@@ -1,28 +1,6 @@
 # bakers ui keys
 
-The new-ticket popup, the deep-link targets, the auto-refresh signal and every keybinding of `bakers ui`; the screens themselves are on [bakers ui](/addons/bakers-ui/reference).
-
-## Creating a ticket - the new-ticket popup (`n`)
-
-`n` opens a centered modal popup with a **Title**, a multiline **Description**, a searchable **Parent**, and live-loaded **Assignee**, **Conductor**, **Labels** (multi-select) and **Workflow** selects. Your own user and the conductor registered for this checkout are preselected. **Title** comes first because the server requires it. **Conductor** is the one select you can **clear** (`Del` or `Backspace`): a set conductor means the ticket is claimed at the next poll and a run starts, a cleared one means it waits for a human.
-
-The popup ends in two submit rows, `[ Create with agent ]` and `[ Create directly ]`, and two key-hint rows inside the frame, because the frame is at most 60 columns wide:
-
-```
- ↑↓ field · ←→ change · Space toggle
- Ctrl+S agent · Ctrl+D direct · Esc cancel
-```
-
-`Ctrl+S` presses the action row you stand on and from any other field means the agent; `Ctrl+D` creates directly from any field; `Enter` on an action row fires that row. `Tab` and `Shift+Tab` walk the fields forward and back, like `↓` and `↑`.
-
-- **Create with agent** writes the fields to a temporary JSON spec, passed as `$BB_NEW_TICKET_INPUT` (never on the command line), and an embedded agent asks you only for what is missing.
-- **Create directly** is one POST, with no agent and no qualification handoff. The typed text becomes the description verbatim (format `bb_rich`); workflow, assignee, conductor, labels and parent are written as picked, and the server owns the rest, so the ticket lands in the workflow's first state. It needs a project: opened from a project, that project is used; opened from a root screen, the popup adds a **Project** field above Title, and picking a project narrows **Conductor** and **Parent** to that project; changing the pick clears both. Without a project it refuses with `no project selected — pick one above to create directly` and writes nothing; the agent row refuses the same way. It also refuses an empty title before the round trip: `title is required — type one, or hand it to the agent`. The agent row has no title precondition. A rejected write is reported in the popup and your text stays.
-
-When an option list cannot load, the popup says so for that list instead of showing an empty one.
-
-**Parent** is optional and limited to the project you are in: type to filter, `←→` moves the suggestion cursor, `Enter` picks. It offers only the project's **open** tickets, so new work is never filed under a finished one (the ticket list's own parent filter still offers closed ones). Matching is a case-insensitive substring of `<identifier> · <title>`. Five suggestions show at once and `+N more` counts the popup's own overflow, not the server's; the server caps a page at 50 rows, so a full page may be truncated and the field says `more may exist`.
-
-On submit each agent becomes a split pane in its project's durable terminal tab (`bakers-agents:<project>`), named after the ticket and zoomed full-screen. `Ticket-Agents` shows only the agents of the project you are in; they survive a restart of the UI because the screen rediscovers them from the live tab. There `Enter` switches to an agent, `z` returns to the tiled overview and `x` closes one.
+The deep-link targets, the auto-refresh signal and every keybinding of `bakers ui`; the screens themselves are on [bakers ui](/addons/bakers-ui/reference).
 
 ## Deep links
 
@@ -73,19 +51,16 @@ The file is transient and git-ignored; nothing in bakers.build writes it.
 
 | Screen | Keys |
 |--------|------|
-| Stats | `PgUp`/`PgDn`/`g`/`G` scroll · `←→` switch the tab group · `t` cycle Range · `Tab`/`Shift-Tab` cycle scope tabs · `n` new ticket agent · `q` quit |
-| Workspace/Team Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
-| Assigned, Member Tickets, Team Work | `/` search |
-| Projects | `↑↓` select · `Enter` open project · `n` new ticket agent · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
+| Workspace Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
+| Assigned, Member Tickets | `/` search |
+| Projects | `↑↓` select · `Enter` open project · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
 | My work | `↑↓` select · `Enter` open · `/` search · `s` state · `p` parent · `r` project · `x` closed · `c` clear · `Tab`/`Shift-Tab` cycle tabs |
-| Tickets | `↑↓` select · `Enter` open ticket · `n` new ticket agent · `/` search · `s` state filter · `w` who · `o` owner · `p` parent · `m` mine · `x` closed filter · `c` clear · `e` edit · `y`/`Y` copy id/link · `←`/`→` page · `R` reload · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
-| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries and fall through to the body scroll at either end · `PgUp`/`PgDn` page the body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket · `f` freeze or unfreeze · `y`/`Y` copy id/link · `Esc` back |
+| Tickets | `↑↓` select · `Enter` open ticket · `/` search · `s` state filter · `w` who · `o` owner · `p` parent · `m` mine · `x` closed filter · `c` clear · `e` edit · `y`/`Y` copy id/link · `←`/`→` page · `R` reload · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
+| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries and fall through to the body scroll at either end · `PgUp`/`PgDn` page the body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (on Runs: the selected claimed or running run) · `f` freeze or unfreeze · `y`/`Y` copy id/link · `Esc` back |
 | Run detail | `↑↓` scroll · `e` cancel a claimed or running run · `Esc` back to the ticket's Runs tab · `q` quit |
-| Ticket-Agents | `↑↓` select · `Enter` switch to agent · `z` tiled overview · `x` close · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
 | Runs | `↑↓` select · `Enter` open the run's ticket · `x` closed filter · `←`/`→` page · `R` reload · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
 | Conductors | `↑↓` select · `Enter` open the conductor · `s`/`x` start/stop (mine only) · `m` mine filter · `c` clear · `R` reload · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
 | Conductor detail | `Tab`/`Shift-Tab` cycle its tabs · `↑↓` select on Held work and Assigned · `Enter` opens the ticket · `Esc` back |
-| New-ticket popup (`n`) | `↑↓`/`Tab`/`Shift+Tab` move field · `←→` change a select, or move the label or parent cursor · `Space` toggle a label · `Del`/`Backspace` clear the Conductor · `Enter` pick a parent suggestion or press the action row you are on · `Ctrl+S` hand to the agent (or press the row you are on) · `Ctrl+D` create directly · `Esc` cancel |
 | Any screen | `W` workspace picker · `R` reload where the screen reloads · `q` quit |
 
-`Tab`/`Shift+Tab` mean two different things, and which one you get depends on what is on screen. On a **screen** they cycle that level's tab bar, as the rows above say. Inside a **modal form** (the new-ticket popup, the Who picker, the parent filter, the assignment edit) they move the form's own cursor instead, mirroring `↓` and `↑`: forward and back through the fields and, on the **parent filter**, the one picker that hands its field count to the key handler, through its suggestions. The **Who picker** has the same one-field shape but does not hand it over, so there both keys stay field moves, and a form with one field has nowhere to move them: they do nothing.
+`Tab`/`Shift+Tab` mean two different things, and which one you get depends on what is on screen. On a **screen** they cycle that level's tab bar, as the rows above say. Inside a **modal form** (the Who picker, the parent filter, the assignment edit) they move the form's own cursor instead, mirroring `↓` and `↑`: forward and back through the fields and, on the **parent filter**, the one picker that hands its field count to the key handler, through its suggestions. The **Who picker** has the same one-field shape but does not hand it over, so there both keys stay field moves, and a form with one field has nowhere to move them: they do nothing.

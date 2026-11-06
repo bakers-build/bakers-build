@@ -1,9 +1,6 @@
 import { expect, it } from 'vitest';
-import {
-  loadCreateFormOptions,
-  loadEditFormOptions,
-} from '../../../../src/Entity/ticket/Form/create-data.js';
 import { EMPTY_EDIT_FORM_OPTIONS } from '../../../../src/Entity/ticket/Form/edit.js';
+import { loadEditFormOptions } from '../../../../src/Entity/ticket/Form/edit-data.js';
 import { fakeClient, toResource } from '../../../test-support.js';
 
 const PROJECT = 'pppppppp-0000-0000-0000-000000000001';
@@ -329,18 +326,4 @@ it('BB-360: EMPTY_EDIT_FORM_OPTIONS has labels:[] and no stateTargets', () => {
   expect(EMPTY_EDIT_FORM_OPTIONS.labels).toEqual([]);
   expect(EMPTY_EDIT_FORM_OPTIONS.reviewers).toEqual([]);
   expect(EMPTY_EDIT_FORM_OPTIONS).not.toHaveProperty('stateTargets');
-});
-
-it('AC-9/D7: loadCreateFormOptions is untouched — it keeps Anonymous and every conductor of the project', async () => {
-  // The create form preselects "own first" and needs labels + workflows; the
-  // edit form must preselect the TICKET's values. Sharing the helpers, not the
-  // entry point, is what keeps both honest — pin that here so a future refactor
-  // cannot quietly route create through the edit loader. BB-664 F4: the
-  // conductor ring is now project-scoped, so this needs one in scope too.
-  const client = fakeClient({ rows: rows() });
-  const created = await loadCreateFormOptions(client, { projectId: 'p1' });
-  expect(created.users.map((u) => u.id)).toContain('u0');
-  expect(created.conductors.map((c) => c.id)).toContain('c3');
-  expect(created.conductors.map((c) => c.label)).toContain('cw-framework');
-  expect(created.workflows.length).toBeGreaterThan(0);
 });

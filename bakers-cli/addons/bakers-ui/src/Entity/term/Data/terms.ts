@@ -1,4 +1,4 @@
-// BB-236 — the TERM data service (`bb_term`, what the create popup happens to
+// BB-236 — the TERM data service (`bb_term`, what the edit popup happens to
 // offer as its labels). It returns TERMS and knows nothing about forms; the name says
 // the entity, not the widget, so a second screen wanting terms for any other purpose
 // gets terms. The simple case: one read, no ordering, no filtering, no decoration.
@@ -10,7 +10,7 @@
 // required argument means a future consumer must state which vocabulary it wants
 // (`type` and `recipe` are the others on this entity type) instead of getting a
 // 404; and it keeps the POLICY "this popup offers label" in the adapter, where
-// every other create-popup policy lives, rather than here.
+// every other popup policy lives, rather than here.
 import type { DropshClient, Resource } from '../../../types.js';
 import { type ListOutcome, listOutcome } from '../../transport.js';
 

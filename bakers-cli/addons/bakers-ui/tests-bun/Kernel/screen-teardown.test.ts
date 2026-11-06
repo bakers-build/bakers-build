@@ -53,19 +53,6 @@ describe('a departed screen leaves nothing standing (BB-340 F2)', () => {
     relationships: { labels: { data: [] } },
   });
 
-  const statsDoc = {
-    data: {
-      type: 'bakers-statistics',
-      id: PROJECT,
-      attributes: {
-        generated: '2026-08-02T10:05:57+00:00',
-        windows: { day: 86400, week: 604800, month: 2592000 },
-        tickets: { total: { day: 0, week: 0, month: 0 }, by_user: [] },
-        runs: { total: { day: 0, week: 0, month: 0 }, by_user: [] },
-      },
-    },
-  };
-
   const services = (): RendererServices => {
     const empty = (): Collection => {
       const c: Collection = {
@@ -80,7 +67,6 @@ describe('a departed screen leaves nothing standing (BB-340 F2)', () => {
     const client: DropshClient = {
       collection: () => empty(),
       get: async (path: string) => {
-        if (path === 'bakers/statistics') return statsDoc;
         if (path === 'bb_ticket/bb_ticket')
           return {
             data: [listRow(TICKET, 'BB-340'), listRow(OTHER, 'BB-341')],
@@ -119,7 +105,7 @@ describe('a departed screen leaves nothing standing (BB-340 F2)', () => {
   });
 
   /** The ticket list, reached the way the cockpit reaches it: Tab off the
-   *  project Dashboard. */
+   *  project Overview. */
   const openList = async (): Promise<BootedTui> => {
     const tui = await bootTui({
       services: services(),

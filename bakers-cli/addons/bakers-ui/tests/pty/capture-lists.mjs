@@ -19,9 +19,9 @@
 //   `verify-screen.mjs` does: a cell-diffing renderer writes each label exactly
 //   once, so grepping the byte stream finds nothing after the first paint.
 //
-//   It sends only Tab. It never sends Ctrl+S or Ctrl+D — the New-ticket form's
-//   two submit paths, which would write a REAL ticket to whichever control
-//   plane the connection resolved to.
+//   It sends only Tab. It never sends Ctrl+S or Ctrl+D — a form's two submit
+//   paths, which would write REAL data to whichever control plane the
+//   connection resolved to.
 //
 // USAGE
 //

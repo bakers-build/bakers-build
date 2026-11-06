@@ -150,11 +150,10 @@ const hasActiveSelection = (
       span.fg.slot === THEME_SLOTS.foregroundActive,
   );
 
-/** Boot the cockpit and Tab once — the overview is one Tab from the Dashboard. */
+/** Boot the cockpit and Tab once — the overview is one Tab from My work. */
 async function openOverview() {
-  // No route ⇒ the root Dashboard; BB-256 AC-1 made that the landing screen,
-  // so the all-projects overview the root `Projects` tab reaches is one Tab
-  // away. This is a NAVIGATION change only: the snapshot below is the one
+  // No route ⇒ root My work, the landing screen, so the all-projects overview
+  // the root `Projects` tab reaches is one Tab away. This is a NAVIGATION change only: the snapshot below is the one
   // recorded on the unchanged tree and must stay that way.
   const tui = await bootTui({
     services: fakeServices(),

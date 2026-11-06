@@ -1,6 +1,5 @@
-import { expect, it, vi } from 'vitest';
+import { expect, it } from 'vitest';
 import {
-  buildTeamMemberRunQueryParams,
   buildUserRunQueryParams,
   DEFAULT_RUN_CRITERIA,
 } from '../../../../src/Entity/run/Data/query.js';
@@ -19,56 +18,4 @@ it('filters by ticket_id.assignee_user_id.id and default closed=hidden', () => {
   expect(s).not.toMatch(/ticket_id\.project_id\.id/);
   expect(s).toContain('sort=-started_at,-drupal_internal__id');
   expect(s).toMatch(/page\[limit\]=20/);
-});
-
-it('filters team-member runs by assignee and linked projects', () => {
-  const query = decodeURIComponent(
-    buildTeamMemberRunQueryParams(
-      'u-1',
-      ['p-1', 'p-2'],
-      DEFAULT_RUN_CRITERIA,
-    ).getQueryString(),
-  );
-  expect(query).toContain('filter[ticket_id.assignee_user_id.id]=u-1');
-  expect(query).toContain(
-    'filter[ticket_id.project_id.id][condition][operator]=IN',
-  );
-  expect(query).toContain(
-    'filter[ticket_id.project_id.id][condition][value][0]=p-1',
-  );
-  expect(query).toContain(
-    'filter[ticket_id.project_id.id][condition][value][1]=p-2',
-  );
-  expect(query).toContain('sort=-started_at,-drupal_internal__id');
-});
-
-it('does not issue an unscoped request for a team with no projects', async () => {
-  const { loadTeamMemberRuns } = await import(
-    '../../../../src/Entity/run/Data/runs.js'
-  );
-  const get = vi.fn();
-  const result = await loadTeamMemberRuns(
-    { get } as never,
-    'u-1',
-    [],
-    DEFAULT_RUN_CRITERIA,
-  );
-  expect(result.rows).toEqual([]);
-  expect(get).not.toHaveBeenCalled();
-});
-
-it('rejects omitted team-member run pages', async () => {
-  const { loadTeamMemberRuns } = await import(
-    '../../../../src/Entity/run/Data/runs.js'
-  );
-  const get = vi.fn(async () => ({ data: [], meta: { omitted: {} } }));
-  await expect(
-    loadTeamMemberRuns(
-      { get } as never,
-      'u-1',
-      ['p-1'],
-      DEFAULT_RUN_CRITERIA,
-      1,
-    ),
-  ).rejects.toThrow('withheld');
 });

@@ -101,17 +101,6 @@ function fakeServices(): RendererServices {
   return {
     client,
     baseUrl: 'https://bakers.example',
-    // The New-ticket modal is only reachable from the Dashboard when an agent
-    // host is injected; the modal case below needs that route.
-    agents: {
-      launch: async () => {
-        throw new Error('not under test');
-      },
-      list: async () => [],
-      focus: async () => {},
-      hide: async () => {},
-      kill: async () => {},
-    },
   };
 }
 
@@ -246,8 +235,8 @@ describe('BB-326 Step B — the frame is a Yoga column', () => {
     );
     expect(regionOf(tui, 'region-body').visible).toBe(true);
 
-    // `n` on the Dashboard opens the New-ticket popup.
-    await tui.press('n');
+    // `r` on My work opens the project-filter popup.
+    await tui.press('r');
 
     expect(regionOf(tui, 'region-modal').visible, 'the box is painted').toBe(
       true,

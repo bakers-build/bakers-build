@@ -1,5 +1,4 @@
-// BB-236 — the ADAPTER between the data services and the EDIT popup, and a sibling
-// of `loadCreateFormOptions` rather than a parameterisation of it. A data service
+// BB-236 — the ADAPTER between the data services and the EDIT popup. A data service
 // (`users.ts`, `conductors.ts`, `terms.ts`) returns data and knows nothing about forms;
 // this module knows both sides and therefore owns the mapping to `Option` and this
 // popup's policy: read write-client-first for users/conductors, drop Anonymous, filter
@@ -8,7 +7,7 @@
 // Type and Recipe selects), and reorder ONLY the
 // conductor ring owner-first (BB-460) — the assignee ring is unordered because
 // the popup preselects the ticket's current assignee. Each rule has exactly one
-// user, so each is written once, here, beside the create adapter it differs from.
+// user, so each is written once, here.
 //
 // BB-360: labels bag replaces the constant State select targets. Parent typeahead
 // is an OptionSource on the screen, not a batch bag here.
@@ -21,9 +20,17 @@ import {
 import { listTerms } from '../../term/Data/terms.js';
 import type { OptionClients } from '../../transport.js';
 import { listUsersPreferringWrite, type User } from '../../user/Data/users.js';
-import { ownFirst } from './create-data.js';
 import type { EditFormOptions } from './edit.js';
 import { loadReviewerOptions } from './reviewer-options.js';
+
+/**
+ * Stable-partition the matching rows to the front: index 0 is what a ring
+ * defaults to.
+ */
+const ownFirst = <T>(rows: T[], isOwn: (row: T) => boolean): T[] => [
+  ...rows.filter(isOwn),
+  ...rows.filter((row) => !isOwn(row)),
+];
 
 /** The two clients an edit-options load may use, by role. */
 export type EditFormClients = OptionClients;

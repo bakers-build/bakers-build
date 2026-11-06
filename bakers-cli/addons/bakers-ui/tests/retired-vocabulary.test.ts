@@ -244,20 +244,6 @@ const ALLOWLIST: readonly Allowed[] = [
       "A7's before/after equality: the binding is literally named `before`, and this shape is the thing the equality is asserted AGAINST",
   },
 
-  // ── `both levels` naming root and project SPECIFICALLY — not a level count ──
-  {
-    file: 'tests-bun/Kernel/top-tab-bar.test.ts',
-    text: '* column 2. BB-256 put `Dashboard` first on both levels, so the',
-    reason:
-      'BB-256 put `Dashboard` first on root and project; the ticket level has no `Dashboard` at all',
-  },
-  {
-    file: 'tests-bun/Kernel/route-boot.test.ts',
-    text: '//          BB-256 put `Dashboard` first on BOTH levels, so the project bar is',
-    reason:
-      'the same two named levels — the column arithmetic under it is the project bar’s',
-  },
-
   // ── BB-346's own corrections: the retired reading, quoted as retired ──────
   //
   // Each of these is a line this ticket WROTE, in place of a line that stated the

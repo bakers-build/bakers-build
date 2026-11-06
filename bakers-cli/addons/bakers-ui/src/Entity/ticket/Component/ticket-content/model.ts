@@ -6,7 +6,6 @@ import {
   styledOf,
 } from '../../../../Component/section-list/index.js';
 import type { TicketDetailDocument } from '../../../../types.js';
-import { compareRunsNewestFirst } from '../../../run/Data/runs.js';
 import { relativeCreated } from '../comment-item/index.js';
 import { TICKET_SECTIONS } from '../sections/index.js';
 import {
@@ -34,39 +33,10 @@ export interface TicketProperty {
   readonly href?: string;
 }
 
-export interface TicketMatrixColumn {
-  readonly key: string;
-  readonly label: string;
-}
-
-export interface TicketMatrixCell {
-  readonly intensity: number | null;
-  readonly display: string;
-  readonly value?: number;
-}
-
-export interface TicketMatrixRow {
-  readonly id: string;
-  readonly label: string;
-  readonly cells: readonly TicketMatrixCell[];
-}
-
-export interface TicketHeatGrid {
-  readonly columns: readonly TicketMatrixColumn[];
-  readonly rows: readonly TicketMatrixRow[];
-}
-
-export interface TicketMetricMatrix {
-  readonly ticket: TicketHeatGrid;
-  readonly runs: TicketHeatGrid;
-}
-
 export interface TicketSidebar {
   readonly details: readonly TicketProperty[];
   readonly links: readonly TicketProperty[];
   readonly related: readonly TicketProperty[];
-  readonly matrix: TicketMetricMatrix;
-  readonly showMetrics: boolean;
 }
 
 export interface TicketContentModel {
@@ -356,249 +326,6 @@ const relatedProperties = (
   ...relatedTicketProperties(document, 'referenced_tickets', 'referenced'),
 ];
 
-const parseMetricNumber = (value: unknown): number | undefined => {
-  if (typeof value === 'number' && Number.isFinite(value)) return value;
-  const raw = asString(value);
-  if (raw === undefined) return undefined;
-  const numeric = Number(raw);
-  return Number.isFinite(numeric) ? numeric : undefined;
-};
-
-const METRIC_LABEL: Record<string, string> = {
-  ac_pass_rate: 'AC',
-  review_bounces: 'bounce',
-  time_to_done_h: 'time',
-  rework_followups: 'rework',
-  human_interventions: 'human',
-  'job_rating.score': 'score',
-};
-
-const metricLabel = (name: string): string =>
-  METRIC_LABEL[name] ?? name.replaceAll('_', ' ').replaceAll('.', ' ');
-
-const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
-
-const intensityAgainst = (value: number, cap: number): number =>
-  cap <= 0 ? 0 : clamp01(value / cap);
-
-const attrNumber = (
-  attributes: Record<string, unknown> | undefined,
-  name: string,
-): number => {
-  const numeric = parseMetricNumber(attributes?.[name]);
-  return numeric === undefined ? 0 : numeric;
-};
-
-const runResources = (document: TicketDetailDocument) =>
-  (document.included ?? [])
-    .filter((resource) => resource.type === 'bb_run--bb_run')
-    .slice()
-    .sort(compareRunsNewestFirst);
-
-export const FOOTPRINT_COLUMNS: readonly TicketMatrixColumn[] = [
-  { key: 'tokens', label: 'tok' },
-  { key: 'duration_s', label: 'dur' },
-  { key: 'agent_turns', label: 'trn' },
-  { key: 'tool_calls', label: 'tl' },
-];
-
-const MAX_MATRIX_RUNS = 12;
-
-const formatCompact = (value: number): string => {
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000) {
-    const scaled = value / 1_000_000;
-    return `${scaled >= 10 ? scaled.toFixed(0) : scaled.toFixed(1).replace(/\.0$/, '')}m`;
-  }
-  if (abs >= 1000) {
-    const scaled = value / 1000;
-    return `${scaled >= 10 ? scaled.toFixed(0) : scaled.toFixed(1).replace(/\.0$/, '')}k`;
-  }
-  return String(Math.round(value));
-};
-
-const formatDurationCell = (seconds: number): string => {
-  if (seconds < 60) return `${Math.round(seconds)}s`;
-  if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
-  const hours = seconds / 3600;
-  return `${hours >= 10 ? hours.toFixed(0) : hours.toFixed(1).replace(/\.0$/, '')}h`;
-};
-
-const footprintDisplay = (key: string, value: number): string => {
-  if (key === 'tokens') return formatCompact(value);
-  if (key === 'duration_s') return formatDurationCell(value);
-  return String(Math.round(value));
-};
-
-const ticketMetricCell = (
-  name: string,
-  value: unknown,
-  unit: string | undefined,
-): { intensity: number; display: string } | undefined => {
-  const numeric = parseMetricNumber(value);
-  if (numeric === undefined) return undefined;
-  if (name === 'job_rating.score') {
-    return {
-      intensity: intensityAgainst(numeric, 5),
-      display: String(Math.round(numeric)),
-    };
-  }
-  const isRatio =
-    unit === 'ratio' || (unit === undefined && name.endsWith('_rate'));
-  if (isRatio) {
-    const ratio = numeric > 1 ? numeric / 100 : numeric;
-    return {
-      intensity: clamp01(ratio),
-      display: `${Math.round(ratio * 100)}%`,
-    };
-  }
-  if (unit === 'h' || name.endsWith('_h')) {
-    return {
-      intensity: intensityAgainst(numeric, 48),
-      display: `${formatCompact(numeric)}h`,
-    };
-  }
-  return {
-    intensity: intensityAgainst(numeric, 5),
-    display: formatCompact(numeric),
-  };
-};
-
-const ticketMetricColumns = (
-  document: TicketDetailDocument,
-): {
-  columns: TicketMatrixColumn[];
-  cells: { intensity: number; display: string }[];
-} => {
-  const raw = document.data?.attributes?.metrics;
-  const rows = Array.isArray(raw) ? raw : [];
-  const columns: TicketMatrixColumn[] = [];
-  const cells: { intensity: number; display: string }[] = [];
-  let score:
-    | {
-        column: TicketMatrixColumn;
-        cell: { intensity: number; display: string };
-      }
-    | undefined;
-  const extras: {
-    column: TicketMatrixColumn;
-    cell: { intensity: number; display: string };
-  }[] = [];
-  for (const row of rows) {
-    if (row === null || typeof row !== 'object') continue;
-    const metric = row as Record<string, unknown>;
-    const name = asString(metric.name);
-    if (name === undefined) continue;
-    const cell = ticketMetricCell(name, metric.value, asString(metric.unit));
-    if (cell === undefined) continue;
-    const column = { key: name, label: metricLabel(name) };
-    if (name === 'job_rating.score') score = { column, cell };
-    else extras.push({ column, cell });
-  }
-  if (score !== undefined) {
-    columns.push(score.column);
-    cells.push(score.cell);
-  }
-  for (const extra of extras) {
-    columns.push(extra.column);
-    cells.push(extra.cell);
-  }
-  return { columns, cells };
-};
-
-const runLabel = (
-  attributes: Record<string, unknown> | undefined,
-  id: string,
-): string => {
-  const internal = attributes?.drupal_internal__id;
-  if (typeof internal === 'number' || typeof internal === 'string') {
-    return `#${internal}`;
-  }
-  return id.slice(0, 6);
-};
-
-const EMPTY_GRID: TicketHeatGrid = { columns: [], rows: [] };
-
-const normalizeRunRows = (
-  rows: readonly {
-    id: string;
-    label: string;
-    values: readonly number[];
-    displays: readonly string[];
-  }[],
-): TicketMatrixRow[] => {
-  const width = rows[0]?.values.length ?? 0;
-  const peaks = Array.from({ length: width }, (_unused, column) => {
-    let peak = 0;
-    for (const row of rows) {
-      const value = row.values[column];
-      if (typeof value === 'number' && value > peak) peak = value;
-    }
-    return peak;
-  });
-  return rows.map((row) => ({
-    id: row.id,
-    label: row.label,
-    cells: row.values.map((value, column) => {
-      const peak = peaks[column] ?? 0;
-      return {
-        intensity: peak > 0 ? clamp01(value / peak) : 0,
-        display: row.displays[column] ?? String(value),
-        value,
-      };
-    }),
-  }));
-};
-
-const metricMatrix = (document: TicketDetailDocument): TicketMetricMatrix => {
-  const runs = runResources(document).slice(0, MAX_MATRIX_RUNS);
-  const ticket = ticketMetricColumns(document);
-  const footprint = FOOTPRINT_COLUMNS.filter((column) =>
-    runs.some((run) => attrNumber(run.attributes, column.key) > 0),
-  );
-
-  const ticketGrid: TicketHeatGrid =
-    ticket.columns.length === 0
-      ? EMPTY_GRID
-      : {
-          columns: ticket.columns,
-          rows: [
-            {
-              id: 'ticket',
-              label: '',
-              cells: ticket.cells.map((cell) => ({
-                intensity: cell.intensity,
-                display: cell.display,
-              })),
-            },
-          ],
-        };
-
-  const runsGrid: TicketHeatGrid =
-    footprint.length === 0 || runs.length === 0
-      ? EMPTY_GRID
-      : {
-          columns: footprint,
-          rows: normalizeRunRows(
-            runs.map((run) => ({
-              id: run.id ?? '',
-              label: runLabel(run.attributes, run.id ?? ''),
-              values: footprint.map((column) =>
-                attrNumber(run.attributes, column.key),
-              ),
-              displays: footprint.map((column) =>
-                footprintDisplay(
-                  column.key,
-                  attrNumber(run.attributes, column.key),
-                ),
-              ),
-            })),
-          ),
-        };
-
-  return { ticket: ticketGrid, runs: runsGrid };
-};
-
 const originProperty = (
   document: TicketDetailDocument,
   key = 'origin',
@@ -669,10 +396,6 @@ const overviewModel = (
     origin === undefined
       ? listedLinks
       : [origin, ...listedLinks.filter((item) => item.value !== 'none')];
-  const matrix = metricMatrix(document);
-  // Stats are a retrospective: they only make sense — and only appear — once the
-  // ticket has reached `done`, never mid-flight.
-  const isDone = document.data?.attributes?.state === 'done';
   return {
     entries: [
       ...documents,
@@ -688,8 +411,6 @@ const overviewModel = (
       details,
       links,
       related: relatedProperties(document),
-      matrix,
-      showMetrics: isDone,
     },
   };
 };

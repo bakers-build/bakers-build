@@ -268,7 +268,7 @@ describe('TicketContent', () => {
     expect(painted.frame).not.toMatch(/… \+\d+ more lines/);
   });
 
-  it('paints ticket metrics as a matrix above Details properties', async () => {
+  it('shows a done ticket sidebar with exactly Details and Related, no Stats', async () => {
     const painted = await paintTab(
       'overview',
       document({
@@ -276,100 +276,16 @@ describe('TicketContent', () => {
         metrics: [
           { name: 'job_rating.score', value: '4.0000' },
           { name: 'ac_pass_rate', value: '0.8000', unit: 'ratio' },
-          { name: 'review_bounces', value: '2.0000' },
-          { name: 'time_to_done_h', value: '34.0000', unit: 'h' },
         ],
       }),
       new Set(['section:Description']),
       80,
       40,
     );
-    expect(painted.frame).toContain('[Stats]');
-    expect(painted.frame).toContain('* ticket');
-    expect(painted.frame).toMatch(/score\s+:\s+4/);
-    expect(painted.frame).toMatch(/AC\s+:\s+80%/);
-    expect(painted.frame).toMatch(/bounce\s+:\s+2/);
-    expect(painted.frame).toMatch(/time\s+:\s+34h/);
-    expect(painted.frame).not.toContain('all');
+    expect(painted.frame).toMatch(/\[Details\] +Related/);
+    expect(painted.frame).not.toContain('Stats');
+    expect(painted.frame).not.toMatch(/score\s+:\s+4/);
     expect(painted.frame).not.toContain('ac_pass_rate');
-    expect(painted.frame).not.toContain('0.8 ratio');
-  });
-
-  it('paints a runs-by-metrics matrix from included runs', async () => {
-    const painted = await paintTab(
-      'overview',
-      {
-        data: {
-          id: 'ticket-1',
-          attributes: {
-            title: 'content render',
-            description: { value: 'Short description body.' },
-            branch_name: 'feat/a_b_c',
-            state: 'done',
-            metrics: [{ name: 'job_rating.score', value: '5.0000' }],
-          },
-          relationships: {
-            assignee_user_id: { data: { id: 'user-1' } },
-            conductor_id: { data: { id: 'cond-1' } },
-            environments: { data: [] },
-            runs: { data: [{ id: 'run-hot' }, { id: 'run-cool' }] },
-          },
-        },
-        included: [
-          {
-            id: 'user-1',
-            type: 'user--user',
-            attributes: { display_name: 'Pat' },
-          },
-          {
-            id: 'cond-1',
-            type: 'bb_conductor--bb_conductor',
-            attributes: { label: 'runner-1' },
-          },
-          {
-            id: 'run-hot',
-            type: 'bb_run--bb_run',
-            attributes: {
-              drupal_internal__id: 2,
-              started_at: '2026-07-18T12:00:00Z',
-              tokens: 8000,
-              duration_s: 60,
-              agent_turns: 8,
-            },
-          },
-          {
-            id: 'run-cool',
-            type: 'bb_run--bb_run',
-            attributes: {
-              drupal_internal__id: 1,
-              started_at: '2026-07-18T10:00:00Z',
-              tokens: 1000,
-              duration_s: 120,
-              agent_turns: 4,
-            },
-          },
-        ],
-      },
-      new Set(['section:Description']),
-      80,
-      40,
-    );
-    expect(painted.frame).toContain('[Stats]');
-    expect(painted.frame).toContain('* ticket');
-    expect(painted.frame).toContain('* runs');
-    expect(painted.frame).toContain('score');
-    expect(painted.frame).toContain('tok');
-    expect(painted.frame).toContain('dur');
-    expect(painted.frame).toContain('trn');
-    expect(painted.frame).not.toContain('all');
-    expect(painted.frame).toContain('#2');
-    expect(painted.frame).toContain('#1');
-    expect(painted.frame).toContain('8000');
-    expect(painted.frame).toContain('1000');
-    expect(painted.frame).toContain('120');
-    expect(painted.frame).toContain('60');
-    expect(painted.frame).toContain('Low');
-    expect(painted.frame).toContain('High');
   });
 
   it('paints Technical details as KeyValue properties, on the right when wide', async () => {
@@ -605,7 +521,7 @@ describe('TicketContent', () => {
     ).text();
     expect(source).toContain('headlineContent(');
     expect(source).toContain('HeadlineMarkdown(');
-    expect(source).toContain('HeatMap(');
+    expect(source).not.toContain('HeatMap(');
     expect(source).toContain('sidebarCard(');
     expect(source).toContain('entry.title');
     expect(source).toContain('Card(');
@@ -620,7 +536,6 @@ describe('TicketContent', () => {
     expect(overview.frame).toContain('* Description');
     expect(overview.frame).not.toContain('[Description]');
     expect(overview.frame).toContain('[Details]');
-    // The Stats tab only appears once the ticket is done; this fixture is not.
     expect(overview.frame).not.toContain('Stats');
     expect(overview.frame).toContain('Short description body.');
 

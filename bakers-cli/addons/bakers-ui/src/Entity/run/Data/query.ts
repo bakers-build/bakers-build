@@ -69,20 +69,6 @@ export function buildUserRunQueryParams(
   return params;
 }
 
-/** Runs attributed to one member inside the selected team's project set. */
-export function buildTeamMemberRunQueryParams(
-  userId: string,
-  projectIds: string[],
-  criteria: RunCriteria,
-  page: { size: number; index: number } = { size: LIST_PAGE_SIZE, index: 0 },
-): DrupalJsonApiParams {
-  const params = new DrupalJsonApiParams();
-  params.addFilter('ticket_id.assignee_user_id.id', userId);
-  params.addFilter('ticket_id.project_id.id', projectIds, 'IN');
-  applyRunCriteria(params, criteria, page);
-  return params;
-}
-
 /**
  * Build the JSON:API query for one conductor's held work: runs whose
  * `conductor_id` matches and whose state is still non-terminal

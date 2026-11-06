@@ -404,7 +404,7 @@ describe('ticketContentModel Overview', () => {
     ).toBe('unknown');
   });
 
-  it('lists ticket success metrics as a one-row matrix, not Details properties', () => {
+  it('keeps ticket success metrics out of the Details properties', () => {
     const model = ticketContentModel(
       document({
         state: 'done',
@@ -419,23 +419,6 @@ describe('ticketContentModel Overview', () => {
       labels,
       NOW,
     );
-    expect(model.sidebar?.showMetrics).toBe(true);
-    expect(
-      model.sidebar?.matrix.ticket.columns.map((column) => column.label),
-    ).toEqual(['score', 'AC', 'bounce', 'time']);
-    expect(model.sidebar?.matrix.ticket.rows).toEqual([
-      {
-        id: 'ticket',
-        label: '',
-        cells: [
-          { intensity: 0.8, display: '4' },
-          { intensity: 0.8, display: '80%' },
-          { intensity: 0.4, display: '2' },
-          { intensity: 34 / 48, display: '34h' },
-        ],
-      },
-    ]);
-    expect(model.sidebar?.matrix.runs).toEqual({ columns: [], rows: [] });
     expect(model.sidebar?.details.map((item) => item.key)).not.toEqual(
       expect.arrayContaining([
         'ac_pass_rate',
@@ -446,95 +429,6 @@ describe('ticketContentModel Overview', () => {
         'tokens',
       ]),
     );
-  });
-
-  it('builds a runs-by-metrics matrix from included runs', () => {
-    const model = ticketContentModel(
-      document(
-        { metrics: [{ name: 'job_rating.score', value: '5.0000' }] },
-        [
-          {
-            id: 'run-old',
-            type: 'bb_run--bb_run',
-            attributes: {
-              drupal_internal__id: 10,
-              started_at: '2026-07-18T10:00:00Z',
-              tokens: 1000,
-              duration_s: 120,
-              agent_turns: 4,
-              tool_calls: 8,
-            },
-          },
-          {
-            id: 'run-new',
-            type: 'bb_run--bb_run',
-            attributes: {
-              drupal_internal__id: 11,
-              started_at: '2026-07-18T12:00:00Z',
-              tokens: 4000,
-              duration_s: 60,
-              agent_turns: 8,
-              tool_calls: 2,
-            },
-          },
-        ],
-        { runs: { data: [{ id: 'run-old' }, { id: 'run-new' }] } },
-      ),
-      'overview',
-      labels,
-      NOW,
-    );
-    expect(
-      model.sidebar?.matrix.ticket.columns.map((column) => column.label),
-    ).toEqual(['score']);
-    expect(model.sidebar?.matrix.ticket.rows[0]?.cells).toEqual([
-      { intensity: 1, display: '5' },
-    ]);
-    expect(
-      model.sidebar?.matrix.runs.columns.map((column) => column.label),
-    ).toEqual(['tok', 'dur', 'trn', 'tl']);
-    expect(model.sidebar?.matrix.runs.rows).toEqual([
-      {
-        id: 'run-new',
-        label: '#11',
-        cells: [
-          { intensity: 1, display: '4k', value: 4000 },
-          { intensity: 0.5, display: '1m', value: 60 },
-          { intensity: 1, display: '8', value: 8 },
-          { intensity: 0.25, display: '2', value: 2 },
-        ],
-      },
-      {
-        id: 'run-old',
-        label: '#10',
-        cells: [
-          { intensity: 0.25, display: '1k', value: 1000 },
-          { intensity: 1, display: '2m', value: 120 },
-          { intensity: 0.5, display: '4', value: 4 },
-          { intensity: 1, display: '8', value: 8 },
-        ],
-      },
-    ]);
-  });
-
-  it('shows the metrics tab on a done ticket and omits it before done', () => {
-    const open = ticketContentModel(document(), 'overview', labels, NOW);
-    expect(open.sidebar?.showMetrics).toBe(false);
-    expect(open.sidebar?.matrix).toEqual({
-      ticket: { columns: [], rows: [] },
-      runs: { columns: [], rows: [] },
-    });
-    const done = ticketContentModel(
-      document({ state: 'done' }),
-      'overview',
-      labels,
-      NOW,
-    );
-    expect(done.sidebar?.showMetrics).toBe(true);
-    expect(done.sidebar?.matrix).toEqual({
-      ticket: { columns: [], rows: [] },
-      runs: { columns: [], rows: [] },
-    });
   });
 
   it('keeps a link title holding emphasis markers as a plain string', () => {

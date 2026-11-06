@@ -21,8 +21,8 @@ it('accepts an active member of the selected parent', async () => {
       clientWith({
         data: [{ relationships: { uid: { data: { id: 'user-1' } } } }],
       }),
-      'bb_team',
-      'team-1',
+      'bb_workspace',
+      'workspace-1',
       'user-1',
     ),
   ).resolves.toBeUndefined();
@@ -32,7 +32,7 @@ it('requests a total order on the membership walk', async () => {
   const client = clientWith({
     data: [{ relationships: { uid: { data: { id: 'user-1' } } } }],
   });
-  await assertActiveMember(client, 'bb_team', 'team-1', 'user-1');
+  await assertActiveMember(client, 'bb_workspace', 'workspace-1', 'user-1');
   const params = (client.get as ReturnType<typeof vi.fn>).mock.calls[0]?.[1] as
     | DrupalJsonApiParams
     | undefined;
@@ -45,8 +45,8 @@ it('rejects a user absent from the selected parent', async () => {
   await expect(
     assertActiveMember(
       clientWith({ data: [] }),
-      'bb_team',
-      'team-1',
+      'bb_workspace',
+      'workspace-1',
       'outsider',
     ),
   ).rejects.toThrow('not an active member');

@@ -78,13 +78,11 @@ describe('the header box is a border, not a template', () => {
     // title prop has to reproduce the prefix the template wrote — including the
     // single column `╳` occupies, which is what `displayWidth(prefix)` was for.
     const { rows } = await render(
-      chromeTree(
-        input({ title: 'bakers.build dashboard', meta: 'a meta row' }),
-      ),
+      chromeTree(input({ title: 'bakers.build projects', meta: 'a meta row' })),
       60,
     );
     expect(rows[0]).toBe(`╭─ ╳ bakers.build ${'─'.repeat(41)}╮`);
-    expect(rows[1]).toBe(`│ bakers.build dashboard${' '.repeat(34)} │`);
+    expect(rows[1]).toBe(`│ bakers.build projects${' '.repeat(35)} │`);
     expect(rows[2]).toBe(`│ a meta row${' '.repeat(46)} │`);
     expect(rows[3]).toBe(`╰${'─'.repeat(58)}╯`);
   });
@@ -146,7 +144,7 @@ describe('the status footer is styled keys without inverse (BB-375)', () => {
     const { rows } = await render(
       footerTree(
         input({
-          status: ' ↑↓ scroll · n new · Tab tabs · q quit ',
+          status: ' ↑↓ scroll · e edit · Tab tabs · q quit ',
           reloadable: true,
           width: 24,
         }),
@@ -178,12 +176,11 @@ describe('the status footer is styled keys without inverse (BB-375)', () => {
   });
 });
 
-it('renders the original six-row braid intact', async () => {
+it('renders the bread-slice logo intact', async () => {
   const { rows } = await render(splashTree(), 80, 24);
-  const top = rows.findIndex((row) => row.includes('╲ ╱'));
+  const top = rows.findIndex((row) => row.includes('▄███████████▀▄'));
   expect(top).toBeGreaterThan(0);
-  const left = rows[top]!.indexOf('╲ ╱');
-  expect(
-    rows.slice(top, top + 6).map((row) => row.slice(left, left + 3)),
-  ).toEqual(['╲ ╱', ' ╳ ', '╱ ╲', ' ╳ ', '═╪═', ' ╵ ']);
+  const left = rows[top]!.indexOf('▄███████████▀▄');
+  expect(rows[top + 3]!.slice(left, left + 14)).toBe('█████▀██▀█████');
+  expect(rows[top + 6]!.slice(left, left + 14)).toBe('▀████████████▀');
 });

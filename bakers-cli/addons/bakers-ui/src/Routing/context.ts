@@ -28,13 +28,6 @@ export const workspaceContext = defineContext<WorkspaceContextValue>(
   'scope',
 );
 
-export interface TeamContextValue {
-  readonly id: string;
-  readonly name: string;
-}
-
-export const teamContext = defineContext<TeamContextValue>('team', 'scope');
-
 export const projectContext = defineContext<ProjectContextValue>(
   'project',
   'scope',
@@ -106,11 +99,6 @@ export const contextsForParams = (
     contexts = contexts.set(workspaceContext, {
       id: params.workspaceId,
       name: params.workspaceName ?? params.workspaceId,
-    });
-  if (params.teamId)
-    contexts = contexts.set(teamContext, {
-      id: params.teamId,
-      name: params.teamName ?? params.teamId,
     });
   if (params.projectId)
     contexts = contexts.set(projectContext, {

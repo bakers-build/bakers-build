@@ -1,8 +1,8 @@
 # bakers ui
 
-`bakers ui` is bakers.build's terminal cockpit: it opens on **My work**, your open assigned tickets, and adds statistics, projects, teams, ticket lists, ticket and run detail, conductors and ticket-create agents, all against one control plane.
+`bakers ui` is bakers.build's terminal cockpit: it opens on **My work**, your open assigned tickets, and adds projects, ticket lists, ticket and run detail and conductors, all against one control plane.
 
-This page covers how the cockpit connects and what each screen shows; the popup, deep links, auto-refresh and every key are on [bakers ui keys](/addons/bakers-ui-keys), and a first walk-through is in [Terminal UI](/addons/bakers-ui/usage).
+This page covers how the cockpit connects and what each screen shows; deep links, auto-refresh and every key are on [bakers ui keys](/addons/bakers-ui-keys), and a first walk-through is in [Terminal UI](/addons/bakers-ui/usage).
 
 ## Synopsis
 
@@ -39,43 +39,29 @@ When the cockpit talks to a server you did not expect, run `bakers ui --print-co
 
 Inside a checkout the workspace comes from `bakers.workspace` in the conductor config, otherwise from the connection; `--workspace` overrides both for one run. `W` opens the workspace picker, and `Enter` writes the choice to `bakers.workspace` and restarts the cockpit.
 
-## Where the agents run
+## Navigation - five scopes
 
-Ticket-create agents start in the root of the repository you started `bakers ui` in: the directory holding the `.bakers/` folder found by walking up from the working directory (in a git worktree, that worktree's own). The winning connection does not matter, so `--config` cannot move them. Outside a project they start in your home directory. Each runs `claude`, pointed at the "Create ticket" section of the repository's `WORKFLOW.md`.
-
-## Navigation - seven scopes
-
-Navigation has seven tab scopes. Tabbed screens show the bar for their current scope; compact ticket views, forms and run detail have no separate tab bar. `Tab`/`Shift-Tab` cycle the tabs of the current level, and a **left click on a tab** goes straight to it; tabs have no letter shortcuts.
+Navigation has five tab scopes. Tabbed screens show the bar for their current scope; compact ticket views, forms and run detail have no separate tab bar. `Tab`/`Shift-Tab` cycle the tabs of the current level, and a **left click on a tab** goes straight to it; tabs have no letter shortcuts.
 
 | Level | Tabs |
 |-------|------|
-| Root | **My work** · **Stats** · **Projects** · **Teams** · **Members** (workspace lead only) · **Conductors** |
-| Project | **Overview** · **Work** · **Stats** · **Tickets** · **Ticket-Agents** · **Runs** · **Conductors** |
+| Root | **My work** · **Projects** · **Members** (workspace lead only) · **Conductors** |
+| Project | **Overview** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
-| Team | **Overview** · **Work** · **Stats** · **Members** |
-| Workspace member | **Overview** · **Stats** · **Tickets** · **Runs** |
-| Team member | **Overview** · **Stats** · **Tickets** · **Runs** |
+| Workspace member | **Overview** · **Tickets** · **Runs** |
 | Conductor | **Overview** · **Held work** · **Assigned** · **Log** |
 
 Run detail has no bar; `Esc` returns to the preceding screen. An addon places a tab with `weight` or `before`/`after` anchors: see [Adding a screen as a tab](/addons/bakers-ui/tabs) and [Addons](/addons/configure).
 
-**Every bar is drawn in the same row**, under the header box, and is clickable where it is drawn and only at its own level: on root **Stats** a click at the column where the project bar's `Runs` would sit is inert, because that bar is not there. On the ticket screen the same column may fall inside ` Runs `, opening that tab, but still reaches no project screen. Project, Team, Workspace Member and Team Member **Overview** are intentionally empty; their figures are on the adjacent **Stats** tab.
+**Every bar is drawn in the same row**, under the header box, and is clickable where it is drawn and only at its own level: on root **Projects** a click at the column where the project bar's `Runs` would sit is inert, because that bar is not there. On the ticket screen the same column may fall inside ` Runs `, opening that tab, but still reaches no project screen. Workspace Member **Overview** shows the person's username, position and About me.
 
-**Team Members** is a read-only OG roster reached through Root → Teams → one team. Enter opens that person inside the selected team, where Tickets and Runs are limited to both the person and the team's linked projects. The root **Members** tab is separate, for workspace leads.
-
-## Stats figures
-
-Every Stats screen shows, in order, an **Overview** matrix, a boxed **Range** chip (`t` cycles `7d·daily`, `30d·daily`, `1y·monthly`) and one tab group that the chip governs, normally **Tickets**, **Runs**, **Breakdown** and **Tokens** (`←→` switch).
-
-**Overview** covers the trailing 24 hours, 7 days and 30 days: rolling durations, nested (`24h ⊆ 7d ⊆ 30d`), ignoring the chip. It shows closed tickets, runs, runs per closed ticket (not a success rate) and token spend. Tickets are windowed on `closed_date`, runs and their tokens on the run's `created`, in the Overview and every trend tab. Trend tabs share one bar scale; **Breakdown** splits token spend by model, each bar scaled against the largest in its own group, never against "100 %".
-
-Every figure is read at render time from `/jsonapi/bakers/statistics`, which counts on the server; nothing is counted or cached in the CLI. Discovery names the figures available for the scope, and the client does not invent a figure list. Ratios arrive already calculated and formatted by the server. On Team Member Stats only matching rows from server-disclosed breakdown figures are shown; aggregate, series, ratio, foreign-user and unattributed rows are not reinterpreted as member figures. A row the server cannot attribute appears as **Unattributed**. A control plane without the endpoint gets a named message and the other tabs keep working. What the figures measure: [Ticket metrics](/configuration/workflows/metrics).
+The root **Members** tab is for workspace leads.
 
 ## The ticket sections
 
 **Overview** leads with the **latest summary**: the newest comment whose `bb_comment_type` is `summary`, the handoff that says where the work stands. It is a collapsible entry, a five-line extract until expanded, and "newest" is the History tab's own order. The type match is exact, so a ticket with no `summary` comment, a typo included, shows "No summary comment."
 
-**Latest spec**, **Latest plan** and **Latest test** live on **Planning** under the same rules. **Description** starts expanded; collapsed it shows five lines, then `… +N more lines`. At 100 columns or wider a sidebar adds **Details**, **Stats** (once the ticket is done) and **Related**: parent, sub-tickets, referenced tickets and **Blocked by**, one `<identifier> · <title>` row per blocker.
+**Latest spec**, **Latest plan** and **Latest test** live on **Planning** under the same rules. **Description** starts expanded; collapsed it shows five lines, then `… +N more lines`. At 100 columns or wider a sidebar adds **Details** and **Related**: parent, sub-tickets, referenced tickets and **Blocked by**, one `<identifier> · <title>` row per blocker.
 
 The header box keeps the identifier, title, labels, state, **Assigned** and **Created by** (the ticket's owner, `unknown` without one) on screen while the body scrolls.
 

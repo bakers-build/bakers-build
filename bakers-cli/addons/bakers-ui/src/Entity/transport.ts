@@ -4,7 +4,7 @@
 // (AC-7). Like its callers `users.ts` / `conductors.ts` / `terms.ts` this is a data
 // module: it returns data and knows nothing about forms — the mapping to a picker
 // row and any policy over it belong to the adapter that wants them
-// (`create-form-data.ts` / `edit-form-data.ts`).
+// (`Form/edit-data.ts`).
 import type { DropshClient, Resource } from '../types.js';
 
 /** One list's result: the rows, and — only when the read threw — the reason. */

@@ -4,8 +4,7 @@ import { keyToIntent } from '../../src/Form/keys.js';
 
 // BB-236 AC-2 / spec Decision 5 — the key→`Intent` table, per kind. This is the
 // ladder `Kernel/tui-kernel.ts` wrote twice (Finding 3); the behaviour it encodes
-// is pinned end-to-end by `tests/Kernel/create-form-keys.test.ts` (create) and
-// `tests/Kernel/edit-form.test.ts` (edit).
+// is pinned end-to-end by `tests-bun/Kernel/edit-form.test.ts`.
 
 const text: FieldDecl = { id: 'body', label: 'Body', kind: 'text' };
 const select: FieldDecl = { id: 'who', label: 'Who', kind: 'select' };
@@ -80,7 +79,7 @@ it('select: → / ← cycle, Enter advances, everything else is inert', () => {
 });
 
 it('select: Del/Backspace clear ONLY a clearable field', () => {
-  // BB-233's edit form declares both selects clearable; the create form
+  // BB-233's edit form declares both selects clearable; a plain select
   // declares none, and there `\x7f` must stay inert — which is also why it never
   // collides with the text field's backspace: different `kind`.
   expect(keyToIntent('delete', clearable)).toEqual({ kind: 'clear' });

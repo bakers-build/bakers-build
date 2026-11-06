@@ -17,8 +17,8 @@ export interface RegisteredRoute {
  * The tab levels whose screens are SCOPED to an entity in the route params.
  *
  * Navigating within such a level, and escaping out of one, must carry those
- * params: a project tab needs `projectId`, a user tab `userId`, a team tab
- * `teamId` (BB-391 AC4). Dropping them opens the tab with no scope, which is a
+ * params: a project tab needs `projectId`, a user tab `userId`. Dropping them
+ * opens the tab with no scope, which is a
  * screen that cannot load. `root` is deliberately absent — it is the level that
  * carries no entity, and it is the one that must drop stale params.
  *
@@ -30,9 +30,7 @@ export interface RegisteredRoute {
  */
 const SCOPED_TAB_LEVELS: readonly string[] = [
   'project',
-  'team',
   'workspace-member',
-  'team-member',
   'user',
   'ticket',
   'conductor',
@@ -166,8 +164,7 @@ export function defineRoutes<const T extends readonly ScreenClass[]>(
             routeId: destination.metadata.id,
             // BB-377 D1: user-level tabs need userId the way project tabs
             // need projectId — dropping params opens the tab with no scope.
-            // BB-391 AC4: and team-level tabs need teamId, for exactly that
-            // reason. Every SCOPED level is listed here; the root level is the
+            // Every SCOPED level is listed here; the root level is the
             // one that carries no entity, so it is the one that drops params.
             params: SCOPED_TAB_LEVELS.includes(scope) ? params : {},
           }

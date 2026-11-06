@@ -7,9 +7,9 @@ import type { DropshClient } from '../../../src/types.js';
 
 // BB-232 spec Decision D9, and the review's blocking finding F1.
 //
-// Deleting `~/.bakers/conductors.json` took away the two answers the ui entry used
-// to read out of it: which project this checkout belongs to, and this machine's
-// conductor `machine_id`. The entry cannot replace them — it holds no JSON:API
+// Deleting `~/.bakers/conductors.json` took away the answer the ui entry used
+// to read out of it: which project this checkout belongs to. The entry cannot
+// replace it — it holds no JSON:API
 // client (BB-223 spec Finding 1) — so it hands over the `.bakers` dir and the
 // renderer matches it against each conductor's `workspace_root`.
 //
@@ -57,19 +57,18 @@ const DOC = {
 };
 
 describe('selectOwnConductor — the registry lookup, against the control plane', () => {
-  it('resolves the project name and machine_id of the matching workspace_root', () => {
+  it('resolves the project name of the matching workspace_root', () => {
     expect(selectOwnConductor(DOC, '/repos/bakers/.bakers')).toEqual({
-      machineId: 'cw-framework',
       project: 'bakers',
     });
   });
 
   it('matches path-normalised, exactly as the registry lookup did', () => {
-    expect(selectOwnConductor(DOC, '/repos/bakers/.bakers/').machineId).toBe(
-      'cw-framework',
+    expect(selectOwnConductor(DOC, '/repos/bakers/.bakers/').project).toBe(
+      'bakers',
     );
-    expect(selectOwnConductor(DOC, '/repos/./bakers/.bakers').machineId).toBe(
-      'cw-framework',
+    expect(selectOwnConductor(DOC, '/repos/./bakers/.bakers').project).toBe(
+      'bakers',
     );
   });
 
@@ -79,7 +78,7 @@ describe('selectOwnConductor — the registry lookup, against the control plane'
     // conductor rather than silently inheriting the parent checkout's project.
     expect(
       selectOwnConductor(DOC, '/repos/bakers/.bakers-worktrees/feat-x/.bakers'),
-    ).toEqual({ machineId: undefined, project: undefined });
+    ).toEqual({ project: undefined });
   });
 
   it('matches the new checkout-root form (BB-450 D3): workspace_root without the .bakers suffix', () => {
@@ -93,7 +92,6 @@ describe('selectOwnConductor — the registry lookup, against the control plane'
       included: [project('p-bakers', 'bakers')],
     };
     expect(selectOwnConductor(doc, '/repos/bakers/.bakers')).toEqual({
-      machineId: 'cw-framework',
       project: 'bakers',
     });
   });
@@ -112,19 +110,17 @@ describe('selectOwnConductor — the registry lookup, against the control plane'
       included: [project('p-bakers', 'bakers')],
     };
     expect(selectOwnConductor(doc, '/repos/bakers/.bakers')).toEqual({
-      machineId: 'cw-framework',
       project: 'bakers',
     });
   });
 
   it('yields nothing when no record names this dir', () => {
     expect(selectOwnConductor(DOC, '/repos/unknown/.bakers')).toEqual({
-      machineId: undefined,
       project: undefined,
     });
   });
 
-  it('yields the machine_id even when the project cannot be resolved', () => {
+  it('yields no project when the matching record names none', () => {
     const doc = {
       data: [
         conductor({ machine_id: 'orphan', workspace_root: '/repos/o/.bakers' }),
@@ -132,7 +128,6 @@ describe('selectOwnConductor — the registry lookup, against the control plane'
       included: [],
     };
     expect(selectOwnConductor(doc, '/repos/o/.bakers')).toEqual({
-      machineId: 'orphan',
       project: undefined,
     });
   });
@@ -143,7 +138,6 @@ describe('selectOwnConductor — the registry lookup, against the control plane'
       included: [project('p-bakers', 'bakers')],
     };
     expect(selectOwnConductor(doc, '/repos/bakers/.bakers')).toEqual({
-      machineId: undefined,
       project: undefined,
     });
   });
@@ -151,8 +145,8 @@ describe('selectOwnConductor — the registry lookup, against the control plane'
   it('takes the first record in server order when a repo hosts several conductors', () => {
     // Several conductor configs in one `.bakers` share a workspace_root, and the
     // dir alone cannot say which one this cockpit belongs to. First in server
-    // order is a documented guess, not a resolution — and it only preselects a
-    // value in the new-ticket form, which the writer can still change.
+    // order is a documented guess, not a resolution — it only picks the default
+    // project, which `--project` overrides.
     const doc = {
       data: [
         conductor(
@@ -167,74 +161,13 @@ describe('selectOwnConductor — the registry lookup, against the control plane'
       included: [project('p-a', 'alpha'), project('p-b', 'beta')],
     };
     expect(selectOwnConductor(doc, '/repos/multi/.bakers')).toEqual({
-      machineId: 'cw-a',
       project: 'alpha',
     });
   });
 
   it('yields nothing for an empty document', () => {
     expect(selectOwnConductor({}, '/repos/bakers/.bakers')).toEqual({
-      machineId: undefined,
       project: undefined,
-    });
-  });
-
-  // BB-353 — registration key renamed machine_id → conductor_id; preselect
-  // must prefer the new attribute and keep a legacy fallback during cutover.
-  it('prefers conductor_id when both conductor_id and machine_id are present', () => {
-    const doc = {
-      data: [
-        conductor(
-          {
-            conductor_id: 'new-id',
-            machine_id: 'legacy-id',
-            workspace_root: '/repos/bakers/.bakers',
-          },
-          'p-bakers',
-        ),
-      ],
-      included: [project('p-bakers', 'bakers')],
-    };
-    expect(selectOwnConductor(doc, '/repos/bakers/.bakers')).toEqual({
-      machineId: 'new-id',
-      project: 'bakers',
-    });
-  });
-
-  it('falls back to machine_id when only the legacy attribute is present', () => {
-    const doc = {
-      data: [
-        conductor(
-          {
-            machine_id: 'legacy-only',
-            workspace_root: '/repos/bakers/.bakers',
-          },
-          'p-bakers',
-        ),
-      ],
-      included: [project('p-bakers', 'bakers')],
-    };
-    expect(selectOwnConductor(doc, '/repos/bakers/.bakers').machineId).toBe(
-      'legacy-only',
-    );
-  });
-
-  it('resolves from conductor_id alone', () => {
-    const doc = {
-      data: [
-        conductor(
-          {
-            conductor_id: 'cw-framework',
-            workspace_root: '/repos/bakers/.bakers',
-          },
-          'p-bakers',
-        ),
-      ],
-      included: [project('p-bakers', 'bakers')],
-    };
-    expect(selectOwnConductor(doc, '/repos/bakers/.bakers')).toEqual({
-      machineId: 'cw-framework',
-      project: 'bakers',
     });
   });
 });
@@ -263,7 +196,7 @@ describe('readOwnConductor — one read, and it never breaks the boot', () => {
     const client = clientReturning(DOC);
     const own = await readOwnConductor(client, '/repos/bakers/.bakers');
 
-    expect(own).toEqual({ machineId: 'cw-framework', project: 'bakers' });
+    expect(own).toEqual({ project: 'bakers' });
     expect(client.calls).toHaveLength(1);
     expect(client.calls[0]?.path).toBe('bb_conductor/bb_conductor');
     // Sideloaded, so the project NAME costs no second request.
@@ -282,6 +215,6 @@ describe('readOwnConductor — one read, and it never breaks the boot', () => {
 
     await expect(
       readOwnConductor(client, '/repos/bakers/.bakers'),
-    ).resolves.toEqual({ machineId: undefined, project: undefined });
+    ).resolves.toEqual({ project: undefined });
   });
 });

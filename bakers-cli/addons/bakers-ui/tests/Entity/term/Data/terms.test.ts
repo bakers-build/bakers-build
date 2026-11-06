@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { listTerms } from '../../../../src/Entity/term/Data/terms.js';
 import { fakeClient, toResource } from '../../../test-support.js';
 
-// BB-236 — the TERM data service returns TERMS (`bb_term`, what the create popup
+// BB-236 — the TERM data service returns TERMS (`bb_term`, what the edit popup
 // offers as labels). It returns TERMS and knows nothing about forms; the name says
 // the entity, not the widget.
 //

@@ -79,11 +79,11 @@
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install   # once: native deps
 //   node verify-colors.mjs
-//   node verify-colors.mjs --surface dashboard
+//   node verify-colors.mjs --surface tickets
 //   node verify-colors.mjs --out ../../../../../assets-ai/BB-nnn/node/pty-colors-after.txt
 //
-//   --surface <all|new-ticket|tickets|dashboard>   default: all three
-//   --project <name>   the project the two project-scoped surfaces open
+//   --surface <all|tickets>   default: all
+//   --project <name>   the project the project-scoped surface opens
 //   --cols/--rows <n>  the pty geometry (default 120x40)
 //   --out <file>       write the transcript here as well as to stdout
 //
@@ -94,12 +94,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import xtermHeadless from '@xterm/headless';
 import { spawn } from 'node-pty';
-import {
-  DASHBOARD_KEY_SCRIPT,
-  lit,
-  NEW_TICKET_KEY_SCRIPT,
-  TICKETS_KEY_SCRIPT,
-} from './key-script.mjs';
+import { lit, TICKETS_KEY_SCRIPT } from './key-script.mjs';
 
 // `@xterm/headless` is CommonJS and exposes `Terminal` on the default export
 // only; a named import of it is `undefined` at runtime, not a build error.
@@ -147,9 +142,8 @@ const ALLOWED = new Map([
   // renderer cannot emit would weaken the set for nothing. `bold + italic` comes
   // out as `ESC[1m ESC[3m`.
   //
-  // It is not in REQUIRED below: the three surfaces this driver walks are the
-  // dashboard, a project ticket list and the New-ticket popup, and NONE of them is
-  // a ticket detail — so this driver cannot make the renderer emit it. What does
+  // It is not in REQUIRED below: the surface this driver walks is a project
+  // ticket list, not a ticket detail — so this driver cannot make the renderer emit it. What does
   // is `verify-markdown.mjs`, which walks a real ticket detail and asserts the
   // same closed set from there.
   ['3', 'italic — emphasis in a rendered Markdown body (BB-372 D7)'],
@@ -180,33 +174,21 @@ const REQUIRED = [
 ];
 
 // ---------------------------------------------------------------------------
-// Surfaces — the same three walks `verify-screen.mjs` drives
+// Surfaces — the same walks `verify-screen.mjs` drives
 // ---------------------------------------------------------------------------
 
 const BOOT_DASHBOARD = [lit('[Dashboard]'), lit('TICKETS CLOSED')];
 
 const SURFACES = {
-  'new-ticket': {
-    describe: 'the New-ticket popup, opened from a project Dashboard',
-    args: (project) => ['ui', '--project', project],
-    script: NEW_TICKET_KEY_SCRIPT,
-    boot: BOOT_DASHBOARD,
-  },
   tickets: {
     describe: 'the project ticket list: paging, search, and back out',
     args: (project) => ['ui', '--project', project],
     script: TICKETS_KEY_SCRIPT,
     boot: BOOT_DASHBOARD,
   },
-  dashboard: {
-    describe: 'the ROOT dashboard and the whole root tab cycle',
-    args: () => ['ui'],
-    script: DASHBOARD_KEY_SCRIPT,
-    boot: [...BOOT_DASHBOARD, lit('bakers.build dashboard')],
-  },
 };
 
-const ORDER = ['dashboard', 'tickets', 'new-ticket'];
+const ORDER = ['tickets'];
 
 // ---------------------------------------------------------------------------
 // Arguments
@@ -232,7 +214,7 @@ function parseArgs(argv) {
   };
 }
 
-/** The New-ticket form's two submit bytes. Neither may appear in any script. */
+/** A form's two submit bytes. Neither may appear in any script. */
 const SUBMIT_BYTES = [
   ['Ctrl+S', '\u0013'],
   ['Ctrl+D', '\u0004'],
@@ -244,8 +226,8 @@ function refuseSubmitKeys(script, surface) {
       if (String(step.send ?? '').includes(byte)) {
         throw new Error(
           `refusing to run --surface ${surface}: step '${step.label}' sends ` +
-            `${name}, which submits the New-ticket form and would write a real ` +
-            'ticket to the connected control plane.',
+            `${name}, which submits a form and would write real data ` +
+            'to the connected control plane.',
         );
       }
     }

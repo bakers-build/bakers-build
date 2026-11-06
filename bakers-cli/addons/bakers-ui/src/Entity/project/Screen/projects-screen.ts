@@ -90,10 +90,7 @@ export class ProjectsScreen extends AsyncScreen<ProjectRow[]> {
   }
 
   protected actions() {
-    return [
-      actionItem('projects-new', 'n', 'new'),
-      actionItem('projects-tab', 'Tab', 'tabs'),
-    ];
+    return [actionItem('projects-tab', 'Tab', 'tabs')];
   }
   activate(index: number, context: ScreenContext): boolean {
     const row = this.readyValue?.[index];

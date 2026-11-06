@@ -1,6 +1,5 @@
 // BB-472: the cockpit's workspace switch. A one-column `ListTable`,
-// presented as a popup over whichever screen opened it — the same modal
-// pattern `Entity/ticket/Screen/create-ticket-form.ts` uses
+// presented as a popup over whichever screen opened it — a modal
 // (`AsyncModalScreen`), not a full-screen route: switching workspace is a
 // short, dismissable action from wherever the operator already is, not a
 // destination of its own.

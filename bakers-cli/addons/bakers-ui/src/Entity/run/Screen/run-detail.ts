@@ -144,7 +144,7 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
    * F5 — the pipe's own output, and it is `string[]`.
    *
    * The run is handled exactly like every other entity (the operator's ruling
-   * after plan Task 10): `ticket.detail`, the dashboard and the project picker
+   * after plan Task 10): `ticket.detail` and the project picker
    * have always printed their own plain text into a pipe, and this screen was
    * the only entity detail falling through to the tree→text path instead. That
    * path lays the body out on a cell grid of a fixed width, and a pipe has no

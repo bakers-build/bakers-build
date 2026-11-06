@@ -7,15 +7,9 @@ import { buildRoutes } from '../../../src/Routing/routes.js';
 
 const routes = buildRoutes();
 it.each([
-  ['root', 'projects', ' My work    Stats   [Projects]   Teams    Conductors '],
-  [
-    'project',
-    'tickets',
-    ' Overview    Stats   [Tickets]   Ticket-Agents    Runs    Conductors ',
-  ],
+  ['root', 'projects', ' My work   [Projects]   Conductors '],
+  ['project', 'tickets', ' Overview   [Tickets]   Runs    Conductors '],
   ['ticket', 'comments', ' Overview    Planning   [History]   Runs '],
-  ['team', 'members', ' Overview    Work    Stats   [Members]'],
-  ['team-member', 'runs', ' Overview    Stats    Tickets   [Runs]'],
 ])('renders the registered %s bar and its clickable parts', (level, tab, expected) => {
   const location = { level, tab, tabs: routes.tabs(level) };
   expect(tabBarFor(location)).toBe(expected);
@@ -43,13 +37,8 @@ it('renders contributed ids and labels without a fixed list', () => {
 it('renders the lead-only workspace-member bar from the admin registry', () => {
   const adminRoutes = buildRoutes([], true);
   const tabs = adminRoutes.tabs('workspace-member');
-  expect(tabs.map(({ id }) => id)).toEqual([
-    'overview',
-    'stats',
-    'tickets',
-    'runs',
-  ]);
+  expect(tabs.map(({ id }) => id)).toEqual(['overview', 'tickets', 'runs']);
   expect(tabBarFor({ level: 'workspace-member', tab: 'overview', tabs })).toBe(
-    '[Overview]   Stats    Tickets    Runs ',
+    '[Overview]   Tickets    Runs ',
   );
 });
