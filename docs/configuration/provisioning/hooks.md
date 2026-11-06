@@ -42,7 +42,7 @@ Run a repository command or an addon's listener at a worktree's lifecycle points
 
 | Hook | Runs | Use for |
 |---|---|---|
-| `after_create` | Every dispatch, after the worktree exists, including a reused worktree | Convergent dependency setup |
+| `after_create` | Once per worktree: on a dispatch that created it, or that finds no recorded success of this hook for it; repeated until it succeeds | One-time setup |
 | `before_run` | After `after_create` (and a fresh worktree's opening layout), before the agent starts | Quick refresh, launch env |
 | `after_run` | After an ended run's worker stopped, before the run is closed; at once when a launch fails | Stopping a run's sidecar |
 | `after_done` | During cleanup of a finished ticket, before the worktree is removed | Releasing local resources |

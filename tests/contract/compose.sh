@@ -201,11 +201,12 @@ try {
   writeFileSync(join(dir, 'package.json'), '{"type":"module"}');
   copyFileSync('.bakers/conductor.config.js', join(dir, 'conductor.mjs'));
   const config = (await import(pathToFileURL(join(dir, 'conductor.mjs')))).default;
-  assert.deepEqual(config.addons, [], 'default workspace must not register FRP');
+  assert.deepEqual(config.addons, ['@bakers-build/addon-ddev'], 'default workspace must not register FRP');
   const frp = { zone: 'preview.example.test', clientConfigPath: '/operator/frpc.json', adminPort: 7400, adminUser: 'operator', adminPassword: 'dummy' };
   writeFileSync(join(dir, 'conductor.config.local.js'), `export default ${JSON.stringify({frp})}`);
   const selected = (await import(`${pathToFileURL(join(dir, 'conductor.mjs'))}?selected`)).default;
-  assert.deepEqual(selected.addons[0].with.transport.with, frp);
+  assert.equal(selected.addons[0], '@bakers-build/addon-ddev');
+  assert.deepEqual(selected.addons[1].with.transport.with, frp);
 } finally {
   if (previous === undefined) delete process.env.BB_HOME; else process.env.BB_HOME = previous;
   rmSync(dir, {recursive: true, force: true});
