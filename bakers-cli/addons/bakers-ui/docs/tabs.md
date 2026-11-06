@@ -126,7 +126,7 @@ Most routes need only `tab`. The optional route-level `activeTab` handles
 presentations that differ from the route's primary tab:
 
 - Member routes belong to workspace-member; their explicit route metadata
-  selects the contextual bar and roster fallback.
+  selects the contextual bar.
 - ProjectPicker has no separate tab; `{ scope: 'root', id: 'projects' }` highlights
   the existing Projects tab.
 - Compact ticket presentations return `null` to hide the bar.

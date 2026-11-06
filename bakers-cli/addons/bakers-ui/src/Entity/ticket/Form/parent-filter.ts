@@ -10,7 +10,7 @@
 
 import { declareForm, type FormState } from '../../../Form/index.js';
 import { PARENT_PAGE_SIZE } from '../Data/parents.js';
-import type { ParentOption } from './create.js';
+import type { ParentOption } from './parent-source.js';
 
 export interface ParentFilterValues {
   /** The PICKED parent's uuid, or null. `parentQuery` holds what was typed. */

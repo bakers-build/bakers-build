@@ -4,7 +4,7 @@ import type { ScreenContext } from '../../../../src/Screen/screen.js';
 import type { DropshClient } from '../../../../src/types.js';
 import { renderTree } from '../../../render-tree.js';
 
-it('validates workspace membership even though the overview body is empty', async () => {
+it('validates workspace membership before showing the overview', async () => {
   const collection = {
     where: vi.fn(),
     first: vi.fn(async () => ({ attr: () => 7 })),

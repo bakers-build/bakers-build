@@ -5,8 +5,7 @@
 
 import type { DropshClient } from '../../../types.js';
 import type { OptionSource } from '../../../Widget/index.js';
-import type { ParentOption } from './create.js';
-import { parentOptionSource } from './parent-source.js';
+import { type ParentOption, parentOptionSource } from './parent-source.js';
 
 /**
  * Parent candidates for the edit popup: project-scoped, identifier+title match,

@@ -1,14 +1,22 @@
-// BB-284 D5 — the PARENT OPTION SOURCE, extracted from `create-data.ts` so the
-// create form and the parent-filter picker compose the SAME source: one read
-// (`loadParentCandidates`), one label policy, one error channel, two consumers.
-// The no-drift argument spec F2 makes for the query builder, applied to the
-// source — a copied source would let the two pickers disagree about what a
-// parent row looks like.
+// BB-284 D5 — the PARENT OPTION SOURCE, so every parent picker composes the
+// SAME source: one read (`loadParentCandidates`), one label policy, one error
+// channel. A copied source would let the pickers disagree about what a parent
+// row looks like.
 
+import type { Option } from '../../../Form/index.js';
 import type { DropshClient } from '../../../types.js';
 import type { OptionSource } from '../../../Widget/index.js';
 import { loadParentCandidates, type ParentCandidate } from '../Data/parents.js';
-import type { ParentOption } from './create.js';
+
+/**
+ * A parent candidate as the pickers offer it (BB-257 D5): a kernel `Option`,
+ * filtered by `label`, that also carries the parent's own identifier and title
+ * so nothing has to parse the composed label back apart.
+ */
+export interface ParentOption extends Option {
+  identifier: string;
+  title: string;
+}
 
 /**
  * How long the parent picker waits before re-querying (BB-257 D7).

@@ -1161,7 +1161,7 @@ async function bootTty(
 }
 
 /**
- * The New-ticket popup's active field value, read off its own value row.
+ * A popup's active field value, read off its own value row.
  *
  * The caret `▸` marks the active label and the value is drawn on the row below
  * it, inside the popup's `│` borders. An empty text field renders the

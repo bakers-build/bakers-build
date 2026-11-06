@@ -123,7 +123,7 @@ export interface FakeClient extends DropshClient {
    * two different requests and only one of them exists (BB-257 F2).
    */
   readonly collections: string[];
-  /** Every `post()` in call order — the ticket-template "exactly one POST" assertion. */
+  /** Every `post()` in call order. */
   readonly posts: RecordedPost[];
   /** Every `where(path, op, value)` filter any collection received. */
   readonly filters: string[][];

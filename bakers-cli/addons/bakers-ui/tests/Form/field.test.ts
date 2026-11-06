@@ -111,7 +111,7 @@ it('autocomplete`s typed key sets reject a wrong-typed key', () => {
   // non-nullable string key, `f.select` a nullable one). Asserted the way they
   // are — this package's tsconfig includes only `src/**/*.ts`, so the test tree
   // is transpiled and never type-checked, and the proof is that the real call
-  // site in `Entity/ticket/Form/create.ts` compiles. What IS checkable here is
+  // site in `Entity/ticket/Form/edit.ts` compiles. What IS checkable here is
   // that the two keys stay distinct and land in distinct slots, so a swap of
   // `from` and `query` cannot pass unnoticed.
   const field = f.autocomplete('parent', 'Parent', {

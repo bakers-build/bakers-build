@@ -359,21 +359,18 @@ describe('entity slices: the target layout EXISTS — AC-15/AC-16/AC-17', () => 
   // a resource the control plane serves (`bb_workspace`), and it is a clean
   // G2 leaf — its `Data/` reads `bb_workspace` alone and imports nothing
   // from another slice.
-  // `ticket-template` is a slice too, argued the same way: it mirrors
-  // `bb_ticket_template`, and its `Data/` reads that type alone; the create
-  // popup's adapter in `ticket/Form/` maps its rows, not the other way round.
+  // `ticket-template` left with the create popup, its only consumer.
   const SLICES = [
     'conductor',
     'project',
     'run',
     'term',
     'ticket',
-    'ticket-template',
     'user',
     'workspace',
   ];
 
-  it('all eight entity slices exist', () => {
+  it('all seven entity slices exist', () => {
     expect(subDirs(entityDir).sort()).toEqual(SLICES);
   });
 

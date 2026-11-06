@@ -44,11 +44,11 @@ import {
   renderDeclaredFieldsTree,
 } from '../../../../Widget/index.js';
 import type { ActiveRunInfo } from '../../../run/Data/active-run.js';
-import type { FieldDef } from '../../Form/create.js';
 import type {
   EditFieldId,
   EditFormOptions,
   EditFormState,
+  FieldDef,
 } from '../../Form/edit.js';
 
 /**

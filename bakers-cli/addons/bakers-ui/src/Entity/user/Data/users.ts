@@ -165,15 +165,16 @@ export async function loadWhoCandidates(
   return fetchWhoCandidates(client, params);
 }
 
-/**
- * Resolve a username to the Who criterion's candidate (BB-287 D4) — an EXACT
- * `name` match. The mine toggle filters tickets on the resolved uuid, so a
- * CONTAINS hit on a longer sibling name would filter on the wrong user:
- * identity must be proven, not guessed. At most one row comes back (Drupal
- * names are unique); uid 0 is dropped by the shared read.
- */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * Resolve the current user to the Who criterion's candidate (BB-287 D4) — an
+ * EXACT match on `id` when given a uuid, otherwise on `name`. The mine toggle
+ * filters tickets on the resolved uuid, so a CONTAINS hit on a longer sibling
+ * name would filter on the wrong user: identity must be proven, not guessed.
+ * At most one row comes back (uuids and Drupal names are unique); uid 0 is
+ * dropped by the shared read.
+ */
 export async function resolveWhoCandidate(
   client: DropshClient,
   name: string,

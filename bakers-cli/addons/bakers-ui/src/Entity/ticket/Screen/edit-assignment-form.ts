@@ -21,7 +21,7 @@ import {
   editFormTree,
 } from '../Component/edit-form/index.js';
 import { loadTicketDetail } from '../Data/detail.js';
-import type { FieldDef } from '../Form/create.js';
+import type { FieldDef } from '../Form/edit.js';
 import {
   CANCEL_TICKET_ACTION_ID,
   cancelEditPayload,
