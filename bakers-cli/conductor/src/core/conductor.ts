@@ -367,7 +367,9 @@ export class Conductor {
   }
 
   async stopTools(): Promise<void> {
+    // Server first, so no new provision_up starts a run after the stop.
     await this.toolServer?.stop();
+    await this.config.provisioning?.stop();
     this.toolServer = undefined;
     this.runTokens.clear();
   }
@@ -1123,6 +1125,8 @@ export class Conductor {
       // workspace just created MUST exist, and silencing a hook there would
       // hide a real provisioning failure.
       if (t.worktreePath) {
+        // A provisioning outlives its run, never its ticket: end it before teardown.
+        await this.config.provisioning?.stop(t.worktreePath);
         if (existsSync(t.worktreePath)) {
           await this.recordMrChanges(t);
           // BB-599: listeners get the ticket's current context; the shell

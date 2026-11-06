@@ -59,8 +59,8 @@ Substitute no method of your own.
   a hit needs a human decision.
 - Before writing a ticket, comment or relationship, read [ticket writes](references/ticket-writes.md).
 - [Evidence and links](references/evidence.md); [local preview links](references/preview-links.md).
-- **Provision**: before a confirmed check that needs a running environment, call `provision_up`
-  ([conductor tools](references/tools-conductor.md)) with the `bb-phase-provision` hint's profile,
-  and use its printed base URL; other checks start nothing. `test_as` logins follow the
+- **Provision**: before a confirmed check needing a running environment, start `provision_up` in a
+  subagent ([conductor tools](references/tools-conductor.md)) with the `bb-phase-provision` profile
+  and use its base URL; other checks start nothing. `test_as` logins follow the
   `bb-phase-outtake` hint; a missing persona stays **missing**, never substituted.
 - Skill prose cites no ticket identifiers.
