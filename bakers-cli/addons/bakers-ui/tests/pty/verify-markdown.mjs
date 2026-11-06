@@ -4,9 +4,8 @@
 //
 // WHY THIS EXISTS AS A SEPARATE DRIVER
 //
-//   `verify-colors.mjs` owns the cockpit's SGR vocabulary but walks three
-//   surfaces — the root dashboard, a project ticket list and the New-ticket
-//   popup — and NONE of them is a ticket detail. So it cannot observe the one
+//   `verify-colors.mjs` owns the cockpit's SGR vocabulary but walks a project
+//   ticket list, not a ticket detail. So it cannot observe the one
 //   code this ticket adds to the wire (`ESC[3m`, italic — D7/R3): its `ALLOWED`
 //   map gains the entry, and this driver is what actually makes the renderer
 //   emit it and then reads the bytes back.
@@ -202,8 +201,8 @@ async function main() {
 
   say('# BB-372 — a real ticket detail on a real pty: is the body Markdown?');
   say('#');
-  say('# `verify-colors.mjs` walks the dashboard, a ticket list and the');
-  say('# New-ticket popup — never a ticket DETAIL — so it cannot observe the');
+  say('# `verify-colors.mjs` walks a ticket list — never a ticket DETAIL —');
+  say('# so it cannot observe the');
   say(
     '# one code this ticket puts on the wire. This driver makes the renderer',
   );

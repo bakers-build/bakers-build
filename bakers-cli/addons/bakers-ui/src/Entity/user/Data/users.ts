@@ -1,6 +1,6 @@
 // BB-236 — the USER data service. It returns USERS and knows nothing about forms:
 // no `Option`, no ordering, no filtering, no popup name. Whoever wants users shaped
-// as picker rows says so itself — that is `create-form-data.ts` / `edit-form-data.ts`,
+// as picker rows says so itself — that is `Form/edit-data.ts`,
 // and the boundary guard in `tests/boundary.test.ts` keeps this file on the data side
 // of the line. The two read strategies are both just reading, so both live here.
 import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
@@ -11,7 +11,6 @@ import type {
 } from '../../../types.js';
 import {
   type ListOutcome,
-  listOutcome,
   listPreferringWrite,
   messageOf,
   type OptionClients,
@@ -20,8 +19,8 @@ import {
 /**
  * Drupal JSON:API default page size (`OffsetPage::SIZE_MAX`).
  *
- * `listUsers` → `listOutcome` → `collection('user').list()` sends no
- * `page[limit]`, so the control plane applies this bound.
+ * `listAllUsers` walks the collection in pages of this size, the bound the
+ * control plane applies anyway.
  */
 export const USER_LIST_PAGE_SIZE = 50;
 
@@ -54,19 +53,6 @@ const fromAttributes = (id: string, attr: (key: string) => unknown): User => {
 };
 
 const toUser = (r: Resource): User => fromAttributes(r.id, (k) => r.attr(k));
-
-/**
- * The user collection through one client, in server order.
- *
- * Yields the OUTCOME rather than a swallowed array (BB-257 D4), for the same
- * reason `listTerms` does: the create popup has to be able to say that the read
- * failed instead of presenting an empty Assignee ring, and only the read knows
- * why it failed. `listUsersPreferringWrite` keeps the swallowing contract — it
- * already HAS an answer to a failure (fall back to the read client), which is
- * the case D4 says the best-effort rule is right for.
- */
-export const listUsers = (client: DropshClient): Promise<ListOutcome<User>> =>
-  listOutcome(client, 'user', toUser);
 
 /** Every readable user, walking JSON:API pages to completion. */
 export async function listAllUsers(

@@ -82,3 +82,15 @@ it('shows none for an empty position and About me', async () => {
   expect(body).toMatch(/Position\W+none/);
   expect(body).toMatch(/About me\W+none/);
 });
+
+it('renders an About me written with CRLF line ends without carriage returns', async () => {
+  const { screen, context } = overviewWith({
+    name: 'ada',
+    field_bb_background: 'Drupal and PHP.\r\nLittle DevOps.',
+  });
+  await vi.waitFor(() => expect(screen.state).toBe('ready'));
+  const body = renderTree(screen.present(context).body).join('\n');
+  expect(body).not.toContain('\r');
+  expect(body).toContain('Drupal and PHP.');
+  expect(body).toContain('Little DevOps.');
+});

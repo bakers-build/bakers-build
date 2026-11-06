@@ -9,7 +9,7 @@ import {
 // dropsh `buildProgram` (returning a program that records its argv) and a faked
 // renderer factory (recording its options), assert `runBbUi`:
 //  (a) builds the program from connection.authPlugins + the renderer instance,
-//  (b) passes currentUser/ownConductorMachineId/project/cwd
+//  (b) passes currentUser/project/cwd
 //      into the renderer factory (→ the renderer's services),
 //  (c) runs the `--format tui search bb_project …` seed.
 
@@ -36,7 +36,6 @@ async function runWithFakes(over: Partial<BbUiLauncherOptions> = {}) {
     cwd: '/home/dev',
     project: 'bakers',
     currentUser: 'cw',
-    ownConductorMachineId: 'cw-host-bakers',
     buildProgram: (o) => {
       builtWith = o;
       return program;
@@ -90,7 +89,6 @@ describe('runBbUi (BB-194 AC-4)', () => {
       cwd: '/home/dev',
       project: 'bakers',
       currentUser: 'cw',
-      ownConductorMachineId: 'cw-host-bakers',
     });
     expect(rendererOpts).not.toHaveProperty('agents');
   });

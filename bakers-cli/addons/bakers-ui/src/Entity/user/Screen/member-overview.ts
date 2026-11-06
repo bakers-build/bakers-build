@@ -14,7 +14,7 @@ import { loadUserProfile, type UserProfile } from '../Data/users.js';
 
 const profileLines = (profile: UserProfile): string[] => {
   const [first = 'none', ...rest] = profile.aboutMe
-    ? profile.aboutMe.split('\n')
+    ? profile.aboutMe.replace(/\r\n?/g, '\n').split('\n')
     : [];
   return [
     `Username: ${profile.username || 'none'}`,

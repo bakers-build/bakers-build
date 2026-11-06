@@ -30,9 +30,9 @@
 //
 // WHAT IT DOES NOT DO
 //
-//   It sends only Enter, Tab and q. It never sends Ctrl+S or Ctrl+D — the
-//   New-ticket form's two submit paths, which would write a REAL ticket to
-//   whichever control plane the connection resolved to. It opens a deep link to
+//   It sends only Enter, Tab and q. It never sends Ctrl+S or Ctrl+D — a
+//   form's two submit paths, which would write REAL data to whichever control
+//   plane the connection resolved to. It opens a deep link to
 //   an existing ticket and never leaves the detail screen, so no write path is
 //   reachable at all.
 //

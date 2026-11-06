@@ -4,7 +4,7 @@
 // debounced server re-query, ←/→ to browse, Enter to pick, Esc to cancel.
 //
 // AC-4: the picker's ONLY ticket read is `loadParentCandidates`, composed as
-// `parentOptionSource` (D5) — the same source the create form's Parent field
+// `parentOptionSource` (D5) — the same source the edit form's Parent field
 // loads through, never a second lookup. The source builds its query with
 // `parent: null` criteria (F7), so an active parent filter can never narrow
 // the picker to that parent's own children.
@@ -61,7 +61,7 @@ export class ParentFilterScreen extends AsyncModalScreen<ParentFilterOptions> {
     const sources: OptionSources = {
       // 'identifier': this picker filters a list the operator scans by
       // identifier — title matching is deliberately off here (PM steer),
-      // while the create form keeps the default identifier+title search.
+      // while the edit form keeps the default identifier+title search.
       parent: parentOptionSource(
         context.services.client,
         context.project.id,

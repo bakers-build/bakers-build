@@ -24,7 +24,6 @@ import {
   type ListOutcome,
   listOutcome,
   listPreferringWrite,
-  messageOf,
   type OptionClients,
 } from '../../transport.js';
 import { type ConductorStatus, deriveConductorStatus } from './liveness.js';
@@ -62,41 +61,14 @@ const toConductor = (r: Resource): Conductor => ({
 /**
  * The conductor collection through one client, in server order.
  *
- * Yields the OUTCOME rather than a swallowed array (BB-257 D4) — see the same
- * note on `listUsers`. `listConductorsPreferringWrite` keeps the swallowing
+ * Yields the OUTCOME rather than a swallowed array (BB-257 D4), so a caller
+ * can say why a read failed. `listConductorsPreferringWrite` keeps the swallowing
  * contract, because it already answers a failure by falling back.
  */
 export const listConductors = (
   client: DropshClient,
 ): Promise<ListOutcome<Conductor>> =>
   listOutcome(client, 'bb_conductor', toConductor);
-
-/**
- * The conductor collection scoped to one project (BB-664 review F4).
- *
- * The create popup's narrow option loader, not `ConductorQuery`'s row-page
- * read above (BB-664 plan correction): this keeps `listOutcome`'s own
- * outcome/error contract rather than inventing a second one for the same
- * entity. An unscoped caller keeps calling {@link listConductors}; this is
- * additive.
- */
-export const listConductorsForProject = async (
-  client: DropshClient,
-  projectId: string,
-): Promise<ListOutcome<Conductor>> => {
-  try {
-    return {
-      rows: (
-        await client
-          .collection('bb_conductor')
-          .where('project_id.id', '=', projectId)
-          .list()
-      ).map(toConductor),
-    };
-  } catch (caught) {
-    return { rows: [], error: messageOf(caught) };
-  }
-};
 
 /**
  * The same collection read through the WRITE client where there is one — still just

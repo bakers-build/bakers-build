@@ -92,10 +92,6 @@ export default function bakersUiPlugin(options: BbUiOptions = {}) {
             ...(options.project === undefined && own?.project !== undefined
               ? { project: own.project }
               : {}),
-            ...(options.ownConductorMachineId === undefined &&
-            own?.machineId !== undefined
-              ? { ownConductorMachineId: own.machineId }
-              : {}),
             // Optional at every hop — omitting the key is the My work path.
             ...(route !== undefined ? { route } : {}),
             ...(workspace !== undefined ? { workspace } : {}),

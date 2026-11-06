@@ -57,7 +57,7 @@ export function padLabel(label: string, columns: number): string {
  * The column the inline values of a declaration line up at.
  *
  * Derived from the fields that actually HAVE an inline value, never from all of
- * them: the create popup declares `Description`, whose label is longer than any
+ * them: the edit popup declares `Description`, whose label is longer than any
  * of its selects but which renders its value on rows of its own, so counting it
  * would push every ring two columns right for nothing.
  */

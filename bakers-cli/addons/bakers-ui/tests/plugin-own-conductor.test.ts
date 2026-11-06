@@ -8,13 +8,11 @@ import type {
 // BB-232 spec Decision D9, and the review's blocking finding F1.
 //
 // F1 was not a wrong value — it was a value that never arrived. `bakers ui` passed
-// `bakersDir` into the launcher, nothing read it, and the two answers the deleted
-// registry used to supply silently became `undefined`: the new-ticket form lost
-// this machine's conductor from the top of its list, and its project fell back
-// to the hardcoded `'bakers'` in ANY repo.
+// `bakersDir` into the launcher, nothing read it, and the default project the
+// deleted registry used to supply silently became `undefined`.
 //
 // So the assertion that matters is not "the resolver works" (that is
-// `Entity/conductor/own-conductor.test.ts`) but "the resolved values REACH the
+// `Entity/conductor/own-conductor.test.ts`) but "the resolved project REACHES the
 // kernel". The kernel is mocked here for exactly that: what `run()` hands it is
 // the observable, and nothing else in this file needs a terminal.
 
@@ -79,32 +77,30 @@ beforeEach(() => {
   runTicketTui.mockClear();
 });
 
-describe('run() hands the kernel this checkout’s project + conductor (F1)', () => {
-  it('resolves both from the conductor record matching bakersDir', async () => {
+describe('run() hands the kernel this checkout’s project (F1)', () => {
+  it('resolves it from the conductor record matching bakersDir', async () => {
     const opts = await optionsHandedToKernel({
       bakersDir: '/repos/bakers/.bakers',
     });
 
     expect(opts.project).toBe('bakers');
-    expect(opts.ownConductorMachineId).toBe('cw-framework');
+    expect(opts).not.toHaveProperty('ownConductorMachineId');
   });
 
-  it('leaves both unset when no bakersDir was handed over', async () => {
+  it('leaves the project unset when no bakersDir was handed over', async () => {
     // Outside any project the cockpit claims no project — the honest empty
     // cockpit `resolveProjectRooting` documents, not a guess.
     const opts = await optionsHandedToKernel({});
 
     expect(opts.project).toBeUndefined();
-    expect(opts.ownConductorMachineId).toBeUndefined();
   });
 
-  it('leaves both unset when no record names this dir', async () => {
+  it('leaves the project unset when no record names this dir', async () => {
     const opts = await optionsHandedToKernel({
       bakersDir: '/repos/somewhere-else/.bakers',
     });
 
     expect(opts.project).toBeUndefined();
-    expect(opts.ownConductorMachineId).toBeUndefined();
   });
 
   it('an explicit --project wins over the resolved one', async () => {
@@ -116,8 +112,6 @@ describe('run() hands the kernel this checkout’s project + conductor (F1)', ()
     });
 
     expect(opts.project).toBe('shop');
-    // The conductor id has no flag, so it still resolves.
-    expect(opts.ownConductorMachineId).toBe('cw-framework');
   });
 
   it('a failed read leaves the defaults unset and still boots', async () => {
@@ -139,6 +133,5 @@ describe('run() hands the kernel this checkout’s project + conductor (F1)', ()
     expect(runTicketTui).toHaveBeenCalledOnce();
     const opts = runTicketTui.mock.calls[0]?.[3] as TuiOptions;
     expect(opts.project).toBeUndefined();
-    expect(opts.ownConductorMachineId).toBeUndefined();
   });
 });

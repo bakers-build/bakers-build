@@ -128,8 +128,7 @@ function canonicalKey(key: ParsedKey): string {
  * kernel already behaved this way whenever the two bytes landed in separate
  * chunks — so this is the older contract restored, not a new one invented.
  *
- * Guarded on a real pty by `tests/pty/verify-escape.mjs`; the full table lives
- * in `tests-bun/key-input.test.ts`.
+ * The full table lives in `tests-bun/key-input.test.ts`.
  */
 export function keyEventToKeys(event: KeyEvent): string[] {
   const delivered = event.sequence !== '' ? event.sequence : event.raw;

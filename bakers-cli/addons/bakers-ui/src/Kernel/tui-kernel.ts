@@ -103,9 +103,6 @@ export async function runTicketTui(
         : {}),
       ...(options.currentUser ? { currentUser: options.currentUser } : {}),
       isWorkspaceAdmin: options.isWorkspaceAdmin ?? false,
-      ...(options.ownConductorMachineId
-        ? { ownConductorMachineId: options.ownConductorMachineId }
-        : {}),
     },
     nowSeconds,
   };

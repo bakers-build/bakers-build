@@ -376,8 +376,7 @@ await runBbUi({
   connection,          // { baseUrl, jsonapiPrefix?, authPlugins, configPath? }
   cwd,                 // repo/home root `bakers ui` was started in
   project,             // default project (opaque group), from the registry
-  currentUser,         // preselected new-ticket assignee
-  ownConductorMachineId,
+  currentUser,         // the connection's user (uuid or name), My work's "me"
   buildProgram,        // dropsh's real buildProgram, injected
   // renderer,         // optional override; defaults to this package's plugin
 });

@@ -38,7 +38,7 @@ export abstract class AsyncModalScreen<T> extends AsyncScreen<T> {
 
   /**
    * Status rows inside the modal box. Default: one ladder from {@link actions},
-   * then {@link notice}. Override to split long ladders across rows (create form).
+   * then {@link notice}. Override to split long ladders across rows.
    */
   protected modalStatusLines(context: ScreenContext): string[] {
     const ladder = formatActionLadder(this.actions(context));

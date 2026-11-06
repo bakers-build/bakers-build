@@ -1,10 +1,9 @@
 // BB-232 (spec Decision D9) — "which conductor is THIS checkout's?", answered
 // from the control plane instead of the deleted `~/.bakers/conductors.json`.
 //
-// The `bakers ui` entry used to read two values straight out of the registry file:
-// the project this checkout belongs to, and this machine's conductor
-// `machine_id`. Both preselect fields in the new-ticket form. The entry cannot
-// resolve them itself — it holds no JSON:API client (BB-223 spec Finding 1) —
+// The `bakers ui` entry used to read the project this checkout belongs to
+// straight out of the registry file; it is the cockpit's default project. The
+// entry cannot resolve it itself — it holds no JSON:API client (BB-223 spec Finding 1) —
 // so it hands over the `.bakers` dir it is standing in and the renderer matches it
 // against each conductor's `workspace_root`, which is the same directory the
 // registry's `path` held.
@@ -28,13 +27,11 @@ import type { JsonApiCollectionDoc } from '../../collection.js';
 
 /** What this checkout's conductor record supplies to the cockpit's defaults. */
 export interface OwnConductor {
-  /** This machine's conductor id — preselected in the new-ticket form. */
-  machineId: string | undefined;
-  /** The project name it serves — the new-ticket form's default project. */
+  /** The project name it serves — the cockpit's default project. */
   project: string | undefined;
 }
 
-const NOTHING: OwnConductor = { machineId: undefined, project: undefined };
+const NOTHING: OwnConductor = { project: undefined };
 
 /** Id of a single-valued relationship linkage (`data` object), or null. */
 function singleRelId(rel: JsonApiRelationship | undefined): string | null {
@@ -52,8 +49,8 @@ const str = (v: unknown): string | undefined =>
  * A repo may host several conductor configs, and they share one
  * `workspace_root` — the dir alone cannot say which of them the cockpit belongs
  * to. The first in server order is taken, and that is a documented guess rather
- * than a resolution: both values only PRESELECT fields in the new-ticket form,
- * which the writer sees and can change.
+ * than a resolution: it only picks the default project, which `--project`
+ * overrides.
  */
 export function selectOwnConductor(
   doc: JsonApiCollectionDoc,
@@ -83,14 +80,7 @@ export function selectOwnConductor(
       )
     : undefined;
 
-  // BB-353 renamed the registration key machine_id → conductor_id; accept
-  // the legacy attribute during cutover so a pre-upgrade control plane still
-  // preselects this checkout's conductor.
-  return {
-    machineId:
-      str(own.attributes?.conductor_id) ?? str(own.attributes?.machine_id),
-    project,
-  };
+  return { project };
 }
 
 /**
@@ -104,8 +94,8 @@ export function selectOwnConductor(
  * this lookup needs no filter because its predicate is already stricter.
  *
  * A failure yields nothing rather than rejecting: this runs on the boot path,
- * and an unreachable control plane must leave the cockpit openable — the two
- * values it produces are form defaults, not preconditions.
+ * and an unreachable control plane must leave the cockpit openable — the
+ * project it produces is a default, not a precondition.
  */
 export async function readOwnConductor(
   client: DropshClient,

@@ -54,7 +54,7 @@ const toParentOption = (row: ParentCandidate): ParentOption => ({
  * `loadParentCandidates` builds its query with `parent: null` criteria, so an
  * active parent filter can never narrow the picker to that parent's children.
  *
- * `match` is forwarded to the read: the create form searches identifier AND
+ * `match` is forwarded to the read: the edit form searches identifier AND
  * title (default), the parent FILTER picker matches by identifier only
  * (BB-284, PM steer — the operator knows `BB-273`, not the title).
  */

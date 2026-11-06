@@ -91,7 +91,7 @@ export interface RendererServices {
   client: DropshClient;
   baseUrl?: string;
   project?: string;
-  /** This machine's user id — preselected as the new-ticket assignee. */
+  /** The connection's current user (uuid or name) — My work's "me". */
   currentUser?: string;
   /** Fail-closed workspace-lead capability resolved from the active membership. */
   isWorkspaceAdmin?: boolean;
@@ -104,8 +104,6 @@ export interface RendererServices {
    * test flaky.
    */
   now?: () => number;
-  /** This machine's conductor `machine_id` — preselected in the new-ticket form. */
-  ownConductorMachineId?: string;
   /**
    * A WRITE-scoped JSON:API client, when the host resolved a separate one.
    *
@@ -286,8 +284,8 @@ export interface TuiOptions {
   /**
    * BB-232 (D9): the `.bakers` dir the entry is standing in, UNRESOLVED. The
    * plugin's `run()` matches it against each conductor's `workspace_root` and
-   * fills `project` + `ownConductorMachineId` from the record it finds — the two
-   * values the deleted `~/.bakers/conductors.json` used to supply. Absent outside
+   * fills `project` from the record it finds — the value the deleted
+   * `~/.bakers/conductors.json` used to supply. Absent outside
    * any project, and never read by the kernel itself.
    */
   bakersDir?: string | undefined;
@@ -307,7 +305,6 @@ export interface TuiOptions {
   currentUser?: string;
   /** Workspace-lead capability resolved by the plugin before routing starts. */
   isWorkspaceAdmin?: boolean;
-  ownConductorMachineId?: string;
   /** BB-223: the unresolved deep-link target, as it arrived from the CLI. */
   initialRoute?: UiInitialRoute | undefined;
   /** BB-223: the RESOLVED route the plugin's `run()` produced. The kernel

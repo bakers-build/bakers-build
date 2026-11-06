@@ -55,8 +55,8 @@ export interface BbUiLauncherOptions {
   project?: string | undefined;
   /**
    * BB-232 (D9): the `.bakers` dir the entry is standing in. The renderer's
-   * `run()` resolves it against the control plane into the default `project`
-   * and `ownConductorMachineId`; the entry cannot, holding no JSON:API client.
+   * `run()` resolves it against the control plane into the default `project`;
+   * the entry cannot, holding no JSON:API client.
    * An explicit `project` above still wins.
    */
   bakersDir?: string | undefined;
@@ -70,10 +70,8 @@ export interface BbUiLauncherOptions {
    *  new workspace selection. Injected from `ui/src/bun-runtime.ts`. */
   restartProcess?: (() => void) | undefined;
   selectWorkspace?: ((name: string) => Promise<void>) | undefined;
-  /** Preselected new-ticket assignee (this machine's user id). */
+  /** The connection's current user (uuid or name) — My work's "me". */
   currentUser?: string | undefined;
-  /** This machine's conductor `machine_id` — preselected in the new-ticket form. */
-  ownConductorMachineId?: string | undefined;
   /** Injected dropsh `buildProgram` (the entry passes dropsh's real one). */
   buildProgram: DropshBuildProgram;
   /** Injected renderer factory; defaults to this package's own plugin. The
@@ -140,9 +138,6 @@ export async function runBbUi(opts: BbUiLauncherOptions): Promise<void> {
       : {}),
     ...(opts.currentUser !== undefined
       ? { currentUser: opts.currentUser }
-      : {}),
-    ...(opts.ownConductorMachineId !== undefined
-      ? { ownConductorMachineId: opts.ownConductorMachineId }
       : {}),
     // Optional at every hop — omitting the key is the My work path.
     ...(opts.initialRoute !== undefined

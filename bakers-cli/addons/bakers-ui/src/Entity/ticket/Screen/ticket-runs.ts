@@ -205,19 +205,6 @@ export class TicketRunsScreen extends AsyncScreen<TicketDetailDocument> {
       const document = (result as { document?: TicketDetailDocument }).document;
       if (document) this.replaceReady(saveTicket(context, document));
       context.requestDraw();
-      return;
-    }
-    if (
-      result &&
-      typeof result === 'object' &&
-      (result as { type?: unknown }).type === 'ticket-assignment-updated'
-    ) {
-      const returned = result as {
-        document?: TicketDetailDocument;
-      };
-      if (returned.document)
-        this.replaceReady(saveTicket(context, returned.document));
-      context.requestDraw();
     }
   }
   protected renderReady(
