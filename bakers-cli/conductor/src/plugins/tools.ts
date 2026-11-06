@@ -82,12 +82,51 @@ export type ProvisionHook = string | Record<string, string>;
 const PROVISION_TIMEOUT_MS = 30 * 60_000;
 const OUTPUT_CAP = 64 * 1024;
 
+type ShellResult = { exitCode: number; output: string };
+
+/** Provisioning runs the conductor owns, one per worktree and command. */
+export interface ProvisionRuns {
+  /** Joins the running command of this worktree, or starts it. */
+  run(worktreePath: string, command: string): Promise<ShellResult>;
+  /** Kills the runs of one worktree, or all; resolves once they closed. */
+  stop(worktreePath?: string): Promise<void>;
+}
+
+export function provisionRuns(timeoutMs = PROVISION_TIMEOUT_MS): ProvisionRuns {
+  const running = new Map<
+    string,
+    { worktreePath: string; abort: AbortController; done: Promise<ShellResult> }
+  >();
+  return {
+    run(worktreePath, command) {
+      const key = JSON.stringify([worktreePath, command]);
+      const current = running.get(key);
+      if (current) return current.done;
+      const abort = new AbortController();
+      const done = shell(command, worktreePath, abort.signal, timeoutMs);
+      running.set(key, { worktreePath, abort, done });
+      const forget = () => running.delete(key);
+      done.then(forget, forget);
+      return done;
+    },
+    async stop(worktreePath) {
+      const ending = [...running.values()].filter(
+        (r) => worktreePath === undefined || r.worktreePath === worktreePath,
+      );
+      for (const r of ending) r.abort.abort();
+      await Promise.allSettled(ending.map((r) => r.done));
+    },
+  };
+}
+
 /**
  * The core `provision_up(profile?)` tool, offered only when the hook is set.
- * The agent picks when and which configured profile, never the command.
+ * The agent picks when and which configured profile, never the command. The
+ * command outlives its caller: the call's signal is ignored on purpose.
  */
 export function provisionTools(
   hook: ProvisionHook | undefined,
+  runs: ProvisionRuns = provisionRuns(),
 ): DiscoveredTools[] {
   if (hook === undefined) return [];
   const profiles = typeof hook === 'string' ? undefined : hook;
@@ -131,10 +170,9 @@ export function provisionTools(
           provision_up: async (req) => {
             const command = commandFor(req.args.profile);
             // shortcut: inherits the conductor's env, not the run's BB_* env; pass it through the binding once a hook needs it.
-            const { exitCode, output } = await shell(
-              command,
+            const { exitCode, output } = await runs.run(
               req.worktreePath,
-              req.signal,
+              command,
             );
             const text = `exit ${exitCode}\n${output}`;
             if (exitCode !== 0) throw new Error(text);
@@ -146,32 +184,52 @@ export function provisionTools(
   ];
 }
 
-/** `sh -c` with stdout and stderr interleaved, the tail kept, killed at the timeout. */
+/**
+ * `sh -c` with stdout and stderr interleaved, the tail kept. Its own process
+ * group, killed whole at the timeout or abort, so no child outlives it.
+ */
 function shell(
   command: string,
   cwd: string,
   signal: AbortSignal,
-): Promise<{ exitCode: number; output: string }> {
+  timeoutMs: number,
+): Promise<ShellResult> {
   return new Promise((done, fail) => {
     const child = spawn('sh', ['-c', command], {
       cwd,
-      signal,
-      timeout: PROVISION_TIMEOUT_MS,
+      detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
+    let killed = false;
+    const kill = () => {
+      try {
+        if (child.pid) process.kill(-child.pid, 'SIGTERM');
+        killed = true;
+      } catch {
+        // The group is already gone.
+      }
+    };
+    // Armed until 'close', not 'exit': a child of sh can hold the output open after sh exits.
+    const timer = setTimeout(kill, timeoutMs);
+    signal.addEventListener('abort', kill, { once: true });
     let output = '';
     const collect = (chunk: Buffer) => {
       output = (output + chunk.toString('utf8')).slice(-OUTPUT_CAP);
     };
     child.stdout.on('data', collect);
     child.stderr.on('data', collect);
-    child.on('error', fail);
-    child.on('close', (code, sig) =>
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      fail(err);
+    });
+    child.on('close', (code, sig) => {
+      clearTimeout(timer);
+      const by = sig ?? (killed ? 'SIGTERM' : null);
       done({
-        exitCode: code ?? 124,
-        output: sig ? `${output}\n(killed: ${sig})` : output,
-      }),
-    );
+        exitCode: by ? 124 : (code ?? 124),
+        output: by ? `${output}\n(killed: ${by})` : output,
+      });
+    });
   });
 }
 

@@ -33,7 +33,7 @@ import type {
   UncleanTicket,
 } from '../plugins/remote.js';
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
-import type { ToolBinding } from '../plugins/tools.js';
+import { loadTools, type ToolBinding } from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
@@ -349,16 +349,19 @@ export class Conductor {
   }
 
   /**
-   * Starts the tool server when an addon declares tools. Only the serve
-   * process calls this; `endpointFile` publishes it to the CLI.
+   * Starts the tool server when an addon declares tools or the remote serves
+   * site tools. Only the serve process calls this; `endpointFile` publishes
+   * it to the CLI.
    */
   async startTools(endpointFile?: string): Promise<void> {
-    if (!this.config.tools || this.toolServer) return;
+    const { siteTools } = this.remote;
+    if ((!this.config.tools && !siteTools) || this.toolServer) return;
     this.toolServer = await startToolServer({
-      registry: this.config.tools,
+      registry: this.config.tools ?? (await loadTools([])),
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
+      ...(siteTools ? { siteTools } : {}),
     });
     this.logger.info(
       { conductorId: this.config.conductor_id, url: this.toolServer.url },
@@ -367,7 +370,10 @@ export class Conductor {
   }
 
   async stopTools(): Promise<void> {
+    // Server first, so no new provision_up starts a run after the stop.
     await this.toolServer?.stop();
+    await this.config.provisioning?.stop();
+    await this.remote.siteTools?.close();
     this.toolServer = undefined;
     this.runTokens.clear();
   }
@@ -1123,6 +1129,8 @@ export class Conductor {
       // workspace just created MUST exist, and silencing a hook there would
       // hide a real provisioning failure.
       if (t.worktreePath) {
+        // A provisioning outlives its run, never its ticket: end it before teardown.
+        await this.config.provisioning?.stop(t.worktreePath);
         if (existsSync(t.worktreePath)) {
           await this.recordMrChanges(t);
           // BB-599: listeners get the ticket's current context; the shell
@@ -1549,6 +1557,17 @@ export class Conductor {
     // field's accepted formats and the PATCH would be rejected (review round
     // 4, Critical 1).
     const dispatchedAt = Math.floor(Date.now() / 1000);
+    const tools = chosen.agent.withoutConductorTools
+      ? undefined
+      : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
+    const command = chosen.agent.launchCommand(
+      prompt,
+      identity,
+      ws.path,
+      tools ? { url: tools.url } : undefined,
+      env,
+    );
+    // Read after launchCommand: a warning may depend on what this launch got.
     const warnings = chosen.agent.launchWarnings;
     if (warnings?.length) {
       const alias = chosen.alias ?? chosen.id;
@@ -1564,16 +1583,6 @@ export class Conductor {
         );
       }
     }
-    const tools = chosen.agent.withoutConductorTools
-      ? undefined
-      : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
-    const command = chosen.agent.launchCommand(
-      prompt,
-      identity,
-      ws.path,
-      tools ? { url: tools.url } : undefined,
-      env,
-    );
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,

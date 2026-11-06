@@ -17,6 +17,10 @@ When('I set {string} to {string} in the {string} card', async ({ page }, label: 
   await cardField(page, heading, label).fill(value);
 });
 
+When('I choose {string} for {string} in the {string} card', async ({ page }, values: string, label: string, heading: string) => {
+  await cardField(page, heading, label).selectOption(values.split(', '));
+});
+
 When(
   'I set {string} to {string} in the {string} card past browser validation',
   async ({ page }, label: string, value: string, heading: string) => {

@@ -5,16 +5,15 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\Core\Entity\Attribute\ContentEntityType;
-use Drupal\Core\Entity\ContentEntityDeleteForm;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\file\FileInterface;
 use Drupal\bb_core\Access\BbOwnerGrantQueryAccessHandler;
 use Drupal\bb_core\Access\BbRunAccessControlHandler;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\bb_core\Form\BbRunForm;
 use Drupal\bb_core\ListBuilder\BbRunListBuilder;
 use Drupal\bb_core\Routing\BbRunRouteProvider;
@@ -51,7 +50,7 @@ use Drupal\user\EntityOwnerTrait;
       'default' => BbRunForm::class,
       'add' => BbRunForm::class,
       'edit' => BbRunForm::class,
-      'delete' => ContentEntityDeleteForm::class,
+      'delete' => BbContentEntityDeleteForm::class,
     ],
     // Views integration is declared HERE rather than attached by a hook. It
     // came from bb_dashboard's hook_entity_type_alter(), which was a detour:
@@ -61,7 +60,6 @@ use Drupal\user\EntityOwnerTrait;
     'route_provider' => ['html' => BbRunRouteProvider::class],
     // Tabs are declared statically in bb_core.links.task.yml. The default
     // provider would synthesise a View/Edit pair from edit-form.
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
   ],
   // `_workspace` is an INTERNAL prefix that never appears in a URL: the public
   // address is /{workspace}/…, which Drupal's router cannot match directly.
@@ -72,11 +70,9 @@ use Drupal\user\EntityOwnerTrait;
     'add-form' => '/_workspace/{bb_workspace}/run/add',
     'edit-form' => '/_workspace/{bb_workspace}/run/{bb_run}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/run/{bb_run}/delete',
-    'collection' => '/admin/bakers/runs',
   ],
   admin_permission: 'administer bakers',
   constraints: ['BbRunLogOmission' => []],
-  field_ui_base_route: 'entity.bb_run.collection',
   base_table: 'bb_run',
 )]
 final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityOwnerInterface {

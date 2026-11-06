@@ -10,6 +10,7 @@ use Drupal\Core\Url;
 use Drupal\consumers\Entity\ConsumerInterface;
 use Drupal\bb_api_key\ServiceAccountManager;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Form\OverlayTrigger;
 use Drupal\user\UserInterface;
 use Drupal\views\Attribute\ViewsField;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
@@ -74,13 +75,17 @@ final class ApiKeyRevokeLink extends FieldPluginBase {
       ];
     }
     $user = $this->view->args[0] ?? $this->currentUser->id();
+    $url = Url::fromRoute('bb_api_key.delete', [
+      'user' => $user,
+      'consumer' => $entity->id(),
+    ]);
+    // The revoke confirm dialog over this list; the href is the page.
     return [
       '#type' => 'link',
       '#title' => $this->t('Revoke'),
-      '#url' => Url::fromRoute('bb_api_key.delete', [
-        'user' => $user,
-        'consumer' => $entity->id(),
-      ]),
+      '#url' => (clone $url)->setOption('attributes', OverlayTrigger::attributes($url)),
+      '#attached' => ['library' => ['core/drupal.htmx']],
+      '#cache' => ['contexts' => ['url.path', 'url.query_args']],
     ];
   }
 

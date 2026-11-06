@@ -11,6 +11,7 @@ use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\Core\Url;
 use Drupal\consumers\Entity\ConsumerInterface;
 use Drupal\bb_api_key\ApiKeyManager;
+use Drupal\bb_core\Form\DeleteDialogFormTrait;
 use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -23,6 +24,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * repeated POST cannot delete a different consumer.
  */
 final class ApiKeyDeleteForm extends ConfirmFormBase {
+
+  use DeleteDialogFormTrait;
 
   public function __construct(
     protected AccountProxyInterface $currentUserProxy,
@@ -79,6 +82,7 @@ final class ApiKeyDeleteForm extends ConfirmFormBase {
     $form = parent::buildForm($form, $form_state);
     $form_state->set('user', $user);
     $form_state->set('consumer', $consumer);
+    $this->attachDeleteDialog($form);
     return $form;
   }
 

@@ -5,7 +5,7 @@ description: How strictly Claude, Codex and Grok runs start on a machine - the s
 
 # Run security
 
-A run executes text other people wrote (ticket title, description, comments, env vars) on your machine, so Claude, Codex and Grok runs start safe by default and only `machine.config.js` decides how strictly. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. There is no global or conductor-level setting. Where to set it: [Agent policy](/configuration/agents/reference#run-security).
+A run executes text other people wrote (ticket title, description, comments, env vars) on your machine, so Claude, Codex and Grok runs start safe by default. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/configuration/agents/reference#run-security).
 
 ## Modes
 
@@ -63,7 +63,7 @@ What the default blocks:
 
 What it does not block:
 
-- `trusted_commands` run with your full rights. An injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox; that is the price of a working workflow. Remove a command you do not need.
+- `trusted_commands` run with your full rights: an injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox. Drop unneeded ones: with the [`bakers` server](/addons/build/tools#site-tools), only `bakers deployment tickets` and `bakers ui` need `bakers`.
 - With `network: ['*']`, a sandboxed command can still reach any host.
 - Unconfirmed: whether `--strict-mcp-config` hides plugin MCP servers.
 
@@ -119,7 +119,7 @@ The inbox, `after_done`, `on_freeze` and `on_resume` hooks run without a run age
 
 ## Risk of loosening
 
-Every step away from `sandbox` gives ticket authors more of your rights: `system` gives them whatever your own harness configuration allows, `yolo` gives them everything your user can do (files, keys, network, every MCP server, your GitLab token), and an env var you take off the deny list can redirect the model API or run code in every process. Loosen per agent, not for the whole harness, and only for projects whose ticket authors you trust.
+Every step away from `sandbox` gives ticket authors more of your rights: `system` gives them whatever your own harness configuration allows, `yolo` gives them everything your user can do (files, keys, network, every MCP server, your GitLab token), and an env var you take off the deny list can redirect the model API or run code in every process. Loosen per agent, not for the whole harness, and only for projects whose ticket authors you trust; a committed project [`security` block](/configuration/agents/shared-security) loosens for everyone with push access.
 
 The harness sandboxes do not isolate a machine. Where runs handle untrusted tickets, also run the conductor in a container or VM, give it credentials scoped to the project (a project-only Git token, no personal SSH key), and restrict outbound traffic with a host firewall.
 

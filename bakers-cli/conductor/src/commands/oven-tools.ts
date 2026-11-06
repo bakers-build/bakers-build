@@ -1,5 +1,5 @@
 // `bakers oven tools`: an MCP client for the run's own conductor tool server,
-// for agents that cannot load `bakers-conductor` themselves. URL and bearer
+// for agents that cannot load the `bakers` MCP server themselves. URL and bearer
 // token come from the run env; the token never reaches argv or output.
 
 import { readFileSync } from 'node:fs';

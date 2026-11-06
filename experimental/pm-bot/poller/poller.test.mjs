@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { setup } from '../test/poller-setup.mjs';
-import { PROJECT, thread } from '../test/site.mjs';
+import { channel, PROJECT, thread } from '../test/site.mjs';
 
 const messages = JSON.parse(readFileSync(new URL('./messages.json', import.meta.url), 'utf8'));
 
@@ -44,7 +44,7 @@ test('the poller reads every page of the project\'s tickets, through bakers tool
   assert.ok(s.stub.requests.every((r) => r.path === '/mcp'), 'no request outside the bakers tools');
 });
 
-test('only the first chat link is the thread', async (t) => {
+test('without a channel link, only the first chat link is the thread', async (t) => {
   const { s, slack, poller } = await setup(t);
   const ticket = s.addTicket({ state: 'plan', links: [{ uri: 'https://example.com/spec', title: 'Spec' }, thread('C0000000002'), thread('C0000000001', '1700000000.000900')] });
   await poller.pass();
@@ -148,7 +148,7 @@ test('a failed relay is retried on the next pass and then sent once', async (t) 
   assert.equal(sent.length, 1);
 });
 
-test('a ticket without a chat link has no question relayed and no state posted', async (t) => {
+test('a ticket without a conversation has no question relayed and no state posted', async (t) => {
   const { s, slack, sent, poller } = await setup(t);
   const ticket = s.addTicket({ state: 'plan' });
   frozenWithQuestion(s, ticket);
@@ -159,39 +159,114 @@ test('a ticket without a chat link has no question relayed and no state posted',
   assert.deepEqual(slack.posts(), []);
 });
 
-test('a sub-ticket gets its own thread in the ancestor channel, its chat link and one pointer in the parent thread', async (t) => {
-  const { s, slack, poller, state } = await setup(t);
-  const parent = s.addTicket({ title: 'Price updater', links: [thread('C0000000002')] });
-  const child = s.addTicket({ title: 'Nightly run', parent: parent.id });
-  const grandchild = s.addTicket({ title: 'Retry', parent: child.id });
+const DAY = 24 * 3600 * 1000;
+const requestChannel = (created = '2026-11-05T11:00:00Z') => ({ C0000000001: { name: 'req-comic-sans', requester: 'U0000000007', created } });
+
+test('a sub-ticket posts into its ancestor\'s channel behind its identifier, and no thread is ever opened', async (t) => {
+  const { s, slack, sent, poller } = await setup(t);
+  const parent = s.addTicket({ title: 'Price updater', state: 'working', links: [channel()] });
+  const child = s.addTicket({ title: 'Nightly run', state: 'plan', parent: parent.id });
+  frozenWithQuestion(s, s.addTicket({ title: 'Retry', state: 'working', parent: child.id }));
   await poller.pass();
+  child.state = 'working';
   await poller.pass();
-  const posts = slack.posts();
-  assert.deepEqual(posts[0], { channel: 'C0000000002', text: 'ACME-2 · Nightly run (sub-ticket of ACME-1)' });
-  const pointers = posts.filter((p) => p.thread_ts === '1700000000.000100');
-  assert.equal(pointers.length, 1, 'one pointer in the parent thread');
-  assert.equal(pointers[0].channel, 'C0000000002');
-  assert.match(pointers[0].text, /^ACME-2 · Nightly run continues in its own thread: https:\/\/acme\.slack\.com\/archives\/C0000000002\/p1800000000000001$/);
-  // The grandchild's nearest ancestor with a thread is the child, linked first in the same pass.
-  assert.deepEqual(posts[1], { channel: 'C0000000002', text: 'ACME-3 · Retry (sub-ticket of ACME-2)' });
-  assert.equal(posts.filter((p) => p.thread_ts === '1800000000.000001').length, 1, 'the grandchild pointer goes into the child thread');
-  const link = child.links[0];
-  assert.deepEqual([link.uri, link.title], ['https://acme.slack.com/archives/C0000000002/p1800000000000001', 'Slack thread']);
-  assert.equal(grandchild.links.length, 1);
-  assert.equal(posts.filter((p) => !p.thread_ts).length, 2, 'one thread each, no more');
-  assert.equal(posts.length, 4);
-  assert.deepEqual(state().threads['ACME-2'], { channel: 'C0000000002', ts: '1800000000.000001', permalink: link.uri, linked: true, pointed: true, parentChannel: 'C0000000002', parentTs: '1700000000.000100' });
+  assert.deepEqual(slack.posts(), [{ channel: 'C0000000001', text: `ACME-2 · ${messages.states.working}` }]);
+  assert.deepEqual(sent.map((m) => [m.channel, 'thread_ts' in m, m.text]), [['C0000000001', false, 'ACME-3 · "Retry" has a question:\n\nShould it run at 3 a.m.?']]);
+  assert.equal(slack.calls.filter((c) => c.method === 'chat.getPermalink').length, 0);
+  assert.deepEqual(s.stub.calls('bakers_ticket_transition'), []);
 });
 
-test('a failed link write is retried from the recorded thread and never opens a second one', async (t) => {
-  const { s, slack, poller, state } = await setup(t);
-  const parent = s.addTicket({ links: [thread()] });
-  const child = s.addTicket({ title: 'Nightly run', parent: parent.id });
+test('a linked request channel is renamed after its ticket, with -2 when the name is taken', async (t) => {
+  const { s, slack, poller, botChannels, state } = await setup(t);
+  botChannels(requestChannel());
+  slack.take('acme-1-comic-sans');
+  s.addTicket({ title: 'Comic Sans', state: 'qualification', links: [channel()] });
+  await poller.pass();
+  await poller.pass();
+  const renames = slack.calls.filter((c) => c.method === 'conversations.rename').map((c) => c.body);
+  assert.deepEqual(renames, [
+    { channel: 'C0000000001', name: 'acme-1-comic-sans' },
+    { channel: 'C0000000001', name: 'acme-1-comic-sans-2' },
+  ]);
+  assert.deepEqual(state().channels.C0000000001, { ticket: 'ACME-1', requester: 'U0000000007', name: 'acme-1-comic-sans-2', generation: 2, renamed: true });
+});
+
+test('done is posted, then the channel archived; a failed archive retries only the archive', async (t) => {
+  const { s, slack, poller, botChannels, state } = await setup(t);
+  botChannels(requestChannel());
+  const ticket = s.addTicket({ title: 'Comic Sans', state: 'review', links: [channel()] });
+  await poller.pass();
+  ticket.state = 'done';
+  slack.fail('conversations.archive');
+  await poller.pass();
+  slack.heal();
+  await poller.pass();
+  await poller.pass();
+  const order = slack.calls.filter((c) => ['chat.postMessage', 'conversations.archive'].includes(c.method)).map((c) => c.method);
+  assert.deepEqual(order, ['chat.postMessage', 'conversations.archive', 'conversations.archive']);
+  assert.match(slack.posts()[0].text, /^This is finished and ready for you to try\./);
+  assert.equal(state().channels.C0000000001.archived, true);
+});
+
+test('cancelled archives the channel after its post', async (t) => {
+  const { s, slack, poller, botChannels } = await setup(t);
+  botChannels(requestChannel());
+  const ticket = s.addTicket({ state: 'working', links: [channel()] });
+  await poller.pass();
+  ticket.state = 'cancelled';
+  await poller.pass();
+  assert.deepEqual(slack.calls.filter((c) => ['chat.postMessage', 'conversations.archive'].includes(c.method)).map((c) => c.method), ['chat.postMessage', 'conversations.archive']);
+});
+
+test('a reopened ticket gets a fresh channel with the requester, a link back and its state, once', async (t) => {
+  const { s, slack, poller, botChannels, restart, state } = await setup(t);
+  botChannels(requestChannel());
+  const ticket = s.addTicket({ title: 'Comic Sans', state: 'review', links: [channel()] });
+  await poller.pass();
+  ticket.state = 'done';
+  await poller.pass();
+  ticket.state = 'working';
   s.failOnce('bakers_ticket_transition');
   await poller.pass();
-  assert.equal(state().threads['ACME-2'].linked, false);
+  await restart().pass();
   await poller.pass();
-  assert.equal(state().threads['ACME-2'].linked, true);
-  assert.equal(child.links.length, 1);
-  assert.equal(slack.posts().filter((p) => !p.thread_ts).length, 1);
+  const created = slack.calls.filter((c) => c.method === 'conversations.create').map((c) => c.body.name);
+  assert.deepEqual(created, ['acme-1-comic-sans-2']);
+  const fresh = state().channels.C0000000001.reopened;
+  assert.equal(state().channels[fresh].previous, 'C0000000001');
+  assert.deepEqual(slack.calls.filter((c) => c.method === 'conversations.invite').map((c) => c.body), [{ channel: fresh, users: 'U0000000007' }]);
+  const reopenPosts = slack.posts().filter((p) => p.channel === fresh);
+  assert.deepEqual(reopenPosts, [{ channel: fresh, text: `${messages.states.working}\n\n${messages.reopened.replace('{previous}', '<#C0000000001>')}` }]);
+  assert.deepEqual(ticket.links.at(-1), { uri: `https://acme.slack.com/archives/${fresh}`, title: 'Slack channel' });
+  assert.equal(slack.posts().length, 2, 'the done post and the reopen post, nothing twice');
+  // From now on the fresh channel is the ticket's conversation.
+  ticket.state = 'review';
+  await poller.pass();
+  assert.deepEqual(slack.posts().at(-1), { channel: fresh, text: messages.states.review });
+});
+
+test('a request channel without a ticket is closed after 7 silent days, not after 6', async (t) => {
+  const { slack, poller, botChannels, clock, state } = await setup(t, {
+    // The last message: 6 days before the test's start.
+    slackAnswers: { 'conversations.history': { ok: true, messages: [{ ts: String((Date.parse('2026-11-05T12:00:00Z') - 6 * DAY) / 1000) }] } },
+  });
+  botChannels(requestChannel(new Date(clock.now - 10 * DAY).toISOString()));
+  await poller.pass();
+  assert.deepEqual(slack.posts(), [], 'a message 6 days ago keeps it open');
+  clock.now += DAY;
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(slack.posts(), [{ channel: 'C0000000001', text: messages.abandoned }]);
+  assert.equal(slack.calls.filter((c) => c.method === 'conversations.archive').length, 1);
+  assert.equal(state().channels.C0000000001.archived, true);
+});
+
+test('a channel link to a channel the bot did not create is posted to, never renamed or archived', async (t) => {
+  const { s, slack, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'review', links: [channel('C0000000005')] });
+  await poller.pass();
+  ticket.state = 'done';
+  await poller.pass();
+  assert.equal(slack.posts().length, 1);
+  assert.deepEqual(slack.calls.filter((c) => c.method.startsWith('conversations.')), []);
 });

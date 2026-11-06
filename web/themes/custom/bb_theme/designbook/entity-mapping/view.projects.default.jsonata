@@ -35,14 +35,14 @@
         "items": [$map($rows, function ($p) {
           (
             {
-              "url": "/admin/bakers/project/" & $p.id,
+              "url": "/bakers/project/" & $p.id,
               "cells": $merge([
                 {
                   "name_avatar": $merge([
                     { "kind": "person", "initials": $p.initials, "color": $p.color, "size": "md", "image_fit": "contain" },
                     $p.image ? { "picture": $p.image } : {}
                   ]),
-                  "name": { "kind": "link", "value": $p.name, "url": "/admin/bakers/project/" & $p.id },
+                  "name": { "kind": "link", "value": $p.name, "url": "/bakers/project/" & $p.id },
                   "created": { "kind": "text", "value": $p.created_ago },
                   /* THE COUNTS ARE ICON BADGES. Drupal adds the tooltip ("N open tickets" …) as
                      `title`/`aria-label` attributes on the badge; the `badge` CELL kind has no field

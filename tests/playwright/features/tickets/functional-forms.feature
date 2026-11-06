@@ -13,7 +13,6 @@ Feature: Entity administration form contracts
       | path                      |
       | /bakers/group/add       |
       | /bakers/project/add     |
-      | /admin/bakers/conductor/add  |
       | /bakers/run/add         |
       | /bakers/ticket/add      |
 

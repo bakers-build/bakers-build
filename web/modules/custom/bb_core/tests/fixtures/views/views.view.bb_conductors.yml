@@ -9,7 +9,7 @@ dependencies:
 id: bb_conductors
 label: 'bakers.build conductors'
 module: views
-description: 'Administrative table of all bakers.build conductors: User, Label, Status, States, Load, Heartbeat and the per-row entity operations. Overrides the entity list builder at /admin/bakers/conductors.'
+description: 'Test fixture: a table of all bakers.build conductors (User, Label, Status, States, Load, Heartbeat), no page.'
 tag: ''
 base_table: bb_conductor
 base_field: id
@@ -293,23 +293,6 @@ display:
       header: {  }
       footer: {  }
       display_extenders: {  }
-    cache_metadata:
-      max-age: -1
-      contexts:
-        - 'languages:language_content'
-        - 'languages:language_interface'
-        - url.query_args
-        - user.permissions
-      tags: {  }
-  page_1:
-    id: page_1
-    display_title: Page
-    display_plugin: page
-    position: 1
-    display_options:
-      display_extenders: {  }
-      path: admin/bakers/conductors
-      route_name: entity.bb_conductor.collection
     cache_metadata:
       max-age: -1
       contexts:

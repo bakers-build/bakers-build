@@ -49,7 +49,7 @@ test('a technical problem that is not frozen has no note', () => {
   assert.equal(openNote({ ...technical, frozen: false }, ruleComments()), null);
 });
 
-const ticket = { identifier: 'ACME-1', title: 'Price <updater> & $& co', thread: { channel: 'C1', thread_ts: '1700000000.000100' } };
+const ticket = { identifier: 'ACME-1', title: 'Price <updater> & $& co', conversation: { channel: 'C1', thread_ts: '1700000000.000100' } };
 const question = (c) => ({ kind: 'question', comment: c });
 const problem = (c) => ({ kind: 'technical_problem', comment: c });
 
@@ -102,4 +102,13 @@ test('open questions and technical problems share the relayed record', () => {
 
 test('the lead-in in messages.json is the agreed text', () => {
   assert.equal(messages.technicalProblemLead, 'The work on the "{title}" ticket is stuck on a technical problem that keytec has to solve:');
+});
+
+test('a note goes flat into a channel conversation; a sub-ticket\'s technical problem names the sub-ticket', () => {
+  const sub = { identifier: 'ACME-2', title: 'Retry', conversation: { channel: 'C1' }, inherited: true };
+  const { posts } = relay([], [{ ticket: sub, note: question(comment('c-1', 'comment', '', 'Why?')) }, { ticket: sub, note: problem(comment('c-2', 'comment', '', 'Down.')) }], true, leads);
+  assert.deepEqual(posts.map((p) => [p.channel, 'thread_ts' in p, p.text]), [
+    ['C1', false, 'ACME-2 · "Retry" has a question:\n\nWhy?'],
+    ['C1', false, 'ACME-2 · The work on the "Retry" ticket is stuck on a technical problem that keytec has to solve:\n\nDown.'],
+  ]);
 });

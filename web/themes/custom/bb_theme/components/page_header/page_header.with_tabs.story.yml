@@ -15,7 +15,7 @@ slots:
         variant: primary
         icon_only: true
         label: New ticket
-        href: /admin/bakers/ticket/add
+        href: /bakers/ticket/add
       slots:
         icon:
           - type: component

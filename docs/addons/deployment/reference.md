@@ -5,19 +5,24 @@
 ## Synopsis
 
 ```
-bakers deployment tickets --since <ref> --to <ref>
+bakers deployment tickets --since <ref> --to <ref> [--project <name>]
 ```
 
 | Option | Meaning |
 |---|---|
 | `--since <ref>` | The environment's currently deployed ref, the start of the git range (required) |
 | `--to <ref>` | The post-merge environment branch tip, the end of the range (required) |
+| `--project <name>` | The project the identifiers belong to (optional; see below) |
 
 ```sh
 bakers deployment tickets --since v1.4.0 --to develop
 ```
 
-Run it inside the project's checkout: it reads `git log` for `<since>..<to>` in the working directory and resolves each identifier it finds against the control plane, using the project named by the checkout's conductor config and the connection that config resolves.
+Run it inside the project's checkout: it reads `git log` for `<since>..<to>` in the working directory and resolves each identifier it finds against the control plane over your connection. It needs no conductor: the machine does not have to be set up to run one, and the conductor config is never loaded. The project comes from the first of these that is available:
+
+1. `--project <name>`;
+2. `bakers.project` in the checkout's `.bakers/conductor.config.js`, read without running the file;
+3. the one project whose repository is the checkout's `origin` remote. If none or several match, the command fails and asks for `--project`.
 
 ## What it prints
 

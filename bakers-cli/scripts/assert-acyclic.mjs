@@ -129,6 +129,9 @@ const PERMITTED_SIBLINGS = {
   '@bakers-build/addon-ports-cloudflare': ['@bakers-build/addon-ports'],
   '@bakers-build/addon-ports-cloudflare-quick': ['@bakers-build/addon-ports'],
   '@bakers-build/addon-ports-frp': ['@bakers-build/addon-ports'],
+  // `bakers deployment tickets` resolves identifiers through the Drupal remote
+  // built from the connection alone, so it runs on a machine with no conductor.
+  '@bakers-build/addon-deployment': ['@bakers-build/addon-remote-drupal'],
 };
 /** The conductor-surface preset accumulator names (see core's `SURFACE_KEYS`). */
 const CONDUCTOR_PRESET_KEYS = [

@@ -82,6 +82,7 @@ export const SIDEBAR = {
       ['Agents', '/configuration/agents'],
       ['Install the bakers skills', '/configuration/agents/skills'],
       ['Run security', '/configuration/agents/execution-security'],
+      ['Shared run security', '/configuration/agents/shared-security'],
       ['Agent policy reference', '/configuration/agents/reference'],
     ]),
     group('Workflows', [

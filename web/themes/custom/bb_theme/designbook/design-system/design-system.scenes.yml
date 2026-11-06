@@ -185,22 +185,22 @@ scenes:
                   label: Primary
                   items:
                     - title: My work
-                      url: /admin/bakers/work
+                      url: /bakers/work
                       icon: ticket
                       in_active_trail: true
                       below: []
                     - title: Groups
-                      url: /admin/bakers/group
+                      url: /bakers/group
                       icon: dashboard
                       in_active_trail: false
                       below: []
                     - title: Projects
-                      url: /admin/bakers/project
+                      url: /bakers/project
                       icon: project
                       in_active_trail: false
                       below: []
                     - title: Settings
-                      url: /admin/bakers/settings
+                      url: /bakers/settings
                       icon: settings
                       in_active_trail: false
                       below: []
@@ -213,13 +213,13 @@ scenes:
                         label: New team
                       below:
                         - title: Team A
-                          url: /admin/bakers/team/team-a
+                          url: /bakers/team/team-a
                           in_active_trail: false
                           mark:
                             initials: TA
                             color: attention
                         - title: Team B
-                          url: /admin/bakers/team/team-b
+                          url: /bakers/team/team-b
                           in_active_trail: false
                           mark:
                             initials: TB
@@ -300,22 +300,22 @@ scenes:
                   label: Primary
                   items:
                     - title: My work
-                      url: /admin/bakers/work
+                      url: /bakers/work
                       icon: ticket
                       in_active_trail: true
                       below: []
                     - title: Groups
-                      url: /admin/bakers/group
+                      url: /bakers/group
                       icon: dashboard
                       in_active_trail: false
                       below: []
                     - title: Projects
-                      url: /admin/bakers/project
+                      url: /bakers/project
                       icon: project
                       in_active_trail: false
                       below: []
                     - title: Settings
-                      url: /admin/bakers/settings
+                      url: /bakers/settings
                       icon: settings
                       in_active_trail: false
                       below: []
@@ -328,13 +328,13 @@ scenes:
                         label: New team
                       below:
                         - title: Team A
-                          url: /admin/bakers/team/team-a
+                          url: /bakers/team/team-a
                           in_active_trail: false
                           mark:
                             initials: TA
                             color: attention
                         - title: Team B
-                          url: /admin/bakers/team/team-b
+                          url: /bakers/team/team-b
                           in_active_trail: false
                           mark:
                             initials: TB

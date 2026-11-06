@@ -15,6 +15,7 @@ use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbInvite;
+use Drupal\bb_core\Form\OverlayTrigger;
 use Drupal\user\UserInterface;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\og\OgMembershipInterface;
@@ -336,13 +337,15 @@ final class WorkspaceInvite {
         $controls[$index]['remove'] = [
           '#type' => 'component',
           '#component' => 'bb_theme:button',
-          // Opens the revoke confirm page; a revoke never happens in one click.
+          // Opens the revoke confirm dialog; a revoke never happens in one
+          // click. The href is the confirm page without JavaScript.
+          '#attached' => ['library' => ['core/drupal.htmx']],
           '#props' => [
             'variant' => 'ghost',
             'icon_only' => TRUE,
             'label' => $this->t('Revoke invitation for @mail', ['@mail' => $mail]),
             'href' => $invite->toUrl('delete-form')->toString(),
-            'attributes' => new Attribute(['data-hx-boost' => 'false']),
+            'attributes' => new Attribute(OverlayTrigger::attributes($invite->toUrl('delete-form'))),
           ],
           '#slots' => [
             'icon' => [

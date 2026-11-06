@@ -1,22 +1,27 @@
-// Pure core of the poller's ticket discovery: a ticket's Slack thread from its
-// links, and which sub-tickets need a thread of their own. No I/O.
+// Pure core of the poller's ticket discovery: a ticket's Slack conversation from
+// its links, inherited by sub-tickets that have none. No I/O.
 
 const PERMALINK = /^https:\/\/[a-z0-9-]+\.slack\.com\/archives\/([A-Z0-9]+)\/p([0-9]{10})([0-9]{6})(?:[?#].*)?$/;
+const CHANNEL = /^https:\/\/[a-z0-9-]+\.slack\.com\/archives\/([A-Z0-9]+)\/?(?:[?#].*)?$/;
+
+// A link counts when bakers.build stored it as kind `chat`, or, stored without a kind, by its shape.
+const chat = (link) => [undefined, 'chat'].includes(link.options?.bakers?.kind);
 
 /**
- * The ticket's Slack thread: its FIRST link of kind `chat` (the kind bakers.build
- * stored; a link stored without one is judged by its permalink shape).
+ * The ticket's Slack conversation: its NEWEST channel link (`/archives/C…`), flat; without
+ * one, the thread of its first `chat` link, as tickets from before channels have.
  *
  * @param {Array<{uri: string, options?: any}>} links the ticket's `links` field
- * @returns {{channel: string, thread_ts: string, url: string} | null}
+ * @returns {{channel: string, thread_ts?: string, url: string} | null}
  */
-export function chatThread(links) {
-  for (const link of links ?? []) {
-    const kind = link.options?.bakers?.kind;
-    if (kind !== undefined && kind !== 'chat') continue;
+export function conversation(links) {
+  const chats = (links ?? []).filter(chat);
+  const channel = chats.map((l) => [l, String(l.uri).match(CHANNEL)]).filter(([, m]) => m).pop();
+  if (channel) return { channel: channel[1][1], url: channel[0].uri };
+  for (const link of chats) {
     const match = String(link.uri).match(PERMALINK);
     if (!match) {
-      if (kind === 'chat') return null; // the first chat link is not a Slack permalink
+      if (link.options?.bakers?.kind === 'chat') return null; // the first chat link is not a Slack permalink
       continue;
     }
     // A permalink to a reply names its thread in thread_ts.
@@ -27,24 +32,22 @@ export function chatThread(links) {
 }
 
 /**
- * Open sub-tickets without a thread whose nearest ancestor has one.
+ * Gives each sub-ticket without a conversation that of its nearest ancestor with one, and
+ * marks it `inherited`: its posts name it, and the channel is not its own to rename or archive.
  *
- * @param {Array<{id: string, parent: string | null, thread: object | null, closed: boolean}>} tickets
- * @returns {Array<{ticket: object, parent: object, ancestor: object}>}
+ * @param {Array<{id: string, parent: string | null, conversation: object | null}>} tickets changed in place
  */
-export function pendingSubTickets(tickets) {
+export function conversations(tickets) {
   const byId = new Map(tickets.map((t) => [t.id, t]));
-  const pending = [];
+  const own = new Map(tickets.map((t) => [t.id, t.conversation]));
   for (const ticket of tickets) {
-    if (ticket.closed || ticket.thread || !ticket.parent) continue;
-    const parent = byId.get(ticket.parent);
-    let ancestor = parent;
+    if (own.get(ticket.id)) continue;
+    let ancestor = byId.get(ticket.parent);
     const seen = new Set();
-    while (ancestor && !ancestor.thread && !seen.has(ancestor.id)) {
+    while (ancestor && !own.get(ancestor.id) && !seen.has(ancestor.id)) {
       seen.add(ancestor.id);
       ancestor = byId.get(ancestor.parent);
     }
-    if (parent && ancestor?.thread) pending.push({ ticket, parent, ancestor });
+    if (ancestor && own.get(ancestor.id)) Object.assign(ticket, { conversation: own.get(ancestor.id), inherited: true });
   }
-  return pending;
 }

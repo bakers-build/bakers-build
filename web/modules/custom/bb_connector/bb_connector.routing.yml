@@ -1,9 +1,0 @@
-bb_connector.config:
-  path: '/admin/bakers/config'
-  defaults:
-    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
-    _title: 'bakers.build configuration'
-  requirements:
-    _permission: 'administer bakers'
-  options:
-    _admin_route: TRUE

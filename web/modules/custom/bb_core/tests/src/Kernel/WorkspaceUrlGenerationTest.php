@@ -157,8 +157,7 @@ final class WorkspaceUrlGenerationTest extends KernelTestBase {
    * MissingMandatoryParametersException, and it was reversed on a measurement,
    * not a preference. A project can legitimately exist without a group (the
    * form does not require one), and its tickets and runs then resolve to no
-   * workspace. Those rows appear in `/admin/bakers/tickets` and
-   * `/admin/bakers/runs` — the two listings D2 deliberately keeps outside every
+   * workspace. Such rows can appear in a listing rendered outside every
    * workspace, so there is no ambient workspace to borrow either. One such row
    * threw mid-render and took the ENTIRE listing down with an HTTP 500:
    * measured on the seeded e2e world, where two fixtures create exactly that
@@ -191,26 +190,12 @@ final class WorkspaceUrlGenerationTest extends KernelTestBase {
   }
 
   /**
-   * The collection route keeps its /admin/bakers path and gains no parameter.
-   *
-   * D2 leaves the plural admin listings behind. urlRouteParameters() adds the
-   * slug per link template, so a template with no workspace segment must come
-   * out untouched — an unconditional addition would append
-   * `?bb_workspace=bakers` to every collection link.
+   * A workspace's own route carries its own slug, not its row id.
    */
-  public function testCollectionUrlIsUnchanged(): void {
-    $ticket = $this->makeTicket();
-
-    self::assertSame('/admin/bakers/tickets', $ticket->toUrl('collection')->toString());
-  }
-
-  /**
-   * The types that stay behind emit no workspace prefix at all.
-   */
-  public function testUnmovedTypesKeepTheAdminPath(): void {
+  public function testWorkspaceAddressesItselfBySlug(): void {
     self::assertSame(
-      '/admin/bakers/workspace/' . $this->workspace->id(),
-      $this->workspace->toUrl()->toString(),
+      '/' . $this->workspace->get('slug')->value . '/delete',
+      $this->workspace->toUrl('delete-form')->toString(),
     );
   }
 

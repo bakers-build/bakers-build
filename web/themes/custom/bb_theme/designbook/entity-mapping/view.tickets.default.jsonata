@@ -53,7 +53,7 @@
             $prio := $t.priority ? ($t.priority > 5 ? "p5" : "p" & $string($t.priority)) : undefined;
             $conductor := $lookup($conductor_names, $t.conductor_id);
             {
-              "url": "/admin/bakers/ticket/" & $t.id,
+              "url": "/bakers/ticket/" & $t.id,
               "accent": $accent($t),
               "cells": $merge([
                 {

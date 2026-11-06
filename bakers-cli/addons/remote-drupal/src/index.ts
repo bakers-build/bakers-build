@@ -1,4 +1,5 @@
 import { createBbConnectionContext, toUnixSeconds } from '@bakers-build/core';
+import { createToolClient } from '@dropsh/plugin-tool';
 
 // BB-224 (Finding 6, decision 8): the Drupal control-plane remote — formerly
 // `@bakers-build/core`'s `plugins/remote/drupal.ts`, now its own conductor-surface
@@ -23,6 +24,7 @@ import type {
   RemotePlugin,
   RunMetrics,
   RunWriteAttributes,
+  SiteToolClient,
   Ticket,
   TicketMetric,
   UncleanTicket,
@@ -167,6 +169,7 @@ async function throwingRunLogFetcher(): Promise<string> {
 }
 
 export class DrupalBbRemote implements BbRemote {
+  siteTools?: SiteToolClient;
   constructor(
     private readonly api: JsonApiClient,
     private readonly selection?: BbProjectSelection,
@@ -1083,12 +1086,19 @@ export function drupalRemote(): RemotePlugin {
           ),
         },
       );
-      return new DrupalBbRemote(
+      const remote = new DrupalBbRemote(
         context.client,
         config.bakers,
         config.resolved_bakers?.projectId,
         createRunLogFetcher(context.http, context.auth, context.baseUrl),
       );
+      // The site's tools for agent runs, on the same auth profile: the run never holds it.
+      remote.siteTools = createToolClient({
+        auth: context.auth,
+        baseUrl: context.baseUrl,
+        endpoint: '/mcp',
+      });
+      return remote;
     },
   };
 }

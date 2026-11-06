@@ -20,6 +20,7 @@ import type {
   RemotePlugin,
   RunMetrics,
   RunWriteAttributes,
+  SiteToolClient,
   Ticket,
   TicketMetric,
   UncleanTicket,
@@ -133,6 +134,8 @@ interface FakeMachineState {
 }
 
 export class FakeBbRemote implements BbRemote {
+  /** Set by a test to serve site tools on the `bakers` MCP server. */
+  siteTools?: SiteToolClient;
   readonly calls: {
     markRunning: MarkRunningCall[];
     markFailed: MarkFailedCall[];

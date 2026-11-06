@@ -9,6 +9,7 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\Routing\Route;
 use Symfony\Component\Yaml\Yaml;
 
 /**
@@ -182,50 +183,50 @@ final class WorkspaceRouteThemeTest extends KernelTestBase {
   }
 
   /**
-   * The negative control: a real admin route still resolves to Gin.
+   * Instance administration renders in the front-end theme too.
    *
-   * Without this the assertion above would also hold on a site with no admin
-   * theme at all, and the test would be measuring nothing.
+   * No route is an admin route, so the former `/admin/...` screens render in
+   * the shell, where the delete dialog has its overlay.
    */
-  public function testAdminRoutesStillResolveToTheAdminTheme(): void {
+  public function testFormerAdminRoutesResolveToTheFrontEndTheme(): void {
     foreach ([
-      'bb_core.settings',
-      'entity.bb_workspace.edit_form',
+      'entity.bb_workspace.delete_form',
+      'entity.bb_machine.delete_form',
+      'entity.bb_figure.delete_form',
     ] as $route_name) {
       self::assertSame(
-        $this->adminTheme,
+        $this->frontEndTheme,
         $this->themeOf($route_name),
-        sprintf('%s is instance administration and must stay in the admin theme.', $route_name),
+        sprintf('%s must render in the product front-end theme.', $route_name),
       );
     }
   }
 
   /**
-   * The workspace routes carry no admin-route option for a negotiator to read.
+   * The negative control: an admin route would resolve to the admin theme.
    *
-   * The mechanism behind the assertions above, pinned separately so a failure
-   * says which half broke.
+   * Without this the assertions above would also hold on a site with no admin
+   * theme at all, and the test would be measuring nothing.
    */
-  public function testWorkspaceRoutesAreNotAdminRoutes(): void {
-    $provider = $this->container->get('router.route_provider');
-
-    foreach ([
-      'entity.bb_ticket.edit_form',
-      'entity.bb_ticket.delete_form',
-      'entity.bb_project.add_form',
-      // The reference surface, in place of the dashboard route this list named
-      // until BB-396 retired that module.
-      'bb_core.bb_team.members',
-    ] as $route_name) {
-      self::assertFalse(
-        (bool) $provider->getRouteByName($route_name)->getOption('_admin_route'),
-        sprintf('%s must not be an admin route.', $route_name),
-      );
-    }
-    self::assertTrue(
-      (bool) $provider->getRouteByName('entity.bb_workspace.edit_form')->getOption('_admin_route'),
-      'The workspace edit form stays instance administration (D2).',
+  public function testAnAdminRouteWouldResolveToTheAdminTheme(): void {
+    $route = new Route('/admin/probe', [], [], ['_admin_route' => TRUE]);
+    self::assertSame(
+      $this->adminTheme,
+      (string) $this->container->get('theme.negotiator')->determineActiveTheme(new RouteMatch('probe', $route)),
     );
+  }
+
+  /**
+   * No route of the site is an admin route, core's and contrib's included.
+   */
+  public function testNoRouteIsAnAdminRoute(): void {
+    $admin = [];
+    foreach ($this->container->get('router.route_provider')->getAllRoutes() as $name => $route) {
+      if ($route->getOption('_admin_route')) {
+        $admin[] = $name;
+      }
+    }
+    self::assertSame([], $admin);
   }
 
   /**

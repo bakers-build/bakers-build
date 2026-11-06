@@ -6,7 +6,6 @@ module:
   bb_addon: 0
   bb_api_key: 0
   bb_board: 0
-  bb_connector: 0
   bb_core: 0
   bb_image: 0
   bb_inbox: 0

@@ -62,7 +62,7 @@ bakers agents
 - Only `yolo` runs with `--auto`; the default `system` does not. `--prompt` and `--auto` are reserved in every mode; putting them in `args` fails loading.
 - The addon starts `opencode`; it does not install it or sign it in. The binary must be on `PATH`.
 - Listed in a conductor config, an agent addon is ignored with a warning.
-- Runs reach the conductor's [addon tools](build/tools.md) through `bakers oven tools`, not through MCP.
+- Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
 More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
 

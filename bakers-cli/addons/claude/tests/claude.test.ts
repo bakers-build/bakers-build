@@ -355,6 +355,42 @@ function flagValue(argv: string[], flag: string): string {
   return argv[at + 1] as string;
 }
 
+describe('ClaudeAgent security: shared project and machine layers', () => {
+  const shared_security = {
+    project: { sandbox: { trusted_commands: ['$inherit', 'ddev'] } },
+    machine: {
+      sandbox: {
+        allow_write: ['/srv/cache'],
+        deny_read: ['$inherit', '~/.aws'],
+      },
+    },
+  };
+
+  it('applies them in the generated settings and reports their sources', async () => {
+    const plugin = claudeAgent({ shared_security } as never);
+    const agent = await plugin.createAgent({} as never);
+    const settings = JSON.parse(
+      flagValue(captureArgv('claude', agent.launchCommand('x')), '--settings'),
+    );
+    expect(settings.sandbox.excludedCommands).toEqual([
+      'bakers *',
+      'git *',
+      'ddev *',
+    ]);
+    expect(settings.sandbox.filesystem.allowWrite).toEqual(['/srv/cache']);
+    expect(settings.sandbox.filesystem.denyRead).toEqual([
+      '~/.ssh',
+      '~/.bakers',
+      '~/.aws',
+    ]);
+    expect(settings.permissions.deny).toContain('Read(~/.aws/**)');
+    expect(plugin.security?.sandbox.trusted_commands.entries).toContainEqual({
+      value: 'ddev',
+      source: 'project',
+    });
+  });
+});
+
 describe('ClaudeAgent security: sandbox (default)', () => {
   const argv = () =>
     captureArgv('claude', new ClaudeAgent({}).launchCommand('x'));
@@ -385,10 +421,12 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       network: { allowedDomains: ['*'] },
     });
     expect(settings.disableClaudeAiConnectors).toBe(true);
+    // The conductor's server binds every call to the run, so its tools need no prompt.
     expect(settings.permissions.allow).toEqual([
       'Bash',
       'Edit(./**)',
       'AskUserQuestion',
+      'mcp__bakers',
     ]);
     expect(settings.permissions.deny).toEqual([
       'Read(~/.ssh)',
@@ -485,7 +523,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       // Git grants and conductor tools combine in one sandboxed launch.
       expect(
         JSON.parse(flagValue(launch(worktree), '--mcp-config')).mcpServers,
-      ).toHaveProperty('bakers-conductor');
+      ).toHaveProperty('bakers');
       const own = join(common, 'worktrees', 'work');
       expect(filesystem(worktree).allowWrite).toEqual([
         '/srv/cache',
@@ -588,22 +626,45 @@ describe('ClaudeAgent conductor tools', () => {
       agent.launchCommand('x', undefined, undefined, tools),
     );
 
-  it('merges bakers-conductor into the sandbox MCP config, the token by env reference only', () => {
-    const a = launch(
-      new ClaudeAgent({
-        sandbox: { mcp_servers: { playwright: { command: 'npx' } } },
-      }),
-    );
+  it('merges the bakers server into the sandbox MCP config, the token by env reference only', () => {
+    const agent = new ClaudeAgent({
+      sandbox: { mcp_servers: { playwright: { command: 'npx' } } },
+    });
+    const a = launch(agent);
     expect(a).toContain('--strict-mcp-config');
     expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
       mcpServers: {
         playwright: { command: 'npx' },
-        'bakers-conductor': conductorServer,
+        bakers: conductorServer,
       },
     });
+    expect(agent.launchWarnings).toEqual([]);
   });
 
-  it('adds bakers-conductor in the system, yolo and custom modes too', () => {
+  it("replaces a sandbox MCP server named bakers with the conductor's, and warns", () => {
+    const agent = new ClaudeAgent({
+      sandbox: { mcp_servers: { bakers: { command: 'old-bakers-mcp' } } },
+    });
+    expect(JSON.parse(flagValue(launch(agent), '--mcp-config'))).toEqual({
+      mcpServers: { bakers: conductorServer },
+    });
+    expect(agent.launchWarnings).toEqual([
+      "sandbox.mcp_servers.bakers is replaced by the conductor's bakers server",
+    ]);
+  });
+
+  it('keeps a sandbox MCP server named bakers, without a warning, in a run without the conductor server', () => {
+    const agent = new ClaudeAgent({
+      sandbox: { mcp_servers: { bakers: { command: 'old-bakers-mcp' } } },
+    });
+    const a = captureArgv('claude', agent.launchCommand('x'));
+    expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
+      mcpServers: { bakers: { command: 'old-bakers-mcp' } },
+    });
+    expect(agent.launchWarnings).toEqual([]);
+  });
+
+  it('adds the bakers server in the system, yolo and custom modes too', () => {
     for (const options of [
       { security: 'system' },
       { security: 'yolo' },
@@ -612,7 +673,7 @@ describe('ClaudeAgent conductor tools', () => {
       const a = launch(new ClaudeAgent(options));
       expect(a).not.toContain('--strict-mcp-config');
       expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
-        mcpServers: { 'bakers-conductor': conductorServer },
+        mcpServers: { bakers: conductorServer },
       });
     }
   });
@@ -622,7 +683,7 @@ describe('ClaudeAgent conductor tools', () => {
       security: 'system',
       measure: true,
     }).launchCommand('x', undefined, '/w', tools);
-    expect(command).not.toContain('bakers-conductor');
+    expect(command).not.toContain('127.0.0.1:4100');
     expect(command).toContain(`'--mcp-config' '{"mcpServers":{}}'`);
   });
 });

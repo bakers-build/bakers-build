@@ -19,18 +19,6 @@ bb_core.settings:
   type: config_object
   label: 'bakers.build core settings'
   mapping:
-    default_lease_seconds:
-      type: integer
-      label: 'Default claim lease (seconds)'
-    max_lease_seconds:
-      type: integer
-      label: 'Maximum claim lease (seconds)'
-    failed_retry_cap:
-      type: integer
-      label: 'Failed-run retry cap: consecutive failed runs that park a ticket'
-    failed_retry_window_seconds:
-      type: integer
-      label: 'Failed-run retry window (seconds): how long the cap parks a ticket'
     plugin_source_base:
       type: string
       label: 'Plugin source base URL (git group prefix)'

@@ -27,6 +27,10 @@ services:
     class: Drupal\bb_core\Routing\BbWorkspaceRouteSubscriber
     tags:
       - { name: event_subscriber }
+  bb_core.front_end_route_subscriber:
+    class: Drupal\bb_core\Routing\FrontEndRouteSubscriber
+    tags:
+      - { name: event_subscriber }
   bb_core.entity_form_surface_subscriber:
     class: Drupal\bb_core\EventSubscriber\EntityFormSurfaceSubscriber
     tags:
@@ -115,7 +119,7 @@ services:
     arguments: ['bb_core']
   bb_core.failed_run_circuit_breaker:
     class: Drupal\bb_core\Claim\FailedRunCircuitBreaker
-    arguments: ['@entity_type.manager', '@datetime.time', '@config.factory']
+    arguments: ['@entity_type.manager', '@datetime.time']
   bb_core.ticket_stall_reason:
     class: Drupal\bb_core\Claim\TicketStallReason
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker', '@bb_core.conductor_owner_access']
@@ -123,7 +127,7 @@ services:
     alias: bb_core.ticket_stall_reason
   bb_core.ticket_claim:
     class: Drupal\bb_core\Claim\TicketClaimService
-    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@config.factory', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher', '@bb_core.conductor_owner_access']
+    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher', '@bb_core.conductor_owner_access']
   bb_core.conductor_deactivation_reassigner:
     class: Drupal\bb_core\Conductor\ConductorDeactivationReassigner
     arguments: ['@entity_type.manager', '@logger.channel.bb_core', '@datetime.time', '@bb_core.conductor_owner_access']

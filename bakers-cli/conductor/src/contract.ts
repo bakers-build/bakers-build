@@ -41,9 +41,14 @@ export {
   SECURITY_MODES,
   type SecurityMode,
   type SecurityOptions,
+  type SecurityReport,
+  SHARED_SECURITY_KEY,
+  type SharedListKey,
+  type SharedSecurity,
   validateAgentArgs,
   validateOptionalBoolean,
   validateOptionalString,
+  validateSharedSecurity,
 } from './plugins/agent-args.js';
 export type {
   BbExecutor,
@@ -110,6 +115,7 @@ export type {
   InboxSnapshot,
   RunMetrics,
   RunWriteAttributes,
+  SiteToolClient,
   Ticket,
   TicketMetric,
   UncleanTicket,

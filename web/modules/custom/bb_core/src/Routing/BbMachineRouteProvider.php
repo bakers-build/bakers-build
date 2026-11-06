@@ -7,15 +7,15 @@ namespace Drupal\bb_core\Routing;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
 use Drupal\bb_core\Entity\BbMachineInterface;
+use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Symfony\Component\Routing\Route;
 
 /**
  * Uses the full Display Builder view for the canonical machine screen.
  *
- * Add, edit, delete and the collection stay admin routes. The product
- * Overview is core's `_entity_view: bb_machine.full`, whose cards edit the
- * machine. Only the title callback is replaced. Do not add a controller that
- * merely renders the view mode.
+ * The product Overview is core's `_entity_view: bb_machine.full`, whose
+ * cards edit the machine. Only the title callback is replaced. Do not add a
+ * controller that merely renders the view mode.
  *
  * @see \Drupal\bb_core\Routing\BbConductorRouteProvider
  */
@@ -40,6 +40,12 @@ final class BbMachineRouteProvider extends AdminHtmlRouteProvider {
    */
   public function getRoutes(EntityTypeInterface $entity_type) {
     $collection = parent::getRoutes($entity_type);
+    $delete = $collection->get('entity.bb_machine.delete_form');
+    if ($delete !== NULL) {
+      // Core titles the route's first entity, which here is the account.
+      $delete->setDefault('_title_callback', BbContentEntityDeleteForm::class . '::title');
+      $this->pinOwner($delete);
+    }
     $settings = new Route('/user/{user}/machine/{bb_machine}/edit');
     $settings->setOption('parameters', ['bb_machine' => ['type' => 'entity:bb_machine']]);
     $this->pinUserArea($settings);
@@ -68,20 +74,26 @@ final class BbMachineRouteProvider extends AdminHtmlRouteProvider {
   }
 
   /**
-   * Titles the machine, upcasts `{user}`, and keeps the route in the shell.
-   *
-   * `{user}` must be the owner: a foreign account in the path is 404 once
-   * `_entity_access` has passed; otherwise that check's 403 wins.
+   * Titles the machine and upcasts its owner.
    */
   private function pinUserArea(Route $route): void {
     $defaults = $route->getDefaults();
     $defaults['_title_callback'] = static::class . '::title';
     unset($defaults['_title'], $defaults['_title_callback_arguments']);
     $route->setDefaults($defaults);
+    $this->pinOwner($route);
+  }
+
+  /**
+   * Upcasts `{user}`, which must be the owner.
+   *
+   * A foreign account in the path is 404 once `_entity_access` has passed;
+   * otherwise that check's 403 wins.
+   */
+  private function pinOwner(Route $route): void {
     $parameters = $route->getOption('parameters') ?? [];
     $parameters['user'] = ['type' => 'entity:user'];
     $route->setOption('parameters', $parameters);
-    $route->setOption('_admin_route', FALSE);
     $route->setRequirement('user', '\d+');
     $route->setRequirement('_bb_machine_owner_match', 'TRUE');
   }

@@ -51,27 +51,37 @@ export default {
   // invokes each (after_create/before_run/after_done), logs loudly + continues
   // on failure, and never wedges a run — so they live at the config TOP LEVEL,
   // not on the workspace descriptor. after_create: env setup on worktree
-  // create. after_done: reclaim the worktree's DDEV project (containers + db)
-  // once its ticket is done, before the conductor tears the worktree down.
+  // create. before_run: install pnpm dependencies before every run, outside
+  // the agent sandbox, which cannot take pnpm's store lock. after_done: reclaim
+  // the worktree's DDEV project (containers + db) once its ticket is done,
+  // before the conductor tears the worktree down.
   //
   // The project bootstrap validates env before its sentinel, then prepares the
   // local test workspace. It starts no DDEV; hook failures remain best-effort.
   hooks: {
     after_create: 'bash .ddev/worktree-post.sh',
+    before_run: 'bash scripts/worktree-deps.sh',
     after_done: 'ddev delete -Oy',
-    // The `provision_up(profile)` agent tool, so a sandboxed run needs no
-    // trusted `ddev`. `ddev provision` reuses a ready site of that provider;
+    // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
+    // a trusted `ddev` nor `pnpm install`. Every profile installs the
+    // bakers-cli and website dependencies first; `deps` does only that.
+    // bb_theme is installed and built by `ddev init` inside DDEV.
+    // `ddev provision` reuses a ready site of that provider;
     // `existing-config-fresh` always reinstalls.
     provision_up: {
-      'recipe-test': 'ddev provision --provider recipe-test',
-      'existing-config': 'ddev provision --provider existing-config',
-      'existing-config-fresh': 'ddev init --provider existing-config',
+      deps: 'bash scripts/worktree-deps.sh --all',
+      'recipe-test': 'bash scripts/worktree-deps.sh && ddev provision --provider recipe-test',
+      'existing-config': 'bash scripts/worktree-deps.sh && ddev provision --provider existing-config',
+      'existing-config-fresh': 'bash scripts/worktree-deps.sh && ddev init --provider existing-config',
     },
   },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
+  // addon-ddev serves the `ddev_status`, `ddev_start` and `ddev_exec` agent
+  // tools, so runs reach DDEV only through the conductor, never directly.
   // Preview is opt-in; the FRP transport validates the operator's complete settings.
-  addons: local.frp ? [
-    {
+  addons: [
+    '@bakers-build/addon-ddev',
+    ...(local.frp ? [{
       use: '@bakers-build/addon-ports',
       with: {
         services: [{ key: 'docs', match: 'vitepress' }],
@@ -80,8 +90,8 @@ export default {
           with: local.frp,
         },
       },
-    },
-  ] : [],
+    }] : []),
+  ],
   // Layout per workflow state: project = workspace, run = tab.
   // No hard-wired diff pane for `review`: the review diff surface is hunk
   // (BB-55) — agent-driven + opt-in in the human's interactive pane

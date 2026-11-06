@@ -1,0 +1,4 @@
+name: bot-channels
+version: 1.0.0
+description: "The PM bot's Slack channels: a mention in the bot's channel opens a request channel, and the bot works only in its own open channels."
+author: bakers.build

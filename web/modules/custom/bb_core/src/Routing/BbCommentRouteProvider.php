@@ -13,9 +13,9 @@ use Symfony\Component\Routing\Route;
 /**
  * Product canonical for a comment: full view in the workspace shell.
  *
- * Edit, delete, add and the collection stay the admin routes the parent
- * provides. This provider does not nest the comment under its ticket, does
- * not add parentage checks, and does not add an overlay.
+ * Edit, delete, add and the collection stay the routes the parent provides.
+ * This provider does not nest the comment under its ticket, does not add
+ * parentage checks, and does not add an overlay.
  */
 final class BbCommentRouteProvider extends AdminHtmlRouteProvider {
 
@@ -39,7 +39,7 @@ final class BbCommentRouteProvider extends AdminHtmlRouteProvider {
   /**
    * Pins the full view and product title.
    *
-   * The UUID converter, its requirement pattern and `_admin_route: FALSE`
+   * The UUID converter and its requirement pattern
    * come from `BbWorkspaceRouteSubscriber::alterRoutes()`, which already
    * applies them to every `/_workspace` route carrying `{bb_comment}`.
    */

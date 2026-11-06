@@ -21,8 +21,8 @@ use Symfony\Component\HttpFoundation\Request;
  * Machine product Overview and user-area canonical.
  *
  * Listing names link to Overview at `/user/{user}/machine/{id}`, whose cards
- * edit the machine. Add, edit, delete and the collection stay under
- * `/admin/bakers/machine`.
+ * edit the machine; Delete opens `/user/{user}/machine/{id}/delete`. The
+ * heartbeat creates machines; there are no admin pages.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -149,24 +149,27 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The instance admin's maintenance form stays an admin route.
+   * Delete sits in the owner's user area, with today's delete access.
    */
-  public function testEditFormIsTheAdministrativeForm(): void {
-    $edit = $this->container->get('router.route_provider')
-      ->getRouteByName('entity.bb_machine.edit_form');
-    self::assertSame('/admin/bakers/machine/{bb_machine}/edit', $edit->getPath());
-    self::assertSame('bb_machine.edit', $edit->getDefault('_entity_form'));
-    self::assertSame('bb_machine.update', $edit->getRequirement('_entity_access'));
-    self::assertTrue($edit->getOption('_admin_route'));
+  public function testDeleteIsInTheUserArea(): void {
+    $delete = $this->container->get('router.route_provider')
+      ->getRouteByName('entity.bb_machine.delete_form');
+    self::assertSame('/user/{user}/machine/{bb_machine}/delete', $delete->getPath());
+    self::assertSame('bb_machine.delete', $delete->getDefault('_entity_form'));
+    self::assertSame('bb_machine.delete', $delete->getRequirement('_entity_access'));
+    self::assertSame('TRUE', $delete->getRequirement('_bb_machine_owner_match'));
+    self::assertFalse($delete->getOption('_admin_route'));
   }
 
   /**
-   * View is the only product tab; admin collection stays put.
+   * View is the only product tab; there are no admin routes.
    */
-  public function testViewAndEditAreTheProductTabsAndAdminCollectionStays(): void {
-    $collection = $this->container->get('router.route_provider')
-      ->getRouteByName('entity.bb_machine.collection');
-    self::assertSame('/admin/bakers/machines', $collection->getPath());
+  public function testViewIsTheProductTabAndNoAdminRoutes(): void {
+    self::assertSame([], $this->container->get('router.route_provider')->getRoutesByNames([
+      'entity.bb_machine.collection',
+      'entity.bb_machine.add_form',
+      'entity.bb_machine.edit_form',
+    ]));
 
     self::assertSame(
       ['entity.bb_machine.canonical'],
@@ -179,13 +182,13 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The canonical URL sits under the owner's user area; edit is admin.
+   * The canonical and delete URLs sit under the owner's user area.
    */
   public function testProductUrlsAreUserArea(): void {
     $this->actAs($this->accounts['lead']);
     $base = '/user/' . $this->accounts['lead']->id() . '/machine/' . $this->labelled->id();
     self::assertSame($base, $this->labelled->toUrl()->toString());
-    self::assertSame('/admin/bakers/machine/' . $this->labelled->id() . '/edit', $this->labelled->toUrl('edit-form')->toString());
+    self::assertSame($base . '/delete', $this->labelled->toUrl('delete-form')->toString());
   }
 
   /**
@@ -240,22 +243,6 @@ final class MachineOverviewTest extends KernelTestBase {
     $this->actAs($this->accounts['guest']);
     self::assertSame(403, $this->statusOf($overview));
     self::assertSame(403, $this->statusOf($edit));
-  }
-
-  /**
-   * The admin form locks host key and keeps current load for the admin.
-   */
-  public function testAdminEditFormKeepsCurrentLoadForTheInstanceAdmin(): void {
-    $this->actAs($this->createAccount('instance-admin', ['administer bakers']));
-    $form = $this->container->get('entity.form_builder')->getForm($this->labelled, 'edit');
-
-    self::assertArrayHasKey('name', $form);
-    self::assertArrayHasKey('max_parallel', $form);
-    self::assertFalse($form['host_key']['#access']);
-    self::assertSame('host-alpha', $form['host_key_display']['value']['#props']['label']);
-    self::assertSame('lock', $form['host_key_display']['value']['#props']['icon']);
-    self::assertArrayHasKey('current_load', $form);
-    self::assertNotFalse($form['current_load']['#access'] ?? TRUE);
   }
 
   /**

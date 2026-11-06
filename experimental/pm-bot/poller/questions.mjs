@@ -1,11 +1,13 @@
 // Pure core of the poller's note relay: a ticket's open note, and which notes
-// to post into which Slack thread with what text. No I/O.
+// to post into which Slack conversation with what text. No I/O.
 //
 // Two protocols of bakers.build share one rule. A ticket is frozen and carries
 // the "Question" label (an open question) or the "technical problem" label (a
 // technical problem keytec has to solve); its note is the newest comment that
 // is not a `summary`, created at or before `frozen_at`. A ticket with both
 // labels has a technical problem: the customer is never asked a technical question.
+
+import { named, target } from './diff.mjs';
 
 export const QUESTION_LABEL = 'Question';
 export const TECHNICAL_PROBLEM_LABEL = 'technical problem';
@@ -29,11 +31,11 @@ export function openNote(ticket, comments) {
  * so a call over one kind would forget the other's entries.
  *
  * @param {string[]} relayed comment UUIDs posted before
- * @param {Array<{ticket: {identifier: string, title: string, thread: {channel: string, thread_ts: string}}, note: {kind: 'question' | 'technical_problem', comment: {id: string, body: string}}}>} open
- *   the open notes of threaded tickets
+ * @param {Array<{ticket: {identifier: string, title: string, conversation: {channel: string, thread_ts?: string}, inherited?: boolean}, note: {kind: 'question' | 'technical_problem', comment: {id: string, body: string}}}>} open
+ *   the open notes of tickets with a conversation
  * @param {boolean} complete every frozen ticket was read; only then are closed notes forgotten
  * @param {{question: string, technical_problem: string}} leads the lead-in per kind; `{identifier}` and `{title}` become the ticket's identifier and title, escaped
- * @returns {{posts: Array<{comment: string, kind: string, identifier: string, channel: string, thread_ts: string, text: string}>, relayed: string[]}}
+ * @returns {{posts: Array<{comment: string, kind: string, identifier: string, channel: string, thread_ts?: string, text: string}>, relayed: string[]}}
  *   add each posted note to `relayed` after its post succeeded
  */
 export function relay(relayed, open, complete, leads) {
@@ -44,9 +46,8 @@ export function relay(relayed, open, complete, leads) {
       comment: note.comment.id,
       kind: note.kind,
       identifier: ticket.identifier,
-      channel: ticket.thread.channel,
-      thread_ts: ticket.thread.thread_ts,
-      text: `${leads[note.kind].replace('{identifier}', () => escape(ticket.identifier)).replace('{title}', () => escape(ticket.title))}\n\n${escape(note.comment.body)}`,
+      ...target(ticket.conversation),
+      text: named(ticket, `${leads[note.kind].replace('{identifier}', () => escape(ticket.identifier)).replace('{title}', () => escape(ticket.title))}\n\n${escape(note.comment.body)}`),
     }));
   if (!complete) return { posts, relayed: [...relayed] };
   const still = new Set(open.map(({ note }) => note.comment.id));

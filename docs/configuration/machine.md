@@ -1,6 +1,6 @@
 # Machines
 
-`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes; every field is listed here with its default and precedence. To set agents up step by step, use [Choose agents and models](/configuration/agents). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. Create, delete and the admin collection stay under `/admin/bakers/machine`.
+`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes; every field is listed here with its default and precedence. To set agents up step by step, use [Choose agents and models](/configuration/agents). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`.
 
 ## Location
 
@@ -33,6 +33,7 @@ export default {
 | `max_parallel` | Not read here. The run budget is set on the machine in the backend (machine form, **Max parallel**); a new machine starts with 5. Every conductor on this host shares it and picks up a change on its next tick. A leftover key loads with a warning and is ignored; `bakers config upgrade` leaves it in place. |
 | `tunnel` | Optional literal boolean, default `false`. See below. |
 | `agents` | Object, described in the next section. An array is invalid. |
+| `security` | Optional. Run security for every agent on this host: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. It replaces the project's block key by key, and a harness entry's `with` replaces both; `'$inherit'` keeps the layer below. See [Shared run security](/configuration/agents/shared-security). |
 | `addons` | This host's addons, the same entry shape as a conductor config's `addons`: a package name or `{ use, alias?, with? }` (`name` and `options` are accepted aliases of `use` and `with`). Agent harnesses go here and are the source of agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. See [Configure addons](/addons/configure). |
 | `user_id` | Rejected; run `bakers init`, which rewrites the file without it and keeps `machine_id`. The server takes the owner from the sign-in. |
 | `agents.addons`, `ports` | Retired. Loading fails with the exact replacement; move both into `addons`. |
