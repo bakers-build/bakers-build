@@ -9,6 +9,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbCommentInterface;
+use Drupal\bb_core\Form\BbContentEntityFormBase;
 use Drupal\bb_core\Routing\BbCommentRouteProvider;
 use Drupal\bb_core\Time\BbDate;
 use Drupal\ui_patterns\Attribute\Source;
@@ -71,13 +72,6 @@ final class BbCommentTeaserSource extends SourcePluginBase implements ContainerF
       ],
     ];
     $delete = $comment->access('delete', NULL, TRUE);
-    if ($delete->isAllowed()) {
-      $links[] = [
-        'url' => $comment->toUrl('delete-form')->toString(),
-        'title' => (string) $this->t('Delete'),
-        'target' => '_self',
-      ];
-    }
     $build = [
       'event' => [
         '#type' => 'component',
@@ -92,11 +86,12 @@ final class BbCommentTeaserSource extends SourcePluginBase implements ContainerF
           'links' => $links,
         ],
       ],
-    ];
+    ] + ($delete->isAllowed() ? BbContentEntityFormBase::deleteAction($comment) : []);
     CacheableMetadata::createFromRenderArray($build)
       ->addCacheableDependency($comment)
       ->addCacheableDependency($delete)
-      ->addCacheContexts(['user'])
+      // The Delete dialog closes back to the screen it was opened over.
+      ->addCacheContexts(['user', 'url.path', 'url.query_args'])
       ->applyTo($build);
     return $build;
   }

@@ -54,16 +54,14 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
       'delete' => BbContentEntityDeleteForm::class,
     ],
     // The canonical route pins the `full` entity view whose Display Builder
-    // tree composes the Overview and its cards. Add, edit, delete and the
-    // collection stay admin routes.
+    // tree composes the Overview and its cards.
     'route_provider' => ['html' => BbMachineRouteProvider::class],
     // Tabs are declared statically in bb_core.links.task.yml, so no
     // `local_task_provider` handler is registered. The default one would
     // synthesise a View/Edit tab row from the `edit-form` link.
     'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
   ],
-  // Product View sits next to the account Machines listing. Add, edit,
-  // delete and the collection stay admin routes.
+  // Product View sits next to the account Machines listing.
   links: [
     'canonical' => '/user/{user}/machine/{bb_machine}',
     'add-form' => '/admin/bakers/machine/add',

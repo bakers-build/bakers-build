@@ -1044,6 +1044,61 @@ final class WorklogFormTest extends KernelTestBase {
   }
 
   /**
+   * The edit form's Delete opens the confirm dialog over the same overview.
+   */
+  public function testDeleteOpensTheDialogOverTheOverview(): void {
+    $this->actAs($this->employee);
+    $entry = $this->createRecorded($this->employee);
+    $destination = '/workspace-a/time?mode=day&date=2026-10-06';
+    $this->pushFormRequest('/time/' . $entry->uuid() . '/edit', [
+      '_wrapper_format' => 'island_dialog',
+      'destination' => $destination,
+    ]);
+    $form = $this->container->get('form_builder')->getForm(WorklogForm::class, $entry);
+    $attributes = $form['delete']['#props']['attributes']->toArray();
+    parse_str((string) parse_url((string) $attributes['data-hx-get'], PHP_URL_QUERY), $query);
+    self::assertSame('island_dialog', $query['_wrapper_format'] ?? NULL);
+    self::assertSame($destination, $query['destination'] ?? NULL, 'the dialog closes to the overview under the edit dialog');
+    self::assertSame('#bakers-overlay', $attributes['data-hx-target'] ?? NULL);
+  }
+
+  /**
+   * The delete confirm answers the dialog: posts back, cancel closes it.
+   */
+  public function testDeleteDialogRequestAttachesHtmx(): void {
+    $this->actAs($this->employee);
+    $entry = $this->createRecorded($this->employee);
+    $destination = '/workspace-a/time?mode=day&date=2026-10-06';
+    $this->pushFormRequest('/time/' . $entry->uuid() . '/delete', [
+      '_wrapper_format' => 'island_dialog',
+      'destination' => $destination,
+    ]);
+    $form = $this->container->get('form_builder')->getForm(WorklogDeleteForm::class, $entry);
+    self::assertStringContainsString('_wrapper_format=island_dialog', (string) ($form['#attributes']['data-hx-post'] ?? ''));
+    $row = $form[WrappedRouteRenderer::ACTIONS_SLOT_PROPERTY] ?? [];
+    self::assertSame($destination, $row['cancel']['#props']['href'] ?? NULL);
+    self::assertSame('form', array_key_first(array_intersect_key($row['submit']['#attributes'] ?? [], ['form' => 1])), 'the confirm sits in the footer');
+  }
+
+  /**
+   * A confirmed delete lands on the overview it was opened from.
+   */
+  public function testDeleteLandsOnTheOverview(): void {
+    $this->actAs($this->employee);
+    $entry = $this->createRecorded($this->employee);
+    $destination = '/workspace-a/time?mode=day&date=2026-10-06';
+    $this->pushFormRequest('/time/' . $entry->uuid() . '/delete', ['destination' => $destination]);
+
+    $delete_state = $this->submitDelete($entry);
+    $delete_state->setProgrammed(FALSE);
+
+    self::assertSame([], $delete_state->getErrors());
+    $redirect = $delete_state->getRedirect();
+    self::assertInstanceOf(Url::class, $redirect);
+    self::assertSame($destination, $redirect->toString());
+  }
+
+  /**
    * External and non-overview destinations are not copied onto Delete.
    */
   public function testHostileDestinationIsNotCopiedOntoDelete(): void {

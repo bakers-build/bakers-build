@@ -18,6 +18,7 @@ use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbGroupInterface;
 use Drupal\bb_core\Element\PickerValue;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Form\OverlayTrigger;
 use Drupal\bb_track\Entity\Worklog;
 use Drupal\bb_track\WorkTargetOptions;
 use Drupal\bb_track\WorkTimeRules;
@@ -721,10 +722,13 @@ final class WorklogFormLayout implements TrustedCallbackInterface {
         '#type' => 'component',
         '#component' => 'bb_theme:button',
         '#weight' => 110,
+        '#attached' => ['library' => ['core/drupal.htmx']],
         '#props' => [
           'label' => (string) $this->t('Delete'),
           'href' => $this->deleteUrl($entry, $destination)->toString(),
           'variant' => 'danger',
+          // The confirm dialog over this screen; href is the page without JS.
+          'attributes' => new Attribute(OverlayTrigger::attributes($this->deleteUrl($entry, $destination))),
         ],
       ];
     }

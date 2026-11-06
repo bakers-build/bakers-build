@@ -72,8 +72,7 @@ use Drupal\user\EntityOwnerTrait;
     ],
     'views_data' => BbTicketViewsData::class,
     // The canonical route pins the `full` entity view whose Display Builder
-    // tree composes the whole detail screen. Edit (Settings) and delete render
-    // in the app shell; add and the collection stay admin routes.
+    // tree composes the whole detail screen.
     'route_provider' => ['html' => BbTicketRouteProvider::class],
     // Deliberately no `local_task_provider`: the default one would synthesise
     // a View/Edit tab row from the `edit-form` link, and a ticket has a single

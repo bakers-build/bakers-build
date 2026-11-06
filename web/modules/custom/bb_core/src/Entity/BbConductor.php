@@ -62,8 +62,7 @@ use Drupal\user\EntityOwnerTrait;
     // handlers.
     'views_data' => BbConductorViewsData::class,
     // The canonical route pins the `full` entity view whose Display Builder
-    // tree composes the Overview and its card. Add, edit, delete and the
-    // collection stay admin routes.
+    // tree composes the Overview and its card.
     'route_provider' => ['html' => BbConductorRouteProvider::class],
     // Tabs are declared statically in bb_core.links.task.yml, so no
     // `local_task_provider` handler is registered. The default one would

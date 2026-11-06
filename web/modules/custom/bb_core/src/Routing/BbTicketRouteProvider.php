@@ -12,8 +12,7 @@ use Symfony\Component\Routing\Route;
 /**
  * Uses the full Display Builder view for the canonical ticket screen.
  *
- * Edit (the `settings` operation) and delete render in the app shell; add
- * and the collection stay admin routes.
+ * Edit (the `settings` operation) and delete render in the app shell.
  *
  * @see \Drupal\bb_core\Routing\BbTeamRouteProvider
  */
@@ -45,17 +44,7 @@ final class BbTicketRouteProvider extends AdminHtmlRouteProvider {
       $route->setDefault('_entity_form', 'bb_ticket.settings');
       // The shell's page header keeps the ticket headline on its Settings.
       $route->setDefault('_title_callback', BbTicketDetailController::class . '::title');
-      $route->setOption('_admin_route', FALSE);
     }
-    return $route;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getDeleteFormRoute(EntityTypeInterface $entity_type): ?Route {
-    $route = parent::getDeleteFormRoute($entity_type);
-    $route?->setOption('_admin_route', FALSE);
     return $route;
   }
 

@@ -8,6 +8,7 @@ use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 
 /**
@@ -159,15 +160,18 @@ class BbContentEntityFormBase extends ContentEntityForm {
     if ($entity->isNew() || !$entity->hasLinkTemplate('delete-form') || !$entity->access('delete')) {
       return [];
     }
-    // A plain page link: the confirm form is its own page, never a swap.
+    // The confirm dialog over this page; the href is the page without JS.
+    $url = $entity->toUrl('delete-form');
     return [
       'delete' => [
         '#type' => 'component',
         '#component' => 'bb_theme:button',
+        '#attached' => ['library' => ['core/drupal.htmx']],
         '#props' => [
           'label' => (string) new TranslatableMarkup('Delete'),
-          'href' => $entity->toUrl('delete-form')->toString(),
+          'href' => $url->toString(),
           'variant' => 'ghost',
+          'attributes' => new Attribute(OverlayTrigger::attributes($url)),
         ],
         '#weight' => 100,
       ],

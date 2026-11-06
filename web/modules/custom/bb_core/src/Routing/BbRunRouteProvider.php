@@ -13,8 +13,7 @@ use Symfony\Component\Routing\Route;
 /**
  * Ticket-relative canonical and overlay views for a run.
  *
- * Edit and delete stay on the un-nested workspace paths. Add and the
- * collection stay admin routes.
+ * Edit and delete stay on the un-nested workspace paths.
  */
 final class BbRunRouteProvider extends AdminHtmlRouteProvider {
 
@@ -74,7 +73,6 @@ final class BbRunRouteProvider extends AdminHtmlRouteProvider {
     $parameters['bb_run'] = $parameters['bb_run'] ?? ['type' => 'entity:bb_run'];
     $parameters['bb_ticket'] = ['type' => 'entity:bb_ticket'];
     $route->setOption('parameters', $parameters);
-    $route->setOption('_admin_route', FALSE);
     $route->setRequirement('_bb_run_parentage_match', 'TRUE');
     return $route;
   }
