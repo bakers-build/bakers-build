@@ -76,7 +76,7 @@ Then('exactly one canvas is present in the document', async ({ page }) => {
   await expect(page.locator(CANVAS)).toHaveCount(1);
 });
 
-// Asserted against the team screen too (a @negative-control scenario), because
+// Asserted against a gate screen too (a @negative-control scenario), because
 // a selector with a typo in it is empty everywhere and this claim is a NEGATIVE
 // on every other scenario that makes it.
 Then('no canvas is present in the document', async ({ page }) => {
