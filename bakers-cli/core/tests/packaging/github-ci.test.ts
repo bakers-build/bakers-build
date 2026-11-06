@@ -18,8 +18,8 @@ const read = (path: string) =>
 const AFTER_MERGE = ['image_gate', 'tui_musl', 'release_rehearsal'];
 
 // WarpBuild tiers; a repository variable set to '["self-hosted","github-runner-1"]' sends a tier back.
-const CHECKS_RUNNER = `\${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2404-x64-2x"') }}`;
-const AFTER_MERGE_RUNNER = `\${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2404-x64-4x"') }}`;
+const CHECKS_RUNNER = `\${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-2604-x64-2x"') }}`;
+const AFTER_MERGE_RUNNER = `\${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2604-x64-4x"') }}`;
 
 describe('GitHub migration checks', () => {
   it('disables every GitLab publisher and deploy job before GitHub takes ownership', () => {
@@ -228,7 +228,7 @@ describe('GitHub migration checks', () => {
 
   it('runs the self-host lifecycle on a disposable WarpBuild runner and names no old runner in any workflow', () => {
     const workflow = parse(read('.github/workflows/self-host-lifecycle.yml'));
-    expect(workflow.jobs.lifecycle['runs-on']).toBe('warp-ubuntu-2404-x64-4x');
+    expect(workflow.jobs.lifecycle['runs-on']).toBe('warp-ubuntu-2604-x64-4x');
     const files = readdirSync(
       new URL('../../../../.github/workflows/', import.meta.url),
     ).filter((file) => file.endsWith('.yml'));

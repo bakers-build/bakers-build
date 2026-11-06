@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   registry:
-    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2404-x64-4x"') }}
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2604-x64-4x"') }}
     permissions:
       contents: read
       packages: write
@@ -55,7 +55,7 @@ jobs:
 
   transfer:
     needs: registry
-    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2404-x64-4x"') }}
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2604-x64-4x"') }}
     permissions:
       contents: read
     env:
