@@ -31,7 +31,8 @@ class BbContentEntityFormBase extends ContentEntityForm {
    * @return array<string, array{label: \Drupal\Core\StringTranslation\TranslatableMarkup, open?: bool, weight?: int, fields: string[]}>
    *   Groups keyed by machine name. Key `meta` is the always-open header
    *   block; any other key is a collapsible accordion panel. A group key must
-   *   not equal a field machine name on the same entity. Empty → no meta container.
+   *   not equal a field machine name on the same entity. Empty → no meta
+   *   container.
    */
   protected static function metaGroups(): array {
     return [];
