@@ -232,16 +232,21 @@ final class ShellPageLayoutTabRoutesTest extends KernelTestBase {
   }
 
   /**
-   * The account shell shows status messages ahead of the page content.
+   * The account lists show status messages ahead of the page content.
    *
-   * Account-area lists render no messages of their own, so a redirect to one
-   * (a deleted machine or conductor) would drop its "Deleted" message.
+   * The machine and conductor lists render no messages of their own, so a
+   * redirect to one (a deleted machine or conductor) would drop its "Deleted"
+   * message. Account forms render their own, so only these lists get it.
    */
-  public function testAccountShellShowsStatusMessagesBeforeTheContent(): void {
+  public function testAccountListsShowStatusMessagesBeforeTheContent(): void {
     $placements = Yaml::parseFile(dirname(__DIR__, 7) . '/config/sync/island.profile.bb_shell_account.yml')['placements'];
-    $by_plugin = array_column(array_filter($placements, static fn(array $placement): bool => $placement['slot'] === 'content'), 'weight', 'plugin_id');
+    $by_plugin = array_column(array_filter($placements, static fn(array $placement): bool => $placement['slot'] === 'content'), NULL, 'plugin_id');
     self::assertArrayHasKey('messages', $by_plugin);
-    self::assertLessThan($by_plugin['page_content'], $by_plugin['messages']);
+    self::assertLessThan($by_plugin['page_content']['weight'], $by_plugin['messages']['weight']);
+    $route = $by_plugin['messages']['conditions']['route_name'] ?? [];
+    self::assertSame('route_name', $route['id'] ?? NULL);
+    self::assertFalse($route['negate'] ?? TRUE);
+    self::assertEqualsCanonicalizing(['view.machines.user_list', 'view.conductors.user_list'], $route['route_names'] ?? []);
   }
 
   /**

@@ -27,10 +27,10 @@ placements:
   # `/user/*` path also covers these routes. `nav`'s items come from the same
   # `bb_menu` source over the `bakers-account` menu. The page header also
   # carries the API key create action, which renders only on the API key
-  # list. `shell_messages` shows status messages, which account-area lists
-  # do not render themselves. Everything else matches `bb_shell`; no
-  # `bakers.team.created` refresh event, since teams are not created from an
-  # account-area page.
+  # list. `shell_messages` shows status messages on the machine and conductor
+  # lists, which render none themselves; account forms render their own.
+  # Everything else matches `bb_shell`; no `bakers.team.created` refresh
+  # event, since teams are not created from an account-area page.
   shell_rail:
     plugin_id: ui_patterns_component
     slot: sidebar
@@ -207,6 +207,14 @@ placements:
     enabled: true
     configuration: {  }
     data: {  }
+    condition_operator: and
+    conditions:
+      route_name:
+        id: route_name
+        negate: false
+        route_names:
+          - view.machines.user_list
+          - view.conductors.user_list
   shell_content_island:
     plugin_id: page_content
     slot: content
