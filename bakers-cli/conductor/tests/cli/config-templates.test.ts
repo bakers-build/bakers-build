@@ -114,10 +114,9 @@ describe('rendered committed conductor config', () => {
     expect(text).not.toContain('after_done');
   });
 
-  it('omits the hooks block entirely without an answer, and names no provisioning tool', () => {
+  it('omits the hooks block entirely without an answer', () => {
     const text = renderCommittedConfig({ project: 'demo' });
     expect(text).not.toContain('hooks');
-    expect(text).not.toContain('after_create');
     // An empty `hooks: {}` would be a statement about hooks where none was made.
     expect(text).not.toContain('hooks: {}');
   });

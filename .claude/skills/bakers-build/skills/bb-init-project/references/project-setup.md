@@ -27,7 +27,7 @@ choices below. **Done when both choices and their owning files are understood.**
    project writes no origin labels. Verify named skills and commands through the
    agent environment's installation/discovery facilities; report missing skills by name. Report
    the installed `bb-recipe-*` skills; recipe guidance for qualification, if the project wants any,
-   is free text in `WORKFLOW.md`.
+   goes in the `## bb-phase-work` hint.
 5. Ensure `.gitignore` contains `/assets-ai/` with a short explanatory comment
    ([transient root](../../bb-workflow/references/evidence.md)); prove it with `git check-ignore -v assets-ai/probe`.
    Ignore `.bakers/conductor.config.local.js` and generated secret-bearing local overrides; verify

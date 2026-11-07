@@ -160,6 +160,30 @@ describe('skill call contracts', () => {
     });
     expect(failing(commonChecks(trace))).toEqual([]);
   });
+  it('counts a bare bakers tool name as its wire name, as the CLI accepts it', () => {
+    const trace = calls({
+      tool_trace: [
+        {
+          tool: 'bakers',
+          arguments: {
+            argv: [
+              'bakers',
+              'tools',
+              'bakers_ticket_read',
+              '--data',
+              JSON.stringify({ ticket: ticketId }),
+            ],
+          },
+          result: result({ id: ticketId }),
+        },
+      ],
+    });
+    expect(trace[0]).toMatchObject({
+      mode: 'call',
+      name: 'tool_api__bakers_ticket_read',
+      args: { ticket: ticketId },
+    });
+  });
   it('confirms a comment from its result and never repeats a timed-out publication', async () => {
     const { fixture, profile, trace } = await commentCase();
     const grade = (rows: unknown[], f = fixture) =>

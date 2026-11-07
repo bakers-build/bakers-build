@@ -301,6 +301,42 @@ describe('claimServices — orchestration with configured claimers', () => {
       await rm(home, { recursive: true, force: true });
     }
   });
+
+  it('refuses a claimer package that does not resolve', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'bakers-ports-claimer-'));
+    try {
+      await expect(
+        loadClaimers({ claimers: ['no-such-claimer'] }, home),
+      ).rejects.toThrow("cannot resolve claimer package 'no-such-claimer'");
+    } finally {
+      await rm(home, { recursive: true, force: true });
+    }
+  });
+
+  it('refuses a claimer package without a `claimer` export carrying discover and claim', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'bakers-ports-claimer-'));
+    try {
+      const pkg = join(home, 'node_modules', 'half-claimer');
+      await mkdir(pkg, { recursive: true });
+      await writeFile(
+        join(pkg, 'package.json'),
+        JSON.stringify({
+          name: 'half-claimer',
+          type: 'module',
+          main: 'index.js',
+        }),
+      );
+      await writeFile(
+        join(pkg, 'index.js'),
+        'export const claimer = { discover: async () => ({ ports: [], diagnostics: [] }) };',
+      );
+      await expect(
+        loadClaimers({ claimers: ['half-claimer'] }, home),
+      ).rejects.toThrow("ports claimer 'half-claimer' has no `claimer` export");
+    } finally {
+      await rm(home, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('discoverClaimedServices', () => {

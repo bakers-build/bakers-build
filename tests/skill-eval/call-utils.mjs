@@ -59,6 +59,8 @@ export function calls(context = {}, files = {}) {
       else name ??= argv[i];
     }
     if (!name) return { ...base, mode: 'list' };
+    // The CLI accepts a bare bakers tool by its wire name, as tool-server.py does.
+    if (name.startsWith('bakers_')) name = tool(name);
     if (schema) return { ...base, mode: 'schema', name };
     let args = {};
     try { args = data === undefined ? {} : JSON.parse(data.startsWith('@') ? written[data.slice(1)] : data); } catch { args = undefined; }

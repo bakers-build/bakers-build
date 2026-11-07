@@ -3,8 +3,8 @@
 Read at qualification's *work*, after both prior-art checks.
 
 List the installed `bb-recipe-*` skills and load each one's **complete** `SKILL.md`: its method,
-declared types and state slots, never its description alone. Read any recipe guidance the project's
-`WORKFLOW.md` gives; it may give none. Choose the recipe whose method and declared types fit the ask
+declared types and state slots, never its description alone. Read any recipe guidance in the project's
+`WORKFLOW.md` `## bb-phase-work` hint; it may give none. Choose the recipe whose method and declared types fit the ask
 best. Ask only when a human is present and two recipes fit equally, and write nothing until the
 answer; an unattended run decides by fit itself. Then choose a type that recipe declares.
 
