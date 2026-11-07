@@ -60,17 +60,16 @@
   'stale': 'bg-transparent border-2 border-state-attention-mark',
   'offline': 'bg-transparent border-2 border-state-offline'
 } %}
-{#- THE OUTLINE OF `mine`, IN THE TONE'S OWN COLOUR, at the width and the opacity
-    the deleted claim badge drew it: one hairline at 45% of the state hue, which
-    reads as a ring on the tint without becoming a second border. It is mapped
-    per tone rather than hard-wired to indigo so that a `mine` badge on any tinted
-    tone outlines in its own colour instead of in somebody else's. #}
+{#- THE OUTLINE OF `mine`, IN THE TONE'S OWN COLOUR: one opaque hairline, so the
+    ring keeps 3:1 against the tint and the page (a translucent hue fell below it).
+    It is mapped per tone so that a `mine` badge on any tinted tone outlines in its
+    own colour instead of in somebody else's. #}
 {% set mine_map = {
-  'running': 'outline outline-1 outline-state-running/45',
-  'attention': 'outline outline-1 outline-state-attention-mark/45',
-  'wait': 'outline outline-1 outline-state-unassigned/45',
-  'critical': 'outline outline-1 outline-state-unassigned/45',
-  'lease': 'outline outline-1 outline-state-lease/45'
+  'running': 'outline outline-1 outline-state-running',
+  'attention': 'outline outline-1 outline-state-attention-mark',
+  'wait': 'outline outline-1 outline-state-unassigned',
+  'critical': 'outline outline-1 outline-state-unassigned',
+  'lease': 'outline outline-1 outline-state-lease'
 } %}
 {% set badge_classes = [
   'inline-flex', 'max-w-full', 'min-w-0', 'overflow-x-clip', '*:min-w-0', 'items-center', 'gap-inline-xs', 'h-5', 'px-inline',

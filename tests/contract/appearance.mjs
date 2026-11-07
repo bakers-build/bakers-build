@@ -114,7 +114,15 @@ for (const [mode, colors] of Object.entries(palette)) {
   for (const state of ['attention', 'running', 'unassigned', 'lease', 'offline']) check(`state-${state}-ink`, `state-${state}-tint`, 4.5)
   for (const bg of ['state-attention', 'state-review', 'state-done', 'avatar-a', 'avatar-b', 'avatar-c', 'avatar-d']) check('state-ink', bg, 4.5)
   const marks = ['control-border', 'focus-ring', 'state-attention-mark', 'state-running', 'state-unassigned', ...'abcdef'.split('').map(s => `chart-series-${s}`)]
-  for (const mark of marks) for (const bg of ['surface', 'surface-2']) check(mark, bg, 3)
+  for (const mark of [...marks, 'state-lease']) for (const bg of ['surface', 'surface-2']) check(mark, bg, 3)
+  // Badge rings and message borders sit on their own tint.
+  for (const [mark, tint] of [['state-attention-mark', 'attention'], ['state-running', 'running'], ['state-unassigned', 'unassigned'], ['state-lease', 'lease']]) check(mark, `state-${tint}-tint`, 3)
+}
+
+// A state edge is drawn opaque: a translucent state border or outline falls below 3:1.
+for (const path of files(themeDir).filter(path => /\.twig$/.test(path))) {
+  const hit = readFileSync(path, 'utf8').match(/(border|outline|ring)-state-[a-z-]+\/\d+|(border|outline)-\[color-mix\([^\]]*--color-state-/)
+  assert.ok(!hit, `${path.slice(themeDir.length)} draws a translucent state edge: ${hit?.[0]}`)
 }
 
 // Wordmark: the <img> follows the page's color-scheme, so its text needs a dark-scheme fill.
