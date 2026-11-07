@@ -12,6 +12,7 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\Core\Entity\Sql\SqlEntityStorageInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\bb_core\Entity\BbVocabulary;
 use Drupal\bb_core\ListBuilder\BbLabelListBuilder;
@@ -337,8 +338,9 @@ final class EntitySchemaTest extends KernelTestBase {
     // A run's `log` write-through resolves a workspace via
     // ticket -> project -> group -> workspace (WorkspaceResolver), so this
     // ticket needs the full chain rather than the bare ticket other cases use.
+    $this->setSetting('feature_flags', [RunLogPolicy::FLAG => TRUE]);
     $workspace = $etm->getStorage('bb_workspace')
-      ->create(['name' => 'GL-200 workspace', 'slug' => 'gl-200-workspace']);
+      ->create(['name' => 'GL-200 workspace', 'slug' => 'gl-200-workspace', RunLogPolicy::WORKSPACE_FIELD => TRUE]);
     $workspace->save();
     $group = $etm->getStorage('bb_group')
       ->create(['name' => 'GL-200 group', 'workspace_id' => $workspace->id()]);

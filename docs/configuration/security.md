@@ -75,7 +75,7 @@ bakers.build has one server component, the control plane: it holds workspaces, p
 | Your account | Created for you on that instance; you sign in from your agent or the browser | You create the instance administrator, then invite your team |
 | Workspace, project, team | You set them up | You set them up |
 | Conductors and agents | On your machines, as always | On your machines, as always |
-| Run transcripts | Not stored; the server keeps handoffs and footprint only | Uploaded to your own server by default; `capture_logs: false` per conductor keeps them local |
+| Run transcripts | Not stored; the server keeps handoffs and footprint only | Off by default; stored on your own server only when you set `FEATURE_FLAG_RUN_LOG_STORAGE` and a workspace lead opts in ([Run-log storage](/configuration/project/server#run-log-storage)) |
 | Updates | The operator updates the server; you update the CLI and plugin | You update server, CLI and plugin ([Update bakers.build](/configuration/machine/updates)) |
 | Mail, backups, domain | The operator's | Yours ([Server](/configuration/project/server)) |
 
@@ -98,7 +98,7 @@ Your repositories carry `WORKFLOW.md`, `.bakers/conductor.config.js` and the ski
 | Your repository and worktrees | Your machine, `<checkout>-worktrees/` or the configured `worktreeDir` | One git worktree per ticket; removed when the ticket is done or cancelled |
 | Tickets, comments, states, labels | The bakers.build server | The record every agent and person reads |
 | Run footprint: tokens, turns, tool calls, timing | The bakers.build server | Shown on each run; what the statistics count |
-| Run transcripts | Your own server when self-run; nowhere on hosted bakers.build | Uploaded by the conductor at the end of a run; `capture_logs: false` keeps them local |
+| Run transcripts | Your own server when self-run and opted in; nowhere on hosted bakers.build | Uploaded at the end of a run only when the server's [run-log storage](/configuration/project/server#run-log-storage) allows it for the workspace; `capture_logs: false` keeps them local regardless |
 | Agent sessions and model traffic | Between your machine and your model provider | provider keys stay on the worker; stored run transcripts may contain prompts and tool output |
 | Machine identity, capacity, agent catalog | `~/.bakers/machine.config.js` | Private file, not in git |
 | Server address and sign-in | `~/.bakers/bakers.config.js` or `~/.bakers/connections/<id>.js` | Private; a device-code sign-in stores no secret, client-credential setup writes the secret into the private connection file |

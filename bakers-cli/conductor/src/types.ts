@@ -64,15 +64,13 @@ export interface ConductorSettings {
   poll_interval_ms: number;
   lease_seconds: number;
   /**
-   * Whether to upload the agent transcript at finalize. Default true.
+   * Local opt-out of transcript upload at finalize. Default true.
    *
-   * Turning it off keeps this conductor's runs out of the log store entirely —
-   * for a machine whose transcripts are large, uninteresting, or subject to a
-   * local policy. Metrics are unaffected: the footprint is derived from the
-   * agent's own session files in this process, never from the uploaded log.
-   *
-   * Client-side by design. It lets an operator opt out; it is not a policy the
-   * server enforces, so a conductor running an older build still uploads.
+   * The server's per-run policy (`FinalizableRun.runLogStorageAllowed`)
+   * decides first; `false` here keeps this conductor's transcripts local even
+   * where the server allows storage, and `true` cannot override a denial.
+   * Metrics are unaffected: the footprint is derived from the agent's own
+   * session files in this process, never from the uploaded log.
    */
   capture_logs?: boolean;
   /** Project shell commands, one per slot; run after the addon listeners. */

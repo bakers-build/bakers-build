@@ -89,9 +89,9 @@ export function renderCommittedConfig(inputs: {
 export default {
   bakers: { project: ${JSON.stringify(inputs.project)}${inputs.bakersWorkspace ? `, workspace: ${JSON.stringify(inputs.bakersWorkspace)}` : ''} },
   // The run budget (max_parallel) is set on the machine in the backend.
-  // Set to false to keep this conductor's transcripts out of the log store
-  // (e.g. large, uninteresting, or subject to a local policy). Default true;
-  // metrics are unaffected either way.
+  // Transcripts upload only where the server's run-log storage allows it.
+  // Set to false to keep this conductor's transcripts local even then.
+  // Metrics are unaffected either way.
   capture_logs: true,
 ${
   inputs.hooks?.after_create || inputs.hooks?.after_done

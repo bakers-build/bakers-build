@@ -246,6 +246,16 @@ Then('the workspace slug is unchanged', async () => {
   expect(storedField('workspace', 'slug')).toBe(world!.slug);
 });
 
+// The test stacks keep FEATURE_FLAG_RUN_LOG_STORAGE off, as SaaS does.
+Then('run-log storage is shown as unavailable without a checkbox', async ({ page }) => {
+  await expect(page.getByText('Unavailable: this deployment does not store agent transcripts.')).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: 'Store agent run logs' })).toHaveCount(0);
+});
+
+Then('the workspace run-log opt-in is stored as off', async () => {
+  expect(['', '0']).toContain(storedField('workspace', 'run_log_storage_enabled'));
+});
+
 // `novalidate` skips the browser's `required` check so the request reaches
 // Form API: the server must reject it, not the client.
 When('I submit the name empty past browser validation', async ({ page }) => {

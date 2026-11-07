@@ -478,6 +478,8 @@ services:
 
   Drupal\bb_core\RunLog\RunLogStore:
     autowire: true
+  Drupal\bb_core\RunLog\RunLogPolicy:
+    autowire: true
 
   Drupal\bb_core\Workflow\ReviewInvariantChecker:
     arguments: ['@current_user']

@@ -9,6 +9,7 @@ use Drupal\bb_core\Claim\TicketClaimService;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\user\UserInterface;
@@ -117,7 +118,7 @@ abstract class ClaimKernelTestBase extends KernelTestBase {
   private function createProject(string $name): int {
     $etm = $this->container->get('entity_type.manager');
     $workspace = $etm->getStorage('bb_workspace')
-      ->create(['name' => $name . ' workspace', 'slug' => 'ws-' . $name]);
+      ->create(['name' => $name . ' workspace', 'slug' => 'ws-' . $name, RunLogPolicy::WORKSPACE_FIELD => TRUE]);
     $workspace->save();
     $group = $etm->getStorage('bb_group')
       ->create(['name' => $name . ' group', 'workspace_id' => $workspace->id()]);

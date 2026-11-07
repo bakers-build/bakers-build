@@ -64,6 +64,8 @@ services:
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
+      # SaaS: run-log storage stays off; only docker/self-host.yml may enable it.
+      FEATURE_FLAG_RUN_LOG_STORAGE: "0"
     volumes:
       - public_files:/var/www/html/web/sites/default/files
       - private_files:/var/www/html/private-files
@@ -124,6 +126,8 @@ services:
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
+      # SaaS: run-log storage stays off; only docker/self-host.yml may enable it.
+      FEATURE_FLAG_RUN_LOG_STORAGE: "0"
       BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
       BB_OAUTH_GOOGLE_CLIENT_SECRET: ${BB_OAUTH_GOOGLE_CLIENT_SECRET:-}
     volumes:
@@ -171,6 +175,8 @@ services:
       DRUPAL_VERSION: "11"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
+      # SaaS: run-log storage stays off; only docker/self-host.yml may enable it.
+      FEATURE_FLAG_RUN_LOG_STORAGE: "0"
       # Outbound SMTP: settings.komodo.php reads these at runtime (getenv). The
       # values are per-stack Komodo variables declared in komodo/bakers.toml; the
       # stack .env carries them, but Drupal only sees them if the runtime
@@ -237,6 +243,8 @@ services:
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
+      # SaaS: run-log storage stays off; only docker/self-host.yml may enable it.
+      FEATURE_FLAG_RUN_LOG_STORAGE: "0"
       # Cron sends scheduled mail too, so it needs the same SMTP passthrough.
       MAIL_SMTP_DSN: ${MAIL_SMTP_DSN:-}
       MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-}
