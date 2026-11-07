@@ -253,8 +253,10 @@ parent_branch_for() {
   response="$(bakers tools tool_api__bakers_ticket_search --data "@${args}")" \
     || { rm -f "$args"; die "cannot resolve parent for $key"; }
   rm -f "$args"
+  # `bakers tools` may print [message, JSON text]; read the JSON part then.
   jq -r '
-    if (.tickets | type) != "array" or (.tickets | length) > 1 then
+    (if type == "array" then (last | fromjson) else . end)
+    | if (.tickets | type) != "array" or (.tickets | length) > 1 then
       error("ticket lookup did not return an unambiguous result")
     elif (.tickets | length) == 0 then ""
     elif (.tickets[0] | has("parent") | not) then error("ticket lookup does not report the parent")
