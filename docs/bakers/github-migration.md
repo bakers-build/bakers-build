@@ -59,13 +59,14 @@ also apply to later GitLab integrations. Existing GitLab customer connectors are
 
 ## Runner selection
 
-Jobs run on WarpBuild runners in two tiers. Each tier reads a repository variable and falls back
+Jobs run on WarpBuild runners in three tiers. Each tier reads a repository variable and falls back
 to its WarpBuild label when the variable is unset:
 
 | Tier | Variable | Default label | Jobs |
 |---|---|---|---|
 | checks | `RUNNER_CHECKS` | `warp-ubuntu-latest-x64-2x` | every `checks.yml` job except the after-merge jobs, including `required` and `report_failure` |
-| after-merge | `RUNNER_AFTER_MERGE` | `warp-ubuntu-latest-x64-4x` | `tui_musl`, `image_gate`, `release_rehearsal` in `checks.yml`; `release` in `release.yml`; `registry` and `transfer` in `registry-rehearsal.yml` |
+| image gate | `RUNNER_IMAGE_GATE` | `warp-ubuntu-latest-x64-16x` | `image_gate` in `checks.yml` (PHPUnit with 16 processes, Playwright with 8 workers) |
+| after-merge | `RUNNER_AFTER_MERGE` | `warp-ubuntu-latest-x64-4x` | `tui_musl`, `release_rehearsal` in `checks.yml`; `release` in `release.yml`; `registry` and `transfer` in `registry-rehearsal.yml` |
 
 The variable holds a JSON label or label array. To send a tier back to the self-hosted
 `github-runner-1` (Docker via dind, one job at a time), set its variable; deleting it returns the

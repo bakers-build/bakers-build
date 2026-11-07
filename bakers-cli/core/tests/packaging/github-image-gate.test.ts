@@ -19,7 +19,7 @@ function gate(failure = '', overrides: Record<string, string> = {}) {
   try {
     writeFileSync(
       join(dir, 'docker'),
-      '#!/bin/bash\nprintf "%s:%s\\n" "${COMPOSE_PROJECT_NAME:-images}" "$*" >> "$CALLS"\nif [[ -n "$FAIL_AT" && "$*" == *"$FAIL_AT"* ]]; then exit 9; fi\n',
+      '#!/bin/bash\nprintf "%s:%s%s\\n" "${COMPOSE_PROJECT_NAME:-images}" "${GATE_RUN_LOG_STORAGE:+run-log=$GATE_RUN_LOG_STORAGE }" "$*" >> "$CALLS"\nif [[ -n "$FAIL_AT" && "$*" == *"$FAIL_AT"* ]]; then exit 9; fi\n',
       { mode: 0o755 },
     );
     writeFileSync(join(dir, 'git'), '#!/bin/sh\necho 0123456789abcdef\n', {
@@ -76,7 +76,8 @@ describe('disposable image gate', () => {
     const result = gate();
     expect(result.status).toBe(0);
     expect(result.calls).toContain('run --name phpunit');
-    expect(result.calls).toContain('--processes 8');
+    expect(result.calls).toContain('--processes 16');
+    expect(result.calls).toContain('--workers=8');
     expect(
       result.calls.indexOf('github-recipe:compose run --rm install'),
     ).toBeLessThan(
@@ -100,10 +101,28 @@ describe('disposable image gate', () => {
       result.calls.indexOf('github-recipe:compose run --rm install'),
     );
   });
+  it('runs the browser suite with run-log storage off, then recreates php with it on for the conductor suite', () => {
+    const calls = gate().calls.split('\n');
+    const browser = calls.findIndex((c) =>
+      c.includes('compose run --name github-browser'),
+    );
+    const recreate = calls.findIndex((c) =>
+      c.includes('--force-recreate php nginx'),
+    );
+    const integration = calls.findIndex((c) =>
+      c.includes('compose run --name github-integration'),
+    );
+    expect(browser).toBeGreaterThan(-1);
+    expect(recreate).toBeGreaterThan(browser);
+    expect(integration).toBeGreaterThan(recreate);
+    expect(calls[recreate]).toContain('run-log=1 ');
+    expect(calls.filter((c) => c.includes('run-log='))).toHaveLength(1);
+  });
   it.each([
     'build --target php',
     'run --name phpunit',
     'compose run --name github-browser',
+    'compose run --name github-integration',
     'pm-bot-image.sh',
   ])('fails closed when %s fails', (failure) => {
     const result = gate(failure);
