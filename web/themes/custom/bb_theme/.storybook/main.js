@@ -14,6 +14,8 @@ const config = {
   ],
   addons: [
     '@storybook/addon-docs',
+    // Toolbar for the Designbook theme global (light, cozy, dark) that preview.js maps to data-mode.
+    '@storybook/addon-themes',
     { name: 'storybook-addon-designbook' },
     {
       name: 'storybook-addon-sdc',
