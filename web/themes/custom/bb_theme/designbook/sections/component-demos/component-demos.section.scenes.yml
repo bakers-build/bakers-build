@@ -402,7 +402,7 @@ scenes:
             - component: bb_theme:text
               props:
                 text: 'Install the bakers.build plugin first:'
-                size: caption
+                size: meta
                 tone: light
           panel_a:
             - component: bb_theme:setup_command
@@ -418,8 +418,8 @@ scenes:
             - component: bb_theme:setup_command
               props:
                 command: >-
-                  Use `bakers:bb-init` to guide me through installing and setting
-                  up bakers.build.
+                  Use `bakers:bb-init` to guide me through installing and
+                  setting up bakers.build.
                 label: Copy the skill wizard prompt
   - name: inline add row
     group: Layout

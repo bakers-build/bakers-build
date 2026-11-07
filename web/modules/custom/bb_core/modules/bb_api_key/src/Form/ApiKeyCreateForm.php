@@ -339,7 +339,7 @@ final class ApiKeyCreateForm extends WrappedDialogFormBase {
       '#component' => 'bb_theme:text',
       '#props' => [
         'text' => $text,
-        'size' => 'caption',
+        'size' => 'meta',
         'tone' => 'light',
       ],
       '#picker_region' => 'lines',

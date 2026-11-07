@@ -87,7 +87,7 @@ final class ServiceAccountMemberRoleOptionsTest extends KernelTestBase {
     $membership->save();
 
     $builder = new MemberItemBuilder(
-      $this->container->get('date.formatter'),
+      $this->container->get('bb_core.date'),
       $this->container->get('string_translation'),
       $this->container->get('module_handler'),
     );
@@ -117,7 +117,7 @@ final class ServiceAccountMemberRoleOptionsTest extends KernelTestBase {
     $membership->save();
 
     $builder = new MemberItemBuilder(
-      $this->container->get('date.formatter'),
+      $this->container->get('bb_core.date'),
       $this->container->get('string_translation'),
       $this->container->get('module_handler'),
     );
@@ -161,7 +161,7 @@ final class ServiceAccountMemberRoleOptionsTest extends KernelTestBase {
     $membership->save();
 
     $builder = new MemberItemBuilder(
-      $this->container->get('date.formatter'),
+      $this->container->get('bb_core.date'),
       $this->container->get('string_translation'),
       $this->container->get('module_handler'),
     );
@@ -354,7 +354,7 @@ final class ServiceAccountMemberRoleOptionsTest extends KernelTestBase {
    */
   private function builder(): MemberItemBuilder {
     return new MemberItemBuilder(
-      $this->container->get('date.formatter'),
+      $this->container->get('bb_core.date'),
       $this->container->get('string_translation'),
       $this->container->get('module_handler'),
     );

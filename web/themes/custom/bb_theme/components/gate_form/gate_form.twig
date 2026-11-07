@@ -4,10 +4,10 @@
    row, and a visible focus ring, because the input resets its outline. #}
 {% set centered = align|default('start') == 'center' %}
 <form{{ (attributes ?: create_attribute()).addClass([
-  'grid', 'gap-4', 'min-w-0', '*:min-w-0',
-  '[&_.form-actions]:flex', '[&_.form-actions]:flex-wrap', '[&_.form-actions]:items-center', '[&_.form-actions]:gap-3',
+  'grid', 'gap-group', 'min-w-0', '*:min-w-0',
+  '[&_.form-actions]:flex', '[&_.form-actions]:flex-wrap', '[&_.form-actions]:items-center', '[&_.form-actions]:gap-stack',
   '[&_:is(input,button,a):focus-visible]:outline-2', '[&_:is(input,button,a):focus-visible]:outline-solid',
-  '[&_:is(input,button,a):focus-visible]:outline-primary', '[&_:is(input,button,a):focus-visible]:outline-offset-3',
+  '[&_:is(input,button,a):focus-visible]:outline-focus-ring', '[&_:is(input,button,a):focus-visible]:outline-offset-2',
 ]|merge(centered ? ['text-center', '[&_.form-actions]:justify-center'] : [])) }}>
   {% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}
 </form>

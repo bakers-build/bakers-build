@@ -117,13 +117,13 @@
   {%- if multiple %} aria-multiselectable="true"{% endif %}
   {%- if name %} data-option-list="{{ name }}"{% endif %}>
   {%- if clearable %}
-  <li class="option-list__option option-list__option--clear flex items-center gap-[8px] px-[8px] py-[6px] rounded-xs cursor-pointer text-caption text-text-faint hover:bg-surface-3 hover:text-text"
+  <li class="option-list__option option-list__option--clear flex items-center gap-inline px-inline py-[6px] rounded-xs cursor-pointer text-body text-text-faint hover:bg-surface-3 hover:text-text"
     role="option"
     aria-selected="{{ clear_selected ? 'true' : 'false' }}"
     data-option-list-clear
     data-value="">
-    {%- if clear_url is not empty %}<a class="option-list__clear flex items-center gap-[8px] w-full text-inherit no-underline" href="{{ clear_url }}">{% endif %}
-    {%- if clear_input %}<label class="option-list__control flex items-center gap-2 w-full cursor-pointer">{% endif %}
+    {%- if clear_url is not empty %}<a class="option-list__clear flex items-center gap-inline w-full text-inherit no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ clear_url }}">{% endif %}
+    {%- if clear_input %}<label class="option-list__control flex items-center gap-inline w-full cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus-ring">{% endif %}
     <span class="option-list__text flex flex-col min-w-0 flex-1">
       <span class="option-list__label truncate">{{ clear }}</span>
     </span>
@@ -151,10 +151,10 @@
   {%- if bulk_on %}
   {#- Select all and Clear act on the rows a search left visible, set the checkbox and the row's
       selected state together, and report the change so the summary recounts. #}
-  <li class="flex items-center gap-3 px-2 pb-1" role="presentation">
-    <button type="button" class="p-0 bg-transparent border-0 text-caption text-primary cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring"
+  <li class="flex items-center gap-stack px-inline pb-inline-xs" role="presentation">
+    <button type="button" class="p-0 bg-transparent border-0 text-label text-primary cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
       @click="$el.closest('[role=listbox]').querySelectorAll('[role=option]:not([hidden]) input[type=checkbox]').forEach((i) => { i.checked = true; i.closest('[role=option]').setAttribute('aria-selected', 'true'); }); $dispatch('change')">Select all</button>
-    <button type="button" class="p-0 bg-transparent border-0 text-caption text-primary cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-focus-ring"
+    <button type="button" class="p-0 bg-transparent border-0 text-label text-primary cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
       @click="$el.closest('[role=listbox]').querySelectorAll('[role=option]:not([hidden]) input[type=checkbox]').forEach((i) => { i.checked = false; i.closest('[role=option]').setAttribute('aria-selected', 'false'); }); $dispatch('change')">Clear</button>
   </li>
   {%- endif %}
@@ -162,16 +162,16 @@
   {%- set previous_group = '' %}
   {%- for option in options|default([]) %}
   {%- if option.group and option.group != previous_group %}
-  <li class="px-2 pt-2 pb-1 text-eyebrow uppercase tracking-wide text-text-faint" role="presentation">{{ option.group }}</li>
+  <li class="px-inline pt-inline pb-inline-xs text-eyebrow uppercase text-text-faint" role="presentation">{{ option.group }}</li>
   {%- endif %}
   {%- set previous_group = option.group|default('') %}
-  <li class="option-list__option flex items-center gap-[8px] px-[8px] py-[6px] rounded-xs cursor-pointer text-caption text-text hover:bg-surface-3 aria-selected:text-text"
+  <li class="option-list__option flex items-center gap-inline px-inline py-[6px] rounded-xs cursor-pointer text-body text-text hover:bg-surface-3 aria-selected:text-text"
     role="option"
     aria-selected="{{ option.selected ? 'true' : 'false' }}"
     data-value="{{ option.value }}">
     {%- if trigger %}<button type="submit" name="{{ submit_name }}" value="{{ option.value }}" formnovalidate
-      class="option-list__submit flex items-center gap-[8px] w-full p-0 bg-transparent border-0 font-inherit text-caption text-inherit text-left cursor-pointer">{% endif %}
-    {%- if control %}<label class="option-list__control flex items-center gap-[8px] w-full cursor-pointer">{% endif %}
+      class="option-list__submit flex items-center gap-inline w-full p-0 bg-transparent border-0 font-inherit text-body text-inherit text-left cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{% endif %}
+    {%- if control %}<label class="option-list__control flex items-center gap-inline w-full cursor-pointer has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-focus-ring">{% endif %}
     {%- if option.initials %}
     {{- include('bb_theme:person', {
       attributes: create_attribute({'aria-hidden': 'true'}),
@@ -184,9 +184,9 @@
     {%- endif %}
     <span class="option-list__text flex flex-col min-w-0 flex-1">
       <span class="option-list__label truncate">{{ option.label }}</span>
-      {%- if option.description %}<span class="option-list__description text-eyebrow text-text-faint">{{ option.description }}</span>{% endif %}
+      {%- if option.description %}<span class="option-list__description text-meta text-text-faint">{{ option.description }}</span>{% endif %}
     </span>
-    {%- if option.count is defined and option.count is not same as(null) %}<span class="shrink-0 text-caption tabular-nums text-text-light">{{ option.count }}</span>{% endif %}
+    {%- if option.count is defined and option.count is not same as(null) %}<span class="shrink-0 text-meta tabular-nums text-text-light">{{ option.count }}</span>{% endif %}
     {%- if control %}
     <input type="{{ control_type }}" name="{{ control_name }}" value="{{ option.value }}"
       class="option-list__input sr-only peer"{% if option.selected %} checked{% endif %} />
@@ -229,9 +229,9 @@
       the ticket that gives these pickers an endpoint. The label below is the no-JavaScript form — a
       plain invitation — and the handler rewrites it to reflect the typed query. #}
   {%- if creatable %}
-  <li class="option-list__create-row mt-[4px] pt-[4px] border-t border-border-2" role="presentation">
+  <li class="option-list__create-row mt-inline-xs pt-inline-xs border-t border-border-2" role="presentation">
     <button type="button"
-      class="option-list__create flex w-full items-center gap-[8px] px-[8px] py-[6px] rounded-xs bg-transparent border-0 text-caption text-primary text-left cursor-pointer hover:bg-surface-3"
+      class="option-list__create flex w-full items-center gap-inline px-inline py-[6px] rounded-xs bg-transparent border-0 text-body text-primary text-left cursor-pointer hover:bg-surface-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
       data-option-list-create
       data-create-noun="{{ create_label|default('item') }}">
       <span class="option-list__create-label truncate">+ New {{ create_label|default('item') }}</span>
@@ -240,9 +240,9 @@
   {%- endif %}
   {%- if summary_on or (apply_label and control) %}
   {#- Pinned to the bottom of a scrolling panel, so the count stays visible however long the list is. #}
-  <li class="sticky bottom-0 flex items-center gap-3 mt-1 pt-2 px-2 border-t border-border-2 bg-surface-2" role="presentation">
+  <li class="sticky bottom-0 flex items-center gap-stack mt-inline-xs pt-inline px-inline border-t border-border-2 bg-surface-2" role="presentation">
     {%- if summary_on %}
-    <span class="flex-1 text-caption text-text-light" x-text="count + ' of {{ option_total }} selected'">{{ selected_count }} of {{ option_total }} selected</span>
+    <span class="flex-1 text-meta text-text-light" x-text="count + ' of {{ option_total }} selected'">{{ selected_count }} of {{ option_total }} selected</span>
     {%- endif %}
     {%- if apply_label and control and auto_apply|default(false) %}
     {#- The enclosing form applies every change itself once scripting runs, so Apply is only for a

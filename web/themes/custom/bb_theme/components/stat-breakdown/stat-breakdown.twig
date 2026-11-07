@@ -6,11 +6,11 @@
 
    An empty breakdown renders `empty-state`, not an empty table: on a figure block an absent
    number and a broken one look identical, and only a sentence tells them apart. #}
-{% set block_classes = ['min-w-0', 'flex', 'flex-col', 'gap-5', 'py-4'] %}
+{% set block_classes = ['min-w-0', 'flex', 'flex-col', 'gap-5', 'py-group'] %}
 <section{{ (attributes ?: create_attribute()).addClass(block_classes) }}>
-  <div class="flex flex-col gap-1">
-    <h2 class="m-0 text-section font-semibold text-title">{{ label }}</h2>
-    {% if caption %}<p class="m-0 text-caption text-text-light">{{ caption }}</p>{% endif %}
+  <div class="flex flex-col gap-inline-xs">
+    <h2 class="m-0 text-section-title text-title">{{ label }}</h2>
+    {% if caption %}<p class="m-0 text-meta text-text-light">{{ caption }}</p>{% endif %}
   </div>
   {% if entries is empty %}
     {{ include('bb_theme:empty-state', {
@@ -21,21 +21,21 @@
     {# Parts of one total: value and share label in text, the share also as a bar. The bar is an SVG
        rect sized by its width attribute, so no inline style and no arbitrary utility carries the
        number, and the share label says it in text for anyone who cannot see the bar. #}
-    <ul class="m-0 p-0 list-none flex flex-col gap-3">
+    <ul class="m-0 p-0 list-none flex flex-col gap-stack">
       {% for row in entries %}
-        <li class="flex flex-col gap-1">
-          <span class="flex items-baseline gap-2">
+        <li class="flex flex-col gap-inline-xs">
+          <span class="flex items-baseline gap-inline">
             <span class="flex-1 min-w-0 truncate text-body text-text">{{ row.label }}</span>
             {% if row.exact %}
               {% set tip_id = 'stat-breakdown-' ~ random(1000000) %}
               <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
                 <span tabindex="0" aria-describedby="{{ tip_id }}" class="text-body tabular-nums text-text rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ row.value }}</span>
-                <span id="{{ tip_id }}" role="tooltip" class="absolute right-0 top-full z-10 mt-1 w-max max-w-prose rounded-xs bg-text px-2 py-1 text-caption font-normal text-surface opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ row.exact }}</span>
+                <span id="{{ tip_id }}" role="tooltip" class="absolute right-0 top-full z-10 mt-inline-xs w-max max-w-prose rounded-xs bg-text px-inline py-inline-xs text-meta text-surface opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ row.exact }}</span>
               </span>
             {% else %}
               <span class="text-body tabular-nums text-text">{{ row.value }}</span>
             {% endif %}
-            <span class="text-caption tabular-nums text-text-light">{{ row.share_label }}</span>
+            <span class="text-meta tabular-nums text-text-light">{{ row.share_label }}</span>
           </span>
           <svg class="block h-1.5 w-2/3" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true" focusable="false">
             <rect width="{{ row.share|default(0) }}" height="6" rx="3" class="fill-chart-series-a"></rect>
@@ -70,9 +70,9 @@
     }, with_context = false) }}
   {% endif %}
   {% if source %}
-    <details class="text-caption text-text-light">
+    <details class="text-meta text-text-light">
       <summary class="w-fit cursor-pointer rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">Data source</summary>
-      <code class="block pt-2 text-caption break-all">{{ source }}</code>
+      <code class="block pt-inline font-mono text-data break-all">{{ source }}</code>
     </details>
   {% endif %}
 </section>

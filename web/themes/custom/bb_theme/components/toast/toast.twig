@@ -5,7 +5,7 @@
    `[data-form-autosave-status][hidden]` rule in css/app.src.css keeps a hidden
    fixed node off the screen. #}
 <div{{ (attributes ?: create_attribute()).setAttribute('role', 'status').addClass([
-    'fixed', 'bottom-4', 'right-4', 'z-50', 'px-3', 'py-2', 'rounded-sm',
+    'fixed', 'bottom-4', 'right-4', 'z-50', 'px-stack', 'py-inline', 'rounded-sm',
     'bg-state-running-tint', 'border', 'border-state-running',
-    'text-caption', 'text-state-running-ink', 'shadow-shadow-1',
+    'text-body', 'text-state-running-ink', 'shadow-shadow-1',
   ]) }}{% if not message %} hidden{% endif %}>{{ message }}</div>

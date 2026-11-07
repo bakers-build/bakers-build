@@ -278,6 +278,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     self::assertStringContainsString('Ship the Overview tab', $html);
     self::assertStringContainsString('href="' . $href . '"', $html);
     self::assertStringContainsString('cursor-pointer', $html);
+    self::assertMatchesRegularExpression('#<time [^>]*datetime="\d{4}-\d{2}-\d{2}T[^"]+"[^>]*title="[^"]+"#', $html, 'The created time is a time element with its exact instant.');
     self::assertStringContainsString('Properties', $html);
     self::assertStringNotContainsString('Still open', $html);
     self::assertStringNotContainsString('No epics in this project.', $html);

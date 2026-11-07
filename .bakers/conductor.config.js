@@ -53,23 +53,27 @@ export default {
   // TOP LEVEL, not on a plugin descriptor. after_create: env setup on worktree
   // create. before_run: install pnpm dependencies before every run, outside
   // the agent sandbox, which cannot take pnpm's store lock. after_done: reclaim
-  // the worktree's DDEV project (containers + db) once its ticket is done,
-  // before the conductor tears the worktree down.
+  // the worktree's docs preview and DDEV project (containers + db) once its
+  // ticket is done, before the conductor tears the worktree down; `;` so the
+  // DDEV cleanup runs whatever the preview stop returns.
   //
   // The project bootstrap validates env before its sentinel, then prepares the
   // local test workspace. It starts no DDEV; hook failures remain best-effort.
   hooks: {
     after_create: 'bash .ddev/worktree-post.sh',
     before_run: 'bash scripts/worktree-deps.sh',
-    after_done: 'ddev delete -Oy',
+    after_done: 'bash scripts/docs-preview.sh stop; ddev delete -Oy',
     // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
     // a trusted `ddev` nor `pnpm install`. Every profile installs the
-    // bakers-cli and website dependencies first; `deps` does only that.
+    // bakers-cli and docs dependencies first; `deps` does only that.
     // bb_theme is installed and built by `ddev init` inside DDEV.
     // `ddev provision` reuses a ready site of that provider;
-    // `existing-config-fresh` always reinstalls.
+    // `existing-config-fresh` always reinstalls. `docs-preview` builds docs/
+    // and serves it detached outside the sandbox, so the ports addon's `docs`
+    // service claims it for `ports_up docs`; a repeat call replaces it.
     provision_up: {
       deps: 'bash scripts/worktree-deps.sh --all',
+      'docs-preview': 'bash scripts/worktree-deps.sh --all && bash scripts/docs-preview.sh',
       'recipe-test': 'bash scripts/worktree-deps.sh && ddev provision --provider recipe-test',
       'existing-config': 'bash scripts/worktree-deps.sh && ddev provision --provider existing-config',
       'existing-config-fresh': 'bash scripts/worktree-deps.sh && ddev init --provider existing-config',

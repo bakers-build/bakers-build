@@ -1,0 +1,14 @@
+component: bb_theme:board-card
+name: Done
+props:
+  identifier: GL-131
+  title: Ship the Overview tab
+  status: idle
+  done_label: 3 days ago
+  done_datetime: '2026-06-12T13:30:00+00:00'
+  done_title: Fri, 12 Jun 2026, 13:30 UTC
+  mr_url: https://git.example.com/acme/app/-/merge_requests/7
+  mr_label: MR !7
+  assignee_name: Mara Kühn
+  assignee_initials: MK
+  assignee_color: running

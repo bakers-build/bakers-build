@@ -1165,15 +1165,15 @@ final class TicketDetailScreenTest extends KernelTestBase {
       $this->badgeLabelsIn($html),
       'Newest run first, each with its state badge and its conductor.',
     );
+    preg_match_all('#<time[^>]* datetime="([^"]+)"#', $html, $starts);
     self::assertSame(
-      [
-        'working', '2026-02-03 03:40',
-        'plan', '2026-02-02 03:40',
-        'qualification', '2026-02-02 02:40', '18s',
-      ],
-      $this->monoValuesIn($html),
-      'The from-state, the start to the MINUTE, and the duration where there is one.',
+      ['2026-02-03T03:40:00+00:00', '2026-02-02T03:40:00+00:00', '2026-02-02T02:40:00+00:00'],
+      $starts[1],
+      'Each run row states its start as a time element, newest first.',
     );
+    foreach (['working', 'plan', 'qualification', '18s'] as $value) {
+      self::assertMatchesRegularExpression('#>' . $value . '</span>#', $html, sprintf('The row shows %s.', $value));
+    }
     // The two faint words that make the row a sentence rather than a strip of
     // values. Both are the mapping's, and both are cells rather than prose.
     self::assertStringContainsString('>from</span>', $html);
@@ -1672,7 +1672,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
    *
    * Sliced rather than searched whole, because the inspector rail is made of
    * the same `list` component with the same cell macro: an unsliced
-   * `monoValuesIn()` picks up the rail's branch and base-branch rows and an
+   * value scan picks up the rail's branch and base-branch rows and an
    * unsliced badge scan picks up its provenance badge. Slicing is also what
    * makes the value ORDER meaningful — inside the zone it is the mapping's
    * order, across the page it is the canvas's.
@@ -1693,20 +1693,6 @@ final class TicketDetailScreenTest extends KernelTestBase {
    */
   private function badgeLabelsIn(string $html): array {
     preg_match_all('#<span data-badge-label>([^<]*)</span>#', $html, $matches);
-    return $matches[1];
-  }
-
-  /**
-   * The visible text of every `mono` CELL in a render, in document order.
-   *
-   * The class list is the `cell()` macro's own, so this reads the cells the
-   * mapping declared `mono` and nothing else.
-   *
-   * @return array<int, string>
-   *   The monospaced values.
-   */
-  private function monoValuesIn(string $html): array {
-    preg_match_all('#<span class="font-mono text-mono text-text-light">([^<]*)</span>#', $html, $matches);
     return $matches[1];
   }
 

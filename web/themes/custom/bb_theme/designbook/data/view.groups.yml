@@ -1,0 +1,15 @@
+- id: groups
+  items_per_page: 50
+  rows:
+    - type: entity
+      entity_type: bb_group
+      bundle: bb_group
+      view_mode: default
+      record: 0
+    - type: entity
+      entity_type: bb_group
+      bundle: bb_group
+      view_mode: default
+      record: 2
+  __designbook:
+    section: projects

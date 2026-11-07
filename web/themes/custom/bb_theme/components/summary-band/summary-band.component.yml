@@ -1,28 +1,56 @@
-$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
 name: Summary Band
 status: stable
 group: Data Display
-description: 'A full-width band above a two-column layout, answering three questions in one glance: where does this stand, what was done, and what evidence is there. THREE SLOTS and nothing else — a `flow` in the header strip, a `summary` beneath it, and the `links` below that.
+description: >-
+  A full-width band above a two-column layout, answering three questions in one
+  glance: where does this stand, what was done, and what evidence is there.
+  THREE SLOTS and nothing else — a `flow` in the header strip, a `summary`
+  beneath it, and the `links` below that.
 
 
-  THE THREE QUESTIONS ARE THE CONTRACT, which is why there are three slots and not four. It carried a fourth, `actions`, declared for a transition control that had been removed at a review gate and never refilled; measured across every scene that composes this band, all three fill `flow`, `summary` and `links` and NONE fills `actions`. A slot no caller fills is not a shape held open for later — it is a region every future reader has to account for, and re-adding one is a line of YAML at the moment somebody actually has a band action to place.
+  THE THREE QUESTIONS ARE THE CONTRACT, which is why there are three slots and
+  not four. It carried a fourth, `actions`, declared for a transition control
+  that had been removed at a review gate and never refilled; measured across
+  every scene that composes this band, all three fill `flow`, `summary` and
+  `links` and NONE fills `actions`. A slot no caller fills is not a shape held
+  open for later — it is a region every future reader has to account for, and
+  re-adding one is a line of YAML at the moment somebody actually has a band
+  action to place.
 
 
-  THE LINKS SIT BELOW THE SUMMARY, NOT BESIDE IT (C21). The first iteration put them in a second column of the body row, and the human read that as two things competing for the one glance the band exists to serve. Stacked, the band reads top to bottom in the order the questions are asked, and with the full width the link groups lay out as one wrapping row of groups instead of a narrow gutter that wraps every label.
+  THE LINKS SIT BELOW THE SUMMARY, NOT BESIDE IT (C21). The first iteration put
+  them in a second column of the body row, and the human read that as two things
+  competing for the one glance the band exists to serve. Stacked, the band reads
+  top to bottom in the order the questions are asked, and with the full width
+  the link groups lay out as one wrapping row of groups instead of a narrow
+  gutter that wraps every label.
 
 
-  IT KNOWS NOTHING ABOUT WHAT IT SUMMARISES. It used to be named for one screen and its slots described that screen''s fields; the questions it answers are asked of a release, a run and a deployment in the same words, and every one of them has a state to show, a summary to read and evidence to open. Each region renders only when its slot is filled, so a caller with two of the three gets a band of two.'
+  IT KNOWS NOTHING ABOUT WHAT IT SUMMARISES. It used to be named for one screen
+  and its slots described that screen's fields; the questions it answers are
+  asked of a release, a run and a deployment in the same words, and every one of
+  them has a state to show, a summary to read and evidence to open. Each region
+  renders only when its slot is filled, so a caller with two of the three gets a
+  band of two.
 provider: bb_theme
 slots:
   flow:
     title: Flow
-    description: Where the subject stands — an ordered chain with a current link. Renders left in the header strip.
+    description: >-
+      Where the subject stands — an ordered chain with a current link. Renders
+      left in the header strip.
   summary:
     title: Summary
-    description: What was done, as one timeline entry rather than a component of this band's own. Renders beneath the header strip.
+    description: >-
+      What was done, as one timeline entry rather than a component of this
+      band's own. Renders beneath the header strip.
   links:
     title: Links
-    description: The evidence — what was tested and how a reader can test it. Rendered BELOW the summary as one wrapping row of groups, never beside it.
+    description: >-
+      The evidence — what was tested and how a reader can test it. Rendered
+      BELOW the summary as one wrapping row of groups, never beside it.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

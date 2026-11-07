@@ -26,6 +26,15 @@ Feature: Create dialogs share dismissal and submission behavior
       | ticket  |
       | project |
 
+  Scenario Outline: A create dialog opens with focus in its first field
+    When I open the "<surface>" create dialog
+    Then focus is in the first field of the "<surface>" create dialog
+
+    Examples:
+      | surface |
+      | ticket  |
+      | project |
+
   # AC6's third consequence: where the action row renders, and the mechanism
   # that lets it render there at all.
   #

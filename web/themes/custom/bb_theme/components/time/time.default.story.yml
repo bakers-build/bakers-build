@@ -1,0 +1,6 @@
+component: bb_theme:time
+name: Relative
+props:
+  label: 2 hours ago
+  datetime: '2026-06-22T10:00:00+00:00'
+  title: Mon, 22 Jun 2026, 10:00 UTC

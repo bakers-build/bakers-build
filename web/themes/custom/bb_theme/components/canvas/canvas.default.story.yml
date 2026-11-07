@@ -19,7 +19,9 @@ slots:
         content:
           - type: element
             tag: p
-            value: The main region carries the screen's route-bearing content — the entity, the view's rows, the board.
+            value: >-
+              The main region carries the screen's route-bearing content — the
+              entity, the view's rows, the board.
             attributes:
               class: text-text-light text-[13px]
   inspector:

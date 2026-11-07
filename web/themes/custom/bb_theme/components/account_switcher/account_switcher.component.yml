@@ -11,8 +11,8 @@ description: >-
   renders as a plain, non-interactive label with no chevron and no panel, the
   same way the signed-in account never was a switcher. The account is NOT
   rendered by this component: it sits at the rail foot, in the sidebar's
-  `actions` slot, as a plain `bb_theme:person` avatar. Collapsed this reduces
-  to the mark alone, so the 56px rail keeps it reachable.
+  `actions` slot, as a plain `bb_theme:person` avatar. Collapsed this reduces to
+  the mark alone, so the 56px rail keeps it reachable.
 provider: bb_theme
 props:
   type: object
