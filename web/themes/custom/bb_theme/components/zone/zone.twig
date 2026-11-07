@@ -62,14 +62,18 @@
    SPACING IS THE TOKEN SCALE (D16). `inset` and `gap` resolve to `space-*` and
    nothing else — no arbitrary pixel value appears in this template.
 
+   `inset` PADS VERTICALLY ONLY. The horizontal edge belongs to the `canvas` /
+   `page_header` (`px-group`, `xl:px-gutter`) or to the `surface_card` a carded
+   zone sits in, so a zone never adds a second left edge inside them.
+
    Both the heading and the actions are CAPTURED before they are tested, so a
    slot filled through a `{% block %}` override still renders its wrapper: a
    wrapper written inside the block would be replaced wholesale by the fill. #}
 {% set inset_map = {
   'none': '',
-  'sm': 'p-stack',
-  'md': 'p-group',
-  'lg': 'p-gutter',
+  'sm': 'py-stack',
+  'md': 'py-group',
+  'lg': 'py-gutter',
 } %}
 {% set gap_map = {
   'none': 'gap-0',

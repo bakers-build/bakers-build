@@ -9,6 +9,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Render\EntityFormSurface;
 use Drupal\bb_core\Statistics\FigureRenderer;
 use Drupal\bb_core\Statistics\InsightsPage;
 use Drupal\bb_core\Statistics\MyWorkStatsPage;
@@ -49,11 +50,11 @@ final class BbStatsController extends ControllerBase {
     if (array_filter($filters, static fn($value): bool => !is_scalar($value)) !== []) {
       throw new BadRequestHttpException('Statistics filters must have scalar values.');
     }
-    return [
+    return EntityFormSurface::wrap([
       '#type' => 'container',
       '#attributes' => [self::BODY_ATTRIBUTE => 'stats'],
       'content' => $this->renderer->build($this->contextsOf($route_match), $this->currentUser(), array_map('strval', $filters)),
-    ];
+    ]);
   }
 
   /**
@@ -64,7 +65,7 @@ final class BbStatsController extends ControllerBase {
     if (!$workspace instanceof BbWorkspaceInterface) {
       throw new NotFoundHttpException('No workspace in the current route.');
     }
-    return $this->insightsPage->build($workspace, $this->currentUser(), $request);
+    return EntityFormSurface::wrap($this->insightsPage->build($workspace, $this->currentUser(), $request));
   }
 
   /**
@@ -75,7 +76,7 @@ final class BbStatsController extends ControllerBase {
     if (!$project instanceof BbProjectInterface) {
       throw new NotFoundHttpException('No project in the current route.');
     }
-    return $this->insightsPage->build($project, $this->currentUser(), $request);
+    return EntityFormSurface::wrap($this->insightsPage->build($project, $this->currentUser(), $request));
   }
 
   /**
@@ -86,7 +87,7 @@ final class BbStatsController extends ControllerBase {
     if (!$workspace instanceof BbWorkspaceInterface) {
       throw new NotFoundHttpException('No workspace in the current route.');
     }
-    return $this->myWorkPage->build($workspace, $this->currentUser(), $request);
+    return EntityFormSurface::wrap($this->myWorkPage->build($workspace, $this->currentUser(), $request));
   }
 
   /**

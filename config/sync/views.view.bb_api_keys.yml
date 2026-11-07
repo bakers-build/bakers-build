@@ -438,21 +438,32 @@ display:
               source_id: component
               source:
                 component:
-                  component_id: 'bb_theme:zone'
+                  component_id: 'bb_theme:canvas'
                   variant_id: null
                   props: {  }
                   slots:
-                    content:
+                    main:
                       sources:
                         -
-                          source_id: view_rows
-                          source: {  }
-                          node_id: bb_api_keys_rows
-                        -
-                          source_id: view_pager
-                          source: {  }
-                          node_id: bb_api_keys_pager
-              node_id: bb_api_keys_zone
+                          source_id: component
+                          source:
+                            component:
+                              component_id: 'bb_theme:zone'
+                              variant_id: null
+                              props: {  }
+                              slots:
+                                content:
+                                  sources:
+                                    -
+                                      source_id: view_rows
+                                      source: {  }
+                                      node_id: bb_api_keys_rows
+                                    -
+                                      source_id: view_pager
+                                      source: {  }
+                                      node_id: bb_api_keys_pager
+                          node_id: bb_api_keys_zone
+              node_id: bb_api_keys_page_canvas
       path: user/%user/api-keys
     cache_metadata:
       max-age: 0

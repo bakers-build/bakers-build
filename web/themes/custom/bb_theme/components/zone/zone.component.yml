@@ -76,14 +76,12 @@ props:
         - lg
       title: Inset
       description: >-
-        Padding on BOTH axes, from one scale: `none` = 0, `sm` = 12px, `md` =
-        20px (the default), `lg` = 24px at default density, and 18px, 30px and
-        36px under cozy (Tailwind's `p-3`/`p-5`/`p-6`, which scale with the
-        density's `--spacing`). One property and one scale on purpose: `section`
-        shipped `padding_x` and `padding_y` whose shared vocabulary resolved to
-        different sizes per axis, and sixteen scenes then corrected its default
-        by hand (F6, F7). The default is the value those sixteen corrections
-        were reaching for, so a zone that says nothing is already right.
+        Padding on the VERTICAL axis only, from the spacing roles: `none` = 0,
+        `sm` = `py-stack`, `md` = `py-group` (the default), `lg` = `py-gutter`.
+        A zone never pads its left or right edge: the horizontal edge belongs to
+        the `canvas` / `page_header` (`px-group`, `xl:px-gutter`), or to the
+        `surface_card` a carded zone sits in (it has its own `p-group`), so a
+        zone never adds a second left edge inside them.
     gap:
       type: string
       enum:

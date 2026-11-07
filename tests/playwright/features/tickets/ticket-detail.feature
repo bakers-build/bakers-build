@@ -34,11 +34,12 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     Given I visit the team "Platform Crew"
     Then a tab row is present
 
-  # The team Stats tab carries no canvas at all, so "exactly one" cannot be
-  # an accident of a selector that matches nothing anywhere.
+  # The workspace chooser is a gate screen and carries no canvas at all, so
+  # "exactly one" cannot be an accident of a selector that matches nothing
+  # anywhere.
   @negative-control
   Scenario: The canvas detector really does see the absence of a canvas
-    Given I visit the team "Platform Crew" tab "Stats"
+    When I open the workspace chooser route
     Then no canvas is present in the document
 
   @shell
