@@ -16,6 +16,14 @@ Keep credentials and `.bakers/*.local.js` out of Git. JavaScript composition is 
 bakers config check --scope all --online
 ```
 
-The report validates files and resolvable addons; it does not prove that a harness is installed/authenticated or that an application is ready. See [Agents](/agents/), [Security](/security/) and [Provision](/provision/) for behavior and runtime checks.
+The report validates files and resolvable addons; it does not prove that a harness is installed/authenticated or that an application is ready. See [Agents](/agents/), [Security](/provision/security/) and [Provision](/provision/) for behavior and runtime checks.
 
-[Updates](/configuration/machine/updates) covers existing CLI/plugin installations. [Self-hosting](/self-hosting/) owns application-server updates. For a new installation, begin with [Get started](/get-started/).
+## Installation and updates
+
+Choose the guide for the part you need to set up or update.
+
+<DocQuickLinks aria-label="Installation and updates" :items="[
+  { label: 'Update bakers.build', text: 'Update an existing CLI installation, skills and configuration.', link: '/configuration/machine/updates' },
+  { label: 'Self-hosting', text: 'Install or update an application server you operate.', link: '/self-hosting/' },
+  { label: 'Get started', text: 'Prepare a new project or begin working with tickets.', link: '/get-started/' }
+]" />

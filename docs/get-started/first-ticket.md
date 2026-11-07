@@ -1,24 +1,29 @@
+---
+prev:
+  text: Prepare your project
+  link: /get-started/connect-a-project
+next:
+  text: Follow a ticket
+  link: /get-started/daily-work/follow-a-ticket
+---
+
 # Run the first ticket
 
-**You need:** a [connected project](/get-started/connect-a-project), its selected connection, a ready client and an authenticated agent harness. If a team conductor runs tickets, you can follow its results without starting a local worker.
+Run a small task from your [prepared project](/get-started/connect-a-project) and read its first result. This guide runs the agent on your computer.
 
-## AI first: guide the first run
+<span id="choose-where-the-work-runs"></span>
+<span id="use-the-team-setup"></span>
 
-```text
-Check this project's configured TUI, agent skills, environment readiness
-and conductor. Explain what is missing; reuse working settings. Help me
-start the conductor, then use bb-create-ticket for a small documentation
-task with checkable criteria. Confirm scope, workflow and assignment
-before creating it. Show me the first run and summary.
-```
+::: tip Your team already runs tickets?
+Use the team's entry in the ticket's **Conductor** field and skip to [Create and follow](#create-and-follow). Your team handles startup.
+:::
 
-## What happens in the background
+<span id="start-the-conductor"></span>
+<span id="start-your-local-setup"></span>
 
-The conductor selects the configured agent and skills, opens a ticket worktree in the chosen client, and invokes project hooks. The agent follows `WORKFLOW.md`, checks environment readiness and records a summary. Approval gates still apply. The steps below show the manual equivalent.
+## Start your agents
 
-## Start the conductor
-
-From the checkout, with the chosen [herdr or Orca client](/configuration/clients) running:
+In your local checkout, keep the signed-in agent and the project's configured [herdr or Orca client](/configuration/clients) running. Start ticket execution:
 
 ```sh
 bakers agents
@@ -27,31 +32,33 @@ bakers oven start
 bakers oven status
 ```
 
-The agent catalog must contain the intended harness; narrow the [machine's agents](/agents/guide) to those installed and authenticated. Status must show your conductor **online**. Keep its configured identity distinct from other workers. [Conductors](/configuration/project/conductors) explains scheduling and served states.
+The catalog must contain an installed, authenticated agent and status must show your setup **online**. If checks fail, use [Troubleshooting](/configuration/clients/troubleshooting) before creating the ticket.
+
+<span id="ai-first-guide-the-first-run"></span>
+
+::: details Let your agent guide startup
+```text
+Check this project's configured client, agent skills and environment.
+Reuse working settings. Help me start its conductor and verify that it is online.
+```
+:::
 
 ## Create and follow
 
-Ask your agent:
+Follow these steps with either setup. If you already have a suitable ticket, reuse it.
 
-```text
-Use bb-create-ticket to write a small documentation ticket for this project,
-with checkable acceptance criteria, and assign my online conductor.
-```
+1. **[Create a ticket](/get-started/daily-work/create-a-ticket)** for a small documentation change. State the expected result and select the execution entry identified above.
+2. **Open the ticket's Runs tab.** Read the latest `summary`. Questions during a run appear in its terminal; a ticket comment reaches the next step. [Where to answer](/get-started/daily-work/follow-a-ticket#where-you-answer) explains both team and local work.
+3. **Check the first result.** Confirm the intended setup ran the ticket and its summary explains the outcome. This does not automatically approve the final implementation.
 
-Confirm the proposed scope and workflow.
+<span id="what-happens-in-the-background"></span>
 
-Open the ticket on the web or in the terminal:
-
-```sh
-bakers ui <IDENTIFIER>
-```
-
-Read the **Runs** tab, then the latest `summary`. Questions during execution appear in the run's client terminal; answer there. A comment on the ticket reaches the next step. [Follow a ticket](/get-started/daily-work/follow-a-ticket#where-you-answer) shows where to find questions.
+::: details What happens during the run
+The selected agent works in a ticket worktree, follows `WORKFLOW.md` and records a summary. Project hooks prepare the environment; required checks and approval gates still apply.
+:::
 
 ## Verify
 
-**Done when:** the ticket names the intended online conductor, its first run finishes, and a `summary` records that step's result. This is the first-ticket check, not automatic approval of the final implementation.
+**Done when:** the first run has finished and you can read its summary. If nothing starts, check the ticket is assigned, unblocked and unfrozen, and its execution setup is online with capacity for this state.
 
-If nothing starts, check the conductor serves this state, has a free slot, blockers are closed, and the ticket is neither frozen nor failing. Use [Troubleshooting](/configuration/clients/troubleshooting) for the next diagnostic step.
-
-**Next:** [Follow a ticket](/get-started/daily-work/follow-a-ticket), [accept results](/skills-and-workflows/accept-results), or [create another ticket](/get-started/daily-work/create-a-ticket).
+**Next:** [Follow the ticket through to review](/get-started/daily-work/follow-a-ticket).

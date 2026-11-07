@@ -2,6 +2,10 @@
 
 **Install DDEV and give each ticket worktree its own DDEV project, through hooks.**
 
+::: info Part of project preparation
+Use this example when your repository already uses DDEV. Keep working installations and adapt the scripts below. The [DDEV addon](/addons/ddev#agent-tools) provides additional status, start and execution tools; project scripts prepare the application.
+:::
+
 ## AI first
 
 ```text
@@ -121,4 +125,4 @@ echo "installed $url"
 - **Install step:** replace `scripts/install.sh` with your repository's install or import for the profile.
 - **Local certificate:** `curl -k` accepts DDEV's local certificate even when the host does not trust it.
 
-[Hook lifecycle and environment →](/provision/hooks)
+**Next:** return to [project preparation](/provision/guide#check-tools-and-access) to review tool access and verify independent worktrees. [Lifecycle hooks](/provision/hooks) explains command timing.

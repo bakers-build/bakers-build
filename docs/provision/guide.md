@@ -1,32 +1,69 @@
-# Provisioning
+---
+prev:
+  text: Prepare your project
+  link: /get-started/connect-a-project
+next:
+  text: Connect your project
+  link: /get-started/connect-a-project
+---
 
-Choose the environment during [project setup](/get-started/connect-a-project#set-up-your-environment), after choosing the client. Your repository's tooling prepares each ticket worktree. bakers.build invokes it through [lifecycle hooks](/provision/hooks); it does not supply a general container or native Node provisioner.
+<span id="prepare-your-project"></span>
 
-| Environment | Use when | Canonical example |
-|---|---|---|
-| Docker Compose | The project has a Compose application | [Isolated Compose projects](/provision/docker-compose) |
-| Native Node | The project runs directly on Node | [Locked dependency setup](/provision/node#node-js-projects) |
+# Prepare a worktree environment
 
-## Ownership and values
+<span id="provisioning"></span>
 
-**Owner:** committed repository scripts and `.bakers/conductor.config.js` → `hooks`. Project requirements determine whether provisioning is needed. All hook keys are optional; omitted hooks do nothing. If used, each value is a repeatable shell command on the conductor's `PATH`, running in the ticket worktree.
+Use your project's existing development tools to give each ticket a working application environment. Any environment can fit, provided it supports independent Git worktrees and repeatable setup.
 
-For an npm project with a lockfile, merge this fragment into the conductor config:
+**You need:** a ready [execution environment](/provision/machine) and the repository. Use this guide during [project setup](/get-started/connect-a-project) when its environment still needs worktree support. It helps you choose and check commands before applying them.
+
+::: tip The project already supports ticket worktrees?
+Keep its existing scripts and configuration. Continue with [connecting this checkout](/get-started/connect-a-project).
+:::
+
+## Make the project worktree-compatible
+
+A Git worktree is a separate working directory for a branch of the same repository. Tickets use these directories to work in parallel. Separate source files alone do not separate running services or data.
+
+Your project must support:
+
+- **Fresh directories:** install dependencies and prepare configuration without relying on files from your main checkout. Git metadata may be a `.git` file pointing elsewhere, rather than a directory.
+- **Parallel instances:** use distinct application names, ports, databases and writable data where tickets must not affect each other.
+- **Repeatable setup:** reuse a ready environment and safely start or prepare one that is missing.
+- **Scoped cleanup:** stop or remove only the resources belonging to that worktree. Preserve or export data you need.
+
+<span id="ownership-and-values"></span>
+
+## Connect the project's setup
+
+Repository scripts prepare the application. Identify the commands to put in `.bakers/conductor.config.js`. The next step, [connecting the checkout](/get-started/connect-a-project), applies these choices and verifies the configuration.
+
+[Lifecycle hooks](/provision/hooks) run commands at setup and cleanup points. For example, a project with `package-lock.json` can install dependencies when a worktree needs preparation:
 
 ```js
 hooks: { after_create: 'npm ci' },
 ```
 
-The [hooks reference](/provision/hooks) owns lifecycle timing, available environment variables and addon listeners. `after_done` receives no ticket variables: cleanup must read a validated worktree-local identity.
+All hooks are optional. Commands run with the execution user's permissions and must be available on that machine. Keep long-running development servers out of blocking setup hooks. `after_done` receives no ticket variables, so cleanup must read a validated worktree-local identity.
 
-## Verify and isolate
+## Prepare the application on demand
 
-```sh
-bakers config check --scope project
-```
+If a task or its checks need a running application, configure the [`provision_up` tool](/provision/tools#prepare-an-environment-with-provision-up) to prepare or reuse it on demand. If they only need source files and installed dependencies, application services can stay stopped. The project script owns installation, readiness checks and the resulting URL.
 
-Then run the selected setup twice in a disposable worktree, run the application's readiness checks, and inspect one dispatch. Give simultaneous tickets separate service identities, ports and data. Export needed data before destructive cleanup.
+Runtime addons can add tools or discover services, but enabling an addon alone does not install your application. Need a concrete pattern? Follow the [example matching your project](/provision/examples), then return to the check below.
 
-**Hook failures are logged and dispatch continues.** Put mandatory readiness checks in `WORKFLOW.md`, not only in hooks. Keep long-running development servers out of blocking setup hooks.
+## Check tools and access
 
-Runtime addons and the [Docker Compose](/addons/docker-compose) support library discover ports; installing them does not provision the environment. [Ports](/addons/ports) handles sharing, with the exposure considerations in [Security](/security/access-and-data#public-previews-and-ports).
+Review the [available tools](/provision/tools) and [security context](/provision/security/) before the first run. `provision_up` and addon tools can execute outside the agent sandbox; their scripts and permissions must be trusted. Neither application containers nor worktrees automatically isolate the agent.
+
+<span id="verify-and-isolate"></span>
+
+## Verify independent operation
+
+Test the setup with two disposable worktrees before using it for parallel tickets. Run preparation twice, check both applications, then clean up one and confirm the other still works.
+
+Lifecycle hook failures are logged and work continues; put mandatory checks in `WORKFLOW.md`. A failed `provision_up` call returns an error to the agent. Configuration validation follows when you connect the project.
+
+**Done when:** you know the preparation, readiness and cleanup commands, and have checked that they keep worktrees independent.
+
+**Next:** [Connect your project](/get-started/connect-a-project) to apply these choices and run the configuration checks.

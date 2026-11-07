@@ -125,21 +125,23 @@ html:not(.landing-page) .VPNavBarTitle .title > span:not(.bb-wordmark) {
 .bb-wordmark__dot {
   color: var(--lp-crust);
 }
-html:not(.landing-page) .VPNavBarMenuLink {
+html:not(.landing-page) .VPNavBarMenuLink,
+html:not(.landing-page) .VPNavBarMenuGroup > .button > .text {
   font-family: var(--lp-mono);
   font-size: 14px;
   font-weight: 500;
 }
-/* The version dropdown reads as a badge, not as another destination. */
-html:not(.landing-page) .VPNavBarMenuGroup > .button > .text {
-  padding: 4px 8px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 6px;
-  background: var(--vp-c-bg-soft);
-  color: var(--vp-c-text-2);
-  font-family: var(--vp-font-family-mono);
-  font-size: 12px;
-  line-height: 1.4;
+
+@media (min-width: 768px) and (max-width: 959px) {
+  html:not(.landing-page) .VPNavBarMenu {
+    display: none;
+  }
+  html:not(.landing-page) .VPNavBarHamburger {
+    display: flex;
+  }
+  html:not(.landing-page) .VPNavScreen {
+    display: block;
+  }
 }
 
 /* ---------- sidebar: Storybook's rhythm — area strip, version row, groups ---------- */
@@ -543,52 +545,22 @@ html:not(.landing-page) .doc-home-page .vp-doc h2 {
   margin-top: 32px;
 }
 
-/* quick links strip */
-html:not(.landing-page) .doc-quicklinks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin: 24px 0 32px;
-}
+/* Related guides use the same flow as ordinary lists. */
 html:not(.landing-page) .vp-doc .doc-quicklink {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 9px 14px 9px 11px;
-  border: 1.5px solid var(--lp-ink);
-  border-radius: 999px;
-  background: var(--lp-paper);
   color: var(--vp-c-text-1);
-  font-size: 14px;
-  font-weight: 700;
-  text-decoration: none;
-  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
-}
-html:not(.landing-page) .vp-doc .doc-quicklink:hover {
-  background: var(--lp-butter);
-  color: var(--lp-ink);
+  font-weight: 400;
   text-decoration: none;
 }
-.doc-quicklink__icon {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+.doc-quicklink__label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.doc-quicklink:hover .doc-quicklink__label {
+  text-decoration-thickness: 2px;
+}
+.doc-quicklink__label,
+.doc-quicklink__arrow {
   color: var(--vp-c-brand-1);
-}
-.doc-quicklink__icon svg {
-  width: 16px;
-  height: 16px;
-}
-.doc-quicklink__icon--area svg {
-  width: 18px;
-  height: 18px;
-}
-.doc-quicklink__ext {
-  font-size: 12px;
-  color: var(--vp-c-text-3);
-  margin-left: -2px;
 }
 
 /* tiles */
@@ -673,9 +645,6 @@ html:not(.landing-page)
 html:not(.landing-page) .doc-tile:focus-visible {
   border-radius: 12px;
 }
-html:not(.landing-page) .doc-quicklink:focus-visible {
-  border-radius: 999px;
-}
 
 /* ---------- ≤ 768px: the custom layer adapts; VitePress owns the mobile shell ---------- */
 @media (max-width: 768px) {
@@ -698,16 +667,6 @@ html:not(.landing-page) .doc-quicklink:focus-visible {
   }
   html:not(.landing-page) .vp-doc .doc-tile {
     padding: 16px;
-  }
-  html:not(.landing-page) .doc-quicklinks {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin: 24px 0;
-  }
-  html:not(.landing-page) .vp-doc .doc-quicklink {
-    min-height: 44px;
-    padding: 8px 10px;
   }
   html:not(.landing-page) .VPSidebarItem .link {
     min-height: 44px;

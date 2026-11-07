@@ -2,15 +2,19 @@
 
 Control how tickets move from a request to checked work. Skills provide instructions, recipes select an engineering method, and the repository's `WORKFLOW.md` supplies project-specific preparation and checks.
 
-Start with [how the process works](/skills-and-workflows/guide), then [install the skills](/skills-and-workflows/skills) on the machine or client that needs them.
+Read [how the process works](/skills-and-workflows/guide) for an overview. For setup, [install the skills](/skills-and-workflows/skills) on the machine or client that needs them.
 
-| Task | Read |
-|---|---|
-| Understand states and approval gates | [Workflows and states](/skills-and-workflows/states) |
-| Review an agent's result | [Accept results](/skills-and-workflows/accept-results) |
-| Select a method and work type | [Types, recipes and labels](/skills-and-workflows/types-recipes-labels) |
-| Set project preparation and checks | [Configure WORKFLOW.md](/skills-and-workflows/workflow-file) |
-| Add an engineering method | [Write a recipe](/skills-and-workflows/recipes) |
-| Record measurements | [Ticket metrics](/skills-and-workflows/metrics) |
+## Choose your task
+
+Review ticket work, adjust project rules or extend the methods available to agents.
+
+<DocQuickLinks aria-label="Workflow tasks" :items="[
+  { label: 'Workflows and states', text: 'Understand ticket states and approval gates.', link: '/skills-and-workflows/states' },
+  { label: 'Accept results', text: 'Review the outcome and decide what happens next.', link: '/skills-and-workflows/accept-results' },
+  { label: 'Types, recipes and labels', text: 'Select the work type, method and ticket labels.', link: '/skills-and-workflows/types-recipes-labels' },
+  { label: 'Configure WORKFLOW.md', text: 'Set project preparation, instructions and checks.', link: '/skills-and-workflows/workflow-file' },
+  { label: 'Write a recipe', text: 'Add an engineering method for agents to follow.', link: '/skills-and-workflows/recipes' },
+  { label: 'Ticket metrics', text: 'Define and record measurements on tickets.', link: '/skills-and-workflows/metrics' }
+]" />
 
 [Get started](/get-started/#after-your-first-ticket) owns basic ticket use. [Agents](/agents/) chooses which harness runs each state. [Provision](/provision/) explains how configured preparation commands execute; instructions alone do not create an environment or enforce a sandbox.

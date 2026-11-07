@@ -32,7 +32,7 @@ Options and subcommands are copied from `bakers --help` and the help of each com
 
 ## Install and update
 
-[Machine setup](/get-started/machine) owns installation and sign-in. `bakers update` installs the latest CLI; [Updates](/configuration/machine/updates) separates code updates from configuration migration.
+[Machine setup](/provision/machine) owns installation and sign-in. `bakers update` installs the latest CLI; [Updates](/configuration/machine/updates) separates code updates from configuration migration.
 
 ## bakers init
 

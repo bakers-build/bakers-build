@@ -83,4 +83,4 @@ A label that names an unknown alias or route only logs a warning and falls back,
 
 ## Required and optional values
 
-Keep harness addons in the private machine file. At least one installed/authenticated harness is required. Catalog overlays, allow/deny lists, fallback and routes are optional; [Agent policy](/agents/reference) defines their defaults. [Execution security](/security/execution) owns sandbox modes and readiness. Vendor options and installation belong to [agent addons](/addons/).
+Keep harness addons in the private machine file. At least one installed/authenticated harness is required. Catalog overlays, allow/deny lists, fallback and routes are optional; [Agent policy](/agents/reference) defines their defaults. [Execution security](/provision/security/execution) owns sandbox modes and readiness. Vendor options and installation belong to [agent addons](/addons/).

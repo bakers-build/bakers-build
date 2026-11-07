@@ -22,12 +22,12 @@ There is no universal “last file wins” merge.
 - **Connection selection:** `--config`, `--connection`, `BB_CONFIG`, `BB_CONNECTION`, checkout selector, then default/legacy/sole-connection fallback. The first match wins; [Connections](/configuration/connector/connections#which-connection-is-used) defines fallback errors.
 - **Project:** the selected conductor module is evaluated. A local sibling is not automatically overlaid. Its import and JavaScript expressions determine which values apply. Keep `bakers.project` literal so discovery can read it without executing the module.
 - **Addons:** machine entries precede project entries. The same resolved package and alias combine at the machine position; machine `with` replaces project options unless the preset defines `mergeWith`. Explicit engine slots beat discovered contributions; otherwise singleton slots are last-wins. [Contracts](/addons/build/contracts#how-discovery-works) owns the details.
-- **Security:** harness default → project → machine → harness entry, key by key. Lists replace unless `'$inherit'` includes the lower layer. Only supported keys apply; see [shared settings](/security/shared-settings).
+- **Security:** harness default → project → machine → harness entry, key by key. Lists replace unless `'$inherit'` includes the lower layer. Only supported keys apply; see [shared settings](/provision/security/shared-settings).
 - **Agents:** machine catalog and routes select harness/model; ticket labels can override routing. See [policy precedence](/agents/reference#which-agent-runs-a-state).
 
 ## One checkout, one connection, one worker
 
-First use [machine setup](/get-started/machine) to create a private named connection `team` and authenticate on the execution machine. Keep its generated sign-in profile. The following files then fit together; retain your generated machine UUID instead of copying this example identity.
+First use [machine setup](/provision/machine) to create a private named connection `team` and authenticate on the execution machine. Keep its generated sign-in profile. The following files then fit together; retain your generated machine UUID instead of copying this example identity.
 
 `~/.bakers/machine.config.js`:
 

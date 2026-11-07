@@ -7,7 +7,7 @@ description: Install a standalone control plane from public release images with 
 
 The control plane runs on one Linux Docker host. It does not require Coder, FRP,
 Komodo, a private registry or a source build. Clients and workers are installed
-separately through [Get started](/get-started/machine). Existing operator-managed
+separately through [Machine setup](/provision/machine). Existing operator-managed
 Komodo stacks retain their [current deployment procedure](/self-hosting/server-komodo).
 
 A release is a GitHub release `vX.Y.Z` of

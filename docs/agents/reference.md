@@ -73,7 +73,7 @@ Pi's `approve` trusts project-local Pi files and grants no bakers.build access. 
 
 ## Run security
 
-Claude and Codex runs start sandboxed by default. Set `security`, the `sandbox` keys, `config` and `env_deny` in a harness entry's `with`; a `catalog` entry uses only its own `with`. The mode and the `deny_read`, `allow_write` and `trusted_commands` lists can also be set once for every agent in a top-level `security` block of `machine.config.js` or the project's `.bakers/conductor.config.js`; layers combine as [Shared run security](/security/shared-settings) describes, including the risk of a committed project block that loosens the sandbox.
+Claude and Codex runs start sandboxed by default. Set `security`, the `sandbox` keys, `config` and `env_deny` in a harness entry's `with`; a `catalog` entry uses only its own `with`. The mode and the `deny_read`, `allow_write` and `trusted_commands` lists can also be set once for every agent in a top-level `security` block of `machine.config.js` or the project's `.bakers/conductor.config.js`; layers combine as [Shared run security](/provision/security/shared-settings) describes, including the risk of a committed project block that loosens the sandbox.
 
 ```js
 agents: {
@@ -83,7 +83,7 @@ agents: {
 },
 ```
 
-Modes, blocks, env var filter, risks and isolation: [Run security](/security/execution).
+Modes, blocks, env var filter, risks and isolation: [Run security](/provision/security/execution).
 
 ## Mixed harnesses
 

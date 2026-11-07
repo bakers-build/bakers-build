@@ -1,6 +1,10 @@
 # Docker Compose
 
-Use the repository's Compose application with a separate project for every ticket. This is project tooling called by hooks, not a bakers.build provisioning addon.
+Use the repository's Compose application with a separate project for every ticket. Project scripts and hooks prepare its environment.
+
+::: info Part of project preparation
+Follow this example when your repository already uses Docker Compose. Keep its services and adapt their identities, ports and data for independent worktrees.
+:::
 
 ## AI first
 
@@ -67,3 +71,5 @@ A missing/invalid identity aborts cleanup. This stops/removes that Compose proje
 **Agents need the running services?** Configure [`provision_up`](/provision/hooks#provision-on-an-agent-s-request) with a command that follows its contract.
 
 **Done when:** two ticket worktrees can run concurrently, both pass application readiness, and cleaning one leaves the other working. [Docker Compose discovery](/addons/docker-compose) can expose the resulting services to [Ports](/addons/ports).
+
+**Next:** return to [project preparation](/provision/guide#check-tools-and-access) to review tool access before connecting the checkout.

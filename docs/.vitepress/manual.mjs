@@ -4,7 +4,6 @@ export const SRC_EXCLUDE = ["decisions/**", "bakers/**", "conductor/**", "bakers
 export const AREAS = [
   { label: "Get started", link: "/get-started/", icon: "guide" },
   { label: "Provision", link: "/provision/", icon: "contributing" },
-  { label: "Security", link: "/security/", icon: "reference" },
   { label: "Agents", link: "/agents/", icon: "guide" },
   { label: "Skills & Workflows", link: "/skills-and-workflows/", icon: "guide" },
   { label: "Addons", link: "/addons/", icon: "reference" },
@@ -13,50 +12,77 @@ export const AREAS = [
   { label: "Development", link: "/development/", icon: "contributing" },
 ]
 
+export const NAV = [
+  { text: "How it works", link: "/#how-it-works" },
+  { text: "Get started", link: "/get-started/" },
+  {
+    text: "Documentation",
+    items: AREAS
+      .filter(({ link }) => link !== "/get-started/" && link !== "/addons/")
+      .map(({ label, link }) => ({ text: label, link })),
+  },
+  { text: "Addons", link: "/addons/" },
+]
+
 const group = (text, items) => ({ text, items: items.map(([text, link]) => ({ text, link })) })
 
 export const SIDEBAR = {
   "/manual": [group("Documentation", AREAS.map(({ label, link }) => [label, link]))],
   "/get-started/": [
-    group("Getting Started", [
+    group("Start here", [
       ["Overview", "/get-started/"],
-      ["Set up a connector", "/get-started/connector"],
-      ["Set up a machine", "/get-started/machine"],
-      ["Set up a project", "/get-started/connect-a-project"],
+      ["Prepare your project", "/get-started/connect-a-project"],
       ["Run the first ticket", "/get-started/first-ticket"],
     ]),
     group("Daily work", [
       ["Create a ticket", "/get-started/daily-work/create-a-ticket"],
       ["Follow a ticket", "/get-started/daily-work/follow-a-ticket"],
+      ["Review and accept results", "/skills-and-workflows/accept-results"],
       ["Freeze a ticket", "/get-started/daily-work/freeze-a-ticket"],
       ["Record time", "/get-started/daily-work/record-time"],
       ["See what the team works on", "/get-started/daily-work/team-overview"],
     ]),
-  ],
-  "/provision/": [
-    group("Provision", [
-      ["Overview", "/provision/"],
-      ["Set up a Coder workspace", "/provision/coder-workspace"],
-      ["Set up a worker server", "/provision/worker-server"],
-      ["Provisioning", "/provision/guide"],
-      ["Docker Compose", "/provision/docker-compose"],
-      ["Add lifecycle hooks", "/provision/hooks"],
-      ["Set up Node.js", "/provision/node"],
+    group("Chat access", [
+      ["Connect your chat", "/get-started/connector"],
     ]),
   ],
-  "/security/": [
+  "/provision/": [
+    group("Setup path", [
+      ["Overview", "/provision/"],
+      ["Choose where agents run", "/provision/machine"],
+      ["Prepare your project", "/get-started/connect-a-project"],
+      ["Run the first ticket", "/get-started/first-ticket"],
+    ]),
+    group("Tools and access", [
+      ["Tools and integrations", "/provision/tools"],
+      ["Run agents securely", "/provision/security/"],
+    ]),
+    group("Machine setup", [
+      ["Set up a Coder workspace", "/provision/coder-workspace"],
+      ["Set up a worker server", "/provision/worker-server"],
+      ["Install Node.js", "/provision/node"],
+    ]),
+    group("Project environment", [
+      ["Prepare a worktree environment", "/provision/guide"],
+      ["Choose an example", "/provision/examples"],
+      ["DDEV", "/addons/ddev/setup"],
+      ["Docker Compose", "/provision/docker-compose"],
+      ["Node.js application", "/provision/node-project"],
+    ]),
+    group("Lifecycle", [
+      ["Add lifecycle hooks", "/provision/hooks"],
+    ]),
     group("Security", [
-      ["Overview", "/security/"],
-      ["Run security", "/security/execution"],
-      ["Shared run security", "/security/shared-settings"],
-      ["Security", "/security/access-and-data"],
-      ["API keys and service accounts", "/security/credentials"],
+      ["Execution limits", "/provision/security/execution"],
+      ["Machine and project policy", "/provision/security/shared-settings"],
+      ["Access and data", "/provision/security/access-and-data"],
+      ["API keys and service accounts", "/provision/security/credentials"],
     ]),
   ],
   "/agents/": [
     group("Agents", [
       ["Overview", "/agents/"],
-      ["Agents", "/agents/guide"],
+      ["Choose agents and models", "/agents/guide"],
       ["Agent policy reference", "/agents/reference"],
     ]),
   ],

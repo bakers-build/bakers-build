@@ -76,7 +76,7 @@ docker compose exec php drush uli
 The install creates one OAuth consumer, and deploys never touch consumers. Manage them in the Drupal consumers UI at `/admin/config/services/consumer`.
 
 - **Device code and browser sign-in.** A shared public consumer `bakers-cli` has no secret; a person signs the CLI in with `bakers init`. `device_code` is the default and works over SSH and in containers.
-- **Service identities.** A user creates a key in the web UI and connects with `client_credentials` ([API keys](/security/credentials)).
+- **Service identities.** A user creates a key in the web UI and connects with `client_credentials` ([API keys](/provision/security/credentials)).
 - **MCP clients.** Claude and other MCP clients register themselves at `/oauth/register`.
 - **Scope and rows.** Every token carries the umbrella scope `bb_session`, which is a ceiling. What a token reaches comes from the account's workspace membership and rank, so add each user to the right workspace and projects.
 - **Web sign-in.** Passwordless sign-in by mail works out of the box. Google sign-in needs `BB_OAUTH_GOOGLE_CLIENT_ID` and `BB_OAUTH_GOOGLE_CLIENT_SECRET`, registered for the host's own redirect URI; both are empty at launch.

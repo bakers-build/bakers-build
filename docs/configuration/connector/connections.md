@@ -1,6 +1,6 @@
 # Connections
 
-A connection is a private file that names one bakers.build server and how you sign in to it; this page covers the files, how one is selected, every field and the three sign-in profiles. For first setup, let `bb-init` guide [machine preparation and sign-in](/get-started/machine). The reference below explains its files and manual commands.
+A connection is a private file that names one bakers.build server and how you sign in to it; this page covers the files, how one is selected, every field and the three sign-in profiles. For first setup, let `bb-init` guide [machine preparation and sign-in](/provision/machine). The reference below explains its files and manual commands.
 
 ## Files
 

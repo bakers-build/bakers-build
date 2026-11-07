@@ -25,7 +25,7 @@ Ports does not find DDEV services on its own. An installation that shared them b
 
 ## Agent tools
 
-Every claude and codex run gets these tools on its own worktree, the DDEV approot:
+The addon provides these tools for the run's worktree, the DDEV approot. Claude and Codex receive them through MCP; other harnesses can call them through `bakers tools` inside a run. See [Tools and integrations](/provision/tools).
 
 | Tool | Does |
 |---|---|
@@ -49,7 +49,7 @@ Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `ddev_ex
 | PHP implementation | `ddev phpcs && ddev phpstan` |
 ```
 
-A sandboxed agent that calls `ddev` from its shell needs it among the trusted commands, for example `trusted_commands: ['$inherit', 'ddev']` in a [shared `security` block](/security/shared-settings).
+A sandboxed agent that calls `ddev` from its shell needs it among the trusted commands, for example `trusted_commands: ['$inherit', 'ddev']` in a [shared `security` block](/provision/security/shared-settings).
 
 ## Options
 

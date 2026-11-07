@@ -1,18 +1,19 @@
 # Work with bakers.build
 
-Agents work your tickets, step by step, while you stay in charge. Start with [Get started](/get-started/) to choose where work runs, connect your account and run a first ticket.
+Agents work your tickets, step by step, while you stay in charge. Start with [Get started](/get-started/) to create a ticket, follow the work and review the result.
 
-| Area | Find |
-|---|---|
-| [Get started](/get-started/) | Execution choices, initial setup and everyday ticket use |
-| [Provision](/provision/) | Worker preparation, environments and lifecycle hooks |
-| [Security](/security/) | Tools, isolation, credentials and access boundaries |
-| [Agents](/agents/) | Harnesses, models, aliases and routing |
-| [Skills & Workflows](/skills-and-workflows/) | Instructions, recipes, states and approvals |
-| [Addons](/addons/) | Extension catalog, configuration and authoring |
-| [Configuration](/configuration/) | Files, ownership, precedence and migration |
-| [Self-hosting](/self-hosting/) | Application-server installation, updates and backups |
-| [Development](/development/) | Building and contributing to bakers.build |
+Choose the guide for the work you want to do.
+
+<DocQuickLinks aria-label="Documentation areas" :items="[
+  { label: 'Get started', text: 'Create tickets, follow the work and review results.', link: '/get-started/' },
+  { label: 'Provision', text: 'Prepare machines, worktree environments, tools and security.', link: '/provision/' },
+  { label: 'Agents', text: 'Choose agent addons, models and routes.', link: '/agents/' },
+  { label: 'Skills & Workflows', text: 'Set instructions, methods and approval steps.', link: '/skills-and-workflows/' },
+  { label: 'Addons', text: 'Find, configure or build an extension.', link: '/addons/' },
+  { label: 'Configuration', text: 'Find the right file, understand precedence and migrate settings.', link: '/configuration/' },
+  { label: 'Self-hosting', text: 'Install, update and back up your own application server.', link: '/self-hosting/' },
+  { label: 'Development', text: 'Build bakers.build from source and contribute changes.', link: '/development/' }
+]" />
 
 For chat-only access, begin with [a connector](/get-started/connector). Already have a prepared worker? [Connect another project](/get-started/connect-a-project).
 

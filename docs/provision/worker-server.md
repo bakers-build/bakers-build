@@ -1,6 +1,6 @@
 # Set up a worker server
 
-Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example uses herdr, Docker and Claude Code; prepare the host with [machine setup](/get-started/machine) and choose tooling per [project](/get-started/connect-a-project). On a Coder deployment, a workspace template does this setup for you: [Set up a Coder workspace](/provision/coder-workspace).
+Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example uses herdr, Docker and Claude Code; prepare the host with [machine setup](/provision/machine) and choose tooling per [project](/get-started/connect-a-project). On a Coder deployment, a workspace template does this setup for you: [Set up a Coder workspace](/provision/coder-workspace).
 
 **You need:** root over SSH, a bakers.build account with a workspace rank, the control-plane URL and a Claude Code account.
 
@@ -34,7 +34,7 @@ This example assumes a project already chose herdr and a Docker-based runtime. O
    su - bakers
    ```
 
-3. Use [machine setup](/get-started/machine#install-and-sign-in) to install bakers.build into a user prefix. Put its PATH in `~/.profile`: Ubuntu's `~/.bashrc` returns early in non-interactive shells.
+3. Use [machine setup](/provision/machine#install-and-sign-in) to install bakers.build into a user prefix. Put its PATH in `~/.profile`: Ubuntu's `~/.bashrc` returns early in non-interactive shells.
 
    ```sh
    npm config set prefix ~/.npm-global
@@ -68,6 +68,6 @@ This example assumes a project already chose herdr and a Docker-based runtime. O
    bakers info
    ```
 
-**Done when:** all checks succeed, the online check has no findings and `bakers info` lists a workspace. Continue with [Conductors](/configuration/project/conductors).
+**Done when:** all checks succeed, the online check has no findings and `bakers info` lists a workspace. Continue with [project setup](/get-started/connect-a-project) on this server. If the checkout is already configured, go to [your first ticket](/get-started/first-ticket).
 
 After reboot, a service manager must start `herdr server` as the worker user before `bakers oven start --foreground`; bakers.build ships no service unit.

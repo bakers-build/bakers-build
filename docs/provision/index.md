@@ -1,17 +1,47 @@
 # Provision
 
-Prepare the machine and application environment where agents work. Start with [machine setup](/get-started/machine) on either a developer computer or remote worker; tools, credentials and resources belong there.
+Run agents, but securely. Choose where they run, connect a project and give each ticket an independent environment with the tools and access it needs.
 
-- [Worker servers](/provision/worker-server) and [Coder workspaces](/provision/coder-workspace) cover remote execution.
-- [Choose an environment](/provision/guide), then follow [Docker Compose](/provision/docker-compose) or [Node.js](/provision/node).
-- [Lifecycle hooks](/provision/hooks) connect repository setup and cleanup to worktrees and runs.
+::: tip Your team already runs tickets?
+You can [create a ticket](/get-started/daily-work/create-a-ticket) using that setup. Follow this guide when you want to run agents yourself.
+:::
 
-## From ticket to cleanup
+## Set up execution
 
-The conductor creates or reuses a worktree, runs `after_create` when preparation is needed, opens a fresh worktree's layout, runs `before_run`, then launches the agent. `after_run` follows the stopped worker. Ticket cleanup runs `after_done` before removing the worktree; freeze and resume have their own hooks.
+Start at the first step you have not completed. Keep working tools and project settings.
 
-Successful `after_create` preparation is recorded by worktree path and survives conductor restarts. Reusing that worktree skips preparation. Failure retries on a later dispatch; recreation prepares again. Lifecycle failures are logged and work continues.
+1. **[Choose where agents run](/provision/machine).** Reuse an existing environment, choose a remote server or use your own computer.
+2. **[Prepare your project](/get-started/connect-a-project).** Connect the repository and configure its workflow and worktree environment.
+3. **[Run your first ticket](/get-started/first-ticket).** Check the execution setup and read the first result.
 
-A workflow's [provisioning instructions](/skills-and-workflows/workflow-file) tell the agent when to call `provision_up` and which profile to select. That tool runs the configured command outside the agent sandbox and returns failures as errors. Required readiness checks belong in the workflow. See [hook ordering and environment](/provision/hooks) before writing commands or addon listeners.
+## Tools and security
 
-[Security](/security/) explains the trust boundary. [Self-hosting](/self-hosting/) concerns the application server, not workers.
+As you prepare the project, decide which operations agents need and what they may access.
+
+<DocQuickLinks aria-label="Tools and security" :items="[
+  { label: 'Tools and integrations', text: 'Make operations available to agents, CLI commands and UI actions.', link: '/provision/tools' },
+  { label: 'Run agents securely', text: 'Choose a supported security mode and review tool access, including provision_up.', link: '/provision/security/' }
+]" />
+
+## Environment examples
+
+Follow the example that matches your existing project. These are starting points, not required environments.
+
+<DocTiles :tiles="[
+  { title: 'DDEV', text: 'Separate DDEV projects and addon tools for each ticket.', link: '/provision/examples#ddev', icon: 'layers', meta: 'Explore the DDEV example →' },
+  { title: 'Docker Compose', text: 'Separate service identities, ports and data.', link: '/provision/examples#docker-compose', icon: 'layers', meta: 'Explore the Compose example →' },
+  { title: 'Node.js', text: 'Run the application directly in each worktree.', link: '/provision/examples#node-js', icon: 'code', meta: 'Explore the Node.js example →' }
+]" />
+
+Using another stack? Apply the same [worktree requirements](/provision/guide#make-the-project-worktree-compatible).
+
+<span id="from-ticket-to-cleanup"></span>
+
+## Related guides
+
+Continue here when you need precise command timing or want to operate the application server.
+
+<DocQuickLinks aria-label="Related provision guides" :items="[
+  { label: 'Lifecycle hooks', text: 'See when preparation, run and cleanup commands execute.', link: '/provision/hooks' },
+  { label: 'Self-hosting', text: 'Run the bakers.build application server on your own infrastructure.', link: '/self-hosting/' }
+]" />

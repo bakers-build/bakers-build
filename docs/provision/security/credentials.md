@@ -66,4 +66,4 @@ Setting up a worker with such a connection: [Set up a worker server](/provision/
 
 ## Scopes and permissions
 
-Both kinds sign in with the single `bb_session` scope. What a request may do is decided by the account's workspace rank and team membership on every call ([Who sees what](/security/access-and-data#roles-and-permissions)), never by the key itself.
+Both kinds sign in with the single `bb_session` scope. What a request may do is decided by the account's workspace rank and team membership on every call ([Who sees what](/provision/security/access-and-data#roles-and-permissions)), never by the key itself.

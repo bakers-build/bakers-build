@@ -11,7 +11,11 @@ Give each person a Coder workspace that works like a developer's own machine: Do
 
 The `bakers-ddev` template provides one long-lived workspace per person. It starts without projects. Inside it, `/bb-init` signs you in, checks out your projects and starts one conductor per checkout. For a plain server instead, see [Set up a worker server](/provision/worker-server).
 
-**You need:** a Coder deployment whose Docker host runs the Sysbox runtime on amd64 and can pull the workspace image, permission to push templates, a bakers.build account with a workspace rank, the control-plane URL, and Claude Code and Codex accounts.
+::: tip Using a team workspace?
+You need access to the team's Coder template, your bakers.build account and your agent account. Start with the [existing-workspace steps](#ai-first-inside-an-existing-workspace). Your operator handles template and image setup.
+:::
+
+**Operator prerequisites:** a Coder deployment whose Docker host runs the Sysbox runtime on amd64 and can pull the workspace image, permission to push templates, the control-plane URL, and the accounts needed by the template.
 
 ## AI first inside an existing workspace
 
@@ -53,7 +57,7 @@ The image supplies tools; your private home stores identity, credentials and che
    bakers auth login
    ```
 
-   Configure the [Coder container boundary](/security/execution#coder-container-boundary) before dispatch. This replaces the default nested OS sandbox with the container boundary; all credentials in that home remain exposed to shell commands.
+   Configure the [Coder container boundary](/provision/security/execution#coder-container-boundary) before dispatch. This replaces the default nested OS sandbox with the container boundary; all credentials in that home remain exposed to shell commands.
 
 5. Sign in to Codex. It prints a URL to open in your own browser.
 
@@ -85,7 +89,7 @@ The image supplies tools; your private home stores identity, credentials and che
    ssh-keyscan <git-host> >> ~/.ssh/known_hosts
    ```
 
-8. Optionally choose a preview transport (skip this step for local-only work) using its canonical setup: [Cloudflare Quick](/addons/ports-cloudflare-quick), [Named Cloudflare](/addons/ports-cloudflare), or [frp](/addons/ports-frp). Configure the Ports entry in the private machine file. Public URLs expose the running application; review [Security](/security/access-and-data#public-previews-and-ports) first.
+8. Optionally choose a preview transport (skip this step for local-only work) using its canonical setup: [Cloudflare Quick](/addons/ports-cloudflare-quick), [Named Cloudflare](/addons/ports-cloudflare), or [frp](/addons/ports-frp). Configure the Ports entry in the private machine file. Public URLs expose the running application; review [Security](/provision/security/access-and-data#public-previews-and-ports) first.
 
    **Coder lifecycle:** Without provider configuration no tunnel client is installed or started. Named Cloudflare installs `cloudflared` and runs `cloudflared tunnel run` on every workspace startup while `~/.cloudflared/tunnel-token` exists. Cloudflare Quick needs an explicitly installed `cloudflared` but no persistent connector. A `~/.config/frp/frpc.json` likewise opts into installing and starting `frpc`; your config supplies your own zone and endpoint. Keep its secrets in the home volume. For frp, use `~/.config/frp/frpc.json`, create the directory referenced by `includes`, and set `loginFailExit: false`: nothing restarts a client that exits when the server is unavailable. Restart the workspace after configuring it, or start the connector manually. The frp transport page owns its complete config and addon descriptor.
 
@@ -105,7 +109,7 @@ The image supplies tools; your private home stores identity, credentials and che
     bakers oven status
     ```
 
-**Done when:** `herdr workspace list` succeeds, the online check has no findings and each conductor shows `online`. Continue with [Conductors](/configuration/project/conductors).
+**Done when:** `herdr workspace list` succeeds, the online check has no findings and each conductor shows `online`. Continue with [your first ticket](/get-started/first-ticket). For another repository, start at [project setup](/get-started/connect-a-project) inside this workspace.
 
 ## See the workspace in your own herdr
 

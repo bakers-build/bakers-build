@@ -58,7 +58,7 @@ A runtime addon may add tools of its own; its page lists them.
 
 The `bakers` server also serves the site's ticket tools to every run, under their plain name and with the site's input schema: `bakers_ticket_read`, `bakers_ticket_search`, `bakers_ticket_create`, `bakers_ticket_update`, `bakers_ticket_classify`, `bakers_ticket_transition`, `bakers_comment_publish`, `bakers_metric_write`, `bakers_ticket_list`, `bakers_ticket_runs_list`, `bakers_label_list`, `bakers_project_read` and `bakers_user_read`. The agent addons need no option and no `settings.json` entry for them.
 
-- The conductor calls the site's `/mcp` with its own connection, so the run holds no site credential and `bakers` need not be a trusted command for ticket work ([run security](/security/execution)).
+- The conductor calls the site's `/mcp` with its own connection, so the run holds no site credential and `bakers` need not be a trusted command for ticket work ([run security](/provision/security/execution)).
 - Every call stays inside the run ticket's project. A `ticket`, `parent`, `referenced_tickets_add` entry or `project` of another project, or a `workspace` other than the project's, is refused with a tool error naming the argument and both projects, and nothing reaches the site. A run whose ticket has no project gets every site tool refused. A missing `project` on `bakers_ticket_search`, `bakers_ticket_list` and `bakers_ticket_create`, and a missing `workspace` on `bakers_label_list`, mean the run's.
 - While the site is unreachable the server lists the addon tools alone and logs a warning; the next listing tries again.
 - The operator `POST /call` serves no site tools.

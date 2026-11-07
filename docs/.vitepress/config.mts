@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { createRequire } from 'node:module'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
-import { AREAS, SIDEBAR, SRC_EXCLUDE } from './manual.mjs'
+import { AREAS, NAV, SIDEBAR, SRC_EXCLUDE } from './manual.mjs'
 import { redirectPage } from '../scripts/redirects.mjs'
 import { thirdPartyLicenses } from '../scripts/third-party.mjs'
 const require = createRequire(import.meta.url)
@@ -19,8 +19,8 @@ const { CI_COMMIT_REF_NAME, CI_COMMIT_SHORT_SHA } = process.env
 const DOCS_VERSION = CI_COMMIT_SHORT_SHA ? `${CI_COMMIT_REF_NAME} · ${CI_COMMIT_SHORT_SHA}` : 'development'
 const RELEASES_URL = 'https://www.npmjs.com/package/@bakers-build/bakers?activeTab=versions'
 
-// The documentation areas (manual.mjs): the sidebar's icon strip (theme/
-// components/SidebarAreas.vue) and the nav share this list. `match` is the path
+// The documentation areas (manual.mjs) feed the sidebar's icon strip and the
+// grouped site navigation. `match` is the path
 // prefix that marks an area current; the icon keys are theme/components/area-icons.ts.
 type Area = { label: string; link: string; icon: string; match?: string; external?: boolean }
 
@@ -112,7 +112,7 @@ export default withMermaid(
       siteTitle: 'bakers.build',
       outline: { level: [2, 3], label: 'On this page' },
       docFooter: { prev: 'Previous', next: 'Next' },
-      nav: AREAS.map(area => ({ text: area.label, link: area.link })),
+      nav: NAV,
       sidebar: SIDEBAR,
       search: {
         provider: 'local',

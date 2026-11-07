@@ -70,4 +70,14 @@ cat .run-marker
 
 **Success:** it prints `before_run reached`, and the conductor log has no `hook listener failed` for `example-run-marker`. Config validation alone does not execute the listener. A subsequent run overwrites the marker; cleanup removes it with the worktree.
 
-Remove the addon entry, reload the conductor, then remove its two files and any remaining marker when finished. For typed or published packages, follow [Addon contracts](/addons/build/contracts#write-an-addon); for interactive operations choose [tools](/addons/build/tools) or [inbox messages](/addons/build/actions).
+Remove the addon entry, reload the conductor, then remove its two files and any remaining marker when finished.
+
+## Extend your addon
+
+Choose the next guide for the capability you want to add.
+
+<DocQuickLinks aria-label="Extend your addon" :items="[
+  { label: 'Addon contracts', text: 'Build a typed package or prepare an addon for publication.', link: '/addons/build/contracts#write-an-addon' },
+  { label: 'Agent tools', text: 'Expose an operation that agents can call during a run.', link: '/addons/build/tools' },
+  { label: 'Inbox messages', text: 'Make operations available through ticket actions and external clients.', link: '/addons/build/actions' }
+]" />

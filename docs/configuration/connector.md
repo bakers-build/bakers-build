@@ -32,4 +32,4 @@ bakers auth status
 bakers config check --scope connection --online
 ```
 
-The selected server must be correct and authentication must pass. [Credentials](/security/credentials) explains keys and service accounts; [Security](/security/access-and-data) covers access boundaries.
+The selected server must be correct and authentication must pass. [Credentials](/provision/security/credentials) explains keys and service accounts; [Security](/provision/security/access-and-data) covers access boundaries.

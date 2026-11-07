@@ -1,10 +1,10 @@
 # Security
 
-Security spans account access, the worker host, project configuration and preview exposure. Keep agent-specific settings in [Agents execution security](/security/execution).
+Security spans account access, the worker host, project configuration and preview exposure. Keep agent-specific settings in [Agents execution security](/provision/security/execution).
 
 ## Credentials and access
 
-Authorize chat connectors with your own account. [API keys and service accounts](/security/credentials) explains issuing, revoking and limiting credentials. Keep connection files under `~/.bakers` private; sign-in tokens live in dropsh's per-host `~/.config/dropsh/` store. [Connections](/configuration/connector/connections) owns the authentication profiles and file permissions.
+Authorize chat connectors with your own account. [API keys and service accounts](/provision/security/credentials) explains issuing, revoking and limiting credentials. Keep connection files under `~/.bakers` private; sign-in tokens live in dropsh's per-host `~/.config/dropsh/` store. [Connections](/configuration/connector/connections) owns the authentication profiles and file permissions.
 
 Never put credentials in tickets, README files or committed conductor configuration. Ignore `.bakers/*.local.js`, `.bakers/log.txt` and `assets-ai/`; verify with `git check-ignore` during [project setup](/get-started/connect-a-project).
 
@@ -51,9 +51,9 @@ Review, merge and deployment stay explicit human decisions, whatever your rank.
 
 ## Agent execution boundaries
 
-Claude and Codex default to their OS sandbox. Verify [sandbox prerequisites](/security/execution#sandbox-prerequisites) as the conductor user before dispatch. Config roots, provider credentials and readable paths need separate consideration; a worktree is not a full security boundary. Other harnesses do not acquire the same sandbox simply by running under bakers.build.
+Claude and Codex default to their OS sandbox. Verify [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites) as the conductor user before dispatch. Config roots, provider credentials and readable paths need separate consideration; a worktree is not a full security boundary. Other harnesses do not acquire the same sandbox simply by running under bakers.build.
 
-[Execution security](/security/execution) owns modes, allowlists, environment filtering and limitations. Package-specific flags stay with [agent addons](/addons/). Review commands from untrusted ticket text against the current scope. Hooks run with the worker's permissions; failures do not stop dispatch, so required readiness checks belong in `WORKFLOW.md`.
+[Execution security](/provision/security/execution) owns modes, allowlists, environment filtering and limitations. Package-specific flags stay with [agent addons](/addons/). Review commands from untrusted ticket text against the current scope. Hooks run with the worker's permissions; failures do not stop dispatch, so required readiness checks belong in `WORKFLOW.md`.
 
 ## Public previews and ports
 
@@ -85,7 +85,7 @@ See [hosted or self-run](/self-hosting/choosing) for the server choice and [serv
 
 ### Who can read what on the server
 
-Access follows workspace ranks and team membership: [Who sees what](/security/access-and-data#roles-and-permissions). Transcripts, when stored, are private files behind the same permissions.
+Access follows workspace ranks and team membership: [Who sees what](/provision/security/access-and-data#roles-and-permissions). Transcripts, when stored, are private files behind the same permissions.
 
 ### Keeping secrets out
 

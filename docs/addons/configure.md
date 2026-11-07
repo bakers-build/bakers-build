@@ -1,8 +1,8 @@
 # Configure addons
 
-**Enable an addon by naming it in the right configuration file. This page covers the rules every addon shares.**
+Enable an addon in its supported configuration file.
 
-Which addons exist, and what each one needs, is on its own page in the [catalog](/addons/).
+Find available packages and their requirements in the [catalog](/addons/catalog).
 
 ## AI first
 
@@ -55,3 +55,5 @@ bakers config check --scope machine --online
 ::: tip Ask your AI
 "Add the Artifacts addon to my machine config's `addons`, add the ports addon with a transport there too, then run the checks."
 :::
+
+**Next:** run the checks on the addon's own page. If you are preparing an environment, return to [project preparation](/provision/guide#check-tools-and-access).

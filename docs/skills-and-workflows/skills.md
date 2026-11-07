@@ -44,7 +44,7 @@ If `bakers` is already registered from an older Git or local-download source, in
 
 ## Verify in a new session
 
-Ask: “Find the installed `bb-init`, `bb-init-project` and `bb-workflow` skills and tell me what each does.” They must be discoverable before you ask the AI to prepare the machine. If missing, check that the plugin is enabled in this agent, then start a fresh session. [Machine setup](/get-started/machine#ai-first-install-the-skills) continues with `bb-init`.
+Ask: “Find the installed `bb-init`, `bb-init-project` and `bb-workflow` skills and tell me what each does.” They must be discoverable before you ask the AI to prepare the machine. If missing, check that the plugin is enabled in this agent, then start a fresh session. [Machine setup](/provision/machine#ai-first-install-the-skills) continues with `bb-init`.
 
 The shipped Matt recipe is included. Project-specific runtime, design or testing skills named by `WORKFLOW.md` must also be installed; the project wizard reports missing names. Installing the CLI alone does not install these instructions.
 

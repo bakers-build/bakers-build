@@ -90,7 +90,10 @@ Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` per
 
 `python3 tests/contract/skill-references.py` is the one structure check: links resolve, retired skill names are absent, grid headings are valid, every state file has the seven phases, `WORKFLOW.md` holds only `## bb-phase-*` sections, recipes link no frame reference and call no other bakers.build skill, no skill declares an input, exactly the bundle's skills exist, no contributor-facing file requires a private keytec skill, and every project skill `WORKFLOW.md` names exists under `.claude/skills/`. No skill check asserts a sentence.
 
-[Test a skill](/development/test-skills) covers isolated generation and offline replay.
-These evaluations use synthetic facts, without live integration.
-[Add a skill test](/development/add-skill-test) documents profiles and CI coverage;
-the [outtake case](/development/test-run-outtake) checks coding presentation and login URLs.
+Use these guides to run or extend evaluations. They use synthetic facts, without live integration.
+
+<DocQuickLinks aria-label="Skill verification guides" :items="[
+  { label: 'Test a skill', text: 'Generate an isolated example and replay its checks offline.', link: '/development/test-skills' },
+  { label: 'Add a skill test', text: 'Extend fixtures, validation profiles and CI coverage.', link: '/development/add-skill-test' },
+  { label: 'Test the coding outtake', text: 'Check presentation, review resources and exact login URLs.', link: '/development/test-run-outtake' }
+]" />

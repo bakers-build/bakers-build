@@ -80,7 +80,6 @@ function navigation(t, mutate = () => {}) {
   const areas = [
     { label: 'Get started', link: '/get-started/' },
     { label: 'Provision', link: '/provision/' },
-    { label: 'Security', link: '/security/' },
     { label: 'Agents', link: '/agents/' },
     { label: 'Skills & Workflows', link: '/skills-and-workflows/' },
     { label: 'Addons', link: '/addons/' },
@@ -89,7 +88,8 @@ function navigation(t, mutate = () => {}) {
     { label: 'Development', link: '/development/' },
   ]
   const sidebar = Object.fromEntries(areas.map(({ label, link }) => [link, [{ text: label, items: [{ link }] }]]))
-  sidebar['/get-started/'][0].items.push(...['connector', 'machine', 'connect-a-project', 'first-ticket'].map(slug => ({ link: `/get-started/${slug}` })))
+  sidebar['/get-started/'][0].items.push(...['connector', 'connect-a-project', 'first-ticket'].map(slug => ({ link: `/get-started/${slug}` })))
+  sidebar['/provision/'][0].items.push(...['machine', 'guide', 'tools', 'security/', 'examples'].map(slug => ({ link: `/provision/${slug}` })))
   for (const route of [...areas.map(a => a.link), ...Object.values(sidebar).flatMap(gs => gs.flatMap(g => g.items.map(i => i.link)))]) {
     const file = join(root, 'docs', route.slice(1) + (route.endsWith('/') ? 'index.md' : '.md'))
     mkdirSync(dirname(file), { recursive: true })
@@ -103,7 +103,7 @@ function navigation(t, mutate = () => {}) {
   return spawnSync(process.execPath, [join(root, 'docs/scripts/check-pages.mjs')], { encoding: 'utf8' })
 }
 
-test('requires exactly nine ordered manual areas', t => {
+test('requires exactly eight ordered manual areas', t => {
   const result = navigation(t, (areas, sidebar) => {
     areas.push({ label: 'Advanced', link: '/advanced/' })
   })
@@ -121,6 +121,14 @@ test('accepts complete navigation and rejects missing setup or excluded sidebar 
   assert.equal(invalid.status, 1, invalid.stdout)
   assert.match(invalid.stdout, /missing setup entry/)
   assert.match(invalid.stdout, /missing or excluded/)
+})
+
+test('requires machine setup, tools and security under Provision', t => {
+  const result = navigation(t, (_areas, sidebar) => {
+    sidebar['/provision/'][0].items = sidebar['/provision/'][0].items.filter(i => !['/provision/machine', '/provision/tools', '/provision/security/'].includes(i.link))
+  })
+  assert.equal(result.status, 1, result.stdout)
+  for (const slug of ['machine', 'tools', 'security/']) assert.ok(result.stdout.includes(`missing provision entry: ${slug}`), result.stdout)
 })
 
 test('redirect HTML preserves an incoming fragment unless its target specifies one', async () => {

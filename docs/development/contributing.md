@@ -64,12 +64,16 @@ Drupal runtime checks run on the `recipe-test` world first and on the `existing-
 
 ## In this section
 
-- [Build from source](/development/build-from-source) takes a clone to a working `bakers` and the rebuild loop.
-- [Addon contracts](/addons/build/contracts) describes the addon kinds and how to write one.
-- [Addon actions](/addons/build/actions) builds an addon whose messages appear on a ticket.
-- [Skill contract](/development/skill-contract) states how the frame, recipes, runtime guides and hints fit together.
-- [Write a recipe](/skills-and-workflows/recipes) adds an engineering method for `plan`, `working` and `review`.
-- [Architecture](/development/architecture) describes the current boundaries.
-- [Write the docs](/development/write-docs) gives the page rules and the checks the site build enforces.
+Use these guides for the implementation or documentation your change touches.
+
+<DocQuickLinks aria-label="Contributor guides" :items="[
+  { label: 'Build the CLI from source', text: 'Build your checkout and rebuild after edits.', link: '/development/build-from-source' },
+  { label: 'Addon contracts', text: 'Choose an extension point and implement its contract.', link: '/addons/build/contracts' },
+  { label: 'Inbox messages', text: 'Build an addon whose messages appear on a ticket.', link: '/addons/build/actions' },
+  { label: 'Skill contract', text: 'Understand the frame, recipes, runtime guides and project hints.', link: '/development/skill-contract' },
+  { label: 'Write a recipe', text: 'Add an engineering method for plan, working and review.', link: '/skills-and-workflows/recipes' },
+  { label: 'Architecture', text: 'Find the component that owns the behavior you want to change.', link: '/development/architecture' },
+  { label: 'Write the docs', text: 'Follow the page rules and run the site checks.', link: '/development/write-docs' }
+]" />
 
 Every `develop` pipeline that deploys dev2 also publishes the site to GitLab Pages, so a merged documentation change is public after that pipeline; it is not a release claim.

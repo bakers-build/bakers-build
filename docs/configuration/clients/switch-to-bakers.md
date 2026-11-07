@@ -57,7 +57,7 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
    | Server base URL | keep `https://app.bakers.build`, or enter your team's URL if it runs its own |
    | OAuth client identifier | keep `bakers-cli` |
 
-   It ends with `Offline: passed`. `bakers auth login` then prints a code: open the link, confirm, and the terminal reports `logged in`. Details are in [Install the CLI](/get-started/machine).
+   It ends with `Offline: passed`. `bakers auth login` then prints a code: open the link, confirm, and the terminal reports `logged in`. Details are in [Install the CLI](/provision/machine).
 
 4. **Connect each project and register its oven.** In the project checkout:
 

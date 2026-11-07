@@ -119,7 +119,7 @@ The inbox, `after_done`, `on_freeze` and `on_resume` hooks run without a run age
 
 ## Risk of loosening
 
-Every step away from `sandbox` gives ticket authors more of your rights: `system` gives them whatever your own harness configuration allows, `yolo` gives them everything your user can do (files, keys, network, every MCP server, your GitLab token), and an env var you take off the deny list can redirect the model API or run code in every process. Loosen per agent, not for the whole harness, and only for projects whose ticket authors you trust; a committed project [`security` block](/security/shared-settings) loosens for everyone with push access.
+Every step away from `sandbox` gives ticket authors more of your rights: `system` gives them whatever your own harness configuration allows, `yolo` gives them everything your user can do (files, keys, network, every MCP server, your GitLab token), and an env var you take off the deny list can redirect the model API or run code in every process. Loosen per agent, not for the whole harness, and only for projects whose ticket authors you trust; a committed project [`security` block](/provision/security/shared-settings) loosens for everyone with push access.
 
 The harness sandboxes do not isolate a machine. Where runs handle untrusted tickets, also run the conductor in a container or VM, give it credentials scoped to the project (a project-only Git token, no personal SSH key), and restrict outbound traffic with a host firewall.
 
@@ -127,7 +127,7 @@ The harness sandboxes do not isolate a machine. Where runs handle untrusted tick
 
 For the provided Coder workspace template:
 
-Keep only the installed harnesses, `@bakers-build/addon-claude` and `@bakers-build/addon-codex`, in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)), and set both to `security: 'custom'`. The default `sandbox` cannot start in the workspace: its `bwrap` needs unprivileged user namespaces, which a Docker host on Ubuntu 23.10 or later restricts. The container is the boundary instead, so a run can still read everything in your home, including your sign-ins and SSH key ([Run security](/security/execution)).
+Keep only the installed harnesses, `@bakers-build/addon-claude` and `@bakers-build/addon-codex`, in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)), and set both to `security: 'custom'`. The default `sandbox` cannot start in the workspace: its `bwrap` needs unprivileged user namespaces, which a Docker host on Ubuntu 23.10 or later restricts. The container is the boundary instead, so a run can still read everything in your home, including your sign-ins and SSH key ([Run security](/provision/security/execution)).
 
 ```js
 {

@@ -29,12 +29,12 @@ Without a `model` it publishes `codex` (your locally configured Codex model) plu
 | `security` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'sandbox'` | How strictly a run starts; see [Security](#security). |
 | `sandbox` | object | see below | Only with `security: 'sandbox'`. Each key set replaces its default; lists are not merged. |
 | `config` | object | none | Required with, and only valid with, `security: 'custom'`. |
-| `env_deny` | string[] | the [default list](/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
+| `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
 
-Runs default to the OS sandbox. [Execution security](/security/execution) owns boundaries, environment filtering and isolation risks.
+Runs default to the OS sandbox. [Execution security](/provision/security/execution) owns boundaries, environment filtering and isolation risks.
 
 | `security` | Launch flags |
 |---|---|
@@ -47,7 +47,7 @@ Runs default to the OS sandbox. [Execution security](/security/execution) owns b
 
 | Key | Default | Becomes |
 |---|---|---|
-| `allow_write` | `[]` | Extra workspace roots, `~/` expanded; `.git` is dropped ([Git metadata](/security/execution#git-metadata-in-codex-and-claude-sandboxes)) |
+| `allow_write` | `[]` | Extra workspace roots, `~/` expanded; `.git` is dropped ([Git metadata](/provision/security/execution#git-metadata-in-codex-and-claude-sandboxes)) |
 | `network` | `['*']` | network on when not empty; Codex has no host list, so any non-empty value allows every host |
 | `mcp_servers` | `{}` | the names of servers from your Codex config that stay enabled; [`bakers`](/addons/build/tools) is added at launch |
 | `trusted_commands`, `deny_read` | `[]` | Codex has no equivalent; a non-empty list fails loading rather than promise a protection Codex does not give |

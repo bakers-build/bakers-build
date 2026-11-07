@@ -6,10 +6,9 @@
 
 ```text
 Read https://bakers.build/provision/node.
-Check Node and npm on the conductor host first. If this is a Node
-application, separately read its version and lockfile. Explain missing setup
-and propose its existing locked-install and readiness commands; preserve
-working tools.
+Check Node and npm on the machine that runs bakers.build. Preserve
+working tools and guide me through installing missing prerequisites.
+Keep the application’s Node.js setup separate.
 ```
 
 The reference below explains the commands and configuration changes.
@@ -29,28 +28,11 @@ The reference below explains the commands and configuration changes.
 
 3. **Check the worker's context.** A Node.js installation inside a project container does not provide Node.js to a conductor running on the host. On a remote worker, repeat the checks on that server as its worker user.
 
-**Done when:** Node.js and npm are available in bakers.build's execution environment. Continue with [Install bakers.build and sign in](/get-started/machine).
+**Done when:** Node.js and npm are available in bakers.build's execution environment. Continue with [Install bakers.build and sign in](/provision/machine).
 
-## Node.js projects
+<span id="node-js-projects"></span>
+<span id="example-npm-project-hooks"></span>
 
-**Your application's Node.js setup is a separate choice.** Keep the project's version, package manager and scripts. [Lifecycle hooks](/provision/hooks) can run its dependency setup in each ticket worktree; `WORKFLOW.md` owns required checks.
+## Preparing a Node.js application?
 
-A Node.js project does not need Docker or another container runtime unless your project chooses them.
-
-## Example: npm project hooks
-
-**For a repository with `package-lock.json`.** Merge this entry into `hooks` in `.bakers/conductor.config.js`, keeping the rest of your configuration:
-
-```js
-hooks: {
-  after_create: 'npm ci',
-},
-```
-
-- **Every dispatch:** install locked dependencies in the ticket worktree, including reused worktrees.
-- **Other package manager?** Use your project's existing locked-install command instead.
-- **Build and test:** put required commands such as `npm test` in `WORKFLOW.md`; a failing hook does not block dispatch.
-- **Long-running dev server?** Keep it out of this blocking hook. Give concurrent worktrees separate ports when you start previews.
-- **Agents need the running app?** Configure [`provision_up`](/provision/hooks#provision-on-an-agent-s-request) with a command that follows its contract.
-
-[Hook lifecycle and environment →](/provision/hooks)
+Follow the [Node.js application example](/provision/node-project) for per-worktree dependencies, ports and data. The application can use its own Node version and package manager.

@@ -3,7 +3,7 @@
 Take a fresh clone of the bakers.build repository to a `bakers` built from your own checkout, so you can change the CLI and run it.
 
 ::: tip You probably do not need this
-To use bakers.build, install the published CLI with `npm install -g @bakers-build/bakers` and follow [Install and sign in](/get-started/machine). Build from source only to work on the CLI itself.
+To use bakers.build, install the published CLI with `npm install -g @bakers-build/bakers` and follow [Install and sign in](/provision/machine). Build from source only to work on the CLI itself.
 :::
 
 **You need:** a clone of the repository, Node 20.19 or later, and [pnpm](https://pnpm.io/installation).
@@ -32,7 +32,7 @@ To use bakers.build, install the published CLI with `npm install -g @bakers-buil
    ./bakers-cli/bin/bakers --help
    ```
 
-4. Sign in as described in [Install and sign in](/get-started/machine), calling `./bakers-cli/bin/bakers` in place of `bakers`.
+4. Sign in as described in [Install and sign in](/provision/machine), calling `./bakers-cli/bin/bakers` in place of `bakers`.
 
 **Done when:** `./bakers-cli/bin/bakers --help` lists `oven`, `ui`, `tools`, `auth`, `deployment`, `agents`, `info` and `ports`. A source build reports the workspace version, currently `0.0.1`.
 
@@ -57,7 +57,7 @@ pnpm install && pnpm -r run build
 5. **PATH shim.** It copies `bakers-cli/templates/bakers.pathshim.sh` to `~/.local/bin/bakers`. This writes outside the repository. A different `bakers` already there is left untouched and the script prints the command that replaces it.
 6. **Local scaffold.** It writes `.bakers/conductor.config.local.js` from a template, asking for an OAuth client id in an interactive shell. It carries no identity; `bakers init` generates the machine UUID. The file is gitignored. See the warning below.
 7. **herdr plugin.** When `herdr` is on the PATH it links the repository's `spiceedit` plugin. This is best effort and never fails the bootstrap.
-8. **Summary.** It prints next steps. They are out of date; use `bakers init` from [Install and sign in](/get-started/machine) instead.
+8. **Summary.** It prints next steps. They are out of date; use `bakers init` from [Install and sign in](/provision/machine) instead.
 
 ::: warning The scaffold and the printed next steps are retired
 `bakers config check` reports the `oauth` keys that step 6 writes as dead keys, because sign-in is now `bakers init` and `bakers auth login`. Ignore the printed instructions to export a consumer secret, and delete the scaffold's `oauth` block if a check warns about it.
@@ -144,4 +144,11 @@ It needs network access to the npm registry. `pnpm run prepare:publish` alone wr
 - **`bakers: no global bakers on PATH, and no .bakers-testbuild workspace above ...`.** You are outside every test workspace and have no global CLI. Install `@bakers-build/bakers` or call `./bakers-cli/bin/bakers`.
 - **A bare `bakers` runs the released CLI inside your clone.** That is the rule, not a fault. Call `./bakers-cli/bin/bakers` to run your build.
 
-For connecting, signing in and migrating configuration, see [Install and sign in](/get-started/machine) and [Connect a project by hand](/get-started/connect-a-project).
+## Connect your build
+
+Use these guides when your source build needs a connection or project setup. Call `./bakers-cli/bin/bakers` in place of `bakers`.
+
+<DocQuickLinks aria-label="Connect your source build" :items="[
+  { label: 'Execution setup and sign-in', text: 'Check the execution environment, CLI configuration and account access.', link: '/provision/machine' },
+  { label: 'Prepare your project', text: 'Connect the checkout and verify its tools and workflow.', link: '/get-started/connect-a-project' }
+]" />

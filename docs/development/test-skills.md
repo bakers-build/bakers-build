@@ -100,4 +100,11 @@ Share the returned public origin with `/index.html` appended, after an HTTP 200 
 
 The default worker runs in a fresh temporary directory with no tools, MCP servers, loaded skills or persistent session. Explicit tool-call fixtures permit only the local simulator. Supplied observations replace tool calls. These evaluations test interpretation and reporting; they do not exercise live application access or workflow transitions.
 
-For authoring and required offline CI checks, see [Add a skill test](/development/add-skill-test). The [run-outtake case](/development/test-run-outtake) adds presentation-specific assertions and an exact-login negative control.
+## Extend your tests
+
+Add coverage for another skill or explore a maintained example.
+
+<DocQuickLinks aria-label="Extend skill tests" :items="[
+  { label: 'Add a skill test', text: 'Write fixtures and profiles, then run the required offline CI checks.', link: '/development/add-skill-test' },
+  { label: 'Test the coding outtake', text: 'Check presentation and use a negative control for the exact login URL.', link: '/development/test-run-outtake' }
+]" />
