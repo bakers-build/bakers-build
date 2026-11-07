@@ -11,8 +11,8 @@ requirements and commands; this skill owns the conversation. Return project conf
 
 ## Read
 
-Read [Set up a machine](https://bakers.build/get-started/machine).
-In a bakers.build source checkout, use its `docs/get-started/machine.md` instead,
+Read [Set up a machine](https://bakers.build/provision/machine).
+In a bakers.build source checkout, use its `docs/provision/machine.md` instead,
 so instructions match the revision being worked on.
 If the required documentation cannot be read, report the missing source and stop; do not
 substitute a remembered tool list.

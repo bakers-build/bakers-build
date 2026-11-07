@@ -54,7 +54,7 @@ Each fact has one canonical home. Repeat only essential safety instructions at t
 
 Frontmatter, fenced code, link destinations and HTML do not count. Split by useful topic when a page exceeds its limit. Every rendered manual page needs a sidebar entry. Keep all eight areas directly accessible in the sidebar. Landing and documentation share `NAV`: How it works, Get started, Documentation and Addons. Documentation groups Provision, Agents, Skills & Workflows, Configuration, Self-hosting and Development.
 
-Use logical canonical URLs and update current internal links and anchors. Retain direct redirects for moved machine and security pages, including their existing fragments. All `docs/routes.json` entries must be direct, valid and free of content-page collisions. Inventory existing content before moving it, and audit each disposition so useful topics remain reachable.
+Use logical canonical URLs and update current internal links and anchors. Backward-compatible URLs, fragment aliases and new redirects are not required. All retained `docs/routes.json` entries must be direct, valid and free of content-page collisions. Inventory existing content before moving it, and audit each disposition so useful topics remain reachable.
 
 ## Checks and publication
 

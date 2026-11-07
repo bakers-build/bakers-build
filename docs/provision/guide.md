@@ -1,7 +1,7 @@
 ---
 prev:
-  text: Prepare your project
-  link: /get-started/connect-a-project
+  text: Provision
+  link: /provision/
 next:
   text: Connect your project
   link: /get-started/connect-a-project

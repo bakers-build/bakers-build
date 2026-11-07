@@ -20,7 +20,7 @@ The shared machine and project configuration offers three modes. Select one that
 | `system` | Use the harness's existing security configuration; bakers.build adds no security flag. |
 | `yolo` | Bypass the harness's sandbox and permission prompts, within the execution user's rights. |
 
-Not every harness supports every mode. OpenCode defaults to `system` and rejects `sandbox`; Pi supports `system` and its own `custom` configuration, not `sandbox` or `yolo`. Selected harnesses also offer `custom` for advanced configuration. See [modes and harness differences](/provision/security/execution#modes).
+Not every harness supports every mode. OpenCode and Pi ignore the shared mode and run in `system` unless their own entry sets a mode; OpenCode's entry rejects `sandbox`, and Pi's entry supports `system` and its own `custom` configuration, not `sandbox` or `yolo`. Selected harnesses also offer `custom` for advanced configuration. See [modes and harness differences](/provision/security/execution#modes).
 
 <span id="tools-and-isolation-strategy"></span>
 
