@@ -119,7 +119,7 @@ Cockpit tabs are layered. The three lists concatenate in the order machine, conn
    import type { ExecutorPlugin } from '@bakers-build/conductor/contract';
    ```
 
-   It carries only types and a few helpers, no engine or runtime, so importing it costs nothing at boot.
+   It carries only types and helpers, so importing it costs nothing at boot.
 3. Export the accumulators from `src/preset.ts`. Type a conductor preset as `Preset` from the contract, and a command, connection or UI preset as `BbPreset` from `@bakers-build/core`.
 
    ```ts
@@ -136,6 +136,8 @@ Cockpit tabs are layered. The three lists concatenate in the order machine, conn
    cd bakers-cli && pnpm install && pnpm -r run build
    node scripts/assert-acyclic.mjs
    ```
+
+Executors and workspaces: [their guide](/addons/build/executor-workspace).
 
 The guard rejects an addon that depends on a sink, names a dependency outside its allowance, lists a contract as a plain dependency, or contributes to the conductor or UI surface without the matching peer dependency; [architecture](/configuration/project/contributing#architecture) has the rules. A new non-private package under `addons/` is published without a list to edit. [Build from source](/configuration/project/contributing#build-from-source) covers `verify:package`, which installs the whole set the way npm users do.
 
