@@ -1,8 +1,8 @@
 # bakers-ddev Coder template
 
-Coder is an optional client/workspace provider, separate from the [control-plane server](../../docs/configuration/project/server.md). A local workstation needs neither Coder nor preview tunnels.
+Coder is an optional client/workspace provider, separate from the [control-plane server](../../docs/self-hosting/server.md). A local workstation needs neither Coder nor preview tunnels.
 
-One long-lived Coder workspace per person that is a bakers.build worker, like a developer's own machine. The template provides the machine and the tools. Signing in, checking out projects and starting conductors happen inside the workspace through `/bb-init`, which follows the [guide](../../docs/configuration/machine/coder-workspace.md).
+One long-lived Coder workspace per person that is a bakers.build worker, like a developer's own machine. The template provides the machine and the tools. Signing in, checking out projects and starting conductors happen inside the workspace through `/bb-init`, which follows the [guide](../../docs/provision/coder-workspace.md).
 
 A workspace is one Sysbox container with its own Docker daemon, a home volume and a Docker volume. The agent runs [`scripts/install.sh`](scripts/install.sh) on every start. It installs each missing tool into the home volume, starts `herdr server`, then starts the [PM bot](#pm-bot) when the workspace has its parameters.
 
@@ -59,7 +59,7 @@ coder templates push bakers-ddev -d coder/bakers-ddev \
   --variable image=registry.example.org/team/workspace-base:1.0.0
 ```
 
-Coder gives a new template to everyone by default. Restrict it in the Coder UI if needed. Create a workspace with `coder create <name> --template bakers-ddev`, then continue with the [guide](../../docs/configuration/machine/coder-workspace.md).
+Coder gives a new template to everyone by default. Restrict it in the Coder UI if needed. Create a workspace with `coder create <name> --template bakers-ddev`, then continue with the [guide](../../docs/provision/coder-workspace.md).
 
 ## Optional previews
 

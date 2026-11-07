@@ -27,7 +27,7 @@ bakers oven start
 bakers oven status
 ```
 
-The agent catalog must contain the intended harness; narrow the [machine's agents](/configuration/agents) to those installed and authenticated. Status must show your conductor **online**. Keep its configured identity distinct from other workers. [Conductors](/configuration/project/conductors) explains scheduling and served states.
+The agent catalog must contain the intended harness; narrow the [machine's agents](/agents/guide) to those installed and authenticated. Status must show your conductor **online**. Keep its configured identity distinct from other workers. [Conductors](/configuration/project/conductors) explains scheduling and served states.
 
 ## Create and follow
 
@@ -54,4 +54,4 @@ Read the **Runs** tab, then the latest `summary`. Questions during execution app
 
 If nothing starts, check the conductor serves this state, has a free slot, blockers are closed, and the ticket is neither frozen nor failing. Use [Troubleshooting](/configuration/clients/troubleshooting) for the next diagnostic step.
 
-**Next:** [Follow a ticket](/get-started/daily-work/follow-a-ticket), [accept results](/get-started/daily-work/accept-results), or [create another ticket](/get-started/daily-work/create-a-ticket).
+**Next:** [Follow a ticket](/get-started/daily-work/follow-a-ticket), [accept results](/skills-and-workflows/accept-results), or [create another ticket](/get-started/daily-work/create-a-ticket).

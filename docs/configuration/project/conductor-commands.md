@@ -56,7 +56,7 @@ A start on a machine where an enabled agent cannot start its sandbox prints `war
 
 ### check
 
-`check` prints one line per enabled agent: `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix> (see https://bakers.build/configuration/agents/execution-security#sandbox-prerequisites)`. It exits 1 when one agent cannot start its sandbox and needs no sign-in. While that is so, every cycle logs `claims withheld: sandbox unavailable: …` and claims nothing. Prerequisites per platform: [Sandbox prerequisites](/configuration/agents/execution-security#sandbox-prerequisites).
+`check` prints one line per enabled agent: `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix> (see https://bakers.build/security/execution#sandbox-prerequisites)`. It exits 1 when one agent cannot start its sandbox and needs no sign-in. While that is so, every cycle logs `claims withheld: sandbox unavailable: …` and claims nothing. Prerequisites per platform: [Sandbox prerequisites](/security/execution#sandbox-prerequisites).
 
 ### once and clean
 

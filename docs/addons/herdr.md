@@ -28,7 +28,7 @@ From another terminal as the same user:
 herdr workspace list
 ```
 
-The default session must answer; a named session uses a separate socket. A headless host uses `herdr server`; [worker servers](/configuration/machine/worker-server) covers startup ordering.
+The default session must answer; a named session uses a separate socket. A headless host uses `herdr server`; [worker servers](/provision/worker-server) covers startup ordering.
 
 ## Configuration
 

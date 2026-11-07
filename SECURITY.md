@@ -23,6 +23,6 @@ supported release range and reporting owner; no response-time commitment
 or maintenance window is asserted here. See the [acceptance matrix](docs/bakers/clean-install-acceptance.md#support-and-cleanup)
 for the current limits and [component licensing](docs/bakers/licensing.md) for publication scope.
 
-The [security manual](docs/configuration/security.md) describes access controls and operational
+The [security manual](docs/security/access-and-data.md) describes access controls and operational
 boundaries. Record actual client security settings and evidence; a worktree alone is not an OS
 sandbox, and a system-mode run must not be described as a sandbox pass.

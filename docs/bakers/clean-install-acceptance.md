@@ -19,7 +19,7 @@ digests, and skill source commits. Record the harness commit separately. The tag
 insufficient. Verify that source/history licensing and secret-review clearance covers these
 artifacts. A private repository or unavailable image is BLOCKED, not a reason to use private caches.
 
-Use the integrated [server reference](../configuration/project/server.md) only when the candidate
+Use the integrated [server reference](../self-hosting/server.md) only when the candidate
 contains its supported standalone provisioning path. The currently integrated legacy Komodo stack
 is not proof of an independent public service; do not replace missing upstream work with a new
 deployment platform. Record source/artifact availability and clearance references in F1.

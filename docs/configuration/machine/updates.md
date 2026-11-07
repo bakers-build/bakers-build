@@ -13,7 +13,7 @@ migration with --dry-run and show the effects before applying it.
 Use bb-upgrade-project for shared project files in a branch.
 ```
 
-Refresh [skills](/configuration/agents/skills#updates) separately from the CLI. They guide the update but do not replace your tools automatically. The exact CLI/configuration sequence follows.
+Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. They guide the update but do not replace your tools automatically. The exact CLI/configuration sequence follows.
 
 ## Manual sequence and background
 
@@ -49,7 +49,7 @@ Refresh [skills](/configuration/agents/skills#updates) separately from the CLI. 
 
    Run a small test ticket in a disposable project, then submit the branch for review. Teammates update their own tools; your merge does not do it for them.
 
-5. A server update is an operator task: follow [Server](/configuration/project/server).
+5. A server update is an operator task: follow [Server](/self-hosting/server).
 
 **Done when:** `bakers --version` shows the release you meant to install, the final dry run reports no change, the online check passes, and a small test ticket runs as expected.
 

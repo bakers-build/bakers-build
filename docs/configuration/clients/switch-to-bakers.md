@@ -2,7 +2,7 @@
 
 bakers.build is driven by the `bakers` command from `@bakers-build/bakers`. The older `gaia` command from `@gaia-ai/gaia` does not work against a bakers.build server, and `bakers` reads none of its files. This page moves one machine from `gaia` to `bakers`.
 
-**You need:** [Node.js ≥ 20.19 with npm](/configuration/provisioning/node) and your team's bakers.build server URL, `https://app.bakers.build` unless your team runs its own.
+**You need:** [Node.js ≥ 20.19 with npm](/provision/node) and your team's bakers.build server URL, `https://app.bakers.build` unless your team runs its own.
 
 ## Before you switch
 

@@ -1,6 +1,6 @@
 # Clients
 
-Choose your TUI or client during [project setup](/get-started/connect-a-project#choose-your-tui). It organizes tickets, agent sessions and worktrees. The [project environment](/configuration/provisioning) runs the application and its dependencies; Claude/Codex are the agents that do the work.
+Choose your TUI or client during [project setup](/get-started/connect-a-project#choose-your-tui). It organizes tickets, agent sessions and worktrees. The [project environment](/provision/guide) runs the application and its dependencies; Claude/Codex are the agents that do the work.
 
 | Client | Purpose | Canonical setup |
 |---|---|---|

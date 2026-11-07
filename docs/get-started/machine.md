@@ -6,7 +6,7 @@ Choose the project's TUI and development environment afterwards in [project setu
 
 **You need:** your own account, workspace access, server URL, and an installed, signed-in [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup). Use your existing agent. A chat-only connector cannot install local tools.
 
-Running your own control plane? Follow the separate [server installation](/configuration/project/server). This machine setup can run on a local workstation; Coder and shared preview tunnels are optional.
+Running your own control plane? Follow the separate [server installation](/self-hosting/server). This machine setup can run on a local workstation; Coder and shared preview tunnels are optional.
 
 <span id="skill-wizard-—-recommended"></span>
 <span id="use-the-guided-setup"></span>
@@ -21,14 +21,14 @@ Install the bakers plugin **before** asking it to set up the machine. These skil
 /plugin install bakers@bakers
 ```
 ```text [Codex — paste into your agent]
-Read https://bakers.build/configuration/agents/skills#codex.
+Read https://bakers.build/skills-and-workflows/skills#codex.
 Install bakers@bakers from https://github.com/bakers-build/bakers-build,
 using the main branch. Check existing marketplace registrations first
 and preserve my other plugins. Tell me when to start a new session.
 ```
 :::
 
-[Skill installation](/configuration/agents/skills) explains both paths and the manual commands. Start a new agent session, then ask:
+[Skill installation](/skills-and-workflows/skills) explains both paths and the manual commands. Start a new agent session, then ask:
 
 ```text
 Use `bakers:bb-init` to guide me through installing and setting up bakers.build.
@@ -39,7 +39,7 @@ change before applying it. Leave project tooling for project setup.
 
 ## What happens in the background
 
-The skill checks Git, host [Node.js ≥20.19 and npm](/configuration/provisioning/node), the agent and its [sandbox prerequisites](/configuration/agents/execution-security#sandbox-prerequisites). Container Node does not supply the host CLI.
+The skill checks Git, host [Node.js ≥20.19 and npm](/provision/node), the agent and its [sandbox prerequisites](/security/execution#sandbox-prerequisites). Container Node does not supply the host CLI.
 
 It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connector/connections) explains storage. Correct existing settings are reused.
 
@@ -65,4 +65,4 @@ Accept your workspace invitation at the server's `/user/login`. `Online: pending
 
 **Done when:** Git, Node/npm and the agent answer their checks, `bb-init` is available, authentication passes, and `bakers info` lists your workspace. Ask the AI to report each result. [Troubleshooting](/configuration/clients/troubleshooting) covers failures.
 
-**Next:** [Set up a project](/get-started/connect-a-project). For remote hosts, use [worker servers](/configuration/machine/worker-server) or [Coder workspaces](/configuration/machine/coder-workspace).
+**Next:** [Set up a project](/get-started/connect-a-project). For remote hosts, use [worker servers](/provision/worker-server) or [Coder workspaces](/provision/coder-workspace).

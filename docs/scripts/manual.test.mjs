@@ -78,15 +78,18 @@ function navigation(t, mutate = () => {}) {
   mkdirSync(join(root, 'docs/scripts'), { recursive: true })
   mkdirSync(join(root, 'docs/.vitepress'), { recursive: true })
   const areas = [
-    { label: 'Getting Started', link: '/get-started/' },
-    { label: 'Configuration', link: '/configuration/' },
+    { label: 'Get started', link: '/get-started/' },
+    { label: 'Provision', link: '/provision/' },
+    { label: 'Security', link: '/security/' },
+    { label: 'Agents', link: '/agents/' },
+    { label: 'Skills & Workflows', link: '/skills-and-workflows/' },
     { label: 'Addons', link: '/addons/' },
+    { label: 'Configuration', link: '/configuration/' },
+    { label: 'Self-hosting', link: '/self-hosting/' },
+    { label: 'Development', link: '/development/' },
   ]
-  const sidebar = {
-    '/get-started/': [{ text: 'Getting Started', items: ['connector', 'machine', 'connect-a-project', 'first-ticket'].map(slug => ({ link: `/get-started/${slug}` })) }],
-    '/configuration/': ['Connector', 'Machine', 'Project', 'Provisioning', 'Clients', 'Agents', 'Workflows', 'Security'].map(text => ({ text, items: [{ link: `/configuration/${text.toLowerCase()}` }] })),
-    '/addons/': [{ text: 'Addons', items: [{ link: '/addons/' }] }],
-  }
+  const sidebar = Object.fromEntries(areas.map(({ label, link }) => [link, [{ text: label, items: [{ link }] }]]))
+  sidebar['/get-started/'][0].items.push(...['connector', 'machine', 'connect-a-project', 'first-ticket'].map(slug => ({ link: `/get-started/${slug}` })))
   for (const route of [...areas.map(a => a.link), ...Object.values(sidebar).flatMap(gs => gs.flatMap(g => g.items.map(i => i.link)))]) {
     const file = join(root, 'docs', route.slice(1) + (route.endsWith('/') ? 'index.md' : '.md'))
     mkdirSync(dirname(file), { recursive: true })
@@ -100,14 +103,12 @@ function navigation(t, mutate = () => {}) {
   return spawnSync(process.execPath, [join(root, 'docs/scripts/check-pages.mjs')], { encoding: 'utf8' })
 }
 
-test('requires the three manual areas and primary configuration topics', t => {
+test('requires exactly nine ordered manual areas', t => {
   const result = navigation(t, (areas, sidebar) => {
     areas.push({ label: 'Advanced', link: '/advanced/' })
-    sidebar['/configuration/'] = sidebar['/configuration/'].filter(g => g.text !== 'Security')
   })
   assert.equal(result.status, 1, result.stdout)
   assert.match(result.stdout, /manual areas/)
-  assert.match(result.stdout, /Configuration topics/)
 })
 
 test('accepts complete navigation and rejects missing setup or excluded sidebar destinations', t => {
@@ -115,7 +116,7 @@ test('accepts complete navigation and rejects missing setup or excluded sidebar 
   assert.equal(valid.status, 0, valid.stdout)
   const invalid = navigation(t, (_areas, sidebar) => {
     sidebar['/get-started/'][0].items = sidebar['/get-started/'][0].items.filter(i => i.link !== '/get-started/connector')
-    sidebar['/addons/'][0].items.push({ link: '/bakers/development/architecture' })
+    sidebar['/addons/'][0].items.push({ link: '/development/architecture' })
   })
   assert.equal(invalid.status, 1, invalid.stdout)
   assert.match(invalid.stdout, /missing setup entry/)
