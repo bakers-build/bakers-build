@@ -1219,7 +1219,9 @@ Examples:
 
   conductor
     .command('start')
-    .description('start the conductor loop (a detached background process by default)')
+    .description(
+      'start the conductor loop (a detached background process by default)',
+    )
     .option('--foreground', 'run the loop in this process', false)
     .option('--no-update-check', 'skip the daily CLI update check')
     .option(
