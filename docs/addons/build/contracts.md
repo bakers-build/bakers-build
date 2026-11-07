@@ -34,7 +34,7 @@ What ships today:
 | Surface | Addons |
 |---|---|
 | command | `conductor` and `ui` (inside their own packages), `addon-dropsh`, `addon-deployment`, `addon-agents`, `addon-info`, `addon-ports`, `addon-track` |
-| conductor | `addon-remote-drupal` (remote), `addon-herdr` (executor and workspace), `addon-workspace-git` (workspace), the agents `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi`, and the inbox of `addon-ports` |
+| conductor | `addon-remote-drupal` (remote), `addon-herdr` (executor and workspace), `addon-herdr-core` (executor), `addon-workspace-git` (workspace), the agents `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi`, and the inbox of `addon-ports` |
 | connection | `addon-auth-basic`, `addon-essentials`, `addon-bakers-ui` (the terminal renderer), `addon-workspace`, and the cockpit tab `addon-bakers-ui-artifacts` |
 
 `addon-fake` is a workspace-only test fixture that contributes a remote, an executor, a workspace and an inbox. `addon-essentials` is a meta-addon that brings the Markdown renderer, the JSON:API schema plugin and the name resolver `addon-name-refs`, which has no preset of its own.
@@ -71,7 +71,7 @@ One function, `discoverAddons`, in `bakers-cli/core/src/plugins/discover-addons.
 3. An exact repeat, meaning the same resolved module, options and alias, is skipped with a warning. The same package with different options loads again as a second instance.
 4. Discovery does not install packages. An unresolvable addon is an error, except in the machine file and the `uiEntries` layers, where it is skipped with a warning naming the package and file.
 
-Singleton slots (remote, executor, workspace) resolve last-wins, with a warning naming the competitors. A contribution of the wrong `kind` for its slot is an error. An explicit `remote`, `executor` or `workspace` descriptor in the config takes precedence over anything discovered. A conductor config with no remote, executor or workspace fails to load.
+Singleton slots (remote, executor, workspace) resolve last-wins, warning about the competitors. A wrong `kind` for its slot is an error. An explicit `remote`, `executor` or `workspace` descriptor in the config takes precedence over anything discovered; a machine `executor` wins ([slots](/addons/slots)). A conductor config with no remote, executor or workspace fails to load.
 
 The machine file `~/.bakers/machine.config.js` and the project file `.bakers/conductor.config.js` each carry one `addons` list, merged into one effective list by `scopeAddons` (`bakers-cli/core/src/plugins/scoped-addons.ts`). The addon's `scopes` export (next section) decides where it may be listed; an entry elsewhere is not loaded and warns, and `bakers config check --online` reports `addon_scope_not_allowed`. The same resolved package and `alias` in both files becomes one entry at the machine position, machine entries first. An unresolvable machine entry is skipped with a warning; an unresolvable project entry fails the conductor load.
 
@@ -119,7 +119,7 @@ Cockpit tabs are layered. The three lists concatenate in the order machine, conn
    import type { ExecutorPlugin } from '@bakers-build/conductor/contract';
    ```
 
-   It carries only types and a few helpers, no engine or runtime, so importing it costs nothing at boot.
+   It carries only types and helpers, so importing it costs nothing at boot.
 3. Export the accumulators from `src/preset.ts`. Type a conductor preset as `Preset` from the contract, and a command, connection or UI preset as `BbPreset` from `@bakers-build/core`.
 
    ```ts
@@ -136,6 +136,8 @@ Cockpit tabs are layered. The three lists concatenate in the order machine, conn
    cd bakers-cli && pnpm install && pnpm -r run build
    node scripts/assert-acyclic.mjs
    ```
+
+Executors and workspaces: [their guide](/addons/build/executor-workspace).
 
 The guard rejects an addon that depends on a sink, names a dependency outside its allowance, lists a contract as a plain dependency, or contributes to the conductor or UI surface without the matching peer dependency; [architecture](/configuration/project/contributing#architecture) has the rules. A new non-private package under `addons/` is published without a list to edit. [Build from source](/configuration/project/contributing#build-from-source) covers `verify:package`, which installs the whole set the way npm users do.
 

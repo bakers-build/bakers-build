@@ -38,6 +38,9 @@ importers:
       '@bakers-build/addon-herdr':
         specifier: workspace:^
         version: link:addons/herdr
+      '@bakers-build/addon-herdr-core':
+        specifier: workspace:^
+        version: link:addons/herdr-core
       '@bakers-build/addon-kimi':
         specifier: workspace:^
         version: link:addons/kimi
@@ -320,6 +323,22 @@ importers:
       '@bakers-build/addon-workspace-git':
         specifier: workspace:^
         version: link:../workspace-git
+    devDependencies:
+      '@bakers-build/conductor':
+        specifier: workspace:^
+        version: link:../../conductor
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
+  addons/herdr-core:
+    dependencies:
+      '@bakers-build/addon-herdr':
+        specifier: workspace:^
+        version: link:../herdr
     devDependencies:
       '@bakers-build/conductor':
         specifier: workspace:^
@@ -672,6 +691,9 @@ importers:
       '@bakers-build/addon-herdr':
         specifier: workspace:^
         version: link:../addons/herdr
+      '@bakers-build/addon-herdr-core':
+        specifier: workspace:^
+        version: link:../addons/herdr-core
       '@bakers-build/addon-info':
         specifier: workspace:^
         version: link:../addons/info

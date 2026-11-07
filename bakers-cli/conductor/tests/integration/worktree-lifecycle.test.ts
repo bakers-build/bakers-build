@@ -8,7 +8,7 @@
  *   dropsh-minted ticket -> real claimed bb_run -> real HerdrWorkspace.ensure
  *   (git worktree off the real bakers checkout + `bash .ddev/worktree-post.sh` hook ->
  *   hardened web/sites/default) -> assert created -> ticket set done -> conductor
- *   tick -> reap -> HerdrExecutor.removeWorktree -> assert deleted.
+ *   tick -> reap -> HerdrWorkspace.remove -> assert deleted.
  *
  * Runs on the HOST (herdr + ddev live there, not in the web container) behind
  * TWO INDEPENDENT gates:
@@ -331,13 +331,16 @@ function terminalWorktreeLifecycle(terminalState: 'done' | 'cancelled'): void {
         });
         // `herdrRoot`, not `root`: herdr's worktree base must be the main clone
         // (see mainCloneRoot) — this is the same anchor production derives.
-        const workspace = new HerdrWorkspace({ root: herdrRoot });
-        // Lifecycle hooks are executor-owned (BB-84): pass them + the logger to
-        // the executor, not the workspace. The conductor calls executor.runHook.
+        const workspace = new HerdrWorkspace({ root: herdrRoot, logger });
         const executor = new HerdrExecutor(
+          { root: herdrRoot, command: 'true' },
+          undefined,
+          logger,
+        );
+        // Lifecycle hooks are conductor-owned: they come from the config.
+        conductor = new Conductor(
           {
-            root: herdrRoot,
-            command: 'true',
+            ...config,
             hooks: {
               after_create: 'bash .ddev/worktree-post.sh',
               // Keeps its name on a cancelled ticket too: renaming the hook
@@ -346,11 +349,6 @@ function terminalWorktreeLifecycle(terminalState: 'done' | 'cancelled'): void {
               after_done: 'ddev delete -Oy',
             },
           },
-          undefined,
-          logger,
-        );
-        conductor = new Conductor(
-          config,
           remote,
           executor,
           workspace,
@@ -458,7 +456,7 @@ function terminalWorktreeLifecycle(terminalState: 'done' | 'cancelled'): void {
 
         // The ->save() above already closed the ticket server-side (BB-451).
         // reap(): fetchUncleanedTickets -> after_done (ddev delete) ->
-        // executor.removeWorktree(branch, worktreePath) -> markTicketCleanedUp.
+        // workspace.remove(branch, worktreePath) -> markTicketCleanedUp.
         await conductor.tick();
 
         // THE assertion this whole test exists for: the worktree is gone on disk...

@@ -44,6 +44,12 @@ export interface MachineContext {
   tunnel?: boolean;
   /** Shared run security for every agent; the conductor validates it. */
   security?: unknown;
+  /**
+   * This machine's executor, an `executor` slot value as in a conductor
+   * config. It overrides every project's executor on this machine; the
+   * workspace and remote stay project-owned.
+   */
+  executor?: unknown;
 }
 
 /**

@@ -43,7 +43,7 @@ ddev init --provider recipe-test     # explicit database replacement, builds and
 The conductor calls `worktree-post.sh`, which prepares env before checking its bootstrap sentinel.
 The script copies missing parent client/audience settings, sets the worktree-local base URL, and
 runs `setup-test-project.sh --workspace-only`. Only that setup script owns the conditional CLI
-build. Hooks remain executor best-effort; a failed hook is not proof of a usable environment.
+build. Hooks remain conductor best-effort; a failed hook is not proof of a usable environment.
 
 `ddev init` defaults to `existing-config`; `recipe` installs the Bakers recipe and playground seed,
 while `recipe-test` installs that recipe and the test seed. It starts DDEV, installs Composer

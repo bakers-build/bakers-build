@@ -1,3 +1,4 @@
+import type { OpenLayout } from './open-layout.js';
 import type { RootGitExec } from './root-anchor.js';
 
 export interface PaneSpec {
@@ -29,18 +30,11 @@ export interface HerdrExecutorOptions {
   /** Legacy fallback for input.command. */
   command?: string;
   /**
-   * Lifecycle-hook commands, keyed like `config.hooks` (after_create,
-   * before_run, after_run, after_done, on_freeze, on_resume). The factory copies `config.hooks` here
-   * so the executor — the single best-effort catch point — can run them.
+   * Startup layout for a fresh worktree's initial pane, applied by
+   * `openWorkspace` (BB-139). Unset → `DEFAULT_OPEN_LAYOUT`
+   * (`bakers ui --ticket <ID>`, BB-234); `{}` → the bare empty tab.
    */
-  hooks?: {
-    after_create?: string;
-    before_run?: string;
-    after_run?: string;
-    after_done?: string;
-    on_freeze?: string;
-    on_resume?: string;
-  };
+  open?: OpenLayout;
   /**
    * The parent repo root (main clone) — herdr `--cwd` target for reattaching a
    * closed worktree. herdr rejects a `worktree open` whose --cwd is a linked

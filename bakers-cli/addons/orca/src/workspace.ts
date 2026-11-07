@@ -1,13 +1,13 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  renderTemplate,
   resolveBaseRef,
-  truncateOpenTabTitle,
+  restoreWritable,
   validateBranch,
 } from '@bakers-build/addon-herdr/shared';
 import {
   loadInstructions,
+  removeGitWorktree,
   runBranchGit,
 } from '@bakers-build/addon-workspace-git';
 import type {
@@ -16,6 +16,7 @@ import type {
   EnsuredWorkspace,
   ExecutorDeps,
   WorkspacePlugin,
+  WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger, RootGitExec } from '@bakers-build/core';
 import { deriveCheckoutRoot, exec } from '@bakers-build/core';
@@ -28,6 +29,10 @@ import {
 } from './orca-cli.js';
 
 export type GitExec = (args: string[]) => Promise<string>;
+
+function normPath(path: string): string {
+  return path.replace(/\/+$/, '');
+}
 export type Sleep = (ms: number) => Promise<void>;
 
 /**
@@ -86,6 +91,32 @@ export async function waitForAdoption(
   );
 }
 
+/** Register `root` with Orca once and make its git worktrees visible. */
+export async function registerRepo(
+  orca: OrcaExec,
+  root: string,
+): Promise<void> {
+  const listed = await orca(['repo', 'list']);
+  const repos =
+    isRecord(listed) && Array.isArray(listed.repos) ? listed.repos : [];
+  const known = repos.some(
+    (r) =>
+      isRecord(r) && typeof r.path === 'string' && resolve(r.path) === root,
+  );
+  if (!known) {
+    await orca(['repo', 'add', '--path', root]);
+  }
+  // Idempotent; without it Orca's sidebar hides worktrees it did not create.
+  await orca([
+    'repo',
+    'set',
+    '--repo',
+    `path:${root}`,
+    '--external-worktree-visibility',
+    'show',
+  ]);
+}
+
 /** `git worktree list --porcelain` records; the main checkout comes first. */
 export function porcelainEntries(
   output: string,
@@ -116,8 +147,6 @@ export interface OrcaWorkspaceOptions {
   worktreeDir?: string;
   /** Base ref for new branches. Default: the upstream of the root's HEAD. */
   baseBranch?: string;
-  /** Overview terminal of a fresh worktree. Unset → {@link DEFAULT_OPEN_LAYOUT}. */
-  open?: OrcaOpenLayout;
   adoptTimeoutMs?: number;
   execOrca?: OrcaExec;
   execGit?: GitExec;
@@ -140,18 +169,13 @@ export class OrcaWorkspace implements BbWorkspace {
   private readonly root: string;
   private readonly execOrca: OrcaExec;
   private readonly execGit: GitExec;
-  private readonly open: OrcaOpenLayout;
   private readonly logger: ConductorLogger;
   private readonly sleep: Sleep;
-  /** Fresh worktrees awaiting {@link applyOpenLayout}; one-shot. */
-  private readonly pendingOpen = new Set<string>();
 
   constructor(private readonly options: OrcaWorkspaceOptions) {
     this.root = resolve(options.root);
     this.execOrca = options.execOrca ?? createOrcaExec();
     this.execGit = options.execGit ?? ((args) => exec('git', args));
-    // `??`, not `||`: an explicit `open: {}` must survive as the opt-out.
-    this.open = options.open ?? DEFAULT_OPEN_LAYOUT;
     this.logger = options.logger ?? noopLogger;
     this.sleep = options.sleep ?? defaultSleep;
   }
@@ -169,7 +193,7 @@ export class OrcaWorkspace implements BbWorkspace {
       ? {}
       : { env: await runBranchGit(this.root, this.logger) };
     await assertOrcaReachable(this.execOrca);
-    await this.registerRepo();
+    await registerRepo(this.execOrca, this.root);
 
     const path = resolve(
       this.root,
@@ -186,35 +210,7 @@ export class OrcaWorkspace implements BbWorkspace {
       this.options.adoptTimeoutMs ?? DEFAULT_ADOPT_TIMEOUT_MS,
       this.sleep,
     );
-    if (created) {
-      this.pendingOpen.add(path);
-    }
     return { path, instructions: loadInstructions(path), created, ...extra };
-  }
-
-  /** Register the root with Orca once and make its git worktrees visible. */
-  private async registerRepo(): Promise<void> {
-    const listed = await this.execOrca(['repo', 'list']);
-    const repos =
-      isRecord(listed) && Array.isArray(listed.repos) ? listed.repos : [];
-    const known = repos.some(
-      (r) =>
-        isRecord(r) &&
-        typeof r.path === 'string' &&
-        resolve(r.path) === this.root,
-    );
-    if (!known) {
-      await this.execOrca(['repo', 'add', '--path', this.root]);
-    }
-    // Idempotent; without it Orca's sidebar hides worktrees it did not create.
-    await this.execOrca([
-      'repo',
-      'set',
-      '--repo',
-      `path:${this.root}`,
-      '--external-worktree-visibility',
-      'show',
-    ]);
   }
 
   private async isRegisteredWorktree(path: string): Promise<boolean> {
@@ -283,42 +279,69 @@ export class OrcaWorkspace implements BbWorkspace {
   }
 
   /**
-   * Open the overview terminal of a worktree the latest {@link ensure} created.
-   * A reused worktree has none pending, so reattaching never duplicates it.
-   * Best-effort: a failure is logged, never thrown, so it cannot wedge dispatch.
+   * Tear down the ticket worktree: through Orca when it knows the worktree
+   * (`orca worktree rm`), otherwise with git alone ({@link removeGitWorktree}),
+   * which also refuses the main checkout.
    */
-  async applyOpenLayout(
-    path: string,
-    ctx: { identifier: string; branch: string; title: string },
-  ): Promise<void> {
-    if (!this.pendingOpen.delete(path) || this.open.command === undefined) {
-      return;
-    }
-    const vars = {
-      identifier: ctx.identifier,
-      branch: ctx.branch,
-      title: ctx.title,
-      worktreePath: path,
-    };
-    try {
+  async remove(
+    branch: string,
+    worktreePath?: string,
+  ): Promise<WorktreeTeardown> {
+    const path = worktreePath
+      ? normPath(worktreePath)
+      : await this.pathOfBranch(branch);
+    if (path && path !== this.root && (await this.orcaKnows(path))) {
+      // Drupal hardens web/sites/default (0555): restore owner-write first.
+      restoreWritable(path);
       await this.execOrca([
-        'terminal',
-        'create',
+        'worktree',
+        'rm',
         '--worktree',
         `path:${path}`,
-        '--title',
-        renderTemplate(this.open.title ?? '{identifier} · {title}', {
-          ...vars,
-          title: truncateOpenTabTitle(ctx.title),
-        }),
-        '--command',
-        renderTemplate(this.open.command, vars),
+        '--force',
       ]);
-    } catch (err) {
-      this.logger.warn(
-        { branch: ctx.branch, worktree: path, err: String(err) },
-        'orca overview terminal failed (best-effort, ignored)',
-      );
+      try {
+        await this.execGit(['-C', this.root, 'worktree', 'prune']);
+      } catch {
+        // best-effort sweep
+      }
+      return existsSync(path) ? 'unverified' : 'removed';
+    }
+    return removeGitWorktree(
+      this.root,
+      branch,
+      worktreePath,
+      (args, cwd) => this.execGit(['-C', cwd, ...args]),
+      this.logger,
+    );
+  }
+
+  private async orcaKnows(path: string): Promise<boolean> {
+    try {
+      await assertOrcaReachable(this.execOrca);
+      await this.execOrca(['worktree', 'show', '--worktree', `path:${path}`]);
+      return true;
+    } catch {
+      // Orca is down or never adopted it: tear down with git alone.
+      return false;
+    }
+  }
+
+  private async pathOfBranch(branch: string): Promise<string | undefined> {
+    try {
+      return porcelainEntries(
+        await this.execGit([
+          '-C',
+          this.root,
+          'worktree',
+          'list',
+          '--porcelain',
+        ]),
+      )
+        .slice(1)
+        .find((e) => e.branch === branch)?.path;
+    } catch {
+      return undefined;
     }
   }
 }
@@ -329,7 +352,6 @@ export function orcaWorkspace(
     root?: string;
     worktreeDir?: string;
     baseBranch?: string;
-    open?: OrcaOpenLayout;
     adoptTimeoutMs?: number;
     autoSetupMerge?: boolean;
     /** Overrideable git exec for root derivation (tests). */
@@ -349,7 +371,6 @@ export function orcaWorkspace(
         root,
         ...(opts.worktreeDir ? { worktreeDir: opts.worktreeDir } : {}),
         ...(opts.baseBranch ? { baseBranch: opts.baseBranch } : {}),
-        ...(opts.open ? { open: opts.open } : {}),
         ...(opts.adoptTimeoutMs !== undefined
           ? { adoptTimeoutMs: opts.adoptTimeoutMs }
           : {}),

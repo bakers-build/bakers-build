@@ -47,10 +47,10 @@ export default {
   bakers: { project: 'bakers' },
   // The run budget (`max_parallel`) is set on the machine in the backend,
   // default 5. A `max_parallel` here is ignored with a warning.
-  // Lifecycle hooks are executor-owned + best-effort (BB-84): the executor
-  // invokes each (after_create/before_run/after_done), logs loudly + continues
-  // on failure, and never wedges a run — so they live at the config TOP LEVEL,
-  // not on the workspace descriptor. after_create: env setup on worktree
+  // Lifecycle hooks are conductor-owned + best-effort: the conductor runs each
+  // (after_create/before_run/after_done) in the worktree, logs loudly +
+  // continues on failure, and never wedges a run — so they live at the config
+  // TOP LEVEL, not on a plugin descriptor. after_create: env setup on worktree
   // create. before_run: install pnpm dependencies before every run, outside
   // the agent sandbox, which cannot take pnpm's store lock. after_done: reclaim
   // the worktree's DDEV project (containers + db) once its ticket is done,

@@ -4,12 +4,8 @@ import type {
   BbExecutor,
   ExecutorCapabilities,
   ExecutorPlugin,
-  HookContext,
-  HookName,
-  HookResult,
   SpawnedSession,
   SpawnRunInput,
-  WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 
 export { fakeInbox } from './inbox.js';
@@ -31,43 +27,11 @@ export interface FakeExecutorOptions {
 
 export class FakeExecutor implements BbExecutor {
   readonly id = 'fake';
-  /** Records runHook(name, cwd, ticket, env) calls for assertions. */
-  readonly hookCalls: Array<{
-    name: HookName;
-    cwd: string;
-    ticket: string;
-    env?: Record<string, string>;
-  }> = [];
 
   constructor(private readonly options: FakeExecutorOptions) {}
 
   capabilities(): ExecutorCapabilities {
     return { persistent: false };
-  }
-
-  /**
-   * Hook slots whose "command" fails — `runHook` reports `ok:false` for these
-   * (and still never throws), so a test can drive the BB-237 AC-6 path.
-   */
-  readonly failingHooks = new Set<HookName>();
-
-  async runHook(
-    name: HookName,
-    cwd: string,
-    ctx: HookContext,
-    env?: Record<string, string>,
-  ): Promise<HookResult> {
-    // Recording no-op — the fake never runs a real shell command.
-    this.hookCalls.push({
-      name,
-      cwd,
-      ticket: ctx.ticket,
-      ...(env ? { env } : {}),
-    });
-    if (this.failingHooks.has(name)) {
-      return { hook: name, ran: true, ok: false, error: `${name} failed` };
-    }
-    return { hook: name, ran: true, ok: true };
   }
 
   async startRun(input: SpawnRunInput): Promise<SpawnedSession> {
@@ -108,16 +72,6 @@ export class FakeExecutor implements BbExecutor {
 
   async cleanupRun(_branch: string): Promise<void> {
     // No-op for the fake executor — no hosted tab to close.
-  }
-
-  async removeWorktree(
-    _branch: string,
-    _worktreePath?: string,
-  ): Promise<WorktreeTeardown> {
-    // No hosted workspace for the fake executor — nothing to tear down. It is
-    // non-persistent, so the reaper never calls this; report `unverified`
-    // (nothing present here) for interface conformance.
-    return 'unverified';
   }
 }
 

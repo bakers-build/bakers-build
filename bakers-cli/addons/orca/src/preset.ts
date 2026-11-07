@@ -1,6 +1,6 @@
-// One `addons` entry wires both slots: the Orca executor only works on
-// worktrees the Orca workspace created. The entry's `with` reaches both
-// factories; each reads only the keys it knows.
+// One `addons` entry wires both slots; the Orca executor also adopts any other
+// workspace's git worktree. The entry's `with` reaches both factories; each
+// reads only the keys it knows.
 import type { Preset } from '@bakers-build/conductor/contract';
 import { orcaExecutor, orcaWorkspace } from './index.js';
 
@@ -14,4 +14,4 @@ export const workspaces: Preset['workspaces'] = (acc, opts) => [
   orcaWorkspace(opts as Parameters<typeof orcaWorkspace>[0]),
 ];
 
-export const scopes: Preset['scopes'] = ['project'];
+export const scopes: Preset['scopes'] = ['machine', 'project'];

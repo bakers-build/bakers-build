@@ -622,14 +622,22 @@ export async function loadConductorConfig(
       'conductor config resolves no remote — name a remote addon in addons[] or set the remote slot',
     );
   }
+  // The machine may run its own installed tool: its explicit executor wins
+  // over the project's, which wins over the one discovered from addons[].
   const executor =
-    config.executor !== undefined
+    machineCtx.executor !== undefined
       ? await resolveSlot<ExecutorPlugin>(
-          config.executor,
+          machineCtx.executor,
           'executor',
-          configPath,
+          machineContextPath(),
         )
-      : wired.executor;
+      : config.executor !== undefined
+        ? await resolveSlot<ExecutorPlugin>(
+            config.executor,
+            'executor',
+            configPath,
+          )
+        : wired.executor;
   if (!executor) {
     throw new Error(
       'conductor config resolves no executor — name an executor addon in addons[] or set the executor slot',
