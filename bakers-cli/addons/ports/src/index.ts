@@ -17,7 +17,6 @@
 import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
-import type { RawPort } from '@bakers-build/addon-ddev';
 import type { BbCommandHost, BbCommandPlugin } from '@bakers-build/core';
 import { homeBbDir } from '@bakers-build/core';
 import type { Command } from 'commander';
@@ -26,6 +25,7 @@ import type { ClaimedDiscovery, ClaimedService, TunnelRule } from './claims.js';
 import {
   bringUpTunnel,
   discoverClaimedServices,
+  loadClaimers,
   loadPortsTransport,
   type OperationContext,
   type PortsTransport,
@@ -47,6 +47,7 @@ import {
 import { serviceRules } from './service-config.js';
 import { recordMatchesRule } from './tunnel-ops.js';
 import type { TunnelDesiredRecord } from './tunnel-state.js';
+import type { RawPort } from './types.js';
 
 // Deliberately stricter than `claims.ts`'s `TICKET_RE` (which also validates
 // an already-known, hyphenated project key): extracting a token out of a
@@ -220,15 +221,14 @@ export function shouldKeepTunnelRecord(
   // when it is a whole-probe failure (`ss -ltnpH` itself failing) — the
   // host-side equivalent of a `containerId`-less Docker diagnostic — since
   // that blinds every host-backed no-claim record at once, same as a
-  // host-backed claimed record is kept on it above. A `ddev-hosts` diagnostic
-  // (BB-681 review I1) is scoped to `web`/`web-<host>` alias keys only —
-  // `ddev utility configyaml` failing says nothing about a non-DDEV claim
-  // (e.g. `storybook`) in the SAME worktree, so it must not block THAT
-  // record's reap (BB-681 review N1).
+  // host-backed claimed record is kept on it above. A diagnostic carrying a
+  // `keyPrefix` (a claimer's, BB-681 review I1) blocks only keys under that
+  // prefix — it says nothing about another claim (e.g. `storybook`) in the
+  // SAME worktree, so it must not block THAT record's reap (BB-681 review N1).
   return discovery.diagnostics.some((d) => {
     if (d.source === 'host') return d.wholePass === true;
-    if (d.source === 'ddev-hosts')
-      return key === 'web' || key.startsWith('web-');
+    if (d.keyPrefix !== undefined)
+      return key === d.keyPrefix || key.startsWith(`${d.keyPrefix}-`);
     return true;
   });
 }
@@ -275,11 +275,13 @@ async function discover(
   ticket: string,
   zone: string,
 ): Promise<ClaimedDiscovery> {
+  const settings = await readPortsSettings(worktree);
   return discoverClaimedServices(worktree, nodeDeps, {
     ticket,
     zone,
     probe: nodeHttpProbe,
-    rules: serviceRules(await readPortsSettings(worktree)),
+    rules: serviceRules(settings),
+    claimers: await loadClaimers(settings, homeBbDir()),
   });
 }
 
@@ -337,7 +339,7 @@ export function liveTunnel(
 }
 
 /** Keys of present records whose freshly claimed rule no longer matches
- *  them (e.g. a new container IP after `ddev restart`). A key with no claim
+ *  them (e.g. a new container IP after a container restart). A key with no claim
  *  at all is `reap`'s business, not stale. */
 export function staleKeys(
   records: readonly TunnelDesiredRecord[],

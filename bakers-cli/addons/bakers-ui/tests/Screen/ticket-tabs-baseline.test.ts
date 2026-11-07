@@ -160,7 +160,7 @@ const fixturePorts: FixturePort[] = [
   {
     id: 'web',
     service: 'Web',
-    local: 'https://bakers.ddev.site',
+    local: 'https://bakers.local.test',
     tunnel: 'https://web.example.test',
   },
 ];
@@ -314,7 +314,7 @@ describe('ticket tab behaviour before the screen-per-tab migration', () => {
       Ports
       SERVICE LOCAL TUNNEL
       Storybook http://127.0.0.1:6006 https://storybook.example.test
-      Web https://bakers.ddev.site https://web.example.test
+      Web https://bakers.local.test https://web.example.test
       "
     `);
   });

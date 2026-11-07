@@ -16,9 +16,9 @@
 
 import { normalizeHost } from './hosts.js';
 import type {
-  ClaimContext,
   ClaimedService,
   ClaimStatus,
+  DdevClaimContext,
   RawPort,
   TunnelRule,
 } from './types.js';
@@ -145,7 +145,7 @@ function listeningSibling(
 export function claimDdev(
   raw: readonly RawPort[],
   remaining: Set<number>,
-  ctx: ClaimContext,
+  ctx: DdevClaimContext,
 ): ClaimedService[] {
   const exposedIdxs = [...remaining].filter(
     (i) => raw[i]!.containerId !== undefined && raw[i]!.exposed !== undefined,

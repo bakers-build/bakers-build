@@ -203,7 +203,7 @@ export const inbox: Preset['inbox'] = {
 };
 ```
 
-**A login link for a DDEV Drupal site** is a sketch, not a shipped addon. It shows the security rules an addon that hands out credentials follows:
+**A login link for a Drupal site** is a sketch, not a shipped addon. It shows the security rules an addon that hands out credentials follows:
 
 - `users` is a view-access message listing only the users the addon is configured for, never the site's user table, as a Markdown list.
 - `uli` has `access: update` and an `input` with one integer field, `uid`. The handler refuses any uid outside its configured options, whatever the form sent.

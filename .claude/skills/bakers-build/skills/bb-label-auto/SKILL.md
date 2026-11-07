@@ -1,11 +1,11 @@
 ---
-name: bb-label-pingpong
-description: "Use when a ticket labelled `pingpong` runs, in any state: carry it to done on your own."
+name: bb-label-auto
+description: "Use when a ticket labelled `auto` runs, in any state: carry it to done on your own."
 ---
 
-# Pingpong
+# Auto
 
-The label `pingpong` authorizes every transition, its origin status and the merge. Decide technical
+The label `auto` authorizes every transition, its origin status and the merge. Decide technical
 questions yourself and record each decision with its reason under `Decisions` in the handoff.
 
 Reach the user only through a user question or a technical problem in the ticket: publish its

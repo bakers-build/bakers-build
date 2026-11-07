@@ -1,9 +1,9 @@
 {
-  "id": "pingpong-review-ok-unaccepted",
+  "id": "auto-review-ok",
   "synthetic": true,
-  "profile": "bb-label-pingpong",
+  "profile": "bb-label-auto",
   "execution": "simulated-tools",
-  "skill": "bb-label-pingpong",
+  "skill": "bb-label-auto",
   "references": [
     "bb-workflow/SKILL.md",
     "bb-workflow/references/read-ticket.md",
@@ -35,7 +35,8 @@
     "created": "2026-01-01"
   },
   "expect": {
-    "stop": "question",
+    "stop": "transition",
+    "state": "done",
     "review_status": "OK"
   },
   "simulation": {
@@ -53,7 +54,7 @@
       "type": "feature",
       "recipe": "probe",
       "labels": [
-        "pingpong"
+        "auto"
       ],
       "links": [
         {
@@ -92,6 +93,18 @@
         "ticket": "11111111-1111-4111-8111-111111111111",
         "type": "coding",
         "body": "# Coding handoff\n\nScope: spec 77777777-7777-4777-8777-000000000002, plan …003, test …004.\n\nBase 1111111 → head f00dfee. MR: https://gitlab.example.invalid/acme/invoices/-/merge_requests/61\n\n- AC-1 PASS `npm test -- test/invoices.test.ts` at f00dfee\n- AC-2 PASS `npm test -- test/invoices.test.ts` at f00dfee\n- AC-3 PASS `npm test` at f00dfee\n"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000006",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "comment",
+        "body": "# Question\n\nThe invoice list now has an Export CSV button that downloads the visible invoices. Try it at https://eval-61-preview.example.invalid/invoices: open the list, press Export CSV and open the file.\n\n1. Accept the result (recommended)\n2. Ask for changes\n"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000007",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "comment",
+        "body": "1. Accepted, the export looks right.\n"
       }
     ],
     "commands": {
@@ -220,8 +233,8 @@
       "criterion": "The final answer reports the published review verdict OK and a summary."
     },
     {
-      "id": "asks-acceptance",
-      "criterion": "The final answer reports a user question asking the user to accept the result, because the ticket carries no earlier acceptance, in place of a merge."
+      "id": "merged-done",
+      "criterion": "The final answer reports merge request 61 merged after a negative remote base check, and then the transition to done, without asking anyone."
     }
   ]
 }

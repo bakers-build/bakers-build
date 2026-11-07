@@ -2,11 +2,11 @@
 
 **Finds a worktree's Docker Compose containers and the ports they listen on.**
 
-It is a support library. You do not enable it on its own; [DDEV discovery](/addons/ddev) uses it for [Ports](/addons/ports).
+It is a support library. You do not enable it on its own; a runtime addon uses it to claim services for [Ports](/addons/ports).
 
 ## Enable it
 
-Nothing to enable — used by [DDEV discovery](/addons/ddev).
+Nothing to enable — used by a runtime addon.
 
 ## Options
 
@@ -14,7 +14,7 @@ No options.
 
 ## Check it works
 
-Running DDEV services of a worktree appear in the ports list.
+Running Compose services of a worktree, claimed by a runtime addon, appear in the ports list.
 
 ## Good to know
 

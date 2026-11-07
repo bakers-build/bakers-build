@@ -85,7 +85,7 @@ describe('frame routing profile', () => {
     ).toEqual(['intake-read']);
   });
   it('checks that a label routes to a skill only when it applies', async () => {
-    const path = 'skills/bb-label-pingpong/SKILL.md';
+    const path = 'skills/bb-label-auto/SKILL.md';
     const skill = (read: unknown) => (f: Record<string, any>) => ({
       ...f,
       expect: { ...f.expect, skill: { path, read } },
@@ -119,16 +119,16 @@ describe('frame routing profile', () => {
   });
 });
 
-describe('bb-label-pingpong profile', () => {
+describe('bb-label-auto profile', () => {
   const fixture = (
     expect: Record<string, unknown>,
     simulation: Record<string, unknown> = {},
   ) => ({
-    id: 'pingpong-probe',
+    id: 'auto-probe',
     synthetic: true,
-    profile: 'bb-label-pingpong',
+    profile: 'bb-label-auto',
     execution: 'simulated-tools',
-    skill: 'bb-label-pingpong',
+    skill: 'bb-label-auto',
     references: [],
     input: { task: 'Run the state.', ticket_uuid: ticket },
     expect,
@@ -136,7 +136,7 @@ describe('bb-label-pingpong profile', () => {
       ticket: {
         id: ticket,
         identifier: 'EVAL-61',
-        labels: ['pingpong'],
+        labels: ['auto'],
       },
       ...simulation,
     },
@@ -200,7 +200,7 @@ describe('bb-label-pingpong profile', () => {
         question,
         update({ labels_add: ['Question'] }),
       ]),
-    ).toEqual(['pingpong-question']);
+    ).toEqual(['auto-question']);
     // Without the answer line nobody knows to unfreeze the ticket, and the run never resumes.
     expect(
       await judge(q, 'Asked.', [
@@ -211,7 +211,7 @@ describe('bb-label-pingpong profile', () => {
         ),
         asked,
       ]),
-    ).toEqual(['pingpong-question']);
+    ).toEqual(['auto-question']);
   });
   it('a call rejected before sending and then recovered stays on the call surface', async () => {
     const q = fixture({ stop: 'question' });
@@ -247,7 +247,7 @@ describe('bb-label-pingpong profile', () => {
     });
     const handoff = comment(
       'comment',
-      '`ddev start` failed:\n\n```\nCannot connect to the Docker daemon at unix:///var/run/docker.sock.\n```',
+      '`docker compose up` failed:\n\n```\nCannot connect to the Docker daemon at unix:///var/run/docker.sock.\n```',
     );
     expect(
       await judge(p, 'Stopped.', [readTicket(), handoff, problem, reported]),
@@ -260,7 +260,7 @@ describe('bb-label-pingpong profile', () => {
         problem,
         reported,
       ]),
-    ).toEqual(['pingpong-question']);
+    ).toEqual(['auto-question']);
     expect(
       await judge(p, 'Stopped.', [
         readTicket(),
@@ -268,7 +268,7 @@ describe('bb-label-pingpong profile', () => {
         problem,
         update({ labels_add: ['technical problem', 'Question'], frozen: true }),
       ]),
-    ).toEqual(['pingpong-question']);
+    ).toEqual(['auto-question']);
     expect(
       await judge(p, 'Stopped.', [
         readTicket(),
@@ -276,7 +276,7 @@ describe('bb-label-pingpong profile', () => {
         comment('comment', '# Technical problem\n\nDocker is down.'),
         reported,
       ]),
-    ).toEqual(['pingpong-technical-problem']);
+    ).toEqual(['auto-technical-problem']);
     // The cause and output belong in the handoff; the user reads only the contact note.
     expect(
       await judge(p, 'Stopped.', [
@@ -284,14 +284,14 @@ describe('bb-label-pingpong profile', () => {
         handoff,
         comment(
           'comment',
-          '# Technical problem\n\n`ddev start` failed: Docker is down.\n\nPlease contact the developers.',
+          '# Technical problem\n\n`docker compose up` failed: Docker is down.\n\nPlease contact the developers.',
         ),
         reported,
       ]),
-    ).toEqual(['pingpong-technical-problem']);
+    ).toEqual(['auto-technical-problem']);
     expect(
       await judge(p, 'Stopped.', [readTicket(), problem, reported]),
-    ).toEqual(['pingpong-cause-recorded']);
+    ).toEqual(['auto-cause-recorded']);
     // Only the exact heading is the contact note; a longer heading is an ordinary comment.
     expect(
       await judge(p, 'Stopped.', [
@@ -312,13 +312,13 @@ describe('bb-label-pingpong profile', () => {
         problem,
         reported,
       ]),
-    ).toEqual(['pingpong-cause-recorded']);
+    ).toEqual(['auto-cause-recorded']);
   });
   it('sends a Not OK verdict back to working', async () => {
     expect(await judge(notOk, 'Back.', back)).toEqual([]);
     expect(
       await judge(notOk, 'Done.', [...back.slice(0, 3), transition('done')]),
-    ).toEqual(['pingpong-transition']);
+    ).toEqual(['auto-transition']);
   });
   it('merges an OK verdict once, then moves to done', async () => {
     const done = fixture(
@@ -330,11 +330,11 @@ describe('bb-label-pingpong profile', () => {
       await judge(done, 'Merged.', [...passed, merged, transition('done')]),
     ).toEqual([]);
     expect(await judge(done, 'Done.', [...passed, transition('done')])).toEqual(
-      ['pingpong-merge'],
+      ['auto-merge'],
     );
     expect(
       await judge(done, 'Done.', [...passed, transition('done'), merged]),
-    ).toEqual(['pingpong-merge']);
+    ).toEqual(['auto-merge']);
     expect(
       await judge(done, 'Merged.', [
         ...passed,
@@ -342,9 +342,9 @@ describe('bb-label-pingpong profile', () => {
         merged,
         transition('done'),
       ]),
-    ).toEqual(['pingpong-merge']);
+    ).toEqual(['auto-merge']);
     expect(await judge(done, 'Merged.', [...passed, merged])).toEqual([
-      'pingpong-transition',
+      'auto-transition',
     ]);
     // Merge's caller handoff may append its evidence as a second verdict with the same status.
     const addendum = [merged, verdict('OK'), summary, transition('done')];
@@ -356,7 +356,7 @@ describe('bb-label-pingpong profile', () => {
         verdict('Not OK'),
         transition('done'),
       ]),
-    ).toEqual(['pingpong-review-status']);
+    ).toEqual(['auto-review-status']);
     // Any other run merges nothing; an undeclared command leaves the call surface too.
     expect(
       await judge(notOk, 'Back.', [
@@ -364,7 +364,7 @@ describe('bb-label-pingpong profile', () => {
         merged,
         transition('working'),
       ]),
-    ).toEqual(['validated-call-surface', 'pingpong-merge']);
+    ).toEqual(['validated-call-surface', 'auto-merge']);
   });
   it('puts the tunnel link in the acceptance question', async () => {
     const accept = fixture({ stop: 'question', link: tunnel });
@@ -373,7 +373,7 @@ describe('bb-label-pingpong profile', () => {
     );
     expect(
       await judge(accept, 'Asked.', [readTicket(), question, asked]),
-    ).toEqual(['pingpong-link']);
+    ).toEqual(['auto-link']);
   });
   it('keeps technical details out of the acceptance question', async () => {
     const plain = fixture({
@@ -390,11 +390,11 @@ describe('bb-label-pingpong profile', () => {
     );
     expect(
       await judge(plain, 'Asked.', [readTicket(), technical, asked]),
-    ).toEqual(['pingpong-plain']);
+    ).toEqual(['auto-plain']);
   });
   it('run ends after the decisive write', async () => {
     expect(await judge(notOk, 'Back.', [...back, summary])).toEqual([
-      'pingpong-run-ends',
+      'auto-run-ends',
     ]);
     expect(
       await judge(fixture({ stop: 'question' }), 'Asked.', [
@@ -403,7 +403,7 @@ describe('bb-label-pingpong profile', () => {
         asked,
         summary,
       ]),
-    ).toEqual(['pingpong-run-ends']);
+    ).toEqual(['auto-run-ends']);
   });
   it('records a technical decision in the handoff', async () => {
     const decide = fixture({ stop: 'none', decision: 'writeCsv' });
@@ -411,7 +411,7 @@ describe('bb-label-pingpong profile', () => {
       '## Decisions\n\n- Reuse `writeCsv`: it already serves two exports.';
     expect(await judge(decide, decided, [readTicket()])).toEqual([]);
     expect(await judge(decide, 'Reused the helper.', [readTicket()])).toEqual([
-      'pingpong-decision',
+      'auto-decision',
     ]);
   });
   it('rejects an incomplete expectation', async () => {
@@ -428,52 +428,46 @@ describe('bb-label-pingpong profile', () => {
   });
   it('a third Not OK still goes back to working', async () => {
     // Two earlier Not OK verdicts: no loop limit, so no technical problem.
-    expect(await judge('pingpong-review-third-not-ok', 'Back.', back)).toEqual(
-      [],
-    );
+    expect(await judge('auto-review-third-not-ok', 'Back.', back)).toEqual([]);
     expect(
-      await judge('pingpong-review-third-not-ok', 'Stopped.', [
+      await judge('auto-review-third-not-ok', 'Stopped.', [
         ...back.slice(0, 3),
         problem,
         reported,
       ]),
-    ).toEqual([
-      'pingpong-technical-problem',
-      'pingpong-no-stop',
-      'pingpong-transition',
-    ]);
+    ).toEqual(['auto-technical-problem', 'auto-no-stop', 'auto-transition']);
   });
   it('a first GREEN pass asks for the acceptance', async () => {
     const handedOff = [readTicket(), comment('coding'), summary];
     expect(
-      await judge('pingpong-working-acceptance', 'Asked.', [
+      await judge('auto-working-acceptance', 'Asked.', [
         ...handedOff,
         shown,
         asked,
       ]),
     ).toEqual([]);
     expect(
-      await judge('pingpong-working-acceptance', 'Moved.', [
+      await judge('auto-working-acceptance', 'Moved.', [
         ...handedOff,
         transition('review'),
       ]),
-    ).toEqual(['pingpong-question', 'pingpong-transition', 'pingpong-link']);
+    ).toEqual(['auto-question', 'auto-transition', 'auto-link']);
   });
   it('an accepted GREEN pass moves to review without asking', async () => {
     const handedOff = [readTicket(), comment('coding'), summary];
     expect(
-      await judge('pingpong-working-accepted', 'Moved.', [
+      await judge('auto-working-accepted', 'Moved.', [
         ...handedOff,
         transition('review'),
       ]),
     ).toEqual([]);
     expect(
-      await judge('pingpong-working-accepted', 'Asked.', [
+      await judge('auto-working-accepted', 'Asked.', [
         ...handedOff,
         shown,
         asked,
       ]),
-    ).toEqual(['pingpong-question', 'pingpong-no-stop', 'pingpong-transition']);
+    ).toEqual(['auto-question', 'auto-no-stop', 'auto-transition']);
   });
 });
 
@@ -488,7 +482,7 @@ describe('classify profile', () => {
     readTicket({ recipe, type });
   it('accepts one classify call with readback', async () => {
     expect(
-      await judge('qualify-classify-default', 'probe, feature', [
+      await judge('qualify-classify-unattended', 'probe, feature', [
         readTicket(),
         ...recipes,
         classify('probe'),
@@ -503,11 +497,11 @@ describe('classify profile', () => {
       classify('bb-recipe-probe'),
       classifiedRead('bb-recipe-probe'),
     ];
-    expect(await judge('qualify-classify-default', 'done', wrong)).toEqual([
+    expect(await judge('qualify-classify-unattended', 'done', wrong)).toEqual([
       'classified',
     ]);
     expect(
-      await judge('qualify-classify-default', 'done', [
+      await judge('qualify-classify-unattended', 'done', [
         readTicket(),
         ...recipes,
         classify('probe', 'epic'),
@@ -515,14 +509,14 @@ describe('classify profile', () => {
       ]),
     ).toEqual(['classified']);
     expect(
-      await judge('qualify-classify-default', 'done', [
+      await judge('qualify-classify-unattended', 'done', [
         readTicket(),
         ...recipes,
         classify('probe'),
       ]),
     ).toEqual(['classified']);
     expect(
-      await judge('qualify-classify-default', 'done', [
+      await judge('qualify-classify-unattended', 'done', [
         readTicket(),
         ...recipes,
         classify('probe'),
@@ -531,7 +525,7 @@ describe('classify profile', () => {
       ]),
     ).toEqual(['classified']);
     expect(
-      await judge('qualify-classify-default', 'done', [
+      await judge('qualify-classify-unattended', 'done', [
         readTicket(),
         ...recipes,
         classify('probe'),
@@ -539,6 +533,17 @@ describe('classify profile', () => {
         comment('qualification'),
       ]),
     ).toEqual(['nothing-else']);
+  });
+  it('requires every installed recipe loaded, not one read twice', async () => {
+    expect(
+      await judge('qualify-classify-unattended', 'probe, feature', [
+        readTicket(),
+        recipes[0],
+        recipes[0],
+        classify('probe'),
+        classifiedRead('probe'),
+      ]),
+    ).toEqual(['recipes-read']);
   });
   it('requires a question and no write when two recipes fit', async () => {
     const ask = 'Which recipe: bb-recipe-probe or bb-recipe-pair?';
@@ -795,13 +800,13 @@ describe('state run profile', () => {
 
 describe('persona login profile', () => {
   const link =
-    'https://eval-42.ddev.site/user/reset/41/1791072000/lead-token/login';
+    'https://eval-42.example.test/user/reset/41/1791072000/lead-token/login';
   const good = `- north-lead (lead, eval-42): 🔗 [login](${link})\n- south-auditor: **missing** — no account, never replaced by an administrator.`;
   it('accepts the issued link once and the missing persona', async () => {
     expect(await judge('persona-login', good)).toEqual([]);
   });
   it('names an admin login, a second link and an unreported missing persona', async () => {
-    const bad = `${good.replace('**missing**', 'skipped')}\n\n\`ddev drush uli --uid 1\` → https://eval-42.ddev.site/user/reset/1/179/admin/login`;
+    const bad = `${good.replace('**missing**', 'skipped')}\n\n\`drush uli --uid 1\` → https://eval-42.example.test/user/reset/1/179/admin/login`;
     expect(await judge('persona-login', bad)).toEqual([
       'issued-link',
       'missing-persona',

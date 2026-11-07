@@ -7,7 +7,7 @@ description: "Give each person a long-lived Coder workspace that is a bakers.bui
 
 Coder is optional and runs the client/workspace, not the [server](/configuration/project/server). You can use a local workstation without Coder or preview tunnels.
 
-Give each person a Coder workspace that works like a developer's own machine: Docker, DDEV, bakers.build, herdr, the agent CLIs and the tunnel clients are ready, and you sign in once.
+Give each person a Coder workspace that works like a developer's own machine: Docker, the template's development runtime, bakers.build, herdr, the agent CLIs and the tunnel clients are ready, and you sign in once.
 
 The `bakers-ddev` template provides one long-lived workspace per person. It starts without projects. Inside it, `/bb-init` signs you in, checks out your projects and starts one conductor per checkout. For a plain server instead, see [Set up a worker server](/configuration/machine/worker-server).
 
@@ -119,7 +119,7 @@ Host <name>.coder
 
 ## After a workspace restart
 
-Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Conductors and DDEV projects do not come back by themselves. Run `ddev start` and `bakers oven start --foreground` again in each checkout, in a herdr tab, and share a preview again with `bakers ports up`.
+Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Conductors and project runtimes do not come back by themselves. Start each project's runtime and run `bakers oven start --foreground` again in each checkout, in a herdr tab, and share a preview again with `bakers ports up`.
 
 ## Update a tool
 

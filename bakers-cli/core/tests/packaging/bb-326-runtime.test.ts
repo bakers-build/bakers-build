@@ -70,14 +70,14 @@ describe('BB-326 runtime packaging', () => {
     // `core`/`conductor`. It sets `engines.node` to the same `>=20.19` floor
     // every other package already uses, so it does not raise the Node floor.
     // The personal evidence command adds the publishable track addon.
-    // BB-676 spec v2 split `@bakers-build/addon-ports`'s Docker/DDEV
+    // BB-676 spec v2 split `@bakers-build/addon-ports`'s container
     // discovery into two new packages, `@bakers-build/addon-docker-compose`
-    // (generic Docker Compose discovery) and `@bakers-build/addon-ddev` (DDEV-
-    // specific interpretation + the claim contract) — `bakers ports` must not
-    // fire `docker` calls itself. Neither sets `engines`, so neither raises
-    // the Node floor.
-    // BB-676 spec v3 also split Drupal's host-header policy out of
-    // `@bakers-build/addon-ddev` into `@bakers-build/addon-ports-drupal` — DDEV
+    // (generic Docker Compose discovery) and a container-runtime addon
+    // (runtime-specific interpretation + the claim contract) — `bakers ports`
+    // must not fire `docker` calls itself. Neither sets `engines`, so neither
+    // raises the Node floor.
+    // BB-676 spec v3 also split Drupal's host-header policy out of that
+    // runtime addon into `@bakers-build/addon-ports-drupal` — runtime
     // discovery must do nothing CMS-specific. It sets no `engines` either.
     // 28 since BB-681 Task 1 removed `@bakers-build/addon-ports-drupal` again —
     // the generic ports pipeline must stay transport/CMS-neutral.

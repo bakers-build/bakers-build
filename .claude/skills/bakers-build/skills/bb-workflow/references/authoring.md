@@ -17,8 +17,9 @@ for X. A slot that needs a third file to make sense belongs in the state file or
 
 A recipe is one normal skill named `bb-recipe-<method>`, domain-free and runtime-free.
 
-- **Description** names the method, the ticket types it declares as `for tickets of type X, Y or
-  Z`, and `Project default` on at most one installed recipe. Qualification chooses from descriptions alone.
+- **Description** names the method and the ticket types it declares as `for tickets of type X, Y or
+  Z`, and carries no selection rule. Qualification loads every installed recipe completely and
+  chooses by fit ([classify](classify.md)).
 - **Sections** are `## bb-state-<state>` and, where a type differs, `## <type>:bb-state-<state>`;
   each holds `### bb-phase-<phase>` slots, only where the method adds something.
 - Per slot the type section wins; a phase it lacks falls back to the general section, else none.

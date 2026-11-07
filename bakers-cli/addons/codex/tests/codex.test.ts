@@ -503,7 +503,7 @@ describe('CodexAgent security: shared project and machine layers', () => {
   it('applies a shared allow_write and reports the keys it cannot express', async () => {
     const options = {
       shared_security: {
-        project: { sandbox: { trusted_commands: ['$inherit', 'ddev'] } },
+        project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
         machine: {
           sandbox: { allow_write: ['/srv/cache'], deny_read: ['~/.aws'] },
         },

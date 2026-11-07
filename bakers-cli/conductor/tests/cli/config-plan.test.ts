@@ -198,8 +198,8 @@ describe('offline scoped configuration plan and apply', () => {
     const conductor = renderCommittedConfig({
       project: 'demo',
       hooks: {
-        after_create: 'ddev init-worktree',
-        after_done: 'ddev delete -Oy',
+        after_create: 'make worktree',
+        after_done: 'make clean',
       },
     });
 
@@ -239,7 +239,7 @@ describe('offline scoped configuration plan and apply', () => {
     expect(committed?.after).not.toContain(home);
   });
 
-  it('omits the hooks block when no hook answer was supplied, and names no provisioning tool', () => {
+  it('omits the hooks block when no hook answer was supplied', () => {
     const root = mkdtempSync(join(tmpdir(), 'bakers-plan-nohooks-'));
     roots.push(root);
     const home = join(root, 'home');
@@ -257,7 +257,6 @@ describe('offline scoped configuration plan and apply', () => {
       write.path.endsWith(join('.bakers', 'conductor.config.js')),
     );
     expect(committed?.after).not.toContain('hooks');
-    expect(committed?.after).not.toContain('ddev');
   });
 
   it("writes exactly the operator's answered hooks, and no others", () => {

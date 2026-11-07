@@ -56,11 +56,11 @@ describe('loadTools', () => {
         },
         { zone: 'z' },
       ),
-      addon('ddev', { ddev_status: async () => ({ text: 'running' }) }),
+      addon('runtime', { runtime_status: async () => ({ text: 'running' }) }),
     ]);
     expect(registry.list().map((t) => t.name)).toEqual([
       'ports_up',
-      'ddev_status',
+      'runtime_status',
     ]);
     expect(
       await registry.call('ports_up', { service: 'web' }, binding),
@@ -271,11 +271,11 @@ describe('loadTools', () => {
       addon('ports', {
         ports_status: async (req) => ({ text: `status ${req.worktreePath}` }),
       }),
-      addon('ddev', {
-        ddev_login: async (req) => req.callTool('ports_status', {}),
+      addon('runtime', {
+        runtime_login: async (req) => req.callTool('ports_status', {}),
       }),
     ]);
-    expect(await registry.call('ddev_login', {}, binding)).toEqual({
+    expect(await registry.call('runtime_login', {}, binding)).toEqual({
       text: 'status /work/bb-1',
     });
   });

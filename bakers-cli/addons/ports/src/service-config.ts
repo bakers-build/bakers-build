@@ -2,7 +2,8 @@
 // `services` names a key and a command-line substring per service; the port is
 // always read from the running process. `all_node` (opt-in) claims every
 // remaining Node listener. Storybook is a shipped default entry, so every
-// process-based service follows one rule.
+// process-based service follows one rule. `claimers` names claimer packages
+// (loaded by `config.ts`'s `loadClaimers`), run in order after the services.
 
 /** A DNS-safe service key (one hostname label). */
 export const LABEL_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
@@ -28,7 +29,7 @@ export const DEFAULT_STORYBOOK: ServiceRule = {
   match: 'storybook',
 };
 
-const WITH_KEYS = new Set(['transport', 'services', 'all_node']);
+const WITH_KEYS = new Set(['transport', 'services', 'all_node', 'claimers']);
 const ENTRY_KEYS = new Set(['key', 'match']);
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
@@ -43,9 +44,16 @@ export function checkWith(value: unknown): WithFinding[] {
     if (!WITH_KEYS.has(k))
       out.push({
         key: k,
-        message: 'is not a ports setting (transport, services, all_node)',
+        message:
+          'is not a ports setting (transport, services, all_node, claimers)',
       });
-  const { transport, services, all_node } = value;
+  const { transport, services, all_node, claimers } = value;
+  if (
+    claimers !== undefined &&
+    (!Array.isArray(claimers) ||
+      !claimers.every((c) => typeof c === 'string' && c !== ''))
+  )
+    out.push({ key: 'claimers', message: 'must be an array of package names' });
   if (transport !== undefined) {
     if (!isObject(transport))
       out.push({ key: 'transport', message: 'must be an object' });

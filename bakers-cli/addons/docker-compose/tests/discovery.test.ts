@@ -32,7 +32,7 @@ describe('parseDockerInspect', () => {
     expect(containers).toHaveLength(2);
     const web = containers.find((c) => c.id === 'web1');
     expect(web?.running).toBe(true);
-    expect(web?.labels['com.ddev.approot']).toBe(WORKTREE);
+    expect(web?.labels['com.example.worktree']).toBe(WORKTREE);
     expect(web?.env.HTTPS_EXPOSE).toBe('443:443,8026:8025,5173:5173');
     const xhgui = containers.find((c) => c.id === 'xhgui1');
     expect(xhgui?.running).toBe(false);
@@ -45,7 +45,7 @@ describe('parseDockerInspect', () => {
           Id: 'web1',
           NetworkSettings: {
             Networks: {
-              ddev_default: { IPAddress: '172.18.0.19' },
+              shop_default: { IPAddress: '172.18.0.19' },
               other: { IPAddress: '' },
             },
           },
@@ -54,7 +54,7 @@ describe('parseDockerInspect', () => {
       ]),
     );
     expect(withNetworks?.networks).toEqual(
-      new Map([['ddev_default', '172.18.0.19']]),
+      new Map([['shop_default', '172.18.0.19']]),
     );
     expect(without?.networks).toEqual(new Map());
   });
@@ -295,7 +295,7 @@ describe('discoverCompose', () => {
   it('unions duplicate container ids from both label filters without double-counting', async () => {
     const deps = fixtureDeps();
     const { containers } = await discoverCompose(WORKTREE, deps, {
-      extraLabelFilters: ['com.ddev.approot'],
+      extraLabelFilters: ['com.example.worktree'],
     });
     expect(containers.filter((c) => c.id === 'web1')).toHaveLength(1);
   });
@@ -303,7 +303,7 @@ describe('discoverCompose', () => {
   it('R2: a PID-less socket still surfaces, so a caller can attach a bound host port to it', async () => {
     // nginx's own 80/tcp listener: the in-container `ss` cannot see its
     // (root-owned) pid, but the socket line itself still proves it is
-    // listening — this is exactly the real-topology row a DDEV-flavored
+    // listening — this is exactly the real-topology row a passthrough-routing
     // consumer needs to find a BB-500 passthrough target for (ref:BB-676
     // pass 4, R2).
     const socketsWithUnmappedPort = `${WEB_SOCKETS}\nLISTEN 0      511    127.0.0.1:80        0.0.0.0:*          users:(("nginx",pid=53,fd=6))\n`;
