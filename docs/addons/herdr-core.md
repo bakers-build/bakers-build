@@ -36,6 +36,8 @@ addons: [
 ],
 ```
 
+`bakers oven start` hosts the conductor itself in a herdr pane, which comes from `@bakers-build/addon-herdr`. Without that addon, run `bakers oven start --foreground`, or keep `@bakers-build/addon-herdr` in the list as the process host.
+
 To use it on your machine only, while the project keeps its own executor, set it in `~/.bakers/machine.config.js`:
 
 ```js
