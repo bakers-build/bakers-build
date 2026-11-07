@@ -100,13 +100,10 @@ final class BbTicketDetailHeaderSource extends SourcePluginBase implements Conta
     if ($conductor !== NULL) {
       $parts[] = 'claimed by ' . (string) $conductor->label();
     }
+    // The stall's age is the stall badge's, as a time element with the date.
     $stall = (string) $ticket->get('stall_reason')->value;
     if ($stall !== '') {
-      $since = $stall === 'frozen'
-        ? TicketStallReason::since($ticket->getFrozenAt())
-        : '';
-      $label = TicketStallReason::label($stall);
-      $parts[] = $since === '' ? $label : $label . ' ' . $since;
+      $parts[] = TicketStallReason::label($stall);
     }
     return implode(' · ', $parts);
   }
