@@ -1,6 +1,6 @@
-# Chromium for the Playwright suite and playwright-cli. Agents run both here through the conductor's
-# ddev_exec, because their sandbox reaches neither this site nor drush (docs/bakers/testing.md).
+# Chromium for the Playwright suite and playwright-cli, which agents run here (docs/bakers/testing.md#setup).
 # playwright matches @playwright/test in tests/playwright/package-lock.json (tests/contract/ddev-provision.sh).
+# playwright-cli bundles its own playwright-core, so it installs a second Chromium revision.
 ENV PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright
 RUN npx -y playwright@1.61.1 install --with-deps chromium \
  && npm install -g @playwright/cli@0.1.23 \

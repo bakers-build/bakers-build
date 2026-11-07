@@ -11,8 +11,7 @@ database:
     version: "11.8"
 use_dns_when_possible: true
 composer_version: "2"
-# Agents run untrusted Playwright code here through ddev_exec (docs/bakers/testing.md): blank the
-# machine's global registry tokens and give the container no SSH agent. Nothing here needs either.
+# Untrusted Playwright code runs here (docs/bakers/testing.md#setup); nothing here needs these credentials.
 web_environment:
   - KEYTEC_REGISTRY_TOKEN=
   - KEYTEC_REGISTRY_WRITE_TOKEN=
