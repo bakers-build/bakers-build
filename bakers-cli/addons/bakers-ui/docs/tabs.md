@@ -209,4 +209,4 @@ with `context.requestDraw()` after a change. No JSX compiler setting is needed.
 
 ### Brand mark
 
-The startup splash pairs the bakers wordmark with the original six-row line-art braid in copper, with a turquoise clasp. The persistent header uses `╳ bakers.build`. The original SVG logo remains `web/themes/custom/bb_theme/assets/brand/bakers-braid.svg`. Non-interactive output skips the splash.
+The startup splash pairs the bakers wordmark with the original six-row line-art braid in copper, with a turquoise clasp. The persistent header uses `╳ bakers.build`. Non-interactive output skips the splash.

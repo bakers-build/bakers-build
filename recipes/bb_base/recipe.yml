@@ -1,34 +1,16 @@
 name: 'bakers.build Base'
-description: 'Minimal Drupal control-plane base with gin as admin theme. No node/media.'
+description: 'Minimal Drupal control-plane base without an admin theme. No node/media.'
 type: 'Site'
 install:
   - block
-  - gin
-  # BB-683: retired the admin_toolbar/gin_toolbar/toolbar stack. The admin
-  # theme (gin) renders without a toolbar; administrators navigate through the
-  # admin index pages directly.
   # Core dynamic page cache (BB-683): anonymous/cacheable admin and product
   # responses are served from the page cache; personalised/uncacheable
   # responses are unaffected because they carry no cacheability that qualifies.
   - dynamic_page_cache
 config:
-  # gin.settings and the gin block.block.gin_* config are owned by config/sync (CIM)
-  # and created by the gin theme's own config/install + config/optional on enable.
-  # Importing them by name aborts on an --existing-config install where the active
-  # copy (from config/sync) is customised and differs from the gin module default
-  # ("The configuration 'gin.settings' exists already and does not match the recipe's
-  # configuration"). Both install paths configure gin without the import — see BB-67.
   actions:
+    # No admin theme: every route, core admin pages included, renders in the
+    # default theme.
     system.theme:
       simpleConfigUpdate:
-        admin: gin
-    # BB-80: mirrors config/sync/gin.settings.yml so both install paths render the
-    # SAME gin toolbar variant — gin's own default is 'new', config/sync pins
-    # 'vertical'. An action and not a config.import for precisely the reason stated
-    # above: importing gin.settings by name aborts on an --existing-config install,
-    # whereas a simpleConfigUpdate writes this one key into whatever object exists and
-    # cannot abort that way. Actions run after install:, so gin.settings exists by then
-    # (gin's own config/install created it when the theme was enabled).
-    gin.settings:
-      simpleConfigUpdate:
-        classic_toolbar: vertical
+        admin: ''

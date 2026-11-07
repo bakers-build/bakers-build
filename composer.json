@@ -30,8 +30,6 @@
         "drupal/facets": "^3.0",
         "drupal/formblock": "^2.0@beta",
         "drupal/formdazzle": "^4.0",
-        "drupal/gin": "^5",
-        "drupal/gin_toolbar": "^3.0",
         "drupal/jsonapi_resources": "^1",
         "drupal/jsonapi_schema": "^1.0",
         "drupal/markdown_easy": "^2.0",

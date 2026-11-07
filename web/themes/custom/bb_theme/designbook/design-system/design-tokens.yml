@@ -504,30 +504,13 @@ component:
       $type: dimension
   brand:
     compact:
-      braid-width:
-        $value: 24px
+      width:
+        $value: 128px
         $type: dimension
         $description: >-
-          Width of the braid in the compact brand the gate chrome uses. Fixed:
-          it does not follow the layout density.
-      braid-height:
-        $value: 38.4px
-        $type: dimension
-        $description: >-
-          Height of the braid in the compact brand, keeping the default braid's
-          40:64 proportion.
-      wordmark-width:
-        $value: 96px
-        $type: dimension
-        $description: >-
-          Width of the wordmark in the compact brand; its height follows the SVG
-          aspect ratio.
-      gap:
-        $value: 8px
-        $type: dimension
-        $description: >-
-          Gap between braid and wordmark in the compact brand (24 + 8 + 96 =
-          128px combined).
+          Width of the logo with wordmark in the compact brand the gate chrome
+          uses; its height follows the SVG aspect ratio. Fixed: it does not
+          follow the layout density.
   gate:
     body:
       $value:

@@ -6,8 +6,8 @@
    `tab_items` takes already rendered entries — Drupal's local-task
    `primary`/`secondary` render arrays, each task rendering `tab` — and is
    printed whole; otherwise the `items` prop is rendered entry by entry.
-   No BEM `tabs` / `tabs__link` classes: those are Drupal core/Gin local-task
-   selectors and would restyle this row with Gin's own tab bar.
+   No BEM `tabs` / `tabs__link` classes: those are Drupal core local-task
+   selectors that core and contrib stylesheets restyle.
    Vertical space under the row belongs to `page_header`, not this component. #}
 <nav{{ (attributes ?: create_attribute()).addClass([
     'block', 'text-body',

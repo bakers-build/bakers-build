@@ -4,6 +4,6 @@ props:
   workspace_label: keytec
   workspace_initials: KT
   workspace_color: running
-  workspace_picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+  workspace_picture: /themes/custom/bb_theme/logo.svg
   multiple: false
   collapsed: false

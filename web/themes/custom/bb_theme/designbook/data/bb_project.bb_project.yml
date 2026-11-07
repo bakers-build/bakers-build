@@ -7,8 +7,8 @@
     The control plane that dispatches agent runs and tracks every ticket from
     qualification to merge.
   image:
-    alt: bakers.build Platform braid mark
-    src: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+    alt: bakers.build Platform logo
+    src: /themes/custom/bb_theme/logo.svg
   repository:
     url: https://gitlab.example.com/bakers/bakers
     default_branch: develop
