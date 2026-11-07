@@ -354,11 +354,23 @@ export class Conductor {
   async startTools(endpointFile?: string): Promise<void> {
     const { siteTools } = this.remote;
     if ((!this.config.tools && !siteTools) || this.toolServer) return;
+    // Runs closed while no server ran (`oven once`, a crash) lose their grant here.
+    const openRuns = await this.remote.fetchActiveRuns(this.id).then(
+      (runs) => runs.map((r) => r.runUuid),
+      (err: unknown) => {
+        this.logger.warn(
+          { err: String(err) },
+          'active runs unreadable, keeping every persisted run grant',
+        );
+        return undefined;
+      },
+    );
     this.toolServer = await startToolServer({
       registry: this.config.tools ?? (await loadTools([])),
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
+      ...(openRuns ? { openRuns } : {}),
       ...(siteTools ? { siteTools } : {}),
     });
     this.logger.info(
@@ -385,8 +397,16 @@ export class Conductor {
     return { url: this.toolServer.url, token };
   }
 
+  /** Never throws: a failed state write leaves the grant on disk, and the next start prunes it. */
   private revokeRunTools(runUuid: string): void {
-    this.toolServer?.revokeRunToken(runUuid);
+    try {
+      this.toolServer?.revokeRunToken(runUuid);
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, err: String(err) },
+        'run tool revoke failed',
+      );
+    }
   }
 
   async start() {
@@ -619,8 +639,9 @@ export class Conductor {
         r.runLogStorageAllowed === true && (this.config.capture_logs ?? true)
           ? captured.log
           : '';
-      await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
+      // Revoke before the durable close: a crash between the two must not leave a closed run's grant.
       this.revokeRunTools(r.runUuid);
+      await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
       this.logger.info(
         { run: r.runUuid, state: r.state, footprint: captured.metrics },
         'run finalised',

@@ -1,4 +1,10 @@
-import { mkdtempSync, readFileSync, statSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -155,8 +161,13 @@ describe('conductor tool server across a restart', () => {
       warn: (_: unknown, msg: string) => void warnings.push(msg),
       error() {},
     };
-    const start = async () =>
-      startToolServer({ registry: await registry(), endpointFile, logger });
+    const start = async (openRuns?: string[]) =>
+      startToolServer({
+        registry: await registry(),
+        endpointFile,
+        logger,
+        ...(openRuns ? { openRuns } : {}),
+      });
     const stateFile = join(home, 'conductors', 'c1.tools.json');
     return { stateFile, start, warnings };
   };
@@ -209,6 +220,31 @@ describe('conductor tool server across a restart', () => {
     server.revokeRunToken('run-a');
     expect(await status(server.url, token)).toBe(401);
     expect(JSON.parse(readFileSync(stateFile, 'utf8')).runs).toEqual({});
+  });
+
+  it('drops the grants of runs that closed while it was down', async () => {
+    const { start } = await restartable();
+    server = await start();
+    const closed = server.issueRunToken('run-a', {
+      worktreePath: '/work/bb-1',
+    });
+    const open = server.issueRunToken('run-b', { worktreePath: '/work/bb-2' });
+    await server.stop();
+
+    server = await start(['run-b']);
+    expect(await status(server.url, closed)).toBe(401);
+    const client = await connect(server.url, open);
+    const result = await client.callTool({ name: 'where', arguments: {} });
+    expect(result.content).toEqual([{ type: 'text', text: '/work/bb-2' }]);
+    await client.close();
+  });
+
+  it('starts empty on a state file of the wrong shape', async () => {
+    const { start, stateFile } = await restartable();
+    mkdirSync(dirname(stateFile), { recursive: true });
+    writeFileSync(stateFile, 'null');
+    server = await start();
+    expect(await status(server.url, 'anything')).toBe(401);
   });
 
   it('keeps its state 0600 in a 0700 directory, without the raw token', async () => {

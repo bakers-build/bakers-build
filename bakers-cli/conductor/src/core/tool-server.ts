@@ -61,6 +61,8 @@ export interface ToolServerOptions {
   logger?: ConductorLogger;
   /** The site's tools, served to run tokens only; absent: none. */
   siteTools?: SiteToolClient;
+  /** The runs still open; persisted grants of any other run are dropped. Absent: keep all. */
+  openRuns?: string[];
 }
 
 const newToken = () => randomBytes(32).toString('hex');
@@ -84,7 +86,18 @@ function readState(
 ): ToolServerState {
   if (!file) return { runs: {} };
   try {
-    return JSON.parse(readFileSync(file, 'utf8')) as ToolServerState;
+    const saved = JSON.parse(readFileSync(file, 'utf8')) as Partial<
+      Record<keyof ToolServerState, unknown>
+    > | null;
+    const runs = saved?.runs;
+    const port = saved?.port;
+    return {
+      runs:
+        typeof runs === 'object' && runs
+          ? (runs as ToolServerState['runs'])
+          : {},
+      ...(Number.isInteger(port) ? { port: port as number } : {}),
+    };
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code !== 'ENOENT')
       logger?.warn(
@@ -132,7 +145,11 @@ export async function startToolServer(
   }
   const stateFile = options.endpointFile?.replace(/(\.json)?$/, '.tools.json');
   const saved = readState(stateFile, logger);
-  const runs = new Map<string, Grant>(Object.entries(saved.runs ?? {}));
+  const runs = new Map<string, Grant>(
+    Object.entries(saved.runs).filter(
+      ([run]) => !options.openRuns || options.openRuns.includes(run),
+    ),
+  );
   const operatorToken = newToken();
   let port = 0;
   const persist = () => {
