@@ -743,12 +743,14 @@ assert_current() {
 # result — because two hand-maintained lists drift and the drift is silent. core is
 # in it like the rest: an unbuilt kernel fails at import time in the workspace,
 # which reads as a config problem.
+# Every executor and workspace addon a playground config may select is linked.
+LINKED_ADDONS=(herdr herdr-core workspace-git claude codex remote-drupal essentials ports)
 BUILD_UNITS=(
   "${BB_CLI}/host/src|${BB_CLI}/host/dist/src/host.js|the bakers host"
   "${BB_CLI}/conductor/src|${BB_CLI}/conductor/dist/src/index.js|the conductor"
   "${BB_CLI}/core/src|${BB_CLI}/core/dist/src/index.js|the bakers core"
 )
-for addon in herdr claude codex remote-drupal essentials ports; do
+for addon in "${LINKED_ADDONS[@]}"; do
   BUILD_UNITS+=("${BB_CLI}/addons/${addon}/src|${BB_CLI}/addons/${addon}/dist/src/index.js|the ${addon} addon")
 done
 
@@ -801,7 +803,7 @@ done
 [ -x "${BB_BIN}" ] || die "the checkout's bakers CLI is missing at ${BB_BIN}"
 
 mkdir -p "${WORKSPACE}/node_modules/@bakers-build"
-for addon in herdr claude codex remote-drupal essentials ports; do
+for addon in "${LINKED_ADDONS[@]}"; do
   ln -sfn "${BB_CLI}/addons/${addon}" "${WORKSPACE}/node_modules/@bakers-build/addon-${addon}"
 done
 ln -sfn "${BB_CLI}/conductor" "${WORKSPACE}/node_modules/@bakers-build/conductor"
@@ -837,7 +839,7 @@ fi
 # constant → committed in the fixture, where it is reviewable and survives a fresh clone.
 mkdir -p "${WORKSPACE}/.claude"
 ln -sfn "${ROOT}/.claude/skills/bakers-build/skills" "${WORKSPACE}/.claude/skills"
-say "linked @bakers-build/{addon-herdr,addon-claude,addon-codex,addon-remote-drupal,addon-essentials,addon-ports,conductor,core}"
+say "linked @bakers-build/{$(printf 'addon-%s,' "${LINKED_ADDONS[@]}")conductor,core}"
 say ".claude/skills linked in the clone root → $(readlink -f "${WORKSPACE}/.claude/skills")"
 
 # THE LINK ABOVE ONLY REACHES A CLAUDE-FAMILY AGENT, and saying so is the point.
