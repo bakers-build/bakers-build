@@ -191,8 +191,9 @@ final class BillingReportPageTest extends WorkTimeTestBase {
     $request = Request::create('/week/insights/billing', 'GET', $query);
     $request->setSession($this->container->get('request_stack')->getCurrentRequest()->getSession());
     $this->container->get('request_stack')->push($request);
+    // The page body inside its canvas › zone frame.
     return BillingReportController::create($this->container)
-      ->page(new RouteMatch(self::ROUTE, $route, ['bb_workspace' => $workspace], ['bb_workspace' => 'week']), $request);
+      ->page(new RouteMatch(self::ROUTE, $route, ['bb_workspace' => $workspace], ['bb_workspace' => 'week']), $request)['#slots']['main']['#slots']['content'];
   }
 
   /**

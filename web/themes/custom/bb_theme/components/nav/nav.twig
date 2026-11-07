@@ -49,7 +49,7 @@
   id="{{ nav_id }}"
   data-navigation
   aria-label="{{ label|default('Primary') }}">
-  <ul class="list-none p-0 flex flex-col flex-1 gap-1">
+  <ul class="list-none p-0 flex flex-col flex-1 gap-inline-xs">
     {% for item in items|default([]) %}
       {{ nav.entry(item, nav_id ~ '-' ~ loop.index, collapsed|default(false), disclose) }}
     {% endfor %}
@@ -69,11 +69,11 @@
   {% set menu_open = item.menu.open|default(false) %}
   <li class="list-none{{ item.at_end|default(false) ? ' flex flex-col flex-1 justify-end' : '' }}"
     x-data="{ open: {{ is_open ? 'true' : 'false' }}, menuOpen: {{ menu_open ? 'true' : 'false' }} }">
-    <div class="flex items-center gap-1"
+    <div class="flex items-center gap-inline-xs"
       {%- if is_heading and not heading_keeps_icon %} data-collapse-hidden{% if collapsed %} hidden{% endif %}{% endif %}>
       {% if is_heading %}
         <button type="button"
-          class="flex items-center gap-1 flex-1 min-w-0 h-10 px-3 rounded-sm bg-transparent border-0 text-text-faint cursor-pointer text-caption font-semibold transition-colors duration-fast hover:bg-surface hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring{{ heading_keeps_icon ? ' group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0' : '' }}"
+          class="flex items-center gap-inline-xs flex-1 min-w-0 h-10 px-stack rounded-sm bg-transparent border-0 text-text-faint cursor-pointer text-label transition-colors duration-fast hover:bg-surface hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring{{ heading_keeps_icon ? ' group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0' : '' }}"
           data-navigation-toggle
           aria-label="{{ item.title }}"
           aria-controls="{{ panel_id }}"
@@ -95,7 +95,7 @@
         </button>
       {% else %}
         <a href="{{ item.url }}" aria-label="{{ item.title }}" title="{{ item.title }}"
-          class="flex items-center gap-3 flex-1 min-w-0 h-10 px-3 rounded-sm no-underline transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0 {{ item.in_active_trail|default(false) ? 'bg-primary/10 text-primary font-semibold' : 'text-text-light hover:bg-surface hover:text-text' }}"
+          class="flex items-center gap-stack flex-1 min-w-0 h-10 px-stack rounded-sm no-underline transition-colors duration-fast focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-0 {{ item.in_active_trail|default(false) ? 'bg-primary/10 text-primary text-body-strong' : 'text-text-light hover:bg-surface hover:text-text' }}"
           {%- if item.full_page|default(false) %} data-hx-boost="false"{% endif %}
           {%- if item.in_active_trail|default(false) %} aria-current="page"{% endif %}>
           {%- if item.mark %}
@@ -134,7 +134,7 @@
             :aria-expanded="menuOpen ? 'true' : 'false'">
             {{ include('bb_theme:icon', { name: 'more-horizontal', size: 'sm' }, with_context = false) }}
           </button>
-          <ul class="absolute right-0 top-full z-10 min-w-40 list-none p-1 rounded-sm bg-surface-2 border border-border text-caption"
+          <ul class="absolute right-0 top-full z-10 min-w-40 list-none p-inline-xs rounded-sm bg-surface-2 border border-border text-body"
             id="{{ menu_id }}"
             role="menu"
             :hidden="!menuOpen"
@@ -143,7 +143,7 @@
               <li class="list-none" role="none">
                 <a href="{{ menu_item.url }}"
                   role="menuitem"
-                  class="block px-2 py-1 rounded-xs no-underline text-text-light transition-colors duration-fast hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ menu_item.label }}</a>
+                  class="block px-inline py-inline-xs rounded-xs no-underline text-text-light transition-colors duration-fast hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ menu_item.label }}</a>
               </li>
             {% endfor %}
           </ul>
@@ -170,7 +170,7 @@
       {% endif %}
     </div>
     {% if children|length %}
-      <ul class="list-none p-0 pt-1 {{ is_heading ? '' : 'pl-6 group-[.is-collapsed]:hidden' }} flex flex-col gap-1"
+      <ul class="list-none p-0 pt-inline-xs {{ is_heading ? '' : 'pl-gutter group-[.is-collapsed]:hidden' }} flex flex-col gap-inline-xs"
         id="{{ panel_id }}"
         :hidden="!open"
         {%- if not is_open %} hidden{% endif %}>

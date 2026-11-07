@@ -92,12 +92,12 @@ final class BbRunOverlaySource extends SourcePluginBase implements ContainerFact
         'dot' => TRUE,
       ],
       'from_label' => ['kind' => 'text', 'value' => 'from', 'emphasis' => 'faint'],
-      'from' => ['kind' => 'mono', 'value' => (string) ($run->get('state_at_start')->value ?? '')],
+      'from' => ['kind' => 'text', 'value' => (string) ($run->get('state_at_start')->value ?? '')],
     ];
     $duration = $run->get('duration_s')->value;
     if ($duration !== NULL && $duration !== '' && (int) $duration !== 0) {
       $cells['took_label'] = ['kind' => 'text', 'value' => 'took', 'emphasis' => 'faint'];
-      $cells['took'] = ['kind' => 'mono', 'value' => (int) $duration . 's'];
+      $cells['took'] = ['kind' => 'text', 'value' => $this->date->duration((int) $duration)];
     }
     return $this->rows->list([['accent' => $accent, 'cells' => $cells]], 'lines');
   }
@@ -157,8 +157,8 @@ final class BbRunOverlaySource extends SourcePluginBase implements ContainerFact
     $active = $run->get('active_s')->value;
     $pairs = array_filter([
       $this->rows->optionalPair('tokens', $run->get('tokens')->value),
-      $this->rows->optionalPair('duration', $took === NULL || $took === '' ? NULL : (int) $took . 's'),
-      $this->rows->optionalPair('active', $active === NULL || $active === '' ? NULL : (int) $active . 's'),
+      $this->rows->optionalPair('duration', $took === NULL || $took === '' ? NULL : $this->date->duration((int) $took)),
+      $this->rows->optionalPair('active', $active === NULL || $active === '' ? NULL : $this->date->duration((int) $active)),
       $this->rows->optionalPair('agent turns', $run->get('agent_turns')->value),
       $this->rows->optionalPair('tool calls', $run->get('tool_calls')->value),
       $this->rows->optionalPair('user prompts', $run->get('user_prompts')->value),
@@ -185,7 +185,7 @@ final class BbRunOverlaySource extends SourcePluginBase implements ContainerFact
       if ($raw === NULL || $raw === '') {
         continue;
       }
-      $pairs[] = $this->rows->pair($label, $this->date->normal((int) $raw));
+      $pairs[] = $this->rows->pair($label, $this->date->cell((int) $raw));
     }
     return $pairs === [] ? [] : $this->rows->namedZone('Timeline', $pairs);
   }

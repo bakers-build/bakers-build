@@ -73,6 +73,7 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
       'bb_track.account' => $this->t('Who recorded time on this project is billed to'),
       'view.bb_api_keys.page' => $this->t('Keys that let a script, pipeline or other tool act as this account, with exactly its permissions. Dates are UTC.'),
       'view.bb_ticket_templates.project_list' => $this->t('Reusable ticket recipes for this project.'),
+      'view.groups.workspace_list' => $this->t('A group grants no permissions — rights come from the workspace and the project only.'),
       'view.bb_service_accounts.settings' => $this->t('Non-human automation accounts bound to this workspace, with their role, team and managed API keys.'),
       'bb_core.my_work.stats' => $this->t('Your own figures — always visible to you'),
       'bb_core.user.profile' => $this->t('bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later.'),
@@ -93,7 +94,6 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
       $route === 'view.worklog.page' => 'Your recorded hours in the @workspace workspace',
       $route === 'bb_track.workspace.insights_billing' => '@workspace · billing report',
       $route === 'view.projects.workspace_list' => 'Every project in the @workspace workspace',
-      $route === 'view.groups.workspace_list' => 'Every group in the @workspace workspace',
       $route === 'view.bb_ticket_templates.workspace_list' => 'Ticket templates for every project in the @workspace workspace',
       default => '',
     };

@@ -122,11 +122,9 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          type: timestamp
+          type: bb_time
           settings:
-            date_format: custom
-            custom_date_format: 'j M Y'
-            timezone: UTC
+            date_only: true
         bb_expires:
           id: bb_expires
           table: consumer_field_data
@@ -160,11 +158,9 @@ display:
           hide_empty: false
           empty_zero: false
           hide_alter_empty: true
-          type: timestamp
+          type: bb_time
           settings:
-            date_format: custom
-            custom_date_format: 'j M Y'
-            timezone: UTC
+            date_only: true
         bb_api_key_status:
           id: bb_api_key_status
           table: consumer_field_data
@@ -442,21 +438,32 @@ display:
               source_id: component
               source:
                 component:
-                  component_id: 'bb_theme:zone'
+                  component_id: 'bb_theme:canvas'
                   variant_id: null
                   props: {  }
                   slots:
-                    content:
+                    main:
                       sources:
                         -
-                          source_id: view_rows
-                          source: {  }
-                          node_id: bb_api_keys_rows
-                        -
-                          source_id: view_pager
-                          source: {  }
-                          node_id: bb_api_keys_pager
-              node_id: bb_api_keys_zone
+                          source_id: component
+                          source:
+                            component:
+                              component_id: 'bb_theme:zone'
+                              variant_id: null
+                              props: {  }
+                              slots:
+                                content:
+                                  sources:
+                                    -
+                                      source_id: view_rows
+                                      source: {  }
+                                      node_id: bb_api_keys_rows
+                                    -
+                                      source_id: view_pager
+                                      source: {  }
+                                      node_id: bb_api_keys_pager
+                          node_id: bb_api_keys_zone
+              node_id: bb_api_keys_page_canvas
       path: user/%user/api-keys
     cache_metadata:
       max-age: 0

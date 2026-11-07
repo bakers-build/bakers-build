@@ -50,5 +50,5 @@ slots:
       component: bb_theme:text
       props:
         text: More settings
-        size: caption
+        size: meta
         href: /_workspace/1/ticket/1/edit

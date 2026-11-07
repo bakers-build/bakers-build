@@ -187,7 +187,7 @@ final class CommentCanonicalTest extends KernelTestBase {
     $html = $this->renderMode('full');
     self::assertStringContainsString('Ada Lovelace', $html);
     self::assertStringContainsString('summary', $html);
-    self::assertStringContainsString('30 Jun 2026, 15:50', $html);
+    self::assertStringContainsString('datetime="2026-06-30T15:50:00+00:00"', $html);
     self::assertStringContainsString('BB-657-END-MARKER', $html);
     self::assertStringContainsString('<td', $html);
     self::assertStringContainsString('BB-142', $html);

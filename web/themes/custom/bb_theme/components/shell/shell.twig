@@ -37,7 +37,7 @@
    drawn from (Controller Ruling) precisely so `ShellOverlayTargetTest` can
    still catch a rename on either side; this attribute is the second half of
    the same pairing and carries no id of its own to drift. #}
-<div{{ (attributes ?: create_attribute()).setAttribute('data-bakers-shell', '').addClass(['min-h-screen', 'flex', 'items-stretch', 'bg-surface', 'text-text', 'font-sans', 'max-md:[html:not(.js)_&]:flex-col', 'max-md:[html:not(.js)_&_[data-sidebar]]:w-full', 'max-md:[html:not(.js)_&_[data-sidebar]]:h-auto', 'max-md:[html:not(.js)_&_[data-sidebar]>button]:hidden']) }}>
+<div{{ (attributes ?: create_attribute()).setAttribute('data-bakers-shell', '').addClass(['min-h-screen', 'flex', 'items-stretch', 'bg-surface', 'text-text','max-md:[html:not(.js)_&]:flex-col', 'max-md:[html:not(.js)_&_[data-sidebar]]:w-full', 'max-md:[html:not(.js)_&_[data-sidebar]]:h-auto', 'max-md:[html:not(.js)_&_[data-sidebar]>button]:hidden']) }}>
   {% if sidebar %}
     <div class="sticky top-shell-offset self-start shrink-0 max-md:[html:not(.js)_&]:static max-md:[html:not(.js)_&]:w-full">{% block sidebar %}{{ sidebar }}{% endblock %}</div>
   {% endif %}

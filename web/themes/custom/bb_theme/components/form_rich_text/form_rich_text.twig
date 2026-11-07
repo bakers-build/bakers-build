@@ -22,18 +22,18 @@
   { tag: 'md-unordered-list', label: 'Bullet list', icon: 'list' },
   { tag: 'md-ordered-list', label: 'Numbered list', icon: 'list-ordered' },
 ] %}
-<div class="form-rich-text flex w-full min-w-0 flex-col bg-app border border-control-border rounded-sm focus-within:border-primary">
+<div class="form-rich-text flex w-full min-w-0 flex-col bg-app border border-control-border rounded-sm focus-within:border-primary has-[textarea:focus-visible]:outline-2 has-[textarea:focus-visible]:outline-offset-2 has-[textarea:focus-visible]:outline-focus-ring">
   {%- if not disabled %}
-  <markdown-toolbar for="{{ id }}" role="toolbar" aria-label="Text formatting" class="flex flex-wrap gap-0.5 px-1.5 py-1 border-b border-border-2 [&:not(:defined)]:hidden">
+  <markdown-toolbar for="{{ id }}" role="toolbar" aria-label="Text formatting" class="flex flex-wrap gap-0.5 px-1.5 py-inline-xs border-b border-border-2 [&:not(:defined)]:hidden">
     {%- for button in buttons %}
-    <{{ button.tag }}{% if button.tag == 'md-header' %} level="2"{% endif %} role="button" aria-label="{{ button.label }}" title="{{ button.label }}" class="inline-flex size-7 items-center justify-center rounded-sm text-text-light cursor-pointer hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+    <{{ button.tag }}{% if button.tag == 'md-header' %} level="2"{% endif %} role="button" aria-label="{{ button.label }}" title="{{ button.label }}" class="inline-flex size-7 items-center justify-center rounded-sm text-text-light cursor-pointer hover:bg-surface-3 hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">
       {{- include('bb_theme:icon', { name: button.icon, size: 'sm' }, with_context = false) -}}
     </{{ button.tag }}>
     {%- endfor %}
   </markdown-toolbar>
   {%- endif %}
   <textarea{{ (attributes ?: create_attribute()).addClass([
-      'input', 'w-full', 'px-2.5', 'py-2', 'bg-transparent', 'resize-y',
+      'input', 'w-full', 'px-2.5', 'py-inline', 'bg-transparent', 'resize-y',
       'text-text', 'text-body', 'focus:outline-none',
     ]) }} id="{{ id }}"
     {%- if name %} name="{{ name }}"{% endif %}

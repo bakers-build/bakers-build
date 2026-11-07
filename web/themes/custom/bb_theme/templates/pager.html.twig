@@ -25,16 +25,16 @@
  * the `link`/`current_link` class strings below, which makes that global rule redundant — it has
  * been removed from `css/app.src.css` along with the CSS-discipline exception that named it, and
  * every arbitrary value here is replaced with the same token scale the theme's 14 scoped
- * components use (`w-7`/`h-7` for a 28px hit area, `px-2`, `rounded-xs`, `gap-1`, `mt-3`).
+ * components use (`w-7`/`h-7` for a 28px hit area, `px-inline`, `rounded-xs`, `gap-inline-xs`, `mt-stack`).
  */
 #}
-{% set link = 'inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-xs border border-border-2 bg-surface-2 text-eyebrow font-semibold text-text no-underline hover:bg-surface hover:border-border' %}
-{% set current_link = 'inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-xs border border-primary bg-primary/15 text-eyebrow font-semibold text-primary no-underline' %}
+{% set link = 'inline-flex items-center justify-center min-w-7 h-7 px-inline rounded-xs border border-border-2 bg-surface-2 text-eyebrow text-text no-underline hover:bg-surface hover:border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring' %}
+{% set current_link = 'inline-flex items-center justify-center min-w-7 h-7 px-inline rounded-xs border border-primary bg-primary/15 text-eyebrow text-primary no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring' %}
 {% set gap = 'inline-flex items-center justify-center min-w-7 h-7 text-eyebrow text-text-faint' %}
 {% if items %}
-  <nav class="bakers-pager pager flex w-full justify-center items-center gap-1 mt-3" role="navigation" aria-labelledby="{{ heading_id }}">
+  <nav class="bakers-pager pager flex w-full justify-center items-center gap-inline-xs mt-stack" role="navigation" aria-labelledby="{{ heading_id }}">
     <{{ pagination_heading_level }} id="{{ heading_id }}" class="sr-only">{{ 'Pagination'|t }}</{{ pagination_heading_level }}>
-    <ul class="pager__items js-pager__items flex flex-wrap items-center gap-1 m-0 p-0 list-none">
+    <ul class="pager__items js-pager__items flex flex-wrap items-center gap-inline-xs m-0 p-0 list-none">
       {# Print first item if we are not on the first page. #}
       {% if items.first %}
         <li class="pager__item shrink-0 pager__item--first">

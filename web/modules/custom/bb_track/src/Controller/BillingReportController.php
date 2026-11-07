@@ -7,6 +7,7 @@ namespace Drupal\bb_track\Controller;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Render\EntityFormSurface;
 use Drupal\bb_track\Statistics\BillingReportPage;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -40,7 +41,7 @@ final class BillingReportController implements ContainerInjectionInterface {
     if (!$workspace instanceof BbWorkspaceInterface) {
       throw new NotFoundHttpException('No workspace in the current route.');
     }
-    return $this->page->build($workspace, $request);
+    return EntityFormSurface::wrap($this->page->build($workspace, $request));
   }
 
 }

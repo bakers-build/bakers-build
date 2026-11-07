@@ -94,6 +94,8 @@ final class BbTicketReviewsSourceTest extends KernelTestBase {
     self::assertSame('draft', (string) ($entry['#props']['attributes']['data-bakers-review'] ?? ''));
     self::assertSame('reviewer', $entry['#slots']['content']['author']['#props']['display_name'] ?? NULL);
     self::assertSame($this->formatted((int) $draft->get('changed')->value), $entry['#slots']['content']['author']['#props']['subtitle'] ?? NULL);
+    self::assertSame((int) $draft->get('changed')->value, (new \DateTimeImmutable($entry['#slots']['content']['author']['#props']['subtitle_datetime'] ?? ''))->getTimestamp());
+    self::assertNotEmpty($entry['#slots']['content']['author']['#props']['subtitle_title'] ?? '');
     self::assertSame(['submit'], $this->transitions($entry));
     self::assertSame('Draft', $this->widget($entry)['actions']['state']['#props']['label'] ?? NULL);
     self::assertStringContainsString('/comment/' . $draft->id() . '/review', (string) ($entry['#slots']['content']['controls']['#slots']['content']['edit']['#props']['href'] ?? ''));
@@ -238,7 +240,7 @@ final class BbTicketReviewsSourceTest extends KernelTestBase {
    * A timestamp the way an entry shows it.
    */
   private function formatted(int $timestamp): string {
-    return $this->container->get('date.formatter')->format($timestamp, 'medium');
+    return $this->container->get('bb_core.date')->label($timestamp);
   }
 
   /**

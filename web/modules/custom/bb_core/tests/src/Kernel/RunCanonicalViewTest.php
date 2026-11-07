@@ -231,29 +231,29 @@ final class RunCanonicalViewTest extends KernelTestBase {
   }
 
   /**
-   * The active time sits beside the duration, both in seconds.
+   * The active time sits beside the duration, both as product durations.
    */
-  public function testFootprintShowsActiveTimeInSeconds(): void {
+  public function testFootprintShowsActiveTimeAsDurations(): void {
     $this->run->set('duration_s', 3620);
     $this->run->set('active_s', 20);
     $build = $this->inspector()->footprint($this->run);
     $html = (string) $this->container->get('renderer')->renderInIsolation($build);
-    self::assertStringContainsString('3620s', $html);
+    self::assertStringContainsString('1h 0m', $html);
     self::assertStringContainsString('Active', $html);
     self::assertStringContainsString('20s', $html);
   }
 
   /**
-   * Inspector timestamps use the product `normal` format, not ISO-8601.
+   * Inspector timestamps are time elements with an ISO `datetime`.
    */
-  public function testTimingUsesTheNormalDateFormat(): void {
+  public function testTimingRendersTimeElements(): void {
     $this->run->set('started_at', 1782834600);
     $this->run->set('heartbeat', 1782837900);
     $build = $this->inspector()->timing($this->run);
     $html = (string) $this->container->get('renderer')->renderInIsolation($build);
-    self::assertStringContainsString('30 Jun 2026, 15:50', $html);
-    self::assertStringContainsString('30 Jun 2026, 16:45', $html);
-    self::assertStringNotContainsString('2026-06-30T', $html);
+    self::assertStringContainsString('datetime="2026-06-30T15:50:00+00:00"', $html);
+    self::assertStringContainsString('datetime="2026-06-30T16:45:00+00:00"', $html);
+    self::assertStringContainsString('title="Tue, 30 Jun 2026, 15:50 UTC"', $html);
   }
 
   /**
