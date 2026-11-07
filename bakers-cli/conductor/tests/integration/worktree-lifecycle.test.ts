@@ -122,7 +122,9 @@ function uniqueTicket(terminalState: string): string {
 /** No-op agent: the worktree lifecycle is under test, not a live claude run. */
 const stubAgent: BbAgent = {
   id: 'stub',
-  launchCommand: () => 'true',
+  // Outlives the 4s launch watch, which fails an agent that exits at once, so
+  // the run stays active for the claim assertion.
+  launchCommand: () => 'sleep 120',
   getRunLog: async () => '',
   parseFootprint: () => emptyAgentFootprint(),
 };
