@@ -115,7 +115,8 @@ const withThemeAttributes = (storyFn, context) => {
     const selection = context.globals.theme || 'light'
     const { layout = selection === 'cozy' ? 'cozy' : 'compact', mode } = context.parameters.bakersTheme || {}
     document.documentElement.setAttribute('data-layout', layout)
-    if (mode || selection === 'dark') document.documentElement.setAttribute('data-mode', mode || 'dark')
+    // Light and dark force their mode; cozy is density only and keeps the app's mode.
+    if (mode || selection !== 'cozy') document.documentElement.setAttribute('data-mode', mode || selection)
     // The addon paints its documentation canvas inline; stories use the app tokens.
     document.body.style.removeProperty('background-color')
     document.body.style.removeProperty('color')
