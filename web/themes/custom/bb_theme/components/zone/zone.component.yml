@@ -89,12 +89,15 @@ props:
         - sm
         - md
         - lg
+        - section
       title: Gap
       description: >-
         Distance between the cells of the content grid, from
         `component.zone.gap.*`, which point at the space scale: `none` = 0, `sm`
         = `space-3` (12px, 16px cozy), `md` = `space-5` (20px, 24px cozy, the
-        default), `lg` = `space-6` (24px, 32px cozy).
+        default), `lg` = `space-6` (24px, 32px cozy). `section` is the spacing
+        role between headed zones (32px), for a grid whose cells are zones with
+        their own headings.
     direction:
       type: string
       enum:

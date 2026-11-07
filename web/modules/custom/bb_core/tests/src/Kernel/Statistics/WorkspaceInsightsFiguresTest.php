@@ -219,6 +219,21 @@ final class WorkspaceInsightsFiguresTest extends KernelTestBase {
   }
 
   /**
+   * Figures and their groups stack a section apart, like every headed zone.
+   */
+  public function testFiguresStackOneSectionApart(): void {
+    $lead = $this->member($this->north, 'north-lead', ['lead']);
+    $build = $this->container->get('bb_core.figure_renderer')->build(
+      ['workspace' => $this->north],
+      $lead,
+      [],
+      ['controls' => FALSE, 'layout' => 'insights'],
+    );
+    self::assertSame('section', $build['#props']['gap'] ?? NULL);
+    self::assertSame('section', $build['#slots']['content']['insights']['#props']['gap'] ?? NULL);
+  }
+
+  /**
    * Whether an account may view one shipped figure in a workspace.
    */
   private function mayView(UserInterface $account, string $figureId, BbWorkspaceInterface $workspace): bool {

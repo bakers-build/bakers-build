@@ -78,7 +78,7 @@ final class FigureRenderer {
       $content[$group['id']] = [
         '#type' => 'component',
         '#component' => 'bb_theme:zone',
-        '#props' => ['inset' => 'none'],
+        '#props' => ['inset' => 'none', 'gap' => 'section'],
         '#slots' => [
           'heading' => count($group['figures']) > 1 && !$insights ? ['#plain_text' => $group['label']] : '',
           'content' => $figures,
@@ -95,7 +95,8 @@ final class FigureRenderer {
     $build = [
       '#type' => 'component',
       '#component' => 'bb_theme:zone',
-      '#props' => ['inset' => 'lg'],
+      // Figures are headed zones, so they stack a section apart.
+      '#props' => ['inset' => 'lg', 'gap' => 'section'],
       '#slots' => ['actions' => ($options['controls'] ?? TRUE) && $controls ? $controls : '', 'content' => $content],
     ];
     $metadata = (new CacheableMetadata())
