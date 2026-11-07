@@ -14,7 +14,9 @@ installs the `bakers-cli` and `docs` dependencies first, `provision_up('deps')` 
 alone for work that needs no site, and a site profile's `ddev init` installs and builds
 `web/themes/custom/bb_theme`. A docs preview for functional checks or manual review starts with
 `provision_up('docs-preview')`, which builds and serves `docs/`, and is shared with `ports_up docs`;
-never run `vitepress preview` in a run. Core tests, Playwright, conductor and skill-behavior
+never run `vitepress preview` in a run. The agent sandbox cannot reach `.ddev.site` (a loopback address), so
+the Playwright suite and `playwright-cli` run through `ddev_exec`. A server an agent starts in the
+sandbox, such as Storybook, is reachable only within that same command. Core tests, Playwright, conductor and skill-behavior
 setup: [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work
