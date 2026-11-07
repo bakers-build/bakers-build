@@ -680,18 +680,21 @@ semantic:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.16}'
-        fontWeight: '{primitive.style.fontWeight.semibold}'
+        fontWeight: '{primitive.style.fontWeight.bold}'
         lineHeight: '{primitive.style.lineHeight.22}'
         letterSpacing: '{primitive.style.letterSpacing.snug}'
       $type: typography
-      $description: Section heading; the CI board sets it semibold.
+      $description: Section heading.
       $extensions:
         designbook:
-          provenance: observation
+          provenance: addition
           reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:57'
             - '550:9016'
+          note: >-
+            Intake decision 2026-11-07: bold instead of the observed semibold,
+            as the spec table sets it (AC-3).
     item-title:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
@@ -753,17 +756,22 @@ semantic:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'
         fontSize: '{primitive.style.fontSize.12}'
-        fontWeight: '{primitive.style.fontWeight.medium}'
+        fontWeight: '{primitive.style.fontWeight.regular}'
         lineHeight: '{primitive.style.lineHeight.16}'
       $type: typography
-      $description: Field and property label.
+      $description: >-
+        Field and property label; regular, so a label is never heavier than its
+        value.
       $extensions:
         designbook:
-          provenance: observation
+          provenance: addition
           reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:72'
             - '550:8992'
+          note: >-
+            Intake decision 2026-11-07: regular instead of the observed medium
+            (spec ed3f030b, AC-2).
     meta:
       $value:
         fontFamily: '{primitive.style.fontFamily.sans}'

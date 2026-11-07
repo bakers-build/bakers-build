@@ -4,7 +4,7 @@
   --text-page-title--line-height: var(--leading-30);
   --text-page-title--letter-spacing: var(--tracking-tight);
   --text-section-title: var(--text-16);
-  --text-section-title--font-weight: var(--font-weight-semibold);
+  --text-section-title--font-weight: var(--font-weight-bold);
   --text-section-title--line-height: var(--leading-22);
   --text-section-title--letter-spacing: var(--tracking-snug);
   --text-item-title: var(--text-14);
@@ -20,7 +20,7 @@
   --text-prose--font-weight: var(--font-weight-regular);
   --text-prose--line-height: var(--leading-21);
   --text-label: var(--text-12);
-  --text-label--font-weight: var(--font-weight-medium);
+  --text-label--font-weight: var(--font-weight-regular);
   --text-label--line-height: var(--leading-16);
   --text-meta: var(--text-12);
   --text-meta--font-weight: var(--font-weight-regular);
