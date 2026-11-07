@@ -74,7 +74,7 @@ See [hosted or self-run](/self-hosting/choosing) for the server choice and [serv
 | Your repository and worktrees | Your machine, `<checkout>-worktrees/` or the configured `worktreeDir` | One git worktree per ticket; removed when the ticket is done or cancelled |
 | Tickets, comments, states, labels | The bakers.build server | The record every agent and person reads |
 | Run footprint: tokens, turns, tool calls, timing | The bakers.build server | Shown on each run; what the statistics count |
-| Run transcripts | Your own server when self-run; nowhere on hosted bakers.build | Uploaded by the conductor at the end of a run; `capture_logs: false` keeps them local |
+| Run transcripts | Your own server when self-run and opted in; nowhere on hosted bakers.build | Uploaded at the end of a run only when the server's [run-log storage](/self-hosting/server#run-log-storage) allows it for the workspace; `capture_logs: false` keeps them local regardless |
 | Agent sessions and model traffic | Between your machine and your model provider | provider keys stay on the worker; stored run transcripts may contain prompts and tool output |
 | Machine identity, capacity, agent catalog | `~/.bakers/machine.config.js` | Private file, not in git |
 | Server address and sign-in | `~/.bakers/bakers.config.js` or `~/.bakers/connections/<id>.js` | Private; a device-code sign-in stores no secret, client-credential setup writes the secret into the private connection file |

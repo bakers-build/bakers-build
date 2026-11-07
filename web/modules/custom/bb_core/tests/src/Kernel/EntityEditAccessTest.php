@@ -15,6 +15,7 @@ use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Onboarding\OnboardingDestination;
+use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\og\Og;
 use Drupal\og\OgMembershipInterface;
@@ -586,6 +587,45 @@ final class EntityEditAccessTest extends KernelTestBase {
     self::assertFalse(
       $machine->access('update', $owner),
       'a revoked membership cannot update the row',
+    );
+  }
+
+  /**
+   * Only an own-workspace lead edits the run-log opt-in, and only when offered.
+   *
+   * With the deployment flag off nobody, admin included, may set it, so a
+   * direct PATCH cannot enable storage the deployment withholds.
+   */
+  public function testRunLogOptInFollowsFlagAndWorkspaceLead(): void {
+    $home = $this->createWorkspaceChain('runlog-home');
+    $foreign = $this->createWorkspaceChain('runlog-foreign');
+    $lead = $this->createAccount('runlog-lead');
+    $contributor = $this->createAccount('runlog-contributor');
+    $foreignLead = $this->createAccount('runlog-foreign-lead');
+    $stranger = $this->createAccount('runlog-rankless');
+    $admin = $this->createAccount('runlog-admin');
+    $this->addMembership($home['workspace'], $lead, ['lead']);
+    $this->addMembership($home['workspace'], $contributor, ['contributor']);
+    $this->addMembership($foreign['workspace'], $foreignLead, ['lead']);
+    $this->grantSiteWide($admin, ['administer bakers']);
+    $field = $home['workspace']->get(RunLogPolicy::WORKSPACE_FIELD);
+
+    foreach ([$lead, $admin] as $actor) {
+      self::assertFalse($field->access('edit', $actor), 'flag off: ' . $actor->getAccountName() . ' must not opt in');
+    }
+
+    $this->setSetting('feature_flags', [RunLogPolicy::FLAG => TRUE]);
+    self::assertTrue($field->access('edit', $lead), 'flag on: the workspace lead may opt in');
+    self::assertTrue($field->access('edit', $admin), 'flag on: the instance admin may opt in');
+    foreach ([$contributor, $foreignLead, $stranger] as $actor) {
+      self::assertFalse(
+        $home['workspace']->access('update', $actor) && $field->access('edit', $actor),
+        $actor->getAccountName() . ' must not change the opt-in',
+      );
+    }
+    self::assertFalse(
+      $foreign['workspace']->access('update', $lead),
+      'a lead must not change another workspace',
     );
   }
 

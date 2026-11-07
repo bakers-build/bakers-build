@@ -10,6 +10,8 @@ x-runtime: &runtime
   DB_PASSWORD: ${DB_PASSWORD:?Set a private DB_PASSWORD}
   MAIL_SMTP_DSN: ${MAIL_SMTP_DSN:?Set the SMTP DSN for passwordless sign-in}
   MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:?Set MAIL_FROM_ADDRESS}
+  # Operator opt-in for workspace run-log storage; 1 or true enables it.
+  FEATURE_FLAG_RUN_LOG_STORAGE: ${FEATURE_FLAG_RUN_LOG_STORAGE:-0}
 
 services:
   init-perms:

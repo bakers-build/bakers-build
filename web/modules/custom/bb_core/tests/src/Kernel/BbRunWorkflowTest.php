@@ -8,6 +8,7 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\bb_core\Entity\BbRun;
 use Drupal\bb_core\Entity\BbRunInterface;
+use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -147,9 +148,10 @@ final class BbRunWorkflowTest extends KernelTestBase {
     // `log`'s write-through resolves a workspace via
     // ticket -> project -> group -> workspace (WorkspaceResolver), so this run
     // needs the full chain.
+    $this->setSetting('feature_flags', [RunLogPolicy::FLAG => TRUE]);
     $etm = \Drupal::entityTypeManager();
     $workspace = $etm->getStorage('bb_workspace')
-      ->create(['name' => 'PROJ-1 workspace', 'slug' => 'proj-1-workspace']);
+      ->create(['name' => 'PROJ-1 workspace', 'slug' => 'proj-1-workspace', RunLogPolicy::WORKSPACE_FIELD => TRUE]);
     $workspace->save();
     $group = $etm->getStorage('bb_group')
       ->create(['name' => 'PROJ-1 group', 'workspace_id' => $workspace->id()]);

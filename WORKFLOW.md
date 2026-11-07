@@ -12,7 +12,9 @@ runs as `ddev_exec("<cmd>")`, a project web command runs by path
 `ddev describe`/`ddev start`. Never run `pnpm install` in a run: every `provision_up` profile
 installs the `bakers-cli` and `docs` dependencies first, `provision_up('deps')` installs them
 alone for work that needs no site, and a site profile's `ddev init` installs and builds
-`web/themes/custom/bb_theme`. Core tests, Playwright, conductor and skill-behavior
+`web/themes/custom/bb_theme`. A docs preview for functional checks or manual review starts with
+`provision_up('docs-preview')`, which builds and serves `docs/`, and is shared with `ports_up docs`;
+never run `vitepress preview` in a run. Core tests, Playwright, conductor and skill-behavior
 setup: [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work
@@ -45,6 +47,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
 | `.ddev/**` | `bash tests/contract/ddev-provision.sh` |
+| `scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
 | `.gitlab-ci.yml` | `glab ci lint .gitlab-ci.yml && bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |

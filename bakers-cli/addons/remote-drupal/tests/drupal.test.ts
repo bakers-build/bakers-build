@@ -1208,6 +1208,7 @@ describe('DrupalBbRemote', () => {
       'started_at',
       'state_at_start',
       'ticket_id',
+      'run_log_storage_allowed',
     ]);
     expect(runs[0]).toMatchObject({
       runUuid: 'run-1',
@@ -1216,6 +1217,32 @@ describe('DrupalBbRemote', () => {
       agent: 'codex',
       startedAt: '2026-09-15T10:00:00+00:00',
     });
+  });
+
+  it('fetchFinalizableRuns allows a transcript upload only for a boolean true policy', async () => {
+    const col = fakeCollection({
+      list: [
+        fakeResource('run-yes', { run_log_storage_allowed: true }),
+        fakeResource('run-no', { run_log_storage_allowed: false }),
+        fakeResource('run-string', { run_log_storage_allowed: 'true' }),
+        fakeResource('run-old-server', {}),
+      ],
+    });
+    const remote = new DrupalBbRemote(
+      fakeClient({
+        collection: vi
+          .fn()
+          .mockReturnValueOnce(col)
+          .mockReturnValueOnce(fakeCollection()),
+      }),
+    );
+    const runs = await remote.fetchFinalizableRuns('machine-1');
+    expect(runs.map((r) => [r.runUuid, r.runLogStorageAllowed])).toEqual([
+      ['run-yes', true],
+      ['run-no', false],
+      ['run-string', false],
+      ['run-old-server', false],
+    ]);
   });
 
   it('fetchFinalizableRuns projects the run ticket and its start state for after_run', async () => {
@@ -1462,9 +1489,10 @@ describe('DrupalBbRemote', () => {
   function runLogClient(
     exists: boolean,
     update = vi.fn(async () => fakeResource('x')),
+    policy: Record<string, unknown> = { run_log_storage_allowed: true },
   ) {
     const col = fakeCollection({
-      first: exists ? fakeResource('run-9', {}) : null,
+      first: exists ? fakeResource('run-9', policy) : null,
     });
     const collection = vi.fn(() => col);
     return {
@@ -1515,7 +1543,22 @@ describe('DrupalBbRemote', () => {
 
     expect(collection).toHaveBeenCalledWith('bb_run');
     expect(col.where).toHaveBeenCalledWith('id', '=', 'run-9');
-    expect(col.fields).toHaveBeenCalledWith(['id']);
+    expect(col.fields).toHaveBeenCalledWith(['id', 'run_log_storage_allowed']);
+  });
+
+  it.each([
+    ['denies storage', { run_log_storage_allowed: false }],
+    ['sends no policy', {}],
+  ])('appendRunNote neither reads nor rewrites the transcript when the server %s', async (_label, policy) => {
+    const update = vi.fn(async () => fakeResource('x'));
+    const { api } = runLogClient(true, update, policy);
+    const fetchRunLog = vi.fn(async () => 'existing transcript');
+    const remote = new DrupalBbRemote(api, undefined, undefined, fetchRunLog);
+
+    await remote.appendRunNote('run-9', 'worktree already absent at /repo/wt');
+
+    expect(fetchRunLog).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('appendRunNote throws rather than replacing the transcript when the run cannot be read', async () => {
