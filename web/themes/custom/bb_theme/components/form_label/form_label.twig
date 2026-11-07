@@ -3,7 +3,7 @@
    hides the label visually while keeping it for screen readers. #}
 {% set vis = title_display|default('before') %}
 {% set label_classes = inline
-  ? ['label', 'text-caption', 'text-text-light', 'cursor-pointer', 'select-none']
-  : ['label', 'block', 'text-eyebrow', 'font-semibold', 'uppercase', 'tracking-[0.03em]', 'text-state-offline-ink', 'mb-[6px]'] %}
+  ? ['label', 'text-label', 'text-text-light', 'cursor-pointer', 'select-none']
+  : ['label', 'block', 'text-eyebrow', 'uppercase', 'text-state-offline-ink', 'mb-[6px]'] %}
 {% if vis == 'invisible' %}{% set label_classes = label_classes|merge(['sr-only']) %}{% endif %}
 <label{{ (attributes ?: create_attribute()).addClass(label_classes) }}{% if for %} for="{{ for }}"{% endif %}>{% if title %}{{ title }}{% endif %}</label>

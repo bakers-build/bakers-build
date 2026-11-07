@@ -13,11 +13,11 @@
     {{ include('bb_theme:icon', { name: 'sun-moon', size: 'md' }, with_context = false) }}
   </button>
   <div popover="auto" x-ref="panel" :id="$id('appearance')" aria-label="Appearance"
-    class="fixed inset-auto left-4 bottom-12 m-0 max-w-full p-4 rounded-md border border-control-border bg-surface text-text font-sans">
-    <fieldset class="flex flex-col gap-2 m-0 p-0 border-0">
-      <legend class="mb-2 p-0 text-caption font-medium">Appearance</legend>
+    class="fixed inset-auto left-4 bottom-12 m-0 max-w-full p-group rounded-md border border-control-border bg-surface text-text">
+    <fieldset class="flex flex-col gap-inline m-0 p-0 border-0">
+      <legend class="mb-inline p-0 text-label">Appearance</legend>
       {% for value, title in { light: 'Light', dark: 'Dark', system: 'System' } %}
-        <label class="flex items-center gap-2 text-body cursor-pointer">
+        <label class="flex items-center gap-inline text-body cursor-pointer">
           <input type="radio" value="{{ value }}" :name="$id('appearance') + '-choice'"{% if value == initial %} checked{% endif %}
             :checked="choice === '{{ value }}'" @change="window.bakersSetMode('{{ value }}')"
             class="m-0 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">

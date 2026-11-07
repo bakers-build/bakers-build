@@ -885,17 +885,6 @@ component:
           Width of the logo with wordmark in the compact brand the gate chrome
           uses; its height follows the SVG aspect ratio. Fixed: it does not
           follow the layout density.
-  gate:
-    body:
-      $value:
-        fontFamily: '{primitive.style.fontFamily.sans}'
-        fontSize: '{primitive.style.fontSize.16}'
-        fontWeight: '{primitive.style.fontWeight.regular}'
-        lineHeight: '{primitive.style.lineHeight.normal}'
-      $type: typography
-      $description: >-
-        Body copy of a standalone gate result, such as the device sign-in
-        confirmation: readable at 16px rather than the 13px product body.
   zone:
     gap:
       sm:

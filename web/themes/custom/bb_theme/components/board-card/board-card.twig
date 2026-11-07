@@ -5,7 +5,7 @@
   'needs_input': 'before:bg-state-attention-mark',
   'wait': 'before:bg-state-unassigned'
 } %}
-{% set card_classes = ['relative', 'bg-surface', 'border', 'border-border-2', 'rounded-sm', 'p-2', 'pl-3', "before:content-['']", 'before:absolute', 'before:left-0', 'before:top-0', 'before:bottom-0', 'before:w-1', 'before:rounded-l-sm', edge_map[status]|default('before:bg-transparent')] %}
+{% set card_classes = ['relative', 'bg-surface', 'border', 'border-border-2', 'rounded-sm', 'p-inline', 'pl-stack', "before:content-['']", 'before:absolute', 'before:left-0', 'before:top-0', 'before:bottom-0', 'before:w-1', 'before:rounded-l-sm', edge_map[status]|default('before:bg-transparent')] %}
 {% if status == 'wait' %}{% set card_classes = card_classes|merge(['bg-state-unassigned-tint', 'border-state-unassigned/30']) %}{% endif %}
 {# Colour by ticket type: normalise the bb_<type> workflow id to the short key. #}
 {% set type_key = (type|default(''))|replace({'bb_': ''}) %}
