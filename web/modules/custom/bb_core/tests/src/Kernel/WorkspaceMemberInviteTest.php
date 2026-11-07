@@ -376,7 +376,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     // MemberItemBuilder is not a service; construct it the way
     // GroupMembersForm does.
     $itemBuilder = new MemberItemBuilder(
-      $this->container->get('date.formatter'),
+      $this->container->get('bb_core.date'),
       $this->container->get('string_translation'),
       $this->container->get('module_handler'),
     );

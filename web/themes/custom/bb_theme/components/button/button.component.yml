@@ -43,8 +43,8 @@ props:
       title: Tone
       description: >-
         Optional fill from the badge token vocabulary, for a control that is
-        also a labelled state (Board work-state and priority chips). When set
-        it replaces the variant colours. The label still names the value.
+        also a labelled state (Board work-state and priority chips). When set it
+        replaces the variant colours. The label still names the value.
   required:
     - label
 slots:

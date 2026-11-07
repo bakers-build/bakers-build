@@ -1,37 +1,65 @@
-$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
 name: Dialog
 status: stable
 group: Shell
-description: 'Generic centered dialog hull for every add, edit, cancel and confirm surface. It fills the page overlay slot and owns nothing but the hull: a title row with an optional ghost close button, then the message, body and actions slots in that order. The message slot sits ABOVE the body so a refusal appears where the writer is looking. The state is the dialog element''s own open attribute, rendered from the open prop, so the surface is readable with JavaScript disabled. Which actions need a confirmation is not this component''s decision — the rule is written down in designbook/design-system/action-pattern.md, and a confirmation is this same component with prose in body and two actions rather than a second component. Distinct from command_palette, which is a dialog hard-wired to the ⌘K palette. Replaces the `island` module''s own default hull (BB-420 Task 36): `replaces: island:dialog` below is core SDC''s own override mechanism (`ComponentPluginManager::alterDefinitions()`, negotiated by `ComponentNegotiator::maybeNegotiateByTheme()`), so any wrapper format registered against `island:dialog` — `island_dialog` itself, the only one left after this task — renders THIS component instead whenever bb_theme is the active theme. No second wrapper-format registration is needed for that; `bb_core` used to carry one (`bb_dialog`) and it is gone. SDC validates `replaces` compatibility on PROPS only, never slots — the slot contract above (`context`, `message`, `body`, `actions` being a superset of island:dialog''s `message`/`body`) is documented, not enforced, which is a deliberate operator decision recorded on this task rather than an oversight.'
+description: >-
+  Generic centered dialog hull for every add, edit, cancel and confirm surface.
+  It fills the page overlay slot and owns nothing but the hull: a title row with
+  an optional ghost close button, then the message, body and actions slots in
+  that order. The message slot sits ABOVE the body so a refusal appears where
+  the writer is looking. The state is the dialog element's own open attribute,
+  rendered from the open prop, so the surface is readable with JavaScript
+  disabled. Which actions need a confirmation is not this component's decision —
+  the rule is written down in designbook/design-system/action-pattern.md, and a
+  confirmation is this same component with prose in body and two actions rather
+  than a second component. Distinct from command_palette, which is a dialog
+  hard-wired to the ⌘K palette. Replaces the `island` module's own default hull
+  (BB-420 Task 36): `replaces: island:dialog` below is core SDC's own override
+  mechanism (`ComponentPluginManager::alterDefinitions()`, negotiated by
+  `ComponentNegotiator::maybeNegotiateByTheme()`), so any wrapper format
+  registered against `island:dialog` — `island_dialog` itself, the only one left
+  after this task — renders THIS component instead whenever bb_theme is the
+  active theme. No second wrapper-format registration is needed for that;
+  `bb_core` used to carry one (`bb_dialog`) and it is gone. SDC validates
+  `replaces` compatibility on PROPS only, never slots — the slot contract above
+  (`context`, `message`, `body`, `actions` being a superset of island:dialog's
+  `message`/`body`) is documented, not enforced, which is a deliberate operator
+  decision recorded on this task rather than an oversight.
+
+
+  Why `libraryOverrides`: THE BEHAVIOUR IS island'S, AND `replaces:` DOES NOT
+  CARRY IT — which is why this block exists and why it is not optional. SDC
+  resolves the override before any library is attached:
+  `ComponentNodeVisitor::enterNode()` compiles
+  `attach_library($component->getLibraryName())` for whichever component's own
+  template is being compiled, so on a site where this theme is active the
+  library attached is THIS component's and island's is never reached. Until
+  BB-421's re-entry this component shipped its own `dialog.js` beside this file,
+  picked up by `ComponentPluginManager::libraryFromDefinition()`'s filename
+  convention; that file is deleted and the behaviour lives in
+  `island/js/island.dialog.js`, so the dependency has to be stated here.
+
+
+  IT ALSO FIXES A LATENT BUG THE MOVE EXPOSED (measured, BB-421 re-entry).
+  Without a `libraryOverrides` block a component's library declares NO
+  dependencies at all — core appends `core/drupal` only when one is present
+  (`ComponentPluginManager::libraryFromDefinition()`). The deleted `dialog.js`
+  therefore closed over `Drupal` and `once` while depending on neither, and its
+  attachment was order-dependent: reliable in isolation, intermittently absent
+  in a full browser run, observed as a hull carrying no `data-once` marker at
+  all. `island/dialog` declares `core/drupal`, and core adds it here on top of
+  that — the overrides block alone is what triggers that.
+
+
+  HAND-AUTHORED UNDER A NAMED EXCEPTION, on the operator's decision of
+  2026-09-09. `web/themes/custom/bb_theme/components/` is bound to
+  `designbook:debo` by WORKFLOW.md, and debo owns components, stories, scenes,
+  entity mappings and design tokens — it has no workflow for a component's
+  behaviour file or for its library dependencies, so there is no debo path this
+  edit could have taken.
 provider: bb_theme
 replaces: island:dialog
-# THE BEHAVIOUR IS island'S, AND `replaces:` DOES NOT CARRY IT — which is why
-# this block exists and why it is not optional. SDC resolves the override
-# before any library is attached: `ComponentNodeVisitor::enterNode()` compiles
-# `attach_library($component->getLibraryName())` for whichever component's own
-# template is being compiled, so on a site where this theme is active the
-# library attached is THIS component's and island's is never reached. Until
-# BB-421's re-entry this component shipped its own `dialog.js` beside this
-# file, picked up by `ComponentPluginManager::libraryFromDefinition()`'s
-# filename convention; that file is deleted and the behaviour lives in
-# `island/js/island.dialog.js`, so the dependency has to be stated here.
-#
-# IT ALSO FIXES A LATENT BUG THE MOVE EXPOSED (measured, BB-421 re-entry).
-# Without a `libraryOverrides` block a component's library declares NO
-# dependencies at all — core appends `core/drupal` only when one is present
-# (`ComponentPluginManager::libraryFromDefinition()`). The deleted `dialog.js`
-# therefore closed over `Drupal` and `once` while depending on neither, and
-# its attachment was order-dependent: reliable in isolation, intermittently
-# absent in a full browser run, observed as a hull carrying no `data-once`
-# marker at all. `island/dialog` declares `core/drupal`, and core adds it
-# here on top of that — the overrides block alone is what triggers that.
-#
-# HAND-AUTHORED UNDER A NAMED EXCEPTION, on the operator's decision of
-# 2026-09-09. `web/themes/custom/bb_theme/components/` is bound to
-# `designbook:debo` by WORKFLOW.md, and debo owns components, stories, scenes,
-# entity mappings and design tokens — it has no workflow for a component's
-# behaviour file or for its library dependencies, so there is no debo path
-# this edit could have taken.
 libraryOverrides:
   dependencies:
     - island/dialog
@@ -45,15 +73,23 @@ props:
     title:
       type: string
       title: Title
-      description: Rendered in the title row, and referenced by aria-labelledby unless label overrides the name.
+      description: >-
+        Rendered in the title row, and referenced by aria-labelledby unless
+        label overrides the name.
     label:
       type: string
       title: Accessible label
-      description: Overrides the accessible name when it must differ from the visible title. It replaces the aria-labelledby reference rather than sitting beside it, because aria-labelledby wins the name computation and would leave this dead.
+      description: >-
+        Overrides the accessible name when it must differ from the visible
+        title. It replaces the aria-labelledby reference rather than sitting
+        beside it, because aria-labelledby wins the name computation and would
+        leave this dead.
     id:
       type: string
       title: Id
-      description: Id a trigger elsewhere points its aria-controls at; the title derives its own id from it.
+      description: >-
+        Id a trigger elsewhere points its aria-controls at; the title derives
+        its own id from it.
     dismissible:
       type: boolean
       title: Dismissible
@@ -63,16 +99,25 @@ props:
 slots:
   context:
     title: Context
-    description: 'The head''s breadcrumb segment, rendered before the title with a separator. Holds the context control — an option_picker carrying the project or team the surface acts in, pre-filled from context and changeable. It is deliberately not part of the body, because context is not a field.'
+    description: >-
+      The head's breadcrumb segment, rendered before the title with a separator.
+      Holds the context control — an option_picker carrying the project or team
+      the surface acts in, pre-filled from context and changeable. It is
+      deliberately not part of the body, because context is not a field.
   message:
     title: Message
-    description: 'Form-level refusal or note, rendered above the body: a server 422, a missing project, an empty title. Normally a message component with status error.'
+    description: >-
+      Form-level refusal or note, rendered above the body: a server 422, a
+      missing project, an empty title. Normally a message component with status
+      error.
   body:
     title: Body
     description: The dialog's content — the form's fields, or the prose of a confirmation.
   actions:
     title: Actions
-    description: The action row. Exactly one submit plus cancel for a create or edit; two actions for a confirmation.
+    description: >-
+      The action row. Exactly one submit plus cancel for a create or edit; two
+      actions for a confirmation.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

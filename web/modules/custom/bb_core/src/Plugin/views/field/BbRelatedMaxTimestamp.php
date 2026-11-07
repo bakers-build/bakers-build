@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\views\field;
 
-use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\views\Attribute\ViewsField;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
 use Drupal\views\ResultRow;
@@ -25,7 +25,7 @@ final class BbRelatedMaxTimestamp extends FieldPluginBase {
   /**
    * Formats the latest timestamp as a relative interval.
    */
-  private DateFormatterInterface $dateFormatter;
+  private BbDate $date;
 
   /**
    * Loads the related entity type.
@@ -44,7 +44,7 @@ final class BbRelatedMaxTimestamp extends FieldPluginBase {
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-    $instance->dateFormatter = $container->get('date.formatter');
+    $instance->date = $container->get(BbDate::class);
     $instance->entityTypeManager = $container->get('entity_type.manager');
     return $instance;
   }
@@ -59,7 +59,7 @@ final class BbRelatedMaxTimestamp extends FieldPluginBase {
    * {@inheritdoc}
    *
    * @return array<string, mixed>|string
-   *   A relative time, or nothing when no related row has a timestamp.
+   *   The latest related time, or nothing when no related row has one.
    */
   public function render(ResultRow $values) {
     $entity = $this->getEntity($values);
@@ -70,17 +70,14 @@ final class BbRelatedMaxTimestamp extends FieldPluginBase {
     if ($timestamp <= 0) {
       return '';
     }
-    return [
-      '#markup' => $this->t('@interval ago', [
-        '@interval' => $this->dateFormatter->formatTimeDiffSince($timestamp, ['granularity' => 1]),
-      ]),
-      '#cache' => [
-        'tags' => $this->entityTypeManager
-          ->getDefinition($this->definition['related_entity_type'])
-          ->getListCacheTags(),
-        'max-age' => 0,
-      ],
+    $element = $this->date->time($timestamp);
+    $element['#cache'] = [
+      'tags' => $this->entityTypeManager
+        ->getDefinition($this->definition['related_entity_type'])
+        ->getListCacheTags(),
+      'max-age' => 0,
     ];
+    return $element;
   }
 
   /**

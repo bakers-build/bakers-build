@@ -1,0 +1,39 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Check
+status: stable
+group: Form
+description: >-
+  Native checkbox or radio input with the shared focus ring; the label belongs
+  to the wrapping form_element.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    type:
+      type: string
+      title: HTML input type
+      enum:
+        - checkbox
+        - radio
+    name:
+      type: string
+      title: Name attribute
+    id:
+      type: string
+      title: ID attribute
+    value:
+      type: string
+      title: Value
+    checked:
+      type: boolean
+      title: Checked
+    required:
+      type: boolean
+      title: Required
+    disabled:
+      type: boolean
+      title: Disabled
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

@@ -1,0 +1,55 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Form field
+status: stable
+group: Form
+description: >-
+  One form field around its control: label, help text and errors in core's
+  order and with core's classes. It owns the space below the field (`stack`),
+  so every form stacks its fields evenly; the last field adds none.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    type:
+      type: string
+      title: Element type
+      description: The form element type, e.g. textfield, checkbox, select.
+    name:
+      type: string
+      title: Element name
+    title_display:
+      type: string
+      title: Title display
+      enum: [before, after, invisible, attribute, none]
+    label_display:
+      type: string
+      title: Label position
+      enum: [before, after, invisible, attribute, none]
+    description_display:
+      type: string
+      title: Description position
+      enum: [before, after, invisible]
+    description_id:
+      type: string
+      title: Description ID
+      description: Keeps the control's aria-describedby pointing at the help text.
+    disabled:
+      type: boolean
+      title: Disabled
+slots:
+  label:
+    title: Label
+  prefix:
+    title: Prefix
+  children:
+    title: Control
+  suffix:
+    title: Suffix
+  errors:
+    title: Errors
+  description:
+    title: Description
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

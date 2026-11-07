@@ -7,20 +7,20 @@
    The three periods are a fixed triple rather than an open list. A `windows` figure arriving
    with two periods would render a lopsided row instead of failing, and display_builder drops
    invalid props silently — so the schema requires exactly three and this template trusts it. #}
-<section{{ (attributes ?: create_attribute()).addClass(['min-w-0', 'flex', 'flex-col', 'gap-5', 'py-4', 'border-b', 'border-border-2']) }}>
-  <h2 class="m-0 text-section font-semibold text-title">{{ label }}</h2>
-  <dl class="m-0 grid grid-cols-3 gap-y-2 divide-x divide-border-2">
+<section{{ (attributes ?: create_attribute()).addClass(['min-w-0', 'flex', 'flex-col', 'gap-5', 'py-group', 'border-b', 'border-border-2']) }}>
+  <h2 class="m-0 text-section-title text-title">{{ label }}</h2>
+  <dl class="m-0 grid grid-cols-3 gap-y-inline divide-x divide-border-2">
     {% for window in windows %}
-      <div class="min-w-0 grid grid-rows-subgrid row-span-2 px-3 first:pl-0 last:pr-0">
-        <dt class="text-caption text-text-light">{{ window.label }}</dt>
-        <dd class="m-0 text-display font-bold leading-tight text-title tabular-nums">{{ window.value }}</dd>
+      <div class="min-w-0 grid grid-rows-subgrid row-span-2 px-stack first:pl-0 last:pr-0">
+        <dt class="text-label text-text-light">{{ window.label }}</dt>
+        <dd class="m-0 text-stat-value text-title tabular-nums">{{ window.value }}</dd>
       </div>
     {% endfor %}
   </dl>
   {% if source %}
-    <details class="text-caption text-text-light">
+    <details class="text-meta text-text-light">
       <summary class="w-fit cursor-pointer rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">Data source</summary>
-      <code class="block pt-2 text-caption break-all">{{ source }}</code>
+      <code class="block pt-inline font-mono text-data break-all">{{ source }}</code>
     </details>
   {% endif %}
 </section>

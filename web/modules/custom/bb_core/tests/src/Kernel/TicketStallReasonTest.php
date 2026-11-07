@@ -98,6 +98,10 @@ final class TicketStallReasonTest extends ClaimKernelTestBase {
     $badge = TicketStallReason::badge('frozen', $started);
     self::assertSame('frozen', $badge['label']);
     self::assertSame('2 minutes ago', $badge['suffix']);
+    self::assertArrayHasKey('suffix_datetime', $badge);
+    self::assertArrayHasKey('suffix_title', $badge);
+    self::assertSame($started, (new \DateTimeImmutable($badge['suffix_datetime']))->getTimestamp());
+    self::assertMatchesRegularExpression('/^[A-Z][a-z]{2}, \d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} \S+$/', $badge['suffix_title']);
     self::assertSame(
       'just now',
       TicketStallReason::badge(

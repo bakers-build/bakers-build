@@ -15,7 +15,7 @@
     $substring($val, 0, 1) = "{" ? (
       $ref := $replace($replace($val, "{", ""), "}", "");
       $parts := $split($ref, ".");
-      $typeKeywords := ["color","spacing","radius","fontFamily","fontSize","fontWeight","lineHeight","elevation","lineWeight","duration","focusRing"];
+      $typeKeywords := ["color","spacing","radius","fontFamily","fontSize","fontWeight","lineHeight","elevation","lineWeight","duration","focusRing","letterSpacing"];
 
       $matchIdxs := $filter($map($parts, function($p, $i) { $count($filter($typeKeywords, function($t) { $t = $p })) > 0 ? $i : -1 }), function($x) { $x >= 0 });
 
@@ -33,6 +33,8 @@
         : $rtype = "lineHeight" ? "leading"
 
         : $rtype = "focusRing" ? "focus-ring"
+
+        : $rtype = "letterSpacing" ? "tracking"
 
         : $rtype;
 
@@ -54,7 +56,8 @@
       $val := $v."$value";
       "  --text-" & $k & ": " & $resolve($val.fontSize) & ";\n" &
       "  --text-" & $k & "--font-weight: " & $resolve($val.fontWeight) & ";\n" &
-      "  --text-" & $k & "--line-height: " & $resolve($val.lineHeight) & ";"
+      "  --text-" & $k & "--line-height: " & $resolve($val.lineHeight) & ";" &
+      ($exists($val.letterSpacing) ? "\n  --text-" & $k & "--letter-spacing: " & $resolve($val.letterSpacing) & ";" : "")
     )
   });
   $lines := $filter($entries, function($e) { $e != null });

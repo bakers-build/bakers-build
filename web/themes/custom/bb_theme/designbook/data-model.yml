@@ -19,6 +19,9 @@ content:
           template: field-map
         full:
           template: field-map
+        epics:
+          template: field-map
+          label: Epics
       fields:
         created:
           type: datetime
@@ -622,6 +625,75 @@ content:
         last_seen_label:
           type: string
           title: Last seen
+          required: false
+          multiple: false
+          computed: true
+          readonly: true
+      omitted:
+        id: Entity key, not a modelled field.
+        uuid: Entity key.
+  bb_machine:
+    bb_machine:
+      title: bakers.build machine
+      purpose: >-
+        Host capacity for concurrent runs, owned by one user account. Capacity
+        (max_parallel / current_load) belongs to the machine, not to each
+        per-project conductor; a conductor links its machine. host_key is the
+        machine-context stem, not the composed conductor registration key.
+        Machines are not in the workspace read scope: the owner sees them under
+        the account Machines listing, and the full view is the machine page
+        /user/{user}/machine/{bb_machine}.
+      view_modes:
+        full:
+          template: field-map
+      fields:
+        created:
+          type: datetime
+          title: Created
+          required: false
+          multiple: false
+        changed:
+          type: datetime
+          title: Changed
+          required: false
+          multiple: false
+        name:
+          type: string
+          title: Name
+          required: true
+          multiple: false
+        host_key:
+          type: string
+          title: Host key
+          description: Machine-context machine_id stem, unique per machine.
+          required: true
+          multiple: false
+        max_parallel:
+          type: integer
+          title: Max parallel
+          description: Concurrent runs this machine accepts; default 5.
+          required: false
+          multiple: false
+        current_load:
+          type: integer
+          title: Current load
+          description: Runs currently claimed on this machine; default 0.
+          required: false
+          multiple: false
+        owner_user_id:
+          type: reference
+          title: Owner
+          required: false
+          multiple: false
+          reference: user
+          settings:
+            target_type: user
+        owner_label:
+          type: string
+          title: Owner label
+          description: >-
+            Display name of the owner, read through owner_user_id; the machine
+            page shows it.
           required: false
           multiple: false
           computed: true
@@ -1318,6 +1390,30 @@ content:
           title: Agent
           required: false
           multiple: false
+        harness:
+          type: string
+          title: Harness
+          description: >-
+            Id of the agent harness package that drove the session, e.g. claude
+            or codex.
+          required: false
+          multiple: false
+        model:
+          type: string
+          title: Model
+          description: >-
+            The candidate's configured model, or the raw transcript model id
+            when unconfigured. Empty only when both are unresolved.
+          required: false
+          multiple: false
+        model_version:
+          type: string
+          title: Model version
+          description: >-
+            The candidate's configured exact version, or the raw transcript
+            model id when unconfigured. Empty only when both are unresolved.
+          required: false
+          multiple: false
         error_log:
           type: text
           title: Error log
@@ -1868,110 +1964,761 @@ config:
     bb_core.bb_vocabulary: >-
       The vocabulary IS the bb_term bundle; no screen renders it as an object of
       its own.
-  og.og_role:
-    title: OG role
-    entity_type: og_role
-    purpose: >-
-      The role vocabulary of the OG groups — what a Settings screen assigns a
-      person on a workspace or a team. Contrib Organic Groups' own config
-      entity. AS-IS, MEASURED IN config/sync AT BB-462: NINE objects, not ten —
-      bb_project carries no role at all any more (D7 deregisters it as an OG
-      group entirely). Five for bb_workspace (non-member, member, contributor,
-      lead, guest) and four for bb_team (non-member, member, lead, owner). `app`
-      is GONE (D9: a conductor's OAuth identity is bound to its owning user, so
-      it sees exactly what that user's own rank sees — no separate machine rank
-      exists to list here). `owner` is NEW (D3): governs the team itself, who
-      may join it and its own settings. The key is the Drupal config-name
-      PREFIX, so this is one entry per config entity TYPE; the instances live in
-      sample data. Three facts a screen must not get wrong. First, `permissions`
-      is NOT an empty list on every role: bb_workspace-lead and -contributor
-      carry real permission strings (create/edit/delete rights),
-      bb_workspace-guest carries read-only, and bb_team-owner carries `manage
-      members`/`update group`. It IS empty on exactly four: the three non-member
-      roles and bb_team-bb_team-member — the implicit member rank is
-      deliberately emptied everywhere (D1: OG ranks are additive and cannot be
-      narrowed, so any right left on an implicit rank is inherited by every
-      membership including guests). Second, `is_admin` is FALSE on all nine.
-      Third, "a workspace admin sees every project of their workspace" (D4) is a
-      VISIBILITY rule computed from the rank id, never an OG admin flag or a
-      project-level role — there is no project-level role left to read at all.
-      TARGET: product roles are OG ranks only; team ownership is the one new
-      rank this ticket adds.
-    fields:
-      id:
-        type: string
-        title: Machine name
-        description: >-
-          Composed as <group_type>-<group_bundle>-<role name>, e.g.
-          bb_workspace-bb_workspace-lead. This full id is what
-          og_membership.roles references.
-        required: true
-        multiple: false
-      label:
-        type: string
-        title: Label
-        description: The human name a Settings screen shows, e.g. "Administrator".
-        required: true
-        multiple: false
-      weight:
-        type: integer
-        title: Weight
-        description: >-
-          Display order within a group type; 0 for non-member, rising to 5 for
-          the workspace app role.
-        required: false
-        multiple: false
-      is_admin:
-        type: boolean
-        title: Is admin
-        description: >-
-          FALSE on every shipped role — measured in config/sync at BB-435 across
-          all ten og.og_role objects, and the role it used to name does not
-          exist. Read the role id, never this flag. See the purpose above.
-        required: false
-        multiple: false
-      permissions:
-        type: string
-        title: Permissions
-        description: >-
-          OG permission strings. Empty in exactly four of the ten shipped roles
-          — the three non-member roles and bb_team-bb_team-member — see the
-          purpose above before designing anything that edits this.
-        required: false
-        multiple: true
-      group_type:
-        type: string
-        title: Group entity type
-        required: true
-        multiple: false
+    view.environments: >-
+      Drupal has no environments View, and no list of environments exists yet.
+      The bb_project environments field is hidden on the project full display;
+      only its referenced names show on the project properties detail card
+      (BbEntityDetailCardForm). Deployment tickets show their environments as
+      chips in the ticket inspector. The view.environments mapping is ahead of
+      the backend and has no Drupal counterpart.
+  og_role:
+    og_role:
+      title: OG role
+      purpose: >-
+        The role vocabulary of the OG groups — what a Settings screen assigns a
+        person on a workspace or a team. Contrib Organic Groups' own config
+        entity. AS-IS, MEASURED IN config/sync AT BB-462: NINE objects, not ten
+        — bb_project carries no role at all any more (D7 deregisters it as an OG
+        group entirely). Five for bb_workspace (non-member, member, contributor,
+        lead, guest) and four for bb_team (non-member, member, lead, owner).
+        `app` is GONE (D9: a conductor's OAuth identity is bound to its owning
+        user, so it sees exactly what that user's own rank sees — no separate
+        machine rank exists to list here). `owner` is NEW (D3): governs the team
+        itself, who may join it and its own settings. The key is the Drupal
+        config-name PREFIX, so this is one entry per config entity TYPE; the
+        instances live in sample data. Three facts a screen must not get wrong.
+        First, `permissions` is NOT an empty list on every role:
+        bb_workspace-lead and -contributor carry real permission strings
+        (create/edit/delete rights), bb_workspace-guest carries read-only, and
+        bb_team-owner carries `manage members`/`update group`. It IS empty on
+        exactly four: the three non-member roles and bb_team-bb_team-member —
+        the implicit member rank is deliberately emptied everywhere (D1: OG
+        ranks are additive and cannot be narrowed, so any right left on an
+        implicit rank is inherited by every membership including guests).
+        Second, `is_admin` is FALSE on all nine. Third, "a workspace admin sees
+        every project of their workspace" (D4) is a VISIBILITY rule computed
+        from the rank id, never an OG admin flag or a project-level role — there
+        is no project-level role left to read at all. TARGET: product roles are
+        OG ranks only; team ownership is the one new rank this ticket adds.
+      fields:
+        id:
+          type: string
+          title: Machine name
+          description: >-
+            Composed as <group_type>-<group_bundle>-<role name>, e.g.
+            bb_workspace-bb_workspace-lead. This full id is what
+            og_membership.roles references.
+          required: true
+          multiple: false
+        label:
+          type: string
+          title: Label
+          description: The human name a Settings screen shows, e.g. "Administrator".
+          required: true
+          multiple: false
+        weight:
+          type: integer
+          title: Weight
+          description: >-
+            Display order within a group type; 0 for non-member, rising to 5 for
+            the workspace app role.
+          required: false
+          multiple: false
+        is_admin:
+          type: boolean
+          title: Is admin
+          description: >-
+            FALSE on every shipped role — measured in config/sync at BB-435
+            across all ten og.og_role objects, and the role it used to name does
+            not exist. Read the role id, never this flag. See the purpose above.
+          required: false
+          multiple: false
+        permissions:
+          type: string
+          title: Permissions
+          description: >-
+            OG permission strings. Empty in exactly four of the ten shipped
+            roles — the three non-member roles and bb_team-bb_team-member — see
+            the purpose above before designing anything that edits this.
+          required: false
+          multiple: true
+        group_type:
+          type: string
+          title: Group entity type
+          required: true
+          multiple: false
+          settings:
+            allowed_values:
+              - bb_workspace
+              - bb_project
+              - bb_team
+        group_bundle:
+          type: string
+          title: Group bundle
+          required: true
+          multiple: false
+        role_type:
+          type: string
+          title: Role type
+          description: >-
+            `required` for the two roles OG creates for every group (non-member,
+            member); `standard` for the roles bakers.build adds. A screen must
+            not offer to delete a required role.
+          required: true
+          multiple: false
+          settings:
+            allowed_values:
+              - required
+              - standard
+      omitted:
+        uuid: >-
+          Config entities carry a uuid that is not part of the modelled key set
+          and is never rendered.
+        group_id: >-
+          Null in all ten shipped roles. OG sets it only for a role scoped to
+          one single group instance, which bakers.build ships none of, so no
+          screen renders it.
+  view:
+    addons:
+      title: Addons
+      purpose: >-
+        Lists every registered addon once, at its newest version, with the
+        conductors of the routed workspace that run any of its versions.
+      base_table: bb_addon
+      items_per_page: 50
+      columns:
+        - icon
+        - label
+        - name
+        - versions
+        - contract
+        - conductors
+      displays:
+        default:
+          plugin: default
         settings:
-          allowed_values:
-            - bb_workspace
-            - bb_project
-            - bb_team
-      group_bundle:
-        type: string
-        title: Group bundle
-        required: true
-        multiple: false
-      role_type:
-        type: string
-        title: Role type
-        description: >-
-          `required` for the two roles OG creates for every group (non-member,
-          member); `standard` for the roles bakers.build adds. A screen must not
-          offer to delete a required role.
-        required: true
-        multiple: false
-        settings:
-          allowed_values:
-            - required
-            - standard
-    omitted:
-      uuid: >-
-        Config entities carry a uuid that is not part of the modelled key set
-        and is never rendered.
-      group_id: >-
-        Null in all ten shipped roles. OG sets it only for a role scoped to one
-        single group instance, which bakers.build ships none of, so no screen
-        renders it.
+          plugin: page
+          path: /_workspace/%bb_workspace/settings/addons
+      view_modes:
+        default:
+          template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_addon records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_addon
+              bundle: bb_addon
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_empty.'
+          required: false
+          multiple: false
+    conductors:
+      title: Conductors
+      purpose: >-
+        Two listings of bb_conductor. The user-area rail item (user_list) is the
+
+        conductors assigned to the account in the URL, any workspace. The
+        project
+
+        tab (project_list) is that project's conductors, any owner. Both walk
+
+        project_id then group_id because bb_conductor carries no workspace field
+
+        of its own. Both joins are INNER: a conductor whose project or group is
+
+        gone has no workspace to be listed under.
+      base_table: bb_conductor
+      items_per_page: 50
+      columns:
+        - conductor_id
+        - label
+        - status
+        - reported_load
+        - owner_user_id
+        - last_seen
+      displays:
+        default:
+          plugin: default
+        project_list:
+          plugin: page
+          path: /_workspace/%bb_workspace/project/%bb_project/conductors
+        user_list:
+          plugin: page
+          path: /user/%user/conductors
+      view_modes:
+        default:
+          template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_conductor records the View lists; Drupal renders each row with
+            the `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_conductor
+              bundle: bb_conductor
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: text_custom.'
+          required: false
+          multiple: false
+    conductor_tickets:
+      title: Conductor tickets
+      purpose: |-
+        Tickets occupying one conductor. The occupancy source supplies explicit
+        numeric ticket ids; this view never lists by ticket conductor_id and has
+        no page route.
+      base_table: bb_ticket
+      columns:
+        - identifier
+        - title
+      displays:
+        default:
+          plugin: default
+        occupancy:
+          plugin: embed
+      view_modes:
+        default:
+          template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_ticket records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_ticket
+              bundle: bb_ticket
+              view_mode: default
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: text_custom.'
+          required: false
+          multiple: false
+    groups:
+      title: Groups
+      purpose: >-
+        Lists the groups of the routed workspace. The Groups page owns the
+        create-group action. A group organizes customer and cost-centre data; it
+        grants no permissions.
+      base_table: bb_group
+      items_per_page: 50
+      columns:
+        - name_avatar
+        - name
+        - description
+        - projects
+        - changed
+      displays:
+        default:
+          plugin: default
+        workspace_list:
+          plugin: page
+          path: /_workspace/%bb_workspace/groups
+      view_modes:
+        default:
+          template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_group records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_group
+              bundle: bb_group
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_empty.'
+          required: false
+          multiple: false
+    machines:
+      title: Machines
+      purpose: |-
+        The user-area rail item (user_list) is the machines assigned to the
+        account in the URL, any workspace.
+      base_table: bb_machine
+      items_per_page: 50
+      columns:
+        - name
+        - max_parallel
+        - current_load
+        - owner_user_id
+        - last_run
+      displays:
+        default:
+          plugin: default
+        user_list:
+          plugin: page
+          path: /user/%user/machines
+      view_modes:
+        default:
+          template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_machine records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_machine
+              bundle: bb_machine
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: text_custom.'
+          required: false
+          multiple: false
+    project_board:
+      title: Project board
+      purpose: >-
+        Four-column project board of bb_ticket on the tickets Search API
+
+        index. The page display owns the route. Each lifecycle column is a
+
+        bb_board_column attachment with its own mini pager. Column membership is
+        the indexed work_state value.
+
+        Parent focus applies to every display; the page header summarizes the
+        whole matching selection.
+      base_table: search_api_index_bb_tickets
+      items_per_page: 10
+      columns:
+        - identifier
+      displays:
+        default:
+          plugin: default
+        backlog:
+          plugin: bb_board_column
+        done:
+          plugin: bb_board_column
+        intake:
+          plugin: bb_board_column
+        project_board:
+          plugin: page
+          path: /_workspace/%bb_workspace/project/%bb_project/board
+        working:
+          plugin: bb_board_column
+      view_modes:
+        default:
+          template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_ticket records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_ticket
+              bundle: bb_ticket
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+    projects:
+      title: Projects
+      purpose: >-
+        The projects of the workspace named in the URL, five columns. A LISTING
+        IS A
+
+        VIEW: the row this replaced was a bb_project.bb_project.teaser view
+        mode,
+
+        and BB-389 removed it because a list row was never a view mode.
+
+
+        THE ROWS COME FROM THE URL, and that is this view's own argument rather
+        than the
+
+        query-access layer's doing. BbWorkspaceReadScope resolves an ACCOUNT's
+        scope —
+
+        the union of every OG membership, with no workspace parameter — so for a
+        user
+
+        who belongs to several workspaces it admits more rows than the URL asked
+        for.
+
+        The `workspace_id` argument narrows to the one workspace, walking the
+        group_id
+
+        relationship because bb_project carries no workspace field of its own.
+        Its
+
+        `default_action` is `access denied` rather than a fallback to all: a
+        view that
+
+        listed every workspace the moment a route stopped supplying the
+        parameter is how
+
+        ambient scoping turns into a disclosure. Query access stays the floor
+
+        underneath — the two layers answer two different questions.
+
+
+        THE TWO RELATIONSHIPS DISAGREE ABOUT `required` ON PURPOSE.
+        owner_user_id is a
+
+        LEFT JOIN, and the reason stated here used to be that
+        BbProject::owner_user_id
+
+        is not setRequired(TRUE). That is now FALSE — the field has carried
+
+        setRequired(TRUE) since 66780aa93 — and the LEFT JOIN is still right, so
+        only
+
+        the rationale is corrected. setRequired() is a VALIDATION constraint on
+        a write
+
+        to the project; it is not delete protection on the account referenced.
+        bb_core
+
+        guards that nowhere — no preDelete, no cascade, no reference constraint
+        — so a
+
+        stored project can still be left pointing at a deleted user, and an
+        inner join
+
+        on it drops the whole project from this listing the moment that happens:
+        no
+
+        message, no empty cell, no row. group_id stays an INNER JOIN, and for a
+        positive
+
+        reason rather than the same one: it carries the workspace argument, so a
+        project
+
+        whose group is gone has no workspace to be listed under, and the honest
+        answer
+
+        is no workspace rather than every workspace. That the referenced rows
+        can vanish
+
+        at all is a data-integrity gap, not this listing's to paper over.
+
+
+        TWO DESIGNED COLUMNS ARE ABSENT, NAMED HERE RATHER THAN LEFT TO AN EMPTY
+        SPACE.
+
+        Teams is absent, and the reason stated here used to be that bb_project
+        carries
+
+        no `teams` field at all. That is now FALSE, in the same way the
+        owner_user_id
+
+        sentence above was: BB-419 added `teams` as a required,
+        unlimited-cardinality
+
+        entity_reference (BbProject.php), so the n:m assignment DOES exist and
+        the
+
+        cancelled BB-356 no longer describes the state of the field. What is
+        true is
+
+        that this listing still renders no teams column, and no decision has
+        been
+
+        recorded that it should not — so this is an open question about the
+        listing
+
+        rather than a structural impossibility, and it is named as one here
+        instead of
+
+        being justified by a field that is gone from the reasoning. Environments
+        is
+
+        absent for a reason that does still hold: it is a COUNT over a
+        multi-value
+
+        entity reference and core views has no field for that; a column showing
+        the
+
+        first referenced environment instead of the count would be a different
+        and
+
+        wrong value.
+
+
+        IT COMPOSES A CANVAS WHOSE HEADING LIVES IN THE SHELL. The screen title,
+
+        tabs and New-project action are the `page_header` island on
+
+        `island.profile.bb_shell`. This display's tree is `bb_theme:canvas`
+
+        with a `bb_theme:zone` in `main` wrapping `view_rows` plus `view_pager`.
+
+        The `empty` area is untouched, because ui_patterns' own `view_rows`
+        source
+
+        renders a view's empty areas when it has no rows.
+
+
+        THE ROWS ARE STILL CORE'S `table` WITH `row: type: fields`, AND NOT FOR
+        THE
+
+        REASON D1 GAVE. D1 priced the alternative as a bespoke ui_patterns
+        Source, and that
+
+        is not what it costs: a PRESENTER TEMPLATE — a markup-free template that
+
+        transforms what views handed it and include()s the component, reached by
+        core's
+
+        own theme suggestion (ViewExecutable::buildThemeFunctions() emits
+
+        views_view_table__projects) — needs no plugin and would leave this file
+        exactly
+
+        as it is. What IS true is that site building cannot do it: `rows` is a
+        PROP
+
+        holding an array of objects, and no shipped ui_patterns source serves
+        such a
+
+        prop type — ui_patterns_views's view_rows declares `prop_types: [slot]`,
+        and
+
+        across all 22 shipped sources the prop types are attributes, boolean,
+        enum,
+
+        enum_list, enum_set, identifier, links, list, number, slot, string, url
+        and
+
+        variant. That absence is the condition under which a presenter is the
+        right
+
+        answer rather than a trick. BB-413 owns that template; when it lands
+        this
+
+        listing renders through bb_theme:table with no change here.
+      base_table: bb_project
+      items_per_page: 50
+      columns:
+        - name_avatar
+        - name
+        - key
+        - description
+        - open_tickets
+        - conductor_tickets
+        - closed_tickets
+        - created
+      displays:
+        default:
+          plugin: default
+        workspace_list:
+          plugin: page
+          path: /_workspace/%bb_workspace/projects
+      view_modes:
+        default:
+          template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_project records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_project
+              bundle: bb_project
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_empty.'
+          required: false
+          multiple: false
+    runs:
+      title: Runs
+      base_table: search_api_index_bb_runs
+      items_per_page: 10
+      columns:
+        - identifier
+        - state
+        - state_at_start
+        - conductor_id
+        - agent
+        - started_at
+        - duration_s
+      displays:
+        default:
+          plugin: default
+        project_runs:
+          plugin: page
+          path: /_workspace/%bb_workspace/project/%bb_project/runs
+        team_runs:
+          plugin: page
+          path: /_workspace/%bb_workspace/team/%bb_team/runs
+      view_modes:
+        default:
+          template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_run records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_run
+              bundle: bb_run
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        header:
+          type: text
+          title: Header
+          description: 'Drupal header area: views_filters_summary.'
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_contextual_empty.'
+          required: false
+          multiple: false
+    tickets:
+      title: Tickets
+      base_table: search_api_index_bb_tickets
+      items_per_page: 10
+      columns:
+        - state
+        - title
+        - priority
+        - identifier
+        - created
+        - owner
+        - conductor
+        - stall_reason
+        - run_count
+        - assignee
+      displays:
+        default:
+          plugin: default
+        my_work:
+          plugin: page
+          path: /_workspace/%bb_workspace/tickets
+        page_1:
+          plugin: page
+          path: /_workspace/%bb_workspace/tickets/all
+        project_tickets:
+          plugin: page
+          path: /_workspace/%bb_workspace/project/%bb_project/tickets
+        team_tickets:
+          plugin: page
+          path: /_workspace/%bb_workspace/team/%bb_team/tickets
+      view_modes:
+        default:
+          template: list-view
+      fields:
+        rows:
+          type: view_rows
+          title: Rows
+          description: >-
+            bb_ticket records the View lists; Drupal renders each row with the
+            `fields` row plugin.
+          required: true
+          multiple: true
+          sample_template:
+            template: views
+            settings:
+              entity_type: bb_ticket
+              bundle: bb_ticket
+              view_mode: default
+        items_per_page:
+          type: integer
+          title: Items per page
+          required: false
+          multiple: false
+        header:
+          type: text
+          title: Header
+          description: 'Drupal header area: views_filters_summary.'
+          required: false
+          multiple: false
+        empty:
+          type: text
+          title: Empty
+          description: 'Drupal empty area: bb_contextual_empty.'
+          required: false
+          multiple: false

@@ -46,7 +46,8 @@ props:
       type: string
       title: Source
       description: >-
-        Where the figure is read from, available in a native Data source disclosure.
+        Where the figure is read from, available in a native Data source
+        disclosure.
   required:
     - label
     - windows

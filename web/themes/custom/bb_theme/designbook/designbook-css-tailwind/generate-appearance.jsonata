@@ -10,9 +10,7 @@
       $colors := $each($theme.semantic.color, function($token, $name) {
         "  --color-" & $name & ": " & $token."$value" & ";"
       });
-      $font := $theme.primitive.style.fontFamily.sans."$value";
-      ":root" & $theme."$extensions".selector & " {\n" & $join($colors, "\n") &
-      ($exists($font) ? "\n  --font-sans: " & $font & ";" : "") & "\n}"
+      ":root" & $theme."$extensions".selector & " {\n" & $join($colors, "\n") & "\n}"
     )
   }), "\n\n") & "\n"
 )

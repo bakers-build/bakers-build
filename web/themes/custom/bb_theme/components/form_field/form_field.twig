@@ -1,0 +1,28 @@
+{# One form field: label, control, errors and help text, in core's order and
+   with core's classes, so Drupal JS (#states, AJAX) keeps finding it. The
+   field owns the space below it (`stack`), so any form stacks its fields
+   evenly without spacing of its own; the last field adds none. #}
+{% set classes = [
+  'js-form-item', 'form-item',
+  'form-type-' ~ type|clean_class, 'js-form-type-' ~ type|clean_class,
+  'form-item-' ~ name|clean_class, 'js-form-item-' ~ name|clean_class,
+  title_display not in ['after', 'before'] ? 'form-no-label',
+  disabled ? 'form-disabled',
+  errors ? 'form-item--error',
+  'mb-stack', 'last:mb-0',
+]|filter(c => c) %}
+{% set description_classes = ['description', 'text-meta', 'text-text-light', description_display == 'invisible' ? 'sr-only']|filter(c => c) %}
+<div{{ (attributes ?: create_attribute()).addClass(classes) }}>
+  {% if label_display in ['before', 'invisible'] %}{{ label }}{% endif %}
+  {% if description_display == 'before' and description %}
+    <div{% if description_id %} id="{{ description_id }}"{% endif %} class="{{ (description_classes|merge(['pb-inline-xs']))|join(' ') }}">{{ description }}</div>
+  {% endif %}
+  {% if prefix %}<span class="field-prefix">{{ prefix }}</span>{% endif %}
+  {{ children }}
+  {% if suffix %}<span class="field-suffix">{{ suffix }}</span>{% endif %}
+  {% if label_display == 'after' %}{{ label }}{% endif %}
+  {% if errors %}<div class="form-item--error-message text-meta text-state-attention-ink">{{ errors }}</div>{% endif %}
+  {% if description_display in ['after', 'invisible'] and description %}
+    <div{% if description_id %} id="{{ description_id }}"{% endif %} class="{{ (description_classes|merge(['pt-inline-xs']))|join(' ') }}">{{ description }}</div>
+  {% endif %}
+</div>

@@ -5,8 +5,8 @@ status: stable
 group: Data Display
 description: >-
   A board that owns its columns and cards. Optional operational controls filter
-  by lane, limit Done to the 10, 25 or 50 most recently closed cards from
-  the Done column, and split Working by exact workflow state.
+  by lane, limit Done to the 10, 25 or 50 most recently closed cards from the
+  Done column, and split Working by exact workflow state.
 provider: bb_theme
 props:
   type: object
@@ -146,14 +146,16 @@ props:
     as_of:
       type: string
       title: Clock for closing-date filters
-      description: ISO 8601 timestamp used to exclude future closing dates; defaults to the current time.
+      description: >-
+        ISO 8601 timestamp used to exclude future closing dates; defaults to the
+        current time.
     filter_title:
       type: string
       title: Filter label
       description: >-
         Visible label of the operational people filter. The Project Board
-        preview passes the Drupal control's label; other stories may omit it
-        and keep the generic default.
+        preview passes the Drupal control's label; other stories may omit it and
+        keep the generic default.
     filter_options:
       type: object
       title: Filter choices

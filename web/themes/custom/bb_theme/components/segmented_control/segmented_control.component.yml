@@ -50,6 +50,13 @@ props:
             description: Selected link position; rendered as aria-current=page.
         required:
           - label
+    initial:
+      type: string
+      title: Initial value
+      description: >-
+        In-page filter only: the value selected first. When set, the control
+        holds `state` in its own Alpine scope instead of reading it from an
+        ancestor.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

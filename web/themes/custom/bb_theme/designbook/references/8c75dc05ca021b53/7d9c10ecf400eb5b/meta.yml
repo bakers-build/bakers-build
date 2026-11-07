@@ -1,0 +1,91 @@
+{
+ "source": {
+  "kind": "figma",
+  "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv/bakers-build",
+  "revision": null
+ },
+ "role": "reference",
+ "elements": [
+  {
+   "id": "typo-system",
+   "locator": {
+    "kind": "figma-node",
+    "value": "68:13"
+   },
+   "states": [
+    {
+     "name": "rest",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "frame",
+     "width": 1399,
+     "height": 2242
+    }
+   ]
+  },
+  {
+   "id": "ci-board",
+   "locator": {
+    "kind": "figma-node",
+    "value": "550:8970"
+   },
+   "states": [
+    {
+     "name": "rest",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "frame",
+     "width": 1440,
+     "height": 900
+    }
+   ]
+  },
+  {
+   "id": "focus-keyboard",
+   "locator": {
+    "kind": "figma-node",
+    "value": "61:3220"
+   },
+   "states": [
+    {
+     "name": "rest",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "frame",
+     "width": 1759,
+     "height": 1719
+    }
+   ]
+  },
+  {
+   "id": "data-formats",
+   "locator": {
+    "kind": "figma-node",
+    "value": "64:3709"
+   },
+   "states": [
+    {
+     "name": "rest",
+     "session": "anonymous"
+    }
+   ],
+   "views": [
+    {
+     "id": "frame",
+     "width": 1502,
+     "height": 1095
+    }
+   ]
+  }
+ ],
+ "assets_dir": "assets"
+}

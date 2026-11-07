@@ -1,0 +1,27 @@
+component: bb_theme:form_field
+name: Default
+props:
+  type: textfield
+  name: name
+  title_display: before
+  label_display: before
+  description_display: after
+  description_id: edit-name--description
+slots:
+  label:
+    - type: component
+      component: bb_theme:form_label
+      props:
+        title: Name
+        for: edit-name
+  children:
+    - type: component
+      component: bb_theme:form_input
+      props:
+        type: text
+        id: edit-name
+        name: name
+  description:
+    - type: element
+      tag: span
+      value: Shown on your profile and in mentions.

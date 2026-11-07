@@ -1,0 +1,2734 @@
+{
+  "format": "designbook-observations",
+  "capture": {
+    "role": "reference",
+    "source": {
+      "kind": "figma",
+      "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv/bakers-build",
+      "revision": null
+    },
+    "scope": [
+      {
+        "subject": "typo-system",
+        "locator": {
+          "kind": "figma-node",
+          "value": "68:13"
+        },
+        "view": "frame",
+        "state": "rest",
+        "session": "anonymous"
+      },
+      {
+        "subject": "ci-board",
+        "locator": {
+          "kind": "figma-node",
+          "value": "550:8970"
+        },
+        "view": "frame",
+        "state": "rest",
+        "session": "anonymous"
+      },
+      {
+        "subject": "focus-keyboard",
+        "locator": {
+          "kind": "figma-node",
+          "value": "61:3220"
+        },
+        "view": "frame",
+        "state": "rest",
+        "session": "anonymous"
+      },
+      {
+        "subject": "data-formats",
+        "locator": {
+          "kind": "figma-node",
+          "value": "64:3709"
+        },
+        "view": "frame",
+        "state": "rest",
+        "session": "anonymous"
+      }
+    ]
+  },
+  "state": "rest",
+  "captured_at": "2026-11-06T22:50:00+00:00",
+  "extract": {
+    "subjects": [
+      {
+        "id": "typo-system",
+        "locator": {
+          "kind": "figma-node",
+          "value": "68:13"
+        },
+        "samples": [
+          {
+            "view": "frame",
+            "state": "rest",
+            "structure": {
+              "roots": [
+                "68:13"
+              ],
+              "nodes": [
+                {
+                  "id": "68:13",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:13"
+                  },
+                  "children": [
+                    "68:16",
+                    "68:23",
+                    "68:88",
+                    "68:94",
+                    "68:121",
+                    "68:140"
+                  ]
+                },
+                {
+                  "id": "68:16",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:16"
+                  },
+                  "children": [
+                    "68:18",
+                    "68:19",
+                    "68:20",
+                    "68:21",
+                    "68:22"
+                  ]
+                },
+                {
+                  "id": "68:18",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:18"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:19",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:19"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:20",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:20"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:21",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:21"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:22",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:22"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:23",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:23"
+                  },
+                  "children": [
+                    "68:50"
+                  ]
+                },
+                {
+                  "id": "68:50",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:50"
+                  },
+                  "children": [
+                    "68:52",
+                    "68:55",
+                    "68:58",
+                    "68:61",
+                    "68:64",
+                    "68:67",
+                    "68:70",
+                    "68:73",
+                    "68:76",
+                    "68:79",
+                    "68:82",
+                    "68:85"
+                  ]
+                },
+                {
+                  "id": "68:52",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:52"
+                  },
+                  "children": [
+                    "68:53",
+                    "68:54"
+                  ]
+                },
+                {
+                  "id": "68:53",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:53"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:54",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:54"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:55",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:55"
+                  },
+                  "children": [
+                    "68:56",
+                    "68:57"
+                  ]
+                },
+                {
+                  "id": "68:56",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:56"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:57",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:57"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:58",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:58"
+                  },
+                  "children": [
+                    "68:59",
+                    "68:60"
+                  ]
+                },
+                {
+                  "id": "68:59",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:59"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:60",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:60"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:61",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:61"
+                  },
+                  "children": [
+                    "68:62",
+                    "68:63"
+                  ]
+                },
+                {
+                  "id": "68:62",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:62"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:63",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:63"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:64",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:64"
+                  },
+                  "children": [
+                    "68:65",
+                    "68:66"
+                  ]
+                },
+                {
+                  "id": "68:65",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:65"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:66",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:66"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:67",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:67"
+                  },
+                  "children": [
+                    "68:68",
+                    "68:69"
+                  ]
+                },
+                {
+                  "id": "68:68",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:68"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:69",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:69"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:70",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:70"
+                  },
+                  "children": [
+                    "68:71",
+                    "68:72"
+                  ]
+                },
+                {
+                  "id": "68:71",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:71"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:72",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:72"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:73",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:73"
+                  },
+                  "children": [
+                    "68:74",
+                    "68:75"
+                  ]
+                },
+                {
+                  "id": "68:74",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:74"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:75",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:75"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:76",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:76"
+                  },
+                  "children": [
+                    "68:77",
+                    "68:78"
+                  ]
+                },
+                {
+                  "id": "68:77",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:77"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:78",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:78"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:79",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:79"
+                  },
+                  "children": [
+                    "68:80",
+                    "68:81"
+                  ]
+                },
+                {
+                  "id": "68:80",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:80"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:81",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:81"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:82",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:82"
+                  },
+                  "children": [
+                    "68:83",
+                    "68:84"
+                  ]
+                },
+                {
+                  "id": "68:83",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:83"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:84",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:84"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:85",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:85"
+                  },
+                  "children": [
+                    "68:86",
+                    "68:87"
+                  ]
+                },
+                {
+                  "id": "68:86",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:86"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:87",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:87"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:88",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:88"
+                  },
+                  "children": [
+                    "68:89",
+                    "68:90",
+                    "68:91",
+                    "68:92",
+                    "68:93"
+                  ]
+                },
+                {
+                  "id": "68:89",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:89"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:90",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:90"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:91",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:91"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:92",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:92"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:93",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:93"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:94",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:94"
+                  },
+                  "children": [
+                    "68:96"
+                  ]
+                },
+                {
+                  "id": "68:96",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:96"
+                  },
+                  "children": [
+                    "68:97",
+                    "68:101",
+                    "68:105",
+                    "68:109",
+                    "68:113",
+                    "68:117"
+                  ]
+                },
+                {
+                  "id": "68:97",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:97"
+                  },
+                  "children": [
+                    "68:98",
+                    "68:99",
+                    "68:100"
+                  ]
+                },
+                {
+                  "id": "68:98",
+                  "kind": "rounded-rectangle",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:98"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:99",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:99"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:100",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:100"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:101",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:101"
+                  },
+                  "children": [
+                    "68:102",
+                    "68:103",
+                    "68:104"
+                  ]
+                },
+                {
+                  "id": "68:102",
+                  "kind": "rounded-rectangle",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:102"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:103",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:103"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:104",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:104"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:105",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:105"
+                  },
+                  "children": [
+                    "68:106",
+                    "68:107",
+                    "68:108"
+                  ]
+                },
+                {
+                  "id": "68:106",
+                  "kind": "rounded-rectangle",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:106"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:107",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:107"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:108",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:108"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:109",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:109"
+                  },
+                  "children": [
+                    "68:110",
+                    "68:111",
+                    "68:112"
+                  ]
+                },
+                {
+                  "id": "68:110",
+                  "kind": "rounded-rectangle",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:110"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:111",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:111"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:112",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:112"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:113",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:113"
+                  },
+                  "children": [
+                    "68:114",
+                    "68:115",
+                    "68:116"
+                  ]
+                },
+                {
+                  "id": "68:114",
+                  "kind": "rounded-rectangle",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:114"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:115",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:115"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:116",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:116"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:117",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:117"
+                  },
+                  "children": [
+                    "68:118",
+                    "68:119",
+                    "68:120"
+                  ]
+                },
+                {
+                  "id": "68:118",
+                  "kind": "rounded-rectangle",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:118"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:119",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:119"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:120",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:120"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:121",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:121"
+                  },
+                  "children": [
+                    "68:131"
+                  ]
+                },
+                {
+                  "id": "68:131",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:131"
+                  },
+                  "children": [
+                    "68:133"
+                  ]
+                },
+                {
+                  "id": "68:133",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:133"
+                  },
+                  "children": [
+                    "68:134",
+                    "68:135",
+                    "68:136",
+                    "68:137",
+                    "68:138"
+                  ]
+                },
+                {
+                  "id": "68:134",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:134"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:135",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:135"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:136",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:136"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:137",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:137"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:138",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:138"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:140",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:140"
+                  },
+                  "children": [
+                    "68:141",
+                    "68:168"
+                  ]
+                },
+                {
+                  "id": "68:141",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:141"
+                  },
+                  "children": [
+                    "68:144",
+                    "68:147",
+                    "68:150",
+                    "68:153",
+                    "68:156",
+                    "68:159",
+                    "68:162",
+                    "68:165"
+                  ]
+                },
+                {
+                  "id": "68:144",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:144"
+                  },
+                  "children": [
+                    "68:145",
+                    "68:146"
+                  ]
+                },
+                {
+                  "id": "68:145",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:145"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:146",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:146"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:147",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:147"
+                  },
+                  "children": [
+                    "68:148",
+                    "68:149"
+                  ]
+                },
+                {
+                  "id": "68:148",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:148"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:149",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:149"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:150",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:150"
+                  },
+                  "children": [
+                    "68:151",
+                    "68:152"
+                  ]
+                },
+                {
+                  "id": "68:151",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:151"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:152",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:152"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:153",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:153"
+                  },
+                  "children": [
+                    "68:154",
+                    "68:155"
+                  ]
+                },
+                {
+                  "id": "68:154",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:154"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:155",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:155"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:156",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:156"
+                  },
+                  "children": [
+                    "68:157",
+                    "68:158"
+                  ]
+                },
+                {
+                  "id": "68:157",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:157"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:158",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:158"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:159",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:159"
+                  },
+                  "children": [
+                    "68:160",
+                    "68:161"
+                  ]
+                },
+                {
+                  "id": "68:160",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:160"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:161",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:161"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:162",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:162"
+                  },
+                  "children": [
+                    "68:163",
+                    "68:164"
+                  ]
+                },
+                {
+                  "id": "68:163",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:163"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:164",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:164"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:165",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:165"
+                  },
+                  "children": [
+                    "68:166",
+                    "68:167"
+                  ]
+                },
+                {
+                  "id": "68:166",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:166"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:167",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:167"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:168",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:168"
+                  },
+                  "children": [
+                    "68:171",
+                    "68:174",
+                    "68:177",
+                    "68:180",
+                    "68:183",
+                    "68:186"
+                  ]
+                },
+                {
+                  "id": "68:171",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:171"
+                  },
+                  "children": [
+                    "68:172",
+                    "68:173"
+                  ]
+                },
+                {
+                  "id": "68:172",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:172"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:173",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:173"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:174",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:174"
+                  },
+                  "children": [
+                    "68:175",
+                    "68:176"
+                  ]
+                },
+                {
+                  "id": "68:175",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:175"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:176",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:176"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:177",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:177"
+                  },
+                  "children": [
+                    "68:178",
+                    "68:179"
+                  ]
+                },
+                {
+                  "id": "68:178",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:178"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:179",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:179"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:180",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:180"
+                  },
+                  "children": [
+                    "68:181",
+                    "68:182"
+                  ]
+                },
+                {
+                  "id": "68:181",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:181"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:182",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:182"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:183",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:183"
+                  },
+                  "children": [
+                    "68:184",
+                    "68:185"
+                  ]
+                },
+                {
+                  "id": "68:184",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:184"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:185",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:185"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:186",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:186"
+                  },
+                  "children": [
+                    "68:187",
+                    "68:188"
+                  ]
+                },
+                {
+                  "id": "68:187",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:187"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "68:188",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "68:188"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "node": "68:13",
+                "width": 1399,
+                "height": 2242
+              },
+              "typography": [
+                {
+                  "node": "68:54",
+                  "text_style": "vorschlag/page-title",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 700,
+                  "fontSize": 24,
+                  "lineHeight": 30,
+                  "letterSpacing": -1,
+                  "label": "page-title 24/700/30"
+                },
+                {
+                  "node": "68:57",
+                  "text_style": "vorschlag/section-title",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 700,
+                  "fontSize": 16,
+                  "lineHeight": 22,
+                  "letterSpacing": -0.5,
+                  "label": "section-title 16/700/22"
+                },
+                {
+                  "node": "68:60",
+                  "text_style": "vorschlag/item-title",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
+                  "fontSize": 14,
+                  "lineHeight": 20,
+                  "letterSpacing": 0,
+                  "label": "item-title 14/600/20"
+                },
+                {
+                  "node": "68:63",
+                  "text_style": "vorschlag/body-strong",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 500,
+                  "fontSize": 13,
+                  "lineHeight": 20,
+                  "letterSpacing": 0,
+                  "label": "body-strong 13/500/20"
+                },
+                {
+                  "node": "68:66",
+                  "text_style": "vorschlag/body",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 400,
+                  "fontSize": 13,
+                  "lineHeight": 20,
+                  "letterSpacing": 0,
+                  "label": "body 13/400/20"
+                },
+                {
+                  "node": "68:69",
+                  "text_style": "vorschlag/prose",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 400,
+                  "fontSize": 13,
+                  "lineHeight": 21,
+                  "letterSpacing": 0,
+                  "label": "prose 13/400/21"
+                },
+                {
+                  "node": "68:72",
+                  "text_style": "vorschlag/label",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 500,
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "letterSpacing": 0,
+                  "label": "label 12/500/16"
+                },
+                {
+                  "node": "68:75",
+                  "text_style": "vorschlag/meta",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 400,
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "letterSpacing": 0,
+                  "label": "meta 12/400/16"
+                },
+                {
+                  "node": "68:78",
+                  "text_style": "vorschlag/data",
+                  "fontFamily": "JetBrains Mono",
+                  "fontWeight": 500,
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "letterSpacing": 0,
+                  "label": "data 12/500/16"
+                },
+                {
+                  "node": "68:81",
+                  "text_style": "vorschlag/eyebrow",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
+                  "fontSize": 11,
+                  "lineHeight": 14,
+                  "letterSpacing": 4,
+                  "label": "eyebrow 11/600/14"
+                },
+                {
+                  "node": "68:84",
+                  "text_style": "vorschlag/badge",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
+                  "fontSize": 11,
+                  "lineHeight": 14,
+                  "letterSpacing": 0,
+                  "label": "badge 11/600/14"
+                },
+                {
+                  "node": "68:87",
+                  "text_style": "vorschlag/stat-value",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
+                  "fontSize": 24,
+                  "lineHeight": 28,
+                  "letterSpacing": 0,
+                  "label": "stat-value 24/600/28"
+                }
+              ],
+              "content": [
+                {
+                  "node": "68:18",
+                  "text": "Grundschrift ungesetzt: 98 Texte ohne Klasse fallen auf Browser-16px — Property-Labels (16px) sind lauter als ihre Werte (13px)."
+                },
+                {
+                  "node": "68:19",
+                  "text": "Ein einziger Layout-Abstand (20 px) überall; vier verschiedene linke Kanten (252 / 264 / 269 / 272)."
+                },
+                {
+                  "node": "68:20",
+                  "text": "Überschriften und Listentitel kollidieren bei 16 px: 38 Ticket-Zeilen lesen sich wie 38 Überschriften."
+                },
+                {
+                  "node": "68:21",
+                  "text": "Fließtext ohne Maß: 124–200 Zeichen pro Zeile (Ziel 45–75)."
+                },
+                {
+                  "node": "68:22",
+                  "text": "Drift: 123 feste Pixelwerte, 6 Control-Höhen, 8 Zeilenhöhen ohne Token, drei Eyebrow-Trackings."
+                },
+                {
+                  "node": "68:54",
+                  "text": "BB-142 · Add designbook entity view-mode"
+                },
+                {
+                  "node": "68:57",
+                  "text": "Run history"
+                },
+                {
+                  "node": "68:60",
+                  "text": "Add designbook entity view-mode for bb_ticket"
+                },
+                {
+                  "node": "68:63",
+                  "text": "Christian Wiedemann"
+                },
+                {
+                  "node": "68:66",
+                  "text": "Standardtext 13/20 — auch für ungesetzte Texte"
+                },
+                {
+                  "node": "68:69",
+                  "text": "Fließtext 13/21, höchstens 72 Zeichen pro Zeile."
+                },
+                {
+                  "node": "68:72",
+                  "text": "Assignee · Priority · Group"
+                },
+                {
+                  "node": "68:75",
+                  "text": "Created 3 days ago · 2 hours ago"
+                },
+                {
+                  "node": "68:78",
+                  "text": "BB-142 · feat/bb-142-view-mode"
+                },
+                {
+                  "node": "68:81",
+                  "text": "Test results"
+                },
+                {
+                  "node": "68:84",
+                  "text": "P2 · coding"
+                },
+                {
+                  "node": "68:87",
+                  "text": "4h 30m"
+                },
+                {
+                  "node": "68:89",
+                  "text": "Größen in rem (13px = 0.8125rem) → Browser-Schriftgröße wirkt; Abstände bleiben px."
+                },
+                {
+                  "node": "68:90",
+                  "text": "Zeilenhöhen in ganzen Pixeln (13/20 statt 13/18.85)."
+                },
+                {
+                  "node": "68:91",
+                  "text": "Mono nur für Maschinenwerte — nie für States, Daten, Dauern, Zähler."
+                },
+                {
+                  "node": "68:92",
+                  "text": "tabular-nums für alle Zahlen-Spalten, Dauern, Summen."
+                },
+                {
+                  "node": "68:93",
+                  "text": "Skins: font-size-adjust 0.53 auf body, damit harbor/grove/ember/iris gleich groß wirken."
+                },
+                {
+                  "node": "68:99",
+                  "text": "inline-xs · 4",
+                  "use": "Icon ↔ Text"
+                },
+                {
+                  "node": "68:103",
+                  "text": "inline · 8",
+                  "use": "Pills, Buttons nebeneinander"
+                },
+                {
+                  "node": "68:107",
+                  "text": "stack · 12",
+                  "use": "Label ↔ Control, Zeileninhalt, unter Überschrift"
+                },
+                {
+                  "node": "68:111",
+                  "text": "group · 16",
+                  "use": "Feldgruppen, Kartenpadding"
+                },
+                {
+                  "node": "68:115",
+                  "text": "gutter · 24",
+                  "use": "Seitenrand ab 1280"
+                },
+                {
+                  "node": "68:119",
+                  "text": "section · 32",
+                  "use": "über Abschnitts-Überschrift"
+                },
+                {
+                  "node": "68:135",
+                  "text": "↕ 32 above a section heading"
+                },
+                {
+                  "node": "68:137",
+                  "text": "↕ 12 below a section heading"
+                },
+                {
+                  "node": "68:146",
+                  "label": "Liste",
+                  "text": "fluid bis 1440"
+                },
+                {
+                  "node": "68:149",
+                  "label": "Detail · Hauptspalte",
+                  "text": "880"
+                },
+                {
+                  "node": "68:152",
+                  "label": "Fließtext",
+                  "text": "72ch ≈ 620"
+                },
+                {
+                  "node": "68:155",
+                  "label": "Inspector",
+                  "text": "280 / 320 / 360 (lg/xl/2xl)"
+                },
+                {
+                  "node": "68:158",
+                  "label": "Filterspalte",
+                  "text": "192, nur ab 4 Facetten"
+                },
+                {
+                  "node": "68:161",
+                  "label": "Settings & Formulare",
+                  "text": "960"
+                },
+                {
+                  "node": "68:164",
+                  "label": "Dialog",
+                  "text": "640 (breit 880)"
+                },
+                {
+                  "node": "68:167",
+                  "label": "Gate / Onboarding",
+                  "text": "420 / 576"
+                },
+                {
+                  "node": "68:173",
+                  "label": "Tabellenzeile",
+                  "text": "36 (--spacing-row 34 → 36)"
+                },
+                {
+                  "node": "68:176",
+                  "label": "Zweizeilige Listenzeile",
+                  "text": "56 (vorher 58–96)"
+                },
+                {
+                  "node": "68:179",
+                  "label": "Key/Value (Inspector)",
+                  "text": "32 (vorher 40–42)"
+                },
+                {
+                  "node": "68:182",
+                  "label": "Toolbar",
+                  "text": "36"
+                },
+                {
+                  "node": "68:185",
+                  "label": "Controls (Button, Input, Select)",
+                  "text": "32 einheitlich (vorher 28/30/38/40)"
+                },
+                {
+                  "node": "68:188",
+                  "label": "Karten-Padding / Radius",
+                  "text": "16 / 7 (vorher 8–20 / 5–7)"
+                }
+              ],
+              "properties": {
+                "spacing_roles_px": {
+                  "inline-xs": 4,
+                  "inline": 8,
+                  "stack": 12,
+                  "group": 16,
+                  "gutter": 24,
+                  "section": 32
+                },
+                "heading_space_above_px": 32,
+                "heading_space_below_px": 12,
+                "prose_max_width": "72ch ≈ 620px",
+                "control_height_px": 32,
+                "card_padding_px": 16,
+                "card_radius_px": 7
+              }
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [],
+              "font_families": [
+                "Spline Sans",
+                "JetBrains Mono"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "variable collection 'BB · Vorschlag Layout' values",
+                "reason": "The spacing variables are not bound to the swatch nodes, so the tools return no variable values; the values come from the swatch sizes and labels.",
+                "required": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ci-board",
+        "locator": {
+          "kind": "figma-node",
+          "value": "550:8970"
+        },
+        "samples": [
+          {
+            "view": "frame",
+            "state": "rest",
+            "structure": {
+              "roots": [
+                "550:8970"
+              ],
+              "nodes": [
+                {
+                  "id": "550:8970",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8970"
+                  },
+                  "children": [
+                    "550:8972"
+                  ]
+                },
+                {
+                  "id": "550:8972",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8972"
+                  },
+                  "children": [
+                    "550:8973",
+                    "550:8987",
+                    "550:9009",
+                    "550:9012"
+                  ]
+                },
+                {
+                  "id": "550:8973",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8973"
+                  },
+                  "children": [
+                    "550:8974"
+                  ]
+                },
+                {
+                  "id": "550:8974",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8974"
+                  },
+                  "children": [
+                    "550:8976"
+                  ]
+                },
+                {
+                  "id": "550:8976",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8976"
+                  },
+                  "children": [
+                    "550:8977",
+                    "550:8978"
+                  ]
+                },
+                {
+                  "id": "550:8987",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8987"
+                  },
+                  "children": [
+                    "550:8991"
+                  ]
+                },
+                {
+                  "id": "550:8991",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8991"
+                  },
+                  "children": [
+                    "550:8992"
+                  ]
+                },
+                {
+                  "id": "550:9009",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9009"
+                  },
+                  "children": [
+                    "550:9011"
+                  ]
+                },
+                {
+                  "id": "550:9012",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9012"
+                  },
+                  "children": [
+                    "550:9013",
+                    "550:9049"
+                  ]
+                },
+                {
+                  "id": "550:9013",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9013"
+                  },
+                  "children": [
+                    "550:9014",
+                    "550:9018"
+                  ]
+                },
+                {
+                  "id": "550:9014",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9014"
+                  },
+                  "children": [
+                    "550:9016",
+                    "550:9017"
+                  ]
+                },
+                {
+                  "id": "550:9018",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9018"
+                  },
+                  "children": [
+                    "550:9019",
+                    "550:9024"
+                  ]
+                },
+                {
+                  "id": "550:9019",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9019"
+                  },
+                  "children": [
+                    "550:9021"
+                  ]
+                },
+                {
+                  "id": "550:9049",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9049"
+                  },
+                  "children": [
+                    "550:9054"
+                  ]
+                },
+                {
+                  "id": "550:9054",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9054"
+                  },
+                  "children": [
+                    "550:9055"
+                  ]
+                },
+                {
+                  "id": "550:8977",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8977"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "550:8978",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8978"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "550:8992",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:8992"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "550:9011",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9011"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "550:9016",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9016"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "550:9017",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9017"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "550:9021",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9021"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "550:9024",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9024"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "550:9055",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "550:9055"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "node": "550:8970",
+                "width": 1440,
+                "height": 900,
+                "sidebar_width": 232,
+                "content_left_px": 256
+              },
+              "typography": [
+                {
+                  "node": "550:8977",
+                  "fontFamily": "Bricolage Grotesque",
+                  "fontWeight": 700,
+                  "fontSize": 24,
+                  "lineHeight": 30,
+                  "letterSpacing": -0.24,
+                  "fontVariationSettings": "\"opsz\" 14, \"wdth\" 100",
+                  "role": "page title"
+                },
+                {
+                  "node": "550:8978",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 400,
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "letterSpacing": 0,
+                  "role": "page description"
+                },
+                {
+                  "node": "550:8992",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 500,
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "letterSpacing": 0,
+                  "role": "toolbar label"
+                },
+                {
+                  "node": "550:9011",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 400,
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "letterSpacing": 0,
+                  "role": "result count"
+                },
+                {
+                  "node": "550:9016",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
+                  "fontSize": 16,
+                  "lineHeight": 22,
+                  "letterSpacing": -0.08,
+                  "role": "lane title"
+                },
+                {
+                  "node": "550:9017",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 400,
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "letterSpacing": 0,
+                  "role": "lane count"
+                },
+                {
+                  "node": "550:9021",
+                  "fontFamily": "Spline Sans Mono",
+                  "fontWeight": 500,
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "letterSpacing": 0,
+                  "role": "ticket key"
+                },
+                {
+                  "node": "550:9024",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
+                  "fontSize": 14,
+                  "lineHeight": 20,
+                  "letterSpacing": 0,
+                  "role": "card title"
+                },
+                {
+                  "node": "550:9055",
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 400,
+                  "fontSize": 12,
+                  "lineHeight": 16,
+                  "letterSpacing": 0,
+                  "role": "empty lane"
+                }
+              ],
+              "content": [
+                {
+                  "node": "550:8977",
+                  "text": "bakers.build"
+                },
+                {
+                  "node": "550:8978",
+                  "text": "key BB · group bakers.build"
+                },
+                {
+                  "node": "550:8992",
+                  "text": "Assignee"
+                },
+                {
+                  "node": "550:9011",
+                  "text": "5 of 44 open tickets"
+                },
+                {
+                  "node": "550:9016",
+                  "text": "Not assigned"
+                },
+                {
+                  "node": "550:9017",
+                  "text": "3"
+                },
+                {
+                  "node": "550:9021",
+                  "text": "BB-281"
+                },
+                {
+                  "node": "550:9024",
+                  "text": "Runs dispatch to the wrong agent: three conductors with divergent agent configs"
+                },
+                {
+                  "node": "550:9055",
+                  "text": "No ticket matches these filters."
+                },
+                {
+                  "node": "550:8969",
+                  "text": "CI · Light — Flour/Rye, Butter = Waits for you, Spline Sans"
+                },
+                {
+                  "node": "555:9238",
+                  "text": "Schrift: Spline Sans, Spline Sans Mono für Daten, Bricolage Grotesque nur für Seitentitel."
+                }
+              ]
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [],
+              "font_families": [
+                "Bricolage Grotesque",
+                "Spline Sans",
+                "Spline Sans Mono"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "text inside component instances (tabs, pills, badges, buttons, status bar)",
+                "reason": "Instance contents were not read node by node; the screenshot shows them.",
+                "required": false
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "focus-keyboard",
+        "locator": {
+          "kind": "figma-node",
+          "value": "61:3220"
+        },
+        "samples": [
+          {
+            "view": "frame",
+            "state": "rest",
+            "structure": {
+              "roots": [
+                "61:3220"
+              ],
+              "nodes": [
+                {
+                  "id": "61:3220",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "61:3220"
+                  },
+                  "children": [
+                    "61:3221",
+                    "61:3222",
+                    "61:3223",
+                    "61:3577"
+                  ]
+                },
+                {
+                  "id": "61:3221",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "61:3221"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "61:3222",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "61:3222"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "61:3223",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "61:3223"
+                  },
+                  "children": [
+                    "61:3229"
+                  ]
+                },
+                {
+                  "id": "61:3229",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "61:3229"
+                  },
+                  "children": [
+                    "61:3237"
+                  ]
+                },
+                {
+                  "id": "61:3237",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "61:3237"
+                  },
+                  "children": [
+                    "61:3240"
+                  ]
+                },
+                {
+                  "id": "61:3240",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "61:3240"
+                  },
+                  "children": [
+                    "61:3238"
+                  ]
+                },
+                {
+                  "id": "61:3238",
+                  "kind": "instance",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "61:3238"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "61:3577",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "61:3577"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "node": "61:3220",
+                "width": 1759,
+                "height": 1719
+              },
+              "interactions": [
+                {
+                  "node": "61:3240",
+                  "state": "focus-visible (proposal)",
+                  "control": "Text input",
+                  "ring_width_px": 2,
+                  "ring_style": "solid",
+                  "ring_color": "var(--color-focus-ring)",
+                  "ring_color_value": "#494fe5",
+                  "ring_offset_px": 2,
+                  "ring_radius_px": 9,
+                  "control_radius_px": 7,
+                  "control_height_px": 38,
+                  "applies_to": [
+                    "Text input",
+                    "Form select",
+                    "Property pill",
+                    "Textarea"
+                  ]
+                }
+              ],
+              "content": [
+                {
+                  "node": "61:3222",
+                  "text": "Vorschlag: derselbe Fokusring wie Navigation, Tabs und Tabellen — 2 px focus-ring, 2 px Abstand (focus-visible:outline-2 outline-offset-2 outline-focus-ring)."
+                },
+                {
+                  "node": "61:3577",
+                  "text": "Die Statusleiste „Auto-refresh on · updated 4s ago“ bekommt role=\"status\" (aria-live=\"polite\")."
+                }
+              ]
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [],
+              "font_families": [
+                "Spline Sans",
+                "JetBrains Mono"
+              ]
+            },
+            "unavailable": []
+          }
+        ]
+      },
+      {
+        "id": "data-formats",
+        "locator": {
+          "kind": "figma-node",
+          "value": "64:3709"
+        },
+        "samples": [
+          {
+            "view": "frame",
+            "state": "rest",
+            "structure": {
+              "roots": [
+                "64:3709"
+              ],
+              "nodes": [
+                {
+                  "id": "64:3709",
+                  "kind": "frame",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3709"
+                  },
+                  "children": [
+                    "64:3710",
+                    "64:3711",
+                    "64:3807",
+                    "64:3808",
+                    "64:3809",
+                    "64:3810",
+                    "64:3811",
+                    "64:3721",
+                    "64:3732",
+                    "64:3739",
+                    "64:3764",
+                    "64:3771",
+                    "64:3778",
+                    "64:3802"
+                  ]
+                },
+                {
+                  "id": "64:3710",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3710"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3711",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3711"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3807",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3807"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3808",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3808"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3809",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3809"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3810",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3810"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3811",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3811"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3721",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3721"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3732",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3732"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3739",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3739"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3764",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3764"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3771",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3771"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3778",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3778"
+                  },
+                  "children": []
+                },
+                {
+                  "id": "64:3802",
+                  "kind": "text",
+                  "locator": {
+                    "kind": "figma-node",
+                    "value": "64:3802"
+                  },
+                  "children": []
+                }
+              ]
+            },
+            "observations": {
+              "layout": {
+                "node": "64:3709",
+                "width": 1502,
+                "height": 1095
+              },
+              "content": [
+                {
+                  "node": "64:3807",
+                  "text": "< 7 Tage: relativ („2 hours ago“, „yesterday“) · älter: „15 Jun, 13:30“ · anderes Jahr: „15 Jun 2025“"
+                },
+                {
+                  "node": "64:3808",
+                  "text": "Dauer: < 1 min „41s“ · < 1 h „36 min“ · sonst „1h 10m“"
+                },
+                {
+                  "node": "64:3809",
+                  "text": "Immer <time datetime=\"…\" title=\"…\"> — exakter Wert per Hover und für Screenreader"
+                },
+                {
+                  "node": "64:3810",
+                  "text": "Mono nur für Maschinenwerte (Keys, Branches, Conductor-IDs), nicht für Zeitangaben"
+                },
+                {
+                  "node": "64:3811",
+                  "text": "Testergebnisse benennen die Quelle (CI vs. BDD) und zeigen Fehlschläge als Badge"
+                },
+                {
+                  "node": "64:3721",
+                  "text": "2 hours ago",
+                  "kind": "after example"
+                },
+                {
+                  "node": "64:3732",
+                  "text": "30 Jun, 15:50 · 36 min",
+                  "kind": "after example"
+                },
+                {
+                  "node": "64:3739",
+                  "text": "1h 10m",
+                  "kind": "after example"
+                },
+                {
+                  "node": "64:3764",
+                  "text": "3m 41s",
+                  "kind": "after example"
+                },
+                {
+                  "node": "64:3771",
+                  "text": "invited 12 days ago",
+                  "kind": "after example"
+                },
+                {
+                  "node": "64:3778",
+                  "text": "joined 6 Jan 2026",
+                  "kind": "after example"
+                },
+                {
+                  "node": "64:3802",
+                  "text": "Mon, 15 Jun 2026, 13:30 UTC",
+                  "kind": "after example"
+                }
+              ]
+            },
+            "dependencies": {
+              "parent_ids": [],
+              "asset_ids": [],
+              "font_families": [
+                "Spline Sans",
+                "JetBrains Mono"
+              ]
+            },
+            "unavailable": [
+              {
+                "property": "exact parent frames of the rule and example texts",
+                "reason": "The nodes are listed under the section root; intermediate table frames are omitted.",
+                "required": false
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "parents": [],
+    "images": [],
+    "fonts": [
+      {
+        "family": "Spline Sans",
+        "source": "google",
+        "weights": [
+          400,
+          500,
+          600,
+          700
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": [
+          {
+            "format": "woff2",
+            "style": "normal",
+            "src_url": "https://fonts.gstatic.com/s/splinesans/v16/_6_7ED73Uf-2WfU2LzycEbAimC0dSh5i.woff2",
+            "local_path": "assets/fonts/spline-sans.woff2"
+          }
+        ]
+      },
+      {
+        "family": "Spline Sans Mono",
+        "source": "google",
+        "weights": [
+          500
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": [
+          {
+            "format": "woff2",
+            "style": "normal",
+            "src_url": "https://fonts.gstatic.com/s/splinesansmono/v13/R70BjzAei_CDNLfgZxrW6wrZOF2WX5KZmE-Z-lw.woff2",
+            "local_path": "assets/fonts/spline-sans-mono.woff2"
+          }
+        ]
+      },
+      {
+        "family": "Bricolage Grotesque",
+        "source": "google",
+        "weights": [
+          700
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": [
+          {
+            "format": "woff2",
+            "style": "normal",
+            "src_url": "https://fonts.gstatic.com/s/bricolagegrotesque/v9/3y996as8bTXq_nANBjzKo3IeZx8z6up5L-iNGfyOPPs.woff2",
+            "local_path": "assets/fonts/bricolage-grotesque.woff2"
+          }
+        ]
+      },
+      {
+        "family": "JetBrains Mono",
+        "source": "google",
+        "weights": [
+          500,
+          700
+        ],
+        "styles": [
+          "normal"
+        ],
+        "files": [
+          {
+            "format": "woff2",
+            "style": "normal",
+            "src_url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbV2o-flEEny0FZhsfKu5WU4xD7OwGtT0rU.woff2",
+            "local_path": "assets/fonts/jetbrains-mono.woff2"
+          }
+        ]
+      }
+    ],
+    "captures": [
+      {
+        "subject": "typo-system",
+        "view": "frame",
+        "state": "rest",
+        "path": "frame--typo-system--rest.png",
+        "width": 1399,
+        "height": 2242
+      },
+      {
+        "subject": "ci-board",
+        "view": "frame",
+        "state": "rest",
+        "path": "frame--ci-board--rest.png",
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "subject": "focus-keyboard",
+        "view": "frame",
+        "state": "rest",
+        "path": "frame--focus-keyboard--rest.png",
+        "width": 1759,
+        "height": 1719
+      },
+      {
+        "subject": "data-formats",
+        "view": "frame",
+        "state": "rest",
+        "path": "frame--data-formats--rest.png",
+        "width": 1502,
+        "height": 1095
+      }
+    ]
+  }
+}

@@ -5,13 +5,12 @@ status: stable
 group: Action
 description: >-
   A generic two-position in-page panel switcher: a segmented control plus two
-  panels. Owns the Alpine `selected` state and shows one panel at a time, so
-  PHP passes the filter items and the `panel_a`/`panel_b` slots with no CSS
-  classes or Alpine attributes. `panel_a` and `panel_b` match `items[0]` and
-  `items[1]` by position, not by value. The filter is `segmented_control`
-  inside this wrapper; do not nest another `x-data` on that control. Both
-  panels stay in the DOM so their content remains readable with JavaScript
-  off.
+  panels. Owns the Alpine `selected` state and shows one panel at a time, so PHP
+  passes the filter items and the `panel_a`/`panel_b` slots with no CSS classes
+  or Alpine attributes. `panel_a` and `panel_b` match `items[0]` and `items[1]`
+  by position, not by value. The filter is `segmented_control` inside this
+  wrapper; do not nest another `x-data` on that control. Both panels stay in the
+  DOM so their content remains readable with JavaScript off.
 provider: bb_theme
 props:
   type: object

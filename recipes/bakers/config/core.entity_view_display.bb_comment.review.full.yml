@@ -5,6 +5,7 @@ dependencies:
     - bb_core.bb_comment_type.review
     - core.entity_view_mode.bb_comment.full
   module:
+    - bb_core
     - display_builder
     - text
   enforced:
@@ -63,20 +64,9 @@ third_party_settings:
                           timestamp:
                             source_id: 'field_formatter:bb_comment:bb_comment:created'
                             source:
-                              type: timestamp
+                              type: bb_time
                               settings:
-                                date_format: normal
-                                custom_date_format: ''
-                                timezone: ''
-                                tooltip:
-                                  date_format: long
-                                  custom_date_format: ''
-                                time_diff:
-                                  enabled: false
-                                  future_format: '@interval hence'
-                                  past_format: '@interval ago'
-                                  granularity: 2
-                                  refresh: 60
+                                date_only: false
                               third_party_settings: {  }
                         slots: {  }
                         third_party_settings: ''
@@ -126,21 +116,10 @@ content:
     weight: 3
     region: content
   created:
-    type: timestamp
+    type: bb_time
     label: inline
     settings:
-      date_format: normal
-      custom_date_format: ''
-      timezone: ''
-      tooltip:
-        date_format: long
-        custom_date_format: ''
-      time_diff:
-        enabled: false
-        future_format: '@interval hence'
-        past_format: '@interval ago'
-        granularity: 2
-        refresh: 60
+      date_only: false
     third_party_settings: {  }
     weight: 2
     region: content
