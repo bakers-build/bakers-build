@@ -1,7 +1,6 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import {
-  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -5461,21 +5460,18 @@ describe('Conductor — bakers ui refresh signal', () => {
     expect(signalled(p.worktree)).toBe(true);
   });
 
-  it('still reaches running when .bakers is not writable', async () => {
+  it('still reaches running when the signal cannot be written', async () => {
     const p = project();
-    chmodSync(join(p.checkout, '.bakers'), 0o500);
-    chmodSync(join(p.worktree, '.bakers'), 0o500);
-    try {
-      const remote = queued();
-      const conductor = conductorOf(remote, new RecordingExecutor(), p);
-      await conductor.start();
-      await conductor.tick();
-      expect(remote.calls.markRunning).toHaveLength(1);
-      expect(existsSync(signal(p.worktree))).toBe(false);
-    } finally {
-      chmodSync(join(p.checkout, '.bakers'), 0o700);
-      chmodSync(join(p.worktree, '.bakers'), 0o700);
+    // `.bakers` as a plain file: every write below it fails, even as root.
+    for (const dir of [p.checkout, p.worktree]) {
+      rmSync(join(dir, '.bakers'), { recursive: true });
+      writeFileSync(join(dir, '.bakers'), '');
     }
+    const remote = queued();
+    const conductor = conductorOf(remote, new RecordingExecutor(), p);
+    await conductor.start();
+    await conductor.tick();
+    expect(remote.calls.markRunning).toHaveLength(1);
   });
 
   it('git-excludes the signal file exactly once per repository', async () => {
