@@ -1,0 +1,13 @@
+decided_at: '2026-11-05T11:37:41.183Z'
+fingerprint: 954b91d7ba7ef1991d2dcf232f886ba4d8c99dadd4209c02c01d7ca21132667d
+note: 'Approved by Pascal 2026-11-05 on condition that the screenshots match Figma: compare-images against fresh Figma exports of 550:8970 and 550:9238 is equal (0 diff pixels, both 1440x900). Suitability yes for BAKERS-53: tokens, components and the board scene of the CI look in light and dark, design-verify last.'
+scope:
+  states:
+    - ci-light
+    - ci-dark
+  subjects:
+    - board-light
+    - board-dark
+  views:
+    - desktop
+status: approved
