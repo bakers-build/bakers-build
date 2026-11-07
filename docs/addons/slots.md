@@ -44,4 +44,4 @@ The executor resolves in this order: the machine's `executor`, the project's `ex
 
 ## Migrating an addon
 
-`BbExecutor.runHook`, `BbExecutor.removeWorktree` and `BbWorkspace.applyOpenLayout` are gone: the conductor runs the config's `hooks`; move removal to `BbWorkspace.remove` and the open layout to `BbExecutor.openWorkspace`. herdr's `open` option is now read by its executor; an explicit `herdrWorkspace` slot carrying `with.open` must move it to the executor.
+`BbExecutor.runHook`, `BbExecutor.removeWorktree` and `BbWorkspace.applyOpenLayout` are gone: the conductor runs the config's top-level `hooks`, and `addon-herdr` now rejects `with.hooks` at startup; move removal to `BbWorkspace.remove` and the open layout to `BbExecutor.openWorkspace`. herdr's `open` option is now read by its executor; an explicit `herdrWorkspace` slot carrying `with.open` must move it to the executor.

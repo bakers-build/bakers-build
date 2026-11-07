@@ -1570,6 +1570,19 @@ describe('herdrExecutor factory root derivation (BB-177)', () => {
     ).toBe('/parent');
   });
 
+  it('rejects with.hooks, which the conductor no longer reads from the executor', async () => {
+    const plugin = herdrExecutor({
+      execGit: async () => '/parent/.git\n',
+      hooks: { after_create: 'make worktree' },
+    } as never);
+    await expect(
+      plugin.createExecutor(
+        { config_path: '/parent/.bakers/conductor.config.js' } as never,
+        { logger: noopLogger },
+      ),
+    ).rejects.toThrow(/top-level `hooks`/);
+  });
+
   it('lets options.root override win over git derivation', async () => {
     let gitCalled = false;
     const plugin = herdrExecutor({

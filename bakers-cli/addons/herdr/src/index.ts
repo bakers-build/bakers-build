@@ -469,6 +469,13 @@ export function herdrExecutor(
     id: 'herdr',
     requiredModules: [],
     async createExecutor(config, deps) {
+      // Hooks used to ride on this addon's options; now only the conductor runs
+      // them, so a leftover would drop silently. Fail loudly instead.
+      if ((options as { hooks?: unknown }).hooks !== undefined) {
+        throw new Error(
+          "@bakers-build/addon-herdr no longer takes `with.hooks`: move them to the conductor config's top-level `hooks`",
+        );
+      }
       // Derive the parent repo root via the single shared anchor (BB-177) so
       // worktree open reattaches from the main clone, not the linked worktree
       // — identical derivation to the sibling herdrWorkspace.
