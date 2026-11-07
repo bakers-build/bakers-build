@@ -116,4 +116,21 @@ for (const [mode, colors] of Object.entries(palette)) {
   const marks = ['control-border', 'focus-ring', 'state-attention-mark', 'state-running', 'state-unassigned', ...'abcdef'.split('').map(s => `chart-series-${s}`)]
   for (const mark of marks) for (const bg of ['surface', 'surface-2']) check(mark, bg, 3)
 }
+
+// Wordmark: the <img> follows the page's color-scheme, so its text needs a dark-scheme fill.
+const wordmark = readFileSync(new URL('logo-wordmark.svg', root), 'utf8')
+const darkRules = wordmark.match(/@media\s*\(prefers-color-scheme:\s*dark\)\s*\{([\s\S]*?\})\s*\}/)?.[1] ?? ''
+const rules = css => Object.fromEntries([...css.matchAll(/\.([\w-]+)\s*\{\s*fill:\s*(#[0-9a-f]{6})/gi)].map(m => [m[1], m[2].toUpperCase()]))
+const lightFill = rules(wordmark.replace(/@media[\s\S]*?\}\s*\}/, '')), darkFill = { ...lightFill, ...rules(darkRules) }
+const letters = [...wordmark.replace(/<g[\s\S]*?<\/g>/g, '').matchAll(/<path\b([^>]*)>/g)].map(m => m[1])
+assert.equal(letters.length, 3, 'wordmark has the three letter paths bakers . build')
+for (const [mode, fills] of [['light', lightFill], ['dark', darkFill]]) for (const attrs of letters) {
+  const cls = attrs.match(/class="([\w-]+)"/)?.[1]
+  const fill = fills[cls] ?? attrs.match(/fill="(#[0-9a-f]{6})"/i)?.[1].toUpperCase()
+  assert.ok(fill, `wordmark letter path has a fill (${attrs.slice(0, 40)})`)
+  for (const bg of ['app', 'surface', 'surface-2']) {
+    const contrast = ratio(fill, palette[mode][bg])
+    assert.ok(contrast >= 3, `${mode} wordmark ${fill} on ${bg}: ${contrast.toFixed(2)} < 3`)
+  }
+}
 console.log('PASS: mode-only runtime (system, persistence, blocked storage, ignored skin), no skin code, CI values and contrast.')
