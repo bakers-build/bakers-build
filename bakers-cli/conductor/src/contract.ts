@@ -59,6 +59,7 @@ export type {
   HookListenerFn,
   HookName,
   HookResult,
+  OpenWorkspaceContext,
   SpawnedSession,
   SpawnRunInput,
   WorktreeTeardown,

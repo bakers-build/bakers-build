@@ -1,8 +1,8 @@
-import { existsSync, rmSync } from 'node:fs';
+import { rmSync } from 'node:fs';
 import {
   type LaunchScript,
   renderTemplate,
-  restoreWritable,
+  truncateOpenTabTitle,
   watchLaunch,
   writeLaunchScript,
 } from '@bakers-build/addon-herdr/shared';
@@ -10,20 +10,12 @@ import type {
   BbExecutor,
   ExecutorCapabilities,
   ExecutorPlugin,
-  HookContext,
-  HookName,
-  HookResult,
+  OpenWorkspaceContext,
   SpawnedSession,
   SpawnRunInput,
-  WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import {
-  deriveCheckoutRoot,
-  exec,
-  shellQuote,
-  slugify,
-} from '@bakers-build/core';
+import { deriveCheckoutRoot, shellQuote, slugify } from '@bakers-build/core';
 import { type OrcaExecutorOptions, resolveTabLabel } from './config.js';
 import {
   assertOrcaReachable,
@@ -33,10 +25,10 @@ import {
 } from './orca-cli.js';
 import {
   DEFAULT_ADOPT_TIMEOUT_MS,
+  DEFAULT_OPEN_LAYOUT,
   defaultSleep,
-  type GitExec,
   noopLogger,
-  porcelainEntries,
+  registerRepo,
   type Sleep,
   waitForAdoption,
 } from './workspace.js';
@@ -49,17 +41,6 @@ export {
   type OrcaWorkspaceOptions,
   orcaWorkspace,
 } from './workspace.js';
-
-/** Runs a lifecycle-hook shell command in a cwd; rejects on non-zero exit. */
-export type ShellRunner = (
-  command: string,
-  cwd: string,
-  env?: Record<string, string>,
-) => Promise<void>;
-
-const defaultShellRunner: ShellRunner = async (command, cwd, env) => {
-  await exec('sh', ['-c', command], { cwd, ...(env ? { env } : {}) });
-};
 
 /** Exact trailing `#<runId>` token, so `#7` never matches `#77`. */
 function titleMatchesRun(title: unknown, runId: number): boolean {
@@ -91,10 +72,6 @@ function visualTabTitles(layouts: unknown): Map<string, unknown> {
   return titles;
 }
 
-function normPath(path: string): string {
-  return path.replace(/\/+$/, '');
-}
-
 /**
  * Executor hosting each run's agent in an Orca terminal of the ticket's
  * worktree. Terminal handles do not survive an Orca restart, so none is kept
@@ -108,8 +85,6 @@ export class OrcaExecutor implements BbExecutor {
     private readonly options: OrcaExecutorOptions,
     private readonly execOrca: OrcaExec = createOrcaExec(),
     private readonly logger: ConductorLogger = noopLogger,
-    private readonly runShell: ShellRunner = defaultShellRunner,
-    private readonly execGit: GitExec = (args) => exec('git', args),
     private readonly sleep: Sleep = defaultSleep,
   ) {}
 
@@ -117,38 +92,9 @@ export class OrcaExecutor implements BbExecutor {
     return { persistent: true };
   }
 
-  /** The single best-effort catch point for lifecycle hooks; never throws. */
-  async runHook(
-    name: HookName,
-    cwd: string,
-    ctx: HookContext,
-    env?: Record<string, string>,
-  ): Promise<HookResult> {
-    const command = this.options.hooks?.[name];
-    if (!command) {
-      return { hook: name, ran: false, ok: true };
-    }
-    try {
-      await this.runShell(command, cwd, env);
-      return { hook: name, ran: true, ok: true };
-    } catch (err) {
-      this.logger.error(
-        { hook: name, worktree: cwd, ticket: ctx.ticket, err: String(err) },
-        'lifecycle hook failed',
-      );
-      return { hook: name, ran: true, ok: false, error: String(err) };
-    }
-  }
-
   async startRun(input: SpawnRunInput): Promise<SpawnedSession> {
     const tabLabel = resolveTabLabel(this.options, input.ticket.state);
-    await assertOrcaReachable(this.execOrca);
-    await waitForAdoption(
-      this.execOrca,
-      input.workspacePath,
-      this.options.adoptTimeoutMs ?? DEFAULT_ADOPT_TIMEOUT_MS,
-      this.sleep,
-    );
+    await this.adopt(input.workspacePath);
     const title = `${renderTemplate(tabLabel, {
       identifier: input.ticket.identifier,
       state: input.ticket.state,
@@ -294,94 +240,63 @@ export class OrcaExecutor implements BbExecutor {
     }
   }
 
-  async removeWorktree(
-    branch: string,
-    worktreePath?: string,
-  ): Promise<WorktreeTeardown> {
-    const root = this.options.root;
-    if (root && worktreePath && normPath(worktreePath) === normPath(root)) {
-      this.logger.warn(
-        { branch, worktreePath, root },
-        'refusing to tear down the main checkout',
-      );
-      return 'unverified';
+  /**
+   * Open the ticket overview terminal of a freshly created worktree (the
+   * conductor calls this only on create). The worktree may come from any
+   * workspace: Orca adopts it first. Best-effort: a failure is logged, never
+   * thrown, so it cannot wedge dispatch.
+   */
+  async openWorkspace(path: string, ctx: OpenWorkspaceContext): Promise<void> {
+    // `??`, not `||`: an explicit `open: {}` must survive as the opt-out.
+    const open = this.options.open ?? DEFAULT_OPEN_LAYOUT;
+    if (open.command === undefined) {
+      return;
     }
-    const gitDir = root ?? worktreePath;
-    let entries: { path: string; branch: string | null }[] = [];
-    if (gitDir) {
-      try {
-        // Record 0 is the main checkout — never a ticket worktree.
-        entries = porcelainEntries(
-          await this.execGit(['-C', gitDir, 'worktree', 'list', '--porcelain']),
-        ).slice(1);
-      } catch {
-        // Degrade to the on-disk answer below.
-      }
-    }
-    const path = worktreePath
-      ? normPath(worktreePath)
-      : entries.find((e) => e.branch === branch)?.path;
-    if (!path) {
-      return 'unverified';
-    }
-    const registered = entries.some((e) => normPath(e.path) === path);
-
-    let orcaKnows = false;
+    const vars = {
+      identifier: ctx.identifier,
+      branch: ctx.branch,
+      title: ctx.title,
+      worktreePath: path,
+    };
     try {
-      await assertOrcaReachable(this.execOrca);
-      await this.execOrca(['worktree', 'show', '--worktree', `path:${path}`]);
-      orcaKnows = true;
-    } catch {
-      // Orca is down or never adopted it: tear down with git alone.
-    }
-    // Drupal hardens web/sites/default (0555): restore owner-write first.
-    restoreWritable(path);
-    if (orcaKnows) {
+      await this.adopt(path);
       await this.execOrca([
-        'worktree',
-        'rm',
+        'terminal',
+        'create',
         '--worktree',
         `path:${path}`,
-        '--force',
+        '--title',
+        renderTemplate(open.title ?? '{identifier} · {title}', {
+          ...vars,
+          title: truncateOpenTabTitle(ctx.title),
+        }),
+        '--command',
+        renderTemplate(open.command, vars),
       ]);
-    } else {
-      if (!registered && !existsSync(path)) {
-        return 'already_absent';
-      }
-      if (registered) {
-        try {
-          await this.execGit([
-            '-C',
-            gitDir as string,
-            'worktree',
-            'remove',
-            '--force',
-            path,
-          ]);
-        } catch (err) {
-          this.logger.warn(
-            { path, err: String(err) },
-            'git worktree remove failed on a registered worktree',
-          );
-        }
-      }
-      try {
-        rmSync(path, { recursive: true, force: true });
-      } catch (err) {
-        this.logger.warn(
-          { path, err: String(err) },
-          'worktree directory reclaim failed',
-        );
-      }
+    } catch (err) {
+      this.logger.warn(
+        { branch: ctx.branch, worktree: path, err: String(err) },
+        'orca overview terminal failed (best-effort, ignored)',
+      );
     }
-    if (gitDir) {
-      try {
-        await this.execGit(['-C', gitDir, 'worktree', 'prune']);
-      } catch {
-        // best-effort sweep
-      }
+  }
+
+  /**
+   * Make Orca resolve `path` as a worktree: register the repo (so a worktree
+   * made by any workspace, not only Orca's, becomes visible), then wait for
+   * Orca's rescan to adopt it.
+   */
+  private async adopt(path: string): Promise<void> {
+    await assertOrcaReachable(this.execOrca);
+    if (this.options.root) {
+      await registerRepo(this.execOrca, this.options.root);
     }
-    return existsSync(path) ? 'unverified' : 'removed';
+    await waitForAdoption(
+      this.execOrca,
+      path,
+      this.options.adoptTimeoutMs ?? DEFAULT_ADOPT_TIMEOUT_MS,
+      this.sleep,
+    );
   }
 
   private commandFor(input: SpawnRunInput): string {
@@ -413,7 +328,6 @@ export function orcaExecutor(
           ...options,
           command: options.command ?? 'claude',
           root,
-          ...(config.hooks ? { hooks: config.hooks } : {}),
         },
         createOrcaExec(),
         deps.logger,

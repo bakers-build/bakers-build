@@ -27,8 +27,9 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
-import { Conductor, resolveRunEnv } from '../../src/core/conductor.js';
+import { resolveRunEnv } from '../../src/core/conductor.js';
 import { loadTools } from '../../src/plugins/tools.js';
+import { TestConductor } from '../test-conductor.js';
 
 interface LogCall {
   level: 'debug' | 'info' | 'warn' | 'error';
@@ -237,7 +238,7 @@ describe('Conductor dispatch env injection', () => {
     });
     const executor = new RecordingExecutor();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -277,7 +278,7 @@ describe('Conductor dispatch env injection', () => {
     const executor = new RecordingExecutor();
     const workspace = new RecordingWorkspace();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -293,7 +294,7 @@ describe('Conductor dispatch env injection', () => {
     // Agent sink: user var present, reserved BB_ID is the real uuid (not 'evil').
     expect(agentEnv.APP_KEY).toBe('secretval');
     expect(agentEnv.BB_ID).toBe('t-1');
-    // Hook sink (BB-84 executor-owned): after_create + before_run see the
+    // Hook sink (conductor-owned): after_create + before_run see the
     // SAME resolved env — reserved keys already stripped, core vars won.
     const afterCreate = executor.hookCalls.find(
       (c) => c.name === 'after_create',
@@ -332,7 +333,7 @@ describe('Conductor dispatch env injection', () => {
     const executor = new RecordingExecutor();
     const workspace = new RecordingWorkspace();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -373,7 +374,7 @@ describe('Conductor dispatch env injection', () => {
     });
     const executor = new RecordingExecutor();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig({ tunnel: true }),
       remote,
       executor,
@@ -410,7 +411,7 @@ describe('Conductor dispatch env injection', () => {
       });
       const executor = new RecordingExecutor();
       const { log } = spyLogger();
-      const conductor = new Conductor(
+      const conductor = new TestConductor(
         makeConfig(),
         remote,
         executor,
@@ -445,7 +446,7 @@ describe('Conductor dispatch env injection', () => {
     const executor = new RecordingExecutor();
     const workspace = new RecordingWorkspace();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -488,7 +489,7 @@ describe('Conductor workspace env', () => {
       }),
     };
     const executor = new RecordingExecutor();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -549,7 +550,7 @@ describe('Conductor agent tools', () => {
         },
       },
     ]);
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(withTools ? { tools } : {}),
       remote,
       executor,

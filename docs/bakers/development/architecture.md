@@ -44,13 +44,13 @@ The conductor is the claim-and-dispatch loop that `bakers oven start` runs, in `
 
 The conductor does not decide implementation, does not write a ticket's state and does not create tickets. The agent does those through the API.
 
-Four typed slots connect the loop to the outside world. The loop depends on the interfaces, never on an implementation, and each slot is filled by an addon.
+Four typed slots connect the loop to the outside world. The loop depends on the interfaces, never on an implementation, and each slot is filled by an addon. The conductor itself runs the lifecycle hooks; [Conductor slots](/addons/slots) states what the executor and the workspace each own.
 
 | Slot | Interface | What it does | Shipped addon |
 |---|---|---|---|
 | remote | `BbRemote` | Register, heartbeat, claim, read tickets, update runs, finalise | `addon-remote-drupal` |
-| executor | `BbExecutor` | Start, stop and clean up a run, run hooks | `addon-herdr` |
-| workspace | `BbWorkspace` | Ensure the ticket's git worktree | `addon-herdr` (paired) or `addon-workspace-git` |
+| executor | `BbExecutor` | Start, stop and clean up a run's terminal; show a fresh worktree | `addon-herdr`, `addon-orca` |
+| workspace | `BbWorkspace` | Ensure and remove the ticket's git worktree | `addon-herdr`, `addon-orca` or `addon-workspace-git` |
 | agent | `BbAgent` | Launch command, read the transcript, parse the footprint | `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi` |
 
 The agent for a ticket comes from its `agent:` labels first, then the machine's `default` route and default agent. The conductor composes three inputs: the machine file, which owns identity, capacity and the agent catalog; the project's `.bakers/conductor.config.js`, which owns the wiring; and a connection, which is loaded separately and names the server and the sign-in. [Which file owns what](/configuration/) and [conductor configuration](/configuration/project) describe each.

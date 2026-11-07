@@ -86,6 +86,31 @@ describe('conductor addons per scope', () => {
     expect(scopeWarn[0]).toContain('.bakers/conductor.config.js');
   });
 
+  it('the machine executor overrides the project executor', async () => {
+    writeMachine(
+      `export default { addons: ['@bakers-build/addon-codex'], executor: { kind: 'executor', id: 'herdr-core', requiredModules: [] } };`,
+    );
+    const cfg = await loadConductorConfig(writeProject(projectConfig()));
+    expect(cfg.executor.id).toBe('herdr-core');
+    // Workspace and remote stay project-owned.
+    expect(cfg.workspace.id).toBe('workspace');
+    expect(cfg.remote.id).toBe('remote');
+  });
+
+  it('without a machine executor the project executor stays', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    const cfg = await loadConductorConfig(writeProject(projectConfig()));
+    expect(cfg.executor.id).toBe('executor');
+  });
+
+  it('a machine executor descriptor resolves the named addon', async () => {
+    writeMachine(
+      `export default { addons: ['@bakers-build/addon-codex'], executor: { plugin: '@bakers-build/addon-orca' } };`,
+    );
+    const cfg = await loadConductorConfig(writeProject(projectConfig()));
+    expect(cfg.executor.id).toBe('orca');
+  });
+
   it('agents.addons throws the retired-key remediation', async () => {
     writeMachine(
       `export default { agents: { addons: ['@bakers-build/addon-codex'] } };`,

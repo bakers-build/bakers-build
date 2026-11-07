@@ -91,10 +91,6 @@ class RecordingExecutor implements BbExecutor {
     return { persistent: false };
   }
 
-  async runHook() {
-    return { hook: 'after_worktree' as const, ran: false, ok: true };
-  }
-
   async startRun(input: SpawnRunInput) {
     this.started.push(input);
     return { sessionId: `s-${this.started.length}` };
@@ -102,9 +98,6 @@ class RecordingExecutor implements BbExecutor {
 
   async stopRun() {}
   async cleanupRun() {}
-  async removeWorktree() {
-    return { present: true, outcome: 'removed' as const };
-  }
   async listRuns() {
     return [];
   }

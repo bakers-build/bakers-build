@@ -775,6 +775,31 @@ describe('offline configuration inventory', () => {
     }
   });
 
+  it('names the machine file as the executor source when it overrides the project', () => {
+    const machine = put(
+      join(home, '.bakers/machine.config.js'),
+      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',executor:{plugin:'@bakers-build/addon-herdr-core'}};",
+    );
+    const conductor = put(
+      join(project, '.bakers/conductor.config.js'),
+      "export default {bakers:{project:'bakers'},executor:{plugin:'@bakers-build/addon-herdr'}};",
+    );
+    const all = core.inventoryConfig({ scope: 'all', home, cwd: project });
+    expect(all.report.executor_source).toBe(machine);
+    expect(all.report.findings.filter((f) => f.key === 'executor')).toEqual([]);
+
+    put(
+      machine,
+      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator'};",
+    );
+    const project_only = core.inventoryConfig({
+      scope: 'all',
+      home,
+      cwd: project,
+    });
+    expect(project_only.report.executor_source).toBe(conductor);
+  });
+
   it('reports tunnel policy from an explicit machine path', () => {
     const path = put(
       join(root, 'isolated-machine.js'),
