@@ -10,7 +10,7 @@ Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe
 runs as `ddev_exec("<cmd>")`, a project web command runs by path
 (`ddev_exec(".ddev/commands/web/<cmd>")`), and `ddev_status`/`ddev_start` replace
 `ddev describe`/`ddev start`. Never run `pnpm install` in a run: every `provision_up` profile
-installs the `bakers-cli` and `website` dependencies first, `provision_up('deps')` installs them
+installs the `bakers-cli` and `docs` dependencies first, `provision_up('deps')` installs them
 alone for work that needs no site, and a site profile's `ddev init` installs and builds
 `web/themes/custom/bb_theme`. Core tests, Playwright, conductor and skill-behavior
 setup: [testing](docs/bakers/testing.md#setup).
