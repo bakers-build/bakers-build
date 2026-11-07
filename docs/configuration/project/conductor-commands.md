@@ -18,7 +18,7 @@ Every subcommand except `ls` works on the conductor of the checkout you stand in
 |---|---|---|
 | `--conductor <name>` | before `conductor` | Select a conductor config by file stem: `conductor` is `conductor.config.js`, anything else `<name>.conductor.config.js`. Environment: `$BB_CONDUCTOR`; the flag wins. |
 | `--log-level <level>` | after `oven` | `debug`, `info` (default), `warn` or `error`. Environment: `BB_LOG_LEVEL`. `debug` shows per-poll ticks, claims and idle cycles. |
-| `--log-sink <sink>` | after `oven` | `stdout`, `file` or `both`. Default `both` on a terminal, `file` otherwise. `file` and `both` write `.bakers/log.txt` in the checkout. Environment: `BB_CONDUCTOR_LOG`. |
+| `--log-sink <sink>` | after `oven` | `stdout`, `file` or `both`. Default `both` on a terminal, `file` otherwise. `file` and `both` write `.bakers/log.txt` in the checkout. A detached `start` always logs to the file. Environment: `BB_CONDUCTOR_LOG`. |
 
 With no `--conductor`, the default is `conductor.config.js`; if that file is absent and exactly one config exists it is used, and with several you must choose or the command lists the stems and stops.
 

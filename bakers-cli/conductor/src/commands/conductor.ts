@@ -845,11 +845,13 @@ async function waitForFreshHeartbeat(
   priorPid: number | undefined,
   priorLastSeen: number | undefined,
   deps: BbCliDeps,
+  stopped: () => boolean = () => false,
 ): Promise<ConductorStatus | undefined> {
   const intervalMs = deps.startPollIntervalMs ?? START_POLL_INTERVAL_MS;
   const attempts = deps.startPollAttempts ?? START_POLL_MAX_ATTEMPTS;
   const sleep = deps.sleep ?? realSleep;
   for (let attempt = 0; attempt < attempts; attempt++) {
+    if (stopped()) return undefined;
     const row = (await remote.listConductors('me')).find((c) => c.id === id);
     if (
       row &&
@@ -1024,7 +1026,7 @@ async function cmdStartBody(
     ...(stem && stem !== 'conductor' ? ['--conductor', stem] : []),
     'oven',
     ...(log.level ? ['--log-level', log.level] : []),
-    ...(log.sink ? ['--log-sink', log.sink] : []),
+    // No --log-sink: the child's stdout is the log file, pinned by BB_CONDUCTOR_LOG=file.
     'start',
     '--foreground',
     '--no-update-check',
@@ -1047,11 +1049,20 @@ async function cmdStartBody(
     return;
   }
 
+  let exited = false;
   const outcome = await Promise.race([
-    child.exited.then((code) => ({ code })),
-    waitForFreshHeartbeat(remote, id, priorPid, priorLastSeen, deps).then(
-      (row) => ({ row }),
-    ),
+    child.exited.then((code) => {
+      exited = true; // ends the losing heartbeat poll, so the CLI exits now
+      return { code };
+    }),
+    waitForFreshHeartbeat(
+      remote,
+      id,
+      priorPid,
+      priorLastSeen,
+      deps,
+      () => exited,
+    ).then((row) => ({ row })),
   ]);
   if ('code' in outcome) {
     console.log(

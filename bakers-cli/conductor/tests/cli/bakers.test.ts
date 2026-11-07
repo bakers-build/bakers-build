@@ -656,22 +656,20 @@ describe('bakers oven start — detached spawn seam', () => {
     expect(lines.join('\n')).not.toMatch(/herdr/);
   });
 
-  it('forwards the conductor-level --log-level / --log-sink flags into the child', async () => {
+  it('forwards --log-level but not --log-sink: the detached child logs to its file only', async () => {
     const deps = makeDeps();
     await start(deps, [
       'oven',
       '--log-level',
       'debug',
       '--log-sink',
-      'stdout',
+      'both',
       'start',
     ]);
     expect(spawnedOf(deps)[0].argv.slice(2)).toEqual([
       'oven',
       '--log-level',
       'debug',
-      '--log-sink',
-      'stdout',
       ...FOREGROUND,
     ]);
   });
@@ -728,6 +726,25 @@ describe('bakers oven start — detached spawn seam', () => {
       ),
     ).toBe(true);
     expect(process.exitCode).toBe(1);
+  });
+
+  it('stops polling for a heartbeat once the child has exited', async () => {
+    let sleeps = 0;
+    const deps = makeDeps(
+      {},
+      {
+        spawnConductor: fakeSpawn({ exited: Promise.resolve(2) }),
+        startPollAttempts: 50,
+        sleep: () => {
+          sleeps++;
+          return new Promise((r) => setTimeout(r, 5));
+        },
+      },
+    );
+    await start(deps);
+    const atReturn = sleeps;
+    await new Promise((r) => setTimeout(r, 50));
+    expect(sleeps).toBe(atReturn);
   });
 
   it('reports FAILED with the log path when the child cannot be spawned', async () => {
