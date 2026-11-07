@@ -5,7 +5,7 @@ handoff, and route once. Execute only qualification, then STOP.
 
 ## read
 
-The frame's read is complete; the recipe is the project default until *work* chooses one.
+The frame's read is complete; no recipe is set until *work* chooses one.
 
 ## provision
 

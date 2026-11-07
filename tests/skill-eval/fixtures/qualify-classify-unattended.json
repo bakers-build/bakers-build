@@ -1,5 +1,5 @@
 {
-  "id": "qualify-classify-default",
+  "id": "qualify-classify-unattended",
   "synthetic": true,
   "profile": "classify",
   "execution": "simulated-tools",
@@ -46,8 +46,8 @@
   },
   "rubric": [
     {
-      "id": "default-recipe",
-      "criterion": "With no clear signal and no human, takes the project default bb-recipe-probe and a type it declares."
+      "id": "chosen-by-fit",
+      "criterion": "Loads both recipes completely and, with no human present, chooses bb-recipe-probe by fit without asking: bb-recipe-pair's method needs a human shaping the work with the agent. Writes a type bb-recipe-probe declares and names that reason; names no default."
     },
     {
       "id": "readback",

@@ -35,7 +35,7 @@ The reference below explains the commands and configuration changes.
 
 **Your application's Node.js setup is a separate choice.** Keep the project's version, package manager and scripts. [Lifecycle hooks](/configuration/provisioning/hooks) can run its dependency setup in each ticket worktree; `WORKFLOW.md` owns required checks.
 
-A Node.js project does not need Docker or DDEV unless your project chooses them.
+A Node.js project does not need Docker or another container runtime unless your project chooses them.
 
 ## Example: npm project hooks
 

@@ -65,7 +65,6 @@ export const SIDEBAR = {
     ]),
     group('Provisioning', [
       ['Provisioning', '/configuration/provisioning'],
-      ['Set up DDEV', '/configuration/provisioning/ddev'],
       ['Docker Compose', '/configuration/provisioning/docker-compose'],
       ['Add lifecycle hooks', '/configuration/provisioning/hooks'],
       ['Set up Node.js', '/configuration/provisioning/node'],
@@ -122,8 +121,9 @@ export const SIDEBAR = {
       ['Conductor slots', '/addons/slots'],
       ['bakers.build server remote', '/addons/remote-drupal'],
     ]),
-    group('Provisioning support (port discovery)', [
-      ['DDEV discovery', '/addons/ddev'],
+    group('Runtimes', [
+      ['DDEV', '/addons/ddev'],
+      ['Set up DDEV', '/addons/ddev/setup'],
       ['Docker Compose discovery', '/addons/docker-compose'],
     ]),
     group('Ports and previews', [

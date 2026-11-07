@@ -1115,8 +1115,8 @@ export class Conductor {
       // that must run inside the worktree cannot run anywhere else.
       //
       // The absence is logged rather than passed over in silence, because an
-      // `after_done` can reach beyond the directory it runs in — `ddev delete
-      // -Oy` also drops a DDEV project registration and its database — and
+      // `after_done` can reach beyond the directory it runs in — deleting a
+      // container runtime's project also drops its registration and database — and
       // that leftover is then an operator's to clear by hand.
       //
       // But the line states the CONDITION, not a decision about a hook: an

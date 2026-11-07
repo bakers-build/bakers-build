@@ -38,16 +38,16 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 A run applies every matching row, and the rows are binding: the agent loads each named skill before the work it governs and stops if one is missing. The engineering method is not in this file; each ticket carries a [recipe](/configuration/workflows/types-recipes-labels). Repository conventions and test lore belong in your repository docs, linked from `CLAUDE.md`.
 
-The label `pingpong` alone lets a ticket work on its own; the entry line needs no clause for it. In any state, such a ticket then works on its own to `done`, asks the user only content questions, collected into one question per run, and one acceptance through the ticket, and refers technical problems to the developers. Label no ticket `pingpong` where nobody answers questions on tickets.
+The label `auto` alone lets a ticket work on its own; the entry line needs no clause for it. In any state, such a ticket then works on its own to `done`, asks the user only content questions, collected into one question per run, and one acceptance through the ticket, and refers technical problems to the developers. Label no ticket `auto` where nobody answers questions on tickets.
 
 ## Example
 
-A Drupal project on DDEV:
+A Drupal project:
 
 ```md
 ## bb-phase-provision
 
-Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `ddev_exec("<cmd>")`.
+Drupal checks run on `provision_up('test')`.
 
 ## bb-phase-work
 
@@ -59,10 +59,10 @@ Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `ddev_ex
 
 | When | Command |
 |---|---|
-| PHP implementation | `ddev phpcs && ddev phpstan` |
+| PHP implementation | `vendor/bin/phpcs && vendor/bin/phpstan` |
 ```
 
-The skills and commands are examples; name your own for other stacks.
+The skills and commands are examples; name your own for other stacks. A runtime addon's page shows how its commands map to its tools.
 
 ## Origin labels
 

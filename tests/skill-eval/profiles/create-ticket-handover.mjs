@@ -27,7 +27,7 @@ function analyze(f, context) {
     // Without the requester's approval no call is needed at all.
     ...commonChecks(trace, () => false, recovered).filter(c => acts || c.id !== 'actual-tool-calls'),
     check('nine-tools', trace.filter(c => c.mode === 'call').every(c => NINE.includes(c.name)), 'Call only the nine bakers tools the skill\'s operations map to'),
-    check('no-pingpong', !sent.some(c => [arg(c, 'labels_add')].flat().includes('pingpong')), 'The host adds pingpong, never the skill'),
+    check('no-auto', !sent.some(c => [arg(c, 'labels_add')].flat().includes('auto')), 'The host adds auto, never the skill'),
   ];
   if (e.start) {
     const searches = toolCalls(trace, 'bakers_ticket_search'), creates = toolCalls(trace, 'bakers_ticket_create');
@@ -51,7 +51,7 @@ function analyze(f, context) {
     return { diagnostics, checks: [...common,
       check('bug-order', sent.length === 4 && comments.map(c => arg(c, 'type')).join() === 'qualification,summary' &&
         classify && is(last, 'bakers_ticket_transition') && arg(last, 'state') === 'plan',
-      'Publish qualification and summary and set type and recipe, then move to plan; nothing else, so no pingpong'),
+      'Publish qualification and summary and set type and recipe, then move to plan; nothing else, so no auto'),
       check('bug-arguments', arg(classify, 'type') === 'bug' && arg(classify, 'recipe') === e.recipe && /reproduction/i.test(body(comments[0])),
         'Type bug with the picked recipe, and the reproduction in the qualification'),
     ] };

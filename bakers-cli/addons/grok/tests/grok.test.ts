@@ -74,7 +74,7 @@ describe('GrokAgent security: shared project and machine layers', () => {
           sandbox: {
             allow_write: ['/data/cache'],
             deny_read: ['~/.aws'],
-            trusted_commands: ['ddev'],
+            trusted_commands: ['make'],
           },
         },
       },
@@ -182,7 +182,7 @@ describe('GrokAgent security', () => {
       [{ network: ['example.com'] }, /sandbox\.network/],
       [{ mcp_servers: { docs: {} } }, /sandbox\.mcp_servers/],
       [
-        { trusted_commands: ['ddev'] },
+        { trusted_commands: ['make'] },
         /no command exception.*trusted_commands/,
       ],
       [{ deny_read: ['~/.ssh'] }, /sandbox\.deny_read is unsupported/],

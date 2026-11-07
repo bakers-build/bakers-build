@@ -1,9 +1,9 @@
 {
-  "id": "pingpong-review-ok",
+  "id": "auto-review-ok-blocked",
   "synthetic": true,
-  "profile": "bb-label-pingpong",
+  "profile": "bb-label-auto",
   "execution": "simulated-tools",
-  "skill": "bb-label-pingpong",
+  "skill": "bb-label-auto",
   "references": [
     "bb-workflow/SKILL.md",
     "bb-workflow/references/read-ticket.md",
@@ -29,15 +29,15 @@
     "observations": [
       "Routing, the intake, `read`, `work` and `validate` ran in this run. The merge request is https://gitlab.example.invalid/acme/invoices/-/merge_requests/61 (GitLab, number 61), base 1111111, head f00dfee. The review subagent returned the verdict below; nothing was repaired.",
       "Verdict: OK. AC-1 PASS, AC-2 PASS and AC-3 PASS, each reused from the coding handoff at f00dfee; no finding.",
-      "For the merge: merge request 61 targets `next`, the ticket's base branch; its title is `feat: export invoices as CSV`; the latest pipeline, including its required manual jobs, succeeded; it has no conflict and is mergeable. The source `feat/eval-61-export-invoices` is this ticket's short-lived branch, and no other merge request targets it.",
+      "For the merge: merge request 61 targets `next`, the ticket's base branch; its title is `feat: export invoices as CSV`; it has no conflict and is mergeable. Its latest pipeline is waiting for the required manual job `gate`, which only a developer can start.",
       "For the remote base check: the ticket was created 2026-01-01, the search terms are `csv` and `CSV`, the path is `src`, and the known-present probe term is `invoice`. Git and glab run only as the fixture commands their tool lists."
     ],
     "created": "2026-01-01"
   },
   "expect": {
-    "stop": "transition",
-    "state": "done",
-    "review_status": "OK"
+    "stop": "technical-problem",
+    "review_status": "OK",
+    "cause": "gate"
   },
   "simulation": {
     "ticket": {
@@ -54,7 +54,7 @@
       "type": "feature",
       "recipe": "probe",
       "labels": [
-        "pingpong"
+        "auto"
       ],
       "links": [
         {
@@ -129,11 +129,6 @@
             "origin/next"
           ],
           "result": {
-            "exit_code": 0,
-            "stdout": "dddddddddddddddddddddddddddddddddddddddd\n",
-            "stderr": ""
-          },
-          "before_merge": {
             "exit_code": 0,
             "stdout": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n",
             "stderr": ""
@@ -215,12 +210,7 @@
           ],
           "result": {
             "exit_code": 0,
-            "stdout": "{\"state\": \"merged\", \"target_branch\": \"next\", \"sha\": \"f00dfee000000000000000000000000000000000\", \"squash_commit_sha\": \"dddddddddddddddddddddddddddddddddddddddd\"}",
-            "stderr": ""
-          },
-          "before_merge": {
-            "exit_code": 0,
-            "stdout": "{\"state\": \"opened\", \"target_branch\": \"next\", \"sha\": \"f00dfee000000000000000000000000000000000\", \"head_pipeline\": {\"status\": \"success\"}, \"merge_status\": \"can_be_merged\"}",
+            "stdout": "{\"state\": \"opened\", \"target_branch\": \"next\", \"sha\": \"f00dfee000000000000000000000000000000000\", \"head_pipeline\": {\"status\": \"manual\"}, \"merge_status\": \"can_be_merged\"}",
             "stderr": ""
           }
         }
@@ -233,8 +223,8 @@
       "criterion": "The final answer reports the published review verdict OK and a summary."
     },
     {
-      "id": "merged-done",
-      "criterion": "The final answer reports merge request 61 merged after a negative remote base check, and then the transition to done, without asking anyone."
+      "id": "blocked",
+      "criterion": "The final answer reports the merge blocked by the pending manual job gate, raised for the developers as a technical problem, with no merge and no transition."
     }
   ]
 }

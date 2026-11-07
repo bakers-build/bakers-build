@@ -2,7 +2,8 @@
 
 Inside a conductor run, the `bakers` MCP server serves two kinds of tools under their plain name:
 
-- addon tools (`ddev_status`, `provision_up`, `ports_up`, …), acting on the run's worktree;
+- addon tools (`provision_up`, `ports_up`, a runtime addon's own tools, …), acting on the run's
+  worktree;
 - the site's tools of [tools](tools.md) › Operations except `bakers_run_cancel`, plus
   `bakers_ticket_runs_list`, `bakers_label_list`, `bakers_project_read` and `bakers_user_read`. The
   conductor calls the site with its own credentials and refuses a ticket, parent, project or

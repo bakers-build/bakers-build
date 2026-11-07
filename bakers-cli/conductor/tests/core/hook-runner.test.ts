@@ -31,7 +31,7 @@ describe('shellHookRunner (best-effort)', () => {
       throw new Error('hook boom'); // the command fails honestly
     };
     const runHook = shellHookRunner(
-      { after_create: 'ddev init-worktree' },
+      { after_create: 'make worktree' },
       logger,
       runShell,
     );
@@ -42,7 +42,7 @@ describe('shellHookRunner (best-effort)', () => {
       runHook('after_create', '/wt/x', { ticket: 'BB-1' }),
     ).resolves.toMatchObject({ hook: 'after_create', ran: true, ok: false });
 
-    expect(ran).toEqual([{ command: 'ddev init-worktree', cwd: '/wt/x' }]);
+    expect(ran).toEqual([{ command: 'make worktree', cwd: '/wt/x' }]);
     expect(errors).toHaveLength(1);
     expect(errors[0]?.msg).toBe('lifecycle hook failed');
     expect(errors[0]?.obj).toMatchObject({
@@ -87,14 +87,14 @@ describe('shellHookRunner (best-effort)', () => {
       ran.push({ command, cwd });
     };
     const runHook = shellHookRunner(
-      { after_done: 'ddev delete -Oy' },
+      { after_done: 'make clean' },
       logger,
       runShell,
     );
 
     const result = await runHook('after_done', '/wt/done', { ticket: 'BB-9' });
 
-    expect(ran).toEqual([{ command: 'ddev delete -Oy', cwd: '/wt/done' }]);
+    expect(ran).toEqual([{ command: 'make clean', cwd: '/wt/done' }]);
     expect(errors).toEqual([]);
     expect(result).toEqual({ hook: 'after_done', ran: true, ok: true });
   });

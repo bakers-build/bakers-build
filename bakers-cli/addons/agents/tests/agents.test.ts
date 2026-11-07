@@ -74,7 +74,7 @@ describe('agent catalog report', () => {
         deny_read: { entries: [], removed: [] },
         allow_write: { entries: [], removed: [] },
         trusted_commands: {
-          entries: [{ value: 'ddev', source: 'project' }],
+          entries: [{ value: 'make', source: 'project' }],
           removed: ['bakers', 'git'],
         },
       },

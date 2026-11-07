@@ -114,21 +114,23 @@ const PERMITTED_SIBLINGS = {
   // addon edges it exactly as `addon-herdr` edges the owner of
   // `loadInstructions`. Acyclicity check (a) is what keeps it honest.
   '@bakers-build/addon-bakers-ui-artifacts': ['@bakers-build/addon-bakers-ui'],
-  // BB-676 spec v2: `bakers ports` must not fire Docker/DDEV calls itself
-  // (operator decision 2026-10-15), so discovery/claim for DDEV moved to a
-  // sibling addon it calls through a plain function import, exactly as
-  // `addon-herdr` calls `addon-workspace-git`'s `loadInstructions` above.
-  // `addon-ddev` in turn consumes `addon-docker-compose`'s generic container
-  // discovery, one level further down the same one-directional chain.
-  // BB-681 Task 1: `addon-ports-drupal` (the Drupal host-header policy
-  // layer) is removed; a pluggable-transport replacement for any CMS-specific
-  // policy is a later task's concern.
-  '@bakers-build/addon-ports': ['@bakers-build/addon-ddev'],
-  '@bakers-build/addon-ddev': ['@bakers-build/addon-docker-compose'],
+  // BB-676 spec v2: `bakers ports` must not fire Docker calls itself
+  // (operator decision 2026-10-15). `addon-ports` owns the `Claimer` contract
+  // (its `./core` export) and loads claimer packages by name from its
+  // settings, never depending on one; `addon-ddev` implements that contract
+  // over `addon-docker-compose`'s generic container discovery.
+  // `addon-ports` takes only the generic `ss` parser from
+  // `addon-docker-compose`. BB-681 Task 1: `addon-ports-drupal` (the Drupal
+  // host-header policy layer) is removed.
+  '@bakers-build/addon-ports': ['@bakers-build/addon-docker-compose'],
+  '@bakers-build/addon-ddev': [
+    '@bakers-build/addon-ports',
+    '@bakers-build/addon-docker-compose',
+  ],
   // BB-681 Task 2/3/4: the pluggable-transport packages implement
   // `@bakers-build/addon-ports`'s `PortsTransport` contract (its `./core` export)
   // but are never depended on BY it — a one-directional edge, same shape as
-  // `addon-ddev -> addon-docker-compose` above.
+  // `addon-ddev -> addon-ports` above.
   '@bakers-build/addon-ports-cloudflare': ['@bakers-build/addon-ports'],
   '@bakers-build/addon-ports-cloudflare-quick': ['@bakers-build/addon-ports'],
   '@bakers-build/addon-ports-frp': ['@bakers-build/addon-ports'],

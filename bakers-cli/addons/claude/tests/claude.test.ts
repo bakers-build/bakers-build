@@ -357,7 +357,7 @@ function flagValue(argv: string[], flag: string): string {
 
 describe('ClaudeAgent security: shared project and machine layers', () => {
   const shared_security = {
-    project: { sandbox: { trusted_commands: ['$inherit', 'ddev'] } },
+    project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
     machine: {
       sandbox: {
         allow_write: ['/srv/cache'],
@@ -375,7 +375,7 @@ describe('ClaudeAgent security: shared project and machine layers', () => {
     expect(settings.sandbox.excludedCommands).toEqual([
       'bakers *',
       'git *',
-      'ddev *',
+      'make *',
     ]);
     expect(settings.sandbox.filesystem.allowWrite).toEqual(['/srv/cache']);
     expect(settings.sandbox.filesystem.denyRead).toEqual([
@@ -385,7 +385,7 @@ describe('ClaudeAgent security: shared project and machine layers', () => {
     ]);
     expect(settings.permissions.deny).toContain('Read(~/.aws/**)');
     expect(plugin.security?.sandbox.trusted_commands.entries).toContainEqual({
-      value: 'ddev',
+      value: 'make',
       source: 'project',
     });
   });
@@ -441,7 +441,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
       'claude',
       new ClaudeAgent({
         sandbox: {
-          trusted_commands: ['git', 'ddev', 'docker compose *'],
+          trusted_commands: ['git', 'make', 'docker compose *'],
           deny_read: ['~/.aws', '/etc/secret', '~/.netrc'],
           allow_write: ['/srv/cache'],
           network: ['api.anthropic.com'],
@@ -452,7 +452,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
     const settings = JSON.parse(flagValue(a, '--settings'));
     expect(settings.sandbox.excludedCommands).toEqual([
       'git *',
-      'ddev *',
+      'make *',
       'docker compose *',
     ]);
     expect(settings.sandbox.filesystem).toEqual({

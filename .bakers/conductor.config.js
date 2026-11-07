@@ -85,6 +85,8 @@ export default {
       use: '@bakers-build/addon-ports',
       with: {
         services: [{ key: 'docs', match: 'vitepress' }],
+        // DDEV's containers are claimed by the addon-ddev claimer.
+        claimers: ['@bakers-build/addon-ddev'],
         transport: {
           use: '@bakers-build/addon-ports-frp',
           with: local.frp,

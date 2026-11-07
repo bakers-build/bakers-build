@@ -14,8 +14,10 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
+use Drupal\bb_core\Form\OverlayTrigger;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\Component\Uuid\UuidInterface;
 use Drupal\bb_track\Entity\Submission;
@@ -142,8 +144,23 @@ final class WorklogForm extends FormBase {
       $form['actions']['submit']['#attributes']['data-hx-disabled-elt'] = 'this';
     }
     $this->attachTicketRefresh($form);
+    $this->attachDeleteDialog($form);
     $this->attachDialogHtmx($form);
     return $form;
+  }
+
+  /**
+   * Opens Delete as the confirm dialog, when this form is itself a dialog.
+   *
+   * Only a dialog sits over a shell with an overlay; the page form renders in
+   * the zone layout, which has none, so its Delete stays a plain link.
+   */
+  private function attachDeleteDialog(array &$form): void {
+    if (!isset($form['delete']) || !$this->isDialogRequest()) {
+      return;
+    }
+    $form['delete']['#attached']['library'][] = 'core/drupal.htmx';
+    $form['delete']['#props']['attributes'] = new Attribute(OverlayTrigger::attributes(Url::fromUserInput($form['delete']['#props']['href'])));
   }
 
   /**

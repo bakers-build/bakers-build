@@ -13,6 +13,7 @@ import {
   readMachineContext,
   resolveModuleEslintStyle,
 } from '@bakers-build/core';
+import type { Claimer } from './claims.js';
 import { checkWith } from './service-config.js';
 import {
   assertPortsTransport,
@@ -131,6 +132,50 @@ export async function readPortsSettings(worktree: string): Promise<unknown> {
   return found.entry.with ?? found.entry.options;
 }
 
+/** `home`, the running `bakers` host install, then `process.cwd()` — see
+ *  `loadPortsTransport`. */
+function loadBases(home: string): string[] {
+  return [
+    pathToFileURL(`${home}/`).href,
+    ...hostInstallBases(),
+    pathToFileURL(`${process.cwd()}/`).href,
+  ];
+}
+
+/**
+ * Load the claimer packages the ports entry's `with.claimers` names, in
+ * order, from the same bases as the transport. Each module exports its
+ * `Claimer` as the named export `claimer`; an unresolvable package or a
+ * module without one throws a safe diagnostic.
+ */
+export async function loadClaimers(
+  settings: unknown,
+  home: string,
+): Promise<Claimer[]> {
+  const names = (settings as { claimers?: unknown } | undefined)?.claimers;
+  if (!Array.isArray(names)) return [];
+  return Promise.all(
+    names.map(async (spec: string) => {
+      const resolved = resolveModuleEslintStyle(spec, loadBases(home));
+      if (resolved === undefined)
+        throw new Error(
+          `bakers ports cannot resolve claimer package '${spec}'`,
+        );
+      const { claimer } = (await import(pathToFileURL(resolved).href)) as {
+        claimer?: Partial<Claimer>;
+      };
+      if (
+        typeof claimer?.discover !== 'function' ||
+        typeof claimer.claim !== 'function'
+      )
+        throw new Error(
+          `ports claimer '${spec}' has no \`claimer\` export with discover and claim`,
+        );
+      return claimer as Claimer;
+    }),
+  );
+}
+
 /**
  * Resolve, load and construct the configured ports transport from the ports
  * addon entry's `with` (`settings`).
@@ -163,11 +208,7 @@ export async function loadPortsTransport(
   // `createRequire` as a FILE, which starts `node_modules` lookup one level
   // too high. Same `pathToFileURL(dir + '/')` shape `load-bakers-config.ts`
   // already uses for its own bases.
-  const resolved = resolveModuleEslintStyle(spec, [
-    pathToFileURL(`${home}/`).href,
-    ...hostInstallBases(),
-    pathToFileURL(`${process.cwd()}/`).href,
-  ]);
+  const resolved = resolveModuleEslintStyle(spec, loadBases(home));
   if (resolved === undefined) {
     throw new Error(`bakers ports cannot resolve transport package '${spec}'`);
   }

@@ -6,7 +6,7 @@ import type { Debounce, WatchDirectory } from '../types.js';
  * BB-376 — "the data behind this cockpit may be stale", as a file.
  *
  * The whole writer contract is `touch .bakers/ui-refresh`: one line, identical
- * from a shell, an agent, a git hook, or inside the DDEV web container — which
+ * from a shell, an agent, a git hook, or inside a project's web container — which
  * is the reason it is a file and not a signal to a pid. A signal does not cross
  * a container boundary, so a `drush` post-write hook could never reach a cockpit
  * on the host, while a file on the bind mount reaches both. A pid file would

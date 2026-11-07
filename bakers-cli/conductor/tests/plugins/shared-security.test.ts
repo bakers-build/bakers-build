@@ -29,21 +29,21 @@ describe('shared run security layers', () => {
   it('a project list with $inherit adds to the harness default', () => {
     const r = resolve({
       shared_security: {
-        project: { sandbox: { trusted_commands: ['$inherit', 'ddev'] } },
+        project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
       },
     });
-    expect(r.sandbox.trusted_commands).toEqual(['bakers', 'git', 'ddev']);
+    expect(r.sandbox.trusted_commands).toEqual(['bakers', 'git', 'make']);
     expect(r.report.sandbox.trusted_commands.entries).toEqual([
       { value: 'bakers', source: 'default' },
       { value: 'git', source: 'default' },
-      { value: 'ddev', source: 'project' },
+      { value: 'make', source: 'project' },
     ]);
   });
 
   it('the machine replaces the project, and [] vetoes its grant', () => {
     const r = resolve({
       shared_security: {
-        project: { sandbox: { trusted_commands: ['$inherit', 'ddev'] } },
+        project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
         machine: { sandbox: { trusted_commands: [] } },
       },
     });
@@ -154,8 +154,8 @@ describe('shared run security layers', () => {
   });
 
   it('without shared layers the entry behaves as before', () => {
-    const r = resolve({ sandbox: { trusted_commands: ['$inherit', 'ddev'] } });
-    expect(r.sandbox.trusted_commands).toEqual(['bakers', 'git', 'ddev']);
+    const r = resolve({ sandbox: { trusted_commands: ['$inherit', 'make'] } });
+    expect(r.sandbox.trusted_commands).toEqual(['bakers', 'git', 'make']);
     expect(resolve({}).sandbox).toEqual(DEFAULTS);
   });
 });

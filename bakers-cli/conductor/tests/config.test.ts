@@ -467,11 +467,11 @@ describe('loadConductorConfig', () => {
   it('passes the hooks object through (incl. after_done)', async () => {
     const withHooks = VALID.replace(
       "bakers: { project: 'bakers' },",
-      "bakers: { project: 'bakers' },\n  hooks: { after_create: 'setup', after_done: 'ddev delete -Oy' },",
+      "bakers: { project: 'bakers' },\n  hooks: { after_create: 'setup', after_done: 'make clean' },",
     );
     const config = await loadConductorConfig(writeConfig(withHooks));
     expect(config.hooks?.after_create).toBe('setup');
-    expect(config.hooks?.after_done).toBe('ddev delete -Oy');
+    expect(config.hooks?.after_done).toBe('make clean');
   });
 
   it('ignores a machine max_parallel with one warning naming the backend', async () => {
@@ -631,7 +631,7 @@ export default {
   project: local.project ?? 'bakers',
   machine_id: local.machine_id,
   max_parallel: 10,
-  hooks: { after_create: 'ddev init-worktree', after_done: 'ddev delete -Oy' },
+  hooks: { after_create: 'make worktree', after_done: 'make clean' },
   remote: { plugin: '@bakers-build/core/plugins', export: 'drupalRemote' },
   executor: { plugin: '@bakers-build/plugin-herdr' },
   // Agent candidates: a sibling ARRAY holding nested objects — must survive.
@@ -676,7 +676,7 @@ export default {
     // The sibling `agent` array (its nested objects + NEGATIVE_INFINITY) survives.
     expect(text).toContain('Number.NEGATIVE_INFINITY');
     expect(text).toContain('workspace: {');
-    expect(text).toContain("after_create: 'ddev init-worktree'");
+    expect(text).toContain("after_create: 'make worktree'");
     expect(text).toContain('project: local.project');
     expect(text).toContain('machine_id: local.machine_id');
     expect(text).toContain('async function loadLocal');

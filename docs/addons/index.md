@@ -35,7 +35,7 @@ Choose supported extensions by purpose.
 
 ## Provisioning support
 
-[DDEV discovery](/addons/ddev) and [Compose discovery](/addons/docker-compose) find ports; they do not provision environments. Use [project hooks](/configuration/provisioning) for DDEV, Compose or native Node. Native Node is not an addon.
+Runtime addons and [Compose discovery](/addons/docker-compose) find ports; they do not provision environments. Use [project hooks](/configuration/provisioning) for your project's runtime. Native Node is not an addon.
 
 ## Terminal UI
 

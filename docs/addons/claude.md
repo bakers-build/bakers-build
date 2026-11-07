@@ -59,7 +59,7 @@ Runs default to the OS sandbox. [Execution security](/configuration/agents/execu
 | `mcp_servers` | `{}` | `--mcp-config`, in Claude's `mcpServers` shape; plus [`bakers`](/addons/build/tools) |
 
 ```js
-{ use: '@bakers-build/addon-claude', with: { sandbox: { trusted_commands: ['bakers', 'git', 'ddev', 'docker'] } } }
+{ use: '@bakers-build/addon-claude', with: { sandbox: { trusted_commands: ['bakers', 'git', 'docker'] } } }
 ```
 
 ## Check it works
