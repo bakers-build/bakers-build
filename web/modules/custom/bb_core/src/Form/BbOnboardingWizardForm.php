@@ -433,7 +433,7 @@ final class BbOnboardingWizardForm extends FormBase {
       (string) $this->t('Set up a connector') => '/get-started/connector',
     ]);
     $this->attachAudience($form, 'developer', (string) $this->t('Developer'), (string) $this->t('Run the agent on your own machine.'), [
-      (string) $this->t('Set up a machine') => '/get-started/machine',
+      (string) $this->t('Set up a machine') => '/provision/machine',
       (string) $this->t('Set up a project') => '/get-started/connect-a-project',
     ]);
   }

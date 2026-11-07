@@ -185,7 +185,7 @@ scenes:
                     props:
                       label: Developer
                       links:
-                        - url: https://bakers.build/docs/get-started/machine
+                        - url: https://bakers.build/docs/provision/machine
                           title: Set up a machine
                           kind: doc
                         - url: https://bakers.build/docs/get-started/connect-a-project
