@@ -155,22 +155,26 @@ describe('removeGitWorktree', () => {
     ).resolves.toBe('unverified');
   });
 
-  it('reports unverified, not a throw, when the directory cannot be reclaimed', async () => {
-    const { root, path } = world();
-    mkdirSync(path, { recursive: true });
-    const { logger, lines } = spyLogger();
-    // A parent we may not write: rm fails like a foreign-owned leftover.
-    chmodSync(dirname(path), 0o555);
-    const git = async (args: string[]) =>
-      args.includes('--porcelain') ? porcelain(root) : '';
-    await expect(
-      removeGitWorktree(undefined, 'feat/x', path, git, logger),
-    ).resolves.toBe('unverified');
-    expect(lines).toContainEqual({
-      level: 'warn',
-      msg: 'worktree directory reclaim failed',
-    });
-  });
+  // Root ignores the write bits that make the unlink fail, as in the herdr case.
+  it.skipIf(process.getuid?.() === 0)(
+    'reports unverified, not a throw, when the directory cannot be reclaimed',
+    async () => {
+      const { root, path } = world();
+      mkdirSync(path, { recursive: true });
+      const { logger, lines } = spyLogger();
+      // A parent we may not write: rm fails like a foreign-owned leftover.
+      chmodSync(dirname(path), 0o555);
+      const git = async (args: string[]) =>
+        args.includes('--porcelain') ? porcelain(root) : '';
+      await expect(
+        removeGitWorktree(undefined, 'feat/x', path, git, logger),
+      ).resolves.toBe('unverified');
+      expect(lines).toContainEqual({
+        level: 'warn',
+        msg: 'worktree directory reclaim failed',
+      });
+    },
+  );
 });
 
 describe('GitWorkspace.remove', () => {
