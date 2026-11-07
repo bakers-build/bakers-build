@@ -275,7 +275,7 @@ export class CodexAgent implements BbAgent {
       parts.push(
         '-c',
         word(
-          `mcp_servers.${CONDUCTOR_TOOLS_SERVER}={url=${JSON.stringify(tools.url)},bearer_token_env_var=${JSON.stringify(CONDUCTOR_TOKEN_ENV)}}`,
+          `mcp_servers.${CONDUCTOR_TOOLS_SERVER}={url=${JSON.stringify(tools.url)},bearer_token_env_var=${JSON.stringify(CONDUCTOR_TOKEN_ENV)},default_tools_approval_mode="approve"}`,
         ),
       );
     }

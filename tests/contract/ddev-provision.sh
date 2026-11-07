@@ -90,5 +90,13 @@ case=no-provider; arrange - - 200; rc=0
 out="$(cd "$work/app" && PATH="$work/bin:$PATH" bash "$script" 2>&1)" || rc=$?
 [ "$rc" != 0 ] || fail 'exit 0'
 
+# Agents run Playwright through ddev_exec, so the web image's browsers must match the suite's lock.
+case=playwright-image
+locked="$(node -p 'require(process.argv[1]).packages["node_modules/@playwright/test"].version' "$root/tests/playwright/package-lock.json")"
+image="$root/.ddev/web-build/Dockerfile.playwright"
+grep -qF "playwright@$locked " "$image" 2>/dev/null || fail "$image does not install playwright@$locked"
+grep -qE '@playwright/cli@[0-9]+\.[0-9]+\.[0-9]+ ' "$image" 2>/dev/null || fail "$image does not pin @playwright/cli"
+grep -qF "cd tests/playwright && npm ci" "$root/.ddev/commands/host/init" || fail 'init does not install the Playwright suite'
+
 [ "$failures" = 0 ] || exit 1
-echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider'
+echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, Playwright image'

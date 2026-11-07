@@ -19,7 +19,9 @@ nothing, provisions nothing and creates no account.
 
 ## Inspection
 
-For a confirmed path with mode `agent`, use `playwright-cli`. Load the persona's saved auth state
+For a confirmed path with mode `agent`, use `playwright-cli` where the project's testing setup
+runs it; a sandboxed agent usually reaches the site only through a runtime tool such as
+`ddev_exec`, which runs outside the sandbox. Load the persona's saved auth state
 before the first authenticated action and confirm the actual identity; use an anonymous session for
 an anonymous path. Run the ordered actions against the resolved absolute URL. Record persona,
 environment, starting URL, actions or selectors, and expected versus observed behavior. Capture
