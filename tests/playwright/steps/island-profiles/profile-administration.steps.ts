@@ -32,12 +32,23 @@ async function placementIds(page: Page): Promise<string[]> {
     .map((label) => label.trim().replace(/^Placement /, '')).sort();
 }
 
+// A list row's operation, a menu item inside the row's closed Actions menu.
+function rowOperation(page: Page, name: string): Locator {
+  return page.getByRole('menuitem', { name, exact: true, includeHidden: true });
+}
+
+async function pickRowOperation(page: Page, name: string): Promise<void> {
+  await page.getByRole('row').filter({ has: rowOperation(page, name) })
+    .getByLabel('Actions', { exact: true }).click();
+  await page.getByRole('menuitem', { name, exact: true }).click();
+}
+
 When('I open Apps administration', async ({ page }) => {
   await page.goto('/admin/structure/island/apps');
 });
 
 Then('bakers.build has its own app administration', async ({ page }) => {
-  await expect(page.getByRole('link', { name: 'Edit bakers.build', exact: true }))
+  await expect(rowOperation(page, 'Edit bakers.build'))
     .toHaveAttribute('href', /\/island\/apps\/bakers\/edit/);
 });
 
@@ -49,8 +60,8 @@ Then('bakers.build owns multiple island profiles', async ({ page }) => {
   const rows = page.getByRole('row').filter({ has: page.getByRole('cell', { name: 'bakers', exact: true }) });
   // These two named rows prove one app owns multiple profiles; additional
   // conditional route fixtures may legitimately belong to the same app.
-  await expect(rows.filter({ has: page.getByRole('link', { name: 'Edit bakers.build gate', exact: true }) })).toHaveCount(1);
-  await expect(rows.filter({ has: page.getByRole('link', { name: 'Edit bakers.build application shell', exact: true }) })).toHaveCount(1);
+  await expect(rows.filter({ has: rowOperation(page, 'Edit bakers.build gate') })).toHaveCount(1);
+  await expect(rows.filter({ has: rowOperation(page, 'Edit bakers.build application shell') })).toHaveCount(1);
 });
 
 Given('I start a disabled fixture app profile using the Shell layout', async ({ page }) => {
@@ -108,7 +119,7 @@ Then('placement {string} is disabled', async ({ page }, alias: string) => {
 When('I save and reopen the island profile', async ({ page }) => {
   await page.getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL((url) => url.pathname === profilesPath);
-  await page.getByRole('link', { name: `Edit ${state(page).label}`, exact: true }).click();
+  await pickRowOperation(page, `Edit ${state(page).label}`);
   await expect(page.getByRole('textbox', { name: /^Label(?: \*)?$/ })).toHaveValue(state(page).label);
   await expect(page.getByRole('checkbox', { name: 'Enabled', exact: true }).first()).not.toBeChecked();
 });
@@ -209,9 +220,8 @@ After({ tags: '@feature:island-profiles' }, async ({ page }) => {
   // Remove only this scenario's UI-created, disabled profile. No live Drush
   // fixture writes; failed unsaved forms simply have no persisted entity.
   await page.goto(profilesPath);
-  const edit = page.getByRole('link', { name: `Edit ${profile.label}`, exact: true });
-  if (await edit.count()) {
-    await edit.click();
+  if (await rowOperation(page, `Edit ${profile.label}`).count()) {
+    await pickRowOperation(page, `Edit ${profile.label}`);
     await page.getByRole('link', { name: 'Delete', exact: true }).click();
     await page.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(page).toHaveURL((url) => url.pathname === profilesPath);
