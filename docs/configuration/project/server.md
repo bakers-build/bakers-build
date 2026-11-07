@@ -142,17 +142,21 @@ rights to bypass an access failure. Connect clients with
 
 ## Run-log storage
 
-Agent run transcripts are stored only when all three hold:
+Agent run transcripts are stored only when both hold:
 
-1. the deployment permits it: the hosted stack (`docker-compose.yml`) pins
-   `FEATURE_FLAG_RUN_LOG_STORAGE=0`; `docker/self-host.yml` passes on your value;
-2. `FEATURE_FLAG_RUN_LOG_STORAGE=1` (or `true`); run `dc up -d` after changing it;
-3. a workspace lead ticks *Store agent run logs* in the workspace Settings. The
-   box appears only while the flag is on; new workspaces start unticked.
+1. `FEATURE_FLAG_RUN_LOG_STORAGE=1` (or `true`) reaches the server. The hosted
+   stack (`docker-compose.yml`) pins it to `0`; `docker/self-host.yml` passes on
+   your value. Run `dc up -d` after changing it.
+2. a workspace lead ticks *Store agent run logs* in the workspace Settings. The
+   box appears only while the flag is on.
 
-When storage is off, conductors still close runs with their footprint and
-state but send no transcript, and the server drops any transcript an older
-conductor sends. Error messages of failed runs are kept either way.
+Both default to off, also after an upgrade: a deployment that stored
+transcripts before stores none until both are set.
+
+When storage is off, conductors close runs with footprint and state but no
+transcript; the server drops any transcript an older conductor sends, and a
+conductor gets no policy from an older server, so sends none. Error messages
+of failed runs are kept either way.
 
 The conductor reads the policy for each run it finalizes, without a restart,
 and the server checks it again on every write: disabling before a run's upload
