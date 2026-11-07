@@ -111,7 +111,9 @@ final class WorkspaceReadScopeViewsTest extends KernelTestBase {
    * cannot go stale: the day a rule adds a term the child types inherit it, and
    * the day a View appears over bb_run or bb_comment for anyone but an
    * `administer bakers` holder, Fact 7 stops being true and says so here rather
-   * than serving wrong rows.
+   * than serving wrong rows. No shipped View sits on a traversing type since
+   * the admin Views were removed, so the guard looks ahead; the scan itself
+   * stays non-empty through ::shippedViewFiles().
    */
   public function testNoShippedViewSitsOnTraversingTypesForNonAdmins(): void {
     $traversing = WorkspaceReadScopeSubscriber::traversingEntityTypeIds();
@@ -124,14 +126,12 @@ final class WorkspaceReadScopeViewsTest extends KernelTestBase {
       $base_tables[(string) $definition->getBaseTable()] = $entity_type_id;
     }
 
-    $checked = 0;
     foreach ($this->shippedViewFiles() as $path) {
       $view = Yaml::parseFile($path);
       $base_table = $view['base_table'] ?? NULL;
       if (!is_string($base_table) || !isset($base_tables[$base_table])) {
         continue;
       }
-      $checked++;
       foreach ($view['display'] ?? [] as $display_id => $display) {
         $access = $display['display_options']['access'] ?? NULL;
         if ($access === NULL) {
@@ -153,12 +153,6 @@ final class WorkspaceReadScopeViewsTest extends KernelTestBase {
         );
       }
     }
-    self::assertGreaterThan(
-      0,
-      $checked,
-      'At least one shipped View sits on a traversing type, so the guard is '
-      . 'measuring something. If this fails the file scan broke, not the rule.',
-    );
   }
 
   /**
@@ -179,7 +173,7 @@ final class WorkspaceReadScopeViewsTest extends KernelTestBase {
    * one. Dropping the module's own config directories — which is what this
    * method did for one commit, when it scanned `config/sync` plus the fixtures
    * and nothing else — leaves a View shipped only from `config/install` or
-   * `config/optional` unguarded, while the non-vacuity assertion below still
+   * `config/optional` unguarded, while the file-count assertion below still
    * passes because the other two globs keep it fed.
    *
    * @return array<string>
