@@ -11,6 +11,7 @@ import type {
   EnsuredWorkspace,
   ExecutorDeps,
   WorkspacePlugin,
+  WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import {
   type ConductorLogger,
@@ -20,13 +21,19 @@ import {
 } from '@bakers-build/core';
 import { runBranchGit } from './git-config.js';
 import { loadInstructions } from './instructions.js';
+import { removeGitWorktree } from './remove-git-worktree.js';
 
+export { restoreWritable } from './fs.js';
 export {
   pushCurrentEnv,
   runBranchGit,
   setNoAutoSetupMerge,
 } from './git-config.js';
 export { loadInstructions } from './instructions.js';
+export {
+  removeGitWorktree,
+  type WorktreeGitExec,
+} from './remove-git-worktree.js';
 
 /** Default branch template: `<prefix><key>-<title-slug>` (readable). */
 export const DEFAULT_BRANCH_TEMPLATE = '{branchPrefix}{key}-{titleSlug}';
@@ -44,7 +51,11 @@ function renderBranchTemplate(
   return rendered.replace(/[-_./]+$/g, '');
 }
 
-export type GitRunner = (args: string[], cwd: string) => Promise<void>;
+/** Runs `git <args>` in a cwd; resolves with stdout when it has one. */
+export type GitRunner = (
+  args: string[],
+  cwd: string,
+) => Promise<string | undefined>;
 
 export interface GitWorkspaceOptions {
   /** Main clone (a git repo): config source + worktree base. */
@@ -68,8 +79,13 @@ export interface GitWorkspaceOptions {
   runGit?: GitRunner;
 }
 
-const defaultGitRunner: GitRunner = async (args, cwd) => {
-  await exec('git', args, { cwd });
+const defaultGitRunner: GitRunner = (args, cwd) => exec('git', args, { cwd });
+
+const noopLogger: ConductorLogger = {
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
 };
 
 export class GitWorkspace implements BbWorkspace {
@@ -140,7 +156,7 @@ export class GitWorkspace implements BbWorkspace {
       ['-C', this.root, 'worktree', 'add', '--force', '-B', branch, path],
       this.root,
     );
-    // The `after_create` hook is run by the executor (BB-84), not here — the
+    // The `after_create` hook is run by the conductor, not here — the
     // workspace only reports that it created a fresh worktree.
     return {
       path,
@@ -150,12 +166,14 @@ export class GitWorkspace implements BbWorkspace {
     };
   }
 
-  async remove(identifier: string): Promise<void> {
-    const key = this.keyFor(identifier);
-    const path = this.pathFor(key);
-    await this.runGit(
-      ['-C', this.root, 'worktree', 'remove', '--force', path],
+  /** Tear down the ticket worktree with git ({@link removeGitWorktree}). */
+  remove(branch: string, worktreePath?: string): Promise<WorktreeTeardown> {
+    return removeGitWorktree(
       this.root,
+      branch,
+      worktreePath,
+      async (args, cwd) => (await this.runGit(['-C', cwd, ...args], cwd)) ?? '',
+      this.logger ?? noopLogger,
     );
   }
 }

@@ -139,23 +139,4 @@ describe('GitWorkspace', () => {
       /invalid workspace/,
     );
   });
-
-  it('removes a worktree via git worktree remove', async () => {
-    const root = mkdtempSync(join(tmpdir(), 'bakers-ws-'));
-    const git: string[][] = [];
-    const manager = new GitWorkspace({ root, runGit: recordingGit(git) });
-
-    await manager.ensure('GL-9');
-    git.length = 0;
-    await manager.remove('GL-9');
-
-    expect(git[0]).toEqual([
-      '-C',
-      root,
-      'worktree',
-      'remove',
-      '--force',
-      join(`${root}-worktrees`, 'GL-9'),
-    ]);
-  });
 });

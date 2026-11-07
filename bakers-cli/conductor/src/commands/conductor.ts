@@ -235,7 +235,7 @@ function herdrHostOf(deps: BbCliDeps, config: ConductorFileConfig): HerdrHost {
   const host = deps.herdr ?? config.processHost;
   if (!host) {
     throw new Error(
-      'no herdr process host — add @bakers-build/addon-herdr to conductor addons',
+      'no herdr process host — add @bakers-build/addon-herdr to conductor addons, or run `bakers oven start --foreground`',
     );
   }
   return host;

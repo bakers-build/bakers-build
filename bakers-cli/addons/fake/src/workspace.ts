@@ -7,11 +7,20 @@ import type {
   ConductorFileConfig,
   EnsuredWorkspace,
   WorkspacePlugin,
+  WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 
 export class FakeWorkspace implements BbWorkspace {
   async ensure(identifier: string, _title?: string): Promise<EnsuredWorkspace> {
     return { path: `/fake/${identifier}`, instructions: null, created: true };
+  }
+
+  async remove(
+    _branch: string,
+    _worktreePath?: string,
+  ): Promise<WorktreeTeardown> {
+    // Nothing on disk: the fake worktree is torn down as soon as it is asked to.
+    return 'removed';
   }
 }
 

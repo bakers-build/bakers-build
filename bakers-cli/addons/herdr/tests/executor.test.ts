@@ -12,10 +12,43 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import type { BbExecutor, SpawnRunInput } from '@bakers-build/bakers/plugin';
+import { exec } from '@bakers-build/core';
 import { describe, expect, it } from 'vitest';
 import { restoreWritable } from '../src/fs.js';
 import herdrExecutor, { HerdrExecutor } from '../src/index.js'; // already exported (index.ts)
+import { removeHerdrWorktree } from '../src/worktrees.js';
 import { INSTANT_WATCH, plantStarted } from './plant-started.js';
+
+const quietLogger = { debug() {}, info() {}, warn() {}, error() {} };
+
+/**
+ * The worktree teardown these cases pin moved from the executor to
+ * `HerdrWorkspace.remove` ({@link removeHerdrWorktree}). This takes the old
+ * executor constructor's arguments — options, herdr exec, logger, the retired
+ * hook runner, git runner — so every case keeps its exact assertions.
+ */
+function herdrTeardown(
+  options: { root?: string },
+  execHerdr: (args: string[]) => Promise<string>,
+  logger: typeof quietLogger = quietLogger,
+  _retiredShell?: unknown,
+  runGit: (args: string[], cwd: string) => Promise<string> = (args, cwd) =>
+    exec('git', args, { cwd }),
+) {
+  return {
+    removeWorktree: (branch: string, worktreePath?: string) =>
+      removeHerdrWorktree(
+        {
+          ...(options.root !== undefined ? { root: options.root } : {}),
+          execHerdr,
+          runGit,
+          logger,
+        },
+        branch,
+        worktreePath,
+      ),
+  };
+}
 
 /** A recorded git invocation: (args, cwd). */
 type GitCall = { args: string[]; cwd: string };
@@ -408,7 +441,7 @@ describe('HerdrExecutor.removeWorktree', () => {
     const exec = makeFakeHerdr(calls, {
       'worktree list': worktreeWith('bakers/bb-1-t', 'ws-1'),
     });
-    const executor = new HerdrExecutor({ launchWatch: INSTANT_WATCH }, exec);
+    const executor = herdrTeardown({ launchWatch: INSTANT_WATCH }, exec);
     await executor.removeWorktree('bakers/bb-1-t');
     expect(calls).toContainEqual([
       'worktree',
@@ -437,7 +470,7 @@ describe('HerdrExecutor.removeWorktree', () => {
         },
       }),
     });
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: '/repo' },
       exec,
       undefined,
@@ -499,7 +532,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       }),
     });
     const root = '/parent/repo';
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root },
       exec,
       undefined,
@@ -572,7 +605,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       }
       return '';
     };
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root },
       exec,
       undefined,
@@ -617,7 +650,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       }
       return '';
     };
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root },
       exec,
       undefined,
@@ -647,7 +680,7 @@ describe('HerdrExecutor.removeWorktree', () => {
         },
       }),
     });
-    const executor = new HerdrExecutor({ launchWatch: INSTANT_WATCH }, exec);
+    const executor = herdrTeardown({ launchWatch: INSTANT_WATCH }, exec);
     await executor.removeWorktree('bakers/bb-1-t', '/repo/wt');
     expect(calls).toContainEqual([
       'worktree',
@@ -696,7 +729,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       }
       return JSON.stringify({ result: {} });
     };
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: parentRoot, launchWatch: INSTANT_WATCH },
       exec,
     );
@@ -746,7 +779,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       }
       return JSON.stringify({ result: {} });
     };
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: '/repo/root', launchWatch: INSTANT_WATCH },
       exec,
     );
@@ -804,7 +837,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       }
       return JSON.stringify({ result: {} });
     };
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: '/repo/root', launchWatch: INSTANT_WATCH },
       exec,
     );
@@ -825,7 +858,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       const gitCalls: GitCall[] = [];
       const exec = async (): Promise<string> =>
         JSON.stringify({ result: { worktrees: [] } }); // herdr tracks nothing
-      const executor = new HerdrExecutor(
+      const executor = herdrTeardown(
         { root },
         exec,
         undefined,
@@ -874,7 +907,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       }
       return JSON.stringify({ result: {} });
     };
-    const executor = new HerdrExecutor({ launchWatch: INSTANT_WATCH }, exec);
+    const executor = herdrTeardown({ launchWatch: INSTANT_WATCH }, exec);
     await executor.removeWorktree('bakers/bb-1-t');
     const subcommands = calls.map((c) => `${c[0]} ${c[1] ?? ''}`.trim());
     expect(subcommands).toContain('worktree open');
@@ -969,7 +1002,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
         { id: 'ws-parent', isLinked: false, repoRoot: '/repo' },
       ],
     });
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: '/repo', launchWatch: INSTANT_WATCH },
       exec,
     );
@@ -998,7 +1031,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
         { id: 'ws-parent', isLinked: false, repoRoot: '/repo' },
       ],
     });
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: '/repo', launchWatch: INSTANT_WATCH },
       exec,
     );
@@ -1026,7 +1059,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
         { id: 'ws-other', isLinked: false, repoRoot: '/other-repo' },
       ],
     });
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: '/repo', launchWatch: INSTANT_WATCH },
       exec,
     );
@@ -1051,7 +1084,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
       ],
       honorFocus: false, // focus command is issued but focus never moves
     });
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: '/repo', launchWatch: INSTANT_WATCH },
       exec,
     );
@@ -1082,7 +1115,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
           { id: 'ws-parent', isLinked: false, repoRoot: '/repo' },
         ],
       });
-      const executor = new HerdrExecutor(
+      const executor = herdrTeardown(
         { root: '/repo', launchWatch: INSTANT_WATCH },
         exec,
       );
@@ -1133,7 +1166,7 @@ describe('HerdrExecutor.removeWorktree git metadata (real git)', () => {
       const exec = makeFakeHerdr([], {
         'worktree list': JSON.stringify({ result: { worktrees: [] } }),
       });
-      const executor = new HerdrExecutor(
+      const executor = herdrTeardown(
         { root: repo, launchWatch: INSTANT_WATCH },
         exec,
       );
@@ -1183,7 +1216,7 @@ describe('HerdrExecutor.removeWorktree git metadata (real git)', () => {
       const exec = makeFakeHerdr([], {
         'worktree list': JSON.stringify({ result: { worktrees: [] } }),
       });
-      const executor = new HerdrExecutor(
+      const executor = herdrTeardown(
         { root: repo, launchWatch: INSTANT_WATCH },
         exec,
       );
@@ -1516,136 +1549,6 @@ describe('HerdrExecutor.startRun rollback', () => {
   });
 });
 
-// BB-84: the executor owns lifecycle-hook invocation, best-effort.
-describe('HerdrExecutor.runHook (best-effort)', () => {
-  interface ErrLog {
-    obj: Record<string, unknown>;
-    msg?: string;
-  }
-  function spyLogger() {
-    const errors: ErrLog[] = [];
-    return {
-      errors,
-      logger: {
-        debug() {},
-        info() {},
-        warn() {},
-        error(obj: object, msg?: string) {
-          errors.push({ obj: obj as Record<string, unknown>, msg });
-        },
-      },
-    };
-  }
-  // herdr binary is never touched by runHook; a stub keeps the ctor happy.
-  const stubHerdr = async () => JSON.stringify({ result: {} });
-
-  it('logs an error (name+worktree+ticket) and does NOT throw when the command fails', async () => {
-    const { logger, errors } = spyLogger();
-    const ran: Array<{ command: string; cwd: string }> = [];
-    const runShell = async (command: string, cwd: string) => {
-      ran.push({ command, cwd });
-      throw new Error('hook boom'); // the command fails honestly
-    };
-    const executor = new HerdrExecutor(
-      { hooks: { after_create: 'make worktree' } },
-      stubHerdr,
-      logger,
-      runShell,
-    );
-
-    // BB-237 AC-6: still never throws, but it now REPORTS the outcome so the
-    // caller can record the failure against the run instead of only trusting a
-    // log line to survive.
-    await expect(
-      executor.runHook('after_create', '/wt/x', { ticket: 'BB-1' }),
-    ).resolves.toMatchObject({ hook: 'after_create', ran: true, ok: false });
-
-    expect(ran).toEqual([{ command: 'make worktree', cwd: '/wt/x' }]);
-    expect(errors).toHaveLength(1);
-    expect(errors[0]?.msg).toBe('lifecycle hook failed');
-    expect(errors[0]?.obj).toMatchObject({
-      hook: 'after_create',
-      worktree: '/wt/x',
-      ticket: 'BB-1',
-    });
-    expect(String(errors[0]?.obj.err)).toContain('hook boom');
-  });
-
-  it('is a silent no-op when no command is configured for the hook', async () => {
-    const { logger, errors } = spyLogger();
-    const ran: string[] = [];
-    const runShell = async (command: string) => {
-      ran.push(command);
-    };
-    const executor = new HerdrExecutor(
-      { hooks: {} },
-      stubHerdr,
-      logger,
-      runShell,
-    );
-
-    const result = await executor.runHook('before_run', '/wt/x', {
-      ticket: 'BB-1',
-    });
-
-    expect(ran).toEqual([]);
-    expect(errors).toEqual([]);
-    // BB-237: "nothing configured" is reported as ran=false / ok=true, so the
-    // caller can tell an unconfigured slot from a successful command.
-    expect(result).toEqual({ hook: 'before_run', ran: false, ok: true });
-  });
-
-  it('runs the configured command in the given cwd on success', async () => {
-    const { logger, errors } = spyLogger();
-    const ran: Array<{ command: string; cwd: string }> = [];
-    const runShell = async (command: string, cwd: string) => {
-      ran.push({ command, cwd });
-    };
-    const executor = new HerdrExecutor(
-      { hooks: { after_done: 'make clean' } },
-      stubHerdr,
-      logger,
-      runShell,
-    );
-
-    const result = await executor.runHook('after_done', '/wt/done', {
-      ticket: 'BB-9',
-    });
-
-    expect(ran).toEqual([{ command: 'make clean', cwd: '/wt/done' }]);
-    expect(errors).toEqual([]);
-    expect(result).toEqual({ hook: 'after_done', ran: true, ok: true });
-  });
-
-  it('forwards the resolved run env to the shell runner (BB-99)', async () => {
-    const { logger, errors } = spyLogger();
-    const seen: Array<Record<string, string> | undefined> = [];
-    const runShell = async (
-      _command: string,
-      _cwd: string,
-      env?: Record<string, string>,
-    ) => {
-      seen.push(env);
-    };
-    const executor = new HerdrExecutor(
-      { hooks: { before_run: 'echo hi' } },
-      stubHerdr,
-      logger,
-      runShell,
-    );
-
-    await executor.runHook(
-      'before_run',
-      '/wt/x',
-      { ticket: 'BB-1' },
-      { DRUPAL11_DB_URL: 'mysql://a' },
-    );
-
-    expect(seen).toEqual([{ DRUPAL11_DB_URL: 'mysql://a' }]);
-    expect(errors).toEqual([]);
-  });
-});
-
 describe('herdrExecutor factory root derivation (BB-177)', () => {
   const noopLogger = {
     debug() {},
@@ -1665,6 +1568,19 @@ describe('herdrExecutor factory root derivation (BB-177)', () => {
     expect(
       (executor as unknown as { options: { root: string } }).options.root,
     ).toBe('/parent');
+  });
+
+  it('rejects with.hooks, which the conductor no longer reads from the executor', async () => {
+    const plugin = herdrExecutor({
+      execGit: async () => '/parent/.git\n',
+      hooks: { after_create: 'make worktree' },
+    } as never);
+    await expect(
+      plugin.createExecutor(
+        { config_path: '/parent/.bakers/conductor.config.js' } as never,
+        { logger: noopLogger },
+      ),
+    ).rejects.toThrow(/top-level `hooks`/);
   });
 
   it('lets options.root override win over git derivation', async () => {
@@ -1735,7 +1651,7 @@ describe('BB-211 HerdrExecutor worktree list is root-anchored', () => {
   it('removeWorktree lists with --cwd <root> (reaper path)', async () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls);
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { command: 'claude', root: ROOT, launchWatch: INSTANT_WATCH },
       exec,
     );
@@ -1747,7 +1663,7 @@ describe('BB-211 HerdrExecutor worktree list is root-anchored', () => {
     }
   });
 
-  it('no executor code path emits the unanchored ["worktree","list","--json"]', async () => {
+  it('no executor or teardown code path emits the unanchored ["worktree","list","--json"]', async () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls);
     const executor = new HerdrExecutor(
@@ -1755,7 +1671,10 @@ describe('BB-211 HerdrExecutor worktree list is root-anchored', () => {
       exec,
     );
     await executor.startRun({ ...input });
-    await executor.removeWorktree('bakers/bb-1-t', '/repo/wt');
+    await herdrTeardown({ root: ROOT }, exec).removeWorktree(
+      'bakers/bb-1-t',
+      '/repo/wt',
+    );
     const unanchored = listCalls(calls).filter((l) => !l.includes('--cwd'));
     expect(unanchored).toEqual([]);
   });
@@ -1839,7 +1758,7 @@ describe('HerdrExecutor.removeWorktree existence probe (BB-293)', () => {
         },
       }),
     });
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: '/repo' },
       exec,
       logger.log,
@@ -1878,7 +1797,7 @@ describe('HerdrExecutor.removeWorktree existence probe (BB-293)', () => {
     const exec = makeFakeHerdr(calls, {
       'worktree list': JSON.stringify({ result: { worktrees: [] } }),
     });
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: '/repo' },
       exec,
       undefined,
@@ -1917,7 +1836,7 @@ describe('HerdrExecutor.removeWorktree existence probe (BB-293)', () => {
     const exec = makeFakeHerdr(calls, {
       'worktree list': JSON.stringify({ result: { worktrees: [] } }),
     });
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       { root: dir },
       exec,
       logger.log,
@@ -1960,7 +1879,7 @@ describe('HerdrExecutor.removeWorktree existence probe (BB-293)', () => {
         'worktree list': JSON.stringify({ result: { worktrees: [] } }),
       });
       const dir = mkdtempSync(join(tmpdir(), 'bb-293-eacces-'));
-      const executor = new HerdrExecutor(
+      const executor = herdrTeardown(
         { root: dir },
         exec,
         logger.log,
@@ -2015,7 +1934,7 @@ describe('HerdrExecutor.removeWorktree existence probe (BB-293)', () => {
     });
     const target = join(dir, 'wt');
     mkdirSync(target);
-    const executor = new HerdrExecutor(
+    const executor = herdrTeardown(
       {}, // no root — the fallback this test exists for
       exec,
       undefined,
