@@ -1,0 +1,9 @@
+- id: conductor_tickets
+  rows:
+    - type: entity
+      entity_type: bb_ticket
+      bundle: bb_ticket
+      view_mode: default
+      record: 0
+  __designbook:
+    section: projects

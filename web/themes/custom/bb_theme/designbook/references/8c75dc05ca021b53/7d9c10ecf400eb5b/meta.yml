@@ -21,8 +21,8 @@
    "views": [
     {
      "id": "frame",
-     "width": 1434,
-     "height": 2246
+     "width": 1399,
+     "height": 2242
     }
    ]
   },
@@ -82,7 +82,7 @@
     {
      "id": "frame",
      "width": 1502,
-     "height": 1179
+     "height": 1095
     }
    ]
   }

@@ -29,7 +29,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:118'
               - '68:135'
@@ -241,7 +241,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '550:8978'
               - '550:8992'
@@ -256,7 +256,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '550:9021'
       display:
@@ -266,7 +266,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '550:8977'
     fontSize:
@@ -286,7 +286,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:60'
               - '550:9024'
@@ -317,7 +317,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:81'
               - '68:84'
@@ -328,7 +328,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:72'
               - '68:75'
@@ -340,7 +340,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:60'
               - '68:63'
@@ -352,7 +352,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:69'
       '22':
@@ -362,7 +362,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:57'
       '28':
@@ -372,7 +372,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:87'
       '30':
@@ -382,7 +382,7 @@ primitive:
         $extensions:
           designbook:
             provenance: observation
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:54'
       tight:
@@ -453,7 +453,7 @@ primitive:
         $extensions:
           designbook:
             provenance: addition
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '61:3240'
             note: >-
@@ -467,7 +467,7 @@ primitive:
         $extensions:
           designbook:
             provenance: calculated
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:54'
               - '550:8977'
@@ -479,7 +479,7 @@ primitive:
         $extensions:
           designbook:
             provenance: calculated
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:57'
               - '550:9016'
@@ -491,7 +491,7 @@ primitive:
         $extensions:
           designbook:
             provenance: calculated
-            reference: 8c75dc05ca021b53/c666d120267b60a5
+            reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:81'
             note: Figma 4 % at 11px.
@@ -672,7 +672,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:54'
             - '550:8977'
@@ -688,7 +688,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:57'
             - '550:9016'
@@ -703,7 +703,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:60'
             - '550:9024'
@@ -718,7 +718,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:63'
     body:
@@ -732,7 +732,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:66'
     prose:
@@ -746,7 +746,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:69'
     label:
@@ -760,7 +760,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:72'
             - '550:8992'
@@ -775,7 +775,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:75'
             - '550:8978'
@@ -791,7 +791,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:78'
             - '550:9021'
@@ -807,7 +807,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:81'
     badge:
@@ -821,7 +821,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:84'
     stat-value:
@@ -835,7 +835,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:87'
   fontWeight:
@@ -899,7 +899,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:98'
             - '68:99'
@@ -910,7 +910,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:102'
             - '68:103'
@@ -921,7 +921,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:106'
             - '68:107'
@@ -933,7 +933,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:110'
             - '68:111'
@@ -944,7 +944,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:114'
             - '68:115'
@@ -955,7 +955,7 @@ semantic:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:118'
             - '68:119'
@@ -1045,7 +1045,7 @@ component:
       $extensions:
         designbook:
           provenance: observation
-          reference: 8c75dc05ca021b53/c666d120267b60a5
+          reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:152'
 themes:
@@ -1081,7 +1081,7 @@ themes:
             $extensions:
               designbook:
                 provenance: addition
-                reference: 8c75dc05ca021b53/c666d120267b60a5
+                reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
                 note: >-
                   Intake decision 2026-11-04: continues the cozy scale 24, 32,
                   40.

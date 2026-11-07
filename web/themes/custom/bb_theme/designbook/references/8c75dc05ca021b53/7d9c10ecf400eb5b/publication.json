@@ -1,17 +1,17 @@
 {
   "id": "8c75dc05ca021b53",
-  "revision": "c666d120267b60a5",
+  "revision": "7d9c10ecf400eb5b",
   "files": {
     "assets/fonts/bricolage-grotesque.woff2": "9fee080fcc2d2e0ea8c7ce2a58abaa8ba1f40c6e603643327cd5eb6f07db06a8",
     "assets/fonts/jetbrains-mono.woff2": "1e06740a02a443fb7f3eeda8fcaa685a0f6c620e3f01e6666e847295469ce3ad",
     "assets/fonts/spline-sans-mono.woff2": "2b193a4f0fef3fc4c6a3fa756bb5dab6c10b489acd5e0718736847755077e9ec",
     "assets/fonts/spline-sans.woff2": "14ed7b4db18fb8fd77f252da580df74f457f81a788cff0b71f357e882279156c",
-    "extract--rest.json": "287ae8057a61ea81feaf470ee014b058e9a8de7c777ee0fc240ae490b3f050d5",
-    "frame--ci-board--rest.png": "ab37b94d0236f7907af8efa05bb55b3b7c6668b707c3cf28a670b8d066a1ed20",
-    "frame--data-formats--rest.png": "8b92fe3dcd4fcc060b6dc0bd34ab37db4ad5ba5016ee3be5fd15000a5bba544e",
-    "frame--focus-keyboard--rest.png": "910960da492198feac81a66de8a650cc4a4f3789c3fcba6ab3536bc963c1ef14",
-    "frame--typo-system--rest.png": "b428f5e9905f89d6c7a629bd7fedf814696ab2522ffaa070a8d12917e1b6ac14",
-    "meta.yml": "bebd42ccad720ebb8c81b9142ba735b11ce82f940215b6da6dceede1b4689903"
+    "extract--rest.json": "71ad7be3d54077c21c212c250a998b2af05f86f41bb92c003b7c32cd780a953a",
+    "frame--ci-board--rest.png": "f5557a5ee6c1d90f6adbf717926405e791d0e73dec02c166728e6e1aaac4c781",
+    "frame--data-formats--rest.png": "910da4b4e983ea11edb59c950ae4310beee8989cda48fa9806e06fbc5c0700ec",
+    "frame--focus-keyboard--rest.png": "1a9b2f3f3e1598f022adfa0efae6b9474b7b88cf7e4173ee9594f1a3efb2d81c",
+    "frame--typo-system--rest.png": "8e6facfe3f267c3fd968f9e2226dac880e270854d41b8dee999d385a376a0799",
+    "meta.yml": "d681a1fa547944e8e1431e24978f9d4fc8938599ab90c8b71599d375e2a2dc86"
   },
   "contract": {
     "referenceSchema": {
@@ -791,48 +791,6 @@
             "items": {
               "$ref": "#/definitions/ObservationView"
             }
-          }
-        }
-      },
-      "Reference": {
-        "type": "object",
-        "title": "Captured observation metadata",
-        "additionalProperties": false,
-        "description": "One source-neutral snapshot shared by reference and actual Storybook capture. Publication identity is supplied by the CLI binding manifest.",
-        "required": [
-          "source",
-          "role",
-          "elements",
-          "assets_dir"
-        ],
-        "properties": {
-          "source": {
-            "$ref": "#/definitions/ObservationSource"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "reference",
-              "actual"
-            ]
-          },
-          "elements": {
-            "type": "array",
-            "minItems": 1,
-            "description": "Selected subjects with their observed state and view coverage.",
-            "items": {
-              "$ref": "#/definitions/ObservationElement"
-            }
-          },
-          "prelude_digest": {
-            "type": "string",
-            "pattern": "^[a-f0-9]{64}$",
-            "description": "SHA-256 of the prelude module that prepared every pass of this revision. Absent when the capture used no prelude. Fixing it here means a later prelude edit cannot silently redefine what was observed.\n"
-          },
-          "assets_dir": {
-            "type": "string",
-            "const": "assets",
-            "description": "Revision-relative asset directory."
           }
         }
       }

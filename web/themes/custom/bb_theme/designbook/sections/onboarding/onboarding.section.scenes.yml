@@ -167,7 +167,7 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Work through chat, without a local machine.
-                      size: caption
+                      size: meta
                       tone: light
                   - component: bb_theme:link-group
                     props:
@@ -179,7 +179,7 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Run the agent on your own machine.
-                      size: caption
+                      size: meta
                       tone: light
                   - component: bb_theme:link-group
                     props:
