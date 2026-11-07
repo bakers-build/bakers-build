@@ -40,7 +40,13 @@ function fakeHc(
         name: args[args.indexOf('--name') + 1],
       });
     }
-    if (args[0] === 'ls') return JSON.stringify(opts.terminals ?? []);
+    // The envelope hc 0.1.18 prints for `ls --json` (pinned by a live run).
+    if (args[0] === 'ls') {
+      return JSON.stringify({
+        hidden_finished: 0,
+        terminals: opts.terminals ?? [],
+      });
+    }
     if (args[0] === 'read') return 'agent says hi';
     return '{}';
   };
@@ -176,8 +182,8 @@ describe('HerdrCoreExecutor.cleanupRun', () => {
   it('kills a live match and removes it; a finished one is only removed', async () => {
     const { hc, calls } = fakeHc({
       terminals: [
-        { id: 't7', name: 'bakers-109-4711', state: 'live' },
-        { id: 't8', name: 'old', state: 'finished' },
+        { address: 't7', name: 'bakers-109-4711', state: 'live' },
+        { address: 't8', name: 'bakers-109-4711', state: 'finished' },
       ],
     });
     await new HerdrCoreExecutor({}, hc).cleanupRun('feat/x', 4711);
@@ -199,7 +205,7 @@ describe('HerdrCoreExecutor.cleanupRun', () => {
 
   it('touches only what hc listed for this run (siblings are filtered by label)', async () => {
     const { hc, calls } = fakeHc({
-      terminals: { terminals: [{ id: 't9', state: 'finished' }] },
+      terminals: [{ address: 't9', name: 'bakers-109-1', state: 'finished' }],
     });
     await new HerdrCoreExecutor({}, hc).cleanupRun('feat/x', 1);
     expect(calls.filter((c) => c[0] === 'kill' || c[0] === 'rm')).toEqual([

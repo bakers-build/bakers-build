@@ -102,20 +102,17 @@ interface HcTerminal {
 }
 
 /**
- * shortcut: accepts a bare array or `{terminals: [...]}` with `id` and `state`
- * (`live`/`finished`, as the hc manual names them); confirm against a live
- * `hc ls --json`, and narrow once its shape is pinned.
+ * `hc ls --json` prints `{hidden_finished, terminals: [{address, name, state}]}`
+ * (hc 0.1.18); `address` (`t4`) is unique even among finished terminals.
  */
 function parseTerminals(output: string): HcTerminal[] {
-  const parsed: unknown = JSON.parse(output);
-  const list = Array.isArray(parsed)
-    ? parsed
-    : (parsed as { terminals?: unknown } | null)?.terminals;
+  const list = (JSON.parse(output) as { terminals?: unknown } | null)
+    ?.terminals;
   if (!Array.isArray(list)) return [];
   return list.flatMap((t) => {
-    const r = t as { id?: unknown; state?: unknown } | null;
-    return typeof r?.id === 'string' && r.id
-      ? [{ id: r.id, live: r.state !== 'finished' }]
+    const r = t as { address?: unknown; state?: unknown } | null;
+    return typeof r?.address === 'string' && r.address
+      ? [{ id: r.address, live: r.state !== 'finished' }]
       : [];
   });
 }
