@@ -131,7 +131,7 @@ final class ProjectsScreenTest extends KernelTestBase {
       self::assertSame('TRUE', $route->getRequirement('_bb_workspace_match'), $listing['route']);
       self::assertFalse(
         (bool) $route->getOption('_admin_route'),
-        $listing['route'] . ': an admin route would resolve to Gin and lose the shell.',
+        $listing['route'] . ': an admin route would leave the product front end.',
       );
     }
   }

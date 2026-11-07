@@ -211,16 +211,16 @@ DELETED_ALLOWLIST=''
 # rather than a choice between two numbers: the two tickets moved the count in opposite directions
 # and independently, so both chains stand and compose. 45 + 1 (BB-490) = 46.
 #
-# 47 SINCE BB-504 (Plan Task 11), one addition: `mode_toggle`, the icon button that flips the
-# persisted colour mode (light/dark). It is a genuinely new component rather than a variant of an
-# existing one — no other component in the rail footer is a button that calls
-# `window.bakersToggleMode()` — and it is generic by B10's test: it knows `mode` (for static/story
+# 47 SINCE BB-504 (Plan Task 11), one addition: `mode_toggle`, the icon button that picks the
+# persisted colour mode (light/dark/system). It is a genuinely new component rather than a variant of
+# an existing one — no other component in the rail footer is a control that calls
+# `window.bakersSetMode()` — and it is generic by B10's test: it knows `mode` (for static/story
 # rendering) and `label`, and nothing about any bakers.build entity or bundle. It sits in the sidebar
 # footer's `actions` slot beside `person`, is NOT an island (no `hx-*` attribute, no region
 # rebuild — a pure client-side attribute flip and localStorage write, same mechanism `skin.src.js`
 # itself uses), and carries zero outer margin as every CONTENT component in this theme must; the
 # `gap-2` between it and `person` is owned by `sidebar.twig`'s own footer row. 46 + 1 (BB-504) = 47.
-# 48 SINCE BB-547: `brand` owns the shared login braid and wordmark.
+# 48 SINCE BB-547: `brand` owns the shared login logo and wordmark.
 # It is a Shell component, not an entity-specific data display. 47 + 1 = 48.
 # 49: `stat-comparison` is the shared-axis two-series plot. Existing
 # `stat-series` bars cannot carry two measurements on one time/value scale.

@@ -14,7 +14,10 @@ installs the `bakers-cli` and `docs` dependencies first, `provision_up('deps')` 
 alone for work that needs no site, and a site profile's `ddev init` installs and builds
 `web/themes/custom/bb_theme`. A docs preview for functional checks or manual review starts with
 `provision_up('docs-preview')`, which builds and serves `docs/`, and is shared with `ports_up docs`;
-never run `vitepress preview` in a run. Core tests, Playwright, conductor and skill-behavior
+never run `vitepress preview` in a run. The Playwright suite and `playwright-cli` run through
+`ddev_exec`. A server an agent starts in the
+sandbox, such as Storybook, is reachable only within that same command. Skill and conductor
+behavior is tested in the playground workspace that `scripts/setup-test-project.sh` sets up. Core tests, Playwright, conductor and skill-behavior
 setup: [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work
@@ -29,7 +32,10 @@ Apply all matching rows.
 | Components and stories under `web/themes/custom/bb_theme/` | `designbook:design-component` |
 | Scenes under `web/themes/custom/bb_theme/` | `designbook:design-screen`, or `designbook:design-shell` for the application shell |
 | Entity mappings under `web/themes/custom/bb_theme/` | `designbook:design-entity` |
-| Design tokens under `web/themes/custom/bb_theme/` | `designbook:tokens` |
+| Design tokens under `web/themes/custom/bb_theme/` | `designbook:tokens`, then `designbook:css-generate` for the token CSS |
+| Storybook for Designbook work under `web/themes/custom/bb_theme/` | `designbook:sb` |
+| Work from a design reference (Figma, Claude Design) under `web/themes/custom/bb_theme/` | `designbook:extract-reference` first |
+| Scenes or screens built from a design reference | `designbook:design-verify` last, `designbook:repair` for its findings |
 | Skills, frontmatter or plugin manifests | `mattpocock-skills:writing-for-agents`, `ponytail:ponytail` |
 
 ## bb-phase-validate

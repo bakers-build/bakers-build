@@ -101,7 +101,7 @@ final class BbHtmlMailTest extends KernelTestBase {
     self::assertInstanceOf(\DOMElement::class, $logo);
     self::assertSame('bakers.build', $logo->getAttribute('alt'));
     self::assertStringStartsWith('cid:', $logo->getAttribute('src'));
-    self::assertSame(['bakers-lockup-invite.png'], $this->lockups($email));
+    self::assertSame(['logo-wordmark.png'], $this->logos($email));
     self::assertStringContainsString('multipart/related', $email->toString());
     self::assertStringContainsString('Need a hand? Contact your workspace administrator.', $dom->textContent);
     self::assertStringContainsString('<script>alert(1)</script> Acme', $dom->textContent);
@@ -127,7 +127,7 @@ final class BbHtmlMailTest extends KernelTestBase {
 
     $dom = $this->dom((string) $email->getHtmlBody());
     self::assertSame([$link], $this->hrefs($dom));
-    self::assertSame(['bakers-lockup-hi.png'], $this->lockups($email));
+    self::assertSame(['logo-wordmark.png'], $this->logos($email));
     preg_match('/Enter this code:\n\n(\d{6})/', $text, $code);
     $boxed = [];
     foreach ($dom->getElementsByTagName('td') as $cell) {
@@ -189,7 +189,7 @@ final class BbHtmlMailTest extends KernelTestBase {
     self::assertStringContainsString('guide [1]', $text);
     self::assertStringContainsString('[1] ' . $url, $text);
     self::assertSame([$url], $this->hrefs($this->dom((string) $email->getHtmlBody())));
-    self::assertSame(['bakers-lockup-plain.png'], $this->lockups($email));
+    self::assertSame(['logo-wordmark.png'], $this->logos($email));
   }
 
   /**
@@ -326,6 +326,7 @@ final class BbHtmlMailTest extends KernelTestBase {
     $plugin = new BbHtmlMail(
       $logger,
       $this->container->get('renderer'),
+      $this->container->get('extension.list.theme'),
       $this->transport,
     );
     self::assertFalse($plugin->mail($plugin->format($this->message(['Hello']))));
@@ -336,7 +337,7 @@ final class BbHtmlMailTest extends KernelTestBase {
     $renderer->method('renderInIsolation')->willThrowException(new \RuntimeException('Template broke'));
     $logger = $this->createMock(LoggerInterface::class);
     $logger->expects(self::once())->method('log');
-    $plugin = new BbHtmlMail($logger, $renderer, $this->transport);
+    $plugin = new BbHtmlMail($logger, $renderer, $this->container->get('extension.list.theme'), $this->transport);
     self::assertFalse($plugin->mail($plugin->format($this->message(['Hello']))));
     self::assertSame(1, $this->attempts());
     self::assertSame([], $this->sent());
@@ -412,19 +413,16 @@ final class BbHtmlMailTest extends KernelTestBase {
   }
 
   /**
-   * The lockup variant each attachment of a message carries.
+   * The image each attachment of a message carries.
    *
    * @return list<string>
-   *   The variant file names, matched by content.
+   *   `logo-wordmark.png` for bb_theme's logo, matched by content, else
+   *   `unknown`.
    */
-  private function lockups(Email $email): array {
-    $dir = $this->container->get('extension.list.module')->getPath('bb_core') . '/assets/email';
-    $variants = [];
-    foreach (glob($dir . '/bakers-lockup-*.png') ?: [] as $file) {
-      $variants[(string) file_get_contents($file)] = basename($file);
-    }
+  private function logos(Email $email): array {
+    $logo = (string) file_get_contents($this->container->get('extension.list.theme')->getPath('bb_theme') . '/logo-wordmark.png');
     return array_values(array_map(
-      static fn ($part): string => $variants[$part->getBody()] ?? 'unknown',
+      static fn ($part): string => $part->getBody() === $logo ? 'logo-wordmark.png' : 'unknown',
       $email->getAttachments(),
     ));
   }

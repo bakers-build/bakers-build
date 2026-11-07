@@ -6,8 +6,8 @@
     keytec builds and runs bakers.build here: the platform, its design system and the
     agents that ship them.
   image:
-    alt: keytec braid mark
-    src: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+    alt: keytec logo
+    src: /themes/custom/bb_theme/logo.svg
   billing_profile:
     contract: agency
     subscription: annual

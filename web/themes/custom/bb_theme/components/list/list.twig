@@ -51,7 +51,7 @@
     one to tint. #}
 {% set accent_map = {
   'running': 'bg-state-running',
-  'attention': 'bg-state-attention',
+  'attention': 'bg-state-attention-mark',
   'wait': 'bg-state-unassigned',
   'idle': 'bg-transparent'
 } %}
@@ -72,7 +72,7 @@
     {% for item in items %}
       {% set item_classes = item_base %}
       {% if item.accent == 'wait' %}
-        {% set item_classes = item_classes|merge(cards ? ['bg-state-unassigned-tint', 'border-state-unassigned/30'] : ['bg-state-unassigned-tint']) %}
+        {% set item_classes = item_classes|merge(['bg-state-unassigned-tint']) %}
       {% endif %}
       {#- THE WHOLE PATTERNED ROW IS A CLICK TARGET FOR ITS IDENTITY LINK. A click on
           the row's own surface forwards to the first link in the headline, so htmx
