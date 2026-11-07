@@ -5,8 +5,9 @@ status: stable
 group: Form
 description: >-
   One form field around its control: label, help text and errors in core's
-  order and with core's classes. It owns the space below the field (`stack`),
-  so every form stacks its fields evenly; the last field adds none.
+  order and with core's classes. In a block parent it owns the space below the
+  field (`stack`), so every form stacks its fields evenly; the last field adds
+  none. A flex or grid parent spaces the field with its own gap.
 provider: bb_theme
 props:
   type: object
