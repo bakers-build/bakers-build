@@ -516,6 +516,22 @@ final class WorklogFormTest extends KernelTestBase {
   }
 
   /**
+   * On the full-page form, Delete opens the confirm page.
+   *
+   * That page renders in the zone layout, which has no overlay to target.
+   */
+  public function testPageFormDeleteLinksToTheConfirmPage(): void {
+    $this->actAs($this->employee);
+    $entry = $this->createRecorded($this->employee);
+    $form = $this->container->get('form_builder')->getForm(WorklogForm::class, $entry);
+    $props = $form['delete']['#props'];
+    self::assertStringContainsString('/time/' . $entry->uuid() . '/delete', $props['href']);
+    $attributes = (string) ($props['attributes'] ?? '');
+    self::assertStringNotContainsString('hx-target', $attributes);
+    self::assertStringNotContainsString('hx-get', $attributes);
+  }
+
+  /**
    * An unresolved ticket is removed by picking No ticket.
    */
   public function testUnresolvedTicketIsRemovedWithNoTicket(): void {
