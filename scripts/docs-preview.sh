@@ -4,7 +4,8 @@
 # build. `stop` (the after_done hook) ends it.
 set -euo pipefail
 
-docs="$(cd "$(dirname "$0")/../docs" && pwd -P)"
+scripts="$(cd "$(dirname "$0")" && pwd -P)"
+docs="$(cd "$scripts/../docs" && pwd -P)"
 log="$docs/.vitepress/cache/preview.log"
 
 # This worktree's preview: a `vitepress … preview` process whose cwd is docs/, the identity the
@@ -44,19 +45,22 @@ pnpm build
 port="$(node -e 'const s = require("node:net").createServer().listen(0, "127.0.0.1", () => { console.log(s.address().port); s.close(); });')"
 mkdir -p "${log%/*}"
 # Detached and holding none of the caller's pipes, so the provision_up call returns and the
-# preview outlives it.
-setsid node node_modules/vitepress/bin/vitepress.js preview --host 127.0.0.1 --port "$port" </dev/null >"$log" 2>&1 &
+# preview outlives it. The loopback preload binds it to 127.0.0.1, which vitepress' --host does not.
+setsid node --import "$scripts/docs-preview-loopback.mjs" node_modules/vitepress/bin/vitepress.js \
+  preview --port "$port" </dev/null >"$log" 2>&1 &
+pid=$!
 
 url="http://127.0.0.1:$port/"
 for _ in $(seq 300); do
-  if [ "$(curl -s -o /dev/null -w '%{http_code}' "$url" || true)" = 200 ]; then
+  kill -0 "$pid" 2>/dev/null || break
+  if [ "$(curl -s --max-time 2 -o /dev/null -w '%{http_code}' "$url" || true)" = 200 ]; then
     echo "Docs preview: $url"
     echo 'Share it with ports_up docs.'
     exit 0
   fi
   sleep 0.1
 done
-echo "Docs preview did not answer on $url within 30 s:" >&2
+echo "Docs preview did not answer on $url:" >&2
 tail -n 20 "$log" >&2
 stop
 exit 1

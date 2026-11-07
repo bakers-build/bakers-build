@@ -47,7 +47,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
 | `.ddev/**` | `bash tests/contract/ddev-provision.sh` |
-| `scripts/docs-preview.sh` | `bash tests/contract/docs-preview.sh` |
+| `scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
 | `.gitlab-ci.yml` | `glab ci lint .gitlab-ci.yml && bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |

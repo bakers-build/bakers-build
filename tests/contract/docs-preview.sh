@@ -2,8 +2,9 @@
 set -euo pipefail
 
 # `scripts/docs-preview.sh` (the `provision_up('docs-preview')` profile) builds docs/ and serves the
-# built site detached, one preview per worktree. A fake `pnpm` on PATH writes a numbered build; a
-# fake `vitepress.js` serves it with `node:http`.
+# built site detached, one preview per worktree, on 127.0.0.1 only. A fake `pnpm` on PATH writes a
+# numbered build; a fake `vitepress.js` serves it with `node:http` and, like vitepress 1.6 `preview`,
+# ignores `--host` (`listen(port, cb)`), then records the address Node bound.
 
 root="$(git rev-parse --show-toplevel)"
 work="$(mktemp -d)"
@@ -27,13 +28,16 @@ chmod +x "$work/bin/pnpm"
 worktree() {
   local wt="$work/$1"
   mkdir -p "$wt/scripts" "$wt/docs/node_modules/vitepress/bin"
-  cp "$root/scripts/docs-preview.sh" "$wt/scripts/"
+  cp "$root/scripts/docs-preview.sh" "$root/scripts/docs-preview-loopback.mjs" "$wt/scripts/"
   cat > "$wt/docs/node_modules/vitepress/bin/vitepress.js" <<'EOF'
+const fs = require('node:fs');
 const args = process.argv.slice(2);
-const opt = (name) => args[args.indexOf(name) + 1];
-require('node:http').createServer((_, res) => {
-  res.end(require('node:fs').readFileSync('.vitepress/dist/index.html'));
-}).listen(Number(opt('--port')), opt('--host'));
+const server = require('node:http').createServer((_, res) => {
+  res.end(fs.readFileSync('.vitepress/dist/index.html'));
+});
+server.listen(Number(args[args.indexOf('--port') + 1]), () => {
+  fs.writeFileSync('.vitepress/dist/bound', server.address().address);
+});
 EOF
 }
 
@@ -60,6 +64,8 @@ case=start; worktree wt1; run wt1
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ -n "$url" ] || fail "no URL: $out"
 [ "$(body "$url")" = 'wt1 build 1' ] || fail "serves '$(body "$url")'"
+bound="$(cat "$work/wt1/docs/.vitepress/dist/bound" 2>/dev/null || true)"
+[ "$bound" = 127.0.0.1 ] || fail "listens on '$bound', not 127.0.0.1 only"
 first="$url"
 
 case=rebuild; run wt1
@@ -76,8 +82,10 @@ case=parallel; worktree wt2; run wt2
 [ "$(body "$wt1_url")" = 'wt1 build 2' ] || fail "wt1 now serves '$(body "$wt1_url")'"
 [ "$(previews wt2)" = 1 ] || fail "$(previews wt2) previews in wt2"
 
-case=stop; run wt1 stop; run wt2 stop
-[ "$rc" = 0 ] || fail "exit $rc: $out"
+case=stop; run wt1 stop
+[ "$rc" = 0 ] || fail "wt1 exit $rc: $out"
+run wt2 stop
+[ "$rc" = 0 ] || fail "wt2 exit $rc: $out"
 [ "$(previews wt1)$(previews wt2)" = 00 ] || fail "previews left: wt1 $(previews wt1), wt2 $(previews wt2)"
 run wt1 stop
 [ "$rc" = 0 ] || fail "stop with none running: exit $rc: $out"
