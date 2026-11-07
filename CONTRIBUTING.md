@@ -63,7 +63,7 @@ release acceptance. Never commit private connection files, tokens, login links o
 
 For work within an existing Bakers project, follow [join a project](docs/get-started/first-ticket.md)
 with your own account. An existing team conductor can supply execution capacity. For a new local
-machine use [machine setup](docs/get-started/machine.md); connector-only use starts at
+machine use [machine setup](docs/provision/machine.md); connector-only use starts at
 [connector setup](docs/get-started/connector.md). These paths have different prerequisites.
 
 Security concerns follow [SECURITY.md](SECURITY.md), not a public issue containing sensitive details.

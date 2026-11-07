@@ -2,7 +2,7 @@
 
 Build an addon whose messages appear in the ticket detail page's right-hand column, in an inline message card (with two or more addons, one tab each, labeled with the addon's label), and in the matching card in `bakers ui` — run on the conductor that owns the ticket's worktree. No page or tab anywhere is named "Addons"; that word stays internal/author-facing.
 
-**You need:** a bakers.build CLI built from source (see [build from source](/configuration/project/contributing#build-from-source)), a conductor you can restart, and the package basics in [addon contracts](/addons/build/contracts#write-an-addon).
+**You need:** a bakers.build CLI built from source (see [build from source](/development/build-from-source)), a conductor you can restart, and the package basics in [addon contracts](/addons/build/contracts#write-an-addon).
 
 ## Write the addon
 

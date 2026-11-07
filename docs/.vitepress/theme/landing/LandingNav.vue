@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { provide, ref } from 'vue'
+import VPNavBarMenuGroup from 'vitepress/dist/client/theme-default/components/VPNavBarMenuGroup.vue'
+import VPNavScreenMenuGroup from 'vitepress/dist/client/theme-default/components/VPNavScreenMenuGroup.vue'
+import { NAV } from '../../manual.mjs'
 import LogoMark from './LogoMark.vue'
 import { LANGUAGES, REPO_URL, SIGN_UP_URL, type Copy } from './copy'
 
-const props = defineProps<{ t: Copy }>()
-const hrefs = ['#how-it-works', '#recipe', '#open-source', '/get-started/']
-const links = props.t.nav.links.map((text, i) => ({ text, href: hrefs[i] }))
+defineProps<{ t: Copy }>()
 const open = ref(false)
+provide('close-screen', () => { open.value = false })
 </script>
 
 <template>
@@ -32,10 +34,14 @@ const open = ref(false)
         :class="open ? 'flex' : 'hidden'"
         class="order-last m-0 w-full list-none flex-col gap-4 p-0 xl:order-none xl:flex xl:w-auto xl:flex-row xl:items-center xl:gap-[34px]"
       >
-        <li v-for="link in links" :key="link.href">
-          <a :href="link.href" class="lp-mono text-[14px] font-medium no-underline hover:underline" @click="open = false">
-            {{ link.text }}
+        <li v-for="item in NAV" :key="item.text">
+          <a v-if="item.link" :href="item.link" class="lp-mono whitespace-nowrap text-[14px] font-medium no-underline hover:underline" @click="open = false">
+            {{ item.text }}
           </a>
+          <template v-else>
+            <VPNavBarMenuGroup :item="item" class="lp-nav-group hidden xl:block" />
+            <VPNavScreenMenuGroup :text="item.text" :items="item.items" class="lp-nav-group xl:hidden" />
+          </template>
         </li>
         <li>
           <a :href="REPO_URL" class="lp-mono text-[14px] font-medium no-underline hover:underline">GitHub ★</a>
@@ -64,3 +70,29 @@ const open = ref(false)
     </nav>
   </header>
 </template>
+
+<style scoped>
+.lp-nav-group :deep(.button) {
+  height: auto;
+  padding: 0;
+  font-family: var(--lp-mono);
+}
+.lp-nav-group :deep(.text) {
+  line-height: 24px;
+}
+.lp-nav-group :deep(.menu) {
+  z-index: 10;
+  top: 100%;
+  right: auto;
+  left: 0;
+  padding-top: 12px;
+}
+.lp-nav-group.VPNavScreenMenuGroup {
+  height: 24px;
+  border: 0;
+}
+.lp-nav-group.VPNavScreenMenuGroup.open {
+  height: auto;
+  padding-bottom: 0;
+}
+</style>

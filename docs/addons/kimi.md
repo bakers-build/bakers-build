@@ -6,7 +6,7 @@ For anyone whose machine should run tickets with Kimi.
 
 ## AI first
 
-Ask your AI to check this harness and its [bakers skills](/configuration/agents/skills).
+Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/skills).
 
 ## Setup
 
@@ -47,5 +47,5 @@ bakers agents
 - Listed in a conductor config, an agent addon is ignored with a warning.
 - Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
-More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
+More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 
