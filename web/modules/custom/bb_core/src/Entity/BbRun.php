@@ -8,6 +8,7 @@ use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
+use Drupal\Core\Field\TypedData\FieldItemDataDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
 use Drupal\file\FileInterface;
@@ -252,7 +253,9 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
       ->setComputed(TRUE)
       ->setReadOnly(TRUE)
       ->setClass(RunLogStorageAllowedItemList::class);
-    $fields[RunLogPolicy::RUN_FIELD]->getItemDefinition()->setClass(UncachedBooleanItem::class);
+    $item_definition = $fields[RunLogPolicy::RUN_FIELD]->getItemDefinition();
+    assert($item_definition instanceof FieldItemDataDefinition);
+    $item_definition->setClass(UncachedBooleanItem::class);
 
     $fields['log_upload_omitted'] = BaseFieldDefinition::create('boolean')
       ->setLabel(new TranslatableMarkup('Log upload omitted'))

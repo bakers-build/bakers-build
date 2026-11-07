@@ -25,11 +25,12 @@ final class UncachedBooleanItem extends BooleanItem {
    *   The parent's single `value` property, served as UncachedBooleanData.
    */
   public static function propertyDefinitions(FieldStorageDefinitionInterface $field_definition): array {
-    $properties['value'] = DataDefinition::create('boolean')
-      ->setLabel(new TranslatableMarkup('Boolean value'))
-      ->setRequired(TRUE)
-      ->setClass(UncachedBooleanData::class);
-    return $properties;
+    return [
+      'value' => DataDefinition::create('boolean')
+        ->setLabel(new TranslatableMarkup('Boolean value'))
+        ->setRequired(TRUE)
+        ->setClass(UncachedBooleanData::class),
+    ];
   }
 
 }

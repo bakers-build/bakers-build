@@ -130,7 +130,7 @@ final class RunLogPolicyTest extends KernelTestBase {
    * Models a conductor that read `true` before the lead switched storage off:
    * the next write is checked against the persisted workspace, not a copy.
    */
-  public function testPersistedDisableBeatsAStaleLoadedWorkspace(): void {
+  public function testPersistedDisableBeatsStaleLoadedWorkspace(): void {
     $this->setSetting('feature_flags', [RunLogPolicy::FLAG => TRUE]);
     $run = $this->createRunInWorkspace();
     $stale = $this->workspaceOf($run);
@@ -138,6 +138,7 @@ final class RunLogPolicyTest extends KernelTestBase {
     self::assertTrue((bool) $run->get(RunLogPolicy::RUN_FIELD)->value, 'the conductor reads true');
 
     $fresh = $this->container->get('entity_type.manager')->getStorage('bb_workspace')->loadUnchanged($stale->id());
+    self::assertInstanceOf(BbWorkspaceInterface::class, $fresh);
     $fresh->set(RunLogPolicy::WORKSPACE_FIELD, FALSE)->save();
     // The stale copy still says TRUE in memory.
     $stale->set(RunLogPolicy::WORKSPACE_FIELD, TRUE);
