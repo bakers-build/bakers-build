@@ -24,8 +24,8 @@ const RELEASES_URL = 'https://www.npmjs.com/package/@bakers-build/bakers?activeT
 // prefix that marks an area current; the icon keys are theme/components/area-icons.ts.
 type Area = { label: string; link: string; icon: string; match?: string; external?: boolean }
 
-// Every URL the site ever published keeps working: routes.json maps it to its
-// current page, and buildEnd writes a one-hop redirect page for each entry.
+// Retained legacy URLs map to canonical pages in routes.json; buildEnd writes
+// a one-hop redirect page for each entry. Removed aliases are not guaranteed.
 // scripts/check-site.mjs fails the build when an entry chains or dangles.
 const LEGACY_ROUTES: Record<string, string> = JSON.parse(
   readFileSync(fileURLToPath(new URL('../routes.json', import.meta.url)), 'utf8'),

@@ -26,7 +26,7 @@ if ! command -v pnpm >/dev/null 2>&1; then
   exit 0
 fi
 install_deps bakers-cli
-for dir in website; do
+for dir in docs; do
   if [ "${all}" = true ] || [ -d "${dir}/node_modules" ]; then
     install_deps "${dir}"
   fi

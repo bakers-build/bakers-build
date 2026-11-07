@@ -64,7 +64,7 @@ export default {
     after_done: 'ddev delete -Oy',
     // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
     // a trusted `ddev` nor `pnpm install`. Every profile installs the
-    // bakers-cli and website dependencies first; `deps` does only that.
+    // bakers-cli and docs dependencies first; `deps` does only that.
     // bb_theme is installed and built by `ddev init` inside DDEV.
     // `ddev provision` reuses a ready site of that provider;
     // `existing-config-fresh` always reinstalls.

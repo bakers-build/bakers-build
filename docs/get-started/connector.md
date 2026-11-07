@@ -44,6 +44,6 @@ Create a bakers.build ticket for <what I need and why>.
 
 Confirm the scope when asked. Feature and chore intake can reach `plan` through chat; bug diagnosis, coding and review use your team's agents. Open the ticket on the web to read summaries and record your verdict. Questions during a run appear in the worker's terminal; ticket comments reach the next step.
 
-**Next:** [Create a ticket](/get-started/daily-work/create-a-ticket), [follow it](/get-started/daily-work/follow-a-ticket), or [accept results](/get-started/daily-work/accept-results).
+**Next:** [Create a ticket](/get-started/daily-work/create-a-ticket), [follow it](/get-started/daily-work/follow-a-ticket), or [accept results](/skills-and-workflows/accept-results).
 
 Connection errors: [Connector configuration](/configuration/connector) and [client limits](/configuration/connector/limits). The CLI's private connection file is a separate setup.

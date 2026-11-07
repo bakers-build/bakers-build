@@ -58,7 +58,7 @@ In the terminal UI, press `f` on the ticket; `"frozen":false` or `f` again relea
 Freezing ends the ticket's active run: the server cancels it with the note `frozen by <account>`. The conductor that holds the ticket's worktree notices the change on its next poll and:
 
 - stops the cancelled run's agent and keeps the worktree;
-- runs the [`on_freeze` or `on_resume` hook](/configuration/provisioning/hooks#when-each-hook-runs) once in that worktree;
+- runs the [`on_freeze` or `on_resume` hook](/provision/hooks#when-each-hook-runs) once in that worktree;
 - marks the worktree's herdr workspace with the display-only token `bb_frozen`, and clears it on unfreeze.
 
 herdr shows the token in its left-hand sidebar once a row names it. Add it to `~/.config/herdr/config.toml`:

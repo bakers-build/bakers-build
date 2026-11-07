@@ -146,7 +146,7 @@ The current `bakers config check` reports a missing `client_secret` for this typ
 
 ### Client credentials
 
-For a conductor on a server. The operator issues the consumer and its secret; the consumer must hold the `bb:session` scope, or the token request fails with `invalid_request` and the hint `Check the scope parameter`. Provisioning is covered in [Server](/configuration/project/server).
+For a conductor on a server. The operator issues the consumer and its secret; the consumer must hold the `bb:session` scope, or the token request fails with `invalid_request` and the hint `Check the scope parameter`. Provisioning is covered in [Server](/self-hosting/server).
 
 ```sh
 export BB_CLIENT_SECRET='<issued secret>'

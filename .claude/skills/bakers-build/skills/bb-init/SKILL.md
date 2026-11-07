@@ -23,8 +23,8 @@ substitute a remembered tool list.
 Establish whether this host runs tickets, locally or remotely. Resolve agent harnesses, skills
 and host prerequisites from the documentation. Leave client and environment choices to project
 setup; reuse existing projects’ requirements. A Coder workspace is a remote worker
-whose path is [Set up a Coder workspace](https://bakers.build/configuration/machine/coder-workspace)
-(`docs/configuration/machine/coder-workspace.md` in a source checkout). Explain the options and their
+whose path is [Set up a Coder workspace](https://bakers.build/provision/coder-workspace)
+(`docs/provision/coder-workspace.md` in a source checkout). Explain the options and their
 tradeoffs briefly, using the docs; distinguish supported integrations from planned ones.
 
 Reuse supplied answers and explicit project or machine configuration, naming the source.

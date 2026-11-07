@@ -30,7 +30,7 @@ project.
    ddev version
    ```
 
-3. **Connect the project through hooks.** Use the repository's documented provisioning script in [lifecycle hooks](/configuration/provisioning/hooks). Each ticket worktree needs its own DDEV project identity; reusing one name can make tickets share or replace the same environment.
+3. **Connect the project through hooks.** Use the repository's documented provisioning script in [lifecycle hooks](/provision/hooks). Each ticket worktree needs its own DDEV project identity; reusing one name can make tickets share or replace the same environment.
 
    Keep the script repeatable. Required readiness checks belong in `WORKFLOW.md`: a failed hook is logged but does not stop dispatch.
 
@@ -80,7 +80,7 @@ ddev delete --omit-snapshot --yes --clean-containers=false "$name"
 
 ## Provision on an agent's request
 
-**For agents that need a running site.** The [`provision_up` hook](/configuration/provisioning/hooks#provision-on-an-agent-s-request) gives runs a tool that brings the site up. Merge a command per profile into `hooks`:
+**For agents that need a running site.** The [`provision_up` hook](/provision/hooks#provision-on-an-agent-s-request) gives runs a tool that brings the site up. Merge a command per profile into `hooks`:
 
 ```js
 hooks: {
@@ -121,4 +121,4 @@ echo "installed $url"
 - **Install step:** replace `scripts/install.sh` with your repository's install or import for the profile.
 - **Local certificate:** `curl -k` accepts DDEV's local certificate even when the host does not trust it.
 
-[Hook lifecycle and environment →](/configuration/provisioning/hooks)
+[Hook lifecycle and environment →](/provision/hooks)
