@@ -20,7 +20,7 @@ Feature: Groups and Projects are separate workspace listings
     Given I am signed in as a member of the "bakers" workspace
     When I visit the "Groups" listing
     Then only the "Groups" listing is visible
-    And the Groups listing shows "A group grants no permissions"
+    And the line under the Groups title says "A group grants no permissions"
 
   Scenario: Each listing renders rows of the workspace's own data
     Given I am signed in as a member of the "bakers" workspace

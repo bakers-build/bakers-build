@@ -215,8 +215,9 @@ Then('the {string} listing is present', async ({ page }, name: string) => {
   await waitForListing(page, listingOf(name));
 });
 
-Then('the Groups listing shows {string}', async ({ page }, text: string) => {
-  await expect(listingWrapper(page, 'Groups').getByText(text)).toBeVisible();
+Then('the line under the Groups title says {string}', async ({ page }, text: string) => {
+  await expect(page.locator('#page-header-description')).toContainText(text);
+  await expect(listingWrapper(page, 'Groups').getByText(text)).toHaveCount(0);
 });
 
 Then('the search toolbar is above its list', async ({ page }) => {

@@ -709,11 +709,7 @@ display:
                             component:
                               component_id: 'bb_theme:zone'
                               variant_id: null
-                              props:
-                                description:
-                                  source_id: textfield
-                                  source:
-                                    value: 'A group grants no permissions — rights come from the workspace and the project only.'
+                              props: {  }
                               slots:
                                 content:
                                   sources:

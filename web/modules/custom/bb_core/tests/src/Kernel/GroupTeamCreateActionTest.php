@@ -147,6 +147,8 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
       $zone = $canvas['slots']['main']['sources'][1]['source']['component'];
       self::assertSame('bb_theme:zone', $zone['component_id']);
       self::assertArrayNotHasKey('actions', $zone['slots'] ?? []);
+      // The permissions note is the page header's line, not the zone's.
+      self::assertArrayNotHasKey('description', $zone['props'] ?? []);
       // The search-and-sort toolbar (a `filters` component) leads; the exposed
       // form it binds to follows the pager, holding only hidden parts.
       self::assertSame(
@@ -172,6 +174,18 @@ final class GroupTeamCreateActionTest extends KernelTestBase {
         array_column($header['slots']['actions']['sources'], 'source_id'),
       );
     }
+  }
+
+  /**
+   * The line under the Groups title says that groups grant no permissions.
+   */
+  public function testTheGroupsHeaderStatesGroupsGrantNoPermissions(): void {
+    $this->enterRoute('view.groups.workspace_list');
+    $this->container->get('current_route_match')->resetRouteMatch();
+    self::assertSame(
+      'A group grants no permissions — rights come from the workspace and the project only.',
+      (string) $this->source('bb_page_header_description', 'string')->getPropValue(),
+    );
   }
 
   /**
