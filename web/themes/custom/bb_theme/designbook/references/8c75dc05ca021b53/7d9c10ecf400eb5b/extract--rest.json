@@ -51,7 +51,7 @@
     ]
   },
   "state": "rest",
-  "captured_at": "2026-11-04T12:42:27+00:00",
+  "captured_at": "2026-11-06T22:50:00+00:00",
   "extract": {
     "subjects": [
       {
@@ -1418,14 +1418,14 @@
             "observations": {
               "layout": {
                 "node": "68:13",
-                "width": 1434,
-                "height": 2246
+                "width": 1399,
+                "height": 2242
               },
               "typography": [
                 {
                   "node": "68:54",
                   "text_style": "vorschlag/page-title",
-                  "fontFamily": "SF Pro",
+                  "fontFamily": "Spline Sans",
                   "fontWeight": 700,
                   "fontSize": 24,
                   "lineHeight": 30,
@@ -1435,7 +1435,7 @@
                 {
                   "node": "68:57",
                   "text_style": "vorschlag/section-title",
-                  "fontFamily": "SF Pro",
+                  "fontFamily": "Spline Sans",
                   "fontWeight": 700,
                   "fontSize": 16,
                   "lineHeight": 22,
@@ -1445,8 +1445,8 @@
                 {
                   "node": "68:60",
                   "text_style": "vorschlag/item-title",
-                  "fontFamily": "SF Pro",
-                  "fontWeight": 590,
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
                   "fontSize": 14,
                   "lineHeight": 20,
                   "letterSpacing": 0,
@@ -1455,8 +1455,8 @@
                 {
                   "node": "68:63",
                   "text_style": "vorschlag/body-strong",
-                  "fontFamily": "SF Pro",
-                  "fontWeight": 510,
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 500,
                   "fontSize": 13,
                   "lineHeight": 20,
                   "letterSpacing": 0,
@@ -1465,7 +1465,7 @@
                 {
                   "node": "68:66",
                   "text_style": "vorschlag/body",
-                  "fontFamily": "SF Pro",
+                  "fontFamily": "Spline Sans",
                   "fontWeight": 400,
                   "fontSize": 13,
                   "lineHeight": 20,
@@ -1475,7 +1475,7 @@
                 {
                   "node": "68:69",
                   "text_style": "vorschlag/prose",
-                  "fontFamily": "SF Pro",
+                  "fontFamily": "Spline Sans",
                   "fontWeight": 400,
                   "fontSize": 13,
                   "lineHeight": 21,
@@ -1485,8 +1485,8 @@
                 {
                   "node": "68:72",
                   "text_style": "vorschlag/label",
-                  "fontFamily": "SF Pro",
-                  "fontWeight": 510,
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 500,
                   "fontSize": 12,
                   "lineHeight": 16,
                   "letterSpacing": 0,
@@ -1495,7 +1495,7 @@
                 {
                   "node": "68:75",
                   "text_style": "vorschlag/meta",
-                  "fontFamily": "SF Pro",
+                  "fontFamily": "Spline Sans",
                   "fontWeight": 400,
                   "fontSize": 12,
                   "lineHeight": 16,
@@ -1515,8 +1515,8 @@
                 {
                   "node": "68:81",
                   "text_style": "vorschlag/eyebrow",
-                  "fontFamily": "SF Pro",
-                  "fontWeight": 590,
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
                   "fontSize": 11,
                   "lineHeight": 14,
                   "letterSpacing": 4,
@@ -1525,8 +1525,8 @@
                 {
                   "node": "68:84",
                   "text_style": "vorschlag/badge",
-                  "fontFamily": "SF Pro",
-                  "fontWeight": 590,
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
                   "fontSize": 11,
                   "lineHeight": 14,
                   "letterSpacing": 0,
@@ -1535,8 +1535,8 @@
                 {
                   "node": "68:87",
                   "text_style": "vorschlag/stat-value",
-                  "fontFamily": "SF Pro",
-                  "fontWeight": 590,
+                  "fontFamily": "Spline Sans",
+                  "fontWeight": 600,
                   "fontSize": 24,
                   "lineHeight": 28,
                   "letterSpacing": 0,
@@ -1566,7 +1566,7 @@
                 },
                 {
                   "node": "68:54",
-                  "text": "GAIA-142 · Add designbook entity view-mode"
+                  "text": "BB-142 · Add designbook entity view-mode"
                 },
                 {
                   "node": "68:57",
@@ -1574,7 +1574,7 @@
                 },
                 {
                   "node": "68:60",
-                  "text": "Add designbook entity view-mode for gaia_ticket"
+                  "text": "Add designbook entity view-mode for bb_ticket"
                 },
                 {
                   "node": "68:63",
@@ -1598,7 +1598,7 @@
                 },
                 {
                   "node": "68:78",
-                  "text": "GAIA-142 · gaia/gaia-142-view-mode"
+                  "text": "BB-142 · feat/bb-142-view-mode"
                 },
                 {
                   "node": "68:81",
@@ -1762,13 +1762,13 @@
               "parent_ids": [],
               "asset_ids": [],
               "font_families": [
-                "SF Pro",
+                "Spline Sans",
                 "JetBrains Mono"
               ]
             },
             "unavailable": [
               {
-                "property": "variable collection 'GAIA · Vorschlag Layout' values",
+                "property": "variable collection 'BB · Vorschlag Layout' values",
                 "reason": "The spacing variables are not bound to the swatch nodes, so the tools return no variable values; the values come from the swatch sizes and labels.",
                 "required": false
               }
@@ -2142,11 +2142,11 @@
               "content": [
                 {
                   "node": "550:8977",
-                  "text": "GAIA"
+                  "text": "bakers.build"
                 },
                 {
                   "node": "550:8978",
-                  "text": "key GAIA · group Gaia"
+                  "text": "key BB · group bakers.build"
                 },
                 {
                   "node": "550:8992",
@@ -2166,7 +2166,7 @@
                 },
                 {
                   "node": "550:9021",
-                  "text": "GAIA-281"
+                  "text": "BB-281"
                 },
                 {
                   "node": "550:9024",
@@ -2358,7 +2358,8 @@
               "parent_ids": [],
               "asset_ids": [],
               "font_families": [
-                "SF Pro"
+                "Spline Sans",
+                "JetBrains Mono"
               ]
             },
             "unavailable": []
@@ -2536,7 +2537,7 @@
               "layout": {
                 "node": "64:3709",
                 "width": 1502,
-                "height": 1179
+                "height": 1095
               },
               "content": [
                 {
@@ -2600,7 +2601,8 @@
               "parent_ids": [],
               "asset_ids": [],
               "font_families": [
-                "SF Pro"
+                "Spline Sans",
+                "JetBrains Mono"
               ]
             },
             "unavailable": [
@@ -2623,7 +2625,8 @@
         "weights": [
           400,
           500,
-          600
+          600,
+          700
         ],
         "styles": [
           "normal"
@@ -2677,7 +2680,8 @@
         "family": "JetBrains Mono",
         "source": "google",
         "weights": [
-          500
+          500,
+          700
         ],
         "styles": [
           "normal"
@@ -2690,19 +2694,6 @@
             "local_path": "assets/fonts/jetbrains-mono.woff2"
           }
         ]
-      },
-      {
-        "family": "SF Pro",
-        "source": "system",
-        "weights": [
-          400,
-          510,
-          590,
-          700
-        ],
-        "styles": [
-          "normal"
-        ]
       }
     ],
     "captures": [
@@ -2711,8 +2702,8 @@
         "view": "frame",
         "state": "rest",
         "path": "frame--typo-system--rest.png",
-        "width": 1434,
-        "height": 2246
+        "width": 1399,
+        "height": 2242
       },
       {
         "subject": "ci-board",
@@ -2736,7 +2727,7 @@
         "state": "rest",
         "path": "frame--data-formats--rest.png",
         "width": 1502,
-        "height": 1179
+        "height": 1095
       }
     ]
   }

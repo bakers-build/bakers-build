@@ -1965,9 +1965,12 @@ config:
       The vocabulary IS the bb_term bundle; no screen renders it as an object of
       its own.
     view.environments: >-
-      Drupal has no environments View: the project full display renders the
-      bb_project environments field. The view.environments mapping has no Drupal
-      counterpart.
+      Drupal has no environments View, and no list of environments exists yet.
+      The bb_project environments field is hidden on the project full display;
+      only its referenced names show on the project properties detail card
+      (BbEntityDetailCardForm). Deployment tickets show their environments as
+      chips in the ticket inspector. The view.environments mapping is ahead of
+      the backend and has no Drupal counterpart.
   og_role:
     og_role:
       title: OG role

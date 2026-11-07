@@ -3,7 +3,7 @@
 Self-hosted Latin variable WOFF2 fonts of the CI, including German umlauts and
 ß. Normal weights come from the variable font; italic uses browser synthesis.
 The files come from the approved Designbook reference
-`designbook/references/8c75dc05ca021b53/c666d120267b60a5` (Google Fonts, Latin
+`designbook/references/8c75dc05ca021b53/7d9c10ecf400eb5b` (Google Fonts, Latin
 subset).
 
 - `spline-sans.woff2`: text. Spline Sans from

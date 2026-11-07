@@ -1057,7 +1057,7 @@ Context: [ctx:cli-surface, ctx:extract-mapping, ctx:css-naming, ctx:section, ctx
                 - SF Pro
                 - JetBrains Mono
             unavailable:
-              - property: variable collection 'GAIA · Vorschlag Layout' values
+              - property: variable collection 'BB · Vorschlag Layout' values
                 reason: The spacing variables are not bound to the swatch nodes, so the tools return no variable values; the values come from the swatch sizes and labels.
                 required: false
       - id: ci-board
