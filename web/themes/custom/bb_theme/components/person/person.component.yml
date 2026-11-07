@@ -77,6 +77,15 @@ props:
         One secondary line beneath the name, e.g. the developer title. Rendered
         in `full` and `profile`, omitted when empty; `compact` has no room for
         it.
+    subtitle_datetime:
+      type: string
+      title: Subtitle instant, ISO 8601
+      description: >-
+        Set when the subtitle is a point in time (a review's date); the
+        subtitle then renders as `bb_theme:time` with its full date on hover.
+    subtitle_title:
+      type: string
+      title: Subtitle full date shown on hover
     mail:
       type: string
       title: Email

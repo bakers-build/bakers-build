@@ -370,6 +370,15 @@ props:
                   description: >-
                     The trailing count or duration on a `badge` — "14m" beside a
                     running state. Optional; an omitted suffix renders nothing.
+                suffix_datetime:
+                  type: string
+                  title: Badge suffix instant
+                  description: >-
+                    ISO 8601 of a suffix that is a point in time; the suffix
+                    then renders as `bb_theme:time`.
+                suffix_title:
+                  type: string
+                  title: Badge suffix full date on hover
                 mine:
                   type: boolean
                   title: Held by the reader

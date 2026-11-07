@@ -120,8 +120,18 @@ props:
       title: Suffix
       description: >-
         A quiet trailing value the label qualifies — a relative time, a count.
-        Rendered in mono at the smallest step so it reads as an annotation of
-        the label rather than a second label.
+        Rendered in sans with tabular figures at the smallest step, faint, so
+        it reads as an annotation of the label rather than a second label.
+        Mono is for machine values only.
+    suffix_datetime:
+      type: string
+      title: Suffix instant, ISO 8601
+      description: >-
+        Set when the suffix is a point in time; the suffix then renders as
+        `bb_theme:time` with its exact date on hover.
+    suffix_title:
+      type: string
+      title: Suffix full date shown on hover
     list_item:
       type: boolean
       title: Is a list item

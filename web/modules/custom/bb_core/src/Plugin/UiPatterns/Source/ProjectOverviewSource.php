@@ -244,10 +244,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
       'state' => $this->stateCell($ticket, $state_label),
       'title' => $this->titleCell($ticket, $url),
       'identifier' => $this->identifierCell($ticket, $url),
-      'created' => [
-        'kind' => 'rendered',
-        'markup' => $this->createdAgo($ticket),
-      ],
+      'created' => $this->created($ticket),
       'assignee' => $this->assigneeCell($ticket),
     ];
     if ($priority !== NULL) {
@@ -323,14 +320,14 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
   }
 
   /**
-   * The created time label for the Created caption.
+   * The `time` cell for the Created caption, or none without a stamp.
+   *
+   * @return array<string, string>
+   *   The cell, or an empty array the list skips.
    */
-  private function createdAgo(BbTicketInterface $ticket): string {
+  private function created(BbTicketInterface $ticket): array {
     $timestamp = (int) $ticket->getCreatedTime();
-    if ($timestamp <= 0) {
-      return '';
-    }
-    return $this->date->label($timestamp);
+    return $timestamp > 0 ? $this->date->cell($timestamp) : [];
   }
 
   /**

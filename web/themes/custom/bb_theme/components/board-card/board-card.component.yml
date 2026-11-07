@@ -82,6 +82,25 @@ props:
         - lease
         - offline
       title: Assignee avatar colour key
+    done_label:
+      type: string
+      title: Done time label
+      description: >-
+        When a closed ticket was done, formatted by BbDate ("3 days ago").
+        With it or `mr_url` the footer says "Done …" and links the merge
+        request instead of the lease and state line.
+    done_datetime:
+      type: string
+      title: Done time, ISO 8601
+    done_title:
+      type: string
+      title: Done time, full date shown on hover
+    mr_url:
+      type: string
+      title: Merge request URL
+    mr_label:
+      type: string
+      title: Merge request label
   required:
     - identifier
     - title

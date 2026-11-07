@@ -94,10 +94,9 @@ final class BbActivityEventSource extends SourcePluginBase implements ContainerF
       'author_initials' => $face['initials'],
       'author_color' => $face['color'],
       'tag' => $line['tag'],
-      'timestamp' => $this->when($activity),
       'statement' => $line['statement'],
       'detail' => $line['detail'] ?? '',
-    ] + $this->ticket($activity, $cache) + $this->runProps($activity, $line, $run, $cache);
+    ] + $this->when($activity, $cache) + $this->ticket($activity, $cache) + $this->runProps($activity, $line, $run, $cache);
     $build = [
       '#type' => 'component',
       '#component' => 'bb_theme:event',
@@ -293,14 +292,25 @@ final class BbActivityEventSource extends SourcePluginBase implements ContainerF
   }
 
   /**
-   * The created time label, or empty when the stamp is missing.
+   * The created time props, or none when the stamp is missing.
+   *
+   * @return array{timestamp?: string, datetime?: string, timestamp_title?: string}
+   *   The event's time props; a relative label's max-age joins $cache.
    */
-  private function when(BbActivity $activity): string {
+  private function when(BbActivity $activity, CacheableMetadata $cache): array {
     $timestamp = (int) $activity->getCreatedTime();
     if ($timestamp <= 0) {
-      return '';
+      return [];
     }
-    return $this->date->label($timestamp);
+    $time = $this->date->time($timestamp);
+    if (isset($time['#cache']['max-age'])) {
+      $cache->mergeCacheMaxAge($time['#cache']['max-age']);
+    }
+    return [
+      'timestamp' => $time['#props']['label'],
+      'datetime' => $time['#props']['datetime'],
+      'timestamp_title' => $time['#props']['title'],
+    ];
   }
 
   /**

@@ -236,14 +236,17 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
    */
   public function testDoneCardShowsRelativeDoneDateAndMergeRequest(): void {
     $this->merged->set('links', [['uri' => 'https://git.example.com/acme/app/-/merge_requests/7', 'title' => 'MR !7']]);
-    $this->merged->set('closed_date', $this->container->get('datetime.time')->getRequestTime() - 3 * 86400)->save();
+    $closed = $this->container->get('datetime.time')->getRequestTime() - 3 * 86400;
+    $this->merged->set('closed_date', $closed)->save();
     $cards = $this->container->get(ProjectBoard::class)->cards([$this->merged], 'done');
     self::assertSame('https://git.example.com/acme/app/-/merge_requests/7', $cards[0]['mr_url']);
-    self::assertSame('3 days ago', $cards[0]['done_ago']);
+    self::assertSame('3 days ago', $cards[0]['done_label']);
+    self::assertSame($closed, (new \DateTimeImmutable($cards[0]['done_datetime']))->getTimestamp());
+    self::assertMatchesRegularExpression('/^[A-Z][a-z]{2}, \d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} \S+$/', $cards[0]['done_title']);
     self::assertSame('MR !7', $cards[0]['mr_label']);
 
     $open = $this->container->get(ProjectBoard::class)->cards([$this->critical], 'working');
-    self::assertArrayNotHasKey('done_ago', $open[0]);
+    self::assertArrayNotHasKey('done_label', $open[0]);
     self::assertArrayNotHasKey('mr_url', $open[0]);
   }
 

@@ -95,7 +95,7 @@ final class ProjectBoard {
    * Absent rather than empty on open tickets: the theme draws a done footer
    * only where there is something done to say.
    *
-   * @return array{done_ago?: string, mr_url?: string, mr_label?: string}
+   * @return array{done_label?: string, done_datetime?: string, done_title?: string, mr_url?: string, mr_label?: string}
    *   The facts that apply.
    */
   private function doneFacts(BbTicketInterface $ticket): array {
@@ -105,7 +105,10 @@ final class ProjectBoard {
     $facts = [];
     $closed = $ticket->get('closed_date')->value;
     if ($closed !== NULL && $closed !== '') {
-      $facts['done_ago'] = $this->date->label((int) $closed);
+      $time = $this->date->cell((int) $closed);
+      $facts['done_label'] = $time['label'];
+      $facts['done_datetime'] = $time['datetime'];
+      $facts['done_title'] = $time['title'];
     }
     foreach ($ticket->get('links')->getValue() as $link) {
       $uri = (string) ($link['uri'] ?? '');

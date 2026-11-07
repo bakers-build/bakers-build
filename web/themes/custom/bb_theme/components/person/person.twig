@@ -61,7 +61,7 @@
     <span data-person-mark class="{{ mark_classes|join(' ') }}">{{ initials }}</span>
   {%- endif %}
   {%- if compact %}
-    {%- if display_name %}<span class="truncate text-body-strong text-text" data-collapse-hidden>{{ display_name }}</span>{% endif %}
+    {%- if display_name %}<span class="truncate text-body-strong text-text" title="{{ display_name }}" data-collapse-hidden>{{ display_name }}</span>{% endif %}
   {%- elseif profile %}
     <span class="flex flex-col items-center gap-inline-xs min-w-0">
       <span class="text-page-title font-display text-text">{{ display_name|default(initials) }}</span>
@@ -69,9 +69,10 @@
     </span>
   {%- else %}
     <span class="flex flex-col min-w-0 leading-tight">
-      <span class="truncate text-body-strong text-text">{{ display_name|default(initials) }}</span>
-      {%- if subtitle %}<span class="truncate text-meta text-text-light">{{ subtitle }}</span>{% endif %}
-      {%- if mail %}<span class="truncate text-meta text-text-faint">{{ mail }}</span>{% endif %}
+      <span class="truncate text-body-strong text-text" title="{{ display_name|default(initials) }}">{{ display_name|default(initials) }}</span>
+      {%- if subtitle and subtitle_datetime %}{{ include('bb_theme:time', { label: subtitle, datetime: subtitle_datetime, title: subtitle_title|default(''), attributes: create_attribute({ class: ['truncate', 'text-meta', 'text-text-light'] }) }, with_context = false) }}
+      {%- elseif subtitle %}<span class="truncate text-meta text-text-light" title="{{ subtitle }}">{{ subtitle }}</span>{% endif %}
+      {%- if mail %}<span class="truncate text-meta text-text-faint" title="{{ mail }}">{{ mail }}</span>{% endif %}
     </span>
   {%- endif %}
 </span>

@@ -34,7 +34,8 @@ description: >-
 
   A CELL IS THE SAME NINE KINDS `table` DECLARES — `text` (`value`, `emphasis:
   default|faint|strong`), `mono` (`value`), `link` (`value`, `url`, `mono?`),
-  `badge` (`label`, `tone`, `dot?`, `icon?`, `suffix?`, `mono?`, `mine?`,
+  `badge` (`label`, `tone`, `dot?`, `icon?`, `suffix?`, `suffix_datetime?`,
+  `suffix_title?`, `mono?`, `mine?`,
   `url?`), `person` (`display_name`, `initials`, `color`, `mail?`), `picker`
   (`label`, `value_labels`, `options`, `picker_id`, `multiple?`, `open?`,
   `icon?`, `clearable?`, `clear_label?`, `creatable?`, `create_label?`, `name?`,

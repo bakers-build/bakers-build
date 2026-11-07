@@ -191,8 +191,7 @@ final class BbTicketReviewsSource extends SourcePluginBase implements ContainerF
               'display_name' => $known ? (string) $author->label() : (string) $this->t('Unknown author'),
               'initials' => $known ? (string) $review->get('author_initials')->value : '?',
               'color' => $known ? (string) $review->get('author_color')->value : 'offline',
-              'subtitle' => $this->date->label((int) $time),
-            ],
+            ] + $this->subtitle((int) $time),
           ],
           'controls' => [
             '#type' => 'component',
@@ -202,6 +201,21 @@ final class BbTicketReviewsSource extends SourcePluginBase implements ContainerF
           ],
         ],
       ],
+    ];
+  }
+
+  /**
+   * The person's subtitle props for the review's time.
+   *
+   * @return array{subtitle: string, subtitle_datetime: string, subtitle_title: string}
+   *   The label and its exact instant.
+   */
+  private function subtitle(int $timestamp): array {
+    $time = $this->date->cell($timestamp);
+    return [
+      'subtitle' => $time['label'],
+      'subtitle_datetime' => $time['datetime'],
+      'subtitle_title' => $time['title'],
     ];
   }
 

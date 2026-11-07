@@ -88,5 +88,6 @@
   {%- if dot %}<span class="inline-block shrink-0 w-2 h-2 rounded-full {{ dot_map[tone_key]|default('bg-state-offline') }}" aria-hidden="true"></span>{% endif %}
   {%- if icon %}{{ include('bb_theme:icon', { name: icon, size: 'xs' }, with_context = false) }}{% endif %}
   <span data-badge-label>{{ label }}</span>
-  {%- if suffix %}<span class="font-mono text-badge text-text-faint">{{ suffix }}</span>{% endif %}
+  {%- if suffix and suffix_datetime %}{{ include('bb_theme:time', { label: suffix, datetime: suffix_datetime, title: suffix_title|default(''), attributes: create_attribute({ class: ['text-badge', 'text-text-faint'] }) }, with_context = false) }}
+  {%- elseif suffix %}<span class="tabular-nums text-badge text-text-faint">{{ suffix }}</span>{% endif %}
 </span>
