@@ -15,6 +15,7 @@ use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\entity\Routing\DefaultHtmlRouteProvider;
 use Drupal\bb_core\Form\BbWorkspaceForm;
 use Drupal\bb_core\ListBuilder\BbWorkspaceListBuilder;
+use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\user\EntityOwnerTrait;
 
@@ -129,6 +130,18 @@ final class BbWorkspace extends BbContentEntityBase implements BbWorkspaceInterf
     // column of an `owner` entity key NOT NULL, so a row created without one
     // would fail to save.
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition();
+    // Workspace half of RunLogPolicy. Editable only while the deployment flag
+    // is on (AccessFenceHooks); a saved TRUE never outranks the flag.
+    $fields[RunLogPolicy::WORKSPACE_FIELD] = BaseFieldDefinition::create('boolean')
+      ->setLabel(new TranslatableMarkup('Store agent run logs'))
+      ->setDescription(new TranslatableMarkup('Upload and keep the agent transcript of each run in this workspace. Error messages of failed runs are kept either way. Turning this off stores no new transcripts and keeps existing ones.'))
+      ->setDefaultValue(FALSE)
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'boolean_checkbox',
+        'weight' => 4,
+        'settings' => ['display_label' => TRUE],
+      ]);
 
     return $fields;
   }

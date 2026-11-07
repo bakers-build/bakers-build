@@ -38,6 +38,13 @@ content:
       size: 60
       placeholder: ''
     third_party_settings: {  }
+  run_log_storage_enabled:
+    type: boolean_checkbox
+    weight: 4
+    region: content
+    settings:
+      display_label: true
+    third_party_settings: {  }
 hidden:
   billing_profile: true
   changed: true

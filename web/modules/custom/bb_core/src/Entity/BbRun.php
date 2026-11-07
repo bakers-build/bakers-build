@@ -17,7 +17,10 @@ use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\bb_core\Form\BbRunForm;
 use Drupal\bb_core\ListBuilder\BbRunListBuilder;
 use Drupal\bb_core\Routing\BbRunRouteProvider;
+use Drupal\bb_core\RunLog\RunLogPolicy;
+use Drupal\bb_core\RunLog\RunLogStorageAllowedItemList;
 use Drupal\bb_core\RunLog\RunLogStore;
+use Drupal\bb_core\RunLog\UncachedBooleanItem;
 use Drupal\bb_core\ViewsData\BbRunViewsData;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\user\EntityOwnerTrait;
@@ -241,6 +244,16 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
         ->setSetting('unsigned', TRUE);
     }
 
+    // Read by the conductor at finalize: send the transcript only when TRUE.
+    // preSave() asks the same policy again, so a stale read cannot store.
+    $fields[RunLogPolicy::RUN_FIELD] = BaseFieldDefinition::create('boolean')
+      ->setLabel(new TranslatableMarkup('Run log storage allowed'))
+      ->setDescription(new TranslatableMarkup('Whether the transcript of this run may be uploaded and stored now: the deployment flag and the workspace opt-in. Computed, read-only.'))
+      ->setComputed(TRUE)
+      ->setReadOnly(TRUE)
+      ->setClass(RunLogStorageAllowedItemList::class);
+    $fields[RunLogPolicy::RUN_FIELD]->getItemDefinition()->setClass(UncachedBooleanItem::class);
+
     $fields['log_upload_omitted'] = BaseFieldDefinition::create('boolean')
       ->setLabel(new TranslatableMarkup('Log upload omitted'))
       ->setCustomStorage(TRUE)
@@ -325,7 +338,13 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
       // otherwise leave the previous one orphaned (no file_usage record, so
       // core's temporary-file cleanup can never find it either).
       $previous_file_id = $this->get($base . '_file')->target_id;
-      $file = \Drupal::service(RunLogStore::class)->write($this, $payload);
+      $file = \Drupal::service(RunLogStore::class)->write($this, $payload, $base);
+      if ($file === NULL) {
+        // Storage is off for this run: drop the incoming transcript, keep the
+        // previous file and its metadata, and let the rest of the save land.
+        $this->set($base, NULL);
+        continue;
+      }
       $this->set($base . '_file', $file->id());
       $this->set($base . '_sha256', hash('sha256', $payload));
       $this->set($base . '_bytes', strlen($payload));
