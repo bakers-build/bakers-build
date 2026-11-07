@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Datetime\DateFormatterInterface;
-use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbRun;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Ticket\TicketInterventions;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -57,7 +57,7 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
   private const RESTING_TONES = ['idle', 'stale', 'neutral'];
 
   /**
-   * The date formatter the row's start timestamp goes through.
+   * The product time formatter the row's start and duration go through.
    *
    * Injected in `create()` rather than through the constructor, and that is
    * phpmd's doing rather than taste: `SourcePluginBase::__construct()` already
@@ -65,14 +65,14 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
    * restating contrib's ten only to pass them on is the copy that rots when
    * contrib adds an eleventh of its own.
    */
-  private DateFormatterInterface $dateFormatter;
+  private BbDate $date;
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-    $instance->dateFormatter = $container->get('date.formatter');
+    $instance->date = $container->get(BbDate::class);
     return $instance;
   }
 
@@ -134,7 +134,7 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
         'dot' => TRUE,
       ],
       'from_label' => ['kind' => 'text', 'value' => 'from', 'emphasis' => 'faint'],
-      'from' => ['kind' => 'mono', 'value' => (string) ($run->get('state_at_start')->value ?? '')],
+      'from' => ['kind' => 'text', 'value' => (string) ($run->get('state_at_start')->value ?? '')],
     ];
 
     $conductor = $run->get('conductor_id')->entity;
@@ -155,19 +155,13 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
     $started = $run->get('started_at')->value;
     if ($started !== NULL && $started !== '') {
       $cells['started_label'] = ['kind' => 'text', 'value' => 'started', 'emphasis' => 'faint'];
-      // MINUTE PRECISION, not the raw timestamp: the seconds and the offset are
-      // noise on a list whose job is to let a reader pick the run to open. The
-      // overlay keeps the full timestamp, where precision is the point.
-      $cells['started'] = [
-        'kind' => 'mono',
-        'value' => $this->dateFormatter->format((int) $started, 'custom', 'Y-m-d H:i'),
-      ];
+      $cells['started'] = $this->date->cell((int) $started);
     }
 
     $duration = $run->get('duration_s')->value;
     if ($duration !== NULL && $duration !== '' && (int) $duration !== 0) {
       $cells['took_label'] = ['kind' => 'text', 'value' => 'took', 'emphasis' => 'faint'];
-      $cells['took'] = ['kind' => 'mono', 'value' => (int) $duration . 's'];
+      $cells['took'] = ['kind' => 'text', 'value' => $this->date->duration((int) $duration)];
     }
 
     $cells += array_filter(['log' => $this->logCell($run), 'cancel' => $this->cancelCell($run)]);

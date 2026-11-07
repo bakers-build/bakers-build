@@ -300,7 +300,8 @@ final class WorkspaceInsightsRouteTest extends KernelTestBase {
     $request->setSession($this->container->get('request_stack')->getCurrentRequest()->getSession());
     $this->container->get('request_stack')->push($request);
     $controller = BbStatsController::create($this->container);
-    return $controller->insights(new RouteMatch(self::ROUTE, $route, ['bb_workspace' => $this->north], ['bb_workspace' => 'north']), $request);
+    // The page body inside its canvas › zone frame.
+    return $controller->insights(new RouteMatch(self::ROUTE, $route, ['bb_workspace' => $this->north], ['bb_workspace' => 'north']), $request)['#slots']['main']['#slots']['content'];
   }
 
   /**

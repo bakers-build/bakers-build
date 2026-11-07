@@ -16,10 +16,11 @@ use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbInvite;
 use Drupal\bb_core\Form\OverlayTrigger;
-use Drupal\user\UserInterface;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\og\OgMembershipInterface;
 use Drupal\og\OgRoleInterface;
+use Drupal\user\UserInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -49,6 +50,7 @@ final class WorkspaceInvite {
     private readonly LoggerInterface $logger,
     private readonly LanguageManagerInterface $languageManager,
     private readonly AccountProxyInterface $currentUser,
+    private readonly BbDate $date,
   ) {
     $this->setStringTranslation($stringTranslation);
   }
@@ -326,10 +328,8 @@ final class WorkspaceInvite {
           ? ['kind' => 'badge', 'label' => (string) $this->t('Expired'), 'tone' => 'critical']
           : ['kind' => 'badge', 'label' => (string) $this->t('Invited'), 'tone' => 'wait'],
         'joined' => [
-          'kind' => 'mono',
-          'value' => $this->t('invited @date', [
-            '@date' => date('Y-m-d', (int) $invite->get('created')->value),
-          ]),
+          'kind' => 'text',
+          'value' => $this->t('invited @date', ['@date' => $this->date->date((int) $invite->get('created')->value)]),
         ],
       ];
       if ($may_write) {

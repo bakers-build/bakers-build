@@ -23,16 +23,16 @@
    NOT A SCROLL CONTAINER. `min-h-screen` with centred items lets a long card
    grow the page rather than clip itself, which is what keeps a chooser with
    twenty workspaces readable. #}
-<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'flex-col', 'items-center', 'justify-center', 'gap-[16px]', 'p-[24px]', 'bg-app', 'text-text', 'font-sans']) }}>
-  <div class="gate__card w-full max-w-[420px] flex flex-col gap-[16px] p-[24px] bg-surface border border-border-2 rounded-[var(--radius-md,10px)]">
+<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'flex-col', 'items-center', 'justify-center', 'gap-group', 'p-gutter', 'bg-app', 'text-text']) }}>
+  <div class="gate__card w-full max-w-[420px] flex flex-col gap-group p-gutter bg-surface border border-border-2 rounded-[var(--radius-md,10px)]">
     {% if mark %}
       <div class="gate__mark flex items-center justify-center">{% block mark %}{{ mark }}{% endblock %}</div>
     {% endif %}
     {% if title %}
-      <h1 class="gate__title text-h3 text-center">{{ title }}</h1>
+      <h1 class="gate__title text-section-title text-center">{{ title }}</h1>
     {% endif %}
     {% if description %}
-      <p class="gate__description text-caption text-text-faint text-center max-w-[40ch] mx-auto">{{ description }}</p>
+      <p class="gate__description text-meta text-text-faint text-center max-w-[40ch] mx-auto">{{ description }}</p>
     {% endif %}
     <div class="gate__content min-w-0">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
   </div>

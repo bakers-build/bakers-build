@@ -427,11 +427,9 @@ display:
           empty_zero: false
           hide_alter_empty: true
           click_sort_column: value
-          type: timestamp_ago
+          type: bb_time
           settings:
-            future_format: '@interval hence'
-            past_format: '@interval ago'
-            granularity: 1
+            date_only: false
           group_column: value
           group_columns: {  }
           group_rows: true
@@ -872,11 +870,11 @@ display:
               source_id: component
               source:
                 component:
-                  component_id: 'bb_theme:zone'
+                  component_id: 'bb_theme:canvas'
                   variant_id: null
                   props: {  }
                   slots:
-                    content:
+                    main:
                       sources:
                         -
                           source_id: block
@@ -887,38 +885,49 @@ display:
                           source_id: component
                           source:
                             component:
-                              component_id: 'bb_theme:filters'
+                              component_id: 'bb_theme:zone'
                               variant_id: null
-                              props:
-                                layout:
-                                  source_id: select
-                                  source:
-                                    value: bar
-                                label:
-                                  source_id: textfield
-                                  source:
-                                    value: 'Search and sort'
+                              props: {  }
                               slots:
-                                controls:
+                                content:
                                   sources:
                                     -
-                                      source_id: bb_view_search
+                                      source_id: component
+                                      source:
+                                        component:
+                                          component_id: 'bb_theme:filters'
+                                          variant_id: null
+                                          props:
+                                            layout:
+                                              source_id: select
+                                              source:
+                                                value: bar
+                                            label:
+                                              source_id: textfield
+                                              source:
+                                                value: 'Search and sort'
+                                          slots:
+                                            controls:
+                                              sources:
+                                                -
+                                                  source_id: bb_view_search
+                                                  source: {  }
+                                                  node_id: projects_workspace_list_search
+                                      node_id: projects_workspace_list_toolbar
+                                    -
+                                      source_id: view_rows
                                       source: {  }
-                                      node_id: projects_workspace_list_search
-                          node_id: projects_workspace_list_toolbar
-                        -
-                          source_id: view_rows
-                          source: {  }
-                          node_id: projects_list_rows
-                        -
-                          source_id: view_pager
-                          source: {  }
-                          node_id: projects_list_pager
-                        -
-                          source_id: view_exposed
-                          source: {  }
-                          node_id: projects_list_exposed
-              node_id: projects_list_zone
+                                      node_id: projects_list_rows
+                                    -
+                                      source_id: view_pager
+                                      source: {  }
+                                      node_id: projects_list_pager
+                                    -
+                                      source_id: view_exposed
+                                      source: {  }
+                                      node_id: projects_list_exposed
+                          node_id: projects_list_zone
+              node_id: projects_workspace_list_canvas
       path: _workspace/%bb_workspace/projects
     cache_metadata:
       max-age: -1

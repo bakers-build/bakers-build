@@ -272,7 +272,7 @@ final class ServiceAccountKeyCreateForm extends WrappedDialogFormBase {
     return [
       '#type' => 'component',
       '#component' => 'bb_theme:text',
-      '#props' => ['text' => $text, 'size' => 'caption', 'tone' => 'light'],
+      '#props' => ['text' => $text, 'size' => 'meta', 'tone' => 'light'],
       '#picker_region' => 'lines',
     ];
   }

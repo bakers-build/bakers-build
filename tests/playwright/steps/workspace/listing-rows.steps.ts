@@ -76,10 +76,18 @@ async function settle(page: Page): Promise<void> {
   await expect(page.locator(LIST).first()).toBeAttached({ timeout: 20000 });
 }
 
+/** A BbDate label: relative under seven days, else "15 Jun, 13:30" or "15 Jun 2025". */
+const DATE_LABEL = '(.+ ago|in .+|\\d{1,2} [A-Z][a-z]{2}(, \\d{2}:\\d{2}| \\d{4}))';
+
 /** A row value without its visible label, read off `[data-cell="key"]`. */
 async function rowValues(page: Page, key: string): Promise<string[]> {
   return page.locator(`${ROW} [data-cell="${key}"]`).evaluateAll((cells) =>
     cells.map((cell) => {
+      // A date compares by its machine value: its label is relative or day-first and does not sort as text.
+      const time = cell.querySelector('time[datetime]');
+      if (time) {
+        return time.getAttribute('datetime') ?? '';
+      }
       const copy = cell.cloneNode(true) as HTMLElement;
       copy.querySelectorAll('[data-cell-label]').forEach((label) => label.remove());
       return (copy.textContent ?? '').replace(/\s+/g, ' ').trim();
@@ -373,7 +381,7 @@ Then(
       expect(row.titles).toHaveLength(expected.length);
       row.titles.forEach((title, index) => expect(title).toMatch(expected[index]));
       expect(row.icons, 'A count has no icon').toBe(expected.length);
-      expect(row.caption).toMatch(new RegExp(`^${caption} .+ ago$`));
+      expect(row.caption).toMatch(new RegExp(`^${caption} ${DATE_LABEL}$`));
       expect(row.beneath, 'The date does not sit beneath the counts').toBe(true);
     }
   },
@@ -510,7 +518,7 @@ Then('every ticket row reads its identifier and {string} beneath the title', asy
   );
   for (const row of rows) {
     expect(row.identifier, "A row has no identifier").toMatch(/^\S+$/);
-    expect(row.created).toMatch(new RegExp(`^${word} .+ (ago|hence)$`));
+    expect(row.created).toMatch(new RegExp(`^${word} ${DATE_LABEL}$`));
     expect(row.metaTop, 'The meta line does not sit beneath the title').toBeGreaterThanOrEqual(row.headlineBottom - 1);
   }
 });

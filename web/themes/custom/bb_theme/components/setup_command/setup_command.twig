@@ -5,10 +5,10 @@
    JavaScript expression. The confirmation is `bb_theme:copied`, absolutely
    positioned slightly below this relative box so a copy never grows the card. #}
 <div{{ (attributes ?: create_attribute()).addClass([
-    'flex', 'items-center', 'gap-2', 'min-w-0', 'max-w-full',
+    'flex', 'items-center', 'gap-inline', 'min-w-0', 'max-w-full',
   ]) }}
   x-data="{ status: '', timer: 0, copy() { const text = this.$refs.command.textContent; const show = (msg) => { this.status = msg; clearTimeout(this.timer); this.timer = setTimeout(() => { this.status = '' }, 2000) }; Promise.resolve().then(() => navigator.clipboard.writeText(text)).then(() => show('Copied')).catch(() => show('Copy failed. Select the command and copy it yourself.')) } }">
-  <pre class="m-0 min-w-0 flex-1 overflow-x-auto rounded-sm border border-border bg-app p-3 text-caption font-mono text-text"><code x-ref="command" class="whitespace-pre">{{ command }}</code></pre>
+  <pre class="m-0 min-w-0 flex-1 overflow-x-auto rounded-sm border border-border bg-app p-stack font-mono text-data text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"><code x-ref="command" class="whitespace-pre">{{ command }}</code></pre>
   <div class="relative shrink-0 overflow-visible">
     {{ include('bb_theme:button', {
       label: 'Copy',

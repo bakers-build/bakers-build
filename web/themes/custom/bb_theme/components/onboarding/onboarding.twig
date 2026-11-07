@@ -18,19 +18,19 @@
 
    NOT A SCROLL CONTAINER, for `gate`'s reason: `min-h-screen` with centred
    items lets a long card grow the page instead of clipping itself. #}
-<div{{ (attributes ?: create_attribute()).setAttribute('id', 'bakers-onboarding').addClass(['min-h-screen', 'flex', 'items-center', 'justify-center', 'p-6', 'bg-app', 'text-text', 'font-sans']) }}>
-  <div class="w-full max-w-xl min-w-0 flex flex-col items-center gap-4">
-    <div class="w-full flex flex-col items-center text-center gap-2">
+<div{{ (attributes ?: create_attribute()).setAttribute('id', 'bakers-onboarding').addClass(['min-h-screen', 'flex', 'items-center', 'justify-center', 'p-gutter', 'bg-app', 'text-text']) }}>
+  <div class="w-full max-w-xl min-w-0 flex flex-col items-center gap-group">
+    <div class="w-full flex flex-col items-center text-center gap-inline">
       {% if mark %}
         <div>{% block mark %}{{ mark }}{% endblock %}</div>
       {% endif %}
       {% if title %}
-        <h1 class="text-h3" tabindex="-1" x-init="$el.focus({preventScroll: true})">{{ title }}</h1>
+        <h1 class="text-section-title" tabindex="-1" x-init="$el.focus({preventScroll: true})">{{ title }}</h1>
       {% endif %}
       {% if description %}
-        <p class="text-caption text-text-faint max-w-xs">{{ description }}</p>
+        <p class="text-meta text-text-faint max-w-xs">{{ description }}</p>
       {% endif %}
     </div>
-    <div class="w-full min-w-0 flex flex-col gap-4 p-6 bg-surface border border-border-2 rounded-md">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
+    <div class="w-full min-w-0 flex flex-col gap-group p-gutter bg-surface border border-border-2 rounded-md">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
   </div>
 </div>

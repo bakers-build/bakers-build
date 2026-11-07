@@ -12,14 +12,14 @@
    `text` is printed through Twig's autoescaping and is never treated as
    markup: an error log is machine output and may contain anything. #}
 {% set lines = text is empty ? [] : text|trim("\n")|split("\n") %}
-<figure{{ (attributes ?: create_attribute()).addClass(['log-viewer', 'm-0', 'rounded-[var(--radius-sm,7px)]', 'border', 'border-border-2', 'overflow-hidden']) }}>
+<figure{{ (attributes ?: create_attribute()).addClass(['log-viewer', 'm-0', 'rounded-[var(--radius-sm,7px)]', 'border', 'border-border-2', 'overflow-hidden', 'has-[:focus-visible]:outline-2', 'has-[:focus-visible]:outline-offset-2', 'has-[:focus-visible]:outline-focus-ring']) }}>
   {% if caption or lines %}
-    <figcaption class="log-viewer__caption flex items-center gap-[8px] px-[12px] py-[7px] border-b border-border-2 bg-surface-2">
-      {% if caption %}<span class="text-eyebrow font-semibold text-text-faint uppercase tracking-[0.04em]">{{ caption }}</span>{% endif %}
-      <span class="text-eyebrow text-text-faint font-mono tabular-nums">{{ lines|length }} {{ lines|length == 1 ? 'line' : 'lines' }}</span>
+    <figcaption class="log-viewer__caption flex items-center gap-inline px-stack py-[7px] border-b border-border-2 bg-surface-2">
+      {% if caption %}<span class="text-eyebrow text-text-faint uppercase">{{ caption }}</span>{% endif %}
+      <span class="text-meta text-text-faint tabular-nums">{{ lines|length }} {{ lines|length == 1 ? 'line' : 'lines' }}</span>
     </figcaption>
   {% endif %}
   <div class="log-viewer__body overflow-x-auto">
-    <pre class="m-0 p-0 text-caption font-mono text-text leading-[1.55]"><code>{% for line in lines %}<span class="log-viewer__line flex"><span class="log-viewer__gutter shrink-0 select-none w-[44px] pr-[10px] text-right text-text-faint tabular-nums" aria-hidden="true">{{ loop.index }}</span><span class="log-viewer__text whitespace-pre pr-[12px]">{{ line }}</span></span>{% endfor %}</code></pre>
+    <pre class="m-0 p-0 text-data font-mono text-text"><code>{% for line in lines %}<span class="log-viewer__line flex"><span class="log-viewer__gutter shrink-0 select-none w-[44px] pr-[10px] text-right text-text-faint tabular-nums" aria-hidden="true">{{ loop.index }}</span><span class="log-viewer__text whitespace-pre pr-stack">{{ line }}</span></span>{% endfor %}</code></pre>
   </div>
 </figure>

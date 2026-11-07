@@ -181,6 +181,16 @@ final class ActivityFeedLineTest extends KernelTestBase {
   }
 
   /**
+   * A row's time names its exact instant for the `<time>` element and hover.
+   */
+  public function testRowTimeCarriesItsExactInstant(): void {
+    $props = $this->line(['kind' => 'created', 'new_state' => 'qualification']);
+    $created = $this->container->get('datetime.time')->getCurrentTime();
+    self::assertSame($created, (new \DateTimeImmutable($props['datetime']))->getTimestamp());
+    self::assertMatchesRegularExpression('/^[A-Z][a-z]{2}, \d{1,2} [A-Z][a-z]{2} \d{4}, \d{2}:\d{2} \S+$/', $props['timestamp_title']);
+  }
+
+  /**
    * Saves one row of the ticket and renders it as the feed does.
    *
    * @param array<string, mixed> $values

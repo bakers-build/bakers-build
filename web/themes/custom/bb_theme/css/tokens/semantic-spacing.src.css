@@ -1,0 +1,8 @@
+@theme static {
+  --spacing-inline-xs: var(--spacing-space-1);
+  --spacing-inline: var(--spacing-space-2);
+  --spacing-stack: var(--spacing-space-3);
+  --spacing-group: var(--spacing-space-4);
+  --spacing-gutter: var(--spacing-space-6);
+  --spacing-section: var(--spacing-space-8);
+}

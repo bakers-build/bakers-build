@@ -5,13 +5,13 @@ status: stable
 group: Layout
 description: >-
   The trailing column of editable properties — what Xcode, Figma, Unity and
-  SwiftUI all call the inspector (BB-378 D9, renamed from `meta_rail`). It
-  fills `canvas.inspector`: a sticky `<aside>` of `meta_row` rows that stays in
-  view (`position: sticky; top: 0; align-self: start`) while the main region
-  beside it scrolls past. It is deliberately NOT a scroll container — no
-  `overflow-y: auto` — because that would make it a scrolling ancestor of the
-  four inline-edit pickers a `meta_row` can hold, and an absolutely positioned
-  picker panel cannot escape a scrolling ancestor (D3, BB-332 R9).
+  SwiftUI all call the inspector (BB-378 D9, renamed from `meta_rail`). It fills
+  `canvas.inspector`: a sticky `<aside>` of `meta_row` rows that stays in view
+  (`position: sticky; top: 0; align-self: start`) while the main region beside
+  it scrolls past. It is deliberately NOT a scroll container — no `overflow-y:
+  auto` — because that would make it a scrolling ancestor of the four
+  inline-edit pickers a `meta_row` can hold, and an absolutely positioned picker
+  panel cannot escape a scrolling ancestor (D3, BB-332 R9).
 provider: bb_theme
 props:
   type: object
@@ -25,8 +25,8 @@ props:
         is a block: blocks are separated by exactly one quiet divider, with the
         block rhythm set here, and the footer is the last block behind one
         divider. Rows inside a block should use `list` layout `plain`, which
-        draws no line of its own, so no line ever doubles. Without
-        it the rail renders exactly as before.
+        draws no line of its own, so no line ever doubles. Without it the rail
+        renders exactly as before.
 slots:
   rows:
     title: Rows

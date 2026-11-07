@@ -1,9 +1,12 @@
 {#
 /**
  * @file
- * Keep checkbox inputs at their native rendering — the text-input SDC classes
- * from input.html.twig would distort them. (Theme-wide safety; the auth forms
- * have no checkboxes.)
+ * Presenter override: render checkbox inputs through the bb_theme form_check
+ * SDC, passing the real Drupal attributes straight through.
+ *
+ * @see web/themes/custom/bb_theme/components/form_check/form_check.twig
  */
 #}
-<input{{ attributes }} />{{ children }}
+{{ include('bb_theme:form_check', {
+  attributes: attributes,
+}, with_context = false) }}{{ children }}

@@ -9,8 +9,9 @@ description: >-
   line stretched across a full-width content zone flattens into near-nothing,
   while a bar is read against its own baseline and stays legible at any width
   the layout gives it. Typically seven days, but the component fixes no length
-  and derives its geometry from however many points it is given. Drawn with proportional SVG bars and no charting library; the counts stay readable as text
-  above each bar, so nothing here is carried by the graphic alone.
+  and derives its geometry from however many points it is given. Drawn with
+  proportional SVG bars and no charting library; the counts stay readable as
+  text above each bar, so nothing here is carried by the graphic alone.
 provider: bb_theme
 props:
   type: object
@@ -47,7 +48,8 @@ props:
       type: string
       title: Source
       description: >-
-        Where the figure is read from, available in a native Data source disclosure.
+        Where the figure is read from, available in a native Data source
+        disclosure.
   required:
     - label
     - days

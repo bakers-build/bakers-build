@@ -3,7 +3,7 @@
    128px wide in every layout density. #}
 {% set compact = size|default('default') == 'compact' %}
 {% set tag = compact ? 'div' : 'h1' %}
-<{{ tag }}{{ (attributes ?: create_attribute()).addClass(['flex', 'items-center', 'justify-center', compact ? 'gap-brand-compact-gap' : 'gap-3', 'm-0', 'min-w-0', 'w-full']) }} aria-label="bakers.build"{% if compact %} role="img"{% endif %}>
+<{{ tag }}{{ (attributes ?: create_attribute()).addClass(['flex', 'items-center', 'justify-center', compact ? 'gap-brand-compact-gap' : 'gap-stack', 'm-0', 'min-w-0', 'w-full']) }} aria-label="bakers.build"{% if compact %} role="img"{% endif %}>
   <svg viewBox="14 4 36 59" width="40" height="64" aria-hidden="true" class="{{ compact ? 'w-brand-compact-braid-width h-brand-compact-braid-height' : 'w-10 h-16' }} shrink-0">
     <image href="{{ file_url('/themes/custom/bb_theme/assets/brand/bakers-braid.svg') }}" width="64" height="64"/>
   </svg>

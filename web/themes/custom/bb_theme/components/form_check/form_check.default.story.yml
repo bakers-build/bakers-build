@@ -1,0 +1,8 @@
+component: bb_theme:form_check
+name: Default
+props:
+  type: checkbox
+  id: edit-notify
+  name: notify
+  value: '1'
+  checked: true

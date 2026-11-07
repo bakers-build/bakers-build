@@ -880,6 +880,39 @@ check "A4 both shell scenes fill content with the \$content placeholder" \
 check "A4 every WORKSPACE screen scene's content holds exactly one node, a bb_theme:canvas" \
   a4_every_screen_content_holds_one_canvas
 
+# D2 for the routes no scene reaches: a View page display built in Display Builder is a screen of its
+# own, so its one root source is the canvas. A zone at the root has no left edge, because a zone adds
+# none, and its text then sits on the sidebar. Both install paths ship the View.
+a4_every_view_page_roots_in_one_canvas() {
+  local rc=0 file bad
+  for file in "$ROOT"/config/sync/views.view.*.yml "$ROOT"/recipes/*/config/views.view.*.yml; do
+    [ -f "$file" ] || continue
+    bad="$(awk '
+      function report(d) { if (d in builder && (roots[d] != 1 || first[d] != "bb_theme:canvas")) printf "%s:%s:%s\n", d, roots[d] + 0, first[d] }
+      /^display:/ { inside = 1; next }
+      inside && /^  [a-z0-9_]+:$/ { display = $1; sub(/:$/, "", display); next }
+      inside && /^    display_plugin: page$/ { page[display] = 1 }
+      inside && /^        display_builder:$/ { builder[display] = 1 }
+      inside && /^            -$/ && (display in builder) { roots[display]++ }
+      inside && /^                  component_id:/ && (display in builder) && roots[display] == 1 && !(display in first) {
+        id = $2; gsub(/["'"'"']/, "", id); first[display] = id
+      }
+      END { for (d in page) report(d) }
+    ' "$file")"
+    if [ -n "$bad" ]; then
+      printf '%s\n' "$bad" | while IFS=: read -r display count root; do
+        printf '  %s [%s]: %s root source(s), the first `%s`, not one bb_theme:canvas\n' \
+          "${file#"$ROOT"/}" "$display" "$count" "${root:-<none>}"
+      done
+      rc=1
+    fi
+  done
+  return "$rc"
+}
+
+check "A4 every View page display built in Display Builder roots in one bb_theme:canvas" \
+  a4_every_view_page_roots_in_one_canvas
+
 # --- A5. One <h1> per screen --------------------------------------------------------------------
 
 a5_page_header_renders_one_h1() {

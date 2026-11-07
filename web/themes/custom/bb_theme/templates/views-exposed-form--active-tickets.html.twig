@@ -10,9 +10,9 @@
  * catch-all at the end.
  */
 #}
-<div{{ attributes.addClass(['bakers-exposed-form', 'flex', 'items-end', 'gap-[12px]', 'flex-wrap', 'px-[20px]', 'py-[12px]', 'bg-app', 'border-b', 'border-border-2', '[&_.form-item]:m-0', '[&_label]:text-eyebrow', '[&_label]:font-bold', '[&_label]:tracking-[0.1em]', '[&_label]:uppercase', '[&_label]:text-text-faint', '[&_label]:mb-[4px]', '[&_label]:block', '[&_.form-text]:bg-surface-2', '[&_.form-text]:border-border-2']) }}>
+<div{{ attributes.addClass(['bakers-exposed-form', 'flex', 'items-end', 'gap-stack', 'flex-wrap', 'px-[20px]', 'py-stack', 'bg-app', 'border-b', 'border-border-2', '[&_.form-item]:m-0', '[&_label]:text-eyebrow', '[&_label]:uppercase', '[&_label]:text-text-faint', '[&_label]:mb-inline-xs', '[&_label]:block', '[&_.form-text]:bg-surface-2', '[&_.form-text]:border-border-2']) }}>
   {% if form.identifier %}<div class="w-[200px] max-w-full">{{ form.identifier }}</div>{% endif %}
   {% if form.title %}<div class="w-[240px] max-w-full">{{ form.title }}</div>{% endif %}
-  {% if form.actions %}<div class="shrink-0 [&_.form-actions]:flex [&_.form-actions]:items-center [&_.form-actions]:gap-[8px] [&_.form-actions]:m-0">{{ form.actions }}</div>{% endif %}
+  {% if form.actions %}<div class="shrink-0 [&_.form-actions]:flex [&_.form-actions]:items-center [&_.form-actions]:gap-inline [&_.form-actions]:m-0">{{ form.actions }}</div>{% endif %}
   {{ form|without('identifier', 'title', 'actions') }}
 </div>

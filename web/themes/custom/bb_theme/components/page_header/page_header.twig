@@ -60,10 +60,10 @@
   {%- set tabs_content %}{% block tabs %}{{ tabs }}{% endblock %}{% endset %}
   {%- set editable = heading_content|trim is not empty %}
   {%- if breadcrumb_content|trim is not empty %}
-    <div class="px-5 pt-4">{{ breadcrumb_content }}</div>
+    <div class="px-group xl:px-gutter pt-group">{{ breadcrumb_content }}</div>
   {% endif %}
-  <div class="flex items-center justify-between gap-4 min-h-11 px-5 {{ breadcrumb_content|trim is not empty ? 'pb-4 pt-2' : 'py-4' }}">
-    <div class="flex items-center gap-3 min-w-0">
+  <div class="flex items-center justify-between gap-group min-h-11 px-group xl:px-gutter {{ breadcrumb_content|trim is not empty ? 'pb-group pt-inline' : 'py-group' }}">
+    <div class="flex items-center gap-stack min-w-0">
       <div class="shrink-0 empty:hidden">{% block leading %}{{ leading }}{% endblock %}</div>
     <div class="flex flex-col min-w-0">
       {#- THE EDITABLE HEADING USED TO NEED HOVER/FOCUS STYLING TO LOOK EDITABLE,
@@ -82,11 +82,11 @@
           is judged to want one. #}
       {%- set editable_classes = 'min-w-0' %}
       {%- if editable or title %}
-        <h1 class="text-display font-bold text-title {{ editable ? editable_classes : 'truncate' }}">{{ editable ? heading_content : title }}</h1>
+        <h1 class="text-page-title font-display text-title {{ editable ? editable_classes : 'truncate' }}"{% if not editable %} title="{{ title }}"{% endif %}>{{ editable ? heading_content : title }}</h1>
       {% endif %}
       {%- if description %}
         {#- One page header per page: the fixed id lets an htmx swap refresh the line out of band. #}
-        <p id="page-header-description" class="truncate text-caption text-text-faint">{{ description }}</p>
+        <p id="page-header-description" class="truncate text-meta text-text-faint" title="{{ description }}">{{ description }}</p>
       {% endif %}
     </div>
     </div>
@@ -94,7 +94,7 @@
         element — an outer margin belongs to a layout component, not to this
         content one — so a header with no title still pushes its actions to the
         right edge. #}
-    <div class="flex items-center gap-3 shrink-0">
+    <div class="flex items-center gap-stack shrink-0">
       {%- block actions %}{% if actions %}{{ actions }}{% endif %}{% endblock %}
     </div>
   </div>
@@ -103,6 +103,6 @@
       the active tab's underline sits on that bottom rule. Absent on every screen
       that is not an entity place. #}
   {%- if tabs_content|trim is not empty %}
-    <div class="px-5">{{ tabs_content }}</div>
+    <div class="px-group xl:px-gutter">{{ tabs_content }}</div>
   {% endif %}
 </header>

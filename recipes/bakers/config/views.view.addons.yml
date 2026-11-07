@@ -609,25 +609,36 @@ display:
               source_id: component
               source:
                 component:
-                  component_id: 'bb_theme:zone'
+                  component_id: 'bb_theme:canvas'
                   variant_id: null
-                  props:
-                    description:
-                      source_id: textfield
-                      source:
-                        value: 'Every registered addon at its newest version, and the conductors of this workspace that run it.'
+                  props: {  }
                   slots:
-                    content:
+                    main:
                       sources:
                         -
-                          source_id: view_rows
-                          source: {  }
-                          node_id: addons_rows
-                        -
-                          source_id: view_pager
-                          source: {  }
-                          node_id: addons_pager
-              node_id: addons_zone
+                          source_id: component
+                          source:
+                            component:
+                              component_id: 'bb_theme:zone'
+                              variant_id: null
+                              props:
+                                description:
+                                  source_id: textfield
+                                  source:
+                                    value: 'Every registered addon at its newest version, and the conductors of this workspace that run it.'
+                              slots:
+                                content:
+                                  sources:
+                                    -
+                                      source_id: view_rows
+                                      source: {  }
+                                      node_id: addons_rows
+                                    -
+                                      source_id: view_pager
+                                      source: {  }
+                                      node_id: addons_pager
+                          node_id: addons_zone
+              node_id: addons_settings_canvas
       path: _workspace/%bb_workspace/settings/addons
     cache_metadata:
       max-age: -1

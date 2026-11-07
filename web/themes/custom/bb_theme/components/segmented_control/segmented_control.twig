@@ -7,13 +7,15 @@
    that reading, and the wrapper is a `<div>` rather than `<nav>` for the same
    reason a filter facet is not a landmark. Link positions work with JavaScript
    off — following one re-requests the list with the position applied. #}
-{% set item_class = 'inline-flex items-center rounded-sm px-2 py-1 text-body font-medium whitespace-nowrap' %}
+{% set item_class = 'inline-flex items-center rounded-sm px-inline py-inline-xs text-body-strong whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring' %}
 <div{{ (attributes ?: create_attribute()).addClass([
     'segmented-control', 'inline-flex', 'max-w-full', 'min-w-0', 'flex-wrap', 'items-center', 'gap-[2px]',
     'rounded-[8px]', 'border', 'border-border', 'bg-surface-2', 'p-[2px]',
   ]) }}
   role="group"
-  {%- if label %} aria-label="{{ label }}"{% endif %}>
+  {%- if label %} aria-label="{{ label }}"{% endif %}
+  {#- With `initial` the filter holds its state itself; without, an ancestor scope does. #}
+  {%- if state and initial is not empty %} x-data='{{ {(state): initial}|json_encode }}'{% endif %}>
   {%- for item in items %}
     {%- if item.value is defined and state -%}
       {%- set value_js = item.value|json_encode -%}

@@ -16,7 +16,6 @@
   --color-focus-ring: #155b91;
   --color-control-border: #768897;
   --color-on-primary: #ffffff;
-  --font-sans: "Source Sans 3", system-ui, sans-serif;
 }
 
 :root[data-skin="harbor"][data-mode="dark"] {
@@ -57,7 +56,6 @@
   --color-focus-ring: #286040;
   --color-control-border: #788873;
   --color-on-primary: #ffffff;
-  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
 }
 
 :root[data-skin="grove"][data-mode="dark"] {
@@ -98,7 +96,6 @@
   --color-focus-ring: #93401f;
   --color-control-border: #917d6d;
   --color-on-primary: #ffffff;
-  --font-sans: "Public Sans", system-ui, sans-serif;
 }
 
 :root[data-skin="ember"][data-mode="dark"] {
@@ -139,7 +136,6 @@
   --color-focus-ring: #78418d;
   --color-control-border: #8c7b98;
   --color-on-primary: #ffffff;
-  --font-sans: "Atkinson Hyperlegible Next", system-ui, sans-serif;
 }
 
 :root[data-skin="iris"][data-mode="dark"] {

@@ -224,7 +224,8 @@ final class ProjectStatsRouteTest extends KernelTestBase {
       ['bb_workspace' => $this->north, 'bb_project' => $this->atlas],
       ['bb_workspace' => 'north', 'bb_project' => 'atl'],
     );
-    return $controller->projectStats($match, $request);
+    // The page body inside its canvas › zone frame.
+    return $controller->projectStats($match, $request)['#slots']['main']['#slots']['content'];
   }
 
   /**

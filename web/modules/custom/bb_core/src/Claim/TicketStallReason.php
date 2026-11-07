@@ -11,6 +11,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Conductor\ConductorOwnerAccess;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\bb_core\Workflow\TypeWorkflows;
 
 /**
@@ -51,17 +52,23 @@ final class TicketStallReason {
    * words and as a mark. Empty `icon`/`suffix` satisfy the badge cell contract.
    * A frozen reason carries the hold's age in `suffix` when a stamp exists.
    *
-   * @return array{label: string, tone: string, dot: bool, icon: string, suffix: string}
-   *   Props for `bb_theme:badge`.
+   * @return array{label: string, tone: string, dot: bool, icon: string, suffix: string, suffix_datetime?: string, suffix_title?: string}
+   *   Props for `bb_theme:badge`; a dated suffix also names its instant.
    */
   public static function badge(string $reason, ?int $frozenAt = NULL): array {
-    return [
+    $badge = [
       'label' => self::label($reason),
       'tone' => 'wait',
       'dot' => TRUE,
       'icon' => '',
       'suffix' => $reason === 'frozen' ? self::since($frozenAt) : '',
     ];
+    if ($badge['suffix'] !== '' && $frozenAt !== NULL) {
+      $time = \Drupal::service(BbDate::class)->cell($frozenAt);
+      $badge['suffix_datetime'] = $time['datetime'];
+      $badge['suffix_title'] = $time['title'];
+    }
+    return $badge;
   }
 
   /**
@@ -104,13 +111,7 @@ final class TicketStallReason {
     if (\Drupal::time()->getRequestTime() - $frozenAt < 2) {
       return (string) new TranslatableMarkup('just now');
     }
-    /** @var \Drupal\Core\Datetime\DateFormatterInterface $formatter */
-    $formatter = \Drupal::service('date.formatter');
-    return (string) new TranslatableMarkup('@interval ago', [
-      '@interval' => $formatter->formatTimeDiffSince($frozenAt, [
-        'granularity' => 1,
-      ]),
-    ]);
+    return \Drupal::service(BbDate::class)->label($frozenAt);
   }
 
   /**

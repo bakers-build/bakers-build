@@ -1,0 +1,45 @@
+- id: tickets
+  items_per_page: 10
+  rows:
+    - type: entity
+      entity_type: bb_ticket
+      bundle: bb_ticket
+      view_mode: default
+      record: 0
+    - type: entity
+      entity_type: bb_ticket
+      bundle: bb_ticket
+      view_mode: default
+      record: 3
+    - type: entity
+      entity_type: bb_ticket
+      bundle: bb_ticket
+      view_mode: default
+      record: 4
+    - type: entity
+      entity_type: bb_ticket
+      bundle: bb_ticket
+      view_mode: default
+      record: 6
+    - type: entity
+      entity_type: bb_ticket
+      bundle: bb_ticket
+      view_mode: default
+      record: 7
+    - type: entity
+      entity_type: bb_ticket
+      bundle: bb_ticket
+      view_mode: default
+      record: 8
+    - type: entity
+      entity_type: bb_ticket
+      bundle: bb_ticket
+      view_mode: default
+      record: 9
+    - type: entity
+      entity_type: bb_ticket
+      bundle: bb_ticket
+      view_mode: default
+      record: 10
+  __designbook:
+    section: tickets
