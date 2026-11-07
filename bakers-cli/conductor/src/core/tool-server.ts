@@ -3,9 +3,19 @@
 // at launch, binds every call to that run's worktree. The operator token
 // (endpoint file, 0600) may name a worktree under the workspace root, for
 // the CLI's plain JSON `POST /call`.
+//
+// With an endpoint file, the port and the run grants (token hash and binding,
+// never the raw token) persist in `<id>.tools.json` beside it, so a running
+// agent's baked-in URL and token survive a conductor restart.
 
-import { randomBytes } from 'node:crypto';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash, randomBytes } from 'node:crypto';
+import {
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import {
   createServer,
   type IncomingMessage,
@@ -28,8 +38,9 @@ import { SITE_TOOLS, siteToolProxy } from './site-tools.js';
 export interface ToolServer {
   /** The MCP endpoint. */
   url: string;
-  issueRunToken(binding: ToolBinding): string;
-  revokeRunToken(token: string): void;
+  /** A fresh token for the run; replaces the run's earlier grant. */
+  issueRunToken(runUuid: string, binding: ToolBinding): string;
+  revokeRunToken(runUuid: string): void;
   stop(): Promise<void>;
 }
 
@@ -53,6 +64,36 @@ export interface ToolServerOptions {
 }
 
 const newToken = () => randomBytes(32).toString('hex');
+const hashOf = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
+
+interface Grant {
+  hash: string;
+  binding: ToolBinding;
+}
+
+/** What `<id>.tools.json` holds: the port and the grants by run UUID. */
+interface ToolServerState {
+  port?: number;
+  runs: Record<string, Grant>;
+}
+
+function readState(
+  file: string | undefined,
+  logger?: ConductorLogger,
+): ToolServerState {
+  if (!file) return { runs: {} };
+  try {
+    return JSON.parse(readFileSync(file, 'utf8')) as ToolServerState;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT')
+      logger?.warn(
+        { err, file },
+        'tool server state unreadable, starting empty',
+      );
+    return { runs: {} };
+  }
+}
 
 function bearer(req: IncomingMessage): string | undefined {
   const m = /^Bearer (.+)$/.exec(req.headers.authorization ?? '');
@@ -89,8 +130,22 @@ export async function startToolServer(
         `addon tool ${clash.name} has the name of a bakers site tool`,
       );
   }
-  const runs = new Map<string, ToolBinding>();
+  const stateFile = options.endpointFile?.replace(/(\.json)?$/, '.tools.json');
+  const saved = readState(stateFile, logger);
+  const runs = new Map<string, Grant>(Object.entries(saved.runs ?? {}));
   const operatorToken = newToken();
+  let port = 0;
+  const persist = () => {
+    if (!stateFile) return;
+    const state: ToolServerState = { port, runs: Object.fromEntries(runs) };
+    writeFileSync(`${stateFile}.tmp`, JSON.stringify(state), { mode: 0o600 });
+    renameSync(`${stateFile}.tmp`, stateFile);
+  };
+  const bindingOf = (token: string | undefined) => {
+    if (!token) return undefined;
+    const hash = hashOf(token);
+    return [...runs.values()].find((g) => g.hash === hash)?.binding;
+  };
 
   const mcpServer = (binding: ToolBinding): Server => {
     const server = new Server(
@@ -172,7 +227,7 @@ export async function startToolServer(
     const handle = async () => {
       if (req.method === 'POST' && req.url === '/call')
         return operatorCall(req, res);
-      const binding = runs.get(bearer(req) ?? '');
+      const binding = bindingOf(bearer(req));
       if (!binding)
         return send(res, 401, {
           error: 'unknown run token — conductor restarted?',
@@ -195,12 +250,32 @@ export async function startToolServer(
       if (!res.headersSent) send(res, 500, { error: 'internal error' });
     });
   });
-  await new Promise<void>((done) => http.listen(0, '127.0.0.1', done));
-  const { port } = http.address() as AddressInfo;
+  const listen = (at: number) =>
+    new Promise<void>((done, fail) => {
+      http.once('error', fail);
+      http.listen(at, '127.0.0.1', () => {
+        http.off('error', fail);
+        done();
+      });
+    });
+  try {
+    await listen(saved.port ?? 0);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'EADDRINUSE' || !saved.port)
+      throw err;
+    // shortcut: runs launched before the restart lose their tools until re-dispatched.
+    logger?.warn(
+      { port: saved.port },
+      'tool server port taken, falling back to a random port',
+    );
+    await listen(0);
+  }
+  port = (http.address() as AddressInfo).port;
   const url = `http://127.0.0.1:${port}`;
 
   if (options.endpointFile) {
     mkdirSync(dirname(options.endpointFile), { recursive: true, mode: 0o700 });
+    persist();
     const endpoint: ToolServerEndpoint = {
       url,
       operatorToken,
@@ -214,17 +289,18 @@ export async function startToolServer(
 
   return {
     url,
-    issueRunToken: (binding) => {
+    issueRunToken: (runUuid, binding) => {
       const token = newToken();
-      runs.set(token, binding);
+      runs.set(runUuid, { hash: hashOf(token), binding });
+      persist();
       return token;
     },
-    revokeRunToken: (token) => {
-      runs.delete(token);
+    revokeRunToken: (runUuid) => {
+      if (runs.delete(runUuid)) persist();
     },
     stop: async () => {
+      // The state file stays: the next start serves the same grants.
       if (options.endpointFile) rmSync(options.endpointFile, { force: true });
-      runs.clear();
       http.closeAllConnections();
       await new Promise<void>((done) => http.close(() => done()));
     },

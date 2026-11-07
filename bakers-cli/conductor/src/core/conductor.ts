@@ -264,8 +264,6 @@ export class Conductor {
 
   /** The local MCP server for addon tools; only the serve process runs one. */
   private toolServer: ToolServer | undefined;
-  /** The live run token per run UUID, revoked when the run is finalised. */
-  private readonly runTokens = new Map<string, string>();
 
   /** Serializes git worktree add/remove: parallel ones fight over git locks. */
   private gitLock: Promise<unknown> = Promise.resolve();
@@ -375,7 +373,6 @@ export class Conductor {
     await this.config.provisioning?.stop();
     await this.remote.siteTools?.close();
     this.toolServer = undefined;
-    this.runTokens.clear();
   }
 
   /** A fresh token for this run's worktree; a re-dispatch replaces the old one. */
@@ -384,16 +381,12 @@ export class Conductor {
     binding: ToolBinding,
   ): { url: string; token: string } | undefined {
     if (!this.toolServer) return undefined;
-    this.revokeRunTools(runUuid);
-    const token = this.toolServer.issueRunToken(binding);
-    this.runTokens.set(runUuid, token);
+    const token = this.toolServer.issueRunToken(runUuid, binding);
     return { url: this.toolServer.url, token };
   }
 
   private revokeRunTools(runUuid: string): void {
-    const token = this.runTokens.get(runUuid);
-    if (token) this.toolServer?.revokeRunToken(token);
-    this.runTokens.delete(runUuid);
+    this.toolServer?.revokeRunToken(runUuid);
   }
 
   async start() {

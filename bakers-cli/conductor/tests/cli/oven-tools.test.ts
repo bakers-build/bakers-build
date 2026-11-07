@@ -52,7 +52,7 @@ async function run(
   env?: NodeJS.ProcessEnv,
 ) {
   server ??= await startToolServer({ registry: await registry() });
-  const token = server.issueRunToken({ worktreePath: '/work/bb-1' });
+  const token = server.issueRunToken('run-1', { worktreePath: '/work/bb-1' });
   const out: string[] = [];
   const err: string[] = [];
   const code = await ovenTools(
