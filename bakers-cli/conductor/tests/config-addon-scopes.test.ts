@@ -241,3 +241,52 @@ describe('shared run security from the machine and project config', () => {
     );
   });
 });
+
+describe('restart_on_change and the watched files', () => {
+  it('defaults restart_on_change to true and watches what was loaded', async () => {
+    const machine = writeMachine(
+      `export default { addons: ['@bakers-build/addon-codex'] };`,
+    );
+    const project = writeProject(projectConfig());
+    const cfg = await loadConductorConfig(project);
+    const dir = join(project, '..');
+
+    expect(cfg.restart_on_change).toBe(true);
+    expect(cfg.watch_paths?.files).toEqual([
+      project,
+      join(dir, 'conductor.config.local.js'),
+      join(dir, 'connection.config.local.js'),
+      machine,
+    ]);
+    // The directory of the resolved addon module, not the package name.
+    expect(cfg.watch_paths?.dirs).toHaveLength(1);
+    expect(cfg.watch_paths?.dirs[0]).toMatch(/codex.*[/\\](dist|src)$/);
+  });
+
+  it('honours restart_on_change: false', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    const cfg = await loadConductorConfig(
+      writeProject(
+        projectConfig().replace(
+          'bakers:',
+          'restart_on_change: false,\n  bakers:',
+        ),
+      ),
+    );
+    expect(cfg.restart_on_change).toBe(false);
+  });
+
+  it('rejects a restart_on_change that is not a boolean', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    await expect(
+      loadConductorConfig(
+        writeProject(
+          projectConfig().replace(
+            'bakers:',
+            "restart_on_change: 'no',\n  bakers:",
+          ),
+        ),
+      ),
+    ).rejects.toThrow(/restart_on_change must be a boolean/);
+  });
+});

@@ -41,6 +41,8 @@ bakers oven stop
 
 `start` accepts `--foreground` (run the loop in this process, for a service unit or debugging), `--no-update-check` (skip the daily notice about a newer `@bakers-build/bakers`) and `--force` (stop the running conductor with `SIGTERM`, then `SIGKILL` after a grace period, and start a new one; it fails instead of starting a second conductor when the old one cannot be verified or stopped). `--foreground` moves only the loop: worker sessions still need herdr. Without `--force`, a conductor that is already alive prints `already running` and exits.
 
+A running conductor restarts itself when its config, the machine config or a configured addon's build changes; `restart_on_change: false` switches that off ([Restart on change](/configuration/project/conductor-commands#restart-on-change)).
+
 `stop --now` sends `SIGKILL` instead. A killed process cannot write `offline`, so the status changes when its lease expires. Stop signals the process itself, so run it on the host where the conductor runs; other hosts refuse. Runs already started keep going in their own herdr tabs. The control plane that protects server-maintained conductor fields needs this CLI: older generic status PATCH callers fail.
 
 `status` and `ls` print tab-separated columns: label, liveness, project, workspace root, conductor id (`<machine_id>-<project>-<variant>`). Liveness is derived the same way in the CLI, in `bakers ui` and on the server:

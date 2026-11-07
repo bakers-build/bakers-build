@@ -152,4 +152,42 @@ describe('bakers oven start --foreground duplicate guard (BB-474)', () => {
     expect(lines.some((l) => l.includes('already running'))).toBe(true);
     expect(remote.registrations).toHaveLength(0);
   });
+
+  it('starts when the live record is this very process, as after a self-restart', async () => {
+    let served = false;
+    class SelfRemote extends RunningRemote {
+      override async listConductors(): Promise<ConductorStatus[]> {
+        return [runningRow({ lastPid: process.pid })];
+      }
+      override async heartbeat(
+        reg: ConductorRegistration,
+        load: number,
+        lease?: number,
+      ): Promise<string> {
+        served = true;
+        process.emit('SIGTERM');
+        return super.heartbeat(reg, load, lease);
+      }
+    }
+    const deps: BbCliDeps = {
+      remote: new SelfRemote(),
+      config: makeConfig(),
+      executor: new FakeExecutor({ outcome: 'exited' }),
+      workspace: new FakeWorkspace(),
+      agents: [{ id: 'claude', agent: claudeAgent() }],
+      // --force must not signal this process either.
+      procProbe: fakeProcProbe(process.pid),
+    };
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    try {
+      await buildConductorProgram(deps).parseAsync(
+        ['oven', 'start', '--foreground', '--force', '--no-update-check'],
+        { from: 'user' },
+      );
+    } finally {
+      logSpy.mockRestore();
+    }
+
+    expect(served).toBe(true);
+  });
 });
