@@ -1,7 +1,10 @@
 {#
 /**
  * @file
- * Keep radio inputs at their native rendering — see input--checkbox.html.twig.
+ * Presenter override: render radio inputs through the bb_theme form_check
+ * SDC — see input--checkbox.html.twig.
  */
 #}
-<input{{ attributes }} />{{ children }}
+{{ include('bb_theme:form_check', {
+  attributes: attributes,
+}, with_context = false) }}{{ children }}

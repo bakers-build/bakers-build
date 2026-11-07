@@ -1,8 +1,25 @@
-{# Keep core field semantics and description IDs; style help text consistently. #}
-{% if description.content %}
-  {% do description.attributes.addClass([
-    'text-meta', 'text-text-light',
-    description_display == 'before' ? 'pb-inline-xs' : 'pt-inline-xs',
-  ]) %}
-{% endif %}
-{% include '@stable9/form/form-element.html.twig' %}
+{#
+/**
+ * @file
+ * Presenter override: render every form element through the bb_theme
+ * form_field SDC, which owns the field's spacing and help-text styling.
+ *
+ * @see web/themes/custom/bb_theme/components/form_field/form_field.twig
+ */
+#}
+{{ include('bb_theme:form_field', {
+  attributes: attributes,
+  type: type,
+  name: name,
+  title_display: title_display,
+  label_display: label_display,
+  description_display: description_display,
+  description_id: description.attributes.id|default(''),
+  disabled: disabled == 'disabled',
+  label: label,
+  prefix: prefix,
+  children: children,
+  suffix: suffix,
+  errors: errors,
+  description: description.content,
+}, with_context = false) }}
