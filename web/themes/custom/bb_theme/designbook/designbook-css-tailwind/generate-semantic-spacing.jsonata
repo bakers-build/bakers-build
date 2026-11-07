@@ -1,0 +1,21 @@
+/** @config
+ {
+   "input": "../design-system/design-tokens.yml",
+   "output": "../../css/tokens/semantic-spacing.src.css"
+ }
+ */
+
+(
+  /* Spacing roles reference the space scale, so the cozy layout repoints them through the primitive it overrides. */
+  $node := $reduce($split("semantic.spacing", "."), function($a, $s) { $lookup($a, $s) }, $$);
+  $entries := $each($node, function($v, $k) {
+    $substring($k, 0, 1) != "$" and $exists($v."$value") ? (
+      $ref := $replace($replace($v."$value", "{", ""), "}", "");
+      "  --spacing-" & $k & ": var(--spacing-" & $split($ref, ".")[-1] & ");"
+    )
+  });
+  $lines := $filter($entries, function($e) { $e != null });
+  $count($lines) > 0
+    ? "@theme static {\n" & $join($lines, "\n") & "\n}\n"
+    : ""
+)

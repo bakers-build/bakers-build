@@ -28,12 +28,12 @@
  * @see template_preprocess_views_mini_pager()
  */
 #}
-{% set link = 'inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-xs border border-border-2 bg-surface-2 text-eyebrow font-semibold text-text no-underline hover:bg-surface hover:border-border' %}
-{% set current = 'inline-flex items-center justify-center min-w-7 h-7 px-2 rounded-xs text-eyebrow font-semibold text-text-faint' %}
+{% set link = 'inline-flex items-center justify-center min-w-7 h-7 px-inline rounded-xs border border-border-2 bg-surface-2 text-eyebrow text-text no-underline hover:bg-surface hover:border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring' %}
+{% set current = 'inline-flex items-center justify-center min-w-7 h-7 px-inline rounded-xs text-eyebrow text-text-faint' %}
 {% if items.previous or items.next %}
-  <nav class="bakers-pager pager flex w-full justify-center items-center gap-1 mt-3" role="navigation" aria-labelledby="{{ heading_id }}">
+  <nav class="bakers-pager pager flex w-full justify-center items-center gap-inline-xs mt-stack" role="navigation" aria-labelledby="{{ heading_id }}">
     <{{ pagination_heading_level }} id="{{ heading_id }}" class="sr-only">{{ 'Pagination'|t }}</{{ pagination_heading_level }}>
-    <ul class="pager__items js-pager__items flex flex-wrap items-center gap-1 m-0 p-0 list-none">
+    <ul class="pager__items js-pager__items flex flex-wrap items-center gap-inline-xs m-0 p-0 list-none">
       {% if items.previous %}
         <li class="pager__item shrink-0 pager__item--previous">
           <a href="{{ items.previous.href }}" class="{{ link }}" title="{{ 'Go to previous page'|t }}" rel="prev"{{ items.previous.attributes|without('href', 'title', 'rel') }}>

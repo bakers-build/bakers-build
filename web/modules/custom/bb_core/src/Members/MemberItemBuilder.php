@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Members;
 
 use Drupal\Component\Render\MarkupInterface;
-use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Security\TrustedCallbackInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\StringTranslation\TranslationInterface;
 use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\og\Entity\OgRole;
 use Drupal\og\OgMembershipInterface;
 use Drupal\og\OgRoleInterface;
@@ -51,7 +51,7 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   public const string TRANSFER_PREFIX = 'transfer_owner_';
 
   public function __construct(
-    private readonly DateFormatterInterface $dateFormatter,
+    private readonly BbDate $date,
     TranslationInterface $string_translation,
     private readonly ModuleHandlerInterface $moduleHandler,
   ) {
@@ -249,14 +249,8 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
     // The date keeps its WORD, because it is no longer under a column heading
     // that named it. A bare date beside a role would be a fact with no subject.
     $cells['joined'] = [
-      'kind' => 'mono',
-      'value' => $this->t('joined @date', [
-        '@date' => $this->dateFormatter->format(
-          $membership->getCreatedTime(),
-          'custom',
-          'Y-m-d',
-        ),
-      ]),
+      'kind' => 'text',
+      'value' => $this->t('joined @date', ['@date' => $this->date->date($membership->getCreatedTime())]),
     ];
     if ($show_transfer) {
       $cells['transfer'] = ['kind' => 'rendered'];

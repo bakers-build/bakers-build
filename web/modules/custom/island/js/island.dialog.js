@@ -3,10 +3,11 @@
  * Makes a wrapped-route dialog hull dismissible by Cancel, close control and Escape.
  *
  * Deviation from Drupal.behaviors: document-level delegation, because a
- * once() attachment raced the swapped close control.
+ * once() attachment raced the swapped close control. Initial focus is a
+ * behavior: it must run when a dialog's markup arrives, not on a user event.
  */
 
-(() => {
+((Drupal, once) => {
   /**
    * Closes a dialog towards its own close target, if it has one.
    *
@@ -62,4 +63,25 @@
       closeDialog(dialog);
     }
   });
-})();
+
+  /**
+   * Moves focus into an opened dialog's first field, never its close control.
+   */
+  Drupal.behaviors.islandDialogFocus = {
+    attach(context) {
+      const selector = '[data-dialog][open], #drupal-off-canvas';
+      // A swapped-in fragment can be the dialog itself, which a context query misses.
+      const dialogs = [context, ...context.querySelectorAll(selector)].filter((el) => el.matches?.(selector));
+      dialogs.forEach((dialog) => {
+        // Rendered only: a closed picker's search field comes first but cannot take focus.
+        const field = dialog.querySelector('[autofocus]')
+          ?? [...dialog.querySelectorAll('input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled)')]
+            .find((el) => el.checkVisibility());
+        // Keyed on the field: the off-canvas container outlives its content, a field does not.
+        if (field && once('island-dialog-focus', field).length) {
+          field.focus();
+        }
+      });
+    },
+  };
+})(Drupal, once);

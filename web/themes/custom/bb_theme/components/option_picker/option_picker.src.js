@@ -366,7 +366,7 @@ const renderChips = (picker) => {
   if (!wrap) {
     wrap = document.createElement('span');
     wrap.setAttribute('data-option-picker-chips', '');
-    wrap.className = 'inline-flex flex-wrap items-center gap-1';
+    wrap.className = 'inline-flex flex-wrap items-center gap-inline-xs';
     picker.querySelector('[data-option-picker-trigger]')?.after(wrap);
   }
   const iconSource = wrap.querySelector('[data-option-picker-chip-remove] svg');
@@ -378,7 +378,7 @@ const renderChips = (picker) => {
     const chip = document.createElement('span');
     chip.setAttribute('data-option-picker-chip', '');
     chip.setAttribute('data-value', value);
-    chip.className = 'inline-flex items-center gap-1 h-6 max-w-40 px-1.5 rounded-full border border-control-border bg-app text-caption';
+    chip.className = 'inline-flex items-center gap-inline-xs h-6 max-w-40 px-1.5 rounded-full border border-control-border bg-app text-meta';
     const text = document.createElement('span');
     text.className = 'min-w-0 truncate';
     text.title = label;
@@ -386,7 +386,7 @@ const renderChips = (picker) => {
     const remove = document.createElement('button');
     remove.type = 'button';
     remove.setAttribute('data-option-picker-chip-remove', '');
-    remove.className = 'shrink-0 text-text-faint hover:text-text';
+    remove.className = 'shrink-0 text-text-faint hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
     remove.setAttribute('aria-label', `Remove ${label} from ${fieldName}`);
     if (iconSource) {
       remove.appendChild(iconSource.cloneNode(true));

@@ -1,3 +1,11 @@
+field.formatter.settings.bb_time:
+  type: mapping
+  label: 'Product time'
+  mapping:
+    date_only:
+      type: boolean
+      label: 'Date only'
+
 field.formatter.settings.bb_integer_badge:
   type: mapping
   label: 'Integer badge'

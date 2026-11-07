@@ -186,6 +186,7 @@ services:
       - '@logger.channel.bb_core'
       - '@language_manager'
       - '@current_user'
+      - '@bb_core.date'
   # Applies an invitation's workspace role and team on joining.
   bb_core.invite_acceptance:
     class: Drupal\bb_core\Members\InviteAcceptance
@@ -396,7 +397,7 @@ services:
   # and bb_conductor. They are JSON:API surface read by bakers-cli.
   bb_core.ticket_run_deriver:
     class: Drupal\bb_core\Derive\TicketRunDeriver
-    arguments: ['@entity_type.manager', '@datetime.time', '@date.formatter']
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.date']
   Drupal\bb_core\Derive\TicketRunDeriver:
     alias: bb_core.ticket_run_deriver
   # Request-cached counts of referencing entities (a project's tickets, a
@@ -408,7 +409,7 @@ services:
     alias: bb_core.reference_counter
   bb_core.conductor_deriver:
     class: Drupal\bb_core\Derive\ConductorDeriver
-    arguments: ['@datetime.time', '@date.formatter']
+    arguments: ['@datetime.time', '@bb_core.date']
   Drupal\bb_core\Derive\ConductorDeriver:
     alias: bb_core.conductor_deriver
   bb_core.project_overview_tickets:
@@ -436,10 +437,11 @@ services:
   # Read-only formatting for the ticket-detail inspector.
   bb_core.ticket_inspector_rows:
     class: Drupal\bb_core\Ticket\TicketInspectorRows
+    arguments: ['@bb_core.date']
   Drupal\bb_core\Ticket\TicketInspectorRows:
     alias: bb_core.ticket_inspector_rows
 
-  # Product date display: `normal` absolute format and relative ago/hence.
+  # The one product path for displayed times and durations.
   bb_core.date:
     class: Drupal\bb_core\Time\BbDate
     arguments: ['@date.formatter', '@datetime.time']

@@ -1,8 +1,12 @@
-$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
 name: Status Bar
 status: stable
 group: Shell
-description: 'Bottom bar of the shell, filling the page footer slot. Deliberately not called footer and without a navigation slot: it is a status surface, not a site footer.'
+description: >-
+  Bottom bar of the shell, filling the page footer slot. Deliberately not called
+  footer and without a navigation slot: it is a status surface, not a site
+  footer.
 provider: bb_theme
 props:
   type: object

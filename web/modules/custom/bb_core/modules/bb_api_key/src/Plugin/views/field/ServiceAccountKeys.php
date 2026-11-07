@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Drupal\bb_api_key\Plugin\views\field;
 
 use Drupal\Component\Datetime\TimeInterface;
-use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\bb_api_key\ServiceAccountManager;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\user\UserInterface;
 use Drupal\views\Attribute\ViewsField;
 use Drupal\views\Plugin\views\field\FieldPluginBase;
@@ -37,7 +37,7 @@ final class ServiceAccountKeys extends FieldPluginBase {
   /**
    * Formats each key's dates.
    */
-  protected DateFormatterInterface $dateFormatter;
+  protected BbDate $date;
 
   /**
    * {@inheritdoc}
@@ -46,7 +46,7 @@ final class ServiceAccountKeys extends FieldPluginBase {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->serviceAccountManager = $container->get(ServiceAccountManager::class);
     $instance->time = $container->get('datetime.time');
-    $instance->dateFormatter = $container->get('date.formatter');
+    $instance->date = $container->get(BbDate::class);
     return $instance;
   }
 
@@ -77,10 +77,12 @@ final class ServiceAccountKeys extends FieldPluginBase {
       return ['#markup' => $this->t('No key'), '#cache' => ['max-age' => 0]];
     }
     // `bb_expires` is the midnight AFTER the last valid UTC day (see
-    // ApiKeyManager::expiryTimestamp()); show the day the admin picked.
+    // ApiKeyManager::expiryTimestamp()); noon of that day is the same calendar
+    // day in every timezone from UTC-12 to UTC+11, so the reader sees the day
+    // the admin picked.
     $latest = max(array_map(fn ($consumer): int => (int) $consumer->get('bb_expires')->value, $consumers));
     $args = [
-      '@date' => $this->dateFormatter->format($latest - 1, 'custom', 'j M Y', 'UTC'),
+      '@date' => $this->date->date($latest - 43200),
     ];
     $summary = $latest <= $this->time->getCurrentTime()
       ? $this->formatPlural(count($consumers), '1 key · expired @date', '@count keys · expired @date', $args)

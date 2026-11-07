@@ -1,0 +1,6 @@
+component: bb_theme:time
+name: Absolute
+props:
+  label: 15 Jun 2025
+  datetime: '2025-06-15T13:30:00+00:00'
+  title: Sun, 15 Jun 2025, 13:30 UTC

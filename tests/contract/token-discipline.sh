@@ -212,7 +212,7 @@ check2_no_primitive_reference() {
   local rc=0 hits
   local colors="neutral-50 neutral-100 neutral-200 neutral-300 neutral-400 neutral-500 neutral-600 neutral-700 neutral-800 neutral-900 accent-50 accent-100 accent-200 accent-300 accent-400 accent-500 accent-600 accent-700 accent-800 accent-900 red-50 red-100 red-200 red-300 red-400 red-500 red-600 red-700 red-800 red-900 amber-50 amber-100 amber-200 amber-300 amber-400 amber-500 amber-600 amber-700 amber-800 amber-900 teal-50 teal-100 teal-200 teal-300 teal-400 teal-500 teal-600 teal-700 teal-800 teal-900 indigo-50 indigo-100 indigo-200 indigo-300 indigo-400 indigo-500 indigo-600 indigo-700 indigo-800 indigo-900"
   local color_alt space_alt
-  color_alt="$(printf '%s\n' $colors | paste -sd'|')"
+  color_alt="$(printf '%s\n' $colors | paste -sd'|' -)"
   space_alt="space-1|space-2|space-3|space-4|space-5|space-6"
 
   # Colour families used as a bg/text/border/ring/shadow/decoration/divide/outline/fill/stroke/
@@ -556,6 +556,134 @@ PY
 
 check "8 no arbitrary/fixed max-w outside a layout component" \
   check8_no_arbitrary_max_width_outside_layout
+
+# --- 9. Text sizes are typography roles, tree-wide ------------------------------------------------
+#
+# Screens apply ROLES (the twelve `semantic.typography` keys, the Figma `vorschlag/*` styles) and
+# never a one-off size. Every `text-<x>` fragment in theme and module Twig and in module PHP render
+# props must be a role, a colour (`semantic.color` key), or one of Tailwind's non-size `text-*`
+# words (alignment, wrapping, overflow, `current`/`inherit`/`transparent`). Anything else - a
+# Tailwind size step (`text-sm`), a primitive step (`text-13`), an arbitrary value (`text-[13px]`)
+# or a removed role (`text-caption`) - is a one-off size and fails.
+
+check9_text_sizes_are_roles() {
+  python3 - "$TOKENS" "$ROOT" <<'PY'
+import glob, os, re, sys, yaml
+
+tokens_path, root = sys.argv[1], sys.argv[2]
+model = yaml.safe_load(open(tokens_path))
+roles = set(model['semantic']['typography'])
+colors = set(model['semantic']['color'])
+words = {'left', 'center', 'right', 'justify', 'start', 'end', 'wrap', 'nowrap', 'balance',
+         'pretty', 'ellipsis', 'clip', 'current', 'inherit', 'transparent', 'white', 'black'}
+files = [f for pattern in ('web/themes/custom/**/*.twig', 'web/modules/custom/**/*.twig',
+                           'web/modules/custom/**/*.php')
+         for f in glob.glob(os.path.join(root, pattern), recursive=True) if '/tests/' not in f]
+if len(files) < 100:
+    print(f'  the enumeration reached only {len(files)} files')
+    sys.exit(1)
+# Mail markup carries inline CSS for mail clients, which load no theme stylesheet.
+exempt = {'web/modules/custom/bb_core/templates/bb-email.html.twig'}
+fragment = re.compile(r'(?<![\w$/.-])text-(\[[^\]\s]*\]|[a-z0-9][a-z0-9-]*)')
+
+
+def code_lines(path):
+    """Lines with comments blanked: `{# #}` in Twig, `//`, `#` and docblock lines in PHP."""
+    text = open(path, encoding='utf-8').read()
+    if path.endswith('.twig'):
+        text = re.sub(r'\{#.*?#\}', lambda m: '\n' * m.group(0).count('\n'), text, flags=re.S)
+        return text.split('\n')
+    return ['' if l.lstrip().startswith(('//', '#', '*', '/*')) else l for l in text.split('\n')]
+
+
+rc = 0
+for path in sorted(files):
+    if os.path.relpath(path, root) in exempt:
+        continue
+    for lineno, line in enumerate(code_lines(path), start=1):
+        for m in fragment.finditer(line):
+            name = m.group(1).split('/')[0]
+            if name in roles or name in colors or name in words:
+                continue
+            print(f'  {os.path.relpath(path, root)}:{lineno}: `text-{m.group(1)}` is not a typography role')
+            rc = 1
+sys.exit(rc)
+PY
+}
+
+check "9 every text size is a typography role, tree-wide" check9_text_sizes_are_roles
+
+# --- 10. Role names and colour names are disjoint -------------------------------------------------
+#
+# Tailwind serves `--text-*` (size) and `--color-*` (colour) through the same `text-` prefix, so a
+# role named like a colour would make `text-<name>` mean two things.
+
+check10_roles_and_colors_are_disjoint() {
+  python3 - "$TOKENS" <<'PY'
+import sys, yaml
+model = yaml.safe_load(open(sys.argv[1]))
+roles = set(model['semantic']['typography'])
+colors = set(model['semantic']['color'])
+for theme in (model.get('themes') or {}).values():
+    colors |= set(((theme.get('semantic') or {}).get('color') or {}))
+both = sorted(roles & colors)
+if len(roles) < 12:
+    print(f'  only {len(roles)} typography roles declared')
+    sys.exit(1)
+for name in both:
+    print(f'  `{name}` is both a typography role and a colour')
+sys.exit(1 if both else 0)
+PY
+}
+
+check "10 typography role names and colour names are disjoint" check10_roles_and_colors_are_disjoint
+
+# --- 11. Layout components space with spacing roles ------------------------------------------------
+#
+# The components that place one thing beside another use the six `semantic.spacing` roles
+# (`inline-xs`, `inline`, `stack`, `group`, `gutter`, `section`) for padding, margin and gap, or a
+# spacing token their own `component.*` group declares (zone's `gap-zone-md`) - no numeric step and
+# no arbitrary value - so every screen shares one rhythm.
+
+SPACING_ROLE_COMPONENTS="shell canvas page_header zone filters inspector"
+
+check11_layout_spacing_uses_roles() {
+  python3 - "$TOKENS" "$COMPONENTS" "$SPACING_ROLE_COMPONENTS" <<'PY'
+import os, re, sys, yaml
+tokens_path, comps, names = sys.argv[1], sys.argv[2], sys.argv[3].split()
+tokens = yaml.safe_load(open(tokens_path))
+roles = set(tokens['semantic']['spacing']) | {'0', 'px', 'auto'}
+# Component spacing tokens compile to `--spacing-<component>-<key>` (component.zone.gap.md: zone-md).
+roles |= {f'{name}-{key}' for name, groups in (tokens.get('component') or {}).items()
+          for group in ('gap', 'padding', 'spacing') for key in ((groups or {}).get(group) or {})}
+utility = re.compile(r'(?<![\w$\[-])-?(p|px|py|pt|pr|pb|pl|ps|pe|m|mx|my|mt|mr|mb|ml|ms|me|gap|gap-x|gap-y|space-x|space-y)-(\[[^\]\s]*\]|[a-z0-9.][a-z0-9.-]*)(?![\w-])')
+rc = 0
+seen = 0
+for name in names:
+    directory = os.path.join(comps, name)
+    if not os.path.isdir(directory):
+        print(f'  components/{name}/ does not exist')
+        rc = 1
+        continue
+    for f in sorted(os.listdir(directory)):
+        if not f.endswith('.twig'):
+            continue
+        seen += 1
+        text = open(os.path.join(directory, f)).read()
+        text = re.sub(r'\{#.*?#\}', lambda m: '\n' * m.group(0).count('\n'), text, flags=re.S)
+        for lineno, line in enumerate(text.split('\n'), start=1):
+            for m in utility.finditer(line):
+                if m.group(2) not in roles:
+                    print(f'  {name}/{f}:{lineno}: `{m.group(0)}` is not a spacing role')
+                    rc = 1
+if seen < 6:
+    print(f'  the enumeration reached only {seen} templates')
+    rc = 1
+sys.exit(rc)
+PY
+}
+
+check "11 layout components space with spacing roles" check11_layout_spacing_uses_roles
 
 # --- Verdict -------------------------------------------------------------------------------------
 

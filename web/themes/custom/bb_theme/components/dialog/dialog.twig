@@ -83,14 +83,14 @@
       `aria-label` dead, because `aria-labelledby` wins the name computation. -#}
   {%- if label %} aria-label="{{ label }}"{% else %} aria-labelledby="{{ title_id }}"{% endif %}
   {%- if open %} open{% endif %}>
-  <div class="dialog__head flex items-center gap-[8px] h-[44px] px-[16px] border-b border-border-2">
+  <div class="dialog__head flex items-center gap-inline h-[44px] px-group border-b border-border-2">
     {%- if context_content|trim is not empty %}
-      <div class="dialog__context flex items-center gap-[8px] shrink-0">
+      <div class="dialog__context flex items-center gap-inline shrink-0">
         {{ context_content }}
         <span class="dialog__separator text-text-faint" aria-hidden="true">&rsaquo;</span>
       </div>
     {% endif %}
-    <h2 id="{{ title_id }}" class="dialog__title flex-1 min-w-0 truncate m-0 text-heading font-bold text-title">{{ title }}</h2>
+    <h2 id="{{ title_id }}" class="dialog__title flex-1 min-w-0 truncate m-0 text-section-title text-title">{{ title }}</h2>
     {%- if dismissible %}
       {{ include('bb_theme:button', {
         label: 'Close dialog',
@@ -102,10 +102,10 @@
     {% endif %}
   </div>
   {%- if message_content|trim is not empty %}
-    <div class="dialog__message px-[16px] pt-[14px] [&_.message]:mb-0">{{ message_content }}</div>
+    <div class="dialog__message px-group pt-stack [&_.message]:mb-0">{{ message_content }}</div>
   {% endif %}
-  <div class="dialog__body flex flex-col gap-4 px-[16px] py-[14px]">{% block body %}{% if body %}{{ body }}{% endif %}{% endblock %}</div>
+  <div class="dialog__body flex flex-col gap-group px-group py-stack">{% block body %}{% if body %}{{ body }}{% endif %}{% endblock %}</div>
   {%- if actions_content|trim is not empty %}
-    <div class="dialog__actions flex items-center justify-end gap-[8px] px-[16px] py-[12px] border-t border-border-2">{{ actions_content }}</div>
+    <div class="dialog__actions flex items-center justify-end gap-inline px-group py-stack border-t border-border-2">{{ actions_content }}</div>
   {% endif %}
 </dialog>

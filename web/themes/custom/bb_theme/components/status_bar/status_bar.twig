@@ -3,10 +3,12 @@
    site footer. The refresh slot sits on the left; its wrapper is OUTSIDE the
    {% block %} so filling the slot replaces the content, never the wrapper. #}
 <div{{ (attributes ?: create_attribute()).addClass([
-    'flex', 'min-w-0', 'overflow-hidden', 'items-center', 'gap-2', 'h-control', 'px-3',
-    'bg-app', 'border-t', 'border-border', 'text-caption', 'text-text-light',
+    'flex', 'min-w-0', 'overflow-hidden', 'items-center', 'gap-inline', 'h-control', 'px-stack',
+    'bg-app', 'border-t', 'border-border', 'text-meta', 'text-text-light',
   ]) }}
-  data-status-bar>
+  data-status-bar
+  role="status"
+  aria-live="polite">
   {%- if label %}<span class="min-w-0 truncate">{{ label }}</span>{% endif %}
   <span class="flex items-center justify-start flex-1 min-w-0 overflow-hidden">{% block refresh %}{% if refresh %}{{ refresh }}{% endif %}{% endblock %}</span>
 </div>

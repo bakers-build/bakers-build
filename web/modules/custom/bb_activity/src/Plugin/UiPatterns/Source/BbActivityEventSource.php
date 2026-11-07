@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_activity\Plugin\UiPatterns\Source;
 
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Datetime\DateFormatterInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -18,6 +17,7 @@ use Drupal\bb_activity\Entity\BbActivity;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
@@ -46,7 +46,7 @@ final class BbActivityEventSource extends SourcePluginBase implements ContainerF
   /**
    * Formats the relative created stamp and the run duration.
    */
-  protected DateFormatterInterface $dateFormatter;
+  protected BbDate $date;
 
   /**
    * Words each row through its activity kind.
@@ -68,7 +68,7 @@ final class BbActivityEventSource extends SourcePluginBase implements ContainerF
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
-    $instance->dateFormatter = $container->get('date.formatter');
+    $instance->date = $container->get(BbDate::class);
     $instance->kinds = $container->get('plugin.manager.bb_activity_kind');
     $instance->currentUser = $container->get('current_user');
     $instance->languageManager = $container->get('language_manager');
@@ -94,10 +94,9 @@ final class BbActivityEventSource extends SourcePluginBase implements ContainerF
       'author_initials' => $face['initials'],
       'author_color' => $face['color'],
       'tag' => $line['tag'],
-      'timestamp' => $this->when($activity),
       'statement' => $line['statement'],
       'detail' => $line['detail'] ?? '',
-    ] + $this->ticket($activity, $cache) + $this->runProps($activity, $line, $run, $cache);
+    ] + $this->when($activity, $cache) + $this->ticket($activity, $cache) + $this->runProps($activity, $line, $run, $cache);
     $build = [
       '#type' => 'component',
       '#component' => 'bb_theme:event',
@@ -289,20 +288,29 @@ final class BbActivityEventSource extends SourcePluginBase implements ContainerF
     if ($seconds <= 0 && $started > 0) {
       $seconds = (int) $activity->getCreatedTime() - $started;
     }
-    return $seconds > 0 ? (string) $this->dateFormatter->formatInterval($seconds, 1) : '';
+    return $seconds > 0 ? $this->date->duration($seconds) : '';
   }
 
   /**
-   * Relative created time, or empty when the stamp is missing.
+   * The created time props, or none when the stamp is missing.
+   *
+   * @return array{timestamp?: string, datetime?: string, timestamp_title?: string}
+   *   The event's time props; a relative label's max-age joins $cache.
    */
-  private function when(BbActivity $activity): string {
+  private function when(BbActivity $activity, CacheableMetadata $cache): array {
     $timestamp = (int) $activity->getCreatedTime();
     if ($timestamp <= 0) {
-      return '';
+      return [];
     }
-    return (string) $this->t('@interval ago', [
-      '@interval' => $this->dateFormatter->formatTimeDiffSince($timestamp, ['granularity' => 1]),
-    ]);
+    $time = $this->date->time($timestamp);
+    if (isset($time['#cache']['max-age'])) {
+      $cache->mergeCacheMaxAge($time['#cache']['max-age']);
+    }
+    return [
+      'timestamp' => $time['#props']['label'],
+      'datetime' => $time['#props']['datetime'],
+      'timestamp_title' => $time['#props']['title'],
+    ];
   }
 
   /**

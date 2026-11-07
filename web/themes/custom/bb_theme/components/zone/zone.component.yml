@@ -76,14 +76,12 @@ props:
         - lg
       title: Inset
       description: >-
-        Padding on BOTH axes, from one scale: `none` = 0, `sm` = 12px, `md` =
-        20px (the default), `lg` = 24px at default density, and 18px, 30px and
-        36px under cozy (Tailwind's `p-3`/`p-5`/`p-6`, which scale with the
-        density's `--spacing`). One property and one scale on purpose: `section`
-        shipped `padding_x` and `padding_y` whose shared vocabulary resolved to
-        different sizes per axis, and sixteen scenes then corrected its default
-        by hand (F6, F7). The default is the value those sixteen corrections
-        were reaching for, so a zone that says nothing is already right.
+        Padding on the VERTICAL axis only, from the spacing roles: `none` = 0,
+        `sm` = `py-stack`, `md` = `py-group` (the default), `lg` = `py-gutter`.
+        A zone never pads its left or right edge: the horizontal edge belongs to
+        the `canvas` / `page_header` (`px-group`, `xl:px-gutter`), or to the
+        `surface_card` a carded zone sits in (it has its own `p-group`), so a
+        zone never adds a second left edge inside them.
     gap:
       type: string
       enum:
@@ -91,12 +89,15 @@ props:
         - sm
         - md
         - lg
+        - section
       title: Gap
       description: >-
         Distance between the cells of the content grid, from
         `component.zone.gap.*`, which point at the space scale: `none` = 0, `sm`
         = `space-3` (12px, 16px cozy), `md` = `space-5` (20px, 24px cozy, the
-        default), `lg` = `space-6` (24px, 32px cozy).
+        default), `lg` = `space-6` (24px, 32px cozy). `section` is the spacing
+        role between headed zones (32px), for a grid whose cells are zones with
+        their own headings.
     direction:
       type: string
       enum:
@@ -148,15 +149,15 @@ props:
         The block's sub-line, rendered below the `<h2>` in the same treatment
         `page_header` gives the screen's sub-line — one level of type smaller
         and recessive. It exists because ten block headers in the delivered
-        scenes needed one and `zone` had none (BB-378 D14 did not think of
-        it), so they were written as block-level `<span>`s with inline styles
-        inside the `heading` slot — scene YAML sits outside the CSS build's
-        source paths, so a utility class written there is never compiled and
-        inline styles were the only thing that worked. A prop is the better
-        answer: it is reviewable, it is styled once here, and it keeps the
-        heading slot for the heading. Omitted means no element, never an empty
-        one. It does NOT truncate: a block sub-line is a sentence and wraps,
-        where a screen sub-line is an identity line on one row.
+        scenes needed one and `zone` had none (BB-378 D14 did not think of it),
+        so they were written as block-level `<span>`s with inline styles inside
+        the `heading` slot — scene YAML sits outside the CSS build's source
+        paths, so a utility class written there is never compiled and inline
+        styles were the only thing that worked. A prop is the better answer: it
+        is reviewable, it is styled once here, and it keeps the heading slot for
+        the heading. Omitted means no element, never an empty one. It does NOT
+        truncate: a block sub-line is a sentence and wraps, where a screen
+        sub-line is an identity line on one row.
     list:
       type: boolean
       title: Content is an ARIA list

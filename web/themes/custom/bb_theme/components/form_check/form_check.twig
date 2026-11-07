@@ -1,0 +1,14 @@
+{# Native checkbox or radio: the browser draws the control, the component adds
+   only the shared focus ring. Like form_input, `type` is emitted only when
+   given as a prop, so the presenter's passthrough `attributes` keep the real
+   input's type without a duplicate attribute. #}
+<input{{ (attributes ?: create_attribute()).addClass([
+    'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring',
+  ]) }}
+  {%- if type %} type="{{ type }}"{% endif %}
+  {%- if id %} id="{{ id }}"{% endif %}
+  {%- if name %} name="{{ name }}"{% endif %}
+  {%- if value %} value="{{ value }}"{% endif %}
+  {%- if checked %} checked{% endif %}
+  {%- if required %} required{% endif %}
+  {%- if disabled %} disabled{% endif %} />

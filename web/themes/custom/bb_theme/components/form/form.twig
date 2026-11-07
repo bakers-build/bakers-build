@@ -71,7 +71,7 @@
    caller renders `form_input` directly (BB-420 Task 31; formerly
    `text_line`); a surface is what you reach for when there is more than one
    thing to place. #}
-<div{{ (attributes ?: create_attribute()).addClass(['form', 'flex', 'flex-col', 'gap-3']) }}>
+<div{{ (attributes ?: create_attribute()).addClass(['form', 'flex', 'flex-col', 'gap-stack']) }}>
   {#- THE LEAD ROW, grammar 3a. It is above the lines and separated from them by a
       rule, because the property that decides what the rest of the surface even
       means is not one of the surface's peers. Making it merely the first pill was
@@ -81,7 +81,7 @@
       property. #}
   {% set lead_content %}{% block lead %}{% if lead %}{{ lead }}{% endif %}{% endblock %}{% endset %}
   {% if lead_content is not empty %}
-    <div class="form__lead flex flex-wrap items-center gap-[6px] pb-[12px] border-b border-border-2"
+    <div class="form__lead flex flex-wrap items-center gap-[6px] pb-stack border-b border-border-2"
       {%- if lead_label %} role="group" aria-label="{{ lead_label }}"{% endif %}>
       {{ lead_content }}
     </div>
@@ -104,7 +104,7 @@
       dialog do not disagree about where the submit is. #}
   {% set actions_content %}{% block actions %}{% if actions %}{{ actions }}{% endif %}{% endblock %}{% endset %}
   {% if actions_content is not empty %}
-    <div class="form__actions flex items-center justify-end gap-[8px] pt-[12px] mt-[10px] border-t border-border-2">
+    <div class="form__actions flex items-center justify-end gap-inline pt-stack mt-[10px] border-t border-border-2">
       {{ actions_content }}
     </div>
   {% endif %}

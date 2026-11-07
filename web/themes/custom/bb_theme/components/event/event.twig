@@ -35,13 +35,13 @@
 {% set root_classes = ['event', 'group', 'relative', 'flex', 'gap-[10px]', 'pl-[14px]', 'py-[10px]', "before:content-['']", 'before:absolute', 'before:left-0', 'before:top-0', 'before:bottom-0', 'before:w-[2px]', 'before:rounded-[2px]', rail_map[tag]|default('before:bg-border')] %}
 <article{{ (attributes ?: create_attribute()).addClass(root_classes).setAttribute('data-tag', tag|default('')) }}>
   {{ include('bb_theme:person', { variant: 'compact', initials: author_initials, color: author_color|default(role == 'agent' ? 'running' : 'lease'), size: 'md' }, with_context = false) }}
-  <div class="flex-1 min-w-0 flex flex-col gap-[4px]">
-    <div class="flex items-center gap-[8px] flex-wrap">
-      <span class="text-body font-semibold text-text">{{ author_name }}</span>
+  <div class="flex-1 min-w-0 flex flex-col gap-inline-xs">
+    <div class="flex items-center gap-inline flex-wrap">
+      <span class="text-body-strong text-text">{{ author_name }}</span>
       {% if role %}{{ include('bb_theme:badge', { label: role, tone: 'neutral' }, with_context = false) }}{% endif %}
-      {% if typed %}<span class="text-eyebrow font-semibold uppercase tracking-[0.04em] {{ accent_map[tag]|default('text-text-light') }}">{{ tag }}</span>{% endif %}
+      {% if typed %}<span class="text-eyebrow uppercase {{ accent_map[tag]|default('text-text-light') }}">{{ tag }}</span>{% endif %}
       <span class="flex-1"></span>
-      {% if timestamp %}<time class="text-caption text-text-faint font-mono tabular-nums whitespace-nowrap">{{ timestamp }}</time>{% endif %}
+      {% if timestamp %}{{ include('bb_theme:time', { label: timestamp, datetime: datetime|default(''), title: timestamp_title|default(''), attributes: create_attribute({ class: ['text-meta', 'text-text-faint'] }) }, with_context = false) }}{% endif %}
     </div>
     {#- THE PROSE TREATMENT IS NOT HERE ANY MORE. It used to be a fifteen-
         declaration blob on this div, which made this the only place in the theme
@@ -55,7 +55,7 @@
       {% set parts = (facts|default([]))|map(fact => fact|e)|merge((links|default([]))|filter(link => link.url is defined)|map(link => '<a href="' ~ link.url|e ~ '">' ~ link.title|e ~ '</a>')) %}
       {% set body %}
 <p>{% if subject_url %}<a href="{{ subject_url }}" class="font-semibold">{{ subject_label }}</a>{% elseif subject_label %}<strong>{{ subject_label }}</strong>{% endif %}{% if statement %} {{ statement }}{% endif %}</p>
-{% if parts is not empty %}<p class="text-caption text-text-light">{{ parts|join(' · ')|raw }}</p>{% endif %}
+{% if parts is not empty %}<p class="text-meta text-text-light">{{ parts|join(' · ')|raw }}</p>{% endif %}
 {% if detail %}<pre><code>{{ detail }}</code></pre>{% endif %}
       {% endset %}
     {% endif %}

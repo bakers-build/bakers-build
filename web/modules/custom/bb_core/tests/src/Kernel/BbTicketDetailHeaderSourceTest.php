@@ -104,7 +104,10 @@ final class BbTicketDetailHeaderSourceTest extends KernelTestBase {
   }
 
   /**
-   * A frozen ticket names that stall on the sub-line.
+   * A frozen ticket names that stall on the sub-line, without its age.
+   *
+   * The age belongs to the stall badge, which renders it as a time element
+   * with the exact date; plain text here would lose that.
    */
   public function testHeaderNamesTheFrozenStall(): void {
     $ticket = $this->createTicket();
@@ -116,8 +119,7 @@ final class BbTicketDetailHeaderSourceTest extends KernelTestBase {
 
     $description = $this->headerDescription($reloaded);
 
-    self::assertStringContainsString('frozen', $description);
-    self::assertMatchesRegularExpression('/frozen (just now|.+ ago)/', $description);
+    self::assertStringEndsWith('· frozen', $description);
   }
 
   /**

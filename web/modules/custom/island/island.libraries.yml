@@ -26,15 +26,12 @@ dialog:
   js:
     js/island.dialog.js: {}
   dependencies:
-    # `core/drupal` and nothing else. The file delegates both of its listeners
-    # from the document and uses no Drupal API at all — it stopped needing
-    # `core/once` when the click half stopped being a `Drupal.behaviors`
-    # attachment (see the file's own docblock for the measurement). The
-    # dependency stays because a consumer hull declaring THIS library is
-    # relying on it to bring Drupal's own front-end base with it; a component
-    # library that declares no dependency at all is the latent bug this very
-    # ticket found in `bb_theme:dialog`.
+    # The dismissal listeners are document-delegated and use no Drupal API;
+    # the initial-focus behavior needs `Drupal.behaviors` and `once`. A
+    # consumer hull declaring THIS library also relies on it to bring Drupal's
+    # own front-end base with it.
     - core/drupal
+    - core/once
 
 # The FORM half of the round trip, attached by WrappedDialogFormTrait on a
 # dialog request only — it guards a swap that the form's own `hx-select` is

@@ -3,7 +3,9 @@ $schema: >-
 name: Brand
 status: stable
 group: Shell
-description: bakers.build login heading with the original braid and terminal block wordmark.
+description: >-
+  bakers.build login heading with the original braid and terminal block
+  wordmark.
 props:
   type: object
   properties:
