@@ -414,4 +414,32 @@ describe('site tools on the bakers server', () => {
     ]);
     await client.close();
   });
+
+  it("tells the conductor about a run's successful ticket writes only", async () => {
+    const writes: unknown[] = [];
+    const binding = runBinding(PROJECT_A);
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: fakeSite(),
+      onSiteWrite: (b) => writes.push(b),
+    });
+    const client = await connect(server.url, server.issueRunToken(binding));
+    await client.callTool({
+      name: 'bakers_ticket_read',
+      arguments: { ticket: 'BB-1' },
+    });
+    const refused = await client.callTool({
+      name: 'bakers_ticket_update',
+      arguments: { ticket: 'NOPE-1' },
+    });
+    expect(refused.isError).toBe(true);
+    expect(writes).toEqual([]);
+    const updated = await client.callTool({
+      name: 'bakers_ticket_update',
+      arguments: { ticket: 'BB-1' },
+    });
+    expect(updated.isError).toBeFalsy();
+    expect(writes).toEqual([binding]);
+    await client.close();
+  });
 });

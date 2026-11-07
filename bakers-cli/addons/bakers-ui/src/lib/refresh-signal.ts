@@ -1,5 +1,6 @@
 import { statSync, watch } from 'node:fs';
 import { join } from 'node:path';
+import { UI_REFRESH_FILE } from '@bakers-build/core';
 import type { Debounce, WatchDirectory } from '../types.js';
 
 /**
@@ -25,8 +26,8 @@ export interface RefreshSignal {
   close(): void;
 }
 
-/** The signal file's basename inside the watched `.bakers` dir. */
-export const REFRESH_SIGNAL_FILE = 'ui-refresh';
+/** The signal file's basename inside the watched `.bakers` dir; core owns it so the conductor's writer agrees. */
+export const REFRESH_SIGNAL_FILE = UI_REFRESH_FILE;
 
 /**
  * The coalescing window. Long enough that the several events one `touch`

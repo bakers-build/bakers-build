@@ -23,6 +23,15 @@ export const SITE_TOOLS: readonly string[] = [
   'bakers_user_read',
 ];
 
+/** The site tools that change a ticket; a successful call signals `bakers ui`. */
+export const SITE_WRITE_TOOLS: readonly string[] = [
+  'bakers_ticket_create',
+  'bakers_ticket_update',
+  'bakers_ticket_classify',
+  'bakers_ticket_transition',
+  'bakers_comment_publish',
+];
+
 const WIRE = 'tool_api__';
 
 export interface SiteTool {

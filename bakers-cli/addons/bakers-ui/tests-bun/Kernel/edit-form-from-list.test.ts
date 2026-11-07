@@ -1,5 +1,9 @@
 import { expect, it } from 'bun:test';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type { RGBA } from '@opentui/core';
+import { REFRESH_SIGNAL_FILE } from '../../src/lib/refresh-signal.js';
 import { THEME_SLOTS } from '../../src/lib/theme.js';
 import type {
   Collection,
@@ -7,6 +11,7 @@ import type {
   RendererServices,
   ResourceWriteBody,
   TuiOptions,
+  WatchDirectory,
 } from '../../src/types.js';
 import { type BootedTui, bootTui, settle } from '../tui-harness.js';
 
@@ -741,5 +746,65 @@ it('the latch is shared: two `e` presses on the DETAIL screen open one popup too
   await settle();
   expect(h.rec.optionCollections).toHaveLength(2);
   await press('\x1b');
+  await quit();
+});
+
+// ---- automatic refresh keeps what the operator is doing ------------------------
+
+/** A watched `.bakers` dir whose signal is a function call, debounced synchronously. */
+function watched() {
+  const dir = mkdtempSync(join(tmpdir(), 'ui-refresh-list-'));
+  let emit: ((filename: string | null) => void) | undefined;
+  const watchDirectory: WatchDirectory = (_dir, onEvent) => {
+    emit = onEvent;
+    return { close: () => {} };
+  };
+  return {
+    options: {
+      bakersDir: dir,
+      watchDirectory,
+      debounce: (fn: () => void) => {
+        fn();
+        return () => {};
+      },
+    } as Partial<TuiOptions>,
+    async bump(tui: BootedTui): Promise<void> {
+      writeFileSync(join(dir, REFRESH_SIGNAL_FILE), String(Date.now()));
+      emit?.(REFRESH_SIGNAL_FILE);
+      await settle();
+      await tui.renderOnce();
+    },
+  };
+}
+
+it('a refresh signal re-reads the list and keeps the highlighted row', async () => {
+  const h = harness();
+  const w = watched();
+  const { tui, press, quit } = await openList(h, w.options);
+  await press('\x1b[B'); // ↓ to row 2
+  expect(selectedRowLine(tui)).toContain('BB-999');
+  const listReads = h.rec.reads.filter((p) => p === 'LIST').length;
+
+  await w.bump(tui);
+
+  expect(h.rec.reads.filter((p) => p === 'LIST').length).toBeGreaterThan(
+    listReads,
+  );
+  expect(selectedRowLine(tui)).toContain('BB-999');
+  await quit();
+});
+
+it('a refresh signal leaves an open edit form and its input alone', async () => {
+  const h = harness();
+  const w = watched();
+  const { tui, press, quit } = await openList(h, w.options);
+  await press('e');
+  await press('\x1b[C'); // cycle the assignee cw → tm
+  expect(tui.frame()).toContain('< tm >');
+
+  await w.bump(tui);
+
+  expect(tui.frame()).toContain('Edit ticket');
+  expect(tui.frame()).toContain('< tm >');
   await quit();
 });

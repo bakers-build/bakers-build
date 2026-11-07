@@ -41,6 +41,7 @@ import { attemptFamily } from './attempt.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
+import { signalUi } from './ui-signal.js';
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
@@ -362,11 +363,18 @@ export class Conductor {
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
       ...(siteTools ? { siteTools } : {}),
+      onSiteWrite: (b) => this.signalUi(b.worktreePath),
     });
     this.logger.info(
       { conductorId: this.config.conductor_id, url: this.toolServer.url },
       'tool server started',
     );
+  }
+
+  /** Tell an open `bakers ui` in the checkout (and the run's worktree) to reload. */
+  private signalUi(worktree?: string): void {
+    signalUi(this.checkoutRoot);
+    if (worktree) signalUi(worktree);
   }
 
   async stopTools(): Promise<void> {
@@ -526,6 +534,7 @@ export class Conductor {
         { conductorId: this.id, run: run.runUuid, ticket: run.ticketUuid },
         'claimed run',
       );
+      this.signalUi();
       this.queue.enqueue({
         key: `dispatch:${run.runUuid}`,
         lane: run.ticketUuid,
@@ -627,6 +636,7 @@ export class Conductor {
           ? captured.log
           : '';
       await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
+      this.signalUi(r.worktreePath);
       this.revokeRunTools(r.runUuid);
       this.logger.info(
         { run: r.runUuid, state: r.state, footprint: captured.metrics },
@@ -1333,8 +1343,9 @@ export class Conductor {
 
   /** Dispatches one claimed run; a failure terminalises it (BB-149). */
   private async dispatchOrFail(run: ClaimedRun): Promise<void> {
+    const at: { worktree?: string } = {};
     try {
-      await this.dispatch(run);
+      await this.dispatch(run, at);
     } catch (err) {
       // BB-149: terminalise the run to `failed` with the error captured,
       // instead of leaving it `claimed` to expire after the ~300s lease (the
@@ -1353,6 +1364,7 @@ export class Conductor {
       );
       try {
         await this.remote.markFailed(run.runUuid, String(err));
+        this.signalUi(at.worktree);
       } catch (markErr) {
         this.logger.warn(
           { run: run.runUuid, err: String(markErr) },
@@ -1362,7 +1374,8 @@ export class Conductor {
     }
   }
 
-  private async dispatch(run: ClaimedRun) {
+  /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
+  private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
     const t = await this.remote.getTicket(run.ticketUuid);
     // Resolve the ticket alias and machine defaults, or the project selection hook.
     // Persist the package id below so finalize can choose its transcript parser.
@@ -1389,6 +1402,7 @@ export class Conductor {
     const ws = await this.serialGit(() =>
       this.workspace.ensure(t.identifier, t.branchName, baseRef),
     );
+    at.worktree = ws.path;
     // The backend's own vars (Git config) join the run env; core keys still win.
     for (const [key, value] of Object.entries(ws.env ?? {})) {
       if (!isReservedEnvKey(key)) env[key] = value;
@@ -1631,6 +1645,7 @@ export class Conductor {
       agent: chosen.id,
       startedAt: dispatchedAt,
     });
+    this.signalUi(ws.path);
   }
 
   /**
