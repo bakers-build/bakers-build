@@ -1,22 +1,56 @@
-# Getting Started
+# Get started
 
-Start at the task you need:
+bakers.build helps your team turn software tasks into reviewed changes. Describe a task in a ticket; coding agents plan, implement and check it, and you review the result.
 
-1. [Set up a connector](/get-started/connector) to work through chat with your own account.
-2. [Set up a machine](/get-started/machine) with AI: install skills, prepare the host and sign in.
-3. [Set up a project](/get-started/connect-a-project) on a prepared machine; choose its TUI, environment and workflow.
-4. [Run the first ticket](/get-started/first-ticket) and verify its first summary.
+<span id="before-you-start"></span>
 
-## Before you start
+## Choose where to start
 
-You need a bakers.build account and workspace access. Chat users need an OAuth-capable MCP client; developers bring their agent subscription and tools. [Security](/configuration/security) explains permissions, hosting and where data live. Start on one laptop; add [worker servers](/configuration/machine/worker-server) when you need capacity.
+If your project already uses bakers.build, start with a ticket. Otherwise, prepare the project once.
 
-## How it works
+<DocTiles :tiles="[
+  { title: 'Work with tickets', text: 'Your team already runs agents for this project. Create a ticket, follow its progress and review the result.', link: '/get-started/daily-work/create-a-ticket', icon: 'ticket', meta: 'Create your first ticket →' },
+  { title: 'Prepare your project', text: 'Connect a repository on your computer, check its tools and workflow, then try your first ticket.', link: '/get-started/connect-a-project', icon: 'code', meta: 'Prepare your project →' }
+]" />
 
-You describe work in a **ticket**. A **conductor** picks it up, starts an agent in a Git worktree, and records a summary after each **state**. You decide at approval gates.
+::: tip Already set up?
+If the project is ready, go straight to [your first ticket](/get-started/first-ticket). For ticket access through chat, [connect your chat](/get-started/connector).
+:::
 
-A **workspace** contains your team and projects; a **project** identifies a repository. **Skills** supply instructions. The repository's `WORKFLOW.md` names project setup, standards and checks; the ticket's **recipe** selects the engineering method. [Workflows](/configuration/workflows) explains the complete process.
+<span id="run-agents-for-a-project"></span>
+
+<span id="how-it-works"></span>
+<span id="from-ticket-to-result"></span>
 
 ## After your first ticket
 
-[Create](/get-started/daily-work/create-a-ticket), [follow](/get-started/daily-work/follow-a-ticket), [accept](/get-started/daily-work/accept-results) or [freeze](/get-started/daily-work/freeze-a-ticket) a ticket. Check [team work](/get-started/daily-work/team-overview), [record time](/get-started/daily-work/record-time), or configure [email notifications](/configuration/connector/notifications).
+Keep tickets moving, coordinate your team and adjust the setup when needed.
+
+### Follow and review
+
+Track progress, answer questions and review what the agent delivers.
+
+<DocQuickLinks aria-label="Follow and review" :items="[
+  { label: 'Follow a ticket', text: 'Read progress updates and answer questions during a run.', link: '/get-started/daily-work/follow-a-ticket' },
+  { label: 'Review results', text: 'Check the outcome and decide what happens next.', link: '/skills-and-workflows/accept-results' }
+]" />
+
+### Manage ongoing work
+
+Pause a ticket, see team activity or record time.
+
+<DocQuickLinks aria-label="Manage ongoing work" :items="[
+  { label: 'Freeze a ticket', text: 'Pause work on a ticket and resume it when you are ready.', link: '/get-started/daily-work/freeze-a-ticket' },
+  { label: 'See team activity', text: 'Find out what the team is working on.', link: '/get-started/daily-work/team-overview' },
+  { label: 'Record time', text: 'Review a time proposal or enter your own hours.', link: '/get-started/daily-work/record-time' }
+]" />
+
+### Adjust your setup
+
+Choose agents, change workflows or prepare environments, tools and security.
+
+<DocQuickLinks aria-label="Adjust your setup" :items="[
+  { label: 'Agents', text: 'Choose the agents and models that work on tickets.', link: '/agents/' },
+  { label: 'Skills & Workflows', text: 'Set project instructions, methods and checks.', link: '/skills-and-workflows/' },
+  { label: 'Provision', text: 'Prepare worktree environments, tools and security.', link: '/provision/' }
+]" />

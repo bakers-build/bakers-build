@@ -623,13 +623,14 @@ export class Conductor {
       // which is why listeners must be idempotent.
       await this.runFinalizeHook(r);
       if (!captured) throw captureError;
-      // `?? true` is the default: an unset flag, and every config written
-      // before this setting existed, keep uploading exactly as before.
-      // `finalizeRun()` already spreads `...(log ? { log } : {})`, so an
-      // empty string omits the attribute from the PATCH entirely — no
-      // server change is needed and no empty log is written.
+      // The server's policy decides first (missing means no), and the local
+      // `capture_logs` opt-out can only narrow it. `finalizeRun()` spreads
+      // `...(log ? { log } : {})`, so an empty string omits the attribute
+      // from the PATCH entirely; the server re-checks its policy anyway.
       const uploadedLog =
-        (this.config.capture_logs ?? true) ? captured.log : '';
+        r.runLogStorageAllowed === true && (this.config.capture_logs ?? true)
+          ? captured.log
+          : '';
       await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
       this.revokeRunTools(r.runUuid);
       this.logger.info(

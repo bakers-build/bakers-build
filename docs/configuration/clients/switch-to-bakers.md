@@ -2,7 +2,7 @@
 
 bakers.build is driven by the `bakers` command from `@bakers-build/bakers`. The older `gaia` command from `@gaia-ai/gaia` does not work against a bakers.build server, and `bakers` reads none of its files. This page moves one machine from `gaia` to `bakers`.
 
-**You need:** [Node.js ≥ 20.19 with npm](/configuration/provisioning/node) and your team's bakers.build server URL, `https://app.bakers.build` unless your team runs its own.
+**You need:** [Node.js ≥ 20.19 with npm](/provision/node) and your team's bakers.build server URL, `https://app.bakers.build` unless your team runs its own.
 
 ## Before you switch
 
@@ -57,7 +57,7 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
    | Server base URL | keep `https://app.bakers.build`, or enter your team's URL if it runs its own |
    | OAuth client identifier | keep `bakers-cli` |
 
-   It ends with `Offline: passed`. `bakers auth login` then prints a code: open the link, confirm, and the terminal reports `logged in`. Details are in [Install the CLI](/get-started/machine).
+   It ends with `Offline: passed`. `bakers auth login` then prints a code: open the link, confirm, and the terminal reports `logged in`. Details are in [Install the CLI](/provision/machine).
 
 4. **Connect each project and register its oven.** In the project checkout:
 

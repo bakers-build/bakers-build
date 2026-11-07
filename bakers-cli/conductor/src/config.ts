@@ -171,7 +171,7 @@ type RawConfig = {
   // detected at load time and rejected with an ownership repair command.
   /** BB-215: the Storybook-style conductor addon list (discovered surface). */
   addons?: unknown;
-  /** Shared run security for every agent (`docs/configuration/agents/execution-security.md`). */
+  /** Shared run security for every agent (`docs/provision/security/execution.md`). */
   security?: unknown;
   remote?: unknown;
   executor?: unknown;

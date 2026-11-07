@@ -10,7 +10,7 @@ Nothing to enable. The command ships with the bakers.build CLI as `bakers agents
 
 ## Options
 
-No options. The command reads the `agents` object of your [machine file](/configuration/agents/reference#the-agents-object).
+No options. The command reads the `agents` object of your [machine file](/agents/reference#the-agents-object).
 
 ## Check it works
 
@@ -26,6 +26,6 @@ bakers agents
 
 - It neither installs a harness nor checks its sign-in.
 
-More: [Choose agents and models](/configuration/agents).
+More: [Choose agents and models](/agents/guide).
 
 Package source in a checkout: `bakers-cli/addons/agents`.

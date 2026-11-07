@@ -44,6 +44,21 @@ Create a bakers.build ticket for <what I need and why>.
 
 Confirm the scope when asked. Feature and chore intake can reach `plan` through chat; bug diagnosis, coding and review use your team's agents. Open the ticket on the web to read summaries and record your verdict. Questions during a run appear in the worker's terminal; ticket comments reach the next step.
 
-**Next:** [Create a ticket](/get-started/daily-work/create-a-ticket), [follow it](/get-started/daily-work/follow-a-ticket), or [accept results](/get-started/daily-work/accept-results).
+## Continue with tickets
 
-Connection errors: [Connector configuration](/configuration/connector) and [client limits](/configuration/connector/limits). The CLI's private connection file is a separate setup.
+Use your connected chat to start a request, then follow the work and review its result.
+
+<DocQuickLinks aria-label="Continue with tickets" :items="[
+  { label: 'Create a ticket', text: 'Describe the work and agree its scope.', link: '/get-started/daily-work/create-a-ticket' },
+  { label: 'Follow a ticket', text: 'Read updates and find where to answer questions.', link: '/get-started/daily-work/follow-a-ticket' },
+  { label: 'Review results', text: 'Check the outcome and record your verdict.', link: '/skills-and-workflows/accept-results' }
+]" />
+
+## Connection problems
+
+Use these guides if chat access fails. The CLI connection file is a separate setup.
+
+<DocQuickLinks aria-label="Connection problems" :items="[
+  { label: 'Connector configuration', text: 'Check which connection settings belong to your client.', link: '/configuration/connector' },
+  { label: 'Client limits and errors', text: 'Understand supported operations and recover from sign-in errors.', link: '/configuration/connector/limits' }
+]" />

@@ -65,6 +65,24 @@ assert any(v["source"] == "oauth_keys" for v in s["cron"]["volumes"])
 '
 pass "independent stack isolates ingress, preserves storage and forwards strict settings"
 
+# Run-log storage: SaaS pins the flag off even when the shell sets it; the
+# independent stack forwards the operator's value and defaults to off.
+flag_of() {
+  RENDER_FORMAT=json "$@" | python3 -c '
+import json, sys
+s = json.load(sys.stdin)["services"]
+print(" ".join(sorted({s[n]["environment"].get("FEATURE_FLAG_RUN_LOG_STORAGE", "unset") for n in ("php", "cron", "deploy", "install") if n in s})))
+'
+}
+[ "$(FEATURE_FLAG_RUN_LOG_STORAGE=1 flag_of render docker-compose.traefik.yml)" = "0" ] \
+  || fail "SaaS stack does not pin FEATURE_FLAG_RUN_LOG_STORAGE=0 on php, cron and deploy"
+[ "$(FEATURE_FLAG_RUN_LOG_STORAGE=1 flag_of render docker-compose.traefik.yml --profile install)" = "0" ] \
+  || fail "SaaS install service does not pin the run-log flag off"
+[ "$(flag_of self_host_render)" = "0" ] || fail "independent stack does not default the run-log flag to 0"
+[ "$(FEATURE_FLAG_RUN_LOG_STORAGE=1 flag_of self_host_render)" = "1" ] \
+  || fail "independent stack does not forward FEATURE_FLAG_RUN_LOG_STORAGE"
+pass "run-log storage flag is pinned off in SaaS and operator-controlled when self-hosted"
+
 # No ambient environment or cached private references can satisfy missing inputs.
 python3 <<'PYTEST'
 import os, subprocess

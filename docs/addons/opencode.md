@@ -6,7 +6,7 @@ For anyone whose machine should run tickets with OpenCode.
 
 ## AI first
 
-Ask your AI to check this harness and its [bakers skills](/configuration/agents/skills).
+Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/skills).
 
 ## Setup
 
@@ -29,7 +29,7 @@ It publishes one alias, `opencode`, which uses your locally configured OpenCode 
 | `model` | string | OpenCode's own default | Passed as `--model`. |
 | `effort` | string | none | Not supported; ignored with a log line. |
 | `security` | `'system'` \| `'yolo'` | `'system'` | How strictly a run starts; see [Security](#security). `'sandbox'` and `'custom'` fail loading. |
-| `env_deny` | string[] | the [default list](/configuration/agents/execution-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
+| `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
@@ -45,7 +45,7 @@ OpenCode has no OS sandbox, and its permission policies do not sandbox plugin co
 
 A `sandbox` block therefore always fails loading too. `bakers oven check` reports OpenCode as `sandbox ok`, as for every agent outside `sandbox` mode, which it does not check.
 
-What `system` and `yolo` expose: [Run security › Risk of loosening](/configuration/agents/execution-security#risk-of-loosening).
+What `system` and `yolo` expose: [Run security › Risk of loosening](/provision/security/execution#risk-of-loosening).
 
 ## Check it works
 
@@ -64,5 +64,5 @@ bakers agents
 - Listed in a conductor config, an agent addon is ignored with a warning.
 - Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
-More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
+More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 

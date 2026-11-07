@@ -3,7 +3,7 @@
 // (including @include directives), link targets and inline tags excluded -
 // and fails when a page exceeds its tier, has no tier, is in no sidebar, or
 // is still a `draft: true` skeleton. The tiers and their reasons:
-// docs/bakers/development/write-docs.md.
+// docs/development/write-docs.md.
 //
 //   node scripts/check-pages.mjs              check every rendered page
 //   node scripts/check-pages.mjs configuration/    check only pages under a prefix
@@ -13,13 +13,9 @@ import { fileURLToPath } from 'node:url'
 import { AREAS, SIDEBAR, SRC_EXCLUDE } from '../.vitepress/manual.mjs'
 
 const DOCS = fileURLToPath(new URL('../../docs/', import.meta.url))
-const AREA_INDEX = new Set([
-  'index.md',
-  'get-started/index.md',
-  'addons/index.md',
-  'configuration/index.md',
-])
+const AREA_INDEX = new Set(['index.md', ...AREAS.map(({ link }) => `${link.slice(1)}index.md`)])
 const MAIN_AREAS = ['get-started/', 'addons/']
+const REFERENCE_AREAS = ['configuration/', 'provision/', 'agents/', 'skills-and-workflows/', 'self-hosting/', 'development/']
 // landing.md and de/index.md render the Vue landing page (EN, DE); index.md is /manual,
 // reached from the nav.
 const NO_PROSE = new Set(['landing.md', 'de/index.md'])
@@ -30,7 +26,7 @@ function limitFor(rel) {
   // Detailed addon references keep the configuration tier after relocation.
   if (/^addons\/[^/]+\//.test(rel) || rel === 'addons/bakers-ui-keys.md') return 1500
   if (MAIN_AREAS.some((area) => rel.startsWith(area))) return 400
-  if (rel.startsWith('configuration/')) return 1500
+  if (REFERENCE_AREAS.some((area) => rel.startsWith(area))) return 1500
   return null
 }
 
@@ -80,25 +76,26 @@ function requireNavigation(condition, message) {
 }
 requireNavigation(
   JSON.stringify(AREAS.map(({ label, link }) => [label, link])) === JSON.stringify([
-    ['Getting Started', '/get-started/'], ['Configuration', '/configuration/'], ['Addons', '/addons/'],
-  ]), 'manual areas must be Getting Started, Configuration, Addons in that order',
+    ['Get started', '/get-started/'],
+    ['Provision', '/provision/'],
+    ['Agents', '/agents/'],
+    ['Skills & Workflows', '/skills-and-workflows/'],
+    ['Addons', '/addons/'],
+    ['Configuration', '/configuration/'],
+    ['Self-hosting', '/self-hosting/'],
+    ['Development', '/development/'],
+  ]), 'manual areas must be Get started, Provision, Agents, Skills & Workflows, Addons, Configuration, Self-hosting, Development in that order',
 )
-const topics = ['Connector', 'Machine', 'Project', 'Provisioning', 'Clients', 'Agents', 'Workflows', 'Security']
-requireNavigation(
-  JSON.stringify((SIDEBAR['/configuration/'] ?? []).map(group => group.text)) === JSON.stringify(topics),
-  'Configuration topics must be eight sibling groups, including Security',
-)
-for (const topic of topics) {
-  const group = (SIDEBAR['/configuration/'] ?? []).find(group => group.text === topic)
-  requireNavigation(
-    sidebarLinks(group ? [group] : []).includes(`/configuration/${topic.toLowerCase()}`),
-    `missing Configuration entry: ${topic}`,
-  )
-}
-for (const slug of ['connector', 'machine', 'connect-a-project', 'first-ticket']) {
+for (const slug of ['connector', 'connect-a-project', 'first-ticket']) {
   requireNavigation(
     sidebarLinks(SIDEBAR['/get-started/'] ?? []).includes(`/get-started/${slug}`),
     `missing setup entry: ${slug}`,
+  )
+}
+for (const slug of ['machine', 'guide', 'tools', 'security/', 'examples']) {
+  requireNavigation(
+    sidebarLinks(SIDEBAR['/provision/'] ?? []).includes(`/provision/${slug}`),
+    `missing provision entry: ${slug}`,
   )
 }
 const publicRoutes = new Set(pages(DOCS)

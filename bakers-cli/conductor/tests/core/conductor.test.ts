@@ -903,6 +903,7 @@ describe('Conductor', () => {
           runUuid: 're-dispatched-run',
           ticketUuid: 't-1',
           stateAtStart: 'todo',
+          runLogStorageAllowed: true,
         },
       ],
     });
@@ -1479,6 +1480,7 @@ describe('Conductor', () => {
           stateAtStart: 'review',
           state: 'done',
           worktreePath: '/wt/r-1',
+          runLogStorageAllowed: true,
         },
       ],
     });
@@ -1764,6 +1766,7 @@ describe('Conductor', () => {
           state: 'done',
           worktreePath: '/wt/codex-r-1',
           agent: 'codex',
+          runLogStorageAllowed: true,
         },
       ],
     });
@@ -1919,6 +1922,7 @@ describe('Conductor', () => {
           stateAtStart: 'review',
           state: 'done',
           worktreePath: '/wt/r-1',
+          runLogStorageAllowed: true,
         },
       ],
     });
@@ -2145,6 +2149,7 @@ describe('Conductor', () => {
           stateAtStart: 'review',
           state: 'done',
           worktreePath: '/wt/r-1',
+          runLogStorageAllowed: true,
         },
       ],
     });

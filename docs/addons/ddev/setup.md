@@ -2,6 +2,10 @@
 
 **Install DDEV and give each ticket worktree its own DDEV project, through hooks.**
 
+::: info Part of project preparation
+Use this example when your repository already uses DDEV. Keep working installations and adapt the scripts below. The [DDEV addon](/addons/ddev#agent-tools) provides additional status, start and execution tools; project scripts prepare the application.
+:::
+
 ## AI first
 
 ```text
@@ -30,7 +34,7 @@ project.
    ddev version
    ```
 
-3. **Connect the project through hooks.** Use the repository's documented provisioning script in [lifecycle hooks](/configuration/provisioning/hooks). Each ticket worktree needs its own DDEV project identity; reusing one name can make tickets share or replace the same environment.
+3. **Connect the project through hooks.** Use the repository's documented provisioning script in [lifecycle hooks](/provision/hooks). Each ticket worktree needs its own DDEV project identity; reusing one name can make tickets share or replace the same environment.
 
    Keep the script repeatable. Required readiness checks belong in `WORKFLOW.md`: a failed hook is logged but does not stop dispatch.
 
@@ -80,7 +84,7 @@ ddev delete --omit-snapshot --yes --clean-containers=false "$name"
 
 ## Provision on an agent's request
 
-**For agents that need a running site.** The [`provision_up` hook](/configuration/provisioning/hooks#provision-on-an-agent-s-request) gives runs a tool that brings the site up. Merge a command per profile into `hooks`:
+**For agents that need a running site.** The [`provision_up` hook](/provision/hooks#provision-on-an-agent-s-request) gives runs a tool that brings the site up. Merge a command per profile into `hooks`:
 
 ```js
 hooks: {
@@ -121,4 +125,4 @@ echo "installed $url"
 - **Install step:** replace `scripts/install.sh` with your repository's install or import for the profile.
 - **Local certificate:** `curl -k` accepts DDEV's local certificate even when the host does not trust it.
 
-[Hook lifecycle and environment →](/configuration/provisioning/hooks)
+**Next:** return to [project preparation](/provision/guide#check-tools-and-access) to review tool access and verify independent worktrees. [Lifecycle hooks](/provision/hooks) explains command timing.

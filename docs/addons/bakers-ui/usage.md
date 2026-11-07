@@ -2,7 +2,7 @@
 
 Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the screen current.
 
-**You need:** `bakers` installed and a checkout connected to bakers.build ([Install and sign in](/get-started/machine)).
+**You need:** `bakers` installed and a checkout connected to bakers.build ([Install and sign in](/provision/machine)).
 
 1. **Start it** inside the checkout. `--print-config` names the connection that wins if you are unsure:
 

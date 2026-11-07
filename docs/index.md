@@ -1,15 +1,20 @@
 # Work with bakers.build
 
-Agents work your tickets, step by step, while you stay in charge.
+Agents work your tickets, step by step, while you stay in charge. Start with [Get started](/get-started/) to create a ticket, follow the work and review the result.
 
-| Area | Find |
-|---|---|
-| [Getting Started](/get-started/) | Connector, machine and project setup, the first ticket, and daily work |
-| [Configuration](/configuration/) | Settings by owner, operational references and Security |
-| [Addons](/addons/) | Supported agents, clients, ports and extensions with canonical setup instructions |
+Choose the guide for the work you want to do.
 
-Start directly with [chat access](/get-started/connector), [your first machine](/get-started/machine), or [another project on a prepared machine](/get-started/connect-a-project).
+<DocQuickLinks aria-label="Documentation areas" :items="[
+  { label: 'Get started', text: 'Create tickets, follow the work and review results.', link: '/get-started/' },
+  { label: 'Provision', text: 'Prepare machines, worktree environments, tools and security.', link: '/provision/' },
+  { label: 'Agents', text: 'Choose agent addons, models and routes.', link: '/agents/' },
+  { label: 'Skills & Workflows', text: 'Set instructions, methods and approval steps.', link: '/skills-and-workflows/' },
+  { label: 'Addons', text: 'Find, configure or build an extension.', link: '/addons/' },
+  { label: 'Configuration', text: 'Find the right file, understand precedence and migrate settings.', link: '/configuration/' },
+  { label: 'Self-hosting', text: 'Install, update and back up your own application server.', link: '/self-hosting/' },
+  { label: 'Development', text: 'Build bakers.build from source and contribute changes.', link: '/development/' }
+]" />
 
-To run the project-manager bot in Slack, follow [`experimental/pm-bot/README.md`](https://github.com/bakers-build/bakers-build/blob/next/experimental/pm-bot/README.md).
+For chat-only access, begin with [a connector](/get-started/connector). Already have a prepared worker? [Connect another project](/get-started/connect-a-project).
 
-The site is published from `develop`, so it can describe features the latest release does not have yet; the version row names the commit it was built from.
+The version row identifies the site's build. It can describe changes not yet in a released package. The experimental Slack project-manager bot has its own [repository guide](https://github.com/bakers-build/bakers-build/blob/next/experimental/pm-bot/README.md).

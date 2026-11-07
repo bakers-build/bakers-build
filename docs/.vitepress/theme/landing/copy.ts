@@ -15,7 +15,7 @@ export const LANGUAGES = [
 const en = {
   lang: 'en',
   home: '/',
-  nav: { label: 'Main', menu: 'Menu', links: ['How it works', 'Your recipe', 'Open source', 'Docs'] },
+  nav: { label: 'Main', menu: 'Menu' },
   signUp: 'Sign up',
   copy: { label: 'Copy command', done: 'Command copied' },
   hero: {
@@ -108,7 +108,7 @@ export type Copy = typeof en
 const de: Copy = {
   lang: 'de',
   home: '/de/',
-  nav: { label: 'Hauptmenü', menu: 'Menü', links: ['So funktioniert’s', 'Dein Rezept', 'Open Source', 'Docs'] },
+  nav: { label: 'Hauptmenü', menu: 'Menü' },
   signUp: 'Anmelden',
   copy: { label: 'Befehl kopieren', done: 'Befehl kopiert' },
   hero: {

@@ -19,7 +19,7 @@ A preset declares contributions through named accumulator functions of the form 
 |---|---|---|---|
 | command | `commands` | The registry of the `bakers` host | A descriptor: `name`, `plugin` module, `describe` text, optional `export` |
 | conductor | `remotes`, `executors`, `workspaces` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` |
-| conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/configuration/provisioning/hooks#add-a-listener-from-an-addon) |
+| conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/provision/hooks#add-a-listener-from-an-addon) |
 | conductor | `agents` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `AgentCandidate` |
 | conductor | `inbox`, `tools` (values, not accumulators) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions); `AddonTools`: [agent tools](/addons/build/tools) |
 | connection | `connectionPlugins` | `addons` of a connection config | A dropsh plugin: authentication, renderers, schema, request hooks |
@@ -139,7 +139,7 @@ Cockpit tabs are layered. The three lists concatenate in the order machine, conn
 
 Executors and workspaces: [their guide](/addons/build/executor-workspace).
 
-The guard rejects an addon that depends on a sink, names a dependency outside its allowance, lists a contract as a plain dependency, or contributes to the conductor or UI surface without the matching peer dependency; [architecture](/configuration/project/contributing#architecture) has the rules. A new non-private package under `addons/` is published without a list to edit. [Build from source](/configuration/project/contributing#build-from-source) covers `verify:package`, which installs the whole set the way npm users do.
+The guard rejects an addon that depends on a sink, names a dependency outside its allowance, lists a contract as a plain dependency, or contributes to the conductor or UI surface without the matching peer dependency; [architecture](/development/architecture) has the rules. A new non-private package under `addons/` is published without a list to edit. [Build from source](/development/build-from-source) covers `verify:package`, which installs the whole set the way npm users do.
 
 ## Addon inbox messages
 

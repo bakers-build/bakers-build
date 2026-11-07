@@ -31,17 +31,24 @@ final class RunLogStore {
     private readonly WorkspaceResolverInterface $workspaceResolver,
     private readonly FileSystemInterface $fileSystem,
     private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly RunLogPolicy $policy,
   ) {
   }
 
   /**
    * Writes a payload and returns the managed file holding it.
    *
+   * A transcript (`log`, the default) is written only when RunLogPolicy
+   * allows it and otherwise returns NULL; `error_log` is always written.
+   *
    * @throws \Drupal\bb_core\RunLog\RunLogException
    *
    * @SuppressWarnings("PHPMD.ErrorControlOperator")
    */
-  public function write(BbRunInterface $run, string $payload): FileInterface {
+  public function write(BbRunInterface $run, string $payload, string $base = 'log'): ?FileInterface {
+    if ($base !== 'error_log' && !$this->policy->allowsStorage($run)) {
+      return NULL;
+    }
     $workspace_uuid = $this->workspaceUuid($run);
     $directory = sprintf('private://%s/%s/%s', self::DIRECTORY, $workspace_uuid, (string) $run->uuid());
     if (!$this->fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY)) {
@@ -52,9 +59,29 @@ final class RunLogStore {
       throw new RunLogException('Run log could not be compressed.');
     }
     $name = Crypt::randomBytesBase64(18) . '.log.gz';
-    // Atomic: write to a sibling temporary path, flush, then rename into place.
-    // A reader therefore never observes a half-written file, and a crash leaves
-    // a stray .part rather than a truncated log.
+    $this->commit($directory, $name, $encoded);
+    $file = $this->entityTypeManager->getStorage('file')->create([
+      'uri' => $directory . '/' . $name,
+      'filename' => $name,
+      'filemime' => 'application/gzip',
+      'status' => FileInterface::STATUS_PERMANENT,
+    ]);
+    $file->save();
+    return $file;
+  }
+
+  /**
+   * Writes the encoded payload to $directory/$name atomically.
+   *
+   * Writes to a sibling temporary path, flushes, then renames into place. A
+   * reader therefore never observes a half-written file, and a crash leaves a
+   * stray .part rather than a truncated log.
+   *
+   * @throws \Drupal\bb_core\RunLog\RunLogException
+   *
+   * @SuppressWarnings("PHPMD.ErrorControlOperator")
+   */
+  private function commit(string $directory, string $name, string $encoded): void {
     $part = $directory . '/' . $name . '.part';
     $handle = fopen($part, 'xb');
     if ($handle === FALSE) {
@@ -72,21 +99,12 @@ final class RunLogStore {
     finally {
       fclose($handle);
     }
-    $uri = $directory . '/' . $name;
     $part_real = $this->fileSystem->realpath($part);
     $directory_real = $this->fileSystem->realpath($directory);
     if ($part_real === FALSE || $directory_real === FALSE || !@rename($part_real, $directory_real . '/' . $name)) {
       @unlink($part);
       throw new RunLogException('Run log could not be committed.');
     }
-    $file = $this->entityTypeManager->getStorage('file')->create([
-      'uri' => $uri,
-      'filename' => $name,
-      'filemime' => 'application/gzip',
-      'status' => FileInterface::STATUS_PERMANENT,
-    ]);
-    $file->save();
-    return $file;
   }
 
   /**
