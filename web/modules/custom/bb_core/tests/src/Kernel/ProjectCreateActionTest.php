@@ -382,7 +382,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
             '#props' => ['size' => $size],
           ];
           $html = (string) $this->container->get('renderer')->renderInIsolation($brand);
-          self::assertStringContainsString('bakers-braid.svg?v=' . $token . '"', $html);
+          self::assertStringContainsString('/themes/custom/bb_theme/logo-wordmark.svg?v=' . $token . '"', $html);
         }
       }
     }
@@ -396,7 +396,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
       AssetQueryString::STATE_KEY, 'boundary',
     );
     $handler = $this->container->get('module_handler');
-    foreach (['dist/assets/icons/sprite.svg', 'assets/brand/bakers-braid.svg'] as $asset) {
+    foreach (['dist/assets/icons/sprite.svg', 'logo-wordmark.svg'] as $asset) {
       foreach (['', '/'] as $prefix) {
         $uri = $prefix . 'themes/custom/bb_theme/' . $asset;
         $expected = $uri . '?v=boundary';
@@ -409,11 +409,11 @@ final class ProjectCreateActionTest extends KernelTestBase {
     foreach ([
       '/themes/custom/bb_theme/dist/js/skin.js',
       '/themes/custom/bb_theme/dist/css/base.css',
-      '/themes/custom/other/assets/brand/bakers-braid.svg',
-      'https://example.test/themes/custom/bb_theme/assets/brand/bakers-braid.svg',
-      '//example.test/themes/custom/bb_theme/assets/brand/bakers-braid.svg',
-      'public://bakers-braid.svg',
-      '/themes/custom/bb_theme/assets/brand/bakers-braid.svg?other=1',
+      '/themes/custom/other/logo-wordmark.svg',
+      'https://example.test/themes/custom/bb_theme/logo-wordmark.svg',
+      '//example.test/themes/custom/bb_theme/logo-wordmark.svg',
+      'public://logo-wordmark.svg',
+      '/themes/custom/bb_theme/logo-wordmark.svg?other=1',
       '/themes/custom/bb_theme/dist/assets/icons/sprite.svg#plus',
     ] as $original) {
       $uri = $original;

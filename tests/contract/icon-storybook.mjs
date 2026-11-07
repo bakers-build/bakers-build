@@ -36,7 +36,7 @@ assert.ok(!escaped.includes('<script>'))
 assert.ok(escaped.includes('&lt;script&gt;'))
 for (const size of ['default', 'compact']) {
   const brandHtml = env.render('brand', { size, attributes })
-  assert.ok(brandHtml.includes('href="/themes/custom/bb_theme/assets/brand/bakers-braid.svg"'))
-  assert.ok(brandHtml.includes('aria-label="bakers.build"'))
+  assert.ok(brandHtml.includes('src="/themes/custom/bb_theme/logo-wordmark.svg"'), `brand ${size} renders logo-wordmark.svg`)
+  assert.ok(brandHtml.includes('alt="bakers.build"'), `brand ${size} names bakers.build`)
 }
 console.log('PASS: Storybook icon rendering, size, attributes and escaping.')

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\Mail;
 
 use Drupal\Component\Render\MarkupInterface;
+use Drupal\Core\Extension\ThemeExtensionList;
 use Drupal\Core\Mail\Attribute\Mail;
 use Drupal\Core\Mail\Plugin\Mail\SymfonyMailer;
 use Drupal\Core\Render\RendererInterface;
@@ -39,31 +40,14 @@ final class BbHtmlMail extends SymfonyMailer {
   private const URL_PATTERN = '~https?://[^\s<>"]+~i';
 
   /**
-   * The content ID of the embedded header lockup.
+   * The content ID of the embedded header logo.
    */
-  private const LOGO_CID = 'bakers-lockup';
-
-  /**
-   * The lockup's speech bubble per mail ID; any other mail gets none.
-   *
-   * Decoration only: it greets, invites or waves goodbye, and changes
-   * nothing about what the mail says or links to.
-   */
-  private const LOCKUP_BY_MAIL = [
-    'user_password_reset' => 'hi',
-    'bb_login_pending_signup' => 'hi',
-    'user_register_admin_created' => 'hi',
-    'user_register_no_approval_required' => 'hi',
-    'user_register_pending_approval' => 'hi',
-    'user_status_activated' => 'hi',
-    'bb_core_invite' => 'invite',
-    'user_cancel_confirm' => 'bye',
-    'user_status_canceled' => 'bye',
-  ];
+  private const LOGO_CID = 'bakers-logo';
 
   public function __construct(
     LoggerInterface $logger,
     private readonly RendererInterface $renderer,
+    private readonly ThemeExtensionList $themeList,
     ?MailerInterface $mailer = NULL,
   ) {
     parent::__construct($logger, $mailer);
@@ -87,6 +71,7 @@ final class BbHtmlMail extends SymfonyMailer {
     return new self(
       $container->get('logger.channel.mail'),
       $container->get('renderer'),
+      $container->get('extension.list.theme'),
     );
   }
 
@@ -145,7 +130,7 @@ final class BbHtmlMail extends SymfonyMailer {
         ->subject($message['subject'])
         ->text($message['body'])
         ->html($this->renderHtml($message))
-        ->embedFromPath(self::lockupPath((string) ($message['id'] ?? '')), self::LOGO_CID, 'image/png');
+        ->embedFromPath($this->themeList->getPath('bb_theme') . '/logo-wordmark.png', self::LOGO_CID, 'image/png');
 
       $this->getMailer()->send($email);
       return TRUE;
@@ -154,14 +139,6 @@ final class BbHtmlMail extends SymfonyMailer {
       Error::logException($this->logger, $e);
       return FALSE;
     }
-  }
-
-  /**
-   * The lockup image for one mail ID.
-   */
-  private static function lockupPath(string $id): string {
-    $variant = self::LOCKUP_BY_MAIL[$id] ?? 'plain';
-    return dirname(__DIR__, 3) . '/assets/email/bakers-lockup-' . $variant . '.png';
   }
 
   /**

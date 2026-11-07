@@ -54,8 +54,8 @@
   </div>
   {% if actions %}
     {# Identity and the mode toggle are expanded-only: a 56px rail has no
-       room for a named account plus a palette control beside the nav icons.
-       `justify-between` pins the palette to the right edge at full width. #}
+       room for a named account plus an appearance control beside the nav icons.
+       `justify-between` pins the appearance control to the right edge at full width. #}
     <div class="flex shrink-0 items-center justify-between gap-inline px-stack py-stack border-t border-border-2" data-collapse-hidden{% if is_collapsed %} hidden{% endif %}>{% block actions %}{{ actions }}{% endblock %}</div>
   {% endif %}
 </aside>

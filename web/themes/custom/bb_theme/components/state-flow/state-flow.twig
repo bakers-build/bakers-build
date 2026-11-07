@@ -7,25 +7,27 @@
   'claimed': 'text-state-lease-ink',
   'working': 'text-state-running-ink',
   'running': 'text-state-running-ink',
-  'review': 'text-state-attention-ink',
+  'review': 'text-state-ink',
   'done': 'text-state-running-ink',
-  'cancelled': 'text-text'
+  'cancelled': 'text-text-faint'
 } %}
 {% set state_dot_map = {
   'plan': 'bg-state-lease',
   'claimed': 'bg-state-lease',
   'working': 'bg-state-running',
   'running': 'bg-state-running',
-  'review': 'bg-state-attention',
+  'review': 'bg-state-ink',
   'done': 'bg-state-running',
   'cancelled': 'bg-text-faint'
 } %}
+{# The current review step is a filled pill; the others sit on surface-3. #}
+{% set state_fill_map = { 'review': 'bg-state-review' } %}
 {% if states %}
   <ol class="m-0 p-0 list-none flex items-center gap-inline-xs flex-wrap py-[2px]" aria-label="{{ label|default('Workflow') }}">
     {% for step in states %}
       {% set is_current = step == current %}
       <li class="inline-flex items-center gap-inline-xs"{% if is_current %} aria-current="step"{% endif %}>
-        <span class="inline-flex items-center gap-[5px] h-[22px] px-[9px] rounded-full text-badge whitespace-nowrap {{ is_current ? 'bg-surface-3 ' ~ state_color_map[step]|default('text-text') : 'text-text-faint' }}">
+        <span class="inline-flex items-center gap-[5px] h-[22px] px-[9px] rounded-full text-badge whitespace-nowrap {{ is_current ? state_fill_map[step]|default('bg-surface-3') ~ ' ' ~ state_color_map[step]|default('text-text-light') : 'text-text-faint' }}">
           <span class="inline-block w-[6px] h-[6px] rounded-full {{ is_current ? state_dot_map[step]|default('bg-text-light') : 'bg-border' }}" aria-hidden="true"></span>
           {%- if is_current %}<strong class="font-bold">{{ step }}</strong>{% else %}{{ step }}{% endif %}
         </span>

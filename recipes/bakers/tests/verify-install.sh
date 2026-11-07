@@ -27,10 +27,15 @@ for m in node media taxonomy; do
   fi
 done
 
-# gin is the admin theme.
-if [ "$(drush config:get system.theme admin --format=string)" != "gin" ]; then
-  echo "FAIL: admin theme is not gin"; fail=1
+# No admin theme: every route renders in bb_theme, and Gin and Claro are not installed.
+if [ -n "$(drush config:get system.theme admin --format=string)" ]; then
+  echo "FAIL: an admin theme is set"; fail=1
 fi
+for t in gin claro; do
+  if drush pm:list --status=enabled --type=theme --format=list | grep -qx "$t"; then
+    echo "FAIL: theme $t must NOT be enabled"; fail=1
+  fi
+done
 
 # Vocabulary bundles ship as bb_vocabulary config (recipes/bakers/config).
 for v in type recipe label; do

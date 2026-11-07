@@ -3,9 +3,7 @@ $schema: >-
 name: Brand
 status: stable
 group: Shell
-description: >-
-  bakers.build login heading with the original braid and terminal block
-  wordmark.
+description: bakers.build login heading with the logo and wordmark.
 props:
   type: object
   properties:
@@ -18,9 +16,9 @@ props:
       description: >-
         `default` is the full mark onboarding uses. `compact` is the 128px mark
         the gate chrome uses, so a gate page's message rather than its mark is
-        the dominant element. Compact marks are images, leaving the screen its
-        h1; their geometry comes from `component.brand.compact.*` and does not
-        follow the layout density.
+        the dominant element. The compact mark is a plain image, leaving the
+        screen its h1; its width comes from `component.brand.compact.width` and
+        does not follow the layout density.
       default: default
 thirdPartySettings:
   sdcStorybook:

@@ -17,7 +17,7 @@
      empty. The second row is group 3, also in workspace 1: a long non-ASCII name, no image and a
      description at the 280-character limit. */
   $rows := [
-    { "id": "1", "name": "keytec", "created": "2026-01-10", "updated": "2 hours ago", "projects": 3, "owner_user_id": "1", "initials": "K", "color": "attention", "image": "/themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png", "description": "keytec builds and runs bakers.build; its projects carry the platform and the design system." },
+    { "id": "1", "name": "keytec", "created": "2026-01-10", "updated": "2 hours ago", "projects": 3, "owner_user_id": "1", "initials": "K", "color": "attention", "image": "/themes/custom/bb_theme/logo.svg", "description": "keytec builds and runs bakers.build; its projects carry the platform and the design system." },
     { "id": "3", "name": "Ærøskøbing Søndergård Genossenschaft für Brückenbau und Küstenschutz", "created": "2026-04-12", "updated": "4 months ago", "projects": 0, "owner_user_id": "3", "initials": "ÆS", "color": "lease", "description": "A cooperative of harbour towns sharing one maintenance budget for bridges, quays and dikes along the coast: ÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜberführungsbauwerkinstandsetzungsdokumentationsverzeichnisnachtragÜberführungsbauwerkinstandsetzungsdoku" }
   ];
   [

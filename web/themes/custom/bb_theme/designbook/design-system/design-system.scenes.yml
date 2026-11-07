@@ -156,7 +156,7 @@ scenes:
                   workspace_color: running
                   multiple: true
                   collapsed: false
-                  workspace_picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                  workspace_picture: /themes/custom/bb_theme/logo.svg
                 slots:
                   workspace_panel:
                     - component: bb_theme:menu_item
@@ -168,7 +168,7 @@ scenes:
                           initials: KE
                           color: running
                           picture: >-
-                            /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                            /themes/custom/bb_theme/logo.svg
                     - component: bb_theme:menu_item
                       props:
                         label: bakers.build
@@ -217,7 +217,7 @@ scenes:
                           in_active_trail: false
                           mark:
                             initials: TA
-                            color: running
+                            color: attention
                         - title: Team B
                           url: /bakers/team/team-b
                           in_active_trail: false
@@ -230,12 +230,12 @@ scenes:
                     variant: compact
                     display_name: cw
                     initials: CW
-                    color: lease
+                    color: running
                     size: md
                 - component: bb_theme:mode_toggle
                   props:
                     mode: light
-                    label: Choose theme
+                    label: Choose appearance
           content: $content
           footer:
             component: bb_theme:status_bar
@@ -332,7 +332,7 @@ scenes:
                           in_active_trail: false
                           mark:
                             initials: TA
-                            color: running
+                            color: attention
                         - title: Team B
                           url: /bakers/team/team-b
                           in_active_trail: false
@@ -344,12 +344,12 @@ scenes:
                   props:
                     variant: compact
                     initials: CW
-                    color: lease
+                    color: running
                     size: md
                 - component: bb_theme:mode_toggle
                   props:
                     mode: light
-                    label: Choose theme
+                    label: Choose appearance
           content: $content
           footer:
             component: bb_theme:status_bar
@@ -519,7 +519,7 @@ scenes:
                           initials: KE
                           color: running
                           picture: >-
-                            /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                            /themes/custom/bb_theme/logo.svg
                     - component: bb_theme:menu_item
                       props:
                         label: bakers.build
@@ -568,12 +568,12 @@ scenes:
                     variant: compact
                     display_name: cw
                     initials: CW
-                    color: lease
+                    color: running
                     size: md
                 - component: bb_theme:mode_toggle
                   props:
                     mode: light
-                    label: Choose theme
+                    label: Choose appearance
           content: $content
           footer:
             component: bb_theme:status_bar

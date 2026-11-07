@@ -1,0 +1,30 @@
+source:
+  kind: "storybook"
+  identity: "http://localhost:58031/iframe.html?id=designbook-sections-projects-scenes--project-detail-board&viewMode=story"
+  revision: null
+role: "actual"
+elements:
+  - id: "sidebar-light"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(1)"
+    states:
+      - name: "ci-light"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 900
+  - id: "sidebar-dark"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(1)"
+    states:
+      - name: "ci-dark"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 900
+prelude_digest: "39d7f20c49442ddda7fdd6750097b95dd9aaf4af13f4dabd841573ce2d9885b3"
+assets_dir: "assets"
