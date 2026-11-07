@@ -34,7 +34,7 @@ What ships today:
 | Surface | Addons |
 |---|---|
 | command | `conductor` and `ui` (inside their own packages), `addon-dropsh`, `addon-deployment`, `addon-agents`, `addon-info`, `addon-ports`, `addon-track` |
-| conductor | `addon-remote-drupal` (remote), `addon-herdr` and `addon-orca` (executor and workspace), `addon-workspace-git` (workspace), the agents `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi`, and the inbox of `addon-ports` |
+| conductor | `addon-remote-drupal` (remote), `addon-herdr` (executor and workspace), `addon-herdr-core` (executor), `addon-workspace-git` (workspace), the agents `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi`, and the inbox of `addon-ports` |
 | connection | `addon-auth-basic`, `addon-essentials`, `addon-bakers-ui` (the terminal renderer), `addon-workspace`, and the cockpit tab `addon-bakers-ui-artifacts` |
 
 `addon-fake` is a workspace-only test fixture that contributes a remote, an executor, a workspace and an inbox. `addon-essentials` is a meta-addon that brings the Markdown renderer, the JSON:API schema plugin and the name resolver `addon-name-refs`, which has no preset of its own.
@@ -71,7 +71,7 @@ One function, `discoverAddons`, in `bakers-cli/core/src/plugins/discover-addons.
 3. An exact repeat, meaning the same resolved module, options and alias, is skipped with a warning. The same package with different options loads again as a second instance.
 4. Discovery does not install packages. An unresolvable addon is an error, except in the machine file and the `uiEntries` layers, where it is skipped with a warning naming the package and file.
 
-Singleton slots (remote, executor, workspace) resolve last-wins, with a warning naming the competitors. A contribution of the wrong `kind` for its slot is an error. An explicit `remote`, `executor` or `workspace` descriptor in the config takes precedence over anything discovered, and an `executor` in the machine file takes precedence over the project's. [Conductor slots](/addons/slots) defines what an executor and a workspace implement. A conductor config with no remote, executor or workspace fails to load.
+Singleton slots (remote, executor, workspace) resolve last-wins, warning about the competitors. A wrong `kind` for its slot is an error. An explicit `remote`, `executor` or `workspace` descriptor in the config takes precedence over anything discovered; a machine `executor` wins ([slots](/addons/slots)). A conductor config with no remote, executor or workspace fails to load.
 
 The machine file `~/.bakers/machine.config.js` and the project file `.bakers/conductor.config.js` each carry one `addons` list, merged into one effective list by `scopeAddons` (`bakers-cli/core/src/plugins/scoped-addons.ts`). The addon's `scopes` export (next section) decides where it may be listed; an entry elsewhere is not loaded and warns, and `bakers config check --online` reports `addon_scope_not_allowed`. The same resolved package and `alias` in both files becomes one entry at the machine position, machine entries first. An unresolvable machine entry is skipped with a warning; an unresolvable project entry fails the conductor load.
 

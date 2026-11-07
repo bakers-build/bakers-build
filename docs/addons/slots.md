@@ -1,6 +1,6 @@
 # Conductor slots
 
-The conductor dispatches a run through two slots with separate jobs. The **workspace** owns the ticket's Git worktree. The **executor** hosts the terminals the agent runs in. The conductor itself runs every lifecycle hook. The executor and the workspace share only the worktree path and branch, so any executor runs on any workspace's worktree.
+The **workspace** owns the ticket's Git worktree, the **executor** hosts the agent's terminals, and the conductor runs every lifecycle hook. They share only the worktree path and branch, so any executor runs on any workspace's worktree.
 
 ## Who does what
 
@@ -29,7 +29,7 @@ interface BbWorkspace {
 }
 ```
 
-`remove` reports `removed`, `already_absent`, or `unverified`. On `unverified`, the ticket stays on the cleanup list and the next reap retries. `@bakers-build/addon-workspace-git` exports `removeGitWorktree`, the Git teardown every shipped workspace falls back to. It refuses the main checkout, checks Git's registration and the directory before acting, restores Drupal's write bits, then removes and prunes.
+`remove` reports `removed`, `already_absent` or `unverified`; on `unverified` the next reap retries. `@bakers-build/addon-workspace-git` exports `removeGitWorktree`, the Git teardown every shipped workspace falls back to; it refuses the main checkout.
 
 ## Order of a dispatch
 
@@ -48,6 +48,7 @@ Finalising a run calls `stopRun`, stores the transcript, runs `after_run`, then 
 |---|---|---|
 | [herdr](/addons/herdr) | herdr TUI tabs; `openWorkspace` applies the `open` layout | herdr worktrees; `remove` uses `herdr worktree remove`, else Git |
 | [Orca](/addons/orca) | Orca terminals; `openWorkspace` opens the overview terminal | Git worktrees adopted by Orca; `remove` uses `orca worktree rm`, else Git |
+| [herdr-core](/addons/herdr-core) | herdr-core (`hc`) terminals; no `openWorkspace` | — |
 | [Git workspace](/addons/workspace-git) | — | Plain Git worktrees |
 | [Fake fixture](/addons/fake) | Test executor | Test workspace |
 
@@ -62,7 +63,7 @@ export default {
   machine_id: '…',
   label: 'my-laptop',
   addons: ['@bakers-build/addon-claude'],
-  executor: { plugin: '@bakers-build/addon-orca' },
+  executor: { plugin: '@bakers-build/addon-herdr-core' },
 };
 ```
 
@@ -70,4 +71,4 @@ The executor slot resolves in this order: the machine's `executor`, the project'
 
 ## Migrating an addon
 
-The slot methods `BbExecutor.runHook`, `BbExecutor.removeWorktree` and `BbWorkspace.applyOpenLayout` are gone. Hook commands come from the conductor config's `hooks` and run in the conductor. Move worktree removal to `BbWorkspace.remove`, and the open layout to `BbExecutor.openWorkspace`. For herdr, the `open` option is read by the executor: one `addons` entry still reaches both. An explicit `workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace', with: { open } }` slot must move `open` to the executor's `with`.
+`BbExecutor.runHook`, `BbExecutor.removeWorktree` and `BbWorkspace.applyOpenLayout` are gone: the conductor runs the config's `hooks`; move removal to `BbWorkspace.remove` and the open layout to `BbExecutor.openWorkspace`. herdr's `open` option is now read by its executor; an explicit `herdrWorkspace` slot carrying `with.open` must move it to the executor.

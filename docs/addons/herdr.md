@@ -47,7 +47,7 @@ addons: [
 ],
 ```
 
-No `with` options are required. [Options and layouts](/addons/herdr/options) owns all defaults, placeholders, panes and launch timeouts. Keep this pair together; do not combine the herdr executor with Git-only workspace.
+No `with` options are required. [Options and layouts](/addons/herdr/options) owns all defaults, placeholders, panes and launch timeouts. The herdr executor also runs on another workspace's worktree, and a machine can replace it with its own executor; see [Conductor slots](/addons/slots).
 
 ## Verify
 

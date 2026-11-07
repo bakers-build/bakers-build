@@ -88,7 +88,9 @@ describe('BB-326 runtime packaging', () => {
     // raises the Node floor.
     // 32 since `@bakers-build/addon-orca` (the Orca executor + workspace host)
     // joined the published set; it sets no `engines`.
-    expect(dirs).toHaveLength(32);
+    // 33 since `@bakers-build/addon-herdr-core` (the herdr-core executor); it
+    // sets no `engines`.
+    expect(dirs).toHaveLength(33);
     for (const dir of dirs) {
       const engines = manifestOf(dir).engines?.node;
       if (engines !== undefined)

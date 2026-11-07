@@ -49,7 +49,7 @@ Four typed slots connect the loop to the outside world. The loop depends on the 
 | Slot | Interface | What it does | Shipped addon |
 |---|---|---|---|
 | remote | `BbRemote` | Register, heartbeat, claim, read tickets, update runs, finalise | `addon-remote-drupal` |
-| executor | `BbExecutor` | Start, stop and clean up a run's terminal; show a fresh worktree | `addon-herdr`, `addon-orca` |
+| executor | `BbExecutor` | Start, stop and clean up a run's terminal; show a fresh worktree | `addon-herdr`, `addon-herdr-core`, `addon-orca` |
 | workspace | `BbWorkspace` | Ensure and remove the ticket's git worktree | `addon-herdr`, `addon-orca` or `addon-workspace-git` |
 | agent | `BbAgent` | Launch command, read the transcript, parse the footprint | `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi` |
 

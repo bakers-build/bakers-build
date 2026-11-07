@@ -111,6 +111,20 @@ describe('conductor addons per scope', () => {
     expect(cfg.executor.id).toBe('orca');
   });
 
+  it('a project on herdr runs herdr-core on a machine that sets it', async () => {
+    writeMachine(
+      `export default { addons: ['@bakers-build/addon-codex'], executor: { plugin: '@bakers-build/addon-herdr-core' } };`,
+    );
+    const project = writeProject(
+      projectConfig().replace(
+        "executor: slot('executor'),",
+        "executor: { plugin: '@bakers-build/addon-herdr' },",
+      ),
+    );
+    const cfg = await loadConductorConfig(project);
+    expect(cfg.executor.id).toBe('herdr-core');
+  });
+
   it('agents.addons throws the retired-key remediation', async () => {
     writeMachine(
       `export default { agents: { addons: ['@bakers-build/addon-codex'] } };`,
