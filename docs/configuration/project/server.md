@@ -77,6 +77,7 @@ it directly; single-quote values containing `$` to avoid interpolation.
 | `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `DRUPAL_HASH_SALT` | Three independent private random values, e.g. generate each with `openssl rand -hex 32`. Retain them across updates/restores. |
 | `MAIL_SMTP_DSN`, `MAIL_FROM_ADDRESS` | Working SMTP URL and permitted sender. For example `smtp://user:password@smtp.example.org:587`; percent-encode credential characters. Use your provider's TLS settings; do not disable peer verification. |
 | `BB_OAUTH_GOOGLE_CLIENT_ID`, `BB_OAUTH_GOOGLE_CLIENT_SECRET` | Optional Google login credentials for this domain; otherwise empty. |
+| `FEATURE_FLAG_RUN_LOG_STORAGE` | `1` or `true` lets workspace leads opt in to storing agent run transcripts; anything else, including empty, keeps storage off. See [Run-log storage](#run-log-storage). |
 
 Leave `COMPOSE_PROFILES` empty. The docs-site image is not required. Coder and FRP
 are not part of this stack. MariaDB retains the base stack's pinned version;
@@ -138,6 +139,27 @@ passwordless sign-in by receiving a real email. Google login is optional. Existi
 application permissions remain authoritative; do not give ordinary members admin
 rights to bypass an access failure. Connect clients with
 `bakers init --base-url https://YOUR_DOMAIN`.
+
+## Run-log storage
+
+Agent run transcripts are stored only when all three hold:
+
+1. the deployment permits it: the hosted stack (`docker-compose.yml`) pins
+   `FEATURE_FLAG_RUN_LOG_STORAGE=0`; `docker/self-host.yml` passes on your value;
+2. `FEATURE_FLAG_RUN_LOG_STORAGE=1` (or `true`); run `dc up -d` after changing it;
+3. a workspace lead ticks *Store agent run logs* in the workspace Settings. The
+   box appears only while the flag is on; new workspaces start unticked.
+
+When storage is off, conductors still close runs with their footprint and
+state but send no transcript, and the server drops any transcript an older
+conductor sends. Error messages of failed runs are kept either way.
+
+The conductor reads the policy for each run it finalizes, without a restart,
+and the server checks it again on every write: disabling before a run's upload
+stores nothing from that run. Turning storage off deletes no existing
+transcript and keeps who may read it; turning it on does not backfill.
+`capture_logs: false` keeps a conductor's transcripts local even when storage
+is allowed.
 
 ## Verify before opening access
 

@@ -173,6 +173,12 @@ export interface FinalizableRun {
    * stays transcript-derived (BB-151). '' / undefined when unset.
    */
   startedAt?: string;
+  /**
+   * The server's current run-log policy for this run (workspace opt-in AND
+   * the operator flag), read fresh on every finalize query. Only `true`
+   * allows uploading the transcript; absent (an older server) means no.
+   */
+  runLogStorageAllowed?: boolean;
 }
 
 /**

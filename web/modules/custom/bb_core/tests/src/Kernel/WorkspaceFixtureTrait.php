@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\RunLog\RunLogPolicy;
 
 /**
  * Builds the workspace -> group -> project -> ticket -> run entity chain.
@@ -22,6 +23,22 @@ trait WorkspaceFixtureTrait {
   private int $workspaceFixtureSequence = 0;
 
   /**
+   * Whether later fixture workspaces opt in to run-log storage.
+   */
+  private bool $runLogStorageOptIn = FALSE;
+
+  /**
+   * Turns on the operator flag and opts every later fixture workspace in.
+   *
+   * For suites whose subject is a stored transcript; storage is off by
+   * default, and RunLogPolicyTest covers the denied paths.
+   */
+  protected function allowRunLogStorage(): void {
+    $this->setSetting('feature_flags', [RunLogPolicy::FLAG => TRUE]);
+    $this->runLogStorageOptIn = TRUE;
+  }
+
+  /**
    * Creates a run at the end of a fresh workspace -> ... -> ticket chain.
    */
   protected function createRunInWorkspace(): BbRunInterface {
@@ -31,6 +48,7 @@ trait WorkspaceFixtureTrait {
     $workspace = $etm->getStorage('bb_workspace')->create([
       'name' => 'Workspace ' . $suffix,
       'slug' => 'workspace-' . $suffix,
+      RunLogPolicy::WORKSPACE_FIELD => $this->runLogStorageOptIn,
     ]);
     $workspace->save();
 

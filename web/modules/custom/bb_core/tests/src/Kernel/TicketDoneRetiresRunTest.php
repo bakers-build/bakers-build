@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\RunLog\RunLogPolicy;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -26,6 +27,7 @@ final class TicketDoneRetiresRunTest extends ClaimKernelTestBase {
   public function testDoneRetiresLastRunAndClosesTicket(): void {
     $ticket = $this->seedAssignedTicket(state: 'review');
     $run = $this->seedRun($ticket, stateAtStart: 'review', state: 'running');
+    $this->setSetting('feature_flags', [RunLogPolicy::FLAG => TRUE]);
     $run->set('log', 'real transcript')->save();
 
     $ticket->set('state', 'done')->save();

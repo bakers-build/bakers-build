@@ -85,6 +85,8 @@ const NON_ZERO_TRANSCRIPT = JSON.stringify({
 async function finalizeWith(
   captureLogs: boolean | undefined,
   transcript: string,
+  /** `null` models a server that sends no policy. */
+  runLogStorageAllowed: boolean | null = true,
 ): Promise<FakeBbRemote> {
   const remote = new FakeBbRemote({
     runs: [
@@ -94,6 +96,7 @@ async function finalizeWith(
         stateAtStart: 'review',
         state: 'done',
         worktreePath: '/wt/r-1',
+        ...(runLogStorageAllowed !== null ? { runLogStorageAllowed } : {}),
       },
     ],
   });
@@ -139,5 +142,76 @@ describe('capture_logs', () => {
     const remote = await finalizeWith(false, NON_ZERO_TRANSCRIPT);
     expect(remote.calls.finalizeRun).toHaveLength(1);
     expect(remote.runLog('r-1')).toBe('');
+  });
+});
+
+// The server's run-log policy (workspace opt-in AND the operator flag) is read
+// per run at finalize; the local capture_logs opt-out can only narrow it.
+describe('server run-log policy', () => {
+  it('omits the transcript when the server sends no policy', async () => {
+    const remote = await finalizeWith(undefined, NON_ZERO_TRANSCRIPT, null);
+    expect(remote.calls.finalizeRun[0]?.log).toBe('');
+  });
+
+  it('omits the transcript when the server denies storage', async () => {
+    const remote = await finalizeWith(true, NON_ZERO_TRANSCRIPT, false);
+    expect(remote.calls.finalizeRun[0]?.log).toBe('');
+    expect(remote.runLog('r-1')).toBe('');
+  });
+
+  it('keeps metrics and closes the run when storage is denied', async () => {
+    const remote = await finalizeWith(undefined, NON_ZERO_TRANSCRIPT, false);
+    expect(remote.calls.finalizeRun).toHaveLength(1);
+    expect(remote.calls.finalizeRun[0]?.metrics?.tokens).toBeGreaterThan(0);
+    expect(remote.calls.finalizeRun[0]?.metrics?.harness).toBe('claude');
+  });
+
+  it('still honors capture_logs false when the server allows storage', async () => {
+    const remote = await finalizeWith(false, NON_ZERO_TRANSCRIPT, true);
+    expect(remote.calls.finalizeRun[0]?.log).toBe('');
+  });
+
+  it('reads the current policy on every tick, without a restart', async () => {
+    const remote = new FakeBbRemote({
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: 'review',
+          state: 'done',
+          worktreePath: '/wt/r-1',
+          runLogStorageAllowed: false,
+        },
+        {
+          runUuid: 'r-2',
+          ticketUuid: 't-2',
+          stateAtStart: 'review',
+          state: 'running',
+          worktreePath: '/wt/r-2',
+          runLogStorageAllowed: false,
+        },
+      ],
+    });
+    const conductor = new Conductor(
+      makeConfig(),
+      remote,
+      new FakeExecutor(),
+      new FakeWorkspace(),
+      resolved(agentReturning(NON_ZERO_TRANSCRIPT)),
+      spyLogger(),
+      CHECKOUT,
+    );
+    await conductor.start();
+    await conductor.tick();
+    expect(remote.calls.finalizeRun.map((c) => c.log)).toEqual(['']);
+
+    // The lead opts in while r-2 is still running; it ends afterwards.
+    remote.setRunLogStorageAllowed('r-2', true);
+    remote.markDone('r-2');
+    await conductor.tick();
+    expect(remote.calls.finalizeRun.map((c) => [c.runUuid, c.log])).toEqual([
+      ['r-1', ''],
+      ['r-2', NON_ZERO_TRANSCRIPT],
+    ]);
   });
 });

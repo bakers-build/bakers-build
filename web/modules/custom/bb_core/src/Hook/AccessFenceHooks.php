@@ -15,6 +15,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Access\BbRankCapabilityInterface;
 use Drupal\bb_core\Access\BbRankEntityFence;
 use Drupal\bb_core\Onboarding\OnboardingDestination;
+use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\og\OgAccess;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
@@ -41,7 +42,10 @@ final class AccessFenceHooks {
    * @var array<string, list<string>>
    */
   private const SAVED_ROW_EDITABLE = [
-    'bb_workspace' => ['name', 'description', 'image', 'billing_profile'],
+    'bb_workspace' => [
+      'name', 'description', 'image', 'billing_profile',
+      RunLogPolicy::WORKSPACE_FIELD,
+    ],
     'bb_group' => ['name', 'description', 'image', 'billing_profile'],
     'bb_project' => [
       'name', 'description', 'image', 'key', 'repository', 'env_vars',
@@ -105,6 +109,10 @@ final class AccessFenceHooks {
     if (!str_starts_with($field_definition->getTargetEntityTypeId(), 'bb_')) {
       return AccessResult::neutral();
     }
+    $run_log = $this->runLogPolicyFieldAccess($operation, $field_definition);
+    if ($run_log !== NULL) {
+      return $run_log;
+    }
 
     $saved_row = $this->savedRowFieldPolicy($operation, $field_definition, $account, $items);
     if ($saved_row !== NULL) {
@@ -117,6 +125,30 @@ final class AccessFenceHooks {
       $account,
       $items,
     );
+  }
+
+  /**
+   * Run-log policy fields: never editable when the deployment disables it.
+   *
+   * Forbids the workspace opt-in for everyone, admins included, while the
+   * operator flag is off, and the computed run policy always. Returns NULL
+   * when this rule does not apply.
+   */
+  private function runLogPolicyFieldAccess(
+    string $operation,
+    FieldDefinitionInterface $field_definition,
+  ): ?AccessResultInterface {
+    if ($operation !== 'edit') {
+      return NULL;
+    }
+    $field = $field_definition->getTargetEntityTypeId() . '.' . $field_definition->getName();
+    if ($field === 'bb_run.' . RunLogPolicy::RUN_FIELD) {
+      return AccessResult::forbidden('The run-log policy is computed.');
+    }
+    if ($field === 'bb_workspace.' . RunLogPolicy::WORKSPACE_FIELD && !RunLogPolicy::isAvailable()) {
+      return AccessResult::forbidden('Run-log storage is disabled by this deployment.');
+    }
+    return NULL;
   }
 
   /**

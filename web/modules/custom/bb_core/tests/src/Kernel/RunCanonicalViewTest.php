@@ -17,6 +17,7 @@ use Drupal\bb_core\Plugin\UiPatterns\Source\BbRunBreadcrumbSource;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbRunRowSource;
 use Drupal\bb_core\Routing\BbRunRouteProvider;
 use Drupal\bb_core\Run\BbRunInspectorRows;
+use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\bb_core\RunLog\RunLogStore;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\views\Entity\View;
@@ -106,9 +107,11 @@ final class RunCanonicalViewTest extends KernelTestBase {
     $this->container->get('theme_installer')->install(['bb_theme']);
 
     $etm = $this->container->get('entity_type.manager');
+    $this->setSetting('feature_flags', [RunLogPolicy::FLAG => TRUE]);
     $workspace = $etm->getStorage('bb_workspace')->create([
       'name' => 'bakers.build',
       'slug' => 'bakers',
+      RunLogPolicy::WORKSPACE_FIELD => TRUE,
     ]);
     $workspace->save();
     self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);

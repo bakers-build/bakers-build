@@ -31,17 +31,24 @@ final class RunLogStore {
     private readonly WorkspaceResolverInterface $workspaceResolver,
     private readonly FileSystemInterface $fileSystem,
     private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly RunLogPolicy $policy,
   ) {
   }
 
   /**
    * Writes a payload and returns the managed file holding it.
    *
+   * A transcript (`log`, the default) is written only when RunLogPolicy
+   * allows it and otherwise returns NULL; `error_log` is always written.
+   *
    * @throws \Drupal\bb_core\RunLog\RunLogException
    *
    * @SuppressWarnings("PHPMD.ErrorControlOperator")
    */
-  public function write(BbRunInterface $run, string $payload): FileInterface {
+  public function write(BbRunInterface $run, string $payload, string $base = 'log'): ?FileInterface {
+    if ($base !== 'error_log' && !$this->policy->allowsStorage($run)) {
+      return NULL;
+    }
     $workspace_uuid = $this->workspaceUuid($run);
     $directory = sprintf('private://%s/%s/%s', self::DIRECTORY, $workspace_uuid, (string) $run->uuid());
     if (!$this->fileSystem->prepareDirectory($directory, FileSystemInterface::CREATE_DIRECTORY)) {

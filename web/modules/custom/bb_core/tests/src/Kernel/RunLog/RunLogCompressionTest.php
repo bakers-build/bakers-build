@@ -65,6 +65,7 @@ final class RunLogCompressionTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
+    $this->allowRunLogStorage();
     $this->setSetting('file_private_path', $this->siteDirectory . '/private');
     foreach ([
       'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_project',

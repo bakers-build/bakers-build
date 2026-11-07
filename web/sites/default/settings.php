@@ -61,6 +61,14 @@ if (getenv('IS_DDEV_PROJECT') === 'true') {
   ];
 }
 
+// Operator feature flags: only an explicit 1/true enables; anything else is
+// off. The SaaS stack (docker-compose.yml) pins run-log storage to 0.
+$settings['feature_flags']['run_log_storage'] = in_array(
+  strtolower(trim((string) getenv('FEATURE_FLAG_RUN_LOG_STORAGE'))),
+  ['1', 'true'],
+  TRUE,
+);
+
 // Komodo deployment (hosted container): override the ddev-local DB creds + salt above
 // with the per-stack env vars when running in a deployed container (DB_HOST is set there,
 // absent under DDEV). Keeps ONE settings.php for local + every deploy environment.
