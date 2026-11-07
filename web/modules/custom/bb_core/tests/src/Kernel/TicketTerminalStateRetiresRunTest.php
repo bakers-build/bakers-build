@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\RunLog\RunLogPolicy;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -38,6 +39,7 @@ final class TicketTerminalStateRetiresRunTest extends ClaimKernelTestBase {
     // bb_work: plan → done is undefined (finish leaves working or review).
     $ticket = $this->seedAssignedTicket(state: 'plan', workflow: 'bb_work');
     $run = $this->seedRun($ticket, stateAtStart: 'plan', state: 'running');
+    $this->setSetting('feature_flags', [RunLogPolicy::FLAG => TRUE]);
     $run->set('log', 'real transcript')->save();
 
     // Undefined edge: state_machine dispatches no post_transition event

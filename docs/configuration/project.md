@@ -51,7 +51,7 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `selectAgent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/configuration/agents). |
 | `schema_version` | Written by `bakers config init` and `upgrade`; the current project schema is 1. |
 
-`capture_logs` is written as `true` by the generator. Set it to `false` to keep this conductor's run transcripts off the server: the footprint (tokens, turns, tool calls) is still recorded, the transcript stays on this machine.
+`capture_logs` is written as `true` by the generator. The server decides whether a run's transcript is uploaded at all ([Run-log storage](/configuration/project/server#run-log-storage)); `true` follows that decision. Set it to `false` to keep this conductor's run transcripts off the server even where storage is allowed: the footprint (tokens, turns, tool calls) is still recorded, the transcript stays on this machine.
 
 The loader rejects two old shapes: top-level `project` or `bb_workspace` instead of `bakers`, and `agent`, `agents`, `default_agent` or `agent_routes` (agent policy lives in the machine file). `site`, `plugins` and `max_parallel` are ignored with a warning; the run budget is set on the machine in the backend. Move or remove them by hand; `bakers config upgrade` no longer rewrites them ([Configuration migration](/configuration/project/migration)). Agent addons listed in `addons` are dropped with a warning.
 

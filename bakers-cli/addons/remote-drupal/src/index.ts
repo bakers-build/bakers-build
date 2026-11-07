@@ -721,6 +721,8 @@ export class DrupalBbRemote implements BbRemote {
       worktreePath: r.attr<string>('worktree_path') ?? '',
       agent: r.attr<string>('agent') ?? '',
       startedAt: r.attr<string>('started_at') ?? '',
+      // Strict: an older server sends nothing, which must mean "do not upload".
+      runLogStorageAllowed: r.attr<unknown>('run_log_storage_allowed') === true,
     }));
   }
 
@@ -737,6 +739,7 @@ export class DrupalBbRemote implements BbRemote {
         'started_at',
         'state_at_start',
         'ticket_id',
+        'run_log_storage_allowed',
       ])
       .page(100)
       .list();
@@ -941,7 +944,7 @@ export class DrupalBbRemote implements BbRemote {
     const run = await this.api
       .collection('bb_run')
       .where('id', '=', runUuid)
-      .fields(['id'])
+      .fields(['id', 'run_log_storage_allowed'])
       .first();
     if (!run) {
       // Refuse rather than guess. With no row read, `existing` below would be ''
@@ -952,6 +955,11 @@ export class DrupalBbRemote implements BbRemote {
       throw new Error(
         `bb_run ${runUuid} could not be read — run note not written`,
       );
+    }
+    // Transcript storage is off for this run: the note belongs in the
+    // transcript, so neither download nor rewrite it.
+    if (run.attr<unknown>('run_log_storage_allowed') !== true) {
+      return;
     }
     // BB-556: the JSON:API `log` attribute is ALWAYS empty on a reload —
     // `BbRun::preSave()` moves any payload to a file and clears the field —

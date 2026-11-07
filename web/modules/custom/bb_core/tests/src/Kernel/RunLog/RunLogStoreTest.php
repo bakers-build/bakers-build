@@ -53,6 +53,7 @@ final class RunLogStoreTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
+    $this->allowRunLogStorage();
     $this->installEntitySchema('bb_workspace');
     $this->installEntitySchema('bb_group');
     $this->installEntitySchema('bb_project');
@@ -72,7 +73,7 @@ final class RunLogStoreTest extends KernelTestBase {
     $store = $this->container->get(RunLogStore::class);
     $run = $this->createRunInWorkspace();
     $payload = "transcript line one\ntranscript line two\n\xF0\x9F\x94\x92\n";
-    $file = $store->write($run, $payload);
+    $file = $this->write($run, $payload);
     self::assertSame($payload, $store->read($file, $run));
     $this->assertGzipFileEquals($payload, $file);
   }
@@ -83,7 +84,7 @@ final class RunLogStoreTest extends KernelTestBase {
   public function testEmptyPayloadRoundTrips(): void {
     $store = $this->container->get(RunLogStore::class);
     $run = $this->createRunInWorkspace();
-    $file = $store->write($run, '');
+    $file = $this->write($run, '');
     self::assertSame('', $store->read($file, $run));
     $this->assertGzipFileEquals('', $file);
   }
@@ -92,13 +93,12 @@ final class RunLogStoreTest extends KernelTestBase {
    * The stored file's URI groups by workspace UUID, then run UUID.
    */
   public function testUriIsGroupedByWorkspaceUuidThenRunUuid(): void {
-    $store = $this->container->get(RunLogStore::class);
     $run = $this->createRunInWorkspace();
     $workspace = $this->container->get(WorkspaceResolverInterface::class)
       ->resolve($run);
     self::assertStringStartsWith(
       'private://bakers-run-logs/' . $workspace->uuid() . '/' . $run->uuid() . '/',
-      $store->write($run, 'x')->getFileUri(),
+      $this->write($run, 'x')->getFileUri(),
     );
   }
 
@@ -106,11 +106,10 @@ final class RunLogStoreTest extends KernelTestBase {
    * The generated filename carries a random component, so it never collides.
    */
   public function testFilenameCarriesRandomComponent(): void {
-    $store = $this->container->get(RunLogStore::class);
     $run = $this->createRunInWorkspace();
     self::assertNotSame(
-      $store->write($run, 'x')->getFileUri(),
-      $store->write($run, 'x')->getFileUri(),
+      $this->write($run, 'x')->getFileUri(),
+      $this->write($run, 'x')->getFileUri(),
     );
   }
 
@@ -118,9 +117,8 @@ final class RunLogStoreTest extends KernelTestBase {
    * No `.part` temporary file survives a completed write.
    */
   public function testNoTemporaryFileSurvivesTheWrite(): void {
-    $store = $this->container->get(RunLogStore::class);
     $run = $this->createRunInWorkspace();
-    $store->write($run, 'payload');
+    $this->write($run, 'payload');
     $root = $this->siteDirectory . '/private';
     $iterator = new \RecursiveIteratorIterator(
       new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
@@ -136,7 +134,7 @@ final class RunLogStoreTest extends KernelTestBase {
     $store = $this->container->get(RunLogStore::class);
     $run = $this->createRunInWorkspace();
     $other = $this->createRunInWorkspace();
-    $file = $store->write($other, 'foreign payload');
+    $file = $this->write($other, 'foreign payload');
     $this->expectException(RunLogException::class);
     $store->read($file, $run);
   }
@@ -157,9 +155,8 @@ final class RunLogStoreTest extends KernelTestBase {
    * New writes are gzip files: magic, `.log.gz` name, application/gzip MIME.
    */
   public function testWriteStoresGzipMagicFilenameAndMime(): void {
-    $store = $this->container->get(RunLogStore::class);
     $run = $this->createRunInWorkspace();
-    $file = $store->write($run, "transcript\n");
+    $file = $this->write($run, "transcript\n");
     self::assertStringEndsWith('.log.gz', $file->getFilename());
     self::assertStringEndsWith('.log.gz', $file->getFileUri());
     self::assertSame('application/gzip', $file->getMimeType());
@@ -262,7 +259,7 @@ final class RunLogStoreTest extends KernelTestBase {
   public function testCorruptGzipThrows(): void {
     $store = $this->container->get(RunLogStore::class);
     $run = $this->createRunInWorkspace();
-    $file = $store->write($run, 'ok');
+    $file = $this->write($run, 'ok');
     file_put_contents($file->getFileUri(), 'this is not gzip');
     $this->expectException(RunLogException::class);
     $store->read($file, $run);
@@ -299,6 +296,15 @@ final class RunLogStoreTest extends KernelTestBase {
       'status' => FileInterface::STATUS_PERMANENT,
     ]);
     $file->save();
+    self::assertInstanceOf(FileInterface::class, $file);
+    return $file;
+  }
+
+  /**
+   * Writes a transcript through the store, failing when it is refused.
+   */
+  private function write(BbRunInterface $run, string $payload): FileInterface {
+    $file = $this->container->get(RunLogStore::class)->write($run, $payload);
     self::assertInstanceOf(FileInterface::class, $file);
     return $file;
   }
