@@ -18,7 +18,7 @@
 
    NOT A SCROLL CONTAINER, for `gate`'s reason: `min-h-screen` with centred
    items lets a long card grow the page instead of clipping itself. #}
-<div{{ (attributes ?: create_attribute()).setAttribute('id', 'bakers-onboarding').addClass(['min-h-screen', 'flex', 'items-center', 'justify-center', 'p-gutter', 'bg-app', 'text-text', 'font-sans']) }}>
+<div{{ (attributes ?: create_attribute()).setAttribute('id', 'bakers-onboarding').addClass(['min-h-screen', 'flex', 'items-center', 'justify-center', 'p-gutter', 'bg-app', 'text-text']) }}>
   <div class="w-full max-w-xl min-w-0 flex flex-col items-center gap-group">
     <div class="w-full flex flex-col items-center text-center gap-inline">
       {% if mark %}

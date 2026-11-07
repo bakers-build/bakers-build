@@ -23,7 +23,7 @@
    NOT A SCROLL CONTAINER. `min-h-screen` with centred items lets a long card
    grow the page rather than clip itself, which is what keeps a chooser with
    twenty workspaces readable. #}
-<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'flex-col', 'items-center', 'justify-center', 'gap-group', 'p-gutter', 'bg-app', 'text-text', 'font-sans']) }}>
+<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'flex-col', 'items-center', 'justify-center', 'gap-group', 'p-gutter', 'bg-app', 'text-text']) }}>
   <div class="gate__card w-full max-w-[420px] flex flex-col gap-group p-gutter bg-surface border border-border-2 rounded-[var(--radius-md,10px)]">
     {% if mark %}
       <div class="gate__mark flex items-center justify-center">{% block mark %}{{ mark }}{% endblock %}</div>
