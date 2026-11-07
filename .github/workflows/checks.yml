@@ -206,6 +206,7 @@ jobs:
         run: |-
           set -eu
           bash tests/contract/compose.sh
+          bash tests/contract/ddev-provision.sh
   conductor:
     runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
     if: *checks

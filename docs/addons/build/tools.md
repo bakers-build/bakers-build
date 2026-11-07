@@ -33,10 +33,16 @@ export const tools: Preset['tools'] = {
 ## How runs get the server
 
 - **claude**: `bakers` (type `http`, header `Authorization: Bearer ${BB_CONDUCTOR_TOKEN}`) is merged into `--mcp-config`, beside `sandbox.mcp_servers` in the sandbox mode and on its own in `system`, `yolo` and `custom`. The sandbox allows its tools without a prompt (`mcp__bakers`). A `sandbox.mcp_servers` entry named `bakers` is replaced, with a launch warning. A measured run gets neither the MCP server nor the run variables below, so it has no conductor tools.
-- **codex**: `-c mcp_servers.bakers={url=…,bearer_token_env_var="BB_CONDUCTOR_TOKEN"}`. The whole table replaces a `[mcp_servers.bakers]` of your Codex config, with a launch warning; without a tool server that entry is switched off like any other.
+- **codex**: `-c mcp_servers.bakers={url=…,bearer_token_env_var="BB_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}`. The whole table replaces a `[mcp_servers.bakers]` of your Codex config, with a launch warning; without a tool server that entry is switched off like any other. This approves current and future tools from this server without per-call prompts; other servers keep their existing policy. The generated shell sandbox and `-a never` remain in place.
 - **grok, opencode, pi and kimi** load no MCP server for it. Their runs call the tools through the shell with [`bakers tools`](/configuration/clients/tools), which works in grok's sandbox mode too (`Bash(*)` is allowed; `MCPTool(*)` stays denied).
 
 Every other run with a tool server has `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` in its environment. The token is never in argv or the launch log, and it is revoked when the run is finalised.
+
+Tool handlers execute in the conductor's environment, outside the agent's shell sandbox, and
+server approval does not change that. `ddev_exec` bounds only the target: it runs any shell
+command in the run worktree's DDEV web container, with that container's network, files and
+environment, so whatever runs there, such as test code or browser navigation, gets that
+access. What this project removes from the container: [testing › Setup](/bakers/testing#setup).
 
 A grok `shell_environment_policy` with `ignore_default_excludes = false` drops `*TOKEN*` variables from grok's shell; `bakers tools` then calls the site with the operator's credentials, without the project limit.
 

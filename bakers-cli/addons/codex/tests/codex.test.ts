@@ -809,7 +809,7 @@ describe('CodexAgent.sandboxPreflight', () => {
 });
 
 describe('CodexAgent conductor tools', () => {
-  it('adds the bakers server with the URL and the token by env var name only', async () => {
+  it('approves only conductor tools while retaining the shell sandbox and token wiring', async () => {
     const home = await homeWithCodexMcp();
     await writeFile(
       join(home, '.codex', 'config.toml'),
@@ -823,9 +823,13 @@ describe('CodexAgent conductor tools', () => {
       }),
     );
     expect(argv).toContain(
-      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN"}',
+      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}',
     );
     expect(argv).toContain('mcp_servers.gitlab.enabled=false');
+    expect(argv.filter((arg) => arg.includes('approval_mode'))).toHaveLength(1);
+    expect(argv).toContain('default_permissions="bakers"');
+    expect(argv[argv.indexOf('-a') + 1]).toBe('never');
+    expect(argv).not.toContain('--dangerously-bypass-approvals-and-sandbox');
     expect(agent.launchWarnings).toEqual([]);
   });
 
@@ -843,7 +847,7 @@ describe('CodexAgent conductor tools', () => {
       }),
     );
     expect(argv).toContain(
-      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN"}',
+      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}',
     );
     expect(argv).not.toContain('mcp_servers.bakers.enabled=false');
     expect(agent.launchWarnings).toEqual([
