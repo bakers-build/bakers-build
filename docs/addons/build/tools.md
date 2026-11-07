@@ -46,7 +46,7 @@ Tool handlers execute in the conductor's environment, outside the agent's shell 
 server approval does not change that. `ddev_exec` bounds only the target: it runs any shell
 command in the run worktree's DDEV web container, with that container's network, files and
 environment, so whatever runs there, such as test code or browser navigation, gets that
-access. What this project removes from the container: [testing › Setup](/bakers/testing#setup).
+access. What this project removes from the container: `docs/bakers/testing.md` › Setup.
 
 A grok `shell_environment_policy` with `ignore_default_excludes = false` drops `*TOKEN*` variables from grok's shell; `bakers tools` then calls the site with the operator's credentials, without the project limit.
 
