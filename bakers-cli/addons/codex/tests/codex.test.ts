@@ -828,7 +828,7 @@ describe('CodexAgent conductor tools', () => {
     expect(argv).toContain('mcp_servers.gitlab.enabled=false');
     expect(argv.filter((arg) => arg.includes('approval_mode'))).toHaveLength(1);
     expect(argv).toContain('default_permissions="bakers"');
-    expect(argv).toContain('never');
+    expect(argv[argv.indexOf('-a') + 1]).toBe('never');
     expect(argv).not.toContain('--dangerously-bypass-approvals-and-sandbox');
     expect(agent.launchWarnings).toEqual([]);
   });

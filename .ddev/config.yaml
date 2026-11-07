@@ -11,7 +11,12 @@ database:
     version: "11.8"
 use_dns_when_possible: true
 composer_version: "2"
-web_environment: []
+# Agents run untrusted Playwright code here through ddev_exec (docs/bakers/testing.md): blank the
+# machine's global registry tokens and give the container no SSH agent. Nothing here needs either.
+web_environment:
+  - KEYTEC_REGISTRY_TOKEN=
+  - KEYTEC_REGISTRY_WRITE_TOKEN=
+omit_containers: [ddev-ssh-agent]
 corepack_enable: true
 
 # Key features of DDEV's config.yaml:

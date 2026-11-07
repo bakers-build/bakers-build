@@ -98,5 +98,13 @@ grep -qF "playwright@$locked " "$image" 2>/dev/null || fail "$image does not ins
 grep -qE '@playwright/cli@[0-9]+\.[0-9]+\.[0-9]+ ' "$image" 2>/dev/null || fail "$image does not pin @playwright/cli"
 grep -qF "cd tests/playwright && npm ci" "$root/.ddev/commands/host/init" || fail 'init does not install the Playwright suite'
 
+# That test code is untrusted: the web container gets no SSH agent and no registry token.
+case=container-credentials
+config="$root/.ddev/config.yaml"
+grep -qE '^omit_containers: \[.*ddev-ssh-agent.*\]' "$config" || fail 'ddev-ssh-agent is not omitted'
+for token in KEYTEC_REGISTRY_TOKEN KEYTEC_REGISTRY_WRITE_TOKEN; do
+  grep -qE "^  - $token=\$" "$config" || fail "$token is not blanked in web_environment"
+done
+
 [ "$failures" = 0 ] || exit 1
-echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, Playwright image'
+echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, Playwright image, container credentials'

@@ -38,13 +38,15 @@ export const tools: Preset['tools'] = {
 
 Every other run with a tool server has `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` in its environment. The token is never in argv or the launch log, and it is revoked when the run is finalised.
 
-Tool handlers execute in the conductor's environment, outside the agent's shell sandbox.
-For example, DDEV execution uses the project's container permissions. Server approval does not
-isolate repository test code or browser navigation: handlers must enforce worktree, input,
-credential and output boundaries themselves. Agents run the Playwright suite and
-`playwright-cli` this way, in the worktree's DDEV web container
-([testing › Setup](/bakers/testing#setup)). Changing launch configuration does not change an
-active session's policy.
+Tool handlers execute in the conductor's environment, outside the agent's shell sandbox, and
+server approval does not change that. `ddev_exec` bounds only the target: it runs any shell
+command in the run worktree's DDEV web container, with that container's network, files and
+environment. Agents run the Playwright suite and `playwright-cli` this way
+([testing › Setup](/bakers/testing#setup)), so that test code and browser navigation get the
+container's access. This project's `.ddev/config.yaml` omits the SSH agent and blanks the
+`KEYTEC_*` registry tokens; any other `web_environment` entry in the machine's global DDEV
+config still reaches the container. Changing launch configuration does not change an active
+session's policy.
 
 A grok `shell_environment_policy` with `ignore_default_excludes = false` drops `*TOKEN*` variables from grok's shell; `bakers tools` then calls the site with the operator's credentials, without the project limit.
 
