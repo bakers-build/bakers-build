@@ -43,10 +43,9 @@ export default {
   // declare the machine scope (`~/.bakers/machine.config.js` `addons[]`). This
   // list holds the remote/executor/workspace engine wiring.
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
-  // Lifecycle hooks are executor-owned + best-effort and live at the config TOP
-  // LEVEL (BB-84), not in the herdr addon's `with.hooks` (that form is
-  // back-compat only; top-level wins when both are present). Uncomment and
-  // name your own provisioning/teardown commands; omit `hooks` entirely for none.
+  // Lifecycle hooks are run by the conductor, best-effort, from the config TOP
+  // LEVEL (BB-84); the herdr addon rejects the old `with.hooks` form. Uncomment
+  // and name your own provisioning/teardown commands; omit `hooks` entirely for none.
   // hooks: { after_create: 'my-provision-command', after_done: 'my-teardown-command' },
 };
 
@@ -58,5 +57,4 @@ export default {
 //
 //   remote:    { plugin: '@bakers-build/addon-remote-drupal' },
 //   executor:  { plugin: '@bakers-build/addon-herdr' },
-//   workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace',
-//                with: { hooks: { after_create: 'my-provision-command' } } },
+//   workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },

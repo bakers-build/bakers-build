@@ -65,37 +65,6 @@ describe('OrcaExecutor', () => {
   });
 });
 
-describe('OrcaExecutor.runHook', () => {
-  it('reports an unconfigured hook as not run', async () => {
-    const ex = new OrcaExecutor({});
-    await expect(
-      ex.runHook('after_create', '/w', { ticket: 'BAKERS-1' }),
-    ).resolves.toEqual({ hook: 'after_create', ran: false, ok: true });
-  });
-
-  it('reports a failing hook without throwing or logging env values', async () => {
-    const sink = { errors: [] as unknown[] };
-    const ex = new OrcaExecutor(
-      { hooks: { before_run: 'exit 3' } },
-      fakeOrca().orca,
-      logger(sink),
-      async () => {
-        throw new Error('hook exited 3');
-      },
-    );
-    const result = await ex.runHook(
-      'before_run',
-      '/w',
-      { ticket: 'BAKERS-1' },
-      { SECRET: 'hunter2' },
-    );
-    expect(result).toMatchObject({ hook: 'before_run', ran: true, ok: false });
-    expect(result.error).toContain('hook exited 3');
-    expect(sink.errors).toHaveLength(1);
-    expect(JSON.stringify(sink.errors)).not.toContain('hunter2');
-  });
-});
-
 describe('OrcaExecutor.startRun', () => {
   it('runs the agent in an Orca terminal titled with the run token', async () => {
     const create = terminalCreate('started');
@@ -317,5 +286,75 @@ describe('orcaExecutor factory', () => {
     const plugin = orcaExecutor({ root: '/repo' });
     expect(plugin.kind).toBe('executor');
     expect(plugin.id).toBe('orca');
+  });
+});
+
+// The overview terminal moved from the Orca workspace to the executor. The
+// conductor calls openWorkspace only on a created worktree.
+describe('OrcaExecutor.openWorkspace', () => {
+  const path = '/repo/.bakers-worktrees/feat/x';
+  const ctx = {
+    identifier: 'BAKERS-1',
+    branch: 'feat/x',
+    title: 'Fix the labels',
+  };
+
+  it('opens the ticket overview terminal on a freshly created worktree', async () => {
+    const { orca, calls } = fakeOrca();
+    await new OrcaExecutor({ root: '/repo' }, orca).openWorkspace(path, ctx);
+    expect(calls).toContainEqual([
+      'terminal',
+      'create',
+      '--worktree',
+      `path:${path}`,
+      '--title',
+      'BAKERS-1 · Fix the labels',
+      '--command',
+      'bakers ui --ticket BAKERS-1',
+    ]);
+  });
+
+  it('registers the repo so Orca adopts a worktree any workspace made', async () => {
+    const { orca, calls } = fakeOrca();
+    await new OrcaExecutor({ root: '/repo' }, orca).openWorkspace(path, ctx);
+    const register = calls.findIndex((c) => c[0] === 'repo' && c[1] === 'set');
+    const create = calls.findIndex(
+      (c) => c[0] === 'terminal' && c[1] === 'create',
+    );
+    expect(register).toBeGreaterThanOrEqual(0);
+    expect(register).toBeLessThan(create);
+  });
+
+  it('opens nothing with open: {}', async () => {
+    const { orca, calls } = fakeOrca();
+    await new OrcaExecutor({ root: '/repo', open: {} }, orca).openWorkspace(
+      path,
+      ctx,
+    );
+    expect(calls).toEqual([]);
+  });
+
+  it('logs and swallows a failing terminal create', async () => {
+    const warnings: unknown[] = [];
+    const warnLogger: ConductorLogger = {
+      debug() {},
+      info() {},
+      warn(obj: object) {
+        warnings.push(obj);
+      },
+      error() {},
+    };
+    const { orca } = fakeOrca({
+      'terminal create': () => {
+        throw new Error('boom');
+      },
+    });
+    await expect(
+      new OrcaExecutor({ root: '/repo' }, orca, warnLogger).openWorkspace(
+        path,
+        ctx,
+      ),
+    ).resolves.toBeUndefined();
+    expect(warnings).toHaveLength(1);
   });
 });
