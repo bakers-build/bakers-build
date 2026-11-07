@@ -111,6 +111,8 @@ The last row is why light mode needs `state-attention-mark`. The chart series re
 
 Do them in this order: 1 and 2 belong together, and 3 to 5 build on them.
 
+Tickets 1 to 3 are done: the skins, the skin handling and the skin themes are gone, the CI values are set, and the new tokens are in use. The list below records what they asked for.
+
 1. **Remove the skins.**
    - Delete `css/tokens/appearance.src.css`.
    - Reduce the `themes` list in `js/skin.src.js` to the mode only. A saved `bakers-theme` value is ignored.
