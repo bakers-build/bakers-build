@@ -13,7 +13,7 @@ jobs:
   release:
     if: ${{ vars.RELEASE_OWNER == 'github' && github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository }}
     environment: release
-    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-2604-x64-4x"') }}
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-latest-x64-4x"') }}
     timeout-minutes: 180
     permissions:
       contents: write

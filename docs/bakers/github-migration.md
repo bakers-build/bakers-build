@@ -64,8 +64,8 @@ to its WarpBuild label when the variable is unset:
 
 | Tier | Variable | Default label | Jobs |
 |---|---|---|---|
-| checks | `RUNNER_CHECKS` | `warp-ubuntu-2604-x64-2x` | every `checks.yml` job except the after-merge jobs, including `required` and `report_failure` |
-| after-merge | `RUNNER_AFTER_MERGE` | `warp-ubuntu-2604-x64-4x` | `tui_musl`, `image_gate`, `release_rehearsal` in `checks.yml`; `release` in `release.yml`; `registry` and `transfer` in `registry-rehearsal.yml` |
+| checks | `RUNNER_CHECKS` | `warp-ubuntu-latest-x64-2x` | every `checks.yml` job except the after-merge jobs, including `required` and `report_failure` |
+| after-merge | `RUNNER_AFTER_MERGE` | `warp-ubuntu-latest-x64-4x` | `tui_musl`, `image_gate`, `release_rehearsal` in `checks.yml`; `release` in `release.yml`; `registry` and `transfer` in `registry-rehearsal.yml` |
 
 The variable holds a JSON label or label array. To send a tier back to the self-hosted
 `github-runner-1` (Docker via dind, one job at a time), set its variable; deleting it returns the
@@ -78,7 +78,7 @@ gh variable delete RUNNER_CHECKS
 gh variable delete RUNNER_AFTER_MERGE
 ```
 
-`self-host-lifecycle.yml` runs on a fixed `warp-ubuntu-2604-x64-4x` with no fallback: it
+`self-host-lifecycle.yml` runs on a fixed `warp-ubuntu-latest-x64-4x` with no fallback: it
 installs, restores and wipes a self-host stack and needs a disposable runner.
 
 PHPUnit, browser/integration tests and config import continue using the images built
