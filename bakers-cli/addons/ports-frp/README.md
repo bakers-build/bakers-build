@@ -45,22 +45,22 @@ Cloudflare.
 ## Direct container origins
 
 A rule with a `direct` origin (`http://<container IP>:<port>`, emitted by
-the DDEV claimer) becomes a plain `http` proxy to that IP and port. It has no
+a container runtime's claimer) becomes a plain `http` proxy to that IP and port. It has no
 plugin and no `hostHeaderRewrite`, and it sets
 `requestHeaders.set["X-Forwarded-Proto"] = "https"`, so the app sees the
 public Host and scheme. Reconcile first makes a 1500 ms TCP connection to the
 container. An unreachable IP, for example on Docker Desktop, fails that
 record with a message that recommends OrbStack. `direct` must be a plain
 `http:` URL; any other value is rejected for that record. The route targets an IP
-on DDEV's shared network. Every `bakers ports up` (and `reap`) re-checks all
+on the runtime's shared network. Every `bakers ports up` (and `reap`) re-checks all
 recorded routes first, so a changed IP is rewritten and a stopped
 container's route is taken down. Until then, another project that takes over
 the old IP would be served under this public host.
 
 ## The `http2https` origin-TLS limitation
 
-Local HTTPS origins without a `direct` origin (for example DDEV `web-<host>`
-aliases through the router) (mkcert-signed, not operator/CA-trusted) are
+Local HTTPS origins without a `direct` origin (for example a runtime router's
+`web-<host>` aliases) (mkcert-signed, not operator/CA-trusted) are
 proxied via frp's `http2https` client plugin. **In frp 0.68.0, this plugin
 unconditionally skips origin certificate verification** — there is no
 config knob to make it actually verify the origin's cert. This addon

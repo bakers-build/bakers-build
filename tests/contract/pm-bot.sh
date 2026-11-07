@@ -17,7 +17,8 @@
 #   - the clone reader is a pinned filesystem server with read tools only
 #   - nothing in experimental/pm-bot/ is a relay, calls JSON:API or exchanges a token
 #   - the bot carries no skill of its own (experimental/pm-bot/skills/); SOUL.template.md gives
-#     bb-create-ticket its host context and carries status and the answer path
+#     bb-create-ticket its host context, adds the label auto on hand-over, and carries status
+#     and the answer path
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
 #   - poller and client call no LLM
@@ -138,7 +139,7 @@ pass "no bot-owned skill"
 # SOUL.md is the skill's host: its host context, the routing, status and the answer path.
 SOUL="$BOT/SOUL.template.md"
 [ ! -e "$BOT/SOUL.md" ] || fail "$BOT/SOUL.md is back; the entrypoint renders SOUL.template.md"
-for word in bb-create-ticket 'Slack user' /archives/ labels_remove frozen 'Answered in Slack by' Question \
+for word in bb-create-ticket 'Slack user' /archives/ 'labels_add: ["auto"]' labels_remove frozen 'Answered in Slack by' Question \
   'technical problem' mcp_bakers__tool_api__ bakers_ticket_search bakers_ticket_read 'your user' bakers_user_read 'not in a checkout' '${PM_BOT_PROJECT}' \
   '${PM_BOT_TICKET_WORKFLOW}' '${PM_BOT_CONDUCTOR_TEXT}' '${SLACK_WORKSPACE_URL}/archives/<channel ID>' 'trusted line' 'Slack channel'; do
   grep -qF -- "$word" "$SOUL" || fail "$SOUL does not name $word"

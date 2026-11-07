@@ -12,8 +12,6 @@ import type {
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
 import { exec } from '@bakers-build/core';
-import type { AgentLaunchHost } from './agent-host.js';
-import { herdrAgentHost } from './agents.js';
 import { type PaneSpec, renderTemplate } from './config.js';
 import { applyPaneLayout, isRecord, parseJson } from './pane-layout.js';
 import { deriveHerdrRoot, type RootGitExec } from './root-anchor.js';
@@ -226,9 +224,6 @@ export class HerdrWorkspace implements BbWorkspace {
    */
   private readonly pendingRootPanes = new Map<string, PendingRootPane>();
 
-  /** Herdr-backed intent-level agent host for `bakers ui` (BB-190). */
-  readonly agentHost: AgentLaunchHost;
-
   constructor(private readonly options: HerdrWorkspaceOptions) {
     this.execHerdr = options.execHerdr ?? defaultExec;
     this.execGit = options.execGit ?? defaultGitExec;
@@ -237,7 +232,6 @@ export class HerdrWorkspace implements BbWorkspace {
     // `??`, not `||`: an explicit `open: {}` must survive as the opt-out.
     this.open = options.open ?? DEFAULT_OPEN_LAYOUT;
     this.logger = options.logger ?? noopLogger;
-    this.agentHost = herdrAgentHost(this.execHerdr);
   }
 
   /**

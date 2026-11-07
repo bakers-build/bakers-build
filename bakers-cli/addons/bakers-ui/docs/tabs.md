@@ -74,10 +74,10 @@ Expose that preset and UI module as `./preset` and `./ui` package exports.
 
 ## Scope and placement
 
-The existing scopes are `root`, `project`, `ticket`, `team`,
-`workspace-member`, and `team-member`. Tab navigation preserves route parameters
-in entity scopes; root navigation clears them. Member scopes retain both the
-selected user and their workspace or team parent. Tab changes do not add
+The existing scopes are `root`, `project`, `ticket`, `workspace-member` and
+`conductor`. Tab navigation preserves route parameters in entity scopes; root
+navigation clears them. The member scope retains both the selected user and
+their workspace. Tab changes do not add
 browser-style back-history entries.
 
 | Metadata | Meaning |
@@ -95,7 +95,7 @@ Related `30`, Runs `40` and Artifacts `50`. An addon with `weight: 25` appears
 between Comments and Related.
 
 There is no built-in **Addons** tab (contract 1 is retired). Instead, Overview
-grows a second card under Details/Stats/Related whenever the ticket's
+grows a second card under Details/Related whenever the ticket's
 conductor runs a message-capable addon: `↓`/`j` (or `↑`/`k` back) selects it
 from Overview's own list, `Enter` opens the send/poll screen for that addon,
 where `←`/`→` switch addon, `Enter` sends a message or opens its input form,
@@ -125,8 +125,8 @@ and cycles fail with an identifying error. For example, placing a tab after
 Most routes need only `tab`. The optional route-level `activeTab` handles
 presentations that differ from the route's primary tab:
 
-- Member routes belong to either workspace-member or team-member; their explicit
-  route metadata selects the contextual bar and roster fallback.
+- Member routes belong to workspace-member; their explicit route metadata
+  selects the contextual bar.
 - ProjectPicker has no separate tab; `{ scope: 'root', id: 'projects' }` highlights
   the existing Projects tab.
 - Compact ticket presentations return `null` to hide the bar.
@@ -174,20 +174,14 @@ Enable the bounded demo ticket tabs in the connection config's addons list:
 ```
 
 The entry and its `/preset` keep their historical names; both load native
-screens, and no React runtime is involved. This adds **Statistics** and
-**Markdown** ticket tabs. Statistics paints clearly labeled example data through
-the same figure cards the Stats screens use (a state matrix, share bars and a
-per-day line chart). Press `n` to cycle through steady, busy and empty
-scenarios. Its local counter and dialog remain available for lifecycle testing.
-Enter or a click increments the counter; `d` toggles the dialog; Escape
-dismisses it. Tab and Shift+Tab keep navigating the native ticket bar. Leaving
-the tab resets its local state. No ticket is changed.
+screens, and no React runtime is involved. This adds a **Markdown** ticket tab.
+Tab and Shift+Tab keep navigating the native ticket bar. No ticket is changed.
 Markdown renders the current ticket description, followed by a separately labeled
 long example. Use ↑/↓, j/k or the mouse wheel to scroll the native body viewport;
 the native header and tabs remain in place. It paints through the production
 Markdown parser: headings, emphasis, links with visible URLs, bullets, task lists,
 quotes and fenced code. Tables, syntax highlighting and clickable links are not
-implemented. Both tabs provide plain pipe reports.
+implemented. The tab provides a plain pipe report.
 
 The contribution is off by default.
 
@@ -209,4 +203,4 @@ with `context.requestDraw()` after a change. No JSX compiler setting is needed.
 
 ### Brand mark
 
-The startup splash pairs the bakers wordmark with the original six-row line-art braid in copper, with a turquoise clasp. The persistent header uses `╳ bakers.build`. The original SVG logo remains `web/themes/custom/bb_theme/assets/brand/bakers-braid.svg`. Non-interactive output skips the splash.
+The startup splash pairs the bakers wordmark with the bread-slice mark of `docs/public/logo.svg`, drawn in half blocks: a butter tile, a dark outline with eyes and a white slice. The persistent header uses `╳ bakers.build`. Non-interactive output skips the splash.

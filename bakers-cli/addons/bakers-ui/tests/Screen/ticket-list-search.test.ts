@@ -1,6 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TeamMemberTicketsScreen } from '../../src/Entity/team/Screen/team-member-work.js';
-import { TeamWorkScreen } from '../../src/Entity/team/Screen/team-work.js';
 import { ConductorTicketsScreen } from '../../src/Entity/ticket/Screen/conductor-tickets.js';
 import { MyWorkScreen } from '../../src/Entity/ticket/Screen/my-work.js';
 import { TicketsScreen } from '../../src/Entity/ticket/Screen/tickets.js';
@@ -60,15 +58,6 @@ function harness(params: Record<string, string>) {
             id: 'm1',
             attributes: { entity_id: '7' },
             relationships: { uid: { data: { id: USER } } },
-          },
-        ],
-      };
-    if (path === 'bb_team/bb_team')
-      return {
-        data: [
-          {
-            id: 'team-1',
-            attributes: { name: 'Platform', drupal_internal__id: 7 },
           },
         ],
       };
@@ -156,16 +145,6 @@ const LISTS: {
     make: () => new WorkspaceMemberTicketsScreen(),
     params: { workspaceId: 'ws-1', userId: USER },
   },
-  {
-    name: 'team member → Tickets',
-    make: () => new TeamMemberTicketsScreen(),
-    params: { teamId: 'team-1', userId: USER },
-  },
-  {
-    name: 'Team → Work',
-    make: () => new TeamWorkScreen(),
-    params: { teamId: 'team-1' },
-  },
 ];
 
 const type = async (screen: Screen, context: ScreenContext, keys: string[]) => {
@@ -198,10 +177,8 @@ describe.each(LISTS)('the `/` search on $name', (list) => {
     const { screen, context, ticketQueries } = await open(list);
     await type(screen, context, ['/', ...'BB-2']);
     expect(searchValue(ticketQueries.at(-1) ?? '')).toBe('BB-2');
-    if (list.name !== 'Team → Work') {
-      expect(body(screen, context)).toContain('BB-201');
-      expect(body(screen, context)).not.toContain('BB-9 ');
-    }
+    expect(body(screen, context)).toContain('BB-201');
+    expect(body(screen, context)).not.toContain('BB-9 ');
   });
 
   it("shows a refusal as the server's sentence, with no rows", async () => {
@@ -231,7 +208,6 @@ describe.each(LISTS)('the `/` search on $name', (list) => {
     const { screen, context, ticketQueries } = await open(list);
     await type(screen, context, ['/', ...'bakers#19']);
     expect(searchValue(ticketQueries.at(-1) ?? '')).toBe('bakers#19');
-    if (list.name === 'Team → Work') return;
     expect(body(screen, context)).toContain('BB-7');
   });
 });

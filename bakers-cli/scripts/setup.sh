@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # bakers.build conductor CLI — standalone setup (bootstrap).
 #
-# Takes a FRESH CLONE to a working `bakers` CLI, with NO DDEV / worktree
-# prerequisite. Idempotent: safe to re-run. Steps:
+# Takes a FRESH CLONE to a working `bakers` CLI, with NO container runtime /
+# worktree prerequisite. Idempotent: safe to re-run. Steps:
 #   1. prereq check (pnpm, node >= 20.19)
 #   2. install conductor dependencies
 #   3. build conductor + workspace plugins
@@ -56,7 +56,7 @@ if [ "$node_major" -lt 20 ] || { [ "$node_major" -eq 20 ] && [ "$node_minor" -lt
 fi
 
 # --- 2. install ---------------------------------------------------------------
-# --config.minimumReleaseAge=0 mirrors `bash .ddev/worktree-post.sh`: it dodges the
+# --config.minimumReleaseAge=0 mirrors the worktree `after_create` hook: it dodges the
 # workspace supply-chain deps-verify policy that fails a plain install on a
 # fresh tree.
 echo "==> Installing conductor dependencies"
@@ -67,7 +67,7 @@ echo "==> Installing conductor dependencies"
 # .bakers/conductor.config.js resolves the workspace packages whose exports point
 # at dist/src. BB-215 reorg: the workspace is `core` (kernel) + `addons/*`
 # (mountables) + `host` (CLI) + `conductor` (run engine). Invoke tsc directly (not
-# `pnpm run build`) to stay fresh-tree-safe, same as `bash .ddev/worktree-post.sh`.
+# `pnpm run build`) to stay fresh-tree-safe, same as the worktree `after_create` hook.
 #
 # ORDER MATTERS — it is the BB-224 layered dependency DAG, each step emitting
 # the .d.ts the next one consumes:

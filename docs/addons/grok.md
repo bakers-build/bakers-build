@@ -44,7 +44,7 @@ The alias is `grok`; `bakers agents` lists it.
 ```js
 with: {
   sandbox: {
-    allow_write: ['/projects/example/.git', '~/.ddev', '~/.npm'],
+    allow_write: ['/projects/example/.git', '~/.npm'],
   },
 },
 ```
@@ -59,7 +59,7 @@ One managed run per Grok home: concurrent runs fail. After crashes, inspect `.ba
 
 Reserved arguments: `--permission-mode`, `--session-id`/`-s`; in sandbox mode also `--sandbox`, `--always-approve`, `--allow`, `--allowedTools`, `--allowed-tools`, `--add-dir`, `--cwd`, `--worktree`/`-w`, `--agents`, `--agent`. Managed profiles additionally reserve `--continue`/`-c`, `--resume`/`-r`, `--fork-session`, `--restore-code`, `--leader-socket`. Clustered flags and bare subcommands cannot bypass these restrictions.
 
-`bakers oven check` checks Linux prerequisites. Storage, directory and version checks precede launch. Shell approval prompts remain possible; unattended DDEV completion is unverified.
+`bakers oven check` checks Linux prerequisites. Storage, directory and version checks precede launch. Shell approval prompts remain possible; unattended container-runtime completion is unverified.
 
 Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools` in Bash, so they work in sandbox mode although `MCPTool(*)` is denied.
 

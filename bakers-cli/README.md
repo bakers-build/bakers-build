@@ -17,9 +17,9 @@ interface names and the `/plugins` subpath barrels keep the word "plugins"; only
 prefix is `@bakers-build/addon-`.
 
 This document covers the **standalone CLI setup** — taking a *fresh clone* to a working
-`bakers`, with **no DDEV or worktree prerequisite**. If you work in a DDEV worktree, the
-`bash .ddev/worktree-post.sh` command already does the equivalent build as its last step (see the
-repo `WORKFLOW.md`); this README is the DDEV-free path.
+`bakers`, with **no container runtime or worktree prerequisite**. If you work in a conductor
+worktree, its `after_create` hook already does the equivalent build as its last step (see the repo
+`WORKFLOW.md`); this README is the runtime-free path.
 
 ## Quick start
 
@@ -99,7 +99,7 @@ and runs eight idempotent steps:
 1. **Prereq check** — verifies `pnpm` is on `PATH` (actionable message + non-zero exit if
    not) and sanity-checks Node ≥ 20.19.
 2. **Install** — `pnpm install --config.minimumReleaseAge=0` in `bakers-cli/`. The
-   `minimumReleaseAge=0` mirrors `bash .ddev/worktree-post.sh`, dodging the workspace supply-chain
+   `minimumReleaseAge=0` mirrors the worktree `after_create` hook, dodging the workspace supply-chain
    deps-verify policy that would otherwise fail a plain install on a fresh tree.
 3. **Build the packages + addons** — `bakers-cli/bin/bakers` runs the compiled host
    (`host/dist/src/host.js`), and `.bakers/conductor.config.js` resolves the workspace packages

@@ -1,27 +1,23 @@
 # @bakers-build/addon-bakers-ui
 
 The bakers.build terminal UI: a dropsh `tui` renderer plugin (`bakers ui`). It opens on
-**My work**, the current operator's open assigned tickets, and also shows a
-**Stats** view of ticket and run statistics, project/team current work, a
-searchable/filterable ticket list, and ticket detail, and manages
-**ticket-create agents** — hideable, re-attachable claude sessions that create
-bakers.build tickets.
+**My work**, the current operator's open assigned tickets, and also shows
+project current work, a searchable/filterable ticket list, and ticket
+detail.
 
-## Navigation — seven scopes
+## Navigation — five scopes
 
-Navigation has seven tab scopes. Tabbed screens show the bar for their current
+Navigation has five tab scopes. Tabbed screens show the bar for their current
 scope; compact ticket views, forms and run detail have no separate tab bar. `Tab`/`Shift-Tab` cycle the tabs of the current level, and
 a **left click on a tab** goes straight to it; there are no letter shortcuts for
 tab navigation.
 
 | Level | Screens | Tabs |
 |-------|---------|------|
-| Root | Personal work, statistics, projects, teams, conductors, and workspace members for leads | **My work** · **Stats** · **Projects** · **Teams** · **Members** (workspace lead only) · **Conductors** |
-| Project | Project-scoped screens | **Overview** · **Work** · **Stats** · **Tickets** · **Ticket-Agents** · **Runs** · **Conductors** |
+| Root | Personal work, projects, conductors, and workspace members for leads | **My work** · **Projects** · **Members** (workspace lead only) · **Conductors** |
+| Project | Project-scoped screens | **Overview** · **Tickets** · **Runs** · **Conductors** |
 | Ticket | Independent ticket screens | **Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card |
-| Team | Team current work, statistics, and roster | **Overview** · **Work** · **Stats** · **Members** |
-| Workspace member | A selected workspace member, for workspace leads only | **Overview** · **Stats** · **Tickets** · **Runs** |
-| Team member | A selected member within one team | **Overview** · **Stats** · **Tickets** · **Runs** |
+| Workspace member | A selected workspace member, for workspace leads only | **Overview** · **Tickets** · **Runs** |
 | Conductor | A selected conductor, reached with Enter from any Conductors list | **Overview** · **Held work** · **Assigned** · **Log** |
 | — | Run detail | none — `Esc` returns to the preceding screen |
 
@@ -30,9 +26,8 @@ insert a normal screen into any of these scopes using `weight` (10, 20, 30, …)
 with intermediate values such as 25 or optional `before` / `after` anchors. See [Adding a screen as a tab](docs/tabs.md) for registration, placement,
 validation and migration examples.
 
-Project, Team, Workspace Member, and Team Member **Overview** are intentional
-empty landing places. Their historical figures live on the adjacent **Stats**
-tab. Ticket Overview remains populated and unchanged.
+Project **Overview** shows the project and its current work; Workspace Member
+**Overview** shows the person's username, position and About me. Ticket Overview remains populated and unchanged.
 
 **Every bar is drawn in the same row** — under the header box (BB-346). The
 ticket detail's sections used to be drawn *inside* that box, as its last content
@@ -68,32 +63,25 @@ its own block, including fields it shares with another screen. Compact ticket
 views continue to print only their own fields.
 
 Each bar is clickable where it is drawn, and only ever at its own level: on root
-Stats a click at the column where the project bar's `Runs` would sit is inert,
+Projects a click at the column where the project bar's `Runs` would sit is inert,
 because that bar is not there. On the ticket screen the same column may fall inside ` Runs `, opening that tab, but still reaches no project screen.
 
 Every project tab is **project-scoped**, so open a project first. The project
 Conductors tab lists that project's conductors. Only registered screens appear
 in a tab bar.
 
-**Team Members** is a read-only OG roster reached through Root → Teams → one
-team. It shows each active member's current Open, Running, and Waiting counts,
-including zeroes. Enter opens that person inside the selected team. Team-member
-Tickets and Runs are constrained by both the person and the team's linked
-projects; Stats projects only that person's disclosed team breakdown rows. The
-root **Members** tab is separate and is registered only for a confirmed
-workspace lead; its member routes use workspace-wide user figures and lists.
+The root **Members** tab is registered only for a confirmed workspace lead; its
+member routes use workspace-wide user lists.
 
 ## Screens & keys
 
 | Screen | Keys |
 |--------|------|
-| Stats | `PgUp`/`PgDn`/`g`/`G` scroll · `Tab`/`Shift-Tab` cycle tabs · `n` new ticket agent · `q` quit |
-| Workspace/Team Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
-| Projects | `↑↓` select · `Enter` open project · `n` new ticket agent · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
-| Project | `↑↓` select · `Enter` open ticket · `n` new ticket agent · `Tab`/`Shift-Tab` cycle tabs · `/` search · `s` status filter · `t` type filter · `p` parent filter · `x` closed filter · `c` clear · `R` reload · `←`/`→` previous/next page · `Esc` back |
-| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (assignee · conductor · estimate/spent · cancel) · `Esc` back |
+| Workspace Members | `↑↓` select · `Enter` open member · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
+| Projects | `↑↓` select · `Enter` open project · `Tab`/`Shift-Tab` cycle tabs · `q` quit |
+| Project | `↑↓` select · `Enter` open ticket · `Tab`/`Shift-Tab` cycle tabs · `/` search · `s` status filter · `t` type filter · `p` parent filter · `x` closed filter · `c` clear · `R` reload · `←`/`→` previous/next page · `Esc` back |
+| Ticket | `Tab`/`Shift-Tab` switch section · `↑↓`/`jk` move between the section's entries — Overview, Planning and History select, one per run on Runs — and fall through to the body scroll at either end · `PgUp`/`PgDn` page the ticket body when no modal is open · `g`/`G` first/last entry · `Enter`/`Space` expand the selected entry · `Enter` on a run row opens it · `e` edit ticket (assignee · conductor · estimate/spent · cancel); on Runs, `e` edits the selected claimed or running run · `Esc` back |
 | Run detail | `↑↓` scroll · `e` cancel a claimed/running run · `Esc` back to the ticket's Runs tab · `q` quit |
-| Ticket-Agents | `↑↓` select · `Enter` switch to agent (zoom full-screen) · `z` tiled overview · `r` retry · `x` close · `Tab`/`Shift-Tab` cycle tabs · `Esc` back |
 | Runs | `↑↓` select · `Enter` open the run's ticket (Runs sub-tab) · `Tab`/`Shift-Tab` cycle tabs · `x` closed filter · `R` reload · `←`/`→` previous/next page · `Esc` back |
 
 ### Auto-refresh (`.bakers/ui-refresh`)
@@ -117,7 +105,7 @@ nothing in bakers.build writes it automatically yet.
 
 `Tab`/`Shift+Tab` mean two different things, and which one you get depends on
 what is on screen. On a **screen** they cycle that level's tab bar, as the rows
-above say. Inside a **modal form** — the new-ticket popup, the Who picker, the
+above say. Inside a **modal form** — the Who picker, the
 parent filter, the assignment edit — they move the form's own cursor instead,
 mirroring `↓` and `↑` exactly: forward and back through the fields, and — on the
 **parent filter**, the one picker that tells the key module how many fields it
@@ -141,42 +129,8 @@ saves even when the cursor is on Cancel ticket. `Esc` closes the popup without
 writing (`Esc close` in the chrome). The server remains the only transition
 guard — a forbidden cancel comes back as a 422 rendered in the popup.
 
-### Stats figures
-
-Stats shows ticket and run activity over the **trailing 24 hours, 7 days
-and 30 days**. Tickets are windowed on `closed_date` (closed tickets in the
-window); runs are windowed on `created`. The windows are **rolling durations**,
-not calendar buckets — "the last 30 days" is 30 × 86 400 seconds, so no timezone
-is involved — and they nest, so `24h ⊆ 7d ⊆ 30d`.
-
-Every figure is read at render time from the control plane's aggregate endpoint
-**`/jsonapi/bakers/statistics`**, which counts server-side and returns one document
-per configured figure; nothing is counted or cached in the CLI. Discovery names
-the figures available for the current account, project, team, or member scope;
-the client does not invent a figure list or calculate historical aggregates.
-
-Ratios arrive already calculated and formatted by the server. On Team Member
-Stats, only matching rows from server-disclosed breakdown figures are shown;
-aggregate, series, ratio, foreign-user, and unattributed rows are not
-reinterpreted as member figures.
-
-A breakdown row the server could not attribute — a ticket with no assignee, a run
-with no ticket — is shown as **`— unattributed`** rather than dropped, so the
-rows always sum to the total. Each bar is scaled against the **largest value in
-its own group**, not against a quota: a full bar means "the biggest of these",
-never "100 %".
-
-A control plane that does not serve the endpoint (one deployed before BB-256)
-gets a **named message** saying so rather than a blank screen or invented zeroes,
-and every other tab keeps working. A real outage is reported as the error it is —
-the two are told apart, so a 500 is never dressed up as an out-of-date control
-plane. An instance with nothing in the window says *"No activity in the last 30
-days."*
-
 `bakers ui | cat` prints My work and `bakers ui project:<name> | cat` prints that
-project's current Work surface, following the TTY. When a statistics endpoint is absent its message goes to
-**stderr** and the exit status is non-zero, so a script sees a failure instead of
-empty output.
+project's Overview, following the TTY.
 
 ### The ticket sections
 
@@ -406,159 +360,12 @@ the rows on screen.
 > (~36 s) for the closed ones. The walk and its read budget are **deleted**, not
 > bypassed.
 
-### New-ticket popup (`n`)
-
-`n` opens a centered popup (a real modal overlay drawn on top of the current
-screen) with, top to bottom, a **Title**, a multiline **Description**, a
-searchable **Parent**, and live-loaded **Assignee** (users), **Conductor**,
-**Type** and **Recipe** (single terms from the `type` / `recipe` vocabularies,
-opened empty and clearable), **Labels** (multi-select) and **Workflow** (the
-one `bb_work` workflow) selects. The operator's own user
-(by username) and own conductor (by `machine_id`, from the machine context /
-config) are preselected as defaults. **Title** comes first because
-`bb_ticket.title` is required server-side — nothing derives it from the
-description. **Conductor** is the one select that can be **cleared** (`Del`, or
-`Backspace`): a set conductor means the ticket is claimed at the next poll and a
-run starts, a cleared one means it waits for a human, and the field is clearable
-precisely so that choice is the operator's.
-
-The popup ends in **two submit rows** — `[ Create with agent ]` and
-`[ Create directly ]` — and the key hints occupy two rows at the bottom of the
-popup, inside the frame (the kernel draws the status line as part of the modal's
-body, so it is framed like every other row). Two rows, because the frame's inner
-width is at most 60 columns (`Math.min(60, width - 8)`, so a narrow terminal gets
-fewer) and one row does not hold them:
-
-```
- ↑↓ field · ←→ change · Space toggle
- Ctrl+S agent · Ctrl+D direct · Esc cancel
-```
-
-Both actions are always drawn, wherever the popup was opened from. `Ctrl+S`
-presses the action row you are standing on and from any other field means the
-agent — exactly what it meant before there was a second action; `Ctrl+D` creates
-directly from any field; `Enter` on an action row fires that row. `Tab` and
-`Shift+Tab` walk the fields forward and back, the same two steps `↓` and `↑`
-take.
-
-- **Create with agent** (`Ctrl+S`) is the original path: the collected fields go
-  into a temp JSON spec and an embedded agent runs the create workflow,
-  interviewing the operator for whatever is missing.
-- **Create directly** (`Ctrl+D`) writes the ticket itself — one POST, no agent,
-  no qualification handoff. The typed text becomes the ticket's description
-  verbatim (format `bb_rich`), the picked workflow, assignee, conductor,
-  type, recipe, labels and parent are written as they stand, and everything the server owns
-  (`state`, `identifier`, `number`, `branch_name`, `base_branch`) is left to the
-  server, so the ticket lands in the workflow's first state. It needs a
-  **project**, because a ticket without one draws no number and gets no
-  `bakers.build-nnn` identifier (BB-664 AC-8): opened from a project, the project is
-  already in scope and the popup carries it in silently, exactly as before.
-  Opened from a root screen with none in scope, the popup instead opens on an
-  extra **Project** field, ahead of Title — an autocomplete searched over the
-  same project picker the ticket list's project filter uses (2-character
-  gate, debounced). Picking a project there re-scopes the **Conductor** ring
-  and the **Parent** search to it; changing or editing the pick clears both,
-  the same way a cross-project assignment is rejected server-side. The picked
-  project is what both submit rows carry forward. Without a project — none in scope and none picked —
-  `[ Create directly ]` refuses with `no project selected — pick one above to
-  create directly` and writes nothing. It needs a **title** for the same kind
-  of reason, and refuses an empty one the same way, before the round trip:
-  `title is required — type one, or hand it to the agent`.
-  `bb_ticket.title` is required server-side, so the popup already knows what
-  the server would answer. The project precondition applies to both rows alike
-  (BB-664): the agent row refuses the same way (`no project selected — pick
-  one above to hand this to the agent`) when nothing resolved a project, rather
-  than guessing one. The title precondition is the direct row's alone — the
-  agent row interviews the operator for the title instead. A rejected write is
-  reported in the popup, with the typed text still in it.
-
-The **Description** soft-wraps to the popup's inner width (measured in display
-columns), so a long line is readable inside the frame instead of clipped at it,
-and **Labels** are read from the `label` vocabulary. When an option list
-cannot be loaded the popup says so per list (`⚠ Labels could not be loaded: …`)
-rather than presenting an empty one — an empty list means the read succeeded and
-there is nothing to offer.
-
-**Parent** (BB-257) is optional and scoped to the project in scope: type to
-filter, `←→` to move the suggestion cursor, `Enter` to pick. It offers only the
-project's **open** tickets (BB-309) — filing new work under a ticket that is
-already finished is not something the form asks the operator to consider, so a
-closed one is never suggested. (The ticket list's own parent *filter* is a
-different question — narrowing a list by a parent that has since been closed is
-legitimate — and it still offers closed tickets.) Matching is a
-case-insensitive substring over `bakers.build-nnn · <title>`, so an identifier fragment
-and a title fragment both work. A page of the project's most recently changed
-tickets is preloaded when the popup opens and re-queried (debounced) as you
-type. Five suggestions are drawn at once, and whatever that render window
-leaves out of the matches it has is counted as `+N more — narrow the search` —
-a statement about the popup, not about the server. The server is a second,
-separate limit: a page is capped at 50 rows by Drupal's `OffsetPage::SIZE_MAX`,
-so a bag that came back full may itself be a truncated answer, and the field
-says `more may exist — narrow the search` whenever it is at the cap and the
-counter has nothing left to report. Both notes exist for one reason: never
-imply the list is complete.
-Opened from a **root screen** there is no project in scope and the field says
-`(no project context — open a project to pick a parent)`. A picked parent
-travels in the spec as `parent: {id, identifier, title}` and becomes the created
-ticket's `parent_id`, from which the server derives `base_branch`.
-
-On the **agent** submit the collected fields are written to a temp JSON spec and
-passed to the agent via `$BB_NEW_TICKET_INPUT` (never on the command line —
-PTY-4096 safe); the agent adopts them and only asks for what's missing. Each
-agent record carries a short **name** (the title, else the description's first
-line, shown in the list so you can tell which ticket), the pre-filled inputs, and
-an `isNew` flag.
-The agent's base prompt defaults to a built-in but can be overridden by config
-(`ticket_create_prompt`). Which agent runs is config-driven too: the launcher
-hands the resolved agents (an object keyed by id) to an optional
-`ticketAgent(ctx)` hook in the conductor config, where `ctx.isNew` lets you route
-a new-ticket create to a different agent than other work:
-
-```js
-// conductor.config.js
-ticketAgent: ({ isNew, agents }) => (isNew ? agents.claude : agents.codex),
-```
-
-On submit each agent becomes a **split pane in its project's durable
-`bakers-ticket-agents:<project>` tab**, labelled `ticket-create:<project>:<sessionId>`,
-and is zoomed full-screen so it stays readable. The tab is **per project**, so the
-`Ticket-Agents` screen shows only the agents of the project you are in — never
-another project's. Multiple agents run concurrently (more splits in that tab). In
-`Ticket-Agents`, `Enter` **switches to** the selected agent (zoom full-screen +
-focus), `z` restores the **tiled overview** of all agents, `x` closes one. A rapid
-double-submit is debounced.
-
-## herdr as the durable backend
-
-The TUI drives agents at the level of **intent**, never mechanics. It says
-`launch / list / focus / hide / kill` keyed by an opaque `group` (the project)
-and an agent `id` — it never names panes, tabs, splits or zoom. The renderer owns
-this seam itself: the prompt-level **`TuiAgentService`** contract lives in this
-package (`src/types.ts`), NOT in `@bakers-build/core` (BB-194 — core is the
-conductor engine contract, not a TUI concern). `@bakers-build/addon-herdr` provides
-the impl (`herdrAgentHost`, typed against its own local host interface + exposed
-on `HerdrWorkspace.agentHost`) and owns the whole layout policy: one durable tab
-per group (`bakers-agents:<group>`), a new agent splits off a live pane, the shown
-agent is zoomed, hide un-zooms + returns to the caller. Agents survive a TUI
-restart — `list(group)` rediscovers them from the live tab, so the
-`Ticket-Agents` screen is exactly the host's live set. The renderer never imports
-herdr; the conductor `bakers ui` entry injects the adapted host.
-
-Why intent, not the earlier pane-level host: we don't know what the next herdr
-does. This contract survives a different pane model or layout engine unchanged —
-only `herdrAgentHost` swaps (and, when herdr grows real `herdr agent …` verbs, it
-shrinks further). The conductor launcher only adapts the prompt→command step
-(config picks the agent binary) and forwards to `agentHost`; no herdr CLI in the
-conductor, none in this plugin (it consumes only `TuiAgentService`, `src/types.ts`).
-
 ## Home-rooted launcher — `runBbUi(opts)`
 
 This package owns the dropsh-tui invocation (BB-194 AC-4). `runBbUi` builds
 the dropsh program (renderer + the connection's auth plugins), runs the trivial
 `--format tui search bb_project` seed (the renderer discards it and boots
-My work), and injects the given agent host into the
-renderer's `services`. It is **herdr-agnostic** (the `agents` impl is injected,
-never imported) and **dropsh-decoupled** (dropsh's `buildProgram` is injected, so
+My work). It is **dropsh-decoupled** (dropsh's `buildProgram` is injected, so
 this package needs no `dropsh` dependency — AC-5):
 
 ```ts
@@ -567,20 +374,18 @@ import { buildProgram } from 'dropsh';
 
 await runBbUi({
   connection,          // { baseUrl, jsonapiPrefix?, authPlugins, configPath? }
-  cwd,                 // repo/home root the launched agents run in
+  cwd,                 // repo/home root `bakers ui` was started in
   project,             // default project (opaque group), from the registry
-  agents,              // herdr-backed host, already adapted prompt→command
-  currentUser,         // preselected new-ticket assignee
-  ownConductorMachineId,
+  currentUser,         // the connection's user (uuid or name), My work's "me"
   buildProgram,        // dropsh's real buildProgram, injected
   // renderer,         // optional override; defaults to this package's plugin
 });
 ```
 
-The `bakers ui` command is a **thin, home-rooted entry** (AC-1): it reads the
-user-global machine context (connection + identity) and the conductor registry
-(default project) — NOT a project `conductor.config.js` — builds a herdr agent
-host, adapts prompt→command, and delegates to `runBbUi`. That one composition
+The `bakers ui` command is a **thin, home-rooted entry** (AC-1): it resolves the
+connection and the `.bakers` dir of the project it was started in — NOT a
+project `conductor.config.js` — and delegates to `runBbUi`; the renderer reads
+the default project from the conductor record matching that dir. That one composition
 point is the only wiring left in the command.
 
 **Which dropsh config it reads** (`connection.configPath` → `$DROPSH_CONFIG`):
@@ -605,9 +410,7 @@ only its public `buildProgram` + config seam are used (AC-5).
 ## Testing
 
 Vitest covers the pure modules (liveness/status derivation, the dropsh reads, the
-create-launch builder, the seven `ListTable` configurations — the Ticket-Agents
-list among them, which is where `Agent/Component/agent-list/` went in BB-345 —
-and the ticket/run render blocks)
+`ListTable` configurations and the ticket/run render blocks)
 and, under `tests/Kernel/`, boots the **real** `runTicketTui` over a fake TTY pair
 at 120×40 — emitting real keystrokes and real SGR mouse reports and asserting on
 the real rendered transcript, including the row geometry at several widths against
@@ -624,8 +427,6 @@ form for this addon had been passing by running no tests at all. Judge either
 form by its **exit code**; `--reporter=basic` no longer exists in vitest 4, so a
 grep verdict goes silently blind.
 
-`@bakers-build/addon-herdr` covers the `herdrAgentHost` layout policy + command
-construction (mocked exec). The interactive PTY walk — start / hide / re-open /
-parallel / errors, and the click/scroll walk over a real emulator — is
+The click/scroll walk over a real emulator is
 spec-designated **manual acceptance** (a terminal, not a browser, so no
 Playwright-BDD; same as BB-175).

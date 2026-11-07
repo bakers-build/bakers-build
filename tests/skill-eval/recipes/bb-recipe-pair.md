@@ -5,7 +5,7 @@ description: Test recipe for tickets of type feature or chore — never shipped;
 
 # Pair method
 
-A second test-only recipe, so qualification has a real choice. It declares no project default.
+A second test-only recipe, so qualification has a real choice.
 
 ## bb-state-plan
 

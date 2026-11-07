@@ -9,8 +9,7 @@ export type { BbUiOptions } from './plugin.js';
 export const ticketRendererPlugin = bakersUiPlugin;
 
 // BB-194 AC-4/AC-5: the home-rooted launcher (dropsh-tui invocation moved out
-// of the conductor `bakers ui` command). herdr-agnostic (agent impl injected) and
-// dropsh-decoupled (buildProgram injected).
+// of the conductor `bakers ui` command). dropsh-decoupled (buildProgram injected).
 export {
   type BbUiLauncherOptions,
   type DropshBuildProgram,
@@ -18,7 +17,3 @@ export {
   type HomeConnection,
   runBbUi,
 } from './launcher.js';
-
-// Re-export the intent-level agent contract so the conductor launcher can inject
-// a herdr-backed agent host against it without importing herdr into this plugin.
-export type { HostedAgent, TuiAgentService } from './types.js';

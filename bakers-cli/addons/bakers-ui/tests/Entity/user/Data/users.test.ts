@@ -2,7 +2,6 @@ import type { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 import { expect, it, vi } from 'vitest';
 import {
   listAllUsers,
-  listUsers,
   listUsersPreferringWrite,
   loadWhoCandidates,
   resolveWhoCandidate,
@@ -13,9 +12,9 @@ import { fakeClient, toResource } from '../../../test-support.js';
 
 // BB-236 — the USER data service returns USERS. Everything asserted here is a
 // property of the data: the fields, the label fallbacks, the `uid` typing, and the
-// two read strategies. Nothing here knows a popup exists — no ordering, no
+// read strategies. Nothing here knows a popup exists — no ordering, no
 // filtering, no `Option`. Those are the adapters' rules and are asserted in
-// `create-form-data.test.ts` / `edit-form-data.test.ts`.
+// `edit-data.test.ts`.
 
 const user = (
   id: string,
@@ -51,9 +50,9 @@ it('a user carries id, label, username and uid — and nothing else', async () =
       ],
     },
   });
-  expect((await listUsers(client)).rows).toEqual([
-    { id: 'u1', label: 'cw', name: 'cw-login', uid: 3 },
-  ]);
+  expect(
+    await listUsersPreferringWrite({ write: client, read: client }),
+  ).toEqual([{ id: 'u1', label: 'cw', name: 'cw-login', uid: 3 }]);
   expect(client.collections).toEqual(['user/user']);
 });
 
@@ -68,11 +67,11 @@ it('the label falls back display_name → name → uuid, and is never empty', as
       ],
     },
   });
-  expect((await listUsers(client)).rows.map((u) => u.label)).toEqual([
-    'tm',
-    'u3',
-    'u0',
-  ]);
+  expect(
+    (await listUsersPreferringWrite({ write: client, read: client })).map(
+      (u) => u.label,
+    ),
+  ).toEqual(['tm', 'u3', 'u0']);
 });
 
 it('`uid` is a number, so Anonymous`s 0 stays comparable; absent is undefined', async () => {
@@ -87,25 +86,10 @@ it('`uid` is a number, so Anonymous`s 0 stays comparable; absent is undefined', 
       ],
     },
   });
-  const users = (await listUsers(client)).rows;
+  const users = await listUsersPreferringWrite({ write: client, read: client });
   expect(users[0]?.uid).toBe(0);
   expect(users[1]?.uid).toBeUndefined();
   expect(users[2]?.uid).toBeUndefined();
-});
-
-it('listUsers returns the collection AS IT IS — server order, Anonymous included', async () => {
-  // The data service applies no policy: whoever wants Anonymous gone, or the
-  // machine`s own user first, says so itself.
-  const client = fakeClient({ rows: rows() });
-  expect((await listUsers(client)).rows.map((u) => u.id)).toEqual([
-    'u0',
-    'u1',
-    'u2',
-  ]);
-  // A successful read carries NO error, including a successful empty one — the
-  // distinction the outcome exists for (BB-257 D4).
-  expect((await listUsers(client)).error).toBeUndefined();
-  expect((await listUsers(fakeClient({}))).error).toBeUndefined();
 });
 
 it('listUsersPreferringWrite reads the write client first, the read client as fallback', async () => {
@@ -123,27 +107,11 @@ it('listUsersPreferringWrite reads the write client first, the read client as fa
   expect(fallback.collections).toEqual(['user/user']);
 });
 
-it('AC-7: a failing user list yields `[]` in BOTH read strategies', async () => {
+it('AC-7: a failing user list yields `[]` when both clients fail', async () => {
   const failing = fakeClient({ rows: rows(), failingCollections: ['user'] });
-  expect((await listUsers(failing)).rows).toEqual([]);
   expect(
     await listUsersPreferringWrite({ write: failing, read: failing }),
   ).toEqual([]);
-});
-
-// ---- BB-257 D4: a failure is SAYABLE, not merely empty ---------------------
-//
-// The half of D4 phase 2 declared but never wired: `CreateOptionErrors` already
-// had a `users` key and the renderer already had a row for it, yet no producer
-// ever set one — so a failing user read still reached the writer as a silently
-// empty Assignee ring, which is the exact defect class this ticket removes.
-// `listUsers` therefore yields the OUTCOME, the way `listTerms` already does.
-
-it('D4: a failing user read yields the REASON, not just an empty list', async () => {
-  const failing = fakeClient({ rows: rows(), failingCollections: ['user'] });
-  const outcome = await listUsers(failing);
-  expect(outcome.rows).toEqual([]);
-  expect(outcome.error).toBe('no user/user');
 });
 
 it('listAllUsers follows every page and refuses withheld identities', async () => {
@@ -292,6 +260,19 @@ it('resolveWhoCandidate filters name EXACTLY — no CONTAINS — and pages at WH
   expect(s).toContain('filter[name]=cw');
   expect(s).not.toContain('CONTAINS');
   expect(s).toContain(`page[limit]=${WHO_PAGE_SIZE}`);
+});
+
+// `me()` answers with the account's uuid since machines are identified by uuid,
+// so the current user arrives as a uuid; a name must still resolve by name.
+it('resolveWhoCandidate looks a uuid up by id, not by name', async () => {
+  const client = fakeClient({ documents: { 'user/user': { data: [] } } });
+  await resolveWhoCandidate(client, '7ec10a10-9703-4f6b-8ae1-7087315d2471');
+  const params = client.requests[0]?.params as {
+    getQueryString(): string;
+  };
+  const s = decodeURIComponent(params.getQueryString());
+  expect(s).toContain('filter[id]=7ec10a10-9703-4f6b-8ae1-7087315d2471');
+  expect(s).not.toContain('filter[name]');
 });
 
 it('resolveWhoCandidate returns at most the FIRST match, mapped like a Who candidate', async () => {

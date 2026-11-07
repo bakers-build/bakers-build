@@ -17,7 +17,6 @@ import {
 import { LIST_PAGE_SIZE } from '../../cycle.js';
 import {
   buildRunQueryParams,
-  buildTeamMemberRunQueryParams,
   buildUserRunQueryParams,
   type RunCriteria,
 } from './query.js';
@@ -377,43 +376,6 @@ export async function loadUserRuns(
     page,
     window,
   );
-}
-
-/** One page attributed to a member within a team's linked project set. */
-export async function loadTeamMemberRuns(
-  client: DropshClient,
-  userId: string,
-  projectIds: string[],
-  criteria: RunCriteria,
-  page = 0,
-): Promise<RunPage> {
-  if (projectIds.length === 0) {
-    return { rows: [], hasNext: false, page, total: 0, window: null };
-  }
-  const window: PageWindow = {
-    offset: page * LIST_PAGE_SIZE,
-    limit: LIST_PAGE_SIZE,
-  };
-  const params = buildTeamMemberRunQueryParams(userId, projectIds, criteria, {
-    size: window.limit,
-    index: page,
-  });
-  const result = await loadPage(
-    client,
-    'bb_run/bb_run',
-    params,
-    (data, included) => {
-      const ticketsById = new Map<string, JsonApiResource>();
-      for (const inc of included) if (inc.id) ticketsById.set(inc.id, inc);
-      return data.map((item) => mapRunData(item, ticketsById));
-    },
-    page,
-    window,
-  );
-  if (result.withheld) {
-    throw new Error('the control plane withheld team member run rows');
-  }
-  return result;
 }
 
 /**

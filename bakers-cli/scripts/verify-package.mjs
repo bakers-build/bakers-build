@@ -362,6 +362,8 @@ console.log(m[1]);
         'State: {state}',
         // The run reads through bakers_ticket_read like every skill step.
         'dropsh --format md read',
+        // The run's CLI call names the bare tool; the server prefix is gone.
+        'tool_api__',
       ]) {
         if (prompt.includes(bad)) {
           fail(
@@ -372,7 +374,7 @@ console.log(m[1]);
       for (const marker of [
         'Read the ticket and all comments',
         'bakers_ticket_read',
-        `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+        `bakers tools bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
         './WORKFLOW.md',
         "that skill's {state} section",
         'Do not start or prepare a later state',

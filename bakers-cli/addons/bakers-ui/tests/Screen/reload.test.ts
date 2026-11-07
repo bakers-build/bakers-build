@@ -3,7 +3,6 @@ import { lineText } from '../../src/Component/section-list/index.js';
 import { ProjectsScreen } from '../../src/Entity/project/Screen/projects-screen.js';
 import { RunsScreen } from '../../src/Entity/run/Screen/runs.js';
 import type { TicketContentProps } from '../../src/Entity/ticket/Component/ticket-content/index.js';
-import { TicketAgentsScreen } from '../../src/Entity/ticket/Screen/ticket-agents.js';
 import { TicketCommentsScreen } from '../../src/Entity/ticket/Screen/ticket-comments.js';
 import {
   TicketDetailScreen,
@@ -12,7 +11,7 @@ import {
 import { TicketsScreen } from '../../src/Entity/ticket/Screen/tickets.js';
 import { ContextBag } from '../../src/Routing/context.js';
 import type { ScreenContext } from '../../src/Screen/screen.js';
-import type { TicketDetailDocument, TuiAgentService } from '../../src/types.js';
+import type { TicketDetailDocument } from '../../src/types.js';
 import { renderTree } from '../render-tree.js';
 import { routes } from '../tab-bars.js';
 import { type FakeClient, fakeClient } from '../test-support.js';
@@ -97,36 +96,6 @@ describe('BB-285 — every data screen declares reload (AC-1)', () => {
     expect(screen.busy).toBe(true);
     await vi.waitFor(() => expect(screen.busy).toBe(false));
     expect(gets(client, 'bb_ticket/bb_ticket')).toBe(2);
-  });
-
-  it('TicketAgentsScreen.reload re-reads and states loading', async () => {
-    // This screen's data source is `services.agents.list`, not the client.
-    let listReads = 0;
-    const agents: TuiAgentService = {
-      launch: async () => {
-        throw new Error('not under test');
-      },
-      list: async () => {
-        listReads++;
-        return [];
-      },
-      focus: async () => {},
-      hide: async () => {},
-      kill: async () => {},
-    };
-    const context = contextFor(
-      { client: fakeClient(), agents },
-      { project: PROJECT },
-    );
-    const screen = new TicketAgentsScreen();
-    screen.enter(context);
-    await vi.waitFor(() => expect(screen.busy).toBe(false));
-    expect(listReads).toBe(1);
-
-    screen.reload(context);
-    expect(screen.busy).toBe(true);
-    await vi.waitFor(() => expect(screen.busy).toBe(false));
-    expect(listReads).toBe(2);
   });
 
   it('RunsScreen.reload re-reads and states loading', async () => {

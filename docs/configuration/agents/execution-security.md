@@ -105,7 +105,7 @@ What it does not block:
 - Network access to any host.
 - `allow_write` includes Git hooks/configuration in granted directories; it provides no Docker isolation.
 - Managed profiles require Grok 1.0.70+ and native configuration protection. See [profile lifecycle](/addons/grok#security).
-- Unverified: MCP enforcement, macOS managed profiles and unattended DDEV execution. Failed custom-profile startup never permits bypassing the sandbox.
+- Unverified: MCP enforcement, macOS managed profiles and unattended container-runtime execution. Failed custom-profile startup never permits bypassing the sandbox.
 
 ## Ticket env vars
 

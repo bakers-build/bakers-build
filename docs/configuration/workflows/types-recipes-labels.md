@@ -4,7 +4,7 @@
 
 | Field | Set by | Effect |
 |---|---|---|
-| `recipe` | qualification | the recipe skill that supplies the method for `plan`, `working` and `review`, such as `matt` for `bb-recipe-matt`; empty means the installed recipe that declares itself project default |
+| `recipe` | qualification | the recipe skill that supplies the method for `plan`, `working` and `review`, such as `matt` for `bb-recipe-matt`; empty until qualification chooses |
 | `ticket_type` | qualification | `feature`, `bug`, `chore` and so on; selects the recipe's slots for that type |
 | `labels` | you, or qualification | agent choice and plain tags, see below |
 
@@ -12,7 +12,7 @@ The fields and their vocabularies are listed under [Ticket type, recipe and labe
 
 ## Recipes
 
-A recipe is a skill named `bb-recipe-<method>`, one per engineering method, with one `## bb-state-<state>` section per state it refines and `### bb-phase-<phase>` slots inside. bakers.build ships `bb-recipe-matt`, the project default. Qualification reads the descriptions of the installed recipes, picks the one that fits the ask, then a type that recipe declares, and writes both on the ticket. It asks only when the choice is genuinely unclear. A later change follows the `bb-scope-change` skill.
+A recipe is a skill named `bb-recipe-<method>`, one per engineering method, with one `## bb-state-<state>` section per state it refines and `### bb-phase-<phase>` slots inside. bakers.build ships `bb-recipe-matt` and `bb-recipe-superpowers`. Qualification loads every installed recipe completely, picks the one whose method fits the ask, then a type that recipe declares, and writes both on the ticket with its reason. Your `WORKFLOW.md` may add guidance for that choice; no recipe is preselected. Qualification asks only when a person is present and two recipes fit equally; an unattended run decides by fit itself. A later change follows the `bb-scope-change` skill.
 
 A run stops before doing any work when the recipe, its section for the current state, or the ticket's type within that recipe is missing. To write your own: [Write a recipe](/configuration/workflows/recipes).
 
@@ -22,6 +22,7 @@ A run stops before doing any work when the recipe, its section for the current s
 |---|---|---|
 | `agent:<alias>` or `agent:<route>` | you, or qualification after you confirm | the coding agent for every state |
 | `agent:<alias>@<state>` or `agent:<route>@<state>` | the same | the coding agent for that state only |
+| `auto` | you, or the host when it hands a specified ticket over | the agent carries the ticket to `done` on its own (skill `bb-label-auto`): it decides technical questions itself, asks you only content questions and one acceptance, and merges after review |
 
 Anything else is a plain tag for people and filters.
 

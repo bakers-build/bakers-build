@@ -165,7 +165,6 @@ startup, so `.zshrc` can react to it. Which panes carry it:
 | --- | --- | --- |
 | Executor run tab, root pane (`tab create --env`) | yes | the agent itself |
 | Executor run tab, configured layout panes (`pane split --env`) | yes | part of the agent's run tab |
-| TUI-hosted agents, `bakers ui` → `n` (`tab create` / `pane split --env`) | yes | agents you attach to |
 | Workspace open-layout pane on a fresh worktree | **no** | that pane is yours, not an agent's |
 
 The last row is the point of the split: the open-layout pane is where *you* land

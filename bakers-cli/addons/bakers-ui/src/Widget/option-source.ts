@@ -2,7 +2,7 @@
 //
 // The review found the Parent field's candidates being fetched in
 // `Entity/ticket/Data/parents.ts`, re-labelled by a second function in
-// `Entity/ticket/Form/create-data.ts`, and debounced, cancelled, swapped and
+// the create form's adapter (since removed), and debounced, cancelled, swapped and
 // error-merged a THIRD time in `Kernel/tui-kernel.ts` — with two kernel state
 // variables that existed only because the field could not reload itself. Beside
 // it a shared adapter hand-aggregated four bags eagerly with `Promise.all`,
@@ -145,8 +145,8 @@ export function createOptionLoader<O extends object>(
   return {
     reload(fieldId, query) {
       const source = deps.sources[fieldId];
-      // A field with no source declared is inert, not an error: the Parent field
-      // opened from the dashboard has no project to search and must stay typeable.
+      // A field with no source declared is inert, not an error: a field with
+      // nothing to search must stay typeable.
       if (source === undefined || source.debounceMs === undefined) return;
       pending?.();
       pending = (deps.debounce ?? timerDebounce)(() => {

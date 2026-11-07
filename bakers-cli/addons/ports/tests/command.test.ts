@@ -25,9 +25,9 @@ function service(
   overrides: Partial<ClaimedService> & { key: string },
 ): ClaimedService {
   return {
-    claim: 'ddev',
+    claim: 'container',
     status: 'healthy',
-    local: `https://${overrides.key}.ddev.site`,
+    local: `https://${overrides.key}.site.test`,
     rawPorts: [],
     rules: [{ key: overrides.key, service: 'https://127.0.0.1:443' }],
     ...overrides,
@@ -115,11 +115,11 @@ describe('resolveTicketIdentifier', () => {
 describe('selectService', () => {
   const drupalAdmin = service({
     key: 'drupal-admin',
-    rawPorts: [{ virtualHost: 'admin.pynq.pynq-42.ddev.site' } as never],
+    rawPorts: [{ virtualHost: 'admin.pynq.pynq-42.site.test' } as never],
   });
   const drupalMembers = service({
     key: 'drupal-members',
-    rawPorts: [{ virtualHost: 'members.pynq.pynq-42.ddev.site' } as never],
+    rawPorts: [{ virtualHost: 'members.pynq.pynq-42.site.test' } as never],
   });
   const mailpit = service({ key: 'mailpit' });
   const discovery: ClaimedDiscovery = {
@@ -352,31 +352,31 @@ describe('shouldKeepTunnelRecord (R4)', () => {
     expect(shouldKeepTunnelRecord(dockerDiag, 'gone')).toBe(true);
   });
 
-  // BB-681 review N1: the I1 fix for a failed `ddev utility configyaml`
-  // read must protect only `web`/`web-<host>` alias records, not every
-  // vanished record in the worktree — a non-DDEV service (e.g. Storybook)
-  // going away in the same pass is unrelated and must still reap.
-  it('a vanished non-DDEV record (storybook) reaps despite a ddev-hosts diagnostic in the same pass (N1)', () => {
+  // BB-681 review N1: a claimer diagnostic scoped by `keyPrefix` protects
+  // only `web`/`web-<host>` records, not every vanished record in the
+  // worktree — another service (e.g. Storybook) going away in the same pass
+  // is unrelated and must still reap.
+  it('a vanished record outside the prefix (storybook) reaps despite a prefix-scoped claimer diagnostic in the same pass (N1)', () => {
     const discovery: ClaimedDiscovery = {
       services: [],
       diagnostics: [
-        { source: 'ddev-hosts', message: '`ddev utility configyaml` failed' },
+        { source: 'claimer', keyPrefix: 'web', message: 'hosts unreadable' },
       ],
       unclaimed: [],
     };
     expect(shouldKeepTunnelRecord(discovery, 'storybook')).toBe(false);
   });
 
-  it('a vanished web-<host> alias record is kept on a ddev-hosts diagnostic (I1)', () => {
+  it('a vanished web-<host> alias record is kept on a web-scoped claimer diagnostic (I1)', () => {
     const discovery: ClaimedDiscovery = {
       services: [],
       diagnostics: [
-        { source: 'ddev-hosts', message: '`ddev utility configyaml` failed' },
+        { source: 'claimer', keyPrefix: 'web', message: 'hosts unreadable' },
       ],
       unclaimed: [],
     };
     expect(shouldKeepTunnelRecord(discovery, 'web')).toBe(true);
-    expect(shouldKeepTunnelRecord(discovery, 'web-admin-ddev-site')).toBe(true);
+    expect(shouldKeepTunnelRecord(discovery, 'web-admin-site-test')).toBe(true);
   });
 });
 
@@ -395,9 +395,9 @@ describe('staleKeys', () => {
     services: [
       {
         key: 'web',
-        claim: 'ddev',
+        claim: 'container',
         status: 'healthy',
-        local: 'https://pynq-42.ddev.site',
+        local: 'https://pynq-42.site.test',
         rawPorts: [],
         rules: [{ key: 'web', service, direct }],
       },
@@ -440,9 +440,9 @@ describe('liveTunnel', () => {
     services: [
       {
         key: 'web',
-        claim: 'ddev',
+        claim: 'container',
         status: 'healthy',
-        local: 'https://pynq-42.ddev.site',
+        local: 'https://pynq-42.site.test',
         rawPorts: [
           {
             worktree: '/work',
@@ -511,7 +511,7 @@ describe('servicesToShare (spec v5: `up` with no key)', () => {
     ).toEqual(['drupal-admin', 'mailpit']);
   });
 
-  it('F: picks a service back up for sharing when its applied record is stale (e.g. after a notional `ddev restart` rebound the target)', () => {
+  it('F: picks a service back up for sharing when its applied record is stale (e.g. after a notional container restart rebound the target)', () => {
     const mailpit = service({
       key: 'mailpit',
       rules: [{ key: 'mailpit', service: 'https://127.0.0.1:8027' }],

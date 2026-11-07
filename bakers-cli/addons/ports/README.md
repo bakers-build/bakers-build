@@ -12,18 +12,12 @@ config to enable the message.
 
 ## What it does
 
-**This package fires no `docker`/`ddev` calls itself.** Discovery here is
-host-listener-only (`ss`, for the configured process rules); DDEV's own discovery and claiming
-lives in two sibling packages — see
-[`@bakers-build/addon-docker-compose`](../docker-compose/README.md) (generic Docker
-Compose discovery) and [`@bakers-build/addon-ddev`](../ddev/README.md) (DDEV
-interpretation), which this package calls as a plain dependency.
-
-**`addon-ddev` does nothing CMS-specific.** Its web-container claim names
-itself `web`, splitting into one `web-<host>` claim per configured AND
-observed host alias. There is no CMS-specific policy layer (the old
-`@bakers-build/addon-ports-drupal` is removed, with no replacement) — a claimed
-Drupal (or any other) service shares exactly like any other claim; the
+**This package fires no container-runtime calls itself.** Discovery here is
+host-listener-only (`ss`, for the configured process rules); container
+discovery and claiming come from **claimer packages** named in the entry's
+`with.claimers` (see [Claimers](#claimers)). There is no CMS-specific policy
+layer (the old `@bakers-build/addon-ports-drupal` is removed, with no
+replacement) — a claimed service shares exactly like any other claim; the
 project owns its own public-vs-origin host handling.
 
 1. **Discover** (`src/discovery.ts`): raw observations of this worktree's host
@@ -33,11 +27,11 @@ project owns its own public-vs-origin host handling.
    counts rather than assuming the unit fixtures' timing transfers.
 2. **Claim** (`src/claims.ts`): ordered claimers — the process rules from the
    entry's `with.services` (`src/service-config.ts`; Storybook is the shipped
-   default entry), then DDEV (`@bakers-build/addon-ddev`'s `claimDdev`), then the
+   default entry), then each `with.claimers` package in order, then the
    opt-in `with.all_node` rule (`node-<port>`) — each claimer consuming only
    the raw identities (or claims) a prior one left. A Node inspector port
    (9229, an `--inspect*` flag, or a `/json/version` probe) is never claimed.
-   DDEV keys never change; a colliding process claim becomes `<key>-<port>`.
+   A claimer's keys never change; a colliding process claim becomes `<key>-<port>`.
    **Unclaimed ports are never tunnelled**; `list` still shows them, dimmed
    "no addon" in a TTY. A claimed
    service carries zero or more `TunnelRule`s; only a healthy claim produces
@@ -57,6 +51,32 @@ project owns its own public-vs-origin host handling.
 A process whose working directory was deleted is an **orphan** — it outlived
 its worktree — and is surfaced, not filtered.
 
+## Claimers
+
+`with.claimers` is an ordered list of package names, resolved like
+`with.transport.use` (the ports home, the running `bakers` install, then the
+working directory). Each package's module exports a `Claimer` as the named
+export **`claimer`**; its types come from `@bakers-build/addon-ports/core`:
+
+```ts
+interface Claimer<C extends object = object> {
+  discover(worktree: string, deps: ClaimerDeps): Promise<ClaimerDiscovery<C>>;
+  claim(raw: readonly RawPort[], remaining: Set<number>, ctx: ClaimContext & Partial<C>): ClaimedService[];
+}
+// ClaimerDeps: { run(cmd, args, cwd?), readFile(path) }
+// ClaimerDiscovery<C>: { ports, diagnostics, context?: C }
+```
+
+`discover` runs alongside host discovery; its `ports` and `diagnostics` join the
+pass and its `context` joins the `ClaimContext` every claimer is handed. `claim`
+removes the raw indices it takes from `remaining`. A claimer diagnostic uses
+`source: 'claimer'`, reported as is; with a `keyPrefix` it keeps only vanished
+records keyed `<keyPrefix>` or `<keyPrefix>-*` from being reaped.
+
+```js
+{ use: '@bakers-build/addon-ports', with: { claimers: ['<claimer package>'], transport: { use: '…' } } }
+```
+
 ## Commands
 
 ```
@@ -73,7 +93,7 @@ writer of the tunnel routes. With no live conductor they exit 1 naming `bakers o
 nothing. `list` stays local. Agents use the same tools, `ports_up`, `ports_down`, `ports_status` and
 `ports_reap`, through the conductor's MCP server (`src/tools.ts`).
 
-`<service-key>` is a claimed key (`web`, `web-admin-ddev-site`, `mailpit`, …), never a raw
+`<service-key>` is a claimed key (`web`, `web-admin-site-test`, `mailpit`, …), never a raw
 port — the removed generic `up <port> --url` path returned a bare numeric port
 as a tunnel target with no addon behind it; it now fails with an actionable
 "pick a service key" error naming the claimed keys available. **`up` with no

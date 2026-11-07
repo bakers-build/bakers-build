@@ -1,7 +1,6 @@
 import { BoxRenderable, h, type RGBA, type VNode } from '@opentui/core';
 import { Card } from '../../../../Component/card/index.js';
 import { Divider } from '../../../../Component/divider/index.js';
-import { HeatMap } from '../../../../Component/heat-map/index.js';
 import {
   KeyValue,
   type KeyValueItem,
@@ -35,8 +34,6 @@ import {
   type TicketContentEntry,
   type TicketContentModel,
   type TicketContentTab,
-  type TicketHeatGrid,
-  type TicketMetricMatrix,
   type TicketProperty,
   type TicketSidebar,
   ticketContentRowId,
@@ -46,14 +43,9 @@ import {
 // they render full-width in the left column (see linksSection) instead.
 export const SIDEBAR_TABS = [
   { id: 'details', label: 'Details' },
-  { id: 'stats', label: 'Stats' },
   { id: 'related', label: 'Related' },
 ] as const;
 export type SidebarTabId = (typeof SIDEBAR_TABS)[number]['id'];
-
-/** The pane a sidebar opens on: Stats once the ticket is done, else Details. */
-export const defaultSidebarTab = (sidebar: TicketSidebar): SidebarTabId =>
-  sidebar.showMetrics ? 'stats' : 'details';
 
 export interface TicketContentProps {
   /** The owner every node id derives from. */
@@ -67,7 +59,7 @@ export interface TicketContentProps {
   readonly activateProperty?: (item: TicketProperty) => void;
   /** Terminal width — the Overview's side-by-side breakpoint reads it. */
   readonly terminalColumns: number;
-  /** The visit's sidebar pane; absent means {@link defaultSidebarTab}. */
+  /** The visit's sidebar pane; absent means Details. */
   readonly sidebarTab?: SidebarTabId;
   readonly onSidebarTab: (tab: SidebarTabId) => void;
   /** The Planning document tab last chosen in this visit. */
@@ -472,79 +464,12 @@ const properties = (
     valueColor: FOREGROUND_HIGHLIGHT,
   });
 
-const heatGrid = (id: string, grid: TicketHeatGrid): VNode | null => {
-  if (grid.columns.length === 0 || grid.rows.length === 0) return null;
-  return HeatMap({
-    id,
-    data: grid.rows.map((row) => row.cells.map((cell) => cell.value ?? 0)),
-    rowLabels: grid.rows.map((row) => row.label),
-    colLabels: grid.columns.map((column) => column.label),
-    showValues: true,
-  });
-};
-
-const ticketStats = (id: string, grid: TicketHeatGrid): VNode | null => {
-  const row = grid.rows[0];
-  if (grid.columns.length === 0 || row === undefined) return null;
-  return KeyValue({
-    id,
-    items: grid.columns.map((column, index) => ({
-      key: column.label,
-      value: row.cells[index]?.display ?? 'none',
-    })),
-    keyColor: FOREGROUND,
-    valueColor: FOREGROUND_HIGHLIGHT,
-  });
-};
-
-const metricsMatrix = (id: string, matrix: TicketMetricMatrix): VNode => {
-  const ticket = ticketStats(`${id}-ticket-values`, matrix.ticket);
-  const runs = heatGrid(`${id}-runs-values`, matrix.runs);
-  if (ticket === null && runs === null)
-    return paragraphNode({
-      id: `${id}-none`,
-      runs: [plainRun('none')],
-      fg: FOREGROUND_HIGHLIGHT,
-      flexShrink: 0,
-    });
-  return column(
-    id,
-    { width: '100%', flexShrink: 0 },
-    ...(ticket === null
-      ? []
-      : [
-          HeadlineMarkdown({
-            id: `${id}-ticket`,
-            headline: 'ticket',
-            children: [ticket],
-          }),
-        ]),
-    ...(runs === null
-      ? []
-      : [
-          HeadlineMarkdown({
-            id: `${id}-runs`,
-            headline: 'runs',
-            children: [runs],
-          }),
-        ]),
-  );
-};
-
 const sidebarCard = (
   id: string,
   sidebar: TicketSidebar,
   props: TicketContentProps,
 ): VNode => {
-  // The Stats tab only exists once the ticket is done (`showMetrics`); until
-  // then the sidebar opens on Details and never offers a Stats tab.
-  const tabs = sidebar.showMetrics
-    ? SIDEBAR_TABS
-    : SIDEBAR_TABS.filter((item) => item.id !== 'stats');
-  const requested = props.sidebarTab ?? defaultSidebarTab(sidebar);
-  const tab = tabs.some((item) => item.id === requested)
-    ? requested
-    : defaultSidebarTab(sidebar);
+  const tab = props.sidebarTab ?? 'details';
   const pane = tab === 'related' ? sidebar.related : sidebar.details;
   return Card({
     id,
@@ -574,7 +499,7 @@ const sidebarCard = (
             gap: 1,
             onMouseDown: pressHandler(() => props.select(TECHNICAL_KEY)),
           },
-          ...tabs.map((item) =>
+          ...SIDEBAR_TABS.map((item) =>
             tabLabel(
               `${id}-tab-${item.id}`,
               item.label,
@@ -591,9 +516,7 @@ const sidebarCard = (
       column(
         `${id}-pane`,
         { width: '100%', flexShrink: 0, marginTop: 1, gap: 1 },
-        tab === 'stats'
-          ? metricsMatrix(`${id}-metrics`, sidebar.matrix)
-          : properties(`${id}-properties-${tab}`, pane, props.activateProperty),
+        properties(`${id}-properties-${tab}`, pane, props.activateProperty),
       ),
     ],
   });
@@ -602,7 +525,7 @@ const sidebarCard = (
 /**
  * The row id a Tab/arrow-key visit lands on for the inline messages card —
  * exported so the screen can add it to `selectableKeys` and open the full
- * send/poll screen on Enter, the same way Details/Stats/Related are reached
+ * send/poll screen on Enter, the same way Details/Related are reached
  * by keyboard even though their own pane switching stays mouse-only.
  */
 export const ADDONS_KEY = 'addons-card';

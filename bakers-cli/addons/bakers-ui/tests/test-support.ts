@@ -90,12 +90,6 @@ export interface RecordedWrite {
   body: ResourceWriteBody;
 }
 
-/** A recorded `client.create(...)` call (BB-309). */
-export interface RecordedCreate {
-  type: string;
-  body: ResourceWriteBody;
-}
-
 /** A recorded `client.post(...)` call. */
 export interface RecordedPost {
   path: string;
@@ -106,8 +100,6 @@ export interface RecordedPost {
 export interface FakeClient extends DropshClient {
   /** Every `update()` in call order — the AC-6 "no write happened" assertion. */
   readonly writes: RecordedWrite[];
-  /** Every `create()` in call order — the AC-2 "exactly one ticket" assertion. */
-  readonly creates: RecordedCreate[];
   /** Every `get()` path in call order. */
   readonly gets: string[];
   /**
@@ -123,7 +115,7 @@ export interface FakeClient extends DropshClient {
    * two different requests and only one of them exists (BB-257 F2).
    */
   readonly collections: string[];
-  /** Every `post()` in call order — the ticket-template "exactly one POST" assertion. */
+  /** Every `post()` in call order. */
   readonly posts: RecordedPost[];
   /** Every `where(path, op, value)` filter any collection received. */
   readonly filters: string[][];
@@ -151,39 +143,11 @@ export interface FakeClientOptions {
   failingPaths?: string[];
   /** When set, every `update()` rejects with this value (the AC-5 path). */
   writeError?: unknown;
-  /** When set, every `create()` rejects with this value (the AC-8 path). */
-  createError?: unknown;
-  /** The uuid the created resource reports back; defaults to a fixed one. */
-  createdId?: string;
   /** What every `post()` answers (the instantiate document). */
   postDocument?: unknown;
   /** When set, every `post()` rejects with this value. */
   postError?: unknown;
 }
-
-/**
- * BB-256: the Dashboard is the landing screen, so EVERY kernel boot reads
- * `/jsonapi/bakers/statistics` before anything else. A double that answered it
- * with `{ data: [] }` would put a "malformed statistics document" error in the
- * status bar of every test that never mentions statistics — and that error wins
- * over `status`, so unrelated assertions would fail for an unrelated reason.
- *
- * The default is therefore a well-formed EMPTY document (spec R7's case): the
- * Dashboard renders "No activity in the last 30 days." and no error. A test that
- * cares about real figures overrides it through `documents`.
- */
-const EMPTY_STATISTICS = {
-  data: {
-    type: 'bakers-statistics',
-    id: 'root',
-    attributes: {
-      generated: '2026-08-02T00:00:00+00:00',
-      windows: { day: 86400, week: 604800, month: 2592000 },
-      tickets: { total: { day: 0, week: 0, month: 0 } },
-      runs: { total: { day: 0, week: 0, month: 0 } },
-    },
-  },
-};
 
 /**
  * The shared client double. Widening `DropshClient` with `update()` (spec
@@ -197,15 +161,12 @@ export function fakeClient(options: FakeClientOptions = {}): FakeClient {
     failingCollections = [],
     failingPaths = [],
     writeError,
-    createError,
-    createdId,
     postDocument,
     postError,
   } = options;
   const posts: RecordedPost[] = [];
   const filters: string[][] = [];
   const writes: RecordedWrite[] = [];
-  const creates: RecordedCreate[] = [];
   const gets: string[] = [];
   const requests: RecordedGet[] = [];
   const collections: string[] = [];
@@ -241,7 +202,6 @@ export function fakeClient(options: FakeClientOptions = {}): FakeClient {
 
   return {
     writes,
-    creates,
     gets,
     requests,
     collections,
@@ -263,25 +223,12 @@ export function fakeClient(options: FakeClientOptions = {}): FakeClient {
         path.startsWith(prefix),
       );
       if (hit !== undefined) return documents[hit];
-      if (path === 'bakers/statistics') return EMPTY_STATISTICS;
       return { data: [] };
     },
     update: async (type: string, id: string, body: ResourceWriteBody) => {
       writes.push({ type, id, body });
       if (writeError !== undefined) throw writeError;
       return { data: { type, id } };
-    },
-    create: async (type: string, body: ResourceWriteBody) => {
-      creates.push({ type, body });
-      if (createError !== undefined) throw createError;
-      // dropsh 0.5.8's `create` ends `return toResource(doc.data)` — it hands
-      // back a RESOURCE, with a top-level `id`, not the JSON:API document it
-      // received (`dropsh/dist/src/core/jsonapi/client.js`). The document shape
-      // this used to return was copied from the `update` double, whose return
-      // value no production code reads; BB-309 is the first caller to read a
-      // write's result, and a double that disagrees with its seam is exactly
-      // where that starts costing something.
-      return toResource({ id: createdId ?? 'created-ticket-uuid', type });
     },
   };
 }

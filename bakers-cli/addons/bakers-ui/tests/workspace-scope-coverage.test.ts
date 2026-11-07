@@ -49,10 +49,8 @@ const CALL_RE =
  * Every `entity_type` (the `WORKSPACE_READ_SCOPE_PATHS` key shape) the UI
  * reads via `client.get(...)`, `client.collection(...)`, `client.resource(...)`,
  * or the shared `loadPage(client, ...)` helper. A call site's resource path is
- * a string/template literal (`'bb_ticket/bb_ticket'`,
- * `` `bakers/statistics/${id}` ``) or a same-file constant it was assigned from
- * (`MEMBERSHIP_RESOURCE`). `bakers/statistics` is kept as its full bespoke path
- * rather than collapsed to `bakers` — it is not an entity type at all.
+ * a string/template literal (`'bb_ticket/bb_ticket'`) or a same-file constant
+ * it was assigned from (`MEMBERSHIP_RESOURCE`).
  */
 function collectionsReadByUi(): string[] {
   const found = new Set<string>();
@@ -84,13 +82,11 @@ describe('every UI collection is workspace-scoped or a recorded exception (BB-49
     const collections = collectionsReadByUi();
     for (const known of [
       'bb_conductor',
-      'bb_team',
       'bb_ticket',
       'bb_workspace',
       'bb_project',
       'bb_run',
       'user',
-      'bakers/statistics',
       'og_membership',
     ]) {
       expect(collections).toContain(known);

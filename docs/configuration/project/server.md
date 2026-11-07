@@ -97,7 +97,7 @@ contains secrets; use `-q` for validation and keep diagnostic output private.
 The self-host overlay forwards domain, SMTP and strict security settings to all
 PHP services. Drupal accepts only `DOMAIN`, trusts forwarding only from the
 selected ingress subnet, ignores forwarded host headers and requires a salt.
-The DDEV and existing Komodo configuration paths retain their current behavior.
+The local development and existing Komodo configuration paths retain their current behavior.
 
 ## First install — empty project only
 

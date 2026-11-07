@@ -11,19 +11,12 @@ describe('root work navigation', () => {
       buildRoutes()
         .tabs('root')
         .map((tab) => tab.label),
-    ).toEqual(['My work', 'Stats', 'Projects', 'Teams', 'Conductors']);
+    ).toEqual(['My work', 'Projects', 'Conductors']);
     expect(
       buildRoutes([], true)
         .tabs('root')
         .map((tab) => tab.label),
-    ).toEqual([
-      'My work',
-      'Stats',
-      'Projects',
-      'Teams',
-      'Members',
-      'Conductors',
-    ]);
+    ).toEqual(['My work', 'Projects', 'Members', 'Conductors']);
   });
 
   it('returns unscoped ticket and run deep links to root My work', () => {

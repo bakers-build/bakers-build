@@ -21,49 +21,7 @@ import { bootTui, settle } from '../tui-harness.js';
 // actual tmpdir, so the one thing this file does not fake is the question
 // "did anything change?".
 
-// One complete atomic figure returned by grouped discovery.
-const STATISTICS_DOCUMENT = {
-  data: {
-    attributes: {
-      groups: [
-        {
-          id: 'overview',
-          label: 'Overview',
-          figures: [
-            {
-              id: 'user_overview',
-              label: 'Overview',
-              description: '',
-              widget: 'matrix',
-              generated: '2026-08-05T07:00:00+00:00',
-              filters: {},
-              categories: [
-                { key: 'day', label: 'Last 24 hours' },
-                { key: 'week', label: 'Last 7 days' },
-                { key: 'month', label: 'Last 30 days' },
-              ],
-              measurements: [
-                {
-                  id: 'closed_tickets',
-                  label: 'Closed tickets',
-                  value_type: 'integer',
-                  unit: 'tickets',
-                  values: { day: 1, week: 2, month: 3 },
-                },
-              ],
-              empty: { is_empty: false, message: null },
-              cache: { max_age: 0, contexts: [], tags: [] },
-            },
-          ],
-        },
-      ],
-    },
-  },
-};
-
-function countingServices(counter: {
-  statisticsReads: number;
-}): RendererServices {
+function countingServices(counter: { ticketReads: number }): RendererServices {
   const collection = (): Collection => {
     const c: Collection = {
       where: () => c,
@@ -78,10 +36,7 @@ function countingServices(counter: {
     collection,
     get: async (path: string) => {
       if (path === 'user/user') return { data: [{ id: 'u-cw' }] };
-      if (path === 'bakers/statistics') {
-        counter.statisticsReads++;
-        return STATISTICS_DOCUMENT;
-      }
+      if (path === 'bb_ticket/bb_ticket') counter.ticketReads++;
       return { data: [] };
     },
     update: async () => ({}),
@@ -90,16 +45,6 @@ function countingServices(counter: {
     client,
     baseUrl: 'https://bakers.example',
     currentUser: 'cw',
-    // The Dashboard's `n` only reaches the New-ticket form with an agent host.
-    agents: {
-      launch: async () => {
-        throw new Error('not under test');
-      },
-      list: async () => [],
-      focus: async () => {},
-      hide: async () => {},
-      kill: async () => {},
-    },
   };
 }
 
@@ -111,7 +56,7 @@ const syncDebounce: Debounce = (fn) => {
 
 async function bootWatched() {
   const dir = mkdtempSync(join(tmpdir(), 'bb-376-kernel-'));
-  const counter = { statisticsReads: 0 };
+  const counter = { ticketReads: 0 };
   let emit: ((filename: string | null) => void) | undefined;
   const watchDirectory: WatchDirectory = (_dir, onEvent) => {
     emit = onEvent;
@@ -145,32 +90,32 @@ async function bootWatched() {
 }
 
 describe('BB-376 — a signal reloads the active screen (AC-2)', () => {
-  it('a bump re-reads the Dashboard exactly once', async () => {
+  it('a bump re-reads My work exactly once', async () => {
     const w = await bootWatched();
-    const before = w.counter.statisticsReads;
+    const before = w.counter.ticketReads;
     await w.bump();
-    expect(w.counter.statisticsReads).toBe(before + 1);
+    expect(w.counter.ticketReads).toBe(before + 1);
     await w.done();
   });
 
   it('R still reloads after the signal path exists (AC-3)', async () => {
     const w = await bootWatched();
-    const before = w.counter.statisticsReads;
+    const before = w.counter.ticketReads;
     await w.tui.press('R');
-    expect(w.counter.statisticsReads).toBe(before + 1);
+    expect(w.counter.ticketReads).toBe(before + 1);
     await w.done();
   });
 });
 
 describe('BB-376 — a screen without reload is untouched (AC-4)', () => {
-  it('a bump with the New-ticket popup open re-reads nothing', async () => {
+  it('a bump with the project picker open re-reads nothing', async () => {
     const w = await bootWatched();
-    await w.tui.press('n');
-    expect(w.tui.frame()).toContain('New ticket');
-    const before = w.counter.statisticsReads;
+    await w.tui.press('r');
+    expect(w.tui.frame()).toContain('Filter by project');
+    const before = w.counter.ticketReads;
     await w.bump();
-    expect(w.counter.statisticsReads).toBe(before);
-    expect(w.tui.frame()).toContain('New ticket');
+    expect(w.counter.ticketReads).toBe(before);
+    expect(w.tui.frame()).toContain('Filter by project');
     await w.tui.press('\x1b');
     await w.done();
   });
@@ -185,7 +130,7 @@ describe('BB-376 — no dir, no watcher (AC-4)', () => {
       return { close: () => {} };
     };
     const tui = await bootTui({
-      services: countingServices({ statisticsReads: 0 }),
+      services: countingServices({ ticketReads: 0 }),
       tui: { watchDirectory, debounce: syncDebounce },
     });
     expect(watched).toBe(false);
@@ -196,7 +141,7 @@ describe('BB-376 — no dir, no watcher (AC-4)', () => {
 });
 
 describe('BB-376 — the footer marks a live watcher (D7)', () => {
-  it('the Dashboard footer says (auto) when the signal is watched', async () => {
+  it('the My work footer says (auto) when the signal is watched', async () => {
     const w = await bootWatched();
     expect(w.tui.frame()).toContain('R:reload (auto)');
     await w.done();
@@ -204,7 +149,7 @@ describe('BB-376 — the footer marks a live watcher (D7)', () => {
 
   it('and stays the plain hint with no bakersDir', async () => {
     const tui = await bootTui({
-      services: countingServices({ statisticsReads: 0 }),
+      services: countingServices({ ticketReads: 0 }),
       tui: { debounce: syncDebounce },
     });
     expect(tui.frame()).toContain('R:reload');

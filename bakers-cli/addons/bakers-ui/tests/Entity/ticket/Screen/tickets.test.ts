@@ -667,7 +667,15 @@ describe('the ticket screen holds and moves the page', () => {
     const shown = screen.present(context);
     expect(shown.meta ?? '').not.toMatch(/ticket\(s\)/);
     // BB-375 — filter keys in badge strip; short actions in footer.
-    expect(formatActionLadder(shown.actions)).toContain('n new · e edit');
+    expect(formatActionLadder(shown.actions)).toMatch(/^e edit/);
+    expect(formatActionLadder(shown.actions)).not.toMatch(/\bnew\b/);
+    // Tickets are not created in bakers ui: `n` opens nothing.
+    expect(
+      screen.actionForInput?.('n', {
+        ...context,
+        services: { ...context.services, agents: {} },
+      } as ScreenContext),
+    ).toBeUndefined();
     expect(shown.meta ?? '').not.toContain('/ search');
     expect(renderTree(screen.present(context).body).join('\n')).toContain(
       'closed: hidden',

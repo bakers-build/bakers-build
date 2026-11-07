@@ -8,13 +8,19 @@ generically as `web`, exactly like every other DDEV service (Mailpit, phpMyAdmin
 web claim additionally splits into one `web-<host>` claim per configured AND observed host alias.
 
 Split out of `@bakers-build/addon-ports` (BB-676 spec v2, operator decision 2026-10-15: `bakers ports`
-must not fire Docker/DDEV calls itself). This package owns `RawPort`/`RawDiagnostic`/`RawDiscovery`
-and the claim contract (`ClaimedService`/`TunnelRule`/`ClaimContext`/`ClaimedDiscovery`/`HttpProbe`);
-`@bakers-build/addon-ports` (its Storybook claimer also produces `RawPort`-shaped values, for host
-processes) imports them from here rather than redeclaring them — the dependency edge runs
-`addon-ports -> addon-ddev -> addon-docker-compose`, one-directionally.
+must not fire Docker/DDEV calls itself). It implements `@bakers-build/addon-ports`' `Claimer`
+contract and takes `RawPort`/`ClaimedService`/`ClaimContext`/… from `@bakers-build/addon-ports/core`;
+the edge runs `addon-ddev -> addon-ports`, never back. Enable it in the ports entry:
+
+```js
+{ use: '@bakers-build/addon-ports', with: { claimers: ['@bakers-build/addon-ddev'], transport: { use: '…' } } }
+```
 
 ## What it does
+
+- `claimer` — the `Claimer` ports loads: `discover` runs `discoverDdevPorts`, `discoverDdevHosts`
+  and reads `.ddev/config.yaml`'s `web_extra_exposed_ports`; a failed hosts read becomes a
+  `source: 'claimer'` diagnostic with `keyPrefix: 'web'`. `claim` is `claimDdev`.
 
 - `discoverDdevPorts(worktree, deps)` — every DDEV-exposed container port for this worktree, as
   `RawPort[]`: calls `@bakers-build/addon-docker-compose`'s `discoverCompose` (unioning the

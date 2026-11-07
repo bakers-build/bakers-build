@@ -4,12 +4,12 @@
     "State": { "Running": true },
     "Config": {
       "Labels": {
-        "com.ddev.approot": "/home/cw/wt/pynq-42",
+        "com.example.worktree": "/home/cw/wt/pynq-42",
         "com.docker.compose.service": "web"
       },
       "Env": [
         "HTTPS_EXPOSE=443:443,8026:8025,5173:5173",
-        "VIRTUAL_HOST=pynq-42.ddev.site,admin.pynq.pynq-42.ddev.site"
+        "VIRTUAL_HOST=pynq-42.local.test,admin.pynq.pynq-42.local.test"
       ]
     },
     "NetworkSettings": {
@@ -24,7 +24,7 @@
     "State": { "Running": false },
     "Config": {
       "Labels": {
-        "com.ddev.approot": "/home/cw/wt/pynq-42",
+        "com.example.worktree": "/home/cw/wt/pynq-42",
         "com.docker.compose.service": "xhgui"
       },
       "Env": []

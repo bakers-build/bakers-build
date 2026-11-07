@@ -7,8 +7,8 @@ import { cycleValue, declareForm, filterOptions } from '../../src/Form/form.js';
 // `NoReserved` (spec Risk R4) is a COMPILE-time constraint on `declareForm`'s
 // `Values`: a form declaring `active` or `cursor` fails to build. It cannot be
 // asserted here — this package's tsconfig only includes `src/**/*.ts`, so the
-// test tree is transpiled and never type-checked. Its proof is that the two real
-// call sites (`Service/create-form.ts`, `Service/edit-form.ts`) compile.
+// test tree is transpiled and never type-checked. Its proof is that the real
+// call sites (the `Form/` modules of the ticket and run slices) compile.
 
 interface Values {
   description: string;

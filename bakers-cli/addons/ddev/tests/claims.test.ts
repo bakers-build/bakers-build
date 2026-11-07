@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { claimDdev } from '../src/claims.js';
-import type { ClaimContext, HttpProbe, RawPort } from '../src/types.js';
+import { claimer } from '../src/claimer.js';
+import type { DdevClaimContext, HttpProbe, RawPort } from '../src/types.js';
 
 function rawPort(partial: Partial<RawPort>): RawPort {
   return {
@@ -11,7 +11,7 @@ function rawPort(partial: Partial<RawPort>): RawPort {
   };
 }
 
-function ctx(overrides: Partial<ClaimContext> = {}): ClaimContext {
+function ctx(overrides: Partial<DdevClaimContext> = {}): DdevClaimContext {
   const noProbe: HttpProbe = async () => null;
   return {
     worktree: '/work',
@@ -23,9 +23,9 @@ function ctx(overrides: Partial<ClaimContext> = {}): ClaimContext {
 }
 
 /** Run the DDEV claimer alone over `raw`, as `claimServices` would. */
-function claim(raw: RawPort[], context: ClaimContext) {
+function claim(raw: RawPort[], context: DdevClaimContext) {
   const remaining = new Set(raw.map((_, i) => i));
-  return claimDdev(raw, remaining, context);
+  return claimer.claim(raw, remaining, context);
 }
 
 describe('claimDdev', () => {

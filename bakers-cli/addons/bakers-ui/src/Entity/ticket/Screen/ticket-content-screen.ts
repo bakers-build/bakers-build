@@ -260,7 +260,7 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
    * The model's selectable keys, plus the inline addons card's row (BB-661
    * D1) when the Overview preview has a message worth reaching: a Tab/arrow
    * visit stops there and Enter opens the full send/poll screen, the same
-   * keyboard reach the Details/Stats/Related sidebar card already has via its
+   * keyboard reach the Details/Related sidebar card already has via its
    * own (Technical details) row.
    */
   private selectableKeys(context: ScreenContext): readonly string[] {

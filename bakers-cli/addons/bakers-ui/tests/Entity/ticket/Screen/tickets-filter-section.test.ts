@@ -37,7 +37,7 @@ describe('Tickets filter section (BB-375 A′)', () => {
     expect(shown.meta ?? '').toMatch(/ticket\(s\)/);
     expect(shown.meta ?? '').toMatch(/page /);
     expect(shown.meta ?? '').not.toContain('/ search');
-    expect(formatActionLadder(shown.actions)).toContain('n new · e edit');
+    expect(formatActionLadder(shown.actions)).toContain('e edit');
     expect(shown.meta ?? '').not.toContain('closed:');
 
     const filter = nodeById(shown.body, 'tickets-filter');

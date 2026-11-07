@@ -44,18 +44,6 @@ function section(doc: string, heading: string, until: RegExp): string {
   return heading + (end === -1 ? rest : rest.slice(0, end));
 }
 
-const readmePopup = section(readme, '### New-ticket popup (`n`)', /\n## /);
-const referencePopup = section(
-  reference,
-  '## Creating a ticket - the new-ticket popup (`n`)',
-  /\n## /,
-);
-// The ONE row of the key table that is this popup's. Slicing the whole
-// `## Keybindings` section would not do: every other row already names
-// `Tab`/`Shift-Tab` for cycling tabs, so a section-wide match says nothing about
-// the row under test.
-const referencePopupKeyRow = section(reference, '| New-ticket popup', /\n/);
-
 // The shared `Tab`/`Shift+Tab` note that follows each key table. Both documents
 // open it with the same sentence, so one anchor slices both; the stop is
 // `/\n##+ /` rather than `/\n## /` because the README's next heading is an `###`
@@ -77,12 +65,12 @@ const referenceTabNote = unwrap(section(reference, TAB_NOTE, /\n##+ /));
 // different widths and a claim is a sentence, not a line.
 const readmeNavSection = section(
   readme,
-  '## Navigation — seven scopes',
+  '## Navigation — five scopes',
   /\n##+ /,
 );
 const referenceNavSection = section(
   reference,
-  '## Navigation - seven scopes',
+  '## Navigation - five scopes',
   /\n##+ /,
 );
 const readmeNav = unwrap(readmeNavSection);
@@ -94,7 +82,7 @@ const referenceDeepLinks = unwrap(
 // The ONE row of each key table that is the ticket screen's. The two documents
 // head their key table differently (`## Screens & keys` vs `## Keybindings`), so
 // the section is sliced first and the row looked up inside it — `| Ticket |`
-// matches neither `| Tickets |` nor `| Ticket-Agents |`, and slicing first keeps
+// does not match `| Tickets |`, and slicing first keeps
 // it from finding the level table's `| Ticket | Ticket detail | …` row instead.
 const readmeTicketKeyRow = section(
   section(readme, '## Screens & keys', /\n##+ /),
@@ -109,7 +97,7 @@ const referenceTicketKeyRow = section(
 
 // BB-376 AC-1 — the signal contract is a PUBLISHED contract: agents and hooks
 // write that path forever, so the reference and the in-package copy must agree on
-// it. Same device as the popup sections above — slice, then assert.
+// it. Slice, then assert.
 const referenceRefresh = section(
   reference,
   '## Auto-refresh - the `.bakers/ui-refresh` signal',
@@ -132,94 +120,6 @@ it('both documents state that a screen without reload is not reloaded', () => {
   for (const doc of [referenceRefresh, readmeRefresh]) {
     expect(doc).toContain('reload');
   }
-});
-
-it('AC-17: `+N more` is described as the RENDER WINDOW`s overflow', () => {
-  expect(readme).toContain('+N more — narrow the search');
-  // The sentence must attribute the count to what is not drawn, not to what the
-  // server did not send.
-  const claim = readme.slice(
-    readme.indexOf('**Parent** (BB-257)'),
-    readme.indexOf('**Parent** (BB-257)') + 1400,
-  );
-  expect(claim).toMatch(/render window|shown at once|drawn at once/i);
-  expect(claim).not.toMatch(
-    /SIZE_MAX[^.]*so\s+whatever the list does not show is counted/,
-  );
-});
-
-it('AC-17: the page cap is documented as its own, separate disclosure', () => {
-  const claim = readme.slice(
-    readme.indexOf('**Parent** (BB-257)'),
-    readme.indexOf('**Parent** (BB-257)') + 1400,
-  );
-  expect(claim).toContain('OffsetPage::SIZE_MAX');
-  expect(claim).toContain('more may exist — narrow the search');
-});
-
-it.each([
-  ['README', readmePopup],
-  ['reference', referencePopup],
-])('BB-309 AC-10: the %s describes the popup as shipped', (_name, popup) => {
-  expect(popup).toContain('**Title**');
-  expect(popup).toContain('Ctrl+S');
-  expect(popup).toContain('Ctrl+D');
-  expect(popup).toMatch(/Create with agent/);
-  expect(popup).toMatch(/Create directly/);
-  // The Conductor select can be CLEARED — the sentence must say so, because
-  // clearing it is what decides whether a run starts at the next poll.
-  expect(popup).toMatch(/Conductor[^.]*clear/i);
-});
-
-it.each([
-  ['README', readmePopup],
-  ['reference', referencePopup],
-])('BB-309 AC-10: the %s places the key hints INSIDE the frame', (_name, popup) => {
-  // The kernel appends the status line to the modal's `body`, and every body
-  // row is drawn as `│ … │` between `╭──╮` and `╰──╯`
-  // (`src/Kernel/tui-kernel.ts`). A reader told the hints sit below the frame
-  // looks for two rows that are not there — and loses the paragraph's own
-  // reason for existing, which is that the frame's at-most-60 inner columns are
-  // WHY the hint needs two rows.
-  expect(popup).toMatch(/inside the frame/);
-  expect(popup).not.toMatch(/below the frame/);
-});
-
-it.each([
-  ['README', readmePopup],
-  ['reference', referencePopup],
-])('BB-309 AC-10: the %s no longer claims Ctrl+S is THE create key', (_name, popup) => {
-  // The pre-BB-309 sentence read "`Ctrl+S` create · `Esc` cancel". It is the
-  // claim this ticket falsified: `Ctrl+S` presses the action row you stand on
-  // and means the agent from anywhere else. Its absence is asserted, not only
-  // the presence of the replacement, because a document can carry both.
-  expect(popup).not.toMatch(/`Ctrl\+S` create\b/);
-});
-
-it.each([
-  ['README', readmePopup],
-  ['reference', referencePopup],
-])('BB-309 AC-10: the %s documents the empty-title refusal', (_name, popup) => {
-  // `submitDirect()` refuses an empty title before the round trip, exactly as
-  // it refuses a missing project, and prints the message verbatim. Both
-  // documents hard-wrap prose, so whitespace is collapsed before matching.
-  expect(popup).toContain(
-    'title is required — type one, or hand it to the agent',
-  );
-  expect(popup.replace(/\s+/g, ' ')).toContain(
-    'no project selected — pick one above to create directly',
-  );
-});
-
-it.each([
-  ['README popup', readmePopup],
-  ['reference popup', referencePopup],
-  ['reference key-table row', referencePopupKeyRow],
-])('BB-309: the %s names Tab / Shift+Tab', (_name, text) => {
-  // `Form/keys.ts` binds `\t` forward and `\x1b[Z` back on every field kind, so
-  // a form's two navigation keys are documented where the form's keys are.
-  expect(text).toMatch(/`Tab`/);
-  expect(text).toMatch(/`Shift\+Tab`|`Shift-Tab`/);
 });
 
 it.each([
@@ -255,53 +155,6 @@ it.each([
   // both keys are field moves on a form with one field, i.e. inert.
   expect(note).toMatch(/\*\*Who picker\*\*[^.]*field moves/);
   expect(note).toMatch(/nowhere to move/);
-});
-
-it.each([
-  ['README', readmePopup],
-  ['reference', referencePopup],
-])('BB-309 F4: the %s states the frame width as a MAXIMUM, not a fixed 60', (_name, popup) => {
-  // `tui-kernel.ts:132` is `Math.min(60, width() - 8)` — 60 is the cap, and a
-  // narrow terminal gets less. The paragraph's point survives the correction:
-  // fewer columns is a stronger reason for the hint to need two rows.
-  expect(popup).not.toMatch(/fixed at 60 columns/);
-  expect(popup).toMatch(/at most 60 columns/);
-});
-
-it.each([
-  ['README', unwrap(readmePopup)],
-  ['reference', unwrap(referencePopup)],
-])("BB-309 D13: the %s says the Parent picker offers the project's OPEN tickets only", (_name, popup) => {
-  // `loadParentCandidates` sends `filter[closed]=0` on the create-form read
-  // (D13). Which tickets a picker OFFERS is the first thing an operator plans
-  // against — a document silent about it lets them look for a finished ticket
-  // that the field will never show. Both slices are unwrapped first: the two
-  // documents hard-wrap at different widths, so the claim is asserted as a
-  // sentence rather than as a line one document happens to break.
-  expect(popup).toMatch(
-    /only the project's \*\*open\*\* tickets|the project's \*\*open\*\* tickets only/,
-  );
-});
-
-it('BB-309 D11: the two copies agree on the popup', () => {
-  // D11 admitted the README copy on exactly this basis. Comparing the whole
-  // section would fail on the deliberate voice difference ("you" vs "the
-  // operator") and on link syntax, so what is compared is the load-bearing
-  // content: the drawn hint block, and every string the popup itself prints.
-  const hints = /```\n( ↑↓[^`]*?)```/;
-  const readmeHints = readmePopup.match(hints)?.[1];
-  const referenceHints = referencePopup.match(hints)?.[1];
-  expect(readmeHints).toBeTruthy();
-  expect(readmeHints).toBe(referenceHints);
-  for (const claim of [
-    '[ Create with agent ]',
-    '[ Create directly ]',
-    'bb_rich',
-    'title is required — type one, or hand it to the agent',
-  ]) {
-    expect(readmePopup).toContain(claim);
-    expect(referencePopup).toContain(claim);
-  }
 });
 
 it.each([
@@ -435,19 +288,13 @@ it.each([
 // BB-377 AC-4 — leftover operator docs still called Users "planned" and
 // windowed tickets on each entity's `created`. The TUI meta line already names
 // closed_date / created; both documents must match the shipped surface.
-const readmeFigures = unwrap(section(readme, '### Stats figures', /\n##+ /));
-const referenceFigures = unwrap(
-  section(reference, '## Stats figures', /\n##+ /),
-);
 const readmeKeys = section(readme, '## Screens & keys', /\n##+ /);
 const referenceKeys = section(reference, '## Keybindings', /\n##+ /);
-const readmeStatsKeyRow = section(readmeKeys, '| Stats |', /\n/);
-const referenceStatsKeyRow = section(referenceKeys, '| Stats |', /\n/);
 
 it.each([
   ['README', readmeNav],
   ['reference', referenceNav],
-])('the %s documents Members as a team tab', (_name, nav) => {
+])('the %s documents the Members tab', (_name, nav) => {
   expect(nav).toMatch(/\*\*Members\*\*/);
   expect(nav).not.toMatch(/Members[^*]*planned/i);
 });
@@ -455,89 +302,49 @@ it.each([
 it.each([
   ['README', readmeNavSection],
   ['reference', referenceNavSection],
-])('the %s documents the exact revision-3 seven-scope sitemap', (_name, nav) => {
-  expect(nav).toMatch(/^## Navigation [-—] seven scopes/);
-  expect(nav).toMatch(/Navigation has seven tab scopes/);
+])('the %s documents the exact five-scope sitemap', (_name, nav) => {
+  expect(nav).toMatch(/^## Navigation [-—] five scopes/);
+  expect(nav).toMatch(/Navigation has five tab scopes/);
   for (const [level, tabs] of [
     [
       'Root',
-      '**My work** · **Stats** · **Projects** · **Teams** · **Members** (workspace lead only) · **Conductors**',
+      '**My work** · **Projects** · **Members** (workspace lead only) · **Conductors**',
     ],
-    [
-      'Project',
-      '**Overview** · **Work** · **Stats** · **Tickets** · **Ticket-Agents** · **Runs** · **Conductors**',
-    ],
+    ['Project', '**Overview** · **Tickets** · **Runs** · **Conductors**'],
     [
       'Ticket',
       '**Overview** · **Planning** · **History** · **Runs**, plus enabled tabs such as **Artifacts**; a message addon is an Overview card',
     ],
-    ['Team', '**Overview** · **Work** · **Stats** · **Members**'],
-    ['Workspace member', '**Overview** · **Stats** · **Tickets** · **Runs**'],
-    ['Team member', '**Overview** · **Stats** · **Tickets** · **Runs**'],
+    ['Workspace member', '**Overview** · **Tickets** · **Runs**'],
   ]) {
     expect(section(nav, `| ${level} |`, /\n/)).toContain(tabs);
   }
   expect(nav).not.toMatch(/^\| User \|/m);
+  expect(nav).not.toMatch(/^\| Team( member)? \|/m);
+  expect(nav).not.toMatch(/\*\*Teams\*\*/);
   expect(nav).not.toMatch(/\*\*Dashboard\*\*/);
 });
 
 it.each([
-  ['README', readmeFigures],
-  ['reference', referenceFigures],
-])('BB-377 AC-4: the %s windows tickets on closed_date and runs on created', (_name, figures) => {
-  expect(figures).toMatch(/closed_date/);
-  expect(figures).toMatch(/runs[^.]*created|created[^.]*runs/i);
-  expect(figures).not.toMatch(/each entity'?s `created`/);
-  expect(figures).not.toMatch(/measured on each entity'?s `created`/);
-});
-
-it('the README documents server-owned member figure projection', () => {
-  expect(readmeFigures).toMatch(/Ratios arrive already calculated/i);
-  expect(readmeFigures).toMatch(/server-disclosed breakdown/i);
-});
-
-it.each([
-  ['README', readmeFigures],
-  ['reference', referenceFigures],
-])('the %s documents server-owned member figure projection', (_name, figures) => {
-  expect(figures).toMatch(/Stats figures/);
-  expect(figures).toMatch(/server-disclosed breakdown/i);
-  expect(figures).toMatch(/does not invent|not reinterpreted/i);
-});
-
-it('the README Stats key row contains no retired per-user activation', () => {
-  expect(readmeStatsKeyRow).not.toMatch(/open user|PER USER/i);
-});
-
-it('the reference Stats key row contains no retired per-user activation', () => {
-  expect(referenceStatsKeyRow).toMatch(/^\| Stats \|/);
-  expect(referenceStatsKeyRow).not.toMatch(/open user|PER USER/i);
+  ['README', readme],
+  ['reference', reference],
+])('the %s documents neither statistics nor ticket creation', (_name, doc) => {
+  expect(doc).not.toMatch(
+    /\*\*Stats\*\*|Stats figures|\/jsonapi\/bakers\/statistics/,
+  );
+  expect(doc).not.toMatch(/new-ticket popup|`n` new ticket/i);
 });
 
 it('the README key table makes member rosters navigable', () => {
-  const row = section(readmeKeys, '| Workspace/Team Members |', /\n/);
+  const row = section(readmeKeys, '| Workspace Members |', /\n/);
   expect(row).toMatch(/↑↓.*select|select/);
   expect(row).toMatch(/Enter.*open member/);
 });
 
-it('the reference key table makes contextual member rosters navigable', () => {
-  const row = section(referenceKeys, '| Workspace/Team Members |', /\n/);
+it('the reference key table makes member rosters navigable', () => {
+  const row = section(referenceKeys, '| Workspace Members |', /\n/);
   expect(row).toMatch(/↑↓.*select|select/);
   expect(row).toMatch(/Enter.*open member/);
-});
-
-it('the README documents contextual team-member navigation', () => {
-  expect(readmeNav).toMatch(/\*\*Team Members\*\* is a read-only OG roster/);
-  expect(readmeNav).toContain('Root → Teams → one team');
-  expect(readmeNav).toMatch(/Enter opens that person inside the selected team/);
-});
-
-it('the reference documents contextual team-member navigation', () => {
-  expect(referenceNav).toMatch(/\*\*Team Members\*\* is a read-only OG roster/);
-  expect(referenceNav).toContain('Root → Teams → one team');
-  expect(referenceNav).toMatch(
-    /Enter opens that person inside the selected team/,
-  );
 });
 
 it('the reference documents the project deep-link escape fallbacks', () => {

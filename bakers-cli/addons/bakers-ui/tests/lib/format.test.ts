@@ -17,12 +17,10 @@ import {
 //     lone ellipsis
 //
 // Each was a claim about a FIELD OF N DISPLAY COLUMNS, and there is no such
-// field any more: the dashboard's bars and the run table state their columns as
-// Yoga budgets, so the renderer places the value and nothing measures it
-// (`lib/vnode.ts`'s `Cell`). What survives of the claim survives structurally —
-// `tests/Component/stats-panel/index.test.ts` asserts that every row of a block
-// declares the same budgets, and the Bun suite asserts what those budgets are
-// worth on a real terminal (spec D8).
+// field any more: the run table states its columns as Yoga budgets, so the
+// renderer places the value and nothing measures it (`lib/vnode.ts`'s `Cell`).
+// The Bun suite asserts what those budgets are worth on a real terminal
+// (spec D8).
 
 // BB-236 entity-slice phase 0 — `humanizeAge` moved here from
 // `Deriver/liveness.ts`: it is a generic relative-time formatter with no conductor

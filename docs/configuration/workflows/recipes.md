@@ -11,12 +11,12 @@ A recipe brings one engineering method to `plan`, `working` and `review`. It add
 
 **You need:** a repository connected to bakers.build and its skills under `.claude/skills` or `.agents/skills`.
 
-1. **Describe it.** Create `.claude/skills/<namespace>/skills/bb-recipe-<method>/SKILL.md`. Qualification chooses from the description alone, so name the method, the ticket types it covers and when it fits. Add `Project default` to at most one installed recipe.
+1. **Describe it.** Create `.claude/skills/<namespace>/skills/bb-recipe-<method>/SKILL.md`. Name the method and the ticket types it covers. Qualification loads every installed recipe completely and chooses the one whose method fits the ask, so the sections below, not the description, carry what the method does.
 
    ```yaml
    ---
    name: bb-recipe-lean
-   description: Recipe for tickets of type feature or chore — a short plan, then test-first implementation and a code review. For small, well-specified work.
+   description: Recipe for tickets of type feature or chore — a short plan, then test-first implementation and a code review.
    ---
    ```
 

@@ -13,10 +13,10 @@ import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
 import type { TicketDetailDocument } from '../../../types.js';
 import { listRowIds, listTableRows, listTableTree } from '../../collection.js';
 import { TICKET_RUN_TABLE, ticketRunRows } from '../../run/Data/runs.js';
+import { isRunCancellable } from '../../run/Form/edit.js';
 import {
   handleTicketCopy,
   ticketCopyActions,
-  ticketEditAction,
   ticketHeaderTree,
   ticketTitleOf,
 } from '../Component/ticket-detail/index.js';
@@ -169,18 +169,32 @@ export class TicketRunsScreen extends AsyncScreen<TicketDetailDocument> {
       return this.select(view.selectable - 1, context);
     return false;
   }
+  /** The selected run, when it can still be edited (claimed or running). */
+  private editableRun(): { id: string } | undefined {
+    if (!this.document) return undefined;
+    const run = ticketRunRows(this.document)[this.cursor.index];
+    return run?.id && isRunCancellable(run.state) ? { id: run.id } : undefined;
+  }
   commandForInput(input: string): string | undefined {
-    return this.state === 'ready' && input === 'e'
-      ? 'edit-assignment'
+    return this.state === 'ready' && input === 'e' && this.editableRun()
+      ? 'edit-run'
       : undefined;
   }
   actionForInput(
     input: string,
     context: ScreenContext,
   ): ScreenAction | undefined {
-    return this.commandForInput(input) === 'edit-assignment'
-      ? ticketEditAction(context, this.document)
-      : undefined;
+    const run = this.editableRun();
+    if (this.commandForInput(input) !== 'edit-run' || !run) return undefined;
+    return {
+      type: 'navigate',
+      routeId: 'run.edit',
+      params: {
+        ticketId: this.document?.data?.id ?? context.params?.ticketId ?? '',
+        runId: run.id,
+      },
+      result: this.document,
+    };
   }
   receiveResult(result: unknown, context: ScreenContext): void {
     if (
@@ -190,19 +204,6 @@ export class TicketRunsScreen extends AsyncScreen<TicketDetailDocument> {
     ) {
       const document = (result as { document?: TicketDetailDocument }).document;
       if (document) this.replaceReady(saveTicket(context, document));
-      context.requestDraw();
-      return;
-    }
-    if (
-      result &&
-      typeof result === 'object' &&
-      (result as { type?: unknown }).type === 'ticket-assignment-updated'
-    ) {
-      const returned = result as {
-        document?: TicketDetailDocument;
-      };
-      if (returned.document)
-        this.replaceReady(saveTicket(context, returned.document));
       context.requestDraw();
     }
   }
@@ -233,7 +234,9 @@ export class TicketRunsScreen extends AsyncScreen<TicketDetailDocument> {
     const view = this.currentView(context);
     return [
       actionItem('detail-tab', 'Tab', 'section'),
-      actionItem('detail-edit', 'e', 'edit'),
+      ...(this.editableRun()
+        ? [actionItem('detail-edit', 'e', 'edit run')]
+        : []),
       ...ticketCopyActions(),
       actionItem(
         'detail-arrows',

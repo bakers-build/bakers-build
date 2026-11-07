@@ -1,15 +1,9 @@
 // BB-201 (was BB-194), BB-219: bootstrap builders for `bakers ui`. Pure
-// functions that turn the machine context (identity), the conductor registry
-// and the cwd into everything `runBbUi` needs. The CONNECTION itself is not
-// built here — `ui.ts` asks core's `loadBbConfig` for it, so this package
+// functions that turn the cwd into what `runBbUi` needs. The CONNECTION itself
+// is not built here — `ui.ts` asks core's `loadBbConfig` for it, so this package
 // holds no connection-precedence rule of its own (AC-6).
 import { dirname, resolve } from 'node:path';
-import {
-  findProjectBbDir,
-  homeBbDir,
-  type MachineContext,
-  shellQuote,
-} from '@bakers-build/core';
+import { findProjectBbDir, homeBbDir } from '@bakers-build/core';
 
 /**
  * The resolved control-plane connection passed to the renderer launcher.
@@ -30,21 +24,7 @@ export interface HomeConnection {
 // ONE default provider and nothing has to choose. AC2's grep over
 // `bakers-cli/*/src` is the guard, so the retired names are not spelled here.
 
-/**
- * Resolve the agent-launch command builder from the home config. Turns a TUI
- * prompt into the shell command herdr runs. Defaults to `claude` (an empty
- * prompt yields the bare launch command). A machine context may name a
- * different `agent_command` binary.
- */
-export function resolveAgentCommand(
-  machine: Partial<MachineContext> & { agent_command?: string },
-): (prompt: string) => string {
-  const bin = (machine.agent_command ?? '').trim() || 'claude';
-  return (prompt: string) =>
-    prompt.trim() === '' ? bin : `${bin} ${shellQuote(prompt)}`;
-}
-
-/** Where `bakers ui` roots the agents it launches, and which project they belong to. */
+/** Where `bakers ui` was started, and which project that is. */
 export interface ProjectRooting {
   cwd: string;
   /**
@@ -59,16 +39,16 @@ export interface ProjectRooting {
 }
 
 /**
- * Decide the agents' working directory (BB-219 AC-9).
+ * Decide the cockpit's working directory (BB-219 AC-9).
  *
  * The trigger is the **cwd**, deliberately not the winning connection config:
  * "which connection did we resolve" and "which project am I standing in" are
  * different questions, and binding them would let an explicit `--config`
- * silently relocate the agents' working directory.
+ * silently relocate the cockpit's working directory.
  *
  * Standing **in** a project (core's walk-up finds a `.bakers/` project dir that
  * is not the user's own `~/.bakers`), the cwd is that repo's **root**. Otherwise
- * the agents root at the home dir and the cockpit opens with no default group —
+ * it roots at the home dir and the cockpit opens with no default group —
  * an honest empty cockpit rather than a guess.
  *
  * The project name and this machine's conductor id used to come from a local

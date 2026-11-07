@@ -191,6 +191,9 @@ importers:
         specifier: ^2.7.0
         version: 2.9.0
     devDependencies:
+      '@bakers-build/addon-ports':
+        specifier: workspace:^
+        version: link:../ports
       '@bakers-build/core':
         specifier: workspace:^
         version: link:../../core
@@ -426,9 +429,9 @@ importers:
 
   addons/ports:
     dependencies:
-      '@bakers-build/addon-ddev':
+      '@bakers-build/addon-docker-compose':
         specifier: workspace:^
-        version: link:../ddev
+        version: link:../docker-compose
       commander:
         specifier: ^12.1.0
         version: 12.1.0
@@ -657,6 +660,9 @@ importers:
       '@bakers-build/addon-codex':
         specifier: workspace:^
         version: link:../addons/codex
+      '@bakers-build/addon-ddev':
+        specifier: workspace:^
+        version: link:../addons/ddev
       '@bakers-build/addon-deployment':
         specifier: workspace:^
         version: link:../addons/deployment
@@ -743,9 +749,6 @@ importers:
 
   ui:
     dependencies:
-      '@bakers-build/addon-herdr':
-        specifier: workspace:^
-        version: link:../addons/herdr
       '@bakers-build/addon-workspace':
         specifier: workspace:^
         version: link:../addons/workspace

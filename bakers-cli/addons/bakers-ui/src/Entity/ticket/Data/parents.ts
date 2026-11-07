@@ -8,7 +8,7 @@
 // screen's `/` search uses, and that reuse is the argument rather than a
 // convenience: it already implements the project filter plus the free-text
 // search, so the parent picker cannot drift from the ticket list. How WIDE the
-// search matches is the caller's choice (`match`): the create form keeps the
+// search matches is the caller's choice (`match`): the edit form keeps the
 // builder's server-resolved identifier+title search (BB-257 S5), while the parent FILTER
 // picker matches by identifier only — the operator knows `BB-273`, not the
 // title (BB-284, PM steer during coding) — and asks for tickets WITH
@@ -61,15 +61,15 @@ const toCandidate = (item: JsonApiResource): ParentCandidate => {
  * One project's tickets matching `query`, as parent candidates.
  *
  * `match` picks how wide `query` matches: `'identifier+title'` (the default,
- * the create form's behaviour — BB-257 S5) is the builder's free-text OR
+ * the edit form's Parent field — BB-257 S5) is the builder's free-text OR
  * group; `'identifier'` (the parent FILTER picker — BB-284, PM steer) is a
  * top-level `identifier CONTAINS` added after the builder, because the
  * operator filtering a list knows the identifier, not the title. The
  * identifier path also carries `filter[has_children]=1` (BB-300 D1): the
  * picker offers only tickets that HAVE children, answered server-side by
- * bb_core's HasChildrenFilterSubscriber; the create form emits no such
+ * bb_core's HasChildrenFilterSubscriber; the edit form emits no such
  * filter, because a ticket must be fileable under a childless parent. The
- * `closed` filter runs the other way round (BB-309 D13): the create form
+ * `closed` filter runs the other way round (BB-309 D13): the edit form
  * offers OPEN tickets only, the filter picker sends no `closed` filter at all.
  *
  * Yields the OUTCOME rather than a swallowed array, so the adapter can record a
@@ -88,12 +88,11 @@ export async function loadParentCandidates(
       query: match === 'identifier' ? '' : query,
       state: null,
       // BB-309 D13 — the two callers answer different questions, so they
-      // filter differently. The CREATE FORM offers OPEN tickets only
-      // (`filter[closed]=0`): filing new work under a parent that is already
+      // filter differently. The EDIT FORM offers OPEN tickets only
+      // (`filter[closed]=0`): filing work under a parent that is already
       // finished is not a case the form should present. That reverses the
       // rationale this line carried until BB-309 ("the parent picker must
-      // still find a closed ticket to attach a follow-up to", BB-257 D6) —
-      // reversed by the human during `coding`, for the create form ALONE.
+      // still find a closed ticket to attach a follow-up to", BB-257 D6).
       // The parent FILTER picker keeps `null`, i.e. no `closed` filter at all:
       // narrowing a ticket list by a parent that has since been closed is
       // legitimate, and its children may well still be open.
@@ -120,7 +119,7 @@ export async function loadParentCandidates(
   // BB-300 D1 — the parent FILTER picker offers only tickets that have
   // children; the server rewrites this param into a stock id IN (…) filter
   // (bb_core's HasChildrenFilterSubscriber), so paging stays honest. The
-  // create form (identifier+title) deliberately emits NO such filter: it must
+  // edit form (identifier+title) deliberately emits NO such filter: it must
   // be able to file a ticket under a childless parent.
   if (match === 'identifier') params.addFilter('has_children', '1');
   // Narrowed AFTER the shared builder rather than inside it: the builder serves

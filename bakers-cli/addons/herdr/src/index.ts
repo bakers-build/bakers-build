@@ -34,20 +34,8 @@ import { AGENT_SHELL_ENV, envArgs } from './panes.js';
 import { deriveHerdrRoot } from './root-anchor.js';
 import { parseWorkspaceList } from './workspace-list.js';
 
-export type {
-  AgentLaunchHost,
-  AgentLaunchHostProvider,
-  HostedAgent,
-} from './agent-host.js';
-export { herdrAgentHost } from './agents.js';
 export type { HerdrExec } from './pane-layout.js';
-export {
-  envArgs,
-  findTabIdByLabel,
-  parsePaneInfo,
-  parsePanesInTab,
-  parseTabCreate,
-} from './panes.js';
+export { envArgs } from './panes.js';
 // BB-139: the herdr workspace lives in the same package now (the separate
 // @bakers-build/addon-herdr-workspace was merged in). The package DEFAULT export
 // stays the executor (below); herdrWorkspace + HerdrWorkspace are named exports.

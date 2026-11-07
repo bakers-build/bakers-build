@@ -114,7 +114,7 @@ describe('wrapToWidth', () => {
 });
 
 // BB-257 D1, whitespace fidelity — "so no character is ever lost" is not
-// satisfied by keeping every WORD. What the create popup wraps is what the
+// satisfied by keeping every WORD. What the edit popup wraps is what the
 // writer is typing, and a bakers.build description is Markdown (`bb_rich`): an
 // indented list item and a deliberate double space are content. Collapsing them
 // re-creates, inside the wrap, the very defect AC-1 exists to remove — the

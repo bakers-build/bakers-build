@@ -493,13 +493,13 @@ describe('reconcileCloudflare', () => {
   });
 
   it('a direct container origin leaves the ingress rule unchanged', async () => {
-    const ddevWeb: TunnelDesiredRecord = {
+    const containerWeb: TunnelDesiredRecord = {
       worktree: '/wt/a',
       ticket: 'a-1',
       key: 'web',
       hostname: 'a-1-web.preview.example',
       service: 'https://127.0.0.1:443',
-      hostHeader: 'a-1.ddev.site',
+      hostHeader: 'a-1.local.test',
       insecureTls: true,
       desired: 'present',
       applied: 'pending',
@@ -515,13 +515,13 @@ describe('reconcileCloudflare', () => {
       return world.uploads[0]!.ingress;
     };
     const withDirect = await ingressFor({
-      ...ddevWeb,
+      ...containerWeb,
       direct: 'http://172.18.0.19:80',
     });
-    expect(withDirect).toEqual(await ingressFor(ddevWeb));
+    expect(withDirect).toEqual(await ingressFor(containerWeb));
     expect(withDirect[0]).toMatchObject({
       service: 'https://127.0.0.1:443',
-      originRequest: { httpHostHeader: 'a-1.ddev.site', noTLSVerify: true },
+      originRequest: { httpHostHeader: 'a-1.local.test', noTLSVerify: true },
     });
   });
 
