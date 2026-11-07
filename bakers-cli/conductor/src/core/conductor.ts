@@ -265,8 +265,6 @@ export class Conductor {
 
   /** The local MCP server for addon tools; only the serve process runs one. */
   private toolServer: ToolServer | undefined;
-  /** The live run token per run UUID, revoked when the run is finalised. */
-  private readonly runTokens = new Map<string, string>();
 
   /** Serializes git worktree add/remove: parallel ones fight over git locks. */
   private gitLock: Promise<unknown> = Promise.resolve();
@@ -361,11 +359,23 @@ export class Conductor {
   async startTools(endpointFile?: string): Promise<void> {
     const { siteTools } = this.remote;
     if ((!this.config.tools && !siteTools) || this.toolServer) return;
+    // Runs closed while no server ran (`oven once`, a crash) lose their grant here.
+    const openRuns = await this.remote.fetchActiveRuns(this.id).then(
+      (runs) => runs.map((r) => r.runUuid),
+      (err: unknown) => {
+        this.logger.warn(
+          { err: String(err) },
+          'active runs unreadable, keeping every persisted run grant',
+        );
+        return undefined;
+      },
+    );
     this.toolServer = await startToolServer({
       registry: this.config.tools ?? (await loadTools([])),
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
+      ...(openRuns ? { openRuns } : {}),
       ...(siteTools ? { siteTools } : {}),
     });
     this.logger.info(
@@ -380,7 +390,6 @@ export class Conductor {
     await this.config.provisioning?.stop();
     await this.remote.siteTools?.close();
     this.toolServer = undefined;
-    this.runTokens.clear();
   }
 
   /** A fresh token for this run's worktree; a re-dispatch replaces the old one. */
@@ -389,16 +398,20 @@ export class Conductor {
     binding: ToolBinding,
   ): { url: string; token: string } | undefined {
     if (!this.toolServer) return undefined;
-    this.revokeRunTools(runUuid);
-    const token = this.toolServer.issueRunToken(binding);
-    this.runTokens.set(runUuid, token);
+    const token = this.toolServer.issueRunToken(runUuid, binding);
     return { url: this.toolServer.url, token };
   }
 
+  /** Never throws: a failed state write leaves the grant on disk, and the next start prunes it. */
   private revokeRunTools(runUuid: string): void {
-    const token = this.runTokens.get(runUuid);
-    if (token) this.toolServer?.revokeRunToken(token);
-    this.runTokens.delete(runUuid);
+    try {
+      this.toolServer?.revokeRunToken(runUuid);
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, err: String(err) },
+        'run tool revoke failed',
+      );
+    }
   }
 
   async start() {
@@ -631,8 +644,9 @@ export class Conductor {
         r.runLogStorageAllowed === true && (this.config.capture_logs ?? true)
           ? captured.log
           : '';
-      await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
+      // Revoke before the durable close: a crash between the two must not leave a closed run's grant.
       this.revokeRunTools(r.runUuid);
+      await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
       this.logger.info(
         { run: r.runUuid, state: r.state, footprint: captured.metrics },
         'run finalised',
