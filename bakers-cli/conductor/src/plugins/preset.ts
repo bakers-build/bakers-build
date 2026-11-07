@@ -25,7 +25,6 @@ import type {
   RemotePlugin,
   WorkspacePlugin,
 } from './plugins.js';
-import type { HerdrHost } from './process-host.js';
 import type { Ticket } from './remote.js';
 import type { AddonTools, DiscoveredTools } from './tools.js';
 
@@ -42,8 +41,6 @@ export interface ConductorContributions {
   agents: AgentCandidate[];
   /** Lifecycle hook listeners, in accumulator order (BB-599). */
   hooks: HookListener[];
-  /** Conductor process hosts (last wins). */
-  processHosts: HerdrHost[];
   /** Addon `inbox` exports with their package name and version (contract 2, BB-661). */
   addonInbox: DiscoveredInbox[];
   /** Addon `tools` exports with their package name and version. */
@@ -94,10 +91,6 @@ export interface Preset<O = unknown> extends BbPreset<O> {
     acc: HookListener[],
     opts: O,
   ) => HookListener[] | Promise<HookListener[]>;
-  processHosts?: (
-    acc: HerdrHost[],
-    opts: O,
-  ) => HerdrHost[] | Promise<HerdrHost[]>;
   /** Addon inbox messages: contract 2, BB-661. */
   inbox?: InboxMessages;
   /** Agent tools served through the conductor's MCP server. */
@@ -119,7 +112,6 @@ export function narrowConductorContributions(
     | 'workspaces'
     | 'agents'
     | 'hooks'
-    | 'processHosts'
     | 'addonInbox'
     | 'addonTools'
   >,

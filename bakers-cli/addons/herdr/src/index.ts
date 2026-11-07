@@ -48,7 +48,6 @@ export { envArgs } from './panes.js';
 // BB-139: the herdr workspace lives in the same package now (the separate
 // @bakers-build/addon-herdr-workspace was merged in). The package DEFAULT export
 // stays the executor (below); herdrWorkspace + HerdrWorkspace are named exports.
-export { herdrProcessHost } from './process-host.js';
 export {
   HerdrWorkspace,
   type HerdrWorkspaceOptions,

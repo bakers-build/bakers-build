@@ -38,7 +38,6 @@ import {
   type ConductorContributions,
   narrowConductorContributions,
 } from './plugins/preset.js';
-import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
 import { loadTools, provisionRuns, provisionTools } from './plugins/tools.js';
 import type { ConductorEngineConfig, ConductorFileConfig } from './types.js';
@@ -235,17 +234,6 @@ function validateHookListeners(value: unknown): HookListener[] {
       throw new Error(`hooks[${index}].id must be a string`);
   }
   return value as HookListener[];
-}
-
-function validateProcessHost(value: unknown): HerdrHost | undefined {
-  if (!Array.isArray(value) || value.length === 0) return undefined;
-  const host = value[value.length - 1];
-  if (!isRecord(host) || typeof host.spawn !== 'function') {
-    throw new Error(
-      'conductor addons[] processHosts must accumulate a host with spawn()',
-    );
-  }
-  return host as unknown as HerdrHost;
 }
 
 function requirePlugin<T>(value: unknown, kind: string): T {
@@ -582,36 +570,6 @@ export async function loadConductorConfig(
     discovered.addonInbox,
     new Set(tools?.list().map((t) => t.name)),
   );
-  // Explicit executor/workspace descriptors still load those slots, but they
-  // skip addons[] discovery — so a pre-BB-215 config never contributes a
-  // process host unless we load that package's processHosts accumulator too.
-  let processHost = validateProcessHost(discovered.processHosts);
-  if (processHost === undefined) {
-    const slotPlugins = [
-      ...new Set(
-        [config.executor, config.workspace]
-          .filter(isPluginDescriptor)
-          .map((entry) => entry.plugin),
-      ),
-    ];
-    for (const spec of slotPlugins) {
-      // A descriptor may be a plain factory file (`./fixture.js`), not an
-      // addon preset. Slot resolution owns that error; skip a host we cannot
-      // discover and keep looking at the other slot.
-      try {
-        const found = validateProcessHost(
-          narrowConductorContributions(
-            await discoverAddons([spec], 'conductor', addonBases, {
-              only: ['processHosts'],
-            }),
-          ).processHosts,
-        );
-        if (found !== undefined) processHost = found;
-      } catch {
-        // no process host from this descriptor
-      }
-    }
-  }
 
   const remote =
     config.remote !== undefined
@@ -831,7 +789,6 @@ export async function loadConductorConfig(
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),
     ...(tools !== undefined ? { tools } : {}),
     ...(config.hooks?.provision_up !== undefined ? { provisioning } : {}),
-    ...(processHost !== undefined ? { processHost } : {}),
     bakers,
     ...identityOf(machineCtx, project, variant),
     variant,

@@ -43,7 +43,7 @@ BB_LOG_LEVEL=debug bakers oven once
 
 ### start
 
-By default `start` launches the loop in a herdr pane (handle `bakers-conductor:<id>`) and waits until the control plane shows a fresh heartbeat from the new process. It ends with exactly one of three outcomes: **started** (naming the pid and host), **already running** (the live pid and the age of its heartbeat) or **failed** (the reason, with a non-zero exit status). On a host without herdr, run `bakers oven start --foreground` under a service manager such as systemd or Docker.
+By default `start` launches the loop as a detached background process: it has its own session and no terminal, so closing the starting shell does not end it, and its output goes to `.bakers/log.txt` in the checkout. `start` then waits until the control plane shows a fresh heartbeat from the new process. It ends with exactly one of three outcomes: **started** (naming the pid and host), **already running** (the live pid and the age of its heartbeat) or **failed** (the reason and the log file, with a non-zero exit status). The detached process does not survive a logout that ends all user processes or a reboot; for that, run `bakers oven start --foreground` under a service manager such as systemd or Docker.
 
 - `--foreground` runs the loop in this process instead. It refuses to start while a verified live conductor already serves the checkout. Every foreground start, and every CI or non-TTY start, prints an update notice only and never prompts.
 - `--no-update-check` skips the lookup, cache, prompt and notice; the version banner still prints.

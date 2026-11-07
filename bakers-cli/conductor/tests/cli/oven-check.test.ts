@@ -16,8 +16,8 @@ import type {
 } from '@bakers-build/conductor/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  type BbCliDeps,
   buildConductorProgram,
-  type HerdrHost,
 } from '../../src/commands/conductor.js';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 
@@ -100,26 +100,26 @@ describe('bakers oven check / start sandbox report', () => {
   });
 
   it('start warns about the sandbox and still launches the conductor', async () => {
-    const herdr = fakeHerdr();
+    const spawner = fakeSpawn();
     await run(
       ['start', '--no-update-check'],
       [agent('claude', MISSING)],
-      herdr,
+      spawner,
     );
     expect(out).toContain(`warning: ${LINE}`);
-    expect(herdr.spawned).toHaveLength(1);
+    expect(spawner.spawned).toHaveLength(1);
   });
 
   async function run(
     argv: string[],
     agents: ResolvedAgent[],
-    herdr = fakeHerdr(),
+    spawner = fakeSpawn(),
   ): Promise<void> {
     await buildConductorProgram({
       remote: new FakeBbRemote(),
       config: makeConfig(),
       agents,
-      herdr,
+      spawnConductor: spawner,
       sleep: async () => {},
       startPollIntervalMs: 0,
       startPollAttempts: 1,
@@ -146,12 +146,13 @@ describe('bakers oven check / start sandbox report', () => {
   }
 });
 
-function fakeHerdr(): HerdrHost & { spawned: string[][] } {
+function fakeSpawn(): NonNullable<BbCliDeps['spawnConductor']> & {
+  spawned: string[][];
+} {
   const spawned: string[][] = [];
-  return {
-    spawned,
-    async spawn(handle: string, cwd: string, cmd: string) {
-      spawned.push([handle, cwd, cmd]);
-    },
-  } as HerdrHost & { spawned: string[][] };
+  const spawn = async (req: { argv: string[] }) => {
+    spawned.push(req.argv);
+    return { pid: 9999, exited: new Promise<number | null>(() => {}) };
+  };
+  return Object.assign(spawn, { spawned });
 }

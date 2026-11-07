@@ -25,7 +25,7 @@ A conductor starts without a `WORKFLOW.md`, but then logs a warning and dispatch
 
 | Command | What it does |
 |---|---|
-| `bakers oven start` | Hands the loop to herdr, waits for the first fresh heartbeat and prints the conductor id, pid and host. |
+| `bakers oven start` | Starts the loop as a detached background process that logs to `.bakers/log.txt`, waits for the first fresh heartbeat and prints the conductor id, pid and host. |
 | `bakers oven status` | One line for this checkout's conductor. |
 | `bakers oven ls` | One line for every conductor you own on the control plane, on any machine. |
 | `bakers oven stop` | Sends `SIGTERM`; the process POSTs its own `/offline` lifecycle operation on the way out. |
@@ -39,7 +39,7 @@ bakers oven status
 bakers oven stop
 ```
 
-`start` accepts `--foreground` (run the loop in this process, for a service unit or debugging), `--no-update-check` (skip the daily notice about a newer `@bakers-build/bakers`) and `--force` (stop the running conductor with `SIGTERM`, then `SIGKILL` after a grace period, and start a new one; it fails instead of starting a second conductor when the old one cannot be verified or stopped). `--foreground` moves only the loop: worker sessions still need herdr. Without `--force`, a conductor that is already alive prints `already running` and exits.
+`start` accepts `--foreground` (run the loop in this process, for a service unit or debugging), `--no-update-check` (skip the daily notice about a newer `@bakers-build/bakers`) and `--force` (stop the running conductor with `SIGTERM`, then `SIGKILL` after a grace period, and start a new one; it fails instead of starting a second conductor when the old one cannot be verified or stopped). Neither mode needs herdr to start the conductor; agent runs still open in herdr panes when the herdr executor is configured. Without `--force`, a conductor that is already alive prints `already running` and exits.
 
 `stop --now` sends `SIGKILL` instead. A killed process cannot write `offline`, so the status changes when its lease expires. Stop signals the process itself, so run it on the host where the conductor runs; other hosts refuse. Runs already started keep going in their own herdr tabs. The control plane that protects server-maintained conductor fields needs this CLI: older generic status PATCH callers fail.
 
@@ -123,7 +123,7 @@ BB_CONDUCTOR=intra bakers oven status
 
 With no selector, `conductor.config.js` is the default; otherwise a lone config is used; otherwise the command fails and lists the stems. `--conductor conductor` names the default explicitly. `BB_CONDUCTOR_CONFIG` may name an exact file instead.
 
-Each config is its own variant (its stem), so each is a separate conductor with its own claims, and `bakers oven ls` lists all of them. When a herdr-hosted conductor starts, it carries its selector along, so it keeps the config you chose.
+Each config is its own variant (its stem), so each is a separate conductor with its own claims, and `bakers oven ls` lists all of them. When a detached conductor starts, it carries its selector along, so it keeps the config you chose.
 
 ## Run a conductor for a team
 
@@ -131,7 +131,7 @@ A team host provides execution capacity so project managers need no conductor of
 
 1. Prepare the host: herdr with a running session, the agent harnesses, repository access, and a machine file from `bakers init` (its own `machine_id`, a UUID for a new machine, and `label`) ([Machines](/configuration/machine)); after its first start, set the machine's run budget in the backend to fit the hardware.
 2. Give the host a service identity: a connection with the `client_credentials` profile and a secret kept in an environment variable ([Connections](/configuration/connector/connections)). The identity needs workspace and project access.
-3. Clone each project on the host, commit its `.bakers/conductor.config.js`, and start one conductor per checkout with `bakers oven start`. Under a service manager, run `bakers oven start --foreground` with herdr already running.
+3. Clone each project on the host, commit its `.bakers/conductor.config.js`, and start one conductor per checkout with `bakers oven start`. Under a service manager, run `bakers oven start --foreground`; start herdr first when its executor runs the agent sessions.
 4. Check `bakers oven ls` from any machine, assign a small ticket to the conductor and confirm a run appears.
 
 If a ticket is not picked up, check its conductor, state and blockers, and the conductor's liveness.

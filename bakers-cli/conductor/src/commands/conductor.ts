@@ -8,6 +8,7 @@ import {
   type ConductorLiveness,
   type ConductorLogger,
   checkForUpdate,
+  configHomeOf,
   createBbConnectionClient,
   createLogger,
   declineUpdate,
@@ -39,7 +40,6 @@ import {
   selectRemote,
   selectWorkspace,
 } from '../plugins/plugins.js';
-import type { HerdrHost } from '../plugins/process-host.js';
 import type {
   BbRemote,
   ConductorRegistration,
@@ -48,10 +48,13 @@ import type {
 } from '../plugins/remote.js';
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
 import type { BbWorkspace } from '../plugins/workspace.js';
+import {
+  type DetachedChild,
+  type DetachedSpawnRequest,
+  spawnDetachedConductor,
+} from '../process/detached-spawn.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ovenTools } from './oven-tools.js';
-
-export type { HerdrHost };
 
 // BB-201: the `conductor` command PLUGIN. `bakers` is now a thin host
 // (`@bakers-build/bakers`) that dynamically mounts this package's command plugin under
@@ -77,11 +80,10 @@ export interface BbCliDeps {
   /** Host contract (resolveBases); default: this install + cwd. */
   host?: BbCommandHost;
   /**
-   * The process host behind `start`. Defaults to the host contributed by a
-   * conductor addon (`processHosts`, last wins). A test MUST inject a fake,
-   * or the suite creates real workspaces + real conductor processes.
+   * The detached spawn behind `start`. Defaults to `spawnDetachedConductor`;
+   * a test MUST inject a fake, or the suite starts real conductor processes.
    */
-  herdr?: HerdrHost;
+  spawnConductor?: (req: DetachedSpawnRequest) => Promise<DetachedChild>;
   /**
    * BB-232: the pid probe behind `stop`. Defaults to the real /proc reader —
    * a test MUST inject a fake, or the suite signals real processes.
@@ -229,16 +231,6 @@ function loggerFor(checkoutRoot: string, log: LogOpts = {}): ConductorLogger {
   const logger = createLogger({ checkoutRoot, ...log });
   setDefaultCommandRunner(new CommandRunner(logger));
   return logger;
-}
-
-function herdrHostOf(deps: BbCliDeps, config: ConductorFileConfig): HerdrHost {
-  const host = deps.herdr ?? config.processHost;
-  if (!host) {
-    throw new Error(
-      'no herdr process host — add @bakers-build/addon-herdr to conductor addons, or run `bakers oven start --foreground`',
-    );
-  }
-  return host;
 }
 
 // --- ls/status liveness -----------------------------------------------------
@@ -628,7 +620,7 @@ export interface TakeoverChoice {
  * A terminal asks whether to take it over (or which, when there are several);
  * any other answer than a choice or no cancels. Without one the start stops with
  * the control plane's own `--adopt`/`--new` hint. After this the id is known,
- * so no later start (nor the herdr child, which has no terminal) asks again.
+ * so no later start (nor the detached child, which has no terminal) asks again.
  * Returns false when the start must stop.
  */
 async function settleTakeover(
@@ -1010,7 +1002,7 @@ async function cmdStartBody(
     console.log(`stopped conductor ${id} for restart (--force)`);
   }
 
-  // The herdr child has no terminal, so a takeover is settled here first.
+  // The detached child has no terminal, so a takeover is settled here first.
   if (
     !existing &&
     !(await settleTakeover(
@@ -1021,58 +1013,57 @@ async function cmdStartBody(
     ))
   )
     return;
-  const handle = `bakers-conductor:${id}`;
 
-  const fgFlags = [
-    log.level ? `--log-level ${log.level}` : '',
-    log.sink ? `--log-sink ${log.sink}` : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
-  // BB-477: a herdr pane is a child of the herdr server, not of this
-  // process, so it inherits the server's environment rather than the
-  // BB_CONDUCTOR this process resolved. Carry the selector on the command
-  // string itself, derived the same way the conductor reports its own
-  // `conductor_name`, so the pane cannot re-resolve to a different config.
+  // BB-477: carry the selector on the child's own argv, derived the same way
+  // the conductor reports its `conductor_name`, so it cannot re-resolve to a
+  // different config.
   const stem = stemForConfigFile(basename(config.config_path));
-  const selectorFlag =
-    stem && stem !== 'conductor' ? `--conductor ${stem} ` : '';
-  const fgCmd =
-    `BB_CONDUCTOR_LOG=file bakers ${selectorFlag}oven ${fgFlags} start --foreground --no-update-check`.replace(
-      /\s+/g,
-      ' ',
-    );
+  const argv = [
+    process.execPath,
+    process.argv[1] as string, // the running bakers entry script
+    ...(stem && stem !== 'conductor' ? ['--conductor', stem] : []),
+    'oven',
+    ...(log.level ? ['--log-level', log.level] : []),
+    ...(log.sink ? ['--log-sink', log.sink] : []),
+    'start',
+    '--foreground',
+    '--no-update-check',
+  ];
+  const logPath = join(configHomeOf(checkoutRoot), 'log.txt');
+  let child: DetachedChild;
   try {
-    await herdrHostOf(deps, config).spawn(handle, checkoutRoot, fgCmd);
-    logger.info({ id, handle }, 'started conductor via herdr');
+    child = await (deps.spawnConductor ?? spawnDetachedConductor)({
+      argv,
+      cwd: checkoutRoot,
+      env: { ...process.env, BB_CONDUCTOR_LOG: 'file' },
+      logPath,
+    });
+    logger.info({ id, pid: child.pid }, 'started conductor detached');
   } catch (err) {
-    logger.error(
-      { id, err: (err as Error).message },
-      'could not start via herdr',
-    );
-    logger.warn(
-      {},
-      'Hint: run `bakers oven start --foreground` under a service manager (systemd-user / docker) on hosts without herdr.',
-    );
     console.log(
-      `failed to start conductor ${id}: could not launch via herdr — ${(err as Error).message}`,
+      `failed to start conductor ${id}: could not spawn — ${(err as Error).message} — see ${logPath}`,
     );
     process.exitCode = 1;
     return;
   }
 
-  const started = await waitForFreshHeartbeat(
-    remote,
-    id,
-    priorPid,
-    priorLastSeen,
-    deps,
-  );
+  const outcome = await Promise.race([
+    child.exited.then((code) => ({ code })),
+    waitForFreshHeartbeat(remote, id, priorPid, priorLastSeen, deps).then(
+      (row) => ({ row }),
+    ),
+  ]);
+  if ('code' in outcome) {
+    console.log(
+      `failed to start conductor ${id}: exited with code ${outcome.code} before its first heartbeat — see ${logPath}`,
+    );
+    process.exitCode = 1;
+    return;
+  }
+  const started = outcome.row;
   if (!started) {
     console.log(
-      `failed to start conductor ${id}: spawned, but no fresh heartbeat arrived — ` +
-        'the herdr pane closes when the conductor exits, so a missing bakers on PATH or a crash before logging leaves no file; ' +
-        'check the conductor registered (a refused registration never heartbeats) and its own log',
+      `failed to start conductor ${id}: spawned, but no fresh heartbeat arrived — see ${logPath}`,
     );
     process.exitCode = 1;
     return;
@@ -1228,7 +1219,7 @@ Examples:
 
   conductor
     .command('start')
-    .description('start the conductor loop (herdr-hosted by default)')
+    .description('start the conductor loop (a detached background process by default)')
     .option('--foreground', 'run the loop in this process', false)
     .option('--no-update-check', 'skip the daily CLI update check')
     .option(

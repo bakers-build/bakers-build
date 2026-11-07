@@ -70,4 +70,4 @@ This example assumes a project already chose herdr and a Docker-based runtime. O
 
 **Done when:** all checks succeed, the online check has no findings and `bakers info` lists a workspace. Continue with [project setup](/get-started/connect-a-project) on this server. If the checkout is already configured, go to [your first ticket](/get-started/first-ticket).
 
-After reboot, a service manager must start `herdr server` as the worker user before `bakers oven start --foreground`; bakers.build ships no service unit.
+After reboot, nothing restarts by itself: a service manager must start `herdr server` as the worker user, because agent runs open in its panes, and `bakers oven start --foreground` for each conductor; bakers.build ships no service unit.

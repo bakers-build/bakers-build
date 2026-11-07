@@ -36,10 +36,10 @@ import {
 } from 'vitest';
 import {
   type BbCliDeps,
-  type HerdrHost,
   runConductorCli,
 } from '../../src/commands/conductor.js';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
+import type { DetachedSpawnRequest } from '../../src/process/detached-spawn.js';
 
 vi.mock('dropsh', async (orig) => {
   const actual = await orig<typeof import('dropsh')>();
@@ -57,6 +57,7 @@ const originalLog = process.env.BB_CONDUCTOR_LOG;
 // process, not to this fixture.
 const CHECKOUT = mkdtempSync(join(tmpdir(), 'bakers-cli-test-checkout-'));
 execSync('git init --quiet', { cwd: CHECKOUT });
+const LOG_PATH = join(CHECKOUT, '.bakers', 'log.txt');
 
 afterAll(() => {
   rmSync(CHECKOUT, { recursive: true, force: true });
@@ -96,19 +97,27 @@ const hermeticFetch = (async () =>
   new Response('offline', { status: 503 })) as unknown as typeof fetch;
 
 /**
- * BB-222: the herdr seam, recorded instead of executed. Before this existed,
- * `cmdStart` shelled out to the real `herdr` binary, so every test invoking
- * `conductor start` created a real workspace labelled
- * `bakers-conductor:test-machine` on the developer's machine — and its pane ran a
- * real `bakers oven start --foreground` against the real `.bakers` config.
- * Every deps bundle injects this, so the suite is hermetic by default.
+ * The detached-spawn seam, recorded instead of executed: a test that reached
+ * the real spawn would start a real `bakers oven start --foreground` against
+ * the real `.bakers` config. Every deps bundle injects this, so the suite is
+ * hermetic by default. The child never exits unless a test says so.
  */
-class FakeHerdrHost implements HerdrHost {
-  readonly spawned: Array<{ label: string; cwd: string; cmd: string }> = [];
+type FakeSpawn = NonNullable<BbCliDeps['spawnConductor']> & {
+  spawned: DetachedSpawnRequest[];
+};
 
-  async spawn(label: string, cwd: string, cmd: string): Promise<void> {
-    this.spawned.push({ label, cwd, cmd });
-  }
+function fakeSpawn(
+  opts: { pid?: number; exited?: Promise<number | null> } = {},
+): FakeSpawn {
+  const spawned: DetachedSpawnRequest[] = [];
+  const fake = async (req: DetachedSpawnRequest) => {
+    spawned.push(req);
+    return {
+      pid: opts.pid ?? 9999,
+      exited: opts.exited ?? new Promise<number | null>(() => {}),
+    };
+  };
+  return Object.assign(fake, { spawned });
 }
 
 function makeDeps(
@@ -121,7 +130,7 @@ function makeDeps(
     workspace: new FakeWorkspace(),
     config: makeConfig(),
     fetch: hermeticFetch,
-    herdr: new FakeHerdrHost(),
+    spawnConductor: fakeSpawn(),
     // BB-450 D9: `start` polls for a fresh heartbeat after spawning. A test
     // that does not care about that outcome still must not wait on a real
     // timer — one fast attempt against the default fake remote (which reports
@@ -184,7 +193,7 @@ describe('bakers oven once', () => {
   });
 });
 
-describe('bakers oven start (herdr path)', () => {
+describe('bakers oven start (detached path)', () => {
   // BB-450 AC-12/AC-13: `start` reports exactly one of three outcomes on
   // stdout — started / already running / failed — rather than the bare
   // `conductor already running for <project>` this superseded, and `failed`
@@ -205,7 +214,7 @@ describe('bakers oven start (herdr path)', () => {
       lines.some(
         (l) =>
           l.includes('spawned, but no fresh heartbeat arrived') &&
-          l.includes('pane closes when the conductor exits'),
+          l.includes(LOG_PATH),
       ),
     ).toBe(true);
     expect(process.exitCode).toBe(1);
@@ -240,11 +249,14 @@ describe('bakers oven start (herdr path)', () => {
       id: 'test-machine',
       alreadyRunning: true,
     });
-    const herdr = new FakeHerdrHost();
+    const spawnConductor = fakeSpawn();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
     try {
-      await runConductorCli(['oven', 'start'], makeDeps({}, { remote, herdr }));
+      await runConductorCli(
+        ['oven', 'start'],
+        makeDeps({}, { remote, spawnConductor }),
+      );
     } finally {
       lines = logSpy.mock.calls.map((c) => String(c[0]));
       logSpy.mockRestore();
@@ -257,7 +269,7 @@ describe('bakers oven start (herdr path)', () => {
           l.includes('heartbeat'),
       ),
     ).toBe(true);
-    expect(herdr.spawned).toHaveLength(0);
+    expect(spawnConductor.spawned).toHaveLength(0);
     expect(process.exitCode).toBeUndefined();
   });
 });
@@ -347,7 +359,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
         }),
       ],
     ]);
-    const herdr = new FakeHerdrHost();
+    const spawnConductor = fakeSpawn();
     // Dies on the first signal it receives (SIGTERM) — the ordinary graceful case.
     const probe = fakeProcProbe(4242, { diesOn: 'SIGTERM' });
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -359,7 +371,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
           {},
           {
             remote,
-            herdr,
+            spawnConductor,
             procProbe: probe,
             startPollAttempts: 2,
             forceGraceAttempts: 2,
@@ -371,7 +383,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
       logSpy.mockRestore();
     }
     expect(probe.sentSignals).toEqual(['SIGTERM']);
-    expect(herdr.spawned).toHaveLength(1);
+    expect(spawnConductor.spawned).toHaveLength(1);
     expect(
       lines.some((l) =>
         l.includes('stopped conductor test-machine for restart'),
@@ -403,7 +415,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
         }),
       ],
     ]);
-    const herdr = new FakeHerdrHost();
+    const spawnConductor = fakeSpawn();
     // Ignores SIGTERM (still alive after it); dies only on SIGKILL — proving
     // the escalation is driven by the LOCAL pid, never by what the (unrelated,
     // never-updated) control-plane record says.
@@ -417,7 +429,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
           {},
           {
             remote,
-            herdr,
+            spawnConductor,
             procProbe: probe,
             startPollAttempts: 2,
             forceGraceAttempts: 1,
@@ -429,7 +441,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
       logSpy.mockRestore();
     }
     expect(probe.sentSignals).toEqual(['SIGTERM', 'SIGKILL']);
-    expect(herdr.spawned).toHaveLength(1);
+    expect(spawnConductor.spawned).toHaveLength(1);
     expect(
       lines.some(
         (l) =>
@@ -459,7 +471,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
       // exact registration-without-heartbeat state B15 closes.
       [runningRow({ lastPid: 9999, lastSeen: staleLastSeen })],
     ]);
-    const herdr = new FakeHerdrHost();
+    const spawnConductor = fakeSpawn();
     const probe = fakeProcProbe(4242, { diesOn: 'SIGTERM' });
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
@@ -470,7 +482,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
           {},
           {
             remote,
-            herdr,
+            spawnConductor,
             procProbe: probe,
             startPollAttempts: 2,
             forceGraceAttempts: 2,
@@ -488,32 +500,32 @@ describe('bakers oven start --force (BB-450 D10)', () => {
 
   it('fails without a second spawn when the running conductor has no pid to verify', async () => {
     const remote = new ScriptedRemote([[runningRow({ lastPid: undefined })]]);
-    const herdr = new FakeHerdrHost();
+    const spawnConductor = fakeSpawn();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
     try {
       await runConductorCli(
         ['oven', 'start', '--force'],
-        makeDeps({}, { remote, herdr }),
+        makeDeps({}, { remote, spawnConductor }),
       );
     } finally {
       lines = logSpy.mock.calls.map((c) => String(c[0]));
       logSpy.mockRestore();
     }
-    expect(herdr.spawned).toHaveLength(0);
+    expect(spawnConductor.spawned).toHaveLength(0);
     expect(lines.some((l) => l.includes('failed to restart'))).toBe(true);
     expect(process.exitCode).toBe(1);
   });
 
   it('behaves as a plain start (no stop, no message) when nothing is running yet', async () => {
     const remote = new HeartbeatAfterSpawnRemote({ id: 'test-machine' });
-    const herdr = new FakeHerdrHost();
+    const spawnConductor = fakeSpawn();
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
     try {
       await runConductorCli(
         ['oven', 'start', '--force'],
-        makeDeps({}, { remote, herdr, startPollAttempts: 3 }),
+        makeDeps({}, { remote, spawnConductor, startPollAttempts: 3 }),
       );
     } finally {
       lines = logSpy.mock.calls.map((c) => String(c[0]));
@@ -547,18 +559,18 @@ describe('bakers oven start --force (BB-450 D10)', () => {
           id: 'test-machine',
           alreadyRunning: true,
         });
-        const herdr = new FakeHerdrHost();
+        const spawnConductor = fakeSpawn();
         const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
         try {
           await runConductorCli(
             ['oven', 'start'],
-            makeDeps({}, { remote, herdr }),
+            makeDeps({}, { remote, spawnConductor }),
           );
         } finally {
           outcomes.push(logSpy.mock.calls.map((c) => String(c[0])).join('\n'));
           logSpy.mockRestore();
         }
-        expect(herdr.spawned).toHaveLength(0);
+        expect(spawnConductor.spawned).toHaveLength(0);
       }
     } finally {
       process.chdir(originalCwd);
@@ -606,70 +618,65 @@ class HeartbeatAfterSpawnRemote extends FakeBbRemote {
   }
 }
 
-describe('bakers oven start — herdr seam (BB-222)', () => {
-  it('fails with the no-herdr hint when no addon contributed a process host', async () => {
-    const deps = makeDeps({}, { herdr: undefined });
+describe('bakers oven start — detached spawn seam', () => {
+  const start = async (deps: BbCliDeps, args: string[] = ['oven', 'start']) => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
-      await runConductorCli(['oven', 'start'], deps);
-      expect(process.exitCode).toBe(1);
-      expect(logSpy.mock.calls.flat().join('\n')).toMatch(
-        /could not launch via herdr/,
-      );
+      await runConductorCli(args, deps);
+      return logSpy.mock.calls.map((c) => String(c[0]));
     } finally {
       logSpy.mockRestore();
     }
-  });
+  };
+  const spawnedOf = (deps: BbCliDeps) =>
+    (deps.spawnConductor as FakeSpawn).spawned;
+  const FOREGROUND = ['start', '--foreground', '--no-update-check'];
 
-  it('spawns through the injected host, never the real herdr binary', async () => {
+  it('spawns the running binary detached in the checkout, logging to the conductor log', async () => {
     const deps = makeDeps();
-    const herdr = deps.herdr as FakeHerdrHost;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      await runConductorCli(['oven', 'start'], deps);
-    } finally {
-      logSpy.mockRestore();
-    }
-    // Exactly one spawn, recorded — a direct `exec('herdr', …)` would leave
-    // this empty (and create a real workspace on the host running the suite).
-    expect(herdr.spawned).toHaveLength(1);
+    await start(deps);
+    expect(spawnedOf(deps)).toHaveLength(1);
+    const [req] = spawnedOf(deps);
+    expect(req.argv).toEqual([
+      process.execPath,
+      process.argv[1],
+      'oven',
+      ...FOREGROUND,
+    ]);
+    expect(req.cwd).toBe(CHECKOUT);
+    expect(req.env.BB_CONDUCTOR_LOG).toBe('file');
+    expect(req.logPath).toBe(LOG_PATH);
   });
 
-  it('hands herdr the conductor handle, the checkout root and the foreground command', async () => {
+  it('starts without any process host or herdr addon configured', async () => {
+    // makeConfig() lists no addons; the start must not ask for herdr.
     const deps = makeDeps();
-    const herdr = deps.herdr as FakeHerdrHost;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      await runConductorCli(['oven', 'start'], deps);
-    } finally {
-      logSpy.mockRestore();
-    }
-    const [call] = herdr.spawned;
-    expect(call.label).toBe('bakers-conductor:test-machine');
-    expect(call.cwd).toBe(CHECKOUT);
-    expect(call.cmd).toBe(
-      'BB_CONDUCTOR_LOG=file bakers oven start --foreground --no-update-check',
-    );
+    const lines = await start(deps);
+    expect(spawnedOf(deps)).toHaveLength(1);
+    expect(lines.join('\n')).not.toMatch(/herdr/);
   });
 
-  it('forwards the conductor-level --log-level / --log-sink flags into the foreground command', async () => {
+  it('forwards the conductor-level --log-level / --log-sink flags into the child', async () => {
     const deps = makeDeps();
-    const herdr = deps.herdr as FakeHerdrHost;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      await runConductorCli(
-        ['oven', '--log-level', 'debug', '--log-sink', 'stdout', 'start'],
-        deps,
-      );
-    } finally {
-      logSpy.mockRestore();
-    }
-    expect(herdr.spawned[0].cmd).toBe(
-      'BB_CONDUCTOR_LOG=file bakers oven --log-level debug --log-sink stdout start --foreground --no-update-check',
-    );
+    await start(deps, [
+      'oven',
+      '--log-level',
+      'debug',
+      '--log-sink',
+      'stdout',
+      'start',
+    ]);
+    expect(spawnedOf(deps)[0].argv.slice(2)).toEqual([
+      'oven',
+      '--log-level',
+      'debug',
+      '--log-sink',
+      'stdout',
+      ...FOREGROUND,
+    ]);
   });
 
-  it('BB-477 FV-1: a variant start carries the --conductor selector so the pane cannot re-resolve to the default', async () => {
+  it('BB-477: a variant start carries the --conductor selector so the child cannot re-resolve to the default', async () => {
     const deps = makeDeps(
       {},
       {
@@ -682,82 +689,66 @@ describe('bakers oven start — herdr seam (BB-222)', () => {
         }),
       },
     );
-    const herdr = deps.herdr as FakeHerdrHost;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      await runConductorCli(['oven', 'start'], deps);
-    } finally {
-      logSpy.mockRestore();
-    }
-    expect(herdr.spawned[0].cmd).toBe(
-      'BB_CONDUCTOR_LOG=file bakers --conductor anerkennungsportal oven start --foreground --no-update-check',
-    );
+    await start(deps);
+    expect(spawnedOf(deps)[0].argv.slice(2)).toEqual([
+      '--conductor',
+      'anerkennungsportal',
+      'oven',
+      ...FOREGROUND,
+    ]);
   });
 
-  it('BB-477 FV-2: a default start stays byte-unchanged', async () => {
+  it('BB-477: a default or non-conductor config file name selects nothing', async () => {
+    for (const name of ['conductor.config.js', 'bakers.config.js']) {
+      const deps = makeDeps(
+        {},
+        { config: makeConfig({ config_path: join(CHECKOUT, name) }) },
+      );
+      await start(deps);
+      expect(spawnedOf(deps)[0].argv.slice(2)).toEqual(['oven', ...FOREGROUND]);
+    }
+  });
+
+  it('reports FAILED with the exit code and the log path when the child exits before its first heartbeat', async () => {
     const deps = makeDeps(
       {},
       {
-        config: makeConfig({
-          config_path: join(CHECKOUT, 'conductor.config.js'),
-        }),
+        spawnConductor: fakeSpawn({ exited: Promise.resolve(2) }),
+        startPollAttempts: 50,
+        sleep: () => new Promise((r) => setTimeout(r, 5)),
       },
     );
-    const herdr = deps.herdr as FakeHerdrHost;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      await runConductorCli(['oven', 'start'], deps);
-    } finally {
-      logSpy.mockRestore();
-    }
-    expect(herdr.spawned[0].cmd).toBe(
-      'BB_CONDUCTOR_LOG=file bakers oven start --foreground --no-update-check',
-    );
+    const lines = await start(deps);
+    expect(
+      lines.some(
+        (l) =>
+          l.includes('failed to start conductor test-machine') &&
+          l.includes('exited with code 2 before its first heartbeat') &&
+          l.includes(LOG_PATH),
+      ),
+    ).toBe(true);
+    expect(process.exitCode).toBe(1);
   });
 
-  it('BB-477 FV-3: the pane label and the spawned command agree on the same conductor', async () => {
+  it('reports FAILED with the log path when the child cannot be spawned', async () => {
     const deps = makeDeps(
       {},
       {
-        config: makeConfig({
-          conductor_id: 'pm-minipm-anerkennungsportal',
-          config_path: join(
-            CHECKOUT,
-            '.bakers',
-            'anerkennungsportal.conductor.config.js',
-          ),
-        }),
+        spawnConductor: async () => {
+          throw new Error('spawn node ENOENT');
+        },
       },
     );
-    const herdr = deps.herdr as FakeHerdrHost;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      await runConductorCli(['oven', 'start'], deps);
-    } finally {
-      logSpy.mockRestore();
-    }
-    const [call] = herdr.spawned;
-    expect(call.label).toBe('bakers-conductor:pm-minipm-anerkennungsportal');
-    expect(call.cmd).toContain('--conductor anerkennungsportal');
-  });
-
-  it('BB-477 FV-4: a non-conductor config file name selects nothing, falling back to the default command', async () => {
-    const deps = makeDeps(
-      {},
-      {
-        config: makeConfig({ config_path: join(CHECKOUT, 'bakers.config.js') }),
-      },
-    );
-    const herdr = deps.herdr as FakeHerdrHost;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    try {
-      await runConductorCli(['oven', 'start'], deps);
-    } finally {
-      logSpy.mockRestore();
-    }
-    expect(herdr.spawned[0].cmd).toBe(
-      'BB_CONDUCTOR_LOG=file bakers oven start --foreground --no-update-check',
-    );
+    const lines = await start(deps);
+    expect(
+      lines.some(
+        (l) =>
+          l.includes('failed to start conductor test-machine') &&
+          l.includes('spawn node ENOENT') &&
+          l.includes(LOG_PATH),
+      ),
+    ).toBe(true);
+    expect(process.exitCode).toBe(1);
   });
 });
 
@@ -824,7 +815,7 @@ describe('bakers oven start — taking over an existing conductor', () => {
         deps,
       );
       return {
-        spawned: (deps.herdr as FakeHerdrHost).spawned.length,
+        spawned: (deps.spawnConductor as FakeSpawn).spawned.length,
         errors: err.mock.calls.flat().join('\n'),
       };
     } finally {
@@ -1034,7 +1025,7 @@ describe('bakers oven start update prompt', () => {
   function promptDeps(extra: Partial<BbCliDeps> = {}): {
     deps: BbCliDeps;
     cachePath: string;
-    herdr: FakeHerdrHost;
+    spawnConductor: FakeSpawn;
   } {
     const cachePath = join(
       mkdtempSync(join(tmpdir(), 'bakers-start-update-')),
@@ -1051,7 +1042,11 @@ describe('bakers oven start update prompt', () => {
         ...extra,
       },
     );
-    return { deps, cachePath, herdr: deps.herdr as FakeHerdrHost };
+    return {
+      deps,
+      cachePath,
+      spawnConductor: deps.spawnConductor as FakeSpawn,
+    };
   }
 
   it('yes: runs update then migration, prints rerun, and skips startup', async () => {
@@ -1061,7 +1056,7 @@ describe('bakers oven start update prompt', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation((m) => {
       logs.push(String(m));
     });
-    const { deps, herdr } = promptDeps({
+    const { deps, spawnConductor } = promptDeps({
       env: { ...process.env, CI: '', BB_CONDUCTOR: 'portal' },
       askUpdate: async (question) => {
         asked.push(question);
@@ -1091,7 +1086,7 @@ describe('bakers oven start update prompt', () => {
       'bakers --conductor portal oven start --force',
     );
     expect(logs).not.toContain('LOOP_STARTED');
-    expect(herdr.spawned).toHaveLength(0);
+    expect(spawnConductor.spawned).toHaveLength(0);
   });
 
   it('no: starts immediately, persists the decline, and does not prompt again', async () => {
@@ -1150,14 +1145,14 @@ describe('bakers oven start update prompt', () => {
     expect(commands).toEqual([]);
     expect(logs).toContain('LOOP_STARTED');
     expect(secondLogs).toContain('LOOP_STARTED');
-    expect(first.herdr.spawned).toHaveLength(1);
-    expect((second.herdr as FakeHerdrHost).spawned).toHaveLength(1);
+    expect(first.spawnConductor.spawned).toHaveLength(1);
+    expect((second.spawnConductor as FakeSpawn).spawned).toHaveLength(1);
   });
 
   it('repeats the question on invalid input then accepts no', async () => {
     const answers = ['maybe', 'NO'];
     const asked: string[] = [];
-    const { deps, herdr } = promptDeps({
+    const { deps, spawnConductor } = promptDeps({
       askUpdate: async (question) => {
         asked.push(question);
         return answers.shift() ?? 'n';
@@ -1168,11 +1163,11 @@ describe('bakers oven start update prompt', () => {
     });
     await runConductorCli(['oven', 'start'], deps);
     expect(asked).toHaveLength(2);
-    expect(herdr.spawned).toHaveLength(1);
+    expect(spawnConductor.spawned).toHaveLength(1);
   });
 
   it('treats cancellation as abort without decline, install, or start', async () => {
-    const { deps, cachePath, herdr } = promptDeps({
+    const { deps, cachePath, spawnConductor } = promptDeps({
       askUpdate: async () => {
         throw new Error('cancelled');
       },
@@ -1184,7 +1179,7 @@ describe('bakers oven start update prompt', () => {
       },
     });
     await runConductorCli(['oven', 'start'], deps);
-    expect(herdr.spawned).toHaveLength(0);
+    expect(spawnConductor.spawned).toHaveLength(0);
     expect(process.exitCode).toBe(1);
     const record = JSON.parse(readFileSync(cachePath, 'utf8')) as {
       declined?: boolean;
@@ -1214,7 +1209,7 @@ describe('bakers oven start update prompt', () => {
     if ('stdinIsTTY' in variant) extra.stdinIsTTY = variant.stdinIsTTY;
     if ('stdoutIsTTY' in variant) extra.stdoutIsTTY = variant.stdoutIsTTY;
     if ('env' in variant) extra.env = variant.env;
-    const { deps, herdr } = promptDeps(extra);
+    const { deps, spawnConductor } = promptDeps(extra);
     const argv =
       'foregroundArg' in variant
         ? (['oven', 'start', '--foreground'] as string[])
@@ -1235,7 +1230,8 @@ describe('bakers oven start update prompt', () => {
     expect(runBb).not.toHaveBeenCalled();
     expect(logs.join('\n')).toContain('bakers update');
     expect(logs).toContain('LOOP_STARTED');
-    if (!('foregroundArg' in variant)) expect(herdr.spawned).toHaveLength(1);
+    if (!('foregroundArg' in variant))
+      expect(spawnConductor.spawned).toHaveLength(1);
   });
 
   it('--no-update-check performs no lookup, prompt or notice', async () => {
@@ -1262,7 +1258,7 @@ describe('bakers oven start update prompt', () => {
 
   it('does not prompt when no newer version is published', async () => {
     const askUpdate = vi.fn(async () => 'y');
-    const { deps, herdr } = promptDeps({
+    const { deps, spawnConductor } = promptDeps({
       fetch: (async () =>
         new Response(JSON.stringify({ version: '0.0.1' }))) as typeof fetch,
       askUpdate,
@@ -1272,11 +1268,11 @@ describe('bakers oven start update prompt', () => {
     });
     await runConductorCli(['oven', 'start'], deps);
     expect(askUpdate).not.toHaveBeenCalled();
-    expect(herdr.spawned).toHaveLength(1);
+    expect(spawnConductor.spawned).toHaveLength(1);
   });
 
   it('still prompts on a UI-populated cache that was never declined', async () => {
-    const { deps, cachePath, herdr } = promptDeps({
+    const { deps, cachePath, spawnConductor } = promptDeps({
       askUpdate: async () => 'n',
       runBb: async () => {
         throw new Error('runBb should not run');
@@ -1290,7 +1286,7 @@ describe('bakers oven start update prompt', () => {
       }),
     );
     await runConductorCli(['oven', 'start'], deps);
-    expect(herdr.spawned).toHaveLength(1);
+    expect(spawnConductor.spawned).toHaveLength(1);
     expect(JSON.parse(readFileSync(cachePath, 'utf8')).declined).toBe(true);
   });
 
@@ -1329,7 +1325,7 @@ describe('bakers oven start update prompt', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation((m) => {
       errors.push(String(m));
     });
-    const { deps, herdr } = promptDeps({
+    const { deps, spawnConductor } = promptDeps({
       askUpdate: async () => 'y',
       runBb: async () => {
         throw new Error('npm failed');
@@ -1340,7 +1336,7 @@ describe('bakers oven start update prompt', () => {
     });
     await runConductorCli(['oven', 'start', '--force'], deps);
     errSpy.mockRestore();
-    expect(herdr.spawned).toHaveLength(0);
+    expect(spawnConductor.spawned).toHaveLength(0);
     expect(process.exitCode).toBe(1);
     expect(errors.join('\n')).toMatch(/update/i);
   });
@@ -1351,7 +1347,7 @@ describe('bakers oven start update prompt', () => {
     const errSpy = vi.spyOn(console, 'error').mockImplementation((m) => {
       errors.push(String(m));
     });
-    const { deps, herdr } = promptDeps({
+    const { deps, spawnConductor } = promptDeps({
       env: { ...process.env, CI: '', BB_CONDUCTOR: 'portal' },
       askUpdate: async () => 'yes',
       runBb: async (args) => {
@@ -1368,7 +1364,7 @@ describe('bakers oven start update prompt', () => {
       ['update'],
       ['config', 'upgrade', '--scope', 'all', '--yes'],
     ]);
-    expect(herdr.spawned).toHaveLength(0);
+    expect(spawnConductor.spawned).toHaveLength(0);
     expect(process.exitCode).toBe(1);
     expect(errors.join('\n')).toContain(
       'Retry with: bakers --conductor portal config upgrade --scope all --yes',
@@ -1384,7 +1380,7 @@ describe('bakers oven start update prompt', () => {
     const writeFileImpl = vi.fn(async () => {
       throw new Error('EACCES');
     });
-    const { deps, cachePath, herdr } = promptDeps({
+    const { deps, cachePath, spawnConductor } = promptDeps({
       askUpdate: async () => 'n',
     });
     writeFileSync(
@@ -1400,7 +1396,7 @@ describe('bakers oven start update prompt', () => {
     };
     await runConductorCli(['oven', 'start'], deps);
     errSpy.mockRestore();
-    expect(herdr.spawned).toHaveLength(1);
+    expect(spawnConductor.spawned).toHaveLength(1);
     expect(errors.join('\n')).toMatch(/remember/i);
     expect(writeFileImpl).toHaveBeenCalled();
   });
