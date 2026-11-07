@@ -63,7 +63,7 @@ props:
       title: Canonical URL
     lease:
       type: string
-      title: Machine holding the lease
+      title: Holder of the lease
       description: >-
         Rendered in the footer when the footer slot is empty. Absent rather than
         empty when no lease is held.
