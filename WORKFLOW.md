@@ -16,7 +16,8 @@ alone for work that needs no site, and a site profile's `ddev init` installs and
 `provision_up('docs-preview')`, which builds and serves `docs/`, and is shared with `ports_up docs`;
 never run `vitepress preview` in a run. The agent sandbox cannot reach `.ddev.site` (a loopback address), so
 the Playwright suite and `playwright-cli` run through `ddev_exec`. A server an agent starts in the
-sandbox, such as Storybook, is reachable only within that same command. Core tests, Playwright, conductor and skill-behavior
+sandbox, such as Storybook, is reachable only within that same command. Skill and conductor
+behavior is tested in the playground workspace that `scripts/setup-test-project.sh` sets up. Core tests, Playwright, conductor and skill-behavior
 setup: [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work
