@@ -153,6 +153,7 @@ jobs:
           set -eu
           node docs/scripts/check-pages.mjs
           node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
+          bash tests/contract/docs-preview.sh
     container: node:22
   config_sync:
     runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
