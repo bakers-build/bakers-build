@@ -41,14 +41,14 @@ Options go in the addon entry's `with` object (or a `catalog` entry). The addon 
 
 | Package | Aliases | Options |
 |---|---|---|
-| `@bakers-build/addon-claude` | `opus`, `sonnet` | `model`, `effort`, `security`, `sandbox`, `config`, `env_deny`, `args`, `measure` (default `false`) |
+| `@bakers-build/addon-claude` | `opus`, `sonnet`, `fable` | `model`, `effort`, `security`, `sandbox`, `config`, `env_deny`, `args`, `measure` (default `false`) |
 | `@bakers-build/addon-codex` | `codex`, `astra`, `sol`, `terra`, `luna` | `model`, `effort`, `security`, `sandbox`, `config`, `env_deny`, `args` |
 | `@bakers-build/addon-kimi` | `kimi` | `model`, `args`; `effort` is ignored with a log line |
 | `@bakers-build/addon-opencode` | `opencode` | `model`, `args`; `effort` is ignored with a log line |
 | `@bakers-build/addon-pi` | `pi` | `model`, `provider`, `thinking` or `effort`, `approve`, `args` |
 | `@bakers-build/addon-grok` | `grok` (Grok CLI default) | `model`, `effort` (or legacy `reasoningEffort`), `security`, `sandbox`, `env_deny`, `args` |
 
-Setting `model` on Claude publishes one custom candidate instead of `opus` and `sonnet`; on Codex it drops the four named variants. Run `bakers agents` to see what your release actually publishes.
+Setting `model` on Claude publishes one custom candidate instead of `opus`, `sonnet` and `fable`; on Codex it drops the four named variants. Select Fable with `agent:fable` or `agent:fable@working`; see the [Claude addon](/addons/claude) for its CLI version requirement and family mapping. Run `bakers agents` to see what your release actually publishes.
 
 Omitting `model` for Grok uses the Grok CLI's own default. An explicit `model` pins that version. Passthrough `-m`/`--model` in `args` wins over the configured model. `grok-4.5` below is an example pin, not an addon default:
 
