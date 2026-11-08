@@ -38,6 +38,7 @@
     "@bakers-build/addon-bakers-ui-artifacts": "workspace:^",
     "@bakers-build/addon-grok": "workspace:^",
     "@bakers-build/addon-herdr": "workspace:^",
+    "@bakers-build/addon-herdr-core": "workspace:^",
     "@bakers-build/addon-info": "workspace:^",
     "@bakers-build/addon-kimi": "workspace:^",
     "@bakers-build/addon-opencode": "workspace:^",

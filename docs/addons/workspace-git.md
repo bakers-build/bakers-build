@@ -31,6 +31,7 @@ A dispatched ticket gets a worktree in `<checkout>-worktrees/` on a branch that 
 
 - Worktrees are created next to the checkout, in `<root>-worktrees`.
 - The package also loads `WORKFLOW.md` from the worktree as run instructions, when the file exists.
-- Do not combine it with [herdr](/addons/herdr): herdr brings its own workspace, and the last one listed wins with a warning.
+- Listing [herdr](/addons/herdr) or [Orca](/addons/orca) in `addons` as well adds their workspace, and the last one listed wins with a warning. To run their executor on Git worktrees, set an explicit `executor` slot instead; see [Conductor slots](/addons/slots).
+- When a ticket is done, the conductor removes its worktree with Git, whatever the executor.
 
 Package source in a checkout: `bakers-cli/addons/workspace-git`.

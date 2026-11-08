@@ -53,7 +53,9 @@ export function renderHostMachine(inputs: {
 }): string {
   return `// @bakers-schema-version 1
 // Local host identity. The run budget is set on the machine in the backend;
-// server credentials belong to bakers.config.js.
+// server credentials belong to bakers.config.js. An \`executor\` slot here
+// (e.g. \`{ plugin: '@bakers-build/addon-herdr-core' }\`) overrides every
+// project's executor on this machine.
 export default {
  schema_version: 1,
  machine_id: ${JSON.stringify(inputs.machineId)},
@@ -95,7 +97,7 @@ export default {
   capture_logs: true,
 ${
   inputs.hooks?.after_create || inputs.hooks?.after_done
-    ? `  // Lifecycle hooks are executor-owned (BB-84): they live at the config top
+    ? `  // Lifecycle hooks are conductor-owned: they live at the config top
   // level — NOT on a plugin descriptor's \`with.hooks\`.
   hooks: { ${[
     inputs.hooks.after_create

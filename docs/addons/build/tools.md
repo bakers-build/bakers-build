@@ -38,11 +38,15 @@ export const tools: Preset['tools'] = {
 
 Every other run with a tool server has `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` in its environment. The token is never in argv or the launch log, and it is revoked when the run is finalised.
 
+The URL and the token survive a conductor restart. The server keeps its port and each run's grant, the token's access to that run's worktree, in `<BB_HOME>/conductors/<conductor_id>.tools.json` (mode 0600). The file holds a hash of each token, never the token. On start, the server drops the grants of runs that are no longer active, so a token stays revoked even when its run ended while the server was down.
+
+If another process holds the port at start, the server takes a new port and logs a warning. Runs launched before the restart then lose their tools until they are dispatched again.
+
 Tool handlers execute in the conductor's environment, outside the agent's shell sandbox, and
 server approval does not change that. `ddev_exec` bounds only the target: it runs any shell
 command in the run worktree's DDEV web container, with that container's network, files and
 environment, so whatever runs there, such as test code or browser navigation, gets that
-access. What this project removes from the container: [testing › Setup](/bakers/testing#setup).
+access. What this project removes from the container: `docs/bakers/testing.md` › Setup.
 
 A grok `shell_environment_policy` with `ignore_default_excludes = false` drops `*TOKEN*` variables from grok's shell; `bakers tools` then calls the site with the operator's credentials, without the project limit.
 

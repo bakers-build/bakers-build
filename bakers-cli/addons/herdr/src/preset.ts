@@ -1,10 +1,9 @@
 // BB-215: the herdr addon self-declares BOTH its conductor contributions —
 // the spawn executor AND the per-ticket worktree workspace — through one
-// `./preset`. This encodes the "herdr executor MUST pair with the herdr
-// workspace" invariant structurally: listing `@bakers-build/addon-herdr` once in a
-// conductor addons[] wires both slots, retiring the old `export: 'herdrWorkspace'`
-// second descriptor. The single entry `with` is handed to both factories; each
-// reads only the option keys it knows.
+// `./preset`: listing `@bakers-build/addon-herdr` once in a conductor addons[]
+// wires both slots. The executor also runs on any other workspace's worktree.
+// The single entry `with` is handed to both factories; each reads only the
+// option keys it knows.
 import type { Preset } from '@bakers-build/conductor/contract';
 import { herdrFrozenMarker } from './frozen-marker.js';
 import { herdrExecutor, herdrWorkspace } from './index.js';
@@ -27,5 +26,7 @@ export const processHosts: Preset['processHosts'] = (acc) => [
 
 export const hooks: Preset['hooks'] = (acc) => [...acc, herdrFrozenMarker];
 
-// Hook listeners and the process host belong to one project (no machine hook listeners, BB-599).
+// Hook listeners and the process host belong to one project (no machine hook
+// listeners, BB-599). A machine picks herdr as its executor through the
+// machine.config.js `executor` slot instead.
 export const scopes: Preset['scopes'] = ['project'];

@@ -78,9 +78,8 @@ export default {
     // `ports` capability was ever available to answer a ticket's Share
     // tunnels message — regardless of how the engine/project config read.
     '@bakers-build/addon-ports',
-    {
-      use: '@bakers-build/addon-herdr',
-      with: { hooks: { after_create: parentSetupHook } },
-    },
+    '@bakers-build/addon-herdr',
   ],
+  // The conductor runs lifecycle hooks; addon-herdr rejects `with.hooks`.
+  hooks: { after_create: parentSetupHook },
 };

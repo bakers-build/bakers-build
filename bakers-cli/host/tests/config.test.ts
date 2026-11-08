@@ -890,6 +890,19 @@ it.each([
   expect(text).toContain(`Machine tunnel: ${expected} (from ${path})`);
 });
 
+it('check --scope machine names the machine file that sets the executor', async () => {
+  seed();
+  const path = join(home, '.bakers/machine.config.js');
+  writeFileSync(
+    path,
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',executor:{plugin:'@bakers-build/addon-herdr-core'}};",
+  );
+  const json = await run(['check', '--scope', 'machine', '--format', 'json']);
+  expect(json.executor_source).toBe(path);
+  const text = await run(['check', '--scope', 'machine', '--format', 'text']);
+  expect(text).toContain(`Executor: from ${path}`);
+});
+
 it('check --scope machine reports unresolved tunnel policy for invalid literals', async () => {
   seed();
   const path = join(home, '.bakers/machine.config.js');

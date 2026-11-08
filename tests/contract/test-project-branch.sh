@@ -67,6 +67,9 @@ LOOKUP_JSON='{"tickets":[{"identifier":"SHOP-27","base_branch":"feat/shop-9-chec
 [ "$(parent_branch_for feat/shop-27-cart)" = feat/shop-9-checkout ] || fail 'parent is not read from ticket metadata'
 LOOKUP_JSON='{"tickets":[{"identifier":"SHOP-27","base_branch":"develop","parent":null}]}'
 [ -z "$(parent_branch_for feat/shop-27-cart)" ] || fail 'root ticket invented a parent'
+# `bakers tools` prints [message, JSON text], as the installed CLI does.
+LOOKUP_JSON='["1 tickets found.","{\"tickets\":[{\"identifier\":\"SHOP-27\",\"base_branch\":\"feat/shop-9-checkout\",\"parent\":\"SHOP-9\"}]}"]'
+[ "$(parent_branch_for feat/shop-27-cart)" = feat/shop-9-checkout ] || fail 'parent is not read from the tools message envelope'
 LOOKUP_JSON='{"error":{"message":"offline"}}'
 if (parent_branch_for feat/shop-27-cart) >/dev/null 2>&1; then fail 'lookup error was treated as no parent'; fi
 echo 'PASS: fixture origin seeding, dynamic names, current/parent/develop priority, no-parent case, preserved edits, lookup errors, no remote writes'
