@@ -23,7 +23,7 @@ Use the team's entry in the ticket's **Conductor** field and skip to [Create and
 
 ## Start your agents
 
-In your local checkout, keep the signed-in agent and the project's configured [herdr or Orca client](/configuration/clients) running. Start ticket execution:
+In your local checkout, check the signed-in agent and the configured terminal host: herdr-cli's session, herdr-app's herdr-core host, or Orca's runtime. [Use your client](/get-started/use-your-client) explains each view. Start ticket execution:
 
 ```sh
 bakers agents

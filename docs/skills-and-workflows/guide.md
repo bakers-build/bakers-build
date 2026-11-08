@@ -40,7 +40,7 @@ Change your way of working with a text edit; no migration needed.
 
 ## What bakers.build decides
 
-The states and transitions themselves belong to the bakers.build server. `WORKFLOW.md` cannot add or remove states. Changing them is a change to bakers.build itself; see [Development](/development/contributing).
+The states and transitions themselves belong to the bakers.build server. `WORKFLOW.md` cannot add or remove states. Changing them is a change to bakers.build itself.
 
 ## Check your setup
 
@@ -52,7 +52,7 @@ Check that this project's WORKFLOW.md starts with the bb-workflow entry line, th
 
 A missing recipe, recipe section or required skill, or a state without a state file, stops a run before it changes anything, naming what is missing.
 
-The rules for writing your own recipe or runtime guide are in the [skill contract](/development/skill-contract).
+To add your own method, follow [Write a recipe](/skills-and-workflows/recipes). The installed `bb-workflow/references/authoring.md` covers runtime guides and hints.
 
 ## Ownership, choices and verification
 

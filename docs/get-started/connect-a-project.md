@@ -58,7 +58,7 @@ Prepare WORKFLOW.md, check required skills, and show what changed.
 Your agent checks three parts of the project. Keep existing settings and use these guides when you need to change them.
 
 <DocTiles :tiles="[
-  { title: 'Choose your client', text: 'The client organizes agent sessions and worktrees. Keep your existing client, or start with the default herdr.', link: '/configuration/clients', icon: 'terminal', meta: 'Explore clients →' },
+  { title: 'Use your client', text: 'Choose how you observe, discuss and act on ticket work with herdr-cli, herdr-app, Orca or Hermes. Keep working project settings.', link: '/get-started/use-your-client', icon: 'terminal', meta: 'Explore clients →' },
   { title: 'Prepare your environment', text: 'The environment runs your application and dependencies. Reuse your project scripts and make them work independently in each ticket worktree.', link: '/provision/guide', icon: 'layers', meta: 'Prepare the environment →' },
   { title: 'Configure your workflow', text: 'WORKFLOW.md supplies project rules and checks. Keep the existing recipe, or start with the shipped Matt recipe.', link: '/skills-and-workflows/guide', icon: 'book', meta: 'Understand workflows →' }
 ]" />
@@ -79,7 +79,7 @@ After resolving the real server project:
 bakers config init --scope project --project <name> --workspace <name>
 ```
 
-Choose the client's canonical addon configuration, then approved hooks and [workflow rules](/skills-and-workflows/workflow-file). A named connection uses private `.bakers/connection.config.local.js`:
+Choose the project's [executor and workspace](/addons/slots), then approved hooks and [workflow rules](/skills-and-workflows/workflow-file). A named connection uses private `.bakers/connection.config.local.js`:
 
 ```js
 export default { connection: 'team' };

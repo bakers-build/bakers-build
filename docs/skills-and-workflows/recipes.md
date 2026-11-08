@@ -38,8 +38,8 @@ A recipe brings one engineering method to `plan`, `working` and `review`. It add
 
 ## The rules
 
-Phases, routing, recipe resolution and the stop rules: [Skill contract](/development/skill-contract). Runtime guides and hints are covered in `bb-workflow/references/authoring.md`. Testing a skill's wording against a worker: [Test a skill](/development/test-skills).
+Phases, routing and recipe resolution: [Workflow mechanics](/skills-and-workflows/guide#how-it-works). The installed `bb-workflow/references/authoring.md` covers runtime guides and hints.
 
 ## Reader contract
 
-A recipe supplies method slots inside the frame's state files; it cannot widen approval, publication or transition authority. A type-specific slot wins over the general state slot. Required skills must be available before work starts. Keep runtime mechanics in runtime guides and project checks in `WORKFLOW.md`. [Workflow mechanics](/skills-and-workflows/guide#how-it-works) explains the seven phases; the implementation contract remains in `docs/development/skill-contract.md` in the source checkout.
+A recipe supplies method slots inside the frame's state files; it cannot widen approval, publication or transition authority. A type-specific slot wins over the general state slot. Required skills must be available before work starts. Keep runtime mechanics in runtime guides and project checks in `WORKFLOW.md`.

@@ -53,7 +53,7 @@ export default {
   // TOP LEVEL, not on a plugin descriptor. after_create: env setup on worktree
   // create. before_run: install pnpm dependencies before every run, outside
   // the agent sandbox, which cannot take pnpm's store lock. after_done: reclaim
-  // the worktree's docs preview and DDEV project (containers + db) once its
+  // the worktree's docs preview, playground conductor and DDEV project (containers + db) once its
   // ticket is done, before the conductor tears the worktree down; `;` so the
   // DDEV cleanup runs whatever the preview stop returns.
   //
@@ -62,7 +62,7 @@ export default {
   hooks: {
     after_create: 'bash .ddev/worktree-post.sh',
     before_run: 'bash scripts/worktree-deps.sh',
-    after_done: 'bash scripts/docs-preview.sh stop; ddev delete -Oy',
+    after_done: 'bash scripts/docs-preview.sh stop; bash scripts/conductor-e2e.sh teardown; ddev delete -Oy',
     // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
     // a trusted `ddev` nor `pnpm install`. Every profile installs the
     // bakers-cli and docs dependencies first; `deps` does only that.
@@ -71,9 +71,15 @@ export default {
     // `existing-config-fresh` always reinstalls. `docs-preview` builds docs/
     // and serves it detached outside the sandbox, so the ports addon's `docs`
     // service claims it for `ports_up docs`; a repeat call replaces it.
+    // `conductor-e2e` resets the recipe-test playground and starts a detached
+    // playground conductor from this worktree's build; `-stop` and `-start`
+    // stop and restart it without a reset (scripts/conductor-e2e.sh).
     provision_up: {
       deps: 'bash scripts/worktree-deps.sh --all',
       'docs-preview': 'bash scripts/worktree-deps.sh --all && bash scripts/docs-preview.sh',
+      'conductor-e2e': 'bash scripts/worktree-deps.sh --all && ddev provision --provider recipe-test && bash scripts/conductor-e2e.sh',
+      'conductor-e2e-stop': 'bash scripts/conductor-e2e.sh stop',
+      'conductor-e2e-start': 'bash scripts/conductor-e2e.sh start',
       'recipe-test': 'bash scripts/worktree-deps.sh && ddev provision --provider recipe-test',
       'existing-config': 'bash scripts/worktree-deps.sh && ddev provision --provider existing-config',
       'existing-config-fresh': 'bash scripts/worktree-deps.sh && ddev init --provider existing-config',

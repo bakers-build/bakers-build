@@ -15,10 +15,12 @@ Choose supported extensions by purpose.
 
 ## Clients and workspaces
 
+[Use your client](/get-started/use-your-client) compares the experiences; these addons supply their technical integration.
+
 | Addon | What it adds |
 |---|---|
-| [herdr](/addons/herdr) | Runs agents in herdr sessions and worktrees |
-| [herdr-core](/addons/herdr-core) | Runs agents in herdr-core terminals that outlive the app |
+| [herdr](/addons/herdr) | Runs agents in herdr-cli sessions and worktrees |
+| [herdr-core](/addons/herdr-core) | Hosts herdr-app's agent terminals independently of the app |
 | [Orca](/addons/orca) | Local worktree UI and agent terminals |
 | [Git workspace](/addons/workspace-git) | Plain Git worktree per ticket |
 | [bakers.build server remote](/addons/remote-drupal) | Connects a conductor to the server |

@@ -4,6 +4,8 @@ A conductor fills two slots for the work on a ticket. The **workspace** owns the
 
 Each slot holds exactly one addon. To write your own, read [Write an executor or a workspace](/addons/build/executor-workspace).
 
+[Use your client](/get-started/use-your-client) explains the user-facing choices. herdr-cli and herdr-app use separate terminal hosts; herdr-core integrates the latter. Hermes discusses tickets through MCP and fills neither slot.
+
 ## Which addon fills which slot
 
 | Addon | Executor | Workspace |

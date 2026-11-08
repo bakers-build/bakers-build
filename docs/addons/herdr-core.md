@@ -1,6 +1,6 @@
 # herdr-core
 
-Run each ticket's agent in a herdr-core terminal. herdr-core is the local server behind the Herdr app; its terminals keep running when the app quits, updates or crashes. The worktree comes from a workspace addon such as [Git workspace](/addons/workspace-git).
+Run each ticket's agent in a herdr-core terminal. herdr-core is the local server behind herdr-app; its terminals live independently of the app. See [Use your client](/get-started/use-your-client#herdr-app) for usage. The worktree comes from a workspace addon such as [Git workspace](/addons/workspace-git).
 
 ## AI first
 
@@ -36,7 +36,7 @@ addons: [
 ],
 ```
 
-`bakers oven start` hosts the conductor itself in a herdr pane, which comes from `@bakers-build/addon-herdr`. Without that addon, run `bakers oven start --foreground`, or keep `@bakers-build/addon-herdr` in the list as the process host.
+`bakers oven start` runs the conductor as a detached process; it needs no herdr process host. Use `bakers oven start --foreground` to keep it attached to the current terminal.
 
 The executor calls `hc` from the conductor, outside any agent sandbox. A sandboxed agent that calls `hc` from its own shell needs it among the trusted commands, for example `trusted_commands: ['$inherit', 'hc']` in a [shared `security` block](/provision/security/shared-settings). A trusted `hc run` starts any program outside the sandbox, so grant it only on a machine where that is acceptable.
 
@@ -50,6 +50,6 @@ The machine's executor wins for every project on that machine; the project keeps
 
 ## Verify
 
-Run `bakers oven check`, then [a first ticket](/get-started/first-ticket). The run appears in `hc ls`, named `<identifier>-<run id>` in lowercase, in the ticket worktree, with the labels `bakers.ticket`, `bakers.branch` and `bakers.run`. Quit the Herdr app: the run keeps working, and `hc ls` still shows it. When the run is finalised, its terminal ends and disappears.
+Run `bakers oven check`, then [a first ticket](/get-started/first-ticket). The run appears in `hc ls`, named `<identifier>-<run id>` in lowercase, in the ticket worktree, with the labels `bakers.ticket`, `bakers.branch` and `bakers.run`. Quit herdr-app: the run keeps working, and `hc ls` still shows it. When the run is finalised, its terminal ends and disappears.
 
 Package source in a checkout: `bakers-cli/addons/herdr-core`.
