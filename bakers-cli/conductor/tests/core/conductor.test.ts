@@ -1,4 +1,4 @@
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import {
   existsSync,
@@ -6,6 +6,8 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  statSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -35,6 +37,7 @@ import type {
   BbAgent,
   BbExecutor,
   BbRemote,
+  BbWorkspace,
   ConductorFileConfig,
   HookContext,
   HookListener,
@@ -46,6 +49,8 @@ import type {
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import { type ConductorLogger, shellQuote } from '@bakers-build/core';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { attemptFamily, attemptSessionId } from '../../src/core/attempt.js';
@@ -5336,5 +5341,227 @@ describe('action queue', () => {
     g.open();
     await served;
     expect(done).toBe(true);
+  });
+});
+
+// The conductor tells an open `bakers ui` its data changed by touching
+// `.bakers/ui-refresh` in the checkout and in the run's worktree.
+describe('Conductor — bakers ui refresh signal', () => {
+  const OLD = 1_000;
+
+  function project(): { checkout: string; worktree: string } {
+    const root = mkdtempSync(join(tmpdir(), 'bakers-ui-signal-'));
+    const checkout = join(root, 'checkout');
+    const worktree = join(root, 'wt');
+    mkdirSync(join(checkout, '.bakers'), { recursive: true });
+    mkdirSync(join(worktree, '.bakers'), { recursive: true });
+    return { checkout, worktree };
+  }
+
+  const signal = (dir: string) => join(dir, '.bakers', 'ui-refresh');
+  const signalled = (dir: string) =>
+    existsSync(signal(dir)) && statSync(signal(dir)).mtimeMs > OLD * 1000;
+  const age = (dir: string) => utimesSync(signal(dir), OLD, OLD);
+
+  function at(worktree: string): BbWorkspace {
+    return {
+      ensure: async () => ({
+        path: worktree,
+        instructions: null,
+        created: false,
+      }),
+      remove: async () => 'removed',
+    };
+  }
+
+  function queued(): FakeBbRemote {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': {
+          identifier: 'BB-1',
+          title: 'One',
+          state: 'todo',
+          projectId: 'p-1',
+        },
+      },
+    });
+    remote.queue.push({
+      runUuid: 'r-1',
+      runId: 1,
+      ticketUuid: 't-1',
+      stateAtStart: 'todo',
+      handler: 'code',
+    });
+    return remote;
+  }
+
+  function conductorOf(
+    remote: BbRemote,
+    executor: BbExecutor,
+    p: { checkout: string; worktree: string },
+  ): Conductor {
+    return new TestConductor(
+      makeConfig(),
+      remote,
+      executor,
+      at(p.worktree),
+      resolved(fakeAgent),
+      spyLogger().log,
+      p.checkout,
+    );
+  }
+
+  it('signals the checkout and the run worktree when a run is claimed and running', async () => {
+    const p = project();
+    const remote = queued();
+    const conductor = conductorOf(remote, new RecordingExecutor(), p);
+    await conductor.start();
+    await conductor.tick();
+    expect(remote.calls.markRunning).toHaveLength(1);
+    expect(signalled(p.checkout)).toBe(true);
+    expect(signalled(p.worktree)).toBe(true);
+  });
+
+  it('signals the checkout and the worktree when a dispatch fails', async () => {
+    const p = project();
+    const remote = queued();
+    // Seen at startRun: only the claim has signalled so far; asserting here
+    // would be swallowed by the dispatch's catch.
+    let atClaim = { checkout: false, worktree: false };
+    const boom: BbExecutor = {
+      id: 'boom',
+      capabilities: () => ({ persistent: false }),
+      startRun: async () => {
+        atClaim = {
+          checkout: signalled(p.checkout),
+          worktree: signalled(p.worktree),
+        };
+        // Age the file after claim, so only the failure can advance it.
+        age(p.checkout);
+        throw new Error('startRun exploded');
+      },
+      stopRun: async () => {},
+      cleanupRun: async () => {},
+    };
+    const conductor = conductorOf(remote, boom, p);
+    await conductor.start();
+    await conductor.tick();
+    // The claim signals the checkout only: the run has no worktree yet.
+    expect(atClaim).toEqual({ checkout: true, worktree: false });
+    expect(remote.calls.markFailed).toHaveLength(1);
+    expect(signalled(p.checkout)).toBe(true);
+    expect(signalled(p.worktree)).toBe(true);
+  });
+
+  it("signals the checkout and the run worktree after a run agent's ticket write", async () => {
+    const p = project();
+    const remote = queued();
+    remote.siteTools = {
+      list: async () => [
+        {
+          name: 'tool_api__bakers_ticket_update',
+          inputSchema: { type: 'object' },
+        },
+      ],
+      // Every ticket the run names belongs to its own project.
+      call: async () => ({
+        content: [{ type: 'text', text: JSON.stringify({ project: 'p-1' }) }],
+      }),
+      close: async () => {},
+    };
+    const executor = new RecordingExecutor();
+    const conductor = conductorOf(remote, executor, p);
+    await conductor.startTools();
+    await conductor.start();
+    await conductor.tick();
+    // Age both after the run started, so only the write can advance them.
+    age(p.checkout);
+    age(p.worktree);
+    const env = executor.started[0]?.env ?? {};
+    const client = new Client({ name: 'test', version: '1.0.0' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(env.BB_CONDUCTOR_URL ?? ''), {
+        requestInit: {
+          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+        },
+      }),
+    );
+    const result = await client.callTool({
+      name: 'bakers_ticket_update',
+      arguments: { ticket: 'BB-1' },
+    });
+    await client.close();
+    await conductor.stopTools();
+    expect(result.isError).toBeFalsy();
+    expect(signalled(p.checkout)).toBe(true);
+    expect(signalled(p.worktree)).toBe(true);
+  });
+
+  it('signals the checkout and the worktree when a run is finalised', async () => {
+    const p = project();
+    writeFileSync(signal(p.checkout), '');
+    writeFileSync(signal(p.worktree), '');
+    age(p.checkout);
+    age(p.worktree);
+    const remote = new FakeBbRemote({
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: 'review',
+          state: 'done',
+          worktreePath: p.worktree,
+        },
+      ],
+    });
+    const conductor = conductorOf(remote, new RecordingExecutor(), p);
+    await conductor.start();
+    await conductor.tick();
+    expect(remote.calls.finalizeRun).toHaveLength(1);
+    expect(signalled(p.checkout)).toBe(true);
+    expect(signalled(p.worktree)).toBe(true);
+  });
+
+  it('still reaches running when the signal cannot be written', async () => {
+    const p = project();
+    // `.bakers` as a plain file: every write below it fails, even as root.
+    for (const dir of [p.checkout, p.worktree]) {
+      rmSync(join(dir, '.bakers'), { recursive: true });
+      writeFileSync(join(dir, '.bakers'), '');
+    }
+    const remote = queued();
+    const conductor = conductorOf(remote, new RecordingExecutor(), p);
+    await conductor.start();
+    await conductor.tick();
+    expect(remote.calls.markRunning).toHaveLength(1);
+  });
+
+  it('git-excludes the signal file exactly once per repository', async () => {
+    const p = project();
+    execFileSync('git', ['init', '-q'], { cwd: p.worktree });
+    // Seeded, not merely queued, so `markDone` has a run record to finalise.
+    const remote = new FakeBbRemote({
+      tickets: { 't-1': { identifier: 'BB-1', title: 'One', state: 'todo' } },
+      runs: [{ runUuid: 'r-1', ticketUuid: 't-1', stateAtStart: 'todo' }],
+    });
+    const conductor = conductorOf(remote, new RecordingExecutor(), p);
+    await conductor.start();
+    await conductor.tick();
+    remote.markDone('r-1');
+    await conductor.tick();
+    expect(remote.calls.finalizeRun).toHaveLength(1);
+    const exclude = readFileSync(
+      join(p.worktree, '.git', 'info', 'exclude'),
+      'utf8',
+    );
+    expect(
+      exclude.split('\n').filter((l) => l === '/.bakers/ui-refresh'),
+    ).toHaveLength(1);
+    expect(
+      execFileSync('git', ['status', '--porcelain'], {
+        cwd: p.worktree,
+        encoding: 'utf8',
+      }),
+    ).not.toContain('ui-refresh');
   });
 });
