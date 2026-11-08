@@ -557,7 +557,10 @@ describe('site tools on the bakers server', () => {
       siteTools: fakeSite(),
       onSiteWrite: (b) => writes.push(b),
     });
-    const client = await connect(server.url, server.issueRunToken(binding));
+    const client = await connect(
+      server.url,
+      server.issueRunToken('run-1', binding),
+    );
     await client.callTool({
       name: 'bakers_ticket_read',
       arguments: { ticket: 'BB-1' },
@@ -587,7 +590,7 @@ describe('site tools on the bakers server', () => {
     });
     const client = await connect(
       server.url,
-      server.issueRunToken(runBinding(PROJECT_A)),
+      server.issueRunToken('run-1', runBinding(PROJECT_A)),
     );
     const updated = await client.callTool({
       name: 'bakers_ticket_update',

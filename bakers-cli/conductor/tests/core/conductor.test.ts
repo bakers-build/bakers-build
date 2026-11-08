@@ -37,6 +37,7 @@ import type {
   BbAgent,
   BbExecutor,
   BbRemote,
+  BbWorkspace,
   ConductorFileConfig,
   HookContext,
   HookListener,
@@ -5369,13 +5370,19 @@ describe('Conductor — bakers ui refresh signal', () => {
         instructions: null,
         created: false,
       }),
+      remove: async () => 'removed',
     };
   }
 
   function queued(): FakeBbRemote {
     const remote = new FakeBbRemote({
       tickets: {
-        't-1': { identifier: 'BB-1', title: 'One', state: 'todo', projectId: 'p-1' },
+        't-1': {
+          identifier: 'BB-1',
+          title: 'One',
+          state: 'todo',
+          projectId: 'p-1',
+        },
       },
     });
     remote.queue.push({
@@ -5393,7 +5400,7 @@ describe('Conductor — bakers ui refresh signal', () => {
     executor: BbExecutor,
     p: { checkout: string; worktree: string },
   ): Conductor {
-    return new Conductor(
+    return new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -5424,7 +5431,6 @@ describe('Conductor — bakers ui refresh signal', () => {
     const boom: BbExecutor = {
       id: 'boom',
       capabilities: () => ({ persistent: false }),
-      runHook: async (name) => ({ hook: name, ran: false, ok: true }),
       startRun: async () => {
         atClaim = {
           checkout: signalled(p.checkout),
@@ -5436,7 +5442,6 @@ describe('Conductor — bakers ui refresh signal', () => {
       },
       stopRun: async () => {},
       cleanupRun: async () => {},
-      removeWorktree: async () => 'removed',
     };
     const conductor = conductorOf(remote, boom, p);
     await conductor.start();
