@@ -90,6 +90,24 @@ Then('the gate chrome is present', async ({ page }) => {
   await expect(page.locator(GATE).first()).toBeVisible();
 });
 
+/** The gate's top bar: the product mark and one quiet link out. */
+Then('the gate top bar links {string} to {string}', async ({ page }, label: string, href: string) => {
+  await expect(
+    page.locator(`${GATE} header`).getByRole('link', { name: label, exact: true }),
+  ).toHaveAttribute('href', href);
+});
+
+/** A gate offers the one thing the page is for, plus the single top-bar link. */
+Then('the gate offers no other navigation', async ({ page }) => {
+  const gate = page.locator(GATE).first();
+  await expect(gate.getByRole('navigation')).toHaveCount(0);
+  await expect(gate.locator('header a')).toHaveCount(1);
+});
+
+Then('the page has exactly one h1', async ({ page }) => {
+  await expect(page.locator('h1')).toHaveCount(1);
+});
+
 /**
  * The gate card pads its content itself, so a form sits directly in it.
  *

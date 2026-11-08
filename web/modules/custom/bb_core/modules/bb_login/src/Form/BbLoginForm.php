@@ -130,7 +130,7 @@ final class BbLoginForm extends FormBase {
     ];
     // THE SECOND DOOR, AND DELIBERATELY NOT A BLOCK. social_auth ships a login
     // block; placing it would mean a block placement and a page-layout change
-    // for what is one anchor. `island.profile.bb_gate` already frames
+    // for what is one anchor. `island.profile.bb_gate_login` already frames
     // `/user/login`, so rendering it here puts it inside the same gate card as
     // the e-mail field with no new plumbing and no island — a link that
     // navigates needs none.

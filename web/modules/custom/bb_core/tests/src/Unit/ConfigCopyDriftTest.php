@@ -223,6 +223,7 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'display_builder.profile.default',
     'island.app.bakers',
     'island.profile.bb_gate',
+    'island.profile.bb_gate_login',
     'island.profile.bb_onboarding',
     'island.profile.bb_shell',
     'island.settings',

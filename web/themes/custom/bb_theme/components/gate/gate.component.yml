@@ -5,15 +5,14 @@ status: stable
 group: Shell
 description: >-
   The product's second chrome, and the peer of `shell` rather than a variant of
-  it: a centred card that frames everything standing BEFORE the product, on a
-  surface that is by definition outside every workspace. It carries no
-  navigation — the rail is workspace-ambient and would render a menu whose
-  entries lead nowhere — and it shares no slot with `shell`, which is a
-  full-viewport flex layout with sidebar/header/content/footer/overlay. Its
-  first and only inhabitant is the workspace chooser, in its two states: the
-  list of the reader's workspaces, and the named absence for a reader who
-  belongs to none. The auth pages are its intended second inhabitant and are a
-  later change to one page-layout condition, not a change to this component.
+  it: a top bar with the product mark and one quiet Docs link over a centred
+  card, framing everything standing BEFORE the product (sign-in, workspace
+  choice and create, device sign-in, OAuth, errors), on a surface that is by
+  definition outside every workspace. It carries no navigation — the rail is
+  workspace-ambient and would render a menu whose entries lead nowhere — and it
+  shares no slot with `shell`. When `aside` is filled (the login page's brand
+  column), the body becomes two columns from `lg`, brand first, and stacks below
+  that.
 provider: bb_theme
 props:
   type: object
@@ -30,13 +29,25 @@ props:
       description: >-
         One sentence under the heading, naming what this gate is for. Optional:
         a chooser whose list speaks for itself needs none.
+    docs_url:
+      type: string
+      title: Docs URL
+      description: >-
+        Target of the quiet Docs link at the top right of the bar, the gate's
+        only link out.
+      default: https://bakers.build
 slots:
   mark:
     title: Mark
     description: >-
-      The product mark above the heading. A slot and not a prop because a mark
-      is rendered content — an icon component or an image — and props carry
-      scalar data only.
+      The product mark at the top left of the bar. A slot and not a prop because
+      a mark is rendered content — an icon component or an image — and props
+      carry scalar data only.
+  aside:
+    title: Aside
+    description: >-
+      Brand column beside the card from `lg`, above it when stacked. Empty on
+      every gate page except login.
   content:
     title: Content
     description: >-

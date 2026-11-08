@@ -173,6 +173,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -276,6 +277,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -309,6 +311,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -349,6 +352,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -376,6 +380,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -433,6 +438,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -465,6 +471,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -493,6 +500,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -526,6 +534,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -581,6 +590,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -632,6 +642,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:canvas
               slots:
@@ -659,6 +670,7 @@ scenes:
     items:
       - scene: design-system:gate
         with:
+          aside: ''
           content:
             - component: bb_theme:canvas
               slots:
@@ -678,3 +690,64 @@ scenes:
                     props:
                       label: Go to home
                       href: /home
+  - name: login
+    group: Gate
+    section: gate
+    docs: >-
+      `/user/login` in the counter line-up look: the `gate` chrome with its
+      `aside` filled by `station-lineup` (the slogan as the page's only h1, a
+      dashed crust hairline and three stations, "you" filled lime) beside the
+      e-mail login card. Two columns from `lg`, brand column first when stacked.
+      The other gate screens leave `aside` empty.
+    items:
+      - scene: design-system:gate
+        with:
+          aside:
+            - component: bb_theme:station-lineup
+              props:
+                headline: You're the baker. Agents run the line.
+                stations:
+                  - role: your client
+                    action: approves the plan
+                    current: false
+                  - role: agents
+                    action: write the code
+                    current: false
+                  - role: you
+                    action: decide what ships
+                    current: true
+          content:
+            - component: bb_theme:gate_form
+              slots:
+                content:
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      gap: none
+                    slots:
+                      content:
+                        - component: bb_theme:form_label
+                          props:
+                            for: edit-mail
+                          slots:
+                            title: E-mail address
+                        - component: bb_theme:form_input
+                          props:
+                            name: mail
+                            id: edit-mail
+                            value: ''
+                            required: true
+                        - component: bb_theme:text
+                          props:
+                            text: We will send you a login link. No password needed.
+                            size: meta
+                            tone: light
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      type: submit
+                      label: Send login link
+                  - component: bb_theme:button
+                    props:
+                      label: Continue with Google
+                      href: /user/login/google

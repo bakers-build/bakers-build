@@ -1,0 +1,12 @@
+component: bb_theme:station-lineup
+name: Default
+props:
+  headline: You're the baker. Agents run the line.
+  stations:
+    - role: your client
+      action: approves the plan
+    - role: agents
+      action: write the code
+    - role: you
+      action: decide what ships
+      current: true

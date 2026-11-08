@@ -137,6 +137,12 @@ primitive:
       '24':
         $value: 24px
         $type: dimension
+      '40':
+        $value: 40px
+        $type: dimension
+        $description: >-
+          Addition (BAKERS-116, reference-free, agreed with the owner). Size of
+          the gate slogan headline.
     fontWeight:
       regular:
         $value: 400
@@ -226,6 +232,12 @@ primitive:
             reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:54'
+      '44':
+        $value: 44px
+        $type: dimension
+        $description: >-
+          Addition (BAKERS-116, reference-free, agreed with the owner). Line
+          height of the gate slogan headline.
       tight:
         $value: 1.2
         $type: number
@@ -530,6 +542,30 @@ semantic:
       $type: color
       $value: '#D9D3C9'
       $description: Avatar initials fill behind state-ink text.
+    station-ring:
+      $type: color
+      $value: '{primitive.style.color.butter}'
+      $description: >-
+        Addition (BAKERS-116, reference-free, agreed with the owner). Ring of a
+        station avatar circle in the gate line-up (graphic only).
+    station-line:
+      $type: color
+      $value: '{primitive.style.color.rye}'
+      $description: >-
+        Addition (BAKERS-116, reference-free, agreed with the owner). Hairline
+        around a station avatar circle (graphic only).
+    station-current:
+      $type: color
+      $value: '{primitive.style.color.lime}'
+      $description: >-
+        Addition (BAKERS-116, reference-free, agreed with the owner). Fill of
+        the current station circle, the reader's own (graphic only).
+    station-rule:
+      $type: color
+      $value: '{primitive.style.color.crust}'
+      $description: >-
+        Addition (BAKERS-116, reference-free, agreed with the owner). Dashed
+        hairline between the gate headline and the line-up (graphic only).
   typography:
     page-title:
       $value:
@@ -717,6 +753,17 @@ semantic:
           reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:87'
+    gate-headline:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.display}'
+        fontSize: '{primitive.style.fontSize.40}'
+        fontWeight: '{primitive.style.fontWeight.bold}'
+        lineHeight: '{primitive.style.lineHeight.44}'
+        letterSpacing: '{primitive.style.letterSpacing.tight}'
+      $type: typography
+      $description: >-
+        Addition (BAKERS-116, reference-free, agreed with the owner). The slogan
+        headline beside the login card, the largest text on the gate.
   fontWeight:
     regular:
       $value: '{primitive.style.fontWeight.regular}'
@@ -1156,6 +1203,13 @@ themes:
           $type: color
           $value: '#BCB3A6'
           $description: Avatar initials fill behind state-ink text.
+        station-line:
+          $type: color
+          $value: '#8E7B62'
+          $description: >-
+            Addition (BAKERS-116, reference-free, agreed with the owner).
+            Hairline around a station avatar circle; rye would vanish on the
+            dark ground.
     primitive:
       style:
         elevation:

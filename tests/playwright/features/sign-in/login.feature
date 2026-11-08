@@ -17,6 +17,17 @@ Feature: bakers.build sign-in
     And no password field is present
     And the gate chrome is present
     And the application shell is not present
+    And the gate top bar links "Docs" to "https://bakers.build"
+    And the gate offers no other navigation
+    And the station line-up shows the headline "You're the baker. Agents run the line."
+    And the station line-up shows the stations:
+      | role        | action            |
+      | your client | approves the plan |
+      | agents      | write the code    |
+      | you         | decide what ships |
+    And the current station is "you"
+    And the station line-up shows no images
+    And the page has exactly one h1
 
   Scenario Outline: The site root still takes an account straight to its work
     Given I am signed in as "<account>"
@@ -45,6 +56,8 @@ Feature: bakers.build sign-in
     Then the workspace chooser is present
     And the workspace chooser offers "/bakers/tickets"
     And the workspace chooser offers "/other/tickets"
+    And the gate top bar links "Docs" to "https://bakers.build"
+    And the station line-up is absent
     When I choose the workspace "/other/tickets"
     Then the application shell is present
 
@@ -127,6 +140,7 @@ Feature: bakers.build sign-in
     Examples:
       | width | zoom |
       | 360   | 100  |
+      | 390   | 100  |
       | 1440  | 100  |
       | 1440  | 200  |
 
