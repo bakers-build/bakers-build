@@ -336,10 +336,16 @@ describe('ClaudeAgent measure', () => {
 
   it('carries measure into every catalog variant and contributes no hook listener', async () => {
     const candidates = await preset.agents([], { measure: true });
-    expect(candidates.map(({ alias }) => alias)).toEqual(['opus', 'sonnet']);
+    expect(candidates.map(({ alias }) => alias)).toEqual([
+      'opus',
+      'sonnet',
+      'fable',
+    ]);
     for (const c of candidates) {
       const agent = await c.agent.createAgent({} as never);
       expect(agent.launchCommand('go')).toContain(`node '${wrapper}' claude`);
+      expect(agent.launchCommand('go')).toContain(`--model '${c.model}'`);
+      expect(agent.withoutConductorTools).toBe(true);
     }
     expect('hooks' in preset).toBe(false);
   });
