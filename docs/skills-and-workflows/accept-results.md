@@ -51,7 +51,7 @@ When work falls short, name the open criterion and the cause:
 
 For changed requirements, ask your agent to use `bb-scope-change`.
 
-When the result meets the criteria, state that decision separately from authorization to merge or deploy. Merging requires explicit authorization for the linked merge request, passing required CI checks and a mergeable branch. Follow your project's delivery workflow for deployment. At `done` or `cancelled`, you can give an optional rating from 1 to 5.
+When the result meets the criteria, state that decision separately from authorization to merge or deploy. Merging requires explicit authorization for the linked merge request, passing required CI checks and a mergeable branch. Follow your project's delivery workflow for deployment. When closing a feature, bug or chore as `done`, you can give an optional [rating from 1 to 5](/skills-and-workflows/metrics). Cancellation records a reason, without a rating.
 
 **Done when:** your findings and delivery decision are recorded, and the next action has an owner. A submitted or published review alone does not mean the ticket is done.
 
