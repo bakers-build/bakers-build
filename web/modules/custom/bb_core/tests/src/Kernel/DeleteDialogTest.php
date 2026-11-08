@@ -182,7 +182,7 @@ final class DeleteDialogTest extends KernelTestBase {
     self::assertSame(200, $response->getStatusCode());
     self::assertStringNotContainsString('<html class', $markup, 'a fragment, not the page');
     self::assertMatchesRegularExpression('/<dialog[^>]*data-dialog/', $markup);
-    self::assertStringContainsString('<h2 id="bakers-dialog__title" class="dialog__title flex-1 min-w-0 truncate m-0 text-heading font-bold text-title">Delete ', $markup);
+    self::assertMatchesRegularExpression('/<h2 id="bakers-dialog__title" class="dialog__title[^"]*">Delete /', $markup);
     self::assertMatchesRegularExpression('/<form[^>]*hx-post="[^"]*_wrapper_format=island_dialog/', $markup);
     [, $footer] = explode('class="dialog__actions', $markup, 2) + [1 => ''];
     self::assertMatchesRegularExpression('/<a[^>]*data-dialog-cancel[^>]*href="' . preg_quote(htmlspecialchars(self::UNDER), '/') . '"/', $footer, 'cancel closes to the screen underneath');

@@ -3,17 +3,19 @@
  * @file
  * Presenter override: render every form element through the bb_theme
  * form_field SDC, which owns the field's spacing and help-text styling.
+ * Core sets type, name and description_display only when the element has
+ * them, so they fall back to core's defaults for the strict schema.
  *
  * @see web/themes/custom/bb_theme/components/form_field/form_field.twig
  */
 #}
 {{ include('bb_theme:form_field', {
   attributes: attributes,
-  type: type,
-  name: name,
+  type: type|default(''),
+  name: name|default(''),
   title_display: title_display,
   label_display: label_display,
-  description_display: description_display,
+  description_display: description_display|default('after'),
   description_id: description.attributes.id|default(''),
   disabled: disabled == 'disabled',
   label: label,

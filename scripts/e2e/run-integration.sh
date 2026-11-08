@@ -43,6 +43,10 @@ foreach ($run_storage->loadMultiple($run_ids) as $run) {
 // Reset ticket to claimable state.
 $ticket->set("state", "working");
 $ticket->save();
+
+// The run-log tests need the workspace opt-in; the deployment flag comes from the stack.
+\Drupal::service("bb_core.workspace_resolver")->resolve($ticket)
+  ->set("run_log_storage_enabled", TRUE)->save();
 print $ticket->uuid();
 ' 2>/dev/null)"
 export BB_E2E_CONDUCTOR_TICKET_UUID

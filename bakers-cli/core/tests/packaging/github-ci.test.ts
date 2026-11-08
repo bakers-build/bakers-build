@@ -20,6 +20,7 @@ const AFTER_MERGE = ['image_gate', 'tui_musl', 'release_rehearsal'];
 // WarpBuild tiers; a repository variable set to '["self-hosted","github-runner-1"]' sends a tier back.
 const CHECKS_RUNNER = `\${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}`;
 const AFTER_MERGE_RUNNER = `\${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-latest-x64-4x"') }}`;
+const IMAGE_GATE_RUNNER = `\${{ fromJSON(vars.RUNNER_IMAGE_GATE || '"warp-ubuntu-latest-x64-16x"') }}`;
 
 describe('GitHub migration checks', () => {
   it('disables every GitLab publisher and deploy job before GitHub takes ownership', () => {
@@ -202,7 +203,11 @@ describe('GitHub migration checks', () => {
       workflow.jobs,
     ))
       expect(job['runs-on'], name).toBe(
-        AFTER_MERGE.includes(name) ? AFTER_MERGE_RUNNER : CHECKS_RUNNER,
+        name === 'image_gate'
+          ? IMAGE_GATE_RUNNER
+          : AFTER_MERGE.includes(name)
+            ? AFTER_MERGE_RUNNER
+            : CHECKS_RUNNER,
       );
     for (const name of required) {
       const job = workflow.jobs[name];

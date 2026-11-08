@@ -448,7 +448,8 @@ jobs:
           bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
           bash tests/contract/coder-pm-bot.sh
   image_gate:
-    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-latest-x64-4x"') }}
+    # Its own, larger runner: PHPUnit and the browser suite run with the parallelism set in the gate script.
+    runs-on: ${{ fromJSON(vars.RUNNER_IMAGE_GATE || '"warp-ubuntu-latest-x64-16x"') }}
     # The push run's tested images are what release.yml deploys.
     if: *after_merge
     timeout-minutes: 180
