@@ -2,7 +2,7 @@
 
 Check a coding handoff's exact login URL, review resources and presentation using the shared skill runner.
 
-**You need:** the prerequisites in [Test a skill](/development/test-skills), including the installed Promptfoo dependency.
+**You need:** the prerequisites in [Test a skill](test-skills.md), including the installed Promptfoo dependency.
 
 1. Generate the maintained case:
 
@@ -42,4 +42,4 @@ Check a coding handoff's exact login URL, review resources and presentation usin
 
 **Done when:** two unchanged replays agree, the negative control fails `issued-login-url` with exit 1, and semantic findings are recorded. Other link checks may also fail after removing the URL. Preserve observed renderer defects instead of weakening assertions or modifying the reference to make the evaluation green.
 
-The old `run-outtake.mjs` command and saved version 1 attempts remain supported. The other states' outtakes (`qualify-outtake`, `review-outtake-findings`, the `outtake-extension-*` cases for the recipe slot) use the `state-outtake` profile with the same operations. See [Add a skill test](/development/add-skill-test) for the profile contract and [HTTP result sharing](/development/test-skills) for tunnel links.
+The old `run-outtake.mjs` command and saved version 1 attempts remain supported. The other states' outtakes (`qualify-outtake`, `review-outtake-findings`, the `outtake-extension-*` cases for the recipe slot) use the `state-outtake` profile with the same operations. See [Add a skill test](add-skill-test.md) for the profile contract and [HTTP result sharing](test-skills.md) for tunnel links.

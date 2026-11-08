@@ -7,10 +7,12 @@ Find the file that owns a setting before changing it. Start with the [file map a
 | [Connections](/configuration/connector/connections) | Server selection, sign-in profiles and private connection files |
 | [Machine](/configuration/machine) | Host identity, agent catalog and machine policy |
 | [Project](/configuration/project) | Committed engine wiring, hooks and named conductor variants |
-| [Clients](/configuration/clients) | Client selection and CLI reference |
+| [CLI reference](/configuration/clients/cli) | Commands, tools and authentication |
 | [Migration](/configuration/project/migration) | Retired shapes and supported upgrades |
 
 Keep credentials and `.bakers/*.local.js` out of Git. JavaScript composition is explicit: a local conductor file changes the committed configuration only where that configuration imports it.
+
+For client choice and everyday use, see [Use your client](/get-started/use-your-client). [Conductor slots](/addons/slots) owns executor and workspace selection.
 
 ```sh
 bakers config check --scope all --online

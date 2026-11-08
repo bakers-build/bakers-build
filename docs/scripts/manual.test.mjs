@@ -85,7 +85,6 @@ function navigation(t, mutate = () => {}) {
     { label: 'Addons', link: '/addons/' },
     { label: 'Configuration', link: '/configuration/' },
     { label: 'Self-hosting', link: '/self-hosting/' },
-    { label: 'Development', link: '/development/' },
   ]
   const sidebar = Object.fromEntries(areas.map(({ label, link }) => [link, [{ text: label, items: [{ link }] }]]))
   sidebar['/get-started/'][0].items.push(...['connector', 'connect-a-project', 'first-ticket'].map(slug => ({ link: `/get-started/${slug}` })))
@@ -97,15 +96,17 @@ function navigation(t, mutate = () => {}) {
   }
   sidebar['/get-started/'][0].items.push({ link: '/get-started/' })
   sidebar['/configuration/'][0].items.push({ link: '/configuration/' })
+  mkdirSync(join(root, 'docs/development'))
+  writeFileSync(join(root, 'docs/development/internal-only.md'), '---\ndraft: true\n---\n# Internal contributor notes\n')
   mutate(areas, sidebar)
   copyFileSync(new URL('./check-pages.mjs', import.meta.url), join(root, 'docs/scripts/check-pages.mjs'))
-  writeFileSync(join(root, 'docs/.vitepress/manual.mjs'), `export const AREAS = ${JSON.stringify(areas)}; export const SIDEBAR = ${JSON.stringify(sidebar)}; export const SRC_EXCLUDE = ['bakers/**'];`)
+  writeFileSync(join(root, 'docs/.vitepress/manual.mjs'), `export const AREAS = ${JSON.stringify(areas)}; export const SIDEBAR = ${JSON.stringify(sidebar)}; export const SRC_EXCLUDE = ['bakers/**', 'development/**'];`)
   return spawnSync(process.execPath, [join(root, 'docs/scripts/check-pages.mjs')], { encoding: 'utf8' })
 }
 
-test('requires exactly eight ordered manual areas', t => {
+test('requires exactly seven public manual areas', t => {
   const result = navigation(t, (areas, sidebar) => {
-    areas.push({ label: 'Advanced', link: '/advanced/' })
+    areas.push({ label: 'Development', link: '/development/' })
   })
   assert.equal(result.status, 1, result.stdout)
   assert.match(result.stdout, /manual areas/)
@@ -116,7 +117,7 @@ test('accepts complete navigation and rejects missing setup or excluded sidebar 
   assert.equal(valid.status, 0, valid.stdout)
   const invalid = navigation(t, (_areas, sidebar) => {
     sidebar['/get-started/'][0].items = sidebar['/get-started/'][0].items.filter(i => i.link !== '/get-started/connector')
-    sidebar['/addons/'][0].items.push({ link: '/development/architecture' })
+    sidebar['/addons/'][0].items.push({ link: '/development/internal-only' })
   })
   assert.equal(invalid.status, 1, invalid.stdout)
   assert.match(invalid.stdout, /missing setup entry/)

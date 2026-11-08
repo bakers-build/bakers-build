@@ -20,7 +20,7 @@ Generate one synthetic skill output, replay its deterministic checks offline, an
      --output "$eval_dir/missing-account" --model sonnet --timeout 180
    ```
 
-   Generation loads the selected skill and references from this checkout. One isolated Claude worker receives the supplied observations, with the rubric withheld. Call fixtures use [simulated tools](/development/test-skill-tools). Promptfoo then checks the saved output. Use `prepare` instead of `generate` to snapshot inputs without a model call; preparation is not a passed test. A fixture ID or JSON path is accepted.
+   Generation loads the selected skill and references from this checkout. One isolated Claude worker receives the supplied observations, with the rubric withheld. Call fixtures use [simulated tools](test-skill-tools.md). Promptfoo then checks the saved output. Use `prepare` instead of `generate` to snapshot inputs without a model call; preparation is not a passed test. A fixture ID or JSON path is accepted.
 
 3. Replay the unchanged attempt twice:
 
@@ -104,7 +104,5 @@ The default worker runs in a fresh temporary directory with no tools, MCP server
 
 Add coverage for another skill or explore a maintained example.
 
-<DocQuickLinks aria-label="Extend skill tests" :items="[
-  { label: 'Add a skill test', text: 'Write fixtures and profiles, then run the required offline CI checks.', link: '/development/add-skill-test' },
-  { label: 'Test the coding outtake', text: 'Check presentation and use a negative control for the exact login URL.', link: '/development/test-run-outtake' }
-]" />
+- [Add a skill test](add-skill-test.md) — Write fixtures and profiles, then run the required offline CI checks.
+- [Test the coding outtake](test-run-outtake.md) — Check presentation and use a negative control for the exact login URL.

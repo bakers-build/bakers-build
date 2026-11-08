@@ -1,6 +1,6 @@
 # herdr
 
-Run each ticket's agent in a visible herdr terminal and its own Git worktree. Development tooling remains independent of the client.
+Run each ticket's agent in a visible herdr terminal and its own Git worktree. For the herdr-cli experience and first action, see [Use your client](/get-started/use-your-client#herdr-cli). Development tooling remains independent of the client.
 
 ## AI first
 

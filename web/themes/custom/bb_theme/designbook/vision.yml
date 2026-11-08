@@ -18,6 +18,9 @@ design_reference:
   url: https://claude.ai/design/p/6dc13314-59d8-44e4-b81f-dad03ff46dfa
   label: bakers.build screens (Claude Design)
 references:
+  - type: brand_foundation
+    url: ../../../../../docs/decisions/brand-foundation.md#current-slogan
+    label: Canonical provisional slogan and production-line metaphor; clients are windows onto the line.
   - type: design_system_rule
     url: designbook/design-system/action-pattern.md
     label: >-

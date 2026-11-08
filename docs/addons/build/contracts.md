@@ -139,7 +139,7 @@ Cockpit tabs are layered. The three lists concatenate in the order machine, conn
 
 Executors and workspaces: [their guide](/addons/build/executor-workspace).
 
-The guard rejects an addon that depends on a sink, names a dependency outside its allowance, lists a contract as a plain dependency, or contributes to the conductor or UI surface without the matching peer dependency; [architecture](/development/architecture) has the rules. A new non-private package under `addons/` is published without a list to edit. [Build from source](/development/build-from-source) covers `verify:package`, which installs the whole set the way npm users do.
+The guard rejects an addon that depends on a sink, names a dependency outside its allowance, lists a contract as a plain dependency, or contributes to the conductor or UI surface without the matching peer dependency. A new non-private package under `addons/` is published without a list to edit.
 
 ## Addon inbox messages
 

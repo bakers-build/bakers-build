@@ -2,6 +2,8 @@
 
 bakers.build helps your team turn software tasks into reviewed changes. Describe a task in a ticket; coding agents plan, implement and check it, and you review the result.
 
+[Use your client](/get-started/use-your-client) to choose how you observe, discuss and act on that work.
+
 <span id="before-you-start"></span>
 
 ## Choose where to start
