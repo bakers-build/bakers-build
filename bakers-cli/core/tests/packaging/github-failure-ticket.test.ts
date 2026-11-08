@@ -18,6 +18,10 @@ type Call = { tool: string; args: Record<string, string> };
 // with the given tickets.
 function report(
   tickets: Array<{ identifier: string; title: string; state: string }>,
+  run: { WORKFLOW: string; BRANCH: string } = {
+    WORKFLOW: 'GitHub checks',
+    BRANCH: 'next',
+  },
 ) {
   const dir = mkdtempSync(join(tmpdir(), 'github-failure-ticket-'));
   try {
@@ -42,6 +46,7 @@ esac
         PATH: `${dir}:${process.env.PATH}`,
         CALLS: join(dir, 'calls'),
         SEARCH: join(dir, 'search.json'),
+        ...run,
         FAILED_JOBS: 'image_gate, phpcs',
         GITHUB_SHA: '0123456789abcdef0123456789abcdef01234567',
         RUN_URL: 'https://github.com/bakers-build/bakers-build/actions/runs/42',
@@ -92,7 +97,9 @@ describe('GitHub checks failure ticket', () => {
       project: BAKERS,
       workflow: 'bb_work',
       type: 'bug',
+      recipe: 'superpowers',
     });
+    expect(created.description).toContain('`GitHub checks` failed on `next`');
     namesTheFailure(created.description);
     // The new ticket goes straight to the cw-framework conductor.
     expect(result.calls[2].args).toEqual({
@@ -127,5 +134,28 @@ describe('GitHub checks failure ticket', () => {
       'bakers_ticket_create',
       'bakers_ticket_update',
     ]);
+  });
+
+  it('files a release failure on its own ticket, apart from the checks ticket', () => {
+    const release = 'CI failure: GitHub release on main';
+    const result = report(
+      [{ identifier: 'BAKERS-90', title: TITLE, state: 'working' }],
+      { WORKFLOW: 'GitHub release', BRANCH: 'main' },
+    );
+    expect(result.status, result.stderr).toBe(0);
+    expect(tools(result.calls)).toEqual([
+      'bakers_ticket_search',
+      'bakers_ticket_create',
+      'bakers_ticket_update',
+    ]);
+    expect(result.calls[0].args).toEqual({ query: release, project: BAKERS });
+    expect(result.calls[1].args).toMatchObject({
+      title: release,
+      type: 'bug',
+      recipe: 'superpowers',
+    });
+    expect(result.calls[1].args.description).toContain(
+      '`GitHub release` failed on `main`',
+    );
   });
 });

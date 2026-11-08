@@ -559,6 +559,8 @@ jobs:
           persist-credentials: false
       - name: File the failure in bakers.build
         env:
+          WORKFLOW: GitHub checks
+          BRANCH: next
           NEEDS: ${{ toJSON(needs) }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           BB_CI_CLIENT_ID: ${{ secrets.BB_CI_CLIENT_ID }}

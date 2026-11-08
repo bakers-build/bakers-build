@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Files a failed `GitHub checks` run on next in bakers.build: comments on the open CI-failure
-# ticket if there is one, otherwise creates a bug. Needs a signed-in `bakers` CLI.
-# Inputs: FAILED_JOBS, GITHUB_SHA, RUN_URL.
+# Files a failed workflow run (`GitHub checks`, `GitHub release`) in bakers.build: comments on the
+# open CI-failure ticket for that workflow and branch if there is one, otherwise creates a bug.
+# Needs a signed-in `bakers` CLI.
+# Inputs: WORKFLOW, BRANCH, FAILED_JOBS, GITHUB_SHA, RUN_URL.
 set -euo pipefail
 
-: "${FAILED_JOBS:?}" "${GITHUB_SHA:?}" "${RUN_URL:?}"
-export TITLE='CI failure: GitHub checks on next'
+: "${WORKFLOW:?}" "${BRANCH:?}" "${FAILED_JOBS:?}" "${GITHUB_SHA:?}" "${RUN_URL:?}"
+export TITLE="CI failure: $WORKFLOW on $BRANCH"
 # Project BAKERS; ticket search accepts only the UUID, not the key.
 export PROJECT=07ab22a7-49ee-479d-8431-7202f5235898
 work="$(mktemp -d)"
@@ -23,7 +24,7 @@ const env = process.env;
 const { tickets = [] } = JSON.parse(fs.readFileSync(`${dir}/found.json`, 'utf8'));
 const open = tickets.find((t) => t.title.startsWith(env.TITLE) && t.state !== 'done');
 const body = [
-  '`GitHub checks` failed on `next`.',
+  `\`${env.WORKFLOW}\` failed on \`${env.BRANCH}\`.`,
   '',
   `- Failed jobs: ${env.FAILED_JOBS}`,
   `- Commit: ${env.GITHUB_SHA}`,
@@ -33,7 +34,8 @@ const body = [
 const [tool, args] = open
   ? ['bakers_comment_publish', { ticket: open.identifier, type: 'comment', body }]
   : ['bakers_ticket_create', {
-      title: env.TITLE, project: env.PROJECT, workflow: 'bb_work', type: 'bug', description: body,
+      title: env.TITLE, project: env.PROJECT, workflow: 'bb_work', type: 'bug', recipe: 'superpowers',
+      description: body,
     }];
 fs.writeFileSync(`${dir}/tool`, `tool_api__${tool}`);
 fs.writeFileSync(`${dir}/args.json`, JSON.stringify(args));
