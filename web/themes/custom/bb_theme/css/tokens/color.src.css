@@ -52,8 +52,6 @@
   --color-avatar-b: #CFE69A;
   --color-avatar-c: #EAC6A4;
   --color-avatar-d: #D9D3C9;
-  --color-station-ring: var(--color-butter);
-  --color-station-line: var(--color-rye);
-  --color-station-current: var(--color-lime);
-  --color-station-rule: var(--color-crust);
+  --color-gate-band: var(--color-butter);
+  --color-gate-band-ink: var(--color-rye);
 }

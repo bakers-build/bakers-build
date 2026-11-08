@@ -334,11 +334,7 @@ DELETED_ALLOWLIST=''
 # `form-element` presenter rendered stable9 markup and styled the help text
 # itself; the field also owns the space below it, so forms stack evenly.
 # Form (snake_case). 69 + 1 = 70.
-# 71 SINCE BAKERS-116: `station_lineup`, the login page's brand column (slogan
-# h1, dashed hairline, a line-up of decorative station circles with role and
-# action). `gate` gained an `aside` slot for it; no existing component renders
-# a headline over an ordered row of marked stations. Shell (snake_case). 70 + 1 = 71.
-TARGET_COMPONENT_COUNT=71
+TARGET_COMPONENT_COUNT=70
 
 # The three containers and the props that make them containers (D2).
 CONTAINER_COMPONENTS='table list form'

@@ -3,7 +3,7 @@
   --spacing-shell-height: calc(100dvh - var(--drupal-displace-offset-top, 0px));
   --spacing-row: 34px;
   --spacing-control: 28px;
-  --spacing-brand-compact-width: 128px;
+  --spacing-brand-compact-width: 200px;
   --spacing-zone-sm: var(--spacing-space-3);
   --spacing-zone-md: var(--spacing-space-5);
   --spacing-zone-lg: var(--spacing-space-6);

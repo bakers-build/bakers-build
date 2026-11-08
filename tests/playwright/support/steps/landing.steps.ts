@@ -90,18 +90,22 @@ Then('the gate chrome is present', async ({ page }) => {
   await expect(page.locator(GATE).first()).toBeVisible();
 });
 
-/** The gate's top bar: the product mark and one quiet link out. */
-Then('the gate top bar links {string} to {string}', async ({ page }, label: string, href: string) => {
-  await expect(
-    page.locator(`${GATE} header`).getByRole('link', { name: label, exact: true }),
-  ).toHaveAttribute('href', href);
-});
+/** The gate's brand band: the product mark, and the slogan as plain text, never a heading. */
+Then(
+  'the gate band shows the product mark and the slogan {string}',
+  async ({ page }, slogan: string) => {
+    const band = page.locator(`${GATE} .gate__band`);
+    await expect(band.getByRole('img', { name: 'bakers.build' })).toBeVisible();
+    await expect(band.getByText(slogan, { exact: true })).toBeVisible();
+    await expect(band.getByRole('heading')).toHaveCount(0);
+  },
+);
 
-/** A gate offers the one thing the page is for, plus the single top-bar link. */
-Then('the gate offers no other navigation', async ({ page }) => {
+/** A gate offers the one thing the page is for: no navigation and no link outside its content. */
+Then('the gate offers no navigation', async ({ page }) => {
   const gate = page.locator(GATE).first();
   await expect(gate.getByRole('navigation')).toHaveCount(0);
-  await expect(gate.locator('header a')).toHaveCount(1);
+  await expect(gate.locator('a:not(.gate__content a)')).toHaveCount(0);
 });
 
 Then('the page has exactly one h1', async ({ page }) => {

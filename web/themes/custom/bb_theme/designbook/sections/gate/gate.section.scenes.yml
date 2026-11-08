@@ -173,7 +173,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -283,7 +282,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -323,7 +321,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -370,7 +367,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -398,7 +394,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -456,7 +451,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -489,7 +483,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -518,7 +511,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:zone
               props:
@@ -552,7 +544,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -614,7 +605,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:gate_form
               slots:
@@ -672,7 +662,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:canvas
               slots:
@@ -700,7 +689,6 @@ scenes:
     items:
       - scene: design-system:gate
         with:
-          aside: ''
           content:
             - component: bb_theme:canvas
               slots:
@@ -724,32 +712,23 @@ scenes:
     group: Gate
     section: gate
     docs: >-
-      `/user/login` in the counter line-up look: the `gate` chrome with its
-      `aside` filled by `station_lineup` (the slogan as the page's only h1, a
-      dashed crust hairline and three stations, "you" filled lime) beside the
-      e-mail login card. Two columns from `lg`, brand column first when stacked.
-      The other gate screens leave `aside` empty.
+      `/user/login` in the butter-band look: the `gate` chrome (logo at the top
+      of the band, the slogan as plain text at its foot) beside the login form,
+      whose "Log in" heading is the page's only h1. The form's two doors are
+      full-width pills with a dashed "or" divider between them. Two columns from
+      `lg`, the band on top when stacked.
     items:
       - scene: design-system:gate
         with:
-          aside:
-            - component: bb_theme:station_lineup
-              props:
-                headline: You're the baker. Agents run the line.
-                stations:
-                  - role: your client
-                    action: approves the plan
-                    current: false
-                  - role: agents
-                    action: write the code
-                    current: false
-                  - role: you
-                    action: decide what ships
-                    current: true
           content:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Log in
+                      as: h1
+                      size: section-title
                   - component: bb_theme:zone
                     props:
                       inset: none
@@ -777,7 +756,9 @@ scenes:
                       variant: primary
                       type: submit
                       label: Send login link
+                alternative:
                   - component: bb_theme:button
                     props:
+                      variant: neutral
                       label: Continue with Google
                       href: /user/login/google

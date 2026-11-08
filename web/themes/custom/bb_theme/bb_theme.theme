@@ -53,7 +53,8 @@ function bb_theme_theme(): array {
  */
 function bb_theme_form_alter(array &$form, FormStateInterface $form_state, string $form_id): void {
   if (in_array($form_id, ['bb_login_form', 'bb_login_code_form', 'user_logout_confirm'], TRUE)) {
-    $form['actions']['submit']['#bb_variant'] = 'neutral';
+    // The login page's own action is the one filled pill on the gate.
+    $form['actions']['submit']['#bb_variant'] = $form_id === 'bb_login_form' ? 'primary' : 'neutral';
     if (isset($form['oauth'])) {
       $form['oauth']['#props']['variant'] = 'neutral';
     }

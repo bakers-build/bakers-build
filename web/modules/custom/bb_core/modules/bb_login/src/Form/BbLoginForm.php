@@ -90,6 +90,16 @@ final class BbLoginForm extends FormBase {
       $this->getRequest()->getSession()->set(BbOneTimeLoginController::DESTINATION_KEY, $destination);
     }
 
+    // The page's one h1: the gate's band carries the slogan as plain text.
+    $form['heading'] = [
+      '#type' => 'component',
+      '#component' => 'bb_theme:text',
+      '#props' => [
+        'text' => $this->t('Log in'),
+        'as' => 'h1',
+        'size' => 'section-title',
+      ],
+    ];
     $form['mail'] = [
       '#type' => 'email',
       '#title' => $this->t('E-mail address'),
@@ -130,7 +140,7 @@ final class BbLoginForm extends FormBase {
     ];
     // THE SECOND DOOR, AND DELIBERATELY NOT A BLOCK. social_auth ships a login
     // block; placing it would mean a block placement and a page-layout change
-    // for what is one anchor. `island.profile.bb_gate_login` already frames
+    // for what is one anchor. `island.profile.bb_gate` already frames
     // `/user/login`, so rendering it here puts it inside the same gate card as
     // the e-mail field with no new plumbing and no island — a link that
     // navigates needs none.

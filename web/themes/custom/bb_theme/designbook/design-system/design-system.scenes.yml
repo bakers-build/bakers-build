@@ -438,7 +438,6 @@ scenes:
             component: bb_theme:brand
             props:
               size: compact
-          aside: $aside
           content: $content
   - name: onboarding
     group: Shell

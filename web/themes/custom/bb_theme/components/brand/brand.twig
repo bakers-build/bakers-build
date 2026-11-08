@@ -1,8 +1,8 @@
 {# The bakers.build logo with wordmark. `compact` sizes it from a fixed
-   component token, so the gate's mark stays 128px wide in every layout
-   density. #}
+   component token, so the gate's mark stays 200px wide in every layout
+   density, and starts it at the left edge of the gate's band. #}
 {% set compact = size|default('default') == 'compact' %}
 {% set tag = compact ? 'div' : 'h1' %}
-<{{ tag }}{{ (attributes ?: create_attribute()).addClass(['flex', 'items-center', 'justify-center', 'm-0', 'min-w-0', 'w-full']) }}>
+<{{ tag }}{{ (attributes ?: create_attribute()).addClass(['flex', 'items-center', compact ? 'justify-start' : 'justify-center', 'm-0', 'min-w-0', 'w-full']) }}>
   <img src="{{ file_url('/themes/custom/bb_theme/logo-wordmark.svg') }}" alt="bakers.build" class="{{ compact ? 'w-brand-compact-width' : 'w-60' }} min-w-0 max-w-full h-auto"/>
 </{{ tag }}>

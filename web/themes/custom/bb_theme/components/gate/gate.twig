@@ -7,45 +7,35 @@
    carries no workspace — so `shell` here would render a navigation with no
    reachable entry, which reads as a defect rather than as a state. It shares no
    slot with `shell` either: that one is a full-viewport flex layout with
-   sidebar/header/content/footer/overlay, this one is a top bar over a card.
+   sidebar/header/content/footer/overlay, this one is a brand band beside a form.
 
-   ONE QUIET LINK OUT, AND NO NAVIGATION. The top bar carries the product mark
-   and a single Docs link; a gate offers the one thing the page is for and
-   nothing else, because a link into a workspace the reader may not be in is
+   THE BAND, AND NO NAVIGATION. A flat butter field carries the product mark at
+   the top and the slogan at the bottom; the page's own title, description and
+   content stand beside it. A gate offers the one thing the page is for and no
+   link out, because a link into a workspace the reader may not be in is
    exactly the wrong guess `BbWorkspaceAccessCheck` answers with a 404.
 
-   The `mark` slot is the product mark, and it is a SLOT rather than a prop
-   because a mark is rendered content — an icon component, an image — and props
-   carry scalar data only. `content` is the one region a screen fills, exactly
-   as in `shell`. `aside` is the brand column the login page fills; with it the
-   body becomes two columns from `lg`, brand first, and without it the card
-   stays centred alone.
+   BUTTER IN BOTH MODES, WITH RYE INK. `scheme-light` keeps the mark's own
+   dark-mode rule (its wordmark turns light) from firing on the light band.
+   The slogan is plain text: the page's title is its single `h1`.
 
-   NOT A SCROLL CONTAINER. `min-h-screen` lets a long card grow the page rather
+   NOT A SCROLL CONTAINER. `min-h-screen` lets a long list grow the page rather
    than clip itself, which keeps a chooser with twenty workspaces readable. #}
-<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'flex-col', 'bg-app', 'text-text']) }}>
-  <header class="flex items-center justify-between gap-group p-gutter">
+<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'flex-col', 'lg:flex-row', 'bg-app', 'text-text']) }}>
+  <aside class="gate__band scheme-light flex flex-col justify-between gap-section p-gutter lg:p-section min-h-[220px] lg:min-h-screen lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
     <div class="min-w-0">{% block mark %}{% if mark %}{{ mark }}{% endif %}{% endblock %}</div>
-    {# SDC does not apply schema defaults at render time; every gate page links the docs. #}
-    {% set docs_url = docs_url|default('https://bakers.build') %}
-    {% if docs_url %}
-      <a href="{{ docs_url }}" class="text-meta text-text-light hover:text-text hover:underline underline-offset-4">{{ 'Docs'|t }}</a>
-    {% endif %}
-  </header>
-  <main class="flex-1 flex items-center justify-center p-gutter">
-    <div class="w-full {{ aside ? 'max-w-5xl grid gap-section items-center lg:grid-cols-2' : 'flex justify-center' }}">
-      {% if aside %}
-        <div class="gate__aside min-w-0">{% block aside %}{{ aside }}{% endblock %}</div>
+    {# SDC does not apply schema defaults at render time. #}
+    <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("You're the baker. Agents run the line."|t) }}</p>
+  </aside>
+  <main class="gate__main flex-1 flex items-start lg:items-center justify-center p-gutter lg:p-section">
+    <div class="w-full max-w-[420px] flex flex-col gap-group">
+      {% if title %}
+        <h1 class="gate__title m-0 text-section-title">{{ title }}</h1>
       {% endif %}
-      <div class="gate__card w-full max-w-[420px] {{ aside ? 'justify-self-center lg:justify-self-end' }} flex flex-col gap-group p-gutter bg-surface border border-border-2 rounded-[var(--radius-md,10px)]">
-        {% if title %}
-          <h1 class="gate__title text-section-title text-center">{{ title }}</h1>
-        {% endif %}
-        {% if description %}
-          <p class="gate__description text-meta text-text-faint text-center max-w-[40ch] mx-auto">{{ description }}</p>
-        {% endif %}
-        <div class="gate__content min-w-0">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
-      </div>
+      {% if description %}
+        <p class="gate__description m-0 text-meta text-text-faint max-w-[40ch]">{{ description }}</p>
+      {% endif %}
+      <div class="gate__content min-w-0">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
     </div>
   </main>
 </div>

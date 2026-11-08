@@ -542,30 +542,18 @@ semantic:
       $type: color
       $value: '#D9D3C9'
       $description: Avatar initials fill behind state-ink text.
-    station-ring:
+    gate-band:
       $type: color
       $value: '{primitive.style.color.butter}'
       $description: >-
-        Addition (BAKERS-116, reference-free, agreed with the owner). Ring of a
-        station avatar circle in the gate line-up (graphic only).
-    station-line:
+        Addition (BAKERS-116, sketch direction A, owner exception to the butter
+        rule on gate pages only). The brand field beside every gate form; the
+        same in light and dark mode.
+    gate-band-ink:
       $type: color
       $value: '{primitive.style.color.rye}'
       $description: >-
-        Addition (BAKERS-116, reference-free, agreed with the owner). Hairline
-        around a station avatar circle (graphic only).
-    station-current:
-      $type: color
-      $value: '{primitive.style.color.lime}'
-      $description: >-
-        Addition (BAKERS-116, reference-free, agreed with the owner). Fill of
-        the current station circle, the reader's own (graphic only).
-    station-rule:
-      $type: color
-      $value: '{primitive.style.color.crust}'
-      $description: >-
-        Addition (BAKERS-116, reference-free, agreed with the owner). Dashed
-        hairline between the gate headline and the line-up (graphic only).
+        Addition (BAKERS-116). Text on the gate band, rye in both modes.
   typography:
     page-title:
       $value:
@@ -763,7 +751,7 @@ semantic:
       $type: typography
       $description: >-
         Addition (BAKERS-116, reference-free, agreed with the owner). The slogan
-        headline beside the login card, the largest text on the gate.
+        on the gate's butter band, the largest text on the gate.
   fontWeight:
     regular:
       $value: '{primitive.style.fontWeight.regular}'
@@ -926,12 +914,12 @@ component:
   brand:
     compact:
       width:
-        $value: 128px
+        $value: 200px
         $type: dimension
         $description: >-
-          Width of the logo with wordmark in the compact brand the gate chrome
-          uses; its height follows the SVG aspect ratio. Fixed: it does not
-          follow the layout density.
+          Width of the logo with wordmark at the top of the gate's butter band
+          (BAKERS-116, sketch direction A); its height follows the SVG aspect
+          ratio. Fixed: it does not follow the layout density.
   zone:
     gap:
       sm:
@@ -1203,13 +1191,6 @@ themes:
           $type: color
           $value: '#BCB3A6'
           $description: Avatar initials fill behind state-ink text.
-        station-line:
-          $type: color
-          $value: '#8E7B62'
-          $description: >-
-            Addition (BAKERS-116, reference-free, agreed with the owner).
-            Hairline around a station avatar circle; rye would vanish on the
-            dark ground.
     primitive:
       style:
         elevation:
