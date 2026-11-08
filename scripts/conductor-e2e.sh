@@ -25,7 +25,8 @@ start() {
   local out id
   out="$(cd "$workspace" && "$bakers" oven start)"
   echo "$out"
-  id="$(sed -n 's/^started conductor \([^ ]*\) .*/\1/p; s/^conductor \([^ ]*\) already running.*/\1/p' <<<"$out" | head -1)"
+  # Only a fresh start counts: "already running" can be a record whose heartbeat outlived its process.
+  id="$(sed -n 's/^started conductor \([^ ]*\) .*/\1/p' <<<"$out" | head -1)"
   [ -n "$id" ] || { echo 'conductor-e2e: oven start reported no started conductor' >&2; exit 1; }
   cat <<EOF
 
@@ -51,6 +52,6 @@ teardown
 # so the gate below is lowered on this worktree's local site only. The source build reports 0.0.1.
 bash "$root/scripts/setup-test-project.sh"
 (cd "$root" && ddev drush cset -y bb_core.settings min_client_version 0.0.1)
-# `oven once` registers the conductor; it has no record until one cycle ran.
-(cd "$workspace" && "$bakers" oven once)
+# No `oven once` first: its fresh heartbeat makes `oven start` report "already running" and start
+# nothing. `oven start` registers a missing conductor itself.
 start
