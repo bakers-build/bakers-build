@@ -1,51 +1,73 @@
 # Choose agents and models
 
-An agent (Claude Code, Codex or another harness) does the work. Its [skills](/skills-and-workflows/skills) supply instructions. The configured [executor](/addons/slots) hosts its sessions; [clients](/get-started/use-your-client) expose different views and actions. The [environment](/provision/guide) runs the application.
+Use this guide to choose the agents available on your execution machine and route a ticket's states to them. You will inspect the catalog, add a route, select it on a ticket and verify the actual run.
 
-Decide which harnesses this machine can run and which handles each state. Start with your existing signed-in agent; add models and routing when needed.
+## Understand the choices
+
+| Concept | What it means |
+|---|---|
+| Agent program, or **harness** | Runs the coding session and its tools, such as Claude Code or Codex. |
+| **Model** | The model used by that program. Its addon defines the available choices and options. |
+| Agent **alias** | A selectable name for a configuration: its harness and optionally a model or other options. For example, `opus` can name a Claude Code configuration. |
+| Agent **catalog** | The configurations available on the execution machine, shown by `bakers agents`. |
+| **Route** | A named mapping from workflow states to existing aliases. For example, use `codex` for working and `opus` for review. |
+
+At the start of each run, the conductor resolves an agent for the ticket's current state. A route selects an existing agent; it does not create one, choose a conductor or move the ticket through its [workflow](/skills-and-workflows/states).
+
+The agent's [skills](/skills-and-workflows/skills) supply instructions. The [executor](/addons/slots) hosts the session, the [client](/get-started/use-your-client) is how you interact with the work, and the [worktree environment](/provision/guide) runs the application.
 
 ## AI first
 
 ```text
 Check my installed agent harnesses and bakers skills. Explain my current
-agent catalog, then propose the smallest machine configuration change
-for the agents I choose. Keep working settings and verify the result.
+agent catalog, then help me add and select a route for the agents I
+choose. Keep working settings and verify the actual ticket runs.
 ```
 
 ## Manual configuration and what it controls
 
-**You need:** bakers.build installed and signed in, at least one harness (Claude Code, Codex, Kimi, OpenCode, Pi or Grok) installed, on `PATH`, and logged in on this machine, and a project checkout. The herdr executor runs the harness through non-interactive `sh`, so a shell alias is not loaded.
+**You need:** bakers.build installed and signed in, a connected project checkout, and the chosen harnesses installed, on `PATH` and logged in on the machine whose conductor will run the ticket. The herdr executor runs the harness through non-interactive `sh`, so a shell alias is not loaded. Follow the [agent addon instructions](/agents/reference#harnesses) for vendor-specific installation, authentication and options.
 
-1. See what the machine offers. Run this in the checkout:
+### Inspect the catalog
 
-   ```sh
-   bakers agents
-   ```
+Run this in the connected checkout:
 
-   The JSON lists each alias with its harness and model, plus `enabled_agents`, `default_agent` and `routes`. An alias is one selectable harness and model, such as `opus` or `codex`. `bakers agents` neither installs a harness nor checks its login.
+```sh
+bakers agents
+```
 
-2. Edit `addons` and `agents` in `~/.bakers/machine.config.js`, keeping the generated machine identity. Use the complete [mixed-harness example](/agents/reference#mixed-harnesses) for Codex coding and Opus review. That reference owns the fields, defaults and routing rules.
+The JSON lists aliases with their harnesses and models, plus the resolved filters, default and routes. It neither installs a harness nor checks its login. The example below assumes the available aliases include `codex` and `opus`; use names from your own catalog.
 
-3. Override one ticket with a label, through the ticket's normal label editing:
+### Add a route
 
-   | Label | Effect with the linked mixed-harness example |
-   |---|---|
-   | `agent:careful` | Route `careful`: Opus in every state |
-   | `agent:opus` | Alias `opus` in every state |
-   | `agent:opus@working` | Alias `opus`, only while the ticket is in `working` |
+On that execution machine, add this fragment inside `agents.routes` in `~/.bakers/machine.config.js`. Create those objects if absent; keep the other settings, existing routes and machine identity.
 
-   A direct alias beats a route, whatever the label order. The route must exist on the machine that actually runs the ticket. The full precedence list is in [Agent policy](/agents/reference#which-agent-runs-a-state).
+```js
+// Fragment inside agents.routes, not a complete machine file.
+reviewed: {
+  working: 'codex',
+  review: 'opus',
+  '*': 'codex',
+},
+```
 
-4. Verify, then run one small ticket:
+`reviewed` is the route name. Its keys are workflow states, its values are agent aliases, and `'*'` covers states without their own entry. Choose a route name that is not also an alias. See the [complete mixed-harness file](/agents/reference#mixed-harnesses) for the surrounding configuration and the special `default` route, which supplies machine-wide choices without a ticket label.
 
-   ```sh
-   bakers config check --scope machine
-   bakers agents
-   ```
+### Select a route or an alias
 
-   Inspect the run's recorded harness and model for the state. If coding and review use different agents, check both.
+Add `agent:reviewed` through the ticket's normal label editing. With the example above, the conductor chooses Codex in `working`, Opus in `review` and Codex otherwise.
 
-**Done when:** `bakers agents` shows your aliases, `default_agent` and routes, and a small ticket ran with the harness you chose for its state.
+To choose one agent throughout instead, use an alias label such as `agent:opus`. A direct alias label such as `agent:codex` overrides a route even if both are present. State-specific labels, defaults and custom selectors follow the [full precedence rules](/agents/reference#which-agent-runs-a-state).
+
+The route must exist on every execution machine that may run the ticket. Editing a different machine's private file does not configure the selected conductor.
+
+### Verify the run
+
+Run `bakers agents` again and confirm that `routes.reviewed` contains your mapping and its target aliases are available. `bakers config check --scope machine` does not validate the agent catalog.
+
+Use a small ticket to check the relevant states, then inspect the agent and model recorded by each run. For this example, check both working and review. Unknown labels or unavailable route targets can warn and fall back, so the label alone is not proof.
+
+**Done when:** the resolved catalog contains your route and the ticket's runs record the agent and model you expected for each checked state.
 
 ## When loading fails
 
@@ -59,7 +81,7 @@ The conductor and `bakers agents` fail with one of these messages; `bakers confi
 | `agents.default_agent names unavailable alias '<alias>'` | `default_agent` is not among the enabled aliases. |
 | `agents.enabled names unknown alias '<alias>'` | Typo, or the addon that publishes it is missing. |
 
-A label that names an unknown alias or route only logs a warning and falls back, so check the observed agent instead of trusting the label. Pins, options such as `model` and `effort`, catalog overlays and every field are in [Agent policy](/agents/reference#the-agents-object).
+Pins, options such as `model` and `effort`, catalog overlays and every field are in [Agent policy](/agents/reference#the-agents-object).
 
 ## Required and optional values
 
