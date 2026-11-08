@@ -77,7 +77,7 @@ describe('disposable image gate', () => {
     expect(result.status).toBe(0);
     expect(result.calls).toContain('run --name phpunit');
     expect(result.calls).toContain('--processes 16 --log-junit /tmp/junit.xml');
-    expect(result.calls).toContain('--workers=8');
+    expect(result.calls).toContain('--workers=6');
     expect(
       result.calls.indexOf('github-recipe:compose run --rm install'),
     ).toBeLessThan(

@@ -48,7 +48,7 @@ status=0
 docker compose run --name github-browser --no-deps runner bash -c '
 cd tests/playwright && npm run typecheck && npm run test:unit || exit 1
 status=0
-npm test -- --retries=1 --workers=8' || status=$?
+npm test -- --retries=1 --workers=6' || status=$?
 for path in tests/playwright/junit-playwright.xml tests/playwright/playwright-report tests/playwright/test-results; do
   docker cp "github-browser:/repo/$path" gate-reports/ || true
 done
