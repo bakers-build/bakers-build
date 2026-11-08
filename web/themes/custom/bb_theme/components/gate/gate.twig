@@ -32,7 +32,7 @@
     <aside class="gate__band scheme-light flex flex-col justify-center gap-section p-gutter lg:p-section min-h-[220px] lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
       <div class="min-w-0">{% block mark %}{% if mark %}{{ mark }}{% endif %}{% endblock %}</div>
       {# SDC does not apply schema defaults at render time. #}
-      <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("You're the baker. Agents run the line."|t) }}</p>
+      <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("Knead it. Ship it."|t) }}</p>
     </aside>
     <main class="gate__main flex-1 flex items-start lg:items-center justify-center p-gutter lg:p-section bg-app lg:bg-surface">
       <div class="w-full max-w-[420px] flex flex-col gap-group">

@@ -17,7 +17,7 @@ Feature: bakers.build sign-in
     And no password field is present
     And the gate chrome is present
     And the application shell is not present
-    And the gate band shows the product mark and the slogan "You're the baker. Agents run the line."
+    And the gate band shows the product mark and the slogan "Knead it. Ship it."
     And the gate offers no navigation
     And the page heading is "Log in"
     And the page has exactly one h1
@@ -50,7 +50,7 @@ Feature: bakers.build sign-in
     Then the workspace chooser is present
     And the workspace chooser offers "/bakers/tickets"
     And the workspace chooser offers "/other/tickets"
-    And the gate band shows the product mark and the slogan "You're the baker. Agents run the line."
+    And the gate band shows the product mark and the slogan "Knead it. Ship it."
     And the gate offers no navigation
     And the page has exactly one h1
     When I choose the workspace "/other/tickets"

@@ -4,5 +4,9 @@
 {% set compact = size|default('default') == 'compact' %}
 {% set tag = compact ? 'div' : 'h1' %}
 <{{ tag }}{{ (attributes ?: create_attribute()).addClass(['flex', 'items-center', compact ? 'justify-start' : 'justify-center', 'm-0', 'min-w-0', 'w-full']) }}>
-  <img src="{{ file_url('/themes/custom/bb_theme/logo-wordmark.svg') }}" alt="bakers.build" class="{{ compact ? 'w-brand-compact-width' : 'w-60' }} min-w-0 max-w-full h-auto"/>
+  {# The gate's mark lets its steam rise; the page, not the SVG, honours reduced motion, because an <img> SVG does not see that preference. #}
+  <picture class="contents">
+    {% if compact %}<source media="(prefers-reduced-motion: no-preference)" srcset="{{ file_url('/themes/custom/bb_theme/logo-wordmark-steam.svg') }}"/>{% endif %}
+    <img src="{{ file_url('/themes/custom/bb_theme/logo-wordmark.svg') }}" alt="bakers.build" class="{{ compact ? 'w-brand-compact-width' : 'w-60' }} min-w-0 max-w-full h-auto"/>
+  </picture>
 </{{ tag }}>
