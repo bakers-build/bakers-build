@@ -12,6 +12,7 @@ const config = {
     { from: '../logo.svg', to: '/themes/custom/bb_theme/logo.svg' },
     { from: '../logo-wordmark.svg', to: '/themes/custom/bb_theme/logo-wordmark.svg' },
     { from: '../logo-wordmark-steam.svg', to: '/themes/custom/bb_theme/logo-wordmark-steam.svg' },
+    { from: '../assets/line', to: '/themes/custom/bb_theme/assets/line' },
   ],
   addons: [
     '@storybook/addon-docs',

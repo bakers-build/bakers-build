@@ -554,6 +554,12 @@ semantic:
       $value: '{primitive.style.color.rye}'
       $description: >-
         Addition (BAKERS-116). Text on the gate band, rye in both modes.
+    gate-counter:
+      $type: color
+      $value: '{primitive.style.color.crust}'
+      $description: >-
+        Addition (BAKERS-116). The counter of the production line at the foot
+        of the gate band, as on the homepage (graphic only).
   typography:
     page-title:
       $value:

@@ -1,0 +1,16 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Station line
+status: stable
+group: Shell
+description: >-
+  A small production line drawn from the homepage's station icons: scale, oven
+  and magnifier stand on a crust counter while a bun rides along it, passing
+  behind each station. Decoration only (hidden from assistive technology);
+  with reduced motion the bun waits still at the end. It scales to the width
+  of its container and draws its outlines in the current text colour. Used at
+  the foot of the gate band.
+provider: bb_theme
+props:
+  type: object
+  properties: {}
