@@ -5,8 +5,8 @@ description: "Use when a ticket labelled `ticket-question` runs, in any state: r
 
 # Ticket question
 
-When the run needs a human, it reaches them only through the ticket: publish the comments below, add
-their label, freeze the ticket and end the run. Every point where the frame waits for a human counts:
+When the run needs a human, it reaches them only through the ticket: publish the comments below,
+then add their label and set `frozen: true` in one `bakers_ticket_update`, and end the run. Every point where the frame waits for a human counts:
 the approval of a qualification or of a spec, plan and test proposal, the coding-gate choice, the
 confirmation of a review verdict and a `criterion` decision. Collect every open question of the run
 into one user question.
@@ -25,10 +25,9 @@ A **technical problem** is one comment headed `# Error` with the error and its o
 Please contact the developers.
 ```
 
-Freeze with one `bakers_ticket_update` that adds the label and sets `frozen: true`, then end the run.
-
-When the run resumes, the answer in the ticket is the human's answer, for every question the frame
-asks.
+When the run resumes, an explicit answer in a ticket comment newer than the question is the human's
+answer, for every question the frame asks, an approval or a gate choice included; silence or any
+other comment is no answer.
 
 The label `ticket-question` authorizes only these writes; transitions, origin status and the merge
 follow the frame.
