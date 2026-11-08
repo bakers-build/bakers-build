@@ -97,7 +97,7 @@ export default {
 
 ## Old keys and verification
 
-Agent addons in a conductor config are ignored with a warning, and the retired keys `agent`, `agents`, `default_agent` and `agent_routes` there are rejected. Move that policy here by hand ([migration](/configuration/project/migration)).
+Agent addons in a conductor config are ignored with a warning, and the retired keys `agent`, `agents`, `default_agent` and `agent_routes` there are rejected. Move that policy here by hand.
 
 ```sh
 bakers config check --scope machine

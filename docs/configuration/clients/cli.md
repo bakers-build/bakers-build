@@ -74,7 +74,7 @@ The three subcommands share one set of scopes, `machine`, `connection`, `project
 |---|---|
 | `init` | Initialize or repair the selected scope and verify readiness. Requires a scope: `--scope`, or a prompt on a terminal. Online verification follows. |
 | `check` | Validate offline; with `--online`, also authenticate and verify each workspace. Changes nothing. |
-| `upgrade` | Migrate the selected scope without changing existing values. `--dry-run` previews. See [Configuration migration](/configuration/project/migration). |
+| `upgrade` | Migrate the selected scope without changing existing values. `--dry-run` previews. |
 
 `init` and `upgrade` also take `--dry-run`, `--label`, `--base-url`, `--client-id`, `--workspace-id`, `--secret-env` and `--auth-type` as above, plus:
 

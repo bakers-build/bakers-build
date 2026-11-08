@@ -71,4 +71,4 @@ bakers oven check
 
 Check that the selected connection, project and workspace match your intent. `check` validates declared schemas and, online, addon resolution/scopes/options; agent catalog loading and sandbox readiness have separate commands above. Neither proves application readiness.
 
-Use [migration](/configuration/project/migration) before modifying older files, and inspect the proposed changes from `bakers config upgrade`. Computed JavaScript needs human editing; upgrading cannot infer its intent. [CLI/plugin updates](/configuration/machine/updates) and [server updates](/self-hosting/server#update) have separate lifecycles.
+Before modifying older files, follow the [update sequence](/configuration/machine/updates#manual-sequence-and-background) and inspect the proposed changes from `bakers config upgrade`. Computed JavaScript needs human editing; upgrading cannot infer its intent. [CLI/plugin updates](/configuration/machine/updates) and [server updates](/self-hosting/server#update) have separate lifecycles.

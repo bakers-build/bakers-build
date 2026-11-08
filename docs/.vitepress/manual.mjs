@@ -192,7 +192,6 @@ export const SIDEBAR = {
       ["Lifecycle hooks", "/configuration/project/hooks"],
       ["Conductors", "/configuration/project/conductors"],
       ["Conductor commands", "/configuration/project/conductor-commands"],
-      ["Configuration migration", "/configuration/project/migration"],
     ]),
     group("CLI reference", [
       ["CLI commands", "/configuration/clients/cli"],

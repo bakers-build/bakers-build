@@ -53,7 +53,7 @@ The file carries no identity and is identical for everyone. A conductor is ident
 
 `capture_logs` is written by the generator, but the current file loader does not forward it to the engine. Do not rely on `capture_logs: false` in this file to prevent uploads. Use the server's [run-log storage policy](/self-hosting/server#run-log-storage); footprint metrics are recorded independently. This loader limitation is separate from the engine's support for the option.
 
-The loader rejects two old shapes: top-level `project` or `bb_workspace` instead of `bakers`, and `agent`, `agents`, `default_agent` or `agent_routes` (agent policy lives in the machine file). `site`, `plugins` and `max_parallel` are ignored with a warning; the run budget is set on the machine in the backend. Move or remove them by hand; `bakers config upgrade` no longer rewrites them ([Configuration migration](/configuration/project/migration)). Agent addons listed in `addons` are dropped with a warning.
+The loader rejects two old shapes: top-level `project` or `bb_workspace` instead of `bakers`, and `agent`, `agents`, `default_agent` or `agent_routes` (agent policy lives in the machine file). `site`, `plugins` and `max_parallel` are ignored with a warning; the run budget is set on the machine in the backend. Move or remove them by hand; `bakers config upgrade` no longer rewrites them. Agent addons listed in `addons` are dropped with a warning.
 
 ## Plugin descriptors
 
