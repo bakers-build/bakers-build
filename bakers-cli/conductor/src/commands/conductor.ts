@@ -149,6 +149,8 @@ async function defaultCheckConfig(): Promise<string | undefined> {
     await promisify(execFile)(process.execPath, args, {
       cwd: process.cwd(),
       env: process.env,
+      // A hung check would block every later restart; a timeout fails it.
+      timeout: 60_000,
     });
     return undefined;
   } catch (err) {
@@ -493,7 +495,8 @@ async function refuseIfAlreadyRunning(
   const existing = (await remote.listConductors('me')).find((c) => c.id === id);
   if (!existing) return false;
   // A self-restart keeps the pid: the live record is this very process.
-  if (existing.lastPid === process.pid) return false;
+  if (existing.lastPid === process.pid && existing.hostKey === thisHostKey)
+    return false;
 
   const probe = deps.procProbe ?? defaultProcProbe();
   const verified = verifyConductorProcess({
@@ -617,11 +620,14 @@ async function cmdStartForeground(
       watcher = (deps.watchForRestart ?? watchForRestart)(
         config.watch_paths,
         async (path) => {
+          if (controller.signal.aborted) return;
           logger.info(
             { path },
             `restart_on_change: ${path} changed; checking config`,
           );
           const error = await check();
+          // A stop requested while the check ran stays a stop.
+          if (controller.signal.aborted) return;
           if (error !== undefined) {
             logger.error(
               { path, err: error },
@@ -631,6 +637,7 @@ async function cmdStartForeground(
           }
           logger.info({ path }, 'config check passed; restarting conductor');
           restart = true;
+          watcher?.close();
           controller.abort();
         },
       );
