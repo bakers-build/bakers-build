@@ -29,7 +29,7 @@ printf '%s\n' "commit=$revision" "tree=$(git rev-parse 'HEAD^{tree}')" "run=$GIT
 # The runner is persistent: a named container left by an earlier run blocks the name.
 docker rm -f phpunit github-browser >/dev/null 2>&1 || true
 docker run --name phpunit --user root -e SIMPLETEST_DB=sqlite://localhost/:memory: \
-  bakers-gate/php-test:local sh -c 'cd /var/www/html && ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 8 --log-junit /tmp/junit.xml' || phpunit_status=$?
+  bakers-gate/php-test:local sh -c 'cd /var/www/html && ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 16 --log-junit /tmp/junit.xml' || phpunit_status=$?
 docker cp phpunit:/tmp/junit.xml gate-reports/junit-phpunit.xml
 docker rm phpunit >/dev/null
 if [ "${phpunit_status:-0}" != 0 ]; then exit "$phpunit_status"; fi
@@ -48,12 +48,15 @@ status=0
 docker compose run --name github-browser --no-deps runner bash -c '
 cd tests/playwright && npm run typecheck && npm run test:unit || exit 1
 status=0
-npm test -- --retries=1 --workers=4 || status=$?
-bash /repo/scripts/e2e/run-integration.sh /bakers-test/env || status=1
-exit $status' || status=$?
-for path in tests/playwright/junit-playwright.xml tests/playwright/playwright-report tests/playwright/test-results .ddev/.bakers-test/junit-integration.xml; do
+npm test -- --retries=1 --workers=6' || status=$?
+for path in tests/playwright/junit-playwright.xml tests/playwright/playwright-report tests/playwright/test-results; do
   docker cp "github-browser:/repo/$path" gate-reports/ || true
 done
+# The conductor suite stores run logs, which the browser suite expects off.
+GATE_RUN_LOG_STORAGE=1 docker compose up -d --no-build --wait --no-deps --force-recreate php nginx
+docker compose run --name github-integration --no-deps runner \
+  bash /repo/scripts/e2e/run-integration.sh /bakers-test/env || status=1
+docker cp github-integration:/repo/.ddev/.bakers-test/junit-integration.xml gate-reports/ || true
 cleanup
 if [ "$status" != 0 ]; then exit "$status"; fi
 # A separate database proves config/sync without importing it into the recipe world.

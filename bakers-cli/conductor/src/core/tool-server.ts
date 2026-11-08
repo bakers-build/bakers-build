@@ -33,7 +33,7 @@ import {
 import { CONDUCTOR_TOOLS_SERVER } from '../plugins/agent.js';
 import type { SiteToolClient } from '../plugins/remote.js';
 import type { ToolBinding, ToolRegistry } from '../plugins/tools.js';
-import { SITE_TOOLS, siteToolProxy } from './site-tools.js';
+import { SITE_TOOLS, SITE_WRITE_TOOLS, siteToolProxy } from './site-tools.js';
 
 export interface ToolServer {
   /** The MCP endpoint. */
@@ -61,6 +61,8 @@ export interface ToolServerOptions {
   logger?: ConductorLogger;
   /** The site's tools, served to run tokens only; absent: none. */
   siteTools?: SiteToolClient;
+  /** Called after a run's successful ticket write through a site tool. */
+  onSiteWrite?: (binding: ToolBinding) => void;
   /** The runs still open; persisted grants of any other run are dropped. Absent: keep all. */
   openRuns?: string[];
 }
@@ -178,12 +180,22 @@ export async function startToolServer(
     }));
     server.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
       try {
-        if (site && SITE_TOOLS.includes(request.params.name))
-          return await site.call(
+        if (site && SITE_TOOLS.includes(request.params.name)) {
+          const result = await site.call(
             request.params.name,
             request.params.arguments ?? {},
             binding,
           );
+          if (SITE_WRITE_TOOLS.includes(request.params.name)) {
+            // The write already succeeded: a failing hook must not make the agent retry it.
+            try {
+              options.onSiteWrite?.(binding);
+            } catch (err) {
+              logger?.warn({ err: String(err) }, 'site write hook failed');
+            }
+          }
+          return result;
+        }
         const result = await registry.call(
           request.params.name,
           request.params.arguments,

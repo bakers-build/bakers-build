@@ -7,7 +7,6 @@
 import type { Preset } from '@bakers-build/conductor/contract';
 import { herdrFrozenMarker } from './frozen-marker.js';
 import { herdrExecutor, herdrWorkspace } from './index.js';
-import { herdrProcessHost } from './process-host.js';
 
 export const executors: Preset['executors'] = (acc, opts) => [
   ...acc,
@@ -19,14 +18,9 @@ export const workspaces: Preset['workspaces'] = (acc, opts) => [
   herdrWorkspace(opts as Parameters<typeof herdrWorkspace>[0]),
 ];
 
-export const processHosts: Preset['processHosts'] = (acc) => [
-  ...acc,
-  herdrProcessHost,
-];
-
 export const hooks: Preset['hooks'] = (acc) => [...acc, herdrFrozenMarker];
 
-// Hook listeners and the process host belong to one project (no machine hook
-// listeners, BB-599). A machine picks herdr as its executor through the
-// machine.config.js `executor` slot instead.
+// Hook listeners belong to one project (no machine hook listeners, BB-599). A
+// machine picks herdr as its executor through the machine.config.js `executor`
+// slot instead.
 export const scopes: Preset['scopes'] = ['project'];

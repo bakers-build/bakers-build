@@ -45,7 +45,7 @@ Only the modification time matters. A bump runs what `R` runs on the active scre
 - Writes closer together than 300 ms coalesce into one reload; a continuous stream waits until it pauses for one window, which shields the control plane from a looping agent.
 - A piped run builds no watcher, and neither does a cockpit outside a project.
 
-The file is transient and git-ignored; nothing in bakers.build writes it.
+The file is transient and git-ignored. The conductor touches it in the checkout when a run is claimed. It touches it in the checkout and in the run's worktree when a run starts, fails or is finalised, and after a run's agent writes a ticket through the conductor's tools. Changes made on the web, on another machine or by a remote conductor still need `R`; nothing polls.
 
 ## Keybindings
 

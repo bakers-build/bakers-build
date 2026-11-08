@@ -116,6 +116,14 @@ it('both documents name the signal file and the touch recipe (BB-376 AC-1)', () 
   }
 });
 
+it('both documents name the conductor as the writer', () => {
+  for (const doc of [referenceRefresh, readmeRefresh]) {
+    expect(doc).toContain('The conductor touches it');
+    expect(doc).not.toContain('writes it automatically yet');
+    expect(doc).not.toContain('nothing in bakers.build writes it');
+  }
+});
+
 it('both documents state that a screen without reload is not reloaded', () => {
   for (const doc of [referenceRefresh, readmeRefresh]) {
     expect(doc).toContain('reload');

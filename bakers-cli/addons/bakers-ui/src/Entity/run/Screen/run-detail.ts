@@ -1,4 +1,5 @@
 import type { VNode } from '@opentui/core';
+import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
 import { actionItem } from '../../../Component/footer-actions/index.js';
 import { defineContext } from '../../../Routing/context.js';
 import type { RouteMetadata } from '../../../Routing/route.js';
@@ -25,7 +26,8 @@ export const runDetailInputContext = defineContext<RunDetailInput>(
 
 /**
  * Run detail — normal {@link AsyncScreen}. The document arrives via navigation
- * context (or empty); refresh is the shared R / ui-refresh path.
+ * context (or empty); refresh is the shared R / ui-refresh path, which refetches
+ * the ticket with its runs so a new run state shows.
  */
 export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
   readonly frameId = 'run';
@@ -50,12 +52,24 @@ export class RunDetailScreen extends AsyncScreen<TicketDetailDocument> {
    * `router.back()` on a bare Esc carries no result on its own.
    */
   private forwardResult: ScreenAction | undefined;
+  /** Set by {@link reload}: the next load asks the server, not the snapshot. */
+  private refetch = false;
 
   reload(context: ScreenContext): void {
+    this.refetch = true;
     this.retry(context);
   }
 
   protected load(context: ScreenContext): Promise<TicketDetailDocument> {
+    const id = context.params?.ticketId;
+    if (this.refetch && context.services && id) {
+      this.refetch = false;
+      // Fetched here, not through the ticket slice's store: ticket imports run.
+      return context.services.client.get(
+        `bb_ticket/bb_ticket/${id}`,
+        new DrupalJsonApiParams().addInclude(['runs']),
+      ) as Promise<TicketDetailDocument>;
+    }
     if (context.contexts?.has(runDetailInputContext))
       return Promise.resolve(
         context.contexts.get(runDetailInputContext).document,

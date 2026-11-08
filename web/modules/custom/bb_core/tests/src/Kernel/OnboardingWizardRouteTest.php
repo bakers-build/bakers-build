@@ -392,7 +392,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
         ['Set up a connector', 'https://bakers.build/docs/get-started/connector', '_blank'],
       ],
       'Developer' => [
-        ['Set up a machine', 'https://bakers.build/docs/get-started/machine', '_blank'],
+        ['Set up a machine', 'https://bakers.build/docs/provision/machine', '_blank'],
         ['Set up a project', 'https://bakers.build/docs/get-started/connect-a-project', '_blank'],
       ],
     ], $groups);
@@ -401,8 +401,8 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     foreach (['bb_theme:setup_command', 'bb_theme:setup_paths', 'bb_theme:note', 'bakers:bb-init', 'marketplace'] as $absent) {
       self::assertStringNotContainsString($absent, $blob);
     }
-    foreach (['connector', 'machine', 'connect-a-project'] as $page) {
-      self::assertFileExists(dirname($this->root) . "/docs/get-started/$page.md");
+    foreach (['get-started/connector', 'provision/machine', 'get-started/connect-a-project'] as $page) {
+      self::assertFileExists(dirname($this->root) . "/docs/$page.md");
     }
   }
 

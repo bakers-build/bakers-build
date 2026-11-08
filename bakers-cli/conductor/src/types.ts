@@ -17,7 +17,6 @@ import type {
   ResolvedAgent,
   WorkspacePlugin,
 } from './plugins/plugins.js';
-import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
 import type {
   ProvisionHook,
@@ -129,12 +128,6 @@ export interface ConductorFileConfig extends ConductorSettings {
   tools?: ToolRegistry;
   /** The `provision_up` runs, stopped at ticket end and conductor stop. Absent without the hook. */
   provisioning?: Pick<ProvisionRuns, 'stop'>;
-  /**
-   * Conductor process host from the `processHosts` accumulator (last wins).
-   * Absent when no addon contributed one — `bakers oven start` then fails
-   * with the existing no-herdr hint.
-   */
-  processHost?: HerdrHost;
   /** dropsh-layer plugins (auth etc.); separate from the bakers.build slots. */
   plugins?: DropSHPlugin[];
 }

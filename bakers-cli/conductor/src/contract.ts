@@ -99,7 +99,6 @@ export {
   narrowConductorContributions,
   type Preset,
 } from './plugins/preset.js';
-export type { HerdrHost } from './plugins/process-host.js';
 export type {
   ActiveRun,
   AddonDefinitionV2,

@@ -162,6 +162,7 @@ export {
 export { normalizeRepoUrl } from './core/repo-url.js';
 export { shellQuote } from './core/shell.js';
 export { DEFAULT_SLUG_MAX_LENGTH, slugify } from './core/slug.js';
+export { bumpUiRefresh, UI_REFRESH_FILE } from './core/ui-refresh.js';
 // BB-215: the Storybook-style preset contract + the shared addon discovery.
 // BB-224 (Finding 6): SURFACE-AGNOSTIC only. The conductor-surface interfaces
 // (`BbRemote`/`BbExecutor`/`BbWorkspace`/`BbAgent`, the four `*Plugin`

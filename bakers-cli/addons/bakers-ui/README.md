@@ -100,8 +100,12 @@ as `R` on the active screen, while keeping manual `R` available. The footer read
 Events closer together than 300 ms are coalesced into one reload, and a continuous stream waits until
 it pauses for one window. A screen that declares no reload — including forms, the project picker and
 popups — is not reloaded, and a bump is not remembered for later. Piped runs build no watcher, nor does
-a cockpit without a resolved project `.bakers/` directory. The transient signal file is git-ignored;
-nothing in bakers.build writes it automatically yet.
+a cockpit without a resolved project `.bakers/` directory. The transient signal file is git-ignored.
+
+The conductor touches it in the checkout when a run is claimed. It touches it in the checkout and in
+the run's worktree when a run starts, fails or is finalised, and after a run's agent writes a ticket
+through the conductor's tools. Changes
+made on the web, on another machine or by a remote conductor still need `R`; there is no polling.
 
 `Tab`/`Shift+Tab` mean two different things, and which one you get depends on
 what is on screen. On a **screen** they cycle that level's tab bar, as the rows
