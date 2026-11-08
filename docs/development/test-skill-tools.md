@@ -2,7 +2,7 @@
 
 Evaluate the actual tool calls made by publish-comment, create-ticket and transition-ticket against a local bakers.build simulation.
 
-**You need:** the setup from [Test a skill](/development/test-skills), including authenticated Claude Code for generation. No bakers.build connection or application account is used by the simulator.
+**You need:** the setup from [Test a skill](test-skills.md), including authenticated Claude Code for generation. No bakers.build connection or application account is used by the simulator.
 
 1. Select a case and a new output directory:
 
@@ -52,7 +52,7 @@ Evaluate the actual tool calls made by publish-comment, create-ticket and transi
 
    The judge receives the recorded trace as evidence as well as the final answer. A favorable semantic judgment cannot override failed call assertions.
 
-5. Generate and share the [HTTP report](/development/test-skills). Include the attempt to show expandable call arguments and results:
+5. Generate and share the [HTTP report](test-skills.md). Include the attempt to show expandable call arguments and results:
 
    ```sh
    node tests/skill-eval/report.mjs --input "$eval_dir/publication-replay.json" \
@@ -90,7 +90,7 @@ Both publications must succeed before the transition.
 
 Set `execution: simulated-tools`, select the matching call profile and provide `simulation` data: initial ticket, virtual files and the selected fault condition. Simulation data and assertions are withheld from the worker; `input` supplies the caller's task and facts. The tools expose only supported fixture operations, including CLI help and `bakers info` (the project and workspace from the fixture input). The server never invokes bakers.build or evaluates command strings. Its source snapshot and hash remain with the worker artifacts. The tool definitions (wire names, input and output schemas, as Drupal serves them), the project UUID and key and the probe ticket live in `tests/skill-eval/contract-fixture.json`, shared with the real-CLI contract below. Fixture tickets use the read tool's shape: `description` is Markdown, `type`, `recipe` and `labels` are names; seeded `comments` carry `ticket`, `type` and `body`.
 
-Profiles receive `checkOutput(fixture, output, { tool_trace })` and optionally export `diagnose` with the same arguments; [Add a skill test](/development/add-skill-test) lists the shared helpers. Trace rows contain `tool`, `arguments` and `result` with exit code, stdout and stderr. Like the CLI, the simulator prints the tool's structured output as JSON text; `calls(context, files)` in `call-utils.mjs` turns each row into a tool `name` and its `args` (resolving `--data @file` against fixture files and earlier `write_file` rows), and `payload()`, `cliError()`, `refused()` and `uncertain()` read the result. An intentionally changed replay trace needs its own hash plus `negative_control.reason` and `parent_tool_trace_sha256`; never edit the original generation trace. Ordinary output mutation remains supported separately.
+Profiles receive `checkOutput(fixture, output, { tool_trace })` and optionally export `diagnose` with the same arguments; [Add a skill test](add-skill-test.md) lists the shared helpers. Trace rows contain `tool`, `arguments` and `result` with exit code, stdout and stderr. Like the CLI, the simulator prints the tool's structured output as JSON text; `calls(context, files)` in `call-utils.mjs` turns each row into a tool `name` and its `args` (resolving `--data @file` against fixture files and earlier `write_file` rows), and `payload()`, `cliError()`, `refused()` and `uncertain()` read the result. An intentionally changed replay trace needs its own hash plus `negative_control.reason` and `parent_tool_trace_sha256`; never edit the original generation trace. Ordinary output mutation remains supported separately.
 
 Permanent tests live in `core/tests/workflow/skill-tool-calls.test.ts` and the shared runner suite. Python tests exercise the actual stdio protocol and isolation checks. CI runs real Promptfoo under the offline network/process guard, with no model calls.
 
@@ -103,4 +103,4 @@ merge/publication order. Python tests verify Git semantics in disposable local r
 
 ## Check the real CLI
 
-[Compare the simulator with the real CLI](/development/test-cli-contract) to validate parsing, payloads and error classes independently of model behavior.
+[Compare the simulator with the real CLI](test-cli-contract.md) to validate parsing, payloads and error classes independently of model behavior.

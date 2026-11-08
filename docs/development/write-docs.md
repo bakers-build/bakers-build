@@ -1,6 +1,6 @@
 # Write the docs
 
-The public manual is Markdown under `docs/`, rendered by VitePress from `docs/.vitepress/`. It has eight ordered sidebar areas, defined in `docs/.vitepress/manual.mjs`:
+The public manual is Markdown under `docs/`, rendered by VitePress from `docs/.vitepress/`. It has seven ordered sidebar areas, defined in `docs/.vitepress/manual.mjs`:
 
 | Area | Reader task | Folder |
 |---|---|---|
@@ -11,11 +11,10 @@ The public manual is Markdown under `docs/`, rendered by VitePress from `docs/.v
 | Addons | Supported extensions and authoring | `docs/addons/` |
 | Configuration | File ownership, precedence, validation and migration | `docs/configuration/` |
 | Self-hosting | Application-server deployment, updates and backups | `docs/self-hosting/` |
-| Development | Product contributor guides | `docs/development/` |
 
 Start with ticket tasks. Provision owns machine setup, worktree compatibility, tools and integrations, security, and environment examples. Tools are a general concept; security explains their access boundaries. DDEV, Docker Compose and Node.js are examples, not an exhaustive support list. Keep worker preparation separate from application-server hosting. Give each overview section a short introduction before its links. Configuration links to the topic that owns behavior.
 
-`docs/index.md` renders at `/manual`, `docs/landing.md` at `/`. `SRC_EXCLUDE` excludes repository operating guidance under `bakers/`, decisions, conductor notes and the internal metrics document. Public contributor guides render under Development.
+`docs/index.md` renders at `/manual`, `docs/landing.md` at `/`. `SRC_EXCLUDE` excludes repository operating guidance under `bakers/`, internal contributor guides under `development/`, decisions, conductor notes and the internal metrics document. Development stays in the source checkout; it is absent from public navigation, pages, search and sitemap. Public guides must not link to `/development/` routes.
 
 ## Writing
 
@@ -50,9 +49,9 @@ Each fact has one canonical home. Repeat only essential safety instructions at t
 |---|---|
 | Manual and area indexes | 250 |
 | Setup, daily-work and main addon pages | 400 |
-| Provision (including Security), Agents, Skills & Workflows, Configuration, Self-hosting and Development detail pages; addon build/subordinate references | 1,500 |
+| Provision (including Security), Agents, Skills & Workflows, Configuration and Self-hosting detail pages; addon build/subordinate references | 1,500 |
 
-Frontmatter, fenced code, link destinations and HTML do not count. Split by useful topic when a page exceeds its limit. Every rendered manual page needs a sidebar entry. Keep all eight areas directly accessible in the sidebar. Landing and documentation share `NAV`: How it works, Get started, Documentation and Addons. Documentation groups Provision, Agents, Skills & Workflows, Configuration, Self-hosting and Development.
+Frontmatter, fenced code, link destinations and HTML do not count. Split by useful topic when a page exceeds its limit. Every rendered manual page needs a sidebar entry. Keep all seven areas directly accessible in the sidebar. Landing and documentation share `NAV`: How it works, Get started, Documentation and Addons. Documentation groups Provision, Agents, Skills & Workflows, Configuration and Self-hosting.
 
 Use logical canonical URLs and update current internal links and anchors. Backward-compatible URLs, fragment aliases and new redirects are not required. All retained `docs/routes.json` entries must be direct, valid and free of content-page collisions. Inventory existing content before moving it, and audit each disposition so useful topics remain reachable.
 

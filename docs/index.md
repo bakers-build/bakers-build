@@ -11,8 +11,7 @@ Choose the guide for the work you want to do.
   { label: 'Skills & Workflows', text: 'Set instructions, methods and approval steps.', link: '/skills-and-workflows/' },
   { label: 'Addons', text: 'Find, configure or build an extension.', link: '/addons/' },
   { label: 'Configuration', text: 'Find the right file, understand precedence and migrate settings.', link: '/configuration/' },
-  { label: 'Self-hosting', text: 'Install, update and back up your own application server.', link: '/self-hosting/' },
-  { label: 'Development', text: 'Build bakers.build from source and contribute changes.', link: '/development/' }
+  { label: 'Self-hosting', text: 'Install, update and back up your own application server.', link: '/self-hosting/' }
 ]" />
 
 [Use your client](/get-started/use-your-client) compares herdr-cli, herdr-app, Orca and Hermes. For chat-only access, begin with [a connector](/get-started/connector). Already have a prepared worker? [Connect another project](/get-started/connect-a-project).

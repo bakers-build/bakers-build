@@ -11,7 +11,7 @@ The approved scope is the ticket's spec `b483cd38-9def-4263-9d6b-b09967466a22`, 
 | `docs/get-started/use-your-client.md` | Created: one usage guide, four client sections, comparison and first actions. Owns the client concept. Real illustrations remain outstanding. |
 | `docs/configuration/clients.md` | Removed after merging usage into the new guide. Technical selection stays in `docs/addons/slots.md`; verification stays in addon references and the first-ticket guide. |
 | `docs/configuration/clients/{cli,tools,auth,switch-to-bakers,troubleshooting}.md` | Kept unchanged as CLI references; their parent directory remains. |
-| `docs/.vitepress/manual.mjs` | Use your client follows Get started Overview. Configuration's old Clients group becomes CLI reference, retaining every child. All eight areas remain. |
+| `docs/.vitepress/manual.mjs` | Use your client follows Get started Overview. Configuration's old Clients group becomes CLI reference, retaining every child. Seven public areas remain after the confirmed Development amendment below. |
 | `docs/get-started/{index,connect-a-project,first-ticket}.md` | Kept: link to usage, distinguish client views from execution setup, include herdr-app. Existing `connect-a-project#choose-your-tui` anchor remains. |
 | `docs/agents/guide.md` | Kept: executor hosts sessions; clients expose views and actions. |
 | `docs/configuration/index.md`, `docs/index.md` | Kept: link usage to its new owner, keep CLI settings separate, name Hermes consistently. No landing layout change. |
@@ -25,6 +25,12 @@ The approved scope is the ticket's spec `b483cd38-9def-4263-9d6b-b09967466a22`, 
 | `docs/decisions/brand-foundation.md`, `web/themes/custom/bb_theme/designbook/vision.yml` | Added the agreed provisional slogan/metaphor to its canonical owner and a relative reference from vision. Earlier slogan candidates are explicitly historical. |
 | `docs/public/clients/{herdr-cli,herdr-app,orca,hermes}.png` | Planned, **absent**. Do not add broken image links, synthetic frames or invented captures. |
 | `docs/decisions/client-guide.md` | This excluded page map, source evidence and capture record. |
+
+### Confirmed amendment: internal Development
+
+On 2026-11-08 the requester reviewed the preview and asked to keep Development internal and include the change in this PR (ticket comment `f02948f2-cade-43c0-9c80-8385d0d2c490`). This replaces the plan's eight-area preservation and extends its scope to this publication boundary. `docs/development/**` remains repository documentation, excluded from the public build, navigation, search and sitemap. Public guide links are removed or redirected to the relevant public user guide; no `/development/` redirect publishes the internal content elsewhere. The existing page gate and navigation fixtures now require seven areas and reject links to excluded pages. Internal documentation content is retained, with repository-relative navigation.
+
+The existing docs tunnel became available after the requester started the preview outside the agent sandbox. Their “otherwise it fits” is favorable feedback on the displayed docs; it does not supply the missing four genuine client captures or their runtime evidence.
 
 | Old URL | Direct destination |
 |---|---|
