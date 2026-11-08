@@ -17,6 +17,11 @@ Feature: bakers.build sign-in
     And no password field is present
     And the gate chrome is present
     And the application shell is not present
+    And the gate band shows the product mark and the slogan "Knead it. Ship it."
+    And the gate offers no navigation
+    And the page heading is "Log in"
+    And the page has exactly one h1
+    And the login form separates "Send login link" from "Continue with Google" with "or"
 
   Scenario Outline: The site root still takes an account straight to its work
     Given I am signed in as "<account>"
@@ -45,6 +50,9 @@ Feature: bakers.build sign-in
     Then the workspace chooser is present
     And the workspace chooser offers "/bakers/tickets"
     And the workspace chooser offers "/other/tickets"
+    And the gate band shows the product mark and the slogan "Knead it. Ship it."
+    And the gate offers no navigation
+    And the page has exactly one h1
     When I choose the workspace "/other/tickets"
     Then the application shell is present
 
@@ -60,6 +68,7 @@ Feature: bakers.build sign-in
     Given I am signed in as "no-bakery"
     And I open the landing route
     Then the address is "/home"
+    And the page has exactly one h1
 
   Scenario: The login form replaces the gate and both shell clicks keep the document
     Given I am signed in as "north-lead"
@@ -127,6 +136,7 @@ Feature: bakers.build sign-in
     Examples:
       | width | zoom |
       | 360   | 100  |
+      | 390   | 100  |
       | 1440  | 100  |
       | 1440  | 200  |
 

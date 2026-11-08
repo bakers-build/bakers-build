@@ -159,6 +159,20 @@ Then('the login form is accessible', async ({ page }) => {
     await expect(page.locator('form#bb-login-form input:not([type=hidden])')).toHaveCount(1);
 });
 
+// The divider reads as text between the two ways in, in reading order.
+Then(
+    'the login form separates {string} from {string} with {string}',
+    async ({ page }, first: string, second: string, divider: string) => {
+        const above = await page.getByRole('button', { name: first, exact: true }).boundingBox();
+        const label = page.locator('.gate__content').getByText(divider, { exact: true });
+        await expect(label).toBeVisible();
+        const middle = await label.boundingBox();
+        const below = await page.getByText(second, { exact: true }).boundingBox();
+        expect(middle!.y).toBeGreaterThan(above!.y);
+        expect(below!.y).toBeGreaterThan(middle!.y);
+    },
+);
+
 Then('no password field is present', async ({ page }) => {
     await expect(page.locator('input[type="password"]')).toHaveCount(0);
 });
