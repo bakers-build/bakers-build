@@ -17,7 +17,9 @@ alone for work that needs no site, and a site profile's `ddev init` installs and
 never run `vitepress preview` in a run. The Playwright suite and `playwright-cli` run through
 `ddev_exec`. A server an agent starts in the
 sandbox, such as Storybook, is reachable only within that same command. Skill and conductor
-behavior is tested in the playground workspace that `scripts/setup-test-project.sh` sets up. Core tests, Playwright, conductor and skill-behavior
+behavior is tested in the playground workspace that `scripts/setup-test-project.sh` sets up; a
+sandboxed run starts a playground conductor with `provision_up('conductor-e2e')` and stops or
+restarts it with `conductor-e2e-stop` and `conductor-e2e-start`. Core tests, Playwright, conductor and skill-behavior
 setup: [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work
