@@ -25,16 +25,17 @@ $etm = \Drupal::entityTypeManager();
 $conductors = $etm->getStorage('bb_conductor')->loadByProperties(['conductor_id' => $conductorId]);
 $conductor = reset($conductors) ?: throw new \RuntimeException("no bb_conductor with conductor_id '$conductorId'; start it with provision_up('conductor-e2e')");
 $project = $conductor->get('project_id')->entity ?? throw new \RuntimeException("conductor '$conductorId' has no project");
-$workspace = $project->get('group_id')->entity?->get('workspace_id')->target_id;
+$workspace = $project->getGroup()?->getWorkspace() ?? throw new \RuntimeException("conductor '$conductorId' has a project without a workspace");
 
-// Terms are unique per (workspace, vocabulary), so the project's workspace picks one.
+// As bakers_ticket_create does: the workspace's term of that name, created when missing.
 $term = function (string $vid, string $name) use ($etm, $workspace): int|string {
-  foreach ($etm->getStorage('bb_term')->loadByProperties(['vid' => $vid, 'name' => $name]) as $candidate) {
-    if ($candidate->get('workspace_id')->target_id === $workspace) {
-      return $candidate->id();
-    }
+  $storage = $etm->getStorage('bb_term');
+  $found = $storage->loadByProperties(['vid' => $vid, 'name' => $name, 'workspace_id' => $workspace->id()]);
+  $term = reset($found) ?: $storage->create(['vid' => $vid, 'name' => $name, 'workspace_id' => $workspace->id()]);
+  if ($term->isNew()) {
+    $term->save();
   }
-  throw new \RuntimeException("no $vid term '$name' in the project's workspace");
+  return $term->id();
 };
 
 $ticket = $etm->getStorage('bb_ticket')->create([
