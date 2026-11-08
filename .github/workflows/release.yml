@@ -179,3 +179,36 @@ jobs:
           name: release-evidence-${{ github.run_attempt }}
           path: gate-reports/
           retention-days: 30
+  report_failure:
+    needs: release
+    if: ${{ always() && needs.release.result == 'failure' && contains(fromJSON('["next","main"]'), github.event.workflow_run.head_branch) }}
+    # No container: job; those fail on the self-hosted runner a tier can be sent back to.
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: File the failure in bakers.build
+        env:
+          WORKFLOW: GitHub release
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          FAILED_JOBS: release
+          # github.sha of a workflow_run is the default branch, not the released commit.
+          GITHUB_SHA: ${{ github.event.workflow_run.head_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BB_CI_CLIENT_ID: ${{ secrets.BB_CI_CLIENT_ID }}
+          BB_CI_CLIENT_SECRET: ${{ secrets.BB_CI_CLIENT_SECRET }}
+        run: |-
+          set -eu
+          npm install -g @bakers-build/bakers@0.6.1-next.2
+          bakers config init --scope connection --auth-type client_credentials --base-url https://app.bakers.build --client-id "$BB_CI_CLIENT_ID" --secret-env BB_CI_CLIENT_SECRET --yes
+          # config init stores no token; bakers tools needs one even with client credentials.
+          bakers auth login --provider bakers
+          bash scripts/ci/github-failure-ticket.sh
