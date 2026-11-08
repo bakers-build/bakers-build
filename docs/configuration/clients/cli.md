@@ -1,8 +1,8 @@
 # CLI commands
 
-The `bakers` command is one program with twelve top-level commands; this page lists them all and covers the setup and configuration commands in detail, while the larger ones have a page of their own.
+Use the installed `bakers` CLI to manage your connection, configuration and conductors. This reference lists the shipped commands and setup options; larger commands have their own pages. For installation and sign-in, start with [Machine setup](/provision/machine).
 
-Options and subcommands are copied from `bakers --help` and the help of each command; run `bakers <command> --help` on your installed version for its complete output.
+Run `bakers <command> --help` for the options available in your installed version. After setup, verify the selected connection and configuration with `bakers config check --scope all --online`.
 
 ## Global options
 

@@ -27,14 +27,14 @@ This example assumes a project already chose herdr and a Docker-based runtime. O
    useradd -m -s /bin/bash bakers
    ```
 
-2. Install the tools chosen for this example: [Node.js ≥ 20.19 with npm](https://nodejs.org/en/download), [Docker](https://docs.docker.com/engine/install/ubuntu/) and your project's runtime using their vendor guides. Grant Docker access, then switch users:
+2. Install the tools chosen for this example: [Node.js ≥ 20.19 with npm](https://nodejs.org/en/download), [Docker](https://docs.docker.com/engine/install/ubuntu/) and your project's runtime using their vendor guides. Docker daemon access can grant control of the host. Give it only to the dedicated worker user for trusted workloads, then switch users:
 
    ```sh
    usermod -aG docker bakers
    su - bakers
    ```
 
-3. Use [machine setup](/provision/machine#install-and-sign-in) to install bakers.build into a user prefix. Put its PATH in `~/.profile`: Ubuntu's `~/.bashrc` returns early in non-interactive shells.
+3. Set a user-owned npm prefix before following [machine setup](/provision/machine#install-and-sign-in). Put its PATH in `~/.profile` and in any service manager's environment; a non-interactive service may not source shell startup files.
 
    ```sh
    npm config set prefix ~/.npm-global
@@ -57,7 +57,7 @@ This example assumes a project already chose herdr and a Docker-based runtime. O
    bakers auth login
    ```
 
-   Device code suffices for this check, but the measured session expired after five minutes without refresh. For unattended operation, have an operator provision a machine consumer and use `--auth-type client_credentials --secret-env <NAME>` ([connections](/configuration/connector/connections)). Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)).
+   Device-code sign-in is suitable for an attended setup. For unattended operation, use a [service account or operator-issued identity](/provision/security/credentials#machine-identities) with `--auth-type client_credentials --secret-env <NAME>` ([connections](/configuration/connector/connections)). Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)).
 
 6. Verify as the worker user:
 

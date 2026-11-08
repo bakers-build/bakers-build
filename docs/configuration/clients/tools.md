@@ -18,7 +18,7 @@ bakers tools [<global options>] [<wire name>] [--schema] [--data <json|@file>] [
 | `bakers tools <wire name> --data '<json>'` | Call it with inline JSON arguments |
 | `bakers tools <wire name> --param key=value` | Set one argument; repeatable, and wins over the same key in `--data` |
 
-A tool's wire name is `tool_api__<id>`, for example `tool_api__bakers_ticket_read`. An unprefixed id such as `bakers_ticket_read` is an unknown tool. Prefer `--data @file` for anything but a one-word value: write the file with an editor, a file tool or a JSON encoder, so Markdown bodies survive byte for byte and no shell quoting gets in the way.
+Use a plain ID such as `bakers_ticket_read` or its wire name `tool_api__bakers_ticket_read`. The CLI normalizes either form for the selected server. Prefer `--data @file` for anything but a one-word value: write the file with an editor, a file tool or a JSON encoder, so Markdown bodies survive byte for byte and no shell quoting gets in the way.
 
 ## Global options
 
@@ -29,7 +29,7 @@ A tool's wire name is `tool_api__<id>`, for example `tool_api__bakers_ticket_rea
 | `--connections-dir <path>` | Directory that holds the named connections (`$DROPSH_CONNECTIONS_DIR`) |
 | `--auth-profile <id>` | Auth profile to use; overrides the active profile and `$DROPSH_AUTH_PROFILE` |
 
-Global options follow the subcommand: `bakers tools --connection staging`. The connection is chosen by the same rule as in `bakers ui`: [Which control plane answers](/addons/bakers-ui/reference#which-control-plane-answers). Sign-in and profiles are covered in [bakers auth](/configuration/clients/auth).
+Global options follow the subcommand: `bakers tools --connection staging`. The connection is chosen by the same rule as in `bakers ui`: [Connection selection](/configuration/connector/connections#which-connection-is-used). Sign-in and profiles are covered in [bakers auth](/configuration/clients/auth).
 
 ## Results and exit codes
 

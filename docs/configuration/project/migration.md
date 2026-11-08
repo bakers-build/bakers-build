@@ -24,14 +24,7 @@ A write to another scope's file needs `--scope all`, because one scope may not w
 
 ## Preview, apply, check
 
-```sh
-bakers config upgrade --scope all --connection team --dry-run
-bakers config upgrade --scope all --connection team
-bakers config check --scope all --connection team --online
-bakers config upgrade --scope all --connection team --dry-run
-```
-
-Replace `team` with your connection name. Run these from the checkout, inspect the first report before applying, and expect the last preview to show no change: a second successful upgrade is a no-op.
+Follow the [update sequence](/configuration/machine/updates#manual-sequence-and-background) from the checkout. Add `--connection <id>` for a named connection. The reference behavior is:
 
 - **Preview** (`--dry-run`) parses the source without executing it and makes no writes, backups, imports or network calls. The report lists file states, fingerprints, redacted diffs, the schema of each file and findings.
 - **Apply** rechecks each file's fingerprint and stops with `changed_since_planning` if a file moved since the plan. It writes a private non-overwriting backup `<file>.bakers.bak` (mode 0600), then replaces the file atomically. If a write fails it restores the files already changed and names any it could not restore.

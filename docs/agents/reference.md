@@ -1,6 +1,6 @@
 # Agent policy reference
 
-Owned by `~/.bakers/machine.config.js`; keep it private.
+Configure aliases, models and routing in `~/.bakers/machine.config.js`; keep it private. This reference is for machine owners with an installed harness and a connected project checkout. For setup, start with [Choose agents and models](/agents/guide); after changes, [verify the resolved catalog](#old-keys-and-verification).
 
 ## The agents object
 
@@ -39,37 +39,18 @@ Unknown or unavailable labels log a warning and fall through; `agent:default` is
 
 Options go in the addon entry's `with` object (or a `catalog` entry). The addon starts the vendor CLI; it does not install it or sign it in.
 
-| Package | Aliases | Options |
-|---|---|---|
-| `@bakers-build/addon-claude` | `opus`, `sonnet`, `fable` | `model`, `effort`, `security`, `sandbox`, `config`, `env_deny`, `args`, `measure` (default `false`) |
-| `@bakers-build/addon-codex` | `codex`, `astra`, `sol`, `terra`, `luna` | `model`, `effort`, `security`, `sandbox`, `config`, `env_deny`, `args` |
-| `@bakers-build/addon-kimi` | `kimi` | `model`, `args`; `effort` is ignored with a log line |
-| `@bakers-build/addon-opencode` | `opencode` | `model`, `args`; `effort` is ignored with a log line |
-| `@bakers-build/addon-pi` | `pi` | `model`, `provider`, `thinking` or `effort`, `approve`, `args` |
-| `@bakers-build/addon-grok` | `grok` (Grok CLI default) | `model`, `effort` (or legacy `reasoningEffort`), `security`, `sandbox`, `env_deny`, `args` |
-
-Setting `model` on Claude publishes one custom candidate instead of `opus`, `sonnet` and `fable`; on Codex it drops the four named variants. Select Fable with `agent:fable` or `agent:fable@working`; see the [Claude addon](/addons/claude) for its CLI version requirement and family mapping. Run `bakers agents` to see what your release actually publishes.
-
-Omitting `model` for Grok uses the Grok CLI's own default. An explicit `model` pins that version. Passthrough `-m`/`--model` in `args` wins over the configured model. `grok-4.5` below is an example pin, not an addon default:
-
-```js
-{ use: '@bakers-build/addon-grok', with: { model: 'grok-4.5' } }
-```
-
-Place that object in `addons` of `machine.config.js`. An agent harness in a conductor config is not loaded and warns.
-
-`args` is a list of strings appended, in order, each as one shell-quoted argument. Paths must be absolute: an element starting with `~`, or a long option assigned a value starting with `~`, fails loading. `args` may carry `--model` or `--effort`; bakers.build then omits its own flag. Precedence: explicit `args`, then `effort`, then a harness-specific legacy setting, then the harness default. Flags bakers.build owns are rejected in `args`:
-
-| Package | Reserved |
+| Harness reference | Configuration it owns |
 |---|---|
-| claude | `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config`, `--mcp-config` |
-| codex | `--sandbox`, `-s`, `-a`, `--ask-for-approval`, `--dangerously-bypass-approvals-and-sandbox`, `--dangerously-bypass-hook-trust` |
-| kimi | `-p`, `--prompt`, `--output-format` |
-| opencode | `--prompt`, `--auto` |
-| pi | `--session-dir`, `--approve`, `-a`, `--no-approve`, `-na` |
-| grok | `--permission-mode`, `--session-id` |
+| [Claude Code](/addons/claude) | Claude aliases, models, effort, measurement and reserved arguments |
+| [Codex](/addons/codex) | Codex aliases, models, effort and reserved arguments |
+| [Kimi](/addons/kimi) | Kimi model and arguments |
+| [OpenCode](/addons/opencode) | OpenCode model and arguments |
+| [Pi](/addons/pi) | Provider, model, thinking and local-file approval |
+| [Grok](/addons/grok) | Model pins, reasoning effort and reserved arguments |
 
-Pi's `approve` trusts project-local Pi files and grants no bakers.build access. Claude `measure: true` launches Claude through the addon's measure wrapper, which runs a logging proxy for that process and applies the state-group settings; it also works on a `catalog` entry.
+Run `bakers agents` in the project checkout to see the aliases and models your installed addons publish. A custom `model` can change that catalog; use the addon reference before pinning it. Harnesses belong in the machine file; a harness in a project conductor config is ignored with a warning.
+
+`args` is a list of strings appended in order as separate shell-quoted arguments. Values starting with `~`, including `--option=~/path`, are rejected; use absolute paths. Supported passthrough arguments and flags reserved by bakers.build differ by harness and are listed in those references.
 
 ## Run security
 

@@ -1,6 +1,6 @@
 # Ticket type, recipe and labels
 
-**The recipe chooses the method, the type chooses its variant, and labels choose the agent and can mirror progress to GitLab.**
+**Use recipe and type to choose a method for a ticket, then labels for agent selection and optional automation. Origin-label mirroring is configured separately.**
 
 | Field | Set by | Effect |
 |---|---|---|
@@ -8,11 +8,22 @@
 | `ticket_type` | qualification | `feature`, `bug`, `chore` and so on; selects the recipe's slots for that type |
 | `labels` | you, or qualification | agent choice and plain tags, see below |
 
-The fields and their vocabularies are listed under [Ticket type, recipe and labels](/skills-and-workflows/states#ticket-type-recipe-and-labels).
+A ticket and a ticket template carry three term fields, each from a vocabulary of the ticket's workspace:
+
+| Field | Vocabulary | Values | Example |
+|---|---|---|---|
+| `ticket_type` | `type` | one | `feature`, `bug`, `chore`, `epic`, `deployment`, `verification` |
+| `recipe` | `recipe` | one | a recipe name |
+| `labels` | `label` | several | `agent:<alias>`, plain tags |
+
+The field is called `ticket_type` because JSON:API reserves `type`. The type selects the recipe's variant. Workspace contributors and leads manage the terms under the workspace's settings, on the tabs Types, Recipes and Labels; guests may only view them. A term has no page of its own and cannot be deleted. Agents set them by name with [`bakers_ticket_classify`](/configuration/clients/tools).
+
+An epic is a ticket of type `epic`. It groups child tickets, which do the work; the project overview lists epics by type.
+
 
 ## Recipes
 
-A recipe is a skill named `bb-recipe-<method>`, one per engineering method, with one `## bb-state-<state>` section per state it refines and `### bb-phase-<phase>` slots inside. bakers.build ships `bb-recipe-matt` and `bb-recipe-superpowers`. Qualification loads every installed recipe completely, picks the one whose method fits the ask, then a type that recipe declares, and writes both on the ticket with its reason. Your `WORKFLOW.md` may add guidance for that choice; no recipe is preselected. Qualification asks only when a person is present and two recipes fit equally; an unattended run decides by fit itself. A later change follows the `bb-scope-change` skill.
+A recipe is an installed skill named `bb-recipe-<method>`. Shipped methods include Matt, Superpowers, verification, and deployment/release. [Write a recipe](/skills-and-workflows/recipes) owns slot syntax. Qualification loads every installed recipe completely, picks the one whose method fits the ask, then a type that recipe declares, and writes both on the ticket with its reason. Your `WORKFLOW.md` may add guidance for that choice; no recipe is preselected. Qualification asks only when a person is present and two recipes fit equally; an unattended run decides by fit itself. A later change follows the `bb-scope-change` skill.
 
 A run stops before doing any work when the recipe, its section for the current state, or the ticket's type within that recipe is missing. To write your own: [Write a recipe](/skills-and-workflows/recipes).
 
@@ -22,9 +33,11 @@ A run stops before doing any work when the recipe, its section for the current s
 |---|---|---|
 | `agent:<alias>` or `agent:<route>` | you, or qualification after you confirm | the coding agent for every state |
 | `agent:<alias>@<state>` or `agent:<route>@<state>` | the same | the coding agent for that state only |
-| `auto` | you, or the host when it hands a specified ticket over | the agent carries the ticket to `done` on its own (skill `bb-label-auto`): it decides technical questions itself, asks you only content questions and one acceptance, and merges after review |
+| `auto` | you, or the host when it hands a specified ticket over | authorizes transitions and merge under `bb-label-auto`; the agent decides technical questions, asks content questions and requests acceptance at GREEN before review |
 
-Anything else is a plain tag for people and filters.
+An `auto` run publishes unresolved user questions or technical problems on the ticket, labels it and freezes it. Answer in a comment, remove the question label and unfreeze to continue. Do not use `auto` when nobody will answer ticket questions. It does not waive checks or acceptance.
+
+Other installed `bb-label-<label>` skills can define behavior for their labels. A label without such a skill or built-in meaning is a tag for people and filters.
 
 ## Agent labels
 

@@ -9,7 +9,7 @@ Start with [hosted or self-run](/self-hosting/choosing) to understand ownership 
 3. Take and verify a [backup](/self-hosting/server#restart-and-backup) before an [update](/self-hosting/server#update).
 4. Practice [restoring onto isolated storage](/self-hosting/server#restore-onto-empty-isolated-storage).
 
-Existing operator-managed stacks use the separate [Komodo procedure](/self-hosting/server-komodo). Keep its deployment choices separate from a new standalone installation.
+These steps describe standalone installations. For an existing deployment with different storage or orchestration, have its operator plan a migration first; do not apply fresh-install commands to existing data.
 
 The server owns ticket history; pointing a client at another instance does not migrate it.
 

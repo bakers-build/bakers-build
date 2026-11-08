@@ -189,6 +189,7 @@ export const SIDEBAR = {
     ]),
     group("Project", [
       ["Project", "/configuration/project"],
+      ["Lifecycle hooks", "/configuration/project/hooks"],
       ["Conductors", "/configuration/project/conductors"],
       ["Conductor commands", "/configuration/project/conductor-commands"],
       ["Configuration migration", "/configuration/project/migration"],
@@ -208,7 +209,6 @@ export const SIDEBAR = {
     group("Self-hosting", [
       ["Overview", "/self-hosting/"],
       ["Server", "/self-hosting/server"],
-      ["Komodo server", "/self-hosting/server-komodo"],
     ]),
   ],
 }

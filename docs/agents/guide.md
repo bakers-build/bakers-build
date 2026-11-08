@@ -24,31 +24,11 @@ for the agents I choose. Keep working settings and verify the result.
 
    The JSON lists each alias with its harness and model, plus `enabled_agents`, `default_agent` and `routes`. An alias is one selectable harness and model, such as `opus` or `codex`. `bakers agents` neither installs a harness nor checks its login.
 
-2. Name your harnesses in `~/.bakers/machine.config.js`. Keep the identity fields that `bakers init` wrote and edit `addons` and the `agents` object. A complete file that uses Codex for coding and Claude Opus for review:
-
-   ```js
-   // @bakers-schema-version 1
-   export default {
-     schema_version: 1,
-     machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-     label: 'alex-laptop',
-     addons: ['@bakers-build/addon-codex', '@bakers-build/addon-claude'],
-     agents: {
-       enabled: ['codex', 'opus'],
-       default_agent: 'codex',
-       routes: {
-         default: { working: 'codex', review: 'opus', '*': 'codex' },
-         careful: { '*': 'opus' },
-       },
-     },
-   };
-   ```
-
-   `addons` supplies candidates (agent harnesses may be listed only in this file), `enabled` limits them, `default_agent` is the last fallback. A route maps workflow states to aliases, and `'*'` covers every state not named. The `default` route applies to every ticket without a label.
+2. Edit `addons` and `agents` in `~/.bakers/machine.config.js`, keeping the generated machine identity. Use the complete [mixed-harness example](/agents/reference#mixed-harnesses) for Codex coding and Opus review. That reference owns the fields, defaults and routing rules.
 
 3. Override one ticket with a label, through the ticket's normal label editing:
 
-   | Label | Effect with the file above |
+   | Label | Effect with the linked mixed-harness example |
    |---|---|
    | `agent:careful` | Route `careful`: Opus in every state |
    | `agent:opus` | Alias `opus` in every state |

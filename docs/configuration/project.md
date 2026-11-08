@@ -22,7 +22,7 @@ export default {
 };
 ```
 
-This complete file loads and passes `bakers config check`. The generator also writes `addons: [{ use: '@bakers-build/addon-herdr' }]`, the `capture_logs` key and, when you answered them, a `hooks` block. The smallest equivalent is:
+This complete file loads and passes `bakers config check`. The generator also writes `addons` entries (including a legacy project-level Claude entry, which the loader ignores), the `capture_logs` key and, when you answered them, a `hooks` block. The smallest equivalent is:
 
 ```js
 export default {
@@ -40,18 +40,18 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `bakers.project` | Required. The project name as a string literal; the loader reads it without running the file, so no variables or spreads. |
 | `bakers.workspace` | Workspace name. Required only when the project name exists in more than one workspace; the error names the candidates. |
 | `conductor_id`, `machine_id`, `label` | Rejected; run `bakers init`. The conductor's identity comes from the machine, the project and the variant; its label is set when it first registers. |
-| `remote`, `executor`, `workspace` | Engine slots: `{ plugin, export?, with? }`. Each must resolve, from a slot or from `addons`. |
+| `remote`, `executor`, `workspace` | Engine slots: `{ plugin, export?, with? }`. Each must resolve, from a slot or from `addons`. A machine `executor` overrides the project executor. |
 | `addons` | Packages that contribute the slots: a name, or `{ use, with }`. A direct slot beats an addon; otherwise the last contributor wins with a warning. |
-| `states` | Workflow states this conductor serves. Omitted or empty serves every claimable state. |
+| `states` | Optional array of non-empty state strings; omitted or empty seeds all claimable states on first registration. Later edits belong on the conductor Identity card or API; changing this file does not update an existing registration. |
 | `poll_interval_ms` | Positive integer, default `5000`. |
 | `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600. It is an ownership duration, not a task timeout. |
-| `hooks` | Lifecycle commands `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`, and the agent tool `provision_up`, which brings the environment up and reuses a ready one; see [Hooks](/provision/hooks). Omitted hooks do nothing. |
+| `hooks` | Optional command object. [Lifecycle hooks](/configuration/project/hooks) owns its keys, timing, environment, failure behavior and on-demand `provision_up` profiles. |
 | `prompt` | Agent prompt template with `{identifier}`, `{state}` and `{runUuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
 | `security` | Run security for every agent of every machine that runs this project: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/provision/security/shared-settings). |
 | `selectAgent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/agents/guide). |
 | `schema_version` | Written by `bakers config init` and `upgrade`; the current project schema is 1. |
 
-`capture_logs` is written as `true` by the generator. The server decides whether a run's transcript is uploaded at all ([Run-log storage](/self-hosting/server#run-log-storage)); `true` follows that decision. Set it to `false` to keep this conductor's run transcripts off the server even where storage is allowed: the footprint (tokens, turns, tool calls) is still recorded, the transcript stays on this machine.
+`capture_logs` is written by the generator, but the current file loader does not forward it to the engine. Do not rely on `capture_logs: false` in this file to prevent uploads. Use the server's [run-log storage policy](/self-hosting/server#run-log-storage); footprint metrics are recorded independently. This loader limitation is separate from the engine's support for the option.
 
 The loader rejects two old shapes: top-level `project` or `bb_workspace` instead of `bakers`, and `agent`, `agents`, `default_agent` or `agent_routes` (agent policy lives in the machine file). `site`, `plugins` and `max_parallel` are ignored with a warning; the run budget is set on the machine in the backend. Move or remove them by hand; `bakers config upgrade` no longer rewrites them ([Configuration migration](/configuration/project/migration)). Agent addons listed in `addons` are dropped with a warning.
 
@@ -88,7 +88,7 @@ states: ['working', 'review'],
 poll_interval_ms: 10000,
 ```
 
-Use real workflow state names ([Workflows and states](/skills-and-workflows/states)). A restricted conductor never claims a ticket in another state. Add `qualification` when it should qualify hand-written tickets.
+Use real workflow state names ([Workflows and states](/skills-and-workflows/states)). For an existing conductor, change its served states on the Identity card as well. Add `qualification` when it should qualify hand-written tickets.
 
 ## Named variants
 
