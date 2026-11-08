@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import {
   mkdirSync,
   mkdtempSync,
@@ -26,6 +27,9 @@ let dir: string;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'bakers-addon-guide-'));
+  execFileSync('git', ['init', '-q', dir]);
+  writeFileSync(join(dir, 'notes.md'), 'First line\n');
+  execFileSync('git', ['add', 'notes.md'], { cwd: dir });
 });
 
 afterEach(() => {
@@ -41,14 +45,14 @@ async function loadGuide(withMessage = false) {
   if (!manifest || !preset || !message)
     throw new Error('guide example is incomplete');
   const configDir = join(dir, '.bakers');
-  const addonDir = join(configDir, 'addons/hello');
+  const addonDir = join(configDir, 'addons/patch-check');
   mkdirSync(addonDir, { recursive: true });
   writeFileSync(join(addonDir, 'package.json'), manifest);
   writeFileSync(
     join(addonDir, 'preset.js'),
     preset + (withMessage ? message : ''),
   );
-  return discoverAddons(['./addons/hello'], 'conductor', [
+  return discoverAddons(['./addons/patch-check'], 'conductor', [
     join(configDir, 'conductor.config.js'),
   ]);
 }
@@ -59,20 +63,84 @@ it('loads the local guide package and validates calls to its tool', async () => 
   const tools = await loadTools(found.addonTools);
   const binding = { worktreePath: dir };
   await expect(
-    tools.call('hello_greet', { name: 'Ada' }, binding),
+    tools.call('patch_check', { scope: 'unstaged' }, binding),
   ).resolves.toEqual({
-    text: 'Hello, Ada!',
+    text: 'No whitespace errors or conflict markers in unstaged changes.',
   });
   for (const args of [
     {},
-    { name: 42 },
-    { name: '' },
-    { name: 'Ada', path: '/' },
+    { scope: 42 },
+    { scope: 'all' },
+    { scope: 'unstaged', path: '/' },
   ]) {
-    await expect(tools.call('hello_greet', args, binding)).rejects.toThrow(
+    await expect(tools.call('patch_check', args, binding)).rejects.toThrow(
       'invalid arguments',
     );
   }
+});
+
+it.each([
+  {
+    name: 'whitespace errors',
+    content: 'First line\nTrailing space \n',
+    finding: 'notes.md:2: trailing whitespace.',
+  },
+  {
+    name: 'conflict markers',
+    content: 'First line\n<<<<<<< ours\n',
+    finding: 'notes.md:2: leftover conflict marker',
+  },
+])('reports $name only in the selected changes', async ({
+  content,
+  finding,
+}) => {
+  const found = await loadGuide();
+  const tools = await loadTools(found.addonTools);
+  const binding = { worktreePath: dir };
+  writeFileSync(join(dir, 'untracked.md'), content);
+  await expect(
+    tools.call('patch_check', { scope: 'unstaged' }, binding),
+  ).resolves.toEqual({
+    text: 'No whitespace errors or conflict markers in unstaged changes.',
+  });
+
+  writeFileSync(join(dir, 'notes.md'), content);
+  await expect(
+    tools.call('patch_check', { scope: 'staged' }, binding),
+  ).resolves.toEqual({
+    text: 'No whitespace errors or conflict markers in staged changes.',
+  });
+  await expect(
+    tools.call('patch_check', { scope: 'unstaged' }, binding),
+  ).rejects.toThrow(finding);
+  expect(readFileSync(join(dir, 'notes.md'), 'utf8')).toBe(content);
+
+  execFileSync('git', ['add', 'notes.md'], { cwd: dir });
+  await expect(
+    tools.call('patch_check', { scope: 'staged' }, binding),
+  ).rejects.toThrow(finding);
+  await expect(
+    tools.call('patch_check', { scope: 'unstaged' }, binding),
+  ).resolves.toEqual({
+    text: 'No whitespace errors or conflict markers in unstaged changes.',
+  });
+});
+
+it('honours cancellation of the guide tool', async () => {
+  const found = await loadGuide();
+  const tools = await loadTools(found.addonTools);
+  const abort = new AbortController();
+  abort.abort();
+  await expect(
+    tools.call(
+      'patch_check',
+      { scope: 'unstaged' },
+      { worktreePath: dir },
+      {
+        signal: abort.signal,
+      },
+    ),
+  ).rejects.toThrow(/aborted/i);
 });
 
 it('binds the guide message to the same tool and ticket/worktree context', async () => {
@@ -84,12 +152,16 @@ it('binds the guide message to the same tool and ticket/worktree context', async
     undefined,
     new Set(tools.list().map((tool) => tool.name)),
   );
-  expect(validateRequestPayload(inbox.messages, 'greet', { name: 42 }).ok).toBe(
-    false,
-  );
+  expect(
+    validateRequestPayload(inbox.messages, 'check', { scope: 42 }).ok,
+  ).toBe(false);
   const remote = new FakeBbRemote({
     tickets: {
-      't-1': { identifier: 'EXAMPLE-1', title: 'Hello', state: 'working' },
+      't-1': {
+        identifier: 'EXAMPLE-1',
+        title: 'Check patch',
+        state: 'working',
+      },
     },
   });
   const runtime = new InboxRuntime(
@@ -101,24 +173,31 @@ it('binds the guide message to the same tool and ticket/worktree context', async
   );
   const request = {
     id: 'req-1',
-    messageId: `${inbox.name}.greet`,
+    messageId: `${inbox.name}.check`,
     version: inbox.version,
     ticketUuid: 't-1',
     requestedBy: 'user-1',
     worktreePath: dir,
-    payload: { name: 'Ada' },
+    payload: { scope: 'unstaged' },
   };
   await expect(runtime.handle(request)).resolves.toEqual({
     status: 'done',
-    result: { markdown: 'Hello, Ada!' },
+    result: {
+      markdown: 'No whitespace errors or conflict markers in unstaged changes.',
+    },
   });
   expect(call).toHaveBeenCalledWith(
-    'hello_greet',
-    { name: 'Ada' },
+    'patch_check',
+    { scope: 'unstaged' },
     { worktreePath: dir, ticket: await remote.getTicket('t-1') },
     expect.objectContaining({ signal: expect.any(AbortSignal) }),
   );
-  const invalid = await runtime.handle({ ...request, payload: { name: 42 } });
+  const invalid = await runtime.handle({ ...request, payload: { scope: 42 } });
   expect(invalid.status).toBe('failed');
   expect(invalid.result.markdown).toContain('invalid arguments');
+
+  writeFileSync(join(dir, 'notes.md'), 'First line\nTrailing space \n');
+  const failed = await runtime.handle(request);
+  expect(failed.status).toBe('failed');
+  expect(failed.result.markdown).toContain('notes.md:2: trailing whitespace.');
 });

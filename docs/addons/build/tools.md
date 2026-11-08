@@ -6,30 +6,15 @@ Give an agent a named operation with declared inputs and a text result. Start wi
 
 ## The contract
 
-Export a `tools` value from the preset:
+Export a `tools` value from the preset. Its type is `Preset['tools']` from `@bakers-build/conductor/contract`. The [patch-check tutorial](/addons/build/first-addon#create-two-files) contains a complete declaration and working handler:
 
-```ts
-import type { Preset } from '@bakers-build/conductor/contract';
-
-export const tools: Preset['tools'] = {
-  contract: 1,
-  tools: {
-    hello_greet: {
-      description: 'Return a greeting for a name.',
-      input: {
-        type: 'object',
-        required: ['name'],
-        properties: {
-          name: { type: 'string', minLength: 1, maxLength: 80 },
-        },
-      },
-    },
-  },
-  handlers: async () => ({
-    hello_greet: async ({ args }) => ({ text: `Hello, ${args.name}!` }),
-  }),
-};
-```
+| Field | Meaning |
+|---|---|
+| `contract` | Required literal `1`. |
+| `tools` | Map of tool names to their definitions, such as `patch_check`. |
+| `tools.<name>.description` | Explains the operation to the agent. |
+| `tools.<name>.input` | Optional input schema; the tutorial accepts a `scope` of `unstaged` or `staged`. |
+| `handlers(options)` | Async factory returning one implementation per declared tool name. |
 
 Use the [flat input schema](/addons/build/actions#contract-2). With no `input`, the tool accepts no arguments. Unknown keys and invalid values are refused before the handler runs; defaults do not fill in missing required arguments.
 

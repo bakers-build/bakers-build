@@ -23,7 +23,7 @@ Follow the package's own instructions; naming an addon does not install its unde
 
 ## Build a capability
 
-Start with [Build your first addon](/addons/build/first-addon): declare a greeting tool, load it in your project, call it, then bind it to a ticket message.
+Start with [Build your first addon](/addons/build/first-addon): check a patch in the ticket's worktree, call the check from an agent, then offer the same operation to ticket users.
 
 A **tool** is a named operation with validated inputs and a result or error. A **message** is a request a person sends from a ticket; the conductor runs its handler or bound tool in that ticket’s worktree. For example, Ports binds **Share tunnels** to the `ports_up` tool. Not every message calls a tool.
 

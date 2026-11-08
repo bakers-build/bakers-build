@@ -14,15 +14,15 @@ import type { Preset } from '@bakers-build/conductor/contract';
 // Assumes the tutorial's tools export is in this module.
 export const inbox: Preset['inbox'] = {
   contract: 2,
-  label: 'Hello',
+  label: 'Patch check',
   messages: {
-    greet: {
-      label: 'Greet',
-      access: 'view',
-      input: tools.tools.hello_greet.input,
+    check: {
+      label: 'Check patch',
+      access: 'update',
+      input: tools.tools.patch_check.input,
     },
   },
-  bindings: { greet: { tool: 'hello_greet' } },
+  bindings: { check: { tool: 'patch_check' } },
 };
 ```
 
@@ -93,7 +93,7 @@ The send-time version is recorded, but execution uses the addon's currently load
 
 ## Examples
 
-The [tutorial](/addons/build/first-addon) owns the complete greeting example. Shipped [Ports](/addons/ports) uses the same pattern: **Share tunnels** binds `tunnel` to `ports_up` with fixed `args: {}`, sharing all eligible services.
+The [tutorial](/addons/build/first-addon) owns the complete patch-check example, including success and failure results. Shipped [Ports](/addons/ports) uses the same pattern: **Share tunnels** binds `tunnel` to `ports_up` with fixed `args: {}`, sharing all eligible services.
 
 For sensitive operations, prefer `update` access, validate targets inside the handler and return secrets only where the server's access model permits. Do not infer that a private result removes the need for authorization.
 
