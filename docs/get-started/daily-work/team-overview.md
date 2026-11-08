@@ -1,30 +1,38 @@
 # See what the team works on
 
-**One look tells you which tickets move, which wait, and what each run consumed.**
+Find tickets needing attention and compare completed work with the resources its agents used.
 
-**You need:** access to the workspace.
+**You need:** access to the workspace and relevant projects. Team time records require team-lead access.
 
 ## On the web
 
+Start with the ticket list for current work; use statistics to understand completed work.
+
 | Where | What you see |
 |---|---|
-| Workspace **Stats** | Closed tickets, runs and token spend for the last 24 hours, 7 and 30 days, with trends. |
-| A project's ticket list | Every ticket with state, assignee, conductor and, when it stands still, the reason: *frozen*, *blocked*, *no conductor* or *failing*. |
-| A ticket's **Runs** | One row per step that ran. Open a run for its footprint: tokens, agent turns, tool calls. |
-| **Team → Time** | Recorded hours of the team's members, for team leads. |
+| Workspace **Insights → Overview** | Tickets reaching `done` in the selected period, their runs and AI usage across projects. |
+| Project **Stats** | The project's figures, with epic and person filters. |
+| **My work → Stats** | Figures for tickets currently assigned to you, across workspaces. |
+| A project's ticket list | State, assignee, conductor and dispatch holds such as *frozen*, *blocked* or *failing*. |
+| A ticket's **Runs** | Execution attempts, their status and reported metrics such as tokens, turns and tool calls. A step can need several attempts. |
+| **Team → Time** | Recorded hours of team members, visible to team leads. |
+
+Statistics let you select a week, month, quarter, year, all time or custom range. Check the period and filters before comparing figures; an empty view may simply have no completed tickets in that selection.
 
 ## Ask your agent
 
 ```text
-Read the open tickets of this project as bb-workflow's references/read-ticket.md describes and tell me which ones wait for a person.
+Find open tickets in <project>. Read the relevant tickets and comments,
+then list which need a person's decision, which are blocked and why.
 ```
 
 ## Reading the numbers
 
-- A run's **tokens** are what the agent's model consumed for that step; your provider bills them under your own subscription.
-- **Runs per closed ticket** shows how many steps a ticket took; it is not a success rate.
-- A ticket in a running step with no new comment for a while usually waits for an answer in its terminal tab ([where you answer](/get-started/daily-work/follow-a-ticket#where-you-answer)).
+- **AI usage** describes reported agent telemetry. It is not a provider invoice or a measure of employee hours.
+- **Runs per ticket** describes attempts associated with completed tickets, not a success rate.
+- People record effort separately through [Record time](/get-started/daily-work/record-time).
+- A quiet run does not establish that someone missed a question. [Follow a ticket](/get-started/daily-work/follow-a-ticket#where-you-answer) explains where to inspect and respond.
 
-**Done when:** you know which tickets need a person and which run on their own.
+**Done when:** you can identify tickets needing attention and interpret the selected figures.
 
-What each figure measures: [Ticket metrics](/skills-and-workflows/metrics).
+**Next:** open those tickets; use [Ticket metrics](/skills-and-workflows/metrics) for detailed definitions.
