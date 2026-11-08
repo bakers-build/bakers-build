@@ -10,7 +10,8 @@
    sidebar/header/content/footer/overlay, this one is a brand band beside a form.
 
    THE BAND, AND NO NAVIGATION. A flat butter field carries the product mark
-   and the slogan as one group, centred in its height; the page's own title, description and
+   and the slogan as one group, centred in its height, over a small production
+   line at its foot; the page's own title, description and
    content stand beside it. A gate offers the one thing the page is for and no
    link out, because a link into a workspace the reader may not be in is
    exactly the wrong guess `BbWorkspaceAccessCheck` answers with a 404.
@@ -29,10 +30,35 @@
    twenty workspaces readable. #}
 <div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'lg:items-center', 'lg:justify-center', 'lg:p-section', 'bg-app', 'text-text']) }}>
   <div class="gate__frame w-full flex flex-col lg:flex-row lg:max-w-[1100px] lg:min-h-[640px] lg:overflow-hidden lg:rounded-md lg:border lg:border-border">
-    <aside class="gate__band scheme-light flex flex-col justify-center gap-section p-gutter lg:p-section min-h-[220px] lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
-      <div class="min-w-0">{% block mark %}{% if mark %}{{ mark }}{% endif %}{% endblock %}</div>
-      {# SDC does not apply schema defaults at render time. #}
-      <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("Knead it. Ship it."|t) }}</p>
+    <aside class="gate__band scheme-light flex flex-col gap-section p-gutter lg:p-section min-h-[220px] lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
+      <div class="flex-1 flex flex-col justify-center gap-section">
+        <div class="min-w-0">{% block mark %}{% if mark %}{{ mark }}{% endif %}{% endblock %}</div>
+        {# SDC does not apply schema defaults at render time. #}
+        <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("Knead it. Ship it."|t) }}</p>
+      </div>
+      {# The line: tickets glide along a dashed belt. Decoration only; with
+         reduced motion the tickets stand still on it. SMIL needs no CSS of
+         its own, and an animation cannot be paused from CSS, so the moving
+         and the still row are two groups and the media query picks one. #}
+      <svg aria-hidden="true" focusable="false" viewBox="0 0 440 36" class="gate__line block w-full h-auto overflow-hidden" fill="none" stroke="currentColor" stroke-width="1.5">
+        <defs>
+          <g id="gate-ticket">
+            <rect x="0" y="4" width="34" height="22" rx="3" class="fill-gate-band"/>
+            <path d="M7 12h20M7 18h12" stroke-linecap="round"/>
+          </g>
+        </defs>
+        <path d="M0 31H440" stroke-dasharray="4 5" stroke-linecap="round"/>
+        <g class="motion-reduce:hidden">
+          {% for begin in ['0s', '-3s', '-6s'] %}
+            <use href="#gate-ticket"><animateTransform attributeName="transform" type="translate" from="-40 0" to="440 0" dur="9s" begin="{{ begin }}" repeatCount="indefinite"/></use>
+          {% endfor %}
+        </g>
+        <g class="hidden motion-reduce:inline">
+          <use href="#gate-ticket" x="60"/>
+          <use href="#gate-ticket" x="200"/>
+          <use href="#gate-ticket" x="340"/>
+        </g>
+      </svg>
     </aside>
     <main class="gate__main flex-1 flex items-start lg:items-center justify-center p-gutter lg:p-section bg-app lg:bg-surface">
       <div class="w-full max-w-[420px] flex flex-col gap-group">
