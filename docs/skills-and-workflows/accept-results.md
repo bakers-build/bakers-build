@@ -1,58 +1,62 @@
 # Accept results
 
-Check delivered work against the ticket's criteria, submit findings and make the next decision explicit.
+Check an agent's delivered change and tell the team whether it is ready or needs more work.
 
-**You need:** access to the ticket and its latest summary, criteria and evidence. For code changes, open the linked merge request. For a running application, you also need a working preview and any required application login.
+The path is: **open the result → try it → write your findings → agree the next step**.
 
-## Agent review and human review
+Two people may be involved:
 
-The workflow's `review` state is an **agent code review**: an agent checks the produced changes against requirements and repository standards. Whether this step is mandatory depends on the recipe; Matt requires it for features.
+- The **reviewer** tries the result and writes a review.
+- The **assignee**, the person the ticket is assigned to, publishes that review for the ticket's readers.
 
-A **human result review** is separate. Someone assigned under **Reviewers** can try the result and submit observations. The assignment does not start a service or tunnel, grant application login, or approve delivery.
+**You need:** ticket access, acceptance criteria and the latest summary. To try an application, you also need a running preview and any required login.
 
 ## Review the result
 
-1. **Assign the reviewer.** A person with ticket-update permission selects the reviewer in the Properties panel's **Reviewers** field. The reviewer needs access to the ticket's workspace. Being a reviewer does not grant permission to edit the ticket.
+These steps are for the human reviewer.
 
-2. **Read the handoff.** Start with the latest `summary`, then its `coding` or agent `review` evidence. Identify the tested revision, passing criteria, failed or missing checks and the walkthrough. Ask for missing evidence before treating a criterion as passed.
+1. **Get assigned.** Ask someone who can edit the ticket to add you under **Properties → Reviewers**. You can then choose **Write a review** in **Reviews**. Skip this step if you are already listed. Assignment grants no workspace access or ticket-edit permission.
 
-3. **Open the preview when needed.** Use the URL supplied in the handoff. If the project's Ports addon is enabled, the ticket's message card offers **Share tunnels**, which requests URLs for eligible running worktree services. The operator must first start the service and configure a tunnel transport; follow [Ports](/addons/ports) for setup. If no URL is returned, ask the operator to check those prerequisites. A tunnel URL can be public while it lives; use the supplied test account or login link if the application requires authentication.
+2. **Open the result.** Read the latest `summary` comment. Follow its preview, document or merge-request link; note the version being checked. Use the supplied test account when needed. Ask for any missing link, login or test instructions.
 
-4. **Check the criteria.** Follow the walkthrough on the supplied revision, including expected failures or access restrictions. For documentation or another change without a running application, inspect the supplied artifact instead. Record what you tried and what happened. You can ask:
+   With Ports, **Share tunnels** on the ticket's message card requests preview links. The operator must first start the service and configure the tunnel; [Ports](/addons/ports) explains setup. Reviewer assignment starts neither. A tunnel link may be public; the application can still require a login.
 
-   ```text
-   Read <identifier> and its comments. Walk me through the acceptance
-   criteria, identify the preview or artifact, and distinguish passing
-   evidence from checks that are still missing.
-   ```
+3. **Try the task.** Follow the summary's walkthrough and compare the result with each acceptance criterion, including requested error and access checks. For documentation, read the pages and follow their links. Check the recorded test results too; name anything you could not verify.
 
-5. **Submit your findings.** As an assigned reviewer, choose **Write a review** in **Reviews**. Describe the checked revision, actions, results and remaining issues. **Save draft** keeps an editable draft private to you. **Submit review** sends it to the assignee for a publication decision; its text can no longer be edited.
+4. **Write your findings.** Choose **Reviews → Write a review**. Include what you checked and what needs attention. For example:
+
+   > Checked preview abc123 on desktop and mobile. Creating a ticket works on desktop. On mobile, Save is hidden, so criterion 2 fails. Please fix this before delivery.
+
+5. **Submit the review.** **Save draft** keeps your text private and editable. **Submit review** sends it to the assignee and locks the text. Your checking step is complete when the review shows **Submitted**.
 
 ## Publish the review comment
 
-The ticket's current **assignee**, rather than every reviewer, decides what happens to a submitted review:
+This step is for the **assignee**. Open the submitted review in **Reviews** and choose:
 
-| Action | Effect |
-|---|---|
-| **Accept** | Publishes the review comment to the ticket's readers. |
-| **Reject** | Keeps it unpublished. |
+- **Accept** to publish the review comment for the ticket's readers.
+- **Reject** to leave it unpublished.
 
-These buttons decide publication of the comment. They do not accept the implementation, change the ticket's workflow state or merge code. Record the delivery decision explicitly, with the evidence and any unresolved findings.
+::: tip What does Accept mean here?
+It means **publish this review**, including any problems it reports. The button does not approve the implementation, finish the ticket or merge code.
+:::
 
 ## Decide what happens next
 
-When work falls short, name the open criterion and the cause:
+Use the findings to tell the agent what should happen next:
 
-| Cause | Meaning | Next action |
-|---|---|---|
-| `implementation` | The result falls short. | Request a correction. |
-| `evidence` | A required check is missing or inconclusive. | Request the missing verification. |
-| `criterion` | The requirement cannot be met as written. | Agree a scope correction before more work. |
+- **Something fails:** describe the problem and the affected criterion; request a correction.
+- **Something was not checked:** request the missing check before deciding.
+- **The requirement needs changing:** agree the new scope first; ask your agent to use `bb-scope-change`.
+- **The result meets the criteria:** say so explicitly. Give merge or deployment permission only when you intend that next action.
 
-For changed requirements, ask your agent to use `bb-scope-change`.
+For example: “The result meets the criteria. Wait for my merge instruction.” A merge needs explicit permission for the specific merge request, passing required CI checks and a mergeable branch. Deployment follows your project's workflow.
 
-When the result meets the criteria, state that decision separately from authorization to merge or deploy. Merging requires explicit authorization for the linked merge request, passing required CI checks and a mergeable branch. Follow your project's delivery workflow for deployment. When closing a feature, bug or chore as `done`, you can give an optional [rating from 1 to 5](/skills-and-workflows/metrics). Cancellation records a reason, without a rating.
+**Done when:** the findings and next action are recorded, with someone responsible for that action. This completes your review; the ticket follows its own workflow to completion. Optional completion [ratings](/skills-and-workflows/metrics) are described separately.
 
-**Done when:** your findings and delivery decision are recorded, and the next action has an owner. A submitted or published review alone does not mean the ticket is done.
+## Agent review and human review
+
+You performed a **human result review**. The workflow's `review` state is an **agent code review**: an agent checks the changes against requirements and repository standards.
+
+The recipe decides whether agent review is required; Matt requires it for features. It does not automatically assign a human reviewer. Publishing your review changes neither the workflow state nor its required agent checks.
 
 **Next:** [Follow the ticket](/get-started/daily-work/follow-a-ticket) through corrections or authorized delivery.
