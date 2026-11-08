@@ -33,14 +33,14 @@ props:
       type: string
       title: Claim
       description: >-
-        The slogan at the foot of the band, plain text and never a heading:
+        The slogan under the mark in the band, plain text and never a heading:
         the page's title is its single `h1`. Defaults to the working slogan
         until the owner supplies the final one.
 slots:
   mark:
     title: Mark
     description: >-
-      The product mark at the top of the band. A slot and not a prop because
+      The product mark above the slogan in the band. A slot and not a prop because
       a mark is rendered content — an icon component or an image — and props
       carry scalar data only.
   content:

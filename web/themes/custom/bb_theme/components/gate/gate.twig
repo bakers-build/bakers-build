@@ -9,8 +9,8 @@
    slot with `shell` either: that one is a full-viewport flex layout with
    sidebar/header/content/footer/overlay, this one is a brand band beside a form.
 
-   THE BAND, AND NO NAVIGATION. A flat butter field carries the product mark at
-   the top and the slogan at the bottom; the page's own title, description and
+   THE BAND, AND NO NAVIGATION. A flat butter field carries the product mark
+   and the slogan as one group, centred in its height; the page's own title, description and
    content stand beside it. A gate offers the one thing the page is for and no
    link out, because a link into a workspace the reader may not be in is
    exactly the wrong guess `BbWorkspaceAccessCheck` answers with a 404.
@@ -29,7 +29,7 @@
    twenty workspaces readable. #}
 <div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'lg:items-center', 'lg:justify-center', 'lg:p-section', 'bg-app', 'text-text']) }}>
   <div class="gate__frame w-full flex flex-col lg:flex-row lg:max-w-[1100px] lg:min-h-[640px] lg:overflow-hidden lg:rounded-md lg:border lg:border-border">
-    <aside class="gate__band scheme-light flex flex-col justify-between gap-section p-gutter lg:p-section min-h-[220px] lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
+    <aside class="gate__band scheme-light flex flex-col justify-center gap-section p-gutter lg:p-section min-h-[220px] lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
       <div class="min-w-0">{% block mark %}{% if mark %}{{ mark }}{% endif %}{% endblock %}</div>
       {# SDC does not apply schema defaults at render time. #}
       <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("You're the baker. Agents run the line."|t) }}</p>
