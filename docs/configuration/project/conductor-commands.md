@@ -57,9 +57,9 @@ A start on a machine where an enabled agent cannot start its sandbox prints `war
 
 #### Restart on change
 
-A foreground conductor (the herdr-hosted one included) restarts itself when a file it loaded changes: the project `conductor.config.js` (or its variant), its sibling `.local.js` override, `.bakers/connection.config.local.js`, `~/.bakers/machine.config.js`, and the build directory of each configured addon (so `pnpm build` of an addon counts). After 2 seconds without a further change, it checks the new config with `bakers oven start --dry-run` in a child process:
+A running conductor (the detached default and `--foreground`) restarts itself when a file it loaded changes: the project `conductor.config.js` (or its variant), its sibling `.local.js` override, `.bakers/connection.config.local.js`, `~/.bakers/machine.config.js`, and the build directory of each configured addon (so `pnpm build` of an addon counts). After 2 seconds without a further change, it checks the new config with `bakers oven start --dry-run` in a child process:
 
-- the check passes: the log shows `config check passed; restarting conductor`. The loop stops claiming, drains its queue and stops its tools as on `SIGTERM`, writes no `offline`, and replaces itself in place: same pid, herdr pane and log. Running agent sessions keep going and are adopted again.
+- the check passes: the log shows `config check passed; restarting conductor`. The loop stops claiming, drains its queue and stops its tools as on `SIGTERM`, writes no `offline`, and replaces itself in place: same pid and log. Running agent sessions keep going and are adopted again.
 - the check fails: the log shows `config check failed; keeping the running conductor` with the error, and the next change checks again.
 
 Set `restart_on_change: false` in `conductor.config.js` (or in `conductor.config.local.js` for one machine) to switch it off. It needs Node 22.15 or later (`process.execve`); on an older Node the conductor logs one warning and does not watch. Rebuilding addons from source is not part of it.
