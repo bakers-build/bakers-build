@@ -89,7 +89,7 @@ function bb_theme_form_alter(array &$form, FormStateInterface $form_state, strin
   if ($object instanceof GroupMembersForm) {
     $form['#attributes']['class'] = array_merge(
       $form['#attributes']['class'] ?? [],
-      ['flex', 'flex-col', 'gap-5', 'min-w-0'],
+      ['flex', 'flex-col', 'gap-group', 'min-w-0'],
     );
   }
   if (!$object instanceof ContentEntityFormInterface) {
@@ -105,9 +105,12 @@ function bb_theme_form_alter(array &$form, FormStateInterface $form_state, strin
   }
   // Core renders these forms without the SDC form wrapper. Keep the same
   // sibling spacing on their actual form container, including after a swap.
+  // Tailwind scans only Twig and JS, never this file: a class here gets CSS
+  // only if a template uses it too, so only semantic tokens the components
+  // already use (`gap-group`, the gate forms' rhythm) belong here.
   $form['#attributes']['class'] = array_merge(
     $form['#attributes']['class'] ?? [],
-    ['flex', 'flex-col', 'gap-3', 'min-w-0'],
+    ['flex', 'flex-col', 'gap-group', 'min-w-0'],
   );
   if (!isset($form['actions'])) {
     return;
