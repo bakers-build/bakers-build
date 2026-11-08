@@ -114,8 +114,14 @@ export async function startToolServer(
             request.params.arguments ?? {},
             binding,
           );
-          if (SITE_WRITE_TOOLS.includes(request.params.name))
-            options.onSiteWrite?.(binding);
+          if (SITE_WRITE_TOOLS.includes(request.params.name)) {
+            // The write already succeeded: a failing hook must not make the agent retry it.
+            try {
+              options.onSiteWrite?.(binding);
+            } catch (err) {
+              logger?.warn({ err: String(err) }, 'site write hook failed');
+            }
+          }
           return result;
         }
         const result = await registry.call(

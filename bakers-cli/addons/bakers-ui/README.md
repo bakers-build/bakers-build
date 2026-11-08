@@ -102,8 +102,9 @@ it pauses for one window. A screen that declares no reload — including forms, 
 popups — is not reloaded, and a bump is not remembered for later. Piped runs build no watcher, nor does
 a cockpit without a resolved project `.bakers/` directory. The transient signal file is git-ignored.
 
-The conductor touches it in the checkout, and in the run's worktree, when a run is claimed, starts,
-fails or is finalised, and after a run's agent writes a ticket through the conductor's tools. Changes
+The conductor touches it in the checkout when a run is claimed. It touches it in the checkout and in
+the run's worktree when a run starts, fails or is finalised, and after a run's agent writes a ticket
+through the conductor's tools. Changes
 made on the web, on another machine or by a remote conductor still need `R`; there is no polling.
 
 `Tab`/`Shift+Tab` mean two different things, and which one you get depends on

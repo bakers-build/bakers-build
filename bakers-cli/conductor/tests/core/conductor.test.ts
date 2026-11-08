@@ -49,6 +49,8 @@ import type {
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import { type ConductorLogger, shellQuote } from '@bakers-build/core';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { attemptFamily, attemptSessionId } from '../../src/core/attempt.js';
@@ -5372,7 +5374,9 @@ describe('Conductor — bakers ui refresh signal', () => {
 
   function queued(): FakeBbRemote {
     const remote = new FakeBbRemote({
-      tickets: { 't-1': { identifier: 'BB-1', title: 'One', state: 'todo' } },
+      tickets: {
+        't-1': { identifier: 'BB-1', title: 'One', state: 'todo', projectId: 'p-1' },
+      },
     });
     remote.queue.push({
       runUuid: 'r-1',
@@ -5414,12 +5418,19 @@ describe('Conductor — bakers ui refresh signal', () => {
   it('signals the checkout and the worktree when a dispatch fails', async () => {
     const p = project();
     const remote = queued();
+    // Seen at startRun: only the claim has signalled so far; asserting here
+    // would be swallowed by the dispatch's catch.
+    let atClaim = { checkout: false, worktree: false };
     const boom: BbExecutor = {
       id: 'boom',
       capabilities: () => ({ persistent: false }),
       runHook: async (name) => ({ hook: name, ran: false, ok: true }),
       startRun: async () => {
-        // Age both files after claim, so only the failure can advance them.
+        atClaim = {
+          checkout: signalled(p.checkout),
+          worktree: signalled(p.worktree),
+        };
+        // Age the file after claim, so only the failure can advance it.
         age(p.checkout);
         throw new Error('startRun exploded');
       },
@@ -5430,7 +5441,53 @@ describe('Conductor — bakers ui refresh signal', () => {
     const conductor = conductorOf(remote, boom, p);
     await conductor.start();
     await conductor.tick();
+    // The claim signals the checkout only: the run has no worktree yet.
+    expect(atClaim).toEqual({ checkout: true, worktree: false });
     expect(remote.calls.markFailed).toHaveLength(1);
+    expect(signalled(p.checkout)).toBe(true);
+    expect(signalled(p.worktree)).toBe(true);
+  });
+
+  it("signals the checkout and the run worktree after a run agent's ticket write", async () => {
+    const p = project();
+    const remote = queued();
+    remote.siteTools = {
+      list: async () => [
+        {
+          name: 'tool_api__bakers_ticket_update',
+          inputSchema: { type: 'object' },
+        },
+      ],
+      // Every ticket the run names belongs to its own project.
+      call: async () => ({
+        content: [{ type: 'text', text: JSON.stringify({ project: 'p-1' }) }],
+      }),
+      close: async () => {},
+    };
+    const executor = new RecordingExecutor();
+    const conductor = conductorOf(remote, executor, p);
+    await conductor.startTools();
+    await conductor.start();
+    await conductor.tick();
+    // Age both after the run started, so only the write can advance them.
+    age(p.checkout);
+    age(p.worktree);
+    const env = executor.started[0]?.env ?? {};
+    const client = new Client({ name: 'test', version: '1.0.0' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(env.BB_CONDUCTOR_URL ?? ''), {
+        requestInit: {
+          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+        },
+      }),
+    );
+    const result = await client.callTool({
+      name: 'bakers_ticket_update',
+      arguments: { ticket: 'BB-1' },
+    });
+    await client.close();
+    await conductor.stopTools();
+    expect(result.isError).toBeFalsy();
     expect(signalled(p.checkout)).toBe(true);
     expect(signalled(p.worktree)).toBe(true);
   });

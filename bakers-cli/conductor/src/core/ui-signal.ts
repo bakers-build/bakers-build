@@ -7,6 +7,7 @@ import {
   UI_REFRESH_FILE,
 } from '@bakers-build/core';
 
+// shortcut: root-anchored, so it misses a project in a repo subdirectory; build it from `git rev-parse --show-prefix` when one exists.
 const EXCLUDE_LINE = `/.bakers/${UI_REFRESH_FILE}`;
 /** Repos (by dir) already checked this process, so git runs once per dir. */
 const excluded = new Set<string>();

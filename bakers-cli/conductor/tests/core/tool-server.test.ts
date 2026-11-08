@@ -442,4 +442,24 @@ describe('site tools on the bakers server', () => {
     expect(writes).toEqual([binding]);
     await client.close();
   });
+
+  it('still reports a ticket write as done when the write hook throws', async () => {
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: fakeSite(),
+      onSiteWrite: () => {
+        throw new Error('hook exploded');
+      },
+    });
+    const client = await connect(
+      server.url,
+      server.issueRunToken(runBinding(PROJECT_A)),
+    );
+    const updated = await client.callTool({
+      name: 'bakers_ticket_update',
+      arguments: { ticket: 'BB-1' },
+    });
+    expect(updated.isError).toBeFalsy();
+    await client.close();
+  });
 });
