@@ -198,9 +198,7 @@ describe('bb-label-auto profile', () => {
     expect(() =>
       validate({ ...q, simulation: { ...q.simulation, ticket: auto } }),
     ).toThrow(/ticket-question/);
-    expect(() => validate({ ...q, references: [] })).toThrow(
-      /ticket-question/,
-    );
+    expect(() => validate({ ...q, references: [] })).toThrow(/ticket-question/);
   });
   it('accepts one user question with the label and the freeze', async () => {
     const q = fixture({ stop: 'question' });
