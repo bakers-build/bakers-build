@@ -27,8 +27,8 @@ Please contact the developers.
 
 Freeze with one `bakers_ticket_update` that adds the label and sets `frozen: true`, then end the run.
 
-When the run resumes, an explicit answer in a ticket comment newer than the question is the human's
-answer, an approval or a gate choice included.
+When the run resumes, the answer in the ticket is the human's answer, for every question the frame
+asks.
 
 The label `ticket-question` authorizes only these writes; transitions, origin status and the merge
 follow the frame.
