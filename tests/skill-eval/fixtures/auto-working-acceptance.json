@@ -13,7 +13,8 @@
     "bb-workflow/references/preview-links.md",
     "bb-workflow/references/origin-status.md",
     "bb-workflow/references/publish-comment.md",
-    "bb-workflow/references/ticket-writes.md"
+    "bb-workflow/references/ticket-writes.md",
+    "bb-label-ticket-question/SKILL.md"
   ],
   "recipes": [
     "bb-recipe-probe"
@@ -56,7 +57,8 @@
       "type": "feature",
       "recipe": "probe",
       "labels": [
-        "auto"
+        "auto",
+        "ticket-question"
       ],
       "links": [
         {

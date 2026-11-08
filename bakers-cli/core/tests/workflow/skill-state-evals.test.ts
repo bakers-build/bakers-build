@@ -129,14 +129,14 @@ describe('bb-label-auto profile', () => {
     profile: 'bb-label-auto',
     execution: 'simulated-tools',
     skill: 'bb-label-auto',
-    references: [],
+    references: ['bb-label-ticket-question/SKILL.md'],
     input: { task: 'Run the state.', ticket_uuid: ticket },
     expect,
     simulation: {
       ticket: {
         id: ticket,
         identifier: 'EVAL-61',
-        labels: ['auto'],
+        labels: ['auto', 'ticket-question'],
       },
       ...simulation,
     },
@@ -189,6 +189,19 @@ describe('bb-label-auto profile', () => {
     transition('working'),
   ];
 
+  it('requires the ticket-question label and skill beside auto', async () => {
+    const q = fixture({ stop: 'question' });
+    const { validate } = await loadProfile(q);
+    expect(() => validate(q)).not.toThrow();
+    // auto alone asks in the session; the ticket-facing stops need the ticket-question skill.
+    const auto = { ...q.simulation.ticket, labels: ['auto'] };
+    expect(() =>
+      validate({ ...q, simulation: { ...q.simulation, ticket: auto } }),
+    ).toThrow(/ticket-question/);
+    expect(() => validate({ ...q, references: [] })).toThrow(
+      /ticket-question/,
+    );
+  });
   it('accepts one user question with the label and the freeze', async () => {
     const q = fixture({ stop: 'question' });
     expect(await judge(q, 'Asked.', [readTicket(), question, asked])).toEqual(

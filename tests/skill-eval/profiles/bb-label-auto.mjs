@@ -13,6 +13,9 @@ export function validate(f) {
   const e = f.expect;
   requireValue(uuid(f.input.ticket_uuid) && f.simulation.ticket?.id === f.input.ticket_uuid, 'Expected the simulated ticket');
   requireValue(STOPS.includes(e?.stop), `Expected expect.stop as one of ${STOPS.join(', ')}`);
+  // The question, technical problem and freeze forms live in the ticket-question skill.
+  requireValue(f.simulation.ticket.labels?.includes('ticket-question') && f.references?.includes('bb-label-ticket-question/SKILL.md'),
+    'Expected the ticket-question label and skill beside auto');
   requireValue((e.stop === 'transition') === ['working', 'review', 'done'].includes(e.state) && (e.stop === 'transition' || e.state === undefined),
     'Expected expect.state working, review or done exactly for a transition');
   requireValue((e.stop === 'technical-problem') === nonempty(e.cause), 'Expected expect.cause exactly for a technical problem');
