@@ -8,6 +8,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { agentReport } from '@bakers-build/addon-agents';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   configStems,
@@ -1385,6 +1386,126 @@ export default {
     writeFileSync(join(home, '.bakers/machine.config.js'), body);
     vi.stubEnv('HOME', home);
   };
+
+  it('reports the default Claude catalog including Fable without changing the default', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
+    const cfg = await loadConductorConfig(writeConfig(slotConfig));
+    const report = agentReport(cfg);
+
+    expect(report.agents.map(({ alias }) => alias)).toEqual([
+      'opus',
+      'sonnet',
+      'fable',
+    ]);
+    expect(report.agents[2]).toMatchObject({
+      alias: 'fable',
+      harness: 'claude',
+      model: 'fable',
+      description: expect.stringMatching(/\S/),
+    });
+    expect(report.enabled_agents).toEqual(['opus', 'sonnet', 'fable']);
+    expect(report.default_agent).toBe('opus');
+    expect(report.routes).toEqual({ default: { '*': 'opus' } });
+  });
+
+  it.each([
+    { labels: ['agent:fable'], state: 'working', expected: 'fable' },
+    { labels: ['agent:fable@working'], state: 'working', expected: 'fable' },
+    {
+      labels: ['agent:opus', 'agent:fable@working'],
+      state: 'working',
+      expected: 'fable',
+    },
+    { labels: ['agent:fable@working'], state: 'review', expected: 'opus' },
+    { labels: [], state: 'working', expected: 'opus' },
+  ])('resolves Claude labels $labels in $state to $expected', async ({
+    labels,
+    state,
+    expected,
+  }) => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
+    const cfg = await loadConductorConfig(writeConfig(slotConfig));
+    const warn = vi.fn();
+    const selected = resolveAgent(
+      await selectAgents(cfg),
+      {
+        uuid: 'u',
+        identifier: 'TEST-1',
+        title: 'Claude routing',
+        branchName: 'b',
+        labels,
+        state,
+        environments: [],
+      },
+      { routes: cfg.routes, defaultAgent: cfg.default_agent, warn },
+    );
+
+    expect(selected).toMatchObject({
+      alias: expected,
+      id: 'claude',
+      model: expected,
+    });
+    expect(warn).not.toHaveBeenCalled();
+    const command = selected.agent.launchCommand('task');
+    expect(command).toContain(`--model '${expected}'`);
+    expect(command.match(/--model/g)).toHaveLength(1);
+  });
+
+  it('replaces the Claude default catalog with an explicit model', async () => {
+    writeMachine(`export default {
+      addons: [{ use: '@bakers-build/addon-claude', with: { model: 'custom-model' } }],
+    };`);
+    const cfg = await loadConductorConfig(writeConfig(slotConfig));
+    expect(cfg.agents).toMatchObject([
+      { alias: 'claude', model: 'custom-model' },
+    ]);
+    expect(cfg.agents).toHaveLength(1);
+    const [candidate] = await selectAgents(cfg);
+    expect(candidate.agent.launchCommand('task')).toContain(
+      "--model 'custom-model'",
+    );
+  });
+
+  it('keeps a user model override on the Fable catalog alias', async () => {
+    writeMachine(`export default {
+      addons: ['@bakers-build/addon-claude'],
+      agents: { catalog: [{ harness: '@bakers-build/addon-claude', alias: 'fable', with: { model: 'custom-model' } }] },
+    };`);
+    const cfg = await loadConductorConfig(writeConfig(slotConfig));
+    const fable = (await selectAgents(cfg)).find((c) => c.alias === 'fable')!;
+    expect(fable.model).toBe('custom-model');
+    expect(fable.agent.launchCommand('task')).toContain(
+      "--model 'custom-model'",
+    );
+    expect(cfg.default_agent).toBe('opus');
+  });
+
+  it.each([
+    "enabled: ['opus', 'sonnet']",
+    "disabled: ['fable']",
+  ])('honors machine filtering of Fable via %s', async (policy) => {
+    writeMachine(`export default {
+      addons: ['@bakers-build/addon-claude'], agents: { ${policy} },
+    };`);
+    const cfg = await loadConductorConfig(writeConfig(slotConfig));
+    expect(cfg.agents.map(({ alias }) => alias)).toEqual(['opus', 'sonnet']);
+    const warn = vi.fn();
+    const selected = resolveAgent(
+      await selectAgents(cfg),
+      {
+        uuid: 'u',
+        identifier: 'TEST-1',
+        title: 'Filtered Fable',
+        branchName: 'b',
+        state: 'working',
+        labels: ['agent:fable'],
+        environments: [],
+      },
+      { routes: cfg.routes, defaultAgent: cfg.default_agent, warn },
+    );
+    expect(selected.alias).toBe('opus');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("'fable'"));
+  });
 
   it('normalizes machine addons[] agent defaults when the machine has no other policy', async () => {
     writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
