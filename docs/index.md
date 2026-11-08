@@ -15,6 +15,6 @@ Choose the guide for the work you want to do.
   { label: 'Development', text: 'Build bakers.build from source and contribute changes.', link: '/development/' }
 ]" />
 
-For chat-only access, begin with [a connector](/get-started/connector). Already have a prepared worker? [Connect another project](/get-started/connect-a-project).
+[Use your client](/get-started/use-your-client) compares herdr-cli, herdr-app, Orca and Hermes. For chat-only access, begin with [a connector](/get-started/connector). Already have a prepared worker? [Connect another project](/get-started/connect-a-project).
 
-The version row identifies the site's build. It can describe changes not yet in a released package. The experimental Slack project-manager bot has its own [repository guide](https://github.com/bakers-build/bakers-build/blob/next/experimental/pm-bot/README.md).
+The version row identifies the site's build. It can describe changes not yet in a released package. Hermes, the experimental Slack project-manager bot, has its own [repository guide](https://github.com/bakers-build/bakers-build/blob/next/experimental/pm-bot/README.md).

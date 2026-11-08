@@ -1,6 +1,6 @@
 # Choose agents and models
 
-An agent (Claude Code, Codex or another harness) does the work. Its [skills](/skills-and-workflows/skills) supply instructions. The project’s [TUI/client](/configuration/clients) hosts its sessions, and its [environment](/provision/guide) runs the application.
+An agent (Claude Code, Codex or another harness) does the work. Its [skills](/skills-and-workflows/skills) supply instructions. The configured [executor](/addons/slots) hosts its sessions; [clients](/get-started/use-your-client) expose different views and actions. The [environment](/provision/guide) runs the application.
 
 Decide which harnesses this machine can run and which handles each state. Start with your existing signed-in agent; add models and routing when needed.
 

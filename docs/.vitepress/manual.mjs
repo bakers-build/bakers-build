@@ -31,6 +31,7 @@ export const SIDEBAR = {
   "/get-started/": [
     group("Start here", [
       ["Overview", "/get-started/"],
+      ["Use your client", "/get-started/use-your-client"],
       ["Prepare your project", "/get-started/connect-a-project"],
       ["Run the first ticket", "/get-started/first-ticket"],
     ]),
@@ -193,8 +194,7 @@ export const SIDEBAR = {
       ["Conductor commands", "/configuration/project/conductor-commands"],
       ["Configuration migration", "/configuration/project/migration"],
     ]),
-    group("Clients", [
-      ["Clients", "/configuration/clients"],
+    group("CLI reference", [
       ["CLI commands", "/configuration/clients/cli"],
       ["bakers tools", "/configuration/clients/tools"],
       ["bakers auth", "/configuration/clients/auth"],
