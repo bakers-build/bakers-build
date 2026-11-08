@@ -181,6 +181,12 @@ scenes:
                 gap: md
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Your workspaces
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:list
                     props:
                       layout: cards
@@ -285,6 +291,12 @@ scenes:
                 gap: md
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Your workspaces
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:empty-state
                     props:
                       message: >-
@@ -316,6 +328,12 @@ scenes:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Create a workspace
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:zone
                     props:
                       inset: none
@@ -450,7 +468,7 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Welcome, Ada
-                      as: h2
+                      as: h1
                       size: page-title
                   - component: bb_theme:text
                     props:
@@ -483,7 +501,7 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Sign-in denied
-                      as: h2
+                      as: h1
                       size: page-title
                   - component: bb_theme:text
                     props:
@@ -514,7 +532,7 @@ scenes:
                       text: >-
                         Welcome, Maximiliane Theodora
                         Wolfeschlegelsteinhausenbergerdorff-Ottenheimer
-                      as: h2
+                      as: h1
                       size: page-title
                   - component: bb_theme:text
                     props:
@@ -539,6 +557,12 @@ scenes:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Sign in a device
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:zone
                     props:
                       inset: none
@@ -595,6 +619,12 @@ scenes:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Sign in a device
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:zone
                     props:
                       inset: none

@@ -58,6 +58,7 @@ Feature: bakers.build sign-in
     And the workspace chooser offers "/other/tickets"
     And the gate top bar links "Docs" to "https://bakers.build"
     And the station line-up is absent
+    And the page has exactly one h1
     When I choose the workspace "/other/tickets"
     Then the application shell is present
 
@@ -73,6 +74,7 @@ Feature: bakers.build sign-in
     Given I am signed in as "no-bakery"
     And I open the landing route
     Then the address is "/home"
+    And the page has exactly one h1
 
   Scenario: The login form replaces the gate and both shell clicks keep the document
     Given I am signed in as "north-lead"
