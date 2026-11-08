@@ -93,12 +93,12 @@ The image supplies tools; your private home stores identity, credentials and che
 
    **Coder lifecycle:** Without provider configuration no tunnel client is installed or started. Named Cloudflare installs `cloudflared` and runs `cloudflared tunnel run` on every workspace startup while `~/.cloudflared/tunnel-token` exists. Cloudflare Quick needs an explicitly installed `cloudflared` but no persistent connector. A `~/.config/frp/frpc.json` likewise opts into installing and starting `frpc`; your config supplies your own zone and endpoint. Keep its secrets in the home volume. For frp, use `~/.config/frp/frpc.json`, create the directory referenced by `includes`, and set `loginFailExit: false`: nothing restarts a client that exits when the server is unavailable. Restart the workspace after configuring it, or start the connector manually. The frp transport page owns its complete config and addon descriptor.
 
-9. Check out your projects and start their conductors. One conductor serves one checkout ([Conductors](/configuration/project/conductors)). `/bb-init` lists your projects, clones each chosen one from its repository at its default branch into `~/projects/<key>`, configures it with `bb-init-project` and, after you confirm, starts its conductor in its own herdr tab. By hand:
+9. Check out your projects and start their conductors. One conductor serves one checkout ([Conductors](/configuration/project/conductors)). `/bb-init` lists your projects, clones each chosen one from its repository at its default branch into `~/projects/<key>`, configures it with `bb-init-project` and, after you confirm, starts its conductor as a background process. By hand:
 
    ```sh
    git clone --branch <default-branch> <repository-url> ~/projects/<key>
    cd ~/projects/<key>
-   bakers oven start --foreground
+   bakers oven start
    ```
 
 10. Verify.
@@ -123,7 +123,7 @@ Host <name>.coder
 
 ## After a workspace restart
 
-Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Conductors and project runtimes do not come back by themselves. Start each project's runtime and run `bakers oven start --foreground` again in each checkout, in a herdr tab, and share a preview again with `bakers ports up`.
+Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Conductors and project runtimes do not come back by themselves. Start each project's runtime and run `bakers oven start` again in each checkout, and share a preview again with `bakers ports up`.
 
 ## Update a tool
 

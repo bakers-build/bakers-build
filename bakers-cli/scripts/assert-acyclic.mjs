@@ -144,7 +144,6 @@ const CONDUCTOR_PRESET_KEYS = [
   'executors',
   'workspaces',
   'agents',
-  'processHosts',
   // Addon inbox (BB-661): a value export, but it compiles against the
   // conductor's `InboxMessages`, so it makes the addon a conductor-surface
   // contributor.
@@ -196,7 +195,9 @@ function exportsAnyAccumulator(dir, keys) {
 function readPackages() {
   const pkgs = new Map(); // name -> { deps, peers, dir, group, conductorSurface }
   const bakers = (obj) =>
-    new Set(Object.keys(obj ?? {}).filter((n) => n.startsWith('@bakers-build/')));
+    new Set(
+      Object.keys(obj ?? {}).filter((n) => n.startsWith('@bakers-build/')),
+    );
   const record = (dir, relDir, group) => {
     let pkg;
     try {
@@ -295,7 +296,9 @@ if (messageEdges.size > 0) {
 // (c) no edge to @bakers-build/bakers (the meta is a sink).
 for (const [name, targets] of edges) {
   if (targets.has('@bakers-build/bakers')) {
-    fail(`@bakers-build/bakers must have no incoming edge, but ${name} depends on it`);
+    fail(
+      `@bakers-build/bakers must have no incoming edge, but ${name} depends on it`,
+    );
   }
 }
 

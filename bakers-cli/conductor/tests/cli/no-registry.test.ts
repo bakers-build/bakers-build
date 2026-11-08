@@ -16,7 +16,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type BbCliDeps,
   buildConductorProgram,
-  type HerdrHost,
 } from '../../src/commands/conductor.js';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 
@@ -74,16 +73,16 @@ describe('the local conductor registry is gone', () => {
   });
 
   it('start refuses a second conductor when the first is running', async () => {
-    const herdr = fakeHerdr();
+    const spawner = fakeSpawn();
     const nowS = Math.floor(Date.now() / 1000);
 
     await run(
       ['start'],
       [row({ status: 'online', lastSeen: nowS, leaseExpiresAt: nowS + 300 })],
-      herdr,
+      spawner,
     );
 
-    expect(herdr.spawned).toEqual([]);
+    expect(spawner.spawned).toEqual([]);
     expect(out.join('\n')).toContain('already running');
   });
 
@@ -91,7 +90,7 @@ describe('the local conductor registry is gone', () => {
     // A crash leaves `status: online` on the record until the cron reaper
     // notices the lapsed lease. Blocking on the raw status would make a restart
     // impossible for minutes, which is exactly when a restart is wanted.
-    const herdr = fakeHerdr();
+    const spawner = fakeSpawn();
     const nowS = Math.floor(Date.now() / 1000);
 
     await run(
@@ -103,18 +102,18 @@ describe('the local conductor registry is gone', () => {
           leaseExpiresAt: nowS - 4700,
         }),
       ],
-      herdr,
+      spawner,
     );
 
-    expect(herdr.spawned.length).toBe(1);
+    expect(spawner.spawned.length).toBe(1);
   });
 
   it('start allows a restart after a clean stop', async () => {
-    const herdr = fakeHerdr();
+    const spawner = fakeSpawn();
 
-    await run(['start'], [row({ status: 'offline' })], herdr);
+    await run(['start'], [row({ status: 'offline' })], spawner);
 
-    expect(herdr.spawned.length).toBe(1);
+    expect(spawner.spawned.length).toBe(1);
   });
 
   it('ls builds its rows from the control plane alone', async () => {
@@ -184,12 +183,12 @@ describe('the local conductor registry is gone', () => {
   async function run(
     argv: string[],
     rows: ConductorStatus[],
-    herdr?: ReturnType<typeof fakeHerdr>,
+    spawner?: ReturnType<typeof fakeSpawn>,
   ): Promise<void> {
     const deps: BbCliDeps = {
       remote: new ListRemote(rows),
       config: makeConfig(),
-      herdr: herdr ?? fakeHerdr(),
+      spawnConductor: spawner ?? fakeSpawn(),
       // BB-450 D9: `start` polls for a fresh heartbeat after spawning; these
       // tests only care that a spawn happened, so settle in one fast attempt
       // rather than waiting on a real timer.
@@ -232,12 +231,13 @@ class ListRemote extends FakeBbRemote {
   }
 }
 
-function fakeHerdr(): HerdrHost & { spawned: string[][] } {
+function fakeSpawn(): NonNullable<BbCliDeps['spawnConductor']> & {
+  spawned: string[][];
+} {
   const spawned: string[][] = [];
-  return {
-    spawned,
-    async spawn(handle: string, cwd: string, cmd: string) {
-      spawned.push([handle, cwd, cmd]);
-    },
-  } as HerdrHost & { spawned: string[][] };
+  const spawn = async (req: { argv: string[] }) => {
+    spawned.push(req.argv);
+    return { pid: 9999, exited: new Promise<number | null>(() => {}) };
+  };
+  return Object.assign(spawn, { spawned });
 }
