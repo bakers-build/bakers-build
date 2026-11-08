@@ -23,7 +23,8 @@ and printed it, so the work is durable whichever way the gate goes.
    ambiguous answer, and a non-interactive dispatch with no human at the other end are all "no
    choice". **An unattended run does not proceed through this gate**: it stops in `working` with
    handoff and summary published, a complete and resumable outcome. A transition dispatches the
-   next run, so it waits for a human.
+   next run, so it waits for a human. An explicit answer to the gate's question in a ticket
+   comment newer than the question is a choice.
 4. **A user restriction to `working` skips the gate entirely** — nothing is asked and nothing
    transitions. The restriction already is the human's answer.
 

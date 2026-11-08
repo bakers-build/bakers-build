@@ -8,7 +8,7 @@ import tempfile
 repo = Path(__file__).resolve().parents[2]
 root = repo / '.claude/skills/bakers-build'
 SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-label-auto',
-          'bb-prepare-time', 'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-superpowers',
+          'bb-label-ticket-question', 'bb-prepare-time', 'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-superpowers',
           'bb-recipe-verify', 'bb-scope-change', 'bb-upgrade-project', 'bb-verdict',
           'bb-workflow')
 STATES = ('qualification', 'plan', 'working', 'review')
