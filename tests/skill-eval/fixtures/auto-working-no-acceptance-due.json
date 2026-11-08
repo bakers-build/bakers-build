@@ -1,0 +1,102 @@
+{
+  "id": "auto-working-no-acceptance-due",
+  "synthetic": true,
+  "profile": "bb-label-auto",
+  "execution": "simulated-tools",
+  "skill": "bb-label-auto",
+  "references": [
+    "bb-workflow/SKILL.md",
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/working.md",
+    "bb-workflow/references/outtake.md",
+    "bb-workflow/references/outtake/working.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/evidence.md",
+    "bb-workflow/references/coding-gate.md",
+    "bb-workflow/references/transition-ticket.md",
+    "bb-workflow/references/preview-links.md",
+    "bb-workflow/references/origin-status.md",
+    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/ticket-writes.md",
+    "bb-label-ticket-question/SKILL.md"
+  ],
+  "recipes": [
+    "bb-recipe-probe"
+  ],
+  "input": {
+    "task": "Continue this ticket's `working` state from its `outtake` phase, as the supplied skills say, through `transition`. The ticket has no origin. This is unattended: nobody answers in this session.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "installed_skills": "The frame and the references above are supplied. The installed recipe is readable with read_file at skills/bb-recipe-probe/SKILL.md. No other file is readable. The tracker tools are served through bakers by wire name `tool_api__<tool>`: `bakers tools` lists them and `bakers tools tool_api__bakers_ticket_update --schema` describes one. Write an arguments file in one step and pass it with --data @<file> in a later one.",
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "project_uuid": "55555555-5555-4555-8555-555555555555",
+    "observations": [
+      "Routing, the intake, `read`, `provision`, `work`, `validate` and `deliver` ran in this run. This is the ticket's first working pass; nobody has asked the user anything.",
+      "Every acceptance criterion passed at head f00dfee: AC-1 with `npm test -- test/invoices.test.ts`, AC-2 with `npm test`. The pull request https://github.example.invalid/acme/invoices/pull/61 is saved in the ticket's links.",
+      "The change runs in the project's environment. Preview links already ran: the tunnel is enabled and `bakers ports up web` returned https://eval-61-preview.example.invalid/invoices.",
+      "No `test_as` persona: no login needed."
+    ]
+  },
+  "expect": {
+    "stop": "transition",
+    "state": "review",
+    "decision": "no acceptance due"
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-61",
+      "title": "CSV export drops the cents of invoice totals",
+      "state": "working",
+      "workflow": "bb_work",
+      "description": "The CSV export writes 12.5 for a total of 12.50 EUR; accounting rejects the file.",
+      "created": "2026-01-01",
+      "base_branch": "next",
+      "branch_name": "feat/eval-61-export-invoices",
+      "changed": "fixture-revision-1",
+      "type": "bug",
+      "recipe": "probe",
+      "labels": [
+        "auto",
+        "ticket-question"
+      ],
+      "links": [
+        {
+          "uri": "https://github.example.invalid/acme/invoices/pull/61",
+          "title": "Pull request"
+        }
+      ]
+    },
+    "comments": [
+      {
+        "id": "77777777-7777-4777-8777-000000000001",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "qualification",
+        "body": "## Qualification handoff\n\n### Acceptance\n\n- **AC-1** As an accountant, I want every total in the invoice CSV written with exactly two decimals and a dot (12.50, 3.00), as the invoice shows it, so that accounting can import the file.\n- **AC-2** The change passes every matching bb-phase-validate row of WORKFLOW.md.\n\nTally: 2 passed, 0 rewritten.\n\n### Handoff metadata\n\n- `recipe`: probe\n- `ticket_type`: bug\n- `reproduction`: export an invoice of 12.50; the CSV shows 12.5\n- `scenario_required`: false\n- `test_as`: no login needed\n- prior art: negative\n- `handoff_version`: 1\n- `provenance`: fixture-revision-1\n"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000002",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "spec",
+        "body": "# Spec\n\nApproval: the user agreed this spec.\n\nWrite each total in the invoice CSV with two decimals and a dot, as on the invoice. Nothing else changes.\n"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000003",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "plan",
+        "body": "# Plan\n\nApproval: the user agreed it.\n\n1. Format totals with two decimals in src/invoices/csv.ts.\n2. Test 12.50 and 3.00 in test/invoices.test.ts.\n"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000004",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "test",
+        "body": "# Test plan\n\nApproval: the user agreed it.\n\n| # | Covers | Command |\n|---|---|---|\n| F1 | AC-1 | `npm test -- test/invoices.test.ts` |\n| P1 | AC-2 | `npm test` |\n"
+      }
+    ]
+  },
+  "rubric": [
+    {
+      "id": "no-acceptance-due",
+      "criterion": "The final answer reports the published coding handoff with \"no acceptance due\" and its reason under Decisions, then the transition to review, without asking the user."
+    }
+  ]
+}

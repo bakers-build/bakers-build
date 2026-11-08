@@ -129,14 +129,14 @@ describe('bb-label-auto profile', () => {
     profile: 'bb-label-auto',
     execution: 'simulated-tools',
     skill: 'bb-label-auto',
-    references: [],
+    references: ['bb-label-ticket-question/SKILL.md'],
     input: { task: 'Run the state.', ticket_uuid: ticket },
     expect,
     simulation: {
       ticket: {
         id: ticket,
         identifier: 'EVAL-61',
-        labels: ['auto'],
+        labels: ['auto', 'ticket-question'],
       },
       ...simulation,
     },
@@ -189,6 +189,17 @@ describe('bb-label-auto profile', () => {
     transition('working'),
   ];
 
+  it('requires the ticket-question label and skill beside auto', async () => {
+    const q = fixture({ stop: 'question' });
+    const { validate } = await loadProfile(q);
+    expect(() => validate(q)).not.toThrow();
+    // auto alone asks in the session; the ticket-facing stops need the ticket-question skill.
+    const auto = { ...q.simulation.ticket, labels: ['auto'] };
+    expect(() =>
+      validate({ ...q, simulation: { ...q.simulation, ticket: auto } }),
+    ).toThrow(/ticket-question/);
+    expect(() => validate({ ...q, references: [] })).toThrow(/ticket-question/);
+  });
   it('accepts one user question with the label and the freeze', async () => {
     const q = fixture({ stop: 'question' });
     expect(await judge(q, 'Asked.', [readTicket(), question, asked])).toEqual(
@@ -468,6 +479,53 @@ describe('bb-label-auto profile', () => {
         asked,
       ]),
     ).toEqual(['auto-question', 'auto-no-stop', 'auto-transition']);
+  });
+  it('a GREEN pass with nothing for the user to decide records no acceptance due and moves to review', async () => {
+    const id = 'auto-working-no-acceptance-due';
+    const handoff = (body: string) => [
+      readTicket(),
+      comment('coding', `# Coding handoff\n\n${body}`),
+      summary,
+    ];
+    const due =
+      '## Decisions\n\n- No acceptance due: the criteria decide the rounding completely.';
+    expect(
+      await judge(id, 'Moved.', [...handoff(due), transition('review')]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...handoff(due), shown, asked])).toEqual([
+      'auto-question',
+      'auto-no-stop',
+      'auto-transition',
+    ]);
+    // Review reads the ticket: the decision belongs in the published handoff, not only the session.
+    expect(
+      await judge(id, `Moved.\n\n${due}`, [
+        ...handoff('All criteria pass.'),
+        transition('review'),
+      ]),
+    ).toEqual(['auto-decision']);
+  });
+  it('merges an OK verdict whose handoff holds no acceptance due', async () => {
+    const id = 'auto-review-ok-no-acceptance-due';
+    const f = await loadFixture(id);
+    const argv = f.simulation.commands.glab.find(
+      (r: { argv: string[] }) => r.argv[2] === 'merge',
+    ).argv;
+    const merge: Row = {
+      tool: 'glab',
+      arguments: { argv },
+      result: ok('Merged MR 61\n'),
+    };
+    const passed = [readTicket(), verdict('OK'), summary];
+    expect(
+      await judge(id, 'Merged.', [...passed, merge, transition('done')]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...passed, shown, asked])).toEqual([
+      'auto-question',
+      'auto-no-stop',
+      'auto-transition',
+      'auto-merge',
+    ]);
   });
 });
 

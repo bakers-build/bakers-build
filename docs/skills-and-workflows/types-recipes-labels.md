@@ -22,7 +22,8 @@ A run stops before doing any work when the recipe, its section for the current s
 |---|---|---|
 | `agent:<alias>` or `agent:<route>` | you, or qualification after you confirm | the coding agent for every state |
 | `agent:<alias>@<state>` or `agent:<route>@<state>` | the same | the coding agent for that state only |
-| `auto` | you, or the host when it hands a specified ticket over | the agent carries the ticket to `done` on its own (skill `bb-label-auto`): it decides technical questions itself, asks you only content questions and one acceptance, and merges after review |
+| `auto` | you, or the host when it hands a specified ticket over | the agent carries the ticket to `done` on its own (skill `bb-label-auto`): it decides technical questions itself, asks you only what is yours to decide, asks for your one acceptance only when you had something to decide, and merges after review |
+| `ticket-question` | you, or the host together with `auto` | the agent asks you through the ticket (skill `bb-label-ticket-question`): a question or a technical problem goes into a comment, and the ticket freezes until you answer and unfreeze it |
 
 Anything else is a plain tag for people and filters.
 
