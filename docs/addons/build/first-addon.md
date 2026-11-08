@@ -1,16 +1,16 @@
 # Build your first addon
 
-Add a project lifecycle listener that writes a harmless marker before each run. It demonstrates loading, project scope and the hook context without publishing a package or adding a dependency.
+Give a running agent a harmless greeting tool, then expose the same operation as a ticket message. You need a working conductor project, a supported Node.js runtime and permission to change its project configuration. Use a disposable ticket with a worktree.
 
-**You need:** an existing working conductor project, Node.js, and permission to change its committed configuration. Hooks execute on the worker outside the agent sandbox. Use a disposable ticket for verification.
+Addon handlers run on the worker, outside the agent's shell sandbox. This example only returns text; it reads no files or credentials.
 
 ## Create two files
 
-Create `.bakers/addons/run-marker/package.json`:
+Create `.bakers/addons/hello/package.json`:
 
 ```json
 {
-  "name": "example-run-marker",
+  "name": "example-hello",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -19,65 +19,100 @@ Create `.bakers/addons/run-marker/package.json`:
 }
 ```
 
-Create `.bakers/addons/run-marker/preset.js`:
+Create `.bakers/addons/hello/preset.js`:
 
 ```js
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-
 export const scopes = ['project'];
-export const hooks = (listeners) => [
-  ...listeners,
-  {
-    id: 'example-run-marker',
-    async before_run(ctx) {
-      await writeFile(join(ctx.worktreePath, '.run-marker'), 'before_run reached\n');
+
+export const tools = {
+  contract: 1,
+  tools: {
+    hello_greet: {
+      description: 'Return a greeting for a name.',
+      input: {
+        type: 'object',
+        required: ['name'],
+        properties: {
+          name: { type: 'string', minLength: 1, maxLength: 80 },
+        },
+      },
     },
   },
-];
-```
-
-The listener preserves earlier contributions and awaits its write. It overwrites the same small marker on retries. It never logs the environment. A write failure is reported through the conductor's best-effort [hook handling](/provision/hooks#failure-behavior), not treated as a readiness gate.
-
-## Enable in the project
-
-Add the local package path to the existing `addons` array in `.bakers/conductor.config.js`, keeping its engine addons and identity:
-
-```js
-export default {
-  bakers: { project: 'demo', workspace: 'Engineering' },
-  addons: [
-    '@bakers-build/addon-remote-drupal',
-    '@bakers-build/addon-herdr',
-    './addons/run-marker',
-  ],
+  handlers: async () => ({
+    hello_greet: async ({ args }) => ({ text: `Hello, ${args.name}!` }),
+  }),
 };
 ```
 
-The path resolves from the config directory. Discovery tries its `preset` subpath first, then the package main module, which exports the contributions above. No install or build step is needed for this local ESM package. Commit both files and the conductor change; add `.run-marker` to the repository's `.gitignore` so ticket worktrees ignore the generated artifact. Do not enable it in the machine file: its scope is project-only.
+The **preset** declares what the package contributes. `scopes` permits it in project configuration. `tools` pairs an input declaration with a lazy handler factory. The conductor validates arguments before calling the handler; missing, mistyped and unknown fields fail. The factory receives the entry's `with` options when you need configuration.
+
+## Enable in the project
+
+Append `'./addons/hello'` to the existing `addons` array in `.bakers/conductor.config.js`. Keep its remote, executor, workspace and identity settings:
+
+```js
+// Add this entry inside your existing addons array:
+'./addons/hello',
+```
+
+The path resolves from the configuration directory. This local JavaScript package needs no installation or compilation. Commit both files and the configuration change so ticket worktrees receive them. Do not add this project-only example to the machine configuration.
 
 ## Verify
+
+Run:
 
 ```sh
 bakers config check --scope project --online
 ```
 
-Reload the conductor using its normal [start/stop procedure](/configuration/project/conductor-commands), then dispatch a disposable ticket through that conductor. In the ticket worktree:
+Restart the conductor with its normal [start/stop procedure](/configuration/project/conductor-commands). Dispatch a disposable ticket and ask its agent to call `hello_greet` with `{"name":"Ada"}`.
+
+From that **running agent's shell**, the equivalent calls are:
 
 ```sh
-cat .run-marker
+bakers tools hello_greet --schema
+bakers tools hello_greet --data '{"name":"Ada"}'
+bakers tools hello_greet --data '{"name":42}'
 ```
 
-**Success:** it prints `before_run reached`, and the conductor log has no `hook listener failed` for `example-run-marker`. Config validation alone does not execute the listener. A subsequent run overwrites the marker; cleanup removes it with the worktree.
+**Success:** the valid call returns `Hello, Ada!`; the last call reports invalid arguments. The run supplies `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN`; an ordinary operator shell instead connects to the site's tools and will not find this local tool. Do not copy or print the token.
 
-Remove the addon entry, reload the conductor, then remove its two files and any remaining marker when finished.
+Configuration validation does not execute the handler. If the tool is missing, check the conductor's addon-load errors and restart it after the committed change.
+
+## Add a ticket message
+
+A **message** lets a person request an operation from a ticket. Append this export to the same `preset.js`:
+
+```js
+export const inbox = {
+  contract: 2,
+  label: 'Hello',
+  messages: {
+    greet: {
+      label: 'Greet',
+      access: 'view',
+      input: tools.tools.hello_greet.input,
+    },
+  },
+  bindings: { greet: { tool: 'hello_greet' } },
+};
+```
+
+Without fixed `args`, the binding passes the form payload to the tool. It uses the ticket's worktree context and turns the tool's `text` into the message's Markdown answer.
+
+Commit the change and restart the conductor. Open the disposable ticket's message card in the web UI or `bakers ui`, select **Hello**, enter **Ada** and send **Greet**. Expect pending/running followed by `Hello, Ada!`; errors appear as a failed answer. `access: 'view'` allows readers of that ticket to send this harmless message. Use the default `update` access and additional handler checks for operations that change data.
+
+Registration keeps the first definition for a package name and version. When changing an already registered message definition, bump the package version before restarting.
+
+## Remove the example
+
+Remove its `addons` entry, restart the conductor, then delete the two files. Existing message history remains. The example creates no other files.
 
 ## Extend your addon
 
-Choose the next guide for the capability you want to add.
+Keep the tutorial as your starting point; use these pages for the complete contracts:
 
-<DocQuickLinks aria-label="Extend your addon" :items="[
-  { label: 'Addon contracts', text: 'Build a typed package or prepare an addon for publication.', link: '/addons/build/contracts#write-an-addon' },
-  { label: 'Agent tools', text: 'Expose an operation that agents can call during a run.', link: '/addons/build/tools' },
-  { label: 'Inbox messages', text: 'Make operations available through ticket actions and external clients.', link: '/addons/build/actions' }
-]" />
+- [Tools](/addons/build/tools): input, handler context, errors and access boundaries.
+- [Messages](/addons/build/actions): direct handlers, bindings and request lifecycle.
+- [Addon API reference](/addons/build/contracts): exports, options, scopes and packaging.
+- [Lifecycle hooks](/provision/hooks#add-a-listener-from-an-addon): project preparation and cleanup.

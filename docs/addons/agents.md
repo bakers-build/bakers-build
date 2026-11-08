@@ -10,11 +10,11 @@ Nothing to enable. The command ships with the bakers.build CLI as `bakers agents
 
 ## Options
 
-No options. The command reads the `agents` object of your [machine file](/agents/reference#the-agents-object).
+No addon settings. Run inside a configured project, or pass `--config <path>` for its conductor config. The command loads that config together with the machine [agent policy](/agents/reference#the-agents-object).
 
 ## Check it works
 
-The command prints JSON with each alias, its harness and model, plus `enabled_agents`, `default_agent` and `routes`.
+The command prints JSON with each alias, its harness and model, plus `security`, `enabled_agents`, `disabled_agents`, `default_agent` and `routes`.
 
 ::: details Per CLI
 ```sh

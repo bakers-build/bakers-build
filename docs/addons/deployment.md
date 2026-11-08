@@ -10,15 +10,15 @@ Nothing to enable. The command ships with the bakers.build CLI as `bakers deploy
 
 ## Options
 
-No options. The command takes `--since <ref>` and `--to <ref>`; see [bakers deployment](/addons/deployment/reference).
+No addon settings. The command takes `--since <ref>` and `--to <ref>`; see [bakers deployment](/addons/deployment/reference).
 
 ## Check it works
 
-Inside the project checkout, the command prints one line of JSON with `range`, `resolved` and `unresolved`.
+With a signed-in connection, inside the project checkout, the command prints one line of JSON with `range`, `resolved` and `unresolved`.
 
 ::: details Per CLI
 ```sh
-bakers deployment tickets --since v1.4.0 --to develop
+bakers deployment tickets --since v1.4.0 --to HEAD
 ```
 :::
 

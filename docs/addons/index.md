@@ -21,18 +21,13 @@ Follow the package's own instructions; naming an addon does not install its unde
 
 <span id="choose-an-extension-point"></span>
 
-::: details Extension points for addon authors
-| You need to extend | Use |
-|---|---|
-| Worktree/run preparation or cleanup | A project lifecycle listener |
-| Agent access to an operation | [Agent tools](/addons/build/tools) |
-| Ticket actions with replies | [Inbox messages](/addons/build/actions) |
-| Agent harness, executor, workspace or remote | A conductor plugin |
-| CLI commands or connection behavior | Command or connection contributions |
-| Terminal ticket UI | [A tab](/addons/bakers-ui/tabs) |
+## Build a capability
 
-[Contracts](/addons/build/contracts) defines the surfaces, scopes and interfaces.
-:::
+Start with [Build your first addon](/addons/build/first-addon): declare a greeting tool, load it in your project, call it, then bind it to a ticket message.
+
+A **tool** is a named operation with validated inputs and a result or error. A **message** is a request a person sends from a ticket; the conductor runs its handler or bound tool in that ticket’s worktree. For example, Ports binds **Share tunnels** to the `ports_up` tool. Not every message calls a tool.
+
+Continue with [Tools](/addons/build/tools), [Messages](/addons/build/actions) and the [API reference](/addons/build/contracts). Specialized extensions can supply an [executor or workspace](/addons/build/executor-workspace), [lifecycle listeners](/provision/hooks#add-a-listener-from-an-addon), or a [terminal tab](/addons/bakers-ui/tabs).
 
 ## Tools and access
 

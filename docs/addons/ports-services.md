@@ -6,7 +6,7 @@ Services of a runtime addon need nothing here; a [claimer](/addons/ports#options
 
 ## Enable it
 
-Add `services` to the `with` of the `@bakers-build/addon-ports` entry, in the project's `.bakers/conductor.config.js` or in `~/.bakers/machine.config.js`:
+Start the intended server in the ticket worktree. Add `services` alongside the configured transport in the `with` of the `@bakers-build/addon-ports` entry, in the project's `.bakers/conductor.config.js` or in `~/.bakers/machine.config.js`:
 
 ```js
 addons: [
@@ -21,13 +21,13 @@ addons: [
 
 | Option | Meaning |
 |---|---|
-| `services[].key` | The service key: lowercase letters, digits and `-`. |
+| `services[].key` | The service key: lowercase letters, digits and internal `-`; start and end with a letter or digit. |
 | `services[].match` | Text the process's command line contains, compared without case. The port is read from the running process. |
 | `all_node` | `true` also shares every other Node application as `node-<port>`. Off by default. |
 
 Storybook is a built-in entry (`key: 'storybook'`, `match: 'storybook'`, plus a static build found by its `index.json`); your own `storybook` entry replaces it. Several processes matching one entry get `<key>`, then `<key>-<port>`.
 
-With the entry in both files, the machine wins: `services` merge per key, `transport` and `all_node` come whole from the machine when it sets them. A project `all_node: true` applies to everyone in the repository unless their machine sets `all_node: false`.
+With the entry in both files, the machine wins: `services` merge per key, `transport`, `claimers` and `all_node` come whole from the machine when it sets them. A project `all_node: true` applies to everyone in the repository unless their machine sets `all_node: false`.
 
 ## Check it works
 

@@ -10,7 +10,7 @@ Nothing to enable. The command ships with the bakers.build CLI as `bakers track 
 
 ## Options
 
-No options. The command takes `--from`, `--to`, `--timezone`, `--config` and `--connection`.
+No addon settings. `--from` and `--to` are required dates (`YYYY-MM-DD`). Optional `--timezone` uses an IANA name; `--config` and `--connection` select the signed-in connection.
 
 ## Check it works
 

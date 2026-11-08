@@ -22,16 +22,11 @@ bakers ui [target] [--ticket <id>] [--project <id>] [--run <uuid>] [--here]
 | `--yes` | Never prompt for a workspace |
 | `--print-config` | Print the resolved connection and exit |
 
-The renderer needs the Bun runtime that `@bakers-build/addon-bakers-ui` installs, so `bakers ui` re-runs itself under it (`--print-config` stays on Node); `BB_UI_NO_BUN=1` uses Node 26 or later with `--experimental-ffi` instead.
+The renderer needs the Bun runtime that `@bakers-build/addon-bakers-ui` installs, so `bakers ui` re-runs itself under it (`--print-config` stays on Node); `BB_UI_NO_BUN=1` uses Node 26.1 or later with `--experimental-ffi` instead.
 
 ## Which control plane answers
 
-`bakers ui` loads its connection like `bakers tools`; first match wins:
-
-1. `--config <path>`, else `$BB_CONFIG`, else `$DROPSH_CONFIG`.
-2. `--connection <id>`, else `$BB_CONNECTION` or `$DROPSH_CONNECTION`.
-3. The checkout's selector file, `.bakers/connection.config.local.js`, which names one connection.
-4. The default connection, normally `~/.bakers/bakers.config.js`.
+The [connection selection order](/configuration/connector/connections#which-connection-is-used) is shared with the CLI. Explicit selectors override the checkout selector and defaults.
 
 When the cockpit talks to a server you did not expect, run `bakers ui --print-config`: it prints the connection file, how it was selected (`selection`), `base_url` and the project's `.bakers` directory (`bb_dir`). Precedence in full: [Connections](/configuration/connector/connections).
 
@@ -53,9 +48,7 @@ Navigation has five tab scopes. Tabbed screens show the bar for their current sc
 
 Run detail has no bar; `Esc` returns to the preceding screen. An addon places a tab with `weight` or `before`/`after` anchors: see [Adding a screen as a tab](/addons/bakers-ui/tabs) and [Addons](/addons/configure).
 
-**Every bar is drawn in the same row**, under the header box, and is clickable where it is drawn and only at its own level: on root **Projects** a click at the column where the project bar's `Runs` would sit is inert, because that bar is not there. On the ticket screen the same column may fall inside ` Runs `, opening that tab, but still reaches no project screen. Workspace Member **Overview** shows the person's username, position and About me.
-
-The root **Members** tab is for workspace leads.
+The root **Members** tab is available to workspace leads.
 
 ## The ticket sections
 
@@ -65,17 +58,11 @@ The root **Members** tab is for workspace leads.
 
 The header box keeps the identifier, title, labels, state, **Assigned** and **Created by** (the ticket's owner, `unknown` without one) on screen while the body scrolls.
 
-The ticket's **labels** and its **state** are full-width rows of the header box, in that order under the title (`Labels: agent:claude`, `State: working`). Each is its own row rather than appended to the title, because a too-narrow terminal truncates a shared row and they would appear or vanish by terminal width.
-
-A piped render has no header box, so State and Labels are sections of their own there.
-
 ### Markdown bodies render as Markdown
 
 Every Markdown body on the ticket detail (the description, the latest summary, spec, plan and test, and every comment) is rendered as Markdown within the terminal's capability: on Overview, Planning and History, and in `bakers ui <id> | cat`, where the parsed text prints without styles. Nothing else is parsed: state, labels, runs, links, branch rows and the cockpit's own marker rows stay plain.
 
 Rendered: headings, `**strong**`, `*em*`, `~~struck~~` (dim), code, lists, quotes, rules and `[text](url)` (shown as `text (url)`). GFM tables, setext headings, reference links, footnotes and raw HTML are shown raw. `__strong__` is raw too, because it cannot be told apart from `__init__`; write `**strong**`.
-
-**Fences, exactly.** A backtick fence's info string may not hold a backtick, so ```` ```code``` ```` is **not** a fence: it is an ordinary line carrying a code span. A `~~~` fence has no such restriction. An **unterminated** fence loses its opening row along with every other fence row, and everything after it is fenced content to the end of that body, never past it. CRLF and a lone CR are normalised to LF before parsing, so a description typed into the web form **renders identically** to one written with Unix line endings. Only markers the renderer matched are removed; anything it cannot resolve comes back as written.
 
 ### Runs
 
