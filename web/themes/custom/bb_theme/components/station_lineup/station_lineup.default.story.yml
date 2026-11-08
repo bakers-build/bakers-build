@@ -1,4 +1,4 @@
-component: bb_theme:station-lineup
+component: bb_theme:station_lineup
 name: Default
 props:
   headline: You're the baker. Agents run the line.

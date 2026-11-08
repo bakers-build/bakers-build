@@ -725,7 +725,7 @@ scenes:
     section: gate
     docs: >-
       `/user/login` in the counter line-up look: the `gate` chrome with its
-      `aside` filled by `station-lineup` (the slogan as the page's only h1, a
+      `aside` filled by `station_lineup` (the slogan as the page's only h1, a
       dashed crust hairline and three stations, "you" filled lime) beside the
       e-mail login card. Two columns from `lg`, brand column first when stacked.
       The other gate screens leave `aside` empty.
@@ -733,7 +733,7 @@ scenes:
       - scene: design-system:gate
         with:
           aside:
-            - component: bb_theme:station-lineup
+            - component: bb_theme:station_lineup
               props:
                 headline: You're the baker. Agents run the line.
                 stations:

@@ -3,7 +3,7 @@ import { Then } from '../../bdd.fixtures';
 import { expect } from '@playwright/test';
 import type { DataTable } from 'playwright-bdd';
 
-const LINEUP = '[data-component-id="bb_theme:station-lineup"]';
+const LINEUP = '[data-component-id="bb_theme:station_lineup"]';
 
 Then('the station line-up shows the headline {string}', async ({ page }, headline: string) => {
   await expect(page.locator(LINEUP).getByRole('heading', { level: 1 })).toHaveText(headline);

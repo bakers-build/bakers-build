@@ -56,7 +56,7 @@ placements:
     enabled: true
     configuration:
       component:
-        component_id: 'bb_theme:station-lineup'
+        component_id: 'bb_theme:station_lineup'
         variant_id: null
         props:
           headline:
