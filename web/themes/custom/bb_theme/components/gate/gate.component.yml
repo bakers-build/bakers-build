@@ -11,8 +11,8 @@ description: >-
   surface that is by definition outside every workspace. It carries no
   navigation and no link out — the rail is workspace-ambient and would render a
   menu whose entries lead nowhere — and it shares no slot with `shell`. From
-  `lg` the band and the content sit side by side; below that the band stacks on
-  top.
+  `lg` the band and the content sit side by side in one rounded frame of about
+  1100×640px centred on the page; below that the band stacks on top.
 provider: bb_theme
 props:
   type: object
