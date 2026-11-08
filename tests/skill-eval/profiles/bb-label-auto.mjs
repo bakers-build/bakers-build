@@ -80,8 +80,12 @@ function analyze(f, output, context) {
     `Publish the review verdict with Status: **${e.review_status}**`));
   }
   if (e.decision) {
-    checks.push(check('auto-decision', output.includes('Decisions') && output.includes(e.decision),
-      `Record the technical decision (${e.decision}) under Decisions in the handoff`));
+    // A transition hands over through the ticket, so the next state reads the published handoff.
+    const handoffs = e.stop === 'transition'
+      ? comments.filter(c => arg(c, 'type') === 'coding' && succeeded(c)).map(c => String(arg(c, 'body')))
+      : [output];
+    checks.push(check('auto-decision', handoffs.some(t => t.includes('Decisions') && t.toLowerCase().includes(e.decision.toLowerCase())),
+      `Record the decision (${e.decision}) under Decisions in the handoff`));
   }
   if (e.stop === 'technical-problem') {
     const note = headed('Technical problem')[0];

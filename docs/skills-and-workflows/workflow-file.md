@@ -38,7 +38,7 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 A run applies every matching row, and the rows are binding: the agent loads each named skill before the work it governs and stops if one is missing. The engineering method is not in this file; each ticket carries a [recipe](/skills-and-workflows/types-recipes-labels). Repository conventions and test lore belong in your repository docs, linked from `CLAUDE.md`.
 
-The label `auto` alone lets a ticket work on its own; the entry line needs no clause for it. In any state, such a ticket then works on its own to `done`, asks the user only content questions, collected into one question per run, and one acceptance, and refers technical problems to the developers. The label `ticket-question` sends those questions and problems through the ticket, which then freezes until answered; without it they go to the session. Label no ticket `ticket-question` where nobody answers questions on tickets.
+The label `auto` alone lets a ticket work on its own; the entry line needs no clause for it. In any state, such a ticket then works on its own to `done`, asks the user only what is theirs to decide, collected into one question per run, asks for one acceptance only when the user had something to decide, and refers technical problems to the developers. The label `ticket-question` sends those questions and problems through the ticket, which then freezes until answered; without it they go to the session. Label no ticket `ticket-question` where nobody answers questions on tickets.
 
 ## Example
 
