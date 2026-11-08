@@ -180,6 +180,12 @@ scenes:
                 gap: md
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Your workspaces
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:list
                     props:
                       layout: cards
@@ -283,6 +289,12 @@ scenes:
                 gap: md
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Your workspaces
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:empty-state
                     props:
                       message: >-
@@ -313,6 +325,12 @@ scenes:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Create a workspace
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:zone
                     props:
                       inset: none
@@ -444,7 +462,7 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Welcome, Ada
-                      as: h2
+                      as: h1
                       size: page-title
                   - component: bb_theme:text
                     props:
@@ -476,7 +494,7 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Sign-in denied
-                      as: h2
+                      as: h1
                       size: page-title
                   - component: bb_theme:text
                     props:
@@ -506,7 +524,7 @@ scenes:
                       text: >-
                         Welcome, Maximiliane Theodora
                         Wolfeschlegelsteinhausenbergerdorff-Ottenheimer
-                      as: h2
+                      as: h1
                       size: page-title
                   - component: bb_theme:text
                     props:
@@ -530,6 +548,12 @@ scenes:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Sign in a device
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:zone
                     props:
                       inset: none
@@ -585,6 +609,12 @@ scenes:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Sign in a device
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:zone
                     props:
                       inset: none
@@ -678,3 +708,57 @@ scenes:
                     props:
                       label: Go to home
                       href: /home
+  - name: login
+    group: Gate
+    section: gate
+    docs: >-
+      `/user/login` in the butter-band look: the `gate` chrome (logo at the top
+      of the band, the slogan as plain text at its foot) beside the login form,
+      whose "Log in" heading is the page's only h1. The form's two doors are
+      full-width pills with a dashed "or" divider between them. Two columns from
+      `lg`, the band on top when stacked.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:gate_form
+              slots:
+                content:
+                  - component: bb_theme:text
+                    props:
+                      text: Log in
+                      as: h1
+                      size: section-title
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      gap: none
+                    slots:
+                      content:
+                        - component: bb_theme:form_label
+                          props:
+                            for: edit-mail
+                          slots:
+                            title: E-mail address
+                        - component: bb_theme:form_input
+                          props:
+                            name: mail
+                            id: edit-mail
+                            value: ''
+                            required: true
+                        - component: bb_theme:text
+                          props:
+                            text: We will send you a login link. No password needed.
+                            size: meta
+                            tone: light
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      type: submit
+                      label: Send login link
+                alternative:
+                  - component: bb_theme:button
+                    props:
+                      variant: neutral
+                      label: Continue with Google
+                      href: /user/login/google

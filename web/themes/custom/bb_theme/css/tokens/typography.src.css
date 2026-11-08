@@ -38,4 +38,8 @@
   --text-stat-value: var(--text-24);
   --text-stat-value--font-weight: var(--font-weight-semibold);
   --text-stat-value--line-height: var(--leading-28);
+  --text-gate-headline: var(--text-40);
+  --text-gate-headline--font-weight: var(--font-weight-bold);
+  --text-gate-headline--line-height: var(--leading-44);
+  --text-gate-headline--letter-spacing: var(--tracking-tight);
 }

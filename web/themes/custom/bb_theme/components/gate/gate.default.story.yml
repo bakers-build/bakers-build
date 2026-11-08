@@ -2,11 +2,15 @@ component: bb_theme:gate
 name: Default
 props:
   title: Choose a workspace
-  description: You belong to more than one workspace. Pick the one you want to work in — the address that follows names it, so you can bookmark it.
+  description: >-
+    You belong to more than one workspace. Pick the one you want to work in —
+    the address that follows names it, so you can bookmark it.
 slots:
   mark:
     - type: component
       component: bb_theme:brand
+      props:
+        size: compact
   content:
     - type: component
       component: bb_theme:list

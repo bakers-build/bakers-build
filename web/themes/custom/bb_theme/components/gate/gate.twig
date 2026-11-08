@@ -7,33 +7,43 @@
    carries no workspace — so `shell` here would render a navigation with no
    reachable entry, which reads as a defect rather than as a state. It shares no
    slot with `shell` either: that one is a full-viewport flex layout with
-   sidebar/header/content/footer/overlay, this one is a centred card.
+   sidebar/header/content/footer/overlay, this one is a brand band beside a form.
 
-   IT CARRIES NO NAVIGATION, and the absence is the design. A gate offers the
-   one thing the page is for and nothing else; a link into a workspace the
-   reader may not be in is exactly the wrong guess `BbWorkspaceAccessCheck`
-   answers with a 404.
+   THE BAND, AND NO NAVIGATION. A flat butter field carries the product mark
+   and the slogan as one group, centred in its height; the page's own title, description and
+   content stand beside it. A gate offers the one thing the page is for and no
+   link out, because a link into a workspace the reader may not be in is
+   exactly the wrong guess `BbWorkspaceAccessCheck` answers with a 404.
 
-   The `mark` slot is the product mark, and it is a SLOT rather than a prop
-   because a mark is rendered content — an icon component, an image — and props
-   carry scalar data only. `content` is the one region a screen fills, exactly
-   as in `shell`, so a scene opens with `scene: "design-system:gate"` and fills
-   `content` and nothing else.
+   BUTTER IN BOTH MODES, WITH RYE INK. `scheme-light` keeps the mark's own
+   dark-mode rule (its wordmark turns light) from firing on the light band.
+   The slogan is plain text: the page's title is its single `h1`.
 
-   NOT A SCROLL CONTAINER. `min-h-screen` with centred items lets a long card
-   grow the page rather than clip itself, which is what keeps a chooser with
+   ONE FRAMED SPLIT FROM `lg`. Band and form share one rounded frame of about
+   1100×640px centred on the page, so the butter stays a field beside the form
+   rather than half the screen. Below `lg` the frame dissolves: the band runs
+   full width on top and the form follows.
+
+   NOT A SCROLL CONTAINER. `min-h-screen` and the frame's `min-h` let a long
+   list grow the page rather than clip itself, which keeps a chooser with
    twenty workspaces readable. #}
-<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'flex-col', 'items-center', 'justify-center', 'gap-group', 'p-gutter', 'bg-app', 'text-text']) }}>
-  <div class="gate__card w-full max-w-[420px] flex flex-col gap-group p-gutter bg-surface border border-border-2 rounded-[var(--radius-md,10px)]">
-    {% if mark %}
-      <div class="gate__mark flex items-center justify-center">{% block mark %}{{ mark }}{% endblock %}</div>
-    {% endif %}
-    {% if title %}
-      <h1 class="gate__title text-section-title text-center">{{ title }}</h1>
-    {% endif %}
-    {% if description %}
-      <p class="gate__description text-meta text-text-faint text-center max-w-[40ch] mx-auto">{{ description }}</p>
-    {% endif %}
-    <div class="gate__content min-w-0">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
+<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'lg:items-center', 'lg:justify-center', 'lg:p-section', 'bg-app', 'text-text']) }}>
+  <div class="gate__frame w-full flex flex-col lg:flex-row lg:max-w-[1100px] lg:min-h-[640px] lg:overflow-hidden lg:rounded-md lg:border lg:border-border">
+    <aside class="gate__band scheme-light flex flex-col justify-center gap-section p-gutter lg:p-section min-h-[220px] lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
+      <div class="min-w-0">{% block mark %}{% if mark %}{{ mark }}{% endif %}{% endblock %}</div>
+      {# SDC does not apply schema defaults at render time. #}
+      <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("Knead it. Ship it."|t) }}</p>
+    </aside>
+    <main class="gate__main flex-1 flex items-start lg:items-center justify-center p-gutter lg:p-section bg-app lg:bg-surface">
+      <div class="w-full max-w-[420px] flex flex-col gap-group">
+        {% if title %}
+          <h1 class="gate__title m-0 text-section-title">{{ title }}</h1>
+        {% endif %}
+        {% if description %}
+          <p class="gate__description m-0 text-meta text-text-faint max-w-[40ch]">{{ description }}</p>
+        {% endif %}
+        <div class="gate__content min-w-0">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>
+      </div>
+    </main>
   </div>
 </div>

@@ -7,7 +7,7 @@ import { markDocument } from '../../support/shell';
 const DEVICE_CLIENT = 'bakers-cli-device-e2e';
 
 const GATE_CONTENT = '.gate__content';
-const RESULT_TITLE = `${GATE_CONTENT} h2[data-component-id="bb_theme:text"]`;
+const RESULT_TITLE = `${GATE_CONTENT} h1[data-component-id="bb_theme:text"]`;
 const RESULT_BODY = `${GATE_CONTENT} p[data-component-id="bb_theme:text"]`;
 
 let userCode = '';
