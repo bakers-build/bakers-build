@@ -17,4 +17,5 @@
 {{ include('bb_theme:gate_form', {
   attributes: attributes.setAttribute('aria-label', 'Log in'|t).setAttribute('data-hx-boost', 'false'),
   content: children,
+  alternative: element.oauth,
 }, with_context = false) }}

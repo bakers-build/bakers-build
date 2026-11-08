@@ -35,6 +35,8 @@
     }),
   }) %}
 {% endif %}
+{{ form.heading }}
 {{ field }}
 {{ form.actions }}
-{{ form|without('mail', 'actions') }}
+{# The Google door is the gate form's `alternative`, printed by the form presenter. #}
+{{ form|without('heading', 'mail', 'actions', 'oauth') }}

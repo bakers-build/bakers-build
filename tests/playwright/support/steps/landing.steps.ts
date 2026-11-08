@@ -90,6 +90,28 @@ Then('the gate chrome is present', async ({ page }) => {
   await expect(page.locator(GATE).first()).toBeVisible();
 });
 
+/** The gate's brand band: the product mark, and the slogan as plain text, never a heading. */
+Then(
+  'the gate band shows the product mark and the slogan {string}',
+  async ({ page }, slogan: string) => {
+    const band = page.locator(`${GATE} .gate__band`);
+    await expect(band.getByRole('img', { name: 'bakers.build' })).toBeVisible();
+    await expect(band.getByText(slogan, { exact: true })).toBeVisible();
+    await expect(band.getByRole('heading')).toHaveCount(0);
+  },
+);
+
+/** A gate offers the one thing the page is for: no navigation and no link outside its content. */
+Then('the gate offers no navigation', async ({ page }) => {
+  const gate = page.locator(GATE).first();
+  await expect(gate.getByRole('navigation')).toHaveCount(0);
+  await expect(gate.locator('a:not(.gate__content a)')).toHaveCount(0);
+});
+
+Then('the page has exactly one h1', async ({ page }) => {
+  await expect(page.locator('h1')).toHaveCount(1);
+});
+
 /**
  * The gate card pads its content itself, so a form sits directly in it.
  *

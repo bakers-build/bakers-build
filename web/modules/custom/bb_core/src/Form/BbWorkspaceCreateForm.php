@@ -122,6 +122,19 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // that shipped no `core.entity_form_display` config might otherwise add.
     unset($form['langcode']);
 
+    // The page's one h1: the gate chrome carries the mark, not a heading.
+    $form['heading'] = [
+      '#type' => 'component',
+      '#component' => 'bb_theme:text',
+      '#props' => [
+        'text' => $this->t('Create a workspace'),
+        'as' => 'h1',
+        'size' => 'section-title',
+        'align' => 'center',
+      ],
+      '#weight' => -20,
+    ];
+
     return $form;
   }
 

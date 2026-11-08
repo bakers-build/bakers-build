@@ -137,6 +137,12 @@ primitive:
       '24':
         $value: 24px
         $type: dimension
+      '40':
+        $value: 40px
+        $type: dimension
+        $description: >-
+          Addition (BAKERS-116, reference-free, agreed with the owner). Size of
+          the gate slogan headline.
     fontWeight:
       regular:
         $value: 400
@@ -226,6 +232,12 @@ primitive:
             reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
             nodes:
               - '68:54'
+      '44':
+        $value: 44px
+        $type: dimension
+        $description: >-
+          Addition (BAKERS-116, reference-free, agreed with the owner). Line
+          height of the gate slogan headline.
       tight:
         $value: 1.2
         $type: number
@@ -530,6 +542,18 @@ semantic:
       $type: color
       $value: '#D9D3C9'
       $description: Avatar initials fill behind state-ink text.
+    gate-band:
+      $type: color
+      $value: '{primitive.style.color.butter}'
+      $description: >-
+        Addition (BAKERS-116, sketch direction A, owner exception to the butter
+        rule on gate pages only). The brand field beside every gate form; the
+        same in light and dark mode.
+    gate-band-ink:
+      $type: color
+      $value: '{primitive.style.color.rye}'
+      $description: >-
+        Addition (BAKERS-116). Text on the gate band, rye in both modes.
   typography:
     page-title:
       $value:
@@ -717,6 +741,17 @@ semantic:
           reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:87'
+    gate-headline:
+      $value:
+        fontFamily: '{primitive.style.fontFamily.display}'
+        fontSize: '{primitive.style.fontSize.40}'
+        fontWeight: '{primitive.style.fontWeight.bold}'
+        lineHeight: '{primitive.style.lineHeight.44}'
+        letterSpacing: '{primitive.style.letterSpacing.tight}'
+      $type: typography
+      $description: >-
+        Addition (BAKERS-116, reference-free, agreed with the owner). The slogan
+        on the gate's butter band, the largest text on the gate.
   fontWeight:
     regular:
       $value: '{primitive.style.fontWeight.regular}'
@@ -879,12 +914,12 @@ component:
   brand:
     compact:
       width:
-        $value: 128px
+        $value: 200px
         $type: dimension
         $description: >-
-          Width of the logo with wordmark in the compact brand the gate chrome
-          uses; its height follows the SVG aspect ratio. Fixed: it does not
-          follow the layout density.
+          Width of the logo with wordmark at the top of the gate's butter band
+          (BAKERS-116, sketch direction A); its height follows the SVG aspect
+          ratio. Fixed: it does not follow the layout density.
   zone:
     gap:
       sm:
