@@ -602,10 +602,14 @@ async function cmdStartForeground(
     join(homeBbDir(), 'conductors', `${conductor.id}.json`),
   );
   const controller = new AbortController();
-  const onSignal = () => controller.abort();
+  let restart = false;
+  // A stop wins over a restart already decided: `oven stop` must stay a stop.
+  const onSignal = () => {
+    restart = false;
+    controller.abort();
+  };
   process.once('SIGINT', onSignal);
   process.once('SIGTERM', onSignal);
-  let restart = false;
   const execve =
     deps.execve ?? (process as { execve?: Execve }).execve?.bind(process);
   let watcher: { close(): void } | undefined;
@@ -647,9 +651,9 @@ async function cmdStartForeground(
     await conductor.serve(controller.signal);
   } finally {
     watcher?.close();
+    await conductor.stopTools();
     process.removeListener('SIGINT', onSignal);
     process.removeListener('SIGTERM', onSignal);
-    await conductor.stopTools();
     // The exiting process writes its own `offline`. It has to be this process:
     // a heartbeat sets `online` unconditionally (ConductorRegistrar), so an
     // offline written by anyone else is erased by the next tick — the status
@@ -668,7 +672,7 @@ async function cmdStartForeground(
       }
     }
   }
-  // Same pid, pane and log.
+  // Same pid and log.
   if (restart && execve)
     execve(
       process.execPath,

@@ -118,6 +118,20 @@ describe('bakers oven start --foreground self-restart', () => {
     expect(remote.statusWrites).toEqual([['mid-fg', 'offline']]);
   });
 
+  it('a stop requested after a passing check, during the drain, stops: offline, no re-exec', async () => {
+    const remote = new TickRemote();
+    const h = harness(remote, async () => undefined);
+    remote.onTick = (n) => {
+      if (n === 1) void h.change().then(() => process.emit('SIGTERM'));
+    };
+
+    await h.run();
+
+    expect(h.checks).toBe(1);
+    expect(h.execve).not.toHaveBeenCalled();
+    expect(remote.statusWrites).toEqual([['mid-fg', 'offline']]);
+  });
+
   it('creates no watcher when restart_on_change is false', async () => {
     const remote = new TickRemote();
     remote.onTick = () => process.emit('SIGTERM');
