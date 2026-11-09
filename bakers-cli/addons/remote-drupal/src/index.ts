@@ -339,7 +339,9 @@ export class DrupalBbRemote implements BbRemote {
       .filter((e) => e.name !== '');
     const termName = (name: string): string | undefined => {
       const r = ref(doc.data, name);
-      const value = r ? byId.get(`${r.type}:${r.id}`)?.attributes?.name : undefined;
+      const value = r
+        ? byId.get(`${r.type}:${r.id}`)?.attributes?.name
+        : undefined;
       return typeof value === 'string' ? value : undefined;
     };
     const type = termName('ticket_type');

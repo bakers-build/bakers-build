@@ -247,7 +247,9 @@ export class CodexAgent implements BbAgent {
         ]);
         const name = /Added marketplace `([^`]+)`/.exec(added)?.[1];
         if (!name)
-          throw new Error(`${url}: codex named no marketplace: ${added.trim()}`);
+          throw new Error(
+            `${url}: codex named no marketplace: ${added.trim()}`,
+          );
         for (const plugin of plugins)
           await codex(dir, plugin, ['plugin', 'add', `${plugin}@${name}`]);
       }
@@ -350,7 +352,8 @@ export class CodexAgent implements BbAgent {
       'codex',
       ...this.securityFlags(workspacePath, tools !== undefined).map(word),
     ];
-    for (const arg of pluginArgs) if (!parts.includes(arg)) parts.push(word(arg));
+    for (const arg of pluginArgs)
+      if (!parts.includes(arg)) parts.push(word(arg));
     // The agent home starts with no trusted project; trust this run's worktree only.
     if (this.pluginsOn)
       parts.push(

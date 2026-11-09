@@ -7,6 +7,7 @@ import {
   shellQuote,
   stemForConfigFile,
 } from '@bakers-build/core';
+import type { PluginLaunch } from '../plugins/agent.js';
 import {
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
@@ -15,7 +16,6 @@ import {
   matchesEnvDeny,
   type RunEnvPolicy,
 } from '../plugins/agent.js';
-import type { PluginLaunch } from '../plugins/agent.js';
 import { homeKey, homePath } from '../plugins/agent-home.js';
 import type {
   BbExecutor,
@@ -41,10 +41,10 @@ import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
-import { checkRequiredSkills } from './required-skills.js';
 import { type HookRunner, shellHookRunner } from './hook-runner.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
+import { checkRequiredSkills } from './required-skills.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
 import { signalUi } from './ui-signal.js';
 

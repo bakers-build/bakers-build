@@ -122,9 +122,7 @@ describe('checkRequiredSkills', () => {
     );
     skill(join(root, 'skills'), 'design-screen');
     skill(join(root, 'skills'), 'design-shell');
-    expect(
-      checkRequiredSkills(worktree, codexHome, {}).missing,
-    ).toEqual([]);
+    expect(checkRequiredSkills(worktree, codexHome, {}).missing).toEqual([]);
   });
 
   it('never counts skills of the user home', () => {

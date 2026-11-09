@@ -36,7 +36,9 @@ export function validateMarketplaces(value: unknown): MarketplaceDeclaration[] {
     const at = `marketplaces[${index}]`;
     const raw = (entry ?? {}) as Record<string, unknown>;
     if (!nonEmpty(raw.url) || !GIT_URL.test(raw.url))
-      throw new Error(`${at}.url must be a remote Git URL (https, ssh or git@)`);
+      throw new Error(
+        `${at}.url must be a remote Git URL (https, ssh or git@)`,
+      );
     if (!nonEmpty(raw.ref))
       throw new Error(`${at}.ref must name a branch or tag`);
     if (

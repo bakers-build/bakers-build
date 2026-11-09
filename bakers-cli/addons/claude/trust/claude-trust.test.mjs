@@ -139,9 +139,13 @@ test('concurrent runs sharing one agent home keep every trusted worktree', async
     worktrees.map(
       (worktree) =>
         new Promise((resolve) =>
-          spawn(process.execPath, [WRAPPER, worktree, process.execPath, '-e', ''], {
-            env: { ...process.env, CLAUDE_CONFIG_DIR: agentHome },
-          }).on('exit', resolve),
+          spawn(
+            process.execPath,
+            [WRAPPER, worktree, process.execPath, '-e', ''],
+            {
+              env: { ...process.env, CLAUDE_CONFIG_DIR: agentHome },
+            },
+          ).on('exit', resolve),
         ),
     ),
   );

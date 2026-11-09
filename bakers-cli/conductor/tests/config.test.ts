@@ -596,11 +596,31 @@ describe('marketplaces: the project declares its agent plugins', () => {
   });
 
   it.each([
-    ['a local path', "[{ url: './plugins', ref: 'main', plugins: ['p'] }]", /marketplaces\[0\]\.url/],
-    ['a file:// URL', "[{ url: 'file:///srv/p.git', ref: 'main', plugins: ['p'] }]", /marketplaces\[0\]\.url/],
-    ['a missing ref', "[{ url: 'https://x.test/p.git', plugins: ['p'] }]", /marketplaces\[0\]\.ref/],
-    ['an empty plugin list', "[{ url: 'https://x.test/p.git', ref: 'v1', plugins: [] }]", /marketplaces\[0\]\.plugins/],
-    ['a non-array', "{ url: 'https://x.test/p.git' }", /marketplaces must be an array/],
+    [
+      'a local path',
+      "[{ url: './plugins', ref: 'main', plugins: ['p'] }]",
+      /marketplaces\[0\]\.url/,
+    ],
+    [
+      'a file:// URL',
+      "[{ url: 'file:///srv/p.git', ref: 'main', plugins: ['p'] }]",
+      /marketplaces\[0\]\.url/,
+    ],
+    [
+      'a missing ref',
+      "[{ url: 'https://x.test/p.git', plugins: ['p'] }]",
+      /marketplaces\[0\]\.ref/,
+    ],
+    [
+      'an empty plugin list',
+      "[{ url: 'https://x.test/p.git', ref: 'v1', plugins: [] }]",
+      /marketplaces\[0\]\.plugins/,
+    ],
+    [
+      'a non-array',
+      "{ url: 'https://x.test/p.git' }",
+      /marketplaces must be an array/,
+    ],
   ])('rejects %s, naming the entry', async (_label, literal, message) => {
     await expect(
       loadConductorConfig(withMarketplaces(literal)),

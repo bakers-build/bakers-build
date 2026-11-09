@@ -128,7 +128,9 @@ describe('ClaudeAgent with plugins on', () => {
   it('reads transcripts from the agent home it installed into', async () => {
     const agent = await agentFor();
     expect(agent.configDir).toMatch(
-      new RegExp(`^${join(root, 'cache', 'bakers', 'agent-homes', 'claude')}/[0-9a-f]{16}$`),
+      new RegExp(
+        `^${join(root, 'cache', 'bakers', 'agent-homes', 'claude')}/[0-9a-f]{16}$`,
+      ),
     );
     const dir = join(
       agent.configDir,
@@ -138,15 +140,17 @@ describe('ClaudeAgent with plugins on', () => {
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'r-1.jsonl'), '{"x":1}\n');
     expect(await agent.sessionExists('/srv/ws/BB-1', 'r-1')).toBe(true);
-    expect(
-      await agent.getRunLog('/srv/ws/BB-1', { sessionId: 'r-1' }),
-    ).toBe('{"x":1}\n');
+    expect(await agent.getRunLog('/srv/ws/BB-1', { sessionId: 'r-1' })).toBe(
+      '{"x":1}\n',
+    );
   });
 
   it('plugins: false keeps the user home and reports plugins disabled', async () => {
     const agent = await agentFor({ plugins: false });
     expect(agent.pluginsDisabled).toBe(true);
     expect(agent.configDir).toBe(join(user, '.claude'));
-    expect(agent.launchCommand('go')).toMatch(/^CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 /);
+    expect(agent.launchCommand('go')).toMatch(
+      /^CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 /,
+    );
   });
 });

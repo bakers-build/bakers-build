@@ -124,9 +124,7 @@ describe('CodexAgent with plugins on', () => {
       {},
       ['--dangerously-bypass-hook-trust'],
     );
-    expect(cmd).toContain(
-      `-c 'projects."/srv/ws/BB-1".trust_level="trusted"'`,
-    );
+    expect(cmd).toContain(`-c 'projects."/srv/ws/BB-1".trust_level="trusted"'`);
     expect(cmd.match(/--dangerously-bypass-hook-trust/g)).toHaveLength(1);
     const yolo = agentFor({ security: 'yolo' }).launchCommand(
       'go',

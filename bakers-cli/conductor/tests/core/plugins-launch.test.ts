@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   FakeBbRemote,
   fakeExecutor,
@@ -18,9 +21,6 @@ import type {
 } from '@bakers-build/conductor/contract';
 import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { homeKey, homePath } from '../../src/plugins/agent-home.js';
@@ -180,7 +180,7 @@ describe('conductor: a run starts with the project plugins installed', () => {
       '## bb-phase-work\n\n| When | Skill |\n|---|---|\n| a | `testing` |\n',
     );
     const agent = baseAgent([], {
-      installPlugins: async (_m, home) => ({
+      installPlugins: async (_m, _home) => ({
         env: {},
         args: [],
         home: 'reused',
@@ -224,7 +224,9 @@ describe('conductor: a run starts with the project plugins installed', () => {
     const calls: string[] = [];
     const agent = baseAgent(calls, {
       installPlugins: async () => {
-        throw new Error('probe-plugin: claude plugin install exited 1: not found');
+        throw new Error(
+          'probe-plugin: claude plugin install exited 1: not found',
+        );
       },
     });
     const { executor, remote, entry } = await dispatch(agent);

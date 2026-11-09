@@ -71,7 +71,9 @@ function pluginSkills(root: string, fallback: string): Array<[string, string]> {
   }
   const plugin = typeof manifest.name === 'string' ? manifest.name : fallback;
   const paths = (
-    Array.isArray(manifest.skills) ? manifest.skills : [manifest.skills ?? 'skills']
+    Array.isArray(manifest.skills)
+      ? manifest.skills
+      : [manifest.skills ?? 'skills']
   ).filter((path): path is string => typeof path === 'string');
   return paths
     .flatMap((path) => skillsBelow(join(root, path)))
@@ -91,7 +93,8 @@ const dirs = (dir: string): string[] => {
 function availableSkills(worktree: string, home: string): Map<string, string> {
   const found = new Map<string, string>();
   const add = (pairs: Array<[string, string]>) => {
-    for (const [name, path] of pairs) if (!found.has(name)) found.set(name, path);
+    for (const [name, path] of pairs)
+      if (!found.has(name)) found.set(name, path);
   };
   for (const root of ['.claude/skills', '.agents/skills']) {
     const dir = join(worktree, root);
@@ -123,7 +126,10 @@ function workflowSkills(worktree: string): string[] {
     .split('\n')
     .filter((line) => line.trim().startsWith('|'))
     .flatMap((line) => {
-      const cells = line.trim().replace(/^\||\|$/g, '').split('|');
+      const cells = line
+        .trim()
+        .replace(/^\||\|$/g, '')
+        .split('|');
       return [...(cells.at(-1) ?? '').matchAll(/`([^`]+)`/g)].map(
         (m) => m[1] as string,
       );
@@ -147,8 +153,7 @@ function recipeRequires(skillFile: string, type: string | undefined): string[] {
 function lookup(found: Map<string, string>, name: string): string | undefined {
   if (name.includes(':')) return found.get(name);
   return (
-    found.get(name) ??
-    [...found].find(([key]) => key.endsWith(`:${name}`))?.[1]
+    found.get(name) ?? [...found].find(([key]) => key.endsWith(`:${name}`))?.[1]
   );
 }
 

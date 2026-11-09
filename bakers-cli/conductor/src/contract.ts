@@ -51,6 +51,13 @@ export {
   validateOptionalString,
   validateSharedSecurity,
 } from './plugins/agent-args.js';
+export {
+  ensureHome,
+  homeKey,
+  homePath,
+  type MarketplaceDeclaration,
+  validateMarketplaces,
+} from './plugins/agent-home.js';
 export type {
   BbExecutor,
   ExecutorCapabilities,
@@ -147,10 +154,3 @@ export type {
   ConductorFileConfig,
   ConductorSettings,
 } from './types.js';
-export {
-  ensureHome,
-  homeKey,
-  homePath,
-  type MarketplaceDeclaration,
-  validateMarketplaces,
-} from './plugins/agent-home.js';
