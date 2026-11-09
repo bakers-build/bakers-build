@@ -41,7 +41,7 @@ bakers oven stop
 
 **Done when:** `status` reports this conductor online and a small assigned ticket starts a run. Stop the conductor on the host where it runs; already-started agent sessions may continue.
 
-[Conductor commands](/configuration/project/conductor-commands#start) owns start/restart flags and graceful versus hard stop. Its [status reference](/configuration/project/conductor-commands#status-and-ls) defines the columns and online/stale/offline states.
+[Conductor commands](/configuration/project/conductor-commands#start) owns start/restart flags, [restart on change](/configuration/project/conductor-commands#restart-on-change) and graceful versus hard stop. Its [status reference](/configuration/project/conductor-commands#status-and-ls) defines the columns and online/stale/offline states.
 
 The `bakers ui` Conductors tab shows the same list; see [bakers ui](/addons/bakers-ui/reference). The web UI has two listings: opening the person mark swaps the rail to Account, Conductors (`/user/{user}/conductors`, the conductors assigned to that account) and Machines (`/user/{user}/machines`), and `/{workspace}/project/{key}/conductors` is the conductors assigned to that project (Title search, status and reported load). Opening a row shows Overview at `/{workspace}/conductor/{id}`: Activities, the ticket activities of this conductor's own runs, newest first, with a **Refresh** button, beside one Identity card. An activity counts for a conductor only through its run, never through the ticket's later assignment, so work stays with the conductor and machine that did it; an activity without a run is in no conductor's or machine's feed. Activities list only tickets you may inspect.
 

@@ -1,6 +1,7 @@
-import { spawnSync } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
 import { basename, dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
+import { promisify } from 'node:util';
 import {
   type BbCommandHost,
   type BbCommandPlugin,
@@ -33,6 +34,7 @@ import { authStatus } from 'dropsh';
 import { resolveBbProjectContext } from '../bakers-project-context.js';
 import { composeConductorConfig, loadConductorConfig } from '../config.js';
 import { Conductor, registrationOf } from '../core/conductor.js';
+import { watchForRestart } from '../core/self-restart.js';
 import type { BbExecutor } from '../plugins/executor.js';
 import {
   type ResolvedAgent,
@@ -123,6 +125,58 @@ export interface BbCliDeps {
   askUpdate?: (question: string) => Promise<string>;
   /** Invoke `bakers` with an argv array (no binary name). */
   runBb?: (args: string[]) => Promise<void>;
+  /** The self-restart file watcher behind `start --foreground`. */
+  watchForRestart?: typeof watchForRestart;
+  /** Checks the changed config; resolves an error message, or undefined when it loads. */
+  checkConfig?: () => Promise<string | undefined>;
+  /** Replaces this process (`process.execve`). A test MUST inject a fake. */
+  execve?: Execve;
+}
+
+type Execve = (file: string, args: string[], env: NodeJS.ProcessEnv) => void;
+
+/**
+ * `oven start --dry-run` in a child with this process's own runtime and argv:
+ * the changed files are imported fresh there, never into this process.
+ */
+async function defaultCheckConfig(): Promise<string | undefined> {
+  const args = [
+    ...process.execArgv,
+    ...process.argv
+      .slice(1)
+      .map((a) => (a === '--foreground' ? '--dry-run' : a)),
+  ];
+  try {
+    await promisify(execFile)(process.execPath, args, {
+      cwd: process.cwd(),
+      env: process.env,
+      // A hung check would block every later restart; a timeout fails it.
+      timeout: 60_000,
+    });
+    return undefined;
+  } catch (err) {
+    const { stderr, message } = err as { stderr?: string; message: string };
+    return stderr?.trim().split('\n').slice(-20).join('\n') || message;
+  }
+}
+
+/**
+ * `oven start --dry-run`: load what a start would load — config with project
+ * resolution, executor, workspace and agents — then stop before registering.
+ */
+async function cmdDryRun(deps: BbCliDeps): Promise<number> {
+  try {
+    const config = await resolveConfig(deps, undefined, true);
+    const logger = loggerFor(await checkoutRootOf(config));
+    if (!deps.executor) await selectExecutor(config, logger);
+    if (!deps.workspace) await selectWorkspace(config, logger);
+    if (!deps.agents) await selectAgents(config);
+    console.log(`config ok: ${config.config_path}`);
+    return 0;
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    return 1;
+  }
 }
 
 /** Default host bases for connection/plugin resolution when none is injected. */
@@ -443,6 +497,9 @@ async function refuseIfAlreadyRunning(
 ): Promise<boolean> {
   const existing = (await remote.listConductors('me')).find((c) => c.id === id);
   if (!existing) return false;
+  // A self-restart keeps the pid: the live record is this very process.
+  if (existing.lastPid === process.pid && existing.hostKey === thisHostKey)
+    return false;
 
   const probe = deps.procProbe ?? defaultProcProbe();
   const verified = verifyConductorProcess({
@@ -550,30 +607,83 @@ async function cmdStartForeground(
     join(homeBbDir(), 'conductors', `${conductor.id}.json`),
   );
   const controller = new AbortController();
-  const onSignal = () => controller.abort();
+  let restart = false;
+  // A stop wins over a restart already decided: `oven stop` must stay a stop.
+  const onSignal = () => {
+    restart = false;
+    controller.abort();
+  };
   process.once('SIGINT', onSignal);
   process.once('SIGTERM', onSignal);
+  const execve =
+    deps.execve ?? (process as { execve?: Execve }).execve?.bind(process);
+  let watcher: { close(): void } | undefined;
+  if (config.restart_on_change !== false && config.watch_paths) {
+    if (!execve) {
+      logger.warn(
+        { node: process.version },
+        'restart_on_change needs process.execve (Node >= 22.15); the conductor does not restart itself on config changes',
+      );
+    } else {
+      const check = deps.checkConfig ?? defaultCheckConfig;
+      watcher = (deps.watchForRestart ?? watchForRestart)(
+        config.watch_paths,
+        async (path) => {
+          if (controller.signal.aborted) return;
+          logger.info(
+            { path },
+            `restart_on_change: ${path} changed; checking config`,
+          );
+          const error = await check();
+          // A stop requested while the check ran stays a stop.
+          if (controller.signal.aborted) return;
+          if (error !== undefined) {
+            logger.error(
+              { path, err: error },
+              `config check failed; keeping the running conductor: ${error}`,
+            );
+            return;
+          }
+          logger.info({ path }, 'config check passed; restarting conductor');
+          restart = true;
+          watcher?.close();
+          controller.abort();
+        },
+      );
+    }
+  }
   try {
     await conductor.serve(controller.signal);
   } finally {
+    watcher?.close();
+    await conductor.stopTools();
     process.removeListener('SIGINT', onSignal);
     process.removeListener('SIGTERM', onSignal);
-    await conductor.stopTools();
     // The exiting process writes its own `offline`. It has to be this process:
     // a heartbeat sets `online` unconditionally (ConductorRegistrar), so an
     // offline written by anyone else is erased by the next tick — the status
     // is only trustworthy when written after the heartbeats have stopped.
     // Best-effort: a conductor that cannot reach the control plane on the way
     // out must still exit, and the reaper flips it on lease expiry anyway.
-    try {
-      await remote.setConductorStatus(conductor.id, 'offline');
-    } catch (err) {
-      logger.warn(
-        { conductorId: conductor.id, err: String(err) },
-        'could not write offline status on shutdown; the lease reaper will',
-      );
+    // A self-restart skips it: the same conductor id comes straight back.
+    if (!restart) {
+      try {
+        await remote.setConductorStatus(conductor.id, 'offline');
+      } catch (err) {
+        logger.warn(
+          { conductorId: conductor.id, err: String(err) },
+          'could not write offline status on shutdown; the lease reaper will',
+        );
+      }
     }
   }
+  // Same pid and log.
+  if (restart && execve)
+    execve(
+      process.execPath,
+      [process.execPath, ...process.execArgv, ...process.argv.slice(1)],
+      process.env,
+    );
 }
 
 async function defaultAskUpdate(question: string): Promise<string> {
@@ -1252,6 +1362,11 @@ Examples:
       'take over the conductor this machine, project and variant already have',
     )
     .option('--new', 'register a new conductor instead of taking one over')
+    .option(
+      '--dry-run',
+      'load the config, executor, workspace and agents, then exit (0 when they load, 1 with the error)',
+      false,
+    )
     .action(async function (
       this: Command,
       opts: {
@@ -1260,8 +1375,13 @@ Examples:
         force: boolean;
         adopt?: string;
         new?: boolean;
+        dryRun: boolean;
       },
     ) {
+      if (opts.dryRun) {
+        process.exitCode = await cmdDryRun(deps);
+        return;
+      }
       if (opts.adopt && opts.new) {
         console.error('Choose either --adopt <uuid> or --new, not both.');
         process.exitCode = 1;

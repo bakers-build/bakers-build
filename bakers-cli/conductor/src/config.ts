@@ -1,5 +1,5 @@
 import { readdirSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   type AddonEntry,
@@ -182,6 +182,7 @@ type RawConfig = {
   prompt?: unknown;
   poll_interval_ms?: unknown;
   lease_seconds?: unknown;
+  restart_on_change?: unknown;
   hooks?: ConductorFileConfig['hooks'];
 };
 
@@ -490,6 +491,9 @@ export async function loadConductorConfig(
     ? config.states.map((state) => requireNonEmptyString(state, 'states'))
     : [];
   warnIgnoredMaxParallel(configPath, config);
+  const restartOnChange = config.restart_on_change ?? true;
+  if (typeof restartOnChange !== 'boolean')
+    throw new Error(`${configPath}: restart_on_change must be a boolean`);
   const machineCtx = await readMachineContext();
   warnIgnoredMaxParallel(machineContextPath(), machineCtx);
   const tunnel = machineCtx.tunnel === true;
@@ -811,6 +815,23 @@ export async function loadConductorConfig(
     ),
     ...(config.hooks !== undefined ? { hooks: config.hooks } : {}),
     config_path: configPath,
+    restart_on_change: restartOnChange,
+    watch_paths: {
+      files: [
+        configPath,
+        configPath.replace(/\.js$/, '.local.js'),
+        join(dirname(configPath), 'connection.config.local.js'),
+        machineContextPath(),
+      ],
+      // A retired entry keeps its spec as key; only resolved modules have a dir.
+      dirs: [
+        ...new Set(
+          effectiveAddons
+            .filter((a) => isAbsolute(a.key))
+            .map((a) => dirname(a.key)),
+        ),
+      ],
+    },
   };
 }
 
