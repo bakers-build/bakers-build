@@ -2,6 +2,7 @@
 # Runs the documented self-host lifecycle (docs/self-hosting/server.md, proxy.md)
 # against the public release images: install, restart, backup, update, restore.
 # Both versions run the operator compose file of <to-version>; only the image changes.
+# <from-version> must contain scripts/deploy/site-deploy.sh (the first `up` installs).
 #
 # usage: scripts/ci/self-host-lifecycle.sh <from-version> <to-version> <workdir>
 #   version: vX.Y.Z (release) or a full 40-character commit SHA on `next`/`main`.
@@ -182,8 +183,7 @@ configure "$WORK/a" lifecycle-a app.selfhost.test 172.31.250.0/24 18443 18080 18
 use_instance app.selfhost.test 18443 18080 18025 18444
 record "from image: $(grep -E '^BAKERS_VERSION=' .env | cut -d= -f2)"
 [ "$(docker volume ls -q --filter label=com.docker.compose.project=lifecycle-a | wc -l)" = 0 ] || fail "test project lifecycle-a already has volumes"
-dc --profile install pull
-dc --profile install run --rm install
+dc pull
 dc up -d
 wait_ready
 pass "anonymous install of $FROM"
@@ -225,7 +225,6 @@ set_env BAKERS_VERSION "$(image_tag "$TO")"
 record "to image: $(grep -E '^BAKERS_VERSION=' .env | cut -d= -f2)"
 dc config -q
 dc pull
-dc run --rm --no-deps deploy
 dc up -d
 wait_ready
 same_snapshot "update $FROM -> $TO" "$WORK/before.txt"

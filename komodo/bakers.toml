@@ -39,8 +39,9 @@ COMPOSE_PROFILES=docs
 DOCS_DOMAIN=docs-develop.dev.bakers.build
 DOCS_ALIAS_DOMAIN=docs-develop.dev.bakers.build
 REGISTRY_IMAGE_DOCS=ghcr.io/bakers-build/bakers-build/docs:next
-# Auto-deploy runs UPDATE only (drush deploy); it never installs. The first install of
-# a fresh environment is a deliberate, profile-gated action, run once on the host:
+# Auto-deploy runs scripts/deploy/site-deploy.sh: on an installed site a dump, then
+# drush deploy; it installs only a reachable database without any table. The explicit
+# first install stays available on the host:
 #   docker compose --profile install run --rm install
 # OAuth / social sign-in (BB-476): Google client credentials. Empty in
 # config/sync — this is the only place they reach the site. Empty at launch.
@@ -132,9 +133,9 @@ COMPOSE_PROFILES=docs
 DOCS_DOMAIN=bakers.build
 DOCS_ALIAS_DOMAIN=www.bakers.build
 REGISTRY_IMAGE_DOCS=ghcr.io/bakers-build/bakers-build/docs:main
-# Auto-deploy runs UPDATE only (drush deploy); it never installs — a bootstrap
-# false-negative can no longer wipe prod. The first install of this environment is a
-# deliberate, profile-gated action from config/sync, run once on the prod host:
+# Auto-deploy runs scripts/deploy/site-deploy.sh: a dump, then drush deploy. It installs
+# only a reachable database without any table, so a bootstrap false-negative cannot wipe
+# prod. The explicit first install stays available on the prod host:
 #   docker compose --profile install run --rm install
 # OAuth / social sign-in (BB-476): Google client credentials, prod's own
 # registration — the redirect URI is host-bound (BB-476 D9). Empty at launch.

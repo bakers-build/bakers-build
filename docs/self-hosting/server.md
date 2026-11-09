@@ -15,9 +15,8 @@ HTTPS reverse proxy ([examples](/self-hosting/proxy)). Releases are listed on
 Save this as `docker-compose.yml` in an empty directory:
 
 ```yaml
-# bakers.build server. Fill in .env next to this file, then:
-#   docker compose --profile install run --rm install   # first install only: creates the database
-#   docker compose up -d
+# bakers.build server. Fill in .env next to this file, then `docker compose up -d`:
+# the first start installs the site, every later start runs the database updates.
 # nginx listens on 127.0.0.1:${HTTP_PORT}; put your HTTPS reverse proxy in front of it.
 x-app: &app
   image: ghcr.io/bakers-build/bakers-build/php:${BAKERS_VERSION:?Set BAKERS_VERSION, e.g. 0.7.0}
@@ -51,16 +50,19 @@ x-env: &env
   BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
   BB_OAUTH_GOOGLE_CLIENT_SECRET: ${BB_OAUTH_GOOGLE_CLIENT_SECRET:-}
   FEATURE_FLAG_RUN_LOG_STORAGE: ${FEATURE_FLAG_RUN_LOG_STORAGE:-0}
+  # The first administrator; signs in by email link.
+  ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL}
 
 services:
   init-perms:
     image: alpine:3.22.2
-    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
+    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys /backups && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
     volumes:
       - public_files:/pf
       - private_files:/privf
       - tmp_files:/tmpdir
       - oauth_keys:/oauthkeys
+      - backups:/backups
     restart: "no"
 
   db:
@@ -82,45 +84,18 @@ services:
       start_period: 30s
     networks: [internal]
 
-  # First install only: site:install DROPS and recreates the database.
-  install:
-    <<: *app
-    profiles: [install]
-    restart: "no"
-    environment:
-      <<: *env
-      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL, the first administrator}
-    command: |
-      sh -c '
-        set -e
-        DRUSH=/var/www/html/vendor/bin/drush
-        echo "[install] site:install --existing-config (DROPS + recreates the DB)"
-        $$DRUSH -y site:install --existing-config --account-mail="$$ADMIN_EMAIL"
-        $$DRUSH -y deploy:hook
-        echo "[install] OAuth keys"
-        mkdir -p /var/www/oauth-keys
-        [ -f /var/www/oauth-keys/private.key ] || $$DRUSH simple-oauth:generate-keys /var/www/oauth-keys
-      '
-
-  # Runs the database updates on every `up`; php starts only when it succeeds.
+  # Installs an empty database, else backs it up and runs the updates; php waits for it.
   deploy:
     <<: *app
     restart: "no"
     environment: *env
-    command: |
-      sh -c '
-        set -e
-        DRUSH=/var/www/html/vendor/bin/drush
-        echo "[deploy] UPDATE — drush deploy (fails loudly if the site is not installed)"
-        $$DRUSH -y deploy
-        echo "[deploy] entity schema: enable tool, apply, re-import config to disable"
-        $$DRUSH -y pm:install devel_entity_updates
-        $$DRUSH -y devel-entity-updates
-        $$DRUSH -y config:import
-        echo "[deploy] OAuth keys"
-        mkdir -p /var/www/oauth-keys
-        [ -f /var/www/oauth-keys/private.key ] || $$DRUSH simple-oauth:generate-keys /var/www/oauth-keys
-      '
+    volumes:
+      - public_files:/var/www/html/web/sites/default/files
+      - private_files:/var/www/html/private-files
+      - tmp_files:/tmp
+      - oauth_keys:/var/www/oauth-keys
+      - backups:/var/www/backups
+    command: /var/www/html/scripts/deploy/site-deploy.sh
 
   php:
     <<: *app
@@ -163,6 +138,7 @@ volumes:
   private_files:
   tmp_files:
   oauth_keys:
+  backups:
 
 networks:
   internal:
@@ -212,12 +188,13 @@ BB_OAUTH_GOOGLE_CLIENT_SECRET=
 ## Install
 
 ```sh
-docker compose --profile install run --rm install
 docker compose up -d
+docker compose logs deploy
 ```
 
-The `install` service creates the database; run it once, never on an existing installation.
-Then set up your [reverse proxy](/self-hosting/proxy).
+On the first start the `deploy` service finds an empty database and installs the site with
+`ADMIN_EMAIL` as administrator. It installs only into a database without any table and stops on
+anything else, so it never overwrites data. Then set up your [reverse proxy](/self-hosting/proxy).
 
 ## First sign-in
 
@@ -233,19 +210,23 @@ workspace and a project, then connect a machine with `bakers init --base-url htt
 
 ## Update
 
-Read the release notes, then:
+Read the release notes, set `BAKERS_VERSION` in `.env` to the new release, then:
 
 ```sh
-docker compose exec -T db sh -c 'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" bakers' > backup-$(date +%F).sql
-# set BAKERS_VERSION in .env to the new release
 docker compose pull
-docker compose run --rm deploy
 docker compose up -d
+docker compose logs deploy
 ```
 
-`deploy` runs the database updates; `up -d` also runs it before PHP starts. Keep `.env` otherwise
-unchanged. If `deploy` fails, the site stays down: set the previous `BAKERS_VERSION` and load the
-dump with `docker compose exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" bakers' < backup-….sql`.
+Before the database updates run, `deploy` writes a dump to the `backups` volume and
+keeps the last three. PHP starts only after a successful update. If it fails, the site stays down:
+set the previous `BAKERS_VERSION`, load the newest dump and start again:
+
+```sh
+docker compose run --rm --no-deps -T deploy sh -c 'zcat "$(ls -1t /var/www/backups/*.sql.gz | head -1)"' \
+  | docker compose exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" bakers'
+docker compose up -d
+```
 
 ## Run-log storage
 

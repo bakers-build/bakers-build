@@ -79,17 +79,17 @@ def run(values, *args, files=("docker-compose.yml",)):
     env = {"PATH": os.environ["PATH"], "HOME": os.environ.get("HOME", work)}
     return subprocess.run(cmd + list(args), cwd=work, env=env, capture_output=True, text=True)
 
-r = run(required, "--profile", "install", "config", "--format", "json")
+r = run(required, "--profile", "install", "config", "--format", "json")  # no install profile: renders the same
 assert r.returncode == 0, r.stderr
 assert "BB_SELF_HOSTED" not in r.stdout, "the operator stack still sets a self-hosted mode switch"
 c = json.loads(r.stdout)
 s = c["services"]
-assert set(s) == {"init-perms", "db", "install", "deploy", "php", "nginx", "cron"}, set(s)
+assert set(s) == {"init-perms", "db", "deploy", "php", "nginx", "cron"}, set(s)
 assert s["php"]["image"] == "ghcr.io/bakers-build/bakers-build/php:1.2.3"
 assert s["nginx"]["image"] == "ghcr.io/bakers-build/bakers-build/nginx:1.2.3"
 subnet = c["networks"]["internal"]["ipam"]["config"][0]["subnet"]
 assert subnet == "172.30.42.0/24", subnet
-for name in ("install", "deploy", "php", "cron"):
+for name in ("deploy", "php", "cron"):
     e = s[name]["environment"]
     assert e["DRUPAL_TRUSTED_PROXY_SUBNET"] == subnet, name
     assert e["DOMAIN"] == "app.example.test", name
@@ -97,16 +97,15 @@ for name in ("install", "deploy", "php", "cron"):
     assert not s[name].get("ports"), name
 assert not s["db"].get("ports")
 assert [(p["host_ip"], str(p["published"]), p["target"]) for p in s["nginx"]["ports"]] == [("127.0.0.1", "8080", 80)]
-assert s["install"]["environment"]["ADMIN_EMAIL"] == "admin@example.test"
+assert s["deploy"]["environment"]["ADMIN_EMAIL"] == "admin@example.test"
+assert any(v["target"] == "/var/www/backups" for v in s["deploy"]["volumes"])
 for name in ("php", "cron"):
     assert s[name]["environment"]["MAIL_SMTP_DSN"] == "smtp://smtp.example.test:587", name
 
 base = json.load(open(os.environ["BASE_JSON"]))["services"]
-def code(command):  # shell comment lines are not behaviour
-    return [re.sub(r"(?m)^\s*#.*\n", "", part) for part in command]
-assert code(s["deploy"]["command"]) == code(base["deploy"]["command"]), "deploy command drifted from docker-compose.yml"
-want = [part.replace("site:install --existing-config\n", 'site:install --existing-config --account-mail="$$ADMIN_EMAIL"\n') for part in base["install"]["command"]]
-assert code(s["install"]["command"]) == code(want), s["install"]["command"]
+script = ["/var/www/html/scripts/deploy/site-deploy.sh"]
+assert s["deploy"]["command"] == script, s["deploy"]["command"]
+assert base["deploy"]["command"] == script, "docker-compose.yml deploy does not run site-deploy.sh"
 
 r = run({**required, "FEATURE_FLAG_RUN_LOG_STORAGE": "1"}, "config", "--format", "json")
 assert r.returncode == 0, r.stderr
@@ -130,6 +129,44 @@ for doc, file in (("docs/self-hosting/server.md", "docker-compose.yml"), ("docs/
 shutil.rmtree(work)
 PYTEST
 pass "operator compose file is standalone, trusts its subnet, requires its inputs and matches the docs"
+
+# site-deploy.sh installs only a reachable, empty database and updates only an installed one.
+python3 <<'PYTEST'
+import os, subprocess, tempfile
+work = tempfile.mkdtemp()
+log = f"{work}/drush.log"
+stub = f"{work}/drush"
+open(stub, "w").write("""#!/bin/sh
+echo "$*" >> "$LOG"
+case "$1" in
+  sql:query)
+    [ "$DB_UP" = 1 ] || exit 1
+    case "$*" in *"'config'"*) echo "$HAS_CONFIG" ;; *) echo "$TABLES" ;; esac ;;
+esac
+""")
+os.chmod(stub, 0o755)
+def run(db_up, tables, has_config, admin="admin@example.test"):
+    open(log, "w").close()
+    env = {"PATH": os.environ["PATH"], "DRUSH": stub, "LOG": log, "OAUTH_KEYS": f"{work}/keys", "BACKUP_DIR": f"{work}/backups",
+           "DB_UP": db_up, "TABLES": tables, "HAS_CONFIG": has_config, "ADMIN_EMAIL": admin, "DOMAIN": "app.example.test"}
+    r = subprocess.run(["sh", "scripts/deploy/site-deploy.sh"], env=env, capture_output=True, text=True)
+    return r, open(log).read()
+r, calls = run("0", "0", "0")
+assert r.returncode != 0 and "site:install" not in calls and "deploy" not in calls.replace("sql:query", ""), (r, calls)
+r, calls = run("1", "0", "0")
+assert r.returncode == 0, r.stderr
+assert "site:install --existing-config --account-mail=admin@example.test" in calls, calls
+assert "admin@example.test" in r.stdout and "account-pass" not in r.stdout, r.stdout
+r, calls = run("1", "0", "0", admin="")
+assert r.returncode != 0 and "site:install" not in calls, calls
+r, calls = run("1", "57", "1")
+assert r.returncode == 0, r.stderr
+assert "-y deploy" in calls and "site:install" not in calls, calls
+assert calls.index("sql:dump") < calls.index("-y deploy"), "no backup before the update"
+r, calls = run("1", "3", "0")
+assert r.returncode != 0 and "site:install" not in calls and "-y deploy" not in calls, calls
+PYTEST
+pass "site-deploy.sh installs only an empty database and updates only an installed site"
 
 # Both stacks use the same Traefik overlay; a second ingress overlay is drift.
 overlays="$(ls docker-compose.*.yml)"
