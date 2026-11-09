@@ -80,6 +80,12 @@ class DeviceVerificationForm extends FormBase {
     // verification_uri_complete worth sending.
     $prefill = $this->getRequest()->query->get('user_code', '');
     $prefill = is_string($prefill) ? $prefill : '';
+    // The page's one h1: the gate chrome carries the mark, not a heading.
+    $form['heading'] = $this->text($this->t('Sign in a device'), [
+      'as' => 'h1',
+      'size' => 'section-title',
+      'align' => 'center',
+    ]) + ['#weight' => -20];
     $form += $this->buildCodeField($prefill);
 
     // Resolving the code already on GET, before any decision is made, is what
@@ -123,7 +129,7 @@ class DeviceVerificationForm extends FormBase {
     $content = [
       'title' => $this->text($confirmed
         ? $this->t('Welcome, @name', ['@name' => $this->currentUser->getDisplayName()])
-        : $this->t('Sign-in denied'), ['as' => 'h2', 'size' => 'page-title']),
+        : $this->t('Sign-in denied'), ['as' => 'h1', 'size' => 'page-title']),
       'body' => $this->text($confirmed
         ? $this->t('You are signed in. You can return to your terminal.')
         : $this->t('You can return to your terminal.'), ['size' => 'prose', 'tone' => 'default']),

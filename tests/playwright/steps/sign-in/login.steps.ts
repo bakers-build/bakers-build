@@ -166,7 +166,8 @@ Then('login controls fit the viewport and show keyboard focus', async ({ page })
     await expect(control).toBeFocused();
     expect(await control.evaluate(el => {
       const style = getComputedStyle(el);
-      const background = getComputedStyle(el.closest('.gate__card')!).backgroundColor;
+      // The ground the form stands on, beside the gate's band.
+      const background = getComputedStyle(el.closest('.gate__main')!).backgroundColor;
       return style.outlineStyle !== 'none' && style.outlineColor !== background;
     })).toBe(true);
     const box = await control.boundingBox();

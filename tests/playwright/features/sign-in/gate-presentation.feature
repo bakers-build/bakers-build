@@ -9,9 +9,11 @@ Feature: Device sign-in consent and result
     And a device code was requested by the CLI
     When I open the device verification page for that code
     Then the consent names the requesting client
+    And the page has exactly one h1
     When I confirm the device sign-in
     Then the address carries "done=confirmed"
     And the device result message is visible
+    And the page has exactly one h1
     And the device result title is not clipped
     When I follow the result's "Go to bakers.build" action
     And I open the site root
@@ -25,6 +27,7 @@ Feature: Device sign-in consent and result
     When I deny the device sign-in
     Then the address carries "done=denied"
     And the device result message is visible
+    And the page has exactly one h1
     And the device result offers no "Go to bakers.build" action
 
   Scenario: A signed-out visitor signs in and returns to the device code

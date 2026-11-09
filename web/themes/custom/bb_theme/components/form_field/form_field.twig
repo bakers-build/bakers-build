@@ -13,6 +13,7 @@
 {% set description_markup = description|render %}
 {% set has_errors = errors_markup|striptags|trim is not empty %}
 {% set has_description = description_markup|striptags(visible_tags)|trim is not empty %}
+{# `mb-group` matches a flex form's `gap-group`, so every form spaces its fields alike. #}
 {% set classes = [
   'js-form-item', 'form-item',
   'form-type-' ~ type|clean_class, 'js-form-type-' ~ type|clean_class,
@@ -20,7 +21,7 @@
   title_display not in ['after', 'before'] ? 'form-no-label',
   disabled ? 'form-disabled',
   has_errors ? 'form-item--error',
-  '[:not(.flex,.grid)>&:not(:last-child)]:mb-stack',
+  '[:not(.flex,.grid)>&:not(:last-child)]:mb-group',
 ]|filter(c => c) %}
 {% set description_classes = ['description', 'text-meta', 'text-text-light', description_display == 'invisible' ? 'sr-only']|filter(c => c) %}
 <div{{ (attributes ?: create_attribute()).addClass(classes) }}>

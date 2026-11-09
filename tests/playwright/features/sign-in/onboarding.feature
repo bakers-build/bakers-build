@@ -185,6 +185,7 @@ Feature: The onboarding wizard before the workspace overview
     Then both finish actions are offered
     When I choose finish and create a new workspace
     Then the address is "/home/new-workspace"
+    And the page has exactly one h1
     When I create the workspace "Setup Create GmbH"
     Then the address is "/home"
     And the workspace "setup-create-gmbh" is owned by "onboarding-create@example.com" as lead

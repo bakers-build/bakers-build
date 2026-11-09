@@ -4,7 +4,7 @@ name: Gate form
 status: stable
 group: Shell
 description: >-
-  The frame of a form that stands in the gate card: login, the e-mail code,
+  The frame of a form that stands in the gate beside its butter band: login, the e-mail code,
   device sign-in, and creating or joining a workspace. Core's form elements
   carry no spacing of their own, so this frame owns the gap between the copy,
   the form items and the action row, lays the action row out, and gives inputs,
@@ -24,12 +24,23 @@ props:
         `center` centres the copy and the action row, for a short decision such
         as confirming a device sign-in. Default `start`.
       default: start
+    divider:
+      type: string
+      title: Divider
+      description: >-
+        The word on the dashed divider between the form's own action and the
+        `alternative`. Default "or".
 slots:
   content:
     title: Content
     description: >-
       The form's rendered children — copy, form items and the action row — in
       their own order.
+  alternative:
+    title: Alternative
+    description: >-
+      A second way in, such as "Continue with Google". When filled, the form's
+      buttons become full-width pills and the divider stands between the two.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

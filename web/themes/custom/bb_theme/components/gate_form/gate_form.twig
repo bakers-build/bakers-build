@@ -1,13 +1,26 @@
 {# The frame of a gate form. The caller's attributes carry the form's own
    (`action`, `method`, `id`, `data-hx-boost`, `aria-*`); this frame adds only
    layout: a gap between the parts core renders without spacing, the action
-   row, and a visible focus ring, because the input resets its outline. #}
+   row, and a visible focus ring, because the input resets its outline.
+   With an `alternative` (the second way in), the buttons become full-width
+   pills and a dashed divider with its word stands between the two doors. #}
 {% set centered = align|default('start') == 'center' %}
+{% set doors = alternative is not empty %}
 <form{{ (attributes ?: create_attribute()).addClass([
   'grid', 'gap-group', 'min-w-0', '*:min-w-0',
   '[&_.form-actions]:flex', '[&_.form-actions]:flex-wrap', '[&_.form-actions]:items-center', '[&_.form-actions]:gap-stack',
   '[&_:is(input,button,a):focus-visible]:outline-2', '[&_:is(input,button,a):focus-visible]:outline-solid',
   '[&_:is(input,button,a):focus-visible]:outline-focus-ring', '[&_:is(input,button,a):focus-visible]:outline-offset-2',
-]|merge(centered ? ['text-center', '[&_.form-actions]:justify-center'] : [])) }}>
+]|merge(centered ? ['text-center', '[&_.form-actions]:justify-center'] : [])|merge(doors ? [
+  '[&_.button]:w-full', '[&_.button]:h-[38px]', '[&_.button]:rounded-full',
+] : [])) }}>
   {% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}
+  {% if doors %}
+    <div class="flex items-center gap-inline text-meta text-text-faint">
+      <span aria-hidden="true" class="flex-1 border-t border-dashed border-border"></span>
+      {{ divider|default('or'|t) }}
+      <span aria-hidden="true" class="flex-1 border-t border-dashed border-border"></span>
+    </div>
+    {% block alternative %}{{ alternative }}{% endblock %}
+  {% endif %}
 </form>
