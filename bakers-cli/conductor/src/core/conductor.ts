@@ -24,6 +24,7 @@ import type {
 } from '../plugins/executor.js';
 import { type ResolvedAgent, resolveAgent } from '../plugins/plugins.js';
 import type {
+  ActiveRun,
   BbRemote,
   ClaimedRun,
   ConductorRegistration,
@@ -522,6 +523,7 @@ export class Conductor {
     }
     // A hung action blocks only its ticket's lane; make it visible.
     this.queue.warnOverdue(this.config.lease_seconds * 1000);
+    await this.step('lost', () => this.enqueueLostRuns());
     await this.step('finalize', () => this.enqueueFinalize());
     await this.step('reap', () => this.enqueueReap());
     await this.step('freeze', () => this.observeFreezes());
@@ -594,6 +596,70 @@ export class Conductor {
           : 'idle, nothing to claim',
       );
     }
+  }
+
+  /**
+   * Fails every running run whose terminal is gone: nobody executes it, and
+   * the server never expires a `running` run. Keyed off the durable active-run
+   * query, so a restarted conductor checks adopted runs on its first tick.
+   */
+  private async enqueueLostRuns(): Promise<void> {
+    if (!this.executor.runAlive) return;
+    const runs = await this.remote.fetchActiveRuns(this.id);
+    for (const r of runs) {
+      if (r.state !== 'running') continue;
+      this.queue.enqueue({
+        key: `lost:${r.runUuid}`,
+        lane: r.ticketUuid || r.runUuid,
+        run: () => this.lostOne(r),
+      });
+    }
+  }
+
+  /** Fails and reports one run when its terminal is gone; a failed lookup changes nothing. */
+  private async lostOne(r: ActiveRun): Promise<void> {
+    let alive: boolean;
+    try {
+      alive = (await this.executor.runAlive?.(r.branchName, r.runId)) ?? true;
+    } catch (err) {
+      this.logger.warn(
+        { run: r.runUuid, err: String(err) },
+        'pane lookup failed; run left active',
+      );
+      return;
+    }
+    if (alive) return;
+    try {
+      // The run may have ended normally since the snapshot.
+      const still = (await this.remote.fetchActiveRuns(this.id)).find(
+        (a) => a.runUuid === r.runUuid,
+      );
+      if (still?.state !== 'running') return;
+      const cause = `herdr pane gone: ${this.executor.id} found no live terminal for run #${r.runId} (branch ${r.branchName})`;
+      await this.remote.markFailed(r.runUuid, cause);
+      this.revokeRunTools(r.runUuid);
+      this.signalUi(r.worktreePath);
+      this.logger.warn({ run: r.runUuid }, cause);
+    } catch (err) {
+      this.logger.warn(
+        { run: r.runUuid, err: String(err) },
+        'lost run not marked failed; retried next tick',
+      );
+      return;
+    }
+    // Not retried: the run is no longer active, so a retry could only duplicate.
+    await this.remote
+      .publishTicketComment(
+        r.ticketUuid,
+        'comment',
+        `Run #${r.runId} (\`${r.runUuid}\`) in state \`${r.stateAtStart}\` was marked \`failed\`: its terminal pane is gone (\`${this.executor.id}\` found no live terminal on branch \`${r.branchName}\`), so nobody was executing it any more.\n`,
+      )
+      .catch((err: unknown) => {
+        this.logger.warn(
+          { run: r.runUuid, err: String(err) },
+          'lost run comment failed',
+        );
+      });
   }
 
   /**

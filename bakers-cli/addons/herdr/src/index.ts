@@ -426,14 +426,7 @@ export class HerdrExecutor implements BbExecutor {
    * The branch worktree is untouched (that is `HerdrWorkspace.remove`).
    */
   async cleanupRun(branch: string, runId: number): Promise<void> {
-    const workspaceId = await this.findWorkspaceByBranch(branch);
-    if (!workspaceId) {
-      return;
-    }
-    const tabs = parseTabList(
-      await this.execHerdr(['tab', 'list', '--workspace', workspaceId]),
-    );
-    const match = tabs.find((tab) => labelMatchesRun(tab.label, runId));
+    const match = await this.runTab(branch, runId);
     if (!match) {
       return; // no tab for this run — quiet best-effort no-op (AC-4)
     }
@@ -442,6 +435,26 @@ export class HerdrExecutor implements BbExecutor {
     } catch {
       // ignore — best-effort: a failing tab-close must not abort finalisation
     }
+  }
+
+  /** Whether the run's tab is still open; a failing `herdr` call throws. */
+  async runAlive(branch: string, runId: number): Promise<boolean> {
+    return (await this.runTab(branch, runId)) !== null;
+  }
+
+  /** The branch workspace's tab labelled `#<runId>`, or null. */
+  private async runTab(
+    branch: string,
+    runId: number,
+  ): Promise<HerdrTab | null> {
+    const workspaceId = await this.findWorkspaceByBranch(branch);
+    if (!workspaceId) {
+      return null;
+    }
+    const tabs = parseTabList(
+      await this.execHerdr(['tab', 'list', '--workspace', workspaceId]),
+    );
+    return tabs.find((tab) => labelMatchesRun(tab.label, runId)) ?? null;
   }
 
   private commandFor(input: SpawnRunInput): string {

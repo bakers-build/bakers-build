@@ -435,6 +435,47 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
   });
 });
 
+describe('HerdrExecutor.runAlive (by tab label #<runId>)', () => {
+  const alive = (exec: (a: string[]) => Promise<string>, runId = 12) =>
+    new HerdrExecutor({ launchWatch: INSTANT_WATCH }, exec).runAlive(
+      'bakers/bb-123',
+      runId,
+    );
+
+  it('is true while the run has a tab', async () => {
+    const exec = makeFakeHerdr([], {
+      'worktree list': worktreeWith('bakers/bb-123', 'ws1'),
+      'tab list': tabsJson([{ tab_id: 't2', label: 'BB-123 · coding #12' }]),
+    });
+    expect(await alive(exec)).toBe(true);
+  });
+
+  it('is false when no tab carries the run id', async () => {
+    const exec = makeFakeHerdr([], {
+      'worktree list': worktreeWith('bakers/bb-123', 'ws1'),
+      'tab list': tabsJson([{ tab_id: 't2', label: 'BB-123 · coding #123' }]),
+    });
+    expect(await alive(exec)).toBe(false);
+  });
+
+  it('is false when no workspace is open for the branch', async () => {
+    const exec = makeFakeHerdr([], {
+      'worktree list': JSON.stringify({
+        result: { worktrees: [{ branch: 'bakers/bb-123', path: '/repo/wt' }] },
+      }),
+    });
+    expect(await alive(exec)).toBe(false);
+  });
+
+  it('rejects when herdr cannot answer', async () => {
+    await expect(
+      alive(async () => {
+        throw new Error('herdr not running');
+      }),
+    ).rejects.toThrow('herdr not running');
+  });
+});
+
 describe('HerdrExecutor.removeWorktree', () => {
   it('removes the open workspace for the branch with --force', async () => {
     const calls: string[][] = [];
