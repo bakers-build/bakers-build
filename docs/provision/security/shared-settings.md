@@ -5,7 +5,7 @@ description: Set the security mode, read-denied paths, writable paths and truste
 
 # Shared run security
 
-A top-level `security` block sets the mode and the `deny_read`, `allow_write` and `trusted_commands` lists for every agent at once. It may appear in `~/.bakers/machine.config.js` and in the project's `.bakers/conductor.config.js` (or the selected variant; local values apply only through explicit imports):
+For a configured execution machine, use a top-level `security` block to set the mode and the `deny_read`, `allow_write` and `trusted_commands` lists for every agent at once. It may appear in `~/.bakers/machine.config.js` and in the project's `.bakers/conductor.config.js` (or the selected variant; local values apply only through explicit imports):
 
 ```js
 security: {
@@ -31,3 +31,7 @@ Shared lists apply only while an agent's effective mode is `sandbox`. Codex and 
 `bakers agents` prints each alias's effective `security`: the `mode` and its source, every list entry with its source (`default`, `project`, `machine`, `agent`), the `removed` defaults and the shared keys `not_applied` with the reason.
 
 **Risk.** A committed project config that loosens the sandbox (a `mode` other than `sandbox`, an `allow_write` or `trusted_commands` entry, a `deny_read` without `'$inherit'`) gives **anyone who can push to the repository** more rights on every machine that runs the project and does not replace that key. With `mode: 'yolo'` that is everything your user can do. Each such loosening prints a warning whenever the conductor loads, including at `bakers oven start`, naming the file and the grant. Replace the key in `machine.config.js` to refuse it. See [Risk of loosening](/provision/security/execution#risk-of-loosening).
+
+## Verify
+
+From a connected project checkout, run `bakers agents` and inspect each alias's effective mode, sources and `not_applied` entries. Run `bakers oven check` for sandbox prerequisites. These checks do not prove that an addon tool or application container has the same limits as the agent.

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -151,23 +151,23 @@ export const hooks = (acc) => [...acc, {
     expect(cfg.hooks).toEqual({ before_run: 'echo shell' });
   });
 
-  it('loads the hooks guide example, whose before_run adds the env key it documents', async () => {
-    const guide = readFileSync(
-      new URL('../../../docs/provision/hooks.md', import.meta.url),
-      'utf8',
-    );
-    const section = guide.split('## Add a listener from an addon')[1] ?? '';
-    const example = /```ts\n([\s\S]*?)```/.exec(section)?.[1] ?? '';
-    // The guide's TypeScript, minus its type-only syntax, as a plain preset.
-    const js = example
-      .replace(/^import type .*\n/m, '')
-      .replace(": Preset['hooks']", '');
+  it('loads a listener preset whose before_run adds a launch environment key', async () => {
     const file = writeConductorConfig(`export default {
   bakers: { project: 'demo' }, states: ['working'],
-  addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './guide.mjs'],
+  addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './sidecar.mjs'],
 };
 `);
-    writeAddon(join(file, '..'), 'guide.mjs', js);
+    writeAddon(
+      join(file, '..'),
+      'sidecar.mjs',
+      `export const hooks = (acc) => [...acc, {
+  id: 'demo-sidecar',
+  async before_run(ctx) {
+    ctx.env.DEMO_SIDECAR_URL = 'http://127.0.0.1:4599';
+  },
+  async after_run() {},
+}];`,
+    );
     const cfg = await loadConductorConfig(file);
     const listener = cfg.hookListeners?.find((l) => l.id === 'demo-sidecar');
     expect(listener).toBeDefined();

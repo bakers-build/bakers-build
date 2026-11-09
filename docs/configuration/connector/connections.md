@@ -28,7 +28,7 @@ export default {
 
 | Field | Meaning and default |
 |---|---|
-| `schema_version` | Current schema is 4; the header comment and this field must agree. |
+| `schema_version` | Current schema is 1; the header comment and this field must agree. |
 | `site.base_url` | Required absolute `http` or `https` URL of the server. |
 | `site.jsonapi_prefix` | API path prefix, default `/jsonapi`. |
 | `plugins` | Array required by `bakers config check`. Descriptors `{ plugin, export?, with? }` (`options` is an alias of `with`) or constructed plugins. `@bakers-build/addon-essentials` supplies the Markdown renderer and the JSON:API schema, so keep it. The sign-in profile goes here. |
@@ -69,7 +69,7 @@ The report prints `Connection: staging (project-file) - <path>`. The bracketed s
 
 ## Sign-in profiles
 
-A connection declares one `@dropsh/plugin-oauth2` entry with `id: 'bakers'` and `scope: 'bb:session'`, the only scope bakers.build issues. Choose the `type`:
+A connection declares one `@dropsh/plugin-oauth2` entry with `id: 'bakers'` and `scope: 'bb:session'`, the session scope sent in OAuth requests. Its server configuration entity is named `bb_session`; use `bb:session` in connection files. Choose the `type`:
 
 | Type | Use when | Written by |
 |---|---|---|

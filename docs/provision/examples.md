@@ -8,13 +8,7 @@ DDEV runs a project's application and services in containers. Give each worktree
 
 The [DDEV setup example](/addons/ddev/setup) shows preparation, cleanup and a `provision_up` script. Starting DDEV alone does not install your application or import its data; the project's script handles those steps and checks readiness.
 
-The **[DDEV addon](/addons/ddev)** adds tools that agents can use for their worktree's environment:
-
-| Tool | Use it to |
-|---|---|
-| `ddev_status()` | Read the project's status, services and URLs |
-| `ddev_start()` | Start the DDEV environment |
-| `ddev_exec(command)` | Execute a command, such as a test, inside the web container |
+The [DDEV addon](/addons/ddev#agent-tools) owns the tool catalog for inspecting, starting and executing commands inside that environment.
 
 Enable the addon in the machine or project configuration. It also supplies service discovery for Ports when configured as a claimer. The addon provides tools and discovery; your project owns application setup. [Tools and integrations](/provision/tools) explains how callers reach these functions.
 

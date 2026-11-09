@@ -5,8 +5,8 @@ What the claude.ai connector cannot do, which errors to expect, and how to recon
 
 ## Reconnecting / refreshing
 
-- **Token expired or revoked**: claude.ai refreshes automatically using its stored refresh token.
-  If a call starts failing with an authentication error anyway, open **Settings → Connectors**,
+- **Token expired or revoked**: the client must refresh its token or ask you to authorize again.
+  If calls keep failing with an authentication error, open **Settings → Connectors**,
   disconnect and reconnect the bakers.build connector to re-run the sign-in/consent flow.
 - **Permissions changed on your bakers.build account**: nothing to do — permissions are evaluated on
   every request, so the change applies to the next call without reconnecting.

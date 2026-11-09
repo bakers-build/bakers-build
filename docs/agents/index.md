@@ -1,41 +1,26 @@
 # Agents
 
-Agents work on tickets using the instructions and tools you provide. An addon starts the chosen agent program, such as Claude Code or Codex, with its model and security settings.
+Configure agents on an execution machine, then select one by its alias. The guide separates these two tasks.
 
-## Choose your task
-
-Use a configured agent for a ticket, or change what the execution machine offers.
+<span id="choose-your-task"></span>
+<span id="add-an-agent"></span>
+<span id="configure-machine-and-project-settings"></span>
+<span id="select-an-agent-on-a-ticket"></span>
 
 <DocTiles :tiles="[
-  { title: 'Select for a ticket', text: 'The machine already has agents. Choose an alias or route using a ticket label.', link: '#select-an-agent-on-a-ticket', icon: 'ticket', meta: 'Choose a ticket agent →' },
-  { title: 'Set up agents', text: 'Add an installed harness, choose models and check the machine catalog.', link: '/agents/guide', icon: 'terminal', meta: 'Configure agents and models →' }
+  { title: 'Configure agents', text: 'Choose one agent from the catalog or agent routes. Follow a complete machine-file example.', link: '/agents/guide#configure-agents', icon: 'terminal', meta: 'Choose your setup →' },
+  { title: 'Select an agent', text: 'Use the machine default, an alias label or a route label.', link: '/agents/guide#select-an-agent', icon: 'ticket', meta: 'Choose what runs →' }
 ]" />
 
-## Add an agent
+[Configuration → Machine](/configuration/machine#agents) explains file ownership and agent settings; [Agent policy reference](/agents/reference) contains the complete fields and precedence rules.
 
-The **harness** runs the agent session. Install and sign in to it on the execution machine, then enable its [addon](/addons/catalog#agents). An **alias**, such as `codex` or `opus`, names an agent and model.
+<span id="route-work-to-different-agents"></span>
 
-## Configure machine and project settings
+For different selections per workflow state, follow [Use agent routes](/agents/guide#use-agent-routes).
 
-The machine owns harness addons, aliases, defaults and routes. The project defines its workflow, environment and additional tools. Both can set shared security policy. [Configuration reference](/agents/reference) explains ownership.
+<span id="provide-tools-and-access"></span>
 
-## Route work to different agents
-
-A route assigns agents to workflow states, such as Codex for implementation and Opus for review. Add [routing](/agents/guide) when states need different agents.
-
-## Select an agent on a ticket
-
-Use a ticket label with the lowercase prefix `agent:`.
-
-- `agent:codex` selects that alias.
-- `agent:careful` selects a configured route named `careful`.
-- `agent:opus@review` selects Opus only in review.
-
-[Selection rules](/agents/reference#which-agent-runs-a-state)
-
-## Provide tools and access
-
-Each run has a security context and available tools. Review the security settings before extending access.
+## Tools and access
 
 <DocQuickLinks aria-label="Agent tools and access" :items="[
   { label: 'Tools and integrations', text: 'Understand which operations addons make available to agents.', link: '/provision/tools' },

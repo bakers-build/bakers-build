@@ -1,131 +1,45 @@
 # Add lifecycle hooks
 
-Run a repository command or an addon's listener at a worktree's lifecycle points, including a freeze.
+Use hooks to prepare a ticket worktree, refresh it before a run or release its resources when work ends. Use an on-demand tool when the agent needs to choose when an application starts.
 
-**You need:** a committed `.bakers/conductor.config.js`, the standard herdr executor and a command that is safe to run repeatedly.
+**You need:** a working conductor, its committed project configuration, and a project setup command that is safe to repeat. Choose that command from your repository's existing scripts.
 
-1. Add a `hooks` object to `.bakers/conductor.config.js`. Each value is one shell command string. This complete file adds five hooks to an existing config:
+1. Merge one hook into `.bakers/conductor.config.js`, keeping the other settings:
 
    ```js
-   export default {
-     bakers: { project: 'demo' },
-     addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
-     hooks: {
-       after_create: 'pnpm install --frozen-lockfile',
-       before_run: 'git status --short',
-       after_done: 'bakers ports down mailpit',
-       on_freeze: 'docker compose stop',
-       on_resume: 'docker compose start',
-     },
-   };
+   hooks: { after_create: 'sh scripts/prepare.sh' },
    ```
 
-   Keep existing values; script longer commands. `bakers config init --scope project` can write `hooks` from `--after-create '<command>'` and `--after-done '<command>'`.
+   Supply `scripts/prepare.sh`; the example does not create it. See the [Node.js example](/provision/node-project) for a locked dependency install, or [Compose](/provision/docker-compose) for service setup and scoped cleanup.
 
-2. Make every command repeatable. It runs through `sh -c` in the ticket's worktree with your permissions, so its tool must be on the conductor's `PATH`.
+2. Run the command twice in a disposable worktree. It should prepare missing resources and preserve resources that are already ready. Keep long-running servers out of blocking setup commands.
 
-3. Verify:
+3. Run `bakers config check --scope project`, then dispatch a small ticket. Check the actual files/services and `.bakers/log.txt` for hook failures.
 
-   ```sh
-   bakers config check --scope project
-   ```
+**Done when:** the ticket worktree has the required environment and repeat setup is safe. A valid config or a started agent alone does not establish readiness.
 
-   It proves only that the file is valid, so also run the command twice in a disposable worktree and watch one dispatch.
-
-**Done when:** a new worktree shows the effect of `after_create` and the log shows no `lifecycle hook failed` line.
-
-::: tip Ask your AI
-"Read this repository's conductor config and add an `after_create` hook using the project's existing install command."
-:::
+Hooks run worktree code with the conductor user's permissions, outside the agent sandbox. Failures are logged and work continues; put required checks in `WORKFLOW.md`. Cleanup must affect only this worktree and preserve needed data.
 
 ## When each hook runs
 
-| Hook | Runs | Use for |
-|---|---|---|
-| `after_create` | Once per worktree: on a dispatch that created it, or that finds no recorded success of this hook for it; repeated until it succeeds | One-time setup |
-| `before_run` | After `after_create` (and a fresh worktree's opening layout), before the agent starts | Quick refresh, launch env |
-| `after_run` | After an ended run's worker stopped, before the run is closed; at once when a launch fails | Stopping a run's sidecar |
-| `after_done` | During cleanup of a finished ticket, before the worktree is removed | Releasing local resources |
-| `on_freeze` | Once when a poll sees the ticket [frozen](/get-started/daily-work/freeze-a-ticket), in its worktree on this machine | Stopping local services |
-| `on_resume` | Once when a poll sees it unfrozen | Restarting them |
-
-Runs resume and a failed close write repeats `after_run`, so tolerate repetition. If the worktree directory is gone, `after_run` and `after_done` run nothing.
+The [six-hook catalog](/configuration/project/hooks#when-each-hook-runs) defines preparation, run, cleanup, freeze and resume timing, including retries and reuse.
 
 ## Environment
 
-`after_create`, `before_run`, `on_freeze` and `on_resume` inherit the conductor's environment, these values and the ticket's environment variables:
-
-| Variable | Value |
-|---|---|
-| `BB_URL` | Server URL of the selected connection |
-| `BB_ID` | Ticket UUID |
-| `BB_TICKET_IDENTIFIER` | Ticket identifier |
-| `BB_STATE` | Run's start state; current state for freeze hooks |
-| `BB_RUN_UUID` | Current run UUID; unset for freeze hooks |
-| `BB_TUNNEL` | `1` if the machine allows preview tunnels, else `0` |
-| `WORKSPACE_ROOT` | Checkout root; the working directory is the ticket worktree |
-| `TICKET_URL` | Origin issue URL, when there is one |
-| `BB_PROJECT`, `BB_PROJECT_ID` | Project name and UUID, when known |
-| `BB_WORKSPACE`, `BB_WORKSPACE_ID` | Ticket workspace name and UUID, when known |
-| `BB_WORKSPACE_IDS` | Comma-separated reachable workspace UUIDs |
-
-Optional values are omitted rather than empty. The `after_run` command gets them rebuilt from the current ticket; the `after_done` command gets none of them.
+The [environment reference](/configuration/project/hooks#environment) lists injected variables. The `after_done` shell command receives no injected ticket variables; use a validated worktree-local identity for cleanup.
 
 ## Failure behavior
 
-Hooks are best effort: a failing command or listener is logged and dispatch or cleanup continues. A required gate belongs in the `WORKFLOW.md` checks. A top-level `hooks` object replaces the herdr addon's `with.hooks` as a whole.
+See [failure and retry behavior](/configuration/project/hooks#failure-behavior) before relying on setup or cleanup.
 
 ## Provision on an agent's request
 
-`provision_up` never runs on its own. The conductor offers it to runs as the [tool](/addons/build/tools#shipped-tools) `provision_up(profile?)`, so a sandboxed agent can bring its environment up without trusting the runtime's CLI. An agent calls it before a check that needs a running environment, with the profile your `WORKFLOW.md` `bb-phase-provision` hint names. The value is one command, or a command per profile; the agent picks a configured profile, never the command:
-
-```js
-hooks: {
-  provision_up: {
-    test: 'sh scripts/provision.sh test',
-    'test-fresh': 'sh scripts/install.sh test',
-  },
-},
-```
-
-Agents call it whenever a check needs the environment, so make the command cheap to repeat. It follows this contract:
-
-| The environment is | The command |
-|---|---|
-| running the requested profile, and its base URL answers | changes nothing, prints the base URL and exits 0 |
-| stopped, with the requested profile installed | starts it, checks the URL and prints it |
-| missing, or running another profile | installs the requested profile, checks the URL and prints it |
-| failing to install, or its URL does not answer | exits non-zero with its output |
-
-The base URL *answers* when it returns an HTTP status below 500, so a site that fails with 500 is not ready. A profile that must start from a clean install every time, such as a disposable import check, gets its own key whose command always reinstalls (`test-fresh` above). The conductor runs the command as configured and checks nothing itself; a command that always reinstalls still works, it is only slower. A runtime addon's page may show one implementation.
-
-It runs through `sh -c` in the run's worktree with the conductor's environment, up to 30 minutes. It outlives the agent that called it and ends early only when the ticket is torn down or the conductor stops; a call while the same profile runs in that worktree waits for that run and gets its result. Unlike the other hooks it is not best effort: a non-zero exit reaches the agent as a tool error. Like `after_create`, it runs worktree code with your permissions.
+Configure [`provision_up`](/configuration/project/hooks#provision-on-an-agent-s-request) when checks need a running environment. It is an explicit tool call, not an automatic lifecycle event. Your script owns reuse, readiness and the returned URL.
 
 ## Add a listener from an addon
 
-A conductor addon's preset can export a [`hooks` accumulator](/addons/build/contracts#surfaces-and-extension-points); each listener defines any of these slots:
-
-```ts
-import type { Preset } from '@bakers-build/conductor/contract';
-
-export const hooks: Preset['hooks'] = (acc) => [
-  ...acc,
-  {
-    id: 'demo-sidecar',
-    async before_run(ctx) {
-      ctx.env.DEMO_SIDECAR_URL = 'http://127.0.0.1:4599';
-    },
-    async after_run(ctx) {
-      // stop what before_run started for ctx.run?.uuid
-    },
-  },
-];
-```
-
-Listeners run awaited in `addons` order, children first, before the slot's project command. `ctx` carries `worktreePath`, `ticket`, `state`, `env` and `run`. At dispatch a key added to `env` reaches later listeners, the command and the agent; reserved keys (`BB_*`, `WORKSPACE_ROOT`, `TICKET_URL`) and invalid entries are restored. Never log `env` values.
-
-At `after_run` and `after_done`, `ctx` is rebuilt from the records, also after a restart: find what you started by `ctx.run.uuid`.
+Addon authors use the existing [hook listener contract](/addons/build/contracts#surfaces-and-extension-points).
 
 ## Clean up a preview
 
-`after_done: 'bakers ports down mailpit'` stops a tunnel opened with `bakers ports up mailpit`. See [Ports](/addons/ports).
+`after_done: 'bakers ports down mailpit'` closes a tunnel opened for that service. It does not stop the application. [Ports](/addons/ports) owns service sharing and tunnel cleanup.
