@@ -30,6 +30,8 @@
 #     addons key or a line-start ternary gives a log line and no change
 #   - a broken machine file stays untouched, with exit 0 and a log line
 #   - none removes the marked lines even from a file that throws on import here
+#   - a missing begin or end marker, or a broken file at none, leaves the file
+#     unchanged with a log line
 #   - install.sh: none starts and installs nothing even with the token file and
 #     frpc.json present; cloudflare-quick installs cloudflared and starts no
 #     connector; cloudflare and frp install their client and start it only
@@ -317,6 +319,28 @@ env -u BB_PREVIEW_UNSET node "$SCRIPT" none "$M" >"$OUT" 2>&1 || fail "none exit
 cmp -s "$M" "$SCRATCH/throws" || fail "none kept marked lines in a file that throws: $(diff "$SCRATCH/throws" "$M")"
 grep -q 'set for none' "$OUT" || fail "none on a throwing file: $(cat "$OUT")"
 pass "none removes the marked lines from a file that does not import here"
+
+# A marker line deleted by hand: every transport leaves the file and names the marker.
+for gone in end begin; do
+  for t in none cloudflare-quick; do
+    printf "export default {\n machine_id: 'x',\n secret: 'keep',\n addons: [\n  { use: '@x/hand' },\n ],\n};\n" > "$M"
+    edit cloudflare-quick
+    grep -v "bakers-ddev preview: $gone" "$M" > "$SCRATCH/cut" || true
+    cp "$SCRATCH/cut" "$M"
+    edit "$t"
+    cmp -s "$M" "$SCRATCH/cut" || fail "$t with no $gone marker changed the file: $(diff "$SCRATCH/cut" "$M")"
+    grep -qi 'marker' "$OUT" || fail "$t with no $gone marker: no log line naming it: $(cat "$OUT")"
+  done
+done
+pass "a missing begin or end marker leaves the file unchanged and is named"
+
+# none on a broken file that holds a marked line leaves it as it is.
+printf "export default {\n tunnel: true, // bakers-ddev preview\n machine_id: 'x',\n" > "$M"
+cp "$M" "$SCRATCH/broken"
+edit none
+cmp -s "$M" "$SCRATCH/broken" || fail "none rewrote a broken file: $(diff "$SCRATCH/broken" "$M")"
+grep -q 'set for none' "$OUT" && fail "none logged success on a broken file: $(cat "$OUT")"
+pass "none leaves a broken file with a marked line untouched"
 
 # --- F6: client selection in install.sh ------------------------------------
 # Every tool install.sh checks for is a stub, so only the preview section acts.

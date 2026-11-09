@@ -49,6 +49,16 @@ function load(text, dir) {
   }
 }
 
+/** Whether `text` parses as a module; it runs nothing. */
+function parses(text) {
+  try {
+    execFileSync(process.execPath, ['--input-type=module', '--check'], { input: text, stdio: ['pipe', 'ignore', 'ignore'], timeout: 10_000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** JSON with object keys sorted, so two loaded configs compare by meaning. */
 const canonical = (value) =>
   JSON.stringify(value, (_, v) =>
@@ -120,14 +130,17 @@ function topKey(blank, key, start) {
 
 /**
  * The text without every line the parameter wrote. A created `addons: [` / `],` pair stays when
- * the user added entries of their own inside it.
+ * the user added entries of their own inside it. Null when a begin or end marker lacks its pair.
  */
 function unmarked(text) {
   const out = [];
   let block = null;
   for (const line of text.split('\n')) {
-    if (line.trim() === BEGIN) block = [];
-    else if (line.trim() === END) {
+    if (line.trim() === BEGIN) {
+      if (block) return null;
+      block = [];
+    } else if (line.trim() === END) {
+      if (!block) return null;
       const kept = block.filter((l) => l.trim() !== QUICK_ENTRY.trim());
       const own = kept.filter((l) => !/^\s*(addons\s*:\s*\[|\],)\s*$/.test(l));
       if (own.length) out.push(...kept);
@@ -135,7 +148,7 @@ function unmarked(text) {
     } else if (block) block.push(line);
     else if (!line.trimEnd().endsWith(MARK)) out.push(line);
   }
-  return out.join('\n');
+  return block ? null : out.join('\n');
 }
 
 /** `base` (no marked lines) with the transport's lines; `own` is its loaded config. Null: leave the file. */
@@ -187,13 +200,20 @@ function main() {
   mkdirSync(dir, { recursive: true });
   const text = exists ? readFileSync(path, 'utf8') : NEW_FILE;
   const base = unmarked(text);
-  // none only removes lines this script marked, so it needs no import of a file this environment may not load.
-  const own = transport === 'none' ? {} : load(base, dir);
-  if (!own) return log(`${path} does not load; left unchanged`);
-  const next = transport === 'none' ? base : edit(base, transport, own);
-  if (next === null || (exists && next === text)) return;
-  if (transport !== 'none' && canonical(load(next, dir)) !== canonical(intended(own, next))) {
-    return log(`cannot place tunnel and the ports entry so they take effect; add them by hand; ${path} left unchanged`);
+  if (base === null) return log(`${path} has a begin or end marker without its pair; remove the marked lines by hand; left unchanged`);
+  let next = base;
+  if (transport === 'none') {
+    if (next === text) return;
+    // none only removes lines this script marked, so a syntax check does without importing a file this environment may not load.
+    if (!parses(next)) return log(`${path} would not parse; left unchanged`);
+  } else {
+    const own = load(base, dir);
+    if (!own) return log(`${path} does not load; left unchanged`);
+    next = edit(base, transport, own);
+    if (next === null || (exists && next === text)) return;
+    if (canonical(load(next, dir)) !== canonical(intended(own, next))) {
+      return log(`cannot place tunnel and the ports entry so they take effect; add them by hand; ${path} left unchanged`);
+    }
   }
   const tmp = `${path}.preview-${process.pid}`;
   writeFileSync(tmp, next, { mode: exists ? statSync(path).mode & 0o777 : 0o644 });
