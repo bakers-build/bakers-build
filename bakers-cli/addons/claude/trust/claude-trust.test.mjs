@@ -81,9 +81,11 @@ test('writes nothing when the worktree is already trusted', () => {
   const file = path.join(dir, '.claude.json');
   const past = new Date(Date.now() - 60_000);
   fs.utimesSync(file, past, past);
+  // Compare against the stored mtime: filesystems round `past` differently.
+  const before = fs.statSync(file).mtimeMs;
   trust(dir);
   assert.equal(fs.readFileSync(file, 'utf8'), text);
-  assert.equal(fs.statSync(file).mtimeMs, past.getTime());
+  assert.equal(fs.statSync(file).mtimeMs, before);
 });
 
 test('leaves an unparsable file untouched, warns and still runs the command', () => {
