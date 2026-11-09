@@ -20,7 +20,7 @@ const en = {
   copy: { label: 'Copy command', done: 'Command copied' },
   hero: {
     title: 'A ticket-driven AI software factory.',
-    text: "Before your team is up, the prep is done. Agents work every ticket on your development machine or on remote workers, and at every step a developer can look into the oven.",
+    text: "Before your team is up, the prep is done. Agents work every ticket on your development machine or on remote workers, and at every step you can look into the oven.",
     install: 'or self-host for free',
     note: 'Open source. Runs on your machines.',
     lineLabel: 'The line: four stations, Plan, Build, Review and Ship, each worked by an agent. At each one a person decides: approve plan, confirm result, confirm verdict, authorize merge.',
@@ -113,7 +113,7 @@ const de: Copy = {
   copy: { label: 'Befehl kopieren', done: 'Befehl kopiert' },
   hero: {
     title: 'Eine KI-Softwarefabrik. Vom Ticket bis zum Merge.',
-    text: 'Bevor dein Team da ist, ist die Vorbereitung erledigt. Agenten arbeiten jedes Ticket auf deinem Entwicklungsrechner oder auf Remote-Workern ab, und bei jedem Schritt kann ein Entwickler in den Ofen schauen.',
+    text: 'Bevor dein Team da ist, ist die Vorbereitung erledigt. Agenten arbeiten jedes Ticket auf deinem Entwicklungsrechner oder auf Remote-Workern ab, und bei jedem Schritt kannst du in den Ofen schauen.',
     install: 'oder kostenlos selbst hosten',
     note: 'Open Source. Läuft auf deinen Rechnern.',
     lineLabel: 'Die Backstraße: vier Stationen, Planen, Umsetzen, Prüfen und Fertig, jede von einem Agenten bearbeitet. An jeder entscheidet ein Mensch: Plan freigeben, Ergebnis bestätigen, Urteil bestätigen, Merge freigeben.',

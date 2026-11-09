@@ -7,7 +7,7 @@
 </p>
 
 Every ticket moves through the same fixed steps: plan, build, review, ship. AI agents do the work
-on your development machine or on remote workers, and at every step a developer can look in.
+on your development machine or on remote workers, and at every step you can look in.
 Everyone works on their own terms: their own AI subscription, their own machine, their own client.
 The line is shared, the tools are not.
 
