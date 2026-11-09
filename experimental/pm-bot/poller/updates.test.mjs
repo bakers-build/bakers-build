@@ -78,6 +78,16 @@ test('a run first seen already ended, as after an outage, posts its start line a
   assert.deepEqual(pass([ticket({ runs: [run('r1', 'failed')] })], { previous: first.next.records }).posts, []);
 });
 
+test('summary sentences with a run ID or an agent name are left out', () => {
+  const body = '## Outcome\n\nRun 0b6a3f0e-5c1d-4a7e-9f21-3d4c5b6a7e8f stopped. Opus wrote the price importer.';
+  assert.deepEqual(pass([ticket({ comments: [summary('c1', body)] })]).posts, []);
+});
+
+test('plain sentences with everyday words or lower-case codes are kept', () => {
+  const body = '## Outcome\n\nThe bug is fixed and the review page is done. Files are read as utf-8 now.';
+  assert.deepEqual(texts(pass([ticket({ comments: [summary('c1', body)] })])), ['The bug is fixed and the review page is done. Files are read as utf-8 now.']);
+});
+
 test('a new summary posts the first two sentences of its Outcome, without Markdown, once', () => {
   const body = '### 🎯 Outcome\n\nThe price list now updates **every night**. Old prices stay in the [history](https://x.example/h). Nothing else changed.\n\n### ✅ Success\n\nAll fine.';
   const result = pass([ticket({ comments: [summary('c1', body)] })]);

@@ -10,8 +10,13 @@ const ENDED = ['done', 'failed', 'expired', 'cancelled'];
 // Run starts closer together than this collapse into the first one's line.
 const COLLAPSE = 5 * 60 * 1000;
 
-// Words of the tool, not of the requester: states, recipes and ticket types.
-const INTERNAL = /\b(qualification|plan|working|review|done|cancelled|matt|superpowers|verify|deploy-and-release|feature|bug|chore)\b|\b[A-Z][A-Z0-9]*-\d+\b|`/i;
+// Words of the tool, not of the requester: code, where agents put state, type and comment-type
+// names; ticket and AC identifiers; run IDs; recipe and agent names. Everyday words such as
+// "review" or "done" stay, as they mean the same to the requester.
+const INTERNAL = [
+  /`|\b[A-Z][A-Z0-9]*-\d+\b|\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/,
+  /\b(?:qualification|matt|superpowers|deploy-and-release|opus|sonnet|haiku|fable|claude|codex)\b/i,
+];
 
 /**
  * The plain sentences among the first two of a summary's Outcome section, escaped for Slack;
@@ -26,7 +31,7 @@ export function outcome(markdown) {
   return text
     .split(/(?<=[.!?])\s+/)
     .slice(0, 2)
-    .filter((s) => s && !INTERNAL.test(s))
+    .filter((s) => s && !INTERNAL.some((r) => r.test(s)))
     .map((s) => escape(s.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\*\*|__|(?<!\w)[*_]|[*_](?!\w)/g, '').trim()));
 }
 
