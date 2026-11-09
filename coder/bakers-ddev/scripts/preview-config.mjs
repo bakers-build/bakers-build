@@ -22,7 +22,7 @@ const log = (msg) => console.log(`preview: ${msg}`);
 /** Whether `text` parses as a module; checked on a copy, the file itself never runs. */
 function parses(text) {
   const copy = join(tmpdir(), `bakers-preview-${process.pid}.mjs`);
-  writeFileSync(copy, text);
+  writeFileSync(copy, text, { mode: 0o600 }); // the machine file may hold secrets
   try {
     execFileSync(process.execPath, ['--check', copy], { stdio: 'ignore' });
     return true;
@@ -56,7 +56,10 @@ function scan(text) {
       for (; i < stop; i++) if (text[i + 1] === '\n') depths.push(depth);
       continue;
     } else if (c === '"' || c === "'" || c === '`') {
-      for (i++; i < text.length && text[i] !== c; i++) if (text[i] === '\\') i++;
+      for (i++; i < text.length && text[i] !== c; i++) {
+        if (text[i] === '\\') i++;
+        if (text[i] === '\n') depths.push(depth);
+      }
     } else if (c === '{' || c === '[' || c === '(') depth++;
     else if (c === '}' || c === ']' || c === ')') depth--;
     code += text.slice(from, i + 1);
@@ -64,14 +67,22 @@ function scan(text) {
   return { depths, code };
 }
 
-/** The text without every line the parameter wrote. */
+/**
+ * The text without every line the parameter wrote. A created `addons: [` / `],` pair stays when
+ * the user added entries of their own inside it.
+ */
 function unmarked(text) {
   const out = [];
-  let inBlock = false;
+  let block = null;
   for (const line of text.split('\n')) {
-    if (line.trim() === BEGIN) inBlock = true;
-    else if (line.trim() === END) inBlock = false;
-    else if (!inBlock && !line.trimEnd().endsWith(MARK)) out.push(line);
+    if (line.trim() === BEGIN) block = [];
+    else if (line.trim() === END) {
+      const kept = block.filter((l) => l.trim() !== QUICK_ENTRY.trim());
+      const own = kept.filter((l) => !/^\s*(addons\s*:\s*\[|\],)\s*$/.test(l));
+      if (own.length) out.push(...kept);
+      block = null;
+    } else if (block) block.push(line);
+    else if (!line.trimEnd().endsWith(MARK)) out.push(line);
   }
   return out.join('\n');
 }
@@ -89,14 +100,14 @@ function edit(text, transport) {
   }
   const hasPorts = /['"]@bakers-build\/addon-ports['"]/.test(code);
   // Looked up before any splice below, which shifts lines against depths.
-  const ownTunnel = top(/^\s*tunnel\s*:/) !== -1;
+  const ownTunnel = top(/^\s*["']?tunnel["']?\s*:/) !== -1;
   if (transport === 'cloudflare-quick') {
     const block = [` ${BEGIN}`, ` ${QUICK_ENTRY}`, ` ${END}`];
-    const addons = top(/^\s*addons\s*:/);
+    const addons = top(/^\s*["']?addons["']?\s*:/);
     if (hasPorts) log('machine.config.js has its own addon-ports entry; it wins over the parameter');
     // A created addons key sits inside the markers, so none removes it with the entry.
     else if (addons === -1) lines.splice(head + 1, 0, ` ${BEGIN}`, ' addons: [', ` ${QUICK_ENTRY}`, ' ],', ` ${END}`);
-    else if (/^\s*addons\s*:\s*\[\s*$/.test(lines[addons])) lines.splice(addons + 1, 0, ...block);
+    else if (/^\s*["']?addons["']?\s*:\s*\[\s*$/.test(lines[addons])) lines.splice(addons + 1, 0, ...block);
     else log('cannot place the ports entry in the addons list; add it by hand');
   } else if (!hasPorts) {
     log(`no addon-ports entry for ${transport}; add the ports entry by hand (README › Optional previews)`);

@@ -16,7 +16,10 @@
 #     names the missing operator ports entry
 #   - an unmarked addon-ports entry or tunnel key wins over the parameter; a
 #     nested tunnel key or a commented-out ports entry does not
-#   - a created addons key goes again at none, and the file mode stays
+#   - a created addons key goes again at none, and the file mode stays; a
+#     hand addon added inside that list keeps it
+#   - a multi-line template literal or quoted keys still give one addons key
+#     holding the Quick entry
 #   - a broken machine file stays untouched, with exit 0 and a log line
 #   - install.sh: none starts and installs nothing even with the token file and
 #     frpc.json present; cloudflare-quick installs cloudflared and starts no
@@ -130,6 +133,32 @@ edit cloudflare-quick
 edit none
 cmp -s "$M" "$SCRATCH/bare.js" || fail "none did not restore a file without addons: $(diff "$SCRATCH/bare.js" "$M")"
 pass "a created addons key goes again at none, and the file mode stays"
+
+# An addon added by hand inside the created list keeps that list.
+edit cloudflare-quick
+sed "s#^ addons: \[\$# addons: [\n  { use: '@acme/hand' },#" "$M" > "$SCRATCH/h1" && cp "$SCRATCH/h1" "$M"
+edit cloudflare-quick
+exported | grep -q '@acme/hand' || fail "a hand addon in the created list is gone: $(cat "$M")"
+[ "$(ports_entries)" = 1 ] || fail "hand addon in the created list: $(ports_entries) addon-ports entries"
+edit none
+exported | grep -q '@acme/hand' || fail "none removed a hand addon in the created list: $(cat "$M")"
+[ "$(ports_entries)" = 0 ] || fail "none kept the Quick entry next to a hand addon"
+pass "a hand addon inside the created addons list survives cloudflare-quick and none"
+
+# One addons key holding the Quick entry, whatever comes before it or how keys are quoted.
+one_addons() {
+  [ "$(grep -cE "^\s*[\"']?addons[\"']?\s*:" "$M")" = 1 ] || fail "$1: not exactly one addons key: $(cat "$M")"
+  [ "$(ports_entries)" = 1 ] || fail "$1: $(ports_entries) addon-ports entries"
+  exported | grep -q 'addon-ddev' || fail "$1: the hand addon is gone"
+}
+printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' label: `two' 'lines`,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+edit cloudflare-quick
+one_addons "a multi-line template literal before addons"
+printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' "tunnel": true,' ' "addons": [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+edit cloudflare-quick
+one_addons "quoted keys"
+[ "$(grep -c 'tunnel' "$M")" = 1 ] || fail "a quoted hand tunnel key got a duplicate: $(cat "$M")"
+pass "a template literal or quoted keys before the list leave one addons key with the Quick entry"
 
 # --- F5: a broken file stays untouched -------------------------------------
 printf 'export default {\n machine_id: "x",\n' > "$M"
