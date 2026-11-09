@@ -6,18 +6,19 @@ The approved scope is the ticket's spec `5fa2cbe2-0646-4a36-956b-2ff19af2a894`, 
 
 ## Decision
 
-Build on the agents' **native skill loading**. Do not build our own loading mechanism, and do not run `npx skills` inside runs.
+Use each harness's **own plugin installation**, but into a **run-scoped agent home**, never into the user's home. Do not build our own loading mechanism, and do not run `npx skills` inside runs. It must work for every project that uses bakers.build, with whatever plugins it brings (hooks, namespaced skills, MCP), not only for our own skills.
 
-- The **project** declares each skill collection **once**, as a pinned Git source (`repo` + `ref`), in a new top-level `skills` list of its committed `conductor.config.js`. A committed lock file, `.bakers/skills.lock.json`, records each entry's resolved commit and content hash. There is **no machine-level declaration**: every machine that runs the project's tickets runs the same skill set at the same version.
-- This includes the `bakers` skills. They are one entry in the list at a pinned version, not a globally installed plugin snapshot per machine.
-- Skills and plugins installed on a machine (user scope) **do not count in a run**. Where an agent allows it, the addon hides them, so only the project's set is visible.
-- The conductor fetches each locked commit into a local cache, verifies it against the lock and fails the run start on a mismatch. Before each run it places that checkout's skills where the run's agent looks natively:
-  - `.agents/skills/<name>` in the worktree serves Codex, pi, OpenCode, Grok and Kimi.
-  - `.claude/skills/<name>` serves Claude Code.
-- An agent addon may choose a **plugin-native** route instead when the collection ships that agent's plugin manifest and the plugin logic matters (hooks, namespaced names). Examples: Claude `--plugin-dir <checkout>`, pi `-e <extension>`.
-- The bar is **skill parity**: the same `SKILL.md` set under the same names in every agent. Hooks, MCP entries and settings stay native where an agent supports them and are listed as gaps elsewhere.
+- The **project** declares each plugin **once**, as a pinned Git source (`repo` + `ref`), in a new top-level `plugins` list of its committed `conductor.config.js`. A committed lock file, `.bakers/plugins.lock.json`, records each entry's resolved commit and content hash. There is **no machine-level declaration**: every machine that runs the project's tickets runs the same plugins at the same version. This includes the `bakers` skills.
+- The conductor fetches each locked commit into a local cache and verifies it against the lock; a mismatch fails the run start.
+- **Every agent addon implements `installPlugins`.** Before the run, the addon (not the model) builds an agent home for this lock state, installs the locked plugins there with the harness's own command, and starts the agent with that home. Plugin features work as the harness defines them, and the user's own installed plugins are not visible in the run.
+- Where a harness cannot carry a plugin feature (for example hooks on Kimi), the run start names the gap instead of losing it silently. The plugin's skills still reach every harness through the shared `SKILL.md` format.
 
-A playground proof ran Claude Code and Codex through the conductor with superpowers v7.0.0 declared once ([Proof](#proof)).
+Two playground proofs back this ([Proof](#proof)):
+
+1. Skills placed from one declaration reached Claude Code and Codex.
+2. A plugin with a hook and namespaced cross-references, installed nowhere in user space, loaded fully:
+   - **Claude Code:** from project settings.
+   - **Codex:** from a run-scoped `CODEX_HOME`. Project settings alone failed.
 
 ## Survey per agent
 
@@ -60,9 +61,9 @@ All six read the shared format and load progressively: the name and description 
 
 - **Plain skills** (every `SKILL.md` directory, with its references and scripts) travel to any agent through a skill directory or `npx skills`.
 - **Plugin-only logic** does not: hooks, MCP entries, settings (`userConfig`, a project's `enabledPlugins` such as disabling `bakers@bakers` in this repository) and marketplace version pinning. None of our plugins ships MCP. Hooks are the real gap: superpowers and ponytail need per-agent code, and both upstreams already ship it (an OpenCode JS plugin, a pi extension, `.codex-plugin`).
-- **Names.** In Claude a plugin skill is `plugin:skill`. A skill placed in a skill directory is bare in every agent. A body reference such as `superpowers:brainstorming` therefore names nothing literally outside a Claude or Codex plugin install. The agent maps it by description. The Codex proof run shows this mapping for bare names ([Proof](#proof)). No surveyed tool rewrites such references. Two rules keep names stable:
+- **Names.** A plugin installed through the harness's own plugin system keeps its namespace: round 2 resolved `bb-probe:probe-alpha` → `bb-probe:probe-beta` in Claude Code and in Codex ([Proof](#proof)). A skill placed as a bare folder has no namespace in any agent, so `superpowers:brainstorming` names nothing literally there and the agent can only map it by description. No surveyed tool rewrites such references. For skills that must also work on a harness without plugins:
   - Write cross-references bare (`brainstorming`), as mattpocock-skills and our recipes already do.
-  - Keep a collection's skill names unique across collections, because a bare install has no namespace to separate them.
+  - Keep skill names unique across plugins, because a bare install has no namespace to separate them.
   - The three `bakers:` references in our own bundle are follow-up work.
 - **`npx skills`** carries plain skills only. It does carry pinning (`owner/repo@ref` plus `skills-lock.json`). It does not carry the namespace, hooks, MCP or settings.
 
@@ -70,8 +71,8 @@ All six read the shared format and load progressively: the name and description 
 
 | Tool | Agents | Carries | Pinning | Status | Fit |
 |---|---|---|---|---|---|
-| [`npx skills`](https://github.com/vercel-labs/skills) (vercel-labs) | about 79, including all six | `SKILL.md` folders; reads `.claude-plugin` manifests for discovery | `@ref`, `skills-lock.json` | 38.6k stars, v1.7.6 (2026-11-03), MIT | Good for humans installing skills; in a run it needs npm and network and writes into agent folders. Its layout (`.agents/skills` + symlinks) is the one we adopt. |
-| [dotagents](https://github.com/getsentry/dotagents) (Sentry) | Claude, Cursor, Codex, Copilot, Grok, VS Code, OpenCode, pi | skills, MCP, subagents, whole plugins (Agent Plugins v1); hooks only for Claude, Cursor, VS Code | `agents.toml` + `agents.lock` | 261 stars, 3.4.0 (2026-10-20), MIT | The only tool that carries plugins across agents with a lockfile; worth a follow-up evaluation as the resolver behind our `skills` list. |
+| [`npx skills`](https://github.com/vercel-labs/skills) (vercel-labs) | about 79, including all six | `SKILL.md` folders; reads `.claude-plugin` manifests for discovery | `@ref`, `skills-lock.json` | 38.6k stars, v1.7.6 (2026-11-03), MIT | Good for humans installing skills; in a run it needs npm and network and writes into agent folders. Its layout (`.agents/skills` + symlinks) is the floor for harnesses without plugins. |
+| [dotagents](https://github.com/getsentry/dotagents) (Sentry) | Claude, Cursor, Codex, Copilot, Grok, VS Code, OpenCode, pi | skills, MCP, subagents, whole plugins (Agent Plugins v1); hooks only for Claude, Cursor, VS Code | `agents.toml` + `agents.lock` | 261 stars, 3.4.0 (2026-10-20), MIT | The only tool that carries plugins across agents with a lockfile; worth evaluating as the per-harness projector behind `installPlugins`. |
 | [rulesync](https://github.com/dyoshikawa/rulesync) | dozens | rules, MCP, commands, subagents, skills, hooks per tool | none | 1.6k stars, very active, MIT | Generator of committed per-tool files; heavier than we need. |
 | [ruler](https://github.com/intellectronica/ruler) | about 30 | rules, MCP, experimental skills | none | 3.0k stars, beta, MIT | Rules focus. |
 | [openskills](https://github.com/numman-ali/openskills) | AGENTS.md readers | skills plus an AGENTS.md index | none | 10.8k stars, idle since January | Superseded by native loading. |
@@ -83,21 +84,22 @@ Superpowers, ponytail and mattpocock-skills use no sync tool: each upstream ship
 
 ## Options
 
-| | 1. Native placement per agent | 2. One shared native location | 3. Own conductor-served mechanism |
+| | 1. Place skill folders per agent | 2. Native plugin install into a run-scoped agent home | 3. Own conductor-served mechanism |
 |---|---|---|---|
-| Shape | Conductor places each declared collection where the run's agent looks (`.agents/skills`, `.claude/skills`, `--skill`, `--plugin-dir`) | Only `.agents/skills`, with adapters where an agent does not read it | Skill index in the run prompt and a "load skill" tool on the conductor's MCP server |
-| Coverage | all six | five; Claude Code needs an adapter, pi needs trust or `--skill` | every agent with MCP; the skill is not a native skill |
-| Sandbox | links in the worktree, read-only targets; no new grants | same | none; served by the tool server |
-| Update path | change `ref` and relock in the project, commit; next run uses it on every machine | same | same |
-| Versioning | committed lock (commit + hash), verified per run, recorded in the run | same | same |
-| Plugin logic | native per agent where the addon picks the plugin route | lost unless adapters add it | lost: no hooks, no description-based auto-trigger, no Skill-tool semantics |
-| What breaks | pi project skills without trust (solved by `--skill`); `plugin:skill` references outside plugins | Claude Code sees nothing without the adapter | progressive disclosure is reimplemented; agents load by our tool instead of their own; every agent's skill UI shows nothing |
+| Shape | Conductor links each declared collection's `SKILL.md` folders where the run's agent looks (`.agents/skills`, `.claude/skills`, pi `--skill`) | Each agent addon installs the declared plugins with the harness's own command into an agent home for this lock state and starts the agent with it | Skill index in the run prompt and a "load skill" tool on the conductor's MCP server |
+| Coverage | skills in all six | full plugins where the harness has a plugin system (Claude, Codex, pi, OpenCode, Grok); skills only on Kimi | every agent with MCP; the skill is not a native skill |
+| Plugin logic | lost: no hooks, no `plugin:skill` names, no MCP | native: hooks, namespaces and MCP as the harness defines them | lost |
+| User-space plugins | visible unless hidden per agent | not visible: the run uses its own home | visible |
+| Sandbox | links in the worktree | the home is written by the addon before launch, outside the agent's sandbox; the agent reads it | none |
+| Update path | change `ref`, relock, commit | same; a new lock state builds a new home | same |
+| Versioning | committed lock, verified per run | same | same |
+| What breaks | every plugin that relies on hooks or namespaced references (superpowers, ponytail) | per-harness work: login, folder trust and transcript paths must follow the home | progressive disclosure is reimplemented; no auto-trigger; no plugin logic |
 
-Option 2 is option 1 with one placement for most agents. The recommendation keeps that placement as the default, so 1 and 2 merge. Option 3 duplicates what all six agents already do natively and loses auto-triggering and plugin logic.
+Option 1 is what `npx skills` does: it works for plain skills and fails for plugins. bakers.build projects bring arbitrary plugins, so option 1 alone is not enough. It stays the floor for harnesses without a plugin system. Option 3 duplicates what every harness already does natively.
 
 ## Recommendation
 
-**Option 1 with option 2's shared directory as the default placement.** It builds on the agents' native skill and plugin systems, not on `npx skills`. It adopts `npx skills`' canonical layout (`.agents/skills` plus links) and its pin-by-ref idea. dotagents is the candidate to evaluate as the resolver later.
+**Option 2, with option 1 as the floor.** Each agent addon implements `installPlugins`. It builds on the harnesses' own plugin systems, isolated per run, not on `npx skills`. dotagents already projects one plugin into each harness's format and is the candidate to evaluate before writing every addon's install by hand.
 
 ### Addon sketch
 
@@ -106,46 +108,55 @@ Declaration, once, in the project's committed config:
 ```js
 // .bakers/conductor.config.js
 export default {
-  skills: [
-    { repo: 'https://github.com/bakers-build/bakers-build.git', ref: 'v0.61.2', path: '.claude/skills/bakers-build/skills' },
+  plugins: [
+    { repo: 'https://github.com/bakers-build/bakers-build.git', ref: 'v0.61.2' },
     { repo: 'https://github.com/obra/superpowers.git', ref: 'v7.0.0' },
     { repo: 'https://github.com/mattpocock/skills.git', ref: 'v1.3.2' },
   ],
 };
 ```
 
-`bakers config skills lock` resolves every `ref` to its commit and writes `.bakers/skills.lock.json` (commit and content hash per entry), which is committed beside the config. Changing a version means changing the `ref`, relocking and committing both, so the change goes through the project's normal review. The bakers.build repository itself declares its own bundle as a worktree path (`{ path: '.claude/skills/bakers-build/skills' }`), so a run tests the branch's sources, as `.claude/settings.json` does today by disabling `bakers@bakers`.
+`bakers config plugins lock` resolves every `ref` to its commit and writes `.bakers/plugins.lock.json` (commit and content hash per entry), which is committed beside the config. A version change means changing the `ref`, relocking and committing both, through the project's normal review. The bakers.build repository declares its own bundle as a worktree path (`{ path: '.claude/skills/bakers-build' }`), so a run tests the branch's sources.
 
-Conductor core (a `skills` slot, one addon):
+Conductor core:
 
-1. Before each run, fetch each locked commit into a content-addressed cache (`~/.bakers/cache/skills/<sha>`, read-only) unless it is already there, and verify its hash against the lock. A missing lock entry, a moved `ref` or a hash mismatch fails the run start with the entry named. The cache is only a cache: it never decides what a run gets. Skill directories are every directory under the checkout that holds a `SKILL.md`; `path` may narrow it.
-2. Hand the agent addon the resolved list (after `after_create`). Collisions between collections fail the run start with both names.
-3. Write the locked commits into the run record, so a run's skill set is traceable.
-4. Check that every skill `WORKFLOW.md` and the ticket's recipe name is in the resolved set, and fail the run start with the missing names otherwise. A run never goes on silently without a required skill.
+1. Before each run, fetch each locked commit into a content-addressed cache (`~/.bakers/cache/plugins/<sha>`, read-only) unless it is already there, and verify it against the lock. A missing entry, a moved `ref` or a hash mismatch fails the run start.
+2. Call the agent addon's `installPlugins(lock, checkouts)`. It returns the launch environment and flags.
+3. Record the locked commits in the run record.
+4. Fail the run start when a skill named by `WORKFLOW.md` or the ticket's recipe is missing from the installed set.
 
-Each agent addon implements one optional method, `placeSkills(collections, worktree) → { links, args }`:
+Each agent addon implements `installPlugins`. Its pieces:
 
-| Addon | Placement | Hides user-scope skills and plugins |
-|---|---|---|
-| claude | links into `.claude/skills/`; or `--plugin-dir <checkout>` when the checkout carries `.claude-plugin/plugin.json` and hooks or the namespace matter | already: `--setting-sources project,local` (user `~/.claude/skills` still to verify) |
-| codex | links into `.agents/skills/` | to build: disable installed plugins per run, or a run-scoped `CODEX_HOME` |
-| pi | `--skill <dir>` per skill (bypasses project trust); optional `-e <extension>` when upstream ships a pi extension | to build: `--no-skills` plus explicit `--skill`, or a run-scoped `PI_CODING_AGENT_DIR` |
-| opencode, grok, kimi | links into `.agents/skills/` | to build: `OPENCODE_CONFIG_DIR`, `GROK_HOME` or `[compat.claude] skills=false`, Kimi `--skills-dir` |
+- **Home:** one per harness and lock hash, `~/.bakers/cache/agent-homes/<harness>/<lock-hash>/`. It is built once and reused by every run with the same lock.
+- **Install:** the harness's own command, from the local cached checkout, with no network.
+- **Login:** link only the harness's credential file from the user's real home. Nothing else from the user's home is visible.
+- **Trust:** pre-grant folder trust for the run's worktree. Both harnesses stopped at a trust prompt in the proof.
+- **Transcripts:** the addon reads the run's transcript from the run home (`getRunLog`, `sessionExists`).
 
-Links go into `info/exclude`, as the playground's `after_create` already does for `.claude/skills`. The project's `.claude/settings.json` marketplaces become redundant once the `skills` list covers Claude, and are removed then, so a collection has exactly one declaration.
+| Addon | Home | Install | Hooks | Proof |
+|---|---|---|---|---|
+| claude | `CLAUDE_CONFIG_DIR` | `extraKnownMarketplaces` + `enabledPlugins` in the run's `--settings` (or `--plugin-dir <checkout>`), with `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1` | native | **passed** from project settings (round 2); the `--settings`/`CLAUDE_CONFIG_DIR` form is still to prove |
+| codex | `CODEX_HOME` | `codex plugin marketplace add <checkout>`, `codex plugin add <plugin>@<marketplace>` | need trust: `--dangerously-bypass-hook-trust`, meant for "automation that already vets hook sources", which the lock does | **passed** with a run-scoped `CODEX_HOME` (round 2); project `.codex/config.toml` alone **failed** |
+| pi | `PI_CODING_AGENT_DIR` | `pi install <checkout>` for a pi package (extension + skills); `--skill <dir>` for plain skills | via the plugin's pi extension | not proven |
+| opencode | `OPENCODE_CONFIG_DIR` | `opencode plugin add` / config `plugins` | via the plugin's OpenCode JS plugin | not proven |
+| grok | `GROK_HOME` | `grok plugin install <checkout> --trust` (reads `.claude-plugin`) | native, trust at install | not proven |
+| kimi | `--skills-dir` | plain skills only | none: named as a gap at run start | not proven |
+
+A plugin that ships no manifest for a harness falls back to option 1 on it: its `SKILL.md` folders go into the home's skill directory, and the missing hooks or MCP are named at run start. Skills cross-reference each other by bare name where they must work everywhere; namespaced references resolve only where the harness installs the plugin.
 
 ### Follow-up tickets
 
-1. Conductor `skills` slot: project declaration, `skills.lock.json` and the lock command, verified cache, run-record commit, collision check.
+1. Conductor `plugins` slot: project declaration, `plugins.lock.json` and the lock command, verified cache, run-record commit, `installPlugins` call.
 2. Required-skill check: fail the run start when a skill named by `WORKFLOW.md` or the recipe is missing.
-3. `placeSkills` and user-scope isolation in the claude, codex and pi addons, with the pi `--skill` route.
-4. `placeSkills` and user-scope isolation in the opencode, grok and kimi addons.
-5. Ship the `bakers` bundle through the `skills` list at a pinned version instead of the per-machine `bakers@bakers` plugin; replace its three `bakers:` references with bare names.
-6. Evaluate dotagents as the resolver and plugin projector, especially for hooks.
-7. Install docs: `docs/skills-and-workflows/skills.md` names the `skills` list and lock, and drops per-machine installs for runs.
-8. Repeat the proof on pi once its addon is enabled on a conductor machine, using the `--skill` route (not proven here).
+3. `installPlugins` in the claude and codex addons: run-scoped home, credential link, trust pre-grant, transcript paths; Codex with `--dangerously-bypass-hook-trust`.
+4. `installPlugins` in the pi, opencode, grok and kimi addons, each with its proof.
+5. Ship the `bakers` skills through the `plugins` list at a pinned version instead of the per-machine `bakers@bakers` plugin; add the manifests other harnesses need; replace its three `bakers:` references with bare names.
+6. Evaluate dotagents as the per-harness projector before writing installs by hand.
+7. Install docs: `docs/skills-and-workflows/skills.md` names the `plugins` list and lock and drops per-machine installs for runs.
 
 ## Proof
+
+### Round 1: skill folders from one declaration
 
 **Setup.** Playground conductor `cw-framework-bakers-e2e-project-conductor` (`provision_up('conductor-e2e')`), built from this branch, 2026-11-09. A throwaway spike in the playground's own `conductor.config.js`, not merged, did the following:
 
@@ -164,6 +175,26 @@ On this machine superpowers is also enabled globally for both agents: the Claude
 Findings from the proof:
 
 - **The declared copy wins over the global plugin.** Claude's `--setting-sources project,local` keeps user plugins out of the run, so only the placed copy was visible. Codex saw both copies and chose the repository one.
-- **Same-name duplicates appear in Codex.** When a collection is both a user-scope plugin and a placed directory, Codex lists both and may pick either. The project's `skills` list must be the only source in a run, so the codex addon has to hide user-scope plugins and skills (for example `-c 'plugins."<id>".enabled=false'` for each installed plugin, or a run-scoped `CODEX_HOME` that keeps auth). Claude already hides them through `--setting-sources project,local`.
-- **Folder trust blocks a fresh worktree.** Both agents stopped at their folder-trust prompt (Claude "Is this a project you trust?"; Codex "Trust this folder?", saved for the repository root) until the owner confirmed it in the herdr pane. This gates the run itself, not only its skills, and predates this spike. The skills slot does not change it, but a new worktree root needs a trust grant once per agent.
+- **Same-name duplicates appear in Codex.** When a collection is both a user-scope plugin and a placed directory, Codex lists both and may pick either. A run-scoped home removes the user-scope copy (round 2).
+- **Folder trust blocks a fresh worktree.** Both agents stopped at their folder-trust prompt (Claude "Is this a project you trust?"; Codex "Trust this folder?", saved for the repository root) until the owner confirmed it in the herdr pane. A run-scoped home must pre-grant trust for the worktree.
 - **Claude's Skill tool strips the frontmatter.** Claude opened the file separately to read `name`; the skill body itself loaded through the native tool.
+- **Round 1 does not test plugin logic.** Superpowers' SessionStart hook and its `superpowers:` references were not checked, and the bare folders cannot carry them. Round 2 does.
+
+### Round 2: a plugin installed nowhere in user space
+
+**Fixture.** A throwaway plugin `bb-probe` 0.1.0 (local Git repo, tag `v0.1.0`, commit `43012c2`, under `workspaces/skill-sources/bb-probe`, not merged). It ships a Claude marketplace (`.claude-plugin/`) and a Codex marketplace (`.agents/plugins/`, `.codex-plugin/`), both named `bb-probe-market`. Its contents:
+
+- A SessionStart hook that injects `BB-PROBE-HOOK-7731: the bb-probe SessionStart hook ran.` and appends a line with `CLAUDE_PLUGIN_ROOT` to `.bb-probe-hook.log` in the working directory.
+- Skill `probe-alpha` (canary `ALPHA-4410`), which tells the agent to load `bb-probe:probe-beta` next.
+- Skill `probe-beta` (canary `BETA-9925`).
+
+No harness on this machine had `bb-probe` installed. The proof prompt asked for the `bb-probe` skills by their harness names, whether `BB-PROBE-HOOK` was in the session context, and to load `bb-probe:probe-alpha` and follow it.
+
+| Harness | Route | Run | Result |
+|---|---|---|---|
+| Claude Code 2.1.319 | conductor run; `after_create` wrote `.claude/settings.local.json` with `extraKnownMarketplaces` (`directory` source = the pinned checkout) and `enabledPlugins` | GLE2E-10, run `e9c6e133-4bcd-4dac-b7c6-7c20c0a32293` | **PASS**. Listed `bb-probe:probe-alpha`, `bb-probe:probe-beta`. Hook text in the context as "SessionStart hook additional context"; `.bb-probe-hook.log` shows `root=…/skill-sources/bb-probe`. Skill tool `bb-probe:probe-alpha`, then `bb-probe:probe-beta`, both from `…/skill-sources/bb-probe/skills/…`; canaries `ALPHA-4410`, `BETA-9925`. No install prompt. |
+| Codex CLI 0.167.0 | conductor run; `after_create` wrote a project `.codex/config.toml` with `[marketplaces.bb-probe-market]` (`source_type = "local"`) and `[plugins."bb-probe@bb-probe-market"] enabled = true` | GLE2E-11, run `f930ff8d-755c-4bc6-84bf-139e8365dab8` | **FAIL**. No `bb-probe` skills, no hook; the agent fell back to the user-scope superpowers 7.0.2. Codex loads a plugin only when it sits in `$CODEX_HOME/plugins/cache/<marketplace>/<plugin>/<version>` **and** is enabled in `$CODEX_HOME/config.toml`, which `codex plugin add` writes. Project config and `-c …enabled=true` leave it "not installed". |
+| Codex CLI 0.167.0 | `codex exec` in the GLE2E-11 worktree with a run-scoped `CODEX_HOME` (credential file linked from `~/.codex`; `codex plugin marketplace add <checkout>`; `codex plugin add bb-probe@bb-probe-market`; worktree trusted in that home) | direct harness run, 2026-11-09 | **PASS** for skills and names: listed `bb-probe:probe-alpha`, `bb-probe:probe-beta`; read both `SKILL.md` from `<CODEX_HOME>/plugins/cache/bb-probe-market/bb-probe/0.1.0/skills/…`; canaries `ALPHA-4410`, `BETA-9925`. The hook did not run: Codex requires persisted hook trust. |
+| Codex CLI 0.167.0 | same, plus `--dangerously-bypass-hook-trust` | direct harness run, 2026-11-09 | **PASS** for the hook: "It appeared in a developer message in my session context: BB-PROBE-HOOK-7731: the bb-probe SessionStart hook ran."; `.bb-probe-hook.log` shows `root=<CODEX_HOME>/plugins/cache/bb-probe-market/bb-probe/0.1.0`. |
+
+The Codex harness runs ran outside the conductor, because the codex addon cannot yet set `CODEX_HOME`; that is follow-up 3. Round 2 shows the harnesses' own plugin systems carry hooks and namespaces when the plugin is installed into the run's home with their own command. Project-level settings work for Claude and not for Codex.
