@@ -366,6 +366,16 @@ test('a status line Slack refused is posted on a later pass, once, also after a 
   assert.deepEqual(slack.posts().slice(refused).map((p) => p.text), [messages.runStart.working]);
 });
 
+test('a summary comment without a body posts nothing and fails nothing', async (t) => {
+  const { s, slack, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  delete s.addComment(ticket, { type: 'summary' }).body;
+  s.addRun(ticket);
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), [messages.runStart.working]);
+});
+
 test('a ticket whose runs cannot be read is skipped for the pass and caught up on the next', async (t) => {
   const { s, slack, poller } = await setup(t);
   const ticket = s.addTicket({ state: 'working', links: [thread()] });

@@ -23,7 +23,7 @@ const INTERNAL = [
  * empty when it has none.
  */
 export function outcome(markdown) {
-  const lines = markdown.split('\n');
+  const lines = (markdown ?? '').split('\n');
   const start = lines.findIndex((l) => /^#{1,6}\s.*outcome/i.test(l));
   if (start < 0) return [];
   const end = lines.findIndex((l, i) => i > start && /^#{1,6}\s/.test(l));
@@ -79,15 +79,16 @@ export function updates({ previous, posted, tickets, now, interval, messages }) 
     // Each post names what it marked as seen, so a failed post can be forgotten and retried.
     const post = (text, undo) => posts.push({ identifier: t.identifier, ...target(t.conversation), text: named(t, text), ...undo });
     const runs = [...t.runs].reverse();
-    // Only a run seen before ending; one first seen closed gets its start line below.
-    for (const r of runs.filter((r) => r.uuid in before.runs && ENDED.includes(r.state) && !ENDED.includes(before.runs[r.uuid]))) {
+    const open = t.labels.includes(QUESTION_LABEL) || t.labels.includes(TECHNICAL_PROBLEM_LABEL);
+    const end = (r, was) => {
       record.runs[r.uuid] = r.state;
       // A run that moved the ticket on is told by its state line.
-      if (r.state_at_start !== t.state) continue;
-      const open = t.labels.includes(QUESTION_LABEL) || t.labels.includes(TECHNICAL_PROBLEM_LABEL);
+      if (r.state_at_start !== t.state) return;
       const text = r.state === 'done' ? (open ? null : messages.runWaiting) : messages.runPaused;
-      if (text) post(text, { run: [r.uuid, before.runs[r.uuid]] });
-    }
+      if (text) post(text, { run: [r.uuid, was] });
+    };
+    // Only a run seen before ending; one first seen closed gets both its lines below.
+    for (const r of runs.filter((r) => r.uuid in before.runs && ENDED.includes(r.state) && !ENDED.includes(before.runs[r.uuid]))) end(r, before.runs[r.uuid]);
     for (const c of t.comments.filter((c) => c.type === 'summary' && !before.summaries.includes(c.id))) {
       record.summaries.push(c.id);
       const sentences = outcome(c.body);
@@ -95,15 +96,19 @@ export function updates({ previous, posted, tickets, now, interval, messages }) 
     }
     for (const l of t.links.filter((l) => !before.links.includes(l.uri))) {
       record.links.push(l.uri);
-      if (preview(l.uri)) post(`${messages.previewLead} ${escape(l.title ?? '')}`.trim() + `\n${escape(l.uri)}`, { link: l.uri });
+      const title = INTERNAL.some((r) => r.test(l.title ?? '')) ? '' : escape(l.title ?? '');
+      if (preview(l.uri)) post(`${messages.previewLead} ${title}`.trim() + `\n${escape(l.uri)}`, { link: l.uri });
     }
     for (const r of runs) {
       if (r.uuid in record.runs) continue;
       record.runs[r.uuid] = r.state;
       const text = messages.runStart[r.state_at_start];
-      if (!text || (record.lastStart !== null && now - record.lastStart < COLLAPSE)) continue;
-      post(text, { run: [r.uuid, undefined], lastStart: record.lastStart });
-      record.lastStart = now;
+      if (text && (record.lastStart === null || now - record.lastStart >= COLLAPSE)) {
+        post(text, { run: [r.uuid, undefined], lastStart: record.lastStart });
+        record.lastStart = now;
+      }
+      // Started and ended between two passes, as during an outage: its end line follows.
+      if (ENDED.includes(r.state)) end(r, 'running');
     }
   }
   // One heartbeat per quiet conversation, after every other post of the pass.
@@ -126,7 +131,8 @@ export function forget(records, post) {
   const record = records[post.identifier];
   if (post.run) {
     if (post.run[1] === undefined) delete record.runs[post.run[0]];
-    else record.runs[post.run[0]] = post.run[1];
+    // A run whose refused start line was forgotten already is retried whole.
+    else if (post.run[0] in record.runs) record.runs[post.run[0]] = post.run[1];
   }
   if ('lastStart' in post) record.lastStart = post.lastStart;
   if (post.summary) record.summaries = record.summaries.filter((id) => id !== post.summary);

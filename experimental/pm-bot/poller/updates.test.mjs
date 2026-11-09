@@ -72,10 +72,23 @@ test('a run whose ticket changed state posts no end line; the state line says it
   assert.deepEqual(pass([ticket({ state: 'review', runs: [run('r1', 'failed', 'working')] })], { previous }).posts, []);
 });
 
-test('a run first seen already ended, as after an outage, posts its start line and no end line', () => {
+test('a run first seen already ended, as after an outage, posts its start line and then its end line, once', () => {
   const first = pass([ticket({ runs: [run('r1', 'failed')] })]);
-  assert.deepEqual(texts(first), [messages.runStart.working]);
+  assert.deepEqual(texts(first), [messages.runStart.working, messages.runPaused]);
   assert.deepEqual(pass([ticket({ runs: [run('r1', 'failed')] })], { previous: first.next.records }).posts, []);
+  assert.deepEqual(texts(pass([ticket({ runs: [run('r1', 'done')] })])), [messages.runStart.working, messages.runWaiting]);
+  assert.deepEqual(texts(pass([ticket({ labels: ['Question'], runs: [run('r1', 'done')] })])), [messages.runStart.working]);
+  assert.deepEqual(texts(pass([ticket({ state: 'review', runs: [run('r1', 'failed', 'working')] })])), [messages.runStart.working]);
+});
+
+test('a refused end line of a run first seen ended is retried alone; a refused start line retries both', () => {
+  const first = pass([ticket({ runs: [run('r1', 'failed')] })]);
+  const records = structuredClone(first.next.records);
+  forget(records, first.posts[1]);
+  assert.deepEqual(texts(pass([ticket({ runs: [run('r1', 'failed')] })], { previous: records })), [messages.runPaused]);
+  const both = structuredClone(first.next.records);
+  for (const p of first.posts) forget(both, p);
+  assert.deepEqual(texts(pass([ticket({ runs: [run('r1', 'failed')] })], { previous: both })), [messages.runStart.working, messages.runPaused]);
 });
 
 test('summary sentences with a run ID or an agent name are left out', () => {
@@ -123,6 +136,13 @@ test('a new ddev page or design link is posted once with its title; other links 
   ]);
   assert.deepEqual(result.next.records['ACME-1'].links, links.map((l) => l.uri));
   assert.deepEqual(pass([ticket({ links })], { previous: result.next.records }).posts, []);
+});
+
+test('a preview link whose title holds a run ID or an agent name is posted with the bare lead and its URI', () => {
+  for (const title of ['Run 0b6a3f0e-5c1d-4a7e-9f21-3d4c5b6a7e8f preview', 'Opus build']) {
+    const links = [{ uri: 'https://acme-135.ddev.site/prices', title }];
+    assert.deepEqual(texts(pass([ticket({ links })])), [`${messages.previewLead}\nhttps://acme-135.ddev.site/prices`]);
+  }
 });
 
 test('a running ticket in a conversation quiet for the interval gets one heartbeat with a sentence of the newest summary since the run started', () => {
