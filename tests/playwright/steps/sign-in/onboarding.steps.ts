@@ -349,3 +349,10 @@ When('I open the onboarding wizard', async ({ page }) => {
     await page.goto('/home/onboarding');
     await expect(page.getByRole('heading', { name: 'What should we call you?' })).toBeVisible();
 });
+
+/** The wizard uses the sign-in gate: its left band explains the current step. */
+Then('the gate band explains the step', async ({ page }) => {
+    const explanation = page.locator('.gate__band .gate__explanation');
+    await expect(explanation).toBeVisible();
+    await expect(explanation).not.toHaveText('');
+});

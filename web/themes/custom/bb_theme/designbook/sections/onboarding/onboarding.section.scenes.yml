@@ -3,7 +3,7 @@ group: Designbook/Sections/Onboarding
 title: Onboarding
 description: >-
   The three-step wizard: identity, About you, then documentation links per
-  audience. Chrome is `design-system:onboarding`. Finishing lands on the
+  audience. Chrome is `design-system:onboarding`, the sign-in gate with a per-step explanation in its left band. Finishing lands on the
   workspace overview.
 status: planned
 order: 15
@@ -13,8 +13,7 @@ scenes:
     section: onboarding
     docs: >-
       Step 1 of 3: full name, nickname and picture, in the order the account
-      edit form uses too. Mark, heading and description sit above the form card
-      in one centred column. Nickname is required to continue; Skip advances
+      edit form uses too. Brand band with the step's explanation on the left, heading, description and form on the right. Nickname is required to continue; Skip advances
       without writing. The picture uses the account form's image widget: a round
       placeholder with the user icon and Choose picture when empty; choosing a
       file opens the square crop dialog at once (pan, zoom, Apply), then the
@@ -26,6 +25,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: What should we call you?
+          explanation: A name and a picture let your team recognize you. You can change both at any time.
           description: >-
             A name and a picture — and bakers.build feels less like software and
             more like your team.
@@ -98,6 +98,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: Tell us about yourself
+          explanation: Your answers are passed as context to the AI assistants bakers.build uses, so that explanations match your background. Both fields are optional.
           description: >-
             So we speak your language — matched to your work and your
             background.
@@ -158,6 +159,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: Get started with bakers.build
+          explanation: bakers.build works from a chat connector or from an agent on your own machine. These guides cover both.
           description: Pick how you will work. Each guide opens in a new tab.
           content:
             - component: bb_theme:form
@@ -219,6 +221,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: Get started with bakers.build
+          explanation: bakers.build works from a chat connector or from an agent on your own machine. These guides cover both.
           description: Pick how you will work. Each guide opens in a new tab.
           content:
             - component: bb_theme:form
@@ -248,6 +251,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: Get started with bakers.build
+          explanation: bakers.build works from a chat connector or from an agent on your own machine. These guides cover both.
           description: Pick how you will work. Each guide opens in a new tab.
           content:
             - component: bb_theme:form

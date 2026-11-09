@@ -85,6 +85,16 @@ final class OnboardingFirstProjectStepTest extends KernelTestBase {
   }
 
   /**
+   * Every step explains itself in the gate's left band.
+   */
+  public function testEveryStepCarriesAnExplanation(): void {
+    foreach ([1, 2, 3, 4] as $step) {
+      $form = $this->build($step);
+      self::assertNotSame('', trim((string) ($form['#bb_copy']['explanation'] ?? '')), "Step $step has an explanation.");
+    }
+  }
+
+  /**
    * An account that may not create sees the wizard exactly as before.
    */
   public function testStepIsHiddenWithoutCreateRights(): void {

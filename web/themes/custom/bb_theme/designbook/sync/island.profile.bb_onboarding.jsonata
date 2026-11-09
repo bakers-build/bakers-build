@@ -1,5 +1,5 @@
 /* Island Profile for the two-step onboarding wizard. The chrome itself is
-   `bb_theme:onboarding`, composed by the wizard form's presenter template
+   `bb_theme:gate`, composed by the wizard form's presenter template
    inside page content; this profile only frames messages and page content in
    a one-column zone. */
 (

@@ -263,9 +263,11 @@ Feature: The onboarding wizard before the workspace overview
     Given the onboarding of "fixture-onboarding" is reset
     And I am logged in as the account "fixture-onboarding"
     When I open the onboarding wizard
-    And I continue from the identity step
+    Then the gate band explains the step
+    When I continue from the identity step
     And I continue to the first project step
-    Then the wizard progress reads "Step 3 of 4"
+    Then the gate band explains the step
+    And the wizard progress reads "Step 3 of 4"
     When I choose to create the first project later
     Then the wizard progress reads "Step 4 of 4"
     When I go back from the setup guide step

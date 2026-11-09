@@ -443,18 +443,21 @@ scenes:
     group: Shell
     section: shell
     docs: |-
-      THE ONBOARDING WIZARD CHROME. Brand, optional step copy and the form
-      card stack in one centred column. Screens open with
-      `scene: "design-system:onboarding"` and fill `content`, `title` and
-      `description`.
+      THE ONBOARDING WIZARD CHROME is the gate: the same split frame as sign-in,
+      with the step's explanation under the slogan in the left band. Screens
+      open with `scene: "design-system:onboarding"` and fill `content`, `title`,
+      `description` and `explanation`.
     items:
-      - component: bb_theme:onboarding
+      - component: bb_theme:gate
         props:
           title: $title
           description: $description
+          explanation: $explanation
         slots:
           mark:
             component: bb_theme:brand
+            props:
+              size: compact
           content: $content
   - name: team-create-action
     group: Shell

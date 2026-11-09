@@ -36,6 +36,19 @@ props:
         The slogan under the mark in the band, plain text and never a heading:
         the page's title is its single `h1`. Defaults to the owner's call to action,
         "Knead it. Ship it."
+    explanation:
+      type: string
+      title: Explanation
+      description: >-
+        Optional plain text under the slogan in the band, saying what this page is for.
+        A multi-step flow such as onboarding sets one per step; sign-in and the other
+        gates leave it out and render unchanged.
+    focus_title:
+      type: boolean
+      title: Focus title
+      description: >-
+        Moves keyboard focus to the heading when the gate renders. For a flow that swaps
+        its steps in place, so a screen reader announces the new step; off by default.
 slots:
   mark:
     title: Mark

@@ -453,26 +453,30 @@ final class BbOnboardingWizardForm extends FormBase {
   /**
    * Approved copy for the current step.
    *
-   * @return array{title: string, description: string}
-   *   Visible heading and lede.
+   * @return array{title: string, description: string, explanation: string}
+   *   Visible heading, lede and the left band's explanation.
    */
   private function copyForStep(int $step): array {
     return match (TRUE) {
       $step === self::STEP_ABOUT => [
         'title' => (string) $this->t('Tell us about yourself'),
         'description' => (string) $this->t('So we speak your language — matched to your work and your background.'),
+        'explanation' => (string) $this->t('Your answers are passed as context to the AI assistants bakers.build uses, so that explanations match your background. Both fields are optional.'),
       ],
       $this->isProjectStep($step) => [
         'title' => (string) $this->t('Create your first project?'),
         'description' => (string) $this->t('Start right away, or set one up later from your overview.'),
+        'explanation' => (string) $this->t('A project connects a repository to your team. Creating it now takes you straight into it; you can always add one later.'),
       ],
       $step === $this->setupStep() => [
         'title' => (string) $this->t('Get started with bakers.build'),
         'description' => (string) $this->t('Pick how you will work. Each guide opens in a new tab.'),
+        'explanation' => (string) $this->t('bakers.build works from a chat connector or from an agent on your own machine. These guides cover both.'),
       ],
       default => [
         'title' => (string) $this->t('What should we call you?'),
         'description' => (string) $this->t('A name and a picture — and bakers.build feels less like software and more like your team.'),
+        'explanation' => (string) $this->t('A name and a picture let your team recognize you. You can change both at any time.'),
       ],
     };
   }
