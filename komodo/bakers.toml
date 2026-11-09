@@ -39,8 +39,8 @@ COMPOSE_PROFILES=docs
 DOCS_DOMAIN=docs-develop.dev.bakers.build
 DOCS_ALIAS_DOMAIN=docs-develop.dev.bakers.build
 REGISTRY_IMAGE_DOCS=ghcr.io/bakers-build/bakers-build/docs:next
-# Auto-deploy runs scripts/deploy/site-deploy.sh: on an installed site a dump, then
-# drush deploy; it installs only a reachable database without any table. The explicit
+# Auto-deploy runs scripts/deploy/site-deploy.sh: on an installed site drush deploy (the
+# runner dumps beforehand); it installs only a reachable database without any table. The explicit
 # first install stays available on the host:
 #   docker compose --profile install run --rm install
 # OAuth / social sign-in (BB-476): Google client credentials. Empty in
@@ -133,7 +133,7 @@ COMPOSE_PROFILES=docs
 DOCS_DOMAIN=bakers.build
 DOCS_ALIAS_DOMAIN=www.bakers.build
 REGISTRY_IMAGE_DOCS=ghcr.io/bakers-build/bakers-build/docs:main
-# Auto-deploy runs scripts/deploy/site-deploy.sh: a dump, then drush deploy. It installs
+# Auto-deploy runs scripts/deploy/site-deploy.sh: drush deploy (the runner dumps first). It installs
 # only a reachable database without any table, so a bootstrap false-negative cannot wipe
 # prod. The explicit first install stays available on the prod host:
 #   docker compose --profile install run --rm install

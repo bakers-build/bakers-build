@@ -98,7 +98,6 @@ for name in ("deploy", "php", "cron"):
 assert not s["db"].get("ports")
 assert [(p["host_ip"], str(p["published"]), p["target"]) for p in s["nginx"]["ports"]] == [("127.0.0.1", "8080", 80)]
 assert s["deploy"]["environment"]["ADMIN_EMAIL"] == "admin@example.test"
-assert any(v["target"] == "/var/www/backups" for v in s["deploy"]["volumes"])
 for name in ("php", "cron"):
     assert s[name]["environment"]["MAIL_SMTP_DSN"] == "smtp://smtp.example.test:587", name
 
@@ -147,7 +146,7 @@ esac
 os.chmod(stub, 0o755)
 def run(db_up, tables, has_config, admin="admin@example.test"):
     open(log, "w").close()
-    env = {"PATH": os.environ["PATH"], "DRUSH": stub, "LOG": log, "OAUTH_KEYS": f"{work}/keys", "BACKUP_DIR": f"{work}/backups",
+    env = {"PATH": os.environ["PATH"], "DRUSH": stub, "LOG": log, "OAUTH_KEYS": f"{work}/keys",
            "DB_UP": db_up, "TABLES": tables, "HAS_CONFIG": has_config, "ADMIN_EMAIL": admin, "DOMAIN": "app.example.test"}
     r = subprocess.run(["sh", "scripts/deploy/site-deploy.sh"], env=env, capture_output=True, text=True)
     return r, open(log).read()
@@ -162,7 +161,7 @@ assert r.returncode != 0 and "site:install" not in calls, calls
 r, calls = run("1", "57", "1")
 assert r.returncode == 0, r.stderr
 assert "-y deploy" in calls and "site:install" not in calls, calls
-assert calls.index("sql:dump") < calls.index("-y deploy"), "no backup before the update"
+assert "sql:dump" not in calls, "the dump runs before the update, not inside it"
 r, calls = run("1", "3", "0")
 assert r.returncode != 0 and "site:install" not in calls and "-y deploy" not in calls, calls
 PYTEST

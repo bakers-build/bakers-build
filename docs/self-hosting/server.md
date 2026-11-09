@@ -56,13 +56,12 @@ x-env: &env
 services:
   init-perms:
     image: alpine:3.22.2
-    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys /backups && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
+    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
     volumes:
       - public_files:/pf
       - private_files:/privf
       - tmp_files:/tmpdir
       - oauth_keys:/oauthkeys
-      - backups:/backups
     restart: "no"
 
   db:
@@ -84,17 +83,11 @@ services:
       start_period: 30s
     networks: [internal]
 
-  # Installs an empty database, else backs it up and runs the updates; php waits for it.
+  # Installs an empty database, else runs the updates; php waits for it.
   deploy:
     <<: *app
     restart: "no"
     environment: *env
-    volumes:
-      - public_files:/var/www/html/web/sites/default/files
-      - private_files:/var/www/html/private-files
-      - tmp_files:/tmp
-      - oauth_keys:/var/www/oauth-keys
-      - backups:/var/www/backups
     command: /var/www/html/scripts/deploy/site-deploy.sh
 
   php:
@@ -138,7 +131,6 @@ volumes:
   private_files:
   tmp_files:
   oauth_keys:
-  backups:
 
 networks:
   internal:
@@ -210,7 +202,14 @@ workspace and a project, then connect a machine with `bakers init --base-url htt
 
 ## Update
 
-Read the release notes, set `BAKERS_VERSION` in `.env` to the new release, then:
+Read the release notes and dump the database:
+
+```sh
+docker compose exec -T db sh -c 'exec mysqldump --single-transaction -uroot -p"$MYSQL_ROOT_PASSWORD" bakers' \
+  | gzip > bakers-$(date +%Y%m%d).sql.gz
+```
+
+Then set `BAKERS_VERSION` in `.env` to the new release:
 
 ```sh
 docker compose pull
@@ -218,13 +217,11 @@ docker compose up -d
 docker compose logs deploy
 ```
 
-Before the database updates run, `deploy` writes a dump to the `backups` volume and
-keeps the last three. PHP starts only after a successful update. If it fails, the site stays down:
-set the previous `BAKERS_VERSION`, load the newest dump and start again:
+PHP starts only after a successful update. If it fails, the site stays down: set the previous
+`BAKERS_VERSION`, load the dump and start again:
 
 ```sh
-docker compose run --rm --no-deps -T deploy sh -c 'zcat "$(ls -1t /var/www/backups/*.sql.gz | head -1)"' \
-  | docker compose exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" bakers'
+gunzip -c bakers-YYYYMMDD.sql.gz | docker compose exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" bakers'
 docker compose up -d
 ```
 

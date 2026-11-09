@@ -10,13 +10,12 @@ services:
   # (Drush compiles its DI container into /tmp) before php starts.
   init-perms:
     image: alpine:3
-    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys /backups && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
+    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
     volumes:
       - public_files:/pf
       - private_files:/privf
       - tmp_files:/tmpdir
       - oauth_keys:/oauthkeys
-      - backups:/backups
     restart: "no"
 
   db:
@@ -67,9 +66,8 @@ services:
       - private_files:/var/www/html/private-files
       - tmp_files:/tmp
       - oauth_keys:/var/www/oauth-keys
-      - backups:/var/www/backups
-    # Same script as the standalone stack: updates an installed site (after a dump into the
-    # backups volume) and installs only a reachable, empty database; anything else fails.
+    # Same script as the standalone stack: updates an installed site and installs only a
+    # reachable, empty database; anything else fails. The deploy runner dumps beforehand.
     command: /var/www/html/scripts/deploy/site-deploy.sh
     networks:
       - internal
@@ -253,7 +251,6 @@ volumes:
   private_files:
   tmp_files:
   oauth_keys:
-  backups:
 
 networks:
   internal:

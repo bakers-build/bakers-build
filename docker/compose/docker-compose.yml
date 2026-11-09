@@ -39,13 +39,12 @@ x-env: &env
 services:
   init-perms:
     image: alpine:3.22.2
-    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys /backups && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
+    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
     volumes:
       - public_files:/pf
       - private_files:/privf
       - tmp_files:/tmpdir
       - oauth_keys:/oauthkeys
-      - backups:/backups
     restart: "no"
 
   db:
@@ -67,17 +66,11 @@ services:
       start_period: 30s
     networks: [internal]
 
-  # Installs an empty database, else backs it up and runs the updates; php waits for it.
+  # Installs an empty database, else runs the updates; php waits for it.
   deploy:
     <<: *app
     restart: "no"
     environment: *env
-    volumes:
-      - public_files:/var/www/html/web/sites/default/files
-      - private_files:/var/www/html/private-files
-      - tmp_files:/tmp
-      - oauth_keys:/var/www/oauth-keys
-      - backups:/var/www/backups
     command: /var/www/html/scripts/deploy/site-deploy.sh
 
   php:
@@ -121,7 +114,6 @@ volumes:
   private_files:
   tmp_files:
   oauth_keys:
-  backups:
 
 networks:
   internal:

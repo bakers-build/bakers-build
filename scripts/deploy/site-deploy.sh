@@ -4,7 +4,6 @@
 # site:install drops the database, so it never runs on a database that has any table.
 set -eu
 DRUSH=${DRUSH:-/var/www/html/vendor/bin/drush}
-BACKUP_DIR=${BACKUP_DIR:-/var/www/backups}
 OAUTH_KEYS=${OAUTH_KEYS:-/var/www/oauth-keys}
 count="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()"
 
@@ -12,10 +11,8 @@ tables=$($DRUSH sql:query "$count") || { echo "[deploy] database unreachable —
 has_config=$($DRUSH sql:query "$count AND table_name = 'config'") || { echo "[deploy] database unreachable — nothing changed" >&2; exit 1; }
 
 if [ "$has_config" = 1 ]; then
-  echo "[deploy] installed site: backup, then drush deploy"
-  mkdir -p "$BACKUP_DIR"
-  $DRUSH sql:dump --gzip --result-file="$BACKUP_DIR/pre-deploy-$(date +%Y%m%d-%H%M%S).sql"
-  ls -1t "$BACKUP_DIR"/pre-deploy-*.sql.gz 2>/dev/null | tail -n +4 | xargs -r rm -f
+  # No dump here: it would lengthen every update; the backup runs before `up`.
+  echo "[deploy] installed site: drush deploy"
   $DRUSH -y deploy
   # Code-defined entity schema changes are not created by config:import: enable the tool
   # just in time, apply, then re-import config so it is uninstalled again.
