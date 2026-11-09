@@ -2,7 +2,6 @@
 // DE frame 667:259). Both render through the same components; German is allowed for
 // landing copy only (docs/bakers/conventions.md › English only).
 
-export const INSTALL = 'npm i -g @bakers-build/bakers'
 export const SIGN_UP_URL = 'https://app.bakers.build/'
 export const ADDONS_URL = 'https://bakers.build/addons/'
 export const REPO_URL = 'https://github.com/bakers-build/bakers-build'
@@ -17,11 +16,9 @@ const en = {
   home: '/',
   nav: { label: 'Main', menu: 'Menu' },
   signUp: 'Sign up',
-  copy: { label: 'Copy command', done: 'Command copied' },
   hero: {
     title: 'A ticket-driven AI software factory.',
     text: "Before your team is up, the prep is done. Agents work every ticket on your development machine or on remote workers, and at every step you can look into the oven.",
-    install: 'or self-host for free',
     note: 'Open source. Runs on your machines.',
     lineLabel: 'The line: four stations, Plan, Build, Review and Ship, each worked by an agent. At each one a person decides: approve plan, confirm result, confirm verdict, authorize merge.',
     tag: 'Human',
@@ -98,7 +95,6 @@ const en = {
   closing: {
     title: 'Try it on a real ticket.',
     text: 'Sign up, create your workspace and invite your team.',
-    install: 'or run it yourself, free',
   },
   footer: ['Open source', 'Docs', 'GitHub'],
 }
@@ -110,11 +106,9 @@ const de: Copy = {
   home: '/de/',
   nav: { label: 'Hauptmenü', menu: 'Menü' },
   signUp: 'Anmelden',
-  copy: { label: 'Befehl kopieren', done: 'Befehl kopiert' },
   hero: {
     title: 'Eine KI-Softwarefabrik. Vom Ticket bis zum Merge.',
     text: 'Bevor dein Team da ist, ist die Vorbereitung erledigt. Agenten arbeiten jedes Ticket auf deinem Entwicklungsrechner oder auf Remote-Workern ab, und bei jedem Schritt kannst du in den Ofen schauen.',
-    install: 'oder kostenlos selbst hosten',
     note: 'Open Source. Läuft auf deinen Rechnern.',
     lineLabel: 'Die Backstraße: vier Stationen, Planen, Umsetzen, Prüfen und Fertig, jede von einem Agenten bearbeitet. An jeder entscheidet ein Mensch: Plan freigeben, Ergebnis bestätigen, Urteil bestätigen, Merge freigeben.',
     tag: 'Mensch',
@@ -191,7 +185,6 @@ const de: Copy = {
   closing: {
     title: 'Probier es an einem echten Ticket.',
     text: 'Melde dich an, leg deinen Workspace an und lade dein Team ein.',
-    install: 'oder selbst betreiben, kostenlos',
   },
   footer: ['Open Source', 'Docs', 'GitHub'],
 }
