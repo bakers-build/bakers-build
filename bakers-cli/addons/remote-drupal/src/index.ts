@@ -185,12 +185,18 @@ export class DrupalBbRemote implements BbRemote {
       .collection('bb_run')
       .where('conductor_id.conductor_id', '=', id)
       .whereIn('state', ACTIVE)
-      .fields(['state', 'state_at_start', 'worktree_path'])
+      .fields([
+        'state',
+        'state_at_start',
+        'worktree_path',
+        'drupal_internal__id',
+      ])
       .page(100)
       .list();
     return Promise.all(
       rows.map(async (r) => ({
         runUuid: r.id,
+        runId: Number(r.attr<number>('drupal_internal__id')),
         ticketUuid: r.rel('ticket_id') ?? '',
         ticketIdentifier: await this.getRunTicketIdentifier(r.id),
         branchName: await this.getRunTicketBranchName(r.id),
@@ -199,6 +205,20 @@ export class DrupalBbRemote implements BbRemote {
         worktreePath: r.attr<string>('worktree_path') ?? '',
       })),
     );
+  }
+
+  /** Through the site's `bakers_comment_publish`, which throws on a tool error. */
+  async publishTicketComment(
+    ticketUuid: string,
+    type: string,
+    body: string,
+  ): Promise<void> {
+    if (!this.siteTools) throw new Error('no site tools to publish a comment');
+    await this.siteTools.call('bakers_comment_publish', {
+      ticket: ticketUuid,
+      type,
+      body,
+    });
   }
 
   async activeRunCount(id: string): Promise<number> {

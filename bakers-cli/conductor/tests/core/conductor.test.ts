@@ -5565,3 +5565,172 @@ describe('Conductor — bakers ui refresh signal', () => {
     ).not.toContain('ui-refresh');
   });
 });
+
+describe('Conductor lost runs (pane gone)', () => {
+  /** A herdr-like executor that answers whether a run's pane still lives. */
+  class PaneExecutor extends RecordingExecutor {
+    /** `false` = no live pane, an Error = the lookup fails. */
+    alive: boolean | Error = true;
+    readonly aliveCalls: Array<{ branch: string; runId: number }> = [];
+    async runAlive(branch: string, runId: number): Promise<boolean> {
+      this.aliveCalls.push({ branch, runId });
+      if (this.alive instanceof Error) throw this.alive;
+      return this.alive;
+    }
+  }
+
+  function runningRemote(): FakeBbRemote {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': {
+          identifier: 'BB-1',
+          title: 'One',
+          state: 'working',
+          branchName: 'feat/bb-1',
+        },
+      },
+      runs: [
+        {
+          runUuid: 'r-1',
+          id: 7,
+          ticketUuid: 't-1',
+          stateAtStart: 'working',
+          state: 'running',
+          worktreePath: '/wt/bb-1',
+        },
+      ],
+    });
+    // The seed queues every run as claimable; this one is already running.
+    remote.queue.length = 0;
+    return remote;
+  }
+
+  async function conductorWith(remote: FakeBbRemote, executor: PaneExecutor) {
+    const spy = spyLogger();
+    const conductor = new TestConductor(
+      makeConfig(),
+      remote,
+      executor,
+      new FakeWorkspace(),
+      resolved(fakeAgent),
+      spy.log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    return { conductor, logs: spy.calls };
+  }
+
+  it('fails a running run whose pane is gone and reports it on the ticket once', async () => {
+    const remote = runningRemote();
+    const executor = new PaneExecutor();
+    executor.alive = false;
+    const { conductor } = await conductorWith(remote, executor);
+
+    await conductor.tick();
+    await conductor.tick();
+
+    expect(executor.aliveCalls[0]).toEqual({ branch: 'feat/bb-1', runId: 7 });
+    expect(remote.calls.markFailed).toHaveLength(1);
+    expect(remote.calls.markFailed[0]?.runUuid).toBe('r-1');
+    expect(remote.calls.markFailed[0]?.errorLog).toMatch(/pane gone.*#7/);
+    expect(remote.calls.publishTicketComment).toHaveLength(1);
+    const comment = remote.calls.publishTicketComment[0];
+    expect(comment?.ticketUuid).toBe('t-1');
+    expect(comment?.body).toContain('#7');
+    expect(comment?.body).toContain('`working`');
+    expect(comment?.body).toMatch(/pane is gone/);
+    expect(await remote.fetchActiveRuns('x')).toEqual([]);
+  });
+
+  it('leaves a run with a live pane alone and does not report a normally ended run', async () => {
+    const remote = runningRemote();
+    const executor = new PaneExecutor();
+    executor.persistent = true;
+    const { conductor } = await conductorWith(remote, executor);
+
+    await conductor.tick();
+    await conductor.tick();
+    remote.markDone('r-1');
+    executor.alive = false; // its tab is closed by the finalise below
+    await conductor.tick();
+    await conductor.tick();
+
+    expect(executor.aliveCalls).toHaveLength(2);
+    expect(remote.calls.markFailed).toEqual([]);
+    expect(remote.calls.publishTicketComment).toEqual([]);
+    expect(remote.calls.finalizeRun.map((c) => c.runUuid)).toEqual(['r-1']);
+  });
+
+  it('does not fail a run that ended between the snapshot and the pane lookup', async () => {
+    const remote = runningRemote();
+    const executor = new PaneExecutor();
+    executor.runAlive = async () => {
+      remote.markDone('r-1');
+      return false;
+    };
+    const { conductor } = await conductorWith(remote, executor);
+
+    await conductor.tick();
+
+    expect(remote.calls.markFailed).toEqual([]);
+    expect(remote.calls.publishTicketComment).toEqual([]);
+  });
+
+  it('detects on the first tick after a restart a pane lost while the conductor was down', async () => {
+    const remote = runningRemote();
+    const before = await conductorWith(remote, new PaneExecutor());
+    await before.conductor.tick();
+    expect(remote.calls.markFailed).toEqual([]);
+
+    const executor = new PaneExecutor();
+    executor.alive = false;
+    const after = await conductorWith(remote, executor);
+    await after.conductor.tick();
+
+    expect(remote.calls.markFailed.map((c) => c.runUuid)).toEqual(['r-1']);
+    expect(remote.calls.publishTicketComment).toHaveLength(1);
+  });
+
+  it('changes nothing and warns when the pane lookup fails, and checks again next tick', async () => {
+    const remote = runningRemote();
+    const executor = new PaneExecutor();
+    executor.alive = new Error('hc: command not found');
+    const { conductor, logs } = await conductorWith(remote, executor);
+
+    await conductor.tick();
+    await conductor.tick();
+
+    expect(executor.aliveCalls).toHaveLength(2);
+    expect(remote.calls.markFailed).toEqual([]);
+    expect(remote.calls.publishTicketComment).toEqual([]);
+    expect((await remote.fetchActiveRuns('x')).map((r) => r.state)).toEqual([
+      'running',
+    ]);
+    const warns = logs.filter(
+      (l) =>
+        l.level === 'warn' && l.msg === 'pane lookup failed; run left active',
+    );
+    expect(warns).toHaveLength(2);
+  });
+
+  it('posts no comment while the failed mark cannot be written, then reports once', async () => {
+    const remote = runningRemote();
+    const markFailed = remote.markFailed.bind(remote);
+    let failures = 1;
+    remote.markFailed = async (runUuid, errorLog) => {
+      if (failures-- > 0) throw new Error('503');
+      return markFailed(runUuid, errorLog);
+    };
+    const executor = new PaneExecutor();
+    executor.alive = false;
+    const { conductor } = await conductorWith(remote, executor);
+
+    await conductor.tick();
+    expect(remote.calls.publishTicketComment).toEqual([]);
+    await conductor.tick();
+    await conductor.tick();
+
+    expect(remote.calls.markFailed.map((c) => c.runUuid)).toEqual(['r-1']);
+    expect(remote.calls.publishTicketComment).toHaveLength(1);
+  });
+});

@@ -165,4 +165,11 @@ export interface BbExecutor {
    * non-persistent executors.
    */
   cleanupRun(branch: string, runId: number): Promise<void>;
+  /**
+   * Whether ONE run's hosted terminal still lives. `false` only when the
+   * executor knows none does (gone, or its process exited); throws when it
+   * cannot tell, so the conductor leaves the run alone. Optional: without it
+   * the conductor never checks a running run's terminal.
+   */
+  runAlive?(branch: string, runId: number): Promise<boolean>;
 }

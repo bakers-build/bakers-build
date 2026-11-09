@@ -7,7 +7,7 @@ A conductor runs each ticket in its own Git worktree, and each run's agent in a 
 | Slot | Job | Interface |
 |---|---|---|
 | Workspace | Create or reuse the ticket's worktree; remove it when the ticket is done | `BbWorkspace`: `ensure`, `remove` |
-| Executor | Start the agent's terminal in that worktree, stop it, clean it up; optionally show a fresh worktree in the tool | `BbExecutor`: `capabilities`, `startRun`, `stopRun`, `cleanupRun`, optional `openWorkspace` |
+| Executor | Start the agent's terminal in that worktree, stop it, clean it up; optionally show a fresh worktree in the tool | `BbExecutor`: `capabilities`, `startRun`, `stopRun`, `cleanupRun`, optional `openWorkspace` and `runAlive` |
 | Conductor | Call both, and run every lifecycle hook (`after_create`, `before_run`, `after_run`, `after_done`) itself | — |
 
 The two never call each other. The conductor hands the worktree path and the branch from the workspace to the executor, so any executor runs on any workspace's worktree. One conductor has exactly one executor and one workspace.
@@ -24,6 +24,8 @@ A dispatch:
 6. `executor.startRun(input)`.
 
 The run ends when the server marks it done or cancelled. The conductor then calls `stopRun`, stores the transcript, runs `after_run`, and calls `cleanupRun`. For an executor that is not `persistent`, it skips `stopRun` and that `cleanupRun`.
+
+While a run is `running`, the conductor asks `runAlive(branch, runId)` each tick, when the executor has it. Return `false` only when you know the run's terminal is gone or its process exited; the conductor then marks the run `failed` and comments on the ticket. Throw when you cannot tell, and the run is left alone.
 
 When the ticket is done, the reaper runs `after_done`, then `workspace.remove(branch, worktreePath)`.
 
