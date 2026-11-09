@@ -159,7 +159,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     self::assertArrayHasKey('back', $form['actions']);
     self::assertArrayNotHasKey('next', $form['actions']);
     self::assertSame('Get started with bakers.build', $form['#bb_copy']['title']);
-    self::assertSame('Step 3 of 3', (string) $form['progress']['#props']['text']);
+    self::assertSame('Step 3 of 3', (string) $form['#bb_copy']['progress']);
 
     // A stale Next POST from an open step-3 page stays on step 3.
     $form_state->setTriggeringElement(['#name' => 'next']);
@@ -180,7 +180,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
 
     $form = BbOnboardingWizardForm::create($this->container)->buildForm([], new FormState());
     self::assertSame('3', $form['#attributes']['data-bakers-onboarding-step']);
-    self::assertSame('Step 3 of 3', (string) $form['progress']['#props']['text']);
+    self::assertSame('Step 3 of 3', (string) $form['#bb_copy']['progress']);
   }
 
   /**
@@ -223,7 +223,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $form = BbOnboardingWizardForm::create($this->container)->buildForm([], new FormState());
     self::assertSame('3', $form['#attributes']['data-bakers-onboarding-step']);
     self::assertArrayNotHasKey('back', $form['actions']);
-    self::assertSame('Setup', (string) $form['progress']['#props']['text']);
+    self::assertSame('Setup', (string) $form['#bb_copy']['progress']);
   }
 
   /**

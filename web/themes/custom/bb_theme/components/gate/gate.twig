@@ -31,16 +31,38 @@
   <div class="gate__frame w-full flex flex-col lg:flex-row lg:max-w-[1100px] lg:min-h-[640px] lg:overflow-hidden lg:rounded-md lg:border lg:border-border">
     <aside class="gate__band scheme-light flex flex-col justify-center gap-section p-gutter lg:p-section min-h-[220px] lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
       <div class="min-w-0">{% block mark %}{% if mark %}{{ mark }}{% endif %}{% endblock %}</div>
-      {# SDC does not apply schema defaults at render time. #}
-      <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("Knead it. Ship it."|t) }}</p>
+      {# A multi-step flow shows where the reader is instead of the slogan: the caption on every
+         width, the list of steps from `lg`. The caption carries `aria-current` so a screen
+         reader hears the position once. #}
+      {% if progress or steps %}
+        <div class="flex flex-col gap-group">
+          {% if progress %}
+            <p class="gate__progress m-0 text-meta uppercase tracking-wide" aria-current="step">{{ progress }}</p>
+          {% endif %}
+          {% if steps %}
+            <ol class="gate__steps max-lg:hidden flex flex-col gap-inline m-0 p-0 list-none">
+              {% for step in steps %}
+                <li class="flex items-center gap-inline text-item-title{{ step.state == 'upcoming' ? ' opacity-50' : (step.state == 'done' ? ' opacity-70' : '') }}">
+                  <span aria-hidden="true" class="inline-block size-2 shrink-0 rounded-full border border-current{{ step.state == 'upcoming' ? '' : ' bg-current' }}"></span>
+                  <span>{{ step.label }}</span>
+                </li>
+              {% endfor %}
+            </ol>
+          {% endif %}
+        </div>
+      {% endif %}
+      {% if not steps %}
+        {# SDC does not apply schema defaults at render time. #}
+        <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("Knead it. Ship it."|t) }}</p>
+      {% endif %}
       {% if explanation %}
-        <p class="gate__explanation m-0 text-meta max-w-[36ch]">{{ explanation }}</p>
+        <p class="gate__explanation m-0 text-body max-w-[36ch]">{{ explanation }}</p>
       {% endif %}
     </aside>
     <main class="gate__main flex-1 flex items-start lg:items-center justify-center p-gutter lg:p-section bg-app lg:bg-surface">
       <div class="w-full max-w-[420px] flex flex-col gap-group">
         {% if title %}
-          <h1 class="gate__title m-0 text-section-title"{% if focus_title %} tabindex="-1" x-init="$el.focus({preventScroll: true})"{% endif %}>{{ title }}</h1>
+          <h1 class="gate__title m-0 text-section-title{{ focus_title ? ' outline-none' : '' }}"{% if focus_title %} tabindex="-1" x-init="$el.focus({preventScroll: true})"{% endif %}>{{ title }}</h1>
         {% endif %}
         {% if description %}
           <p class="gate__description m-0 text-meta text-text-faint max-w-[40ch]">{{ description }}</p>

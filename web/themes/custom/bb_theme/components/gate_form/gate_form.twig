@@ -6,7 +6,9 @@
    pills and a dashed divider with its word stands between the two doors. #}
 {% set centered = align|default('start') == 'center' %}
 {% set doors = alternative is not empty %}
-<form{{ (attributes ?: create_attribute()).addClass([
+{# `div` frames the parts of a form that already stands inside a `<form>`: the onboarding wizard, whose form element wraps the whole gate. #}
+{% set tag = tag|default('form') %}
+<{{ tag }}{{ (attributes ?: create_attribute()).addClass([
   'grid', 'gap-group', 'min-w-0', '*:min-w-0',
   '[&_.form-actions]:flex', '[&_.form-actions]:flex-wrap', '[&_.form-actions]:items-center', '[&_.form-actions]:gap-stack',
   '[&_:is(input,button,a):focus-visible]:outline-2', '[&_:is(input,button,a):focus-visible]:outline-solid',
@@ -23,4 +25,4 @@
     </div>
     {% block alternative %}{{ alternative }}{% endblock %}
   {% endif %}
-</form>
+</{{ tag }}>

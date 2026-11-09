@@ -217,21 +217,14 @@ final class BbOnboardingWizardForm extends FormBase {
     // THE COPY IS THE STEP'S, so it is built here and handed to the chrome by
     // the presenter template as props. It travels in the same fragment the
     // fields do; `bb_theme:onboarding` renders it and owns the frame.
-    $form['#bb_copy'] = $this->copyForStep($step);
+    $form['#bb_copy'] = $this->copyForStep($step) + [
+      'progress' => $this->progressText($step),
+      'steps' => $this->stepList($step),
+    ];
     // `bb_theme_theme()` registers this hook with `render element: form`,
     // which is what hands the presenter the parts it composes the chrome from.
     // Renaming the form id drops the presenter back to core's markup.
     $form['#theme'] = 'bb_onboarding_wizard_form';
-    $form['progress'] = [
-      '#type' => 'component',
-      '#component' => 'bb_theme:text',
-      '#props' => [
-        'text' => $this->progressText($step),
-        'size' => 'meta',
-        'tone' => 'light',
-        'attributes' => ['aria-current' => 'step'],
-      ],
-    ];
 
     // INSIDE THE FRAGMENT: the swap selects this form, so a validation error
     // printed by the page's messages block would never reach the reader.
@@ -252,12 +245,9 @@ final class BbOnboardingWizardForm extends FormBase {
       ];
     }
 
-    $form['fields'] = [
-      '#type' => 'container',
-      '#attributes' => [
-        'class' => ['flex', 'flex-col', 'gap-4'],
-      ],
-    ];
+    // The container carries no classes: the presenter unwraps it into the gate
+    // form frame, which spaces its children.
+    $form['fields'] = ['#type' => 'container'];
     match (TRUE) {
       $step === self::STEP_IDENTITY => $this->buildIdentityFields($form, $form_state, $user),
       $step === self::STEP_ABOUT => $this->buildAboutFields($form, $user),
@@ -479,6 +469,36 @@ final class BbOnboardingWizardForm extends FormBase {
         'explanation' => (string) $this->t('A name and a picture let your team recognize you. You can change both at any time.'),
       ],
     };
+  }
+
+  /**
+   * The steps for the gate's left band, each marked done, current or upcoming.
+   *
+   * Empty on a voluntary reopen, which has only the setup page.
+   *
+   * @return list<array{label: string, state: string}>
+   *   One entry per page of this wizard.
+   */
+  private function stepList(int $step): array {
+    if ($this->destination->isComplete($this->currentUser())) {
+      return [];
+    }
+    $labels = [
+      self::STEP_IDENTITY => (string) $this->t('Your name'),
+      self::STEP_ABOUT => (string) $this->t('About you'),
+    ];
+    if ($this->hasProjectStep()) {
+      $labels[self::STEP_PROJECT] = (string) $this->t('First project');
+    }
+    $labels[$this->setupStep()] = (string) $this->t('Get started');
+    $steps = [];
+    foreach ($labels as $number => $label) {
+      $steps[] = [
+        'label' => $label,
+        'state' => $number < $step ? 'done' : ($number === $step ? 'current' : 'upcoming'),
+      ];
+    }
+    return $steps;
   }
 
   /**

@@ -1,9 +1,15 @@
 component: bb_theme:gate
 name: Explained
 props:
-  title: What should we call you?
-  description: A name and a picture — and bakers.build feels less like software and more like your team.
-  explanation: A name and a picture make your team recognize you. You can change both later.
+  title: Create your first project?
+  description: Start right away, or set one up later from your overview.
+  progress: Step 3 of 4
+  explanation: A project connects a repository to your team. Creating it now takes you straight into it; you can always add one later.
+  steps:
+    - { label: Your name, state: done }
+    - { label: About you, state: done }
+    - { label: First project, state: current }
+    - { label: Get started, state: upcoming }
 slots:
   mark:
     - type: component
@@ -13,7 +19,6 @@ slots:
   content:
     - type: element
       value: >-
-        <form><p>Step 1 of 4</p><label>Full name<input value="Ada
-        Lovelace"></label><label>Nickname (username)<input
-        value="ada"></label><button type="submit">Skip</button><button
-        type="submit">Next</button></form>
+        <div><label>Project name<input></label><label>Repository URL<input></label><label>Group
+        name<input></label><button type="submit">Back</button><button
+        type="submit">Create project</button></div>

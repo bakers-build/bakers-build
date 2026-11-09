@@ -76,12 +76,16 @@ final class OnboardingFirstProjectStepTest extends KernelTestBase {
   public function testStepIsShownAsThreeOfFour(): void {
     $form = $this->build(3);
 
-    self::assertSame('Step 3 of 4', (string) $form['progress']['#props']['text']);
+    self::assertSame('Step 3 of 4', (string) $form['#bb_copy']['progress']);
     self::assertSame('3', $form['#attributes']['data-bakers-onboarding-step']);
     self::assertArrayHasKey('project_yes', $form['actions']);
     self::assertArrayHasKey('project_later', $form['actions']);
     self::assertArrayHasKey('back', $form['actions']);
     self::assertArrayNotHasKey('finish', $form['actions']);
+    self::assertSame(
+      [['Your name', 'done'], ['About you', 'done'], ['First project', 'current'], ['Get started', 'upcoming']],
+      array_map(static fn (array $step): array => [$step['label'], $step['state']], $form['#bb_copy']['steps']),
+    );
   }
 
   /**
@@ -102,9 +106,10 @@ final class OnboardingFirstProjectStepTest extends KernelTestBase {
 
     $form = $this->build(3);
 
-    self::assertSame('Step 3 of 3', (string) $form['progress']['#props']['text']);
+    self::assertSame('Step 3 of 3', (string) $form['#bb_copy']['progress']);
     self::assertArrayHasKey('finish', $form['actions']);
     self::assertArrayNotHasKey('project_yes', $form['actions']);
+    self::assertCount(3, $form['#bb_copy']['steps']);
   }
 
   /**
@@ -116,7 +121,7 @@ final class OnboardingFirstProjectStepTest extends KernelTestBase {
     self::assertSame(4, (int) $form_state->get('bb_onboarding_step'));
     self::assertSame([], $this->projects());
     $form = $this->build(4);
-    self::assertSame('Step 4 of 4', (string) $form['progress']['#props']['text']);
+    self::assertSame('Step 4 of 4', (string) $form['#bb_copy']['progress']);
     self::assertArrayHasKey('finish', $form['actions']);
 
     $back = $this->submit(4, 'back');

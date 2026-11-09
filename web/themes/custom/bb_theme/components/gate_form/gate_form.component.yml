@@ -24,6 +24,16 @@ props:
         `center` centres the copy and the action row, for a short decision such
         as confirming a device sign-in. Default `start`.
       default: start
+    tag:
+      type: string
+      enum:
+        - form
+        - div
+      title: Tag
+      description: >-
+        `form` (default) for a form of its own; `div` when the parts already stand inside a
+        `<form>` that wraps a larger frame, as in the onboarding wizard.
+      default: form
     divider:
       type: string
       title: Divider
