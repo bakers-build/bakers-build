@@ -14,7 +14,10 @@ use Drupal\Core\Htmx\Htmx;
 use Drupal\Core\Htmx\HtmxLocationResponseData;
 use Drupal\Core\Htmx\HtmxRequestInfoTrait;
 use Drupal\Core\Url;
+use Drupal\bb_core\Access\BbWorkspaceCreateAccess;
 use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
+use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Onboarding\FirstProjectCreator;
 use Drupal\bb_core\Onboarding\OnboardingDestination;
 use Drupal\bb_core\Workspace\InviteMatcher;
 use Drupal\user\Plugin\Validation\Constraint\UserNameUnique;
@@ -23,7 +26,9 @@ use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * The three-step HTMX onboarding wizard: identity, About you, setup.
+ * The HTMX onboarding wizard: identity, About you, project, setup.
+ *
+ * The project page is optional.
  *
  * The template composes `bb_theme:onboarding` from `#bb_copy` and the
  * fields, so heading, copy and inputs swap as one HTMX fragment. The step
@@ -33,7 +38,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * account form display — the same square-crop widget the account form uses —
  * and its file travels with the step's multipart POST.
  *
- * One Form API object owns the three pages and their exits; splitting it would
+ * The project step exists only for an account that may create a group and a
+ * project in one of its workspaces; for everyone else the wizard has three
+ * steps. The saved integer is the page number as shown.
+ *
+ * One Form API object owns the pages and their exits; splitting it would
  * add a second form and a nested POST, which this wizard must not do.
  *
  * @SuppressWarnings("PHPMD.TooManyMethods")
@@ -59,11 +68,20 @@ final class BbOnboardingWizardForm extends FormBase {
   private const int STEP_ABOUT = 2;
 
   /**
+   * Optional first project: Yes or Later, then the project's fields.
+   *
+   * Hidden when the account may not create one; see ::setupStep().
+   */
+  private const int STEP_PROJECT = 3;
+
+  /**
    * Documentation links per audience.
    *
-   * Last page: Finish lives here.
+   * The last page when the project step is shown.
+   *
+   * Without the project step it is page 3; see ::setupStep().
    */
-  private const int STEP_SETUP = 3;
+  private const int STEP_SETUP = 4;
 
   /**
    * Core user.data provider for this wizard's saved step.
@@ -80,13 +98,67 @@ final class BbOnboardingWizardForm extends FormBase {
    */
   private const string DOCS_BASE = 'https://bakers.build/docs';
 
+  /**
+   * Memo of ::projectWorkspace(): NULL unknown, FALSE none.
+   */
+  private BbWorkspaceInterface|false|null $projectWorkspace = NULL;
+
   public function __construct(
     protected EntityTypeManagerInterface $entityTypeManager,
     protected OnboardingDestination $destination,
     protected UserDataInterface $userData,
     protected InviteMatcher $inviteMatcher,
     protected BbWorkspaceReadScopeInterface $readScope,
+    protected BbWorkspaceCreateAccess $createAccess,
+    protected FirstProjectCreator $firstProject,
   ) {}
+
+  /**
+   * The first workspace the account may create its first project in, if any.
+   *
+   * The active-workspace service is URL-only and knows nothing on this route,
+   * so the account's own workspaces are searched instead. It needs the right
+   * to create groups and projects there and a team of its own.
+   */
+  private function projectWorkspace(): ?BbWorkspaceInterface {
+    if ($this->projectWorkspace === NULL) {
+      $this->projectWorkspace = FALSE;
+      $account = $this->currentUser();
+      $projects = $this->entityTypeManager->getAccessControlHandler('bb_project');
+      if ($projects->createAccess('bb_project', $account)) {
+        foreach ($this->entityTypeManager->getStorage('bb_workspace')->loadMultiple($this->readScope->workspaceIds($account)) as $workspace) {
+          if ($workspace instanceof BbWorkspaceInterface
+            && $this->createAccess->check('bb_group', $workspace, $account)->isAllowed()
+            && $this->firstProject->teamIds($workspace, $this->currentUserEntity()) !== []) {
+            $this->projectWorkspace = $workspace;
+            break;
+          }
+        }
+      }
+    }
+    return $this->projectWorkspace ?: NULL;
+  }
+
+  /**
+   * Whether the optional project step is part of this wizard.
+   */
+  private function hasProjectStep(): bool {
+    return $this->projectWorkspace() !== NULL;
+  }
+
+  /**
+   * The documentation page's number: 4 with the project step, else 3.
+   */
+  private function setupStep(): int {
+    return $this->hasProjectStep() ? self::STEP_SETUP : self::STEP_PROJECT;
+  }
+
+  /**
+   * Whether this page number is the project step.
+   */
+  private function isProjectStep(int $step): bool {
+    return $step === self::STEP_PROJECT && $this->hasProjectStep();
+  }
 
   /**
    * {@inheritdoc}
@@ -98,6 +170,8 @@ final class BbOnboardingWizardForm extends FormBase {
       $container->get('user.data'),
       $container->get('bb_core.invite_matcher'),
       $container->get('bb_core.workspace_read_scope'),
+      $container->get('bb_core.workspace_create_access'),
+      $container->get('bb_core.onboarding_first_project'),
     );
   }
 
@@ -184,15 +258,16 @@ final class BbOnboardingWizardForm extends FormBase {
         'class' => ['flex', 'flex-col', 'gap-4'],
       ],
     ];
-    match ($step) {
-      self::STEP_IDENTITY => $this->buildIdentityFields($form, $form_state, $user),
-      self::STEP_ABOUT => $this->buildAboutFields($form, $user),
-      self::STEP_SETUP => $this->buildSetupFields($form),
+    match (TRUE) {
+      $step === self::STEP_IDENTITY => $this->buildIdentityFields($form, $form_state, $user),
+      $step === self::STEP_ABOUT => $this->buildAboutFields($form, $user),
+      $this->isProjectStep($step) => $this->buildProjectFields($form, $form_state),
+      $step === $this->setupStep() => $this->buildSetupFields($form),
       default => NULL,
     };
 
     $form['actions'] = ['#type' => 'actions'];
-    $this->buildActions($form, $step);
+    $this->buildActions($form, $form_state, $step);
     return $form;
   }
 
@@ -280,11 +355,17 @@ final class BbOnboardingWizardForm extends FormBase {
 
     if ($trigger === 'next' && $step === self::STEP_ABOUT) {
       $this->saveAbout($form_state);
-      $this->advanceTo($form_state, self::STEP_SETUP);
+      // Page 3 is the project step when shown and documentation when not.
+      $this->advanceTo($form_state, self::STEP_PROJECT);
       return;
     }
 
-    if ($step !== self::STEP_SETUP) {
+    if ($this->isProjectStep($step)) {
+      $this->submitProject($form_state, $trigger);
+      return;
+    }
+
+    if ($step !== $this->setupStep()) {
       return;
     }
 
@@ -299,6 +380,41 @@ final class BbOnboardingWizardForm extends FormBase {
         : 'bb_core.home';
       $this->leaveWizard($form_state, $route);
     }
+  }
+
+  /**
+   * Handles the project step's four actions.
+   */
+  private function submitProject(FormStateInterface $form_state, string $trigger): void {
+    if ($trigger === 'project_yes' || $trigger === 'project_back') {
+      $form_state->set('bb_onboarding_project_yes', $trigger === 'project_yes');
+      $form_state->setRebuild();
+      return;
+    }
+    if ($trigger === 'project_later') {
+      $this->advanceTo($form_state, self::STEP_SETUP);
+      return;
+    }
+    $workspace = $this->projectWorkspace();
+    if ($trigger !== 'project_create' || $workspace === NULL) {
+      return;
+    }
+    try {
+      $project = $this->firstProject->create(
+        $workspace,
+        $this->currentUserEntity(),
+        trim((string) $form_state->getValue('project_name', '')),
+        trim((string) $form_state->getValue('repository_url', '')),
+        trim((string) $form_state->getValue('group_name', '')),
+      );
+    }
+    catch (\InvalidArgumentException $error) {
+      // The rebuild keeps the typed values; the message shows in the fragment.
+      $this->messenger()->addError($error->getMessage());
+      $form_state->setRebuild();
+      return;
+    }
+    $this->leaveWizard($form_state, 'entity.bb_project.canonical', $project->toUrl());
   }
 
   /**
@@ -320,14 +436,16 @@ final class BbOnboardingWizardForm extends FormBase {
    * Restricts a stored or submitted step to the pages this account may see.
    */
   private function boundStep(int $step): int {
+    $setup = $this->setupStep();
     if ($this->destination->isComplete($this->currentUser())) {
-      return self::STEP_SETUP;
+      return $setup;
     }
-    // A step saved by the former four-step wizard resumes on its last page.
-    if ($step === self::STEP_SETUP + 1) {
-      return self::STEP_SETUP;
+    // Page 4 without the project step, saved by the former four-step wizard
+    // or while the step was still offered, resumes on the last page.
+    if ($step > $setup && $step <= self::STEP_SETUP) {
+      return $setup;
     }
-    return ($step >= self::STEP_IDENTITY && $step <= self::STEP_SETUP)
+    return ($step >= self::STEP_IDENTITY && $step <= $setup)
       ? $step
       : self::STEP_IDENTITY;
   }
@@ -339,12 +457,16 @@ final class BbOnboardingWizardForm extends FormBase {
    *   Visible heading and lede.
    */
   private function copyForStep(int $step): array {
-    return match ($step) {
-      self::STEP_ABOUT => [
+    return match (TRUE) {
+      $step === self::STEP_ABOUT => [
         'title' => (string) $this->t('Tell us about yourself'),
         'description' => (string) $this->t('So we speak your language — matched to your work and your background.'),
       ],
-      self::STEP_SETUP => [
+      $this->isProjectStep($step) => [
+        'title' => (string) $this->t('Create your first project?'),
+        'description' => (string) $this->t('Start right away, or set one up later from your overview.'),
+      ],
+      $step === $this->setupStep() => [
         'title' => (string) $this->t('Get started with bakers.build'),
         'description' => (string) $this->t('Pick how you will work. Each guide opens in a new tab.'),
       ],
@@ -364,7 +486,7 @@ final class BbOnboardingWizardForm extends FormBase {
     }
     return (string) $this->t('Step @current of @total', [
       '@current' => $step,
-      '@total' => self::STEP_SETUP,
+      '@total' => $this->setupStep(),
     ]);
   }
 
@@ -426,6 +548,37 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
+   * Project fields after Yes; the choice itself has none.
+   */
+  private function buildProjectFields(array &$form, FormStateInterface $form_state): void {
+    if (!$form_state->get('bb_onboarding_project_yes')) {
+      return;
+    }
+    $form['fields']['project_name'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Project name'),
+      '#required' => TRUE,
+      '#required_error' => $this->t('Enter a project name.'),
+      '#maxlength' => 255,
+    ];
+    $form['fields']['repository_url'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Repository URL'),
+      '#required' => TRUE,
+      '#required_error' => $this->t('Enter the repository URL.'),
+      '#maxlength' => 2048,
+    ];
+    $form['fields']['group_name'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Group name'),
+      '#description' => $this->t('A group bundles related projects.'),
+      '#required' => TRUE,
+      '#required_error' => $this->t('Enter a group name.'),
+      '#maxlength' => 255,
+    ];
+  }
+
+  /**
    * Documentation links, one labelled group per audience.
    */
   private function buildSetupFields(array &$form): void {
@@ -441,7 +594,7 @@ final class BbOnboardingWizardForm extends FormBase {
   /**
    * Step actions for the current page.
    */
-  private function buildActions(array &$form, int $step): void {
+  private function buildActions(array &$form, FormStateInterface $form_state, int $step): void {
     $complete = $this->destination->isComplete($this->currentUser());
     if ($step === self::STEP_IDENTITY) {
       // Skip validates nothing and writes nothing: the account already has a
@@ -453,7 +606,12 @@ final class BbOnboardingWizardForm extends FormBase {
       return;
     }
 
-    if ($step !== self::STEP_SETUP || !$complete) {
+    if ($this->isProjectStep($step)) {
+      $this->buildProjectActions($form, (bool) $form_state->get('bb_onboarding_project_yes'));
+      return;
+    }
+
+    if ($step !== $this->setupStep() || !$complete) {
       $form['actions']['back'] = $this->ghostSubmit($this->t('Back'), 'back');
     }
 
@@ -462,7 +620,7 @@ final class BbOnboardingWizardForm extends FormBase {
       return;
     }
 
-    if ($step === self::STEP_SETUP) {
+    if ($step === $this->setupStep()) {
       $form['actions']['finish'] = $this->primarySubmit($this->t('Finish'), 'finish');
       if ($this->mayCreateWorkspaceOnFinish()) {
         $form['actions']['finish_create'] = [
@@ -477,12 +635,30 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
+   * Yes and Later, or after Yes the fields' own Back and Create project.
+   */
+  private function buildProjectActions(array &$form, bool $yes): void {
+    if ($yes) {
+      $form['actions']['project_back'] = $this->ghostSubmit($this->t('Back'), 'project_back');
+      $form['actions']['project_create'] = $this->primarySubmit($this->t('Create project'), 'project_create');
+      return;
+    }
+    $form['actions']['back'] = $this->ghostSubmit($this->t('Back'), 'back');
+    $form['actions']['project_later'] = $this->ghostSubmit($this->t('Later'), 'project_later');
+    $form['actions']['project_yes'] = $this->primarySubmit($this->t('Yes'), 'project_yes');
+    // Yes has no fields to check; Back and Later above skip validation too.
+    $form['actions']['project_yes']['#limit_validation_errors'] = [];
+    $form['actions']['project_yes']['#submit'] = ['::submitForm'];
+  }
+
+  /**
    * Moves one page back without writing unsent field values.
    */
   private function goBack(FormStateInterface $form_state, int $step): void {
-    $previous = match ($step) {
-      self::STEP_ABOUT => self::STEP_IDENTITY,
-      self::STEP_SETUP => self::STEP_ABOUT,
+    $previous = match (TRUE) {
+      $step === self::STEP_ABOUT => self::STEP_IDENTITY,
+      $this->isProjectStep($step) => self::STEP_ABOUT,
+      $step === $this->setupStep() => $this->hasProjectStep() ? self::STEP_PROJECT : self::STEP_ABOUT,
       default => self::STEP_IDENTITY,
     };
     $this->advanceTo($form_state, $this->boundStep($previous));
@@ -493,6 +669,7 @@ final class BbOnboardingWizardForm extends FormBase {
    */
   private function advanceTo(FormStateInterface $form_state, int $step): void {
     $form_state->set('bb_onboarding_step', $step);
+    $form_state->set('bb_onboarding_project_yes', FALSE);
     $this->userData->set(
       self::USER_DATA_PROVIDER,
       (int) $this->currentUser()->id(),
@@ -510,7 +687,7 @@ final class BbOnboardingWizardForm extends FormBase {
    * document. Without JavaScript both are ordinary redirects. Query
    * destinations are discarded.
    */
-  private function leaveWizard(FormStateInterface $form_state, string $route): void {
+  private function leaveWizard(FormStateInterface $form_state, string $route, ?Url $target = NULL): void {
     $this->destination->markComplete($this->currentUser());
     $this->userData->delete(
       self::USER_DATA_PROVIDER,
@@ -519,13 +696,13 @@ final class BbOnboardingWizardForm extends FormBase {
     );
     $form_state->setIgnoreDestination();
     if (!$this->isHtmxRequest()) {
-      $form_state->setRedirect($route);
+      $target === NULL ? $form_state->setRedirect($route) : $form_state->setRedirectUrl($target);
       return;
     }
     $response = new CacheableResponse('');
     $response->getCacheableMetadata()->setCacheMaxAge(0);
     $htmx = new Htmx();
-    $url = Url::fromRoute($route);
+    $url = $target ?? Url::fromRoute($route);
     if ($route === 'bb_core.home') {
       // Both the wizard and the overview wrap their page in Drupal's off-canvas
       // canvas. Selecting `body` fails: HTMX parses the location GET as a

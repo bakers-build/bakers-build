@@ -1,0 +1,30 @@
+# A Northside guest whose onboarding is not completed.
+#
+# A workspace guest may not create groups or projects, so the onboarding wizard
+# shows it no first-project step. `north-guest` cannot serve: it is onboarded
+# and shared by parallel scenarios.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: dbe50000-0000-4000-8000-000000000650
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: "en"
+  name:
+    -
+      value: fixture-onboarding-guest
+  mail:
+    -
+      value: fixture-onboarding-guest@example.test
+  timezone:
+    -
+      value: "Europe/Berlin"
+  status:
+    -
+      value: true
+  pass:
+    -
+      value: "Bb-test-login-426!"
+      pre_hashed: false

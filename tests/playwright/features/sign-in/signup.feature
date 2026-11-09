@@ -122,6 +122,7 @@ Feature: bakers.build sign-up
     And the invite screen is not present
     And the workspace "aerzte-soehne-gmbh" is owned by "founder@example.com" as lead
     And the workspace "aerzte-soehne-gmbh" has one team with that account as lead
+    And the workspace "aerzte-soehne-gmbh" has a team named "Core Team"
     And the sign-up provisioned exactly one workspace, one team and two memberships
 
   Scenario: Both shell clicks keep the document after landing in a new workspace
@@ -227,3 +228,16 @@ Feature: bakers.build sign-up
 
   Scenario: Signed-out workspace entry preserves the existing 404
     When I check anonymous workspace privacy
+
+  Scenario: A workspace cannot be created without a team name
+    Given no account exists for "teamless@example.com"
+    And no workspace is slugged "teamless-gmbh"
+    When I open anonymous login
+    And I request an login link for "teamless@example.com"
+    And I follow the login link for "teamless@example.com"
+    Then the identity step is present
+    When I continue from the identity step
+    And I finish the onboarding wizard
+    And I try to create the workspace "Teamless GmbH" without a team name
+    Then the address is "/home/new-workspace"
+    And no workspace is slugged "teamless-gmbh" in the database

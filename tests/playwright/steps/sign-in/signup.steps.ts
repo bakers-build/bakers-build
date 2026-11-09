@@ -379,9 +379,32 @@ When('I create the workspace {string}', async ({ page }, name: string) => {
         await openNav;
     }
     await page.getByLabel('Workspace name', { exact: true }).fill(name);
+    await page.getByLabel('Team name', { exact: true }).fill('Core Team');
     const navigation = page.waitForNavigation({ waitUntil: 'load' });
     await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
     lastResponse = await navigation;
+});
+
+/** The team name is required: the browser or the server refuses, either way the form stays. */
+When('I try to create the workspace {string} without a team name', async ({ page }, name: string) => {
+    if (new URL(page.url()).pathname !== '/home/new-workspace') {
+        const openNav = page.waitForNavigation({ waitUntil: 'load' });
+        await page.getByRole('link', { name: 'Create a new workspace', exact: true }).click();
+        await openNav;
+    }
+    await page.getByLabel('Workspace name', { exact: true }).fill(name);
+    await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+    await expect(page.getByLabel('Team name', { exact: true })).toBeVisible();
+});
+
+Then('the workspace {string} has a team named {string}', async ({}, slug: string, team: string) => {
+    const php = `$w = current(\\Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["slug" => "${slug}"])); print implode("|", array_map(fn ($t) => $t->label(), \\Drupal::entityTypeManager()->getStorage("bb_team")->loadByProperties(["workspace_id" => $w->id()])));`;
+    expect(Drush.exec(`ev '${php}'`).trim()).toBe(team);
+});
+
+Then('no workspace is slugged {string} in the database', async ({}, slug: string) => {
+    const php = `print count(\\Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["slug" => "${slug}"]));`;
+    expect(Drush.exec(`ev '${php}'`).trim()).toBe('0');
 });
 
 Then(

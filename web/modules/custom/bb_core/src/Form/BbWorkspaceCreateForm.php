@@ -21,9 +21,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * The bb_workspace entity's own form, asking the settings fields.
  *
  * Renders the shared `settings` form display (`name`, `description`,
- * `image`); the slug is derived, and `::save()` hands the values to
- * `WorkspaceProvisioner` instead of saving the entity. `create bb_workspace`
- * is granted to nobody, so the route guards on `_user_is_logged_in` only.
+ * `image`) plus a required first-team name; the slug is derived, and
+ * `::save()` hands the values to `WorkspaceProvisioner` instead of saving
+ * the entity. `create bb_workspace` is granted to nobody, so the route
+ * guards on `_user_is_logged_in` only.
  *.
  */
 final class BbWorkspaceCreateForm extends ContentEntityForm {
@@ -117,6 +118,16 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
       $widget['#required_error'] = $this->t('Please enter a name for the workspace.');
       unset($widget);
     }
+    // THE FIRST TEAM IS NAMED HERE, not silently: the first project is created
+    // for it, so the customer picks its name at sign-up.
+    $form['team_name'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Team name'),
+      '#description' => $this->t('Your first team in this workspace.'),
+      '#required' => TRUE,
+      '#required_error' => $this->t('Enter a team name.'),
+      '#maxlength' => 255,
+    ];
     // Nothing else on the entity is asked about, so nothing else needs a
     // presenter position — nulling `#group`/`#weight` scaffolding a display
     // that shipped no `core.entity_form_display` config might otherwise add.
@@ -185,7 +196,7 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // An unexpected failure becomes a 500 with the rollback already done, which
     // is honest; a caught throwable rendered as "something went wrong" beside a
     // half-provisioned workspace would not be.
-    $workspace = $this->provisioner->provision($entity->getName(), $account, [
+    $workspace = $this->provisioner->provision($entity->getName(), $account, trim((string) $form_state->getValue('team_name')), [
       'description' => $entity->get('description')->getValue(),
       'image' => $entity->get('image')->getValue(),
     ]);

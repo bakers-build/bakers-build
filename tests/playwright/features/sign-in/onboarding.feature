@@ -1,5 +1,6 @@
-# HTMX three-step wizard (identity, About you, then documentation links per
-# audience), then workspace overview. Completion is a stored Boolean;
+# HTMX wizard (identity, About you, an optional first project for an account
+# that may create one, then documentation links per audience), then workspace
+# overview. Completion is a stored Boolean;
 # optional profile fullness does not skip the wizard.
 @feature:onboarding
 Feature: The onboarding wizard before the workspace overview
@@ -254,3 +255,67 @@ Feature: The onboarding wizard before the workspace overview
     Then the address is "/home"
     And the home overview empty state is present
     And the account "onboarding-nojs@example.com" has completed onboarding
+
+  # The first-project step exists only for an account that may create a group
+  # and a project, so these scenarios use a Northside lead whose onboarding is
+  # open; a new account with no workspace never sees it (scenarios above).
+  Scenario: The first-project step offers Yes and Later and counts as step 3 of 4
+    Given the onboarding of "fixture-onboarding" is reset
+    And I am logged in as the account "fixture-onboarding"
+    When I open the onboarding wizard
+    And I continue from the identity step
+    And I continue to the first project step
+    Then the wizard progress reads "Step 3 of 4"
+    When I choose to create the first project later
+    Then the wizard progress reads "Step 4 of 4"
+    When I go back from the setup guide step
+    Then the first project step is present
+    When I go back from the first project step
+    Then the about-you step is present
+
+  Scenario: Later continues exactly as before and creates nothing
+    Given the onboarding of "fixture-onboarding" is reset
+    And I am logged in as the account "fixture-onboarding"
+    When I open the onboarding wizard
+    And I continue from the identity step
+    And I continue to the first project step
+    And I choose to create the first project later
+    Then the setup guide step is present
+    When I finish the setup guide
+    Then the address is "/home"
+    And no first project exists
+    And the onboarding of "fixture-onboarding" is complete
+
+  Scenario: Yes creates the group and project inside the wizard and lands on the project
+    Given the onboarding of "fixture-onboarding" is reset
+    And I am logged in as the account "fixture-onboarding"
+    When I open the onboarding wizard
+    And I continue from the identity step
+    And I continue to the first project step
+    And I choose to create the first project now
+    And I fill in the first project with repository "https://example.com/acme/bakery.git" and group "Onboarding Crew"
+    And I create the first project
+    Then I land on the new first project
+    And the first project exists in the group "Onboarding Crew" on the team "Design Crew"
+    And the onboarding of "fixture-onboarding" is complete
+
+  Scenario: Invalid project details show the error and keep the input
+    Given the onboarding of "fixture-onboarding" is reset
+    And I am logged in as the account "fixture-onboarding"
+    When I open the onboarding wizard
+    And I continue from the identity step
+    And I continue to the first project step
+    And I choose to create the first project now
+    And I fill in the first project with repository "not a url" and group "Onboarding Crew"
+    And I create the first project
+    Then the first project step shows an error and keeps what I typed
+    And no first project exists
+
+  Scenario: An account that may not create projects never sees the step
+    Given the onboarding of "fixture-onboarding-guest" is reset
+    And I am logged in as the account "fixture-onboarding-guest"
+    When I open the onboarding wizard
+    And I continue from the identity step
+    And I continue from the about-you step
+    Then the first project step is not offered
+    And the wizard progress reads "Step 3 of 3"
