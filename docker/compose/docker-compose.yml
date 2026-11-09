@@ -24,10 +24,9 @@ x-env: &env
   DB_DRIVER: mysql
   DB_PORT: "3306"
   DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
-  DRUSH_OPTIONS_URI: https://${DOMAIN}
-  DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT:?Set DRUPAL_HASH_SALT}
+  DRUPAL_HASH_SALT: ${HASH_SALT:?Set HASH_SALT}
   # Your reverse proxy reaches nginx from this network (or its gateway), so it is trusted.
-  DRUPAL_TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:-172.30.42.0/24}
+  TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:-172.30.42.0/24}
   MAIL_SMTP_DSN: ${MAIL_SMTP_DSN:?Set MAIL_SMTP_DSN; sign-in works by email}
   MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:?Set MAIL_FROM_ADDRESS}
   BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
@@ -90,7 +89,7 @@ services:
       deploy:
         condition: service_completed_successfully
     environment: *env
-    command: sh -c 'while true; do /var/www/html/vendor/bin/drush core:cron || true; sleep 300; done'
+    command: /var/www/html/scripts/deploy/site-cron.sh
 
   nginx:
     image: ghcr.io/bakers-build/bakers-build/nginx:${BAKERS_VERSION}

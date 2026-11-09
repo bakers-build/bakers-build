@@ -1,36 +1,45 @@
 #!/bin/sh
-# Runs on every `docker compose up` (deploy service): installs a reachable, EMPTY
-# database from config/sync, updates an installed site, and aborts in every other case.
-# site:install drops the database, so it never runs on a database that has any table.
+# Runs on every `docker compose up` (deploy service): installs bakers.build into a reachable,
+# EMPTY database, updates an installed bakers.build, and aborts in every other case.
+# The install drops the database, so it never runs on a database that has any table.
 set -eu
 DRUSH=${DRUSH:-/var/www/html/vendor/bin/drush}
 OAUTH_KEYS=${OAUTH_KEYS:-/var/www/oauth-keys}
+export DRUSH_OPTIONS_URI="${DRUSH_OPTIONS_URI:-${DOMAIN:+https://$DOMAIN}}"
 count="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE()"
 
-tables=$($DRUSH sql:query "$count") || { echo "[deploy] database unreachable — nothing changed" >&2; exit 1; }
-has_config=$($DRUSH sql:query "$count AND table_name = 'config'") || { echo "[deploy] database unreachable — nothing changed" >&2; exit 1; }
+say() { echo "[bakers] $*"; }
+fail() { echo "[bakers] $*" >&2; exit 1; }
+# The log speaks of bakers.build; a step's own output is shown only when that step fails.
+step() {
+  out=$("$DRUSH" "$@" 2>&1) || { printf '%s\n' "$out" >&2; fail "$what failed — see the output above"; }
+}
+
+tables=$($DRUSH sql:query "$count" 2>/dev/null) || fail "database unreachable — nothing changed"
+has_config=$($DRUSH sql:query "$count AND table_name = 'config'" 2>/dev/null) || fail "database unreachable — nothing changed"
 
 if [ "$has_config" = 1 ]; then
-  # No dump here: it would lengthen every update; the backup runs before `up`.
-  echo "[deploy] installed site: drush deploy"
-  $DRUSH -y deploy
+  say "updating bakers.build"
+  what="update"
+  step -y deploy
   # Code-defined entity schema changes are not created by config:import: enable the tool
   # just in time, apply, then re-import config so it is uninstalled again.
-  $DRUSH -y pm:install devel_entity_updates
-  $DRUSH -y devel-entity-updates
-  $DRUSH -y config:import
+  step -y pm:install devel_entity_updates
+  step -y devel-entity-updates
+  step -y config:import
+  say "bakers.build is up to date"
 elif [ "$tables" = 0 ]; then
-  [ -n "${ADMIN_EMAIL:-}" ] || { echo "[deploy] empty database: set ADMIN_EMAIL to install" >&2; exit 1; }
-  echo "[deploy] empty database: site:install --existing-config"
-  # The password is never shown: the administrator signs in by email link.
-  $DRUSH -y site:install --existing-config --account-mail="$ADMIN_EMAIL" \
-    --account-pass="$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')" >/dev/null
-  $DRUSH -y deploy:hook
-  echo "[deploy] installed — sign in at https://${DOMAIN:-<DOMAIN>}/user/login with $ADMIN_EMAIL"
+  [ -n "${ADMIN_EMAIL:-}" ] || fail "empty database: set ADMIN_EMAIL to install bakers.build"
+  say "empty database: installing bakers.build"
+  what="install"
+  # Drush's generated password stays in the hidden output: the administrator signs in by email link.
+  step -y site:install --existing-config --account-mail="$ADMIN_EMAIL"
+  step -y deploy:hook
+  say "bakers.build installed — sign in at https://${DOMAIN:-<DOMAIN>}/user/login with $ADMIN_EMAIL"
 else
-  echo "[deploy] database has $tables tables but no Drupal site — refusing to install over it" >&2
-  exit 1
+  fail "the database has $tables tables but no bakers.build — refusing to install over it"
 fi
 
+what="creating the sign-in keys"
 mkdir -p "$OAUTH_KEYS"
-[ -f "$OAUTH_KEYS/private.key" ] || $DRUSH simple-oauth:generate-keys "$OAUTH_KEYS"
+[ -f "$OAUTH_KEYS/private.key" ] || step simple-oauth:generate-keys "$OAUTH_KEYS"
