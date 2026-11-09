@@ -7,31 +7,24 @@
 
 use Symfony\Component\HttpFoundation\Request;
 
-// Strict inputs are opt-in to preserve existing operator stacks.
-if (getenv('BB_SELF_HOSTED') === '1') {
-  foreach (['DOMAIN', 'DRUPAL_HASH_SALT', 'DRUPAL_TRUSTED_PROXY_SUBNET', 'MAIL_SMTP_DSN', 'MAIL_FROM_ADDRESS'] as $required) {
-    if (trim((string) getenv($required)) === '') {
-      throw new \RuntimeException('Missing required ' . $required);
-    }
-  }
-  if (!filter_var(getenv('DOMAIN'), FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
-    throw new \RuntimeException('DOMAIN must be a DNS hostname without a scheme or path');
-  }
-  $proxy_subnet = explode('/', getenv('DRUPAL_TRUSTED_PROXY_SUBNET'));
-  if (count($proxy_subnet) !== 2 || !filter_var($proxy_subnet[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || !ctype_digit($proxy_subnet[1]) || (int) $proxy_subnet[1] < 1 || (int) $proxy_subnet[1] > 32) {
+// Each block applies only when its own variable is set; unset leaves Drupal's default.
+if ($proxy_subnet = getenv('DRUPAL_TRUSTED_PROXY_SUBNET')) {
+  $cidr = explode('/', $proxy_subnet);
+  if (count($cidr) !== 2 || !filter_var($cidr[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || !ctype_digit($cidr[1]) || (int) $cidr[1] < 1 || (int) $cidr[1] > 32) {
     throw new \RuntimeException('DRUPAL_TRUSTED_PROXY_SUBNET must be an IPv4 CIDR with prefix 1 through 32');
   }
-  $smtp = parse_url(getenv('MAIL_SMTP_DSN'));
+  $settings['reverse_proxy'] = TRUE;
+  $settings['reverse_proxy_addresses'] = [$proxy_subnet];
+  $settings['reverse_proxy_trusted_headers'] = Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO | Request::HEADER_X_FORWARDED_PORT;
+}
+if ($smtp_dsn = getenv('MAIL_SMTP_DSN')) {
+  $smtp = parse_url($smtp_dsn);
   if ($smtp === FALSE || !in_array($smtp['scheme'] ?? '', ['smtp', 'smtps'], TRUE) || empty($smtp['host'])) {
     throw new \RuntimeException('MAIL_SMTP_DSN must be an smtp or smtps URL with a host');
   }
-  if (!filter_var(getenv('MAIL_FROM_ADDRESS'), FILTER_VALIDATE_EMAIL)) {
-    throw new \RuntimeException('MAIL_FROM_ADDRESS must be an email address');
-  }
-  $settings['trusted_host_patterns'] = [];
-  $settings['reverse_proxy'] = TRUE;
-  $settings['reverse_proxy_addresses'] = [getenv('DRUPAL_TRUSTED_PROXY_SUBNET')];
-  $settings['reverse_proxy_trusted_headers'] = Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO | Request::HEADER_X_FORWARDED_PORT;
+}
+if (getenv('MAIL_FROM_ADDRESS') && !filter_var(getenv('MAIL_FROM_ADDRESS'), FILTER_VALIDATE_EMAIL)) {
+  throw new \RuntimeException('MAIL_FROM_ADDRESS must be an email address');
 }
 
 // Deployment settings — included from settings.php when running in a
@@ -69,7 +62,7 @@ if (getenv('DB_HOST')) {
   // OAuth / social sign-in (BB-476): Google client credentials. NEVER IN
   // config/sync. Overrides are not exported, so the repository copy stays
   // empty and a repository read yields no usable credential (AC-9). The
-  // value travels Komodo Variable -> bakers.toml -> compose env -> here.
+  // value travels compose env -> here.
   $config['social_auth_google.settings']['client_id'] = getenv('BB_OAUTH_GOOGLE_CLIENT_ID') ?: '';
   $config['social_auth_google.settings']['client_secret'] = getenv('BB_OAUTH_GOOGLE_CLIENT_SECRET') ?: '';
 }
@@ -109,8 +102,10 @@ if (getenv('MAIL_FROM_ADDRESS')) {
   $config['system.site']['mail'] = getenv('MAIL_FROM_ADDRESS');
 }
 
-// Trust the per-stack deployment domain. DOMAIN is set per stack, so this
-// ONE file (baked into the shared image) serves every environment.
+// A forwarded DOMAIN is the only host this site answers to.
 if (getenv('DOMAIN')) {
-  $settings['trusted_host_patterns'][] = '^' . preg_quote(getenv('DOMAIN'), '/') . '$';
+  if (!filter_var(getenv('DOMAIN'), FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME)) {
+    throw new \RuntimeException('DOMAIN must be a DNS hostname without a scheme or path');
+  }
+  $settings['trusted_host_patterns'] = ['^' . preg_quote(getenv('DOMAIN'), '/') . '$'];
 }

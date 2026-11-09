@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Runs the documented self-host lifecycle (docs/configuration/project/server.md)
+# Runs the documented self-host lifecycle (docs/self-hosting/server.md, proxy.md)
 # against the public release images: install, restart, backup, update, restore.
+# Both versions run the operator compose file of <to-version>; only the image changes.
 #
 # usage: scripts/ci/self-host-lifecycle.sh <from-version> <to-version> <workdir>
 #   version: vX.Y.Z (release) or a full 40-character commit SHA on `next`/`main`.
@@ -15,7 +16,7 @@ TO=${2:?to-version}
 WORK=$(mkdir -p "${3:?workdir}" && cd "$3" && pwd)
 
 REPO=bakers-build/bakers-build
-FILES=(docker-compose.yml docker-compose.traefik.yml docker/self-host.yml docker/self-host.env.example)
+FILES=(docker-compose.yml .env.example traefik.yml)
 PEBBLE_IMAGE=ghcr.io/letsencrypt/pebble:2.7.0
 MAILPIT_IMAGE=axllent/mailpit:v1.27.10
 USER_MAIL=lifecycle@selfhost.test
@@ -37,29 +38,24 @@ image_tag() { [[ $1 =~ ^v?([0-9]+\.[0-9]+\.[0-9]+)$ ]] && echo "${BASH_REMATCH[1
 fetch_release() { # dir version
   local ref; ref=$(git_ref "$2")
   for f in "${FILES[@]}"; do
-    curl -fsSL --create-dirs -o "$1/$f" "https://raw.githubusercontent.com/$REPO/$ref/$f"
+    curl -fsSL --create-dirs -o "$1/$f" "https://raw.githubusercontent.com/$REPO/$ref/docker/compose/$f"
   done
-}
-
-pinned() { # image version
-  docker buildx imagetools inspect "ghcr.io/$REPO/$1:$(image_tag "$2")" --format '{{.Name}}@{{.Manifest.Digest}}'
 }
 
 set_env() { # key value (in ./.env)
   awk -v k="$1" -v v="$2" 'BEGIN{FS=OFS="="} $1==k{print k "=" v; done=1; next} {print} END{if(!done) print k "=" v}' .env > .env.tmp && mv .env.tmp .env
 }
 
-# The operator's `dc` from the guide, plus the test overlay.
+# The guide's compose file and Traefik example, plus the test overlay.
 dc() {
-  docker compose --env-file .env -f docker-compose.yml \
-    -f docker-compose.traefik.yml -f docker/self-host.yml -f lifecycle.yml "$@"
+  docker compose --env-file .env -f docker-compose.yml -f traefik.yml -f lifecycle.yml "$@"
 }
 
 write_overlay() { # https http mailpit pebble-management
   local command
-  command=$(docker compose --env-file .env -f docker-compose.yml -f docker-compose.traefik.yml \
-    -f docker/self-host.yml config --format json \
-    | jq -c '.services.traefik.command + ["--certificatesresolvers.letsencrypt.acme.caserver=https://pebble:14000/dir"]')
+  # Two instances share the Docker host: each Traefik watches only its own project.
+  command=$(docker compose --env-file .env -f docker-compose.yml -f traefik.yml config --format json \
+    | jq -c --arg p "$(sed -n 's/^COMPOSE_PROJECT_NAME=//p' .env)" '.services.traefik.command + ["--certificatesresolvers.le.acme.caserver=https://pebble:14000/dir", "--providers.docker.constraints=Label(`com.docker.compose.project`,`\($p)`)"]')
   docker create --name "pebble-ca-$$" "$PEBBLE_IMAGE" >/dev/null
   docker cp "pebble-ca-$$:/test/certs/pebble.minica.pem" pebble.minica.pem >/dev/null
   docker rm "pebble-ca-$$" >/dev/null
@@ -81,7 +77,7 @@ services:
       PEBBLE_VA_ALWAYS_VALID: "1"
       PEBBLE_VA_NOSLEEP: "1"
     ports: ["127.0.0.1:$4:15000"]
-    networks: [traefik_proxy]
+    networks: [internal]
   mailpit:
     image: $MAILPIT_IMAGE
     ports: ["127.0.0.1:$3:8025"]
@@ -89,14 +85,13 @@ services:
 EOF
 }
 
-configure() { # dir project domain subnet https http mailpit pebble-management
+configure() { # dir project domain subnet https http mailpit pebble-management nginx
   cd "$1"
   umask 077
-  cp docker/self-host.env.example .env
+  cp .env.example .env
   chmod 600 .env
-  set_env COMPOSE_PROJECT_NAME "$2"; set_env STACK_NAME "$2"
-  set_env DOMAIN "$3"; set_env ACME_EMAIL "ops@selfhost.test"; set_env TRAEFIK_SUBNET "$4"
-  set_env REGISTRY_IMAGE_PHP "$(pinned php "$FROM")"; set_env REGISTRY_IMAGE_NGINX "$(pinned nginx "$FROM")"
+  set_env COMPOSE_PROJECT_NAME "$2"; set_env BAKERS_VERSION "$(image_tag "$FROM")"
+  set_env DOMAIN "$3"; set_env ADMIN_EMAIL "$USER_MAIL"; set_env INTERNAL_SUBNET "$4"; set_env HTTP_PORT "$9"
   set_env DB_PASSWORD "$(openssl rand -hex 32)"; set_env DB_ROOT_PASSWORD "$(openssl rand -hex 32)"
   set_env DRUPAL_HASH_SALT "$(openssl rand -hex 32)"
   set_env MAIL_SMTP_DSN "smtp://mailpit:1025"; set_env MAIL_FROM_ADDRESS "bakers@selfhost.test"
@@ -182,10 +177,10 @@ same_snapshot() { # label expected-file
 # ------------------------------------------------------------------ install
 log "Install $FROM"
 record "from: $FROM, to: $TO"
-fetch_release "$WORK/a" "$FROM"
-configure "$WORK/a" lifecycle-a app.selfhost.test 172.31.250.0/24 18443 18080 18025 18444
+fetch_release "$WORK/a" "$TO"
+configure "$WORK/a" lifecycle-a app.selfhost.test 172.31.250.0/24 18443 18080 18025 18444 18081
 use_instance app.selfhost.test 18443 18080 18025 18444
-record "from images: $(grep -E '^REGISTRY_IMAGE_(PHP|NGINX)=' .env | cut -d= -f2 | tr '\n' ' ')"
+record "from image: $(grep -E '^BAKERS_VERSION=' .env | cut -d= -f2)"
 [ "$(docker volume ls -q --filter label=com.docker.compose.project=lifecycle-a | wc -l)" = 0 ] || fail "test project lifecycle-a already has volumes"
 dc --profile install pull
 dc --profile install run --rm install
@@ -193,7 +188,6 @@ dc up -d
 wait_ready
 pass "anonymous install of $FROM"
 check_edge
-drush user:create lifecycle --mail="$USER_MAIL" >/dev/null
 dc exec -T php sh -c 'head -c 65536 /dev/urandom > /var/www/html/web/sites/default/files/lifecycle-public.bin && head -c 65536 /dev/urandom > /var/www/html/private-files/lifecycle-private.bin'
 sign_in
 check_files
@@ -214,9 +208,8 @@ dc exec -T db sh -c 'exec mysqldump --single-transaction --routines --triggers -
 dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/web/sites/default/files -cf - . > "$backup/public.tar"
 dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/private-files -cf - . > "$backup/private.tar"
 dc run --rm --no-deps -T --entrypoint tar php -C /var/www/oauth-keys -cf - . > "$backup/oauth.tar"
-dc run --rm --no-deps -T --entrypoint tar init-perms -C /acme -cf - . > "$backup/acme.tar"
-cp .env docker-compose.yml docker-compose.traefik.yml "$backup/"
-cp -R docker "$backup/"
+dc run --rm --no-deps -T --entrypoint tar traefik -C /acme -cf - . > "$backup/acme.tar"
+cp .env docker-compose.yml traefik.yml "$backup/"
 dc config --images > "$backup/images.txt"
 dc images --format json > "$backup/running-images.json"
 (cd "$backup" && sha256sum database.sql public.tar private.tar oauth.tar acme.tar > SHA256SUMS)
@@ -228,10 +221,8 @@ pass "consistent backup with writers stopped"
 # ------------------------------------------------------------------ update (guide block)
 log "Update to $TO"
 dc stop traefik nginx php cron
-fetch_release "$WORK/a" "$TO"
-write_overlay 18443 18080 18025 18444
-set_env REGISTRY_IMAGE_PHP "$(pinned php "$TO")"; set_env REGISTRY_IMAGE_NGINX "$(pinned nginx "$TO")"
-record "to images: $(grep -E '^REGISTRY_IMAGE_(PHP|NGINX)=' .env | cut -d= -f2 | tr '\n' ' ')"
+set_env BAKERS_VERSION "$(image_tag "$TO")"
+record "to image: $(grep -E '^BAKERS_VERSION=' .env | cut -d= -f2)"
 dc config -q
 dc pull
 dc run --rm --no-deps deploy
@@ -245,11 +236,10 @@ check_files
 # ------------------------------------------------------------------ restore (guide block)
 log "Restore onto empty storage"
 mkdir -p "$WORK/b"
-cp "$backup/.env" "$backup/docker-compose.yml" "$backup/docker-compose.traefik.yml" "$WORK/b/"
-cp -R "$backup/docker" "$WORK/b/"
+cp "$backup/.env" "$backup/docker-compose.yml" "$backup/traefik.yml" "$WORK/b/"
 cd "$WORK/b"
-set_env COMPOSE_PROJECT_NAME lifecycle-b; set_env STACK_NAME lifecycle-b
-set_env DOMAIN restore.selfhost.test; set_env TRAEFIK_SUBNET 172.31.251.0/24
+set_env COMPOSE_PROJECT_NAME lifecycle-b
+set_env DOMAIN restore.selfhost.test; set_env INTERNAL_SUBNET 172.31.251.0/24; set_env HTTP_PORT 28081
 write_overlay 28443 28080 28025 28444
 use_instance restore.selfhost.test 28443 28080 28025 28444
 [ "$(docker volume ls -q --filter label=com.docker.compose.project=lifecycle-b | wc -l)" = 0 ] || fail "restore target has volumes"

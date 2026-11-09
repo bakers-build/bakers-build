@@ -4,12 +4,9 @@ Run the bakers.build application server on your infrastructure. It stores worksp
 
 Start with [hosted or self-run](/self-hosting/choosing) to understand ownership and data. If you operate the server:
 
-1. Follow [standalone installation](/self-hosting/server) with matching release artifacts and pinned public images.
-2. Verify HTTPS, sign-in, mail and access before inviting users.
-3. Take and verify a [backup](/self-hosting/server#restart-and-backup) before an [update](/self-hosting/server#update).
-4. Practice [restoring onto isolated storage](/self-hosting/server#restore-onto-empty-isolated-storage).
-
-These steps describe standalone installations. For an existing deployment with different storage or orchestration, have its operator plan a migration first; do not apply fresh-install commands to existing data.
+1. Start the [server](/self-hosting/server) from one Docker Compose file.
+2. Put a [reverse proxy](/self-hosting/proxy) in front of it for HTTPS.
+3. Sign in, verify, and connect your machines.
 
 The server owns ticket history; pointing a client at another instance does not migrate it.
 

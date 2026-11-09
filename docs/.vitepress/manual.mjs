@@ -208,6 +208,7 @@ export const SIDEBAR = {
     group("Self-hosting", [
       ["Overview", "/self-hosting/"],
       ["Server", "/self-hosting/server"],
+      ["Reverse proxy", "/self-hosting/proxy"],
     ]),
   ],
 }

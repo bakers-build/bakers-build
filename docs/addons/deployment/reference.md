@@ -67,4 +67,4 @@ A breaking server change needs a raised `min_client_version` in the same batch; 
 
 ## Roll back
 
-For a standalone server, recover the matching code and data using [Restore onto empty isolated storage](/self-hosting/server#restore-onto-empty-isolated-storage). Changing only an image does not undo database updates. Follow up with a revert through a merge request. A version tag is never moved or reused; the fix ships as the next version.
+For a standalone server, set the previous release and load the database dump taken before the [update](/self-hosting/server#update). Changing only an image does not undo database updates. Follow up with a revert through a merge request. A version tag is never moved or reused; the fix ships as the next version.

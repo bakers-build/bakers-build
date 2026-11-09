@@ -9,6 +9,8 @@
 # started) and asserts:
 #   - no plaintext secret leaks into the rendered output
 #   - no separate mcp service renders; /mcp is Drupal's mcp_server
+#   - the standalone operator file (docker/compose/) renders from its .env.example,
+#     requires its inputs and is the one the self-hosting docs show
 #   - the `install` profile (site:install, DROPS the DB) is not active on a
 #     normal render
 #   - Traefik is the only ingress overlay, and no removed keytec variable
@@ -37,36 +39,7 @@ render() {
     docker compose -f docker-compose.yml -f "$overlay" "$@" config ${RENDER_FORMAT:+--format=$RENDER_FORMAT}
 }
 
-# The independent path uses the same services and volumes, with its own ingress.
-self_host_render() {
-  TRAEFIK_IMAGE=traefik:v3.6.1 ACME_EMAIL=operator@example.test \
-  TRAEFIK_SUBNET=172.30.42.0/24 MAIL_SMTP_DSN=smtp://mail.example.test:587 \
-  MAIL_FROM_ADDRESS=sender@example.test \
-    render docker-compose.traefik.yml -f docker/self-host.yml "$@"
-}
-RENDER_FORMAT=json self_host_render | python3 -c '
-import json, sys
-c = json.load(sys.stdin)
-s = c["services"]
-assert "traefik" in s and "install" not in s and "docs" not in s
-assert set(c["volumes"]) == {"db", "public_files", "private_files", "tmp_files", "oauth_keys", "acme"}
-for name in ("php", "cron", "deploy"):
-    e = s[name]["environment"]
-    assert e["BB_SELF_HOSTED"] == "1"
-    assert e["DOMAIN"] == "dummy.example.test"
-    assert e["DRUPAL_TRUSTED_PROXY_SUBNET"] == "172.30.42.0/24"
-    assert not s[name].get("ports")
-assert not s["db"].get("ports")
-assert not s["nginx"].get("ports")
-assert {str(p["published"]) for p in s["traefik"]["ports"]} == {"80", "443"}
-assert c["networks"]["traefik_proxy"].get("external", False) is False
-assert s["nginx"]["labels"]["traefik.docker.network"] == c["networks"]["traefik_proxy"]["name"]
-assert any(v["source"] == "oauth_keys" for v in s["cron"]["volumes"])
-'
-pass "independent stack isolates ingress, preserves storage and forwards strict settings"
-
-# Run-log storage: SaaS pins the flag off even when the shell sets it; the
-# independent stack forwards the operator's value and defaults to off.
+# Run-log storage: SaaS pins the flag off even when the shell sets it.
 flag_of() {
   RENDER_FORMAT=json "$@" | python3 -c '
 import json, sys
@@ -78,31 +51,85 @@ print(" ".join(sorted({s[n]["environment"].get("FEATURE_FLAG_RUN_LOG_STORAGE", "
   || fail "SaaS stack does not pin FEATURE_FLAG_RUN_LOG_STORAGE=0 on php, cron and deploy"
 [ "$(FEATURE_FLAG_RUN_LOG_STORAGE=1 flag_of render docker-compose.traefik.yml --profile install)" = "0" ] \
   || fail "SaaS install service does not pin the run-log flag off"
-[ "$(flag_of self_host_render)" = "0" ] || fail "independent stack does not default the run-log flag to 0"
-[ "$(FEATURE_FLAG_RUN_LOG_STORAGE=1 flag_of self_host_render)" = "1" ] \
-  || fail "independent stack does not forward FEATURE_FLAG_RUN_LOG_STORAGE"
-pass "run-log storage flag is pinned off in SaaS and operator-controlled when self-hosted"
+pass "run-log storage flag is pinned off in SaaS"
 
-# No ambient environment or cached private references can satisfy missing inputs.
-python3 <<'PYTEST'
-import os, subprocess
-values = dict(COMPOSE_PROJECT_NAME="bakers-contract", STACK_NAME="bakers-contract",
-    DOMAIN="app.example.test", ACME_EMAIL="operator@example.test", TRAEFIK_SUBNET="172.30.42.0/24",
-    TRAEFIK_IMAGE="traefik:v3.6.1", REGISTRY_IMAGE_PHP="ghcr.io/example/php:1.0.0",
-    REGISTRY_IMAGE_NGINX="ghcr.io/example/nginx:1.0.0", DB_NAME="dummy", DB_USER="dummy",
-    DB_PASSWORD="dummy", DB_ROOT_PASSWORD="dummy", DRUPAL_HASH_SALT="dummy",
+# The operator compose file (docker/compose/) is standalone: it renders from its own
+# filled .env.example alone, with no ambient environment and no other compose file.
+RENDER_FORMAT=json render docker-compose.traefik.yml --profile install > "${TMPDIR:-/tmp}/bakers-base.json"
+BASE_JSON="${TMPDIR:-/tmp}/bakers-base.json" python3 <<'PYTEST'
+import json, os, re, shutil, subprocess, tempfile
+src = "docker/compose"
+required = dict(BAKERS_VERSION="1.2.3", DOMAIN="app.example.test", ADMIN_EMAIL="admin@example.test",
+    DB_PASSWORD="dummy-pw", DB_ROOT_PASSWORD="dummy-root-pw", DRUPAL_HASH_SALT="dummy-salt",
     MAIL_SMTP_DSN="smtp://smtp.example.test:587", MAIL_FROM_ADDRESS="sender@example.test")
-command = ["docker", "compose", "--env-file", "/dev/null", "-f", "docker-compose.yml",
-    "-f", "docker-compose.traefik.yml", "-f", "docker/self-host.yml", "config", "-q"]
-env = {"PATH": os.environ["PATH"], **values}
-result = subprocess.run(command, env=env, capture_output=True, text=True)
-assert result.returncode == 0, result.stderr
-for name in values.keys() - {"COMPOSE_PROJECT_NAME"}:
-    result = subprocess.run(command, env={**env, name: ""}, capture_output=True, text=True)
-    assert result.returncode != 0, f"Missing {name} was accepted"
-    assert name in result.stderr, result.stderr
+example = open(f"{src}/.env.example").read()
+keys = re.findall(r"^([A-Z_][A-Z0-9_]*)=", example, re.M)
+assert set(required) <= set(keys), f"missing in .env.example: {set(required) - set(keys)}"
+work = tempfile.mkdtemp()
+shutil.copy(f"{src}/docker-compose.yml", work)
+shutil.copy(f"{src}/traefik.yml", work)
+
+def run(values, *args, files=("docker-compose.yml",)):
+    lines = [l for l in example.splitlines() if not re.match(r"^[A-Z_][A-Z0-9_]*=", l) or l.split("=")[0] not in values]
+    lines += [f"{k}={v}" for k, v in values.items()]
+    open(f"{work}/.env", "w").write("\n".join(lines) + "\n")
+    cmd = ["docker", "compose", "--project-name", "bakers-operator"]
+    for f in files:
+        cmd += ["-f", f]
+    env = {"PATH": os.environ["PATH"], "HOME": os.environ.get("HOME", work)}
+    return subprocess.run(cmd + list(args), cwd=work, env=env, capture_output=True, text=True)
+
+r = run(required, "--profile", "install", "config", "--format", "json")
+assert r.returncode == 0, r.stderr
+assert "BB_SELF_HOSTED" not in r.stdout, "the operator stack still sets a self-hosted mode switch"
+c = json.loads(r.stdout)
+s = c["services"]
+assert set(s) == {"init-perms", "db", "install", "deploy", "php", "nginx", "cron"}, set(s)
+assert s["php"]["image"] == "ghcr.io/bakers-build/bakers-build/php:1.2.3"
+assert s["nginx"]["image"] == "ghcr.io/bakers-build/bakers-build/nginx:1.2.3"
+subnet = c["networks"]["internal"]["ipam"]["config"][0]["subnet"]
+assert subnet == "172.30.42.0/24", subnet
+for name in ("install", "deploy", "php", "cron"):
+    e = s[name]["environment"]
+    assert e["DRUPAL_TRUSTED_PROXY_SUBNET"] == subnet, name
+    assert e["DOMAIN"] == "app.example.test", name
+    assert e["FEATURE_FLAG_RUN_LOG_STORAGE"] == "0", name
+    assert not s[name].get("ports"), name
+assert not s["db"].get("ports")
+assert [(p["host_ip"], str(p["published"]), p["target"]) for p in s["nginx"]["ports"]] == [("127.0.0.1", "8080", 80)]
+assert s["install"]["environment"]["ADMIN_EMAIL"] == "admin@example.test"
+for name in ("php", "cron"):
+    assert s[name]["environment"]["MAIL_SMTP_DSN"] == "smtp://smtp.example.test:587", name
+
+base = json.load(open(os.environ["BASE_JSON"]))["services"]
+def code(command):  # shell comment lines are not behaviour
+    return [re.sub(r"(?m)^\s*#.*\n", "", part) for part in command]
+assert code(s["deploy"]["command"]) == code(base["deploy"]["command"]), "deploy command drifted from docker-compose.yml"
+want = [part.replace("site:install --existing-config\n", 'site:install --existing-config --account-mail="$$ADMIN_EMAIL"\n') for part in base["install"]["command"]]
+assert code(s["install"]["command"]) == code(want), s["install"]["command"]
+
+r = run({**required, "FEATURE_FLAG_RUN_LOG_STORAGE": "1"}, "config", "--format", "json")
+assert r.returncode == 0, r.stderr
+assert {json.loads(r.stdout)["services"][n]["environment"]["FEATURE_FLAG_RUN_LOG_STORAGE"] for n in ("php", "cron", "deploy")} == {"1"}
+
+for name in required:
+    r = run({**required, name: ""}, "config", "-q")
+    assert r.returncode != 0, f"Missing {name} was accepted"
+    assert name in r.stderr, r.stderr
+
+r = run(required, "config", "--format", "json", files=("docker-compose.yml", "traefik.yml"))
+assert r.returncode == 0, r.stderr
+c = json.loads(r.stdout)
+t = c["services"]["traefik"]
+assert {str(p["published"]) for p in t["ports"]} == {"80", "443"}
+assert "internal" in t["networks"]
+assert "traefik.http.routers.bakers.rule" in c["services"]["nginx"]["labels"]
+
+for doc, file in (("docs/self-hosting/server.md", "docker-compose.yml"), ("docs/self-hosting/server.md", ".env.example"), ("docs/self-hosting/proxy.md", "traefik.yml")):
+    assert open(f"{src}/{file}").read() in open(doc).read(), f"{doc} does not show {src}/{file} verbatim"
+shutil.rmtree(work)
 PYTEST
-pass "independent installation rejects every missing required input"
+pass "operator compose file is standalone, trusts its subnet, requires its inputs and matches the docs"
 
 # Both stacks use the same Traefik overlay; a second ingress overlay is drift.
 overlays="$(ls docker-compose.*.yml)"

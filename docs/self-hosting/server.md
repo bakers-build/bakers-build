@@ -1,282 +1,253 @@
 ---
 title: Server
-description: Install a standalone control plane from public release images with Docker Compose, Traefik HTTPS and persistent storage.
+description: Run the bakers.build server with one Docker Compose file behind your own HTTPS reverse proxy.
 ---
 
 # Self-host the server
 
-Run the control plane on one Linux Docker host using public release images. Install clients and workers through [Machine setup](/provision/machine). Existing deployments need an operator-approved migration preserving their data and configuration.
+The server runs from one Docker Compose file on a Linux `amd64` host with Docker Compose v2.24.4
+or newer. You need a DNS name for the host, an SMTP account (sign-in works by email link) and an
+HTTPS reverse proxy ([examples](/self-hosting/proxy)). Releases are listed on
+[GitHub](https://github.com/bakers-build/bakers-build/releases); their images are public.
 
-A release is a GitHub release `vX.Y.Z` of
-[`bakers-build/bakers-build`](https://github.com/bakers-build/bakers-build/releases).
-Its public images are `ghcr.io/bakers-build/bakers-build/php:X.Y.Z` and
-`ghcr.io/bakers-build/bakers-build/nginx:X.Y.Z`, pullable without a registry login. Install
-only a release; `latest`, `main` and `next` are moving channel tags, and `next`
-images are pre-release builds.
+## Compose file
 
-## AI first
+Save this as `docker-compose.yml` in an empty directory:
 
-```text
-Read https://bakers.build/self-hosting/server.
-Read this server reference and inspect the existing deployment. Explain
-missing operator prerequisites, storage and secrets. Propose the documented
-install or update steps and verification; wait for explicit deployment
-authorization.
+```yaml
+# bakers.build server. Fill in .env next to this file, then:
+#   docker compose --profile install run --rm install   # first install only: creates the database
+#   docker compose up -d
+# nginx listens on 127.0.0.1:${HTTP_PORT}; put your HTTPS reverse proxy in front of it.
+x-app: &app
+  image: ghcr.io/bakers-build/bakers-build/php:${BAKERS_VERSION:?Set BAKERS_VERSION, e.g. 0.7.0}
+  restart: unless-stopped
+  depends_on:
+    init-perms:
+      condition: service_completed_successfully
+    db:
+      condition: service_healthy
+  volumes:
+    - public_files:/var/www/html/web/sites/default/files
+    - private_files:/var/www/html/private-files
+    - tmp_files:/tmp
+    - oauth_keys:/var/www/oauth-keys
+  networks: [internal]
+
+x-env: &env
+  DB_HOST: db
+  DB_NAME: bakers
+  DB_USER: bakers
+  DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+  DB_DRIVER: mysql
+  DB_PORT: "3306"
+  DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
+  DRUSH_OPTIONS_URI: https://${DOMAIN}
+  DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT:?Set DRUPAL_HASH_SALT}
+  # Your reverse proxy reaches nginx from this network (or its gateway), so it is trusted.
+  DRUPAL_TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:-172.30.42.0/24}
+  MAIL_SMTP_DSN: ${MAIL_SMTP_DSN:?Set MAIL_SMTP_DSN; sign-in works by email}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:?Set MAIL_FROM_ADDRESS}
+  BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
+  BB_OAUTH_GOOGLE_CLIENT_SECRET: ${BB_OAUTH_GOOGLE_CLIENT_SECRET:-}
+  FEATURE_FLAG_RUN_LOG_STORAGE: ${FEATURE_FLAG_RUN_LOG_STORAGE:-0}
+
+services:
+  init-perms:
+    image: alpine:3.22.2
+    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
+    volumes:
+      - public_files:/pf
+      - private_files:/privf
+      - tmp_files:/tmpdir
+      - oauth_keys:/oauthkeys
+    restart: "no"
+
+  db:
+    image: wodby/mariadb:10.11-3.30.1
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: bakers
+      MYSQL_USER: bakers
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks: [internal]
+
+  # First install only: site:install DROPS and recreates the database.
+  install:
+    <<: *app
+    profiles: [install]
+    restart: "no"
+    environment:
+      <<: *env
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL, the first administrator}
+    command: |
+      sh -c '
+        set -e
+        DRUSH=/var/www/html/vendor/bin/drush
+        echo "[install] site:install --existing-config (DROPS + recreates the DB)"
+        $$DRUSH -y site:install --existing-config --account-mail="$$ADMIN_EMAIL"
+        $$DRUSH -y deploy:hook
+        echo "[install] OAuth keys"
+        mkdir -p /var/www/oauth-keys
+        [ -f /var/www/oauth-keys/private.key ] || $$DRUSH simple-oauth:generate-keys /var/www/oauth-keys
+      '
+
+  # Runs the database updates on every `up`; php starts only when it succeeds.
+  deploy:
+    <<: *app
+    restart: "no"
+    environment: *env
+    command: |
+      sh -c '
+        set -e
+        DRUSH=/var/www/html/vendor/bin/drush
+        echo "[deploy] UPDATE — drush deploy (fails loudly if the site is not installed)"
+        $$DRUSH -y deploy
+        echo "[deploy] entity schema: enable tool, apply, re-import config to disable"
+        $$DRUSH -y pm:install devel_entity_updates
+        $$DRUSH -y devel-entity-updates
+        $$DRUSH -y config:import
+        echo "[deploy] OAuth keys"
+        mkdir -p /var/www/oauth-keys
+        [ -f /var/www/oauth-keys/private.key ] || $$DRUSH simple-oauth:generate-keys /var/www/oauth-keys
+      '
+
+  php:
+    <<: *app
+    depends_on:
+      deploy:
+        condition: service_completed_successfully
+    environment:
+      <<: *env
+      PHP_FPM_USER: wodby
+      PHP_FPM_GROUP: wodby
+      PHP_FPM_CLEAR_ENV: "no"
+
+  cron:
+    <<: *app
+    depends_on:
+      deploy:
+        condition: service_completed_successfully
+    environment: *env
+    command: sh -c 'while true; do /var/www/html/vendor/bin/drush core:cron || true; sleep 300; done'
+
+  nginx:
+    image: ghcr.io/bakers-build/bakers-build/nginx:${BAKERS_VERSION}
+    restart: unless-stopped
+    depends_on: [php]
+    environment:
+      NGINX_BACKEND_HOST: php
+      NGINX_SERVER_ROOT: /var/www/html/web
+      NGINX_VHOST_PRESET: drupal10
+      NGINX_STATIC_OPEN_FILE_CACHE: "off"
+      NGINX_SERVER_EXTRA_CONF_FILEPATH: /etc/nginx/oauth-discovery.conf
+    volumes:
+      - public_files:/var/www/html/web/sites/default/files
+    ports:
+      - 127.0.0.1:${HTTP_PORT:-8080}:80
+    networks: [internal]
+
+volumes:
+  db:
+  public_files:
+  private_files:
+  tmp_files:
+  oauth_keys:
+
+networks:
+  internal:
+    ipam:
+      config:
+        - subnet: ${INTERNAL_SUBNET:-172.30.42.0/24}
 ```
 
-## Host and release inputs
-
-Use a dedicated Linux Docker Engine host with Docker Compose v2.24.4 or newer,
-on `amd64` (the release images are published for `linux/amd64` only), and enough disk for the
-working data plus a separate backup. Select capacity based on your workload.
-Provide a DNS hostname pointing directly to this host (including correct AAAA
-records if present), inbound TCP 80/443, outbound HTTPS, and outbound access to
-your SMTP service. Disable any upstream TLS termination for the documented
-TLS-ALPN ACME challenge. Do not expose database or PHP ports.
-
-Obtain these files from the same release tag, retaining paths, and pin both
-images by digest:
+Next to it, save this as `.env` and fill it in:
 
 ```sh
-set -euo pipefail
-VERSION=X.Y.Z  # the selected release, without the leading v
-for f in docker-compose.yml docker-compose.traefik.yml docker/self-host.yml docker/self-host.env.example; do
-  curl -fsSL --create-dirs -o "$f" "https://raw.githubusercontent.com/bakers-build/bakers-build/v$VERSION/$f"
-done
-for image in php nginx; do
-  docker buildx imagetools inspect "ghcr.io/bakers-build/bakers-build/$image:$VERSION" --format '{{.Name}}@{{.Manifest.Digest}}'; echo
-done
+# Release without the leading v, e.g. 0.7.0.
+BAKERS_VERSION=
+# Public hostname, no scheme or path.
+DOMAIN=
+# The first administrator; signs in with an email link.
+ADMIN_EMAIL=
+# Three random values (openssl rand -hex 32). Keep them for every update.
+DB_PASSWORD=
+DB_ROOT_PASSWORD=
+DRUPAL_HASH_SALT=
+# smtp:// or smtps:// URL; percent-encode the user and password, e.g. user%40example.org.
+MAIL_SMTP_DSN=
+MAIL_FROM_ADDRESS=
+# 1 lets workspace leads store agent run transcripts on this server.
+FEATURE_FLAG_RUN_LOG_STORAGE=0
+# Optional.
+HTTP_PORT=8080
+INTERNAL_SUBNET=172.30.42.0/24
+BB_OAUTH_GOOGLE_CLIENT_ID=
+BB_OAUTH_GOOGLE_CLIENT_SECRET=
 ```
 
-No checkout build toolchain is needed. Put the files in a private installation
-directory. Never run this path inside an existing operator's stack directory.
-The following commands use Bash from that directory:
-
-```sh
-set -euo pipefail
-umask 077
-cp docker/self-host.env.example .env
-chmod 600 .env
-```
-
-Edit `.env` before proceeding. Do not source it as a shell script. Compose reads
-it directly; single-quote values containing `$` to avoid interpolation.
-
-| Input | Value to provide |
+| Variable | Value |
 |---|---|
-| `COMPOSE_PROJECT_NAME` | Stable, unique project name; changing it selects different networks and volumes. |
-| `STACK_NAME` | Unique router name, normally the same as the project name. |
-| `DOMAIN`, `ACME_EMAIL` | Public hostname without scheme/path and certificate contact email. |
-| `TRAEFIK_SUBNET` | Unused private IPv4 CIDR for this project's ingress network. Check host/VPN routes and existing Docker networks first; e.g. `172.30.42.0/24` only if free. |
-| `REGISTRY_IMAGE_PHP`, `REGISTRY_IMAGE_NGINX` | The two pinned references printed above, e.g. `ghcr.io/bakers-build/bakers-build/php:X.Y.Z@sha256:…`. Both must come from the same release. |
-| `TRAEFIK_IMAGE` | Versioned public Traefik image; the example selects `traefik:v3.6.1`. |
-| `DB_NAME`, `DB_USER` | Application database and user. |
-| `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `DRUPAL_HASH_SALT` | Three independent private random values, e.g. generate each with `openssl rand -hex 32`. Retain them across updates/restores. |
-| `MAIL_SMTP_DSN`, `MAIL_FROM_ADDRESS` | Working SMTP URL and permitted sender. For example `smtp://user:password@smtp.example.org:587`; percent-encode credential characters. Use your provider's TLS settings; do not disable peer verification. |
-| `BB_OAUTH_GOOGLE_CLIENT_ID`, `BB_OAUTH_GOOGLE_CLIENT_SECRET` | Optional Google login credentials for this domain; otherwise empty. |
-| `FEATURE_FLAG_RUN_LOG_STORAGE` | `1` or `true` lets workspace leads opt in to storing agent run transcripts; anything else, including empty, keeps storage off. See [Run-log storage](#run-log-storage). |
+| `BAKERS_VERSION` | Release without the leading `v`, e.g. `0.7.0`. |
+| `DOMAIN` | The public hostname, e.g. `bakers.example.org`. |
+| `ADMIN_EMAIL` | The first administrator's email address. |
+| `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `DRUPAL_HASH_SALT` | Three random values, e.g. from `openssl rand -hex 32`. Keep them; an update needs the same ones. |
+| `MAIL_SMTP_DSN`, `MAIL_FROM_ADDRESS` | Your SMTP URL, e.g. `smtp://user%40example.org:password@smtp.example.org:587`, and its sender address. |
+| `FEATURE_FLAG_RUN_LOG_STORAGE` | See [Run-log storage](#run-log-storage). |
+| `HTTP_PORT` | Loopback port your proxy forwards to. |
+| `INTERNAL_SUBNET` | Change only if `172.30.42.0/24` is already used on the host. |
 
-Leave `COMPOSE_PROFILES` empty. The docs-site image is not required. Coder and FRP
-are not part of this stack. MariaDB retains the base stack's pinned version;
-the standalone helper is pinned in `docker/self-host.yml`.
+`docker compose config -q` reports a missing value. Keep `.env` private (`chmod 600 .env`).
 
-Define this function in every operator shell used below:
+## Install
 
 ```sh
-dc() {
-  docker compose --env-file .env -f docker-compose.yml \
-    -f docker-compose.traefik.yml -f docker/self-host.yml "$@"
-}
-dc config -q
+docker compose --profile install run --rm install
+docker compose up -d
 ```
 
-Missing required values fail before startup. Full `docker compose config` output
-contains secrets; use `-q` for validation and keep diagnostic output private.
-The self-host overlay forwards domain, SMTP and strict security settings to all
-PHP services. Drupal accepts only `DOMAIN`, trusts forwarding only from the
-selected ingress subnet, ignores forwarded host headers and requires a salt.
+The `install` service creates the database; run it once, never on an existing installation.
+Then set up your [reverse proxy](/self-hosting/proxy).
 
-## First install — empty project only
+## First sign-in
 
-Confirm this project has no existing data: inspect `dc ps -a` and
-`docker volume ls` before running install. **The install service drops and
-recreates the selected database. Never run it as an update or restore step.**
+Open `https://DOMAIN/user/login`, enter `ADMIN_EMAIL` and follow the link in the email. Create a
+workspace and a project, then connect a machine with `bakers init --base-url https://DOMAIN`
+([Machine setup](/provision/machine)).
 
-```sh
-dc --profile install pull
-dc --profile install run --rm install
-dc up -d
-dc ps -a
-dc logs --tail 80 deploy
-```
+## Verify
 
-`install` is profile-gated. Normal startup runs the update-only `deploy` hook,
-then PHP, Nginx and cron; a failed hook keeps application services from starting.
-Named volumes preserve database, public/private files and OAuth signing keys.
-The `/tmp` volume is disposable. Do not use `down -v` or volume pruning.
-
-Traefik owns ports 80/443, redirects HTTP to HTTPS and requests/renews certificates
-with Let's Encrypt through TLS-ALPN on port 443. Its `acme` volume preserves
-certificate/account material. Its dashboard is disabled. The project-specific
-ingress network is created by Compose; no pre-existing company network is needed.
-Traefik discovers only this project's labelled containers. Its Docker socket
-mount is read-only, but Docker API access is still privileged: use a dedicated
-host and do not give untrusted containers access to that socket or ingress network.
-
-Obtain the first administrator's one-time login link privately:
-
-```sh
-dc exec php /var/www/html/vendor/bin/drush --uri="https://YOUR_DOMAIN" uli
-```
-
-Replace `YOUR_DOMAIN` with the configured hostname. Open the link, configure the
-owner's email, and create the initial workspace and memberships. Verify normal
-passwordless sign-in by receiving a real email. Google login is optional. Existing
-application permissions remain authoritative; do not give ordinary members admin
-rights to bypass an access failure. Connect clients with
-`bakers init --base-url https://YOUR_DOMAIN`.
-
-## Run-log storage
-
-Agent run transcripts are stored only when both hold:
-
-1. `FEATURE_FLAG_RUN_LOG_STORAGE=1` (or `true`) reaches the server. The hosted
-   stack (`docker-compose.yml`) pins it to `0`; `docker/self-host.yml` passes on
-   your value. Run `dc up -d` after changing it.
-2. a workspace lead ticks *Store agent run logs* in the workspace Settings. The
-   box appears only while the flag is on.
-
-Both default to off, also after an upgrade: a deployment that stored
-transcripts before stores none until both are set.
-
-When storage is off, conductors close runs with footprint and state but no
-transcript; the server drops any transcript an older conductor sends, and a
-conductor gets no policy from an older server, so sends none. Error messages
-of failed runs are kept either way.
-
-The conductor reads the policy for each run it finalizes, without a restart,
-and the server checks it again on every write: disabling before a run's upload
-stores nothing from that run. Turning storage off deletes no existing
-transcript and keeps who may read it; turning it on does not backfill.
-The current CLI configuration loader drops `capture_logs`, so setting it to `false`
-in a conductor file does **not** prevent uploads. Use the server/workspace policy
-above to disable storage; see [Project configuration](/configuration/project).
-
-## Verify before opening access
-
-Check HTTP redirects to HTTPS, the certificate matches the hostname, the sign-in
-page and mail links use HTTPS, and normal/denied member access behaves as expected.
-A request with an unrelated Host must not reach the application. Spoofed forwarded
-headers from outside the ingress network must not be trusted. Verify OAuth discovery
-at `/.well-known/oauth-authorization-server` and MCP access at `/mcp` using the
-appropriate signed-in client. A server response alone is not a permission check.
-
-Maintainers with the repository and Node can additionally run:
-
-```sh
-node scripts/deploy/deploy-report.mjs --smoke-only https://YOUR_DOMAIN
-```
-
-Record release versions, resolved digests, architecture, source revision and
-observations without login tokens or secrets. Maintainers exercise this guide's
-install, restart, backup, update and restore blocks against two published
-versions with the manual *Self-host lifecycle* GitHub Actions workflow
-(`scripts/ci/self-host-lifecycle.sh`); it substitutes a test ACME CA and mail
-catcher for the public CA and SMTP provider.
-
-## Restart and backup
-
-`dc restart php nginx cron traefik` restarts services without reinstalling. Verify
-records, public/private file access and OAuth identity afterwards.
-
-For a consistent backup, stop all application writers and ingress. Keep any
-external automation stopped too; do not run deploy/install during the backup.
-Use a fresh backup directory outside the installation directory and protect it:
-
-```sh
-set -euo pipefail
-umask 077
-backup="$(mktemp -d ../bakers-backup.XXXXXXXX)"
-dc stop traefik nginx php cron
-dc exec -T db sh -c 'exec mysqldump --single-transaction --routines --triggers --events -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' > "$backup/database.sql"
-dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/web/sites/default/files -cf - . > "$backup/public.tar"
-dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/private-files -cf - . > "$backup/private.tar"
-dc run --rm --no-deps -T --entrypoint tar php -C /var/www/oauth-keys -cf - . > "$backup/oauth.tar"
-dc run --rm --no-deps -T --entrypoint tar init-perms -C /acme -cf - . > "$backup/acme.tar"
-cp .env docker-compose.yml docker-compose.traefik.yml "$backup/"
-cp -R docker "$backup/"
-dc config --images > "$backup/images.txt"
-dc images --format json > "$backup/running-images.json"
-(cd "$backup" && sha256sum database.sql public.tar private.tar oauth.tar acme.tar > SHA256SUMS)
-touch "$backup/COMPLETE"
-dc start php nginx cron traefik
-```
-
-If a command fails, leave writers stopped until the cause is resolved. A directory
-without `COMPLETE` is not a completed backup. Copy completed backups to separate,
-access-controlled storage; they contain the database, private files, signing keys,
-certificate private keys and `.env` secrets. Do not commit or publish them.
+- `http://DOMAIN` redirects to `https://DOMAIN` with a valid certificate.
+- The sign-in email arrives and its link starts with `https://DOMAIN`.
+- A connected conductor appears and one ticket runs one state.
 
 ## Update
 
-Take and verify the backup above first. Stop writers again with
-`dc stop traefik nginx php cron`. Read the release's supported upgrade path and
-replace the installation artifacts only as directed, then update both application
-image references to the matching release. Keep project identity, database inputs
-and salt unchanged. Do not independently upgrade MariaDB as part of an application
-update.
+Read the release notes, then:
 
 ```sh
-dc config -q
-dc pull
-dc run --rm --no-deps deploy
-dc up -d
+docker compose exec -T db sh -c 'exec mysqldump -uroot -p"$MYSQL_ROOT_PASSWORD" bakers' > backup-$(date +%F).sql
+# set BAKERS_VERSION in .env to the new release
+docker compose pull
+docker compose run --rm deploy
+docker compose up -d
 ```
 
-If the update hook fails, do not reopen ingress. Resolve the failure or restore a
-matching backup. After success, compare pre/post-update record IDs, public/private
-file checksums and the OAuth public-key fingerprint, then repeat login and access
-checks. A code-only downgrade does not reverse database/schema changes.
+`deploy` runs the database updates; `up -d` also runs it before PHP starts. Keep `.env` otherwise
+unchanged. If `deploy` fails, the site stays down: set the previous `BAKERS_VERSION` and load the
+dump with `docker compose exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" bakers' < backup-….sql`.
 
-## Restore onto empty isolated storage
+## Run-log storage
 
-Practice recovery in a **new installation directory and a different Compose
-project**, preferably on a separate host. Never restore over the source instance.
-Copy the completed backup's configuration and exact release files to the new
-directory, keep `.env` private, and redefine `dc` there. Verify `SHA256SUMS` in the
-backup directory and inspect the archive inventories before extraction.
-
-Set a new `COMPOSE_PROJECT_NAME` and `STACK_NAME`, a separate test hostname and an
-unused `TRAEFIK_SUBNET`. Retain the original database credentials, salt and exact
-image digests. Update optional provider redirect registrations if testing login
-on the new hostname. A new test hostname obtains its own ACME certificate; restore
-the saved ACME archive only for recovery of the original domain on its replacement
-host, with the original ingress stopped. Two hosts must not compete for that name.
-
-Check `dc ps -a` and the project-labelled volumes are absent before creating any
-storage. Explicitly select and inspect the destination project; never use existing
-operator volumes. Do **not** run the install service.
-
-```sh
-set -euo pipefail
-# Set this to the complete, verified backup directory.
-backup=/absolute/path/to/backup
-test -f "$backup/COMPLETE"
-(cd "$backup" && sha256sum -c SHA256SUMS)
-dc config -q
-dc pull
-dc up -d --wait db
-dc run --rm --no-deps init-perms
-dc exec -T db sh -c 'exec mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < "$backup/database.sql"
-dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/web/sites/default/files -xf - < "$backup/public.tar"
-dc run --rm --no-deps -T --entrypoint tar php -C /var/www/html/private-files -xf - < "$backup/private.tar"
-dc run --rm --no-deps -T --entrypoint tar php -C /var/www/oauth-keys -xf - < "$backup/oauth.tar"
-# Original-domain recovery only, before Traefik starts:
-# dc run --rm --no-deps -T --entrypoint tar init-perms -C /acme -xf - < "$backup/acme.tar"
-dc up -d
-```
-
-Verify record IDs, file checksums, private-file permissions, OAuth public-key
-fingerprint and sign-in against the source snapshot. Keep the source instance and
-backup intact. Failed-upgrade recovery uses this same matched image/data snapshot;
-switching traffic or changing production DNS is a separate operator decision.
+With `FEATURE_FLAG_RUN_LOG_STORAGE=1` a workspace lead can tick *Store agent run logs* in the
+workspace settings; only then does the server keep agent run transcripts. Both are off by default.
