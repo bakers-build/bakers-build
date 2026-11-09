@@ -2,9 +2,10 @@
 
 import json
 import pathlib
+import tempfile
 import unittest
 
-from channels import channel_prompt, open_channels, request_channel_name, slug
+from channels import channel_prompt, open_channels, read_json, request_channel_name, slug
 
 HERE = pathlib.Path(__file__).parent
 
@@ -56,6 +57,21 @@ class ChannelPrompt(unittest.TestCase):
 
     def test_without_a_ticket_says_none_yet(self):
         self.assertIn("none yet", channel_prompt("C1", "https://acme.slack.com", None))
+
+
+class ReadJson(unittest.TestCase):
+    def test_a_missing_file_is_empty(self):
+        self.assertEqual(read_json("/nonexistent/bot-channels.json", strict=True), {})
+
+    def test_an_unreadable_file_is_empty_for_admission_and_an_error_for_intake(self):
+        # Intake rewrites the file from what it read: an empty read would wipe every channel.
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d, "bot-channels.json")
+            path.write_text('{"C1": {"name": "req-', encoding="utf-8")
+            with self.assertLogs("pm_bot.bot_channels", "ERROR"):
+                self.assertEqual(read_json(path), {})
+            with self.assertRaises(ValueError):
+                read_json(path, strict=True)
 
 
 if __name__ == "__main__":

@@ -20,24 +20,13 @@ import os
 import re
 from datetime import datetime, timezone
 
-from .channels import channel_prompt, open_channels, request_channel_name
+from .channels import channel_prompt, open_channels, read_json, request_channel_name
 
 logger = logging.getLogger("pm_bot.bot_channels")
 
 DATA = os.environ.get("HERMES_HOME") or "/opt/data"
 BOT_FILE = os.path.join(DATA, "bot-channels.json")
 POLLER_FILE = os.path.join(DATA, "poller-state.json")
-
-
-def _read(path):
-    try:
-        with open(path, encoding="utf-8") as fh:
-            return json.load(fh)
-    except FileNotFoundError:
-        return {}
-    except (OSError, ValueError) as exc:
-        logger.error("bot-channels: cannot read %s: %s", path, exc)
-        return {}
 
 
 def _write(path, value):
@@ -64,8 +53,8 @@ def factory(app, adapter):
         return
 
     def current():
-        poller = _read(POLLER_FILE)
-        return poller, open_channels(_read(BOT_FILE), poller)
+        poller = read_json(POLLER_FILE)
+        return poller, open_channels(read_json(BOT_FILE), poller)
 
     # Instance overrides of the adapter's channel getters (shadowing the class's env/YAML
     # readers): read on every message, so a new channel is admitted at once and an archived
@@ -99,7 +88,8 @@ def factory(app, adapter):
 
     async def open_request_channel(client, event):
         async with lock:
-            bot = _read(BOT_FILE)
+            # Strict: written back below, so an unreadable file fails the intake instead of being wiped.
+            bot = read_json(BOT_FILE, strict=True)
             taken = {(r or {}).get("name") for r in bot.values()}
             for _ in range(20):
                 name = request_channel_name(event.get("text") or "", taken)
@@ -127,8 +117,8 @@ def factory(app, adapter):
             logger.error("bot-channels: request channel for %s: %s", event.get("ts"), exc)
             try:
                 await client.chat_postMessage(channel=home, text=f"<@{user}> I could not open a channel for this request. Please try again in a moment.")
-            except Exception:
-                pass
+            except Exception as post_exc:
+                logger.error("bot-channels: telling %s: %s", user, post_exc)
             return
         # The message itself, as if it had been written in the new channel.
         copy = dict(event, channel=channel)
@@ -136,7 +126,10 @@ def factory(app, adapter):
             await adapter._handle_slack_message(copy, dict(body, event=copy))
         except Exception as exc:
             logger.error("bot-channels: handing on %s: %s", event.get("ts"), exc)
-            await client.chat_postMessage(channel=channel, text=f"<@{user}>, please repeat your request here.")
+            try:
+                await client.chat_postMessage(channel=channel, text=f"<@{user}>, please repeat your request here.")
+            except Exception as post_exc:
+                logger.error("bot-channels: asking %s to repeat in %s: %s", user, channel, post_exc)
 
     async def middleware(body, next, client):
         event = (body or {}).get("event") or {}
