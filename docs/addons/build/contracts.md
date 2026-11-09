@@ -106,7 +106,7 @@ Terminal UI tabs are layered. The three lists concatenate in the order machine, 
 
 ## Write an addon
 
-1. Create a JavaScript package with `"type": "module"` and an export such as `"./preset": "./preset.js"`. The [tutorial](/addons/build/first-addon#create-two-files) includes a complete manifest. A local package can live in `.bakers/addons/`; it does not need to be added to the Bakers source repository.
+1. Create a JavaScript package with `"type": "module"` and an export such as `"./preset": "./preset.js"`. The [harness tutorial](/addons/build/agent#create-the-package) includes a complete manifest. A local package can live in `.bakers/addons/`; it does not need to be added to the Bakers source repository.
 2. Export only the contributions you need. Accumulators preserve previous contributions, for example `(acc, opts) => [...acc, myWorkspace(opts)]`. `tools` and `inbox` are values with their own contract versions.
 3. For TypeScript, import `BbPreset` from `@bakers-build/core`, or the typed conductor `Preset` from `@bakers-build/conductor/contract`. That subpath also exports `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin`, `AgentPlugin` and their interfaces. Use `import type` for types and compile before loading the package; export the compiled JavaScript path.
 4. Declare the contract packages you use as peer dependencies with compatible published versions. You can also use them as development dependencies for local type checking. Keep preset imports light: commands return lazy module descriptors, UI entries return module specifiers, and tool/message handler factories load their implementation only when needed.

@@ -7,17 +7,26 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { FakeBbRemote } from '@bakers-build/addon-fake';
 import { discoverAddons } from '@bakers-build/core';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import type {
+  AgentCandidate,
+  ConductorFileConfig,
+  ExecutorPlugin,
+  SpawnRunInput,
+} from '../../src/contract.js';
 import { InboxRuntime } from '../../src/core/inbox-runtime.js';
 import { loadInbox } from '../../src/plugins/message.js';
 import { loadTools } from '../../src/plugins/tools.js';
 
 let dir: string;
+let clientServer: Server | undefined;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'bakers-addon-guide-'));
@@ -26,23 +35,28 @@ beforeEach(() => {
   writeFileSync(join(dir, '.gitignore'), 'ignored.txt\n');
 });
 
-afterEach(() => {
+afterEach(async () => {
+  if (clientServer) {
+    await new Promise<void>((resolve) => clientServer!.close(() => resolve()));
+    clientServer = undefined;
+  }
+  vi.unstubAllEnvs();
   rmSync(dir, { recursive: true, force: true });
 });
 
 async function loadGuide(
   page = 'control-panel',
   name = 'worktree-check',
-  section?: string,
+  options?: unknown,
 ) {
-  let guide = readFileSync(
+  const guide = readFileSync(
     new URL(`../../../../docs/addons/build/${page}.md`, import.meta.url),
     'utf8',
   );
-  if (section)
-    guide = guide.split(`## ${section}\n`)[1]?.split('\n## ')[0] ?? '';
   const blocks = [...guide.matchAll(/^```(json|js)\n([\s\S]*?)^```/gm)];
-  const manifest = blocks.find((b) => b[1] === 'json')?.[2];
+  const manifest = blocks.find(
+    (b) => b[1] === 'json' && JSON.parse(b[2]).name,
+  )?.[2];
   const preset = blocks.find((b) => b[1] === 'js')?.[2];
   if (!manifest || !preset) throw new Error('guide example is incomplete');
   const configDir = join(dir, '.bakers');
@@ -66,10 +80,14 @@ async function loadGuide(
     ],
     { cwd: dir },
   );
-  return discoverAddons([`./addons/${name}`], 'conductor', [
-    join(configDir, 'conductor.config.js'),
-    fileURLToPath(new URL('../../../package.json', import.meta.url)),
-  ]);
+  return discoverAddons(
+    [{ use: `./addons/${name}`, with: options }],
+    'conductor',
+    [
+      join(configDir, 'conductor.config.js'),
+      fileURLToPath(new URL('../../../package.json', import.meta.url)),
+    ],
+  );
 }
 
 it('reports a clean worktree and rejects arguments to the dirty-check tool', async () => {
@@ -194,30 +212,223 @@ it('runs the ticket button in its bound worktree and distinguishes dirty from fa
   expect(failed.result.markdown).toContain('not a git repository');
 });
 
-it('loads the agent example as one named Claude candidate', async () => {
-  const found = await loadGuide('first-addon', 'review-agent', 'Add an agent');
+it('loads a new harness that passes the prompt and run identity to its own program', async () => {
+  const found = await loadGuide('agent', 'my-agent');
   expect(found.agents).toMatchObject([
     {
-      alias: 'review',
-      model: 'sonnet',
-      agent: { kind: 'agent', id: 'claude' },
+      alias: 'my-agent',
+      agent: { kind: 'agent', id: 'my-agent' },
     },
   ]);
   expect(found.agents).toHaveLength(1);
+  const [{ agent: plugin }] = found.agents as AgentCandidate[];
+  const agent = await plugin.createAgent({} as ConductorFileConfig);
+  const bin = join(dir, 'bin');
+  mkdirSync(bin);
+  writeFileSync(join(bin, 'my-agent'), '#!/bin/sh\nprintf "%s\\0" "$@"\n', {
+    mode: 0o700,
+  });
+  const prompt = "Keep 'quotes' and $(touch injected) literal\nSecond line";
+  const output = execFileSync(
+    'sh',
+    ['-c', agent.launchCommand(prompt, { sessionId: 'run-1' })],
+    {
+      cwd: dir,
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+      encoding: 'utf8',
+    },
+  );
+  expect(output.split('\0')).toEqual([
+    '--session',
+    'run-1',
+    '--prompt',
+    prompt,
+    '',
+  ]);
+  expect(agent.launchCommand('')).toBe('my-agent');
+  expect(() =>
+    agent.launchCommand('prompt', { sessionId: '../escape' }),
+  ).toThrow('Invalid session ID');
 });
 
-it('loads the client example as a herdr-core executor with a Git workspace', async () => {
-  const found = await loadGuide(
-    'first-addon',
-    'project-client',
-    'Add a client',
+it('collects only its own agent transcript and tolerates absent logs and metrics', async () => {
+  const found = await loadGuide('agent', 'my-agent');
+  const [{ agent: plugin }] = found.agents as AgentCandidate[];
+  const agent = await plugin.createAgent({} as ConductorFileConfig);
+  const logs = join(dir, '.my-agent');
+  mkdirSync(logs);
+  writeFileSync(join(logs, 'run-1.log'), 'First attempt');
+  writeFileSync(join(logs, 'run-2.log'), 'Second attempt');
+  writeFileSync(join(logs, 'foreign.log'), 'Another ticket');
+  await expect(agent.getRunLog(dir, { sessionId: 'run-1' })).resolves.toBe(
+    'First attempt',
   );
+  await expect(
+    agent.getRunLog(dir, {
+      sessionId: 'run-1',
+      attemptFamily: ['run-1', 'run-2', 'missing'],
+    }),
+  ).resolves.toBe('Second attempt');
+  await expect(agent.getRunLog(dir, { sessionId: 'missing' })).resolves.toBe(
+    '',
+  );
+  await expect(agent.getRunLog(dir)).resolves.toBe('');
+  await expect(agent.getRunLog(dir, { sessionId: '../foreign' })).resolves.toBe(
+    '',
+  );
+  for (const log of ['', 'unfinished log {']) {
+    expect(agent.parseFootprint(log)).toEqual({
+      tokens: 0,
+      duration_s: 0,
+      agent_turns: 0,
+      tool_calls: 0,
+      user_prompts: 0,
+      user_prompt_words: 0,
+      active_s: 0,
+    });
+  }
+});
+
+it('starts runs through the new client API and cleans up one session after reconnecting', async () => {
+  const sessions = new Map<string, unknown>();
+  const requests: Array<{
+    method?: string;
+    path: string;
+    authorization?: string;
+    body: unknown;
+  }> = [];
+  clientServer = createServer(async (req, res) => {
+    let text = '';
+    for await (const chunk of req) text += chunk;
+    const body = text ? JSON.parse(text) : undefined;
+    const path = req.url!;
+    requests.push({
+      method: req.method,
+      path,
+      authorization: req.headers.authorization,
+      body,
+    });
+    if (req.headers.authorization !== 'Bearer test-client-token') {
+      res.writeHead(401).end();
+      return;
+    }
+    if (req.method === 'PUT') {
+      sessions.set(path, body);
+      res.writeHead(201).end();
+      return;
+    }
+    res.writeHead(sessions.delete(path) ? 204 : 404).end();
+  });
+  await new Promise<void>((resolve) =>
+    clientServer!.listen(0, '127.0.0.1', resolve),
+  );
+  const url = `http://127.0.0.1:${(clientServer.address() as AddressInfo).port}`;
+  vi.stubEnv('MY_CLIENT_TOKEN', 'test-client-token');
+  const found = await loadGuide('client', 'my-client', { url });
   expect(found.executors).toMatchObject([
-    { kind: 'executor', id: 'herdr-core' },
+    { kind: 'executor', id: 'my-client' },
   ]);
-  expect(found.workspaces).toMatchObject([{ kind: 'workspace', id: 'git' }]);
   expect(found.executors).toHaveLength(1);
-  expect(found.workspaces).toHaveLength(1);
+  expect(found.workspaces).toEqual([]);
   expect(found.agents).toEqual([]);
-  expect(found.remotes).toEqual([]);
+  const [plugin] = found.executors as ExecutorPlugin[];
+  const logger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  };
+  const config = {} as ConductorFileConfig;
+  const executor = await plugin.createExecutor(config, { logger });
+  const input: SpawnRunInput = {
+    ticket: {
+      uuid: 'ticket-1',
+      identifier: 'EXAMPLE-1',
+      title: 'Example',
+      branchName: 'feat/example',
+      state: 'working',
+    },
+    run: { uuid: 'run-1', id: 7, handler: 'my-agent' },
+    workspacePath: dir,
+    instructions: null,
+    command: "my-agent --prompt 'a prompt'",
+    env: { BB_CONDUCTOR_TOKEN: 'run-secret' },
+  };
+  expect(executor.capabilities()).toEqual({ persistent: true });
+  const first = await executor.startRun(input);
+  await executor.startRun({ ...input, run: { ...input.run, id: 8 } });
+  expect(requests[0]).toMatchObject({
+    method: 'PUT',
+    authorization: 'Bearer test-client-token',
+    body: { cwd: dir, command: input.command, env: input.env },
+  });
+  expect(requests[0].path).not.toContain('run-secret');
+  expect(sessions.size).toBe(2);
+  const restarted = await plugin.createExecutor(config, { logger });
+  await restarted.stopRun(input.ticket.branchName);
+  expect(sessions.size).toBe(2);
+  await restarted.cleanupRun(input.ticket.branchName, 7);
+  expect(sessions.size).toBe(1);
+  expect(sessions.has(`/sessions/${first.sessionRef}`)).toBe(false);
+  await restarted.cleanupRun(input.ticket.branchName, 7);
+  expect(sessions.size).toBe(1);
+  expect(logger.warn).not.toHaveBeenCalled();
+});
+
+it('requires confirmed client launches and reports cleanup and configuration failures without secrets', async () => {
+  let status = 202;
+  clientServer = createServer((_req, res) => res.writeHead(status).end());
+  await new Promise<void>((resolve) =>
+    clientServer!.listen(0, '127.0.0.1', resolve),
+  );
+  const url = `http://127.0.0.1:${(clientServer.address() as AddressInfo).port}`;
+  vi.stubEnv('MY_CLIENT_TOKEN', 'private-runtime-token');
+  const found = await loadGuide('client', 'my-client', { url });
+  const [plugin] = found.executors as ExecutorPlugin[];
+  const logger = {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  };
+  const config = {} as ConductorFileConfig;
+  const executor = await plugin.createExecutor(config, { logger });
+  const input: SpawnRunInput = {
+    ticket: {
+      uuid: 'ticket-1',
+      identifier: 'EXAMPLE-1',
+      title: 'Example',
+      branchName: 'feat/example',
+      state: 'working',
+    },
+    run: { uuid: 'run-1', id: 7, handler: 'my-agent' },
+    workspacePath: dir,
+    instructions: null,
+    command: 'my-agent',
+    env: { SECRET: 'private-run-token' },
+  };
+  await expect(executor.startRun(input)).rejects.toThrow(
+    'My Client PUT failed (202)',
+  );
+  status = 503;
+  await expect(executor.startRun(input)).rejects.toThrow(
+    'My Client PUT failed (503)',
+  );
+  await expect(
+    executor.startRun({ ...input, command: undefined }),
+  ).rejects.toThrow('An agent command is required');
+  await expect(executor.cleanupRun('feat/example', 7)).resolves.toBeUndefined();
+  expect(logger.warn).toHaveBeenCalledOnce();
+  expect(JSON.stringify(logger.warn.mock.calls)).not.toContain('private-');
+  vi.stubEnv('MY_CLIENT_TOKEN', '');
+  await expect(plugin.createExecutor(config, { logger })).rejects.toThrow(
+    'MY_CLIENT_TOKEN is required',
+  );
+  const remote = await loadGuide('client', 'my-client-remote', {
+    url: 'https://example.com',
+  });
+  const [unsafe] = remote.executors as ExecutorPlugin[];
+  await expect(unsafe.createExecutor(config, { logger })).rejects.toThrow(
+    'loopback HTTP origin',
+  );
 });

@@ -50,4 +50,4 @@ bakers config check --scope machine --online
 bakers config check --scope project --online
 ```
 
-Check the scope you changed, restart the conductor or UI, then follow the addon's success check. Old `agents.addons` and top-level `ports` settings require [configuration migration](/configuration/project/migration).
+Check the scope you changed, restart the conductor or UI, then follow the addon's success check. Old `agents.addons` and top-level `ports` settings require [configuration migration](/configuration/machine/updates).

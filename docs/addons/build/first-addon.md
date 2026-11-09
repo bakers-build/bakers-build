@@ -1,6 +1,6 @@
 # Build your first addon
 
-Use addons to make agents available in Bakers, give them project tools, and add operations to tickets. This guide shows what you can build, how to package it, and how to enable it.
+Use addons to make agents available in Bakers, give them project tools, and add operations to tickets. This guide shows what you can build, how to package it, and where to implement each integration.
 
 ## What can you extend?
 
@@ -8,14 +8,12 @@ Start with the capability your project needs:
 
 | You want to… | The addon provides… |
 |---|---|
-| Use an AI coding program with Bakers | An **agent** integration that starts and configures that program for a run. |
+| Use an AI coding program with Bakers | An **agent harness** that translates between Bakers and your program's launch and transcript APIs. |
 | Control how a ticket's checkout is prepared | A **workspace** integration that creates and manages its working directory. |
 | Give agents an additional operation | A **tool** that an agent can call during a run. |
 | Let someone request an operation from a ticket | A **message** with a button or form and an answer in the control panel. |
 
-One addon can provide several of these capabilities. It can implement them in JavaScript, reuse other addons with chosen settings, or do both. Reusing addons inside another package is called **composition**.
-
-The [API reference](/addons/build/contracts) describes the supported exports and their contracts.
+One addon can provide several capabilities. You implement the operations in JavaScript and register them through a preset. The [API reference](/addons/build/contracts) defines the supported exports.
 
 <span id="what-an-addon-is"></span>
 
@@ -25,151 +23,58 @@ Create a JavaScript package with a **preset**: a module that tells Bakers what t
 
 | Piece | Purpose |
 |---|---|
-| `package.json` | Names and versions the package and exposes its entry points. |
-| `preset.js` | A module whose named exports declare the addon's capabilities. Bakers calls this module a **preset**. |
+| `package.json` | Names the package and exposes its `./preset` entry. |
+| `preset.js` | Exports your implementations through names Bakers recognizes. |
 | An `addons` configuration entry | Enables the package on a machine or in a project. |
 
-JavaScript's `export` makes a value available to the code importing a module. Bakers recognizes specific export names: for example, `agents` provides agent integrations, `tools` provides callable operations, and `inbox` provides ticket messages. An `addons` export lists other addons to load as part of this package.
-
-The package's `scopes` export declares whether it belongs in machine configuration, project configuration, or both. Agent integrations belong to the machine where their programs run. Project tools and workflows can be enabled for the project that needs them.
+For example, `agents` registers an agent harness, `tools` registers callable operations, and `inbox` declares ticket messages. The package's `scopes` export declares where it can be enabled. Agent harnesses belong to the machine where their programs run; project tools belong to the project that needs them.
 
 ## What you will build
 
-Choose an example by the part of Bakers you want to extend:
+Each example implements a new integration:
 
-1. [Add an agent](#add-an-agent): make an agent available for work on your machine.
-2. [Add a client](#add-a-client): connect project runs to a terminal application.
-3. [Extend the control panel](/addons/build/control-panel): make an operation available from a ticket.
+1. [Add an agent](#add-an-agent): write a harness for a program Bakers does not yet support.
+2. [Add a client](#add-a-client): connect your own terminal application through its runtime API.
+3. [Extend the control panel](/addons/build/control-panel): implement an operation and make it callable from a ticket.
 
-The first two examples package existing integrations and their settings. The control-panel example implements an operation and exposes it as a ticket message. Each shows a different use of the same package-and-preset structure.
-
-Use an existing conductor setup and a disposable project for the client example. You need Node.js, access to the relevant configuration and permission to restart the conductor. Naming a package does not install its underlying application.
+The harness and client guides define a small example CLI/API, then show the complete adapter, registration and verification. Their external programs are hypothetical so you can see which parts must be adapted to your own software.
 
 ## Add an agent
 
-An agent integration tells Bakers how to start an AI coding program for a ticket. It can also expose named configurations, so a run can select an agent with particular settings.
+<span id="example-configure-an-existing-agent"></span>
 
-You can write an integration for another program or reuse an existing one. The example below reuses one to show how a package supplies settings and a selectable name.
+Bakers needs to know how to launch your agent, which transcript belongs to a run, and how to read its usage metrics. A harness implements those operations through `AgentPlugin` and `BbAgent`.
 
-### Example: configure an existing agent
-
-Make a `review` alias backed by Claude's `sonnet` model. The shipped Claude addon must be available to your Bakers installation; [install and authenticate Claude Code](/addons/claude#setup) as the conductor user first.
+The example integrates a new `my-agent` CLI. Its preset exports an `agents` function that registers your plugin. The plugin constructs the adapter; the adapter supplies `launchCommand`, `getRunLog` and `parseFootprint`.
 
 <span id="create-two-files"></span>
 
-Create `~/.bakers/addons/review-agent/package.json`:
-
-```json
-{
-  "name": "example-review-agent",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "main": "./preset.js",
-  "exports": { ".": "./preset.js", "./preset": "./preset.js" }
-}
-```
-
-Create `~/.bakers/addons/review-agent/preset.js`:
-
-```js
-export const scopes = ['machine'];
-
-export const addons = [
-  {
-    use: '@bakers-build/addon-claude',
-    with: { model: 'sonnet' },
-    alias: 'review',
-  },
-];
-```
-
-`"type": "module"` enables JavaScript imports/exports. The package's `"./preset"` entry points to the file Bakers imports. Its `addons` export loads the Claude preset; `with` supplies options and `alias` names its single custom candidate. `scopes` says where your package may be configured.
-
-Append `'./addons/review-agent'` to the existing `addons` array in `~/.bakers/machine.config.js`. The path resolves from that file. Keep the other machine settings.
-
-If you maintain an explicit `agents.catalog`, add this entry to its existing array:
-
-```js
-{ harness: './addons/review-agent', alias: 'review' },
-```
-
-Keep any alias filters consistent with `review`; see [agent selection](/agents/guide). Check machine configuration and restart the conductor:
-
-```sh
-bakers config check --scope machine --online
-bakers agents
-```
-
-Expect `review` backed by harness `claude`. On a disposable ticket, select `agent:review` and dispatch a run. The adapter starts Claude with the configured model; your package does not install Claude or grant model access.
-
-This adds a named configuration of an existing agent. Supporting a new agent program requires its own `AgentPlugin` / `BbAgent` implementation.
+[Implement a new harness](/addons/build/agent) includes the program's CLI contract, the Bakers interfaces, the package manifest and the complete JavaScript implementation.
 
 ## Add a client
 
-A terminal client lets you see and interact with running agents. To connect one to Bakers, an addon supplies the run infrastructure the client uses: an **executor** manages the agent's terminal, and a **workspace** prepares the ticket's working directory.
+<span id="example-connect-an-existing-terminal-client"></span>
 
-There is no `clients` export. The application provides its own UI; the addon connects Bakers to its runtime through the executor and workspace APIs. A package can reuse existing integrations or implement these interfaces for another runtime.
+Your terminal or desktop application has its own way to create, display and remove agent sessions. A Bakers addon translates run lifecycle calls into that application's API.
 
-### Example: connect an existing terminal client
-
-This example connects project runs to **herdr-app**. Its executor hosts agent terminals in herdr-core, and its workspace creates each ticket's Git worktree.
-
-Follow [herdr-core setup](/addons/herdr-core#setup) first and make `hc` available on the conductor's `PATH`. The shipped herdr-core and Git workspace addons must be available to Bakers. Use the [client guide](/get-started/use-your-client#herdr-app) to connect herdr-app to the same local runtime.
-
-Create `.bakers/addons/project-client/package.json` in your disposable project:
-
-```json
-{
-  "name": "example-project-client",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "main": "./preset.js",
-  "exports": { ".": "./preset.js", "./preset": "./preset.js" }
-}
-```
-
-Create `.bakers/addons/project-client/preset.js`:
-
-```js
-export const scopes = ['project'];
-
-export const addons = [
-  '@bakers-build/addon-herdr-core',
-  '@bakers-build/addon-workspace-git',
-];
-```
-
-This package composes the two adapters with their defaults. It contributes neither a remote connection nor an agent; keep those existing settings.
+The example defines an HTTP session API for **My Client** and implements a new `ExecutorPlugin` / `BbExecutor` that calls it. Bakers supplies the prepared worktree, agent command and environment; your runtime hosts the terminal. The existing workspace provider still prepares the checkout.
 
 <span id="enable-in-project"></span>
 
-In `.bakers/conductor.config.js`, replace the previous executor/workspace addon entries with `'./addons/project-client'`. Keep unrelated addons and project identity. Explicit `executor` or `workspace` settings override addon contributions; a machine `executor` also wins. Resolve those competing selections deliberately in this disposable setup, following [Conductor slots](/addons/slots).
-
-Commit the package and configuration, validate them, then restart the conductor:
-
-```sh
-bakers config check --scope project --online
-bakers oven check
-```
-
-Dispatch a disposable ticket with an available agent. Expect a Git worktree and a herdr-core terminal visible in `hc ls` and herdr-app. Stopping the run must end its terminal; closing the app alone leaves the terminal running. See [herdr-core verification](/addons/herdr-core#verify) for the lifecycle checks.
-
-This composes an existing client integration. A new terminal host needs an `ExecutorPlugin` / `BbExecutor`; a different worktree lifecycle needs a `WorkspacePlugin` / `BbWorkspace`. Their [contract and cleanup obligations](/addons/build/executor-workspace) go beyond composing this package.
+[Connect a new client](/addons/build/client) shows both sides of the API: the methods Bakers calls and the requests your runtime must accept, including authentication, launch confirmation and cleanup of one specific run.
 
 ## Verify
 
-Use each example's configuration check before dispatch. A successful configuration check proves loading and validation; a disposable run proves that the underlying agent or client works on your machine. Check [conductor logs](/configuration/project/conductor-commands) if loading fails.
+Use a disposable project and the checks in each guide. First verify the adapter against your program's CLI or API, then check configuration, restart the conductor and dispatch a ticket. A configuration check proves registration; the live run proves your external program works with it.
 
 ## Add a ticket message
 
-To let someone call an operation from a ticket, declare a **message**. Bakers displays its button or form and the returned answer. [Extend the control panel](/addons/build/control-panel) explains this connection and walks through a complete example.
+To let someone call an operation from a ticket, declare a **message**. Bakers displays its button or form and the returned answer. [Extend the control panel](/addons/build/control-panel) implements a read-only worktree check through `tools` and `inbox`.
 
 ## Remove the example
 
-Remove the package's configuration entry and any catalog row referring to it, restart the conductor, then delete only that example package. For the client example, restore the project's previous executor/workspace configuration before dispatching more runs.
+Remove its addon entry and any catalog entry referring to it, restart the conductor, then delete only the example package. When replacing a client integration, restore the project's previous executor configuration before dispatching further runs.
 
 ## Extend your addon
 
-Use [Tools](/addons/build/tools) for agent operations, [Messages](/addons/build/actions) for ticket requests, and the [executor/workspace API](/addons/build/executor-workspace) for a client integration with its own implementation. Configuration fields and exports are defined in the [Addon API reference](/addons/build/contracts).
+Continue with [Tools](/addons/build/tools), [Messages](/addons/build/actions), the [preset API](/addons/build/contracts) and the [executor/workspace lifecycle](/addons/build/executor-workspace).

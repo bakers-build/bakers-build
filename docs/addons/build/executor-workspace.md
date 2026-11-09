@@ -31,7 +31,7 @@ When the ticket is done, the reaper runs `after_done`, then `workspace.remove(br
 
 Import `BbExecutor`, `ExecutorPlugin` and `SpawnRunInput` from `@bakers-build/conductor/contract`. A plugin has `kind: 'executor'`, an `id`, `requiredModules` and an async `createExecutor(config, deps)` factory. The factory returns an executor implementing the methods below.
 
-Use `bakers-cli/addons/herdr-core/src/index.ts` as a complete implementation example. A detached process with empty cleanup methods is not a complete executor: it would leave agents running and cannot recover its terminals after restart.
+The [new client tutorial](/addons/build/client) implements an adapter and defines the runtime API it calls. For a shipped implementation, inspect `bakers-cli/addons/herdr-core/src/index.ts`. A detached process with empty cleanup methods is not a complete executor: it would leave agents running and cannot recover its terminals after restart.
 
 The rules each method must keep:
 

@@ -23,7 +23,7 @@ Follow the package's own instructions; naming an addon does not install its unde
 
 ## Build a capability
 
-Start with [Build your first addon](/addons/build/first-addon) to choose a capability for your project and learn how to package and enable it. The examples then show how to add an agent or connect a terminal client.
+Start with [Build your first addon](/addons/build/first-addon) to choose a capability for your project and learn how to package and enable it. The examples implement a [new agent harness](/addons/build/agent) and an adapter for a [new terminal client](/addons/build/client), including the APIs they connect.
 
 To [extend the control panel](/addons/build/control-panel), an addon declares **messages**: ticket buttons or forms with a result. Bakers renders the controls; the conductor runs the operation. A message can call an agent tool or have its own handler.
 

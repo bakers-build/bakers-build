@@ -107,6 +107,8 @@ export const SIDEBAR = {
     ]),
     group("Build an addon", [
       ["Build your first addon", "/addons/build/first-addon"],
+      ["Add a new agent harness", "/addons/build/agent"],
+      ["Connect a new client", "/addons/build/client"],
       ["Extend the control panel", "/addons/build/control-panel"],
       ["Tools", "/addons/build/tools"],
       ["Messages", "/addons/build/actions"],
