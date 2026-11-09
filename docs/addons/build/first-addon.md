@@ -1,43 +1,41 @@
 # Build your first addon
 
-Add a **Check patch** action to your tickets. An agent can use it before handing back a change; a teammate can run the same check from the ticket without opening a terminal.
+Build two small JavaScript packages: **Add an agent** gives your machine a named Claude agent; **Add a client** connects a project's runs to herdr-app. Both examples compose shipped adapters, so you can learn the package and preset API with working integrations.
 
-The addon runs `git diff --check` in **that ticket's worktree**. It reports whitespace errors and conflict markers in tracked changes. It changes no project files. This is a small Git check, not a replacement for your project's tests.
+For a button you can call from a ticket, follow [Extend the control panel](/addons/build/control-panel): an **Is dirty?** check of the ticket's worktree.
 
 ## What an addon is
 
-An addon extends an application through an API that the application provides. In bakers.build, it is an ordinary **JavaScript package**: a directory containing `package.json` and JavaScript modules. It can live inside your project, as this example does, or be an installed package. Publishing it to npm is optional.
+An addon extends an application through its extension API. In bakers.build, it is an ordinary **JavaScript package**: a directory containing `package.json` and JavaScript modules. It can be local or installed; publishing it to npm is optional.
 
-Three pieces connect your code to Bakers:
-
-| Piece | Role in this example |
+| Piece | Purpose |
 |---|---|
-| `package.json` | Gives the package a name and version, and points to the module Bakers should load. |
-| `preset.js` | A JavaScript module whose named exports describe the addon's capabilities and supply their implementations. Bakers calls this module a **preset**. |
-| The project's `addons` entry | Tells the conductor to load this package. Creating the files alone does not enable it. |
+| `package.json` | Names and versions the package and exposes its entry points. |
+| `preset.js` | A module whose named exports declare the addon's capabilities. Bakers calls this module a **preset**. |
+| An `addons` configuration entry | Tells Bakers to load the package in machine or project configuration. |
 
-JavaScript's `export` makes a value available to the module's importer. Here, the conductor imports your preset and reads exports such as `tools` and `inbox`. Their names and structure follow the Bakers API; exporting an arbitrary function does not automatically make it a tool or a button.
+JavaScript's `export` makes a value available to the module's importer. The conductor imports the preset and reads the exports its API recognizes. Here, `export const addons` lists other addons to load. This is called **composition**: your package bundles existing integrations and their settings.
+
+Other presets export implementations through `agents`, `executors`, `workspaces`, `tools` or `inbox`; see the [API reference](/addons/build/contracts). These examples reuse the shipped implementations.
 
 ## What you will build
 
-You will build one operation and expose it twice:
+1. [Add an agent](#add-an-agent): a machine-scoped package with a `review` agent alias.
+2. [Add a client](#add-a-client): a project-scoped package selecting the executor and workspace for herdr-app.
 
-1. **Tool:** the agent calls `patch_check`, choosing unstaged or staged changes.
-2. **Message:** the ticket's control panel offers the same choice and displays the result.
+Use an existing conductor setup and a disposable project for the client example. You need Node.js, access to the relevant configuration and permission to restart the conductor. Naming a package does not install its underlying application.
 
-**Unstaged** means changes in tracked files that are not yet in the Git index; **staged** means changes prepared for the next commit.
+## Add an agent
 
-The conductor supplies the worktree and runs your handler. Callers provide the choice, never a filesystem path or shell command.
+Make a `review` alias backed by Claude's `sonnet` model. The shipped Claude addon must be available to your Bakers installation; [install and authenticate Claude Code](/addons/claude#setup) as the conductor user first.
 
-**Before you start:** use a disposable ticket in a working conductor project. Git and Node.js must be available on the conductor's machine. You need permission to edit the project configuration and restart the conductor.
+<span id="create-two-files"></span>
 
-## Create two files
-
-Create `.bakers/addons/patch-check/package.json`:
+Create `~/.bakers/addons/review-agent/package.json`:
 
 ```json
 {
-  "name": "example-patch-check",
+  "name": "example-review-agent",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -46,150 +44,100 @@ Create `.bakers/addons/patch-check/package.json`:
 }
 ```
 
-`"type": "module"` enables JavaScript's `import` and `export` syntax for these files. The `"./preset"` entry exposes `preset.js` at the package's preset entry point; the filename itself is your choice.
-
-Create `.bakers/addons/patch-check/preset.js`:
+Create `~/.bakers/addons/review-agent/preset.js`:
 
 ```js
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+export const scopes = ['machine'];
 
-const run = promisify(execFile);
+export const addons = [
+  {
+    use: '@bakers-build/addon-claude',
+    with: { model: 'sonnet' },
+    alias: 'review',
+  },
+];
+```
 
+`"type": "module"` enables JavaScript imports/exports. The package's `"./preset"` entry points to the file Bakers imports. Its `addons` export loads the Claude preset; `with` supplies options and `alias` names its single custom candidate. `scopes` says where your package may be configured.
+
+Append `'./addons/review-agent'` to the existing `addons` array in `~/.bakers/machine.config.js`. The path resolves from that file. Keep the other machine settings.
+
+If you maintain an explicit `agents.catalog`, add this entry to its existing array:
+
+```js
+{ harness: './addons/review-agent', alias: 'review' },
+```
+
+Keep any alias filters consistent with `review`; see [agent selection](/agents/guide). Check machine configuration and restart the conductor:
+
+```sh
+bakers config check --scope machine --online
+bakers agents
+```
+
+Expect `review` backed by harness `claude`. On a disposable ticket, select `agent:review` and dispatch a run. The adapter starts Claude with the configured model; your package does not install Claude or grant model access.
+
+This adds a named configuration of an existing agent. Supporting a new agent program requires its own `AgentPlugin` / `BbAgent` implementation.
+
+## Add a client
+
+Connect the project's runs to **herdr-app**. Its integration needs two contributions: an **executor** hosts agent terminals in herdr-core, and a **workspace** creates each ticket's Git worktree. There is no `clients` export; you supply these capabilities to the conductor. The application itself provides the client UI.
+
+Follow [herdr-core setup](/addons/herdr-core#setup) first and make `hc` available on the conductor's `PATH`. The shipped herdr-core and Git workspace addons must be available to Bakers. Use the [client guide](/get-started/use-your-client#herdr-app) to connect herdr-app to the same local runtime.
+
+Create `.bakers/addons/project-client/package.json` in your disposable project:
+
+```json
+{
+  "name": "example-project-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./preset.js",
+  "exports": { ".": "./preset.js", "./preset": "./preset.js" }
+}
+```
+
+Create `.bakers/addons/project-client/preset.js`:
+
+```js
 export const scopes = ['project'];
 
-export const tools = {
-  contract: 1,
-  tools: {
-    patch_check: {
-      description: 'Check tracked changes for whitespace errors and conflict markers.',
-      input: {
-        type: 'object',
-        required: ['scope'],
-        properties: {
-          scope: { type: 'string', enum: ['unstaged', 'staged'] },
-        },
-      },
-    },
-  },
-  handlers: async () => ({
-    patch_check: async ({ args, worktreePath, signal }) => {
-      const flags = ['diff', '--check'];
-      if (args.scope === 'staged') flags.push('--cached');
-      try {
-        await run('git', flags, {
-          cwd: worktreePath,
-          signal,
-          timeout: 10_000,
-          maxBuffer: 64 * 1024,
-        });
-      } catch (error) {
-        if (error.stdout) throw new Error(`${error.message}\n${error.stdout}`);
-        throw error;
-      }
-      return {
-        text: `No whitespace errors or conflict markers in ${args.scope} changes.`,
-      };
-    },
-  }),
-};
+export const addons = [
+  '@bakers-build/addon-herdr-core',
+  '@bakers-build/addon-workspace-git',
+];
 ```
 
-Read the declaration and handler together:
+This package composes the two adapters with their defaults. It contributes neither a remote connection nor an agent; keep those existing settings.
 
-- `tools.patch_check` describes the operation to the agent. Its `input` allows exactly two choices; the conductor rejects missing, unknown or mistyped arguments before running Git.
-- `handlers` supplies the implementation. `worktreePath` comes from the caller's ticket binding, so the command checks that ticket's files.
-- `signal` forwards cancellation to Git. The command also has a ten-second timeout and an output limit.
-- A successful Git exit returns `{ text }`. Git prints check findings to standard output; the `catch` includes them in the error so a failed tool call still names the file and line.
+<span id="enable-in-project"></span>
 
-Handlers execute on the worker, outside the agent's shell sandbox. Keep the command fixed and review the addon before enabling it. The `scope` input selects an argument; it cannot introduce another command.
+In `.bakers/conductor.config.js`, replace the previous executor/workspace addon entries with `'./addons/project-client'`. Keep unrelated addons and project identity. Explicit `executor` or `workspace` settings override addon contributions; a machine `executor` also wins. Resolve those competing selections deliberately in this disposable setup, following [Conductor slots](/addons/slots).
 
-## Enable in the project
-
-Append this entry to the existing `addons` array in `.bakers/conductor.config.js`:
-
-```js
-'./addons/patch-check',
-```
-
-Keep the existing remote, executor, workspace and identity settings. The path resolves from the configuration file. This local JavaScript package needs no installation or compilation.
-
-Commit both files and the configuration change so ticket worktrees receive them. `scopes: ['project']` means this example belongs in project configuration.
-
-## Verify
-
-Run:
+Commit the package and configuration, validate them, then restart the conductor:
 
 ```sh
 bakers config check --scope project --online
+bakers oven check
 ```
 
-Restart the conductor with its normal [start/stop procedure](/configuration/project/conductor-commands). Dispatch a disposable ticket and ask its agent: **“Check the unstaged changes with patch_check.”**
+Dispatch a disposable ticket with an available agent. Expect a Git worktree and a herdr-core terminal visible in `hc ls` and herdr-app. Stopping the run must end its terminal; closing the app alone leaves the terminal running. See [herdr-core verification](/addons/herdr-core#verify) for the lifecycle checks.
 
-From that **running agent's shell**, the equivalent call is:
+This composes an existing client integration. A new terminal host needs an `ExecutorPlugin` / `BbExecutor`; a different worktree lifecycle needs a `WorkspacePlugin` / `BbWorkspace`. Their [contract and cleanup obligations](/addons/build/executor-workspace) go beyond composing this package.
 
-```sh
-bakers tools patch_check --data '{"scope":"unstaged"}'
-```
+## Verify
 
-With no problems, the answer is:
-
-```text
-No whitespace errors or conflict markers in unstaged changes.
-```
-
-To see a real failure, add trailing whitespace to a changed line in a tracked file in the disposable worktree, then repeat the call. The failed answer names the file and line, for example `notes.md:2: trailing whitespace.` Remove only that deliberate edit afterwards.
-
-Use `{"scope":"staged"}` to check the index instead. Untracked files are not included. An invalid choice such as `{"scope":"all"}` fails input validation before Git runs.
-
-An ordinary operator shell connects to the site's tools and will not find this local operation. The running agent receives its conductor connection automatically. If the tool is missing, check addon-load errors and restart after the committed change; configuration validation alone does not execute the handler.
+Use each example's configuration check before dispatch. A successful configuration check proves loading and validation; a disposable run proves that the underlying agent or client works on your machine. Check [conductor logs](/configuration/project/conductor-commands) if loading fails.
 
 ## Add a ticket message
 
-The tool now gives agents an operation. To put that operation in the **web control panel**, add an `inbox` export. It describes a message that a person can send from the ticket's message card. Bakers supplies the form, submit action, progress status and answer display.
-
-The conductor registers the message definition with the Bakers server. Your Git function stays on the conductor's machine; the browser receives the rendered controls and sends the selected input. You do not need to write a web component for this form.
-
-Make the check available to teammates who can update the ticket. Append this export to the same `preset.js`:
-
-```js
-export const inbox = {
-  contract: 2,
-  label: 'Patch check',
-  messages: {
-    check: {
-      label: 'Check patch',
-      access: 'update',
-      input: tools.tools.patch_check.input,
-    },
-  },
-  bindings: { check: { tool: 'patch_check' } },
-};
-```
-
-Here, `label: 'Patch check'` names the addon, `label: 'Check patch'` names its action, and the reused `scope` enum becomes an **unstaged / staged** selector. When several addons are available, the web card uses their labels as tabs. The binding connects that form to `patch_check`; it forwards the selected scope, uses the ticket's worktree and turns the tool's text into the message answer.
-
-Commit the change and restart the conductor. On the disposable ticket, open the message card in the web UI or `bakers ui`. If several addons are offered, select **Patch check**. Choose **unstaged** and send **Check patch**.
-
-Expect pending/running followed by the same confirmation as the agent received. With a whitespace error or conflict marker, expect a failed answer naming the affected file and line. Fix the deliberate error and run the check again to see the result change.
-
-`access: 'update'` requires permission to update that ticket. It controls who can send this message; direct tool calls have their own run binding. See [Messages](/addons/build/actions) for access and lifecycle details.
-
-This extension adds controls to the existing ticket card. Its answer is Markdown; `inbox` does not mount arbitrary JavaScript components or add new web pages. [Messages](/addons/build/actions#extend-the-control-panel) explains the available controls and their limits. Custom tabs in the terminal client use a [separate API](/addons/bakers-ui/tabs).
-
-When changing an already registered message definition, bump the package version before restarting: registration keeps the first definition for a package name and version.
+An agent or client integration does not automatically add a ticket button. Continue with [Extend the control panel](/addons/build/control-panel) to implement **Is dirty?** through `tools` and `inbox`.
 
 ## Remove the example
 
-Remove its `addons` entry, restart the conductor, then delete `.bakers/addons/patch-check/`. Existing message history remains. The check itself creates no files.
+Remove the package's configuration entry and any catalog row referring to it, restart the conductor, then delete only that example package. For the client example, restore the project's previous executor/workspace configuration before dispatching more runs.
 
 ## Extend your addon
 
-You now have the complete path: **declare an operation → run it in the bound worktree → return a result or error → offer the same operation to ticket users**.
-
-Use a fixed, reviewed command for another quick project check. Keep the working directory supplied by the conductor and avoid accepting arbitrary commands or paths.
-
-- [Tools](/addons/build/tools): input, handler context, errors and access boundaries.
-- [Messages](/addons/build/actions): direct handlers, bindings and request lifecycle.
-- [Addon API reference](/addons/build/contracts): exports, options, scopes and packaging.
-- [Lifecycle hooks](/provision/hooks#add-a-listener-from-an-addon): project preparation and cleanup.
+Use [Tools](/addons/build/tools) for agent operations, [Messages](/addons/build/actions) for ticket requests, and the [executor/workspace API](/addons/build/executor-workspace) for a client integration with its own implementation. Configuration fields and exports are defined in the [Addon API reference](/addons/build/contracts).

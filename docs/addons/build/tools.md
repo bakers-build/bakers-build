@@ -2,18 +2,18 @@
 
 <span id="write-an-addon-with-agent-tools"></span>
 
-Give an agent a named operation with declared inputs and a text result. Start with [Build your first addon](/addons/build/first-addon) for a complete local package. This page defines the tool API; [Messages](/addons/build/actions) explains how a person can request the same operation from a ticket.
+Give an agent a named operation with declared inputs and a text result. The [Is dirty? example](/addons/build/control-panel) provides a complete local package and a ticket button calling the same tool. This page defines the tool API; [Messages](/addons/build/actions) explains ticket requests.
 
 ## The contract
 
-Export a `tools` value from the preset. Its type is `Preset['tools']` from `@bakers-build/conductor/contract`. The [patch-check tutorial](/addons/build/first-addon#create-two-files) contains a complete declaration and working handler:
+Export a `tools` value from the preset. Its type is `Preset['tools']` from `@bakers-build/conductor/contract`. The [dirty-check tutorial](/addons/build/control-panel#create-two-files) contains a complete declaration and working handler:
 
 | Field | Meaning |
 |---|---|
 | `contract` | Required literal `1`. |
-| `tools` | Map of tool names to their definitions, such as `patch_check`. |
+| `tools` | Map of tool names to their definitions, such as `git_is_dirty`. |
 | `tools.<name>.description` | Explains the operation to the agent. |
-| `tools.<name>.input` | Optional input schema; the tutorial accepts a `scope` of `unstaged` or `staged`. |
+| `tools.<name>.input` | Optional input schema; the dirty check omits it and accepts no arguments. |
 | `handlers(options)` | Async factory returning one implementation per declared tool name. |
 
 Use the [flat input schema](/addons/build/actions#contract-2). With no `input`, the tool accepts no arguments. Unknown keys and invalid values are refused before the handler runs; defaults do not fill in missing required arguments.

@@ -2,7 +2,7 @@
 
 <span id="write-an-addon-with-inbox-messages"></span>
 
-Let a person request an addon operation from a ticket and receive a Markdown answer. Start with [Build your first addon](/addons/build/first-addon#add-a-ticket-message) for a working tool-to-message example. This reference is for authors extending that example.
+Let a person request an addon operation from a ticket and receive a Markdown answer. Start with [Extend the control panel](/addons/build/control-panel) to add an **Is dirty?** button to a ticket. This reference is for authors extending that example.
 
 ## Extend the control panel
 
@@ -30,15 +30,14 @@ import type { Preset } from '@bakers-build/conductor/contract';
 // Assumes the tutorial's tools export is in this module.
 export const inbox: Preset['inbox'] = {
   contract: 2,
-  label: 'Patch check',
+  label: 'Worktree',
   messages: {
-    check: {
-      label: 'Check patch',
-      access: 'update',
-      input: tools.tools.patch_check.input,
+    is_dirty: {
+      label: 'Is dirty?',
+      access: 'view',
     },
   },
-  bindings: { check: { tool: 'patch_check' } },
+  bindings: { is_dirty: { tool: 'git_is_dirty' } },
 };
 ```
 
@@ -109,7 +108,7 @@ The send-time version is recorded, but execution uses the addon's currently load
 
 ## Examples
 
-The [tutorial](/addons/build/first-addon) owns the complete patch-check example, including success and failure results. Shipped [Ports](/addons/ports) uses the same pattern: **Share tunnels** binds `tunnel` to `ports_up` with fixed `args: {}`, sharing all eligible services.
+The [control-panel tutorial](/addons/build/control-panel) owns the complete dirty-check example. Clean and dirty are successful answers; Git failures are failed answers. Shipped [Ports](/addons/ports) uses the same pattern: **Share tunnels** binds `tunnel` to `ports_up` with fixed `args: {}`, sharing all eligible services.
 
 For sensitive operations, prefer `update` access, validate targets inside the handler and return secrets only where the server's access model permits. Do not infer that a private result removes the need for authorization.
 

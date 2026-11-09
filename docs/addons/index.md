@@ -23,7 +23,7 @@ Follow the package's own instructions; naming an addon does not install its unde
 
 ## Build a capability
 
-Start with [Build your first addon](/addons/build/first-addon): check a patch in the ticket's worktree, call the check from an agent, then offer the same operation to ticket users.
+Start with [Build your first addon](/addons/build/first-addon): **Add an agent** and **Add a client** explain packages and presets. Then [extend the control panel](/addons/build/control-panel) with an **Is dirty?** button that checks the ticket's worktree.
 
 To extend the web control panel, an addon declares **messages**: ticket buttons or forms with a result. Bakers renders the controls; the conductor runs the operation. A message can call an agent tool, as Ports' **Share tunnels** calls `ports_up`, or have its own handler.
 
