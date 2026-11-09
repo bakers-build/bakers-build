@@ -50,6 +50,7 @@ export class TestConductor extends Conductor {
     checkoutRoot?: string,
     frozenStateFile?: string,
     hookRunner?: HookRunner,
+    readMachine?: ConstructorParameters<typeof Conductor>[9],
   ) {
     const rec = executor as BbExecutor & Recorders;
     const wired: BbWorkspace = Object.create(workspace);
@@ -78,6 +79,7 @@ export class TestConductor extends Conductor {
       checkoutRoot,
       frozenStateFile,
       runHook,
+      readMachine,
     );
   }
 }

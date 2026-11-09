@@ -48,22 +48,7 @@ Follow these steps only if you are responsible for preparing the chosen environm
 
 ### 1. Install missing skills
 
-If the bakers skills are missing, install them for your chosen agent before asking it to complete setup. These skills also guide later ticket work.
-
-::: code-group
-```text [Claude Code]
-/plugin marketplace add https://bakers.build/marketplace.json
-/plugin install bakers@bakers
-```
-```text [Codex — paste into your agent]
-Read https://bakers.build/skills-and-workflows/skills#codex.
-Install bakers@bakers from https://github.com/bakers-build/bakers-build,
-using the main branch. Check existing marketplace registrations first
-and preserve my other plugins. Tell me when to start a new session.
-```
-:::
-
-[Skill installation](/skills-and-workflows/skills) explains both paths and the manual commands.
+Follow [skill installation](/skills-and-workflows/skills) for your chosen agent, then start a new session. That page owns the install commands and update procedure; the skills guide setup and later ticket work.
 
 <span id="2-install-and-sign-in"></span>
 
@@ -84,7 +69,7 @@ change before applying it. Leave project tooling for project setup.
 
 The skill checks Git, host [Node.js ≥20.19 and npm](/provision/node), the agent and its [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites). Container Node does not supply the host CLI.
 
-It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connector/connections) explains storage. Correct existing settings are reused.
+It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connector/connections) explains storage. Correct existing settings are reused. Add the installed harness to the machine's `addons` using [Agents](/agents/guide); initialization alone does not supply an agent catalog.
 :::
 
 <span id="install-and-sign-in"></span>

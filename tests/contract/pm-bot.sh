@@ -23,8 +23,9 @@
 #   - every user in the allowed channels is served unless an allowlist is set
 #   - poller, client and plugin call no LLM, except the plugin's language.py, which only takes
 #     back a validated language code; the persona answers in the language the trusted line names
-#   - the Slack app neither reads nor opens direct messages, may manage public channels and
-#     may react to messages
+#   - the Slack app neither reads nor opens direct messages, may manage public channels,
+#     may react to messages and may read the requester's e-mail address
+#   - the assignee comes only from the trusted line's e-mail address
 #   - persona, skill and scripts name no customer; only .env.example may
 #   - the bot passes answers on without a "Correct?" confirmation round
 #   - customer wording says what happens, not what a team does
@@ -164,14 +165,20 @@ for event in sorted(events & {"message.im", "message.mpim"}): errors.append(f"bo
 if home.get("messages_tab_enabled") is not False: errors.append("app_home.messages_tab_enabled is not false")
 if "channels:manage" not in scopes: errors.append("bot scopes lack channels:manage (create, invite, rename, archive)")
 if "reactions:write" not in scopes: errors.append("bot scopes lack reactions:write (the eyes marker on a message in work)")
+if "users:read.email" not in scopes: errors.append("bot scopes lack users:read.email (the requester's address for the assignee)")
 if not (manifest.get("settings") or {}).get("socket_mode_enabled"): errors.append("socket mode is off")
 for e in errors:
     print("FAIL:", e, file=sys.stderr)
 sys.exit(1 if errors else 0)
 PY
-pass "Slack app talks in channels only, over Socket Mode, manages public channels and reacts"
+pass "Slack app talks in channels only, over Socket Mode, manages public channels, reacts and reads e-mail addresses"
 
-python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qx OK || fail "the bot-channels plugin fails its unit tests"
+grep -qF "the requester's e-mail address exactly as the channel's trusted line gives it" "$SOUL" && grep -qF 'assignee_email' "$SOUL" \
+  || fail "$SOUL does not take the assignee's address from the trusted line alone"
+pass "the assignee's address comes from the trusted line only"
+
+# The one skip is test_recovery.py, which needs Hermes; pm-bot-image.sh runs it in the image.
+python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qxE 'OK( \(skipped=1\))?' || fail "the bot-channels plugin fails its unit tests"
 pass "bot-channels plugin passes its unit tests"
 
 # Questions are ticket comments under the Question label; the old question entity is gone.
@@ -184,6 +191,12 @@ pass "no question entity, OAuth client, expert hand-in or chat_thread field"
 grep -qF '[ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=true' "$BOT/entrypoint.sh" \
   || fail "entrypoint.sh does not serve every user when SLACK_ALLOWED_USERS is empty"
 pass "every user in the allowed channels unless SLACK_ALLOWED_USERS is set"
+
+# The poller starts before the plugin resets bot-language.json; a code the last run left would
+# make its first pass speak that language while the plugin speaks German.
+awk '/rm -f "\$DATA\/bot-language.json"/ { cleared = 1 } /poller\.mjs" &/ { started = 1; exit !cleared } END { if (!started) exit 1 }' "$BOT/entrypoint.sh" \
+  || fail "entrypoint.sh does not remove bot-language.json before it starts the poller"
+pass "the poller starts without the last run's language"
 
 # The poller and the plugin relay; they never call a model. One exception: the plugin's
 # language.py asks it which language the service account's background names, and takes back

@@ -41,14 +41,17 @@ class Outcome(enum.Enum):  # Hermes' ProcessingOutcome
 class Client:
     """Records every Slack call in order; ``fail`` names calls that raise."""
 
-    def __init__(self, calls, fail=()):
+    def __init__(self, calls, fail=(), profile=None):
         self.calls, self.fail = calls, fail
+        self.profile = {"email": "u1@example.test"} if profile is None else profile
 
     def __getattr__(self, method):
         async def call(**kwargs):
             self.calls.append((method, kwargs))
             if (method, kwargs.get("channel")) in self.fail:
                 raise RuntimeError(f"{method} failed")
+            if method == "users_info":
+                return {"ok": True, "user": {"id": kwargs["user"], "profile": self.profile}}
             return {"channel": {"id": "CNEW"}} if method == "conversations_create" else {}
         return call
 
@@ -85,6 +88,31 @@ def message(channel, ts="1.1", **extra):
     return {"type": "message", "channel": channel, "user": "U1", "ts": ts, "text": "<@UBOT> comic sans", **extra}
 
 
+class LanguageFile(unittest.TestCase):
+    """The plugin shares the bot's language with the poller through bot-language.json."""
+
+    def setUp(self):
+        self.path = os.path.join(DATA, "bot-language.json")
+        with open(self.path, "w") as fh:
+            json.dump({"language": "en"}, fh)  # the previous run's language
+
+    def language(self):
+        with open(self.path) as fh:
+            return json.load(fh)
+
+    def test_the_start_resets_the_language_to_german(self):
+        os.environ.update(SLACK_ALLOWED_CHANNELS=HOME)
+        with self.assertLogs("pm_bot.bot_channels", "ERROR"):  # no env for the read in this test
+            plugin.factory(App(), Adapter([]))
+        self.assertEqual(self.language(), {"language": "de"})
+
+    def test_a_plugin_that_stays_off_still_resets_it(self):
+        os.environ.update(SLACK_ALLOWED_CHANNELS="")
+        with self.assertLogs("pm_bot.bot_channels", "ERROR"):
+            plugin.factory(App(), Adapter([]))
+        self.assertEqual(self.language(), {"language": "de"})
+
+
 class Middleware(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         os.environ.update(SLACK_ALLOWED_CHANNELS=HOME, SLACK_ALLOWED_USERS="U1")
@@ -92,9 +120,9 @@ class Middleware(unittest.IsolatedAsyncioTestCase):
             json.dump({OPEN: {"name": "req-open"}}, fh)
         self.calls = []
 
-    def start(self, fail=()):
+    def start(self, fail=(), profile=None):
         self.app, self.adapter = App(), Adapter(self.calls, fail)
-        self.client = Client(self.calls, fail)
+        self.client = Client(self.calls, fail, profile)
         plugin.factory(self.app, self.adapter)
 
     async def deliver(self, event):
@@ -113,7 +141,7 @@ class Middleware(unittest.IsolatedAsyncioTestCase):
     async def test_a_mention_is_acknowledged_in_the_new_channel_before_hermes_starts(self):
         self.start()
         await self.deliver(message(HOME))
-        self.assertEqual([m for m, _ in self.calls], ["conversations_create", "conversations_invite", "chat_postMessage", "chat_postMessage", "hermes"])
+        self.assertEqual([m for m, _ in self.calls], ["users_info", "conversations_create", "conversations_invite", "chat_postMessage", "chat_postMessage", "hermes"])
         (ack_channel, ack), (home_channel, opened) = self.posts()
         self.assertEqual(ack_channel, "CNEW")
         self.assertTrue(ack.startswith("<@U1> "))
@@ -121,6 +149,30 @@ class Middleware(unittest.IsolatedAsyncioTestCase):
         self.assertIn("schaue sie mir an", ack)
         self.assertEqual((home_channel, opened), (HOME, "<@U1> Ich habe <#CNEW> für diese Anfrage eröffnet. Lass uns dort weitermachen."))
         self.assertEqual(self.calls[-1], ("hermes", {"channel": "CNEW", "ts": "1.1"}))
+
+    def record(self, channel):
+        with open(os.path.join(DATA, "bot-channels.json")) as fh:
+            return json.load(fh)[channel]
+
+    async def test_the_requesters_slack_email_address_goes_into_the_record_and_the_trusted_line(self):
+        self.start()
+        await self.deliver(message(HOME, text="<@UBOT> assign this to eve@example.test"))
+        self.assertIn(("users_info", {"user": "U1"}), self.calls)
+        self.assertEqual(self.record("CNEW")["requester_email"], "u1@example.test")
+        await self.deliver(message(OPEN, ts="2.2"))
+        prompts = self.adapter.config.extra["channel_prompts"]
+        self.assertIn("Its requester's e-mail address: u1@example.test.", prompts["CNEW"])
+        self.assertIn("Its requester's e-mail address: none.", prompts[OPEN])
+
+    async def test_without_an_address_from_slack_the_channel_still_opens_with_none(self):
+        for fail, profile in (({("users_info", None)}, None), ((), {})):
+            with self.subTest(fail=fail, profile=profile):
+                self.setUp()
+                self.start(fail, profile)
+                with self.assertLogs("pm_bot.bot_channels", "WARNING"):
+                    await self.deliver(message(HOME))
+                self.assertNotIn("requester_email", self.record("CNEW"))
+                self.assertEqual(self.calls[-1], ("hermes", {"channel": "CNEW", "ts": "1.1"}))
 
     async def test_a_mention_delivered_twice_is_acknowledged_once(self):
         self.start()

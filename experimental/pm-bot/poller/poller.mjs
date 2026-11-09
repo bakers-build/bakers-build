@@ -3,9 +3,12 @@
 // bakers.build through its tools and, for each ticket with a Slack conversation (its newest
 // channel link, else the thread of its first `chat` link; a sub-ticket without one shares its
 // ancestor's): posts each state change there once and relays its open question or technical
-// problem once. For the channels the bot created it renames a request channel after its
+// problem once. Between states it posts, once each, when a run starts, when a run ends without
+// moving the ticket on, a new summary's outcome and a new preview link, and a heartbeat while a
+// run works and the conversation has been quiet for PM_BOT_HEARTBEAT_INTERVAL. For the channels the bot created it renames a request channel after its
 // ticket, archives it after the final post, opens a fresh one when the ticket is reopened, and
-// closes a request channel that stayed silent for a week without a ticket. No LLM, no dependencies.
+// closes a request channel that stayed silent for a week without a ticket. It posts in the bot's
+// language, which the bot-channels plugin writes to bot-language.json. No LLM, no dependencies.
 //
 //   node experimental/pm-bot/poller/poller.mjs          # loop
 //   node experimental/pm-bot/poller/poller.mjs --once   # one pass, then exit
@@ -20,9 +23,10 @@ import { join } from 'node:path';
 import { createBakersClient } from '../lib/bakers-client.mjs';
 import { channelSteps, CLOSED, ticketChannelName, WEEK } from './channels.mjs';
 import { diff, reachedDone } from './diff.mjs';
-import { pollInterval } from './interval.mjs';
+import { heartbeatInterval, pollInterval } from './interval.mjs';
 import { openNote, QUESTION_LABEL, relay, TECHNICAL_PROBLEM_LABEL } from './questions.mjs';
 import { conversation, conversations } from './tickets.mjs';
+import { forget, updates } from './updates.mjs';
 
 const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
 
@@ -74,12 +78,17 @@ export function hermesSend({ channel, thread_ts, text }) {
 /**
  * @param {{client: ReturnType<typeof createBakersClient>, slack: ReturnType<typeof createSlack>,
  *   send: (message: {comment: string, kind: 'question' | 'technical_problem', identifier: string, channel: string, thread_ts?: string, text: string}) => Promise<void>,
- *   stateFile: string, botChannelsFile: string, workspaceUrl: string, now?: () => number,
- *   project: string, messages: any, log?: {log: Function, error: Function}}} options
+ *   stateFile: string, botChannelsFile: string, languageFile: string, workspaceUrl: string, now?: () => number,
+ *   project: string, messages: {de: any, en: any}, heartbeat?: number, log?: {log: Function, error: Function}}} options
+ *   heartbeat: the quiet time in ms after which a working ticket's conversation gets a heartbeat
  *   botChannelsFile: the request channels the bot's plugin opened, which only the plugin writes
+ *   languageFile: the bot's language as the plugin read it, {"language": "<ISO 639-1 code>"}; only the plugin writes it
+ *   messages: the fixed texts per language
  */
-export function createPoller({ client, slack, send, stateFile, botChannelsFile, workspaceUrl, now = Date.now, project, messages, log = console }) {
+export function createPoller({ client, slack, send, stateFile, botChannelsFile, languageFile, workspaceUrl, now = Date.now, project, messages: texts, heartbeat = heartbeatInterval(), log = console }) {
   const stamp = () => new Date().toISOString();
+  // The texts of the current pass: the plugin's language, German without texts for it.
+  let messages = texts.de;
 
   // Every ticket of the project, page by page, through the bakers list tool.
   async function tickets() {
@@ -94,6 +103,7 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
           title: t.title,
           state: t.state,
           conversation: conversation(t.links),
+          links: t.links ?? [],
           labels: t.labels ?? [],
           frozen: Boolean(t.frozen),
           frozen_at: t.frozen_at ?? null,
@@ -118,7 +128,9 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
 
   // The state file: {tickets: identifier → posted state, relayed: comment UUIDs,
   // channels: channel ID → {ticket, requester, name, generation, renamed, final, archived,
-  // seen, closing, successor, reopened, previous}}. The plugin reads `channels` for the open channels.
+  // seen, closing, successor, reopened, previous}, updates: identifier → {runs: run UUID → state,
+  // summaries, links, lastStart}, posted: conversation → last post in ms}. The plugin reads
+  // `channels` for the open channels.
   async function readJson(file, empty) {
     try {
       return JSON.parse(await readFile(file, 'utf8'));
@@ -128,15 +140,32 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
     }
   }
 
+  // German while the plugin has written no language; an unreadable file is logged.
+  async function language() {
+    try {
+      const { language: code } = await readJson(languageFile, {});
+      if (code !== undefined && typeof code !== 'string') throw new Error('language is not a string');
+      return Object.hasOwn(texts, code ?? '') ? texts[code] : texts.de;
+    } catch (error) {
+      log.error(`${stamp()} ${languageFile}: ${error.message}; posting in German`);
+      return texts.de;
+    }
+  }
+
   async function readState() {
     const state = await readJson(stateFile, {});
-    return { tickets: state.tickets ?? null, relayed: state.relayed ?? [], channels: state.channels ?? {} };
+    return { tickets: state.tickets ?? null, relayed: state.relayed ?? [], channels: state.channels ?? {}, updates: state.updates ?? {}, posted: state.posted ?? {} };
   }
 
   async function writeState(state) {
     await writeFile(`${stateFile}.tmp`, JSON.stringify(state, null, 2));
     await rename(`${stateFile}.tmp`, stateFile);
   }
+
+  // Every post restarts its conversation's heartbeat interval.
+  const stampPost = (state, { channel, thread_ts }) => {
+    state.posted[thread_ts ? `${channel}:${thread_ts}` : channel] = now();
+  };
 
   const archived = (state, t) => Boolean(t.conversation && !t.conversation.thread_ts && state.channels[t.conversation.channel]?.archived);
 
@@ -153,6 +182,7 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
     for (const p of posts) {
       try {
         await slack.post(p);
+        stampPost(state, p);
         // The ticket's own channel may be archived only after this post.
         const record = !p.thread_ts && state.channels[p.channel];
         if (record?.ticket === p.identifier && CLOSED.includes(next[p.identifier])) record.final = true;
@@ -187,10 +217,49 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
       try {
         await send(post);
         state.relayed.push(post.comment);
+        stampPost(state, post);
         log.log(`${stamp()} relayed ${post.kind} ${post.comment} of ${post.identifier}`);
       } catch (error) {
         // Not recorded, so the next pass retries it.
         log.error(`${stamp()} ${post.kind} ${post.comment} of ${post.identifier}: ${error.message}`);
+      }
+    }
+  }
+
+  // Status lines between states, for the open tickets that can still take a post. A ticket that
+  // cannot be read keeps its record and is caught up on the next pass; a closed one's is dropped.
+  async function postUpdates(state, current) {
+    const read = [];
+    const kept = {};
+    for (const t of current.filter((t) => t.conversation && !archived(state, t) && !CLOSED.includes(t.state))) {
+      try {
+        const { runs } = await client.tool('bakers_ticket_runs_list', { ticket: t.id });
+        const { comments } = await client.tool('bakers_ticket_read', { ticket: t.id });
+        read.push({ ...t, runs: runs ?? [], comments: comments ?? [] });
+      } catch (error) {
+        if (state.updates[t.identifier]) kept[t.identifier] = state.updates[t.identifier];
+        log.error(`${stamp()} updates of ${t.identifier}: ${error.message}`);
+      }
+    }
+    const { posts, next } = updates({ previous: state.updates, posted: state.posted, tickets: read, now: now(), interval: heartbeat, messages });
+    state.updates = { ...kept, ...next.records };
+    state.posted = next.posted;
+    const refused = new Set();
+    for (const p of posts) {
+      // After a refused post, the ticket's later posts wait too, so the next pass retries them in order.
+      if (refused.has(p.identifier)) {
+        forget(state.updates, p);
+        continue;
+      }
+      try {
+        await slack.post(p);
+        stampPost(state, p);
+        log.log(`${stamp()} posted an update of ${p.identifier}`);
+      } catch (error) {
+        // Not recorded, so the next pass retries it.
+        refused.add(p.identifier);
+        forget(state.updates, p);
+        log.error(`${stamp()} update of ${p.identifier}: ${error.message}`);
       }
     }
   }
@@ -279,6 +348,7 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
   }
 
   async function pass() {
+    messages = await language();
     try {
       const state = await readState();
       const current = await tickets();
@@ -288,6 +358,8 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
       await channelWork(state, current, ['archive', 'abandon']);
       // Notes are relayed on the first pass too: they wait for an answer or for keytec.
       await relayNotes(state, current);
+      // Last, so a heartbeat sees every other post of the pass.
+      await postUpdates(state, current);
       await writeState(state);
     } catch (error) {
       // bakers.build unreachable: the state file stays as it was, the next pass catches up.
@@ -312,9 +384,11 @@ if (isMain) {
     send: hermesSend,
     stateFile: join(env('HERMES_HOME'), 'poller-state.json'),
     botChannelsFile: join(env('HERMES_HOME'), 'bot-channels.json'),
+    languageFile: join(env('HERMES_HOME'), 'bot-language.json'),
     workspaceUrl: env('SLACK_WORKSPACE_URL'),
     project: env('PM_BOT_PROJECT'),
     messages: JSON.parse(await readFile(new URL('./messages.json', import.meta.url), 'utf8')),
+    heartbeat: heartbeatInterval(process.env.PM_BOT_HEARTBEAT_INTERVAL),
   });
   if (process.argv.includes('--once')) {
     await poller.pass();

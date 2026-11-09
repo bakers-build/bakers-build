@@ -15,6 +15,7 @@ re-derive this file; do not hand-edit it out of sync with them.
 
 **What this bundle deliberately drops** from the source skills, and why:
 
+- Recipe discovery needs installed skills and project policy. Ask the requester for an explicit recipe choice; this bundle cannot assess local recipe availability.
 - Agent routing (`bb-workflow` › `references/agent-choice.md`) — needs `bakers agents`, a local CLI command;
   no MCP tool exposes it. The connector never proposes or writes an `agent:*` label.
 - The `working` paths in `bb-create-ticket` (specifying with the requester and handing over to
@@ -44,11 +45,11 @@ filesystem or the `bakers` CLI; every step below is a call to one of these tools
 |---|---|---|
 | `bakers_ticket_search` | `query` | tickets whose title or description contains `query`: `identifier`, `title`, `state`, `type`; newest first, at most 50 |
 | `bakers_ticket_read` | `ticket` (identifier or UUID) | the ticket with `type`, `recipe`, `labels`, `links` and every comment |
-| `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent` | `id`, `identifier`, `state` |
+| `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee_email` | `id`, `identifier`, `state`, `branch_name`, `assignee`, `url` |
 | `bakers_comment_publish` | `ticket`, `type`, `body` | the new comment's `id` |
 | `bakers_ticket_transition` | `ticket`, `state` | the saved `state` |
 
-Your client lists each tool with the prefix `tool_api__` (`tool_api__bakers_ticket_read`). The
+Use the tool name exposed by your client, including any client-added prefix. The
 tool's own input schema wins over this table.
 
 ## What you can do
@@ -93,8 +94,9 @@ parent ticket; if the user names one, pass it as `parent`. Otherwise create with
 
 Ask which project the ticket belongs to when it is unclear; its key is the prefix of its ticket
 identifiers. Call `bakers_ticket_create` with the verbatim `title`, `workflow: "bb_work"`, the
-`project`, the Markdown `description`, `type` (`feature` or `chore`) and the `recipe` (`matt` unless
-the user names another). **Retain the returned `id` and `identifier`.** Read the ticket back and
+`project`, the Markdown `description`, `type` (`feature` or `chore`) and the requester’s explicitly
+chosen `recipe`. Ask for the recipe if it is missing; do not silently choose one. Confirm that it
+supports the chosen type; if the requester cannot establish that, hand this task to the checkout workflow. **Retain the returned `id` and `identifier`.** Read the ticket back and
 verify title, description, type, recipe and the initial state `qualification`.
 
 If the result is uncertain (timeout, connection error after sending), do not repeat the create:
@@ -105,7 +107,7 @@ stop rather than risk a duplicate.
 
 Build the qualification handoff with every required field:
 
-- `acceptance_criteria` — exhaustive, role-named, checkable conditions.
+- `acceptance_criteria` — exhaustive, role-named, checkable conditions with stable AC IDs; gate each for clarity, record the passed/rewritten tally, and preserve previous wording for rewrites. This tally is not test success. Keep confirmed criteria verbatim.
 - `out_of_scope` — an explicit boundary, including a reasoned "none".
 - `recipe` and `ticket_type`, with the reason for the recipe choice.
 - `reproduction` — `not_required` for feature/chore.
@@ -113,7 +115,10 @@ Build the qualification handoff with every required field:
 - `test_as` — the test personas who check the change and what each should see (including any that
   must be denied), or `no login needed`. Ask when the right persona is unclear; never pick an
   administrator for convenience.
+- `prior_art` — searched terms, returned candidates and the server-search outcome. The remote Git base check is unavailable in this connector; record it as not checked, never negative.
 - `handoff_version` — `1` for a first qualification, incremented on any requalification.
+
+Present the criteria, assumptions and recipe choice to the requester and obtain their confirmation before routing. Existing confirmation of the same intake can be reused.
 
 Publish it with `bakers_comment_publish`, `type: "qualification"`. The returned `id` is the only
 confirmation needed. A definite failure: report it and stop. A timeout: treat it as unresolved and

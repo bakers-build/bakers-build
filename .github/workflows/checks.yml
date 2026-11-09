@@ -448,6 +448,7 @@ jobs:
           bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh coder/bakers-ddev/scripts/conductors.sh
           bash tests/contract/coder-pm-bot.sh
           bash tests/contract/coder-conductors.sh
+          bash tests/contract/coder-preview.sh
   image_gate:
     # Its own, larger runner: PHPUnit and the browser suite run with the parallelism set in the gate script.
     runs-on: ${{ fromJSON(vars.RUNNER_IMAGE_GATE || '"warp-ubuntu-latest-x64-16x"') }}

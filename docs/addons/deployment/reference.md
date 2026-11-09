@@ -56,6 +56,6 @@ For choosing and checking an installed bakers.build version, see [Updates](/conf
 
 ## Roll back
 
-Follow your deployment's rollback procedure. For a Komodo-managed bakers.build server, see [Roll back](/self-hosting/server-komodo#roll-back). Listing a previous Git range does not roll back a deployment.
+Follow your deployment's rollback procedure. For a standalone server, recover matching code and data using [Restore onto empty isolated storage](/self-hosting/server#restore-onto-empty-isolated-storage). Changing only an image does not undo database updates. Follow up with a revert through a merge request; a version tag is never moved or reused. Listing a previous Git range does not roll back a deployment.
 
 Source: `bakers-cli/addons/deployment/src/deployment.ts` (`registerDeployment`, `parseIdentifiers`, `gatherBatch`).

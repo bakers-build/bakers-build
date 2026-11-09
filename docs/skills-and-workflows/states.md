@@ -25,21 +25,11 @@ The transitions:
 | `finish` | `working`, `review` | `done` |
 | `cancel` | every state except `done` and `cancelled` | `cancelled` |
 
-A fully specified intake goes from `qualification` straight to `working`. `requalify` returns to `qualification` when the handoff is missing, stale or contradictory; `to_plan` redoes a missing or wrong plan. Review is optional: `finish` leaves `working` or `review`.
+A fully specified intake goes from `qualification` straight to `working`. `requalify` returns to `qualification` when required qualification fields are missing; `to_plan` redoes a missing or wrong plan. The server permits `finish` from `working` or `review`, but the selected recipe and authorization still control its use. Matt requires review for features; bugs and chores may skip it only through the merge gate with explicit authorization.
 
 ## Ticket type, recipe and labels
 
-A ticket and a ticket template carry three term fields, each from a vocabulary of the ticket's workspace:
-
-| Field | Vocabulary | Values | Example |
-|---|---|---|---|
-| `ticket_type` | `type` | one | `feature`, `bug`, `chore`, `epic`, `deployment`, `verification` |
-| `recipe` | `recipe` | one | a recipe name |
-| `labels` | `label` | several | `agent:<alias>`, plain tags |
-
-The field is called `ticket_type` because JSON:API reserves `type`. The type selects the recipe's variant. Workspace contributors and leads manage the terms under the workspace's settings, on the tabs Types, Recipes and Labels; guests may only view them. A term has no page of its own and cannot be deleted. Agents set them by name with [`bakers_ticket_classify`](/configuration/clients/tools).
-
-An epic is a ticket of type `epic`. It groups child tickets, which do the work; the project overview lists epics by type.
+[Ticket type, recipe and labels](/skills-and-workflows/types-recipes-labels) owns the field definitions, vocabulary administration and selection rules. An epic groups child tickets; it is a ticket type, not a separate workflow.
 
 ## Blockers, parents and branches
 

@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { setup } from '../test/poller-setup.mjs';
 import { channel, PROJECT, thread } from '../test/site.mjs';
 
-const messages = JSON.parse(readFileSync(new URL('./messages.json', import.meta.url), 'utf8'));
+const messages = JSON.parse(readFileSync(new URL('./messages.json', import.meta.url), 'utf8')).de;
 
 function frozenWithQuestion(s, ticket, body = 'Should it run at 3 a.m.?') {
   const question = s.addComment(ticket, { body, created: '2026-11-02T10:00:00+00:00' });
@@ -82,7 +82,7 @@ test('an open question is relayed into its thread exactly once, keyed by the com
       identifier: 'ACME-1',
       channel: 'C0000000001',
       thread_ts: '1700000000.000100',
-      text: 'ACME-1 · "Price updater" has a question:\n\nShould it run at 3 a.m.?',
+      text: 'ACME-1 · „Price updater“ hat eine Frage:\n\nShould it run at 3 a.m.?',
     },
   ]);
   assert.deepEqual(state().relayed, [question.id]);
@@ -101,7 +101,7 @@ test('a technical problem is relayed into its thread exactly once, behind its ow
       identifier: 'ACME-1',
       channel: 'C0000000001',
       thread_ts: '1700000000.000100',
-      text: 'The work on the "Price updater" ticket is stuck on a technical problem that keytec has to solve:\n\nThe test database refuses the connection. Please contact keytec.',
+      text: 'Die Arbeit am Ticket „Price updater“ hängt an einem technischen Problem, das keytec lösen muss:\n\nThe test database refuses the connection. Please contact keytec.',
     },
   ]);
   assert.deepEqual(state().relayed, [note.id]);
@@ -115,7 +115,7 @@ test('a ticket labelled Question and technical problem gets only the technical-p
   await poller.pass();
   assert.equal(sent.length, 1);
   assert.equal(sent[0].kind, 'technical_problem');
-  assert.ok(!sent[0].text.includes('has a question:'));
+  assert.ok(!sent[0].text.includes('hat eine Frage:'));
 });
 
 test('a technical problem is not posted again by a restarted poller', async (t) => {
@@ -171,7 +171,7 @@ test('a sub-ticket posts into its ancestor\'s channel behind its identifier, and
   child.state = 'working';
   await poller.pass();
   assert.deepEqual(slack.posts(), [{ channel: 'C0000000001', text: `ACME-2 · ${messages.states.working}` }]);
-  assert.deepEqual(sent.map((m) => [m.channel, 'thread_ts' in m, m.text]), [['C0000000001', false, 'ACME-3 · "Retry" has a question:\n\nShould it run at 3 a.m.?']]);
+  assert.deepEqual(sent.map((m) => [m.channel, 'thread_ts' in m, m.text]), [['C0000000001', false, 'ACME-3 · „Retry“ hat eine Frage:\n\nShould it run at 3 a.m.?']]);
   assert.equal(slack.calls.filter((c) => c.method === 'chat.getPermalink').length, 0);
   assert.deepEqual(s.stub.calls('bakers_ticket_transition'), []);
 });
@@ -204,7 +204,7 @@ test('done is posted, then the channel archived; a failed archive retries only t
   await poller.pass();
   const order = slack.calls.filter((c) => ['chat.postMessage', 'conversations.archive'].includes(c.method)).map((c) => c.method);
   assert.deepEqual(order, ['chat.postMessage', 'conversations.archive', 'conversations.archive']);
-  assert.match(slack.posts()[0].text, /^This is finished and ready for you to try\./);
+  assert.match(slack.posts()[0].text, /^Das ist fertig und bereit zum Ausprobieren\./);
   assert.equal(state().channels.C0000000001.archived, true);
 });
 
@@ -300,4 +300,197 @@ test('a channel link to a channel the bot did not create is posted to, never ren
   await poller.pass();
   assert.equal(slack.posts().length, 1);
   assert.deepEqual(slack.calls.filter((c) => c.method.startsWith('conversations.')), []);
+});
+
+const MINUTE = 60 * 1000;
+
+test('a ticket walking plan, working, review and done gets its state lines, a work-start line, a line per summary and the preview link, in order', async (t) => {
+  const { s, slack, poller, clock } = await setup(t);
+  const ticket = s.addTicket({ state: 'plan', links: [thread()] });
+  s.addComment(ticket, { type: 'summary', body: '### Outcome\n\nThe request is written up.', created: '2026-11-05T11:00:00Z' });
+  await poller.pass();
+
+  ticket.state = 'working';
+  const working = s.addRun(ticket, { state_at_start: 'working' });
+  await poller.pass();
+
+  clock.now += 20 * MINUTE;
+  s.addComment(ticket, { type: 'summary', body: '### 🎯 Outcome\n\nThe import reads the **supplier** file. Prices update every night.', created: '2026-11-05T12:19:00Z' });
+  ticket.links.push({ uri: 'https://acme-1.ddev.site/prices', title: 'Price list' });
+  working.state = 'done';
+  ticket.state = 'review';
+  const review = s.addRun(ticket, { state_at_start: 'review' });
+  await poller.pass();
+
+  clock.now += 10 * MINUTE;
+  s.addComment(ticket, { type: 'summary', body: '### Outcome\n\nAll checks pass.\n\n### 🧪 Manual review\n\nOpen the price list.', created: '2026-11-05T12:29:00Z' });
+  review.state = 'done';
+  ticket.state = 'done';
+  await poller.pass();
+  await poller.pass();
+
+  assert.deepEqual(slack.posts().map((p) => p.text), [
+    messages.states.working,
+    messages.runStart.working,
+    messages.states.review,
+    'The import reads the supplier file. Prices update every night.',
+    `${messages.previewLead} Price list\nhttps://acme-1.ddev.site/prices`,
+    messages.runStart.review,
+    `${messages.states.done}\n\n${messages.testHint}\n\nOpen the price list.`,
+  ]);
+});
+
+test('runs, summaries and links from before the poller followed a ticket are not posted', async (t) => {
+  const { s, slack, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread(), { uri: 'https://acme-1.ddev.site/', title: 'Site' }] });
+  s.addRun(ticket, { state: 'failed' });
+  s.addRun(ticket);
+  s.addComment(ticket, { type: 'summary', body: '### Outcome\n\nSomething was done earlier.' });
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(slack.posts(), []);
+});
+
+test('a status line Slack refused is posted on a later pass, once, also after a restart', async (t) => {
+  const { s, slack, poller, restart } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  s.addRun(ticket);
+  slack.fail('chat.postMessage');
+  await poller.pass();
+  slack.heal();
+  const refused = slack.posts().length;
+  const again = restart();
+  await again.pass();
+  await again.pass();
+  assert.deepEqual(slack.posts().slice(refused).map((p) => p.text), [messages.runStart.working]);
+});
+
+test('a run whose start line Slack refused once gets its start and end lines once each, in order', async (t) => {
+  const accepted = [];
+  let refusals = 1;
+  const { s, poller } = await setup(t, {
+    slackAnswers: {
+      'chat.postMessage': (body) => {
+        if (body.text === messages.runStart.working && refusals-- > 0) return { ok: false, error: 'ratelimited' };
+        accepted.push(body.text);
+        return { ok: true, ts: `1800000000.${String(accepted.length).padStart(6, '0')}` };
+      },
+    },
+  });
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  s.addRun(ticket, { state: 'failed' });
+  await poller.pass();
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(accepted, [messages.runStart.working, messages.runPaused]);
+});
+
+test('a summary comment without a body posts nothing and fails nothing', async (t) => {
+  const { s, slack, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  delete s.addComment(ticket, { type: 'summary' }).body;
+  s.addRun(ticket);
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), [messages.runStart.working]);
+});
+
+test('a ticket whose runs cannot be read is skipped for the pass and caught up on the next', async (t) => {
+  const { s, slack, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  s.addRun(ticket);
+  s.failOnce('bakers_ticket_runs_list');
+  await poller.pass();
+  assert.deepEqual(slack.posts(), []);
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), [messages.runStart.working]);
+});
+
+test('a working ticket in a quiet conversation gets one heartbeat per interval while its run runs', async (t) => {
+  const { s, slack, poller, clock } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  const running = s.addRun(ticket, { started_at: clock.now / 1000 - 3600 });
+  await poller.pass();
+  clock.now += 30 * MINUTE - 1;
+  await poller.pass();
+  assert.deepEqual(slack.posts(), []);
+  clock.now += 1;
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), [messages.stillWorking]);
+  clock.now += 30 * MINUTE;
+  running.state = 'done';
+  ticket.state = 'review';
+  await poller.pass();
+  clock.now += 30 * MINUTE;
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), [messages.stillWorking, messages.states.review]);
+});
+
+test('a question relayed while the run still runs is the only post of its pass, with no heartbeat beside it', async (t) => {
+  const { s, slack, sent, poller, clock } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  s.addRun(ticket, { started_at: clock.now / 1000 - 3600 });
+  await poller.pass();
+  clock.now += 30 * MINUTE;
+  frozenWithQuestion(s, ticket);
+  await poller.pass();
+  assert.deepEqual(sent.map((p) => p.kind), ['question']);
+  assert.deepEqual(slack.posts(), []);
+});
+
+test('without bot-language.json the state line, run start and question lead-in are German', async (t) => {
+  const { s, slack, sent, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'plan', title: 'Prices', links: [thread()] });
+  await poller.pass();
+  ticket.state = 'working';
+  s.addRun(ticket);
+  frozenWithQuestion(s, ticket);
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), ['Die Arbeit daran hat begonnen.', 'Wir arbeiten jetzt daran.']);
+  assert.ok(sent[0].text.startsWith('ACME-1 · „Prices“ hat eine Frage:'), sent[0].text);
+});
+
+for (const [code, expected] of [['en', 'Work on this has started.'], ['de', 'Die Arbeit daran hat begonnen.'], ['fr', 'Die Arbeit daran hat begonnen.']]) {
+  test(`with the language ${code} the state line is "${expected}"`, async (t) => {
+    const { s, slack, poller, language, errors } = await setup(t);
+    language(code);
+    const ticket = s.addTicket({ state: 'plan', links: [thread()] });
+    await poller.pass();
+    ticket.state = 'working';
+    await poller.pass();
+    assert.deepEqual(slack.posts().map((p) => p.text), [expected]);
+    assert.deepEqual(errors, []);
+  });
+}
+
+test('an unreadable bot-language.json gives German and logs one error per pass', async (t) => {
+  const { s, slack, poller, language, errors } = await setup(t);
+  language({ raw: '{"language": ' });
+  const ticket = s.addTicket({ state: 'plan', links: [thread()] });
+  await poller.pass();
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /bot-language\.json/);
+  language({ raw: '{"language": 7}' });
+  ticket.state = 'working';
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), ['Die Arbeit daran hat begonnen.']);
+  assert.equal(errors.length, 2);
+});
+
+test('a language written between passes applies on the next pass, without a poller restart', async (t) => {
+  const { s, slack, poller, language } = await setup(t);
+  language('de');
+  const ticket = s.addTicket({ state: 'plan', links: [thread()] });
+  await poller.pass();
+  ticket.state = 'working';
+  await poller.pass();
+  language('en');
+  ticket.state = 'review';
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), ['Die Arbeit daran hat begonnen.', 'The work is finished and is being checked.']);
 });

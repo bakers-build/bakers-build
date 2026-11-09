@@ -38,13 +38,7 @@ Your project must support:
 
 Repository scripts prepare the application. Identify the commands to put in `.bakers/conductor.config.js`. The next step, [connecting the checkout](/get-started/connect-a-project), applies these choices and verifies the configuration.
 
-[Lifecycle hooks](/provision/hooks) run commands at setup and cleanup points. For example, a project with `package-lock.json` can install dependencies when a worktree needs preparation:
-
-```js
-hooks: { after_create: 'npm ci' },
-```
-
-All hooks are optional. Commands run with the execution user's permissions and must be available on that machine. Keep long-running development servers out of blocking setup hooks. `after_done` receives no ticket variables, so cleanup must read a validated worktree-local identity.
+[Lifecycle hooks](/provision/hooks) connect setup and cleanup commands to ticket work. The [Node.js](/provision/node-project) and [Compose](/provision/docker-compose) examples show stack-specific commands. The [Configuration reference](/configuration/project/hooks) owns timing, environment and failure rules.
 
 ## Prepare the application on demand
 

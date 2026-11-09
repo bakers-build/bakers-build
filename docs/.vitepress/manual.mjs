@@ -82,7 +82,7 @@ export const SIDEBAR = {
   "/agents/": [
     group("Agents", [
       ["Overview", "/agents/"],
-      ["Choose agents and models", "/agents/guide"],
+      ["Configure and select agents", "/agents/guide"],
       ["Agent policy reference", "/agents/reference"],
     ]),
   ],
@@ -185,9 +185,9 @@ export const SIDEBAR = {
     ]),
     group("Project", [
       ["Project", "/configuration/project"],
+      ["Lifecycle hooks", "/configuration/project/hooks"],
       ["Conductors", "/configuration/project/conductors"],
       ["Conductor commands", "/configuration/project/conductor-commands"],
-      ["Configuration migration", "/configuration/project/migration"],
     ]),
     group("CLI reference", [
       ["CLI commands", "/configuration/clients/cli"],
@@ -204,7 +204,6 @@ export const SIDEBAR = {
     group("Self-hosting", [
       ["Overview", "/self-hosting/"],
       ["Server", "/self-hosting/server"],
-      ["Komodo server", "/self-hosting/server-komodo"],
     ]),
   ],
 }
