@@ -11,7 +11,7 @@
 import type { DropshClient } from '../../../types.js';
 import type { OptionSource } from '../../../Widget/index.js';
 import { loadAllParentCandidates } from '../Data/parents-all.js';
-import type { ParentOption } from './create.js';
+import type { ParentOption } from './parent-source.js';
 
 /** How long the My work parent picker waits before re-querying. */
 const PARENT_QUERY_DEBOUNCE_MS = 150;

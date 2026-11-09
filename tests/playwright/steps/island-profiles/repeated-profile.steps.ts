@@ -9,7 +9,7 @@ const islands = `${instances} [id^="island-profile_"]`;
 const actions = new WeakMap<Page, { instance: string; requests: string[]; responseIds: string[]; ids: string[] }>();
 
 Given('I open the repeated profile fixture', async ({ page }) => {
-  await page.goto('/admin/structure/island/browser-fixture');
+  await page.goto('/island-browser/browser-fixture');
   await markDocument(page);
 });
 

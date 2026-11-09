@@ -2,7 +2,7 @@
 
 **Decides which processes of a ticket's worktree [Ports](/addons/ports) may share, such as a docs or app dev server.**
 
-DDEV services need nothing here; [DDEV discovery](/addons/ddev) claims them.
+Services of a runtime addon need nothing here; a [claimer](/addons/ports#options) claims them.
 
 ## Enable it
 
@@ -43,7 +43,8 @@ A malformed setting is never ignored: `bakers ports` names the file and the key,
 
 - A Node inspector port is not shared: port 9229, a port named by an `--inspect…` flag, or one answering as an inspector. A public inspector would let anyone run code on your machine.
 - `all_node` skips a process that gives no HTTP answer. A `services` entry does not: it claims a matching process even when the inspector check gets no answer, so match only the dev servers you mean.
-- Order: `services`, then DDEV, then `all_node`. DDEV keys never change; a process entry reusing one becomes `<key>-<port>`.
+- Order: `services`, then each package of the ports entry's `claimers` in the listed order, then `all_node`; each claims only what is still unclaimed. A claimer's keys never change; a process entry reusing one becomes `<key>-<port>`.
+- Ports finds no runtime's services on its own: a claimer package, e.g. a runtime addon, claims them once it is in `claimers`; see the addon's page. An installation that relied on implicit discovery adds `claimers`.
 
 ::: tip Ask your AI
 "Share my worktree's dev server with a ports `services` entry, then run `bakers ports list`."

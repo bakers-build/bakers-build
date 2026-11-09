@@ -14,9 +14,8 @@ use Drupal\Core\Render\Element;
  * `ModuleHandler::invokeAllWith()` throws `Module bb_core should not
  * implement theme more than once` outright, so `hook_theme` is a
  * module-singleton rather than a per-concern hook — which is why this class
- * exists at all and why the Gin registration below lives here rather than
- * beside the other Gin hooks it belongs with. Theme SVG asset URLs are
- * versioned here for the same reason: `file_url_alter` is a module hook.
+ * exists at all. Theme SVG asset URLs are versioned here for the same reason:
+ * `file_url_alter` is a module hook.
  */
 final class ThemeHooks {
 
@@ -28,9 +27,7 @@ final class ThemeHooks {
   /**
    * Registers this module's theme hooks.
    *
-   * @see \Drupal\node\Hook\NodeThemeHooks::theme()
    * @see \Drupal\bb_core\Form\BbCreateDialogFormBase
-   * @see https://www.drupal.org/project/gin/issues/3342164
    *
    * @return array<string, array<string, mixed>>
    *   Theme hook definitions keyed by hook name.
@@ -38,15 +35,11 @@ final class ThemeHooks {
   #[Hook('theme')]
   public function theme(): array {
     return [
-      'node_edit_form' => [
-        'render element' => 'form',
-      ],
       'bb_create_dialog' => [
         'render element' => 'form',
       ],
-      // The conductor listing's Load cell. The listing renders in the admin
-      // theme, so the markup is a module template rather than a front-theme
-      // component.
+      // The conductor listing's Load cell, a module template rather than a
+      // front-theme component.
       'bb_conductor_utilization' => [
         'variables' => ['label' => '', 'level' => ''],
       ],
@@ -93,7 +86,7 @@ final class ThemeHooks {
   }
 
   /**
-   * Versions the theme sprite and brand SVG URLs with the asset query token.
+   * Versions the theme sprite and logo SVG URLs with the asset query token.
    *
    * Only the four exact bare theme paths are rewritten. Already queried or
    * fragmented URIs, other files, and external addresses pass through.
@@ -106,8 +99,8 @@ final class ThemeHooks {
     if (in_array($uri, [
       'themes/custom/bb_theme/dist/assets/icons/sprite.svg',
       '/themes/custom/bb_theme/dist/assets/icons/sprite.svg',
-      'themes/custom/bb_theme/assets/brand/bakers-braid.svg',
-      '/themes/custom/bb_theme/assets/brand/bakers-braid.svg',
+      'themes/custom/bb_theme/logo-wordmark.svg',
+      '/themes/custom/bb_theme/logo-wordmark.svg',
     ], TRUE)) {
       $uri .= '?v=' . $this->assetQueryString->get();
     }

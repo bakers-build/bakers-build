@@ -1,22 +1,31 @@
 # Configuration
 
-Change settings after initial setup. Each topic names its owner, required and optional values, examples and verification.
+Find the file that owns a setting before changing it. Start with the [file map and precedence](/configuration/files); it separates shared project configuration from private machine and connection values and includes one compact example.
 
-| Topic | Location and responsibility |
+| Reference | Owns |
 |---|---|
-| [Connector](/configuration/connector) | Chat client's MCP settings; CLI connection files under `~/.bakers` |
-| [Machine](/configuration/machine) | Private `~/.bakers/machine.config.js`: identity, capacity and preview policy |
-| [Project](/configuration/project) | Committed `.bakers/conductor.config.js`: project identity and engine wiring |
-| [Provisioning](/configuration/provisioning) | Repository scripts and conductor hooks: development environments |
-| [Clients](/configuration/clients) | Local client runtime and project executor/workspace selection |
-| [Agents](/configuration/agents) | Machine addons and agent policy: harnesses, models and routing |
-| [Workflows](/configuration/workflows) | Ticket workflow/recipe and committed `WORKFLOW.md`: method and checks |
-| [Security](/configuration/security) | Access, credentials, execution boundaries, previews and data locations |
+| [Connections](/configuration/connector/connections) | Server selection, sign-in profiles and private connection files |
+| [Machine](/configuration/machine) | Host identity, agent catalog and machine policy |
+| [Project](/configuration/project) | Committed engine wiring, hooks and named conductor variants |
+| [CLI reference](/configuration/clients/cli) | Commands, tools and authentication |
+| [Migration](/configuration/project/migration) | Retired shapes and supported upgrades |
 
-Keep connections, `.bakers/connection.config.local.js`, `.bakers/conductor.config.local.js`, logs and evidence out of Git. Local conductor values apply only where the committed file explicitly imports them. `BB_HOME` names the private `.bakers` directory itself and moves machine and connection files together.
+Keep credentials and `.bakers/*.local.js` out of Git. JavaScript composition is explicit: a local conductor file changes the committed configuration only where that configuration imports it.
+
+For client choice and everyday use, see [Use your client](/get-started/use-your-client). [Conductor slots](/addons/slots) owns executor and workspace selection.
 
 ```sh
 bakers config check --scope all --online
 ```
 
-Check the selected connection and intended project before changing credentials. [Updates](/configuration/machine/updates) and [migration](/configuration/project/migration) cover existing installations; [Getting Started](/get-started/) covers new ones.
+The report validates files and resolvable addons; it does not prove that a harness is installed/authenticated or that an application is ready. See [Agents](/agents/), [Security](/provision/security/) and [Provision](/provision/) for behavior and runtime checks.
+
+## Installation and updates
+
+Choose the guide for the part you need to set up or update.
+
+<DocQuickLinks aria-label="Installation and updates" :items="[
+  { label: 'Update bakers.build', text: 'Update an existing CLI installation, skills and configuration.', link: '/configuration/machine/updates' },
+  { label: 'Self-hosting', text: 'Install or update an application server you operate.', link: '/self-hosting/' },
+  { label: 'Get started', text: 'Prepare a new project or begin working with tickets.', link: '/get-started/' }
+]" />

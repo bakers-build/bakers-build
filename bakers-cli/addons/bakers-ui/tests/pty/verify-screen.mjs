@@ -23,20 +23,20 @@
 //
 // WHAT IT DOES NOT DO
 //
-//   It never sends Ctrl+S or Ctrl+D. Those are the New-ticket form's two submit
-//   paths and would write a REAL ticket to whichever control plane the
-//   connection resolved to. The check below is not decoration: it refuses to
+//   It never sends Ctrl+S or Ctrl+D. Those are a form's two submit paths and
+//   would write REAL data to whichever control plane the connection resolved
+//   to. The check below is not decoration: it refuses to
 //   run a script that contains either byte.
 //
 // USAGE
 //
 //   cd bakers-cli/addons/bakers-ui/tests/pty && npm install      # once: native deps
-//   node verify-screen.mjs --surface new-ticket
+//   node verify-screen.mjs --surface tickets
 //   node verify-screen.mjs --surface tickets --out ../../../../../assets-ai/BB-nnn/node/pty-tickets-before.txt
 //
-//   --surface <new-ticket|tickets|dashboard>   which walk, and which deep link
+//   --surface <tickets>   which walk, and which deep link
 //   --out <file>       write the transcript here as well as to stdout
-//   --project <name>   the project the two project-scoped surfaces open
+//   --project <name>   the project the project-scoped surface opens
 //   --cols/--rows <n>  the pty geometry (default 120x40)
 //   --boot-timeout <ms>
 //
@@ -48,12 +48,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import xtermHeadless from '@xterm/headless';
 import { spawn } from 'node-pty';
-import {
-  DASHBOARD_KEY_SCRIPT,
-  lit,
-  NEW_TICKET_KEY_SCRIPT,
-  TICKETS_KEY_SCRIPT,
-} from './key-script.mjs';
+import { lit, TICKETS_KEY_SCRIPT } from './key-script.mjs';
 
 // `@xterm/headless` is CommonJS and exposes `Terminal` on the default export
 // only; a named import of it is `undefined` at runtime, not a build error.
@@ -80,7 +75,7 @@ const EXIT_GRACE_MS = 8000;
 // ---------------------------------------------------------------------------
 
 /**
- * What "booted" means: the tab bar AND the statistics body.
+ * What "booted" means: the tab bar AND the body.
  *
  * The chrome alone is not enough. `[Dashboard]` and the header are painted
  * while the body still reads `Loading dashboard…`, so a boot wait on the chrome
@@ -97,31 +92,15 @@ const BOOT_DASHBOARD = [lit('[Dashboard]'), lit('TICKETS CLOSED')];
  * driver's business how it starts the subject; the WALK is the shared artefact
  * and lives at its single definition site.
  *
- * `--project` is load-bearing on the two project-scoped surfaces, not
- * decoration. Without a project in scope the New-ticket form's Parent field
- * renders `(no project context — open a project to pick a parent)` and its
- * debounced autocomplete never queries, so the one async option source the walk
- * exists to exercise would not run; and there is no Tickets tab at all.
+ * `--project` is load-bearing, not decoration: without a project in scope there
+ * is no Tickets tab at all.
  */
 const SURFACES = {
-  'new-ticket': {
-    describe: 'the New-ticket popup, opened from a project Dashboard',
-    args: (project) => ['ui', '--project', project],
-    script: NEW_TICKET_KEY_SCRIPT,
-    boot: BOOT_DASHBOARD,
-  },
   tickets: {
     describe: 'the project ticket list: paging, search, and back out',
     args: (project) => ['ui', '--project', project],
     script: TICKETS_KEY_SCRIPT,
     boot: BOOT_DASHBOARD,
-  },
-  dashboard: {
-    describe: 'the ROOT dashboard and the whole root tab cycle',
-    // No `--project`: the root tab bar exists only outside a project.
-    args: () => ['ui'],
-    script: DASHBOARD_KEY_SCRIPT,
-    boot: [...BOOT_DASHBOARD, lit('bakers.build dashboard')],
   },
 };
 
@@ -134,7 +113,7 @@ function parseArgs(argv) {
     const at = argv.indexOf(flag);
     return at === -1 ? fallback : argv[at + 1];
   };
-  const surface = read('--surface', 'new-ticket');
+  const surface = read('--surface', 'tickets');
   if (!Object.hasOwn(SURFACES, surface)) {
     throw new Error(
       `unknown --surface '${surface}'. Known: ${Object.keys(SURFACES).join(', ')}`,
@@ -154,7 +133,7 @@ function parseArgs(argv) {
 // Safety
 // ---------------------------------------------------------------------------
 
-/** The New-ticket form's two submit bytes. Neither may appear in any script. */
+/** A form's two submit bytes. Neither may appear in any script. */
 const SUBMIT_BYTES = [
   ['Ctrl+S', '\u0013'],
   ['Ctrl+D', '\u0004'],
@@ -166,8 +145,8 @@ function refuseSubmitKeys(script, surface) {
       if (String(step.send ?? '').includes(byte)) {
         throw new Error(
           `refusing to run --surface ${surface}: step '${step.label}' sends ` +
-            `${name}, which submits the New-ticket form and would write a real ` +
-            'ticket to the connected control plane.',
+            `${name}, which submits a form and would write real data ` +
+            'to the connected control plane.',
         );
       }
     }

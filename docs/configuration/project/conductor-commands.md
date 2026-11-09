@@ -18,7 +18,7 @@ Every subcommand except `ls` works on the conductor of the checkout you stand in
 |---|---|---|
 | `--conductor <name>` | before `conductor` | Select a conductor config by file stem: `conductor` is `conductor.config.js`, anything else `<name>.conductor.config.js`. Environment: `$BB_CONDUCTOR`; the flag wins. |
 | `--log-level <level>` | after `oven` | `debug`, `info` (default), `warn` or `error`. Environment: `BB_LOG_LEVEL`. `debug` shows per-poll ticks, claims and idle cycles. |
-| `--log-sink <sink>` | after `oven` | `stdout`, `file` or `both`. Default `both` on a terminal, `file` otherwise. `file` and `both` write `.bakers/log.txt` in the checkout. Environment: `BB_CONDUCTOR_LOG`. |
+| `--log-sink <sink>` | after `oven` | `stdout`, `file` or `both`. Default `both` on a terminal, `file` otherwise. `file` and `both` write `.bakers/log.txt` in the checkout. A detached `start` always logs to the file. Environment: `BB_CONDUCTOR_LOG`. |
 
 With no `--conductor`, the default is `conductor.config.js`; if that file is absent and exactly one config exists it is used, and with several you must choose or the command lists the stems and stops.
 
@@ -43,7 +43,7 @@ BB_LOG_LEVEL=debug bakers oven once
 
 ### start
 
-By default `start` launches the loop in a herdr pane (handle `bakers-conductor:<id>`) and waits until the control plane shows a fresh heartbeat from the new process. It ends with exactly one of three outcomes: **started** (naming the pid and host), **already running** (the live pid and the age of its heartbeat) or **failed** (the reason, with a non-zero exit status). On a host without herdr, run `bakers oven start --foreground` under a service manager such as systemd or Docker.
+By default `start` launches the loop as a detached background process: it has its own session and no terminal, so closing the starting shell does not end it, and its output goes to `.bakers/log.txt` in the checkout. `start` then waits until the control plane shows a fresh heartbeat from the new process. It ends with exactly one of three outcomes: **started** (naming the pid and host), **already running** (the live pid and the age of its heartbeat) or **failed** (the reason and the log file, with a non-zero exit status). The detached process does not survive a logout that ends all user processes or a reboot; for that, run `bakers oven start --foreground` under a service manager such as systemd or Docker.
 
 - `--foreground` runs the loop in this process instead. It refuses to start while a verified live conductor already serves the checkout. Every foreground start, and every CI or non-TTY start, prints an update notice only and never prompts.
 - `--no-update-check` skips the lookup, cache, prompt and notice; the version banner still prints.
@@ -56,7 +56,7 @@ A start on a machine where an enabled agent cannot start its sandbox prints `war
 
 ### check
 
-`check` prints one line per enabled agent: `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix> (see https://bakers.build/configuration/agents/execution-security#sandbox-prerequisites)`. It exits 1 when one agent cannot start its sandbox and needs no sign-in. While that is so, every cycle logs `claims withheld: sandbox unavailable: …` and claims nothing. Prerequisites per platform: [Sandbox prerequisites](/configuration/agents/execution-security#sandbox-prerequisites).
+`check` prints one line per enabled agent: `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix> (see https://bakers.build/security/execution#sandbox-prerequisites)`. It exits 1 when one agent cannot start its sandbox and needs no sign-in. While that is so, every cycle logs `claims withheld: sandbox unavailable: …` and claims nothing. Prerequisites per platform: [Sandbox prerequisites](/provision/security/execution#sandbox-prerequisites).
 
 ### once and clean
 
@@ -78,7 +78,7 @@ Liveness is derived, and uses the same three words as the cockpit and the contro
 
 ### tools
 
-`tools` is the shell route to the conductor's [addon tools](../../addons/build/tools.md) for agents that load no MCP server for them. It needs no conductor config or connection: it reads `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` from the run environment.
+`tools` is the shell route to the conductor's [addon tools](../../addons/build/tools.md) for agents that load no MCP server for them; inside a run, [`bakers tools`](/configuration/clients/tools) takes the same route. It needs no conductor config or connection: it reads `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` from the run environment.
 
 - `bakers oven tools` lists `name<TAB>description`.
 - `bakers oven tools <name> --schema` prints the tool's input schema.

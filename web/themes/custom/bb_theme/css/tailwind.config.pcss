@@ -12,8 +12,7 @@
  * Page background + base text colour. The page SDC carries min-h-screen/bg-app/
  * text-text, but the theme has no page.html.twig — Drupal renders the real page
  * via the stable9 template without that wrapper, so set the document backdrop
- * here. bb_theme CSS only loads on bb_theme pages; Gin's admin theme is
- * untouched.
+ * here.
  *
  * No literal fallbacks: the tokens always load through tokens/index.src.css, so
  * a fallback could only ever mask a broken import — and the ones that used to
@@ -28,8 +27,16 @@ html {
   scrollbar-color: var(--color-border) var(--color-app);
 }
 
+/*
+ * Base text takes the body role, so text without a role class never falls back
+ * to the browser's 16px. On body, not html: the roles are rem, and html keeps
+ * the reader's browser font size as their base.
+ */
 body {
   color: var(--color-text);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  font-weight: var(--text-body--font-weight);
 }
 
 html[data-mode="dark"] {

@@ -39,7 +39,7 @@ timestamp); an absent key is the correct shape.
   falls through `checkFieldAccess`). Multi-value → **read-modify-write union**
   (GET current metrics, append, PATCH the whole array), like `links`.
 - **Human:** the Metrics widget on the ticket edit form
-  (`/admin/bakers/ticket/<id>/edit`).
+  (`/{workspace}/ticket/<identifier>/edit`).
 
 ## Reading / aggregating (Views)
 

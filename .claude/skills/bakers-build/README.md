@@ -10,16 +10,19 @@ Start from `skills/bb-init-project/references/WORKFLOW.template.md`. No CLI read
 skills; the agent environment's native skill mechanism loads them.
 
 **Skills are chosen; references are read.** A skill is something a person, the ticket's `recipe`
-field, a hint or a subagent start selects. Exactly fourteen ship:
+field, a hint or a subagent start selects. The `recipe` field is written at qualification: the agent
+loads every installed `bb-recipe-*` skill completely and picks the method that fits the ask
+(`skills/bb-workflow/references/classify.md`). Exactly fifteen ship:
 
 | Skill | Job |
 |---|---|
 | `@bakers-build/bb-workflow` | The frame of every state run: seven phases — `read, provision, work, validate, deliver, outtake, transition` — the state files, routing, binding, replacement and stop rules. |
-| `@bakers-build/bb-recipe-matt` | The project-default recipe for feature, bug and chore tickets, selected by the ticket's `recipe` field. |
-| `@bakers-build/bb-recipe-superpowers` | The superpowers method for the same ticket types, selected by `recipe` = `superpowers`. |
+| `@bakers-build/bb-recipe-matt` | The Matt method for feature, bug and chore tickets. |
+| `@bakers-build/bb-recipe-superpowers` | The superpowers method for the same ticket types. |
 | `@bakers-build/bb-recipe-deploy-and-release`, `@bakers-build/bb-recipe-verify` | The recipes of `deployment` and `verification` tickets. |
 | `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |
-| `@bakers-build/bb-label-pingpong` | Loaded by the `bb-workflow` frame for a ticket labelled `pingpong`, in any state, as every `bb-label-<label>` skill is: it carries the ticket to `done` on its own, asks the user only content questions and one acceptance, and refers technical problems to the developers. |
+| `@bakers-build/bb-label-auto` | Loaded by the `bb-workflow` frame for a ticket labelled `auto`, in any state, as every `bb-label-<label>` skill is: it carries the ticket to `done` on its own, asks the user only what is theirs to decide and for one acceptance only when they had something to decide, and refers technical problems to the developers. |
+| `@bakers-build/bb-label-ticket-question` | Loaded by the frame for a ticket labelled `ticket-question`, in any state: it reaches a human only through the ticket — a question or a technical problem — then freezes it. |
 | `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project`, `@bakers-build/bb-upgrade-project` | Machine, project and workflow setup and upgrades. |
 | `@bakers-build/bb-create-ticket`, `@bakers-build/bb-scope-change`, `@bakers-build/bb-prepare-time` | Create a ticket, specified with its requester when asked; change its scope; prepare time proposals. |
 

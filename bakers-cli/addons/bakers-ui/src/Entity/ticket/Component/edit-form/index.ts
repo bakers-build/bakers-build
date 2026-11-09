@@ -1,6 +1,5 @@
 // The "Edit ticket" popup's body (BB-233, widened by BB-308 / BB-360), as
-// CHROME around its declaration — a genuine sibling of `Component/create-form`
-// now, not a second implementation of it.
+// CHROME around its declaration.
 //
 // BB-257 (re-entry) AC-13/AC-14. What this file used to carry, and why each
 // piece had to go:
@@ -44,11 +43,11 @@ import {
   renderDeclaredFieldsTree,
 } from '../../../../Widget/index.js';
 import type { ActiveRunInfo } from '../../../run/Data/active-run.js';
-import type { FieldDef } from '../../Form/create.js';
 import type {
   EditFieldId,
   EditFormOptions,
   EditFormState,
+  FieldDef,
 } from '../../Form/edit.js';
 
 /**

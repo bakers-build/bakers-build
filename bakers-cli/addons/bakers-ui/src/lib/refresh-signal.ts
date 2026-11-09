@@ -1,12 +1,13 @@
 import { statSync, watch } from 'node:fs';
 import { join } from 'node:path';
+import { UI_REFRESH_FILE } from '@bakers-build/core';
 import type { Debounce, WatchDirectory } from '../types.js';
 
 /**
  * BB-376 — "the data behind this cockpit may be stale", as a file.
  *
  * The whole writer contract is `touch .bakers/ui-refresh`: one line, identical
- * from a shell, an agent, a git hook, or inside the DDEV web container — which
+ * from a shell, an agent, a git hook, or inside a project's web container — which
  * is the reason it is a file and not a signal to a pid. A signal does not cross
  * a container boundary, so a `drush` post-write hook could never reach a cockpit
  * on the host, while a file on the bind mount reaches both. A pid file would
@@ -25,8 +26,8 @@ export interface RefreshSignal {
   close(): void;
 }
 
-/** The signal file's basename inside the watched `.bakers` dir. */
-export const REFRESH_SIGNAL_FILE = 'ui-refresh';
+/** The signal file's basename inside the watched `.bakers` dir; core owns it so the conductor's writer agrees. */
+export const REFRESH_SIGNAL_FILE = UI_REFRESH_FILE;
 
 /**
  * The coalescing window. Long enough that the several events one `touch`

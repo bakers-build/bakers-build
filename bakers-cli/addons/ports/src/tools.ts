@@ -16,6 +16,7 @@ import { discoverClaimedServices } from './claims.js';
 import {
   assertNoMachinePorts,
   bringUpTunnel,
+  loadClaimers,
   loadPortsTransport,
   type OperationContext,
   type PortsTransport,
@@ -61,7 +62,7 @@ export interface PortsToolDeps {
   home(): string;
 }
 
-/** DDEV labels containers with the real path; discovery matches it exactly. */
+/** Container labels carry the real path; discovery matches it exactly. */
 function canonicalPath(path: string): string {
   try {
     return realpathSync(path);
@@ -104,7 +105,7 @@ export function portsTools(deps: PortsToolDeps): Record<string, ToolHandler> {
       const worktree = canonicalPath(req.worktreePath);
       const ticket = ticketOf(req, worktree);
       const lines: string[] = [];
-      // A container IP reused by another DDEV project after `ddev restart`
+      // A container IP reused by another project after a container restart
       // would serve that project under a stale route, so every `up` first
       // re-checks every recorded route machine-wide, exactly like `reap`.
       const recheck = await reapAll(transport, req.signal);
@@ -227,12 +228,13 @@ export function toolsFor(options: unknown): Record<string, ToolHandler> {
         };
       }
     },
-    discover: (worktree, ticket, zone) =>
+    discover: async (worktree, ticket, zone) =>
       discoverClaimedServices(worktree, nodeDeps, {
         ticket,
         zone,
         probe: nodeHttpProbe,
         rules: serviceRules(options),
+        claimers: await loadClaimers(options, homeBbDir()),
       }),
     readRecords: (worktree) =>
       readMachineTunnelRecords(worktree, homeBbDir(), nodeTunnelOpsDeps),

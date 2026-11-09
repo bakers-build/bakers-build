@@ -6,11 +6,11 @@
  * WHAT NOTHING ELSE COVERS. `conductor/tests/core/worktree-bootstrap.test.ts`
  * runs the script standalone; `conductor/tests/core/conductor.test.ts` pins the
  * hook/layout ordering against fakes. Neither proves the two compose: that when
- * the conductor calls `applyOpenLayout` on a real herdr workspace, the real
+ * the conductor calls `openWorkspace` on a real herdr executor, the real
  * bootstrap has ALREADY finished. That is the single property this ticket
  * exists for — the `bakers ui` pane command names a binary `after_create` builds
  * — and it is asserted here by observing `existsSync(sentinel)` AT the moment
- * `applyOpenLayout` fires, not by checking that two calls happened in order.
+ * `openWorkspace` fires, not by checking that two calls happened in order.
  * `worktree-lifecycle.test.ts` drives a real dispatch but configures
  * `after_create: 'bash .ddev/worktree-post.sh'`, asserts nothing about the hook's
  * outcome, has no failure case, and says nothing about the pane.
@@ -141,17 +141,17 @@ async function makeParentRepo(slug: string): Promise<string> {
 }
 
 /**
- * `HerdrWorkspace` that records what the world looked like AT the moment the
+ * `HerdrExecutor` that records what the world looked like AT the moment the
  * conductor asked for the open layout. This is the seam the ordering assertion
  * needs: the property under test is not "both calls happened" but "the sentinel
  * already existed when the pane command was about to be launched".
  */
-class ObservingWorkspace extends HerdrWorkspace {
+class ObservingExecutor extends HerdrExecutor {
   sentinelAtLayout: boolean | null = null;
   localConfigAtLayout: string | null = null;
   layoutCalls = 0;
 
-  override async applyOpenLayout(
+  override async openWorkspace(
     path: string,
     ctx: { identifier: string; branch: string; title: string },
   ): Promise<void> {
@@ -161,13 +161,13 @@ class ObservingWorkspace extends HerdrWorkspace {
     this.localConfigAtLayout = existsSync(cfg)
       ? readFileSync(cfg, 'utf8')
       : null;
-    return super.applyOpenLayout(path, ctx);
+    return super.openWorkspace(path, ctx);
   }
 }
 
 interface Fixture {
   repo: string;
-  workspace: ObservingWorkspace;
+  executor: ObservingExecutor;
   conductor: Conductor;
   logPath: string;
   markerPath: string;
@@ -184,7 +184,7 @@ interface Fixture {
 let nextRunId = 1;
 
 /**
- * Wire a complete real dispatch. `hook` becomes the executor's `after_create`.
+ * Wire a complete real dispatch. `hook` becomes the config's `after_create`.
  * The open layout writes a marker carrying the rendered `{identifier}`, which
  * is the deterministic proof that the pane really executed its command (a PTY
  * scrape is asserted separately, as a secondary check).
@@ -209,14 +209,15 @@ async function makeFixture(slug: string, hook: string): Promise<Fixture> {
   const runUuid = `r-${slug}`;
   const branch = `bakers/bb-237-${slug}`;
   const state = 'working';
-  const workspace = new ObservingWorkspace({
-    root: repo,
-    open: {
-      command: `sh -c 'echo PANE-RAN-{identifier} | tee ${markerPath}; sleep 30'`,
+  const workspace = new HerdrWorkspace({ root: repo });
+  const executor = new ObservingExecutor(
+    {
+      root: repo,
+      command: 'true',
+      open: {
+        command: `sh -c 'echo PANE-RAN-{identifier} | tee ${markerPath}; sleep 30'`,
+      },
     },
-  });
-  const executor = new HerdrExecutor(
-    { root: repo, command: 'true', hooks: { after_create: hook } },
     undefined,
     // isTTY: true exercises the BB-237 default sink — pretty stdout AND the
     // durable log.txt. Asserting the failure lands in the FILE is the AC-4
@@ -242,7 +243,10 @@ async function makeFixture(slug: string, hook: string): Promise<Fixture> {
     handler: 'code',
   });
   const conductor = new Conductor(
-    makeConfig(join(logDir, 'conductor.config.js')),
+    {
+      ...makeConfig(join(logDir, 'conductor.config.js')),
+      hooks: { after_create: hook },
+    },
     remote,
     executor,
     workspace,
@@ -253,7 +257,7 @@ async function makeFixture(slug: string, hook: string): Promise<Fixture> {
   await conductor.start();
   return {
     repo,
-    workspace,
+    executor,
     conductor,
     logPath: join(logDir, 'log.txt'),
     markerPath,
@@ -375,15 +379,15 @@ describe.skipIf(!HAS_HERDR)(
         cfg.lastIndexOf(PARENT_URL),
       );
 
-      // THE ordering property. Not "after_create then applyOpenLayout happened"
+      // THE ordering property. Not "after_create then openWorkspace happened"
       // — that the bootstrap was already FINISHED when the layout fired. This is
       // what removed the need for the sentinel wait loop in the pane command.
-      expect(fx.workspace.layoutCalls).toBe(1);
+      expect(fx.executor.layoutCalls).toBe(1);
       expect(
-        fx.workspace.sentinelAtLayout,
-        'the sentinel must already exist when applyOpenLayout is called',
+        fx.executor.sentinelAtLayout,
+        'the sentinel must already exist when openWorkspace is called',
       ).toBe(true);
-      expect(fx.workspace.localConfigAtLayout).toContain(
+      expect(fx.executor.localConfigAtLayout).toContain(
         `base_url: '${WORKTREE_URL}'`,
       );
 
@@ -430,7 +434,7 @@ describe.skipIf(!HAS_HERDR)(
 
       // AC-6 + AC-4 — the failure is recorded, and it reaches the DURABLE sink
       // even though the logger was built with isTTY: true. Two records are
-      // expected: the executor's own `lifecycle hook failed` and the
+      // expected: the conductor's own `lifecycle hook failed` and the
       // conductor's, which attributes it to the run.
       expect(
         await waitFor(
@@ -454,8 +458,8 @@ describe.skipIf(!HAS_HERDR)(
       // config, where that command is `bakers ui` — surfaces the shim's loud build
       // hint. A visibly broken pane is the AC-6 behaviour ("never dispatched
       // into a broken worktree without that being visible"); a silent one is not.
-      expect(fx.workspace.layoutCalls).toBe(1);
-      expect(fx.workspace.sentinelAtLayout).toBe(false);
+      expect(fx.executor.layoutCalls).toBe(1);
+      expect(fx.executor.sentinelAtLayout).toBe(false);
       expect(await waitFor(() => existsSync(fx.markerPath))).toBe(true);
       expect(
         await waitFor(() => paneDump(fx).includes(`PANE-RAN-${fx.identifier}`)),

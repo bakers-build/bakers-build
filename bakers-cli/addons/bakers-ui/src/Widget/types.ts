@@ -135,9 +135,8 @@ export interface FieldWidget {
    *
    * A kind with a block of its own can put a `⚠` note in it; a one-line
    * `< value >` has nowhere to put one, so its failure is reported by the
-   * component as a form-level note instead. That is the rule the create popup
-   * already followed by hand — Labels and Parent at the field, Assignee,
-   * Conductor and Workflow at the top — expressed as a property of the kind.
+   * component as a form-level note instead — Labels and Parent at the field,
+   * Assignee and Conductor at the top — expressed as a property of the kind.
    */
   readonly ownsError: boolean;
   /** Whether this kind renders a value INLINE after its label, and therefore

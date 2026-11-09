@@ -41,9 +41,14 @@ export {
   SECURITY_MODES,
   type SecurityMode,
   type SecurityOptions,
+  type SecurityReport,
+  SHARED_SECURITY_KEY,
+  type SharedListKey,
+  type SharedSecurity,
   validateAgentArgs,
   validateOptionalBoolean,
   validateOptionalString,
+  validateSharedSecurity,
 } from './plugins/agent-args.js';
 export type {
   BbExecutor,
@@ -54,6 +59,7 @@ export type {
   HookListenerFn,
   HookName,
   HookResult,
+  OpenWorkspaceContext,
   SpawnedSession,
   SpawnRunInput,
   WorktreeTeardown,
@@ -93,7 +99,6 @@ export {
   narrowConductorContributions,
   type Preset,
 } from './plugins/preset.js';
-export type { HerdrHost } from './plugins/process-host.js';
 export type {
   ActiveRun,
   AddonDefinitionV2,
@@ -110,6 +115,7 @@ export type {
   InboxSnapshot,
   RunMetrics,
   RunWriteAttributes,
+  SiteToolClient,
   Ticket,
   TicketMetric,
   UncleanTicket,

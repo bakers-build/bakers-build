@@ -1,18 +1,17 @@
 # Theme fonts
 
-Self-hosted Latin variable WOFF2 fonts, including German umlauts and ß. Only
-the selected family is requested by the browser. Normal weights are supplied
-by the variable font; italic uses browser synthesis.
+Self-hosted Latin variable WOFF2 fonts of the CI, including German umlauts and
+ß. Normal weights come from the variable font; italic uses browser synthesis.
+The files come from the approved Designbook reference
+`designbook/references/8c75dc05ca021b53/7d9c10ecf400eb5b` (Google Fonts, Latin
+subset).
 
-- `source-sans-3.woff2`: `@fontsource-variable/source-sans-3@5.3.0` from
-  https://fontsource.org/fonts/source-sans-3. License:
-  `source-sans-3.LICENSE`.
-- `ibm-plex-sans.woff2`: `@fontsource-variable/ibm-plex-sans@5.3.0` from
-  https://fontsource.org/fonts/ibm-plex-sans. License:
-  `ibm-plex-sans.LICENSE`.
-- `public-sans.woff2`: `@fontsource-variable/public-sans@5.3.0` from
-  https://fontsource.org/fonts/public-sans. License: `public-sans.LICENSE`.
-- `atkinson-hyperlegible-next.woff2`:
-  `@fontsource-variable/atkinson-hyperlegible-next@5.3.0` from
-  https://fontsource.org/fonts/atkinson-hyperlegible-next. License:
-  `atkinson-hyperlegible-next.LICENSE`.
+- `spline-sans.woff2`: text. Spline Sans from
+  https://fonts.google.com/specimen/Spline+Sans (axis wght 300-700). License:
+  `spline-sans.LICENSE`.
+- `spline-sans-mono.woff2`: machine values (keys, branches, IDs). Spline Sans
+  Mono from https://fonts.google.com/specimen/Spline+Sans+Mono (axis wght
+  300-700). License: `spline-sans-mono.LICENSE`.
+- `bricolage-grotesque.woff2`: page titles only. Bricolage Grotesque from
+  https://fonts.google.com/specimen/Bricolage+Grotesque (axes opsz 12-96, wdth
+  75-100, wght 200-800). License: `bricolage-grotesque.LICENSE`.

@@ -23,7 +23,7 @@ Then('the stored ticket identifier still matches resource {string}', async ({ ap
 
 When('the ticket is renamed through its form to {string}', async ({ page }, title: string) => {
     await page.locator('input[name="title[0][value]"]').fill(title);
-    await page.locator('#gin-sticky-edit-submit, #edit-submit').first().click();
+    await page.locator('#edit-submit').first().click();
     await page.waitForLoadState('networkidle');
 });
 

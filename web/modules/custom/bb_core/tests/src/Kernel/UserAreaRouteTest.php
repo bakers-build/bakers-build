@@ -57,7 +57,7 @@ final class UserAreaRouteTest extends KernelTestBase {
     self::assertSame('user.update', $edit->getRequirement('_entity_access'));
     self::assertSame('user.view', $canonical->getRequirement('_entity_access'));
     self::assertNull($edit->getRequirement('_bb_workspace_match'));
-    self::assertTrue($provider->getRouteByName('entity.user.cancel_form')->getOption('_admin_route'));
+    self::assertFalse($provider->getRouteByName('entity.user.cancel_form')->getOption('_admin_route'));
   }
 
   /**

@@ -1,6 +1,6 @@
 // BB-236 — the USER data service. It returns USERS and knows nothing about forms:
 // no `Option`, no ordering, no filtering, no popup name. Whoever wants users shaped
-// as picker rows says so itself — that is `create-form-data.ts` / `edit-form-data.ts`,
+// as picker rows says so itself — that is `Form/edit-data.ts`,
 // and the boundary guard in `tests/boundary.test.ts` keeps this file on the data side
 // of the line. The two read strategies are both just reading, so both live here.
 import { DrupalJsonApiParams } from 'drupal-jsonapi-params';
@@ -9,10 +9,8 @@ import type {
   JsonApiResource,
   Resource,
 } from '../../../types.js';
-import type { ListTable } from '../../collection.js';
 import {
   type ListOutcome,
-  listOutcome,
   listPreferringWrite,
   messageOf,
   type OptionClients,
@@ -21,74 +19,10 @@ import {
 /**
  * Drupal JSON:API default page size (`OffsetPage::SIZE_MAX`).
  *
- * `listUsers` → `listOutcome` → `collection('user').list()` sends no
- * `page[limit]`, so the control plane applies this bound. The Users tab does
- * not page further.
+ * `listAllUsers` walks the collection in pages of this size, the bound the
+ * control plane applies anyway.
  */
 export const USER_LIST_PAGE_SIZE = 50;
-
-/** One team-roster row: account label plus current assigned workload. */
-export interface UserListRow {
-  id: string;
-  label: string;
-  open: number;
-  running: number;
-  waiting: number;
-}
-
-/**
- * The Users list table — labels come from the user collection; the 30d numbers
- * are filled by the screen from unscoped statistics (G2: Data/ stays a leaf).
- */
-export const USER_TABLE = {
-  noun: 'user',
-  emptyMessage: 'No users.',
-  columns: [
-    {
-      key: 'label',
-      label: 'USER',
-      width: 0,
-      fields: ['display_name', 'name'],
-      get: (r: UserListRow) => r.label,
-    },
-    {
-      key: 'tickets',
-      label: 'OPEN',
-      width: 8,
-      fields: [],
-      get: (r: UserListRow) => String(r.open),
-    },
-    {
-      key: 'runs',
-      label: 'RUNNING',
-      width: 10,
-      fields: [],
-      get: (r: UserListRow) => String(r.running),
-    },
-    {
-      key: 'cpr',
-      label: 'WAITING',
-      width: 10,
-      fields: [],
-      get: (r: UserListRow) => String(r.waiting),
-    },
-  ],
-} as const satisfies ListTable<UserListRow, void>;
-
-/**
- * The SAME columns for one crew's member list (BB-391 AC4, second round).
- *
- * Only the wording differs, and the columns are shared rather than re-declared:
- * a crew's Users tab shows people, so a second column set would be two places
- * for one layout to drift. The noun keys the row node ids and the empty message
- * is the crew's own — `No users.` on a team page would read as an instance with
- * no accounts.
- */
-export const TEAM_MEMBER_TABLE = {
-  noun: 'member',
-  emptyMessage: 'No active members in this crew.',
-  columns: USER_TABLE.columns,
-} as const satisfies ListTable<UserListRow, void>;
 
 /** One user of the control plane, as this renderer needs it. */
 export interface User {
@@ -119,19 +53,6 @@ const fromAttributes = (id: string, attr: (key: string) => unknown): User => {
 };
 
 const toUser = (r: Resource): User => fromAttributes(r.id, (k) => r.attr(k));
-
-/**
- * The user collection through one client, in server order.
- *
- * Yields the OUTCOME rather than a swallowed array (BB-257 D4), for the same
- * reason `listTerms` does: the create popup has to be able to say that the read
- * failed instead of presenting an empty Assignee ring, and only the read knows
- * why it failed. `listUsersPreferringWrite` keeps the swallowing contract — it
- * already HAS an answer to a failure (fall back to the read client), which is
- * the case D4 says the best-effort rule is right for.
- */
-export const listUsers = (client: DropshClient): Promise<ListOutcome<User>> =>
-  listOutcome(client, 'user', toUser);
 
 /** Every readable user, walking JSON:API pages to completion. */
 export async function listAllUsers(
@@ -230,20 +151,51 @@ export async function loadWhoCandidates(
   return fetchWhoCandidates(client, params);
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
- * Resolve a username to the Who criterion's candidate (BB-287 D4) — an EXACT
- * `name` match. The mine toggle filters tickets on the resolved uuid, so a
- * CONTAINS hit on a longer sibling name would filter on the wrong user:
- * identity must be proven, not guessed. At most one row comes back (Drupal
- * names are unique); uid 0 is dropped by the shared read.
+ * Resolve the current user to the Who criterion's candidate (BB-287 D4) — an
+ * EXACT match on `id` when given a uuid, otherwise on `name`. The mine toggle
+ * filters tickets on the resolved uuid, so a CONTAINS hit on a longer sibling
+ * name would filter on the wrong user: identity must be proven, not guessed.
+ * At most one row comes back (uuids and Drupal names are unique); uid 0 is
+ * dropped by the shared read.
  */
 export async function resolveWhoCandidate(
   client: DropshClient,
   name: string,
 ): Promise<ListOutcome<WhoCandidate>> {
   const params = new DrupalJsonApiParams();
-  params.addFilter('name', name);
+  // `me()` reports the account's uuid; older connections still hand over a name.
+  params.addFilter(UUID.test(name) ? 'id' : 'name', name);
   params.addPageLimit(WHO_PAGE_SIZE);
   const outcome = await fetchWhoCandidates(client, params);
   return { ...outcome, rows: outcome.rows.slice(0, 1) };
+}
+
+/** A member's profile as the member Overview shows it. */
+export interface UserProfile {
+  username: string;
+  position: string;
+  aboutMe: string;
+}
+
+/** Read one user's username, position (`field_developer_title`) and About me
+ *  (`field_bb_background`). A refusal propagates to the screen's error. */
+export async function loadUserProfile(
+  client: DropshClient,
+  userId: string,
+): Promise<UserProfile> {
+  const doc = (await client.get(`user/user/${userId}`)) as {
+    data?: JsonApiResource;
+  };
+  const text = (key: string): string => {
+    const value = doc?.data?.attributes?.[key];
+    return typeof value === 'string' ? value.trim() : '';
+  };
+  return {
+    username: text('name'),
+    position: text('field_developer_title'),
+    aboutMe: text('field_bb_background'),
+  };
 }

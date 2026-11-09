@@ -22,7 +22,7 @@ The alias is `grok`; `bakers agents` lists it.
 | `effort` | none | `--reasoning-effort`; overrides `reasoningEffort` |
 | `security` | `sandbox` | See below |
 | `sandbox` | below | Only in sandbox mode |
-| `env_deny` | [default list](/configuration/agents/execution-security#ticket-env-vars) | Filters ticket environment |
+| `env_deny` | [default list](/provision/security/execution#ticket-env-vars) | Filters ticket environment |
 | `args` | `[]` | Shell-quoted arguments; explicit model flags win |
 
 ## Security
@@ -38,13 +38,13 @@ The alias is `grok`; `bakers agents` lists it.
 |---|---|
 | `network` | `['*']` |
 | `mcp_servers` | `{}` |
-| `trusted_commands`, `deny_read` | `[]` |
+| `trusted_commands`, `deny_read` | `[]`; a value from a shared machine or project [`security` block](/provision/security/shared-settings) is skipped with a warning |
 | `allow_write` | Existing absolute or `~/` directories; default `[]` |
 
 ```js
 with: {
   sandbox: {
-    allow_write: ['/projects/example/.git', '~/.ddev', '~/.npm'],
+    allow_write: ['/projects/example/.git', '~/.npm'],
   },
 },
 ```
@@ -59,8 +59,8 @@ One managed run per Grok home: concurrent runs fail. After crashes, inspect `.ba
 
 Reserved arguments: `--permission-mode`, `--session-id`/`-s`; in sandbox mode also `--sandbox`, `--always-approve`, `--allow`, `--allowedTools`, `--allowed-tools`, `--add-dir`, `--cwd`, `--worktree`/`-w`, `--agents`, `--agent`. Managed profiles additionally reserve `--continue`/`-c`, `--resume`/`-r`, `--fork-session`, `--restore-code`, `--leader-socket`. Clustered flags and bare subcommands cannot bypass these restrictions.
 
-`bakers oven check` checks Linux prerequisites. Storage, directory and version checks precede launch. Shell approval prompts remain possible; unattended DDEV completion is unverified.
+`bakers oven check` checks Linux prerequisites. Storage, directory and version checks precede launch. Shell approval prompts remain possible; unattended container-runtime completion is unverified.
 
-Runs reach the conductor's [addon tools](build/tools.md) through `bakers oven tools` in Bash, so they work in sandbox mode although `MCPTool(*)` is denied.
+Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools` in Bash, so they work in sandbox mode although `MCPTool(*)` is denied.
 
-More: [Run security](/configuration/agents/execution-security#grok-in-sandbox-mode), [Choose agents](/configuration/agents).
+More: [Run security](/provision/security/execution#grok-in-sandbox-mode), [Choose agents](/agents/guide).

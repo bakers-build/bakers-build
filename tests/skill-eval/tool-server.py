@@ -247,6 +247,9 @@ class Simulation:
         """The CLI's order: list, unknown tool, --schema, read --data, overlay --param, validate, call."""
         if name is None:
             return result(dumps([{'name': t['name'], 'title': t['title'], 'description': t['description']} for t in CONTRACT['tools']]))
+        # The CLI names a bare bakers tool by its wire name outside a run.
+        if name.startswith('bakers_'):
+            name = f'tool_api__{name}'
         definition = TOOL_DEFS.get(name)
         if definition is None:
             raise Fail('E_VALIDATION', f"unknown tool '{name}'", {'tool': name})

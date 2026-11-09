@@ -1,0 +1,14 @@
+/** @config
+ {
+   "input": "../design-system/design-tokens.yml",
+   "output": "../../css/tokens/layout-prose.src.css"
+ }
+ */
+
+(
+  /* --container-prose sizes Tailwind's max-w-prose. */
+  $node := $reduce($split("component.prose.max-width", "."), function($a, $s) { $lookup($a, $s) }, $$);
+  $exists($node."$value")
+    ? "@theme static {\n  --container-prose: " & $node."$value" & ";\n}\n"
+    : ""
+)

@@ -19,7 +19,7 @@ import {
   SPLASH_MS,
 } from '../lib/theme.js';
 import type { TuiOptions } from '../types.js';
-import { BRAID_WIDTH, braidTree } from './braid.js';
+import { LOGO_WIDTH, logoTree } from './logo.js';
 
 export { SPLASH_MS };
 
@@ -36,7 +36,7 @@ const splashMarkSize = measureText({ text: SPLASH_TEXT, font: SPLASH_FONT });
 
 /** Outer frame width: mark + horizontal pad + border columns. */
 export const SPLASH_FRAME_WIDTH =
-  splashMarkSize.width + BRAID_WIDTH + 3 + SPLASH_FRAME_PAD_X * 2 + 2;
+  splashMarkSize.width + LOGO_WIDTH + 3 + SPLASH_FRAME_PAD_X * 2 + 2;
 
 /**
  * Centered BORDER box with an ASCIIFont bakers mark — modal-like, not a wash.
@@ -86,12 +86,12 @@ export const splashTree = (): VNode =>
       h(
         BoxRenderable,
         {
-          id: 'splash-braid',
-          width: BRAID_WIDTH,
+          id: 'splash-logo',
+          width: LOGO_WIDTH,
           flexShrink: 0,
           flexDirection: 'column',
         },
-        ...braidTree(),
+        ...logoTree(),
       ),
       h(ASCIIFontRenderable, {
         id: 'splash-bakers',

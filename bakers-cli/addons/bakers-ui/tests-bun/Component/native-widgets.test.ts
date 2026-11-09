@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 import type { VNode } from '@opentui/core';
-import { BarChart } from '../../src/Component/bar-chart/index.js';
 import { Card } from '../../src/Component/card/index.js';
-import { HeatMap } from '../../src/Component/heat-map/index.js';
 import { KeyValue } from '../../src/Component/key-value/index.js';
 import { Markdown } from '../../src/Component/markdown/index.js';
 import { mountTree, patchTree, unmountTree } from '../../src/Kernel/mount.js';
@@ -99,62 +97,6 @@ describe('shared widgets through mount, patch and paint', () => {
     } finally {
       harness.close();
     }
-  });
-
-  it('keeps duplicate category labels apart and paints exact cell labels', async () => {
-    const painted = await paintTree(
-      () =>
-        HeatMap({
-          id: 'grid',
-          data: [
-            [1, 2],
-            [3, 4],
-          ],
-          rowLabels: ['same', 'same'],
-          colLabels: ['a', 'b'],
-          cellLabels: [
-            ['—', '2'],
-            ['3', '4'],
-          ],
-          showValues: true,
-          showLegend: false,
-        }),
-      40,
-      8,
-    );
-    expect(painted.rows.filter((row) => row.includes('same'))).toHaveLength(2);
-    expect(painted.frame).toContain('—');
-    expect(painted.frame).not.toContain('Low');
-  });
-
-  it('names empty data and draws zero values as empty bars', async () => {
-    const empty = await paintTree(
-      () => BarChart({ id: 'bars', data: [] }),
-      40,
-      4,
-    );
-    expect(empty.frame).toContain('No data');
-    const emptyGrid = await paintTree(
-      () => HeatMap({ id: 'grid', data: [] }),
-      40,
-      4,
-    );
-    expect(emptyGrid.frame).toContain('No data');
-    const zero = await paintTree(
-      () =>
-        BarChart({
-          id: 'bars',
-          data: [
-            { label: 'a', value: 0 },
-            { label: 'b', value: 0 },
-          ],
-          width: 20,
-        }),
-      40,
-      4,
-    );
-    expect(zero.frame).not.toContain('█');
-    expect(zero.frame).toContain('░');
   });
 
   it('wraps wide glyphs inside the width without losing any', async () => {

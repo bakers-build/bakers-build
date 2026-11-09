@@ -160,7 +160,7 @@ const fixturePorts: FixturePort[] = [
   {
     id: 'web',
     service: 'Web',
-    local: 'https://bakers.ddev.site',
+    local: 'https://bakers.local.test',
     tunnel: 'https://web.example.test',
   },
 ];
@@ -314,7 +314,7 @@ describe('ticket tab behaviour before the screen-per-tab migration', () => {
       Ports
       SERVICE LOCAL TUNNEL
       Storybook http://127.0.0.1:6006 https://storybook.example.test
-      Web https://bakers.ddev.site https://web.example.test
+      Web https://bakers.local.test https://web.example.test
       "
     `);
   });
@@ -334,7 +334,7 @@ describe('ticket tab behaviour before the screen-per-tab migration', () => {
         "comments": "Tab section · e edit · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
         "overview": "Tab section · e edit · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
         "planning": "Tab section · e edit · f freeze · ↑↓ select · PgUp/PgDn page · y copy id · Y copy link · Enter/Space expand",
-        "runs": "Tab section · e edit · y copy id · Y copy link · ↑↓ select · Enter open run",
+        "runs": "Tab section · y copy id · Y copy link · ↑↓ select · Enter open run",
       }
     `);
   });
@@ -423,7 +423,7 @@ describe('built-in ticket screen parity', () => {
     ],
     [
       'runs',
-      'Tab section · e edit · y copy id · Y copy link · ↑↓ select · Enter open run',
+      'Tab section · y copy id · Y copy link · ↑↓ select · Enter open run',
       ['y', 'Y', 'enter', ' ', 'j', 'k', 'down', 'g', 'G'],
     ],
   ] as const)('%s preserves its footer and handled keys', async (tab, ladder, keys) => {

@@ -159,8 +159,10 @@ export {
   type VerifyProcessInput,
   verifyConductorProcess,
 } from './core/proc.js';
+export { normalizeRepoUrl } from './core/repo-url.js';
 export { shellQuote } from './core/shell.js';
 export { DEFAULT_SLUG_MAX_LENGTH, slugify } from './core/slug.js';
+export { bumpUiRefresh, UI_REFRESH_FILE } from './core/ui-refresh.js';
 // BB-215: the Storybook-style preset contract + the shared addon discovery.
 // BB-224 (Finding 6): SURFACE-AGNOSTIC only. The conductor-surface interfaces
 // (`BbRemote`/`BbExecutor`/`BbWorkspace`/`BbAgent`, the four `*Plugin`
@@ -200,6 +202,5 @@ export {
   readEffectiveAddon,
   scopeAddons,
 } from './plugins/scoped-addons.js';
-// BB-194 AC-2: the agent-host contract (`AgentLaunchHost` / `HostedAgent` /
-// `supportsAgentHost`) is likewise NOT here — it is the TUI renderer's own plugin
-// seam (`@bakers-build/addon-bakers-ui`), and herdr types its impl locally.
+// BB-194 AC-2: there is no agent-host contract here; `bakers ui` no longer
+// hosts agents.

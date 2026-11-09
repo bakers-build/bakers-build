@@ -59,16 +59,51 @@ also apply to later GitLab integrations. Existing GitLab customer connectors are
 
 ## Runner selection
 
-The private rehearsal uses `blacksmith-4vcpu-ubuntu-2404` for fast jobs and
-`blacksmith-8vcpu-ubuntu-2404` for the Docker image and private registry gates.
-PHPUnit uses eight processes on these 8-vCPU runners. The Blacksmith GitHub App must have access to the repository.
-The same-source conductor benchmark passed 4,679 tests (3 existing skips) in 3m07s,
-compared with 7m27s on GitHub standard runners and 2m21s on the existing GitLab runner.
-This single sample does not establish full-pipeline runtime or cost.
-[Benchmark evidence](https://github.com/bakers-build/bakers-build/actions/runs/41542518835).
+Jobs run on WarpBuild runners in three tiers. Each tier reads a repository variable and falls back
+to its WarpBuild label when the variable is unset:
+
+| Tier | Variable | Default label | Jobs |
+|---|---|---|---|
+| checks | `RUNNER_CHECKS` | `warp-ubuntu-latest-x64-2x` | every `checks.yml` job except the after-merge jobs, including `required` and `report_failure`; `report_failure` in `release.yml` |
+| image gate | `RUNNER_IMAGE_GATE` | `warp-ubuntu-latest-x64-16x` | `image_gate` in `checks.yml` (PHPUnit with 16 processes, Playwright with 6 workers) |
+| after-merge | `RUNNER_AFTER_MERGE` | `warp-ubuntu-latest-x64-4x` | `tui_musl`, `release_rehearsal` in `checks.yml`; `release` in `release.yml`; `registry` and `transfer` in `registry-rehearsal.yml` |
+
+The variable holds a JSON label or label array. To send a tier back to the self-hosted
+`github-runner-1` (Docker via dind, one job at a time), set its variable; deleting it returns the
+tier to WarpBuild:
+
+```sh
+gh variable set RUNNER_CHECKS --body '["self-hosted","github-runner-1"]'
+gh variable set RUNNER_AFTER_MERGE --body '["self-hosted","github-runner-1"]'
+gh variable delete RUNNER_CHECKS
+gh variable delete RUNNER_AFTER_MERGE
+```
+
+`self-host-lifecycle.yml` runs on a fixed `warp-ubuntu-latest-x64-4x` with no fallback: it
+installs, restores and wipes a self-host stack and needs a disposable runner.
 
 PHPUnit, browser/integration tests and config import continue using the images built
-once by `scripts/ci/github-image-gate.sh`; runner selection does not change the gates.
+once by `scripts/ci/github-image-gate.sh` in `image_gate`. `image_gate`, `tui_musl` (musl
+compatibility) and `release_rehearsal` (package and release notes) are after-merge jobs. They run:
+
+- on every push to `next` and `main` and on manual dispatch. A push runs only these: the other
+  checks already passed in the PR on the same tree. The push run exports the tested images that
+  `release.yml` deploys (`next` to develop, `main` to app);
+- on every PR into `main`. There, the aggregate `required` check fails when one of them fails or
+  is skipped;
+- not on PRs into `next`. There, `required` passes with them skipped, so their failures show up on
+  the push to `next` and block that deployment.
+
+When a push or dispatch run on `next` has a failed job, `report_failure` runs
+`scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service
+account and comments on the open BAKERS ticket titled `CI failure: GitHub checks on next`, or
+creates that ticket as a `bug` with recipe `superpowers` (workflow `bb_work`) when none is open
+and assigns it to the `cw-framework` conductor. The comment or ticket names the failed jobs, the
+commit and the run. When the `release` job of `release.yml` fails on `next` or `main`, the
+`report_failure` job of `release.yml` runs the same script for its own ticket,
+`CI failure: GitHub release on <branch>`, so release and checks failures never share a ticket.
+Both jobs need repository secrets `BB_CI_CLIENT_ID` and `BB_CI_CLIENT_SECRET` (the service
+account's OAuth client).
 The public fork full check passed; a separate probe confirmed secrets were absent and a write
 to the base repository failed with HTTP 403.
 

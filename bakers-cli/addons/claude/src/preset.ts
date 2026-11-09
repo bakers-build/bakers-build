@@ -30,6 +30,11 @@ export const agents: Preset<ClaudeAgentOptions | undefined>['agents'] = (
         'Efficient implementation of well-specified changes and routine maintenance.',
       model: 'sonnet',
     },
+    {
+      alias: 'fable',
+      description: 'Demanding problems and long-running autonomous work.',
+      model: 'fable',
+    },
   ].map((candidate) =>
     'agent' in candidate
       ? candidate

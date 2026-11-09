@@ -2,21 +2,25 @@
 // tunnel-ready services. A claimer consumes raw IDENTITIES (array indices
 // into one `RawDiscovery` pass), never a global port number: two containers
 // or two site rules can share a port, so "port already seen" would silently
-// merge them. Claimers run in precedence order (configured processes, DDEV,
-// then the opt-in all-Node rule — specific before broad); each receives only
-// what the previous claimer left in `remaining`.
+// merge them. Claimers run in precedence order (configured processes, the
+// configured claimer packages, then the opt-in all-Node rule — specific
+// before broad); each receives only what the previous claimer left in
+// `remaining`.
 //
 // This package owns naming/reconciliation and the process claimers (host
 // processes matched by the ports addon's `services` settings, no Docker
 // call). Which processes are tunnelled is configuration, not code here; an
-// unmatched listener stays unclaimed — still no numeric-port fallback. DDEV's own discovery/claim logic — everything
-// that fires `docker` or interprets `HTTP(S)_EXPOSE`/`VIRTUAL_HOST`, and the
-// neutral `{key, service, hostHeader?, insecureTls?}` rules it emits (BB-681:
-// no CMS-specific addon or policy layer over its output any more) — lives in
-// `@bakers-build/addon-ddev` (operator decision 2026-10-15: ports must not fire
-// Docker calls itself). `claimServices` below runs the process rules, then
-// DDEV, then all-Node, over one merged raw-discovery pass.
+// unmatched listener stays unclaimed — still no numeric-port fallback.
+// Container discovery and claiming belong to claimer packages named in
+// `with.claimers` (a `Claimer` each, see below): ports fires no `docker`
+// call itself and knows no runtime's conventions.
 
+import { discoverHostPorts, type HostDiscoveryDeps } from './discovery.js';
+import {
+  DEFAULT_STORYBOOK,
+  LABEL_RE,
+  type ServiceRules,
+} from './service-config.js';
 import type {
   ClaimContext,
   ClaimedDiscovery,
@@ -24,19 +28,7 @@ import type {
   HttpProbe,
   RawDiscovery,
   RawPort,
-} from '@bakers-build/addon-ddev';
-import {
-  claimDdev,
-  discoverDdevHosts,
-  discoverDdevPorts,
-  parseWebExtraExposedPorts,
-} from '@bakers-build/addon-ddev';
-import { discoverHostPorts, type HostDiscoveryDeps } from './discovery.js';
-import {
-  DEFAULT_STORYBOOK,
-  LABEL_RE,
-  type ServiceRules,
-} from './service-config.js';
+} from './types.js';
 
 export type {
   ClaimContext,
@@ -45,7 +37,30 @@ export type {
   ClaimStatus,
   HttpProbe,
   TunnelRule,
-} from '@bakers-build/addon-ddev';
+} from './types.js';
+
+/** What a claimer's `discover` may call: a bounded command exec and a plain
+ *  file read (`null` for a missing file). */
+export type ClaimerDeps = Pick<HostDiscoveryDeps, 'run'> & ConfigFileDeps;
+
+/** One claimer's own observations for a pass, plus the private `context` its
+ *  `claim` reads back (merged into the `ClaimContext` it is handed). */
+export interface ClaimerDiscovery<C extends object = object>
+  extends RawDiscovery {
+  readonly context?: C;
+}
+
+/** The contract a claimer package exports as `claimer` (named in the ports
+ *  entry's `with.claimers`). `claim` takes the raw indices it owns out of
+ *  `remaining` and returns their services. */
+export interface Claimer<C extends object = object> {
+  discover(worktree: string, deps: ClaimerDeps): Promise<ClaimerDiscovery<C>>;
+  claim(
+    raw: readonly RawPort[],
+    remaining: Set<number>,
+    ctx: ClaimContext & Partial<C>,
+  ): ClaimedService[];
+}
 
 const TICKET_RE = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-\d+$/;
 
@@ -296,21 +311,22 @@ async function claimProcesses(
 
 /** Run claimers in precedence order over one raw discovery pass, specific
  *  before broad: configured process entries (with the default `storybook`),
- *  DDEV (generic `web`/`web-<host>` naming), then the opt-in all-Node rule.
- *  DDEV's keys never change: a process claim on a key DDEV produced becomes
- *  `<key>-<port>`. */
+ *  the configured `claimers` in order, then the opt-in all-Node rule.
+ *  A claimer's keys never change: a process claim on a key a claimer
+ *  produced becomes `<key>-<port>`. */
 export async function claimServices(
   raw: RawDiscovery,
   ctx: ClaimContext,
   rules: ServiceRules,
+  claimers: readonly Claimer[] = [],
 ): Promise<ClaimedDiscovery> {
   const remaining = new Set(raw.ports.map((_, i) => i));
   const processes = await claimProcesses(raw.ports, remaining, ctx, rules);
-  const ddev = claimDdev(raw.ports, remaining, ctx);
+  const claimed = claimers.flatMap((c) => c.claim(raw.ports, remaining, ctx));
   const nodes = await processes.allNode();
-  const ddevKeys = new Set(ddev.map((s) => s.key));
+  const claimedKeys = new Set(claimed.map((s) => s.key));
   const renamed = [...processes.services, ...nodes].map((s) => {
-    if (!ddevKeys.has(s.key)) return s;
+    if (!claimedKeys.has(s.key)) return s;
     const key = `${s.key}-${s.rawPorts[0]!.hostPort}`;
     return { ...s, key, rules: s.rules.map((r) => ({ ...r, key })) };
   });
@@ -318,24 +334,23 @@ export async function claimServices(
     .sort((a, b) => a - b)
     .map((i) => raw.ports[i]!);
   return {
-    services: [...renamed, ...ddev],
+    services: [...renamed, ...claimed],
     diagnostics: raw.diagnostics,
     unclaimed,
   };
 }
 
-/** `.ddev/config.yaml`'s own raw-text reader — kept distinct from
- *  `HostDiscoveryDeps` since it is plain file I/O, not a command exec. */
+/** A plain file reader for claimers — kept distinct from
+ *  `HostDiscoveryDeps` since it is file I/O, not a command exec. */
 export interface ConfigFileDeps {
   /** `null` for ENOENT; throwing is reserved for a real I/O failure. */
   readFile(path: string): Promise<string | null>;
 }
 
 /** Compose raw lookup and claims — the `list`/`up` entry point.
- *  Host-listener discovery (process-rule candidates) stays local; DDEV's own
- *  container discovery AND effective-host discovery (`ddev utility
- *  configyaml`) are delegated to `@bakers-build/addon-ddev`, never read/called
- *  directly here. */
+ *  Host-listener discovery (process-rule candidates) stays local; every
+ *  configured claimer discovers its own ports alongside it, and its
+ *  `context` joins the `ClaimContext` all claimers are handed. */
 export async function discoverClaimedServices(
   worktree: string,
   deps: HostDiscoveryDeps & ConfigFileDeps,
@@ -344,39 +359,29 @@ export async function discoverClaimedServices(
     readonly zone: string;
     readonly probe: HttpProbe;
     readonly rules: ServiceRules;
+    readonly claimers?: readonly Claimer[];
   },
 ): Promise<ClaimedDiscovery> {
-  const [host, ddev, hostsResult, ddevConfigYaml] = await Promise.all([
+  const claimers = opts.claimers ?? [];
+  const [host, ...found] = await Promise.all([
     discoverHostPorts(worktree, deps),
-    discoverDdevPorts(worktree, deps),
-    discoverDdevHosts(worktree, deps),
-    deps.readFile(`${worktree.replace(/\/+$/, '')}/.ddev/config.yaml`),
+    ...claimers.map((c) => c.discover(worktree, deps)),
   ]);
-  // BB-681 review I1: a failed `ddev utility configyaml` read must leave a
-  // diagnostic, not silently drop every `web-<host>` alias claim — without
-  // one, `shouldKeepTunnelRecord` sees no evidence at all for a vanished
-  // alias record and `reap` deletes a route that may still be perfectly
-  // live, only unobserved this pass.
   const raw: RawDiscovery = {
-    ports: [...host.ports, ...ddev.ports],
-    diagnostics: [
-      ...host.diagnostics,
-      ...ddev.diagnostics,
-      ...(hostsResult.ok
-        ? []
-        : [{ source: 'ddev-hosts' as const, message: hostsResult.reason }]),
-    ],
+    ports: [host, ...found].flatMap((d) => d.ports),
+    diagnostics: [host, ...found].flatMap((d) => d.diagnostics),
   };
+  const context = Object.assign({}, ...found.map((d) => d.context));
   return claimServices(
     raw,
     {
+      ...context,
       worktree,
       ticket: opts.ticket,
       zone: opts.zone,
       probe: opts.probe,
-      webExtraExposedPortNames: parseWebExtraExposedPorts(ddevConfigYaml),
-      ...(hostsResult.ok ? { hosts: hostsResult.hosts } : {}),
     },
     opts.rules,
+    claimers,
   );
 }

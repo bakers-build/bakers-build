@@ -241,12 +241,21 @@ Then('exactly one invitation mail reaches each invited address', async ({ page, 
 });
 
 When('I revoke the pending invitation of the first invited address', async ({ page }) => {
-  // Revoking asks for confirmation on its own page, then returns to Members.
-  await page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` }).click();
-  await page.waitForURL(/\/invite\/\d+\/delete$/);
+  // Revoking asks for confirmation in the delete dialog, then returns to Members.
+  const revoke = page.getByRole('link', { name: `Revoke invitation for ${invitedAddress}` });
+  // A click before htmx owns the anchor would follow its page href instead.
+  await expect
+    .poll(() => revoke.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), {
+      message: 'htmx never processed the Revoke action',
+      timeout: 20000,
+    })
+    .toBe(true);
+  await revoke.click();
+  const dialog = page.locator('dialog[data-dialog][open]:has(form[id$="-delete-form"])');
+  await expect(dialog).toBeVisible();
   await Promise.all([
     page.waitForURL(/\/settings\/members$/),
-    page.getByRole('button', { name: 'Delete', exact: true }).click(),
+    dialog.getByRole('button', { name: 'Delete', exact: true }).click(),
   ]);
 });
 

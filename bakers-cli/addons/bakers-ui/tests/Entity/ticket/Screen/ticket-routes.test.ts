@@ -117,7 +117,7 @@ describe('ticket routes', () => {
     router.navigate('ticket.runs', { ticketId: 'T1' }, false, { document });
     const screen = activeScreen(router);
     expect(formatActionLadder(screen.present(router.context()).actions)).toBe(
-      'Tab section · e edit · y copy id · Y copy link · ↑↓ select · Enter open run',
+      'Tab section · y copy id · Y copy link · ↑↓ select · Enter open run',
     );
     expect(screen.handleInput('up', router.context())).toBe(false);
     expect(screen.handleInput('down', router.context())).toBe(true);
@@ -256,10 +256,16 @@ describe('ticket route state', () => {
       'https://example.test/admin/bakers/ticket/T1',
     ]);
     const action = screen.actionForInput?.('e', router.context());
-    expect(action).toMatchObject({
-      type: 'navigate',
-      routeId: 'ticket.assignment.edit',
-    });
+    if (tab === 'runs') {
+      // On Runs `e` edits the selected run; the fixture's first run carries no
+      // claimed/running state, so there is nothing to edit.
+      expect(action).toBeUndefined();
+    } else {
+      expect(action).toMatchObject({
+        type: 'navigate',
+        routeId: 'ticket.assignment.edit',
+      });
+    }
   });
 });
 

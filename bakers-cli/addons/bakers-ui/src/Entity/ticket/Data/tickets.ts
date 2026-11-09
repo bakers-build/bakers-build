@@ -18,7 +18,6 @@ import {
 } from '../../collection.js';
 import { LIST_PAGE_SIZE } from '../../cycle.js';
 import {
-  buildTeamMemberTicketQueryParams,
   buildTicketQueryParams,
   buildUserTicketQueryParams,
   type TicketCriteria,
@@ -535,44 +534,6 @@ export async function loadUserTickets(
     page,
     window,
   );
-}
-
-/** One page assigned to a member within a team's linked project set. */
-export async function loadTeamMemberTickets(
-  client: DropshClient,
-  userId: string,
-  projectIds: string[],
-  criteria: TicketCriteria,
-  page = 0,
-): Promise<TicketPage> {
-  if (projectIds.length === 0) {
-    return { rows: [], hasNext: false, page, total: 0, window: null };
-  }
-  const window: PageWindow = {
-    offset: page * LIST_PAGE_SIZE,
-    limit: LIST_PAGE_SIZE,
-  };
-  const params = buildTeamMemberTicketQueryParams(
-    userId,
-    projectIds,
-    criteria,
-    { page: { size: window.limit, index: page } },
-  );
-  const result = await loadPage(
-    client,
-    'bb_ticket/bb_ticket',
-    params,
-    (data, included) => {
-      const index = indexIncluded(included);
-      return data.map((item) => mapTicketData(item, index));
-    },
-    page,
-    window,
-  );
-  if (result.withheld) {
-    throw new Error('the control plane withheld team member ticket rows');
-  }
-  return result;
 }
 
 /** Every open ticket assigned to one user, or an error instead of a prefix. */

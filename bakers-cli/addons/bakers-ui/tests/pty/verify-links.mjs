@@ -26,7 +26,7 @@
 //
 // WHAT IS ASSERTED
 //
-//   1. The root Dashboard prints no URL and emits NO OSC 8. That is the
+//   1. The root My work screen prints no URL and emits NO OSC 8. That is the
 //      negative half, and it is what stops the rest of this file passing
 //      against a renderer that links everything or nothing.
 //   2. The root Projects tab prints the connected control plane's base URL in
@@ -157,7 +157,7 @@ async function main() {
     rows: options.rows,
     allowProposedApi: true,
   });
-  // No `--project`: the ROOT tab bar (Dashboard · Projects · Conductors) is the
+  // No `--project`: the ROOT tab bar (My work · Projects · Conductors) is the
   // only place the Projects screen is reachable, and its meta line is where the
   // base URL is printed.
   const child = spawn(process.execPath, [BB_BIN, 'ui'], {
@@ -201,26 +201,23 @@ async function main() {
     }
   };
 
-  const booted = await waitFor(
-    [lit('[Dashboard]'), lit('TICKETS CLOSED'), lit('bakers.build dashboard')],
-    BOOT_TIMEOUT_MS,
-  );
-  say('## boot — the root Dashboard');
+  const booted = await waitFor([lit('[My work]')], BOOT_TIMEOUT_MS);
+  say('## boot — the root My work screen');
   check(booted, 'the cockpit booted');
 
   // -------------------------------------------------------------------------
   // 1 — the negative. A screen with no address on it emits no OSC 8.
   // -------------------------------------------------------------------------
-  const onDashboard = hyperlinks(raw);
-  const dashboardScreen = screenText();
+  const onMyWork = hyperlinks(raw);
+  const myWorkScreen = screenText();
   check(
-    !/https?:\/\//.test(dashboardScreen),
-    'the Dashboard prints no address (the premise of the next check)',
+    !/https?:\/\//.test(myWorkScreen),
+    'My work prints no address (the premise of the next check)',
   );
   check(
-    onDashboard.opens.length === 0,
+    onMyWork.opens.length === 0,
     'and emits no OSC 8 — the cockpit does not link cells at random',
-    `${onDashboard.opens.length} link(s)`,
+    `${onMyWork.opens.length} link(s)`,
   );
 
   // -------------------------------------------------------------------------

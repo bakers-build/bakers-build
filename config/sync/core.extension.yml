@@ -6,7 +6,6 @@ module:
   bb_addon: 0
   bb_api_key: 0
   bb_board: 0
-  bb_connector: 0
   bb_core: 0
   bb_image: 0
   bb_inbox: 0
@@ -45,7 +44,6 @@ module:
   mcp_server_oauth: 0
   mcp_server_tool_bridge: 0
   menu_link_content: 0
-  menu_ui: 0
   mysql: 0
   og: 0
   options: 0
@@ -79,7 +77,5 @@ module:
   formdazzle: 10
   views: 10
 theme:
-  claro: 0
-  gin: 0
   stable9: 0
   bb_theme: 0

@@ -19,6 +19,7 @@
     "access": "public"
   },
   "peerDependencies": {
+    "@bakers-build/addon-remote-drupal": "workspace:^",
     "@bakers-build/conductor": "workspace:^",
     "@bakers-build/core": "workspace:^"
   },
@@ -26,6 +27,7 @@
     "commander": "^12.1.0"
   },
   "devDependencies": {
+    "@bakers-build/addon-remote-drupal": "workspace:^",
     "@bakers-build/conductor": "workspace:^",
     "@bakers-build/core": "workspace:^",
     "typescript": "^5.9.0",

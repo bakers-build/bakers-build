@@ -47,7 +47,7 @@
 {% if rows or links is not empty %}
   <div{{ (attributes ?: create_attribute()).addClass(['link-group', 'flex', 'flex-col', 'gap-[5px]']) }}>
     {% if label %}
-      <div class="link-group__label text-eyebrow font-semibold text-text-faint uppercase tracking-[0.04em]">{{ label }}</div>
+      <div class="link-group__label text-eyebrow text-text-faint uppercase">{{ label }}</div>
     {% endif %}
     <div class="link-group__rows flex flex-col gap-[3px]">
       {% block rows %}
@@ -66,12 +66,12 @@
               <div{{ create_attribute().addClass(['link-report-row', 'flex', 'items-center', 'gap-[6px]', 'min-w-0']) }}>
                 {{ include('bb_theme:icon', { name: icon_map[link.kind]|default('link'), size: 'sm' }, with_context = false) }}
                 {% set new_tab = link.target|default('_blank') != '_self' %}
-                <a class="link-report-row__title min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text no-underline hover:underline" href="{{ link.url }}"{% if new_tab %} target="_blank" rel="noreferrer noopener"{% endif %}>{{ link.title|default(link.url) }}{% if new_tab %}<span class="sr-only"> (opens in a new tab)</span>{% endif %}</a>
+                <a class="link-report-row__title min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-body text-text no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ link.url }}"{% if new_tab %} target="_blank" rel="noreferrer noopener"{% endif %}>{{ link.title|default(link.url) }}{% if new_tab %}<span class="sr-only"> (opens in a new tab)</span>{% endif %}</a>
                 <span class="flex-1"></span>
-                <span class="link-report-row__counts flex items-center gap-[8px] shrink-0">
-                  {% if link.passed is defined and link.passed is not null %}<span class="text-caption font-mono tabular-nums text-state-running">{{ link.passed }} passed</span>{% endif %}
-                  {% if link.failed %}<span class="text-caption font-mono tabular-nums text-state-attention">{{ link.failed }} failed</span>{% endif %}
-                  {% if link.duration %}<span class="text-caption font-mono tabular-nums text-text-faint">{{ link.duration }}</span>{% endif %}
+                <span class="link-report-row__counts flex items-center gap-inline shrink-0">
+                  {% if link.passed is defined and link.passed is not null %}<span class="text-meta tabular-nums text-state-running-ink">{{ link.passed }} passed</span>{% endif %}
+                  {% if link.failed %}<span class="text-meta tabular-nums text-state-attention-ink">{{ link.failed }} failed</span>{% endif %}
+                  {% if link.duration %}<span class="text-meta tabular-nums text-text-faint">{{ link.duration }}</span>{% endif %}
                 </span>
               </div>
             {% else %}
@@ -82,7 +82,7 @@
               <div{{ create_attribute().addClass(['link-row', 'flex', 'items-center', 'gap-[6px]', 'min-w-0']) }}>
                 {{ include('bb_theme:icon', { name: icon_map[link.kind]|default('link'), size: 'sm' }, with_context = false) }}
                 {% set new_tab = link.target|default('_blank') != '_self' %}
-                <a class="link-row__title min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-caption text-text no-underline hover:underline" href="{{ link.url }}"{% if new_tab %} target="_blank" rel="noreferrer noopener"{% endif %}>{{ link.title|default(link.url) }}{% if new_tab %}<span class="sr-only"> (opens in a new tab)</span>{% endif %}</a>
+                <a class="link-row__title min-w-0 overflow-hidden text-ellipsis whitespace-nowrap text-body text-text no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ link.url }}"{% if new_tab %} target="_blank" rel="noreferrer noopener"{% endif %}>{{ link.title|default(link.url) }}{% if new_tab %}<span class="sr-only"> (opens in a new tab)</span>{% endif %}</a>
               </div>
             {% endif %}
           {% endfor %}

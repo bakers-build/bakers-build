@@ -24,6 +24,5 @@ export { cmdUi, default, type RunBbUiOptions, type UiDeps } from './ui.js';
 export {
   type HomeConnection,
   type ProjectRooting,
-  resolveAgentCommand,
   resolveProjectRooting,
 } from './ui-home.js';

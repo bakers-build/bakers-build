@@ -159,7 +159,7 @@
         tells a reader to match the string character by character instead of
         reading it — which is why the face is a kind of its own and not an
         emphasis. #}
-    <span class="font-mono text-mono text-text-light">{{ c.value }}</span>
+    <span class="font-mono text-data text-text-light">{{ c.value }}</span>
   {%- elseif c.kind == 'link' -%}
     {#- The row's VISIBLE affordance. A `<tr>` cannot be wrapped in an anchor and
         inventing one inside a cell would add a `<td>` no column asked for, so a
@@ -172,7 +172,7 @@
       {#- An address outside bakers.build: styled like a prose link, opened apart. #}
       <a class="text-body text-link underline underline-offset-2 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring break-all" href="{{ c.url|default('#') }}" target="_blank" rel="noopener noreferrer">{{ c.value }}</a>
     {%- else -%}
-    <a class="{{ c.mono ? 'font-mono font-semibold text-mono' : 'text-body' }} text-text no-underline hover:underline focus-visible:underline"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url|default('#') }}">{{ c.value }}</a>
+    <a class="{{ c.mono ? 'font-mono text-data' : 'text-body' }} text-text no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url|default('#') }}">{{ c.value }}</a>
     {%- endif -%}
   {%- elseif c.kind == 'badge' -%}
     {#- With `url` a badge is a linked chip; hover dims it, because underline
@@ -186,6 +186,8 @@
       dot: c.dot|default(false),
       icon: c.icon|default(''),
       suffix: c.suffix|default(''),
+      suffix_datetime: c.suffix_datetime|default(''),
+      suffix_title: c.suffix_title|default(''),
       mono: c.mono|default(false),
       mine: c.mine|default(false),
     }, with_context = false) }}
@@ -295,9 +297,9 @@
         is withheld. `select-none` keeps them out of a copied selection, where they
         would look like the value. #}
     {%- if c.revealed and c.value is not empty -%}
-      <span class="font-mono text-mono text-text-light">{{ c.value }}</span>
+      <span class="font-mono text-data text-text-light">{{ c.value }}</span>
     {%- else -%}
-      <span class="text-caption text-text-faint tracking-widest leading-none select-none" role="img" aria-label="value hidden">••••••</span>
+      <span class="text-meta text-text-faint tracking-widest leading-none select-none" role="img" aria-label="value hidden">••••••</span>
     {%- endif -%}
   {%- elseif c.kind == 'action' -%}
     {#- THE ONE KIND THAT IS NOT A VALUE, and the reason it exists at all. Seven
@@ -366,14 +368,14 @@
     {%- endif -%}
     {%- if c.error -%}
       {%- set input_attributes = input_attributes
-        .addClass(['border-state-attention'])
+        .addClass(['border-state-attention-mark'])
         .setAttribute('aria-invalid', 'true')
         .setAttribute('aria-describedby', input_id ~ '--error') -%}
     {%- endif -%}
     {%- if c.autofocus -%}
       {%- set input_attributes = input_attributes.setAttribute('autofocus', 'autofocus') -%}
     {%- endif -%}
-    <span class="relative inline-flex flex-col items-end gap-1 w-20 whitespace-normal text-left">
+    <span class="relative inline-flex flex-col items-end gap-inline-xs w-20 whitespace-normal text-left">
       {{- include('bb_theme:form_input', {
         type: 'text',
         id: input_id,
@@ -386,7 +388,7 @@
       <input type="hidden" name="{{ hidden_name }}" value="{{ hidden_value }}" />
       {%- endfor -%}
       {%- if c.hint -%}
-      <span class="text-caption text-text-light">{{ c.hint }}</span>
+      <span class="text-meta text-text-light">{{ c.hint }}</span>
       {%- endif -%}
       {%- if c.url -%}
       {%- set details_attributes = create_attribute()
@@ -403,9 +405,12 @@
       <a{{ details_attributes }}>{{ include('bb_theme:icon', { name: 'more-horizontal', size: 'xs' }, with_context = false) }}</a>
       {%- endif -%}
       {%- if c.error -%}
-      <span id="{{ input_id }}--error" class="text-caption text-state-attention-ink" role="alert">{{ c.error }}</span>
+      <span id="{{ input_id }}--error" class="text-meta text-state-attention-ink" role="alert">{{ c.error }}</span>
       {%- endif -%}
     </span>
+  {%- elseif c.kind == 'time' -%}
+    {#- A point in time, already formatted by BbDate. #}
+    {{ include('bb_theme:time', { label: c.label, datetime: c.datetime, title: c.title|default('') }, with_context = false) }}
   {%- elseif c.kind == 'rendered' -%}
     {#- MARKUP ANOTHER LAYER ALREADY PRODUCED, and a ninth KIND rather than a
         second slot. The ticket list is bound by core's own `table` views style
@@ -436,7 +441,7 @@
     {%- set tip_id = 'table-exact-' ~ random(1000000) -%}
     <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
       <span tabindex="0" aria-describedby="{{ tip_id }}" class="{{ emphasis_map[c.emphasis]|default('text-text') }} rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ c.value }}</span>
-      <span id="{{ tip_id }}" role="tooltip" class="absolute right-0 bottom-full z-10 mb-1 w-max max-w-prose whitespace-normal text-left rounded-xs bg-text px-2 py-1 text-caption font-normal text-surface opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ c.exact }}</span>
+      <span id="{{ tip_id }}" role="tooltip" class="absolute right-0 bottom-full z-10 mb-inline-xs w-max max-w-prose whitespace-normal text-left rounded-xs bg-text px-inline py-inline-xs text-meta font-normal text-surface opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ c.exact }}</span>
     </span>
   {%- else -%}
     {#- `sum` names a live total this value shows, `seconds` its stored base;
@@ -447,7 +452,7 @@
 {% endmacro %}
 
 {% if variant == 'collapsed' %}
-  <div{{ (attributes ?: create_attribute()).addClass(['flex', 'items-center', 'gap-2', 'p-3', 'bg-surface-2', 'border', 'border-border-2', 'rounded-sm', 'text-text-light', 'text-mono']) }}>
+  <div{{ (attributes ?: create_attribute()).addClass(['flex', 'items-center', 'gap-inline', 'p-stack', 'bg-surface-2', 'border', 'border-border-2', 'rounded-sm', 'text-text-light', 'text-data']) }}>
     <span class="w-6 h-6 rounded-full bg-state-running-tint text-state-running-ink grid place-items-center shrink-0"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></span>
     {% if empty %}{{ empty }}{% else %}Nothing is waiting for a human — every run is running.{% endif %}
   </div>
@@ -460,7 +465,7 @@
       measures 2.76:1 there against the 4.5:1 the contrast criterion asks for. #}
   {% set accent_map = {
     'running': 'bg-state-running',
-    'attention': 'bg-state-attention',
+    'attention': 'bg-state-attention-mark',
     'wait': 'bg-state-unassigned',
     'idle': 'bg-transparent'
   } %}
@@ -500,10 +505,10 @@
       {% set sort_aria = { 'asc': 'ascending', 'desc': 'descending', 'none': 'none' } %}
       <tr>
         {% for column in columns %}
-          <th class="text-left text-caption font-semibold text-text-light bg-app px-3 py-3 border-b border-border-2 whitespace-nowrap {{ column.num ? 'text-right tabular-nums' : '' }}"
+          <th class="text-left text-label text-text-light bg-app px-stack py-stack border-b border-border-2 whitespace-nowrap {{ column.num ? 'text-right tabular-nums' : '' }}"
             {%- if column.sort %} aria-sort="{{ sort_aria[column.sort]|default('none') }}"{% endif %}>
             {%- if column.sort %}
-              <a data-table-sort class="inline-flex items-center gap-1 text-inherit no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ column.url|default('#') }}">
+              <a data-table-sort class="inline-flex items-center gap-inline-xs text-inherit no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ column.url|default('#') }}">
                 {{- column.label -}}
                 {%- if column.sort != 'none' %}
                   <span class="inline-flex {{ column.sort == 'asc' ? 'rotate-180' : '' }}">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'xs' }, with_context = false) }}</span>
@@ -529,14 +534,14 @@
             {#- A row-header column names its row for assistive technology and
                 stays at the left edge while the table scrolls sideways. #}
             {%- set cell_tag = column.row_header ? 'th' : 'td' -%}
-            <{{ cell_tag }}{% if column.row_header %} scope="row"{% endif %} class="h-row px-3 py-3 align-middle whitespace-nowrap border-b border-border-2 {{ loop.first ? 'relative pl-3' : '' }} {{ column.num ? 'text-right tabular-nums' : '' }} {{ column.row_header ? 'sticky left-0 z-10 [&:has([data-option-picker-trigger][aria-expanded=true])]:z-20 bg-surface text-left font-normal' : '' }}">
+            <{{ cell_tag }}{% if column.row_header %} scope="row"{% endif %} class="h-row px-stack py-stack align-middle whitespace-nowrap border-b border-border-2 {{ loop.first ? 'relative pl-stack' : '' }} {{ column.num ? 'text-right tabular-nums' : '' }} {{ column.row_header ? 'sticky left-0 z-10 [&:has([data-option-picker-trigger][aria-expanded=true])]:z-20 bg-surface text-left font-normal' : '' }}">
               {%- if loop.first %}<span class="{{ (rail_classes|merge([accent_map[row.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>{% endif -%}
               {%- if column.row_header and row.depth is defined -%}
                 {#- A TREE ROW: indented one step per level, its disclosure a plain
                     link that toggles the row (no script), and a slot of the same
                     width on a row without children so names stay aligned. #}
-                {%- set indent_map = { 1: 'pl-6', 2: 'pl-12', 3: 'pl-18' } -%}
-                <span class="inline-flex items-center gap-2 {{ indent_map[row.depth]|default('') }}">
+                {%- set indent_map = { 1: 'pl-gutter', 2: 'pl-12', 3: 'pl-18' } -%}
+                <span class="inline-flex items-center gap-inline {{ indent_map[row.depth]|default('') }}">
                   {%- if row.disclosure -%}
                     <a data-table-disclosure class="inline-flex w-5 justify-center text-text-light no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ row.disclosure.href }}" aria-expanded="{{ row.disclosure.expanded ? 'true' : 'false' }}" aria-label="{{ row.disclosure.expanded ? 'Collapse' : 'Expand' }} {{ c.value|default('') }}">
                       <span class="inline-flex {{ row.disclosure.expanded ? '' : '-rotate-90' }}">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'xs' }, with_context = false) }}</span>

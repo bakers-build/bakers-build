@@ -3,10 +3,15 @@ name: Default
 props:
   open: false
 slots:
-  label: Handoffs (3)
+  label:
+    - type: element
+      tag: span
+      value: Handoffs (3)
   content:
     - type: element
       tag: p
-      value: Collapsed by default — this content is hidden until the collapsible is opened.
+      value: >-
+        Collapsed by default — this content is hidden until the collapsible is
+        opened.
       attributes:
         class: text-text-light text-[13px]

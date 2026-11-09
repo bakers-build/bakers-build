@@ -109,15 +109,11 @@ table above.
 |---|---|---|---|---|---|
 | View (default) | `entity.bb_machine.canonical` | `/user/{user}/machine/{id}` | View mode (`_entity_view: bb_machine.full`) | `bb_machine.view` | `_entity_access` |
 
-## Admin routes (unchanged)
+## Admin routes
 
-Every route under `/admin/bakers/*` — the collections for `bb_workspace`,
-`bb_team`, `bb_project`, `bb_run`, `bb_conductor`, `bb_machine`, `bb_group`,
-`bb_ticket`, plus `bb_core.settings` — is out of this umbrella's scope and
-unchanged. They are listed here once, as a block, rather than one row each:
-gated by `administer bakers` (or the specific admin-collection permission each
-already carries), rendered by each entity's list builder, and reachable only
-from the Drupal admin backend, never the rail.
+Content entities and site settings have no route under `/admin/`. Only the
+config entities (figures, figure groups, measurements, island apps and
+profiles) keep their admin pages, reachable by URL and never from the rail.
 
 ## Entity types with no nav home of their own
 

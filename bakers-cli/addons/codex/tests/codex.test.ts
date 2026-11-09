@@ -499,6 +499,35 @@ describe('CodexAgent security: system, yolo, custom', () => {
   });
 });
 
+describe('CodexAgent security: shared project and machine layers', () => {
+  it('applies a shared allow_write and reports the keys it cannot express', async () => {
+    const options = {
+      shared_security: {
+        project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
+        machine: {
+          sandbox: { allow_write: ['/srv/cache'], deny_read: ['~/.aws'] },
+        },
+      },
+    } as never;
+    const agent = new CodexAgent(options, await homeWithCodexMcp());
+    expect(agent.launchCommand('x')).toContain('"/srv/cache" = true');
+    expect(codexAgent(options).security?.not_applied).toEqual([
+      { key: 'deny_read', source: 'machine', reason: 'unsupported' },
+      { key: 'trusted_commands', source: 'project', reason: 'unsupported' },
+    ]);
+  });
+
+  it('still fails loading on an entry deny_read', () => {
+    expect(
+      () =>
+        new CodexAgent({
+          shared_security: { machine: { sandbox: { deny_read: ['~/.a'] } } },
+          sandbox: { deny_read: ['$inherit', '~/.b'] },
+        } as never),
+    ).toThrow(/Codex does not support sandbox.deny_read/);
+  });
+});
+
 describe('CodexAgent security load errors', () => {
   it.each([
     [
@@ -780,30 +809,54 @@ describe('CodexAgent.sandboxPreflight', () => {
 });
 
 describe('CodexAgent conductor tools', () => {
-  it('adds bakers-conductor with the URL and the token by env var name only', async () => {
+  it('approves only conductor tools while retaining the shell sandbox and token wiring', async () => {
     const home = await homeWithCodexMcp();
     await writeFile(
       join(home, '.codex', 'config.toml'),
-      '[mcp_servers.bakers-conductor]\nurl = "http://old"\n[mcp_servers.gitlab]\ncommand = "g"\n',
+      '[mcp_servers.gitlab]\ncommand = "g"\n',
     );
+    const agent = new CodexAgent({}, home);
     const argv = captureArgv(
       'codex',
-      new CodexAgent({}, home).launchCommand('x', undefined, home, {
+      agent.launchCommand('x', undefined, home, {
         url: 'http://127.0.0.1:4100',
       }),
     );
     expect(argv).toContain(
-      'mcp_servers.bakers-conductor.url="http://127.0.0.1:4100"',
+      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}',
+    );
+    expect(argv).toContain('mcp_servers.gitlab.enabled=false');
+    expect(argv.filter((arg) => arg.includes('approval_mode'))).toHaveLength(1);
+    expect(argv).toContain('default_permissions="bakers"');
+    expect(argv[argv.indexOf('-a') + 1]).toBe('never');
+    expect(argv).not.toContain('--dangerously-bypass-approvals-and-sandbox');
+    expect(agent.launchWarnings).toEqual([]);
+  });
+
+  it('replaces a config.toml server named bakers as a whole, and warns', async () => {
+    const home = await homeWithCodexMcp();
+    await writeFile(
+      join(home, '.codex', 'config.toml'),
+      '[mcp_servers.bakers]\ncommand = "old-bakers-mcp"\n',
+    );
+    const agent = new CodexAgent({}, home);
+    const argv = captureArgv(
+      'codex',
+      agent.launchCommand('x', undefined, home, {
+        url: 'http://127.0.0.1:4100',
+      }),
     );
     expect(argv).toContain(
-      'mcp_servers.bakers-conductor.bearer_token_env_var="BB_CONDUCTOR_TOKEN"',
+      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}',
     );
-    expect(argv).not.toContain('mcp_servers.bakers-conductor.enabled=false');
-    expect(argv).toContain('mcp_servers.gitlab.enabled=false');
+    expect(argv).not.toContain('mcp_servers.bakers.enabled=false');
+    expect(agent.launchWarnings).toEqual([
+      "~/.codex/config.toml mcp_servers.bakers is replaced by the conductor's bakers server",
+    ]);
   });
 
   it('adds nothing without a tool server', () => {
     const command = new CodexAgent({ security: 'yolo' }).launchCommand('x');
-    expect(command).not.toContain('bakers-conductor');
+    expect(command).not.toContain('mcp_servers.bakers');
   });
 });

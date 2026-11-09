@@ -170,20 +170,6 @@ export function buildUserTicketQueryParams(
   return params;
 }
 
-/** One assignee, constrained to the projects linked to the selected team. */
-export function buildTeamMemberTicketQueryParams(
-  userId: string,
-  projectIds: string[],
-  criteria: TicketCriteria,
-  options: TicketQueryOptions = {},
-): DrupalJsonApiParams {
-  const params = new DrupalJsonApiParams();
-  params.addFilter('assignee_user_id.id', userId);
-  params.addFilter('project_id.id', projectIds, 'IN');
-  applyTicketCriteria(params, criteria, options);
-  return params;
-}
-
 /**
  * Build the JSON:API query for the tickets assigned to one conductor —
  * open only, newest-changed first. Not project-scoped: a conductor may serve

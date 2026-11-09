@@ -156,7 +156,7 @@ final class BbRailMyWorkTest extends KernelTestBase {
    * Off a workspace route there is no workspace to link to.
    */
   public function testTheEntryIsAbsentWithNoAmbientWorkspace(): void {
-    $this->visit('entity.bb_workspace.collection');
+    $this->visit('bb_core.home');
 
     self::assertNotContains('My work', array_column($this->emitted(), 'title'));
   }

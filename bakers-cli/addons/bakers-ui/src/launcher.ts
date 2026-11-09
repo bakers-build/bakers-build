@@ -1,16 +1,10 @@
 import bakersUiPlugin, { type BbUiOptions } from './plugin.js';
-import type {
-  DropshClient,
-  TuiAgentService,
-  UiInitialRoute,
-  UiViewMode,
-} from './types.js';
+import type { DropshClient, UiInitialRoute, UiViewMode } from './types.js';
 
 // BB-194 AC-4: the dropsh-tui invocation (`buildProgram` + the `--format tui`
 // seed run) lives HERE, in the renderer package, not in the conductor `bakers ui`
 // command. The conductor entry stays a thin composition point: it resolves the
-// home connection + a herdr-backed agent host and delegates to `runBbUi`. The
-// launcher stays herdr-agnostic (the agent impl is INJECTED, never imported) and
+// home connection and delegates to `runBbUi`. The launcher stays
 // dropsh-decoupled (dropsh's `buildProgram` is INJECTED, so this package needs
 // no `dropsh` dependency — AC-5).
 
@@ -55,14 +49,14 @@ export interface HomeConnection {
 export interface BbUiLauncherOptions {
   /** Resolved home connection (base_url + auth + dropsh config path). */
   connection: HomeConnection;
-  /** Repo/home root the launched agents run in. */
+  /** Repo/home root `bakers ui` was started in. */
   cwd: string;
   /** Default project (opaque group) — `bakers ui --project`, when given. */
   project?: string | undefined;
   /**
    * BB-232 (D9): the `.bakers` dir the entry is standing in. The renderer's
-   * `run()` resolves it against the control plane into the default `project`
-   * and `ownConductorMachineId`; the entry cannot, holding no JSON:API client.
+   * `run()` resolves it against the control plane into the default `project`;
+   * the entry cannot, holding no JSON:API client.
    * An explicit `project` above still wins.
    */
   bakersDir?: string | undefined;
@@ -76,14 +70,8 @@ export interface BbUiLauncherOptions {
    *  new workspace selection. Injected from `ui/src/bun-runtime.ts`. */
   restartProcess?: (() => void) | undefined;
   selectWorkspace?: ((name: string) => Promise<void>) | undefined;
-  /** Herdr-backed agent host, already adapted prompt→command (injected). */
-  agents?: TuiAgentService | undefined;
-  /** Preselected new-ticket assignee (this machine's user id). */
+  /** The connection's current user (uuid or name) — My work's "me". */
   currentUser?: string | undefined;
-  /** This machine's conductor `machine_id` — preselected in the new-ticket form. */
-  ownConductorMachineId?: string | undefined;
-  /** Config override for the ticket-create agent's base prompt. */
-  createPrompt?: string | undefined;
   /** Injected dropsh `buildProgram` (the entry passes dropsh's real one). */
   buildProgram: DropshBuildProgram;
   /** Injected renderer factory; defaults to this package's own plugin. The
@@ -115,9 +103,8 @@ export interface BbUiLauncherOptions {
 export type { UiInitialRoute, UiViewMode };
 
 /**
- * Build + run the dropsh `--format tui` program with the TUI renderer and the
- * injected agent host. A trivial `search bb_project` seeds the renderer's
- * `run()`; the renderer discards the seed document and boots its own projects
+ * Build + run the dropsh `--format tui` program with the TUI renderer. A
+ * trivial `search bb_project` seeds the renderer's `run()`; the renderer discards the seed document and boots its own projects
  * screen from the `bb_conductor` records it reads through this connection.
  */
 export async function runBbUi(opts: BbUiLauncherOptions): Promise<void> {
@@ -149,15 +136,8 @@ export async function runBbUi(opts: BbUiLauncherOptions): Promise<void> {
     ...(opts.selectWorkspace !== undefined
       ? { selectWorkspace: opts.selectWorkspace }
       : {}),
-    ...(opts.agents ? { agents: opts.agents } : {}),
     ...(opts.currentUser !== undefined
       ? { currentUser: opts.currentUser }
-      : {}),
-    ...(opts.ownConductorMachineId !== undefined
-      ? { ownConductorMachineId: opts.ownConductorMachineId }
-      : {}),
-    ...(opts.createPrompt !== undefined
-      ? { createPrompt: opts.createPrompt }
       : {}),
     // Optional at every hop — omitting the key is the My work path.
     ...(opts.initialRoute !== undefined

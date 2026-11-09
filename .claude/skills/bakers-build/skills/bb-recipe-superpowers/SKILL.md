@@ -1,6 +1,6 @@
 ---
 name: bb-recipe-superpowers
-description: Recipe for tickets of type feature, bug or chore — the superpowers method; brainstorming to an approved design, writing-plans, executing-plans with test-driven-development, systematic-debugging for bugs, requesting-code-review. Selected by `recipe` = superpowers; matt stays the project default.
+description: Recipe for tickets of type feature, bug or chore — the superpowers method; brainstorming to an approved design, writing-plans, executing-plans with test-driven-development, systematic-debugging for bugs, requesting-code-review.
 ---
 
 # Superpowers method

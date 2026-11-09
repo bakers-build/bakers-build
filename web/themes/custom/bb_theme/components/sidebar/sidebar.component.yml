@@ -1,8 +1,13 @@
-$schema: https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
 name: Sidebar
 status: stable
 group: Shell
-description: 'Linear-style left navigation rail: workspace switcher on top, the primary navigation below it, a collapse toggle on the rail''s right edge and an actions area at the foot. Collapsed it keeps the icons and drops the labels; the state is a prop and the toggle drives the same accessible attributes at runtime.'
+description: >-
+  Linear-style left navigation rail: workspace switcher on top, the primary
+  navigation below it, a collapse toggle on the rail's right edge and an actions
+  area at the foot. Collapsed it keeps the icons and drops the labels; the state
+  is a prop and the toggle drives the same accessible attributes at runtime.
 provider: bb_theme
 props:
   type: object
@@ -31,10 +36,14 @@ slots:
 variants:
   expanded:
     title: Expanded
-    description: Full rail with the workspace name, the navigation labels and the nested settings sub-navigation.
+    description: >-
+      Full rail with the workspace name, the navigation labels and the nested
+      settings sub-navigation.
   collapsed:
     title: Collapsed
-    description: Icon-only rail; the labels and the workspace name are hidden, the six entries stay as icons.
+    description: >-
+      Icon-only rail; the labels and the workspace name are hidden, the six
+      entries stay as icons.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

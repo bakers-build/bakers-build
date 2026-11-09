@@ -1,0 +1,7 @@
+component: bb_theme:form_check
+name: Radio
+props:
+  type: radio
+  id: edit-density-compact
+  name: density
+  value: compact

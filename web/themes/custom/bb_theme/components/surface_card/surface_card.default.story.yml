@@ -1,0 +1,15 @@
+component: bb_theme:surface_card
+name: Default
+slots:
+  header:
+    - type: element
+      tag: h2
+      value: Addons
+      attributes:
+        class: m-0 text-section-title text-title
+  content:
+    - type: element
+      tag: p
+      value: No addon is enabled for this ticket yet.
+      attributes:
+        class: m-0 text-body text-text-light

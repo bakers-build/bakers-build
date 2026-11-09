@@ -80,7 +80,7 @@ final class SettingsFormDisplayTest extends KernelTestBase {
       ['group_id', 'teams', 'name', 'description', 'image', 'repository', 'owner_user_id', 'env_vars'],
       array_keys(self::orderedComponents('bb_project.bb_project.settings')),
     );
-    self::assertSame(['name', 'description', 'image'], array_keys(self::orderedComponents('bb_workspace.bb_workspace.settings')));
+    self::assertSame(['name', 'description', 'image', 'run_log_storage_enabled'], array_keys(self::orderedComponents('bb_workspace.bb_workspace.settings')));
     self::assertSame(['name'], array_keys(self::orderedComponents('bb_team.bb_team.settings')));
     self::assertSame(['name', 'description', 'image'], array_keys(self::orderedComponents('bb_group.bb_group.settings')));
     self::assertSame(['name', 'description', 'image'], array_keys(self::orderedComponents('bb_group.bb_group.create')));

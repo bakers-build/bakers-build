@@ -31,9 +31,6 @@ export interface BootOptions {
   readonly columns?: number;
   /** Terminal rows. 40 is the height the fake harness defaulted to. */
   readonly rows?: number;
-  /** Keep the product's My work / project Work landing instead of advancing
-   * legacy screen-focused fixtures to their historical Dashboard subject. */
-  readonly useProductLanding?: boolean;
 }
 
 export interface BootedTui extends TestRendererSetup {
@@ -136,14 +133,6 @@ export async function bootTui(options: BootOptions): Promise<BootedTui> {
   });
   await settle();
   await setup.renderOnce();
-  if (
-    options.useProductLanding !== true &&
-    (options.tui?.route === undefined || options.tui.route.screen === 'project')
-  ) {
-    setup.mockInput.pressKey('\t');
-    await settle();
-    await setup.renderOnce();
-  }
 
   const frame = (): string => trimRows(setup.captureCharFrame());
   return {

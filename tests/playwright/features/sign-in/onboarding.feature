@@ -167,7 +167,7 @@ Feature: The onboarding wizard before the workspace overview
     And the document was not reloaded
     And the wizard progress reads "Step 3 of 3"
     And the audience "Ticket only" links "Set up a connector" to "https://bakers.build/docs/get-started/connector" in a new tab
-    And the audience "Developer" links "Set up a machine" to "https://bakers.build/docs/get-started/machine" in a new tab
+    And the audience "Developer" links "Set up a machine" to "https://bakers.build/docs/provision/machine" in a new tab
     And the audience "Developer" links "Set up a project" to "https://bakers.build/docs/get-started/connect-a-project" in a new tab
     And the setup guide shows no commands and no Next
     And both finish actions are offered
@@ -185,6 +185,7 @@ Feature: The onboarding wizard before the workspace overview
     Then both finish actions are offered
     When I choose finish and create a new workspace
     Then the address is "/home/new-workspace"
+    And the page has exactly one h1
     When I create the workspace "Setup Create GmbH"
     Then the address is "/home"
     And the workspace "setup-create-gmbh" is owned by "onboarding-create@example.com" as lead

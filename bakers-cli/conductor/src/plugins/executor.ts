@@ -76,12 +76,12 @@ export interface HookContext {
 }
 
 /**
- * What a lifecycle hook invocation DID (BB-237). `runHook` still never throws,
- * but it no longer swallows the outcome silently: it reports it, so a caller can
- * record a failed provisioning hook against the run it is about to dispatch
- * instead of relying on a log line to survive (AC-6). Reporting — rather than
- * throwing — keeps the never-wedge property that the never-throw contract exists
- * for; boundedness stays with the conductor's circuit breaker.
+ * What a lifecycle hook invocation DID (BB-237). The conductor's hook runner
+ * never throws, but it does not swallow the outcome silently either: it reports
+ * it, so a caller can record a failed provisioning hook against the run it is
+ * about to dispatch instead of relying on a log line to survive (AC-6).
+ * Reporting — rather than throwing — keeps the never-wedge property; boundedness
+ * stays with the conductor's circuit breaker.
  */
 export interface HookResult {
   /** The hook slot that was invoked. */
@@ -112,34 +112,33 @@ export interface HookResult {
  */
 export type WorktreeTeardown = 'removed' | 'already_absent' | 'unverified';
 
+/** What {@link BbExecutor.openWorkspace} knows about the fresh worktree. */
+export interface OpenWorkspaceContext {
+  identifier: string;
+  branch: string;
+  title: string;
+}
+
+/**
+ * The executor hosts terminals, nothing else: the workspace owns the worktree
+ * and the conductor runs the lifecycle hooks. The two share only the worktree
+ * path and branch, so any executor runs on any workspace.
+ */
 export interface BbExecutor {
   id: string;
+  /** `persistent` = the agent lives in a hosted terminal; gates `stopRun`/`cleanupRun` only. */
   capabilities(): ExecutorCapabilities;
   /**
-   * Run the lifecycle hook `name` (command from `config.hooks[name]`) in `cwd`,
-   * best-effort. This is the SINGLE catch point for all lifecycle hooks:
+   * Present a freshly created worktree in the tool (panes, tabs, an open
+   * layout). Optional: an executor without a UI surface omits it.
    *
-   * - MUST NEVER throw. No configured command → silent no-op. A failing command
-   *   → `logger.error({hook,worktree,ticket,err}, 'lifecycle hook failed')` then
-   *   return. So a hook failure never aborts dispatch or wedges a run in
-   *   `claimed`.
-   * - The underlying shell command still fails honestly (a non-zero exit
-   *   rejects); only the executor catches + logs + continues.
-   * - MUST report the outcome as a {@link HookResult} (BB-237): never throwing
-   *   is not the same as never telling. The caller decides what a failure means
-   *   for the run it is dispatching; the executor only refuses to abort.
-   *
-   * `env`, when given, is the run's resolved environment (per-ticket env_vars
-   * merged with the core BB_* vars, BB-99), merged over the hook process's
-   * inherited env. Values may be sensitive — implementations must never log
-   * them (log key names only).
+   * The conductor calls it after `after_create`, before `before_run`, and ONLY
+   * when the workspace reported the worktree as created (BB-237): the layout's
+   * startup command may name what `after_create` builds, and re-applying it on
+   * reuse would start a duplicate process on every reattach. Best-effort:
+   * implementations log and swallow a failure so it never wedges dispatch.
    */
-  runHook(
-    name: HookName,
-    cwd: string,
-    ctx: HookContext,
-    env?: Record<string, string>,
-  ): Promise<HookResult>;
+  openWorkspace?(path: string, ctx: OpenWorkspaceContext): Promise<void>;
   startRun(input: SpawnRunInput): Promise<SpawnedSession>;
   /**
    * Signal the run's agent to stop. Called by the conductor's run-finalise pass
@@ -160,35 +159,10 @@ export interface BbExecutor {
    * and any non-run tab are left untouched. Called as the LAST finalisation step,
    * strictly after the transcript is captured, and again at dispatch to clear a
    * reused workspace's leftover tab for the run being (re-)started. No matching
-   * tab → a quiet no-op. Does NOT touch the branch worktree (that is the
-   * reap/{@link removeWorktree} lifecycle). Best-effort: a failing tab-close is
+   * tab → a quiet no-op. Does NOT touch the branch worktree (that is
+   * {@link BbWorkspace.remove}). Best-effort: a failing tab-close is
    * swallowed and never aborts finalisation or dispatch. A no-op for
    * non-persistent executors.
    */
   cleanupRun(branch: string, runId: number): Promise<void>;
-  /**
-   * Tear down the branch's entire worktree (git worktree + hosted workspace),
-   * reclaiming its disk. Called by the conductor's ticket-cleanup pass once a
-   * ticket is done. A no-op for non-persistent executors (no hosted workspace);
-   * the conductor gates the call on `capabilities().persistent`.
-   *
-   * `worktreePath` is the stable, identifier-derived worktree path (from the
-   * ticket's latest run). Prefer it over `branch` to resolve the worktree: the
-   * checked-out branch is mutable (the coding agent may rename/switch it), the
-   * path is not.
-   *
-   * Reports what the teardown DID as a {@link WorktreeTeardown} (BB-293):
-   * `removed` when the worktree was present on this host and torn down (or its
-   * prunable admin entry swept), `already_absent` when there was nothing to
-   * tear down at all, and `unverified` when nothing matched here and the
-   * worktree may still be on disk (another conductor's host, or a path that
-   * could not be resolved). The reaper flags a ticket `cleaned_up` for the
-   * first two and leaves it on the work list for `unverified`, so it never
-   * false-teardowns a worktree another host physically holds. A genuine
-   * failure still throws (surfaced as a teardown miss).
-   */
-  removeWorktree(
-    branch: string,
-    worktreePath?: string,
-  ): Promise<WorktreeTeardown>;
 }

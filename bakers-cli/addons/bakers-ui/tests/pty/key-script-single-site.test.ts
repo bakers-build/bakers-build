@@ -6,8 +6,8 @@ import { describe, expect, it } from 'vitest';
  * BB-326 — the shared PTY key scripts have exactly ONE definition site.
  *
  * Two drivers walk these screens: the real-PTY screen verifier
- * (`tests/pty/verify-screen.mjs`) and the BB-322 measurement driver.
- * A verifier that
+ * (`tests/pty/verify-screen.mjs`) and the colour verifier
+ * (`tests/pty/verify-colors.mjs`). A verifier that
  * runs a different walk than the one the old kernel was measured with cannot
  * tell "the screen is right" from "the harness agrees with itself", so the two
  * must be structurally incapable of drifting apart. Copy-paste is the only way
@@ -23,17 +23,13 @@ const REPO_ROOT = fileURLToPath(new URL('../../../../..', import.meta.url));
 /** The one file allowed to declare them. */
 const DEFINITION_SITE = 'bakers-cli/addons/bakers-ui/tests/pty/key-script.mjs';
 
-const EXPORTED_SCRIPTS = [
-  'NEW_TICKET_KEY_SCRIPT',
-  'TICKETS_KEY_SCRIPT',
-  'DASHBOARD_KEY_SCRIPT',
-];
+const EXPORTED_SCRIPTS = ['TICKETS_KEY_SCRIPT'];
 
 /**
  * Every line in the repository that DECLARES `name`.
  *
  * `export const <name>` and not merely `<name>`: a re-export
- * (`export { NEW_TICKET_KEY_SCRIPT } from '…'`) and an import are exactly what
+ * (`export { TICKETS_KEY_SCRIPT } from '…'`) and an import are exactly what
  * this rule wants and must not be counted as second definitions. `git grep`
  * rather than `grep -r`, so the search never walks `node_modules` — the PTY
  * harness installs its native deps right next to this file. `--untracked` so a

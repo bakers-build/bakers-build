@@ -2,7 +2,7 @@
 
 Called like every tool in [tools](tools.md). IDs are UUIDs unless named. Lists take optional
 `limit` (1–100) and `offset` and return `next_offset`, null on the last page; a count or "none"
-needs every page.
+needs every page. A conductor run is served only the lookups [conductor](tools-conductor.md) names.
 
 | Operation | Tool | Arguments | Result |
 |---|---|---|---|

@@ -2,7 +2,7 @@
 
 **Shares a running service of a ticket's worktree under a public URL.**
 
-Show a preview, such as a DDEV site, Mailpit or Storybook, to someone outside the machine.
+Show a site, Mailpit or Storybook to someone outside the machine.
 
 The `bakers ports` commands ship with the CLI. The addon entry adds the **Share tunnels** message to tickets.
 
@@ -29,6 +29,7 @@ The conductor registers the addon; a **Share tunnels** message then appears in t
 |---|---|
 | `transport.use` | The transport package. Required for `bakers ports up`, `down`, `reap` and the **Share tunnels** message. |
 | `transport.with` | The transport's own settings; see each transport's page and [Shared service tunnels](/configuration/machine#shared-service-tunnels-bakers-ports). |
+| `claimers` | Runtime claimer packages; see [Shared processes](/addons/ports-services). |
 | `services`, `all_node` | Which host processes are shared; see [Shared processes](/addons/ports-services). |
 
 Without a ports entry with `transport.use`, tunnel commands refuse with `bakers ports needs '@bakers-build/addon-ports' in addons[] …`; `bakers ports list` still works. Projects naming different transports are refused at runtime. A top-level `ports` key in the machine file is retired; `bakers config upgrade --scope machine` moves it into the entry.
@@ -52,9 +53,9 @@ bakers ports reap                         # machine-wide reconciliation
 
 ## Good to know
 
-- Only claimed services get a tunnel: DDEV services by [DDEV discovery](/addons/ddev), host processes by [`services`](/addons/ports-services). A service key comes from `list`, never a raw port; `up` alone shares every eligible one.
+- Only claimed services get a tunnel: host processes by [`services`](/addons/ports-services), runtime services by `claimers`. A service key comes from `list`, never a raw port; `up` alone shares every eligible one.
 - In `bakers ui`, open the message card from Overview (`↓`/`j`, `Enter`). `←`/`→` switch addon, `Enter` sends Share tunnels, and `l` copies a link out of the answer.
-- Reap is no message: run `bakers ports reap` or wire the [`after_done` hook](/configuration/provisioning/hooks#clean-up-a-preview), so a finished ticket leaves no tunnel behind.
+- Reap is no message: run `bakers ports reap` or wire the [`after_done` hook](/provision/hooks#clean-up-a-preview), so a finished ticket leaves no tunnel behind.
 - A public URL is reachable from the internet while the tunnel lives.
 
 ::: tip Ask your AI

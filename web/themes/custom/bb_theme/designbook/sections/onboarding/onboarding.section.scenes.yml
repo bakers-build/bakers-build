@@ -27,8 +27,8 @@ scenes:
         with:
           title: What should we call you?
           description: >-
-            A name and a picture — and bakers.build feels less like software and more
-            like your team.
+            A name and a picture — and bakers.build feels less like software and
+            more like your team.
           content:
             - component: bb_theme:form
               slots:
@@ -167,7 +167,7 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Work through chat, without a local machine.
-                      size: caption
+                      size: meta
                       tone: light
                   - component: bb_theme:link-group
                     props:
@@ -179,13 +179,13 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Run the agent on your own machine.
-                      size: caption
+                      size: meta
                       tone: light
                   - component: bb_theme:link-group
                     props:
                       label: Developer
                       links:
-                        - url: https://bakers.build/docs/get-started/machine
+                        - url: https://bakers.build/docs/provision/machine
                           title: Set up a machine
                           kind: doc
                         - url: https://bakers.build/docs/get-started/connect-a-project

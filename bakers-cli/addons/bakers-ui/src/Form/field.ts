@@ -114,7 +114,7 @@ export interface FieldFactory<V, O> {
 type Bag = Record<string, never>;
 
 // `clearable: false` and "no clearable" are the same thing, so the key stays ABSENT
-// unless asked for — the create form must declare it nowhere.
+// unless asked for — a form that wants none declares nothing.
 const FACTORY: FieldFactory<Bag, Bag> = {
   text: (id, label) => ({ id, label, kind: 'text' }),
   select: (id, label, o) => ({

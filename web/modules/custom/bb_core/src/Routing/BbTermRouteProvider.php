@@ -9,18 +9,9 @@ use Drupal\entity\Routing\AdminHtmlRouteProvider;
 use Symfony\Component\Routing\Route;
 
 /**
- * Term add and edit forms as product routes under the workspace.
+ * Titles the term edit form under the workspace.
  */
 final class BbTermRouteProvider extends AdminHtmlRouteProvider {
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getAddFormRoute(EntityTypeInterface $entity_type): ?Route {
-    $route = parent::getAddFormRoute($entity_type);
-    $route?->setOption('_admin_route', FALSE);
-    return $route;
-  }
 
   /**
    * {@inheritdoc}
@@ -31,7 +22,6 @@ final class BbTermRouteProvider extends AdminHtmlRouteProvider {
     // entity parameter, the workspace.
     $route?->setDefault('_title', 'Edit');
     $route?->setDefaults(array_diff_key($route->getDefaults(), ['_title_callback' => TRUE]));
-    $route?->setOption('_admin_route', FALSE);
     return $route;
   }
 

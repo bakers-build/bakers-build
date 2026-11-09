@@ -55,9 +55,9 @@ props:
       type: string
       title: Profile picture URL
       description: >-
-        A rendered image URL for the circle, e.g. `user.user_picture`
-        (BB-507). Optional: initials are the fallback for any account without
-        one, which is why initials stays the required prop.
+        A rendered image URL for the circle, e.g. `user.user_picture` (BB-507).
+        Optional: initials are the fallback for any account without one, which
+        is why initials stays the required prop.
     image_fit:
       type: string
       enum:
@@ -77,6 +77,15 @@ props:
         One secondary line beneath the name, e.g. the developer title. Rendered
         in `full` and `profile`, omitted when empty; `compact` has no room for
         it.
+    subtitle_datetime:
+      type: string
+      title: Subtitle instant, ISO 8601
+      description: >-
+        Set when the subtitle is a point in time (a review's date); the
+        subtitle then renders as `bb_theme:time` with its full date on hover.
+    subtitle_title:
+      type: string
+      title: Subtitle full date shown on hover
     mail:
       type: string
       title: Email

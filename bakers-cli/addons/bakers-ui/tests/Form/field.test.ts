@@ -55,7 +55,7 @@ it('select names its option list by BAG KEY, not by a projection function', () =
   expect(field.from).toBe('users');
 });
 
-it('clearable is ABSENT unless asked for — the create form declares none', () => {
+it('clearable is ABSENT unless asked for — a plain select declares none', () => {
   const plain = f.select('assignee', 'Assignee', { from: 'users' });
   expect(Object.hasOwn(plain, 'clearable')).toBe(false);
   expect(plain.clearable).toBeUndefined();
@@ -111,7 +111,7 @@ it('autocomplete`s typed key sets reject a wrong-typed key', () => {
   // non-nullable string key, `f.select` a nullable one). Asserted the way they
   // are — this package's tsconfig includes only `src/**/*.ts`, so the test tree
   // is transpiled and never type-checked, and the proof is that the real call
-  // site in `Entity/ticket/Form/create.ts` compiles. What IS checkable here is
+  // site in `Entity/ticket/Form/edit.ts` compiles. What IS checkable here is
   // that the two keys stay distinct and land in distinct slots, so a swap of
   // `from` and `query` cannot pass unnoticed.
   const field = f.autocomplete('parent', 'Parent', {

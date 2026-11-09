@@ -7,7 +7,7 @@
    where `[]` is truthy. #}
 {% if items is not empty %}
 <nav{{ (attributes ?: create_attribute()).addClass([
-    'block', 'text-caption',
+    'block', 'text-meta',
   ]) }}
   aria-label="{{ label|default('Breadcrumb') }}"
   data-breadcrumb>

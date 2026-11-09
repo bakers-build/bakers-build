@@ -18,7 +18,9 @@ concurrency:
   cancel-in-progress: true
 jobs:
   branch_policy:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    # A push follows a PR that already ran this on the same tree; only the after-merge jobs run.
+    if: &checks github.event_name != 'push'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -29,7 +31,8 @@ jobs:
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
         run: bash scripts/ci/github-branch-policy.sh
   phpcs:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -62,7 +65,8 @@ jobs:
           ./vendor/bin/phpcs -d memory_limit=512M --standard=phpcs.xml.dist
     container: php:8.4
   phpmd:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -95,7 +99,8 @@ jobs:
           php -d error_reporting='E_ALL & ~E_DEPRECATED' ./vendor/bin/phpmd web/modules/custom,web/themes/custom text phpmd.xml.dist --exclude 'tests/*,**/tests/*,**/node_modules/*'
     container: php:8.4
   phpstan:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -128,7 +133,8 @@ jobs:
           ./vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit 1G
     container: php:8.4
   docs_pages:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -147,9 +153,11 @@ jobs:
           set -eu
           node docs/scripts/check-pages.mjs
           node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
+          bash tests/contract/docs-preview.sh
     container: node:22
   config_sync:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -183,7 +191,8 @@ jobs:
           bash tests/config-sync/check-ci-wiring.sh
     container: php:8.4
   compose_render:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -197,8 +206,10 @@ jobs:
         run: |-
           set -eu
           bash tests/contract/compose.sh
+          bash tests/contract/ddev-provision.sh
   conductor:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -234,7 +245,8 @@ jobs:
           retention-days: 7
     container: node:22
   tui:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -267,7 +279,10 @@ jobs:
           retention-days: 7
     container: node:22
   tui_musl:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-latest-x64-4x"') }}
+    # After the merge (push), on dispatch and before main; not on PRs into next. Shared with
+    # image_gate and release_rehearsal and `required`'s AFTER_MERGE_REQUIRED.
+    if: &after_merge github.event_name != 'pull_request' || github.base_ref == 'main'
     timeout-minutes: 45
     env:
       CI_PROJECT_DIR: ${{ github.workspace }}
@@ -326,7 +341,8 @@ jobs:
           path: bakers-cli/junit-tui.xml
           retention-days: 7
   web_ui:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     timeout-minutes: 45
     env:
       NODE_OPTIONS: --max-old-space-size=4096
@@ -353,6 +369,7 @@ jobs:
           bash tests/contract/layout-components.sh
           bash tests/contract/data-display-components.sh
           bash tests/contract/token-discipline.sh
+          bash tests/contract/time-format.sh
           bash tests/contract/run-detail-overlay.sh
           bash tests/contract/island-links.sh
           node tests/contract/appearance.mjs
@@ -366,7 +383,8 @@ jobs:
           retention-days: 7
     container: node:22
   bb_skill_version_gate:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     steps:
       - uses: actions/checkout@v4
         with:
@@ -377,7 +395,8 @@ jobs:
           HEAD_REF: ${{ github.sha }}
         run: bash tests/contract/skill-version-gate.sh
   mr_title:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     steps:
       - uses: actions/checkout@v4
         with:
@@ -390,7 +409,8 @@ jobs:
           bash tests/contract/mr-title.test.sh
           if [ "$EVENT" = pull_request ]; then bash tests/contract/mr-title.sh "$PR_TITLE"; fi
   pm_bot:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     container: node:22
     timeout-minutes: 30
     steps:
@@ -409,7 +429,8 @@ jobs:
           node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'
           bash tests/contract/pm-bot.sh
   coder_pm_bot:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
     container: node:22
     timeout-minutes: 30
     steps:
@@ -427,7 +448,10 @@ jobs:
           bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
           bash tests/contract/coder-pm-bot.sh
   image_gate:
-    runs-on: blacksmith-8vcpu-ubuntu-2404
+    # Its own, larger runner: PHPUnit and the browser suite run with the parallelism set in the gate script.
+    runs-on: ${{ fromJSON(vars.RUNNER_IMAGE_GATE || '"warp-ubuntu-latest-x64-16x"') }}
+    # The push run's tested images are what release.yml deploys.
+    if: *after_merge
     timeout-minutes: 180
     env:
       DOMAIN: nginx
@@ -465,7 +489,8 @@ jobs:
           path: gate-reports/
           retention-days: 7
   release_rehearsal:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubuntu-latest-x64-4x"') }}
+    if: *after_merge
     container: node:22
     timeout-minutes: 60
     steps:
@@ -493,9 +518,10 @@ jobs:
           path: release-notes.md
           if-no-files-found: ignore
   required:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    container: node:22
     if: always()
-    needs:
+    needs: &gates
       - branch_policy
       - phpcs
       - phpmd
@@ -516,4 +542,35 @@ jobs:
     steps:
       - env:
           RESULTS: ${{ toJSON(needs) }}
-        run: node -e 'const jobs = JSON.parse(process.env.RESULTS); if (Object.values(jobs).some(job => job.result !== "success")) process.exit(1)'
+          # Same expressions as the jobs' `if`: a skipped job passes only where it does not run.
+          CHECKS_REQUIRED: ${{ github.event_name != 'push' }}
+          AFTER_MERGE_REQUIRED: ${{ github.event_name != 'pull_request' || github.base_ref == 'main' }}
+        run: |-
+          node -e 'const jobs = JSON.parse(process.env.RESULTS); const afterMerge = ["image_gate", "tui_musl", "release_rehearsal"]; const required = (name) => process.env[afterMerge.includes(name) ? "AFTER_MERGE_REQUIRED" : "CHECKS_REQUIRED"] === "true"; const ok = ([name, job]) => job.result === "success" || (job.result === "skipped" && !required(name)); if (!Object.entries(jobs).every(ok)) process.exit(1)'
+  report_failure:
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    container: node:22
+    timeout-minutes: 15
+    needs: *gates
+    if: always() && contains(needs.*.result, 'failure') && github.ref == 'refs/heads/next' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: File the failure in bakers.build
+        env:
+          WORKFLOW: GitHub checks
+          BRANCH: next
+          NEEDS: ${{ toJSON(needs) }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          BB_CI_CLIENT_ID: ${{ secrets.BB_CI_CLIENT_ID }}
+          BB_CI_CLIENT_SECRET: ${{ secrets.BB_CI_CLIENT_SECRET }}
+        run: |-
+          set -eu
+          FAILED_JOBS="$(node -e 'const jobs = JSON.parse(process.env.NEEDS); console.log(Object.keys(jobs).filter(name => jobs[name].result === "failure").join(", "))')"
+          export FAILED_JOBS
+          npm install -g @bakers-build/bakers@0.6.1-next.2
+          bakers config init --scope connection --auth-type client_credentials --base-url https://app.bakers.build --client-id "$BB_CI_CLIENT_ID" --secret-env BB_CI_CLIENT_SECRET --yes
+          # config init stores no token; bakers tools needs one even with client credentials (BAKERS-105).
+          bakers auth login --provider bakers
+          bash scripts/ci/github-failure-ticket.sh

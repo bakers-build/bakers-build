@@ -9,6 +9,7 @@ use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\tool\Attribute\Tool;
 use Drupal\tool\ExecutableResult;
 use Drupal\tool\Tool\ToolBase;
@@ -166,6 +167,30 @@ use Drupal\tool\TypedData\OutputDefinition;
         ],
       ),
     ),
+    'deployments' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Deployments'),
+      description: new TranslatableMarkup('The viewable deployment tickets whose referenced tickets contain this ticket, oldest first; empty when none does.'),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Deployment'),
+        description: new TranslatableMarkup('One deployment ticket.'),
+        property_definitions: [
+          'identifier' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Identifier'),
+            description: new TranslatableMarkup('The deployment ticket identifier.'),
+          ),
+          'environments' => new ListOutputDefinition(
+            label: new TranslatableMarkup('Environments'),
+            description: new TranslatableMarkup('The environment names the deployment targets.'),
+            item_definition: new OutputDefinition(
+              data_type: 'string',
+              label: new TranslatableMarkup('Environment'),
+              description: new TranslatableMarkup('An environment name.'),
+            ),
+          ),
+        ],
+      ),
+    ),
     'comments' => new ListOutputDefinition(
       label: new TranslatableMarkup('Comments'),
       description: new TranslatableMarkup('The readable comments, oldest first.'),
@@ -254,6 +279,10 @@ final class TicketRead extends ToolBase {
         'value' => (float) $row['value'],
         'unit' => $row['unit'] ?? NULL,
       ], $ticket->get('metrics')->getValue()) : NULL,
+      'deployments' => array_map(static fn (BbTicketInterface $deployment): array => [
+        'identifier' => $deployment->getIdentifier(),
+        'environments' => array_map(static fn ($env): string => (string) $env->label(), $deployment->get('environments')->referencedEntities()),
+      ], $ticket->get('deployments')->referencedEntities()),
       'comments' => $comments,
     ]);
   }

@@ -50,8 +50,9 @@ In this order:
    The frame's merge never runs here, and nothing merges back into `develop`.
 2. An unplayed, running or red gate blocks the merge: publish an honest `summary` and STOP.
 3. Watch the deploy of the merged SHA (`glab ci status --branch <branch>`), then expect HTTP 200
-   from `<base_url>/user/login`. Then call `bakers_ticket_update` with `environments_add` (the
-   target) on each batch ticket and this one, and `referenced_tickets_add` (the batch) on this one.
+   from `<base_url>/user/login`. Then call `bakers_ticket_update` on this ticket only, with
+   `environments_add` (the target) and `referenced_tickets_add` (the batch): this ticket is the
+   record of where its batch is deployed.
 4. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA, add its GitLab
    release to `links`.
 
@@ -64,8 +65,8 @@ Review is mandatory.
 ### bb-phase-work
 
 Verdict on the deployment: pipeline green on the merged SHA, the target responds, the batch is
-complete and stamped. Release environment additionally: tag `vx.y.z` on the frozen SHA, its GitLab
-release linked in `links`, the CLI package `x.y.z` on npm (`npm view`).
+complete and recorded on this ticket. Release environment additionally: tag `vx.y.z` on the frozen
+SHA, its GitLab release linked in `links`, the CLI package `x.y.z` on npm (`npm view`).
 
 ### bb-phase-transition
 

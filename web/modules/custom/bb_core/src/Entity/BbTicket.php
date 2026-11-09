@@ -12,7 +12,6 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\bb_core\Access\BbTicketAccessControlHandler;
 use Drupal\bb_core\Storage\BbTicketStorage;
@@ -72,13 +71,11 @@ use Drupal\user\EntityOwnerTrait;
     ],
     'views_data' => BbTicketViewsData::class,
     // The canonical route pins the `full` entity view whose Display Builder
-    // tree composes the whole detail screen. Edit (Settings) and delete render
-    // in the app shell; add and the collection stay admin routes.
+    // tree composes the whole detail screen.
     'route_provider' => ['html' => BbTicketRouteProvider::class],
     // Deliberately no `local_task_provider`: the default one would synthesise
     // a View/Edit tab row from the `edit-form` link, and a ticket has a single
     // face. The shell keeps drawing tabs for entities that declare them.
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
   ],
   // `_workspace` is an INTERNAL prefix that never appears in a URL: the public
   // address is /{workspace}/…, which Drupal's router cannot match directly.
@@ -88,12 +85,8 @@ use Drupal\user\EntityOwnerTrait;
     'add-form' => '/_workspace/{bb_workspace}/ticket/add',
     'edit-form' => '/_workspace/{bb_workspace}/ticket/{bb_ticket}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/ticket/{bb_ticket}/delete',
-    // views.view.bb_tickets overrides this route with a page display;
-    // without the View it falls back to BbTicketListBuilder.
-    'collection' => '/admin/bakers/tickets',
   ],
   admin_permission: 'administer bakers',
-  field_ui_base_route: 'entity.bb_ticket.collection',
   base_table: 'bb_ticket',
 )]
 final class BbTicket extends BbContentEntityBase implements BbTicketInterface, EntityOwnerInterface {
@@ -468,7 +461,7 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
       ->setDisplayConfigurable('view', TRUE);
     $fields['referenced_tickets'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Referenced tickets'))
-      ->setDescription(new TranslatableMarkup('Tickets carried by this deployment (the release batch). Set when the deployment is planned; flagged with the target environment once it is deployed.'))
+      ->setDescription(new TranslatableMarkup('Tickets carried by this deployment (the release batch). Set when the deployment is planned. The environments of the deployment say where they are deployed; the carried tickets are not stamped.'))
       ->setSetting('target_type', 'bb_ticket')
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->setDisplayConfigurable('form', TRUE)

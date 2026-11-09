@@ -27,6 +27,10 @@ services:
     class: Drupal\bb_core\Routing\BbWorkspaceRouteSubscriber
     tags:
       - { name: event_subscriber }
+  bb_core.front_end_route_subscriber:
+    class: Drupal\bb_core\Routing\FrontEndRouteSubscriber
+    tags:
+      - { name: event_subscriber }
   bb_core.entity_form_surface_subscriber:
     class: Drupal\bb_core\EventSubscriber\EntityFormSurfaceSubscriber
     tags:
@@ -115,7 +119,7 @@ services:
     arguments: ['bb_core']
   bb_core.failed_run_circuit_breaker:
     class: Drupal\bb_core\Claim\FailedRunCircuitBreaker
-    arguments: ['@entity_type.manager', '@datetime.time', '@config.factory']
+    arguments: ['@entity_type.manager', '@datetime.time']
   bb_core.ticket_stall_reason:
     class: Drupal\bb_core\Claim\TicketStallReason
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker', '@bb_core.conductor_owner_access']
@@ -123,7 +127,7 @@ services:
     alias: bb_core.ticket_stall_reason
   bb_core.ticket_claim:
     class: Drupal\bb_core\Claim\TicketClaimService
-    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@config.factory', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher', '@bb_core.conductor_owner_access']
+    arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher', '@bb_core.conductor_owner_access']
   bb_core.conductor_deactivation_reassigner:
     class: Drupal\bb_core\Conductor\ConductorDeactivationReassigner
     arguments: ['@entity_type.manager', '@logger.channel.bb_core', '@datetime.time', '@bb_core.conductor_owner_access']
@@ -182,6 +186,7 @@ services:
       - '@logger.channel.bb_core'
       - '@language_manager'
       - '@current_user'
+      - '@bb_core.date'
   # Applies an invitation's workspace role and team on joining.
   bb_core.invite_acceptance:
     class: Drupal\bb_core\Members\InviteAcceptance
@@ -392,7 +397,7 @@ services:
   # and bb_conductor. They are JSON:API surface read by bakers-cli.
   bb_core.ticket_run_deriver:
     class: Drupal\bb_core\Derive\TicketRunDeriver
-    arguments: ['@entity_type.manager', '@datetime.time', '@date.formatter']
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.date']
   Drupal\bb_core\Derive\TicketRunDeriver:
     alias: bb_core.ticket_run_deriver
   # Request-cached counts of referencing entities (a project's tickets, a
@@ -404,7 +409,7 @@ services:
     alias: bb_core.reference_counter
   bb_core.conductor_deriver:
     class: Drupal\bb_core\Derive\ConductorDeriver
-    arguments: ['@datetime.time', '@date.formatter']
+    arguments: ['@datetime.time', '@bb_core.date']
   Drupal\bb_core\Derive\ConductorDeriver:
     alias: bb_core.conductor_deriver
   bb_core.project_overview_tickets:
@@ -432,10 +437,11 @@ services:
   # Read-only formatting for the ticket-detail inspector.
   bb_core.ticket_inspector_rows:
     class: Drupal\bb_core\Ticket\TicketInspectorRows
+    arguments: ['@bb_core.date']
   Drupal\bb_core\Ticket\TicketInspectorRows:
     alias: bb_core.ticket_inspector_rows
 
-  # Product date display: `normal` absolute format and relative ago/hence.
+  # The one product path for displayed times and durations.
   bb_core.date:
     class: Drupal\bb_core\Time\BbDate
     arguments: ['@date.formatter', '@datetime.time']
@@ -471,6 +477,8 @@ services:
   # overrides `island:dialog` via SDC `replaces`, so no service is needed here.
 
   Drupal\bb_core\RunLog\RunLogStore:
+    autowire: true
+  Drupal\bb_core\RunLog\RunLogPolicy:
     autowire: true
 
   Drupal\bb_core\Workflow\ReviewInvariantChecker:

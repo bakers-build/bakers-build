@@ -82,19 +82,8 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
     const cfg = await loadConductorConfig(file);
     expect(cfg.executor.id).toBe('herdr');
     expect(cfg.workspace.id).toBe('herdr');
-    expect(typeof cfg.processHost?.spawn).toBe('function');
-  });
-
-  it('an explicit herdr executor slot still contributes a process host', async () => {
-    const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, states: ['working'],
-  remote: { plugin: '@bakers-build/addon-remote-drupal' },
-  executor: { plugin: '@bakers-build/addon-herdr' },
-  workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
-};
-`);
-    const cfg = await loadConductorConfig(file);
-    expect(typeof cfg.processHost?.spawn).toBe('function');
+    // The conductor starts detached; herdr hosts agent runs only.
+    expect('processHost' in cfg).toBe(false);
   });
 
   it('an explicit per-slot descriptor WINS over a discovered contributor (back-compat)', async () => {
@@ -164,10 +153,7 @@ export const hooks = (acc) => [...acc, {
 
   it('loads the hooks guide example, whose before_run adds the env key it documents', async () => {
     const guide = readFileSync(
-      new URL(
-        '../../../docs/configuration/provisioning/hooks.md',
-        import.meta.url,
-      ),
+      new URL('../../../docs/provision/hooks.md', import.meta.url),
       'utf8',
     );
     const section = guide.split('## Add a listener from an addon')[1] ?? '';
@@ -581,6 +567,6 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
     const z = emptyContributions();
     expect(z.commands).toEqual([]);
     expect(z.executors).toEqual([]);
-    expect(z.processHosts).toEqual([]);
+    expect('processHosts' in z).toBe(false);
   });
 });

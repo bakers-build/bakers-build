@@ -30,8 +30,9 @@ transitions. Beside it, read the matching **slots**; they supply the method insi
    | every other state | the recipe's `bb-state-<state>` section, run in the state file of that name: [plan](references/plan.md), [working](references/working.md), [review](references/review.md) |
 
    A state without a readable state file: stop and name it, reading no recipe.
-3. Resolve the recipe: `bb-recipe-<name>` from the ticket's `recipe` field; empty — always at
-   qualification — means the installed recipe declaring itself project default.
+3. Resolve the recipe: `bb-recipe-<name>` from the ticket's `recipe` field, empty at qualification
+   until [classify](references/classify.md) chooses; slots and the stop rule wait
+   for it.
 4. Apply *Stop rule*, then render [the intake](references/intake.md) once and start the state
    file's `## read`.
 
@@ -59,8 +60,8 @@ Substitute no method of your own.
   a hit needs a human decision.
 - Before writing a ticket, comment or relationship, read [ticket writes](references/ticket-writes.md).
 - [Evidence and links](references/evidence.md); [local preview links](references/preview-links.md).
-- **Provision**: before a confirmed check that needs a running environment, call `provision_up`
-  ([conductor tools](references/tools-conductor.md)) with the `bb-phase-provision` hint's profile,
-  and use its printed base URL; other checks start nothing. `test_as` logins follow the
+- **Provision**: before a confirmed check needing a running environment, start `provision_up` in a
+  subagent ([conductor tools](references/tools-conductor.md)) with the `bb-phase-provision` profile
+  and use its base URL; other checks start nothing. `test_as` logins follow the
   `bb-phase-outtake` hint; a missing persona stays **missing**, never substituted.
 - Skill prose cites no ticket identifiers.

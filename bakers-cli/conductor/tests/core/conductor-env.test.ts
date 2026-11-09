@@ -27,8 +27,9 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
-import { Conductor, resolveRunEnv } from '../../src/core/conductor.js';
+import { resolveRunEnv } from '../../src/core/conductor.js';
 import { loadTools } from '../../src/plugins/tools.js';
+import { TestConductor } from '../test-conductor.js';
 
 interface LogCall {
   level: 'debug' | 'info' | 'warn' | 'error';
@@ -237,7 +238,7 @@ describe('Conductor dispatch env injection', () => {
     });
     const executor = new RecordingExecutor();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -277,7 +278,7 @@ describe('Conductor dispatch env injection', () => {
     const executor = new RecordingExecutor();
     const workspace = new RecordingWorkspace();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -293,7 +294,7 @@ describe('Conductor dispatch env injection', () => {
     // Agent sink: user var present, reserved BB_ID is the real uuid (not 'evil').
     expect(agentEnv.APP_KEY).toBe('secretval');
     expect(agentEnv.BB_ID).toBe('t-1');
-    // Hook sink (BB-84 executor-owned): after_create + before_run see the
+    // Hook sink (conductor-owned): after_create + before_run see the
     // SAME resolved env — reserved keys already stripped, core vars won.
     const afterCreate = executor.hookCalls.find(
       (c) => c.name === 'after_create',
@@ -332,7 +333,7 @@ describe('Conductor dispatch env injection', () => {
     const executor = new RecordingExecutor();
     const workspace = new RecordingWorkspace();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -373,7 +374,7 @@ describe('Conductor dispatch env injection', () => {
     });
     const executor = new RecordingExecutor();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig({ tunnel: true }),
       remote,
       executor,
@@ -410,7 +411,7 @@ describe('Conductor dispatch env injection', () => {
       });
       const executor = new RecordingExecutor();
       const { log } = spyLogger();
-      const conductor = new Conductor(
+      const conductor = new TestConductor(
         makeConfig(),
         remote,
         executor,
@@ -445,7 +446,7 @@ describe('Conductor dispatch env injection', () => {
     const executor = new RecordingExecutor();
     const workspace = new RecordingWorkspace();
     const { log } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -488,7 +489,7 @@ describe('Conductor workspace env', () => {
       }),
     };
     const executor = new RecordingExecutor();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -508,12 +509,17 @@ describe('Conductor workspace env', () => {
 });
 
 describe('Conductor agent tools', () => {
-  async function dispatchOnce(withTools: boolean, agentWithholds = false) {
+  async function dispatchOnce(
+    withTools: boolean,
+    agentWithholds = false,
+    siteTools?: FakeBbRemote['siteTools'],
+  ) {
     const remote = new FakeBbRemote({
       tickets: {
         't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
       },
     });
+    if (siteTools) remote.siteTools = siteTools;
     remote.queue.push({
       runUuid: 'r-1',
       runId: 1,
@@ -544,7 +550,7 @@ describe('Conductor agent tools', () => {
         },
       },
     ]);
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(withTools ? { tools } : {}),
       remote,
       executor,
@@ -575,6 +581,39 @@ describe('Conductor agent tools', () => {
     const result = await client.callTool({ name: 'where', arguments: {} });
     expect(result.content).toEqual([{ type: 'text', text: '/fake/BB-1' }]);
     await client.close();
+    await conductor.stopTools();
+  });
+
+  it('serves the site tools to a run even when no addon declares tools, and hands it no site credential', async () => {
+    const siteTools = {
+      list: async () => [
+        { name: 'tool_api__bakers_user_read', inputSchema: { type: 'object' } },
+      ],
+      call: async () => ({ content: [] }),
+      close: async () => {},
+    };
+    const { conductor, env, launched } = await dispatchOnce(
+      false,
+      false,
+      siteTools,
+    );
+    const url = (launched[0] as { url: string }).url;
+    expect(env.BB_CONDUCTOR_URL).toBe(url);
+    const client = new Client({ name: 'test', version: '1.0.0' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(url), {
+        requestInit: {
+          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+        },
+      }),
+    );
+    const { tools } = await client.listTools();
+    expect(tools.map((t) => t.name)).toEqual(['bakers_user_read']);
+    await client.close();
+    // The run's only credential is its run token.
+    expect(
+      Object.keys(env).filter((k) => /TOKEN|SECRET|AUTH|PASSWORD/i.test(k)),
+    ).toEqual(['BB_CONDUCTOR_TOKEN']);
     await conductor.stopTools();
   });
 

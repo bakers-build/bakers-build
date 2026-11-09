@@ -65,7 +65,7 @@
   "rubric": [
     {
       "id": "loads-label-skill",
-      "criterion": "Loads bb-label-probe because the ticket carries the label probe: the frame loads bb-label-<label> for every label, not only pingpong."
+      "criterion": "Loads bb-label-probe because the ticket carries the label probe: the frame loads bb-label-<label> for every label, not only auto."
     },
     {
       "id": "general-slot",

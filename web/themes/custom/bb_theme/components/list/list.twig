@@ -51,7 +51,7 @@
     one to tint. #}
 {% set accent_map = {
   'running': 'bg-state-running',
-  'attention': 'bg-state-attention',
+  'attention': 'bg-state-attention-mark',
   'wait': 'bg-state-unassigned',
   'idle': 'bg-transparent'
 } %}
@@ -63,16 +63,16 @@
     anywhere, since clipping would also clip an inline picker's panel. #}
 {% set plain = layout == 'plain' %}
 {% set item_base = plain
-  ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-2', 'gap-y-1', 'py-1']
+  ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-inline', 'gap-y-inline-xs', 'py-inline-xs']
   : (cards
-  ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-3', 'gap-y-1', 'min-h-row', 'pl-3', 'pr-2', roomy ? 'py-3' : 'py-2', 'bg-surface-2', 'border', 'border-border-2', 'rounded-xs', 'transition-colors', 'duration-fast', 'hover:bg-surface-3']
-  : ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-3', 'pl-3', 'pr-2', 'py-2', 'border-b', 'border-border-2', 'last:border-b-0', 'transition-colors', 'duration-fast', 'hover:bg-surface']) %}
+  ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-stack', 'gap-y-inline-xs', 'min-h-row', 'pl-stack', 'pr-inline', roomy ? 'py-stack' : 'py-inline', 'bg-surface-2', 'border', 'border-border-2', 'rounded-xs', 'transition-colors', 'duration-fast', 'hover:bg-surface-3']
+  : ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-stack', 'pl-stack', 'pr-inline', 'py-inline', 'border-b', 'border-border-2', 'last:border-b-0', 'transition-colors', 'duration-fast', 'hover:bg-surface']) %}
 {% if items is not empty %}
-  <ul{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'list-none', 'p-0', 'm-0', cards ? (roomy ? 'gap-3' : 'gap-2') : 'gap-0']) }} role="list">
+  <ul{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'list-none', 'p-0', 'm-0', cards ? (roomy ? 'gap-stack' : 'gap-inline') : 'gap-0']) }} role="list">
     {% for item in items %}
       {% set item_classes = item_base %}
       {% if item.accent == 'wait' %}
-        {% set item_classes = item_classes|merge(cards ? ['bg-state-unassigned-tint', 'border-state-unassigned/30'] : ['bg-state-unassigned-tint']) %}
+        {% set item_classes = item_classes|merge(['bg-state-unassigned-tint']) %}
       {% endif %}
       {#- THE WHOLE PATTERNED ROW IS A CLICK TARGET FOR ITS IDENTITY LINK. A click on
           the row's own surface forwards to the first link in the headline, so htmx
@@ -91,7 +91,7 @@
       <li data-list-item class="{{ item_classes|join(' ') }}"{% if item.url %} data-item-url="{{ item.url }}"{% endif %}{% if row_link %} x-data @click="$event.target.closest('a, button, input, select, textarea, label, summary, [role=button]') || String(window.getSelection()) || $el.querySelector('[data-list-region=headline] a')?.click()"{% endif %}>
         <span class="{{ (rail_classes|merge([accent_map[item.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>
         {%- if pattern %}
-          {#- THE PATTERNED ROW (BB-592): a headline line (one type step up, `text-heading`) and a meta line in a
+          {#- THE PATTERNED ROW (BB-592): a headline line (one type step up, `text-item-title`) and a meta line in a
               flexible left block, one compact right block that never exceeds the row. Each region walks its
               own key list in order and skips absent cells, so an optional fact
               leaves no gap. The left block's basis is what makes the right block
@@ -128,19 +128,19 @@
               and only the right block flows beneath. A headline alone centres on the
               avatar; once a meta or description line follows, both align at the top. -#}
           {% if avatar is not empty %}
-            <div class="flex min-w-0 flex-1 basis-80 {{ left|length > 1 ? 'items-start' : 'items-center' }} gap-3">
-            <div data-list-region="avatar" class="flex shrink-0 items-center gap-1">
+            <div class="flex min-w-0 flex-1 basis-80 {{ left|length > 1 ? 'items-start' : 'items-center' }} gap-stack">
+            <div data-list-region="avatar" class="flex shrink-0 items-center gap-inline-xs">
               {% for key in avatar %}
                 <span class="flex shrink-0" data-cell="{{ key }}">{{ cells.cell(item.cells[key]) }}</span>
               {% endfor %}
             </div>
           {% endif %}
           {% if left is not empty %}
-            <div class="flex min-w-0 flex-1 {{ avatar is empty ? 'basis-80' : 'basis-0' }} flex-col gap-1">
+            <div class="flex min-w-0 flex-1 {{ avatar is empty ? 'basis-80' : 'basis-0' }} flex-col gap-inline-xs">
               {% for line in left %}
-                <div data-list-region="{{ line.region }}" class="{{ (line.region == 'headline' ? ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-2', 'gap-y-1', 'text-heading', 'text-text'] : (line.region == 'description' ? ['flex', 'min-w-0', 'flex-wrap', 'gap-x-3', 'gap-y-1', 'text-body', 'text-text-light'] : ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-3', 'gap-y-1', 'text-caption', 'text-text-faint']))|join(' ') }}">
+                <div data-list-region="{{ line.region }}" class="{{ (line.region == 'headline' ? ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-inline', 'gap-y-inline-xs', 'text-item-title', 'text-text'] : (line.region == 'description' ? ['flex', 'min-w-0', 'flex-wrap', 'gap-x-stack', 'gap-y-inline-xs', 'text-body', 'text-text-light'] : ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-stack', 'gap-y-inline-xs', 'text-meta', 'text-text-faint']))|join(' ') }}">
                   {% for key in line.keys %}
-                    <span class="min-w-0 wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-1 text-caption text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
+                    <span class="min-w-0 wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-inline-xs text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
                   {% endfor %}
                 </div>
               {% endfor %}
@@ -151,18 +151,18 @@
               `right_meta` line beneath them, right-aligned and faint like a caption.
               It still flows beneath the left block on a narrow viewport. -#}
           {% if right is not empty or right_meta is not empty %}
-            <div class="ml-auto flex min-w-0 max-w-full flex-col items-end gap-1">
+            <div class="ml-auto flex min-w-0 max-w-full flex-col items-end gap-inline-xs">
               {% if right is not empty %}
-                <div data-list-region="right" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
+                <div data-list-region="right" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline">
                   {% for key in right %}
-                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-1 text-caption text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
+                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-inline-xs text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
                   {% endfor %}
                 </div>
               {% endif %}
               {% if right_meta is not empty %}
-                <div data-list-region="right_meta" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1 text-caption text-text-faint">
+                <div data-list-region="right_meta" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-stack gap-y-inline-xs text-meta text-text-faint">
                   {% for key in right_meta %}
-                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-1 text-caption text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
+                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-inline-xs text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
                   {% endfor %}
                 </div>
               {% endif %}

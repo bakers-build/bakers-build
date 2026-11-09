@@ -198,14 +198,14 @@ final class TicketListRouteTest extends KernelTestBase {
       $route = $this->container->get('router.route_provider')->getRouteByName($name);
       self::assertFalse(
         (bool) $route->getOption('_admin_route'),
-        $name . ': an admin route would resolve to Gin and lose the shell.',
+        $name . ': an admin route would leave the product front end.',
       );
     }
     $route = $this->container->get('router.route_provider')
       ->getRouteByName(self::ROUTE);
 
-    // _admin_route would resolve the page to Gin and lose the shell, whose
-    // page layout is conditioned on request_path /_workspace/*.
+    // The page must stay a front-end route: the shell's page layout is
+    // conditioned on request_path /_workspace/*.
     //
     // FALSE rather than absent: `BbWorkspaceRouteSubscriber::makeFrontEnd()`
     // stamps every workspace-prefixed route with `_admin_route: FALSE` on
@@ -213,7 +213,7 @@ final class TicketListRouteTest extends KernelTestBase {
     // cannot read 'no opinion' and stamp TRUE back on".
     self::assertFalse(
       (bool) $route->getOption('_admin_route'),
-      'An admin route would resolve to Gin and lose the shell.',
+      'An admin route would leave the product front end.',
     );
   }
 

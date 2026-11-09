@@ -69,8 +69,8 @@ scenes:
       THE SCREEN THE SITE ROOT RENDERS WHEN THERE IS NO SINGLE ANSWER (BB-415
       D5). `/` is
 
-      `system.site.front` and points at `/home`; `BbHomeController` resolves
-      the operator's read scope
+      `system.site.front` and points at `/home`; `BbHomeController` resolves the
+      operator's read scope
 
       and, when it holds MORE THAN ONE workspace, renders this instead of
       picking one.
@@ -132,8 +132,8 @@ scenes:
       an invalid SDC prop silently, and the Storybook build validates no props
       at all — so this payload
 
-      is asserted against the RENDERED output, in `BbHomeControllerTest` and
-      in the browser scenario,
+      is asserted against the RENDERED output, in `BbHomeControllerTest` and in
+      the browser scenario,
 
       never against an exit code.
 
@@ -180,6 +180,12 @@ scenes:
                 gap: md
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Your workspaces
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:list
                     props:
                       layout: cards
@@ -260,8 +266,8 @@ scenes:
       THE ADMINISTRATOR NEVER SEES THIS, and the reason is worth stating because
       it looks like a gap.
 
-      `bb_core_install()` creates the default workspace with no
-      `og_membership` at all, so the
+      `bb_core_install()` creates the default workspace with no `og_membership`
+      at all, so the
 
       administrator's membership set is empty on every install path — but
       `BbHomeController` resolves
@@ -283,6 +289,12 @@ scenes:
                 gap: md
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Your workspaces
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:empty-state
                     props:
                       message: >-
@@ -313,6 +325,12 @@ scenes:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Create a workspace
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:zone
                     props:
                       inset: none
@@ -333,7 +351,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: Your workspace's address is derived from this.
-                            size: caption
+                            size: meta
                             tone: light
                   - component: bb_theme:button
                     props:
@@ -384,7 +402,7 @@ scenes:
                     props:
                       text: Check your mail
                       as: h1
-                      size: h3
+                      size: section-title
                       align: center
                   - component: bb_theme:text
                     props:
@@ -444,12 +462,12 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Welcome, Ada
-                      as: h2
-                      size: display
+                      as: h1
+                      size: page-title
                   - component: bb_theme:text
                     props:
                       text: You are signed in. You can return to your terminal.
-                      size: gate-body
+                      size: prose
                       tone: default
                   - component: bb_theme:button
                     props:
@@ -476,12 +494,12 @@ scenes:
                   - component: bb_theme:text
                     props:
                       text: Sign-in denied
-                      as: h2
-                      size: display
+                      as: h1
+                      size: page-title
                   - component: bb_theme:text
                     props:
                       text: You can return to your terminal.
-                      size: gate-body
+                      size: prose
                       tone: default
   - name: device sign-in done long name
     group: Gate
@@ -506,12 +524,12 @@ scenes:
                       text: >-
                         Welcome, Maximiliane Theodora
                         Wolfeschlegelsteinhausenbergerdorff-Ottenheimer
-                      as: h2
-                      size: display
+                      as: h1
+                      size: page-title
                   - component: bb_theme:text
                     props:
                       text: You are signed in. You can return to your terminal.
-                      size: gate-body
+                      size: prose
                       tone: default
                   - component: bb_theme:button
                     props:
@@ -530,6 +548,12 @@ scenes:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Sign in a device
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:zone
                     props:
                       inset: none
@@ -550,7 +574,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: Enter the code shown in your terminal.
-                            size: caption
+                            size: meta
                             tone: light
                   - component: bb_theme:zone
                     props:
@@ -585,6 +609,12 @@ scenes:
             - component: bb_theme:gate_form
               slots:
                 content:
+                  - component: bb_theme:text
+                    props:
+                      text: Sign in a device
+                      as: h1
+                      size: section-title
+                      align: center
                   - component: bb_theme:zone
                     props:
                       inset: none
@@ -598,7 +628,7 @@ scenes:
                           props:
                             text: ABCD-EFGH
                             as: span
-                            size: h3
+                            size: section-title
                             tracking: widest
                   - component: bb_theme:text
                     props:
@@ -640,7 +670,7 @@ scenes:
                     props:
                       text: 404 — Page not found
                       as: h1
-                      size: display
+                      size: page-title
                       align: center
                 main:
                   - component: bb_theme:empty-state
@@ -667,7 +697,7 @@ scenes:
                     props:
                       text: 403 — Access denied
                       as: h1
-                      size: display
+                      size: page-title
                       align: center
                 main:
                   - component: bb_theme:empty-state
@@ -678,3 +708,57 @@ scenes:
                     props:
                       label: Go to home
                       href: /home
+  - name: login
+    group: Gate
+    section: gate
+    docs: >-
+      `/user/login` in the butter-band look: the `gate` chrome (logo at the top
+      of the band, the slogan as plain text at its foot) beside the login form,
+      whose "Log in" heading is the page's only h1. The form's two doors are
+      full-width pills with a dashed "or" divider between them. Two columns from
+      `lg`, the band on top when stacked.
+    items:
+      - scene: design-system:gate
+        with:
+          content:
+            - component: bb_theme:gate_form
+              slots:
+                content:
+                  - component: bb_theme:text
+                    props:
+                      text: Log in
+                      as: h1
+                      size: section-title
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      gap: none
+                    slots:
+                      content:
+                        - component: bb_theme:form_label
+                          props:
+                            for: edit-mail
+                          slots:
+                            title: E-mail address
+                        - component: bb_theme:form_input
+                          props:
+                            name: mail
+                            id: edit-mail
+                            value: ''
+                            required: true
+                        - component: bb_theme:text
+                          props:
+                            text: We will send you a login link. No password needed.
+                            size: meta
+                            tone: light
+                  - component: bb_theme:button
+                    props:
+                      variant: primary
+                      type: submit
+                      label: Send login link
+                alternative:
+                  - component: bb_theme:button
+                    props:
+                      variant: neutral
+                      label: Continue with Google
+                      href: /user/login/google

@@ -6,34 +6,33 @@ namespace Drupal\bb_core\Form;
 
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 
 /**
- * Shared content entity form that groups fields into the Gin sidebar.
+ * Shared content entity form that groups fields into a meta container.
  *
- * Subclasses declare sidebar groups via metaGroups(). The base builds the
- * standard `advanced` sidebar container and one element per group:
+ * Subclasses declare meta groups via metaGroups(). The base builds the
+ * standard `advanced` container and one element per group:
  *   - the reserved key `meta` renders as the always-open header block;
  *   - any other key renders as a collapsible `details` accordion panel.
  * Each listed field is assigned to its group only when present on the form, so
  * fields hidden by other code are left untouched. Fields not listed in any
- * group stay in the centre column.
- *
- * Action buttons may opt into Gin's visible sticky toolbar (next to Save) by
- * setting `'#gin_action_item' => TRUE`; Gin reads this property directly. No
- * button is promoted by default.
+ * group stay in the main column.
  */
 class BbContentEntityFormBase extends ContentEntityForm {
 
   /**
-   * Declares the sidebar groups for this entity form.
+   * Declares the meta groups for this entity form.
    *
    * @return array<string, array{label: \Drupal\Core\StringTranslation\TranslatableMarkup, open?: bool, weight?: int, fields: string[]}>
    *   Groups keyed by machine name. Key `meta` is the always-open header
    *   block; any other key is a collapsible accordion panel. A group key must
-   *   not equal a field machine name on the same entity. Empty → no sidebar.
+   *   not equal a field machine name on the same entity. Empty → no meta
+   *   container.
    */
   protected static function metaGroups(): array {
     return [];
@@ -63,7 +62,7 @@ class BbContentEntityFormBase extends ContentEntityForm {
       return $form;
     }
 
-    // Only create the sidebar container when the parent has not already set
+    // Only create the meta container when the parent has not already set
     // one up (e.g. as vertical tabs for a revisionable entity).
     if (!isset($form['advanced'])) {
       $form['advanced'] = [
@@ -82,8 +81,8 @@ class BbContentEntityFormBase extends ContentEntityForm {
         '#weight' => $group['weight'] ?? 0,
       ];
       // The reserved `meta` key is the always-open header block at the top of
-      // the sidebar; Gin styles it via the entity-meta__header class (the same
-      // class core's NodeForm uses). Other keys are collapsible panels.
+      // the container, marked like core's NodeForm. Other keys are collapsible
+      // panels.
       if ($key === 'meta') {
         $element['#attributes']['class'][] = 'entity-meta__header';
       }
@@ -110,9 +109,23 @@ class BbContentEntityFormBase extends ContentEntityForm {
     }
     $result = parent::save($form, $form_state);
     $this->addSavedMessage();
-    $form_state->setRedirectUrl($this->getEntity()->toUrl('collection'));
+    $form_state->setRedirectUrl($this->landing());
 
     return $result;
+  }
+
+  /**
+   * The product page a save lands on: the entity's own, a comment's ticket.
+   */
+  private function landing(): Url {
+    $entity = $this->getEntity();
+    $ticket = $entity instanceof FieldableEntityInterface && $entity->getEntityTypeId() === 'bb_comment'
+      ? $entity->get('ticket_id')->entity
+      : NULL;
+    if ($ticket instanceof EntityInterface) {
+      return $ticket->toUrl();
+    }
+    return $entity->hasLinkTemplate('canonical') ? $entity->toUrl() : Url::fromRoute('<front>');
   }
 
   /**
@@ -159,15 +172,18 @@ class BbContentEntityFormBase extends ContentEntityForm {
     if ($entity->isNew() || !$entity->hasLinkTemplate('delete-form') || !$entity->access('delete')) {
       return [];
     }
-    // A plain page link: the confirm form is its own page, never a swap.
+    // The confirm dialog over this page; the href is the page without JS.
+    $url = $entity->toUrl('delete-form');
     return [
       'delete' => [
         '#type' => 'component',
         '#component' => 'bb_theme:button',
+        '#attached' => ['library' => ['core/drupal.htmx']],
         '#props' => [
           'label' => (string) new TranslatableMarkup('Delete'),
-          'href' => $entity->toUrl('delete-form')->toString(),
+          'href' => $url->toString(),
           'variant' => 'ghost',
+          'attributes' => new Attribute(OverlayTrigger::attributes($url)),
         ],
         '#weight' => 100,
       ],

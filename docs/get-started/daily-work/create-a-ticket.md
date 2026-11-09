@@ -2,23 +2,35 @@
 
 **Tell your agent what you need. It writes a clear ticket with checkable acceptance criteria.**
 
-**You need:** a [connected project](/get-started/connect-a-project).
+**You need:** your own account and permission to create tickets in the team's project. Web and connected-chat creation need no local checkout.
 
-1. **Ask your agent.**
+::: tip No project access yet?
+Ask your team for access. If you are setting up a repository to run agents yourself, start with [Provision](/provision/) and return here when it is connected.
+:::
 
-   ```text
-   Use bb-create-ticket for: <what you need and why>.
-   ```
+## 1. Create with your agent or on the web
 
-   Your agent checks whether a similar ticket exists, asks for anything missing and creates the ticket. If it finds a match, you decide: create anyway, extend that ticket or drop the idea.
+Use either method. A chat client needs a [connector](/get-started/connector); a local coding agent needs the [bakers skills](/skills-and-workflows/skills).
 
-   To work the idea out together first, add *and specify it with me*. Your agent then asks you only about the content, until you agree on what changes, how you will know it is done and what stays out. On your yes it writes the plan and moves the ticket to `working`. It then sets the conductor, or asks you which one runs it.
+**Ask your agent:**
 
-2. **Or use the web.** In the project's ticket list choose **New ticket**, fill in the dialog and choose **Create ticket**. The ticket is saved as typed.
+```text
+Use bb-create-ticket for: <what you need and why>.
+```
 
-3. **Decide who works it.** Name the conductor that should run it: yours, or a teammate's. The first step starts within seconds. Without a conductor, the ticket waits for a person.
+Your agent checks for a similar ticket and asks for missing details. If it finds a match, choose whether to create, extend or drop the idea.
+
+With a coding agent, add *and specify it with me* to agree the change, criteria and scope first. An approved feature or chore can enter `working` with its plan and conductor. Bugs enter `plan` for diagnosis. The supplied [chat instructions](/configuration/connector/project-instructions) stop at `plan`.
+
+**Or use the web:** in the project's ticket list choose **New ticket**, fill in the dialog and choose **Create ticket**. The ticket is saved as typed.
+
+## 2. Choose where the work runs
+
+The **Conductor** field identifies the setup that runs the ticket. Use your team's entry, or [start your own prepared setup](/get-started/first-ticket#start-the-conductor). A ticket with a workflow needs an assigned conductor. One without a workflow may be picked up for qualification.
 
 ## Give your agent
+
+Include enough context to make the result checkable.
 
 | Your agent needs | Example |
 |---|---|
@@ -28,12 +40,13 @@
 | What is out of scope | "No change to the login form itself." |
 | Anything you already decided | "Keep the existing redirect module; fix, don't replace." |
 
-Everything else, such as workflow, labels, identifier and branch, your agent and bakers.build fill in. Ask your agent to read the ticket back to you before you confirm.
+Read the ticket before approving its specification. For the standard `bb_work` workflow:
 
-| Created by | Ticket starts in |
+| Created by | State after intake |
 |---|---|
 | Your agent with `bb-create-ticket` | `plan`, already qualified |
-| Your agent with `bb-create-ticket`, specified with you | `working`, with its conductor |
+| Coding agent, approved feature/chore specification | `working`, with its conductor |
+| Coding agent, bug specified with you | `plan`, for diagnosis |
 | **New ticket** on the web | `qualification` |
 
 **Done when:** the ticket has an identifier and your criteria. Next: [Follow a ticket](/get-started/daily-work/follow-a-ticket).

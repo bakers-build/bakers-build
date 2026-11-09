@@ -126,6 +126,12 @@ export interface ConfigReport {
   result: 'ok' | 'blocked' | 'incomplete' | 'failed';
   /** Present when machine scope is inspected. `null` means unresolved, never an implicit opt-in. */
   machine_policy?: { tunnel: boolean | null; source: string };
+  /**
+   * The file whose explicit `executor` slot the conductor uses: the machine
+   * file overrides the project's. Absent when neither sets one (the executor
+   * is then discovered from `addons[]`).
+   */
+  executor_source?: string;
   verification: {
     offline: { status: 'passed' | 'blocked' | 'incomplete' };
     online: {

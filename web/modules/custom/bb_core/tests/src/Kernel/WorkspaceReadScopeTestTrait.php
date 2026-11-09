@@ -80,9 +80,11 @@ trait WorkspaceReadScopeTestTrait {
    *
    * Bounded by the signed 32-bit range: the `timestamp` field type stores an
    * `int` column, so a year-2100 value is rejected outright by MySQL with
-   * "Out of range value for column 'claim_expires_at'".
+   * "Out of range value for column 'claim_expires_at'". Kept inside 2037 in
+   * every timezone, because the `datetime_timestamp` widget on an edit form
+   * only accepts the years 1902-2037.
    */
-  private const FAR_FUTURE_TIMESTAMP = 2147483000;
+  private const FAR_FUTURE_TIMESTAMP = 2145830400;
 
   /**
    * The built world, keyed by side ('a', 'b') then by entity type id.

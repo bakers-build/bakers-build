@@ -863,18 +863,6 @@ describe('100-visit cleanup', () => {
     },
     relationships: { labels: { data: [] } },
   };
-  const statsDoc = {
-    data: {
-      type: 'bakers-statistics',
-      id: PROJECT,
-      attributes: {
-        generated: '2026-08-02T10:05:57+00:00',
-        windows: { day: 86400, week: 604800, month: 2592000 },
-        tickets: { total: { day: 0, week: 0, month: 0 }, by_user: [] },
-        runs: { total: { day: 0, week: 0, month: 0 }, by_user: [] },
-      },
-    },
-  };
 
   const listServices = (
     ticketGet: () => Promise<unknown>,
@@ -882,7 +870,6 @@ describe('100-visit cleanup', () => {
     const client: DropshClient = {
       collection: emptyCollection,
       get: async (path: string) => {
-        if (path === 'bakers/statistics') return statsDoc;
         if (path === 'bb_ticket/bb_ticket')
           return { data: [listRow], included: [] };
         if (path.startsWith(`bb_ticket/bb_ticket/${TICKET}`))

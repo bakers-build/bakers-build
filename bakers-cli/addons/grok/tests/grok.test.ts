@@ -66,6 +66,36 @@ const SANDBOXED_ARGV = [
   'MCPTool(*)',
 ];
 
+describe('GrokAgent security: shared project and machine layers', () => {
+  it('applies a shared allow_write and reports the keys it cannot express', () => {
+    const plugin = grokAgent({
+      shared_security: {
+        machine: {
+          sandbox: {
+            allow_write: ['/data/cache'],
+            deny_read: ['~/.aws'],
+            trusted_commands: ['make'],
+          },
+        },
+      },
+    } as never);
+    expect(plugin.security?.sandbox.allow_write.entries).toEqual([
+      { value: '/data/cache', source: 'machine' },
+    ]);
+    expect(plugin.security?.not_applied).toEqual([
+      { key: 'deny_read', source: 'machine', reason: 'unsupported' },
+      { key: 'trusted_commands', source: 'machine', reason: 'unsupported' },
+    ]);
+  });
+
+  it('starts a shared allow_write through the managed profile', () => {
+    const agent = new GrokAgent({
+      shared_security: { project: { sandbox: { allow_write: ['/data/x'] } } },
+    } as never);
+    expect(agent.launchCommand('work')).toContain('managed-launch');
+  });
+});
+
 describe('GrokAgent security', () => {
   it('starts writable-path runs through a managed native profile', () => {
     const agent = new GrokAgent({ sandbox: { allow_write: ['/data/cache'] } });
@@ -152,7 +182,7 @@ describe('GrokAgent security', () => {
       [{ network: ['example.com'] }, /sandbox\.network/],
       [{ mcp_servers: { docs: {} } }, /sandbox\.mcp_servers/],
       [
-        { trusted_commands: ['ddev'] },
+        { trusted_commands: ['make'] },
         /no command exception.*trusted_commands/,
       ],
       [{ deny_read: ['~/.ssh'] }, /sandbox\.deny_read is unsupported/],

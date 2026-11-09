@@ -159,15 +159,7 @@ describe('Planning route', () => {
     expect(router.context().params?.ticketId).toBe('T1');
   });
 
-  it('keeps Agents and contributed tabs discoverable', () => {
-    expect(routes.get('project.ticket-agents')?.metadata.tab).toMatchObject({
-      id: 'ticket-agents',
-      label: 'Ticket-Agents',
-      scope: 'project',
-    });
-    expect(routes.tabs('project').map((tab) => tab.id)).toContain(
-      'ticket-agents',
-    );
+  it('keeps contributed tabs discoverable', () => {
     const registry = buildRoutes([ExampleScreen]);
     expect(registry.tabs('ticket').map((tab) => tab.id)).toEqual([
       'overview',

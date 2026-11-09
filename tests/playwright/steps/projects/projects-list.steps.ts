@@ -215,8 +215,9 @@ Then('the {string} listing is present', async ({ page }, name: string) => {
   await waitForListing(page, listingOf(name));
 });
 
-Then('the Groups listing shows {string}', async ({ page }, text: string) => {
-  await expect(listingWrapper(page, 'Groups').getByText(text)).toBeVisible();
+Then('the line under the Groups title says {string}', async ({ page }, text: string) => {
+  await expect(page.locator('#page-header-description')).toContainText(text);
+  await expect(listingWrapper(page, 'Groups').getByText(text)).toHaveCount(0);
 });
 
 Then('the search toolbar is above its list', async ({ page }) => {
@@ -314,7 +315,8 @@ Then(
 
 // THE CONTENT FRAME. A full page load hands the content island pre-rendered
 // markup, a rail click hands it a render array, and both must frame the
-// listing the same way: the View's own zone, no form canvas around it. Create
+// listing the same way: the View's own canvas and zone, no form canvas around
+// them, which would add a second of each. Create
 // (`HX-Location`) lands through a full page load, which is why a frame lost
 // there shows up after it.
 let lastTableLeft: number | null = null;
@@ -330,8 +332,8 @@ Then('the listing sits in a single content frame', async ({ page }) => {
   const island = page.locator(CONTENT_ISLAND);
   await expect(
     island.locator('[data-component-id="bb_theme:canvas"]'),
-    'The listing is wrapped in a form canvas',
-  ).toHaveCount(0);
+    'The listing is not framed by exactly one canvas',
+  ).toHaveCount(1);
   await expect(
         island.locator('[data-component-id="bb_theme:zone"]'),
     'The listing is not framed by exactly one zone',

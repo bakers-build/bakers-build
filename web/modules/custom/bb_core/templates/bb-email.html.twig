@@ -5,8 +5,8 @@
  *
  * A standalone email document rather than a theme component: mail clients
  * need inline styles and presentation tables, and the active web theme is
- * not loaded in an inbox. The header is the gate's brand lockup (braid and
- * block wordmark) as an embedded PNG on an opaque surface, so it survives
+ * not loaded in an inbox. The header is bb_theme's logo with wordmark as an
+ * embedded PNG on an opaque surface, so it survives
  * dark-mode recoloring; its alt text keeps the name when images are blocked.
  * Colors are resolved snapshots of bb_theme's semantic roles (app,
  * surface, title, text, text-light, link, border).
@@ -18,7 +18,7 @@
  *   link rendered as a button; the text part keeps its URL. All message
  *   data is escaped here.
  * - langcode: The message language.
- * - logo_src: The lockup image source, normally an embedded `cid:` URL.
+ * - logo_src: The logo image source, normally an embedded `cid:` URL.
  */
 #}
 {% set font = 'Arial, Helvetica, sans-serif' %}
@@ -40,7 +40,7 @@
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FAFAF7" style="width:100%;max-width:600px;background-color:#FAFAF7;border:1px solid #D6D3CA;border-radius:8px;">
         <tr>
           <td align="center" bgcolor="#FAFAF7" style="padding:40px 24px 0 24px;background-color:#FAFAF7;border-radius:8px 8px 0 0;font-family:{{ font }};">
-            <img src="{{ logo_src }}" width="149" height="56" alt="bakers.build" style="display:block;width:149px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;font-family:{{ font }};font-size:24px;line-height:56px;font-weight:bold;letter-spacing:4px;color:#14171A;">
+            <img src="{{ logo_src }}" width="214" height="40" alt="bakers.build" style="display:block;width:214px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;font-family:{{ font }};font-size:24px;line-height:40px;font-weight:bold;color:#14171A;">
           </td>
         </tr>
         <tr>

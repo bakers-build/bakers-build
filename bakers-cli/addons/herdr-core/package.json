@@ -1,0 +1,33 @@
+{
+  "name": "@bakers-build/addon-herdr-core",
+  "version": "0.0.1",
+  "description": "bakers.build herdr-core integration: executor running each agent in a herdr-core (hc) terminal.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0"
+  },
+  "dependencies": {
+    "@bakers-build/addon-herdr": "workspace:^"
+  }
+}

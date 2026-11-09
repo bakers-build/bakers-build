@@ -96,7 +96,13 @@ function securityFlags(
     // Bash command is either sandboxed or a trusted command, and the Read
     // deny covers the Read tool, which the OS sandbox does not confine.
     permissions: {
-      allow: ['Bash', 'Edit(./**)', 'AskUserQuestion'],
+      // The conductor's server binds every call to this run's worktree and project.
+      allow: [
+        'Bash',
+        'Edit(./**)',
+        'AskUserQuestion',
+        `mcp__${CONDUCTOR_TOOLS_SERVER}`,
+      ],
       // Claude reads a single leading `/` as relative to the settings file;
       // the plain rule covers a file entry, `/**` a directory's contents.
       deny: sandbox.deny_read.flatMap((path) => {
@@ -156,11 +162,13 @@ export class ClaudeAgent implements BbAgent {
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
-  private readonly security: ResolvedSecurity;
+  readonly security: ResolvedSecurity;
   /** The sandbox's own MCP servers, strict; undefined outside the sandbox. */
   private readonly sandboxMcpServers: Record<string, unknown> | undefined;
   private readonly securityMode: SecurityMode;
   readonly runEnvPolicy: RunEnvPolicy;
+  /** Set by the last launch: the conductor's server replaced the sandbox's own `bakers`. */
+  private replacedBakersServer = false;
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
 
@@ -186,6 +194,14 @@ export class ClaudeAgent implements BbAgent {
     this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
+  }
+
+  get launchWarnings(): readonly string[] {
+    return this.replacedBakersServer
+      ? [
+          `sandbox.mcp_servers.${CONDUCTOR_TOOLS_SERVER} is replaced by the conductor's ${CONDUCTOR_TOOLS_SERVER} server`,
+        ]
+      : [];
   }
 
   /** A measured run stays without the conductor's tools, MCP or bridge. */
@@ -258,6 +274,9 @@ export class ClaudeAgent implements BbAgent {
             },
           }
         : {};
+    this.replacedBakersServer =
+      CONDUCTOR_TOOLS_SERVER in conductor &&
+      Object.hasOwn(this.sandboxMcpServers ?? {}, CONDUCTOR_TOOLS_SERVER);
     const config = (servers: Record<string, unknown>) =>
       JSON.stringify({ mcpServers: servers });
     if (this.sandboxMcpServers !== undefined)
@@ -449,6 +468,7 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'claude',
     requiredModules: [],
+    security: agent.security.report,
     async createAgent() {
       return agent;
     },

@@ -1,71 +1,44 @@
 # Addons
 
-Choose supported extensions by purpose.
+Addons extend bakers.build with agents, tools, previews and other integrations. Choose whether to use an existing package or build a capability that is missing.
 
-## Agents
+## Choose your task
 
-| Addon | What it adds |
+Most projects can start with the shipped addons. Developing an addon is a separate path.
+
+<DocTiles :tiles="[
+  { title: 'Use an existing addon', text: 'Find an integration for your project, then follow its setup and verification steps.', link: '/addons/catalog', icon: 'plug', meta: 'Browse available addons →' },
+  { title: 'Build an addon', text: 'You need a capability that existing packages do not provide. Start with a small working example.', link: '/addons/build/first-addon', icon: 'code', meta: 'Build your first addon →' }
+]" />
+
+## Enable an existing addon
+
+Follow the package's own instructions; naming an addon does not install its underlying tools.
+
+1. Find the package in the [catalog](/addons/catalog).
+2. [Configure it](/addons/configure) in its supported machine or project scope.
+3. Run the checks on its page before using it in a ticket.
+
+<span id="choose-an-extension-point"></span>
+
+::: details Extension points for addon authors
+| You need to extend | Use |
 |---|---|
-| [Claude](/addons/claude) | Claude Code harness |
-| [Codex](/addons/codex) | Codex CLI harness |
-| [Grok](/addons/grok) | Grok Build harness |
-| [Kimi](/addons/kimi) | Kimi Code harness |
-| [OpenCode](/addons/opencode) | OpenCode harness |
-| [Pi](/addons/pi) | pi harness |
+| Worktree/run preparation or cleanup | A project lifecycle listener |
+| Agent access to an operation | [Agent tools](/addons/build/tools) |
+| Ticket actions with replies | [Inbox messages](/addons/build/actions) |
+| Agent harness, executor, workspace or remote | A conductor plugin |
+| CLI commands or connection behavior | Command or connection contributions |
+| Terminal ticket UI | [A tab](/addons/bakers-ui/tabs) |
 
-## Clients and workspaces
+[Contracts](/addons/build/contracts) defines the surfaces, scopes and interfaces.
+:::
 
-| Addon | What it adds |
-|---|---|
-| [herdr](/addons/herdr) | Runs agents in herdr sessions and worktrees |
-| [Orca](/addons/orca) | Local worktree UI and agent terminals |
-| [Git workspace](/addons/workspace-git) | Plain Git worktree per ticket |
-| [bakers.build server remote](/addons/remote-drupal) | Connects a conductor to the server |
+## Tools and access
 
-## Sharing previews and ports
+Addons run code on the worker. Understand their operations and review access boundaries before enabling them.
 
-| Addon | What it adds |
-|---|---|
-| [Ports](/addons/ports) | Share a running service publicly |
-| [Named Cloudflare tunnel](/addons/ports-cloudflare) | Fixed names in your Cloudflare zone |
-| [Cloudflare Quick tunnel](/addons/ports-cloudflare-quick) | Random URL, no account |
-| [frp tunnel](/addons/ports-frp) | Fixed names through your frp server |
-
-
-## Provisioning support
-
-[DDEV discovery](/addons/ddev) and [Compose discovery](/addons/docker-compose) find ports; they do not provision environments. Use [project hooks](/configuration/provisioning) for DDEV, Compose or native Node. Native Node is not an addon.
-
-## Terminal UI
-
-| Addon | What it adds |
-|---|---|
-| [Terminal UI](/addons/bakers-ui) | The `bakers ui` renderer |
-| [Artifacts](/addons/bakers-ui-artifacts) | Ticket tab with local run evidence |
-
-## Time
-
-| Addon | What it adds |
-|---|---|
-| [Time evidence](/addons/track) | Daily evidence for time entries |
-
-## Commands
-
-| Addon | What it adds |
-|---|---|
-| [Agent catalog](/addons/agents) | Lists agent aliases and routes |
-| [Project info](/addons/info) | Current project and workspace as JSON |
-| [Deployment tickets](/addons/deployment) | Tickets in a release range |
-
-## Connection support
-
-| Addon | What it adds |
-|---|---|
-| [Essentials](/addons/essentials) | Markdown, schema and name resolution |
-| [Name references](/addons/name-refs) | Labels and environments by name |
-| [Ambient workspace](/addons/workspace) | Fills in your workspace |
-| [HTTP Basic sign-in](/addons/auth-basic) | Fixed Basic auth token |
-
-[Fake conductor fixture](/addons/fake) is test-only.
-
-[Configure addons](/addons/configure) · [Build your own](/addons/build/contracts)
+<DocQuickLinks aria-label="Addon tools and access" :items="[
+  { label: 'Tools and integrations', text: 'See how addon operations reach agents and external clients.', link: '/provision/tools' },
+  { label: 'Run agents securely', text: 'Review the access granted to addons and their tools.', link: '/provision/security/' }
+]" />

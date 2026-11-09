@@ -80,6 +80,15 @@ function invocation(argv: string[]) {
   return { forwarded, explicit, connection, format, yes, profile, positional };
 }
 
+const SITE_TOOL = 'tool_api__';
+
+/** A site tool's name for the route: plain on the run's conductor, `tool_api__` on the site. */
+export function toolNameFor(name: string, inRun: boolean): string {
+  if (inRun)
+    return name.startsWith(SITE_TOOL) ? name.slice(SITE_TOOL.length) : name;
+  return name.startsWith('bakers_') ? `${SITE_TOOL}${name}` : name;
+}
+
 /** Build the actual plugin registrations after the final connection is ready. */
 export async function dispatchBbDropsh(
   host: BbCommandHost,
@@ -87,6 +96,19 @@ export async function dispatchBbDropsh(
   options: DropshDispatchOptions = {},
 ): Promise<void> {
   const args = invocation(argv);
+  // Inside a conductor run, tools go to the run's own `bakers` server with the
+  // run token, never to the site with the operator's credentials.
+  const runUrl = process.env.BB_CONDUCTOR_URL;
+  const runToken = process.env.BB_CONDUCTOR_TOKEN;
+  const run =
+    args.positional[0] === 'tool' && runUrl && runToken
+      ? { url: runUrl, token: runToken }
+      : undefined;
+  const name = args.positional[0] === 'tool' ? args.positional[1] : undefined;
+  if (name !== undefined) {
+    const at = args.forwarded.indexOf(name);
+    args.forwarded[at] = toolNameFor(name, run !== undefined);
+  }
   const opts = {
     ...options,
     ...(args.explicit ? { explicit: args.explicit } : {}),
@@ -113,19 +135,44 @@ export async function dispatchBbDropsh(
     else stdout(`${JSON.stringify(rows, null, 2)}\n`);
     return;
   }
-  const connection = help
-    ? undefined
-    : auth
-      ? await loadBbConnectionBootstrap(host, opts)
-      : await loadReadyBbConnection(host, opts);
+  const connection =
+    help || run
+      ? undefined
+      : auth
+        ? await loadBbConnectionBootstrap(host, opts)
+        : await loadReadyBbConnection(host, opts);
   const plugins = connection?.plugins ?? [];
   const program = buildDropshProgram({
     // `dropsh tool` (MCP, default endpoint /mcp) rides the same connection and auth profile.
-    plugins: plugins.some((plugin) => plugin.id === 'tool')
-      ? plugins
-      : [...plugins, toolPlugin()],
+    plugins: run
+      ? [toolPlugin({ endpoint: '/' })]
+      : plugins.some((plugin) => plugin.id === 'tool')
+        ? plugins
+        : [...plugins, toolPlugin()],
     ...(options.stdout ? { stdout: options.stdout } : {}),
     ...(options.stderr ? { stderr: options.stderr } : {}),
+    ...(run
+      ? {
+          // The tool command reads only `auth` and `baseUrl` from its context.
+          contextFactory: async () =>
+            ({
+              baseUrl: run.url,
+              auth: {
+                apply: async (request: {
+                  headers?: Record<string, string>;
+                }) => ({
+                  ...request,
+                  headers: {
+                    ...request.headers,
+                    authorization: `Bearer ${run.token}`,
+                  },
+                }),
+              },
+            }) as unknown as Awaited<
+              ReturnType<typeof createBbConnectionContext>
+            >,
+        }
+      : {}),
     ...(connection
       ? {
           contextFactory: () =>

@@ -42,6 +42,7 @@ if (project.name !== name || realpathSync(project.approot) !== realpathSync(".")
 ddev start
 ddev composer install
 ddev exec 'cd web/themes/custom/bb_theme && pnpm install --frozen-lockfile && pnpm build'
+ddev exec 'cd tests/playwright && npm ci --no-audit --no-fund'
 case "$provider" in
   existing-config)
     mkdir -p .ddev/.bakers-test

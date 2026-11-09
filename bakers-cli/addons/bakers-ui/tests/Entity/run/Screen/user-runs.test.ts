@@ -1,24 +1,14 @@
 import { expect, it, vi } from 'vitest';
 import { formatActionLadder } from '../../../../src/Component/footer-actions/index.js';
 import { WorkspaceMemberRunsScreen } from '../../../../src/Entity/run/Screen/user-runs.js';
-import { TeamMemberRunsScreen } from '../../../../src/Entity/team/Screen/team-member-work.js';
 import type { ScreenContext } from '../../../../src/Screen/screen.js';
 import type { DropshClient } from '../../../../src/types.js';
 import { nodeById, renderTree } from '../../../render-tree.js';
-import { routes } from '../../../tab-bars.js';
 
-it('declares independent workspace-member and team-member run routes', () => {
+it('declares the workspace-member run route', () => {
   expect(WorkspaceMemberRunsScreen.route).toMatchObject({
     id: 'workspace.member.runs',
     tab: { id: 'runs', scope: 'workspace-member' },
-  });
-  expect(TeamMemberRunsScreen.route).toMatchObject({
-    id: 'team.member.runs',
-    tab: { id: 'runs', scope: 'team-member' },
-  });
-  expect(routes.tabLocation(TeamMemberRunsScreen.route.id, {})).toMatchObject({
-    level: 'team-member',
-    tab: 'runs',
   });
 });
 

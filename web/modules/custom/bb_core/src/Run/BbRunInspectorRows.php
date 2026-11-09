@@ -137,7 +137,7 @@ final class BbRunInspectorRows extends InspectorRows {
       if ($raw === NULL || $raw === '') {
         continue;
       }
-      $items[] = $this->row($label, $this->mono($this->date->normal((int) $raw)));
+      $items[] = $this->row($label, $this->date->cell((int) $raw));
     }
     return $items === [] ? [] : $this->zone('Timing', $this->list($items));
   }
@@ -173,8 +173,8 @@ final class BbRunInspectorRows extends InspectorRows {
       if ($values[$field] === NULL) {
         continue;
       }
-      $display = in_array($field, ['duration_s', 'active_s'], TRUE) ? $values[$field] . 's' : (string) $values[$field];
-      $items[] = $this->row($label, $this->mono($display));
+      $display = in_array($field, ['duration_s', 'active_s'], TRUE) ? $this->date->duration($values[$field]) : (string) $values[$field];
+      $items[] = $this->row($label, $this->text($display));
     }
     return $this->zone('Footprint', $this->list($items));
   }

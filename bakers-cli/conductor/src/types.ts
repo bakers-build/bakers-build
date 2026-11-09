@@ -17,9 +17,12 @@ import type {
   ResolvedAgent,
   WorkspacePlugin,
 } from './plugins/plugins.js';
-import type { HerdrHost } from './plugins/process-host.js';
 import type { Ticket } from './plugins/remote.js';
-import type { ProvisionHook, ToolRegistry } from './plugins/tools.js';
+import type {
+  ProvisionHook,
+  ProvisionRuns,
+  ToolRegistry,
+} from './plugins/tools.js';
 
 /** Normalized single conductor. */
 export interface ConductorSettings {
@@ -60,15 +63,13 @@ export interface ConductorSettings {
   poll_interval_ms: number;
   lease_seconds: number;
   /**
-   * Whether to upload the agent transcript at finalize. Default true.
+   * Local opt-out of transcript upload at finalize. Default true.
    *
-   * Turning it off keeps this conductor's runs out of the log store entirely —
-   * for a machine whose transcripts are large, uninteresting, or subject to a
-   * local policy. Metrics are unaffected: the footprint is derived from the
-   * agent's own session files in this process, never from the uploaded log.
-   *
-   * Client-side by design. It lets an operator opt out; it is not a policy the
-   * server enforces, so a conductor running an older build still uploads.
+   * The server's per-run policy (`FinalizableRun.runLogStorageAllowed`)
+   * decides first; `false` here keeps this conductor's transcripts local even
+   * where the server allows storage, and `true` cannot override a denial.
+   * Metrics are unaffected: the footprint is derived from the agent's own
+   * session files in this process, never from the uploaded log.
    */
   capture_logs?: boolean;
   /** Project shell commands, one per slot; run after the addon listeners. */
@@ -118,12 +119,8 @@ export interface ConductorFileConfig extends ConductorSettings {
   inboxAddons?: LoadedInbox[];
   /** Agent tools from the conductor `addons[]` `tools` exports. Absent means none. */
   tools?: ToolRegistry;
-  /**
-   * Conductor process host from the `processHosts` accumulator (last wins).
-   * Absent when no addon contributed one — `bakers oven start` then fails
-   * with the existing no-herdr hint.
-   */
-  processHost?: HerdrHost;
+  /** The `provision_up` runs, stopped at ticket end and conductor stop. Absent without the hook. */
+  provisioning?: Pick<ProvisionRuns, 'stop'>;
   /** dropsh-layer plugins (auth etc.); separate from the bakers.build slots. */
   plugins?: DropSHPlugin[];
 }

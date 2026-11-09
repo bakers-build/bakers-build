@@ -43,26 +43,6 @@ bb_core.workspace_join:
     _user_is_logged_in: 'TRUE'
     _custom_access: '\Drupal\bb_core\Form\BbWorkspaceJoinForm::access'
 
-bb_core.admin:
-  path: '/admin/bakers'
-  defaults:
-    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
-    _title: 'bakers.build'
-  requirements:
-    _permission: 'administer bakers'
-  options:
-    _admin_route: TRUE
-
-bb_core.settings:
-  path: '/admin/bakers/settings'
-  defaults:
-    _form: '\Drupal\bb_core\Form\BbSettingsForm'
-    _title: 'bakers.build settings'
-  requirements:
-    _permission: 'administer bakers'
-  options:
-    _admin_route: TRUE
-
 bb_core.claim_next:
   path: '/%jsonapi%/bakers/claim-next'
   methods: ['POST']
@@ -241,7 +221,7 @@ entity.bb_ticket_template.add_for_workspace:
 # `?_wrapper_format=island_dialog` it answers as a dialog fragment; without,
 # as an ordinary page.
 #
-# Not `entity.bb_ticket.add_form`, which is the full admin form: `create` is
+# Not `entity.bb_ticket.add_form`, which is the full form: `create` is
 # a second form operation and the form mode owning the dialog's widgets.
 # Gated by `_entity_create_access`; the form checks the permission again.
 # The public address is `/{workspace}/ticket/create`.
@@ -258,7 +238,7 @@ entity.bb_ticket.create_form:
 
 # The create-project dialog, built like the create-ticket dialog above: a
 # route whose form is main content. `create` is a second form operation and
-# mode beside the admin `entity.bb_project.add_form`;
+# mode beside the full `entity.bb_project.add_form`;
 # `_entity_create_access` gates it and the form checks again.
 # The public address is `/{workspace}/project/create`.
 entity.bb_project.create_form:
