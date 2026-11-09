@@ -89,6 +89,13 @@ export interface ConductorSettings {
   site: { base_url: string; jsonapi_prefix: string };
   /** Absolute path of the loaded config. */
   config_path: string;
+  /**
+   * `oven start --foreground` restarts itself when a file in `watch_paths`
+   * changes. Default true.
+   */
+  restart_on_change?: boolean;
+  /** The files and addon build dirs this config was loaded from. */
+  watch_paths?: { files: string[]; dirs: string[] };
 }
 
 /** Whole conductor.config.js (dropsh-superset): site + named plugin slots. */

@@ -32,7 +32,7 @@ BB_LOG_LEVEL=debug bakers oven once
 
 | Subcommand | Options | What it does |
 |---|---|---|
-| `start` | `--foreground`, `--no-update-check`, `--force`, `--adopt <uuid>`, `--new` | Start the conductor loop |
+| `start` | `--foreground`, `--no-update-check`, `--force`, `--adopt <uuid>`, `--new`, `--dry-run` | Start the conductor loop |
 | `once` | none | Run one conductor cycle, then exit |
 | `check` | none | Check that every enabled agent can start its sandbox |
 | `status` | none | One line for this checkout's conductor |
@@ -45,7 +45,8 @@ BB_LOG_LEVEL=debug bakers oven once
 
 By default `start` launches the loop as a detached background process: it has its own session and no terminal, so closing the starting shell does not end it, and its output goes to `.bakers/log.txt` in the checkout. `start` then waits until the control plane shows a fresh heartbeat from the new process. It ends with exactly one of three outcomes: **started** (naming the pid and host), **already running** (the live pid and the age of its heartbeat) or **failed** (the reason and the log file, with a non-zero exit status). The detached process does not survive a logout that ends all user processes or a reboot; for that, run `bakers oven start --foreground` under a service manager such as systemd or Docker.
 
-- `--foreground` runs the loop in this process instead. It refuses to start while a verified live conductor already serves the checkout. Every foreground start, and every CI or non-TTY start, prints an update notice only and never prompts.
+- `--foreground` runs the loop in this process instead. It refuses to start while a verified live conductor already serves the checkout. Every foreground start, and every CI or non-TTY start, prints an update notice only and never prompts. It restarts itself in place when a loaded config or addon build changes; see [Restart on change](#restart-on-change).
+- `--dry-run` loads what a start would load (the config with its project, the executor, the workspace and the agents) and exits before registering: 0 when everything loads, 1 with the error on stderr. The self-restart uses it to check a changed config.
 - `--no-update-check` skips the lookup, cache, prompt and notice; the version banner still prints.
 - When the control plane does not know this conductor's id yet but this machine, project and variant already have a conductor under another id (for example from before the upgrade), `start` asks once in a terminal whether to take it over, or which one when there are several; it keeps its tickets and runs. Without a terminal it stops and names `--adopt <uuid>` (take it over) and `--new` (register another conductor); the two cannot be combined.
 - `--force` turns "already running" into a restart: a verified `SIGTERM`, a grace period, then `SIGKILL`, then the normal start. It fails rather than starting a second conductor when the running one cannot be verified or stopped.
@@ -53,6 +54,15 @@ By default `start` launches the loop as a detached background process: it has it
 An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. The procedure, decline window, rerun and failure behaviour are in [Update bakers.build](/configuration/machine/updates).
 
 A start on a machine where an enabled agent cannot start its sandbox prints `warning: sandbox unavailable: <agent>: <cause> — <fix>` and still starts; the loop then claims nothing until the cause is fixed (see `check`).
+
+#### Restart on change
+
+A running conductor (the detached default and `--foreground`) restarts itself when a file it loaded changes: the project `conductor.config.js` (or its variant), its sibling `.local.js` override, `.bakers/connection.config.local.js`, `~/.bakers/machine.config.js`, and the build directory of each configured addon (so `pnpm build` of an addon counts). After 2 seconds without a further change, it checks the new config with `bakers oven start --dry-run` in a child process:
+
+- the check passes: the log shows `config check passed; restarting conductor`. The loop stops claiming, drains its queue and stops its tools as on `SIGTERM`, writes no `offline`, and replaces itself in place: same pid and log. Running agent sessions keep going and are adopted again.
+- the check fails: the log shows `config check failed; keeping the running conductor` with the error, and the next change checks again.
+
+Set `restart_on_change: false` in `conductor.config.js` (or in `conductor.config.local.js` for one machine) to switch it off. It needs Node 22.15 or later (`process.execve`); on an older Node the conductor logs one warning and does not watch. Rebuilding addons from source is not part of it.
 
 ### check
 
