@@ -1,5 +1,5 @@
 """Core of the bot-channels plugin: request-channel names, the set of open bot channels,
-the channel prompt, and the state-file read. No Hermes import.
+the channel prompts, the plugin's Slack texts, and the state-file read. No Hermes import.
 
 shortcut: two copies of the slug rule (here and poller/channels.mjs), held together by
 slug-examples.json; merge them if a third writer appears.
@@ -7,11 +7,14 @@ slug-examples.json; merge them if a third writer appears.
 
 import json
 import logging
+import pathlib
 import re
 import unicodedata
 
 logger = logging.getLogger("pm_bot.bot_channels")
 
+MESSAGES = json.loads((pathlib.Path(__file__).parent / "messages.json").read_text(encoding="utf-8"))
+DEFAULT_LANGUAGE = "de"
 MAX_NAME = 40
 _MENTION = re.compile(r"<[@#!][^>]*>")
 
@@ -51,12 +54,17 @@ def open_channels(bot_channels, poller_state):
     return {c for c in known if not (records.get(c) or {}).get("archived")}
 
 
-def channel_prompt(channel_id, workspace_url, ticket):
+def language_prompt(code=DEFAULT_LANGUAGE):
+    """The trusted line's language part; the main channel's whole line."""
+    return f"Answer in the language with ISO 639-1 code `{code}`."
+
+
+def channel_prompt(channel_id, workspace_url, ticket, code=DEFAULT_LANGUAGE):
     """The trusted line Hermes puts before each turn in this channel: what the model cannot see."""
     link = f"{workspace_url.rstrip('/')}/archives/{channel_id}"
     return (
         f"This is the request channel {channel_id}. Its conversation link is {link}. "
-        f"Its ticket: {ticket or 'none yet'}."
+        f"Its ticket: {ticket or 'none yet'}. {language_prompt(code)}"
     )
 
 
@@ -73,3 +81,8 @@ def read_json(path, strict=False):
             raise
         logger.error("bot-channels: cannot read %s: %s", path, exc)
         return {}
+
+
+def text(code, key, **values):
+    """The plugin's Slack text ``key`` in language ``code``, German when it has none."""
+    return MESSAGES.get(code, MESSAGES[DEFAULT_LANGUAGE])[key].format(**values)

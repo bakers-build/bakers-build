@@ -7,7 +7,10 @@
   channels this plugin opened plus the poller's reopen channels, minus the archived ones; in an
   open channel without a mention.
 - Channel prompt: each open channel gets a trusted line with its ID, conversation link and
-  ticket, which the model cannot see otherwise.
+  ticket, which the model cannot see otherwise, and the bot's language; the main channel gets the
+  language alone.
+- Language: read once at start from the service account's background (language.py), German
+  until then and on any failure; it also picks the plugin's own texts (messages.json).
 
 This plugin writes $HERMES_HOME/bot-channels.json; the poller writes poller-state.json. Each
 reads the other's file and writes only its own.
@@ -20,7 +23,8 @@ import os
 import re
 from datetime import datetime, timezone
 
-from .channels import channel_prompt, open_channels, read_json, request_channel_name
+from . import language
+from .channels import DEFAULT_LANGUAGE, channel_prompt, language_prompt, open_channels, read_json, request_channel_name, text
 
 logger = logging.getLogger("pm_bot.bot_channels")
 
@@ -52,6 +56,9 @@ def factory(app, adapter):
         logger.error("bot-channels: SLACK_ALLOWED_CHANNELS is empty; the plugin stays off")
         return
 
+    lang = {"code": DEFAULT_LANGUAGE}
+    language.start(lang)
+
     def current():
         poller = read_json(POLLER_FILE)
         return poller, open_channels(read_json(BOT_FILE), poller)
@@ -66,8 +73,9 @@ def factory(app, adapter):
         poller, channels = current()
         records = poller.get("channels") or {}
         prompts = adapter.config.extra.setdefault("channel_prompts", {})
+        prompts[home] = language_prompt(lang["code"])
         for channel in channels:
-            prompts[channel] = channel_prompt(channel, workspace, (records.get(channel) or {}).get("ticket"))
+            prompts[channel] = channel_prompt(channel, workspace, (records.get(channel) or {}).get("ticket"), lang["code"])
 
     def is_request(event):
         """A new mention of the bot at the top of its channel, from a served user."""
@@ -112,11 +120,11 @@ def factory(app, adapter):
         try:
             channel = await open_request_channel(client, event)
             await client.conversations_invite(channel=channel, users=user)
-            await client.chat_postMessage(channel=home, text=f"<@{user}> I opened <#{channel}> for this request. Let's continue there.")
+            await client.chat_postMessage(channel=home, text=text(lang["code"], "opened", user=user, channel=channel))
         except Exception as exc:
             logger.error("bot-channels: request channel for %s: %s", event.get("ts"), exc)
             try:
-                await client.chat_postMessage(channel=home, text=f"<@{user}> I could not open a channel for this request. Please try again in a moment.")
+                await client.chat_postMessage(channel=home, text=text(lang["code"], "not_opened", user=user))
             except Exception as post_exc:
                 logger.error("bot-channels: telling %s: %s", user, post_exc)
             return
@@ -127,7 +135,7 @@ def factory(app, adapter):
         except Exception as exc:
             logger.error("bot-channels: handing on %s: %s", event.get("ts"), exc)
             try:
-                await client.chat_postMessage(channel=channel, text=f"<@{user}>, please repeat your request here.")
+                await client.chat_postMessage(channel=channel, text=text(lang["code"], "repeat", user=user))
             except Exception as post_exc:
                 logger.error("bot-channels: asking %s to repeat in %s: %s", user, channel, post_exc)
 

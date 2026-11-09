@@ -21,7 +21,8 @@
 #     and the answer path
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
-#   - poller and client call no LLM
+#   - poller, client and plugin call no LLM, except the plugin's language.py, which only takes
+#     back a validated language code; the persona answers in the language the trusted line names
 #   - the Slack app neither reads nor opens direct messages, and may manage public channels
 #   - persona, skill and scripts name no customer; only .env.example may
 #   - the bot passes answers on without a "Correct?" confirmation round
@@ -49,6 +50,7 @@ for f in "$TEMPLATE" "$BOT/SOUL.template.md" "$BOT/.env.example" \
          "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
          "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/poller/channels.mjs" "$BOT/lib/bakers-client.mjs" \
          "$BOT/plugins/bot-channels/plugin.yaml" "$BOT/plugins/bot-channels/__init__.py" "$BOT/plugins/bot-channels/channels.py" \
+         "$BOT/plugins/bot-channels/language.py" "$BOT/plugins/bot-channels/messages.json" \
          "$BOT/slack-app-manifest.yaml"; do
   [ -f "$f" ] || fail "$f is missing"
 done
@@ -181,11 +183,19 @@ grep -qF '[ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=tr
   || fail "entrypoint.sh does not serve every user when SLACK_ALLOWED_USERS is empty"
 pass "every user in the allowed channels unless SLACK_ALLOWED_USERS is set"
 
-# The poller and the relay relay; they never call a model.
-if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/lib" "$BOT/plugins"; then
-  fail "poller, client or plugin call an LLM"
+# The poller and the plugin relay; they never call a model. One exception: the plugin's
+# language.py asks it which language the service account's background names, and takes back
+# nothing but a validated code.
+LANG="$BOT/plugins/bot-channels/language.py"
+if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/lib" "$BOT/plugins" ":!$LANG"; then
+  fail "poller, client or plugin call an LLM outside $LANG"
 fi
-pass "poller, client and plugin make no LLM call"
+grep -qF 'parse_code(ask(' "$LANG" || fail "$LANG does not validate the model's answer with parse_code"
+pass "poller, client and plugin make no LLM call but the validated language read"
+
+grep -qF "the language your channel's trusted line names; German when it names none" "$SOUL" \
+  || fail "$SOUL does not answer in the trusted line's language, German by default"
+pass "the persona answers in the trusted line's language, German by default"
 
 # Customer specifics live in the env file only; .env.example may show them as examples.
 if git grep --untracked -nIiE 'pnf|park ?(and|&|n) ?fly' -- "$BOT" ":!$BOT/.env.example"; then
