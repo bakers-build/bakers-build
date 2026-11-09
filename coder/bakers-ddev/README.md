@@ -112,6 +112,8 @@ As a bakers.build workspace administrator:
 
 1. **Workspace → Service accounts → Add**: an account for the bot, with a rank that may create and update tickets, as a member of the bot's project's team only. The bot reaches bakers.build only through its tools on `/mcp`, with this account's rights, so the membership is its reach.
 2. On that account's profile, set its **position** and **background**: `bb-create-ticket` reads its own user first and works the way they say. For example, position *Project manager*, background *Specifies every idea with its requester before work starts and answers technical questions itself.*
+
+   The **background** also sets the bot's language. The bot posts German unless the background names another language, in any wording, e.g. *Antworte auf Englisch.* or *Language: English*. The model's answers follow any language; the plugin's own texts exist in German and English and stay German for other languages. The poller's texts stay English for now. The bot reads the language when it starts: after a change, run `docker compose -p pm-bot restart` in the workspace; no rebuild is needed.
 3. On that account, create an API key. It goes into `pm_bot_bakers_api_key`; the bot sends it as the bearer on `/mcp`. The site must accept an API key as bearer and offer the project ticket list tool, `bakers_user_read` and `labels_remove` on `bakers_ticket_update`.
 4. Note the project's UUID for `pm_bot_project`. To have new tickets qualified at once, also note a conductor's UUID for `pm_bot_conductor`.
 

@@ -5,7 +5,7 @@ import pathlib
 import tempfile
 import unittest
 
-from channels import TEXTS, channel_prompt, open_channels, read_json, request_channel_name, slug
+from channels import channel_prompt, language_prompt, open_channels, read_json, request_channel_name, slug, text
 
 HERE = pathlib.Path(__file__).parent
 
@@ -58,6 +58,13 @@ class ChannelPrompt(unittest.TestCase):
     def test_without_a_ticket_says_none_yet(self):
         self.assertIn("none yet", channel_prompt("C1", "https://acme.slack.com", None))
 
+    def test_names_the_language_german_by_default(self):
+        self.assertTrue(channel_prompt("C1", "https://acme.slack.com", None).endswith("Answer in the language with ISO 639-1 code `de`."))
+        self.assertTrue(channel_prompt("C1", "https://acme.slack.com", "YF-12", "fr").endswith("Answer in the language with ISO 639-1 code `fr`."))
+
+    def test_the_main_channel_line_names_the_language_only(self):
+        self.assertEqual(language_prompt("en"), "Answer in the language with ISO 639-1 code `en`.")
+
 
 class ReadJson(unittest.TestCase):
     def test_a_missing_file_is_empty(self):
@@ -75,12 +82,22 @@ class ReadJson(unittest.TestCase):
 
 
 class Texts(unittest.TestCase):
-    def test_the_acknowledgement_mentions_the_requester(self):
-        self.assertTrue(TEXTS["acknowledge"].format(user="U1").startswith("<@U1> "))
+    def test_every_text_exists_in_german_and_english(self):
+        messages = json.loads((HERE / "messages.json").read_text(encoding="utf-8"))
+        self.assertEqual(set(messages), {"de", "en"})
+        self.assertEqual(set(messages["de"]), set(messages["en"]))
+        self.assertEqual(set(messages["de"]), {"acknowledge", "opened", "open_failed", "repeat"})
 
-    def test_every_fixed_text_is_in_the_table(self):
-        self.assertEqual(set(TEXTS), {"acknowledge", "opened", "open_failed", "repeat"})
-        self.assertIn("<#C9>", TEXTS["opened"].format(user="U1", channel="C9"))
+    def test_placeholders_are_filled_in_the_language(self):
+        self.assertEqual(text("en", "opened", user="U1", channel="C1"), "<@U1> I opened <#C1> for this request. Let's continue there.")
+        self.assertEqual(text("de", "repeat", user="U1"), "<@U1>, bitte schreib deine Anfrage hier noch einmal.")
+
+    def test_a_language_without_texts_falls_back_to_german(self):
+        self.assertEqual(text("fr", "repeat", user="U1"), text("de", "repeat", user="U1"))
+
+    def test_the_acknowledgement_mentions_the_requester_in_each_language(self):
+        for code in ("de", "en"):
+            self.assertTrue(text(code, "acknowledge", user="U1").startswith("<@U1> "))
 
 
 if __name__ == "__main__":
