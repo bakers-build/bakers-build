@@ -6,7 +6,7 @@ The approved scope is the ticket's spec `5fa2cbe2-0646-4a36-956b-2ff19af2a894`, 
 
 ## Decision
 
-Use each harness's **own plugin installation**, but into a **run-scoped agent home**, never into the user's home. Do not build our own loading mechanism, and do not run `npx skills` inside runs. It must work for every project that uses bakers.build, with whatever plugins it brings (hooks, namespaced skills, MCP), not only for our own skills.
+Use each harness's **own plugin installation**, but into a **dedicated agent home per lock state**, never into the user's home. Do not build our own loading mechanism, and do not run `npx skills` inside runs. It must work for every project that uses bakers.build, with whatever plugins it brings (hooks, namespaced skills, MCP), not only for our own skills.
 
 - The **project** declares each plugin **once**, as a pinned Git source (`repo` + `ref`), in a new top-level `plugins` list of its committed `conductor.config.js`. A committed lock file, `.bakers/plugins.lock.json`, records each entry's resolved commit and content hash. There is **no machine-level declaration**: every machine that runs the project's tickets runs the same plugins at the same version. This includes the `bakers` skills.
 - The conductor fetches each locked commit into a local cache and verifies it against the lock; a mismatch fails the run start.
@@ -18,7 +18,7 @@ Two playground proofs back this ([Proof](#proof)):
 1. Skills placed from one declaration reached Claude Code and Codex.
 2. A plugin with a hook and namespaced cross-references, installed nowhere in user space, loaded fully:
    - **Claude Code:** from project settings.
-   - **Codex:** from a run-scoped `CODEX_HOME`. Project settings alone failed.
+   - **Codex:** from a dedicated `CODEX_HOME`. Project settings alone failed.
 
 ## Survey per agent
 
@@ -84,7 +84,7 @@ Superpowers, ponytail and mattpocock-skills use no sync tool: each upstream ship
 
 ## Options
 
-| | 1. Place skill folders per agent | 2. Native plugin install into a run-scoped agent home | 3. Own conductor-served mechanism |
+| | 1. Place skill folders per agent | 2. Native plugin install into a dedicated agent home per lock state | 3. Own conductor-served mechanism |
 |---|---|---|---|
 | Shape | Conductor links each declared collection's `SKILL.md` folders where the run's agent looks (`.agents/skills`, `.claude/skills`, pi `--skill`) | Each agent addon installs the declared plugins with the harness's own command into an agent home for this lock state and starts the agent with it | Skill index in the run prompt and a "load skill" tool on the conductor's MCP server |
 | Coverage | skills in all six | full plugins where the harness has a plugin system (Claude, Codex, pi, OpenCode, Grok); skills only on Kimi | every agent with MCP; the skill is not a native skill |
@@ -121,36 +121,33 @@ export default {
 Conductor core:
 
 1. Before each run, fetch each locked commit into a content-addressed cache (`~/.cache/bakers/plugins/<sha>`, read-only) unless it is already there, and verify it against the lock. A missing entry, a moved `ref` or a hash mismatch fails the run start.
-2. Call the agent addon's `installPlugins(lockedPlugins, runHome) → { env, args }`. The conductor knows nothing else about the harness.
+2. Call the agent addon's `installPlugins(lockedPlugins, home) → { env, args }`. The conductor knows nothing else about the harness.
 3. Record the locked commits in the run record.
 4. Fail the run start when a skill named by `WORKFLOW.md` or the ticket's recipe is missing from the installed set.
 
 **Every security mode.** `installPlugins` runs in every mode (`sandbox`, `system`, `custom`, `yolo`): the mode decides what the agent may do, the plugin set decides what it has, and that set is the same for every run of the project. The install runs in the addon before launch, outside the agent's sandbox, so the mode does not affect it. It can be switched off per agent (`plugins: false` in the agent's options); the agent then starts with its normal home and whatever is installed there, and the run start says so.
 
-**Homes.** A harness writes runtime state into its home as well as plugins (the Codex run home held SQLite databases, sessions and logs), so two runs must never share a writable home. Two levels:
+**Home.** The addon never changes `$HOME`. It sets only the harness's own config directory (`CODEX_HOME`, `CLAUDE_CONFIG_DIR`, `PI_CODING_AGENT_DIR`, `GROK_HOME`); git, npm, the shell and everything else in the user's home stay as they are.
 
-| Level | Path | Content | Lifetime |
-|---|---|---|---|
-| Plugin state, per harness and lock hash | `~/.cache/bakers/agent-homes/<harness>/<lock-hash>/` | the plugins as the harness's own install command lays them out | built once, then read-only; shared by every run with the same lock |
-| Run home, per run | `<worktree>/.bakers/agent-home/<harness>/` (in `info/exclude`) | links to the plugin state, a link to the credential file in the user's real home, folder trust for this worktree, and the run's own sessions, databases and transcript | the run; removed with the worktree |
-
-- **Parallel versions:** different lock states (two projects, or two branches of one project) have different hashes, so their plugin states sit side by side and their runs never meet.
-- **Readable in the sandbox:** both levels stay outside `~/.bakers`, which the agent sandbox denies reading. Agents read skill files and run skill scripts from the sandbox (Codex read `SKILL.md` with a shell command in the proof).
-- **Transcripts:** the addon reads the run's transcript from the run home at a known path (`getRunLog`, `sessionExists`), instead of scanning `~/.claude/projects` or `~/.codex/sessions`.
-- **Not yet proven:** two concurrent runs at different lock states, and whether each harness accepts linked instead of copied plugin directories. Follow-ups 3 and 4 prove both per harness.
+- **One home per harness and lock hash:** `~/.cache/bakers/agent-homes/<harness>/<lock-hash>/`. The addon builds it once (installs the plugins, links the credential file, grants folder trust), and every run with that lock uses it. Runs share it the way all sessions share `~/.codex` or `~/.claude` today, which the harnesses are built for.
+- **Parallel versions:** a different lock state (another project, or another branch) has a different hash and therefore its own home.
+- **Readable in the sandbox:** the home stays outside `~/.bakers`, which the agent sandbox denies reading. Agents read skill files and run skill scripts from the sandbox (Codex read `SKILL.md` with a shell command in the proof).
+- **Trust:** granted once for the project's worktree root when the home is built. Codex applies trust to the repository root; whether Claude Code inherits trust into subfolders is unverified.
+- **Transcripts:** the addon reads them from the home it set (`getRunLog`, `sessionExists`) instead of `~/.claude/projects` or `~/.codex/sessions`.
+- **Not yet proven:** two concurrent runs at different lock states. Follow-ups 3 and 4 prove it per harness.
 
 Each agent addon implements `installPlugins`. Its pieces:
 
-- **Install:** the harness's own command into the plugin state, from the local cached checkout, with no network.
+- **Install:** the harness's own command into the home, from the local cached checkout, with no network.
 - **Login:** link only the harness's credential file from the user's real home. Nothing else from the user's home is visible.
 - **Trust:** pre-grant folder trust for the run's worktree. Both harnesses stopped at a trust prompt in the proof.
 
-**Standard tool or own code.** `installPlugins` is the abstraction, and a standard tool can sit behind it where one fits. dotagents is the closest. It installs into one home directory, which fits a run home if it honours a redirected home. It does not carry hooks to Codex, and its project mode writes project config, which Codex ignores for plugins (round 2). The harness's own install commands are proven for Codex and Claude Code. dotagents is evaluated as a backend in follow-up 6; nothing in the contract depends on it.
+**Standard tool or own code.** `installPlugins` is the abstraction, and a standard tool can sit behind it where one fits. dotagents is the closest. It installs into one home directory, which fits if it honours a redirected harness home. It does not carry hooks to Codex, and its project mode writes project config, which Codex ignores for plugins (round 2). The harness's own install commands are proven for Codex and Claude Code. dotagents is evaluated as a backend in follow-up 6; nothing in the contract depends on it.
 
 | Addon | Home | Install | Hooks | Proof |
 |---|---|---|---|---|
 | claude | `CLAUDE_CONFIG_DIR` | `extraKnownMarketplaces` + `enabledPlugins` in the run's `--settings` (or `--plugin-dir <checkout>`), with `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1` | native | **passed** from project settings (round 2); the `--settings`/`CLAUDE_CONFIG_DIR` form is still to prove |
-| codex | `CODEX_HOME` | `codex plugin marketplace add <checkout>`, `codex plugin add <plugin>@<marketplace>` | need trust: `--dangerously-bypass-hook-trust`, meant for "automation that already vets hook sources", which the lock does | **passed** with a run-scoped `CODEX_HOME` (round 2); project `.codex/config.toml` alone **failed** |
+| codex | `CODEX_HOME` | `codex plugin marketplace add <checkout>`, `codex plugin add <plugin>@<marketplace>` | need trust: `--dangerously-bypass-hook-trust`, meant for "automation that already vets hook sources", which the lock does | **passed** with a dedicated `CODEX_HOME` (round 2); project `.codex/config.toml` alone **failed** |
 | pi | `PI_CODING_AGENT_DIR` | `pi install <checkout>` for a pi package (extension + skills); `--skill <dir>` for plain skills | via the plugin's pi extension | not proven |
 | opencode | `OPENCODE_CONFIG_DIR` | `opencode plugin add` / config `plugins` | via the plugin's OpenCode JS plugin | not proven |
 | grok | `GROK_HOME` | `grok plugin install <checkout> --trust` (reads `.claude-plugin`) | native, trust at install | not proven |
@@ -162,7 +159,7 @@ A plugin that ships no manifest for a harness falls back to option 1 on it: its 
 
 1. Conductor `plugins` slot: project declaration, `plugins.lock.json` and the lock command, verified cache, run-record commit, `installPlugins` call.
 2. Required-skill check: fail the run start when a skill named by `WORKFLOW.md` or the recipe is missing.
-3. `installPlugins` in the claude and codex addons: plugin state and run home, credential link, trust pre-grant, transcript paths, `plugins: false`; Codex with `--dangerously-bypass-hook-trust`. Proof includes two concurrent runs at different lock states.
+3. `installPlugins` in the claude and codex addons: home per lock hash, credential link, trust pre-grant, transcript paths, `plugins: false`; Codex with `--dangerously-bypass-hook-trust`. Proof includes two concurrent runs at different lock states.
 4. `installPlugins` in the pi, opencode, grok and kimi addons, each with the same proof.
 5. Ship the `bakers` skills through the `plugins` list at a pinned version instead of the per-machine `bakers@bakers` plugin; add the manifests other harnesses need; replace its three `bakers:` references with bare names.
 6. Evaluate dotagents as the per-harness projector before writing installs by hand.
@@ -189,8 +186,8 @@ On this machine superpowers is also enabled globally for both agents: the Claude
 Findings from the proof:
 
 - **The declared copy wins over the global plugin.** Claude's `--setting-sources project,local` keeps user plugins out of the run, so only the placed copy was visible. Codex saw both copies and chose the repository one.
-- **Same-name duplicates appear in Codex.** When a collection is both a user-scope plugin and a placed directory, Codex lists both and may pick either. A run-scoped home removes the user-scope copy (round 2).
-- **Folder trust blocks a fresh worktree.** Both agents stopped at their folder-trust prompt (Claude "Is this a project you trust?"; Codex "Trust this folder?", saved for the repository root) until the owner confirmed it in the herdr pane. A run-scoped home must pre-grant trust for the worktree.
+- **Same-name duplicates appear in Codex.** When a collection is both a user-scope plugin and a placed directory, Codex lists both and may pick either. A dedicated home removes the user-scope copy (round 2).
+- **Folder trust blocks a fresh worktree.** Both agents stopped at their folder-trust prompt (Claude "Is this a project you trust?"; Codex "Trust this folder?", saved for the repository root) until the owner confirmed it in the herdr pane. A dedicated home must pre-grant trust for the worktree.
 - **Claude's Skill tool strips the frontmatter.** Claude opened the file separately to read `name`; the skill body itself loaded through the native tool.
 - **Round 1 does not test plugin logic.** Superpowers' SessionStart hook and its `superpowers:` references were not checked, and the bare folders cannot carry them. Round 2 does.
 
@@ -208,7 +205,7 @@ No harness on this machine had `bb-probe` installed. The proof prompt asked for 
 |---|---|---|---|
 | Claude Code 2.1.319 | conductor run; `after_create` wrote `.claude/settings.local.json` with `extraKnownMarketplaces` (`directory` source = the pinned checkout) and `enabledPlugins` | GLE2E-10, run `e9c6e133-4bcd-4dac-b7c6-7c20c0a32293` | **PASS**. Listed `bb-probe:probe-alpha`, `bb-probe:probe-beta`. Hook text in the context as "SessionStart hook additional context"; `.bb-probe-hook.log` shows `root=…/skill-sources/bb-probe`. Skill tool `bb-probe:probe-alpha`, then `bb-probe:probe-beta`, both from `…/skill-sources/bb-probe/skills/…`; canaries `ALPHA-4410`, `BETA-9925`. No install prompt. |
 | Codex CLI 0.167.0 | conductor run; `after_create` wrote a project `.codex/config.toml` with `[marketplaces.bb-probe-market]` (`source_type = "local"`) and `[plugins."bb-probe@bb-probe-market"] enabled = true` | GLE2E-11, run `f930ff8d-755c-4bc6-84bf-139e8365dab8` | **FAIL**. No `bb-probe` skills, no hook; the agent fell back to the user-scope superpowers 7.0.2. Codex loads a plugin only when it sits in `$CODEX_HOME/plugins/cache/<marketplace>/<plugin>/<version>` **and** is enabled in `$CODEX_HOME/config.toml`, which `codex plugin add` writes. Project config and `-c …enabled=true` leave it "not installed". |
-| Codex CLI 0.167.0 | `codex exec` in the GLE2E-11 worktree with a run-scoped `CODEX_HOME` (credential file linked from `~/.codex`; `codex plugin marketplace add <checkout>`; `codex plugin add bb-probe@bb-probe-market`; worktree trusted in that home) | direct harness run, 2026-11-09 | **PASS** for skills and names: listed `bb-probe:probe-alpha`, `bb-probe:probe-beta`; read both `SKILL.md` from `<CODEX_HOME>/plugins/cache/bb-probe-market/bb-probe/0.1.0/skills/…`; canaries `ALPHA-4410`, `BETA-9925`. The hook did not run: Codex requires persisted hook trust. |
+| Codex CLI 0.167.0 | `codex exec` in the GLE2E-11 worktree with a dedicated `CODEX_HOME` (credential file linked from `~/.codex`; `codex plugin marketplace add <checkout>`; `codex plugin add bb-probe@bb-probe-market`; worktree trusted in that home) | direct harness run, 2026-11-09 | **PASS** for skills and names: listed `bb-probe:probe-alpha`, `bb-probe:probe-beta`; read both `SKILL.md` from `<CODEX_HOME>/plugins/cache/bb-probe-market/bb-probe/0.1.0/skills/…`; canaries `ALPHA-4410`, `BETA-9925`. The hook did not run: Codex requires persisted hook trust. |
 | Codex CLI 0.167.0 | same, plus `--dangerously-bypass-hook-trust` | direct harness run, 2026-11-09 | **PASS** for the hook: "It appeared in a developer message in my session context: BB-PROBE-HOOK-7731: the bb-probe SessionStart hook ran."; `.bb-probe-hook.log` shows `root=<CODEX_HOME>/plugins/cache/bb-probe-market/bb-probe/0.1.0`. |
 
 The Codex harness runs ran outside the conductor, because the codex addon cannot yet set `CODEX_HOME`; that is follow-up 3. Round 2 shows the harnesses' own plugin systems carry hooks and namespaces when the plugin is installed into the run's home with their own command. Project-level settings work for Claude and not for Codex.
