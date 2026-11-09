@@ -146,3 +146,7 @@ export type {
   ConductorFileConfig,
   ConductorSettings,
 } from './types.js';
+export {
+  type MarketplaceDeclaration,
+  validateMarketplaces,
+} from './plugins/agent-home.js';
