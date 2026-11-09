@@ -86,7 +86,7 @@ class Texts(unittest.TestCase):
         messages = json.loads((HERE / "messages.json").read_text(encoding="utf-8"))
         self.assertEqual(set(messages), {"de", "en"})
         self.assertEqual(set(messages["de"]), set(messages["en"]))
-        self.assertEqual(set(messages["de"]), {"opened", "not_opened", "repeat"})
+        self.assertEqual(set(messages["de"]), {"acknowledge", "opened", "open_failed", "repeat"})
 
     def test_placeholders_are_filled_in_the_language(self):
         self.assertEqual(text("en", "opened", user="U1", channel="C1"), "<@U1> I opened <#C1> for this request. Let's continue there.")
@@ -94,6 +94,10 @@ class Texts(unittest.TestCase):
 
     def test_a_language_without_texts_falls_back_to_german(self):
         self.assertEqual(text("fr", "repeat", user="U1"), text("de", "repeat", user="U1"))
+
+    def test_the_acknowledgement_mentions_the_requester_in_each_language(self):
+        for code in ("de", "en"):
+            self.assertTrue(text(code, "acknowledge", user="U1").startswith("<@U1> "))
 
 
 if __name__ == "__main__":

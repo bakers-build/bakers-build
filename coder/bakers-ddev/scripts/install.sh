@@ -110,7 +110,8 @@ if [ -f "$HOME/.config/frp/frpc.json" ]; then
   fi
 fi
 
-# Services run detached; the container's /tmp lives for one start. Conductors are the user's to start.
+# Services run detached; the container's /tmp lives for one start. Conductors start below, when the
+# workspace's conductor_autostart parameter is on.
 # Own session (setsid): herdr treats a server outside one as not surviving SSH loss and refuses saved machines.
 setsid nohup herdr server >"${TMPDIR:-/tmp}/herdr-server.log" 2>&1 </dev/null &
 
@@ -125,3 +126,7 @@ fi
 # The PM bot, when the workspace has its parameters (README › PM bot). It never fails the start.
 # Through bash: the Docker upload makes it root-owned, so neither coder nor the bot can change it.
 bash /usr/local/bin/pm-bot || true
+
+# The workspace's conductors, when conductor_autostart is on (README › Conductor autostart). The
+# startup script does not block the workspace, so this runs in line and its lines reach this log.
+bash /usr/local/bin/bakers-conductors || true

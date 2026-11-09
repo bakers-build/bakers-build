@@ -1,8 +1,11 @@
 """The PM bot's Slack channels, as a Hermes plugin (experimental/pm-bot/README.md › How it works).
 
 - Intake: a mention of the bot at the top of its channel (SLACK_ALLOWED_CHANNELS, one ID) opens
-  a public request channel, invites the sender, links it in a flat reply and hands the message
-  on to Hermes there. The bot's channel itself holds no conversation.
+  a public request channel, invites the sender, acknowledges the request there, links it in a
+  flat reply and hands the message on to Hermes there. The bot's channel itself holds no
+  conversation.
+- Reaction: a served user's message in an open channel joins Hermes' eyes lifecycle (Hermes
+  runs it only for mentions); the final ✅/❌ is dropped.
 - Admission: Hermes answers only in the bot's channel and in its open channels, the request
   channels this plugin opened plus the poller's reopen channels, minus the archived ones; in an
   open channel without a mention.
@@ -69,6 +72,15 @@ def factory(app, adapter):
     adapter._slack_allowed_channels = lambda: {home} | current()[1]
     adapter._slack_free_response_channels = lambda: current()[1]
 
+    # Hermes swaps eyes for ✅/❌ when it finishes; in a flat channel only eyes comes and goes.
+    # CANCELLED removes eyes and adds nothing. entrypoint.sh check asserts the hook and outcome.
+    complete = adapter.on_processing_complete
+
+    async def on_processing_complete(event, outcome):
+        await complete(event, type(outcome).CANCELLED)
+
+    adapter.on_processing_complete = on_processing_complete
+
     def refresh_prompts():
         poller, channels = current()
         records = poller.get("channels") or {}
@@ -89,6 +101,14 @@ def factory(app, adapter):
             return False
         bot_user = getattr(adapter, "_bot_user_id", None)
         return event["type"] == "app_mention" or bool(bot_user and f"<@{bot_user}" in (event.get("text") or ""))
+
+    def is_open_channel_message(event):
+        """A served user's own message in one of the bot's open channels."""
+        if event.get("type") != "message" or event.get("subtype") or event.get("bot_id") or not event.get("user"):
+            return False
+        if allowed_users and event["user"] not in allowed_users:
+            return False
+        return event.get("channel") in current()[1]
 
     lock = asyncio.Lock()
     seen = set()  # a mention arrives as message and as app_mention, with one ts
@@ -120,11 +140,15 @@ def factory(app, adapter):
         try:
             channel = await open_request_channel(client, event)
             await client.conversations_invite(channel=channel, users=user)
+            try:
+                await client.chat_postMessage(channel=channel, text=text(lang["code"], "acknowledge", user=user))
+            except Exception as exc:
+                logger.error("bot-channels: acknowledging %s in %s: %s", event.get("ts"), channel, exc)
             await client.chat_postMessage(channel=home, text=text(lang["code"], "opened", user=user, channel=channel))
         except Exception as exc:
             logger.error("bot-channels: request channel for %s: %s", event.get("ts"), exc)
             try:
-                await client.chat_postMessage(channel=home, text=text(lang["code"], "not_opened", user=user))
+                await client.chat_postMessage(channel=home, text=text(lang["code"], "open_failed", user=user))
             except Exception as post_exc:
                 logger.error("bot-channels: telling %s: %s", user, post_exc)
             return
@@ -146,6 +170,12 @@ def factory(app, adapter):
         except Exception as exc:
             logger.error("bot-channels: channel prompts: %s", exc)
         if not is_request(event):
+            if is_open_channel_message(event):
+                try:
+                    # Hermes' own eyes lifecycle, which it otherwise runs only for mentions.
+                    adapter._track_reacting_message(adapter._event_team_id(event, body), event["ts"])
+                except Exception as exc:
+                    logger.error("bot-channels: marking %s for the reaction: %s", event.get("ts"), exc)
             await next()
             return None
         ts = event.get("ts")

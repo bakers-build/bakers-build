@@ -10,7 +10,7 @@
 #     only the bot's own toolsets
 #   - memory writes and self-written skills wait for approval
 #   - one shared session per channel, not per user, and flat replies (reply_in_thread: false)
-#   - only the bot's own plugin, bot-channels, is enabled; its pure core passes its unit tests
+#   - only the bot's own plugin, bot-channels, is enabled; it passes its unit tests
 #   - bakers.build is reached only through its own MCP endpoint: the remote
 #     server `bakers` at ${BAKERS_URL}/mcp, the API key as a static bearer that
 #     Hermes fills from the env file, exactly eight bakers tools, no OAuth
@@ -23,7 +23,8 @@
 #   - every user in the allowed channels is served unless an allowlist is set
 #   - poller, client and plugin call no LLM, except the plugin's language.py, which only takes
 #     back a validated language code; the persona answers in the language the trusted line names
-#   - the Slack app neither reads nor opens direct messages, and may manage public channels
+#   - the Slack app neither reads nor opens direct messages, may manage public channels and
+#     may react to messages
 #   - persona, skill and scripts name no customer; only .env.example may
 #   - the bot passes answers on without a "Correct?" confirmation round
 #   - customer wording says what happens, not what a team does
@@ -162,15 +163,16 @@ for scope in sorted(scopes & {"im:write", "im:history", "im:read", "mpim:history
 for event in sorted(events & {"message.im", "message.mpim"}): errors.append(f"bot events include {event}")
 if home.get("messages_tab_enabled") is not False: errors.append("app_home.messages_tab_enabled is not false")
 if "channels:manage" not in scopes: errors.append("bot scopes lack channels:manage (create, invite, rename, archive)")
+if "reactions:write" not in scopes: errors.append("bot scopes lack reactions:write (the eyes marker on a message in work)")
 if not (manifest.get("settings") or {}).get("socket_mode_enabled"): errors.append("socket mode is off")
 for e in errors:
     print("FAIL:", e, file=sys.stderr)
 sys.exit(1 if errors else 0)
 PY
-pass "Slack app talks in channels only, over Socket Mode, and manages public channels"
+pass "Slack app talks in channels only, over Socket Mode, manages public channels and reacts"
 
-python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qx OK || fail "the bot-channels plugin core fails its unit tests"
-pass "bot-channels plugin core passes its unit tests"
+python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qx OK || fail "the bot-channels plugin fails its unit tests"
+pass "bot-channels plugin passes its unit tests"
 
 # Questions are ticket comments under the Question label; the old question entity is gone.
 if git grep --untracked -nIE 'bb_question|bakers_question_|client_id: *hermes|bring_in_expert|chat_thread' -- "$BOT"; then

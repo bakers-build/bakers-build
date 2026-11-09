@@ -103,6 +103,7 @@ def start(holder):
 
     def run():
         holder["code"] = detect(lambda: read_background(url, key), lambda text: ask_model(text, model, api_key, oauth))
-        logger.info("bot-channels: answering in %s", holder["code"])
+        # warning, not info: Hermes' log level may filter info, and the README's hand test reads this line.
+        logger.warning("bot-channels: answering in %s", holder["code"])
 
     threading.Thread(target=run, name="bot-channels-language", daemon=True).start()

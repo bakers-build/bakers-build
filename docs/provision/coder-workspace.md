@@ -123,7 +123,7 @@ Host <name>.coder
 
 ## After a workspace restart
 
-Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Conductors and project runtimes do not come back by themselves. Start each project's runtime and run `bakers oven start` again in each checkout, and share a preview again with `bakers ports up`.
+Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Project runtimes do not come back by themselves, and conductors only with the workspace parameter `conductor_autostart` on (the template README's *Conductor autostart*). Otherwise run `bakers oven start` again in each checkout. Start each project's runtime where you need it, and share a preview again with `bakers ports up`.
 
 ## Update a tool
 
