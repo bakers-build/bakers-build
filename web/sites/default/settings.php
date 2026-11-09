@@ -72,6 +72,6 @@ $settings['feature_flags']['run_log_storage'] = in_array(
 // Komodo deployment (hosted container): override the ddev-local DB creds + salt above
 // with the per-stack env vars when running in a deployed container (DB_HOST is set there,
 // absent under DDEV). Keeps ONE settings.php for local + every deploy environment.
-if (getenv('DB_HOST') && file_exists(__DIR__ . '/settings.komodo.php')) {
-  include __DIR__ . '/settings.komodo.php';
+if (getenv('DB_HOST') && file_exists(__DIR__ . '/settings.container.php')) {
+  include __DIR__ . '/settings.container.php';
 }
