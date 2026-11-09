@@ -67,7 +67,7 @@ services:
       - tmp_files:/tmp
       - oauth_keys:/var/www/oauth-keys
     # Same script as the standalone stack: updates an installed site and installs only a
-    # reachable, empty database; anything else fails. The deploy runner dumps beforehand.
+    # reachable, empty database; anything else fails. Komodo dumps the database beforehand.
     command: /var/www/html/scripts/deploy/site-deploy.sh
     networks:
       - internal
