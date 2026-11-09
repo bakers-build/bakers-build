@@ -85,6 +85,12 @@ describe('disposable image gate', () => {
       result.calls.indexOf('github-recipe:compose run --rm install'),
     ).toBeLessThan(install);
     expect(install).toBeGreaterThan(-1);
+    // compose run does not wait for depends_on health; site-deploy.sh queries the database at once.
+    const healthy = result.calls.indexOf(
+      'github-config:compose up -d --wait db\n',
+    );
+    expect(healthy).toBeGreaterThan(-1);
+    expect(healthy).toBeLessThan(install);
     expect(
       result.calls.indexOf('github-config:compose run --rm deploy\n', install),
     ).toBeGreaterThan(install);

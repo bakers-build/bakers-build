@@ -63,6 +63,8 @@ if [ "$status" != 0 ]; then exit "$status"; fi
 export COMPOSE_PROJECT_NAME=github-config
 export COMPOSE_FILE=docker-compose.yml
 export COMPOSE_PROFILES=
+# `compose run` ignores depends_on health, and site-deploy.sh queries the database at once.
+docker compose up -d --wait db
 # The deploy service as every `up` runs it: the empty database installs, the next run updates it.
 docker compose run --rm -e ADMIN_EMAIL=admin@example.test deploy
 docker compose run --rm deploy
