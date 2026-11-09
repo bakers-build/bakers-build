@@ -77,7 +77,7 @@ Modes, blocks, env var filter, risks and isolation: [Run security](/provision/se
 
 ## Mixed harnesses
 
-This complete file uses the special `default` route for Codex coding and Claude Opus review without a ticket label. The named `careful` route uses Opus throughout. To add an opt-in route to your existing file, follow [Add a route](/agents/guide#add-a-route).
+This complete file uses the special `default` route for Codex coding and Claude Opus review without a ticket label. The named `careful` route uses Opus throughout. For a complete opt-in route setup, follow [Use agent routes](/agents/guide#use-agent-routes).
 
 ```js
 // @bakers-schema-version 1

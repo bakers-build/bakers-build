@@ -1,6 +1,6 @@
 # Machines
 
-`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes; every field is listed here with its default and precedence. To set agents up step by step, use [Choose agents and models](/agents/guide). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`.
+`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes. This page defines the machine fields and links the detailed agent policy. For complete agent and route examples, use [Configure and select agents](/agents/guide#configure-agents). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`.
 
 ## Location
 
@@ -51,13 +51,15 @@ Configure [Ports](/addons/ports) and its chosen transport in this machine's `add
 
 ## Agents
 
+Agent configuration and selection share this machine file: top-level `addons` supplies harnesses; the sibling `agents` object holds the catalog, filters, default alias and routes. Keep these beside `machine_id`, not inside the project conductor configuration. The guide shows complete files for [one catalog agent](/agents/guide#use-one-agent) and [agent routes](/agents/guide#use-agent-routes).
+
 ### The agents object
 
-[Agent policy fields](/agents/reference#the-agents-object) defines catalog overlays and optional filters.
+`agents.catalog` adds or overrides configured aliases supplied by the harness addons. `enabled` and `disabled` filter what is available. See [all catalog fields, defaults and loading order](/agents/reference#configure-the-catalog).
 
 ### Which agent runs a state
 
-[Routing precedence](/agents/reference#which-agent-runs-a-state) defines labels, routes and fallback.
+`agents.default_agent` names the fallback alias. `agents.routes` maps workflow states to catalog aliases; its special `default` route applies without a route label. Ticket labels can select an alias or named route. See [selection fields](/agents/reference#configure-selection) and [the complete precedence order](/agents/reference#which-agent-runs-a-state), including why an explicit default route can override the fallback alias.
 
 ### Harnesses
 

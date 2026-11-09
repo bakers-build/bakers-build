@@ -8,15 +8,15 @@ Configure agents on an execution machine, then select one by its alias. The guid
 <span id="select-an-agent-on-a-ticket"></span>
 
 <DocTiles :tiles="[
-  { title: 'Configure agents', text: 'Enable a harness addon, configure an agent plugin and give it an alias.', link: '/agents/guide#configure-agents', icon: 'terminal', meta: 'Configure an agent →' },
-  { title: 'Select an agent', text: 'Choose an alias as the machine default or through a ticket label.', link: '/agents/guide#select-an-agent', icon: 'ticket', meta: 'Choose what runs →' }
+  { title: 'Configure agents', text: 'Choose one agent from the catalog or agent routes. Follow a complete machine-file example.', link: '/agents/guide#configure-agents', icon: 'terminal', meta: 'Choose your setup →' },
+  { title: 'Select an agent', text: 'Use the machine default, an alias label or a route label.', link: '/agents/guide#select-an-agent', icon: 'ticket', meta: 'Choose what runs →' }
 ]" />
 
-[Agent policy reference](/agents/reference) contains the complete fields, defaults, precedence and machine configuration example.
+[Configuration → Machine](/configuration/machine#agents) explains file ownership and agent settings; [Agent policy reference](/agents/reference) contains the complete fields and precedence rules.
 
 <span id="route-work-to-different-agents"></span>
 
-For different selections per workflow state, follow [Add a route](/agents/guide#add-a-route).
+For different selections per workflow state, follow [Use agent routes](/agents/guide#use-agent-routes).
 
 <span id="provide-tools-and-access"></span>
 
