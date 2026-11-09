@@ -36,18 +36,19 @@
    the frame spaces them. `fields` is unwrapped for that: its container carries no markup. #}
 {% set parts %}
   {{ form.messages }}
-  {{ form.ai_use_notice }}
   {% for key, child in form.fields %}{% if key|first != '#' %}{{ child }}{% endif %}{% endfor %}
   {{ form.actions }}
-  {{ form|without('#bb_copy', 'messages', 'ai_use_notice', 'fields', 'actions') }}
+  {{ form|without('#bb_copy', 'messages', 'fields', 'actions') }}
 {% endset %}
-{% set card %}{{ include('bb_theme:gate_form', {tag: 'div', content: parts}, with_context = false) }}{% endset %}
+{% set card %}{{ include('bb_theme:gate_form', {tag: 'div', stacked: true, content: parts}, with_context = false) }}{% endset %}
 {{ include('bb_theme:gate', {
   title: form['#bb_copy'].title,
   description: form['#bb_copy'].description,
   explanation: form['#bb_copy'].explanation,
+  explanation_title: form['#bb_copy'].explanation_title,
   progress: form['#bb_copy'].progress,
   steps: form['#bb_copy'].steps,
+  title_in_band: true,
   focus_title: true,
   mark: include('bb_theme:brand', {size: 'compact'}, with_context = false),
   content: card,

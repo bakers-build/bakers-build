@@ -4,6 +4,7 @@ props:
   title: Create your first project?
   description: Start right away, or set one up later from your overview.
   progress: Step 3 of 4
+  explanation_title: Why a project
   explanation: A project connects a repository to your team. Creating it now takes you straight into it; you can always add one later.
   steps:
     - { label: Your name, state: done }

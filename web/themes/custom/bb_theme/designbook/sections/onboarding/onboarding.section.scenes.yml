@@ -25,6 +25,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: What should we call you?
+          explanation_title: Why we ask
           explanation: A name and a picture let your team recognize you. You can change both at any time.
           description: >-
             A name and a picture — and bakers.build feels less like software and
@@ -98,7 +99,11 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: Tell us about yourself
-          explanation: Your answers are passed as context to the AI assistants bakers.build uses, so that explanations match your background. Both fields are optional.
+          explanation_title: Your data
+          explanation: >-
+            bakers.build passes these details as context to the AI assistants it uses, so that
+            explanations and support match your background and your goals. You can change or
+            delete them later.
           description: >-
             So we speak your language — matched to your work and your
             background.
@@ -107,15 +112,6 @@ scenes:
               slots:
                 lead: Step 2 of 3
                 lines:
-                  - component: bb_theme:note
-                    props:
-                      tone: attention
-                    slots:
-                      body: >-
-                        bakers.build passes these details as context to the AI
-                        assistants it uses, so that explanations and support
-                        match your background and your goals. You can change or
-                        delete them later.
                   - component: bb_theme:form_label
                     props:
                       for: edit-field-developer-title
@@ -159,6 +155,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: Get started with bakers.build
+          explanation_title: Two ways to work
           explanation: bakers.build works from a chat connector or from an agent on your own machine. These guides cover both.
           description: Pick how you will work. Each guide opens in a new tab.
           content:
@@ -221,6 +218,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: Get started with bakers.build
+          explanation_title: Two ways to work
           explanation: bakers.build works from a chat connector or from an agent on your own machine. These guides cover both.
           description: Pick how you will work. Each guide opens in a new tab.
           content:
@@ -251,6 +249,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: Get started with bakers.build
+          explanation_title: Two ways to work
           explanation: bakers.build works from a chat connector or from an agent on your own machine. These guides cover both.
           description: Pick how you will work. Each guide opens in a new tab.
           content:

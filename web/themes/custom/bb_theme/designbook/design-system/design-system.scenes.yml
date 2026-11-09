@@ -453,6 +453,8 @@ scenes:
           title: $title
           description: $description
           explanation: $explanation
+          explanation_title: $explanation_title
+          title_in_band: true
         slots:
           mark:
             component: bb_theme:brand
