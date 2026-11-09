@@ -26,6 +26,8 @@
 #   - keys of a helper object above the export are ignored; a regex literal or
 #     `${}` in a template gives the "cannot read" line and no change, never a
 #     second, shadowed addons or tunnel key
+#   - a JS line end inside a comment (U+2028, lone CR), a computed or spread
+#     addons key or a line-start ternary gives a log line and no change
 #   - a broken machine file stays untouched, with exit 0 and a log line
 #   - install.sh: none starts and installs nothing even with the token file and
 #     frpc.json present; cloudflare-quick installs cloudflared and starts no
@@ -270,6 +272,30 @@ export default {
 };
 EOF
 pass "keys of a helper const are ignored, and an unreadable file is named and left unchanged"
+
+# Syntax the scan misreads (a JS line end in a comment, a computed key, a spread) would get a
+# second, shadowed key: the import check names it and leaves the file unchanged.
+unplaced() {
+  cp "$M" "$SCRATCH/lost"
+  edit cloudflare-quick
+  cmp -s "$M" "$SCRATCH/lost" || fail "$1: changed: $(diff "$SCRATCH/lost" "$M")"
+  grep -qi 'by hand' "$OUT" || fail "$1: no log line: $(cat "$OUT")"
+  grep -qi 'set for' "$OUT" && fail "$1: logged success: $(cat "$OUT")"
+  return 0
+}
+printf "export default {\n machine_id: 'x', // note\xe2\x80\xa8 addons: [{ use: '@bakers-build/addon-ddev' }],\n};\n" > "$M"
+unplaced "U+2028 ending a comment"
+printf "export default {\n machine_id: 'x', // note\r addons: [{ use: '@bakers-build/addon-ddev' }],\n};\n" > "$M"
+unplaced "a lone CR ending a comment"
+printf "export default {\n machine_id: 'x', // c\xe2\x80\xa8 a: '//', addons: [\n  { use: '@bakers-build/addon-ddev' },\n ],\n};\n" > "$M"
+unplaced "U+2028 before a quoted //"
+printf "export default {\n machine_id: 'x',\n ['addons']: [\n  { use: '@bakers-build/addon-ddev' },\n ],\n};\n" > "$M"
+unplaced "a computed addons key"
+printf "const base = { addons: [{ use: '@bakers-build/addon-ddev' }] };\nexport default {\n ...base,\n machine_id: 'x',\n};\n" > "$M"
+unplaced "a spread holding addons"
+printf "export default {\n foo: process.env.X ?\n  'addons' : [\n  ],\n addons: [\n  { use: '@bakers-build/addon-ddev' },\n ],\n};\n" > "$M"
+unplaced "a line-start ternary before addons"
+pass "a key the scan misreads is named and the file left unchanged, never shadowed"
 
 # --- F5: a broken file stays untouched -------------------------------------
 printf 'export default {\n machine_id: "x",\n' > "$M"

@@ -6,42 +6,63 @@
 // failure logs a line and exits 0, so it never fails the workspace start.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
-import { homedir, tmpdir } from 'node:os';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 const MARK = '// bakers-ddev preview';
 const BEGIN = `${MARK}: begin`;
 const END = `${MARK}: end`;
+const PORTS = '@bakers-build/addon-ports';
+const QUICK = { use: PORTS, with: { transport: { use: '@bakers-build/addon-ports-cloudflare-quick' } } };
 const QUICK_ENTRY =
   " { use: '@bakers-build/addon-ports', with: { transport: { use: '@bakers-build/addon-ports-cloudflare-quick' } } },";
+const TUNNEL_LINE = ` tunnel: true, ${MARK}`;
 const TRANSPORTS = ['none', 'cloudflare-quick', 'cloudflare', 'frp'];
 const NEW_FILE = '// @bakers-schema-version 1\nexport default {\n schema_version: 1,\n};\n';
 
 const log = (msg) => console.log(`preview: ${msg}`);
 
-/** Whether `text` parses as a module; checked on a copy, the file itself never runs. */
-function parses(text) {
-  const copy = join(tmpdir(), `bakers-preview-${process.pid}.mjs`);
+/**
+ * The default export of `text` as JSON data, or null when it does not load. Imported in a child
+ * node from a copy beside the machine file, so relative imports resolve, as the conductor reads it.
+ */
+function load(text, dir) {
+  const copy = join(dir, `.machine.config.preview-${process.pid}.mjs`);
   writeFileSync(copy, text, { mode: 0o600 }); // the machine file may hold secrets
   try {
-    execFileSync(process.execPath, ['--check', copy], { stdio: 'ignore' });
-    return true;
+    const out = execFileSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        "import { pathToFileURL } from 'node:url'; const m = await import(pathToFileURL(process.argv[1])); console.log('\\n' + JSON.stringify(m.default));",
+        copy,
+      ],
+      { stdio: ['ignore', 'pipe', 'ignore'], timeout: 10_000, encoding: 'utf8' },
+    );
+    const value = JSON.parse(out.trimEnd().split('\n').pop()); // the file itself may log first
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : null;
   } catch {
-    return false;
+    return null;
   } finally {
     rmSync(copy, { force: true });
   }
 }
 
+/** JSON with object keys sorted, so two loaded configs compare by meaning. */
+const canonical = (value) =>
+  JSON.stringify(value, (_, v) =>
+    v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort()) : v,
+  );
+
 /**
- * The text without its comments (`code`), and the text with comments and string contents blanked
- * to spaces, newlines kept (`blank`); a string used as a property key stays. Null when a string
- * or comment never closes, a quoted string crosses a line, or the text holds a `/` that starts no
- * comment or a `${` in a template: only a regex literal or a template expression can hide a quote
- * from this scan, so without them a file that parses has no stray quote. Division reads as lost too.
+ * The text with comments and string contents blanked to spaces, newlines kept; a string used as a
+ * property key stays. Null when a string or comment never closes, a quoted string crosses a line,
+ * or the text holds a `/` that starts no comment or a `${` in a template. shortcut: it ends a `//`
+ * comment only at `\n` and sees no computed or spread keys; the import check in main() catches a
+ * misplaced key, upgrade to a JS parser if hand files often need that check.
  */
 function scan(text) {
-  let code = '';
   let blank = '';
   const colon = /\s*:/y;
   for (let i = 0; i < text.length; i++) {
@@ -71,15 +92,13 @@ function scan(text) {
       if (c !== '`' && /(?<!\\)\n/.test(str)) return null;
       colon.lastIndex = end + 1;
       const key = c !== '`' && colon.test(text);
-      code += str;
       blank += key ? str : c + str.slice(1, -1).replace(/[^\n]/g, ' ') + c;
       i = end;
     } else {
-      code += c;
       blank += c;
     }
   }
-  return { code, blank };
+  return blank;
 }
 
 /**
@@ -119,41 +138,43 @@ function unmarked(text) {
   return out.join('\n');
 }
 
-function edit(text, transport) {
-  const base = unmarked(text);
-  if (transport === 'none') return base;
-  const lines = base.split('\n');
-  const scanned = scan(base);
-  if (!scanned) {
+/** `base` (no marked lines) with the transport's lines; `own` is its loaded config. Null: leave the file. */
+function edit(base, transport, own) {
+  const blank = scan(base);
+  if (blank === null) {
     log('cannot read machine.config.js; add tunnel and the ports entry by hand');
-    return base;
+    return null;
   }
-  const { code, blank } = scanned;
   const start = blank.search(/^[ \t]*export[ \t]+default[ \t]*\{[ \t]*$/m);
   if (start === -1) {
     log('machine.config.js has no `export default {` line; add tunnel and the ports entry by hand');
-    return base;
+    return null;
   }
+  const lines = base.split('\n');
   const head = blank.slice(0, start).split('\n').length - 1;
-  const hasPorts = /['"]@bakers-build\/addon-ports['"]/.test(code);
-  // Looked up before any splice below, which shifts lines against blank.
-  const ownTunnel = topKey(blank, 'tunnel', start) !== -1;
+  const hasPorts = Array.isArray(own.addons) && own.addons.some((a) => a?.use === PORTS);
   if (transport === 'cloudflare-quick') {
-    const block = [` ${BEGIN}`, ` ${QUICK_ENTRY}`, ` ${END}`];
     const addons = topKey(blank, 'addons', start);
-    const rest = blank.slice(addons).split('\n')[0];
     if (hasPorts) log('machine.config.js has its own addon-ports entry; it wins over the parameter');
     // A created addons key sits inside the markers, so none removes it with the entry.
     else if (addons === -1) lines.splice(head + 1, 0, ` ${BEGIN}`, ' addons: [', ` ${QUICK_ENTRY}`, ' ],', ` ${END}`);
-    else if (/^["']?addons["']?\s*:\s*\[\s*$/.test(rest)) {
-      lines.splice(blank.slice(0, addons).split('\n').length, 0, ...block);
+    else if (/^["']?addons["']?\s*:\s*\[\s*$/.test(blank.slice(addons).split('\n')[0])) {
+      lines.splice(blank.slice(0, addons).split('\n').length, 0, ` ${BEGIN}`, ` ${QUICK_ENTRY}`, ` ${END}`);
     } else log('cannot place the ports entry in the addons list; add it by hand');
   } else if (!hasPorts) {
     log(`no addon-ports entry for ${transport}; add the ports entry by hand (README › Optional previews)`);
   }
-  if (ownTunnel) log('machine.config.js sets tunnel itself; it wins over the parameter');
-  else lines.splice(head + 1, 0, ` tunnel: true, ${MARK}`);
+  if (own.tunnel !== undefined) log('machine.config.js sets tunnel itself; it wins over the parameter');
+  else lines.splice(head + 1, 0, TUNNEL_LINE);
   return lines.join('\n');
+}
+
+/** The config `next` must load as: `own` plus what the marked lines in `next` set. */
+function intended(own, next) {
+  const want = { ...own };
+  if (next.includes(TUNNEL_LINE)) want.tunnel = true;
+  if (next.includes(BEGIN)) want.addons = [QUICK, ...(own.addons ?? [])];
+  return want;
 }
 
 function main() {
@@ -162,12 +183,17 @@ function main() {
   if (!TRANSPORTS.includes(transport)) return log(`unknown transport "${transport}"; machine.config.js unchanged`);
   const exists = existsSync(path);
   if (!exists && transport === 'none') return;
+  const dir = dirname(path);
+  mkdirSync(dir, { recursive: true });
   const text = exists ? readFileSync(path, 'utf8') : NEW_FILE;
-  if (!parses(text)) return log(`${path} does not parse; left unchanged`);
-  const next = edit(text, transport);
-  if (exists && next === text) return;
-  if (!parses(next)) return log(`the edited ${path} would not parse; left unchanged`);
-  mkdirSync(dirname(path), { recursive: true });
+  const base = unmarked(text);
+  const own = load(base, dir);
+  if (!own) return log(`${path} does not load; left unchanged`);
+  const next = transport === 'none' ? base : edit(base, transport, own);
+  if (next === null || (exists && next === text)) return;
+  if (transport !== 'none' && canonical(load(next, dir)) !== canonical(intended(own, next))) {
+    return log(`cannot place tunnel and the ports entry so they take effect; add them by hand; ${path} left unchanged`);
+  }
   const tmp = `${path}.preview-${process.pid}`;
   writeFileSync(tmp, next, { mode: exists ? statSync(path).mode & 0o777 : 0o644 });
   renameSync(tmp, path);
