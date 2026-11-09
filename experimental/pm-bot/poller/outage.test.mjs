@@ -26,6 +26,6 @@ test('through 5xx and a refused connection the poller keeps passing and then pos
 
   await poller.pass();
   await poller.pass();
-  assert.deepEqual(slack.posts().map((p) => p.text), ['Work on this has started.']);
-  assert.deepEqual(sent.map((m) => m.text), ['ACME-1 · "Price updater" has a question:\n\nWeekends too?']);
+  assert.deepEqual(slack.posts().map((p) => p.text), ['Die Arbeit daran hat begonnen.']);
+  assert.deepEqual(sent.map((m) => m.text), ['ACME-1 · „Price updater“ hat eine Frage:\n\nWeekends too?']);
 });

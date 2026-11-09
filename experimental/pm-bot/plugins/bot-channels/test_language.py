@@ -1,7 +1,12 @@
 """Tests of the language core: python3 -m unittest discover -s experimental/pm-bot/plugins/bot-channels"""
 
+import json
+import os
+import tempfile
 import unittest
+from unittest import mock
 
+import language
 from language import detect, parse_code
 
 
@@ -56,6 +61,27 @@ class Detect(unittest.TestCase):
             self.assertEqual(self.run_detect(OSError("/mcp down"), "en")[0], "de")
         with self.assertLogs("pm_bot.bot_channels", "ERROR"):
             self.assertEqual(self.run_detect("Antworte auf Englisch.", TimeoutError("slow"))[0], "de")
+
+
+class Start(unittest.TestCase):
+    ENV = {"BAKERS_URL": "https://bakers.example", "BAKERS_API_KEY": "k", "PM_BOT_MODEL": "m", "CLAUDE_CODE_OAUTH_TOKEN": "t"}
+
+    def test_the_detected_code_is_kept_and_written_for_the_poller(self):
+        path = os.path.join(tempfile.mkdtemp(), "bot-language.json")
+        holder = {"code": "de"}
+        with mock.patch.dict(os.environ, self.ENV), mock.patch.object(language, "detect", return_value="en"), \
+                self.assertLogs("pm_bot.bot_channels", "WARNING"):
+            language.start(holder, path).join()
+        self.assertEqual(holder["code"], "en")
+        with open(path) as fh:
+            self.assertEqual(json.load(fh), {"language": "en"})
+
+    def test_a_failed_write_is_logged_and_keeps_the_code(self):
+        holder = {"code": "de"}
+        with mock.patch.dict(os.environ, self.ENV), mock.patch.object(language, "detect", return_value="en"), \
+                self.assertLogs("pm_bot.bot_channels", "ERROR"):
+            language.start(holder, "/nonexistent/dir/bot-language.json").join()
+        self.assertEqual(holder["code"], "en")
 
 
 if __name__ == "__main__":

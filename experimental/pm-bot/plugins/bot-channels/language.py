@@ -2,6 +2,7 @@
 ``background`` (bakers_user_read on /mcp), interpreted by the model into an ISO 639-1 code.
 German when the text names none or anything fails. The only file of the bot that calls a model;
 whatever ``background`` says, the call yields a language code and nothing else (parse_code).
+The code is shared with the poller through ``$HERMES_HOME/bot-language.json`` (write).
 """
 
 import json
@@ -92,18 +93,32 @@ def ask_model(background, model, api_key="", oauth_token=""):
     return "".join(block.get("text", "") for block in json.loads(body).get("content") or [])
 
 
-def start(holder):
+def write(path, code):
+    """``{"language": code}`` to ``path`` for the poller, atomically; a failure is logged only."""
+    try:
+        with open(f"{path}.tmp", "w", encoding="utf-8") as fh:
+            json.dump({"language": code}, fh)
+        os.replace(f"{path}.tmp", path)
+    except OSError as exc:
+        logger.error("bot-channels: language: writing %s: %s", path, exc)
+
+
+def start(holder, path):
     """Fill ``holder["code"]`` from the container's env in a daemon thread, so neither Hermes'
-    start nor a Slack message waits for it. No retry: a failure keeps German until the next start."""
+    start nor a Slack message waits for it, and write it to ``path``. No retry: a failure keeps
+    German until the next start. Returns the thread, or None when the env is incomplete."""
     url, key, model = (os.environ.get(n) or "" for n in ("BAKERS_URL", "BAKERS_API_KEY", "PM_BOT_MODEL"))
     api_key, oauth = os.environ.get("ANTHROPIC_API_KEY") or "", os.environ.get("CLAUDE_CODE_OAUTH_TOKEN") or ""
     if not (url and key and model and (api_key or oauth)):
         logger.error("bot-channels: language: BAKERS_URL, BAKERS_API_KEY, PM_BOT_MODEL or a model credential is missing; answering in German")
-        return
+        return None
 
     def run():
         holder["code"] = detect(lambda: read_background(url, key), lambda text: ask_model(text, model, api_key, oauth))
+        write(path, holder["code"])
         # warning, not info: Hermes' log level may filter info, and the README's hand test reads this line.
         logger.warning("bot-channels: answering in %s", holder["code"])
 
-    threading.Thread(target=run, name="bot-channels-language", daemon=True).start()
+    thread = threading.Thread(target=run, name="bot-channels-language", daemon=True)
+    thread.start()
+    return thread

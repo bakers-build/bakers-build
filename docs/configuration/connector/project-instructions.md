@@ -45,7 +45,7 @@ filesystem or the `bakers` CLI; every step below is a call to one of these tools
 |---|---|---|
 | `bakers_ticket_search` | `query` | tickets whose title or description contains `query`: `identifier`, `title`, `state`, `type`; newest first, at most 50 |
 | `bakers_ticket_read` | `ticket` (identifier or UUID) | the ticket with `type`, `recipe`, `labels`, `links` and every comment |
-| `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent` | `id`, `identifier`, `state` |
+| `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee_email` | `id`, `identifier`, `state`, `branch_name`, `assignee`, `url` |
 | `bakers_comment_publish` | `ticket`, `type`, `body` | the new comment's `id` |
 | `bakers_ticket_transition` | `ticket`, `state` | the saved `state` |
 

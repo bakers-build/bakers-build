@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { forget, updates } from './updates.mjs';
 
-const messages = JSON.parse(readFileSync(new URL('./messages.json', import.meta.url), 'utf8'));
+const messages = JSON.parse(readFileSync(new URL('./messages.json', import.meta.url), 'utf8')).de;
 const NOW = Date.parse('2026-11-05T12:00:00Z');
 const MIN = 60 * 1000;
 const INTERVAL = 30 * MIN;
