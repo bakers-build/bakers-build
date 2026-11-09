@@ -15,6 +15,8 @@
   (scope users:read.email) when the request channel opens; without it the line says none.
 - Language: read once at start from the service account's background (language.py), German
   until then and on any failure; it also picks the plugin's own texts (messages.json).
+- Recovery: a requester's turn that a hard restart left unknown settles as interrupted on the
+  channel's next message instead of pausing the conversation; it is not run again.
 
 This plugin writes $HERMES_HOME/bot-channels.json and bot-language.json (the bot's language for the
 poller's texts); the poller writes poller-state.json. Each reads the other's files and writes only
@@ -217,3 +219,7 @@ def factory(app, adapter):
 
 def register(ctx):
     ctx.register_platform_handler("slack", factory)
+    # A requester cannot run /hermes discard here, so a turn lost in a hard restart settles like
+    # Hermes' automation turns: interrupted, not replayed. entrypoint.sh check asserts the seam.
+    import gateway.session_unattended_unknown as unattended
+    unattended._unattended_unknown = lambda rows: [row for row in rows if row["status"] == "unknown"]
