@@ -72,8 +72,10 @@ test('a run whose ticket changed state posts no end line; the state line says it
   assert.deepEqual(pass([ticket({ state: 'review', runs: [run('r1', 'failed', 'working')] })], { previous }).posts, []);
 });
 
-test('a run first seen already ended posts only its end line', () => {
-  assert.deepEqual(texts(pass([ticket({ runs: [run('r1', 'failed')] })])), [messages.runPaused]);
+test('a run first seen already ended, as after an outage, posts its start line and no end line', () => {
+  const first = pass([ticket({ runs: [run('r1', 'failed')] })]);
+  assert.deepEqual(texts(first), [messages.runStart.working]);
+  assert.deepEqual(pass([ticket({ runs: [run('r1', 'failed')] })], { previous: first.next.records }).posts, []);
 });
 
 test('a new summary posts the first two sentences of its Outcome, without Markdown, once', () => {

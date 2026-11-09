@@ -74,7 +74,8 @@ export function updates({ previous, posted, tickets, now, interval, messages }) 
     // Each post names what it marked as seen, so a failed post can be forgotten and retried.
     const post = (text, undo) => posts.push({ identifier: t.identifier, ...target(t.conversation), text: named(t, text), ...undo });
     const runs = [...t.runs].reverse();
-    for (const r of runs.filter((r) => ENDED.includes(r.state) && !ENDED.includes(before.runs[r.uuid]))) {
+    // Only a run seen before ending; one first seen closed gets its start line below.
+    for (const r of runs.filter((r) => r.uuid in before.runs && ENDED.includes(r.state) && !ENDED.includes(before.runs[r.uuid]))) {
       record.runs[r.uuid] = r.state;
       // A run that moved the ticket on is told by its state line.
       if (r.state_at_start !== t.state) continue;
