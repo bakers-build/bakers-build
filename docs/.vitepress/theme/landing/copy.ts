@@ -112,7 +112,7 @@ const de: Copy = {
   signUp: 'Anmelden',
   copy: { label: 'Befehl kopieren', done: 'Befehl kopiert' },
   hero: {
-    title: 'A ticket-driven AI software factory.',
+    title: 'Eine KI-Softwarefabrik. Vom Ticket bis zum Merge.',
     text: 'Bevor dein Team da ist, ist die Vorbereitung erledigt. Agenten arbeiten jedes Ticket auf deinem Entwicklungsrechner oder auf Remote-Workern ab, und bei jedem Schritt kann ein Entwickler in den Ofen schauen.',
     install: 'oder kostenlos selbst hosten',
     note: 'Open Source. Läuft auf deinen Rechnern.',

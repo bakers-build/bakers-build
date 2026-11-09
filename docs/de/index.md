@@ -5,8 +5,8 @@ layout: home
 navbar: false
 markdownStyles: false
 search: false
-title: A ticket-driven AI software factory.
-description: Agenten arbeiten jedes Ticket auf deinen eigenen Rechnern ab, und an jeder Station entscheidet ein Mensch. Open Source, selbst gehostet oder gehostet, beides kostenlos.
+title: Eine KI-Softwarefabrik. Vom Ticket bis zum Merge.
+description: Agenten arbeiten jedes Ticket auf deinem Entwicklungsrechner oder auf Remote-Workern ab, und an jeder Station entscheidet ein Mensch. Open Source, selbst gehostet oder gehostet, beides kostenlos.
 ---
 
 <Landing lang="de" />
