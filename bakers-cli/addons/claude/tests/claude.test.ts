@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -239,13 +240,23 @@ describe('ClaudeAgent.launchCommand with a run identity', () => {
   });
 });
 
+// The stub is an executable on PATH, not a shell function, so a wrapper
+// process (the trust wrapper) reaches it too; HOME keeps ~/.claude.json untouched.
 function captureArgv(binary: string, command: string): string[] {
-  const output = execFileSync(
-    'bash',
-    ['-c', `${binary}() { printf '%s\\0' "${binary}" "$@"; }; ${command}`],
-    { encoding: 'utf8' },
-  );
-  return output.split('\0').slice(0, -1);
+  const dir = mkdtempSync(join(tmpdir(), 'claude-argv-'));
+  try {
+    const stub = join(dir, binary);
+    writeFileSync(stub, `#!/bin/sh\nprintf '%s\\0' "${binary}" "$@"\n`, {
+      mode: 0o755,
+    });
+    const output = execFileSync('bash', ['-c', command], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: dir, PATH: `${dir}:${process.env.PATH}` },
+    });
+    return output.split('\0').slice(0, -1);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 describe('ClaudeAgent args and effort', () => {
