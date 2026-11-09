@@ -5,7 +5,7 @@ layout: home
 navbar: false
 markdownStyles: false
 search: false
-title: Eine ticketgesteuerte KI-Softwarefabrik.
+title: A ticket-driven AI software factory.
 description: Agenten arbeiten jedes Ticket auf deinen eigenen Rechnern ab, und an jeder Station entscheidet ein Mensch. Open Source, selbst gehostet oder gehostet, beides kostenlos.
 ---
 

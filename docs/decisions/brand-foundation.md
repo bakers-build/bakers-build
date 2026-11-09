@@ -158,7 +158,7 @@ The bakers are the people: the agency lead, the client and the developer. They o
 
 **A ticket-driven AI software factory.**
 
-Canonical slogan, agreed on 2026-11-09; it replaces the provisional "A ticket-driven software factory." of 2026-11-08. This section owns its wording; the README, the landing headline, product guidance and the Designbook vision reference it rather than maintaining another slogan. The German landing uses the translation "Eine ticketgesteuerte KI-Softwarefabrik.".
+Canonical slogan, agreed on 2026-11-09; it replaces the provisional "A ticket-driven software factory." of 2026-11-08. This section owns its wording; the README, the landing headline, product guidance and the Designbook vision reference it rather than maintaining another slogan. The German landing keeps the English slogan; the translation "Eine ticketgesteuerte KI-Softwarefabrik." was rejected as too long (2026-11-09).
 
 The production line carries tickets through workflow states. Agents do the work; people observe, discuss and decide at the relevant stations. Clients are windows onto that line: herdr-cli, herdr-app, Orca and Hermes expose different views and actions. They can complement each other without sharing a terminal host or offering identical capabilities.
 
