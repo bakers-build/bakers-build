@@ -43,9 +43,10 @@ NODE
 
 bakers tools "$(cat "$work/tool")" --data @"$work/args.json" | tee "$work/result.json"
 
-# A new ticket goes straight to the cw-framework conductor so it is worked on.
+# A new ticket goes straight to the cw-framework conductor, labelled `auto` so it runs on its own.
+# One call: the run the conductor dispatches must already see the label.
 if [ "$(cat "$work/tool")" = tool_api__bakers_ticket_create ]; then
-  node -e 'const fs = require("fs"); const { identifier } = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); process.stdout.write(JSON.stringify({ticket: identifier, conductor: "4081d638-37ef-4bc3-80cd-72501492e6b3"}))' \
+  node -e 'const fs = require("fs"); const { identifier } = JSON.parse(fs.readFileSync(process.argv[1], "utf8")); process.stdout.write(JSON.stringify({ticket: identifier, conductor: "4081d638-37ef-4bc3-80cd-72501492e6b3", labels_add: ["auto"]}))' \
     "$work/result.json" >"$work/assign.json"
   bakers tools tool_api__bakers_ticket_update --data @"$work/assign.json"
 fi

@@ -11,6 +11,12 @@ const script = new URL(
 const TITLE = 'CI failure: GitHub checks on next';
 // Project BAKERS; ticket search accepts only the UUID.
 const BAKERS = '07ab22a7-49ee-479d-8431-7202f5235898';
+// The update a newly created ticket gets: the cw-framework conductor and the label `auto`.
+const ASSIGN = {
+  ticket: 'BAKERS-999',
+  conductor: '4081d638-37ef-4bc3-80cd-72501492e6b3',
+  labels_add: ['auto'],
+};
 
 type Call = { tool: string; args: Record<string, string> };
 
@@ -101,11 +107,8 @@ describe('GitHub checks failure ticket', () => {
     });
     expect(created.description).toContain('`GitHub checks` failed on `next`');
     namesTheFailure(created.description);
-    // The new ticket goes straight to the cw-framework conductor.
-    expect(result.calls[2].args).toEqual({
-      ticket: 'BAKERS-999',
-      conductor: '4081d638-37ef-4bc3-80cd-72501492e6b3',
-    });
+    // The new ticket goes straight to the cw-framework conductor, labelled to run on its own.
+    expect(result.calls[2].args).toEqual(ASSIGN);
   });
 
   it('comments on the open CI-failure ticket instead of creating a duplicate', () => {
@@ -134,6 +137,7 @@ describe('GitHub checks failure ticket', () => {
       'bakers_ticket_create',
       'bakers_ticket_update',
     ]);
+    expect(result.calls[2].args).toEqual(ASSIGN);
   });
 
   it('files a release failure on its own ticket, apart from the checks ticket', () => {
@@ -157,5 +161,6 @@ describe('GitHub checks failure ticket', () => {
     expect(result.calls[1].args.description).toContain(
       '`GitHub release` failed on `main`',
     );
+    expect(result.calls[2].args).toEqual(ASSIGN);
   });
 });
