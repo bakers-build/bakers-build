@@ -39,7 +39,7 @@ Each example implements a new integration:
 <span id="enable-in-project"></span>
 
 1. <span id="add-an-agent"></span>[Add an agent](/addons/build/agent): write a harness for a program Bakers does not yet support.
-2. <span id="add-a-client"></span>[Add a client](/addons/build/client): connect your own terminal application through its runtime API.
+2. <span id="add-a-client"></span>[Add a client](/addons/build/client): start and close agent terminals in your application through its CLI.
 3. [Extend the control panel](/addons/build/control-panel): implement an operation and make it callable from a ticket.
 
 The harness and client guides define a small example CLI/API, then show the complete adapter, registration and verification. Their external programs are hypothetical so you can see which parts must be adapted to your own software.

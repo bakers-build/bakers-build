@@ -7,8 +7,6 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -26,7 +24,6 @@ import { loadInbox } from '../../src/plugins/message.js';
 import { loadTools } from '../../src/plugins/tools.js';
 
 let dir: string;
-let clientServer: Server | undefined;
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'bakers-addon-guide-'));
@@ -35,11 +32,7 @@ beforeEach(() => {
   writeFileSync(join(dir, '.gitignore'), 'ignored.txt\n');
 });
 
-afterEach(async () => {
-  if (clientServer) {
-    await new Promise<void>((resolve) => clientServer!.close(() => resolve()));
-    clientServer = undefined;
-  }
+afterEach(() => {
   vi.unstubAllEnvs();
   rmSync(dir, { recursive: true, force: true });
 });
@@ -289,42 +282,40 @@ it('collects only its own agent transcript and tolerates absent logs and metrics
   }
 });
 
-it('starts runs through the new client API and cleans up one session after reconnecting', async () => {
-  const sessions = new Map<string, unknown>();
-  const requests: Array<{
-    method?: string;
-    path: string;
-    authorization?: string;
-    body: unknown;
-  }> = [];
-  clientServer = createServer(async (req, res) => {
-    let text = '';
-    for await (const chunk of req) text += chunk;
-    const body = text ? JSON.parse(text) : undefined;
-    const path = req.url!;
-    requests.push({
-      method: req.method,
-      path,
-      authorization: req.headers.authorization,
-      body,
-    });
-    if (req.headers.authorization !== 'Bearer test-client-token') {
-      res.writeHead(401).end();
-      return;
-    }
-    if (req.method === 'PUT') {
-      sessions.set(path, body);
-      res.writeHead(201).end();
-      return;
-    }
-    res.writeHead(sessions.delete(path) ? 204 : 404).end();
-  });
-  await new Promise<void>((resolve) =>
-    clientServer!.listen(0, '127.0.0.1', resolve),
+function installClientCli() {
+  const bin = join(dir, 'bin');
+  mkdirSync(bin);
+  writeFileSync(
+    join(bin, 'my-client'),
+    `#!/usr/bin/env node
+const fs = require('node:fs');
+const path = require('node:path');
+const root = process.env.CLIENT_TEST_DIR;
+const file = (name) => path.join(root, name);
+const body = JSON.parse(fs.readFileSync(0, 'utf8'));
+const args = process.argv.slice(2);
+fs.appendFileSync(file('requests.jsonl'), JSON.stringify({ args, body }) + '\\n');
+if (fs.existsSync(file('fail-client'))) {
+  process.stderr.write(JSON.stringify(body));
+  process.exit(1);
+}
+const sessions = fs.existsSync(file('sessions.json'))
+  ? JSON.parse(fs.readFileSync(file('sessions.json'), 'utf8')) : {};
+const key = JSON.stringify([body.branch, body.runId]);
+if (args[0] === 'start') sessions[key] = body;
+else if (args[0] === 'close') delete sessions[key];
+else process.exit(2);
+fs.writeFileSync(file('sessions.json'), JSON.stringify(sessions));
+`,
+    { mode: 0o755 },
   );
-  const url = `http://127.0.0.1:${(clientServer.address() as AddressInfo).port}`;
-  vi.stubEnv('MY_CLIENT_TOKEN', 'test-client-token');
-  const found = await loadGuide('client', 'my-client', { url });
+  vi.stubEnv('PATH', `${bin}:${process.env.PATH}`);
+  vi.stubEnv('CLIENT_TEST_DIR', dir);
+}
+
+it('starts runs through the new client CLI and cleans up one session after reconnecting', async () => {
+  installClientCli();
+  const found = await loadGuide('client', 'my-client');
   expect(found.executors).toMatchObject([
     { kind: 'executor', id: 'my-client' },
   ]);
@@ -351,39 +342,48 @@ it('starts runs through the new client API and cleans up one session after recon
     run: { uuid: 'run-1', id: 7, handler: 'my-agent' },
     workspacePath: dir,
     instructions: null,
-    command: "my-agent --prompt 'a prompt'",
+    command: "my-agent --prompt 'quotes; $(touch unexpected)'",
     env: { BB_CONDUCTOR_TOKEN: 'run-secret' },
   };
   expect(executor.capabilities()).toEqual({ persistent: true });
   const first = await executor.startRun(input);
-  await executor.startRun({ ...input, run: { ...input.run, id: 8 } });
-  expect(requests[0]).toMatchObject({
-    method: 'PUT',
-    authorization: 'Bearer test-client-token',
-    body: { cwd: dir, command: input.command, env: input.env },
+  const second = await executor.startRun({
+    ...input,
+    run: { ...input.run, id: 8 },
   });
-  expect(requests[0].path).not.toContain('run-secret');
-  expect(sessions.size).toBe(2);
+  expect(first.sessionRef).toEqual(expect.any(String));
+  expect(first.sessionRef).not.toBe(second.sessionRef);
+  const requests = readFileSync(join(dir, 'requests.jsonl'), 'utf8')
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line));
+  expect(requests[0]).toEqual({
+    args: ['start', '--json-stdin'],
+    body: {
+      branch: 'feat/example',
+      runId: 7,
+      cwd: dir,
+      command: input.command,
+      env: input.env,
+    },
+  });
+  const sessions = () =>
+    Object.values(JSON.parse(readFileSync(join(dir, 'sessions.json'), 'utf8')));
+  expect(sessions()).toHaveLength(2);
   const restarted = await plugin.createExecutor(config, { logger });
   await restarted.stopRun(input.ticket.branchName);
-  expect(sessions.size).toBe(2);
+  expect(sessions()).toHaveLength(2);
   await restarted.cleanupRun(input.ticket.branchName, 7);
-  expect(sessions.size).toBe(1);
-  expect(sessions.has(`/sessions/${first.sessionRef}`)).toBe(false);
+  expect(sessions()).toEqual([expect.objectContaining({ runId: 8 })]);
   await restarted.cleanupRun(input.ticket.branchName, 7);
-  expect(sessions.size).toBe(1);
+  expect(sessions()).toHaveLength(1);
   expect(logger.warn).not.toHaveBeenCalled();
+  expect(readFileSync(join(dir, 'notes.md'), 'utf8')).toBe('First line\n');
 });
 
-it('requires confirmed client launches and reports cleanup and configuration failures without secrets', async () => {
-  let status = 202;
-  clientServer = createServer((_req, res) => res.writeHead(status).end());
-  await new Promise<void>((resolve) =>
-    clientServer!.listen(0, '127.0.0.1', resolve),
-  );
-  const url = `http://127.0.0.1:${(clientServer.address() as AddressInfo).port}`;
-  vi.stubEnv('MY_CLIENT_TOKEN', 'private-runtime-token');
-  const found = await loadGuide('client', 'my-client', { url });
+it('reports client start and cleanup failures without exposing client output', async () => {
+  installClientCli();
+  const found = await loadGuide('client', 'my-client');
   const [plugin] = found.executors as ExecutorPlugin[];
   const logger = {
     debug: vi.fn(),
@@ -391,8 +391,9 @@ it('requires confirmed client launches and reports cleanup and configuration fai
     warn: vi.fn(),
     error: vi.fn(),
   };
-  const config = {} as ConductorFileConfig;
-  const executor = await plugin.createExecutor(config, { logger });
+  const executor = await plugin.createExecutor({} as ConductorFileConfig, {
+    logger,
+  });
   const input: SpawnRunInput = {
     ticket: {
       uuid: 'ticket-1',
@@ -404,15 +405,12 @@ it('requires confirmed client launches and reports cleanup and configuration fai
     run: { uuid: 'run-1', id: 7, handler: 'my-agent' },
     workspacePath: dir,
     instructions: null,
-    command: 'my-agent',
+    command: 'my-agent --prompt private-prompt',
     env: { SECRET: 'private-run-token' },
   };
-  await expect(executor.startRun(input)).rejects.toThrow(
-    'My Client PUT failed (202)',
-  );
-  status = 503;
-  await expect(executor.startRun(input)).rejects.toThrow(
-    'My Client PUT failed (503)',
+  writeFileSync(join(dir, 'fail-client'), '');
+  await expect(executor.startRun(input)).rejects.toEqual(
+    new Error('my-client start failed'),
   );
   await expect(
     executor.startRun({ ...input, command: undefined }),
@@ -420,15 +418,8 @@ it('requires confirmed client launches and reports cleanup and configuration fai
   await expect(executor.cleanupRun('feat/example', 7)).resolves.toBeUndefined();
   expect(logger.warn).toHaveBeenCalledOnce();
   expect(JSON.stringify(logger.warn.mock.calls)).not.toContain('private-');
-  vi.stubEnv('MY_CLIENT_TOKEN', '');
-  await expect(plugin.createExecutor(config, { logger })).rejects.toThrow(
-    'MY_CLIENT_TOKEN is required',
-  );
-  const remote = await loadGuide('client', 'my-client-remote', {
-    url: 'https://example.com',
-  });
-  const [unsafe] = remote.executors as ExecutorPlugin[];
-  await expect(unsafe.createExecutor(config, { logger })).rejects.toThrow(
-    'loopback HTTP origin',
+  unlinkSync(join(dir, 'bin', 'my-client'));
+  await expect(executor.startRun(input)).rejects.toEqual(
+    new Error('my-client start failed'),
   );
 });
