@@ -35,9 +35,10 @@ function parses(text) {
 
 /**
  * The text without its comments (`code`), and the text with comments and string contents blanked
- * to spaces, newlines kept (`blank`); a string used as a property key stays.
- * shortcut: a quote inside a regex literal throws the scan off; machine files hold none, parse one
- * if they do.
+ * to spaces, newlines kept (`blank`); a string used as a property key stays. Null when a string
+ * or comment never closes, which means the scan lost track.
+ * shortcut: a quote or slash inside a regex literal, or a string nested in a template's `${}`,
+ * throws the scan off; machine files hold none, parse them if they do.
  */
 function scan(text) {
   let code = '';
@@ -52,12 +53,14 @@ function scan(text) {
       i = stop - 1;
     } else if (c === '/' && text[i + 1] === '*') {
       const end = text.indexOf('*/', i + 2);
-      const stop = end === -1 ? text.length : end + 2;
+      if (end === -1) return null;
+      const stop = end + 2;
       blank += text.slice(i, stop).replace(/[^\n]/g, ' ');
       i = stop - 1;
     } else if (c === '"' || c === "'" || c === '`') {
       let end = i + 1;
       for (; end < text.length && text[end] !== c; end++) if (text[end] === '\\') end++;
+      if (end >= text.length) return null;
       const str = text.slice(i, end + 1);
       colon.lastIndex = end + 1;
       const key = c !== '`' && colon.test(text);
@@ -72,13 +75,17 @@ function scan(text) {
   return { code, blank };
 }
 
-/** The offset of the top-level `key` (quoted, shorthand or on a shared line) in `blank`, or -1. */
-function topKey(blank, key) {
+/**
+ * The offset of `key` (quoted, shorthand or on a shared line) in `blank` as a key of the object that
+ * opens at `start`, the `export default {` line, or -1.
+ */
+function topKey(blank, key, start) {
   for (const m of blank.matchAll(new RegExp(`(?<=(?:^|[{,])\\s*)(["']?)${key}\\1\\s*(?=[:,}])`, 'gm'))) {
+    if (m.index < start) continue;
     let depth = 0;
-    for (const ch of blank.slice(0, m.index)) {
+    for (const ch of blank.slice(start, m.index)) {
       if ('{[('.includes(ch)) depth++;
-      else if ('}])'.includes(ch)) depth--;
+      else if ('}])'.includes(ch) && --depth === 0) return -1; // past the exported object
     }
     if (depth === 1) return m.index;
   }
@@ -109,18 +116,24 @@ function edit(text, transport) {
   const base = unmarked(text);
   if (transport === 'none') return base;
   const lines = base.split('\n');
-  const { code, blank } = scan(base);
-  const head = blank.split('\n').findIndex((l) => /^\s*export\s+default\s*\{\s*$/.test(l));
-  if (head === -1) {
+  const scanned = scan(base);
+  if (!scanned) {
+    log('cannot read machine.config.js; left unchanged, add tunnel and the ports entry by hand');
+    return text;
+  }
+  const { code, blank } = scanned;
+  const start = blank.search(/^[ \t]*export[ \t]+default[ \t]*\{[ \t]*$/m);
+  if (start === -1) {
     log('machine.config.js has no `export default {` line; add tunnel and the ports entry by hand');
     return base;
   }
+  const head = blank.slice(0, start).split('\n').length - 1;
   const hasPorts = /['"]@bakers-build\/addon-ports['"]/.test(code);
   // Looked up before any splice below, which shifts lines against blank.
-  const ownTunnel = topKey(blank, 'tunnel') !== -1;
+  const ownTunnel = topKey(blank, 'tunnel', start) !== -1;
   if (transport === 'cloudflare-quick') {
     const block = [` ${BEGIN}`, ` ${QUICK_ENTRY}`, ` ${END}`];
-    const addons = topKey(blank, 'addons');
+    const addons = topKey(blank, 'addons', start);
     const rest = blank.slice(addons).split('\n')[0];
     if (hasPorts) log('machine.config.js has its own addon-ports entry; it wins over the parameter');
     // A created addons key sits inside the markers, so none removes it with the entry.

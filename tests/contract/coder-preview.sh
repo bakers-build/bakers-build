@@ -189,6 +189,23 @@ grep -qi 'cannot place' "$OUT" || fail "shorthand addons: no log line: $(cat "$O
 [ "$(tunnel_value)" = true ] || fail "shorthand addons: tunnel is $(tunnel_value)"
 pass "keys sharing a line, in comments or strings, or in shorthand are found or named"
 
+# Only keys of the exported object count; a scan the script cannot follow leaves the file alone.
+printf '%s\n' '// @bakers-schema-version 1' 'const defaults = { tunnel: false, addons: [] };' 'const more = {' ' tunnel: false,' ' addons: [' ' ],' '};' 'export default {' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+edit cloudflare-quick
+[ "$(tunnel_value)" = true ] || fail "tunnel in a helper const: tunnel is $(tunnel_value): $(cat "$M")"
+grep -qi 'sets tunnel itself' "$OUT" && fail "a helper const's tunnel is named as the machine's: $(cat "$OUT")"
+quick_with_hand "addons in a helper const"
+printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' tpl: `a${"`"}b`,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+cp "$M" "$SCRATCH/nested"
+edit cloudflare-quick
+if ! cmp -s "$M" "$SCRATCH/nested"; then
+  quick_with_hand "a backtick nested in a template literal"
+  [ "$(grep -cE "^\s*addons\s*:" "$M")" = 1 ] || fail "a nested backtick: not exactly one addons key: $(cat "$M")"
+else
+  grep -qi 'cannot read' "$OUT" || fail "a nested backtick left the file unchanged without a log line: $(cat "$OUT")"
+fi
+pass "keys of a helper const are ignored, and an unreadable file is named and left unchanged"
+
 # --- F5: a broken file stays untouched -------------------------------------
 printf 'export default {\n machine_id: "x",\n' > "$M"
 cp "$M" "$SCRATCH/broken"
