@@ -81,6 +81,7 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
 function securityFlags(
   { mode, sandbox, config }: ResolvedSecurity,
   workspacePath: string | undefined,
+  pluginsOn = false,
 ): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
@@ -132,8 +133,9 @@ function securityFlags(
   return [
     '--permission-mode',
     'default',
+    // The agent home's user settings enable its plugins; the person's own stay out.
     '--setting-sources',
-    'project,local',
+    pluginsOn ? 'user,project,local' : 'project,local',
     '--settings',
     JSON.stringify(settings),
   ];
@@ -340,7 +342,7 @@ export class ClaudeAgent implements BbAgent {
     // The flags are constants; only their generated values need quoting.
     parts.push(
       ...[
-        ...securityFlags(this.security, workspacePath),
+        ...securityFlags(this.security, workspacePath, this.pluginsOn),
         ...this.mcpFlags(tools),
       ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );

@@ -125,6 +125,17 @@ describe('ClaudeAgent with plugins on', () => {
     );
   });
 
+  it('reads the agent home settings, where the plugins are enabled, in sandbox mode', async () => {
+    const agent = new ClaudeAgent({}, user);
+    agent.useMarketplaces([probe]);
+    expect(agent.launchCommand('go', undefined, root)).toContain(
+      "--setting-sources 'user,project,local'",
+    );
+    expect(
+      new ClaudeAgent({}, user).launchCommand('go', undefined, root),
+    ).toContain("--setting-sources 'project,local'");
+  });
+
   it('reads transcripts from the agent home it installed into', async () => {
     const agent = await agentFor();
     expect(agent.configDir).toMatch(
