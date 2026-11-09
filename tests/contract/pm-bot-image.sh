@@ -15,8 +15,9 @@
 #     container of the same image) with the key as bearer and takes exactly the
 #     eight included tools; with a wrong key the check fails
 #   - the bot-channels plugin is installed and loaded, and the Hermes internals it relies on
-#     (SlackAdapter._handle_slack_message, the channel getters, resolve_channel_prompt,
-#     register_platform_handler) exist
+#     (SlackAdapter._handle_slack_message, the channel getters, the reaction lifecycle's
+#     _track_reacting_message, _event_team_id, on_processing_complete and
+#     ProcessingOutcome.CANCELLED, resolve_channel_prompt, register_platform_handler) exist
 #   - the shipped skills (bb-create-ticket, both recipes and the upstream method
 #     skills) are installed, the bundle version is printed, every relative link
 #     in them resolves, the upstream ones match pm-bot-upstream.sha256 (their
