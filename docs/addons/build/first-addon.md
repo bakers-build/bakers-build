@@ -4,10 +4,26 @@ Add a **Check patch** action to your tickets. An agent can use it before handing
 
 The addon runs `git diff --check` in **that ticket's worktree**. It reports whitespace errors and conflict markers in tracked changes. It changes no project files. This is a small Git check, not a replacement for your project's tests.
 
+## What an addon is
+
+An addon extends an application through an API that the application provides. In bakers.build, it is an ordinary **JavaScript package**: a directory containing `package.json` and JavaScript modules. It can live inside your project, as this example does, or be an installed package. Publishing it to npm is optional.
+
+Three pieces connect your code to Bakers:
+
+| Piece | Role in this example |
+|---|---|
+| `package.json` | Gives the package a name and version, and points to the module Bakers should load. |
+| `preset.js` | A JavaScript module whose named exports describe the addon's capabilities and supply their implementations. Bakers calls this module a **preset**. |
+| The project's `addons` entry | Tells the conductor to load this package. Creating the files alone does not enable it. |
+
+JavaScript's `export` makes a value available to the module's importer. Here, the conductor imports your preset and reads exports such as `tools` and `inbox`. Their names and structure follow the Bakers API; exporting an arbitrary function does not automatically make it a tool or a button.
+
+## What you will build
+
 You will build one operation and expose it twice:
 
 1. **Tool:** the agent calls `patch_check`, choosing unstaged or staged changes.
-2. **Message:** the ticket offers the same choice and displays the result.
+2. **Message:** the ticket's control panel offers the same choice and displays the result.
 
 **Unstaged** means changes in tracked files that are not yet in the Git index; **staged** means changes prepared for the next commit.
 
@@ -30,7 +46,7 @@ Create `.bakers/addons/patch-check/package.json`:
 }
 ```
 
-This identifies the package and tells the loader where its **preset** lives. The preset declares the capabilities the addon contributes.
+`"type": "module"` enables JavaScript's `import` and `export` syntax for these files. The `"./preset"` entry exposes `preset.js` at the package's preset entry point; the filename itself is your choice.
 
 Create `.bakers/addons/patch-check/preset.js`:
 
@@ -130,6 +146,10 @@ An ordinary operator shell connects to the site's tools and will not find this l
 
 ## Add a ticket message
 
+The tool now gives agents an operation. To put that operation in the **web control panel**, add an `inbox` export. It describes a message that a person can send from the ticket's message card. Bakers supplies the form, submit action, progress status and answer display.
+
+The conductor registers the message definition with the Bakers server. Your Git function stays on the conductor's machine; the browser receives the rendered controls and sends the selected input. You do not need to write a web component for this form.
+
 Make the check available to teammates who can update the ticket. Append this export to the same `preset.js`:
 
 ```js
@@ -147,13 +167,15 @@ export const inbox = {
 };
 ```
 
-The message reuses the tool's input declaration and binds its **Check patch** action to `patch_check`. You write no second Git implementation. The binding forwards the selected scope, uses the ticket's worktree and turns the tool's text into the message answer.
+Here, `label: 'Patch check'` names the addon, `label: 'Check patch'` names its action, and the reused `scope` enum becomes an **unstaged / staged** selector. When several addons are available, the web card uses their labels as tabs. The binding connects that form to `patch_check`; it forwards the selected scope, uses the ticket's worktree and turns the tool's text into the message answer.
 
-Commit the change and restart the conductor. On the disposable ticket, open the message card in the web UI or `bakers ui`, select **Patch check**, choose **unstaged** and send **Check patch**.
+Commit the change and restart the conductor. On the disposable ticket, open the message card in the web UI or `bakers ui`. If several addons are offered, select **Patch check**. Choose **unstaged** and send **Check patch**.
 
 Expect pending/running followed by the same confirmation as the agent received. With a whitespace error or conflict marker, expect a failed answer naming the affected file and line. Fix the deliberate error and run the check again to see the result change.
 
 `access: 'update'` requires permission to update that ticket. It controls who can send this message; direct tool calls have their own run binding. See [Messages](/addons/build/actions) for access and lifecycle details.
+
+This extension adds controls to the existing ticket card. Its answer is Markdown; `inbox` does not mount arbitrary JavaScript components or add new web pages. [Messages](/addons/build/actions#extend-the-control-panel) explains the available controls and their limits. Custom tabs in the terminal client use a [separate API](/addons/bakers-ui/tabs).
 
 When changing an already registered message definition, bump the package version before restarting: registration keeps the first definition for a package name and version.
 

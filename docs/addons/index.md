@@ -1,6 +1,6 @@
 # Addons
 
-Addons extend bakers.build with agents, tools, previews and other integrations. Choose whether to use an existing package or build a capability that is missing.
+An **addon** is a JavaScript package that extends bakers.build through its extension API. Its exports declare capabilities such as agent tools, ticket actions, previews or integrations. You can use an installed package or write a local one.
 
 ## Choose your task
 
@@ -25,7 +25,7 @@ Follow the package's own instructions; naming an addon does not install its unde
 
 Start with [Build your first addon](/addons/build/first-addon): check a patch in the ticket's worktree, call the check from an agent, then offer the same operation to ticket users.
 
-A **tool** is a named operation with validated inputs and a result or error. A **message** is a request a person sends from a ticket; the conductor runs its handler or bound tool in that ticket’s worktree. For example, Ports binds **Share tunnels** to the `ports_up` tool. Not every message calls a tool.
+To extend the web control panel, an addon declares **messages**: ticket buttons or forms with a result. Bakers renders the controls; the conductor runs the operation. A message can call an agent tool, as Ports' **Share tunnels** calls `ports_up`, or have its own handler.
 
 Continue with [Tools](/addons/build/tools), [Messages](/addons/build/actions) and the [API reference](/addons/build/contracts). Specialized extensions can supply an [executor or workspace](/addons/build/executor-workspace), [lifecycle listeners](/provision/hooks#add-a-listener-from-an-addon), or a [terminal tab](/addons/bakers-ui/tabs).
 

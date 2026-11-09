@@ -4,6 +4,22 @@
 
 Let a person request an addon operation from a ticket and receive a Markdown answer. Start with [Build your first addon](/addons/build/first-addon#add-a-ticket-message) for a working tool-to-message example. This reference is for authors extending that example.
 
+## Extend the control panel
+
+Use the preset's `inbox` export to add controls to a ticket's **message card** in the web control panel. You describe the operation and its inputs; Bakers builds the interface from that definition.
+
+| You declare | The user gets |
+|---|---|
+| Addon `label` | The addon's name; when several addons are available, a tab in the ticket card. |
+| A message `label`, with no `input` | A button to request that operation. |
+| A message `input` | A form: text fields, choices, numbers or booleans, followed by a submit action. |
+| A tool binding or a handler | Work performed by the conductor when the request is processed. |
+| A Markdown result | An answer below the controls, with the request's status. |
+
+The conductor sends the **definition** to the server when registering the addon. Handler functions remain on the conductor's machine. The browser submits input to the server, the conductor processes the request in the ticket's worktree, and the UI retrieves its status and answer. This is why loading an addon with only `tools` does not create a control-panel button: add `inbox` to describe the human-facing action.
+
+The message API supplies this existing card and its supported inputs and Markdown output. It does not load your JavaScript into the browser or provide arbitrary web pages, layouts or components. Custom tabs for the **terminal** client are a separate [extension API](/addons/bakers-ui/tabs).
+
 ## Write the addon
 
 Export `inbox` from the same preset as your tool. A message uses either a tool binding or a direct handler, never both. It needs a conductor with the addon loaded and a ticket worktree on that machine.
@@ -30,7 +46,7 @@ The binding passes the message payload as tool arguments. It returns the tool's 
 
 ## How it fits together
 
-The preset declares the form and its access requirement. The server checks the sender's ticket access and validates the payload. The conductor claims the request, resolves its ticket/worktree, runs the binding or handler, and writes the answer. The UI renders that person's latest request and result.
+The server checks the sender's ticket access and validates the payload before the conductor runs the operation. The UI renders that person's latest request and result.
 
 These are separate entry points: an agent can call a tool directly; a person can send a message bound to that tool. Messages may also have their own handlers. A message's `access` setting does not restrict direct tool calls.
 
