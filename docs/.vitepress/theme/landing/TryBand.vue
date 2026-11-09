@@ -1,7 +1,5 @@
 <script setup lang="ts">
-// The closing butter band: sign-up and the install command side by side as one group,
-// stacked on phones.
-import InstallCommand from './InstallCommand.vue'
+// The closing butter band: title, text and the sign-up button.
 import { SIGN_UP_URL, type Copy } from './copy'
 
 defineProps<{ t: Copy }>()
@@ -14,7 +12,6 @@ defineProps<{ t: Copy }>()
       <p class="m-0 mt-[10px] max-w-[445px] text-[17px] leading-[25.5px] text-[color:var(--lp-ink-2)]">{{ t.closing.text }}</p>
       <div data-cta-group class="mt-[18px] flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:gap-5">
         <a :href="SIGN_UP_URL" class="lp-btn lp-btn--ink">{{ t.signUp }}</a>
-        <InstallCommand :t="t.copy" :label="t.closing.install" tall />
       </div>
     </div>
   </section>

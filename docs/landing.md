@@ -5,8 +5,8 @@
 layout: home
 navbar: false
 markdownStyles: false
-title: You're the baker. Agents run the line.
-description: Agents work every ticket on your own machines, and a person decides at every station. Open source, self-hosted or hosted, both free.
+title: A ticket-driven AI software factory.
+description: Agents work every ticket on your development machine or on remote workers, and a person decides at every station. Open source, self-hosted or hosted, both free.
 ---
 
 <Landing />
