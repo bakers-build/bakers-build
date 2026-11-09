@@ -21,7 +21,7 @@ with a JSON encoder
 | 1 | the tool refused; the message names the cause | report it; correct only arguments the message shows wrong |
 | 3 | credentials rejected | `bakers auth status` outside a run; report |
 | 4 | invalid arguments or unknown tool, nothing sent | fix the arguments against `bakers tools <tool> --schema` |
-| 5 | HTTP or protocol error | report it |
+| 5 | HTTP or protocol error | report |
 
 **An error is not a negative**: a failed read or search found nothing out. A timed-out or exit-5 write
 may have happened: reconcile with a read, never resend it.
@@ -35,7 +35,7 @@ are term names, reused or created.
 |---|---|---|---|
 | Read a ticket | `bakers_ticket_read` | `ticket` | `id`, `identifier`, `title`, `state`, `workflow`, `description`, `type`, `recipe`, `labels`, `links`, `project`, `branch_name`, `base_branch`, `conductor`, `frozen`, `metrics`, `deployments`, `comments` (`id`, `type`, `body`, `created`, `author`; oldest first) |
 | Search tickets | `bakers_ticket_search` | `query` (title or description) or exact `branch_name`; optional `project` | `tickets` (`identifier`, `title`, `state`, `type`, `branch_name`, `base_branch`, `parent`); newest first, at most 50 |
-| Create a ticket | `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent`, `branch_name` | `id`, `identifier`, `state`, `branch_name`, `url` |
+| Create a ticket | `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee_email` | `id`, `identifier`, `state`, `branch_name`, `assignee`, `url` |
 | Edit a ticket | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor` (UUID), `labels_add`, `labels_remove` (absent ignored), `frozen`, `environments_add` (names, UUIDs), `referenced_tickets_add` (adds only) | saved values; others kept; a label in both lists refused; closed: refused |
 | Set recipe and type | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | saved `recipe` and `type` |
 | Change state or add links | `bakers_ticket_transition` | `ticket`; `state`, `links` (`[{uri, title}]`) or both | saved `state` and all `links`; existing links kept, no duplicate `uri`; no `state` keeps it |
