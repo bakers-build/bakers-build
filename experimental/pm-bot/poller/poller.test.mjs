@@ -366,6 +366,27 @@ test('a status line Slack refused is posted on a later pass, once, also after a 
   assert.deepEqual(slack.posts().slice(refused).map((p) => p.text), [messages.runStart.working]);
 });
 
+test('a run whose start line Slack refused once gets its start and end lines once each, in order', async (t) => {
+  const accepted = [];
+  let refusals = 1;
+  const { s, poller } = await setup(t, {
+    slackAnswers: {
+      'chat.postMessage': (body) => {
+        if (body.text === messages.runStart.working && refusals-- > 0) return { ok: false, error: 'ratelimited' };
+        accepted.push(body.text);
+        return { ok: true, ts: `1800000000.${String(accepted.length).padStart(6, '0')}` };
+      },
+    },
+  });
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  s.addRun(ticket, { state: 'failed' });
+  await poller.pass();
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(accepted, [messages.runStart.working, messages.runPaused]);
+});
+
 test('a summary comment without a body posts nothing and fails nothing', async (t) => {
   const { s, slack, poller } = await setup(t);
   const ticket = s.addTicket({ state: 'working', links: [thread()] });

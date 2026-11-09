@@ -227,13 +227,20 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
     const { posts, next } = updates({ previous: state.updates, posted: state.posted, tickets: read, now: now(), interval: heartbeat, messages });
     state.updates = { ...kept, ...next.records };
     state.posted = next.posted;
+    const refused = new Set();
     for (const p of posts) {
+      // After a refused post, the ticket's later posts wait too, so the next pass retries them in order.
+      if (refused.has(p.identifier)) {
+        forget(state.updates, p);
+        continue;
+      }
       try {
         await slack.post(p);
         stampPost(state, p);
         log.log(`${stamp()} posted an update of ${p.identifier}`);
       } catch (error) {
         // Not recorded, so the next pass retries it.
+        refused.add(p.identifier);
         forget(state.updates, p);
         log.error(`${stamp()} update of ${p.identifier}: ${error.message}`);
       }
