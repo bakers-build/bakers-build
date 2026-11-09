@@ -8,7 +8,7 @@ A workspace is one Sysbox container with its own Docker daemon, a home volume an
 
 ## Tools
 
-`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh` and `glab`. Docker and DDEV come from the image. `frpc` and `cloudflared` are installed and started only when their operator configuration files exist. With PM bot parameters, the bot runs as a container on the workspace's Docker daemon.
+`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh` and `glab`. Docker and DDEV come from the image. `cloudflared` and `frpc` are installed only when the [`preview_transport` parameter](#optional-previews) selects them. With PM bot parameters, the bot runs as a container on the workspace's Docker daemon.
 
 ## Prerequisites
 
@@ -63,13 +63,20 @@ Coder gives a new template to everyone by default. Restrict it in the Coder UI i
 
 ## Optional previews
 
-Without provider configuration no tunnel client is downloaded or started. For FRP,
-create `~/.config/frp/frpc.json` with your server and credentials. For named
-Cloudflare, create `~/.cloudflared/tunnel-token`. Protect these files and restart
-the workspace to install/start the selected client. For Cloudflare Quick, install
-`cloudflared` explicitly before selecting that transport; it needs no token file.
-The transport configuration must supply your own zone and endpoint; no company
-preview zone is provided. Local development works without any of these providers.
+The workspace parameter `preview_transport` (*Preview transport*) chooses how runs share preview links. Set it in the workspace form, or with `--parameter preview_transport=<value>` on `coder create` and `coder update`. A changed value applies on the next start.
+
+| Value | On every start |
+|---|---|
+| `none` (default) | Installs and starts no tunnel client, and removes what the parameter wrote earlier |
+| `cloudflare-quick` | Installs `cloudflared` and writes `tunnel: true` and the [Cloudflare Quick](../../docs/addons/ports-cloudflare-quick.md) ports entry. `bakers ports up` starts the tunnel, so no connector runs |
+| `cloudflare` | Installs `cloudflared`, writes `tunnel: true` and runs `cloudflared tunnel run` when `~/.cloudflared/tunnel-token` exists |
+| `frp` | Installs `frpc`, writes `tunnel: true` and starts `frpc` when `~/.config/frp/frpc.json` exists |
+
+The parameter edits `~/.bakers/machine.config.js` through [`scripts/preview-config.mjs`](scripts/preview-config.mjs), and creates the file when it is missing. It owns only the lines it marks with `// bakers-ddev preview`; every other line stays as it is. A `tunnel` key or an `@bakers-build/addon-ports` entry you wrote yourself wins over the parameter, and the start log says so. A file that does not load, or whose keys it cannot place so that they take effect (a spread or computed `addons` key, for example), stays untouched, and the start log names what to add by hand. At `none` it still removes its marked lines from a file that does not load here, unless the result would not parse. A `begin` or `end` marker line without its pair leaves the file untouched for every value. A running conductor reads `tunnel` again for each run; a changed ports entry needs a conductor restart, which a workspace restart gives.
+
+Named Cloudflare and FRP need your account values, so you supply their files: `~/.cloudflared/tunnel-token`, or `~/.config/frp/frpc.json` with your server and credentials, and the ports entry in `machine.config.js` as the [named Cloudflare](../../docs/addons/ports-cloudflare.md) and [frp](../../docs/addons/ports-frp.md) pages show. The start log names a missing ports entry. Protect these files. The transport configuration must supply your own zone and endpoint; no company preview zone is provided. Local development works without any of these providers.
+
+**Upgrading:** a token file or `frpc.json` alone no longer starts a connector. A workspace that relied on one needs `preview_transport` set to `cloudflare` or `frp`.
 
 ## Updating versions
 
