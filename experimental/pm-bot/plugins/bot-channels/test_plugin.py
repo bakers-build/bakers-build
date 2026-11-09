@@ -85,6 +85,31 @@ def message(channel, ts="1.1", **extra):
     return {"type": "message", "channel": channel, "user": "U1", "ts": ts, "text": "<@UBOT> comic sans", **extra}
 
 
+class LanguageFile(unittest.TestCase):
+    """The plugin shares the bot's language with the poller through bot-language.json."""
+
+    def setUp(self):
+        self.path = os.path.join(DATA, "bot-language.json")
+        with open(self.path, "w") as fh:
+            json.dump({"language": "en"}, fh)  # the previous run's language
+
+    def language(self):
+        with open(self.path) as fh:
+            return json.load(fh)
+
+    def test_the_start_resets_the_language_to_german(self):
+        os.environ.update(SLACK_ALLOWED_CHANNELS=HOME)
+        with self.assertLogs("pm_bot.bot_channels", "ERROR"):  # no env for the read in this test
+            plugin.factory(App(), Adapter([]))
+        self.assertEqual(self.language(), {"language": "de"})
+
+    def test_a_plugin_that_stays_off_still_resets_it(self):
+        os.environ.update(SLACK_ALLOWED_CHANNELS="")
+        with self.assertLogs("pm_bot.bot_channels", "ERROR"):
+            plugin.factory(App(), Adapter([]))
+        self.assertEqual(self.language(), {"language": "de"})
+
+
 class Middleware(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         os.environ.update(SLACK_ALLOWED_CHANNELS=HOME, SLACK_ALLOWED_USERS="U1")

@@ -3,7 +3,8 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { openNote, relay } from './questions.mjs';
 
-const messages = JSON.parse(readFileSync(new URL('./messages.json', import.meta.url), 'utf8'));
+const texts = JSON.parse(readFileSync(new URL('./messages.json', import.meta.url), 'utf8'));
+const messages = texts.de;
 const leads = {
   question: '{identifier} · "{title}" has a question:',
   technical_problem: 'The work on the "{title}" ticket is stuck on a technical problem that keytec has to solve:',
@@ -101,7 +102,8 @@ test('open questions and technical problems share the relayed record', () => {
 });
 
 test('the lead-in in messages.json is the agreed text', () => {
-  assert.equal(messages.technicalProblemLead, 'The work on the "{title}" ticket is stuck on a technical problem that keytec has to solve:');
+  assert.equal(texts.en.technicalProblemLead, 'The work on the "{title}" ticket is stuck on a technical problem that keytec has to solve:');
+  assert.equal(texts.de.technicalProblemLead, 'Die Arbeit am Ticket „{title}“ hängt an einem technischen Problem, das keytec lösen muss:');
 });
 
 test('a note goes flat into a channel conversation; a sub-ticket\'s technical problem names the sub-ticket', () => {
