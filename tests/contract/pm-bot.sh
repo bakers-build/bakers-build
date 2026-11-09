@@ -191,6 +191,12 @@ grep -qF '[ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=tr
   || fail "entrypoint.sh does not serve every user when SLACK_ALLOWED_USERS is empty"
 pass "every user in the allowed channels unless SLACK_ALLOWED_USERS is set"
 
+# The poller starts before the plugin resets bot-language.json; a code the last run left would
+# make its first pass speak that language while the plugin speaks German.
+awk '/rm -f "\$DATA\/bot-language.json"/ { cleared = 1 } /poller\.mjs" &/ { started = 1; exit !cleared } END { if (!started) exit 1 }' "$BOT/entrypoint.sh" \
+  || fail "entrypoint.sh does not remove bot-language.json before it starts the poller"
+pass "the poller starts without the last run's language"
+
 # The poller and the plugin relay; they never call a model. One exception: the plugin's
 # language.py asks it which language the service account's background names, and takes back
 # nothing but a validated code.

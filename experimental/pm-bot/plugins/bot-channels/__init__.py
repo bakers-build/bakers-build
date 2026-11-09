@@ -16,8 +16,9 @@
 - Language: read once at start from the service account's background (language.py), German
   until then and on any failure; it also picks the plugin's own texts (messages.json).
 
-This plugin writes $HERMES_HOME/bot-channels.json; the poller writes poller-state.json. Each
-reads the other's file and writes only its own.
+This plugin writes $HERMES_HOME/bot-channels.json and bot-language.json (the bot's language for the
+poller's texts); the poller writes poller-state.json. Each reads the other's files and writes only
+its own.
 """
 
 import asyncio
@@ -34,6 +35,7 @@ logger = logging.getLogger("pm_bot.bot_channels")
 
 DATA = os.environ.get("HERMES_HOME") or "/opt/data"
 BOT_FILE = os.path.join(DATA, "bot-channels.json")
+LANGUAGE_FILE = os.path.join(DATA, "bot-language.json")
 POLLER_FILE = os.path.join(DATA, "poller-state.json")
 
 
@@ -53,6 +55,8 @@ def factory(app, adapter):
     from slack_bolt.response import BoltResponse
     from slack_sdk.errors import SlackApiError
 
+    # First, so the poller posts German until this start's read is done, never a previous run's language.
+    language.write(LANGUAGE_FILE, DEFAULT_LANGUAGE)
     home = (os.environ.get("SLACK_ALLOWED_CHANNELS") or "").strip()
     workspace = os.environ.get("SLACK_WORKSPACE_URL") or ""
     allowed_users = _users(os.environ.get("SLACK_ALLOWED_USERS"))
@@ -61,7 +65,7 @@ def factory(app, adapter):
         return
 
     lang = {"code": DEFAULT_LANGUAGE}
-    language.start(lang)
+    language.start(lang, LANGUAGE_FILE)
 
     def current():
         poller = read_json(POLLER_FILE)
