@@ -122,8 +122,19 @@ Conductor core:
 
 1. Before each run, fetch each locked commit into a content-addressed cache (`~/.cache/bakers/plugins/<sha>`, read-only) unless it is already there, and verify it against the lock. A missing entry, a moved `ref` or a hash mismatch fails the run start.
 2. Call the agent addon's `installPlugins(lockedPlugins, home) → { env, args }`. The conductor knows nothing else about the harness.
-3. Record the locked commits in the run record.
+3. Record the plugin set in the run record and log it (see *Logs*).
 4. Fail the run start when a skill named by `WORKFLOW.md` or the ticket's recipe is missing from the installed set.
+
+**Logs.** Which plugins a run had must be readable from its log alone, without inspecting the machine. Before launch the conductor writes one structured `plugins` entry per run to its log and the run record:
+
+- **Run:** harness, agent alias, security mode, and whether `installPlugins` was on or switched off (`plugins: false`, logged as a warning).
+- **Lock:** the lock hash and the agent home path.
+- **Home:** `built` or `reused`.
+- **Per plugin:** name, declared `ref`, locked commit, content hash, and the route the addon took (`native` install, or `skills-only` fallback).
+- **Gaps:** features the harness could not carry, per plugin (for example `hooks` on Kimi), and any trust bypass used (`codex --dangerously-bypass-hook-trust`).
+- **Failure:** a failed run start names the entry and the reason: missing lock entry, moved `ref`, hash mismatch, failed install command with its exit code and output tail, or a missing required skill.
+
+The run detail in the UI shows the same entry, so a reviewer sees the plugin versions next to the transcript.
 
 **Every security mode.** `installPlugins` runs in every mode (`sandbox`, `system`, `custom`, `yolo`): the mode decides what the agent may do, the plugin set decides what it has, and that set is the same for every run of the project. The install runs in the addon before launch, outside the agent's sandbox, so the mode does not affect it. It can be switched off per agent (`plugins: false` in the agent's options); the agent then starts with its normal home and whatever is installed there, and the run start says so.
 
@@ -155,15 +166,23 @@ Each agent addon implements `installPlugins`. Its pieces:
 
 A plugin that ships no manifest for a harness falls back to option 1 on it: its `SKILL.md` folders go into the home's skill directory, and the missing hooks or MCP are named at run start. Skills cross-reference each other by bare name where they must work everywhere; namespaced references resolve only where the harness installs the plugin.
 
+**Project harness settings stay empty.** The `plugins` list is the only declaration. A project's `.claude/settings.json` (and any `.codex/config.toml`) carries no `extraKnownMarketplaces`, `enabledPlugins` or plugin opt-outs:
+
+- The claude addon writes the marketplaces and enabled plugins into the agent home it sets (or passes them with `--settings`).
+- The user's globally installed plugins, such as `bakers@bakers`, are not visible there, so the opt-out this repository and its playground fixture carry today becomes unnecessary.
+
+For interactive work outside the conductor, a developer starts the harness through bakers (for example `bakers agent run claude`) with the same agent home as a run. Interactive sessions and conductor runs then have the same plugins. A plain `claude` or `codex` keeps the user's own setup. Claude Code loading the plugins from `CLAUDE_CONFIG_DIR` alone, with empty project settings, is not proven yet (round 2 used project settings); follow-up 3 proves it.
+
 ### Follow-up tickets
 
-1. Conductor `plugins` slot: project declaration, `plugins.lock.json` and the lock command, verified cache, run-record commit, `installPlugins` call.
+1. Conductor `plugins` slot: project declaration, `plugins.lock.json` and the lock command, verified cache, `installPlugins` call, and the `plugins` log and run-record entry with its UI display.
 2. Required-skill check: fail the run start when a skill named by `WORKFLOW.md` or the recipe is missing.
 3. `installPlugins` in the claude and codex addons: home per lock hash, credential link, trust pre-grant, transcript paths, `plugins: false`; Codex with `--dangerously-bypass-hook-trust`. Proof includes two concurrent runs at different lock states.
 4. `installPlugins` in the pi, opencode, grok and kimi addons, each with the same proof.
 5. Ship the `bakers` skills through the `plugins` list at a pinned version instead of the per-machine `bakers@bakers` plugin; add the manifests other harnesses need; replace its three `bakers:` references with bare names.
 6. Evaluate dotagents as the per-harness projector before writing installs by hand.
 7. Install docs: `docs/skills-and-workflows/skills.md` names the `plugins` list and lock and drops per-machine installs for runs.
+8. Empty the project harness settings: move this repository's `.claude/settings.json` marketplaces into its `plugins` list and remove the `bakers@bakers` opt-out here and in the playground fixture; add `bakers agent run <harness>` for interactive sessions with the run's agent home.
 
 ## Proof
 
