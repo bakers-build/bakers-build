@@ -1,6 +1,6 @@
 # keytec bakers-ddev Coder template
 
-keytec's bakers.build worker box: one long-lived Coder workspace that comes up signed in and working on its first start. The [image](../../images/bakers-ddev/) carries every tool at a pinned version; this template only configures. Forked from bakers.build's [`coder/bakers-ddev`](https://github.com/bakers-build/bakers-build/blob/next/coder/bakers-ddev) ([MOVE.md](../../../MOVE.md) names the revision).
+keytec's bakers.build worker box: one long-lived Coder workspace that comes up signed in and working on its first start. The [image](../../images/keytec-coder/) carries every tool at a pinned version; this template only configures. Forked from bakers.build's [`coder/bakers-ddev`](https://github.com/bakers-build/bakers-build/blob/next/coder/bakers-ddev) ([MOVE.md](../../../MOVE.md) names the revision).
 
 A workspace is one Sysbox container with its own Docker daemon, a home volume and a Docker volume. On every start the agent runs [`scripts/install.sh`](scripts/install.sh), which installs nothing:
 
@@ -15,14 +15,14 @@ Every step logs to `/tmp/coder-startup-script.log` and never fails the start.
 
 ## Tools
 
-From the image, under `/usr/local`: `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh`, `glab`, `cloudflared`, `frpc`, `ss`, Playwright with Chromium (`PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright`), Docker and DDEV. `/usr/local/bin` comes first on `PATH`, so copies an older home volume still holds in `~/.local/bin` or `~/.npm-global/bin` never win. Nothing updates on start (`DISABLE_AUTOUPDATER=1`); a version bump is a new image ([image README](../../images/bakers-ddev/README.md)).
+From the image, under `/usr/local`: `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh`, `glab`, `cloudflared`, `frpc`, `ss`, Playwright with Chromium (`PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright`), Docker and DDEV. `/usr/local/bin` comes first on `PATH`, so copies an older home volume still holds in `~/.local/bin` or `~/.npm-global/bin` never win. Nothing updates on start (`DISABLE_AUTOUPDATER=1`); a version bump is a new image ([image README](../../images/keytec-coder/README.md)).
 
 Claude Code reads `/etc/claude-code/managed-settings.json` from the image: the keytec marketplace and the enabled plugins. It fetches the plugins itself, through the GitLab credential helper. Codex gets the image's `config.toml` when `~/.codex/config.toml` is missing.
 
 ## Prerequisites
 
 - A Coder deployment with a Docker host on amd64 that has the [Sysbox](https://github.com/nestybox/sysbox) runtime (`sysbox-runc`) and pull access to `git.key-tec.de:5050`.
-- The image built and pushed ([image README](../../images/bakers-ddev/README.md)).
+- The image built and pushed ([image README](../../images/keytec-coder/README.md)).
 
 ## Variables
 
@@ -30,7 +30,7 @@ Set them at push time with `--variable name=value`. A push needs only the two di
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `image` | required | The image by digest, `git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:<tag>@sha256:<digest>`. Anything without `@sha256:` fails validation |
+| `image` | required | The image by digest, `git.key-tec.de:5050/keytec/infra/keytec-coder:<tag>@sha256:<digest>`. Anything without `@sha256:` fails validation |
 | `pm_bot_image` | empty | The PM bot's image by digest ([PM bot › The bot's version](#4-the-bots-version)). Anything without `@sha256:` fails validation. Empty: no workspace runs the bot |
 | `pm_bot_registry_user`, `pm_bot_registry_token` | empty | Credentials for a private `pm_bot_image` registry; empty for the public GHCR image |
 | `docker_host` | `unix:///var/run/docker.sock` | Docker socket of the Coder server |
@@ -42,7 +42,7 @@ Set them at push time with `--variable name=value`. A push needs only the two di
 
 ```sh
 coder templates push bakers-ddev -d coder/templates/bakers-ddev \
-  --variable image=git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:<tag>@sha256:<digest> \
+  --variable image=git.key-tec.de:5050/keytec/infra/keytec-coder:<tag>@sha256:<digest> \
   --variable pm_bot_image=ghcr.io/bakers-build/bakers-build/pm-bot:<tag>@sha256:<digest>
 ```
 

@@ -5,7 +5,7 @@ mock_provider "coder" {}
 mock_provider "docker" {}
 
 variables {
-  image = "git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:1.0.0@sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  image = "git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0@sha256:0000000000000000000000000000000000000000000000000000000000000000"
 }
 
 run "image_by_digest_plans" {
@@ -15,7 +15,7 @@ run "image_by_digest_plans" {
 run "image_by_tag_only_is_rejected" {
   command = plan
   variables {
-    image = "git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:1.0.0"
+    image = "git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0"
   }
   expect_failures = [var.image]
 }

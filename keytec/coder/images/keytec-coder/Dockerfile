@@ -1,4 +1,4 @@
-# keytec bakers-ddev workspace image: coder-drupal-ddev-base (Ubuntu 24.04, user coder, Docker,
+# keytec-coder workspace image: coder-drupal-ddev-base (Ubuntu 24.04, user coder, Docker,
 # Node 22, DDEV) plus every tool a bakers.build box runs, pinned and installed as root under
 # /usr/local, so the home volume holds data only. A version bump is a new build (README).
 ARG BASE_IMAGE=git.key-tec.de:5050/keytec/infra/coder-drupal-ddev-base:3.2.5

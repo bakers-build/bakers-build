@@ -18,7 +18,7 @@ variable "docker_host" {
 }
 
 variable "image" {
-  description = "The keytec bakers-ddev workspace image by digest (git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:<tag>@sha256:<digest>; README › Push)"
+  description = "The keytec-coder workspace image by digest (git.key-tec.de:5050/keytec/infra/keytec-coder:<tag>@sha256:<digest>; README › Push)"
   type        = string
   validation {
     condition     = can(regex("@sha256:[0-9a-f]{64}$", var.image))

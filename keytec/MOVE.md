@@ -12,12 +12,12 @@ Every file keeps its path below `keytec/`:
 
 | From (bakers.build) | To (keytec/infra) |
 |---|---|
-| `keytec/ci/bakers-ddev.gitlab-ci.yml` | `ci/bakers-ddev.gitlab-ci.yml` |
-| `keytec/coder/images/bakers-ddev/Dockerfile` | `coder/images/bakers-ddev/Dockerfile` |
-| `keytec/coder/images/bakers-ddev/README.md` | `coder/images/bakers-ddev/README.md` |
-| `keytec/coder/images/bakers-ddev/files/managed-settings.json` | `coder/images/bakers-ddev/files/managed-settings.json` |
-| `keytec/coder/images/bakers-ddev/files/codex-config.toml` | `coder/images/bakers-ddev/files/codex-config.toml` |
-| `keytec/coder/images/bakers-ddev/files/smoke.sh` | `coder/images/bakers-ddev/files/smoke.sh` |
+| `keytec/ci/keytec-coder.gitlab-ci.yml` | `ci/keytec-coder.gitlab-ci.yml` |
+| `keytec/coder/images/keytec-coder/Dockerfile` | `coder/images/keytec-coder/Dockerfile` |
+| `keytec/coder/images/keytec-coder/README.md` | `coder/images/keytec-coder/README.md` |
+| `keytec/coder/images/keytec-coder/files/managed-settings.json` | `coder/images/keytec-coder/files/managed-settings.json` |
+| `keytec/coder/images/keytec-coder/files/codex-config.toml` | `coder/images/keytec-coder/files/codex-config.toml` |
+| `keytec/coder/images/keytec-coder/files/smoke.sh` | `coder/images/keytec-coder/files/smoke.sh` |
 | `keytec/coder/templates/bakers-ddev/template.tf` | `coder/templates/bakers-ddev/template.tf` |
 | `keytec/coder/templates/bakers-ddev/README.md` | `coder/templates/bakers-ddev/README.md` |
 | `keytec/coder/templates/bakers-ddev/pm-bot.compose.yaml` | `coder/templates/bakers-ddev/pm-bot.compose.yaml` |
@@ -39,10 +39,10 @@ Add to infra's `.gitlab-ci.yml`:
 ```yaml
 include:
   - local: "templates/docker-compose-deploy.yml"
-  - local: "ci/bakers-ddev.gitlab-ci.yml"
+  - local: "ci/keytec-coder.gitlab-ci.yml"
 ```
 
-The job extends infra's `.docker_image_build` (stage `build`, runner tag `parallel`, registry login) and uses `DDEV_BASE_IMAGE_VERSION` for its base. Its own version is `BAKERS_DDEV_IMAGE_VERSION` in the included file. It runs on `main` when `ci/bakers-ddev.gitlab-ci.yml` or `coder/images/bakers-ddev/**` changes. It builds `coder-bakers-ddev:<version>`, runs the smoke test, pushes, and writes the digest to the `digest.txt` artifact and the job log.
+The job extends infra's `.docker_image_build` (stage `build`, runner tag `parallel`, registry login) and uses `DDEV_BASE_IMAGE_VERSION` for its base. Its own version is `KEYTEC_CODER_IMAGE_VERSION` in the included file. It runs on `main` when `ci/keytec-coder.gitlab-ci.yml` or `coder/images/keytec-coder/**` changes. It builds `keytec-coder:<version>`, runs the smoke test, pushes, and writes the digest to the `digest.txt` artifact and the job log.
 
 ## 3. First image
 
@@ -50,11 +50,11 @@ Merge to `main` and take the `image = …@sha256:…` line from the job log. Bef
 
 ```sh
 docker login git.key-tec.de:5050
-cd coder/images/bakers-ddev
-docker build --platform linux/amd64 -t git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:1.0.0 .
-docker run --rm --platform linux/amd64 git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:1.0.0 /usr/local/share/bakers-ddev/smoke.sh
-docker push git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:1.0.0
-docker inspect --format '{{index .RepoDigests 0}}' git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:1.0.0
+cd coder/images/keytec-coder
+docker build --platform linux/amd64 -t git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0 .
+docker run --rm --platform linux/amd64 git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0 /usr/local/share/bakers-ddev/smoke.sh
+docker push git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0
+docker inspect --format '{{index .RepoDigests 0}}' git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0
 ```
 
 ## 4. Push the template
@@ -62,7 +62,7 @@ docker inspect --format '{{index .RepoDigests 0}}' git.key-tec.de:5050/keytec/in
 ```sh
 docker buildx imagetools inspect ghcr.io/bakers-build/bakers-build/pm-bot:<tag> --format '{{.Manifest.Digest}}'
 coder templates push bakers-ddev -d coder/templates/bakers-ddev \
-  --variable image=git.key-tec.de:5050/keytec/infra/coder-bakers-ddev:1.0.0@sha256:<digest> \
+  --variable image=git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0@sha256:<digest> \
   --variable pm_bot_image=ghcr.io/bakers-build/bakers-build/pm-bot:<tag>@sha256:<digest>
 ```
 

@@ -1,4 +1,4 @@
-# keytec bakers-ddev workspace image
+# keytec-coder workspace image
 
 The image of the [keytec bakers-ddev template](../../templates/bakers-ddev/README.md): `coder-drupal-ddev-base` plus every tool a bakers.build box runs, installed as root under `/usr/local` at pinned versions. The home volume holds data only, so a rebuild keeps tools and versions as the image has them.
 
@@ -26,16 +26,16 @@ Nothing updates itself on start (`DISABLE_AUTOUPDATER=1`, no installer in the st
 ## Build
 
 ```sh
-cd coder/images/bakers-ddev
-docker build --platform linux/amd64 -t coder-bakers-ddev:dev .
-docker run --rm --platform linux/amd64 coder-bakers-ddev:dev /usr/local/share/bakers-ddev/smoke.sh
+cd coder/images/keytec-coder
+docker build --platform linux/amd64 -t keytec-coder:dev .
+docker run --rm --platform linux/amd64 keytec-coder:dev /usr/local/share/bakers-ddev/smoke.sh
 ```
 
-The build needs pull access to `git.key-tec.de:5050`. CI runs the same build and smoke test, pushes the image and reports its digest ([`ci/bakers-ddev.gitlab-ci.yml`](../../../ci/bakers-ddev.gitlab-ci.yml)).
+The build needs pull access to `git.key-tec.de:5050`. CI runs the same build and smoke test, pushes the image and reports its digest ([`ci/keytec-coder.gitlab-ci.yml`](../../../ci/keytec-coder.gitlab-ci.yml)).
 
 ## Bumping a version
 
 1. Change the `ARG` in the [`Dockerfile`](Dockerfile) and the expected version in [`files/smoke.sh`](files/smoke.sh).
-2. Raise `BAKERS_DDEV_IMAGE_VERSION` in `ci/bakers-ddev.gitlab-ci.yml`.
+2. Raise `KEYTEC_CODER_IMAGE_VERSION` in `ci/keytec-coder.gitlab-ci.yml`.
 3. Merge to `main`: the pipeline builds, tests and pushes, and prints the new `image = …@sha256:…`.
 4. Push the template with that digest and restart the workspaces.

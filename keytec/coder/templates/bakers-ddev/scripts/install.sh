@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Coder agent startup script of the keytec bakers-ddev template: configures, installs nothing. Every
-# tool comes from the image at a pinned version (keytec/coder/images/bakers-ddev); a version bump is
+# tool comes from the image at a pinned version (keytec/coder/images/keytec-coder); a version bump is
 # a new image. Each step logs its own lines and never fails the start.
 set -uo pipefail
 
