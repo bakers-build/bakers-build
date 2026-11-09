@@ -23,6 +23,9 @@
 #   - keys are found in code only: an addons key sharing its line gets the
 #     entry, addons or tunnel inside a comment or string is ignored, and a
 #     shorthand addons key gets a log line instead of a second key
+#   - keys of a helper object above the export are ignored; a stray quote in a
+#     template, regex or before a later quoted comment gives a log line and no
+#     change, never a second, shadowed addons or tunnel key
 #   - a broken machine file stays untouched, with exit 0 and a log line
 #   - install.sh: none starts and installs nothing even with the token file and
 #     frpc.json present; cloudflare-quick installs cloudflared and starts no
@@ -204,6 +207,25 @@ if ! cmp -s "$M" "$SCRATCH/nested"; then
 else
   grep -qi 'cannot read' "$OUT" || fail "a nested backtick left the file unchanged without a log line: $(cat "$OUT")"
 fi
+# A stray quote that a later quote in a comment closes: one key holding the entry, or the log and no change.
+unreadable_or_one() {
+  if cmp -s "$M" "$SCRATCH/lost"; then
+    grep -qi 'cannot read' "$OUT" || fail "$1: unchanged without a log line: $(cat "$OUT")"
+  else
+    [ "$(grep -cE "^\s*$2\s*:" "$M")" = 1 ] || fail "$1: not exactly one $2 key: $(cat "$M")"
+    quick_with_hand "$1"
+  fi
+}
+for stray in ' tpl: `a${"`"}b`,|// the 27" screen box' " re: /it's/,|// it's fine"; do
+  printf '%s\n' '// @bakers-schema-version 1' 'export default {' " ${stray%%|*}" ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' " ${stray#*|}" '};' > "$M"
+  cp "$M" "$SCRATCH/lost"
+  edit cloudflare-quick
+  unreadable_or_one "a stray quote closed in a later comment (${stray%%|*})" addons
+done
+printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' tpl: `a${"`"}b`,' ' tunnel: false,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' ' // the 27" screen box' '};' > "$M"
+cp "$M" "$SCRATCH/lost"
+edit cloudflare-quick
+unreadable_or_one "a stray quote hiding a hand tunnel key" tunnel
 pass "keys of a helper const are ignored, and an unreadable file is named and left unchanged"
 
 # --- F5: a broken file stays untouched -------------------------------------

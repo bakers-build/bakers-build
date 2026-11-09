@@ -36,9 +36,9 @@ function parses(text) {
 /**
  * The text without its comments (`code`), and the text with comments and string contents blanked
  * to spaces, newlines kept (`blank`); a string used as a property key stays. Null when a string
- * or comment never closes, which means the scan lost track.
- * shortcut: a quote or slash inside a regex literal, or a string nested in a template's `${}`,
- * throws the scan off; machine files hold none, parse them if they do.
+ * or comment never closes, or a quoted string crosses a line, which means the scan lost track.
+ * shortcut: a backtick inside a regex literal, or one that a stray quote leaves unpaired, can still
+ * throw the scan off unnoticed; machine files hold none, parse them if they do.
  */
 function scan(text) {
   let code = '';
@@ -62,6 +62,8 @@ function scan(text) {
       for (; end < text.length && text[end] !== c; end++) if (text[end] === '\\') end++;
       if (end >= text.length) return null;
       const str = text.slice(i, end + 1);
+      // An unescaped newline ends no quoted string in JS: a stray quote opened this one.
+      if (c !== '`' && /(?<!\\)\n/.test(str)) return null;
       colon.lastIndex = end + 1;
       const key = c !== '`' && colon.test(text);
       code += str;
@@ -118,8 +120,8 @@ function edit(text, transport) {
   const lines = base.split('\n');
   const scanned = scan(base);
   if (!scanned) {
-    log('cannot read machine.config.js; left unchanged, add tunnel and the ports entry by hand');
-    return text;
+    log('cannot read machine.config.js; add tunnel and the ports entry by hand');
+    return base;
   }
   const { code, blank } = scanned;
   const start = blank.search(/^[ \t]*export[ \t]+default[ \t]*\{[ \t]*$/m);
