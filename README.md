@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="docs/public/favicon.svg" alt="bakers.build" width="120">
+  <img src=".github/assets/bakers-build-icon.png" alt="bakers.build" width="120">
 </p>
 
 <p align="center">
-  <strong>Keep your issue tracker. Give your AI agents a workbench.</strong>
+  <strong>A ticket-driven AI software factory.</strong>
 </p>
 
-Your team keeps planning in the issue tracker it already uses. bakers.build is the ticket system
-for the agents' workbench: each task moves through states such as plan, coding and review, an AI
-agent works every state, and you decide how much you, or your customer, step in, from fully
-autonomous to approving each step.
+Every ticket moves through the same fixed steps: plan, build, review, ship. AI agents do the work
+on your developers' machines or on remote workers, and at every step a developer can look in.
+Everyone works on their own terms: their own AI subscription, their own machine, their own client.
+The line is shared, the tools are not.
 
 - [Get started](https://bakers.build/get-started/)
 - [Configuration](https://bakers.build/configuration/)

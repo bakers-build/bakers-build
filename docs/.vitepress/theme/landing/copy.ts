@@ -19,8 +19,8 @@ const en = {
   signUp: 'Sign up',
   copy: { label: 'Copy command', done: 'Command copied' },
   hero: {
-    title: "You're the baker. Agents run the line.",
-    text: 'Before your team is up, the prep is done. Agents work every ticket on your own machines, and a person decides at every station.',
+    title: 'A ticket-driven AI software factory.',
+    text: "Before your team is up, the prep is done. Agents work every ticket on your developers' machines or on remote workers, and at every step a developer can look into the oven.",
     install: 'or self-host for free',
     note: 'Open source. Runs on your machines.',
     lineLabel: 'The line: four stations, Plan, Build, Review and Ship, each worked by an agent. At each one a person decides: approve plan, confirm result, confirm verdict, authorize merge.',
@@ -112,8 +112,8 @@ const de: Copy = {
   signUp: 'Anmelden',
   copy: { label: 'Befehl kopieren', done: 'Befehl kopiert' },
   hero: {
-    title: 'Du bist der Bäcker. Agenten betreiben die Backstraße.',
-    text: 'Bevor dein Team da ist, ist die Vorarbeit erledigt. Agenten arbeiten jedes Ticket auf deinen eigenen Rechnern ab, und an jeder Station entscheidet ein Mensch.',
+    title: 'Eine ticketgesteuerte KI-Softwarefabrik.',
+    text: 'Bevor dein Team da ist, ist die Vorbereitung erledigt. Agenten arbeiten jedes Ticket auf den Rechnern deiner Entwickler oder auf Remote-Workern ab, und bei jedem Schritt kann ein Entwickler in den Ofen schauen.',
     install: 'oder kostenlos selbst hosten',
     note: 'Open Source. Läuft auf deinen Rechnern.',
     lineLabel: 'Die Backstraße: vier Stationen, Planen, Umsetzen, Prüfen und Fertig, jede von einem Agenten bearbeitet. An jeder entscheidet ein Mensch: Plan freigeben, Ergebnis bestätigen, Urteil bestätigen, Merge freigeben.',

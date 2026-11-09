@@ -5,7 +5,7 @@ layout: home
 navbar: false
 markdownStyles: false
 search: false
-title: Du bist der Bäcker. Agenten betreiben die Backstraße.
+title: Eine ticketgesteuerte KI-Softwarefabrik.
 description: Agenten arbeiten jedes Ticket auf deinen eigenen Rechnern ab, und an jeder Station entscheidet ein Mensch. Open Source, selbst gehostet oder gehostet, beides kostenlos.
 ---
 
