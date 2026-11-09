@@ -94,3 +94,5 @@ export const thread = (channel = 'C0000000001', ts = '1700000000.000100') => ({
   uri: `https://acme.slack.com/archives/${channel}/p${ts.replace('.', '')}`,
   title: 'Slack thread',
 });
+
+export const channel = (id = 'C0000000001') => ({ uri: `https://acme.slack.com/archives/${id}`, title: 'Slack channel' });

@@ -9,6 +9,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\RunLog\RunLogPolicy;
 
 /**
  * Workspace entity form with a meta header block on admin screens.
@@ -59,6 +60,15 @@ final class BbWorkspaceForm extends BbContentEntityFormBase {
       ],
       '#weight' => 1,
     ];
+    if (!RunLogPolicy::isAvailable()) {
+      // Field access hides the checkbox; say why instead of leaving a gap.
+      $form['run_log_storage_unavailable'] = [
+        '#type' => 'item',
+        '#title' => $this->t('Store agent run logs'),
+        '#markup' => $this->t('Unavailable: this deployment does not store agent transcripts. Error messages of failed runs are still kept.'),
+        '#weight' => 4,
+      ];
+    }
     return $form;
   }
 

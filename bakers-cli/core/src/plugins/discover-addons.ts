@@ -268,6 +268,7 @@ async function applyPreset(
   surface: BbSurface,
   acc: DiscoveredContributions,
   only?: Array<keyof DiscoveredContributions>,
+  agentOpts: unknown = opts,
 ): Promise<void> {
   // `only` NARROWS, never widens: a key the surface does not run stays unrun.
   const keys = only
@@ -279,8 +280,9 @@ async function applyPreset(
       | undefined;
     if (typeof fn !== 'function') continue;
     const before = key === 'agents' ? acc.agents.length : 0;
+    const keyOpts = key === 'agents' ? agentOpts : opts;
     // biome-ignore lint/suspicious/noExplicitAny: heterogeneous per-key arrays
-    (acc as any)[key] = await fn((acc as any)[key], opts);
+    (acc as any)[key] = await fn((acc as any)[key], keyOpts);
     if (key === 'agents' && alias !== undefined) {
       const added = acc.agents.slice(before) as PrioritizedCandidate[];
       const selected = added.filter((c) => c.alias === alias);
@@ -321,6 +323,9 @@ export async function discoverAddons(
   opts: {
     logger?: ConductorLogger;
     globals?: unknown;
+    /** Like `globals`, but seen only by the `agents` accumulators (the
+     *  conductor's shared run security). */
+    agentGlobals?: unknown;
     /** Narrow the surface's accumulators to this subset (intersection only). */
     only?: Array<keyof DiscoveredContributions>;
     /** `skip` warns and drops an addon that does not RESOLVE; import errors still throw. */
@@ -393,6 +398,7 @@ export async function discoverAddons(
         surface,
         acc,
         opts.only,
+        mergeGlobals(opts.agentGlobals, presetOpts),
       );
       if (
         surface === 'conductor' &&

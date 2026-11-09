@@ -1,0 +1,44 @@
+#!/bin/bash
+## Description: Bring the selected local Bakers site up; a running site of that provider is reused
+## Usage: provision --provider existing-config|recipe|recipe-test
+## Example: "ddev provision --provider recipe-test"
+set -euo pipefail
+provider=
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --provider) [ "$#" -ge 2 ] || { echo 'Missing provider' >&2; exit 1; }; provider="$2"; shift 2 ;;
+    *) echo "Unsupported provision argument: $1" >&2; exit 1 ;;
+  esac
+done
+case "$provider" in existing-config|recipe|recipe-test) ;; *) echo 'Missing or unsupported provider' >&2; exit 1 ;; esac
+cd "${DDEV_APPROOT:-$(pwd)}"
+# `ddev init` clears this marker; only a verified install here writes it.
+marker=.ddev/.bakers-test/profile
+url=
+
+# Sets $url and succeeds when the stack runs and its primary URL answers below 500.
+ready() {
+  url="$( (ddev describe -j 2>/dev/null || true) | node --input-type=module -e '
+import { readFileSync } from "node:fs";
+try {
+  const raw = JSON.parse(readFileSync(0, "utf8")).raw ?? {};
+  if (raw.status === "running" && raw.primary_url) console.log(raw.primary_url);
+} catch {}
+')"
+  [ -n "$url" ] || return 1
+  local code
+  # -k: the local mkcert certificate need not be in this shell's trust store.
+  code="$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 "$url" || true)"
+  [ "$code" -ge 100 ] 2>/dev/null && [ "$code" -lt 500 ]
+}
+
+if [ "$(cat "$marker" 2>/dev/null || true)" = "$provider" ]; then
+  if ready; then echo "ready $url"; exit 0; fi
+  if ddev start && ready; then echo "started $url"; exit 0; fi
+fi
+rm -f "$marker"
+ddev init --provider "$provider"
+if ! ready; then echo "Site does not answer after install: ${url:-no running primary URL}" >&2; exit 1; fi
+mkdir -p "$(dirname "$marker")"
+echo "$provider" > "$marker"
+echo "installed $url"

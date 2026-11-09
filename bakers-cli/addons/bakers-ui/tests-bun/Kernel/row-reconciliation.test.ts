@@ -127,7 +127,7 @@ const PROJECT_ROUTE: ResolvedRoute = {
  * Boot on the project's TICKETS tab — the 80-row table, so every terminal
  * height below is filled and the frame's length is a function of the terminal
  * rather than of how much content happens to exist. The deep link lands on the
- * project Dashboard, so one Tab moves to the table.
+ * project Overview, so one Tab moves to the table.
  */
 const bootOnTickets = async (
   columns: number,
@@ -251,7 +251,7 @@ describe('BB-326 Step A — the kernel retains its row renderables', () => {
    * RETARGETED, BB-340 spec F2 — and the claim it used to make is now the
    * defect, not the contract.
    *
-   * It asserted that leaving the ticket list for the Dashboard and coming back
+   * It asserted that leaving the ticket list for Overview and coming back
    * PAINTED THE SAME ROW OBJECTS: `survivorCount(list, tall) === list.length`,
    * with none of them destroyed in between. That is only true of a kernel that
    * parks a departed screen's subtree forever, which is exactly what F2 forbids
@@ -273,7 +273,7 @@ describe('BB-326 Step A — the kernel retains its row renderables', () => {
     // gives its own composition. F2 is about the SCREEN's subtree: the header
     // box's rows, the tab bar and the footer are the kernel's, their ids are a
     // bounded set, and they are deliberately kept across a navigation. Footer
-    // ActionItem chips use screen ids (`tickets-new-key`) rather than a
+    // ActionItem chips use screen ids (`tickets-edit-key`) rather than a
     // `footer-` prefix — exclude those key/sfx chips too.
     const bodyRows = list.filter(
       (row) =>
@@ -284,7 +284,7 @@ describe('BB-326 Step A — the kernel retains its row renderables', () => {
       'most of that body is the list itself',
     ).toBeGreaterThan(20);
 
-    await tui.press('\x1b[Z'); // Shift+Tab: back to the project Dashboard
+    await tui.press('\x1b[Z'); // Shift+Tab: back to the project Overview
     const short = [...paintedRowsOf(tui)];
     expect(
       bodyRows.filter((row) => row.isDestroyed).length,
@@ -348,13 +348,13 @@ describe('BB-326 Step A — the kernel retains its row renderables', () => {
     const tui = await bootOnTickets(120, 44);
     const tall = paintedRowsOf(tui).length;
 
-    await tui.press('\x1b[Z'); // Shift+Tab: the 80-row list gives way to the Dashboard
+    await tui.press('\x1b[Z'); // Shift+Tab: the 80-row list gives way to Overview
 
     const painted = paintedRowsOf(tui);
     expect(painted.length, 'fewer rows are painted').toBeLessThan(tall);
     // The screen is the proof, and it is a stronger one than a row count: a pool
     // that only ever grew would leave the 80-row list's tail standing under the
-    // Dashboard, so the identifiers themselves must be gone.
+    // Overview, so the identifiers themselves must be gone.
     const rendered = tui.rows();
     expect(
       rendered.join('\n'),

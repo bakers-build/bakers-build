@@ -4,7 +4,7 @@ Run tickets with the OpenAI Codex CLI.
 
 ## AI first
 
-Ask your AI to check this harness and its [bakers skills](/configuration/agents/skills).
+Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/skills).
 
 ## Setup
 
@@ -29,12 +29,12 @@ Without a `model` it publishes `codex` (your locally configured Codex model) plu
 | `security` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'sandbox'` | How strictly a run starts; see [Security](#security). |
 | `sandbox` | object | see below | Only with `security: 'sandbox'`. Each key set replaces its default; lists are not merged. |
 | `config` | object | none | Required with, and only valid with, `security: 'custom'`. |
-| `env_deny` | string[] | the [default list](/configuration/agents/execution-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
+| `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
 
-Runs default to the OS sandbox. [Execution security](/configuration/agents/execution-security) owns boundaries, environment filtering and isolation risks.
+Runs default to the OS sandbox. [Execution security](/provision/security/execution) owns boundaries, environment filtering and isolation risks.
 
 | `security` | Launch flags |
 |---|---|
@@ -47,9 +47,9 @@ Runs default to the OS sandbox. [Execution security](/configuration/agents/execu
 
 | Key | Default | Becomes |
 |---|---|---|
-| `allow_write` | `[]` | Additional profile workspace roots; a leading `~/` is expanded |
+| `allow_write` | `[]` | Extra workspace roots, `~/` expanded; `.git` is dropped ([Git metadata](/provision/security/execution#git-metadata-in-codex-and-claude-sandboxes)) |
 | `network` | `['*']` | network on when not empty; Codex has no host list, so any non-empty value allows every host |
-| `mcp_servers` | `{}` | the names of servers from your Codex config that stay enabled; `bakers-conductor`, the conductor's [agent tools](/addons/build/tools), is added at launch and always stays on |
+| `mcp_servers` | `{}` | the names of servers from your Codex config that stay enabled; [`bakers`](/addons/build/tools) is added at launch |
 | `trusted_commands`, `deny_read` | `[]` | Codex has no equivalent; a non-empty list fails loading rather than promise a protection Codex does not give |
 
 Needs Codex 0.166.0+. Writable: Git directories, not config or hooks; read-only: `.agents`, `.codex`, `.aws`.
@@ -69,5 +69,5 @@ bakers agents
 - `--sandbox`, `-s`, `-a`, `--ask-for-approval`, `--dangerously-bypass-approvals-and-sandbox` and `--dangerously-bypass-hook-trust` are reserved; putting them in `args` fails loading.
 - Listed in a conductor config, an agent addon is ignored with a warning.
 
-More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
+More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 

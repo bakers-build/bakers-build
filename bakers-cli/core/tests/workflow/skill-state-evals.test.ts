@@ -85,7 +85,7 @@ describe('frame routing profile', () => {
     ).toEqual(['intake-read']);
   });
   it('checks that a label routes to a skill only when it applies', async () => {
-    const path = 'skills/bb-label-pingpong/SKILL.md';
+    const path = 'skills/bb-label-auto/SKILL.md';
     const skill = (read: unknown) => (f: Record<string, any>) => ({
       ...f,
       expect: { ...f.expect, skill: { path, read } },
@@ -119,24 +119,24 @@ describe('frame routing profile', () => {
   });
 });
 
-describe('bb-label-pingpong profile', () => {
+describe('bb-label-auto profile', () => {
   const fixture = (
     expect: Record<string, unknown>,
     simulation: Record<string, unknown> = {},
   ) => ({
-    id: 'pingpong-probe',
+    id: 'auto-probe',
     synthetic: true,
-    profile: 'bb-label-pingpong',
+    profile: 'bb-label-auto',
     execution: 'simulated-tools',
-    skill: 'bb-label-pingpong',
-    references: [],
+    skill: 'bb-label-auto',
+    references: ['bb-label-ticket-question/SKILL.md'],
     input: { task: 'Run the state.', ticket_uuid: ticket },
     expect,
     simulation: {
       ticket: {
         id: ticket,
         identifier: 'EVAL-61',
-        labels: ['pingpong'],
+        labels: ['auto', 'ticket-question'],
       },
       ...simulation,
     },
@@ -189,6 +189,17 @@ describe('bb-label-pingpong profile', () => {
     transition('working'),
   ];
 
+  it('requires the ticket-question label and skill beside auto', async () => {
+    const q = fixture({ stop: 'question' });
+    const { validate } = await loadProfile(q);
+    expect(() => validate(q)).not.toThrow();
+    // auto alone asks in the session; the ticket-facing stops need the ticket-question skill.
+    const auto = { ...q.simulation.ticket, labels: ['auto'] };
+    expect(() =>
+      validate({ ...q, simulation: { ...q.simulation, ticket: auto } }),
+    ).toThrow(/ticket-question/);
+    expect(() => validate({ ...q, references: [] })).toThrow(/ticket-question/);
+  });
   it('accepts one user question with the label and the freeze', async () => {
     const q = fixture({ stop: 'question' });
     expect(await judge(q, 'Asked.', [readTicket(), question, asked])).toEqual(
@@ -200,7 +211,7 @@ describe('bb-label-pingpong profile', () => {
         question,
         update({ labels_add: ['Question'] }),
       ]),
-    ).toEqual(['pingpong-question']);
+    ).toEqual(['auto-question']);
     // Without the answer line nobody knows to unfreeze the ticket, and the run never resumes.
     expect(
       await judge(q, 'Asked.', [
@@ -211,7 +222,7 @@ describe('bb-label-pingpong profile', () => {
         ),
         asked,
       ]),
-    ).toEqual(['pingpong-question']);
+    ).toEqual(['auto-question']);
   });
   it('a call rejected before sending and then recovered stays on the call surface', async () => {
     const q = fixture({ stop: 'question' });
@@ -247,7 +258,7 @@ describe('bb-label-pingpong profile', () => {
     });
     const handoff = comment(
       'comment',
-      '`ddev start` failed:\n\n```\nCannot connect to the Docker daemon at unix:///var/run/docker.sock.\n```',
+      '`docker compose up` failed:\n\n```\nCannot connect to the Docker daemon at unix:///var/run/docker.sock.\n```',
     );
     expect(
       await judge(p, 'Stopped.', [readTicket(), handoff, problem, reported]),
@@ -260,7 +271,7 @@ describe('bb-label-pingpong profile', () => {
         problem,
         reported,
       ]),
-    ).toEqual(['pingpong-question']);
+    ).toEqual(['auto-question']);
     expect(
       await judge(p, 'Stopped.', [
         readTicket(),
@@ -268,7 +279,7 @@ describe('bb-label-pingpong profile', () => {
         problem,
         update({ labels_add: ['technical problem', 'Question'], frozen: true }),
       ]),
-    ).toEqual(['pingpong-question']);
+    ).toEqual(['auto-question']);
     expect(
       await judge(p, 'Stopped.', [
         readTicket(),
@@ -276,7 +287,7 @@ describe('bb-label-pingpong profile', () => {
         comment('comment', '# Technical problem\n\nDocker is down.'),
         reported,
       ]),
-    ).toEqual(['pingpong-technical-problem']);
+    ).toEqual(['auto-technical-problem']);
     // The cause and output belong in the handoff; the user reads only the contact note.
     expect(
       await judge(p, 'Stopped.', [
@@ -284,14 +295,14 @@ describe('bb-label-pingpong profile', () => {
         handoff,
         comment(
           'comment',
-          '# Technical problem\n\n`ddev start` failed: Docker is down.\n\nPlease contact the developers.',
+          '# Technical problem\n\n`docker compose up` failed: Docker is down.\n\nPlease contact the developers.',
         ),
         reported,
       ]),
-    ).toEqual(['pingpong-technical-problem']);
+    ).toEqual(['auto-technical-problem']);
     expect(
       await judge(p, 'Stopped.', [readTicket(), problem, reported]),
-    ).toEqual(['pingpong-cause-recorded']);
+    ).toEqual(['auto-cause-recorded']);
     // Only the exact heading is the contact note; a longer heading is an ordinary comment.
     expect(
       await judge(p, 'Stopped.', [
@@ -312,13 +323,13 @@ describe('bb-label-pingpong profile', () => {
         problem,
         reported,
       ]),
-    ).toEqual(['pingpong-cause-recorded']);
+    ).toEqual(['auto-cause-recorded']);
   });
   it('sends a Not OK verdict back to working', async () => {
     expect(await judge(notOk, 'Back.', back)).toEqual([]);
     expect(
       await judge(notOk, 'Done.', [...back.slice(0, 3), transition('done')]),
-    ).toEqual(['pingpong-transition']);
+    ).toEqual(['auto-transition']);
   });
   it('merges an OK verdict once, then moves to done', async () => {
     const done = fixture(
@@ -330,11 +341,11 @@ describe('bb-label-pingpong profile', () => {
       await judge(done, 'Merged.', [...passed, merged, transition('done')]),
     ).toEqual([]);
     expect(await judge(done, 'Done.', [...passed, transition('done')])).toEqual(
-      ['pingpong-merge'],
+      ['auto-merge'],
     );
     expect(
       await judge(done, 'Done.', [...passed, transition('done'), merged]),
-    ).toEqual(['pingpong-merge']);
+    ).toEqual(['auto-merge']);
     expect(
       await judge(done, 'Merged.', [
         ...passed,
@@ -342,9 +353,9 @@ describe('bb-label-pingpong profile', () => {
         merged,
         transition('done'),
       ]),
-    ).toEqual(['pingpong-merge']);
+    ).toEqual(['auto-merge']);
     expect(await judge(done, 'Merged.', [...passed, merged])).toEqual([
-      'pingpong-transition',
+      'auto-transition',
     ]);
     // Merge's caller handoff may append its evidence as a second verdict with the same status.
     const addendum = [merged, verdict('OK'), summary, transition('done')];
@@ -356,7 +367,7 @@ describe('bb-label-pingpong profile', () => {
         verdict('Not OK'),
         transition('done'),
       ]),
-    ).toEqual(['pingpong-review-status']);
+    ).toEqual(['auto-review-status']);
     // Any other run merges nothing; an undeclared command leaves the call surface too.
     expect(
       await judge(notOk, 'Back.', [
@@ -364,7 +375,7 @@ describe('bb-label-pingpong profile', () => {
         merged,
         transition('working'),
       ]),
-    ).toEqual(['validated-call-surface', 'pingpong-merge']);
+    ).toEqual(['validated-call-surface', 'auto-merge']);
   });
   it('puts the tunnel link in the acceptance question', async () => {
     const accept = fixture({ stop: 'question', link: tunnel });
@@ -373,7 +384,7 @@ describe('bb-label-pingpong profile', () => {
     );
     expect(
       await judge(accept, 'Asked.', [readTicket(), question, asked]),
-    ).toEqual(['pingpong-link']);
+    ).toEqual(['auto-link']);
   });
   it('keeps technical details out of the acceptance question', async () => {
     const plain = fixture({
@@ -390,11 +401,11 @@ describe('bb-label-pingpong profile', () => {
     );
     expect(
       await judge(plain, 'Asked.', [readTicket(), technical, asked]),
-    ).toEqual(['pingpong-plain']);
+    ).toEqual(['auto-plain']);
   });
   it('run ends after the decisive write', async () => {
     expect(await judge(notOk, 'Back.', [...back, summary])).toEqual([
-      'pingpong-run-ends',
+      'auto-run-ends',
     ]);
     expect(
       await judge(fixture({ stop: 'question' }), 'Asked.', [
@@ -403,7 +414,7 @@ describe('bb-label-pingpong profile', () => {
         asked,
         summary,
       ]),
-    ).toEqual(['pingpong-run-ends']);
+    ).toEqual(['auto-run-ends']);
   });
   it('records a technical decision in the handoff', async () => {
     const decide = fixture({ stop: 'none', decision: 'writeCsv' });
@@ -411,7 +422,7 @@ describe('bb-label-pingpong profile', () => {
       '## Decisions\n\n- Reuse `writeCsv`: it already serves two exports.';
     expect(await judge(decide, decided, [readTicket()])).toEqual([]);
     expect(await judge(decide, 'Reused the helper.', [readTicket()])).toEqual([
-      'pingpong-decision',
+      'auto-decision',
     ]);
   });
   it('rejects an incomplete expectation', async () => {
@@ -428,52 +439,93 @@ describe('bb-label-pingpong profile', () => {
   });
   it('a third Not OK still goes back to working', async () => {
     // Two earlier Not OK verdicts: no loop limit, so no technical problem.
-    expect(await judge('pingpong-review-third-not-ok', 'Back.', back)).toEqual(
-      [],
-    );
+    expect(await judge('auto-review-third-not-ok', 'Back.', back)).toEqual([]);
     expect(
-      await judge('pingpong-review-third-not-ok', 'Stopped.', [
+      await judge('auto-review-third-not-ok', 'Stopped.', [
         ...back.slice(0, 3),
         problem,
         reported,
       ]),
-    ).toEqual([
-      'pingpong-technical-problem',
-      'pingpong-no-stop',
-      'pingpong-transition',
-    ]);
+    ).toEqual(['auto-technical-problem', 'auto-no-stop', 'auto-transition']);
   });
   it('a first GREEN pass asks for the acceptance', async () => {
     const handedOff = [readTicket(), comment('coding'), summary];
     expect(
-      await judge('pingpong-working-acceptance', 'Asked.', [
+      await judge('auto-working-acceptance', 'Asked.', [
         ...handedOff,
         shown,
         asked,
       ]),
     ).toEqual([]);
     expect(
-      await judge('pingpong-working-acceptance', 'Moved.', [
+      await judge('auto-working-acceptance', 'Moved.', [
         ...handedOff,
         transition('review'),
       ]),
-    ).toEqual(['pingpong-question', 'pingpong-transition', 'pingpong-link']);
+    ).toEqual(['auto-question', 'auto-transition', 'auto-link']);
   });
   it('an accepted GREEN pass moves to review without asking', async () => {
     const handedOff = [readTicket(), comment('coding'), summary];
     expect(
-      await judge('pingpong-working-accepted', 'Moved.', [
+      await judge('auto-working-accepted', 'Moved.', [
         ...handedOff,
         transition('review'),
       ]),
     ).toEqual([]);
     expect(
-      await judge('pingpong-working-accepted', 'Asked.', [
+      await judge('auto-working-accepted', 'Asked.', [
         ...handedOff,
         shown,
         asked,
       ]),
-    ).toEqual(['pingpong-question', 'pingpong-no-stop', 'pingpong-transition']);
+    ).toEqual(['auto-question', 'auto-no-stop', 'auto-transition']);
+  });
+  it('a GREEN pass with nothing for the user to decide records no acceptance due and moves to review', async () => {
+    const id = 'auto-working-no-acceptance-due';
+    const handoff = (body: string) => [
+      readTicket(),
+      comment('coding', `# Coding handoff\n\n${body}`),
+      summary,
+    ];
+    const due =
+      '## Decisions\n\n- No acceptance due: the criteria decide the rounding completely.';
+    expect(
+      await judge(id, 'Moved.', [...handoff(due), transition('review')]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...handoff(due), shown, asked])).toEqual([
+      'auto-question',
+      'auto-no-stop',
+      'auto-transition',
+    ]);
+    // Review reads the ticket: the decision belongs in the published handoff, not only the session.
+    expect(
+      await judge(id, `Moved.\n\n${due}`, [
+        ...handoff('All criteria pass.'),
+        transition('review'),
+      ]),
+    ).toEqual(['auto-decision']);
+  });
+  it('merges an OK verdict whose handoff holds no acceptance due', async () => {
+    const id = 'auto-review-ok-no-acceptance-due';
+    const f = await loadFixture(id);
+    const argv = f.simulation.commands.glab.find(
+      (r: { argv: string[] }) => r.argv[2] === 'merge',
+    ).argv;
+    const merge: Row = {
+      tool: 'glab',
+      arguments: { argv },
+      result: ok('Merged MR 61\n'),
+    };
+    const passed = [readTicket(), verdict('OK'), summary];
+    expect(
+      await judge(id, 'Merged.', [...passed, merge, transition('done')]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...passed, shown, asked])).toEqual([
+      'auto-question',
+      'auto-no-stop',
+      'auto-transition',
+      'auto-merge',
+    ]);
   });
 });
 
@@ -488,7 +540,7 @@ describe('classify profile', () => {
     readTicket({ recipe, type });
   it('accepts one classify call with readback', async () => {
     expect(
-      await judge('qualify-classify-default', 'probe, feature', [
+      await judge('qualify-classify-unattended', 'probe, feature', [
         readTicket(),
         ...recipes,
         classify('probe'),
@@ -503,11 +555,11 @@ describe('classify profile', () => {
       classify('bb-recipe-probe'),
       classifiedRead('bb-recipe-probe'),
     ];
-    expect(await judge('qualify-classify-default', 'done', wrong)).toEqual([
+    expect(await judge('qualify-classify-unattended', 'done', wrong)).toEqual([
       'classified',
     ]);
     expect(
-      await judge('qualify-classify-default', 'done', [
+      await judge('qualify-classify-unattended', 'done', [
         readTicket(),
         ...recipes,
         classify('probe', 'epic'),
@@ -515,14 +567,14 @@ describe('classify profile', () => {
       ]),
     ).toEqual(['classified']);
     expect(
-      await judge('qualify-classify-default', 'done', [
+      await judge('qualify-classify-unattended', 'done', [
         readTicket(),
         ...recipes,
         classify('probe'),
       ]),
     ).toEqual(['classified']);
     expect(
-      await judge('qualify-classify-default', 'done', [
+      await judge('qualify-classify-unattended', 'done', [
         readTicket(),
         ...recipes,
         classify('probe'),
@@ -531,7 +583,7 @@ describe('classify profile', () => {
       ]),
     ).toEqual(['classified']);
     expect(
-      await judge('qualify-classify-default', 'done', [
+      await judge('qualify-classify-unattended', 'done', [
         readTicket(),
         ...recipes,
         classify('probe'),
@@ -539,6 +591,17 @@ describe('classify profile', () => {
         comment('qualification'),
       ]),
     ).toEqual(['nothing-else']);
+  });
+  it('requires every installed recipe loaded, not one read twice', async () => {
+    expect(
+      await judge('qualify-classify-unattended', 'probe, feature', [
+        readTicket(),
+        recipes[0],
+        recipes[0],
+        classify('probe'),
+        classifiedRead('probe'),
+      ]),
+    ).toEqual(['recipes-read']);
   });
   it('requires a question and no write when two recipes fit', async () => {
     const ask = 'Which recipe: bb-recipe-probe or bb-recipe-pair?';
@@ -769,7 +832,7 @@ describe('state run profile', () => {
       ),
     ).toEqual(['classified']);
   });
-  it('requires every expected read: provision for a bug RED in plan', async () => {
+  it('requires every expected read: the conductor tools for a bug RED in plan', async () => {
     const diagnose = [
       readTicket(),
       comment('debug_diagnose', 'HTTP 500 at c0ffee0'),
@@ -777,7 +840,7 @@ describe('state run profile', () => {
       comment('test'),
       comment('summary', 'Probe-plan: 0'),
     ];
-    const provision = file('skills/bb-workflow/references/provision.md');
+    const provision = file('skills/bb-workflow/references/tools-conductor.md');
     expect(
       await judge('plan-bug-provision', 'Approve?', [...diagnose, provision]),
     ).toEqual([]);
@@ -787,7 +850,7 @@ describe('state run profile', () => {
     expect(
       await judge('plan-bug-provision', 'Approve?', [
         ...diagnose,
-        file('skills/bb-workflow/references/provision.md', 1),
+        file('skills/bb-workflow/references/tools-conductor.md', 1),
       ]),
     ).toEqual(['reads']);
   });
@@ -795,13 +858,13 @@ describe('state run profile', () => {
 
 describe('persona login profile', () => {
   const link =
-    'https://eval-42.ddev.site/user/reset/41/1791072000/lead-token/login';
+    'https://eval-42.example.test/user/reset/41/1791072000/lead-token/login';
   const good = `- north-lead (lead, eval-42): 🔗 [login](${link})\n- south-auditor: **missing** — no account, never replaced by an administrator.`;
   it('accepts the issued link once and the missing persona', async () => {
     expect(await judge('persona-login', good)).toEqual([]);
   });
   it('names an admin login, a second link and an unreported missing persona', async () => {
-    const bad = `${good.replace('**missing**', 'skipped')}\n\n\`ddev drush uli --uid 1\` → https://eval-42.ddev.site/user/reset/1/179/admin/login`;
+    const bad = `${good.replace('**missing**', 'skipped')}\n\n\`drush uli --uid 1\` → https://eval-42.example.test/user/reset/1/179/admin/login`;
     expect(await judge('persona-login', bad)).toEqual([
       'issued-link',
       'missing-persona',
@@ -1041,7 +1104,7 @@ describe('recipe run profile', () => {
 
 describe('origin map profile', () => {
   const workflow = file('WORKFLOW.md');
-  const write = (label: string, remove: string) => ({
+  const write = (label: string | null, remove: string) => ({
     tool: 'glab',
     arguments: {
       argv: [
@@ -1049,19 +1112,33 @@ describe('origin map profile', () => {
         'issue',
         'update',
         'https://git.example.invalid/acme/shop/-/issues/7',
-        '--label',
-        label,
+        ...(label === null ? [] : ['--label', label]),
         '--unlabel',
         remove,
       ],
     },
     result: ok('updated'),
   });
+  const labels = {
+    tool: 'glab',
+    arguments: {
+      argv: [
+        'glab',
+        'api',
+        '--hostname',
+        'git.example.invalid',
+        '--paginate',
+        'projects/acme%2Fshop/labels?include_ancestor_groups=true&per_page=100',
+      ],
+    },
+    result: ok('[]'),
+  };
   it('writes the table label and removes the rest of its family', async () => {
     expect(
       await judge('origin-map', 'in progress', [
         readTicket(),
         workflow,
+        labels,
         write('in progress', 'ready for review'),
       ]),
     ).toEqual([]);
@@ -1069,9 +1146,68 @@ describe('origin map profile', () => {
       await judge('origin-map', 'doing', [
         readTicket(),
         workflow,
+        labels,
         write('doing', 'review'),
       ]),
+    ).toEqual(['label-write', 'existing-labels-only']);
+  });
+  it('reads the project labels before it writes', async () => {
+    expect(
+      await judge('origin-map', 'in progress', [
+        readTicket(),
+        workflow,
+        write('in progress', 'ready for review'),
+        labels,
+      ]),
+    ).toEqual(['label-read']);
+  });
+  it('writes the existing spelling of project and group labels', async () => {
+    expect(
+      await judge('origin-map-existing-spelling', 'Doing', [
+        workflow,
+        labels,
+        write('Doing', 'Review'),
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('origin-map-existing-spelling', 'doing', [
+        workflow,
+        labels,
+        write('doing', 'review'),
+      ]),
+    ).toEqual(['label-write', 'existing-labels-only']);
+  });
+  it('picks the exact spelling, then the project label, among duplicates', async () => {
+    expect(
+      await judge('origin-map-duplicate-spelling', 'doing', [
+        workflow,
+        labels,
+        write('doing', 'Review'),
+      ]),
+    ).toEqual([]);
+    expect(
+      await judge('origin-map-duplicate-spelling', 'Doing', [
+        workflow,
+        labels,
+        write('Doing', 'REVIEW'),
+      ]),
     ).toEqual(['label-write']);
+  });
+  it('skips a missing label with a warning and creates nothing', async () => {
+    expect(
+      await judge(
+        'origin-map-missing-label',
+        'Warning: label `in progress` does not exist in acme/shop; removed Review.',
+        [workflow, labels, write(null, 'Review')],
+      ),
+    ).toEqual([]);
+    expect(
+      await judge('origin-map-missing-label', 'Done.', [
+        workflow,
+        labels,
+        write('in progress', 'Review'),
+      ]),
+    ).toEqual(['label-write', 'existing-labels-only', 'missing-label-warning']);
   });
   it('writes nothing without a table', async () => {
     expect(

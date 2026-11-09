@@ -10,19 +10,7 @@ import { EditRunFormScreen } from '../Entity/run/Screen/edit-run-form.js';
 import { RunDetailScreen } from '../Entity/run/Screen/run-detail.js';
 import { RunsScreen } from '../Entity/run/Screen/runs.js';
 import { WorkspaceMemberRunsScreen } from '../Entity/run/Screen/user-runs.js';
-import {
-  TeamMemberRunsScreen,
-  TeamMemberTicketsScreen,
-} from '../Entity/team/Screen/team-member-work.js';
-import { TeamUsersScreen } from '../Entity/team/Screen/team-users.js';
-import { TeamWorkScreen } from '../Entity/team/Screen/team-work.js';
-import {
-  TeamOverviewScreen,
-  TeamStatsScreen,
-  TeamsScreen,
-} from '../Entity/team/Screen/teams-screen.js';
 import { ConductorTicketsScreen } from '../Entity/ticket/Screen/conductor-tickets.js';
-import { CreateTicketFormScreen } from '../Entity/ticket/Screen/create-ticket-form.js';
 import { EditAssignmentFormScreen } from '../Entity/ticket/Screen/edit-assignment-form.js';
 import { MyWorkScreen } from '../Entity/ticket/Screen/my-work.js';
 import { MyWorkParentFilterScreen } from '../Entity/ticket/Screen/my-work-parent-filter-form.js';
@@ -32,7 +20,6 @@ import {
   AddonActionFormScreen,
   TicketAddonsScreen,
 } from '../Entity/ticket/Screen/ticket-addons.js';
-import { TicketAgentsScreen } from '../Entity/ticket/Screen/ticket-agents.js';
 import { TicketCommentsScreen } from '../Entity/ticket/Screen/ticket-comments.js';
 import { TicketDetailScreen } from '../Entity/ticket/Screen/ticket-detail.js';
 import { TicketPlanningScreen } from '../Entity/ticket/Screen/ticket-planning.js';
@@ -40,17 +27,9 @@ import { TicketRunsScreen } from '../Entity/ticket/Screen/ticket-runs.js';
 import { TicketsScreen } from '../Entity/ticket/Screen/tickets.js';
 import { WorkspaceMemberTicketsScreen } from '../Entity/ticket/Screen/user-tickets.js';
 import { WhoFilterScreen } from '../Entity/ticket/Screen/who-filter-form.js';
-import {
-  TeamMemberOverviewScreen,
-  WorkspaceMemberOverviewScreen,
-} from '../Entity/user/Screen/member-overview.js';
+import { WorkspaceMemberOverviewScreen } from '../Entity/user/Screen/member-overview.js';
 import { UsersScreen } from '../Entity/user/Screen/users.js';
 import { WorkspacePickerScreen } from '../Entity/workspace/Screen/workspace-picker.js';
-import { MyStatsScreen, ProjectStatsScreen } from '../Statistics/dashboard.js';
-import {
-  TeamMemberStatsScreen,
-  WorkspaceMemberStatsScreen,
-} from '../Statistics/member-stats.js';
 import type { ResolvedRoute } from '../types.js';
 import { defineRoutes } from './registry.js';
 import type { RouteLocation, ScreenClass } from './route.js';
@@ -88,34 +67,20 @@ export const bootLocationFor = (route?: ResolvedRoute): RouteLocation => {
 
 const BUILT_IN: readonly ScreenClass[] = [
   MyWorkScreen,
-  MyStatsScreen,
   ConductorsScreen,
   ConductorOverviewScreen,
   ConductorRunsScreen,
   ConductorTicketsScreen,
   ConductorLogScreen,
-  CreateTicketFormScreen,
   EditAssignmentFormScreen,
   ParentFilterScreen,
   MyWorkParentFilterScreen,
   ProjectFilterScreen,
   ProjectsScreen,
   ProjectOverviewScreen,
-  ProjectStatsScreen,
   ProjectPickerScreen,
   WorkspacePickerScreen,
-  // Team routes and their contextual member subtree are always available.
-  TeamsScreen,
-  TeamWorkScreen,
-  TeamOverviewScreen,
-  TeamStatsScreen,
-  TeamUsersScreen,
-  TeamMemberOverviewScreen,
-  TeamMemberStatsScreen,
-  TeamMemberTicketsScreen,
-  TeamMemberRunsScreen,
   TicketsScreen,
-  TicketAgentsScreen,
   WhoFilterScreen,
   RunsScreen,
   ProjectConductorsScreen,
@@ -138,7 +103,6 @@ export function buildRoutes(
         ...BUILT_IN,
         UsersScreen,
         WorkspaceMemberOverviewScreen,
-        WorkspaceMemberStatsScreen,
         WorkspaceMemberTicketsScreen,
         WorkspaceMemberRunsScreen,
       ]

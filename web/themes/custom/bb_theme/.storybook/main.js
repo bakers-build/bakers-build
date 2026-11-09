@@ -9,10 +9,14 @@ const config = {
   // so the Storybook icon() preview resolves the same sprite as Drupal.
   staticDirs: [
     { from: '../dist', to: '/themes/custom/bb_theme/dist' },
-    { from: '../assets/brand', to: '/themes/custom/bb_theme/assets/brand' },
+    { from: '../logo.svg', to: '/themes/custom/bb_theme/logo.svg' },
+    { from: '../logo-wordmark.svg', to: '/themes/custom/bb_theme/logo-wordmark.svg' },
+    { from: '../logo-wordmark-steam.svg', to: '/themes/custom/bb_theme/logo-wordmark-steam.svg' },
   ],
   addons: [
     '@storybook/addon-docs',
+    // Toolbar for the Designbook theme global (light, cozy, dark) that preview.js maps to data-mode.
+    '@storybook/addon-themes',
     { name: 'storybook-addon-designbook' },
     {
       name: 'storybook-addon-sdc',

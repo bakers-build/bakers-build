@@ -13,7 +13,6 @@ use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\bb_core\Access\BbCommentAccessControlHandler;
 use Drupal\bb_core\Access\BbCommentQueryAccessHandler;
 use Drupal\bb_core\Form\BbContentEntityFormBase;
@@ -27,7 +26,7 @@ use Drupal\user\EntityOwnerTrait;
  * Represents a bakers.build comment entity.
  *
  * Comments are structured notes attached to a ticket with an explicit author
- * and a long-text body. They are administered under /admin/bakers/comment.
+ * and a long-text body. They are listed and managed on their ticket.
  */
 #[ContentEntityType(
   id: 'bb_comment',
@@ -62,7 +61,6 @@ use Drupal\user\EntityOwnerTrait;
     'route_provider' => ['html' => BbCommentRouteProvider::class],
     // Tabs are declared statically in bb_core.links.task.yml. The default
     // provider would synthesise a View/Edit pair from edit-form.
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
   ],
   // `_workspace` is an INTERNAL prefix that never appears in a URL: the public
   // address is /{workspace}/…, which Drupal's router cannot match directly.
@@ -72,11 +70,9 @@ use Drupal\user\EntityOwnerTrait;
     'add-form' => '/_workspace/{bb_workspace}/comment/add',
     'edit-form' => '/_workspace/{bb_workspace}/comment/{bb_comment}/edit',
     'delete-form' => '/_workspace/{bb_workspace}/comment/{bb_comment}/delete',
-    'collection' => '/admin/bakers/comments',
   ],
   admin_permission: 'administer bakers',
   permission_granularity: 'entity_type',
-  field_ui_base_route: 'entity.bb_comment.collection',
   base_table: 'bb_comment',
   constraints: ['BbReviewComment' => []],
 )]

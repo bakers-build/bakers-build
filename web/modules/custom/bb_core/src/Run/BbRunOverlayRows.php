@@ -40,11 +40,11 @@ final class BbRunOverlayRows extends InspectorRows {
    * @return array<string, mixed>
    *   A list item.
    */
-  public function pair(string $label, string $value): array {
+  public function pair(string $label, string|array $value): array {
     return [
       'cells' => [
         'name' => ['kind' => 'text', 'value' => $label, 'emphasis' => 'faint'],
-        'value' => ['kind' => 'mono', 'value' => $value],
+        'value' => is_array($value) ? $value : ['kind' => 'text', 'value' => $value],
       ],
     ];
   }

@@ -1,0 +1,40 @@
+{# One form field: label, control, errors and help text, in core's order and
+   with core's classes, so Drupal JS (#states, AJAX) keeps finding it. In a
+   block parent the field owns the space below it (`stack`), so a form stacks
+   its fields evenly without spacing of its own; the last field adds none. A
+   flex or grid parent spaces its children with its own gap, so the field adds
+   nothing there. #}
+{#- Slots arrive as render arrays, which are truthy even when empty: test the
+    rendered output, captured once because rendering marks the array printed. #}
+{% set visible_tags = '<img><svg><input>' %}
+{% set errors_markup = errors|render %}
+{% set prefix_markup = prefix|render %}
+{% set suffix_markup = suffix|render %}
+{% set description_markup = description|render %}
+{% set has_errors = errors_markup|striptags|trim is not empty %}
+{% set has_description = description_markup|striptags(visible_tags)|trim is not empty %}
+{# `mb-group` matches a flex form's `gap-group`, so every form spaces its fields alike. #}
+{% set classes = [
+  'js-form-item', 'form-item',
+  'form-type-' ~ type|clean_class, 'js-form-type-' ~ type|clean_class,
+  'form-item-' ~ name|clean_class, 'js-form-item-' ~ name|clean_class,
+  title_display not in ['after', 'before'] ? 'form-no-label',
+  disabled ? 'form-disabled',
+  has_errors ? 'form-item--error',
+  '[:not(.flex,.grid)>&:not(:last-child)]:mb-group',
+]|filter(c => c) %}
+{% set description_classes = ['description', 'text-meta', 'text-text-light', description_display == 'invisible' ? 'sr-only']|filter(c => c) %}
+<div{{ (attributes ?: create_attribute()).addClass(classes) }}>
+  {% if label_display in ['before', 'invisible'] %}{{ label }}{% endif %}
+  {% if description_display == 'before' and has_description %}
+    <div{% if description_id %} id="{{ description_id }}"{% endif %} class="{{ (description_classes|merge(['pb-inline-xs']))|join(' ') }}">{{ description_markup }}</div>
+  {% endif %}
+  {% if prefix_markup|striptags(visible_tags)|trim is not empty %}<span class="field-prefix">{{ prefix_markup }}</span>{% endif %}
+  {{ children }}
+  {% if suffix_markup|striptags(visible_tags)|trim is not empty %}<span class="field-suffix">{{ suffix_markup }}</span>{% endif %}
+  {% if label_display == 'after' %}{{ label }}{% endif %}
+  {% if has_errors %}<div class="form-item--error-message text-meta text-state-attention-ink">{{ errors_markup }}</div>{% endif %}
+  {% if description_display in ['after', 'invisible'] and has_description %}
+    <div{% if description_id %} id="{{ description_id }}"{% endif %} class="{{ (description_classes|merge(['pt-inline-xs']))|join(' ') }}">{{ description_markup }}</div>
+  {% endif %}
+</div>

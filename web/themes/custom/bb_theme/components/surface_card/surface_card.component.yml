@@ -4,17 +4,16 @@ name: Surface Card
 status: stable
 group: Layout
 description: >-
-  A generic bordered, padded surface — the same lifted-panel look
-  `inspector`'s `surface` variant already draws (`bg-surface`,
-  `border-border-2`, `rounded-sm`, `p-4`), factored out for a SECOND panel of
-  `canvas.inspector` that is not itself a properties rail (BB-661): the
-  ticket's Addons card, a tab strip over one message panel. `inspector` keeps
-  owning `meta_row` properties; this owns nothing about addons or any other
-  bakers.build concept, so any future second inspector-column panel reuses it rather
-  than growing another product-named wrapper. Not sticky and not an `<aside>`
-  itself — a caller composing `canvas.inspector` as a `list` of items places
-  this as a sibling item next to `inspector`, which already provides the
-  column's own stickiness.
+  A generic bordered, padded surface — the same lifted-panel look `inspector`'s
+  `surface` variant already draws (`bg-surface`, `border-border-2`,
+  `rounded-sm`, `p-4`), factored out for a SECOND panel of `canvas.inspector`
+  that is not itself a properties rail (BB-661): the ticket's Addons card, a tab
+  strip over one message panel. `inspector` keeps owning `meta_row` properties;
+  this owns nothing about addons or any other bakers.build concept, so any
+  future second inspector-column panel reuses it rather than growing another
+  product-named wrapper. Not sticky and not an `<aside>` itself — a caller
+  composing `canvas.inspector` as a `list` of items places this as a sibling
+  item next to `inspector`, which already provides the column's own stickiness.
 provider: bb_theme
 slots:
   header:

@@ -5,7 +5,7 @@
 {% set first_value = items[0].value|default('') %}
 {% set second_value = items[1].value|default('') %}
 {% set selected_js = (selected|default(first_value))|json_encode %}
-<div{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'gap-3']) }}
+<div{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'gap-stack']) }}
   x-data='{ selected: {{ selected_js }} }'>
   <div class="self-start">
     {{ include('bb_theme:segmented_control', {
@@ -15,10 +15,10 @@
     }, with_context = false) }}
   </div>
   {% block intro %}{{ intro }}{% endblock %}
-  <div class="flex flex-col gap-2" x-show='selected === {{ first_value|json_encode }}'>
+  <div class="flex flex-col gap-inline" x-show='selected === {{ first_value|json_encode }}'>
     {% block panel_a %}{{ panel_a }}{% endblock %}
   </div>
-  <div class="flex flex-col gap-2" x-show='selected === {{ second_value|json_encode }}'>
+  <div class="flex flex-col gap-inline" x-show='selected === {{ second_value|json_encode }}'>
     {% block panel_b %}{{ panel_b }}{% endblock %}
   </div>
   {% block after %}{{ after }}{% endblock %}

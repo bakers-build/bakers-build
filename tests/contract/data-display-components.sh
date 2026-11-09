@@ -211,16 +211,16 @@ DELETED_ALLOWLIST=''
 # rather than a choice between two numbers: the two tickets moved the count in opposite directions
 # and independently, so both chains stand and compose. 45 + 1 (BB-490) = 46.
 #
-# 47 SINCE BB-504 (Plan Task 11), one addition: `mode_toggle`, the icon button that flips the
-# persisted colour mode (light/dark). It is a genuinely new component rather than a variant of an
-# existing one — no other component in the rail footer is a button that calls
-# `window.bakersToggleMode()` — and it is generic by B10's test: it knows `mode` (for static/story
+# 47 SINCE BB-504 (Plan Task 11), one addition: `mode_toggle`, the icon button that picks the
+# persisted colour mode (light/dark/system). It is a genuinely new component rather than a variant of
+# an existing one — no other component in the rail footer is a control that calls
+# `window.bakersSetMode()` — and it is generic by B10's test: it knows `mode` (for static/story
 # rendering) and `label`, and nothing about any bakers.build entity or bundle. It sits in the sidebar
 # footer's `actions` slot beside `person`, is NOT an island (no `hx-*` attribute, no region
 # rebuild — a pure client-side attribute flip and localStorage write, same mechanism `skin.src.js`
 # itself uses), and carries zero outer margin as every CONTENT component in this theme must; the
 # `gap-2` between it and `person` is owned by `sidebar.twig`'s own footer row. 46 + 1 (BB-504) = 47.
-# 48 SINCE BB-547: `brand` owns the shared login braid and wordmark.
+# 48 SINCE BB-547: `brand` owns the shared login logo and wordmark.
 # It is a Shell component, not an entity-specific data display. 47 + 1 = 48.
 # 49: `stat-comparison` is the shared-axis two-series plot. Existing
 # `stat-series` bars cannot carry two measurements on one time/value scale.
@@ -323,7 +323,18 @@ DELETED_ALLOWLIST=''
 # comparison text, with its own date math. No existing component offers a period: `option_picker`
 # picks values a server rendered, and `week-strip` shows days, it does not
 # choose a range. Data Display (kebab-case). 66 + 1 = 67.
-TARGET_COMPONENT_COUNT=67
+# 68 SINCE BAKERS-54: `time`, the one `<time datetime title>` every displayed
+# timestamp renders through, fed by `BbDate`. No component rendered a point in
+# time; `event` hand-wrote its own. Data Display (single word). 67 + 1 = 68.
+# 69 SINCE BAKERS-54: `form_check`, the native checkbox or radio with the shared
+# focus ring. The `input--checkbox`/`input--radio` presenters drew it inline;
+# a presenter carries no classes, so the input became the `form_input` sibling
+# it is. Form (snake_case). 68 + 1 = 69.
+# 70 SINCE BAKERS-54: `form_field`, the field wrapper around a control. The
+# `form-element` presenter rendered stable9 markup and styled the help text
+# itself; the field also owns the space below it, so forms stack evenly.
+# Form (snake_case). 69 + 1 = 70.
+TARGET_COMPONENT_COUNT=70
 
 # The three containers and the props that make them containers (D2).
 CONTAINER_COMPONENTS='table list form'
@@ -348,7 +359,10 @@ DISPLAY_GROUPS='Data Display|Media'
 #
 # `form_rich_text` joins as the Markdown counterpart of `form_textarea`: it is
 # only ever a body field of an add or edit form.
-FORM_COMPONENTS='form form_input form_label form_rich_text form_select form_textarea image_crop property_pill'
+#
+# `form_check` joins as the checkbox/radio sibling of `form_input`, and
+# `form_field` as the field wrapper both sit in.
+FORM_COMPONENTS='form form_check form_field form_input form_label form_rich_text form_select form_textarea image_crop property_pill'
 
 # A `<tr>` open tag. The trailing guard is "anything that is not a name character", because the tag
 # is written `<tr{{ attributes }}` in this theme — a space/`>` guard would match none of the five row

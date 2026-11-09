@@ -96,8 +96,8 @@ final class ListingPatternTest extends KernelTestBase {
     self::assertCount(3, (new Crawler($this->region($item, 'right')))->filter('[data-component-id="bb_theme:badge"] svg'), 'Every count carries an icon.');
     $right_meta = $this->region($item, 'right_meta');
     self::assertStringContainsString('Created', $right_meta);
-    // The request time is fixed at setUp: a later fixture reads "hence".
-    self::assertMatchesRegularExpression('/\\d+ \\w+ (ago|hence)/', $right_meta);
+    // The request time is fixed at setUp: a later fixture reads "in …".
+    self::assertMatchesRegularExpression('/\\d+ \\w+ ago|in \\d+ \\w+/', $right_meta);
     self::assertStringNotContainsString('<table', $item);
   }
 
@@ -268,7 +268,7 @@ final class ListingPatternTest extends KernelTestBase {
     self::assertSame(['1 project'], $this->badgeTitles($item));
     $right_meta = $this->region($item, 'right_meta');
     self::assertStringContainsString('Updated', $right_meta);
-    self::assertMatchesRegularExpression('/\\d+ \\w+ (ago|hence)/', $right_meta);
+    self::assertMatchesRegularExpression('/\\d+ \\w+ ago|in \\d+ \\w+/', $right_meta);
   }
 
   /**

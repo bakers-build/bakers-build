@@ -189,6 +189,8 @@ export function renderConfigReport(
       `Machine tunnel: ${tunnel === null ? 'unresolved' : tunnel} (from ${source})`,
     );
   }
+  if (report.executor_source)
+    lines.push(`Executor: from ${report.executor_source}`);
   if (report.connection_resolution) {
     const selected = report.connection_resolution;
     lines.push(

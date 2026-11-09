@@ -23,7 +23,7 @@ When('the browser creates a scoped {string} named {string}', async ({ page, apiC
     const type = `bb_${kind}`;
     await page.locator('input[name="name[0][value]"]').fill(name);
     try {
-        await page.locator('#gin-sticky-edit-submit, #edit-submit').first().click();
+        await page.locator('#edit-submit').first().click();
         await page.waitForLoadState('networkidle');
     } finally {
         await apiClient.identify('site-admin');

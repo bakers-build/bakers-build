@@ -89,13 +89,23 @@ export async function bakersStub({ tools = {}, apiKey = 'bb-test-key', sse = tru
 /**
  * A Slack Web API stub at `${url}/api/<method>`: records `{method, body}` and
  * answers from `answers[method]` (a value or a function of the body).
- * `fail(method)` makes that method answer `{ok: false}` until `heal()`.
+ * `fail(method)` makes that method answer `{ok: false}` until `heal()`. Channel names are
+ * unique, as in Slack: `conversations.create` and `conversations.rename` answer `name_taken`
+ * for a name in use, and `take(name)` puts a name in use.
  */
 export async function slackStub(answers = {}) {
   const calls = [];
   let failing = new Set();
   let ts = 0;
+  let ids = 0;
+  const names = new Set();
+  const claim = (name, answer) => (names.has(name) ? { ok: false, error: 'name_taken' } : (names.add(name), answer()));
   const defaults = {
+    'conversations.create': (body) => claim(body.name, () => ({ ok: true, channel: { id: `C9${String(++ids).padStart(9, '0')}`, name: body.name } })),
+    'conversations.rename': (body) => claim(body.name, () => ({ ok: true, channel: { id: body.channel, name: body.name } })),
+    'conversations.invite': { ok: true, channel: {} },
+    'conversations.archive': { ok: true },
+    'conversations.history': { ok: true, messages: [] },
     'chat.postMessage': () => {
       ts += 1;
       return { ok: true, ts: `1800000000.${String(ts).padStart(6, '0')}` };
@@ -114,6 +124,7 @@ export async function slackStub(answers = {}) {
     url: `http://127.0.0.1:${server.address().port}/api`,
     calls,
     posts: () => calls.filter((c) => c.method === 'chat.postMessage').map((c) => c.body),
+    take: (name) => names.add(name),
     fail: (method) => failing.add(method),
     heal: () => (failing = new Set()),
     close: () => new Promise((resolve) => (server.closeAllConnections(), server.close(resolve))),

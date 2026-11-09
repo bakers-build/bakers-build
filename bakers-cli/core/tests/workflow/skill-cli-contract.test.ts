@@ -727,7 +727,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
   it(
     'classify: one call sets recipe and type by name, a missing term is created, an empty call is refused',
     async () => {
-      const simulation = (await loadFixture('qualify-classify-default'))
+      const simulation = (await loadFixture('qualify-classify-unattended'))
         .simulation;
       const { files, call } = script();
       const steps = [
@@ -794,7 +794,7 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
   it(
     'update-labels: labels are added and removed by name, absent names ignored, one name in both lists refused',
     async () => {
-      const simulation = (await loadFixture('qualify-classify-default'))
+      const simulation = (await loadFixture('qualify-classify-unattended'))
         .simulation;
       const { files, call } = script();
       const steps = [
@@ -1192,10 +1192,10 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
       const { files, call } = script();
       const steps = [
         call('bakers_ticket_read', { ticket: ticketId }),
-        // The tool id without its wire prefix is not a tool the server lists.
+        // A tool the server does not list.
         [
           ...T,
-          'bakers_ticket_read',
+          'bakers_ticket_frobnicate',
           '--data',
           JSON.stringify({ ticket: ticketId }),
         ],

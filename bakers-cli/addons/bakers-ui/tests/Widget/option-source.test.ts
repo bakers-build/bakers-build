@@ -9,7 +9,7 @@ import {
 // BB-257 (re-entry) AC-12 — ONE loading path per field.
 //
 // Before this change the Parent field's candidates were fetched in
-// `Data/parents.ts`, re-labelled in `Form/create-data.ts`, and debounced,
+// `Data/parents.ts`, re-labelled in the create form's adapter (since removed), and debounced,
 // cancelled, swapped and error-merged a third time in `Kernel/tui-kernel.ts`. The
 // contract below is what collapses those three into one: a field declares ONE
 // source (fetch + label + error, in the slice that knows the service), and this

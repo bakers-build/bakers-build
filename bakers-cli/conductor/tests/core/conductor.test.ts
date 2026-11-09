@@ -1,8 +1,13 @@
+import { execFileSync, spawn } from 'node:child_process';
+import { randomUUID } from 'node:crypto';
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
+  statSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -44,12 +49,15 @@ import type {
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import { type ConductorLogger, shellQuote } from '@bakers-build/core';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { attemptFamily, attemptSessionId } from '../../src/core/attempt.js';
-import { Conductor } from '../../src/core/conductor.js';
+import type { Conductor } from '../../src/core/conductor.js';
 import { measureMrChanges } from '../../src/core/mr-changes.js';
 import { loadInbox } from '../../src/plugins/message.js';
+import { TestConductor } from '../test-conductor.js';
 
 // Git runs against a real repository in mr-changes.test.ts; here the reap
 // only has to call it and write what it returns.
@@ -168,7 +176,7 @@ const fakeAgent: BbAgent = {
 /** Wrap a BbAgent as the 1-element ResolvedAgent[] the Conductor now takes. */
 const resolved = (a: BbAgent): ResolvedAgent[] => [{ id: a.id, agent: a }];
 
-const CHECKOUT = '/tmp/bakers-conductor-test-checkout';
+const CHECKOUT = join(tmpdir(), 'bakers-conductor-test-checkout');
 
 function makeConfig(
   overrides: Partial<ConductorFileConfig> = {},
@@ -202,7 +210,12 @@ type RecordingCall =
   | { kind: 'startRun'; identifier: string }
   | { kind: 'removeWorktree'; branch: string; worktreePath?: string };
 
-/** Simple recording executor — captures startRun inputs and cleanupRun/startRun call order. */
+/**
+ * Simple recording executor — captures startRun inputs and cleanupRun/startRun
+ * call order. `runHook` and `removeWorktree` are not executor methods: they
+ * record the conductor's hooks and the workspace teardown, wired to their
+ * owners by {@link TestConductor}.
+ */
 class RecordingExecutor implements BbExecutor {
   readonly id = 'recording';
   readonly started: SpawnRunInput[] = [];
@@ -301,7 +314,7 @@ async function startedConductor(
   workspace = new FakeWorkspace(),
 ): Promise<Conductor> {
   const { log } = spyLogger();
-  const conductor = new Conductor(
+  const conductor = new TestConductor(
     config,
     remote,
     executor,
@@ -337,7 +350,7 @@ describe('Conductor', () => {
     });
     const executor = new RecordingExecutor();
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -372,7 +385,7 @@ describe('Conductor', () => {
   });
 
   it('exposes the id from config.conductor_id — no directory-derived fallback (BB-450 D5)', () => {
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig({ conductor_id: 'cw-dev-box-bakers' }),
       new FakeBbRemote(),
       new FakeExecutor({ outcome: 'exited' }),
@@ -385,7 +398,7 @@ describe('Conductor', () => {
   });
 
   it('throws naming bakers init rather than deriving an id from the checkout directory when the machine has no UUID', () => {
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig({ conductor_id: undefined }),
       new FakeBbRemote(),
       new FakeExecutor({ outcome: 'exited' }),
@@ -569,7 +582,7 @@ describe('Conductor', () => {
       { id: 'lo', agent: mk('lo'), priority: () => 1 },
       { id: 'hi', agent: mk('hi'), priority: () => 9 },
     ];
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -610,7 +623,7 @@ describe('Conductor', () => {
     });
     const executor = new RecordingExecutor();
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -654,7 +667,7 @@ describe('Conductor', () => {
     });
     const executor = new RecordingExecutor();
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -711,7 +724,7 @@ describe('Conductor', () => {
         },
       ],
     });
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -778,7 +791,7 @@ describe('Conductor', () => {
       stateAtStart: 'todo',
       handler: 'code',
     });
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -830,7 +843,7 @@ describe('Conductor', () => {
       stateAtStart: 'todo',
       handler: 'code',
     });
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -895,6 +908,7 @@ describe('Conductor', () => {
           runUuid: 're-dispatched-run',
           ticketUuid: 't-1',
           stateAtStart: 'todo',
+          runLogStorageAllowed: true,
         },
       ],
     });
@@ -909,7 +923,7 @@ describe('Conductor', () => {
       instructions: { path: `${cwd}/WORKFLOW.md`, sha256: 'abc', text: 'x' },
       created: true,
     });
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -1178,7 +1192,7 @@ describe('Conductor', () => {
   it('logs a start event with the conductor id', async () => {
     const remote = new FakeBbRemote();
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new FakeExecutor({ outcome: 'exited' }),
@@ -1199,7 +1213,7 @@ describe('Conductor', () => {
     };
     const remote = new FakeBbRemote(seed);
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new FakeExecutor({ outcome: 'exited' }),
@@ -1337,7 +1351,7 @@ describe('Conductor', () => {
     // The agent self-reads the ticket + comments at step 0 — the dispatch line
     // embeds neither the ticket body nor any comment text, and stays bounded.
     expect(command).toContain(
-      `bakers tools tool_api__bakers_ticket_read --data '{"ticket":"t-1"}'`,
+      `bakers tools bakers_ticket_read --data '{"ticket":"t-1"}'`,
     );
     expect(command).not.toContain('--- Ticket comments ---');
     expect(command).not.toContain('{comments}');
@@ -1371,16 +1385,14 @@ describe('Conductor', () => {
     const boom: BbExecutor = {
       id: 'boom',
       capabilities: () => ({ persistent: false }),
-      runHook: async (name) => ({ hook: name, ran: false, ok: true }),
       startRun: async () => {
         throw new Error('startRun exploded');
       },
       stopRun: async () => {},
       cleanupRun: async () => {},
-      removeWorktree: async () => 'removed',
     };
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       boom,
@@ -1431,7 +1443,6 @@ describe('Conductor', () => {
     const boom: BbExecutor = {
       id: 'boom',
       capabilities: () => ({ persistent: false }),
-      runHook: async (name) => ({ hook: name, ran: false, ok: true }),
       startRun: async () => {
         throw new Error(
           'Launch failed: exit 1\nError: Invalid session ID. Must be a valid UUID.',
@@ -1439,9 +1450,8 @@ describe('Conductor', () => {
       },
       stopRun: async () => {},
       cleanupRun: async () => {},
-      removeWorktree: async () => 'removed',
     };
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       boom,
@@ -1475,10 +1485,11 @@ describe('Conductor', () => {
           stateAtStart: 'review',
           state: 'done',
           worktreePath: '/wt/r-1',
+          runLogStorageAllowed: true,
         },
       ],
     });
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -1547,7 +1558,7 @@ describe('Conductor', () => {
         },
       }),
     ].join('\n');
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -1599,7 +1610,7 @@ describe('Conductor', () => {
         usage: { input_tokens: 10, output_tokens: 20 },
       },
     });
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -1639,7 +1650,7 @@ describe('Conductor', () => {
       ],
     });
     // Both fields pinned, but the transcript names nothing to fall back to.
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -1680,7 +1691,7 @@ describe('Conductor', () => {
       ],
     });
     // No configured pin, and a transcript that names no model.
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -1727,7 +1738,7 @@ describe('Conductor', () => {
       getRunLog: async () => transcript,
       parseFootprint: parseCodexTranscript,
     };
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -1760,6 +1771,7 @@ describe('Conductor', () => {
           state: 'done',
           worktreePath: '/wt/codex-r-1',
           agent: 'codex',
+          runLogStorageAllowed: true,
         },
       ],
     });
@@ -1815,7 +1827,7 @@ describe('Conductor', () => {
         run?.sessionId === 'codex-r-1' ? transcript : foreignTranscript,
       parseFootprint: parseCodexTranscript,
     };
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -1869,7 +1881,7 @@ describe('Conductor', () => {
     const executor = new RecordingExecutor();
     executor.persistent = true;
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -1915,12 +1927,13 @@ describe('Conductor', () => {
           stateAtStart: 'review',
           state: 'done',
           worktreePath: '/wt/r-1',
+          runLogStorageAllowed: true,
         },
       ],
     });
     const executor = new RecordingExecutor();
     executor.persistent = true;
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -1969,6 +1982,67 @@ describe('Conductor', () => {
     ]);
   });
 
+  it.runIf(process.platform === 'linux')(
+    'ends processes left by the finalised run, and only those',
+    async () => {
+      const runUuid = randomUUID();
+      const start = (uuid: string) => {
+        const child = spawn('sleep', ['60'], {
+          detached: true,
+          stdio: 'ignore',
+          env: { ...process.env, BB_RUN_UUID: uuid },
+        });
+        child.unref();
+        return child.pid as number;
+      };
+      const ours = start(runUuid);
+      const theirs = start(randomUUID());
+      try {
+        const remote = new FakeBbRemote({
+          tickets: {
+            't-1': {
+              identifier: 'BB-1',
+              title: 'One',
+              state: 'done',
+              branchName: 'bakers/bb-1-one',
+            },
+          },
+          runs: [
+            {
+              runUuid,
+              ticketUuid: 't-1',
+              stateAtStart: 'review',
+              state: 'done',
+              worktreePath: '/wt/r-1',
+            },
+          ],
+        });
+        const executor = new RecordingExecutor();
+        executor.persistent = true;
+        const conductor = new TestConductor(
+          makeConfig(),
+          remote,
+          executor,
+          new FakeWorkspace(),
+          resolved(agentReturning('X')),
+          spyLogger().log,
+          CHECKOUT,
+        );
+        await conductor.start();
+        await conductor.tick();
+        await new Promise((r) => setTimeout(r, 200));
+        expect(existsSync(`/proc/${ours}`)).toBe(false);
+        expect(existsSync(`/proc/${theirs}`)).toBe(true);
+      } finally {
+        for (const pid of [ours, theirs]) {
+          try {
+            process.kill(pid, 'SIGKILL');
+          } catch {}
+        }
+      }
+    },
+  );
+
   it('captures the run log before closing the tab (BB-171 AC-2)', async () => {
     const remote = new FakeBbRemote({
       tickets: {
@@ -2007,7 +2081,7 @@ describe('Conductor', () => {
         return 'X';
       },
     };
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -2047,7 +2121,7 @@ describe('Conductor', () => {
     const executor = new RecordingExecutor();
     executor.persistent = true;
     executor.cleanupRunError = new Error('tab close boom');
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -2080,11 +2154,12 @@ describe('Conductor', () => {
           stateAtStart: 'review',
           state: 'done',
           worktreePath: '/wt/r-1',
+          runLogStorageAllowed: true,
         },
       ],
     });
     const executor = new RecordingExecutor(); // persistent = false
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -2131,7 +2206,7 @@ describe('Conductor', () => {
         },
       ],
     });
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -2168,7 +2243,7 @@ describe('Conductor', () => {
     });
     // DrupalBbRemote swallows a recognized size rejection behind a
     // successful omission close; the conductor only sees finalizeRun success.
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -2197,7 +2272,7 @@ describe('Conductor', () => {
   it('tick heartbeats: an offline conductor is brought back online, never drains', async () => {
     const remote = new FakeBbRemote();
     remote.queue.length = 0;
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -2257,7 +2332,7 @@ describe('Conductor', () => {
     workspace: FakeWorkspace = new FakeWorkspace(),
     logger?: ConductorLogger,
   ): Promise<Conductor> {
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -2333,6 +2408,41 @@ describe('Conductor', () => {
     ]);
     // Verified teardown → cleaned_up set (drops the ticket off the work list).
     expect(remote.calls.markCleanedUp).toEqual(['t-1']);
+  });
+
+  it('stops a done ticket’s provisioning before after_done, and all provisioning at stopTools', async () => {
+    const remote = new FakeBbRemote(doneTicketSeed());
+    const executor = new RecordingExecutor();
+    const events: string[] = [];
+    const runHook = executor.runHook.bind(executor);
+    executor.runHook = async (name, ...rest) => {
+      events.push(name);
+      return runHook(name, ...rest);
+    };
+    const conductor = new TestConductor(
+      makeConfig({
+        provisioning: {
+          stop: async (path) => {
+            events.push(`stop ${path ?? 'all'}`);
+          },
+        },
+      }),
+      remote,
+      executor,
+      new FakeWorkspace(),
+      resolved(fakeAgent),
+      spyLogger().log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    await conductor.tick();
+    expect(events.slice(0, 2)).toEqual([
+      `stop ${PRESENT_WORKTREE}`,
+      'after_done',
+    ]);
+    events.length = 0;
+    await conductor.stopTools();
+    expect(events).toEqual(['stop all']);
   });
 
   it('tick does not mark cleaned_up when teardown fails on a closed ticket (no withholding of anything else)', async () => {
@@ -2464,17 +2574,17 @@ describe('Conductor', () => {
     expect(remote.calls.markCleanedUp).toEqual(['t-1']);
   });
 
-  it('tick does not call removeWorktree for a non-persistent executor, but still marks cleaned_up', async () => {
+  it('tick tears down the worktree for a non-persistent executor too, then marks cleaned_up', async () => {
     const remote = new FakeBbRemote(doneTicketSeed());
     const executor = new RecordingExecutor(); // persistent = false
     const conductor = await cleanupConductor(remote, executor);
 
     await conductor.tick();
 
-    // The after_done hook still runs (a non-persistent gitWorkspace has an
-    // on-disk worktree); only the workspace teardown is gated on persistence.
+    // The workspace owns the worktree, whatever the executor: a non-persistent
+    // executor on a git workspace still leaves one on disk, and it is removed.
     expect(afterDoneCwds(executor)).toEqual([PRESENT_WORKTREE]);
-    expect(executor.removed).toEqual([]);
+    expect(executor.removed).toEqual(['bakers/bb-1']);
     expect(remote.calls.markCleanedUp).toEqual(['t-1']);
   });
 
@@ -2602,7 +2712,7 @@ describe('Conductor', () => {
     expect(remote.calls.markCleanedUp).toEqual(['t-1']);
   });
 
-  it('reap winds up a closed ticket on a non-persistent executor: marks cleaned_up, tears down nothing', async () => {
+  it('reap winds up a closed ticket on a non-persistent executor: tears down the worktree, marks cleaned_up', async () => {
     const remote = new FakeBbRemote({
       tickets: {
         't-1': {
@@ -2619,7 +2729,7 @@ describe('Conductor', () => {
 
     await conductor.reap();
 
-    expect(executor.removed).toEqual([]);
+    expect(executor.removed).toEqual(['bakers/bb-1']);
     expect(remote.calls.markCleanedUp).toEqual(['t-1']);
   });
 
@@ -2852,7 +2962,7 @@ describe('Conductor', () => {
   // alone, and a hook is a shell spawned with the worktree as its `cwd`. Against
   // an absent directory that spawn fails with ENOENT before the probe is ever
   // consulted, and the shared exec helper logs it at ERROR — so a configured
-  // hook (this repo's own engine config sets `after_done: 'ddev delete -Oy'`)
+  // hook (a project's engine config may delete its runtime project in `after_done`)
   // produced exactly the ERROR the criterion forbids.
   it('reap runs no after_done hook for a worktree that is absent on disk (BB-293)', async () => {
     const remote = new FakeBbRemote(doneTicketSeed(ABSENT_WORKTREE));
@@ -2872,14 +2982,13 @@ describe('Conductor', () => {
     // The hook is not invoked at all — no spawn, so nothing to fail.
     expect(afterDoneCwds(executor)).toEqual([]);
     // The absence is stated rather than passed over, because an `after_done`
-    // can reach beyond the directory it runs in (`ddev delete -Oy` also drops a
-    // DDEV project registration and its database) and that leftover is then an
+    // can reach beyond the directory it runs in (deleting a container runtime's
+    // project also drops its registration and database) and that leftover is then an
     // operator's to clear by hand.
     //
-    // The exact wording is pinned deliberately. Hook commands are executor-owned
-    // config the core cannot see, so it does not know whether an `after_done`
-    // exists at all — a message claiming one was "skipped" is false wherever
-    // none is configured, which is the majority case and includes the generated
+    // The exact wording is pinned deliberately. An `after_done` may be a
+    // listener, a shell command or nothing at all — a message claiming one
+    // was "skipped" is false wherever none is configured, which is the majority case and includes the generated
     // playground config this ticket's own runtime evidence ran against. Every
     // clause here must hold in BOTH configurations, so it reports the condition
     // (the directory is gone) and the consequence (no after_done ran), never a
@@ -3429,7 +3538,7 @@ describe('Conductor', () => {
   it('dispatch runs after_create on an EXISTING but unprovisioned worktree (created=false)', async () => {
     // BB-237 AC-5. `created` answers "was this worktree born just now?", which
     // is NOT the question dispatch needs answered: a worktree whose bootstrap
-    // aborted (the BB-237 `.ddev/worktree-post.sh` abort), an aborted earlier
+    // aborted (the BB-237 bootstrap-hook abort), an aborted earlier
     // run, or a manual `git worktree add` all exist WITHOUT being provisioned,
     // and the creation gate means they never get another chance. Provisioning
     // must be driven by whether the worktree IS provisioned; the bootstrap
@@ -3493,7 +3602,7 @@ describe('Conductor', () => {
     const executor = new RecordingExecutor();
     executor.failingHooks.add('after_create');
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -3526,8 +3635,8 @@ describe('Conductor', () => {
   // --- BB-237: the open layout is applied AFTER after_create -------------
 
   /**
-   * Drives dispatch with one shared ordering log across the executor AND the
-   * workspace, so the cross-object sequence can be asserted as one list.
+   * Drives dispatch with one shared ordering log across the hooks and the
+   * executor, so the cross-object sequence can be asserted as one list.
    */
   async function dispatchRecordingOrder(created: boolean): Promise<string[]> {
     const order: string[] = [];
@@ -3560,6 +3669,9 @@ describe('Conductor', () => {
         order.push('startRun');
         return super.startRun(input);
       }
+      async openWorkspace(): Promise<void> {
+        order.push('openWorkspace');
+      }
     }
     const workspace = new FakeWorkspace();
     workspace.ensure = async (identifier: string) => ({
@@ -3567,9 +3679,6 @@ describe('Conductor', () => {
       instructions: null,
       created,
     });
-    (workspace as BbWorkspace).applyOpenLayout = async () => {
-      order.push('applyOpenLayout');
-    };
     const conductor = await startedConductor(
       makeConfig(),
       remote,
@@ -3581,7 +3690,7 @@ describe('Conductor', () => {
     return order;
   }
 
-  it('dispatch applies the open layout AFTER after_create and BEFORE before_run', async () => {
+  it('dispatch opens the workspace in the executor AFTER after_create and BEFORE before_run', async () => {
     // BB-237. The `bakers ui` pane command names a binary that the
     // `after_create` hook builds. While the layout was applied inside
     // `workspace.ensure()` it necessarily fired BEFORE that hook — two
@@ -3591,19 +3700,19 @@ describe('Conductor', () => {
     // is the contract and must stay pinned.
     expect(await dispatchRecordingOrder(true)).toEqual([
       'after_create',
-      'applyOpenLayout',
+      'openWorkspace',
       'before_run',
       'cleanupRun',
       'startRun',
     ]);
   });
 
-  it('dispatch skips applyOpenLayout on a reused worktree but STILL runs after_create', async () => {
+  it('dispatch skips openWorkspace on a reused worktree but STILL runs after_create', async () => {
     // BB-237: the two gates deliberately DIFFER, and the difference is load
     // bearing — do not "simplify" them back into one.
     //   after_create   → convergent, runs always (AC-5): a worktree can exist
     //                    without ever having been provisioned.
-    //   applyOpenLayout → creation-gated: only a FRESH create has a root pane
+    //   openWorkspace  → creation-gated: only a FRESH create has a root pane
     //                    to lay out, and re-applying on reuse would start a
     //                    duplicate editor process on every reattach.
     expect(await dispatchRecordingOrder(false)).toEqual([
@@ -3731,7 +3840,7 @@ describe('Conductor', () => {
           },
         ],
       });
-      const conductor = new Conductor(
+      const conductor = new TestConductor(
         makeConfig(),
         remote,
         executor,
@@ -3773,7 +3882,7 @@ describe('Conductor', () => {
     const executor = new RecordingExecutor();
     // FakeWorkspace → instructions=null → no WORKFLOW.md.
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -3826,7 +3935,7 @@ describe('Conductor', () => {
       created: true,
     });
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       executor,
@@ -3940,7 +4049,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
     executor: BbExecutor,
     log: ConductorLogger = spyLogger().log,
   ): Promise<Conductor> {
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig({ hookListeners: listeners }),
       remote,
       executor,
@@ -4388,7 +4497,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
         return '';
       },
     };
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig({ hookListeners: [recorder('A', events)] }),
       remote,
       new EventExecutor(events),
@@ -4584,7 +4693,7 @@ describe('Conductor poll loop — reaped checkout', () => {
       runs: [{ runUuid: 'r-1', ticketUuid: 't-1', stateAtStart: 'working' }],
     });
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new FakeExecutor({ outcome: 'exited' }),
@@ -4612,7 +4721,7 @@ describe('Conductor poll loop — reaped checkout', () => {
     try {
       const remote = new FakeBbRemote();
       const { log, calls } = spyLogger();
-      const conductor = new Conductor(
+      const conductor = new TestConductor(
         makeConfig({ poll_interval_ms: 1 }),
         remote,
         new FakeExecutor({ outcome: 'exited' }),
@@ -4678,7 +4787,7 @@ describe('Conductor — freeze hooks', () => {
   ): Promise<Conductor> {
     // The seeded runs only carry the worktree path; nothing is dispatched.
     remote.queue.length = 0;
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig({ hookListeners: listeners }),
       remote,
       executor,
@@ -5050,7 +5159,7 @@ describe('action queue', () => {
     remote.enqueue(hangMessage('m-1', 't-1'));
     remote.claimNext = async () => null;
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig({ lease_seconds: 0, inboxAddons: [await hangingAddon(g)] }),
       remote,
       new RecordingExecutor(),
@@ -5085,7 +5194,7 @@ describe('action queue', () => {
       return null;
     };
     const { log, calls } = spyLogger();
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig(),
       remote,
       new RecordingExecutor(),
@@ -5206,7 +5315,7 @@ describe('action queue', () => {
       remote.enqueue(hangMessage(`m-${i}`, `t-${i}`));
     remote.claimNext = async () => null;
     // A real checkout: a missing one ends serve() at once (checkoutGone).
-    const conductor = new Conductor(
+    const conductor = new TestConductor(
       makeConfig({
         poll_interval_ms: 10,
         inboxAddons: [await hangingAddon(g)],
@@ -5232,5 +5341,227 @@ describe('action queue', () => {
     g.open();
     await served;
     expect(done).toBe(true);
+  });
+});
+
+// The conductor tells an open `bakers ui` its data changed by touching
+// `.bakers/ui-refresh` in the checkout and in the run's worktree.
+describe('Conductor — bakers ui refresh signal', () => {
+  const OLD = 1_000;
+
+  function project(): { checkout: string; worktree: string } {
+    const root = mkdtempSync(join(tmpdir(), 'bakers-ui-signal-'));
+    const checkout = join(root, 'checkout');
+    const worktree = join(root, 'wt');
+    mkdirSync(join(checkout, '.bakers'), { recursive: true });
+    mkdirSync(join(worktree, '.bakers'), { recursive: true });
+    return { checkout, worktree };
+  }
+
+  const signal = (dir: string) => join(dir, '.bakers', 'ui-refresh');
+  const signalled = (dir: string) =>
+    existsSync(signal(dir)) && statSync(signal(dir)).mtimeMs > OLD * 1000;
+  const age = (dir: string) => utimesSync(signal(dir), OLD, OLD);
+
+  function at(worktree: string): BbWorkspace {
+    return {
+      ensure: async () => ({
+        path: worktree,
+        instructions: null,
+        created: false,
+      }),
+      remove: async () => 'removed',
+    };
+  }
+
+  function queued(): FakeBbRemote {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': {
+          identifier: 'BB-1',
+          title: 'One',
+          state: 'todo',
+          projectId: 'p-1',
+        },
+      },
+    });
+    remote.queue.push({
+      runUuid: 'r-1',
+      runId: 1,
+      ticketUuid: 't-1',
+      stateAtStart: 'todo',
+      handler: 'code',
+    });
+    return remote;
+  }
+
+  function conductorOf(
+    remote: BbRemote,
+    executor: BbExecutor,
+    p: { checkout: string; worktree: string },
+  ): Conductor {
+    return new TestConductor(
+      makeConfig(),
+      remote,
+      executor,
+      at(p.worktree),
+      resolved(fakeAgent),
+      spyLogger().log,
+      p.checkout,
+    );
+  }
+
+  it('signals the checkout and the run worktree when a run is claimed and running', async () => {
+    const p = project();
+    const remote = queued();
+    const conductor = conductorOf(remote, new RecordingExecutor(), p);
+    await conductor.start();
+    await conductor.tick();
+    expect(remote.calls.markRunning).toHaveLength(1);
+    expect(signalled(p.checkout)).toBe(true);
+    expect(signalled(p.worktree)).toBe(true);
+  });
+
+  it('signals the checkout and the worktree when a dispatch fails', async () => {
+    const p = project();
+    const remote = queued();
+    // Seen at startRun: only the claim has signalled so far; asserting here
+    // would be swallowed by the dispatch's catch.
+    let atClaim = { checkout: false, worktree: false };
+    const boom: BbExecutor = {
+      id: 'boom',
+      capabilities: () => ({ persistent: false }),
+      startRun: async () => {
+        atClaim = {
+          checkout: signalled(p.checkout),
+          worktree: signalled(p.worktree),
+        };
+        // Age the file after claim, so only the failure can advance it.
+        age(p.checkout);
+        throw new Error('startRun exploded');
+      },
+      stopRun: async () => {},
+      cleanupRun: async () => {},
+    };
+    const conductor = conductorOf(remote, boom, p);
+    await conductor.start();
+    await conductor.tick();
+    // The claim signals the checkout only: the run has no worktree yet.
+    expect(atClaim).toEqual({ checkout: true, worktree: false });
+    expect(remote.calls.markFailed).toHaveLength(1);
+    expect(signalled(p.checkout)).toBe(true);
+    expect(signalled(p.worktree)).toBe(true);
+  });
+
+  it("signals the checkout and the run worktree after a run agent's ticket write", async () => {
+    const p = project();
+    const remote = queued();
+    remote.siteTools = {
+      list: async () => [
+        {
+          name: 'tool_api__bakers_ticket_update',
+          inputSchema: { type: 'object' },
+        },
+      ],
+      // Every ticket the run names belongs to its own project.
+      call: async () => ({
+        content: [{ type: 'text', text: JSON.stringify({ project: 'p-1' }) }],
+      }),
+      close: async () => {},
+    };
+    const executor = new RecordingExecutor();
+    const conductor = conductorOf(remote, executor, p);
+    await conductor.startTools();
+    await conductor.start();
+    await conductor.tick();
+    // Age both after the run started, so only the write can advance them.
+    age(p.checkout);
+    age(p.worktree);
+    const env = executor.started[0]?.env ?? {};
+    const client = new Client({ name: 'test', version: '1.0.0' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(env.BB_CONDUCTOR_URL ?? ''), {
+        requestInit: {
+          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+        },
+      }),
+    );
+    const result = await client.callTool({
+      name: 'bakers_ticket_update',
+      arguments: { ticket: 'BB-1' },
+    });
+    await client.close();
+    await conductor.stopTools();
+    expect(result.isError).toBeFalsy();
+    expect(signalled(p.checkout)).toBe(true);
+    expect(signalled(p.worktree)).toBe(true);
+  });
+
+  it('signals the checkout and the worktree when a run is finalised', async () => {
+    const p = project();
+    writeFileSync(signal(p.checkout), '');
+    writeFileSync(signal(p.worktree), '');
+    age(p.checkout);
+    age(p.worktree);
+    const remote = new FakeBbRemote({
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: 'review',
+          state: 'done',
+          worktreePath: p.worktree,
+        },
+      ],
+    });
+    const conductor = conductorOf(remote, new RecordingExecutor(), p);
+    await conductor.start();
+    await conductor.tick();
+    expect(remote.calls.finalizeRun).toHaveLength(1);
+    expect(signalled(p.checkout)).toBe(true);
+    expect(signalled(p.worktree)).toBe(true);
+  });
+
+  it('still reaches running when the signal cannot be written', async () => {
+    const p = project();
+    // `.bakers` as a plain file: every write below it fails, even as root.
+    for (const dir of [p.checkout, p.worktree]) {
+      rmSync(join(dir, '.bakers'), { recursive: true });
+      writeFileSync(join(dir, '.bakers'), '');
+    }
+    const remote = queued();
+    const conductor = conductorOf(remote, new RecordingExecutor(), p);
+    await conductor.start();
+    await conductor.tick();
+    expect(remote.calls.markRunning).toHaveLength(1);
+  });
+
+  it('git-excludes the signal file exactly once per repository', async () => {
+    const p = project();
+    execFileSync('git', ['init', '-q'], { cwd: p.worktree });
+    // Seeded, not merely queued, so `markDone` has a run record to finalise.
+    const remote = new FakeBbRemote({
+      tickets: { 't-1': { identifier: 'BB-1', title: 'One', state: 'todo' } },
+      runs: [{ runUuid: 'r-1', ticketUuid: 't-1', stateAtStart: 'todo' }],
+    });
+    const conductor = conductorOf(remote, new RecordingExecutor(), p);
+    await conductor.start();
+    await conductor.tick();
+    remote.markDone('r-1');
+    await conductor.tick();
+    expect(remote.calls.finalizeRun).toHaveLength(1);
+    const exclude = readFileSync(
+      join(p.worktree, '.git', 'info', 'exclude'),
+      'utf8',
+    );
+    expect(
+      exclude.split('\n').filter((l) => l === '/.bakers/ui-refresh'),
+    ).toHaveLength(1);
+    expect(
+      execFileSync('git', ['status', '--porcelain'], {
+        cwd: p.worktree,
+        encoding: 'utf8',
+      }),
+    ).not.toContain('ui-refresh');
   });
 });

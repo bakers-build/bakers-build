@@ -319,6 +319,19 @@ final class BbHomeController extends ControllerBase {
       ],
       '#slots' => [
         'content' => [
+          // The page's one h1. It names both answers, the list and the
+          // absence, so the chrome above it still does not need to tell them
+          // apart.
+          'heading' => [
+            '#type' => 'component',
+            '#component' => 'bb_theme:text',
+            '#props' => [
+              'text' => $this->t('Your workspaces'),
+              'as' => 'h1',
+              'size' => 'section-title',
+              'align' => 'center',
+            ],
+          ],
           'chooser' => $items === []
             ? [
               '#type' => 'component',

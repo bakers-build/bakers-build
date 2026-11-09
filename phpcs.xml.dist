@@ -16,8 +16,10 @@
   <!-- playwright CLI scratch output (page snapshots), not project code -->
   <exclude-pattern>*/.playwright-cli/*</exclude-pattern>
   <!-- designbook generated artifacts (plans, data-model, vision) are design-tool
-       output, not project code — do not lint their prose/line length. -->
+       output, not project code — do not lint their prose/line length. References are
+       hashed capture files and cannot be reformatted. -->
   <exclude-pattern>*/designbook/plans/*</exclude-pattern>
+  <exclude-pattern>*/designbook/references/*</exclude-pattern>
   <!-- Minified Tailwind output written by the designbook css-generate workflow's
        compile stage (git-ignored). phpcs cannot process a minified file and
        reports a warning, which fails the gate on generated output. -->

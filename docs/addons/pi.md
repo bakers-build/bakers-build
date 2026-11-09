@@ -6,7 +6,7 @@ For anyone whose machine should run tickets with pi.
 
 ## AI first
 
-Ask your AI to check this harness and its [bakers skills](/configuration/agents/skills).
+Ask your AI to check this harness and its [bakers skills](/skills-and-workflows/skills).
 
 ## Setup
 
@@ -28,7 +28,7 @@ It publishes one alias, `pi`, which uses your locally configured pi model.
 |---|---|---|---|
 | `security` | `'system'` \| `'custom'` | `'system'` | How a run starts; see [Security](#security). |
 | `config` | object | none | Required with, and only valid with, `security: 'custom'`. |
-| `env_deny` | string[] | the [default list](/configuration/agents/execution-security#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
+| `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `model` | string | pi's own default | Passed as `--model`. |
 | `provider` | string | none | Passed as `--provider`. |
 | `thinking` | string | none | Passed as `--thinking`. |
@@ -68,6 +68,7 @@ bakers agents
 - `--session-dir`, `--approve`, `-a`, `--no-approve` and `-na` are reserved; putting them in `args` fails loading.
 - The addon starts `pi`; it does not install it or sign it in. The binary must be on `PATH`.
 - Listed in a conductor config, an agent addon is ignored with a warning.
+- Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
-More: [Choose agents and models](/configuration/agents), [Machines](/configuration/agents/reference#harnesses).
+More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 

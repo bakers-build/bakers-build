@@ -96,7 +96,7 @@ final class BbCodeForm extends FormBase {
       '#props' => [
         'text' => $this->t('Check your mail'),
         'as' => 'h1',
-        'size' => 'h3',
+        'size' => 'section-title',
         'align' => 'center',
       ],
       '#weight' => -20,

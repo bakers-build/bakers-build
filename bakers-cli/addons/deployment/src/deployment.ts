@@ -124,7 +124,7 @@ export async function gatherBatch(opts: {
 export function registerDeployment(
   program: Command,
   resolveRemote: () => Promise<BbRemote>,
-  resolveProject: () => Promise<string>,
+  resolveProject: (explicit?: string) => Promise<string>,
   cwd: () => string,
 ): void {
   const dep = program
@@ -143,7 +143,11 @@ export function registerDeployment(
       '--to <ref>',
       'the post-merge env branch tip (git range end)',
     )
-    .action(async (opts: { since: string; to: string }) => {
+    .option(
+      '--project <name>',
+      "the bakers project the identifiers belong to (default: the project config's, else the one owning the origin remote)",
+    )
+    .action(async (opts: { since: string; to: string; project?: string }) => {
       // Prefix each commit with a record separator (%x1e) so one commit's body
       // cannot run into the next commit's header line; the identifier parse is
       // separator-agnostic, but the boundary keeps the log unambiguous.
@@ -153,7 +157,7 @@ export function registerDeployment(
         { cwd: cwd() },
       );
       const remote = await resolveRemote();
-      const project = await resolveProject();
+      const project = await resolveProject(opts.project);
       const result = await gatherBatch({
         sinceRef: opts.since,
         toRef: opts.to,

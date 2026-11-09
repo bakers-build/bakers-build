@@ -6,7 +6,7 @@ import { renderTree } from '../../../render-tree.js';
 import { fakeClient } from '../../../test-support.js';
 
 // BB-284 D4 — the parent-filter picker screen, driven directly the way
-// `tests/Screen/form-screens.test.ts` drives the create form. (The end-to-end
+// `tests/Screen/form-screens.test.ts` drives the edit form. (The end-to-end
 // `p` key wiring through the kernel is Task 4's; what is pinned HERE is the
 // screen's own contract: what it reads, and what it hands back.)
 

@@ -1,29 +1,29 @@
 id: debo-design-system
 title: Design System
 description: >-
-  The bakers.build application shell: a collapsible left navigation rail beside a main
-  column that stacks the screen content and the status bar, with the overlay
-  layer for dialogs. BB-332's action-pattern scenes used to sit here too,
-  because the pattern crosses every section; BB-335 moved every TICKET scene
-  of them into `sections/tickets/tickets.section.scenes.yml`, where the surfaces
-  they demonstrate live. The written rule stayed put:
+  The bakers.build application shell: a collapsible left navigation rail beside
+  a main column that stacks the screen content and the status bar, with the
+  overlay layer for dialogs. BB-332's action-pattern scenes used to sit here
+  too, because the pattern crosses every section; BB-335 moved every TICKET
+  scene of them into `sections/tickets/tickets.section.scenes.yml`, where the
+  surfaces they demonstrate live. The written rule stayed put:
   `design-system/action-pattern.md` is still the single copy, and it still binds
   every section. What is left here is the shell itself — including the
   deliberate absence of an add action in the chrome, which is a fact about the
-  CHROME rather than about any screen. BB-341 then replaced the navigation
-  this shell carries with the decided information architecture; Groups later
-  joined as its own leaf, so the rail order is My work · Groups · Projects ·
-  Settings · Teams. Team row overflow menus and the Team settings dialog were
-  retired: open the team, use the Members tab (IA D12). BB-378 made this file
-  the ONLY place the shell is declared: every screen scene in every section
-  starts with `scene: "design-system:shell"` and fills `content` through
-  `with:`, so the rail and the status bar exist once. BB-503 removed the
-  header/top bar entirely — the shell has no top chrome at all — and moved
-  identity into the rail, where it SPLITS: the workspace switcher (the new
-  `account_switcher`, replacing the retired `workspace_switcher`) at the rail
-  HEAD, and the signed-in account at the rail FOOT as a plain
-  `bb_theme:person` avatar, replacing the retired `user_menu`. The layout
-  rules those screens obey are written in `designbook/design-system/layout.md`.
+  CHROME rather than about any screen. BB-341 then replaced the navigation this
+  shell carries with the decided information architecture; Groups later joined
+  as its own leaf, so the rail order is My work · Groups · Projects · Settings ·
+  Teams. Team row overflow menus and the Team settings dialog were retired: open
+  the team, use the Members tab (IA D12). BB-378 made this file the ONLY place
+  the shell is declared: every screen scene in every section starts with `scene:
+  "design-system:shell"` and fills `content` through `with:`, so the rail and
+  the status bar exist once. BB-503 removed the header/top bar entirely — the
+  shell has no top chrome at all — and moved identity into the rail, where it
+  SPLITS: the workspace switcher (the new `account_switcher`, replacing the
+  retired `workspace_switcher`) at the rail HEAD, and the signed-in account at
+  the rail FOOT as a plain `bb_theme:person` avatar, replacing the retired
+  `user_menu`. The layout rules those screens obey are written in
+  `designbook/design-system/layout.md`.
 status: planned
 order: 0
 group: Designbook/Design System
@@ -58,9 +58,8 @@ scenes:
       is true — with a single workspace it is a plain label, chevron and panel
       both dropped, because a switcher with nothing to switch to is not a
       control. The signed-in account moved to the rail FOOT, filling `actions`,
-      as a plain, non-interactive avatar (`bb_theme:person` compact) — there
-      is nothing to switch about it, so it carries no chevron and no panel
-      either.
+      as a plain, non-interactive avatar (`bb_theme:person` compact) — there is
+      nothing to switch about it, so it carries no chevron and no panel either.
 
       The bakers.build application shell with the sidebar expanded, carrying the
       information architecture the IA target
@@ -69,13 +68,13 @@ scenes:
       on one screen; no separate Labels rail entry; workspace has no members
       surface), and Teams (with create affordance and one row per team).
 
-      READ HERE (BB-341 C1/C2/C3, Groups inserted as a sibling leaf).
-      Top-level order: My work, Groups, Projects, then Settings as a leaf, then
-      Teams as a GROUP HEADING (disclosure, no destination). Neither heading nor
-      leaves indent children — a team row sits at rail level and is told apart
-      by its MARK. A team row does not expand further. Teams is open here (shell
-      demo default); Settings is closed by default. Groups and Projects are
-      separate destinations; neither is a child of the other.
+      READ HERE (BB-341 C1/C2/C3, Groups inserted as a sibling leaf). Top-level
+      order: My work, Groups, Projects, then Settings as a leaf, then Teams as a
+      GROUP HEADING (disclosure, no destination). Neither heading nor leaves
+      indent children — a team row sits at rail level and is told apart by its
+      MARK. A team row does not expand further. Teams is open here (shell demo
+      default); Settings is closed by default. Groups and Projects are separate
+      destinations; neither is a child of the other.
 
       The `[+]` on Teams is not a hole in BB-332's rule but the same rule one
       surface further in. The chrome carries no entity-add action — there is no
@@ -98,21 +97,21 @@ scenes:
       attribute.
 
       ONE ISLAND BOUNDARY CROSSES THIS SHELL, AND STORYBOOK RENDERS NONE OF IT
-      (BB-396 D15, amended BB-503). An island is a render array contributed
-      by `IslandWrapper` at request time, so this scene cannot render one and
-      must not pretend to: what follows names the boundary so a reader of the
-      design knows where it falls, and nothing here simulates a swap, a boost or
-      a fragment request. Storybook has no htmx and gets none.
+      (BB-396 D15, amended BB-503). An island is a render array contributed by
+      `IslandWrapper` at request time, so this scene cannot render one and must
+      not pretend to: what follows names the boundary so a reader of the design
+      knows where it falls, and nothing here simulates a swap, a boost or a
+      fragment request. Storybook has no htmx and gets none.
 
       WHERE IT FALLS, read off the shipped
-      `display_builder_page_layout.page_layout.bb_shell` and not invented
-      here. The `sidebar` slot below is wrapped by `island-rail`, whose swap
-      target is `#island-content`. The `content` slot — the `$content`
-      placeholder every screen fills — is wrapped by `island-content`, and by D1
-      that is the page's ONE swap target, addressed by its DOM id rather than by
-      a class or a `closest` selector. `header` no longer exists; `footer` and
-      `overlay` stay outside both boundaries: the status bar and any dialog are
-      never replaced.
+      `display_builder_page_layout.page_layout.bb_shell` and not invented here.
+      The `sidebar` slot below is wrapped by `island-rail`, whose swap target is
+      `#island-content`. The `content` slot — the `$content` placeholder every
+      screen fills — is wrapped by `island-content`, and by D1 that is the
+      page's ONE swap target, addressed by its DOM id rather than by a class or
+      a `closest` selector. `header` no longer exists; `footer` and `overlay`
+      stay outside both boundaries: the status bar and any dialog are never
+      replaced.
 
       SO THE ASYMMETRY IN THIS SCENE'S OWN PROSE IS AN ISLAND FACT (D3, module
       fact F6). `island-rail` names `#island-content` as its target and does NOT
@@ -135,10 +134,10 @@ scenes:
       that changes content needs a plugin.
 
       KNOWN DIVERGENCE (BB-503). `island.profile.bb_shell.yml` still places
-      `bb_theme:topbar` in `shell_topbar`; this ticket deliberately leaves
-      that live config untouched, so a `recipe-test` world built from this
-      branch fails to render the shell until the follow-up
-      `designbook-to-config` ticket reconciles it.
+      `bb_theme:topbar` in `shell_topbar`; this ticket deliberately leaves that
+      live config untouched, so a `recipe-test` world built from this branch
+      fails to render the shell until the follow-up `designbook-to-config`
+      ticket reconciles it.
     items:
       - component: bb_theme:shell
         slots:
@@ -156,7 +155,7 @@ scenes:
                   workspace_color: running
                   multiple: true
                   collapsed: false
-                  workspace_picture: /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                  workspace_picture: /themes/custom/bb_theme/logo.svg
                 slots:
                   workspace_panel:
                     - component: bb_theme:menu_item
@@ -167,8 +166,7 @@ scenes:
                         mark:
                           initials: KE
                           color: running
-                          picture: >-
-                            /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                          picture: /themes/custom/bb_theme/logo.svg
                     - component: bb_theme:menu_item
                       props:
                         label: bakers.build
@@ -185,22 +183,22 @@ scenes:
                   label: Primary
                   items:
                     - title: My work
-                      url: /admin/bakers/work
+                      url: /bakers/work
                       icon: ticket
                       in_active_trail: true
                       below: []
                     - title: Groups
-                      url: /admin/bakers/group
+                      url: /bakers/group
                       icon: dashboard
                       in_active_trail: false
                       below: []
                     - title: Projects
-                      url: /admin/bakers/project
+                      url: /bakers/project
                       icon: project
                       in_active_trail: false
                       below: []
                     - title: Settings
-                      url: /admin/bakers/settings
+                      url: /bakers/settings
                       icon: settings
                       in_active_trail: false
                       below: []
@@ -213,13 +211,13 @@ scenes:
                         label: New team
                       below:
                         - title: Team A
-                          url: /admin/bakers/team/team-a
+                          url: /bakers/team/team-a
                           in_active_trail: false
                           mark:
                             initials: TA
-                            color: running
+                            color: attention
                         - title: Team B
-                          url: /admin/bakers/team/team-b
+                          url: /bakers/team/team-b
                           in_active_trail: false
                           mark:
                             initials: TB
@@ -230,12 +228,12 @@ scenes:
                     variant: compact
                     display_name: cw
                     initials: CW
-                    color: lease
+                    color: running
                     size: md
                 - component: bb_theme:mode_toggle
                   props:
                     mode: light
-                    label: Choose theme
+                    label: Choose appearance
           content: $content
           footer:
             component: bb_theme:status_bar
@@ -300,22 +298,22 @@ scenes:
                   label: Primary
                   items:
                     - title: My work
-                      url: /admin/bakers/work
+                      url: /bakers/work
                       icon: ticket
                       in_active_trail: true
                       below: []
                     - title: Groups
-                      url: /admin/bakers/group
+                      url: /bakers/group
                       icon: dashboard
                       in_active_trail: false
                       below: []
                     - title: Projects
-                      url: /admin/bakers/project
+                      url: /bakers/project
                       icon: project
                       in_active_trail: false
                       below: []
                     - title: Settings
-                      url: /admin/bakers/settings
+                      url: /bakers/settings
                       icon: settings
                       in_active_trail: false
                       below: []
@@ -328,13 +326,13 @@ scenes:
                         label: New team
                       below:
                         - title: Team A
-                          url: /admin/bakers/team/team-a
+                          url: /bakers/team/team-a
                           in_active_trail: false
                           mark:
                             initials: TA
-                            color: running
+                            color: attention
                         - title: Team B
-                          url: /admin/bakers/team/team-b
+                          url: /bakers/team/team-b
                           in_active_trail: false
                           mark:
                             initials: TB
@@ -344,12 +342,12 @@ scenes:
                   props:
                     variant: compact
                     initials: CW
-                    color: lease
+                    color: running
                     size: md
                 - component: bb_theme:mode_toggle
                   props:
                     mode: light
-                    label: Choose theme
+                    label: Choose appearance
           content: $content
           footer:
             component: bb_theme:status_bar
@@ -381,11 +379,11 @@ scenes:
       absence is in the ROUTE, not in the props.
 
 
-      IT IS DECLARED HERE FOR EXACTLY THE REASON THE SHELL IS. BB-378 made
-      this file the only place a chrome may be declared, so that a screen scene
-      opens with `scene: "design-system:<chrome>"` and fills `content` rather
-      than retyping the frame. Two chromes now means two declarations in one
-      file, not two files.
+      IT IS DECLARED HERE FOR EXACTLY THE REASON THE SHELL IS. BB-378 made this
+      file the only place a chrome may be declared, so that a screen scene opens
+      with `scene: "design-system:<chrome>"` and fills `content` rather than
+      retyping the frame. Two chromes now means two declarations in one file,
+      not two files.
 
 
       ITS `content` IS THE `$content` PLACEHOLDER, the same injection point the
@@ -518,8 +516,7 @@ scenes:
                         mark:
                           initials: KE
                           color: running
-                          picture: >-
-                            /themes/custom/bb_theme/assets/brand/bakers-tui-braid-v2.png
+                          picture: /themes/custom/bb_theme/logo.svg
                     - component: bb_theme:menu_item
                       props:
                         label: bakers.build
@@ -568,12 +565,12 @@ scenes:
                     variant: compact
                     display_name: cw
                     initials: CW
-                    color: lease
+                    color: running
                     size: md
                 - component: bb_theme:mode_toggle
                   props:
                     mode: light
-                    label: Choose theme
+                    label: Choose appearance
           content: $content
           footer:
             component: bb_theme:status_bar

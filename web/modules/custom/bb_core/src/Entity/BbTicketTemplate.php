@@ -13,7 +13,6 @@ use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityPermissionProvider;
-use Drupal\entity\Menu\EntityCollectionLocalActionProvider;
 use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\bb_core\Access\BbTicketTemplateAccessControlHandler;
 use Drupal\bb_core\Form\BbTicketTemplateForm;
@@ -50,21 +49,17 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
       'edit' => BbTicketTemplateForm::class,
       'delete' => BbContentEntityDeleteForm::class,
     ],
-    'local_action_provider' => ['collection' => EntityCollectionLocalActionProvider::class],
     'route_provider' => ['html' => BbTicketTemplateRouteProvider::class],
   ],
   links: [
     // Product routes, not /admin: the entry point is the owning project's
-    // "Templates" tab. `collection` stays an unlinked admin route purely to
-    // satisfy `field_ui_base_route`.
+    // "Templates" tab.
     'canonical' => '/_workspace/{bb_workspace}/ticket-template/{bb_ticket_template}',
     'add-form' => '/_workspace/{bb_workspace}/ticket-template/add',
     'edit-form' => '/_workspace/{bb_workspace}/ticket-template/{bb_ticket_template}/settings',
     'delete-form' => '/_workspace/{bb_workspace}/ticket-template/{bb_ticket_template}/delete',
-    'collection' => '/admin/bakers/ticket-templates',
   ],
   admin_permission: 'administer bakers',
-  field_ui_base_route: 'entity.bb_ticket_template.collection',
   base_table: 'bb_ticket_template',
   constraints: [
     'Callback' => ['callback' => [self::class, 'validateScope']],

@@ -11,7 +11,6 @@ use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
-use Drupal\bb_core\Hook\GinIntegrationHooks;
 use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -285,10 +284,6 @@ final class TicketActionFormTest extends KernelTestBase {
     self::assertSame('bb_ticket.settings', $edit->getDefault('_entity_form'));
     self::assertFalse((bool) $edit->getOption('_admin_route'));
     self::assertFalse((bool) $provider->getRouteByName('entity.bb_ticket.delete_form')->getOption('_admin_route'));
-
-    $gin = (new GinIntegrationHooks())->ginContentFormRoutes();
-    self::assertNotContains('entity.bb_ticket.edit_form', $gin);
-    self::assertContains('entity.bb_project.edit_form', $gin);
   }
 
   /**

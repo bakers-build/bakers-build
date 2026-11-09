@@ -9,6 +9,7 @@ use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\EnvVars;
 use Drupal\bb_core\Inspector\InspectorRows;
+use Drupal\bb_core\Time\BbDate;
 
 /**
  * Formats read-only ticket properties for the inspector list.
@@ -33,12 +34,17 @@ final class TicketInspectorRows extends InspectorRows {
     'branch_name' => 'Branch',
     'base_branch' => 'Base branch',
     'environments' => 'Environments',
+    'deployments' => 'Deployed to',
     'env_vars' => 'Env vars',
     'parent_id' => 'Parent',
     'sub_tickets' => 'Sub-tickets',
     'blocked_by' => 'Blocked by',
     'referenced_tickets' => 'Referenced',
   ];
+
+  public function __construct(
+    private readonly BbDate $date,
+  ) {}
 
   /**
    * Ticket-relation fields rendered as linked chips.
@@ -54,7 +60,7 @@ final class TicketInspectorRows extends InspectorRows {
    * Builds the rail's `items` array.
    *
    * @return array<string, array<string, mixed>>
-   *   Nineteen `list` items, in the order the scene fixes.
+   *   Twenty `list` items, in the order the scene fixes.
    */
   public function build(BbTicketInterface $ticket): array {
     return $this->buildRows($ticket, self::FIELDS);
@@ -70,6 +76,9 @@ final class TicketInspectorRows extends InspectorRows {
         return $this->row($label, $this->dash());
       }
       return $this->envVars($entity);
+    }
+    if ($field === 'deployments') {
+      return $this->deploymentsRow($label, $entity);
     }
     if (in_array($field, self::RELATIONS, TRUE)) {
       return $this->relationRow($label, $entity, $field);
@@ -89,7 +98,7 @@ final class TicketInspectorRows extends InspectorRows {
    */
   public const array GROUPS = [
     'effort' => ['time_estimate', 'time_spent'],
-    'code' => ['branch_name', 'base_branch', 'environments', 'env_vars'],
+    'code' => ['branch_name', 'base_branch', 'environments', 'deployments', 'env_vars'],
     // Parent and Blocked by are editable properties, in the Properties block.
     'relations' => ['sub_tickets', 'referenced_tickets'],
   ];
@@ -175,7 +184,7 @@ final class TicketInspectorRows extends InspectorRows {
           '#props' => [
             'text' => $label,
             'as' => 'span',
-            'size' => 'caption',
+            'size' => 'meta',
             'tone' => 'faint',
           ],
         ],
@@ -243,7 +252,7 @@ final class TicketInspectorRows extends InspectorRows {
   }
 
   /**
-   * A time field in seconds, humanised — `4h`, `3.5h`, `45m`.
+   * A time field in seconds as a product duration — `4h 0m`, `45 min`.
    *
    * Both fields are stored in SECONDS and are agent-proposed and
    * human-confirmed, so the rail reads them rather than deriving them from run
@@ -257,13 +266,7 @@ final class TicketInspectorRows extends InspectorRows {
     if ($seconds === NULL || $seconds === '') {
       return $this->dash();
     }
-    $seconds = (int) $seconds;
-    if ($seconds >= 3600) {
-      $hours = round($seconds / 3600, 1);
-      // `4h` rather than `4.0h`: the fraction is shown only when there is one.
-      return $this->text(rtrim(rtrim(number_format($hours, 1, '.', ''), '0'), '.') . 'h');
-    }
-    return $this->text((string) (int) round($seconds / 60) . 'm');
+    return $this->text($this->date->duration((int) $seconds));
   }
 
   /**
@@ -283,6 +286,27 @@ final class TicketInspectorRows extends InspectorRows {
         : (string) $entity->label();
       $chip = $this->badge($identifier, 'neutral', ['mono' => TRUE]);
       $chips[] = $chip + ($entity->access('view') ? ['url' => $entity->toUrl()->toString()] : []);
+    }
+    return $this->chipsRow($label, $chips);
+  }
+
+  /**
+   * Where the ticket is deployed: one linked chip per environment.
+   *
+   * Each deployment carrying the ticket adds a chip per environment it lists,
+   * so a deployment without environments adds none.
+   *
+   * @return array<string, mixed>
+   *   The `list` item.
+   */
+  private function deploymentsRow(string $label, BbTicketInterface $ticket): array {
+    $chips = [];
+    foreach ($ticket->get('deployments')->referencedEntities() as $deployment) {
+      assert($deployment instanceof BbTicketInterface);
+      foreach ($deployment->get('environments')->referencedEntities() as $environment) {
+        $chips[] = $this->badge($environment->label() . ' · ' . $deployment->getIdentifier(), 'neutral', ['mono' => TRUE])
+          + ['url' => $deployment->toUrl()->toString()];
+      }
     }
     return $this->chipsRow($label, $chips);
   }

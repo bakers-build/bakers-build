@@ -1,12 +1,12 @@
 {% set status_tone = { running: 'running', attention: 'attention', needs_input: 'attention', wait: 'wait', idle: 'neutral' } %}
 {% set edge_map = {
   'running': 'before:bg-state-running',
-  'attention': 'before:bg-state-attention',
-  'needs_input': 'before:bg-state-attention',
+  'attention': 'before:bg-state-attention-mark',
+  'needs_input': 'before:bg-state-attention-mark',
   'wait': 'before:bg-state-unassigned'
 } %}
-{% set card_classes = ['relative', 'bg-surface-2', 'border', 'border-border-2', 'rounded-sm', 'p-2', 'pl-3', "before:content-['']", 'before:absolute', 'before:left-0', 'before:top-0', 'before:bottom-0', 'before:w-1', 'before:rounded-l-sm', edge_map[status]|default('before:bg-transparent')] %}
-{% if status == 'wait' %}{% set card_classes = card_classes|merge(['bg-state-unassigned-tint', 'border-state-unassigned/30']) %}{% endif %}
+{% set card_classes = ['relative', 'bg-surface', 'border', 'border-border-2', 'rounded-sm', 'p-inline', 'pl-stack', "before:content-['']", 'before:absolute', 'before:left-0', 'before:top-0', 'before:bottom-0', 'before:w-1', 'before:rounded-l-sm', edge_map[status]|default('before:bg-transparent')] %}
+{% if status == 'wait' %}{% set card_classes = card_classes|merge(['bg-state-unassigned-tint']) %}{% endif %}
 {# Colour by ticket type: normalise the bb_<type> workflow id to the short key. #}
 {% set type_key = (type|default(''))|replace({'bb_': ''}) %}
 {% set type_dot_map = {
@@ -15,10 +15,10 @@
   'chore': 'bg-type-chore'
 } %}
 <article{{ (attributes ?: create_attribute()).addClass(card_classes).setAttribute('data-state', state|default('')).setAttribute('data-type', type_key) }}>
-  {% if url %}<a class="use-ajax absolute inset-0 z-10" href="{{ url }}" data-dialog-type="dialog.off_canvas" data-dialog-options='{"width":"40%"}' aria-label="Open {{ identifier }}"></a>{% endif %}
-  <div class="flex items-center gap-1 mb-1">
+  {% if url %}<a class="use-ajax absolute inset-0 z-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ url }}" data-dialog-type="dialog.off_canvas" data-dialog-options='{"width":"40%"}' aria-label="Open {{ identifier }}"></a>{% endif %}
+  <div class="flex items-center gap-inline-xs mb-inline-xs">
     {% if type_dot_map[type_key] is defined %}<span class="inline-block w-2 h-2 rounded-full shrink-0 {{ type_dot_map[type_key] }}" title="{{ type_key }}" aria-label="{{ type_key }}"></span>{% endif %}
-    <span class="font-mono font-semibold text-section text-text">{{ identifier }}</span>
+    <span class="font-mono text-data text-text">{{ identifier }}</span>
     <span class="flex-1"></span>
     {#- P1 is `critical`, not `wait`. Both draw the same red pair, so nothing moves on
         the screen; what changes is what the badge SAYS. `wait` means nobody is acting
@@ -26,17 +26,25 @@
         for its colour while the token layer had no name for the red that ranks. #}
     {% if priority %}{{ include('bb_theme:badge', { label: priority|upper, tone: priority == 'p1' ? 'critical' : 'neutral' }, with_context = false) }}{% endif %}
   </div>
-  <p class="text-caption text-text leading-normal m-0 line-clamp-2">{{ title }}</p>
+  <p class="text-item-title text-text m-0 line-clamp-2">{{ title }}</p>
   {% if blocked or state == 'cancelled' %}
-    <div class="flex flex-wrap gap-1 mt-2">
+    <div class="flex flex-wrap gap-inline-xs mt-inline">
       {% if blocked %}{{ include('bb_theme:badge', { label: 'Blocked', tone: 'neutral' }, with_context = false) }}{% endif %}
       {% if state == 'cancelled' %}{{ include('bb_theme:badge', { label: 'Cancelled', tone: 'neutral' }, with_context = false) }}{% endif %}
     </div>
   {% endif %}
   {% if footer %}
-    <div class="relative z-20 flex items-center gap-1 mt-2">{{ footer }}</div>
+    <div class="relative z-20 flex items-center gap-inline-xs mt-inline">{{ footer }}</div>
+  {% elseif done_label or mr_url %}
+    {#- A done card says when it was done and links its merge request instead
+        of the lease and state line. #}
+    <div class="relative z-20 flex items-center gap-inline-xs mt-inline">
+      {% if mr_url %}{{ include('bb_theme:text', {text: mr_label|default('MR'), href: mr_url, as: 'span', size: 'meta'}, with_context = false) }}{% endif %}
+      {% if done_label %}<span class="text-meta text-text-light">{{ 'Done'|t }} {{ include('bb_theme:time', {label: done_label, datetime: done_datetime|default(''), title: done_title|default('')}, with_context = false) }}</span>{% endif %}
+      {% if assignee_initials %}{{ include('bb_theme:person', {variant: 'compact', display_name: assignee_name, initials: assignee_initials, color: assignee_color|default('running')}, with_context = false) }}{% endif %}
+    </div>
   {% elseif lease or state or assignee_initials %}
-    <div class="relative z-20 flex items-center gap-1 mt-2">
+    <div class="relative z-20 flex items-center gap-inline-xs mt-inline">
       {% if lease %}{{ include('bb_theme:badge', {label: lease, tone: 'lease', mono: true, icon: 'lock'}, with_context = false) }}{% endif %}
       <span class="flex-1"></span>
       {% if state %}{{ include('bb_theme:badge', {label: state, tone: status_tone[status]|default('neutral'), dot: true}, with_context = false) }}{% endif %}

@@ -9,12 +9,31 @@ import type {
   BbWorkspace,
   ConductorFileConfig,
   EnsuredWorkspace,
+  ExecutorDeps,
   WorkspacePlugin,
+  WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
-import { deriveCheckoutRoot, exec, slugify } from '@bakers-build/core';
+import {
+  type ConductorLogger,
+  deriveCheckoutRoot,
+  exec,
+  slugify,
+} from '@bakers-build/core';
+import { runBranchGit } from './git-config.js';
 import { loadInstructions } from './instructions.js';
+import { removeGitWorktree } from './remove-git-worktree.js';
 
+export { restoreWritable } from './fs.js';
+export {
+  pushCurrentEnv,
+  runBranchGit,
+  setNoAutoSetupMerge,
+} from './git-config.js';
 export { loadInstructions } from './instructions.js';
+export {
+  removeGitWorktree,
+  type WorktreeGitExec,
+} from './remove-git-worktree.js';
 
 /** Default branch template: `<prefix><key>-<title-slug>` (readable). */
 export const DEFAULT_BRANCH_TEMPLATE = '{branchPrefix}{key}-{titleSlug}';
@@ -32,7 +51,11 @@ function renderBranchTemplate(
   return rendered.replace(/[-_./]+$/g, '');
 }
 
-export type GitRunner = (args: string[], cwd: string) => Promise<void>;
+/** Runs `git <args>` in a cwd; resolves with stdout when it has one. */
+export type GitRunner = (
+  args: string[],
+  cwd: string,
+) => Promise<string | undefined>;
 
 export interface GitWorkspaceOptions {
   /** Main clone (a git repo): config source + worktree base. */
@@ -46,11 +69,23 @@ export interface GitWorkspaceOptions {
    * {identifier}, {titleSlug}. Default: `{branchPrefix}{key}-{titleSlug}`.
    */
   branchTemplate?: string;
+  /**
+   * Default `false`: before creating a worktree, set `branch.autoSetupMerge=false`
+   * in `root`, and give runs `push.default=current`. `true` leaves Git alone.
+   */
+  autoSetupMerge?: boolean;
+  /** Receives the warning when `branch.autoSetupMerge` cannot be written. */
+  logger?: ConductorLogger;
   runGit?: GitRunner;
 }
 
-const defaultGitRunner: GitRunner = async (args, cwd) => {
-  await exec('git', args, { cwd });
+const defaultGitRunner: GitRunner = (args, cwd) => exec('git', args, { cwd });
+
+const noopLogger: ConductorLogger = {
+  debug() {},
+  info() {},
+  warn() {},
+  error() {},
 };
 
 export class GitWorkspace implements BbWorkspace {
@@ -59,6 +94,8 @@ export class GitWorkspace implements BbWorkspace {
   private readonly worktreesRoot: string;
   private readonly branchPrefix: string;
   private readonly branchTemplate: string;
+  private readonly autoSetupMerge: boolean;
+  private readonly logger: ConductorLogger | undefined;
 
   constructor(options: GitWorkspaceOptions) {
     this.runGit = options.runGit ?? defaultGitRunner;
@@ -68,6 +105,8 @@ export class GitWorkspace implements BbWorkspace {
       : `${this.root}-worktrees`;
     this.branchPrefix = options.branchPrefix ?? 'bakers/';
     this.branchTemplate = options.branchTemplate ?? DEFAULT_BRANCH_TEMPLATE;
+    this.autoSetupMerge = options.autoSetupMerge ?? false;
+    this.logger = options.logger;
   }
 
   /** Render the branch name for a ticket from the configured template. */
@@ -100,37 +139,56 @@ export class GitWorkspace implements BbWorkspace {
       throw new Error(`invalid workspace identifier: ${identifier}`);
     }
     const path = this.pathFor(key);
+    const env = this.autoSetupMerge
+      ? undefined
+      : await runBranchGit(this.root, this.logger);
+    const extra = env ? { env } : {};
     if (existsSync(path)) {
-      return { path, instructions: loadInstructions(path), created: false };
+      return {
+        path,
+        instructions: loadInstructions(path),
+        created: false,
+        ...extra,
+      };
     }
     const branch = this.branchFor(identifier, title);
     await this.runGit(
       ['-C', this.root, 'worktree', 'add', '--force', '-B', branch, path],
       this.root,
     );
-    // The `after_create` hook is run by the executor (BB-84), not here — the
+    // The `after_create` hook is run by the conductor, not here — the
     // workspace only reports that it created a fresh worktree.
-    return { path, instructions: loadInstructions(path), created: true };
+    return {
+      path,
+      instructions: loadInstructions(path),
+      created: true,
+      ...extra,
+    };
   }
 
-  async remove(identifier: string): Promise<void> {
-    const key = this.keyFor(identifier);
-    const path = this.pathFor(key);
-    await this.runGit(
-      ['-C', this.root, 'worktree', 'remove', '--force', path],
+  /** Tear down the ticket worktree with git ({@link removeGitWorktree}). */
+  remove(branch: string, worktreePath?: string): Promise<WorktreeTeardown> {
+    return removeGitWorktree(
       this.root,
+      branch,
+      worktreePath,
+      async (args, cwd) => (await this.runGit(['-C', cwd, ...args], cwd)) ?? '',
+      this.logger ?? noopLogger,
     );
   }
 }
 
 export function gitWorkspace(
-  opts: { branchPrefix?: string; branchTemplate?: string } = {},
+  opts: Pick<
+    GitWorkspaceOptions,
+    'branchPrefix' | 'branchTemplate' | 'autoSetupMerge'
+  > = {},
 ): WorkspacePlugin {
   return {
     kind: 'workspace',
     id: 'git',
     requiredModules: [],
-    async createWorkspace(config: ConductorFileConfig) {
+    async createWorkspace(config: ConductorFileConfig, deps?: ExecutorDeps) {
       // BB-450 D2: the checkout root, through the one shared helper, never a
       // bare `dirname(config_path)` re-derived here.
       const root = await deriveCheckoutRoot(config.config_path);
@@ -138,6 +196,8 @@ export function gitWorkspace(
         root,
         ...(opts.branchPrefix ? { branchPrefix: opts.branchPrefix } : {}),
         ...(opts.branchTemplate ? { branchTemplate: opts.branchTemplate } : {}),
+        ...(opts.autoSetupMerge ? { autoSetupMerge: true } : {}),
+        ...(deps?.logger ? { logger: deps.logger } : {}),
       });
     },
   };

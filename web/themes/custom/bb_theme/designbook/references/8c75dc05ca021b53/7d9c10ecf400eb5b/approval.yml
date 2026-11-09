@@ -1,0 +1,14 @@
+decided_at: '2026-11-07T13:33:32.750Z'
+fingerprint: 6a229021c8371a6e18f11eba4d36a2738cc26d5b9678064ad408d712680a8823
+note: 'Approved by Christian Wiedemann 2026-11-07: screenshots correct after the Figma rename; successor of revision c666d120267b60a5.'
+scope:
+  states:
+    - rest
+  subjects:
+    - typo-system
+    - ci-board
+    - focus-keyboard
+    - data-formats
+  views:
+    - frame
+status: approved

@@ -1,0 +1,13 @@
+decided_at: '2026-11-05T16:42:32.718Z'
+fingerprint: 81e6aa8fa5a4a5d2d3c6b543538c07128d66cf4be83169d7f6abc891acc823c5
+note: 'Approved by Pascal 2026-11-05: sidebar-light@ci-light and sidebar-dark@ci-dark screenshots (232x900 slices x 0..232 of frames 550:8970 and 550:9238). Suitability yes for BAKERS-53: design-verify of the board sidebar in light and dark; the main area is verified by the full-screen measurement because a Storybook capture cannot cut the main column in context.'
+scope:
+  states:
+    - ci-light
+    - ci-dark
+  subjects:
+    - sidebar-light
+    - sidebar-dark
+  views:
+    - desktop
+status: approved

@@ -2,11 +2,14 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import {
   type ConductorLogger,
+  killRunProcesses,
   shellQuote,
   stemForConfigFile,
 } from '@bakers-build/core';
 import {
   type BbAgent,
+  CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_URL_ENV,
   DEFAULT_ENV_DENY,
   matchesEnvDeny,
   type RunEnvPolicy,
@@ -30,14 +33,16 @@ import type {
   UncleanTicket,
 } from '../plugins/remote.js';
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
-import type { ToolBinding } from '../plugins/tools.js';
+import { loadTools, type ToolBinding } from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
+import { type HookRunner, shellHookRunner } from './hook-runner.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
+import { signalUi } from './ui-signal.js';
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
@@ -261,8 +266,6 @@ export class Conductor {
 
   /** The local MCP server for addon tools; only the serve process runs one. */
   private toolServer: ToolServer | undefined;
-  /** The live run token per run UUID, revoked when the run is finalised. */
-  private readonly runTokens = new Map<string, string>();
 
   /** Serializes git worktree add/remove: parallel ones fight over git locks. */
   private gitLock: Promise<unknown> = Promise.resolve();
@@ -276,6 +279,10 @@ export class Conductor {
     private readonly logger: ConductorLogger,
     private readonly checkoutRoot = process.cwd(),
     private readonly frozenStateFile?: string,
+    private readonly runHook: HookRunner = shellHookRunner(
+      config.hooks,
+      logger,
+    ),
   ) {
     this.inboxAddons = new InboxRuntime(
       config.inboxAddons ?? [],
@@ -346,16 +353,32 @@ export class Conductor {
   }
 
   /**
-   * Starts the tool server when an addon declares tools. Only the serve
-   * process calls this; `endpointFile` publishes it to the CLI.
+   * Starts the tool server when an addon declares tools or the remote serves
+   * site tools. Only the serve process calls this; `endpointFile` publishes
+   * it to the CLI.
    */
   async startTools(endpointFile?: string): Promise<void> {
-    if (!this.config.tools || this.toolServer) return;
+    const { siteTools } = this.remote;
+    if ((!this.config.tools && !siteTools) || this.toolServer) return;
+    // Runs closed while no server ran (`oven once`, a crash) lose their grant here.
+    const openRuns = await this.remote.fetchActiveRuns(this.id).then(
+      (runs) => runs.map((r) => r.runUuid),
+      (err: unknown) => {
+        this.logger.warn(
+          { err: String(err) },
+          'active runs unreadable, keeping every persisted run grant',
+        );
+        return undefined;
+      },
+    );
     this.toolServer = await startToolServer({
-      registry: this.config.tools,
+      registry: this.config.tools ?? (await loadTools([])),
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
+      ...(openRuns ? { openRuns } : {}),
+      ...(siteTools ? { siteTools } : {}),
+      onSiteWrite: (b) => this.signalUi(b.worktreePath),
     });
     this.logger.info(
       { conductorId: this.config.conductor_id, url: this.toolServer.url },
@@ -363,10 +386,18 @@ export class Conductor {
     );
   }
 
+  /** Tell an open `bakers ui` in the checkout (and the run's worktree) to reload. */
+  private signalUi(worktree?: string): void {
+    signalUi(this.checkoutRoot);
+    if (worktree) signalUi(worktree);
+  }
+
   async stopTools(): Promise<void> {
+    // Server first, so no new provision_up starts a run after the stop.
     await this.toolServer?.stop();
+    await this.config.provisioning?.stop();
+    await this.remote.siteTools?.close();
     this.toolServer = undefined;
-    this.runTokens.clear();
   }
 
   /** A fresh token for this run's worktree; a re-dispatch replaces the old one. */
@@ -375,16 +406,20 @@ export class Conductor {
     binding: ToolBinding,
   ): { url: string; token: string } | undefined {
     if (!this.toolServer) return undefined;
-    this.revokeRunTools(runUuid);
-    const token = this.toolServer.issueRunToken(binding);
-    this.runTokens.set(runUuid, token);
+    const token = this.toolServer.issueRunToken(runUuid, binding);
     return { url: this.toolServer.url, token };
   }
 
+  /** Never throws: a failed state write leaves the grant on disk, and the next start prunes it. */
   private revokeRunTools(runUuid: string): void {
-    const token = this.runTokens.get(runUuid);
-    if (token) this.toolServer?.revokeRunToken(token);
-    this.runTokens.delete(runUuid);
+    try {
+      this.toolServer?.revokeRunToken(runUuid);
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, err: String(err) },
+        'run tool revoke failed',
+      );
+    }
   }
 
   async start() {
@@ -517,6 +552,7 @@ export class Conductor {
         { conductorId: this.id, run: run.runUuid, ticket: run.ticketUuid },
         'claimed run',
       );
+      this.signalUi();
       this.queue.enqueue({
         key: `dispatch:${run.runUuid}`,
         lane: run.ticketUuid,
@@ -576,7 +612,7 @@ export class Conductor {
     try {
       // Signal the agent to stop before capturing its log. Best-effort and
       // gated on the persistent capability (only hosted executors have a live
-      // agent) — mirrors removeWorktree's gate. For herdr this is a no-op
+      // agent). For herdr this is a no-op
       // (the tab-close in closeRunTab kills the PTY); a stop failure must
       // never block finalisation.
       const branch = this.executor.capabilities().persistent
@@ -609,15 +645,18 @@ export class Conductor {
       // which is why listeners must be idempotent.
       await this.runFinalizeHook(r);
       if (!captured) throw captureError;
-      // `?? true` is the default: an unset flag, and every config written
-      // before this setting existed, keep uploading exactly as before.
-      // `finalizeRun()` already spreads `...(log ? { log } : {})`, so an
-      // empty string omits the attribute from the PATCH entirely — no
-      // server change is needed and no empty log is written.
+      // The server's policy decides first (missing means no), and the local
+      // `capture_logs` opt-out can only narrow it. `finalizeRun()` spreads
+      // `...(log ? { log } : {})`, so an empty string omits the attribute
+      // from the PATCH entirely; the server re-checks its policy anyway.
       const uploadedLog =
-        (this.config.capture_logs ?? true) ? captured.log : '';
-      await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
+        r.runLogStorageAllowed === true && (this.config.capture_logs ?? true)
+          ? captured.log
+          : '';
+      // Revoke before the durable close: a crash between the two must not leave a closed run's grant.
       this.revokeRunTools(r.runUuid);
+      await this.remote.finalizeRun(r.runUuid, uploadedLog, captured.metrics);
+      this.signalUi(r.worktreePath);
       this.logger.info(
         { run: r.runUuid, state: r.state, footprint: captured.metrics },
         'run finalised',
@@ -721,6 +760,21 @@ export class Conductor {
         'run tab cleanup failed',
       );
     }
+    // Background commands and their sandboxes outlive the closed PTY.
+    try {
+      const { pids } = await killRunProcesses(runUuid);
+      if (pids.length > 0) {
+        this.logger.info(
+          { run: runUuid, pids },
+          'ended leftover run processes',
+        );
+      }
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, err: String(err) },
+        'run process cleanup failed',
+      );
+    }
   }
 
   /**
@@ -798,7 +852,7 @@ export class Conductor {
 
   /**
    * Run one lifecycle slot (BB-599): every addon listener in accumulator
-   * order, awaited, then the project shell hook through the executor. Never
+   * order, awaited, then the project shell hook through {@link runHook}. Never
    * throws. A failing listener is logged by slot, listener, ticket and run —
    * never with its message or the env — and reported in the returned result
    * the same way a failing shell command is, so the rest of the slot, the
@@ -842,7 +896,7 @@ export class Conductor {
         });
       }
     }
-    const shell = await this.executor.runHook(
+    const shell = await this.runHook(
       name,
       cwd,
       { ticket: ticketRef },
@@ -1002,7 +1056,7 @@ export class Conductor {
    * `BbTicket::preSave()` on any save of a terminal, unclosed ticket, so it
    * holds for every write path and cannot be withheld by a teardown hiccup —
    * the reap reasons about `cleaned_up` alone. `cleaned_up` is withheld unless
-   * the teardown is ACCOUNTED FOR (BB-141 RC-2), which `removeWorktree`
+   * the teardown is ACCOUNTED FOR (BB-141 RC-2), which `workspace.remove`
    * reports as one of three outcomes (BB-293):
    *   - `removed` — gone because this host tore it down → flag cleaned;
    *   - `already_absent` — nothing was there to tear down. A FINISHED teardown,
@@ -1070,14 +1124,13 @@ export class Conductor {
   /** Reaps one ticket; isolated, so one failure never aborts the rest. */
   private async reapOne(t: UncleanTicket): Promise<void> {
     try {
-      // Infra teardown. The `after_done` hook runs in the worktree regardless
-      // of executor kind (a non-persistent gitWorkspace still has an on-disk
-      // worktree); only the workspace removal is gated on the persistent
-      // capability (mirrors the executor-agnostic release path). Pass the
-      // stable worktreePath so the executor resolves the worktree by path,
-      // not by the mutable checked-out branch (the coding agent may rename
-      // it). Teardown is idempotent: a worktree herdr no longer tracks is a
-      // no-op / on-disk reclaim, not a failure.
+      // Infra teardown. The `after_done` hook runs in the worktree, then the
+      // workspace removes it — for every executor kind: a non-persistent
+      // executor still leaves an on-disk worktree behind. Pass the stable
+      // worktreePath so the workspace resolves the worktree by path, not by
+      // the mutable checked-out branch (the coding agent may rename it).
+      // Teardown is idempotent: a worktree no longer tracked is a no-op /
+      // on-disk reclaim, not a failure.
       //
       // The hook needs the DIRECTORY, not just a recorded path (BB-293): a
       // hook is a shell spawned with the worktree as its `cwd`, so against an
@@ -1087,17 +1140,16 @@ export class Conductor {
       // that must run inside the worktree cannot run anywhere else.
       //
       // The absence is logged rather than passed over in silence, because an
-      // `after_done` can reach beyond the directory it runs in — `ddev delete
-      // -Oy` also drops a DDEV project registration and its database — and
+      // `after_done` can reach beyond the directory it runs in — deleting a
+      // container runtime's project also drops its registration and database — and
       // that leftover is then an operator's to clear by hand.
       //
-      // But the line states the CONDITION, not a decision about a hook: hook
-      // commands are executor-owned config that the core cannot see, so it
-      // does not know whether an `after_done` is configured at all. Saying a
-      // hook was "skipped" would be false wherever none exists (the generated
-      // playground config is exactly such a case). What the core does know is
-      // that the directory is gone and that no `after_done` ran — both true in
-      // either configuration.
+      // But the line states the CONDITION, not a decision about a hook: an
+      // `after_done` may be a listener, a shell command or nothing at all.
+      // Saying a hook was "skipped" would be false wherever none exists (the
+      // generated playground config is exactly such a case). What the core
+      // does know is that the directory is gone and that no `after_done` ran —
+      // both true in every configuration.
       //
       // `existsSync` here is a plain filesystem question, not worktree
       // knowledge: the core stays executor-agnostic and asks nothing about
@@ -1105,6 +1157,8 @@ export class Conductor {
       // workspace just created MUST exist, and silencing a hook there would
       // hide a real provisioning failure.
       if (t.worktreePath) {
+        // A provisioning outlives its run, never its ticket: end it before teardown.
+        await this.config.provisioning?.stop(t.worktreePath);
         if (existsSync(t.worktreePath)) {
           await this.recordMrChanges(t);
           // BB-599: listeners get the ticket's current context; the shell
@@ -1144,105 +1198,99 @@ export class Conductor {
           );
         }
       }
-      if (this.executor.capabilities().persistent) {
-        let outcome: WorktreeTeardown;
-        try {
-          // removeWorktree reports what the teardown DID (BB-293):
-          // `removed` = the worktree is gone because this host removed it;
-          // `already_absent` = there was nothing to tear down; `unverified` =
-          // it could NOT be resolved and may still be on disk (BB-141 RC-2
-          // — e.g. worktree_path was never persisted and herdr lost track of
-          // the branch). A THROW is a hard failure.
-          outcome = await this.serialGit(() =>
-            this.executor.removeWorktree(
-              t.branchName,
-              t.worktreePath || undefined,
-            ),
+      let outcome: WorktreeTeardown;
+      try {
+        // workspace.remove reports what the teardown DID (BB-293):
+        // `removed` = the worktree is gone because this host removed it;
+        // `already_absent` = there was nothing to tear down; `unverified` =
+        // it could NOT be resolved and may still be on disk (BB-141 RC-2
+        // — e.g. worktree_path was never persisted and herdr lost track of
+        // the branch). A THROW is a hard failure.
+        outcome = await this.serialGit(() =>
+          this.workspace.remove(t.branchName, t.worktreePath || undefined),
+        );
+      } catch (err) {
+        this.logger.warn(
+          {
+            ticket: t.ticketUuid,
+            branch: t.branchName,
+            worktreePath: t.worktreePath,
+            err: String(err),
+          },
+          'worktree teardown failed',
+        );
+        return; // leave cleaned_up=0 → the next reconciliation retries.
+      }
+      if (outcome === 'unverified') {
+        // BB-468 — an unverified teardown with NO run and NO recorded
+        // path has nothing left for a later reap to resolve: no run will
+        // appear on a terminal ticket, and no branch will appear for work
+        // that never started (`reap()` passes `t.worktreePath ||
+        // undefined`, so a never-ran ticket and a lost-path ticket reach
+        // the executor byte-identically — only the reaper, which alone
+        // knows `runUuid === ''`, can tell them apart). That retry is not
+        // deferred, it is unreachable, so it is logged ONCE at info and
+        // accounted for below rather than retried forever. BB-141 RC-2
+        // is unchanged for every ticket that DOES carry a run or a
+        // recorded path: those keep retrying below, unaffected.
+        if (!t.runUuid && !t.worktreePath) {
+          this.logger.info(
+            { ticket: t.ticketUuid, branch: t.branchName },
+            'no run and no recorded path — nothing to tear down',
           );
-        } catch (err) {
+        } else {
+          // Unverified teardown (BB-141 RC-2): do NOT flag cleaned_up, or
+          // the ticket drops off fetchUncleanedTickets (which filters
+          // cleaned_up=0) and the orphan is never retried. Leave it on the
+          // work list so a later reap — with a persisted path, or once the
+          // executor resolves it via the parent-repo git worktree list —
+          // can finish the job.
           this.logger.warn(
             {
               ticket: t.ticketUuid,
               branch: t.branchName,
               worktreePath: t.worktreePath,
-              err: String(err),
             },
-            'worktree teardown failed',
+            'worktree teardown unverified — retrying next reap',
           );
           return; // leave cleaned_up=0 → the next reconciliation retries.
         }
-        if (outcome === 'unverified') {
-          // BB-468 — an unverified teardown with NO run and NO recorded
-          // path has nothing left for a later reap to resolve: no run will
-          // appear on a terminal ticket, and no branch will appear for work
-          // that never started (`reap()` passes `t.worktreePath ||
-          // undefined`, so a never-ran ticket and a lost-path ticket reach
-          // the executor byte-identically — only the reaper, which alone
-          // knows `runUuid === ''`, can tell them apart). That retry is not
-          // deferred, it is unreachable, so it is logged ONCE at info and
-          // accounted for below rather than retried forever. BB-141 RC-2
-          // is unchanged for every ticket that DOES carry a run or a
-          // recorded path: those keep retrying below, unaffected.
-          if (!t.runUuid && !t.worktreePath) {
-            this.logger.info(
-              { ticket: t.ticketUuid, branch: t.branchName },
-              'no run and no recorded path — nothing to tear down',
+      }
+      if (outcome === 'already_absent') {
+        // BB-293: the worktree was gone before we got here. That is a
+        // FINISHED teardown, so it is recorded rather than swallowed and
+        // the ticket is flagged cleaned below — the next reap will not
+        // retry it.
+        this.logger.info(
+          {
+            ticket: t.ticketUuid,
+            branch: t.branchName,
+            worktreePath: t.worktreePath,
+          },
+          'worktree already absent — teardown complete',
+        );
+        // A ticket with no run has no record to write to — the conductor
+        // log above is then the whole account.
+        if (t.runUuid) {
+          try {
+            await this.remote.appendRunNote(
+              t.runUuid,
+              `worktree already absent at teardown: ${
+                t.worktreePath || '(path unknown)'
+              }`,
             );
-          } else {
-            // Unverified teardown (BB-141 RC-2): do NOT flag cleaned_up, or
-            // the ticket drops off fetchUncleanedTickets (which filters
-            // cleaned_up=0) and the orphan is never retried. Leave it on the
-            // work list so a later reap — with a persisted path, or once the
-            // executor resolves it via the parent-repo git worktree list —
-            // can finish the job.
+          } catch (err) {
+            // Best-effort: an unreachable control plane must not keep a
+            // finished teardown from being flagged.
             this.logger.warn(
-              {
-                ticket: t.ticketUuid,
-                branch: t.branchName,
-                worktreePath: t.worktreePath,
-              },
-              'worktree teardown unverified — retrying next reap',
+              { ticket: t.ticketUuid, run: t.runUuid, err: String(err) },
+              'run note write failed',
             );
-            return; // leave cleaned_up=0 → the next reconciliation retries.
-          }
-        }
-        if (outcome === 'already_absent') {
-          // BB-293: the worktree was gone before we got here. That is a
-          // FINISHED teardown, so it is recorded rather than swallowed and
-          // the ticket is flagged cleaned below — the next reap will not
-          // retry it.
-          this.logger.info(
-            {
-              ticket: t.ticketUuid,
-              branch: t.branchName,
-              worktreePath: t.worktreePath,
-            },
-            'worktree already absent — teardown complete',
-          );
-          // A ticket with no run has no record to write to — the conductor
-          // log above is then the whole account.
-          if (t.runUuid) {
-            try {
-              await this.remote.appendRunNote(
-                t.runUuid,
-                `worktree already absent at teardown: ${
-                  t.worktreePath || '(path unknown)'
-                }`,
-              );
-            } catch (err) {
-              // Best-effort: an unreachable control plane must not keep a
-              // finished teardown from being flagged.
-              this.logger.warn(
-                { ticket: t.ticketUuid, run: t.runUuid, err: String(err) },
-                'run note write failed',
-              );
-            }
           }
         }
       }
-      // Teardown verified locally, the worktree was already absent, or there
-      // is nothing hosted to tear down: flag it cleaned so it drops off the
-      // work list.
+      // Teardown verified locally or the worktree was already absent: flag it
+      // cleaned so it drops off the work list.
       await this.remote.markTicketCleanedUp(t.ticketUuid);
       this.logger.info({ ticket: t.ticketUuid }, 'ticket cleaned up');
     } catch (err) {
@@ -1306,8 +1354,9 @@ export class Conductor {
 
   /** Dispatches one claimed run; a failure terminalises it (BB-149). */
   private async dispatchOrFail(run: ClaimedRun): Promise<void> {
+    const at: { worktree?: string } = {};
     try {
-      await this.dispatch(run);
+      await this.dispatch(run, at);
     } catch (err) {
       // BB-149: terminalise the run to `failed` with the error captured,
       // instead of leaving it `claimed` to expire after the ~300s lease (the
@@ -1326,6 +1375,7 @@ export class Conductor {
       );
       try {
         await this.remote.markFailed(run.runUuid, String(err));
+        this.signalUi(at.worktree);
       } catch (markErr) {
         this.logger.warn(
           { run: run.runUuid, err: String(markErr) },
@@ -1335,7 +1385,8 @@ export class Conductor {
     }
   }
 
-  private async dispatch(run: ClaimedRun) {
+  /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
+  private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
     const t = await this.remote.getTicket(run.ticketUuid);
     // Resolve the ticket alias and machine defaults, or the project selection hook.
     // Persist the package id below so finalize can choose its transcript parser.
@@ -1350,7 +1401,7 @@ export class Conductor {
     if (unavailable) throw new Error(unavailable);
     const baseRef = t.baseBranch ? `origin/${t.baseBranch}` : undefined;
     // Resolve the run env once (per-ticket env_vars + core BB_* vars) and
-    // inject it into BOTH the executor-owned lifecycle hooks AND the agent run
+    // inject it into BOTH the lifecycle hooks AND the agent run
     // env (BB-99). Reserved core keys always win; values may be sensitive so
     // only key names are ever logged.
     const env = await this.runEnv(
@@ -1362,6 +1413,11 @@ export class Conductor {
     const ws = await this.serialGit(() =>
       this.workspace.ensure(t.identifier, t.branchName, baseRef),
     );
+    at.worktree = ws.path;
+    // The backend's own vars (Git config) join the run env; core keys still win.
+    for (const [key, value] of Object.entries(ws.env ?? {})) {
+      if (!isReservedEnvKey(key)) env[key] = value;
+    }
     // A claimable state has no project policy without a WORKFLOW.md. Warn and
     // proceed so the missing project instructions are observable without
     // wedging the run. `ws.instructions` is the loaded file (null when absent).
@@ -1404,7 +1460,7 @@ export class Conductor {
     launch: { started: boolean },
   ): Promise<void> {
     const env = ctx.env;
-    // Lifecycle hooks are executor-owned + best-effort (BB-84): runHook never
+    // Lifecycle hooks are conductor-owned + best-effort (BB-84): runHook never
     // throws, so neither call can abort dispatch or wedge a run in `claimed`.
     // `runSlot` runs the addon listeners first under the same rule (BB-599).
     // Both get the resolved run env so a setup/pre hook sees the same vars (e.g.
@@ -1452,7 +1508,7 @@ export class Conductor {
         'lifecycle hook failed',
       );
     }
-    // BB-237: apply the workspace's open layout HERE — after `after_create`,
+    // BB-237: open the fresh worktree in the executor HERE — after `after_create`,
     // before the run starts. The layout's startup command names the bakers CLI
     // that `after_create` builds; applied inside `workspace.ensure()` (where it
     // used to live) it necessarily fired first, so a self-hosting checkout had
@@ -1466,7 +1522,7 @@ export class Conductor {
     // Optional on the contract, so a workspace with no layout concept is a
     // no-op. Best-effort by contract: implementations swallow their own errors.
     if (ws.created) {
-      await this.workspace.applyOpenLayout?.(ws.path, {
+      await this.executor.openWorkspace?.(ws.path, {
         identifier: t.identifier,
         branch: t.branchName,
         title: t.title,
@@ -1527,6 +1583,17 @@ export class Conductor {
     // field's accepted formats and the PATCH would be rejected (review round
     // 4, Critical 1).
     const dispatchedAt = Math.floor(Date.now() / 1000);
+    const tools = chosen.agent.withoutConductorTools
+      ? undefined
+      : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
+    const command = chosen.agent.launchCommand(
+      prompt,
+      identity,
+      ws.path,
+      tools ? { url: tools.url } : undefined,
+      env,
+    );
+    // Read after launchCommand: a warning may depend on what this launch got.
     const warnings = chosen.agent.launchWarnings;
     if (warnings?.length) {
       const alias = chosen.alias ?? chosen.id;
@@ -1542,16 +1609,6 @@ export class Conductor {
         );
       }
     }
-    const tools = this.issueRunTools(run.runUuid, {
-      worktreePath: ws.path,
-      ticket: t,
-    });
-    const command = chosen.agent.launchCommand(
-      prompt,
-      identity,
-      ws.path,
-      tools ? { url: tools.url } : undefined,
-    );
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,
@@ -1566,7 +1623,13 @@ export class Conductor {
       instructions: ws.instructions,
       command,
       // The token travels in the env, never in argv or the launch log.
-      env: tools ? { ...env, BB_CONDUCTOR_TOKEN: tools.token } : env,
+      env: tools
+        ? {
+            ...env,
+            [CONDUCTOR_URL_ENV]: tools.url,
+            [CONDUCTOR_TOKEN_ENV]: tools.token,
+          }
+        : env,
     });
     launch.started = true;
     this.logger.info(
@@ -1593,6 +1656,7 @@ export class Conductor {
       agent: chosen.id,
       startedAt: dispatchedAt,
     });
+    this.signalUi(ws.path);
   }
 
   /**

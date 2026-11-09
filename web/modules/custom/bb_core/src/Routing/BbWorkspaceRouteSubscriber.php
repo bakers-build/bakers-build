@@ -12,7 +12,7 @@ use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouteCollection;
 
 /**
- * Wires every workspace-prefixed route: converters, patterns, check, theme.
+ * Wires every workspace-prefixed route: converters, patterns, check.
  *
  * One seam for entity-link routes and module routing.yml routes alike, so
  * they cannot drift into checking tenancy differently. Membership is decided
@@ -20,16 +20,11 @@ use Symfony\Component\Routing\RouteCollection;
  *
  * Applies the slug converter and pattern, the human-reference converters on
  * {bb_ticket}/{bb_project}, the UUID converter on {bb_comment}, the
- * `_bb_workspace_match` requirement, and `_admin_route: FALSE`, because the
- * entity module's AdminHtmlRouteProvider marks add/edit/delete forms as admin
- * routes by name, whatever the path.
+ * `_bb_workspace_match` requirement. FrontEndRouteSubscriber keeps every
+ * route out of the admin theme.
  *
  * The route builder assigns parameter converters only after this ALTER pass
  * and skips any slot that already names one, so setting them here wins.
- *
- * One named exception outside the prefix: the account edit form is also
- * taken out of the admin theme, so it renders in the app shell. Its access
- * requirements stay core's; no workspace treatment is applied.
  */
 final class BbWorkspaceRouteSubscriber extends RouteSubscriberBase {
 
@@ -102,12 +97,6 @@ final class BbWorkspaceRouteSubscriber extends RouteSubscriberBase {
    */
   protected function alterRoutes(RouteCollection $collection): void {
     $this->removeOgAdminRoutes($collection);
-    // Core marks the account edit form as an admin route; Island skips admin
-    // routes, so without this the form renders outside the app shell.
-    $account_edit = $collection->get('entity.user.edit_form');
-    if ($account_edit !== NULL) {
-      $this->makeFrontEnd($account_edit);
-    }
     foreach ($collection as $name => $route) {
       if (!str_starts_with($route->getPath(), self::WORKSPACE_PREFIX)) {
         continue;
@@ -134,7 +123,6 @@ final class BbWorkspaceRouteSubscriber extends RouteSubscriberBase {
       $route->setOption('parameters', $parameters);
       $route->setRequirement('bb_workspace', self::SLUG_PATTERN);
       $route->setRequirement('_bb_workspace_match', 'TRUE');
-      $this->makeFrontEnd($route);
     }
   }
 
@@ -204,20 +192,6 @@ final class BbWorkspaceRouteSubscriber extends RouteSubscriberBase {
         $collection->remove($name);
       }
     }
-  }
-
-  /**
-   * Takes a route out of the admin theme.
-   *
-   * Set to FALSE rather than unset, so a later ALTER subscriber cannot read
-   * "no opinion" and stamp TRUE back on. The default theme is bb_theme, so
-   * a non-admin route already resolves to it.
-   *
-   * @param \Symfony\Component\Routing\Route $route
-   *   The route to mark as front end.
-   */
-  private function makeFrontEnd(Route $route): void {
-    $route->setOption('_admin_route', FALSE);
   }
 
 }

@@ -72,7 +72,7 @@ it('a pick makes the payload the candidate`s id and identifier — no title (AC-
 
 it('a pick no longer in the bag yields null, not a phantom id', () => {
   // The bag is swapped on every debounced re-query (BB-257 D7), so a pick can
-  // outlive the row it came from. Same rule as the create form (D6).
+  // outlive the row it came from.
   const stale: ParentFilterState = { ...initial(), parent: 'gone' };
   expect(PARENT_FILTER_FORM.toObject(stale, opts)).toBeNull();
 });

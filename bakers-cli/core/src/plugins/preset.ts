@@ -106,8 +106,6 @@ export interface DiscoveredContributions {
   agents: unknown[];
   /** Opaque: `HookListener[]` on the conductor surface (BB-599). */
   hooks: unknown[];
-  /** Opaque: `HerdrHost[]` on the conductor surface. */
-  processHosts: unknown[];
   connectionPlugins: DropSHPlugin[];
   /**
    * BB-373: UI extension entry MODULES — specifiers, never constructed
@@ -165,14 +163,7 @@ export const SURFACE_KEYS: Record<
   Array<keyof DiscoveredContributions>
 > = {
   command: ['commands'],
-  conductor: [
-    'remotes',
-    'executors',
-    'workspaces',
-    'agents',
-    'hooks',
-    'processHosts',
-  ],
+  conductor: ['remotes', 'executors', 'workspaces', 'agents', 'hooks'],
   connection: ['connectionPlugins', 'uiEntries'],
 };
 
@@ -214,7 +205,6 @@ export interface BbPreset<O = unknown> {
   workspaces?: OpaqueAccumulator<O>;
   agents?: OpaqueAccumulator<O>;
   hooks?: OpaqueAccumulator<O>;
-  processHosts?: OpaqueAccumulator<O>;
 
   // ── connection surface (dropsh) ──
   connectionPlugins?: (
@@ -244,7 +234,6 @@ export const PRESET_FUNCTION_KEYS: Array<keyof DiscoveredContributions> = [
   'workspaces',
   'agents',
   'hooks',
-  'processHosts',
   'connectionPlugins',
   'uiEntries',
 ];
@@ -258,7 +247,6 @@ export function emptyContributions(): DiscoveredContributions {
     workspaces: [],
     agents: [],
     hooks: [],
-    processHosts: [],
     connectionPlugins: [],
     uiEntries: [],
     addonInbox: [],

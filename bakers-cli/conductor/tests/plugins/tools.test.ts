@@ -1,10 +1,11 @@
-import { mkdtemp, realpath } from 'node:fs/promises';
+import { mkdtemp, readFile, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   type DiscoveredTools,
   loadTools,
+  provisionRuns,
   provisionTools,
   type ToolHandler,
 } from '../../src/plugins/tools.js';
@@ -55,11 +56,11 @@ describe('loadTools', () => {
         },
         { zone: 'z' },
       ),
-      addon('ddev', { ddev_status: async () => ({ text: 'running' }) }),
+      addon('runtime', { runtime_status: async () => ({ text: 'running' }) }),
     ]);
     expect(registry.list().map((t) => t.name)).toEqual([
       'ports_up',
-      'ddev_status',
+      'runtime_status',
     ]);
     expect(
       await registry.call('ports_up', { service: 'web' }, binding),
@@ -112,9 +113,25 @@ describe('loadTools', () => {
     ).toBe('exit 0\nsecond\n');
     await expect(
       registry.call('provision_up', { profile: 'c' }, here),
-    ).rejects.toThrow(/unknown profile c.*a, b/);
+    ).rejects.toThrow(/profile: must be equal to one of the allowed values/);
     await expect(registry.call('provision_up', {}, here)).rejects.toThrow(
       /profile required.*a, b/,
+    );
+  });
+
+  it('describes provision_up as reusing a ready environment, profiles as an enum', async () => {
+    const [tool] = (
+      await loadTools(provisionTools({ a: 'true', b: 'true' }))
+    ).list();
+    expect(tool.description).toBe(
+      "Bring this worktree's environment up with a configured profile (a, b); the project's command reuses a ready environment. Returns the command's output, including the base URL.",
+    );
+    expect(tool.inputSchema).toMatchObject({
+      properties: { profile: { type: 'string', enum: ['a', 'b'] } },
+    });
+    const [single] = (await loadTools(provisionTools('true'))).list();
+    expect(single.description).toBe(
+      "Bring this worktree's environment up; the project's command reuses a ready environment. Returns the command's output, including the base URL.",
     );
   });
 
@@ -123,6 +140,124 @@ describe('loadTools', () => {
     await expect(registry.call('provision_up', {}, here)).rejects.toThrow(
       'exit 3\nbroken\n',
     );
+  });
+
+  describe('provision_up runs, owned by the conductor', () => {
+    const lines = async (file: string) =>
+      (await readFile(file, 'utf8').catch(() => ''))
+        .split('\n')
+        .filter(Boolean);
+
+    it('runs to completion when its caller aborts, and a later call joins it', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'bb-provision-'));
+      const registry = await loadTools(
+        provisionTools('sleep 0.3; echo done > marker; echo up'),
+      );
+      const caller = new AbortController();
+      const first = registry.call(
+        'provision_up',
+        {},
+        { worktreePath: dir },
+        {
+          signal: caller.signal,
+        },
+      );
+      setTimeout(() => caller.abort(), 50);
+      const joined = await registry.call(
+        'provision_up',
+        {},
+        {
+          worktreePath: dir,
+        },
+      );
+      expect(joined.text).toBe('exit 0\nup\n');
+      expect(await lines(join(dir, 'marker'))).toEqual(['done']);
+      expect((await first).text).toBe('exit 0\nup\n');
+    });
+
+    it('spawns overlapping calls of one worktree and profile once, other profiles apart', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'bb-provision-'));
+      const cmd = (p: string) => `echo ${p} >> count; sleep 0.2; echo ok`;
+      const registry = await loadTools(
+        provisionTools({ a: cmd('a'), b: cmd('b') }),
+      );
+      const at = { worktreePath: dir };
+      const [one, two, other] = await Promise.all([
+        registry.call('provision_up', { profile: 'a' }, at),
+        registry.call('provision_up', { profile: 'a' }, at),
+        registry.call('provision_up', { profile: 'b' }, at),
+      ]);
+      expect(one.text).toBe('exit 0\nok\n');
+      expect(two.text).toBe(one.text);
+      expect(other.text).toBe('exit 0\nok\n');
+      expect((await lines(join(dir, 'count'))).sort()).toEqual(['a', 'b']);
+    });
+
+    it('starts a new run for a call after the previous one finished', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'bb-provision-'));
+      const registry = await loadTools(provisionTools('echo x >> count'));
+      await registry.call('provision_up', {}, { worktreePath: dir });
+      await registry.call('provision_up', {}, { worktreePath: dir });
+      expect(await lines(join(dir, 'count'))).toEqual(['x', 'x']);
+    });
+
+    it('kills a run at its timeout', async () => {
+      const registry = await loadTools(
+        provisionTools('sleep 5', provisionRuns(100)),
+      );
+      await expect(registry.call('provision_up', {}, here)).rejects.toThrow(
+        '(killed: SIGTERM)',
+      );
+    });
+
+    it('kills a run at its timeout after sh exited, while a child holds the output', async () => {
+      const registry = await loadTools(
+        provisionTools('sleep 5 & echo bg', provisionRuns(100)),
+      );
+      const started = Date.now();
+      await expect(registry.call('provision_up', {}, here)).rejects.toThrow(
+        'exit 124\nbg\n\n(killed: SIGTERM)',
+      );
+      expect(Date.now() - started).toBeLessThan(2000);
+    });
+
+    it('spawns a string hook once for overlapping calls with different profile values', async () => {
+      const dir = await mkdtemp(join(tmpdir(), 'bb-provision-'));
+      const registry = await loadTools(
+        provisionTools('echo x >> count; sleep 0.2'),
+      );
+      const at = { worktreePath: dir };
+      await Promise.all([
+        registry.call('provision_up', {}, at),
+        registry.call('provision_up', { profile: 'x' }, at),
+      ]);
+      expect(await lines(join(dir, 'count'))).toEqual(['x']);
+    });
+
+    it('stop(worktree) kills that worktree only; stop() kills all', async () => {
+      const [a, b] = await Promise.all([
+        mkdtemp(join(tmpdir(), 'bb-provision-')),
+        mkdtemp(join(tmpdir(), 'bb-provision-')),
+      ]);
+      const runs = provisionRuns();
+      const registry = await loadTools(
+        provisionTools({ slow: 'sleep 5', quick: 'sleep 0.3; echo ok' }, runs),
+      );
+      const call = (profile: string, worktreePath: string) =>
+        registry.call('provision_up', { profile }, { worktreePath });
+      const killed = (worktreePath: string) =>
+        expect(call('slow', worktreePath)).rejects.toThrow('(killed: SIGTERM)');
+
+      const killedA = killed(a);
+      const quickB = call('quick', b);
+      await runs.stop(a);
+      await killedA;
+      expect((await quickB).text).toBe('exit 0\nok\n');
+
+      const both = Promise.all([killed(a), killed(b)]);
+      await runs.stop();
+      await both;
+    });
   });
 
   it('refuses a malformed provision_up hook at load', () => {
@@ -136,11 +271,11 @@ describe('loadTools', () => {
       addon('ports', {
         ports_status: async (req) => ({ text: `status ${req.worktreePath}` }),
       }),
-      addon('ddev', {
-        ddev_login: async (req) => req.callTool('ports_status', {}),
+      addon('runtime', {
+        runtime_login: async (req) => req.callTool('ports_status', {}),
       }),
     ]);
-    expect(await registry.call('ddev_login', {}, binding)).toEqual({
+    expect(await registry.call('runtime_login', {}, binding)).toEqual({
       text: 'status /work/bb-1',
     });
   });

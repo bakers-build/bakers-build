@@ -21,6 +21,7 @@ addons: [
 |---|---|---|---|
 | `branchPrefix` | string | `bakers/` | Prefix of every ticket branch. |
 | `branchTemplate` | string | `{branchPrefix}{key}-{titleSlug}` | Branch name. `{identifier}` is also available. |
+| `autoSetupMerge` | boolean | `false` | `false`: before it creates a worktree, the addon sets `branch.autoSetupMerge=false` in the root repository. Creating a worktree then writes nothing to the shared `.git/config`, so once the setting is written it still works while a sandbox holds `config.lock`. If that first write meets a held lock, the conductor logs a warning with the repair command. Runs get `push.default=current` through `GIT_CONFIG_COUNT`, so a plain `git push` creates the same-name remote branch, and run branches have no upstream. This applies to everyone who uses that repository: `git switch <remote branch>` no longer sets an upstream either. `true` leaves Git alone, but it does not revert an earlier change; for that, run `git config --unset branch.autoSetupMerge`. |
 
 ## Check it works
 
@@ -30,6 +31,7 @@ A dispatched ticket gets a worktree in `<checkout>-worktrees/` on a branch that 
 
 - Worktrees are created next to the checkout, in `<root>-worktrees`.
 - The package also loads `WORKFLOW.md` from the worktree as run instructions, when the file exists.
-- Do not combine it with [herdr](/addons/herdr): herdr brings its own workspace, and the last one listed wins with a warning.
+- Listing [herdr](/addons/herdr) or [Orca](/addons/orca) in `addons` as well adds their workspace, and the last one listed wins with a warning. To run their executor on Git worktrees, set an explicit `executor` slot instead; see [Conductor slots](/addons/slots).
+- When a ticket is done, the conductor removes its worktree with Git, whatever the executor.
 
 Package source in a checkout: `bakers-cli/addons/workspace-git`.

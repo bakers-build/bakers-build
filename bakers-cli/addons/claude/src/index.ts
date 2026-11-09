@@ -24,7 +24,11 @@ import {
   systemSandboxHost,
   validateOptionalBoolean,
 } from '@bakers-build/conductor/contract';
-import { shellQuote } from '@bakers-build/core';
+import {
+  gitSandboxPaths,
+  shellQuote,
+  withoutGitDirs,
+} from '@bakers-build/core';
 import { parseClaudeTranscript } from './footprint.js';
 
 export { parseClaudeTranscript } from './footprint.js';
@@ -56,10 +60,18 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
 };
 
 /** The launch flags a security mode owns (`docs/addons/claude.md`). */
-function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
+function securityFlags(
+  { mode, sandbox, config }: ResolvedSecurity,
+  workspacePath: string | undefined,
+): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
   if (mode === 'custom') return ['--settings', JSON.stringify(config)];
+  // Git metadata only for a known workspace; the conductor always passes one.
+  const git =
+    workspacePath === undefined
+      ? { write: [], protect: [] }
+      : gitSandboxPaths(workspacePath);
   const settings = {
     sandbox: {
       enabled: true,
@@ -72,7 +84,8 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
       ),
       filesystem: {
         denyRead: sandbox.deny_read,
-        allowWrite: sandbox.allow_write,
+        allowWrite: [...sandbox.allow_write, ...git.write],
+        denyWrite: git.protect,
       },
       network: { allowedDomains: sandbox.network },
     },
@@ -83,7 +96,13 @@ function securityFlags({ mode, sandbox, config }: ResolvedSecurity): string[] {
     // Bash command is either sandboxed or a trusted command, and the Read
     // deny covers the Read tool, which the OS sandbox does not confine.
     permissions: {
-      allow: ['Bash', 'Edit(./**)', 'AskUserQuestion'],
+      // The conductor's server binds every call to this run's worktree and project.
+      allow: [
+        'Bash',
+        'Edit(./**)',
+        'AskUserQuestion',
+        `mcp__${CONDUCTOR_TOOLS_SERVER}`,
+      ],
       // Claude reads a single leading `/` as relative to the settings file;
       // the plain rule covers a file entry, `/**` a directory's contents.
       deny: sandbox.deny_read.flatMap((path) => {
@@ -143,11 +162,13 @@ export class ClaudeAgent implements BbAgent {
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
-  private readonly securityFlags: string[];
+  readonly security: ResolvedSecurity;
   /** The sandbox's own MCP servers, strict; undefined outside the sandbox. */
   private readonly sandboxMcpServers: Record<string, unknown> | undefined;
   private readonly securityMode: SecurityMode;
   readonly runEnvPolicy: RunEnvPolicy;
+  /** Set by the last launch: the conductor's server replaced the sandbox's own `bakers`. */
+  private replacedBakersServer = false;
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
 
@@ -161,7 +182,13 @@ export class ClaudeAgent implements BbAgent {
     this.effort = cli.effort;
     this.overrides = cli.overrides;
     const security = resolveSecurityOptions(options, SANDBOX_DEFAULTS);
-    this.securityFlags = securityFlags(security);
+    this.security = {
+      ...security,
+      sandbox: {
+        ...security.sandbox,
+        allow_write: withoutGitDirs(security.sandbox.allow_write),
+      },
+    };
     this.sandboxMcpServers =
       security.mode === 'sandbox' ? security.sandbox.mcp_servers : undefined;
     this.securityMode = security.mode;
@@ -169,10 +196,23 @@ export class ClaudeAgent implements BbAgent {
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
   }
 
+  get launchWarnings(): readonly string[] {
+    return this.replacedBakersServer
+      ? [
+          `sandbox.mcp_servers.${CONDUCTOR_TOOLS_SERVER} is replaced by the conductor's ${CONDUCTOR_TOOLS_SERVER} server`,
+        ]
+      : [];
+  }
+
+  /** A measured run stays without the conductor's tools, MCP or bridge. */
+  get withoutConductorTools(): boolean {
+    return this.measure;
+  }
+
   launchCommand(
     prompt: string,
     run?: AgentRunIdentity,
-    _workspacePath?: string,
+    workspacePath?: string,
     tools?: { url: string },
   ): string {
     if (prompt === '') {
@@ -194,14 +234,10 @@ export class ClaudeAgent implements BbAgent {
     }
     // The flags are constants; only their generated values need quoting.
     parts.push(
-      ...this.securityFlags.map((t) =>
-        t.startsWith('--') ? t : shellQuote(t),
-      ),
-    );
-    parts.push(
-      ...this.mcpFlags(tools).map((t) =>
-        t.startsWith('--') ? t : shellQuote(t),
-      ),
+      ...[
+        ...securityFlags(this.security, workspacePath),
+        ...this.mcpFlags(tools),
+      ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );
     // Pin the transcript's own session id to the run's UUID (BB-473), so
     // `getRunLog` can read that ONE file directly instead of scanning the
@@ -238,6 +274,9 @@ export class ClaudeAgent implements BbAgent {
             },
           }
         : {};
+    this.replacedBakersServer =
+      CONDUCTOR_TOOLS_SERVER in conductor &&
+      Object.hasOwn(this.sandboxMcpServers ?? {}, CONDUCTOR_TOOLS_SERVER);
     const config = (servers: Record<string, unknown>) =>
       JSON.stringify({ mcpServers: servers });
     if (this.sandboxMcpServers !== undefined)
@@ -429,6 +468,7 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'claude',
     requiredModules: [],
+    security: agent.security.report,
     async createAgent() {
       return agent;
     },

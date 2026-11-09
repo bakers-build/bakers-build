@@ -17,9 +17,9 @@ interface names and the `/plugins` subpath barrels keep the word "plugins"; only
 prefix is `@bakers-build/addon-`.
 
 This document covers the **standalone CLI setup** — taking a *fresh clone* to a working
-`bakers`, with **no DDEV or worktree prerequisite**. If you work in a DDEV worktree, the
-`bash .ddev/worktree-post.sh` command already does the equivalent build as its last step (see the
-repo `WORKFLOW.md`); this README is the DDEV-free path.
+`bakers`, with **no container runtime or worktree prerequisite**. If you work in a conductor
+worktree, its `after_create` hook already does the equivalent build as its last step (see the repo
+`WORKFLOW.md`); this README is the runtime-free path.
 
 ## Quick start
 
@@ -99,7 +99,7 @@ and runs eight idempotent steps:
 1. **Prereq check** — verifies `pnpm` is on `PATH` (actionable message + non-zero exit if
    not) and sanity-checks Node ≥ 20.19.
 2. **Install** — `pnpm install --config.minimumReleaseAge=0` in `bakers-cli/`. The
-   `minimumReleaseAge=0` mirrors `bash .ddev/worktree-post.sh`, dodging the workspace supply-chain
+   `minimumReleaseAge=0` mirrors the worktree `after_create` hook, dodging the workspace supply-chain
    deps-verify policy that would otherwise fail a plain install on a fresh tree.
 3. **Build the packages + addons** — `bakers-cli/bin/bakers` runs the compiled host
    (`host/dist/src/host.js`), and `.bakers/conductor.config.js` resolves the workspace packages
@@ -524,10 +524,14 @@ the overlay for `$SPICEEDIT_FILE`. Everything degrades gracefully: a missing
 
 The Claude, Codex, Grok, Kimi, OpenCode and Pi addons declare their candidates in their presets.
 Run `bakers agents` to see effective aliases, descriptions, harnesses, model bindings, filters,
-the default agent and routes as JSON. Claude ships `opus` and `sonnet`; other addons expose
+the default agent and routes as JSON. Claude ships `opus`, `sonnet` and `fable`; other addons expose
 their harness alias. A missing machine policy enables every addon candidate and infers the first
 one as the default.
 Host-local variants may add family names such as `k3-pi` without changing a published addon.
+An explicit Claude `model` replaces its default catalog with one custom candidate.
+Select Fable with `agent:fable` or `agent:fable@working`; it launches with `--model fable`
+and supports Claude Code 2.1.257 or later. See the [Claude addon guide](../docs/addons/claude.md)
+for provider availability and family overrides.
 
 Tickets select an alias with `agent:<alias>`, optionally narrowed to a state with
 `agent:<alias>@coding`. Qualification proposes a suitable alias and writes it only after human

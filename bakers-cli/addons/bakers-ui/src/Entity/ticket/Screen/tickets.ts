@@ -7,7 +7,7 @@ import type {
   ListFilterBadge,
 } from '../../../Screen/full-screen.js';
 import { ListScreen } from '../../../Screen/list-screen.js';
-import type { ScreenAction, ScreenContext } from '../../../Screen/screen.js';
+import type { ScreenContext } from '../../../Screen/screen.js';
 import { resolveWhoCandidate } from '../../user/Data/users.js';
 import { loadTicketDetail } from '../Data/detail.js';
 import {
@@ -48,20 +48,6 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
     tab: { id: 'tickets', label: 'Tickets', scope: 'project', weight: 20 },
   } satisfies RouteMetadata;
   readonly id = TicketsScreen.route.id;
-  actionForInput(
-    input: string,
-    context: ScreenContext,
-  ): ScreenAction | undefined {
-    if (input === 'n')
-      return context.services?.agents
-        ? {
-            type: 'navigate',
-            routeId: 'ticket.create',
-            params: context.params ?? {},
-          }
-        : { type: 'redraw' };
-    return undefined;
-  }
   receiveResult(result: unknown, context: ScreenContext): void {
     if (
       result &&
@@ -111,19 +97,6 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
       // CLEAR: it drops only the project criterion (AC-3).
       const { project } = result as { project: ProjectCriterion | null };
       this.setCriteria({ ...this.criteria, project }, context);
-      return;
-    }
-    if (
-      result &&
-      typeof result === 'object' &&
-      (result as { type?: unknown }).type === 'ticket-created-directly'
-    ) {
-      // BB-309 AC-7 — the same `context.back(result)` channel the pickers and
-      // the assignment save already return through. The criteria do not change;
-      // the RELOAD is the point, and `setCriteria` resets to page 0, which is
-      // where the new ticket sorts: `buildTicketQueryParams` sorts by
-      // `changed` DESC, with `drupal_internal__id` DESC as the tiebreaker.
-      this.setCriteria({ ...this.criteria }, context);
       return;
     }
     if (
@@ -535,7 +508,6 @@ export class TicketsScreen extends ListScreen<TicketRow, void> {
 
   protected actions() {
     return [
-      actionItem('tickets-new', 'n', 'new'),
       actionItem('tickets-edit', 'e', 'edit'),
       ...this.pagingActionItems(),
     ];

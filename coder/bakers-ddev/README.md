@@ -1,8 +1,8 @@
 # bakers-ddev Coder template
 
-Coder is an optional client/workspace provider, separate from the [control-plane server](../../docs/configuration/project/server.md). A local workstation needs neither Coder nor preview tunnels.
+Coder provides an optional worker environment, separate from the [control-plane server](../../docs/self-hosting/server.md). [Use your client](https://bakers.build/get-started/use-your-client) compares the four user-facing clients. A local workstation needs neither Coder nor preview tunnels.
 
-One long-lived Coder workspace per person that is a bakers.build worker, like a developer's own machine. The template provides the machine and the tools. Signing in, checking out projects and starting conductors happen inside the workspace through `/bb-init`, which follows the [guide](../../docs/configuration/machine/coder-workspace.md).
+One long-lived Coder workspace per person that is a bakers.build worker, like a developer's own machine. The template provides the machine and the tools. Signing in, checking out projects and starting conductors happen inside the workspace through `/bb-init`, which follows the [guide](../../docs/provision/coder-workspace.md).
 
 A workspace is one Sysbox container with its own Docker daemon, a home volume and a Docker volume. The agent runs [`scripts/install.sh`](scripts/install.sh) on every start. It installs each missing tool into the home volume, starts `herdr server`, then starts the [PM bot](#pm-bot) when the workspace has its parameters.
 
@@ -59,7 +59,7 @@ coder templates push bakers-ddev -d coder/bakers-ddev \
   --variable image=registry.example.org/team/workspace-base:1.0.0
 ```
 
-Coder gives a new template to everyone by default. Restrict it in the Coder UI if needed. Create a workspace with `coder create <name> --template bakers-ddev`, then continue with the [guide](../../docs/configuration/machine/coder-workspace.md).
+Coder gives a new template to everyone by default. Restrict it in the Coder UI if needed. Create a workspace with `coder create <name> --template bakers-ddev`, then continue with the [guide](../../docs/provision/coder-workspace.md).
 
 ## Optional previews
 
@@ -83,16 +83,18 @@ The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its conta
 
 ## PM bot
 
-The workspace can run the bakers.build PM bot ([`experimental/pm-bot/`](../../experimental/pm-bot/README.md)): a Hermes gateway that answers in Slack, and a poller that posts ticket changes into their Slack threads. Its settings are workspace parameters. Set them once; every start, restart, rebuild and template update brings the bot back with them. A workspace with every PM bot parameter empty runs no bot and starts as before.
+For the Hermes requester experience, return to [Use your client](https://bakers.build/get-started/use-your-client#hermes). This section owns operator setup.
+
+The workspace can run the bakers.build PM bot ([`experimental/pm-bot/`](../../experimental/pm-bot/README.md)): a Hermes gateway that answers in Slack, in a public channel it opens for each request, and a poller that posts ticket changes into those channels. Its settings are workspace parameters. Set them once; every start, restart, rebuild and template update brings the bot back with them. A workspace with every PM bot parameter empty runs no bot and starts as before.
 
 The bot is one container, `pm-bot`, on the workspace's own Docker daemon, from the image the template variable `pm_bot_image` pins. On every start, [`scripts/pm-bot.sh`](scripts/pm-bot.sh) checks the parameters, writes the bot's env file, refreshes the clone of the project's repository and runs `docker compose up` with [`pm-bot.compose.yaml`](pm-bot.compose.yaml). The container restarts on its own (`unless-stopped`) and sees two directories of the home volume, nothing else:
 
 | Host path | In the container | Holds |
 |---|---|---|
-| `~/.pm-bot/data` | `/opt/data`, read-write | Hermes' home: sessions, memories, learned skills, the poller's state and the env file. Kept across starts and rebuilds |
+| `~/.pm-bot/data` | `/opt/data`, read-write | Hermes' home: sessions, memories, learned skills, the poller's state, the list of request channels the bot opened and the env file. Kept across starts and rebuilds |
 | `~/.pm-bot/clone` | `/opt/clone`, read-only | A clone of the project's repository without env files, settings, keys and certificates |
 
-It has no Docker socket and every capability dropped except the four Hermes' start needs to drop to its own user, which runs as the workspace user's UID. Every start rewrites the env file from the parameters, and the container rewrites `config.yaml`, `SOUL.md` and the shipped skills (`bb-create-ticket`, its recipes and their method skills) from the image and removes the retired `project-manager` skill: edits to them are lost; sessions, memories and learned skills stay.
+It has no Docker socket and every capability dropped except the four Hermes' start needs to drop to its own user, which runs as the workspace user's UID. Every start rewrites the env file from the parameters, and the container rewrites `config.yaml`, `SOUL.md`, the shipped skills (`bb-create-ticket`, its recipes and their method skills) and the `bot-channels` plugin from the image and removes the retired `project-manager` skill: edits to them are lost; sessions, memories and learned skills stay.
 
 ### 1. The bot's service account
 
@@ -105,11 +107,11 @@ As a bakers.build workspace administrator:
 
 ### 2. The Slack app
 
-At api.slack.com/apps, choose **Create New App → From a manifest**, pick your workspace and paste [`experimental/pm-bot/slack-app-manifest.yaml`](../../experimental/pm-bot/slack-app-manifest.yaml) from the bakers.build revision of the image. It sets up Socket Mode, the bot scopes and the message events.
+At api.slack.com/apps, choose **Create New App → From a manifest**, pick your workspace and paste [`experimental/pm-bot/slack-app-manifest.yaml`](../../experimental/pm-bot/slack-app-manifest.yaml) from the bakers.build revision of the image. It sets up Socket Mode, the bot scopes and the message events. Its `channels:manage` scope lets the bot create, invite to, rename and archive the public request channels it opens; an app installed from an older manifest lacks it: add the scope under **OAuth & Permissions** and reinstall the app.
 
 1. **Basic Information → App-Level Tokens:** generate a token with the `connections:write` scope. That is the app token (`xapp-…`) for `pm_bot_slack_app_token`.
 2. **Install App → Install to Workspace.** The bot token (`xoxb-…`) goes into `pm_bot_slack_bot_token`.
-3. Invite the bot to the project's channel (`/invite @<bot>`). Its channel ID (channel name → **View channel details**, at the bottom) goes into `pm_bot_slack_allowed_channels`. The bot serves exactly one channel: Hermes shows it a channel's name, not its ID, and the thread link it writes into a ticket needs the ID. With more than one ID the container refuses to start.
+3. Invite the bot to the project's channel (`/invite @<bot>`). Its channel ID (channel name → **View channel details**, at the bottom) goes into `pm_bot_slack_allowed_channels`. That is the bot's main channel: a mention there opens a request channel. The bot has exactly one; with more than one ID the container refuses to start.
 4. Copy the operators' member IDs (profile → **⋮ → Copy member ID**) into `pm_bot_slack_admin_users`.
 5. Optional: create a private channel with only the operators in it and invite the bot. That is Hermes' home channel for its restart notices (`pm_bot_slack_home_channel`).
 
@@ -121,10 +123,10 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 |---|---|---|
 | `pm_bot_slack_bot_token` | yes | Bot token, `xoxb-…` (masked) |
 | `pm_bot_slack_app_token` | yes | App token, `xapp-…` (masked) |
-| `pm_bot_slack_allowed_channels` | yes | The one channel ID the bot answers in. Messages in any other channel are ignored |
-| `pm_bot_slack_allowed_users` | no | Member IDs the bot answers. Empty: every user in the allowed channels. Set: only these users |
+| `pm_bot_slack_allowed_channels` | yes | The bot's main channel ID, where a mention opens a request channel. Besides it the bot answers only in the request channels it opened; messages in any other channel are ignored |
+| `pm_bot_slack_allowed_users` | no | Member IDs the bot answers. Empty: every user in its channels. Set: only these users |
 | `pm_bot_slack_admin_users` | yes | Operators' member IDs: the only users who may run Hermes slash commands |
-| `pm_bot_slack_workspace_url` | yes | `https://<workspace>.slack.com`, for thread permalinks |
+| `pm_bot_slack_workspace_url` | yes | `https://<workspace>.slack.com`, for channel links |
 | `pm_bot_slack_home_channel` | no | Channel ID of the operators' channel |
 | `pm_bot_bakers_url` | yes | The bakers.build server, `https://…` |
 | `pm_bot_bakers_api_key` | yes | The service account's API key (masked) |

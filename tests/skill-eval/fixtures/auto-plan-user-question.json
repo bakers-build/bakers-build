@@ -1,0 +1,77 @@
+{
+  "id": "auto-plan-user-question",
+  "synthetic": true,
+  "profile": "bb-label-auto",
+  "execution": "simulated-tools",
+  "skill": "bb-label-auto",
+  "references": [
+    "bb-workflow/SKILL.md",
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/plan.md",
+    "bb-workflow/references/boundaries.md",
+    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/ticket-writes.md",
+    "bb-label-ticket-question/SKILL.md"
+  ],
+  "recipes": [
+    "bb-recipe-probe"
+  ],
+  "input": {
+    "task": "Read the ticket, then continue its `plan` state from the point the observations name, as the supplied skills say, until they tell you to stop or the point is settled. Publish no spec, plan or test comment: if you settle every point, give the `Decisions` section of the spec as your final answer. The ticket has no origin. This is unattended: nobody answers in this session.",
+    "ticket_uuid": "11111111-1111-4111-8111-111111111111",
+    "installed_skills": "The frame and the references above are supplied. The installed recipe is readable with read_file at skills/bb-recipe-probe/SKILL.md. No other file is readable. The tracker tools are served through bakers by wire name `tool_api__<tool>`: `bakers tools` lists them and `bakers tools tool_api__bakers_ticket_update --schema` describes one. Write an arguments file in one step and pass it with --data @<file> in a later one.",
+    "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+    "project_uuid": "55555555-5555-4555-8555-555555555555",
+    "observations": [
+      "Routing, the intake and `read` ran in this run: the qualification handoff is valid. The run is in the plan's `work`, writing the spec; nothing is published yet.",
+      "The invoice list hides cancelled invoices unless the operator switches on its filter \"Show cancelled\"; the filter is off by default. AC-1 does not say whether the export follows the filter.",
+      "AC-2 names the columns but not the date format; the accounting import is not described anywhere.",
+      "The ticket, its comments and the code settle neither point; both are for the requester to decide."
+    ]
+  },
+  "expect": {
+    "stop": "question"
+  },
+  "simulation": {
+    "ticket": {
+      "id": "11111111-1111-4111-8111-111111111111",
+      "identifier": "EVAL-64",
+      "title": "Export invoices as CSV",
+      "state": "plan",
+      "workflow": "bb_work",
+      "description": "Operators export the invoice list as CSV from the invoice page.",
+      "created": "2026-01-01",
+      "base_branch": "next",
+      "changed": "fixture-revision-1",
+      "type": "feature",
+      "recipe": "probe",
+      "labels": [
+        "auto",
+        "ticket-question"
+      ],
+      "links": []
+    },
+    "comments": [
+      {
+        "id": "77777777-7777-4777-8777-000000000001",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "qualification",
+        "body": "## Qualification handoff\n\n### Acceptance\n\n- **AC-1** As an operator, I want an Export CSV button on the invoice list, so that I can download the invoices.\n- **AC-2** As an accountant, I want number, date, customer and total per invoice in the CSV, so that accounting can import it.\n- **AC-3** The change passes every matching bb-phase-validate row of WORKFLOW.md.\n\nTally: 3 passed, 0 rewritten.\n\n### Handoff metadata\n\n- `recipe`: probe\n- `ticket_type`: feature\n- `reproduction`: not_required\n- `scenario_required`: false\n- `test_as`: no login needed\n- prior art: negative\n- `handoff_version`: 1\n- `provenance`: fixture-revision-1\n"
+      }
+    ]
+  },
+  "rubric": [
+    {
+      "id": "one-question",
+      "criterion": "Publishes one comment headed # Question that carries both open points, each numbered with its own choices and one recommended choice per point; no second question comment."
+    },
+    {
+      "id": "freeze",
+      "criterion": "Adds the label Question, freezes the ticket and ends the run; no spec, approval request or transition."
+    },
+    {
+      "id": "not-in-terminal",
+      "criterion": "The final answer asks the user nothing directly: it reports the published question instead of asking either point in the session."
+    }
+  ]
+}

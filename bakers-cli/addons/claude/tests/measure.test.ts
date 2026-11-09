@@ -323,6 +323,11 @@ describe('ClaudeAgent measure', () => {
     expect(new ClaudeAgent({ measure: true }).launchCommand('')).toBe('claude');
   });
 
+  it('withholds the conductor tools from a measured run only', () => {
+    expect(new ClaudeAgent({ measure: true }).withoutConductorTools).toBe(true);
+    expect(new ClaudeAgent().withoutConductorTools).toBe(false);
+  });
+
   it('rejects a non-boolean measure option', () => {
     expect(() => new ClaudeAgent({ measure: 'yes' as never })).toThrow(
       /measure must be a boolean/,
@@ -331,10 +336,16 @@ describe('ClaudeAgent measure', () => {
 
   it('carries measure into every catalog variant and contributes no hook listener', async () => {
     const candidates = await preset.agents([], { measure: true });
-    expect(candidates.map(({ alias }) => alias)).toEqual(['opus', 'sonnet']);
+    expect(candidates.map(({ alias }) => alias)).toEqual([
+      'opus',
+      'sonnet',
+      'fable',
+    ]);
     for (const c of candidates) {
       const agent = await c.agent.createAgent({} as never);
       expect(agent.launchCommand('go')).toContain(`node '${wrapper}' claude`);
+      expect(agent.launchCommand('go')).toContain(`--model '${c.model}'`);
+      expect(agent.withoutConductorTools).toBe(true);
     }
     expect('hooks' in preset).toBe(false);
   });

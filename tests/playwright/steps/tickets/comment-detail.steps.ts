@@ -73,7 +73,7 @@ function createComment(
     createdPhp,
     '$c->save();',
     '$name = ($u->hasField("field_full_name") && $u->get("field_full_name")->value) ? (string) $u->get("field_full_name")->value : (string) $u->label();',
-    '$when = \\Drupal::service("date.formatter")->format($c->getCreatedTime(), "normal", "", $u->getTimeZone());',
+    '$when = \\Drupal::service("date.formatter")->format($c->getCreatedTime(), "custom", "D, j M Y, H:i T", $u->getTimeZone());',
     'print $c->uuid() . "|" . $c->toUrl()->toString() . "|" . $name . "|" . $when;',
   ].join(' '));
   const [uuid, url, author, time] = output.split('|');
@@ -141,7 +141,7 @@ Given(
       '$c = $etm->getStorage("bb_comment")->create(["ticket_id" => $t->id(), "author" => $u->id(), "type" => "handoff-v3", "body" => ["value" => $body, "format" => "bb_rich"]]);',
       '$c->save();',
       '$name = ($u->hasField("field_full_name") && $u->get("field_full_name")->value) ? (string) $u->get("field_full_name")->value : (string) $u->label();',
-      '$when = \\Drupal::service("date.formatter")->format($c->getCreatedTime(), "normal", "", $u->getTimeZone());',
+      '$when = \\Drupal::service("date.formatter")->format($c->getCreatedTime(), "custom", "D, j M Y, H:i T", $u->getTimeZone());',
       'print $c->uuid() . "|" . $c->toUrl()->toString() . "|" . $name . "|" . $when;',
     ].join(' '));
     const [uuid, url, author, time] = output.split('|');
@@ -191,7 +191,8 @@ Then('the page shows the comment time', async ({ page }) => {
     ?? comments.get(page)?.['handoff-v3']?.time
     ?? '';
   expect(time).not.toBe('');
-  await expect(page.getByText(time, { exact: true }).first()).toBeVisible();
+  // The label may be relative; the exact time is the <time> element's tooltip.
+  await expect(page.locator(`time[datetime][title="${time}"]`).first()).toBeVisible();
 });
 
 Then('the page shows the disposable ticket identifier', async ({ page }) => {

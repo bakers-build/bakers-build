@@ -76,8 +76,8 @@ describe('rendered committed conductor config', () => {
   const base = {
     project: 'demo',
     hooks: {
-      after_create: 'ddev init-worktree',
-      after_done: 'ddev delete -Oy',
+      after_create: 'make worktree',
+      after_done: 'make clean',
     },
   };
 
@@ -101,8 +101,8 @@ describe('rendered committed conductor config', () => {
 
   it("writes exactly the operator's own hooks when supplied", () => {
     const text = renderCommittedConfig(base);
-    expect(text).toContain('after_create: "ddev init-worktree"');
-    expect(text).toContain('after_done: "ddev delete -Oy"');
+    expect(text).toContain('after_create: "make worktree"');
+    expect(text).toContain('after_done: "make clean"');
   });
 
   it('writes only the supplied half of the hooks pair', () => {
@@ -114,10 +114,9 @@ describe('rendered committed conductor config', () => {
     expect(text).not.toContain('after_done');
   });
 
-  it('omits the hooks block entirely without an answer, and names no provisioning tool', () => {
+  it('omits the hooks block entirely without an answer', () => {
     const text = renderCommittedConfig({ project: 'demo' });
     expect(text).not.toContain('hooks');
-    expect(text).not.toContain('ddev');
     // An empty `hooks: {}` would be a statement about hooks where none was made.
     expect(text).not.toContain('hooks: {}');
   });

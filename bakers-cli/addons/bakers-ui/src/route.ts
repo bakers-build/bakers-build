@@ -160,7 +160,7 @@ async function resolveTicketByOrigin(
 /**
  * The repo URLs a `bb_project` row declares, normalised. `repository` is a
  * single-cardinality `bb_repo` field: JSON:API serves it as one object
- * (measured on this branch's DDEV), but both a JSON *string* and an array are
+ * (measured on this branch's local site), but both a JSON *string* and an array are
  * tolerated too, so a differently-serialized deployment does not silently stop
  * matching. Anything unparseable yields no URLs — a malformed value is
  * skipped, never fatal.

@@ -50,6 +50,13 @@ Feature: Settings tabs edit their entity
     Then the workspace slug is unchanged
     And I am on the workspace Settings with a saved message
 
+  Scenario: Workspace Settings explain that run-log storage is unavailable
+    Given I lead a disposable workspace world
+    When I open the workspace Settings
+    Then run-log storage is shown as unavailable without a checkbox
+    When I set the name to "No run logs here" and save the Settings
+    Then the workspace run-log opt-in is stored as off
+
   Scenario: Invalid Settings can be corrected
     Given I lead a disposable workspace world
     When I open the project Settings

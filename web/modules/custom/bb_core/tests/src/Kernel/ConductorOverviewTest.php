@@ -287,12 +287,14 @@ final class ConductorOverviewTest extends KernelTestBase {
   }
 
   /**
-   * Overview is the only product tab; admin collection stays put.
+   * Overview is the only product tab; there are no admin routes.
    */
-  public function testOverviewIsTheOnlyProductTabAndAdminCollectionStays(): void {
-    $collection = $this->container->get('router.route_provider')
-      ->getRouteByName('entity.bb_conductor.collection');
-    self::assertSame('/admin/bakers/conductors', $collection->getPath());
+  public function testOverviewIsTheOnlyProductTabAndNoAdminRoutes(): void {
+    self::assertSame([], $this->container->get('router.route_provider')->getRoutesByNames([
+      'entity.bb_conductor.collection',
+      'entity.bb_conductor.add_form',
+      'entity.bb_conductor.edit_form',
+    ]));
 
     self::assertSame(
       ['entity.bb_conductor.canonical'],
@@ -317,10 +319,11 @@ final class ConductorOverviewTest extends KernelTestBase {
       self::assertSame('TRUE', $route->getRequirement('_bb_workspace_match'));
       self::assertFalse($route->getOption('_admin_route'));
     }
-    // The served states are not edited on a card (administrative form or API).
+    // The Identity card edits the served states; there is no second card.
     self::assertSame([], $provider->getRoutesByNames(['entity.bb_conductor.configuration_form']));
-    // The administrative edit form stays where it was.
-    self::assertSame('/admin/bakers/conductor/{bb_conductor}/edit', $provider->getRouteByName('entity.bb_conductor.edit_form')->getPath());
+    $delete = $provider->getRouteByName('entity.bb_conductor.delete_form');
+    self::assertSame('/_workspace/{bb_workspace}/conductor/{bb_conductor}/delete', $delete->getPath());
+    self::assertSame('bb_conductor.delete', $delete->getRequirement('_entity_access'));
   }
 
   /**
@@ -347,7 +350,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     $form = $this->container->get('entity.form_builder')->getForm($mine, 'identity');
     self::assertArrayHasKey('label', $form);
     self::assertSame('Save', (string) $form['actions']['submit']['#value']);
-    self::assertArrayNotHasKey('states', $form, 'No card edits the served states.');
+    self::assertArrayHasKey('states', $form, 'The card edits the served states.');
     self::assertArrayNotHasKey('active', $form, 'Activity changes only through the confirmation.');
     self::assertNull($this->container->get('entity_type.manager')->getDefinition('bb_conductor')->getFormClass('configuration'));
     self::assertSame('Disable conductor', $this->actionsSource($mine)['activity']['#props']['label'] ?? NULL);
@@ -370,7 +373,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     self::assertEmpty($form['actions'] ?? []);
     $rows = (string) $this->container->get('renderer')->renderInIsolation($form['readonly']);
     self::assertStringContainsString('Mine', $rows);
-    self::assertStringNotContainsString('coding, review', $rows, 'The served states are not shown.');
+    self::assertStringContainsString('States', $rows, 'A peer reads the served states.');
     self::assertSame([], array_filter($this->actionsSource($stored), static fn(string $key): bool => $key[0] !== '#', ARRAY_FILTER_USE_KEY));
   }
 
@@ -588,7 +591,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     self::assertStringContainsString('Project', $html);
     self::assertStringContainsString('bakers.build', $html);
     // One card; the lead owns this conductor. The page shows no status, last
-    // seen, load or states.
+    // seen or load.
     self::assertStringContainsString('bb_theme:inspector', $html);
     // The Identity card.
     self::assertSame(1, substr_count($html, 'data-zone-heading'));

@@ -777,7 +777,7 @@ scenes:
       It is a BUTTON, deliberately — not a link to an add route. A create
       surface is a dialog in the shell's overlay slot precisely because a
       standalone route loses the list context (action-pattern.md, "Create and
-      edit surfaces"), so a `+` pointing at /admin/bakers/ticket/add would
+      edit surfaces"), so a `+` pointing at /bakers/ticket/add would
       contradict the pattern it is supposed to demonstrate. Like the dialog's
       own close control it carries no handler here: opening the dialog is
       runtime work and sits on the same side of the boundary as modality and
@@ -1563,7 +1563,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -1600,7 +1600,7 @@ scenes:
                           props:
                             label: Try it yourself
                             links:
-                              - url: https://bb-142.ddev.site/admin/bakers/ticket
+                              - url: https://bb-142.ddev.site/bakers/ticket
                                 title: Tickets screen on the bb-142 worktree
                                 kind: ddev
                         - component: bb_theme:link-group
@@ -1898,7 +1898,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -2795,7 +2795,7 @@ scenes:
                               - review
                               - done
                             current: working
-                            label: Workflow state flow
+                            label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -2832,7 +2832,7 @@ scenes:
                           props:
                             label: Try it yourself
                             links:
-                              - url: https://bb-142.ddev.site/admin/bakers/ticket
+                              - url: https://bb-142.ddev.site/bakers/ticket
                                 title: Tickets screen on the bb-142 worktree
                                 kind: ddev
                         - component: bb_theme:link-group
@@ -3272,7 +3272,7 @@ scenes:
                                 props:
                                   text: Effort
                                   as: span
-                                  size: caption
+                                  size: meta
                                   tone: faint
                             content:
                               - component: bb_theme:list
@@ -3304,7 +3304,7 @@ scenes:
                                 props:
                                   text: Code · develop
                                   as: span
-                                  size: caption
+                                  size: meta
                                   tone: faint
                             content:
                               - component: bb_theme:list
@@ -3360,7 +3360,7 @@ scenes:
                                 props:
                                   text: Relations · 5
                                   as: span
-                                  size: caption
+                                  size: meta
                                   tone: faint
                             content:
                               - component: bb_theme:list
@@ -3426,7 +3426,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: More settings
-                            size: caption
+                            size: meta
                             href: /_workspace/1/ticket/1/edit
                     props:
                       surface: true
@@ -3493,7 +3493,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -3530,7 +3530,7 @@ scenes:
                           props:
                             label: Try it yourself
                             links:
-                              - url: https://bb-142.ddev.site/admin/bakers/ticket
+                              - url: https://bb-142.ddev.site/bakers/ticket
                                 title: Tickets screen on the bb-142 worktree
                                 kind: ddev
                         - component: bb_theme:link-group
@@ -3959,7 +3959,7 @@ scenes:
                                 props:
                                   text: Effort
                                   as: span
-                                  size: caption
+                                  size: meta
                                   tone: faint
                             content:
                               - component: bb_theme:list
@@ -3991,7 +3991,7 @@ scenes:
                                 props:
                                   text: Code · develop
                                   as: span
-                                  size: caption
+                                  size: meta
                                   tone: faint
                             content:
                               - component: bb_theme:list
@@ -4047,7 +4047,7 @@ scenes:
                                 props:
                                   text: Relations · 5
                                   as: span
-                                  size: caption
+                                  size: meta
                                   tone: faint
                             content:
                               - component: bb_theme:list
@@ -4113,7 +4113,7 @@ scenes:
                         - component: bb_theme:text
                           props:
                             text: More settings
-                            size: caption
+                            size: meta
                             href: /_workspace/1/ticket/1/edit
                     props:
                       surface: true
@@ -5421,7 +5421,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -5458,7 +5458,7 @@ scenes:
                           props:
                             label: Try it yourself
                             links:
-                              - url: https://bb-142.ddev.site/admin/bakers/ticket
+                              - url: https://bb-142.ddev.site/bakers/ticket
                                 title: Tickets screen on the bb-142 worktree
                                 kind: ddev
                         - component: bb_theme:link-group
@@ -5916,7 +5916,7 @@ scenes:
                             - review
                             - done
                           current: working
-                          label: Workflow state flow
+                          label: Workflow
                       summary:
                         entity: bb_comment.bb_comment
                         view_mode: teaser
@@ -5953,7 +5953,7 @@ scenes:
                           props:
                             label: Try it yourself
                             links:
-                              - url: https://bb-142.ddev.site/admin/bakers/ticket
+                              - url: https://bb-142.ddev.site/bakers/ticket
                                 title: Tickets screen on the bb-142 worktree
                                 kind: ddev
                         - component: bb_theme:link-group

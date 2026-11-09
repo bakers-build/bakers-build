@@ -21,10 +21,9 @@ install:
   # name below (BB-316 D2/D3).
   - og
   # The navigation rail and the account area are Drupal menus (`bakers-rail`,
-  # `bakers-account`). `menu_ui` and `menu_link_content` provide the standard
-  # menu administration; the shipped state is config.
+  # `bakers-account`). `menu_link_content` stores their links; the shipped
+  # state is config, so no menu administration UI is installed.
   - menu_link_content
-  - menu_ui
   # Core's Editor API, BEFORE bb_core, which depends on it: the bb_markdown
   # text editor (the Markdown toolbar) is bound to bb_rich by
   # editor.editor.bb_rich, imported by name below.
@@ -34,7 +33,6 @@ install:
   # Ticket activities and their opt-in mails; an account's mail settings row
   # is written only when it saves its notifications page.
   - bb_activity
-  - bb_connector
   # The island link layer (BB-398). Path-based custom code, not a composer
   # package, so nothing enables it implicitly — and every hook it ships is
   # silently inert while it is uninstalled.
@@ -51,8 +49,8 @@ install:
   # Swaps the 'string'/'combine'/'search_api_text'/'search_api_fulltext' Views
   # filter handler CLASS for every view (hook_views_plugins_filter_alter), not
   # only for a view that names this module — so it stays installed as long as
-  # any shipped view has such an exposed filter. `views.view.bb_tickets`,
-  # `views.view.runs`, `views.view.bb_runs`, `views.view.projects`,
+  # any shipped view has such an exposed filter. `views.view.runs`,
+  # `views.view.projects`,
   # `views.view.conductors`, `views.view.machines`, `views.view.groups`,
   # `views.view.files` and `views.view.user_admin_people` all do (BB-683:
   # confirmed by plugin ID, not a module-name text match — removing this
@@ -217,7 +215,7 @@ config:
       # bb_core install without editor (kernel tests) skips it. The file is
       # the saved form, key for key (editor.editor.* is FullyValidatable).
       - editor.editor.bb_rich
-      # bakers.build settings (lease + failed-run retry policy, BB-149). config/install
+      # bakers.build settings (minimum client version, plugin source). config/install
       # is not applied reliably at recipe-install time (unmet module deps at
       # enable → silently skipped), so import it by name here — idempotent.
       - bb_core.settings

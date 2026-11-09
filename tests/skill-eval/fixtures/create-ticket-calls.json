@@ -23,7 +23,7 @@
     "description_file": "/fixture/description.md",
     "ticket_type": "feature",
     "recipe": "matt",
-    "recipe_choice": "matt (installed bb-recipe-matt, project default; no other recipe installed)",
+    "recipe_choice": "matt (bb-recipe-matt, the only installed recipe, loaded completely; its method fits the ask)",
     "parent_selection": "Explicitly rejected: no parent",
     "conductor_selection": null,
     "workspace_uuid": "66666666-6666-4666-8666-666666666666",
@@ -33,7 +33,7 @@
       "The operator explicitly approved creating this intake and its normal routing, unless a prior-art hit requires a new decision.",
       "Prior-art search has not run. Use invoice and invoices as the two domain spellings.",
       "The current branch has no associated ticket; no parent is selected.",
-      "bb-recipe-matt is the only installed recipe and declares itself project default; it covers feature, bug and chore. The type and recipe terms feature and matt already exist. Existing agent defaults are confirmed; no agent override is requested.",
+      "bb-recipe-matt is the only installed recipe, its method fits the ask, and it covers feature, bug and chore. The type and recipe terms feature and matt already exist. Existing agent defaults are confirmed; no agent override is requested.",
       "Qualification acceptance quality gate passed AC-1 without rewrites; implementation has not been tested.",
       "No web surface; test_as is no login needed, scenario_required false, reproduction not_required, out_of_scope no code or runtime changes.",
       "The supplied Markdown description file is the confirmed exact description. There is no origin platform, so origin status is not_required."

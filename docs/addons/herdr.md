@@ -1,6 +1,6 @@
 # herdr
 
-Run each ticket's agent in a visible herdr terminal and its own Git worktree. Development tooling remains independent of the client.
+Run each ticket's agent in a visible herdr terminal and its own Git worktree. For the herdr-cli experience and first action, see [Use your client](/get-started/use-your-client#herdr-cli). Development tooling remains independent of the client.
 
 ## AI first
 
@@ -28,7 +28,7 @@ From another terminal as the same user:
 herdr workspace list
 ```
 
-The default session must answer; a named session uses a separate socket. A headless host uses `herdr server`; [worker servers](/configuration/machine/worker-server) covers startup ordering.
+The default session must answer; a named session uses a separate socket. A headless host uses `herdr server`; [worker servers](/provision/worker-server) covers startup ordering.
 
 ## Configuration
 
@@ -47,7 +47,7 @@ addons: [
 ],
 ```
 
-No `with` options are required. [Options and layouts](/addons/herdr/options) owns all defaults, placeholders, panes and launch timeouts. Keep this pair together; do not combine the herdr executor with Git-only workspace.
+No `with` options are required. [Options and layouts](/addons/herdr/options) owns all defaults, placeholders, panes and launch timeouts. The herdr executor also runs on another workspace's worktree, and a machine can replace it with its own executor; see [Conductor slots](/addons/slots).
 
 ## Verify
 

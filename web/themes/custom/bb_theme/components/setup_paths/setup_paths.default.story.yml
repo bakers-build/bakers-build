@@ -14,14 +14,14 @@ slots:
       component: bb_theme:text
       props:
         text: 'Install the bakers.build plugin first:'
-        size: caption
+        size: meta
         tone: light
   panel_a:
     - type: component
       component: bb_theme:text
       props:
         text: 'Inside Claude Code, each as its own command:'
-        size: caption
+        size: meta
         tone: light
     - type: component
       component: bb_theme:setup_command
@@ -33,7 +33,7 @@ slots:
       component: bb_theme:text
       props:
         text: 'With the Codex CLI, each as its own command:'
-        size: caption
+        size: meta
         tone: light
     - type: component
       component: bb_theme:setup_command
@@ -45,10 +45,12 @@ slots:
       component: bb_theme:text
       props:
         text: 'Then paste this into your agent:'
-        size: caption
+        size: meta
         tone: light
     - type: component
       component: bb_theme:setup_command
       props:
-        command: Use `bakers:bb-init` to guide me through installing and setting up bakers.build.
+        command: >-
+          Use `bakers:bb-init` to guide me through installing and setting up
+          bakers.build.
         label: Copy the skill wizard prompt

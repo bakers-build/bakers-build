@@ -8,39 +8,15 @@ import {
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AgentLaunchHost, HostedAgent } from '@bakers-build/addon-herdr';
 import type { BbCommandHost, BbConnectionConfig } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cmdUi, type RunBbUiOptions } from '../src/ui.js';
 
-// BB-201 (AC-3): `bakers ui` reads its connection scope + the registry, adapts
-// a herdr host (prompt → command) and delegates to `runBbUi`.
+// BB-201 (AC-3): `bakers ui` reads its connection scope + the registry and
+// delegates to `runBbUi`.
 // BB-219: that connection scope is now core's — explicit → project walk-up →
 // home → shipped fallback — and the ui owns NO precedence rule of its own.
 // All seams are injected here.
-
-const machine = {
-  machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-  label: 'host',
-};
-
-function fakeHost(): { host: AgentLaunchHost; launched: string[] } {
-  const launched: string[] = [];
-  const host: AgentLaunchHost = {
-    async launch({ command }): Promise<HostedAgent> {
-      launched.push(command);
-      return { id: 'p1', group: 'bakers', label: 'agent' };
-    },
-    async list() {
-      return [];
-    },
-    async focus() {},
-    async hide() {},
-    async kill() {},
-    async sendText() {},
-  };
-  return { host, launched };
-}
 
 /** A stand-in for core's `loadBbConfig` that records what it was asked for. */
 function fakeLoader(over: Partial<BbConnectionConfig> = {}): {
@@ -118,8 +94,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     const cfg = makeProject(tmp, 'https://project.test');
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       runUi: async (o) => {
         opts = o;
@@ -133,8 +107,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     makeProject(tmp, 'https://project.test');
     const order: string[] = [];
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       updateCheck: async () => {
         order.push('notice');
@@ -154,8 +126,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     mkdirSync(sub, { recursive: true });
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: sub,
       runUi: async (o) => {
         opts = o;
@@ -173,8 +143,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     });
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       loadConnection: loader.load,
       runUi: async (o) => {
@@ -195,8 +163,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     });
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       loadConnection: loader.load,
       runUi: async (o) => {
@@ -217,8 +183,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     );
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       explicitConfig: explicit,
       runUi: async (o) => {
@@ -233,8 +197,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     const loader = fakeLoader();
     process.env.BB_CONFIG = '/env/bakers.config.js';
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       loadConnection: loader.load,
       runUi: async () => {},
@@ -246,8 +208,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     const loader = fakeLoader();
     process.env.DROPSH_CONFIG = '/dropsh/bakers.config.js';
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       loadConnection: loader.load,
       runUi: async () => {},
@@ -260,8 +220,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     process.env.BB_CONFIG = '/env/bakers.config.js';
     process.env.DROPSH_CONFIG = '/dropsh/bakers.config.js';
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       explicitConfig: '/flag/bakers.config.js',
       loadConnection: loader.load,
@@ -271,8 +229,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
 
     loader.calls.length = 0;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       loadConnection: loader.load,
       runUi: async () => {},
@@ -289,7 +245,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     const previous = process.exitCode;
     try {
       await cmdUi({
-        machine,
         cwd: tmp,
         workspaceRecovery: { home: join(tmp, 'empty-home') },
         stderr: (s) => (error += s),
@@ -309,8 +264,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
   it('AC-7: --print-config reports path, source and the fallback flag', async () => {
     const out: string[] = [];
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       printConfig: true,
       stdout: (s) => out.push(s),
@@ -335,8 +288,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     process.exitCode = 0;
     let launched = false;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       printConfig: true,
       stdout: () => {},
@@ -354,8 +305,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     const out: string[] = [];
     makeProject(tmp, 'https://project.test');
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       printConfig: true,
       stdout: (s) => out.push(s),
@@ -379,8 +328,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     const out: string[] = [];
     makeProject(tmp, 'https://project.test');
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       printConfig: true,
       stdout: (s) => out.push(s),
@@ -395,8 +342,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     const out: string[] = [];
     makeProject(tmp, 'https://project.test');
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       project: 'shop',
       printConfig: true,
@@ -409,8 +354,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
   it('--print-config outside any project reports no bb_dir and no project', async () => {
     const out: string[] = [];
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       printConfig: true,
       stdout: (s) => out.push(s),
@@ -422,15 +365,12 @@ describe('cmdUi connection resolution (BB-219)', () => {
     expect(text).toMatch(/project:\s+\(none\)/);
   });
 
-  // ── AC-8: the project's control plane, not the machine's ──────────────────
+  // ── AC-8: the project's control plane ─────────────────────────────────────
 
-  it('AC-8: a project base_url differing from the machine context is the one delegated', async () => {
+  it('AC-8: the project base_url is the one delegated', async () => {
     makeProject(tmp, 'https://dev2.example');
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      // The machine context points somewhere else entirely (prod).
-      machine: { ...machine },
-      agentHost: fakeHost().host,
       cwd: tmp,
       runUi: async (o) => {
         opts = o;
@@ -446,8 +386,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     makeProject(tmp, 'https://project.test');
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       runUi: async (o) => {
         opts = o;
@@ -468,8 +406,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     makeProject(tmp, 'https://project.test');
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       runUi: async (o) => {
         opts = o;
@@ -485,8 +421,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     // home, claim nothing, and let the Conductors screen list what is real.
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       loadConnection: fakeLoader().load,
       runUi: async (o) => {
@@ -513,8 +447,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     const loader = fakeLoader();
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       // The connection legs (home) are core's; delegation is the
       // assertion here, exactly as the AC-3 case does it.
@@ -540,8 +472,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     );
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       explicitConfig: explicit,
       runUi: async (o) => {
@@ -558,8 +488,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     makeProject(tmp, 'https://project.test');
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       buildWriteClient: async () => ({ me: async () => 'user-uuid' }),
       runUi: async (o) => {
@@ -573,8 +501,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     makeProject(tmp, 'https://project.test');
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       buildWriteClient: async () => ({
         me: async () => {
@@ -589,27 +515,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     expect(opts).not.toHaveProperty('currentUser');
   });
 
-  it('adapts the herdr host prompt→command (default claude)', async () => {
-    const { host, launched } = fakeHost();
-    let opts: RunBbUiOptions | undefined;
-    await cmdUi({
-      machine,
-      agentHost: host,
-      cwd: tmp,
-      loadConnection: fakeLoader().load,
-      runUi: async (o) => {
-        opts = o;
-      },
-    });
-    await opts?.agents?.launch({
-      group: 'bakers',
-      cwd: '/repos/bakers',
-      prompt: 'work BB-9',
-      env: {},
-    });
-    expect(launched).toEqual(["claude 'work BB-9'"]);
-  });
-
   // The stderr half is asserted, not only the exit code. This path used to
   // report through `logger.error`, which writes to `$HOME/log.txt` whenever
   // stdout is not a TTY — so an unresolvable connection came out of CI as
@@ -621,8 +526,6 @@ describe('cmdUi connection resolution (BB-219)', () => {
     let called = false;
     const err: string[] = [];
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       stderr: (s) => err.push(s),
       loadConnection: async () => {
@@ -638,45 +541,12 @@ describe('cmdUi connection resolution (BB-219)', () => {
     process.exitCode = saved;
   });
 
-  it('errors naming bakers init when the machine file is stale', async () => {
-    const saved = process.exitCode;
-    const savedHome = process.env.HOME;
-    process.exitCode = 0;
-    process.env.HOME = tmp;
-    mkdirSync(join(tmp, '.bakers'), { recursive: true });
-    writeFileSync(
-      join(tmp, '.bakers', 'machine.config.js'),
-      "export default { user_id: 'cw', machine_id: 'framework' };\n",
-    );
-    let called = false;
-    const err: string[] = [];
-    try {
-      await cmdUi({
-        agentHost: fakeHost().host,
-        cwd: tmp,
-        stderr: (s) => err.push(s),
-        loadConnection: fakeLoader().load,
-        runUi: async () => {
-          called = true;
-        },
-      });
-      expect(called).toBe(false);
-      expect(process.exitCode).toBe(1);
-      expect(err.join('')).toContain('bakers init');
-    } finally {
-      process.env.HOME = savedHome;
-      process.exitCode = saved;
-    }
-  });
-
   it('--print-config still exits 1 on an unresolvable connection, and says why', async () => {
     const saved = process.exitCode;
     process.exitCode = 0;
     const out: string[] = [];
     const err: string[] = [];
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       cwd: tmp,
       printConfig: true,
       stdout: (s) => out.push(s),
@@ -719,8 +589,6 @@ describe('cmdUi deep-link entry seam (BB-223)', () => {
     let opts: RunBbUiOptions | undefined;
     let called = false;
     await cmdUi({
-      machine,
-      agentHost: fakeHost().host,
       loadConnection: fakeLoader().load,
       stderr: (line) => stderr.push(line),
       runUi: async (o) => {
@@ -877,10 +745,7 @@ describe('@bakers-build/ui package independence (AC-3)', () => {
 // identity.
 
 describe('cmdUi write client (BB-233, one identity per BB-391)', () => {
-  const base = {
-    machine,
-    agentHost: fakeHost().host,
-  };
+  const base = {};
 
   it('builds the write client with NO profile and delegates it', async () => {
     const asked: Record<string, unknown>[] = [];
@@ -956,10 +821,7 @@ describe('cmdUi write client (BB-233, one identity per BB-391)', () => {
 // the workspace it already knows. Dropsh does not do this any more — the
 // caller names the workspace on the call.
 describe('cmdUi attaches the ambient workspace plugin to its own chain (BB-495)', () => {
-  const base = {
-    machine,
-    agentHost: fakeHost().host,
-  };
+  const base = {};
 
   it('attaches the ambient workspace plugin to its own chain', async () => {
     let opts: RunBbUiOptions | undefined;

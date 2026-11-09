@@ -69,8 +69,8 @@ props:
       type: array
       title: Kept parameters
       description: >-
-        Further query parameters the form submits unchanged, e.g. other
-        filters of the page, as hidden inputs.
+        Further query parameters the form submits unchanged, e.g. other filters
+        of the page, as hidden inputs.
       items:
         type: object
         properties:

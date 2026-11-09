@@ -101,7 +101,8 @@ function okCollection(id = RUN_UUID): string {
       {
         type: 'bb_run--bb_run',
         id,
-        attributes: {},
+        // A server that permits transcript storage for this run.
+        attributes: { run_log_storage_allowed: true },
       },
     ],
   });

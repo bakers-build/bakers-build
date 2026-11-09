@@ -9,11 +9,20 @@
 // `f.action` whose id is never `cancel` — that intent closes the popup (Esc).
 // Two declarations from one body: a terminal ticket's popup simply omits the
 // Cancel ticket action (D3), and `editFormFor` picks between them.
-import { declareForm, type FormState } from '../../../Form/index.js';
+import {
+  declareForm,
+  type FieldDecl,
+  type FormState,
+  type Option,
+} from '../../../Form/index.js';
 import { formatDuration, parseDuration } from '../../../lib/format.js';
 import type { TicketDetailDocument } from '../../../types.js';
 import { PARENT_PAGE_SIZE } from '../Data/parents.js';
-import type { FieldDef, Option } from './create.js';
+
+/** A declared field with a narrowed `id` — what the edit popup's field lists are. */
+export type FieldDef<Id extends string = string> = Omit<FieldDecl, 'id'> & {
+  id: Id;
+};
 
 export type EditFieldId =
   | 'assignee'

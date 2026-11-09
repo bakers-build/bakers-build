@@ -1,0 +1,29 @@
+source:
+  kind: "figma"
+  identity: "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv?node-id=550-8845"
+  revision: null
+role: "reference"
+elements:
+  - id: "board-light"
+    locator:
+      kind: "figma-node"
+      value: "550:8970"
+    states:
+      - name: "ci-light"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 900
+  - id: "board-dark"
+    locator:
+      kind: "figma-node"
+      value: "550:9238"
+    states:
+      - name: "ci-dark"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 900
+assets_dir: "assets"

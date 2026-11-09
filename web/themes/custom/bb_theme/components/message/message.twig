@@ -15,14 +15,14 @@
   'error': 'text-state-unassigned-ink',
 } %}
 {% set msg_border = {
-  'status': 'border-[color-mix(in_srgb,var(--color-state-running)_32%,transparent)]',
-  'warning': 'border-[color-mix(in_srgb,var(--color-state-attention)_36%,transparent)]',
-  'error': 'border-[color-mix(in_srgb,var(--color-state-unassigned)_36%,transparent)]',
+  'status': 'border-state-running',
+  'warning': 'border-state-attention-mark',
+  'error': 'border-state-unassigned',
 } %}
 <div{{ attributes.addClass([
   'message',
   'flex', 'items-center', 'gap-[9px]', 'px-[11px]', 'py-[9px]',
-  'rounded-sm', 'border', 'text-caption', 'text-text-light', 'mb-[16px]',
+  'rounded-sm', 'border', 'text-body', 'text-text-light', 'mb-group',
   msg_tint[status]|default(msg_tint['status']),
   msg_border[status]|default(msg_border['status']),
 ]) }}>

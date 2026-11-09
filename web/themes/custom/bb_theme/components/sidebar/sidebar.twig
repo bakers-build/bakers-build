@@ -44,18 +44,18 @@
     :aria-label="open ? 'Collapse sidebar' : 'Expand sidebar'">
     {{ include('bb_theme:icon', { name: 'panel-left', size: 'md' }, with_context = false) }}
   </button>
-  <div class="flex shrink-0 items-center gap-1 px-3 py-4 border-b border-border-2 group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-2">
+  <div class="flex shrink-0 items-center gap-inline-xs px-stack py-group border-b border-border-2 group-[.is-collapsed]:justify-center group-[.is-collapsed]:px-inline">
     {% if workspace %}
       <div class="min-w-0 flex-1 group-[.is-collapsed]:flex-none">{% block workspace %}{{ workspace }}{% endblock %}</div>
     {% endif %}
   </div>
-  <div class="flex flex-col flex-1 min-h-0 overflow-y-auto p-3 group-[.is-collapsed]:px-2" id="{{ body_id }}">
+  <div class="flex flex-col flex-1 min-h-0 overflow-y-auto p-stack group-[.is-collapsed]:px-inline" id="{{ body_id }}">
     {% block navigation %}{% if navigation %}{{ navigation }}{% endif %}{% endblock %}
   </div>
   {% if actions %}
     {# Identity and the mode toggle are expanded-only: a 56px rail has no
-       room for a named account plus a palette control beside the nav icons.
-       `justify-between` pins the palette to the right edge at full width. #}
-    <div class="flex shrink-0 items-center justify-between gap-2 px-3 py-3 border-t border-border-2" data-collapse-hidden{% if is_collapsed %} hidden{% endif %}>{% block actions %}{{ actions }}{% endblock %}</div>
+       room for a named account plus an appearance control beside the nav icons.
+       `justify-between` pins the appearance control to the right edge at full width. #}
+    <div class="flex shrink-0 items-center justify-between gap-inline px-stack py-stack border-t border-border-2" data-collapse-hidden{% if is_collapsed %} hidden{% endif %}>{% block actions %}{{ actions }}{% endblock %}</div>
   {% endif %}
 </aside>

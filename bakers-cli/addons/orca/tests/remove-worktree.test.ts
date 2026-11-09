@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { OrcaExecutor } from '../src/index.js';
+import { OrcaWorkspace } from '../src/index.js';
 import { executors, workspaces } from '../src/preset.js';
 import { fakeOrca, notFound } from './fakes.js';
 
@@ -39,15 +39,17 @@ function fakeGit(listing: () => string) {
   return { git, calls };
 }
 
+/** The teardown moved from the executor to the Orca workspace. */
 function executor(
   root: string,
   orca: ReturnType<typeof fakeOrca>['orca'],
   git: ReturnType<typeof fakeGit>['git'],
 ) {
-  return new OrcaExecutor({ root }, orca, undefined, undefined, git);
+  const ws = new OrcaWorkspace({ root, execOrca: orca, execGit: git });
+  return { removeWorktree: ws.remove.bind(ws) };
 }
 
-describe('OrcaExecutor.removeWorktree', () => {
+describe('OrcaWorkspace.remove', () => {
   it('refuses to tear down the main checkout', async () => {
     const { root } = world();
     const { orca, calls } = fakeOrca();

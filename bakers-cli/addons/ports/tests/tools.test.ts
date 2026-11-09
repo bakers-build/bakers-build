@@ -8,9 +8,9 @@ function service(
   overrides: Partial<ClaimedService> & { key: string },
 ): ClaimedService {
   return {
-    claim: 'ddev',
+    claim: 'container',
     status: 'healthy',
-    local: `https://${overrides.key}.ddev.site`,
+    local: `https://${overrides.key}.site.test`,
     rawPorts: [],
     rules: [{ key: overrides.key, service: 'https://127.0.0.1:443' }],
     ...overrides,

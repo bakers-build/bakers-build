@@ -1,6 +1,6 @@
 ---
 name: bb-recipe-probe
-description: Test recipe for tickets of type feature, bug or chore — never shipped; every slot leaves a marker in the run's output. Project default.
+description: Test recipe for tickets of type feature, bug or chore — never shipped; every slot leaves a marker in the run's output.
 ---
 
 # Probe method

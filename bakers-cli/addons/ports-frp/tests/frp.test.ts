@@ -59,11 +59,11 @@ describe('toFrpProxy', () => {
     });
   });
 
-  it('translates a DDEV mkcert HTTPS origin (insecureTls: true) to http2https', () => {
+  it('translates a self-signed HTTPS origin (insecureTls: true) to http2https', () => {
     const proxy = toFrpProxy(
       record({
         service: 'https://127.0.0.1:443',
-        hostHeader: 'myproject.ddev.site',
+        hostHeader: 'myproject.local.test',
         insecureTls: true,
       }),
     );
@@ -74,7 +74,7 @@ describe('toFrpProxy', () => {
       plugin: {
         type: 'http2https',
         localAddr: '127.0.0.1:443',
-        hostHeaderRewrite: 'myproject.ddev.site',
+        hostHeaderRewrite: 'myproject.local.test',
       },
     });
   });
@@ -95,19 +95,19 @@ describe('toFrpProxy', () => {
 });
 
 describe('toFrpProxy with a direct container origin', () => {
-  const ddevWeb = (direct: string) =>
+  const containerWeb = (direct: string) =>
     record({
       ticket: 'BB-684',
       key: 'web',
       hostname: 'bb-684-web.frps.preview.bakers.build',
       service: 'https://127.0.0.1:443',
-      hostHeader: 'bb-684.ddev.site',
+      hostHeader: 'bb-684.local.test',
       insecureTls: true,
       direct,
     });
 
   it('dials the container over plain HTTP, keeps the public Host and forces X-Forwarded-Proto', () => {
-    expect(toFrpProxy(ddevWeb('http://172.18.0.19:80'))).toStrictEqual({
+    expect(toFrpProxy(containerWeb('http://172.18.0.19:80'))).toStrictEqual({
       name: 'BB-684-web',
       type: 'http',
       customDomains: ['bb-684-web.frps.preview.bakers.build'],
@@ -118,11 +118,11 @@ describe('toFrpProxy with a direct container origin', () => {
   });
 
   it('rejects a direct origin that is not a plain http URL', () => {
-    expect(() => toFrpProxy(ddevWeb('https://172.18.0.19:443'))).toThrow(
+    expect(() => toFrpProxy(containerWeb('https://172.18.0.19:443'))).toThrow(
       FrpConfigError,
     );
-    expect(() => toFrpProxy(ddevWeb('not a url'))).toThrow(FrpConfigError);
-    expect(() => toFrpProxy(ddevWeb('file:///etc/passwd'))).toThrow(
+    expect(() => toFrpProxy(containerWeb('not a url'))).toThrow(FrpConfigError);
+    expect(() => toFrpProxy(containerWeb('file:///etc/passwd'))).toThrow(
       FrpConfigError,
     );
   });
@@ -456,9 +456,9 @@ describe('reconcileFrp', () => {
   it('a validation-rejected candidate does not truncate the file — the record is excluded, siblings still written', async () => {
     const good = record({ key: 'storybook' });
     const bad = record({
-      key: 'ddev',
+      key: 'web',
       service: 'https://127.0.0.1:443',
-      hostname: 'bb-99-ddev.preview.example',
+      hostname: 'bb-99-web.preview.example',
     }); // insecureTls omitted -> rejected
     const { deps, writes } = fakeWorld({
       statusSequence: [
@@ -471,7 +471,7 @@ describe('reconcileFrp', () => {
       deps,
       noopCheckpoint,
     );
-    const badResult = result.records.find((r) => r.key === 'ddev');
+    const badResult = result.records.find((r) => r.key === 'web');
     const goodResult = result.records.find((r) => r.key === 'storybook');
     expect(badResult?.applied).toBe('error');
     expect(goodResult?.applied).toBe('applied');
@@ -499,7 +499,7 @@ describe('reconcileFrp', () => {
     key: 'web',
     hostname: 'bb-99-web.preview.example',
     service: 'https://127.0.0.1:443',
-    hostHeader: 'bb-99.ddev.site',
+    hostHeader: 'bb-99.local.test',
     insecureTls: true,
     direct: 'http://172.18.0.19:80',
   });

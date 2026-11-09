@@ -47,39 +47,63 @@ export default {
   bakers: { project: 'bakers' },
   // The run budget (`max_parallel`) is set on the machine in the backend,
   // default 5. A `max_parallel` here is ignored with a warning.
-  // Lifecycle hooks are executor-owned + best-effort (BB-84): the executor
-  // invokes each (after_create/before_run/after_done), logs loudly + continues
-  // on failure, and never wedges a run — so they live at the config TOP LEVEL,
-  // not on the workspace descriptor. after_create: env setup on worktree
-  // create. after_done: reclaim the worktree's DDEV project (containers + db)
-  // once its ticket is done, before the conductor tears the worktree down.
+  // Lifecycle hooks are conductor-owned + best-effort: the conductor runs each
+  // (after_create/before_run/after_done) in the worktree, logs loudly +
+  // continues on failure, and never wedges a run — so they live at the config
+  // TOP LEVEL, not on a plugin descriptor. after_create: env setup on worktree
+  // create. before_run: install pnpm dependencies before every run, outside
+  // the agent sandbox, which cannot take pnpm's store lock. after_done: reclaim
+  // the worktree's docs preview, playground conductor and DDEV project (containers + db) once its
+  // ticket is done, before the conductor tears the worktree down; `;` so the
+  // DDEV cleanup runs whatever the preview stop returns.
   //
   // The project bootstrap validates env before its sentinel, then prepares the
   // local test workspace. It starts no DDEV; hook failures remain best-effort.
   hooks: {
     after_create: 'bash .ddev/worktree-post.sh',
-    after_done: 'ddev delete -Oy',
-    // The `provision_up(profile)` agent tool: a sandboxed run reinstalls
-    // without trusting `ddev`. Each run reinstalls the site.
+    before_run: 'bash scripts/worktree-deps.sh',
+    after_done: 'bash scripts/docs-preview.sh stop; bash scripts/conductor-e2e.sh teardown; ddev delete -Oy',
+    // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
+    // a trusted `ddev` nor `pnpm install`. Every profile installs the
+    // bakers-cli and docs dependencies first; `deps` does only that.
+    // bb_theme is installed and built by `ddev init` inside DDEV.
+    // `ddev provision` reuses a ready site of that provider;
+    // `existing-config-fresh` always reinstalls. `docs-preview` builds docs/
+    // and serves it detached outside the sandbox, so the ports addon's `docs`
+    // service claims it for `ports_up docs`; a repeat call replaces it.
+    // `conductor-e2e` resets the recipe-test playground and starts a detached
+    // playground conductor from this worktree's build; `-stop` and `-start`
+    // stop and restart it without a reset (scripts/conductor-e2e.sh).
     provision_up: {
-      'recipe-test': 'ddev init --provider recipe-test',
-      'existing-config': 'ddev init --provider existing-config',
+      deps: 'bash scripts/worktree-deps.sh --all',
+      'docs-preview': 'bash scripts/worktree-deps.sh --all && bash scripts/docs-preview.sh',
+      'conductor-e2e': 'bash scripts/worktree-deps.sh --all && ddev provision --provider recipe-test && bash scripts/conductor-e2e.sh',
+      'conductor-e2e-stop': 'bash scripts/conductor-e2e.sh stop',
+      'conductor-e2e-start': 'bash scripts/conductor-e2e.sh start',
+      'recipe-test': 'bash scripts/worktree-deps.sh && ddev provision --provider recipe-test',
+      'existing-config': 'bash scripts/worktree-deps.sh && ddev provision --provider existing-config',
+      'existing-config-fresh': 'bash scripts/worktree-deps.sh && ddev init --provider existing-config',
     },
   },
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
+  // addon-ddev serves the `ddev_status`, `ddev_start` and `ddev_exec` agent
+  // tools, so runs reach DDEV only through the conductor, never directly.
   // Preview is opt-in; the FRP transport validates the operator's complete settings.
-  addons: local.frp ? [
-    {
+  addons: [
+    '@bakers-build/addon-ddev',
+    ...(local.frp ? [{
       use: '@bakers-build/addon-ports',
       with: {
         services: [{ key: 'docs', match: 'vitepress' }],
+        // DDEV's containers are claimed by the addon-ddev claimer.
+        claimers: ['@bakers-build/addon-ddev'],
         transport: {
           use: '@bakers-build/addon-ports-frp',
           with: local.frp,
         },
       },
-    },
-  ] : [],
+    }] : []),
+  ],
   // Layout per workflow state: project = workspace, run = tab.
   // No hard-wired diff pane for `review`: the review diff surface is hunk
   // (BB-55) — agent-driven + opt-in in the human's interactive pane

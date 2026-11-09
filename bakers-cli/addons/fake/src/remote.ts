@@ -20,6 +20,7 @@ import type {
   RemotePlugin,
   RunMetrics,
   RunWriteAttributes,
+  SiteToolClient,
   Ticket,
   TicketMetric,
   UncleanTicket,
@@ -41,6 +42,8 @@ export interface FakeSeedRun {
   closed?: boolean;
   /** Id of the agent that ran (BB-144) — routes footprint parsing at finalize. */
   agent?: string;
+  /** The server's run-log policy; omit to model a server that sends none. */
+  runLogStorageAllowed?: boolean;
 }
 
 export interface FakeSeedTicket {
@@ -98,6 +101,7 @@ interface RunRecord {
   log?: string;
   closed?: boolean;
   startedAt?: string;
+  runLogStorageAllowed?: boolean;
 }
 
 export interface MarkRunningCall {
@@ -133,6 +137,8 @@ interface FakeMachineState {
 }
 
 export class FakeBbRemote implements BbRemote {
+  /** Set by a test to serve site tools on the `bakers` MCP server. */
+  siteTools?: SiteToolClient;
   readonly calls: {
     markRunning: MarkRunningCall[];
     markFailed: MarkFailedCall[];
@@ -198,6 +204,9 @@ export class FakeBbRemote implements BbRemote {
           : {}),
         ...(r.agent !== undefined ? { agent: r.agent } : {}),
         ...(r.closed !== undefined ? { closed: r.closed } : {}),
+        ...(r.runLogStorageAllowed !== undefined
+          ? { runLogStorageAllowed: r.runLogStorageAllowed }
+          : {}),
       });
       this.queue.push({
         runUuid: r.runUuid,
@@ -261,6 +270,14 @@ export class FakeBbRemote implements BbRemote {
     const r = this.runs.get(runUuid);
     if (r) {
       r.state = 'done';
+    }
+  }
+
+  /** Changes a run's server-side run-log policy, as a workspace lead would. */
+  setRunLogStorageAllowed(runUuid: string, allowed: boolean): void {
+    const r = this.runs.get(runUuid);
+    if (r) {
+      r.runLogStorageAllowed = allowed;
     }
   }
 
@@ -460,6 +477,9 @@ export class FakeBbRemote implements BbRemote {
         worktreePath: r.worktreePath ?? '',
         agent: r.agent ?? '',
         ...(r.startedAt ? { startedAt: r.startedAt } : {}),
+        ...(r.runLogStorageAllowed !== undefined
+          ? { runLogStorageAllowed: r.runLogStorageAllowed }
+          : {}),
       }));
   }
 

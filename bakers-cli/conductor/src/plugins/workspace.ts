@@ -1,3 +1,5 @@
+import type { WorktreeTeardown } from './executor.js';
+
 export interface EnsuredWorkspace {
   path: string;
   instructions: { path: string; sha256: string; text: string } | null;
@@ -6,10 +8,15 @@ export interface EnsuredWorkspace {
    * (false). The core runs the `after_create` lifecycle hook on a fresh
    * worktree, or on a reused one with no recorded successful `after_create`
    * (BB-663), so it needs to know which happened. Lifecycle hooks themselves
-   * are no longer a workspace concern (BB-84): the executor owns and runs
-   * them best-effort.
+   * are not a workspace concern: the conductor runs them best-effort.
    */
   created: boolean;
+  /**
+   * Variables the run needs from its workspace backend (e.g. Git config via
+   * `GIT_CONFIG_COUNT`). The conductor adds them to the run env; core `BB_*`
+   * keys still win.
+   */
+  env?: Record<string, string>;
 }
 
 export interface BbWorkspace {
@@ -27,8 +34,8 @@ export interface BbWorkspace {
    *
    * Reports `created` so the caller can decide whether `after_create` needs to
    * run (fresh worktree, or no recorded success for this one — BB-663).
-   * Lifecycle-hook invocation is NOT a workspace responsibility
-   * anymore — the executor owns all hooks (BB-84).
+   * Lifecycle-hook invocation is NOT a workspace responsibility — the
+   * conductor runs all hooks.
    */
   ensure(
     identifier: string,
@@ -37,34 +44,24 @@ export interface BbWorkspace {
   ): Promise<EnsuredWorkspace>;
 
   /**
-   * Apply the workspace's "open" layout — for a hosted workspace, the startup
-   * command(s) of the freshly created workspace's initial pane.
+   * Tear down the branch's worktree, reclaiming its disk. Called by the
+   * conductor's ticket-cleanup pass once a ticket is done, after `after_done`,
+   * for every workspace and executor kind.
    *
-   * OPTIONAL: a workspace with no layout concept (git, fake) simply omits it and
-   * the conductor calls it with `?.`.
+   * `worktreePath` is the stable, identifier-derived worktree path (from the
+   * ticket's latest run). Prefer it over `branch` to resolve the worktree: the
+   * checked-out branch is mutable (the coding agent may rename/switch it), the
+   * path is not.
    *
-   * BB-237 — why this is a SEPARATE call and not part of `ensure()`. The
-   * layout's startup command typically names the bakers CLI, which the
-   * `after_create` lifecycle hook builds. Applied inside `ensure()` it
-   * necessarily ran BEFORE that hook, so in a self-hosting checkout the command
-   * fired minutes before the binary it names existed. The only remedy available
-   * to a config author was a cross-process handshake — a sentinel wait loop
-   * inside the pane command itself. Splitting the call lets the conductor order
-   * the two correctly (`after_create` → `applyOpenLayout`), which removes the
-   * need for any handshake.
-   *
-   * The conductor calls this ONLY on a freshly created workspace
-   * ({@link EnsuredWorkspace.created}), because only a fresh create has an
-   * initial pane to lay out; re-applying on reuse would start a duplicate editor
-   * process on every reattach. Deliberately a NARROWER gate than the one on
-   * `after_create`, which runs again on a reuse with no recorded success
-   * (BB-663), not on every dispatch.
-   *
-   * Best-effort by contract: implementations log and swallow a failing layout so
-   * it can never wedge dispatch.
+   * Reports what the teardown DID as a {@link WorktreeTeardown} (BB-293):
+   * `removed` when the worktree was present on this host and torn down (or its
+   * prunable admin entry swept), `already_absent` when there was nothing to
+   * tear down at all, and `unverified` when nothing matched here and the
+   * worktree may still be on disk (another conductor's host, or a path that
+   * could not be resolved). The reaper flags a ticket `cleaned_up` for the
+   * first two and leaves it on the work list for `unverified`, so it never
+   * false-teardowns a worktree another host physically holds. A genuine
+   * failure still throws (surfaced as a teardown miss).
    */
-  applyOpenLayout?(
-    path: string,
-    ctx: { identifier: string; branch: string; title: string },
-  ): Promise<void>;
+  remove(branch: string, worktreePath?: string): Promise<WorktreeTeardown>;
 }

@@ -9,7 +9,8 @@ export {
   watchLaunch,
   writeLaunchScript,
 } from './launch-script.js';
-export { truncateOpenTabTitle, validateBranch } from './workspace.js';
+export { truncateOpenTabTitle } from './open-layout.js';
+export { validateBranch } from './workspace.js';
 
 /** Runs `git <args>`; resolves with stdout, rejects on non-zero exit. */
 export type BaseRefGitExec = (args: string[]) => Promise<string>;

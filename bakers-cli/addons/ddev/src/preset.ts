@@ -14,7 +14,7 @@ export const tools = {
     },
     ddev_exec: {
       description:
-        "Run a shell command in the web container of this worktree's DDEV project, e.g. `drush uli --name north-lead --uri <url>`. Returns the exit code and the output tail.",
+        "Run a shell command in the web container of this worktree's DDEV project, e.g. a project command by path (`.ddev/commands/web/<cmd>`). Returns the exit code and the output tail.",
       input: {
         type: 'object' as const,
         required: ['command'],

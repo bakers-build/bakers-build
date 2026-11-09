@@ -1,11 +1,11 @@
 /**
  * The list selection cursor: an index plus the four move keys (BB-294).
  *
- * Extracted from FOUR verbatim copies — `ticket/Screen/tickets.ts`,
- * `run/Screen/runs.ts`, `project/Screen/projects-screen.ts` and
- * `ticket/Screen/ticket-agents.ts`. It is a plain composed object, not a base
- * class or a mixin, because two of those four are `AsyncScreen<Row[]>` while the
- * other two are `AsyncScreen<Page<Row>>`: no single base class spans them, and
+ * Extracted from verbatim copies in `ticket/Screen/tickets.ts`,
+ * `run/Screen/runs.ts` and `project/Screen/projects-screen.ts`. It is a plain
+ * composed object, not a base class or a mixin, because some of them are
+ * `AsyncScreen<Row[]>` and others `AsyncScreen<Page<Row>>`: no single base class
+ * spans them, and
  * putting the index on `AsyncScreen` itself would hand a `selectedIndex` to every
  * form, detail and dashboard screen that has no rows.
  *

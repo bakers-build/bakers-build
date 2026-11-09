@@ -5,12 +5,12 @@
 // `Form/`; nothing of them is repeated here.
 //
 // AC-4: this screen's only ticket read is `loadParentCandidates`, composed as
-// `parentOptionSource` (D5) — the same source the create form's Parent field
+// `parentOptionSource` (D5) — the same source the edit form's Parent field
 // loads through, never a second lookup path.
 
 import { declareForm, type FormState } from '../../../Form/index.js';
 import { PARENT_PAGE_SIZE } from '../Data/parents.js';
-import type { ParentOption } from './create.js';
+import type { ParentOption } from './parent-source.js';
 
 export interface ParentFilterValues {
   /** The PICKED parent's uuid, or null. `parentQuery` holds what was typed. */
@@ -22,7 +22,7 @@ export interface ParentFilterOptions {
   /**
    * The parent candidates. Optional so an ABSENT bag ("nothing can be offered")
    * stays distinguishable from an empty one ("searched, nothing matched") — the
-   * same rule as the create form's `parents` bag (BB-257 D8).
+   * same rule as the edit form's `parents` bag (BB-257 D8).
    */
   parents?: ParentOption[] | undefined;
   errors?: { parents?: string | undefined } | undefined;

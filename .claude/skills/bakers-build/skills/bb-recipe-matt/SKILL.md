@@ -1,6 +1,6 @@
 ---
 name: bb-recipe-matt
-description: Recipe for tickets of type feature, bug or chore — the Matt method, for hard, under-specified work. grilling to a shared understanding, then a spec; diagnosing-bugs for bugs; tdd; code-review. Project default.
+description: Recipe for tickets of type feature, bug or chore — the Matt method; grilling to a shared understanding, then a spec; diagnosing-bugs for bugs; tdd; code-review.
 ---
 
 # Matt method

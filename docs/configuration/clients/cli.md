@@ -32,7 +32,7 @@ Options and subcommands are copied from `bakers --help` and the help of each com
 
 ## Install and update
 
-[Machine setup](/get-started/machine) owns installation and sign-in. `bakers update` installs the latest CLI; [Updates](/configuration/machine/updates) separates code updates from configuration migration.
+[Machine setup](/provision/machine) owns installation and sign-in. `bakers update` installs the latest CLI; [Updates](/configuration/machine/updates) separates code updates from configuration migration.
 
 ## bakers init
 
@@ -97,4 +97,4 @@ bakers info
 
 ## bakers ports
 
-`bakers ports` works on the worktree you stand in. `list` shows every service an addon has claimed (a Storybook, a DDEV site), `status` this worktree's tunnel records, `up [service-key]` shares one claimed service, or every eligible one when no key is given, `down [service-key]` takes it down, and `reap` reconciles the machine's tunnel records and kills orphaned tunnel processes. Only claimed services are shared, never a raw port. The transport (a named Cloudflare tunnel, a Cloudflare quick tunnel or frp) is configured on the machine and documented with the [Ports](/addons/ports) addon; tunnel state lives machine-wide in `~/.bakers/tunnels.json`.
+`bakers ports` works on the worktree you stand in. `list` shows every service an addon has claimed (a Storybook, a site of your project's runtime), `status` this worktree's tunnel records, `up [service-key]` shares one claimed service, or every eligible one when no key is given, `down [service-key]` takes it down, and `reap` reconciles the machine's tunnel records and kills orphaned tunnel processes. Only claimed services are shared, never a raw port. The transport (a named Cloudflare tunnel, a Cloudflare quick tunnel or frp) is configured on the machine and documented with the [Ports](/addons/ports) addon; tunnel state lives machine-wide in `~/.bakers/tunnels.json`.

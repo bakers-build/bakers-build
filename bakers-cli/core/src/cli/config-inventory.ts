@@ -342,6 +342,14 @@ export function inventoryConfig(
       return;
     }
     file.state = 'valid';
+    // An explicit executor slot: the machine's wins over the project's.
+    if (
+      selected &&
+      source.properties.get('executor') &&
+      (kind === 'machine' ||
+        (kind === 'conductor' && report.executor_source === undefined))
+    )
+      report.executor_source = path;
     const startFindings = report.findings.length;
     const field = source.properties.get('schema_version');
     file.version.header = source.headerVersions[0] ?? null;

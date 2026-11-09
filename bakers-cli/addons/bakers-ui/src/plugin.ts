@@ -4,8 +4,7 @@ import { loadWorkspaceMemberships } from './Entity/workspace/Data/members.js';
 import { resolveRoute } from './route.js';
 import type { RendererServices, TuiOptions } from './types.js';
 
-/** Options the launcher passes into the factory (a superset of the injected
- *  intent-level agent service so `bakers ui` can drive launch/list/focus/…). */
+/** Options the launcher passes into the factory. */
 export type BbUiOptions = TuiOptions;
 
 // The dropsh `tui` renderer plugin: a single interactive renderer that hands off
@@ -41,9 +40,9 @@ export default function bakersUiPlugin(options: BbUiOptions = {}) {
                 });
           // BB-232 (D9): the second thing resolved here, for the same reason.
           // `~/.bakers/conductors.json` used to tell the entry which project this
-          // checkout belongs to and which conductor is this machine's; the
-          // control plane knows both, and this is the first place a client
-          // exists to ask. Only when the entry handed over a `.bakers` dir — no
+          // checkout belongs to; the control plane knows it from the conductor
+          // record matching the `.bakers` dir, and this is the first place a
+          // client exists to ask. Only when the entry handed over a `.bakers` dir — no
           // dir, no read, so a cockpit outside any project boots as before.
           const own =
             options.bakersDir === undefined
@@ -92,10 +91,6 @@ export default function bakersUiPlugin(options: BbUiOptions = {}) {
             // record is an inference, so the flag wins.
             ...(options.project === undefined && own?.project !== undefined
               ? { project: own.project }
-              : {}),
-            ...(options.ownConductorMachineId === undefined &&
-            own?.machineId !== undefined
-              ? { ownConductorMachineId: own.machineId }
               : {}),
             // Optional at every hop — omitting the key is the My work path.
             ...(route !== undefined ? { route } : {}),

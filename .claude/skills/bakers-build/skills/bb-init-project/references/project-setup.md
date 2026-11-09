@@ -14,6 +14,10 @@ choices below. **Done when both choices and their owning files are understood.**
 2. Ask the operator for each lifecycle hook; an empty answer means none. Pass their exact commands
    with `--after-create <command>` / `--after-done <command>`. Never infer/probe a provisioning tool
    or command. Omitting both writes no `hooks` key. Unattended: write no hooks and report this.
+   When agents need the running application, explain `hooks.provision_up`
+   ([hooks](https://bakers.build/provision/hooks#provision-on-an-agent-s-request)):
+   one command per profile that reuses a ready environment. No flag writes it; the operator adds
+   it to `.bakers/conductor.config.js`.
 3. Preserve existing `WORKFLOW.md` and additions; create an absent file from
    [WORKFLOW.template.md](WORKFLOW.template.md). Keep its entry line verbatim.
 4. Fill the `## bb-phase-provision`, `## bb-phase-work`, `## bb-phase-validate`, `## bb-phase-deliver`
@@ -22,7 +26,8 @@ choices below. **Done when both choices and their owning files are understood.**
    origin-label table; show it to the operator, apply their vocabulary, or delete it when the
    project writes no origin labels. Verify named skills and commands through the
    agent environment's installation/discovery facilities; report missing skills by name. Report
-   the installed `bb-recipe-*` skills and which declares itself project default.
+   the installed `bb-recipe-*` skills; recipe guidance for qualification, if the project wants any,
+   goes in the `## bb-phase-work` hint.
 5. Ensure `.gitignore` contains `/assets-ai/` with a short explanatory comment
    ([transient root](../../bb-workflow/references/evidence.md)); prove it with `git check-ignore -v assets-ai/probe`.
    Ignore `.bakers/conductor.config.local.js` and generated secret-bearing local overrides; verify

@@ -48,7 +48,7 @@ export const nodeDiscoveryDeps: HostDiscoveryDeps = {
       });
       return { stdout, ok: true };
     } catch (err) {
-      // A non-zero exit still carries stdout for a command like `ddev describe`
+      // A non-zero exit still carries stdout for a command like `docker inspect`
       // outside a project; hand it back so the parser can decide. `code` is
       // the numeric exit code when the process actually ran (e.g. 127 =
       // command not found inside the container); a spawn-level failure

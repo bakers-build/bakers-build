@@ -25,7 +25,7 @@
 {% set tone_classes = {
   'wait': ['bg-state-unassigned-tint', 'text-state-unassigned-ink', 'border', 'border-state-unassigned', 'hover:opacity-90'],
   'critical': ['bg-state-unassigned-tint', 'text-state-unassigned-ink', 'border', 'border-state-unassigned', 'hover:opacity-90'],
-  'attention': ['bg-state-attention-tint', 'text-state-attention-ink', 'border', 'border-state-attention', 'hover:opacity-90'],
+  'attention': ['bg-state-attention-tint', 'text-state-attention-ink', 'border', 'border-state-attention-mark', 'hover:opacity-90'],
   'running': ['bg-state-running-tint', 'text-state-running-ink', 'border', 'border-state-running', 'hover:opacity-90'],
   'idle': ['bg-surface-3', 'text-text-light', 'border', 'border-border', 'hover:bg-surface-2'],
 } %}
@@ -38,11 +38,12 @@
 <{{ tag }}{{ (attributes ?: create_attribute()).addClass([
     'button', 'inline-flex', 'items-center', 'justify-center', 'gap-[6px]',
     'h-[30px]', is_icon_only ? 'w-[30px] px-0' : 'px-[10px]', 'rounded-sm',
-    'text-caption', 'font-bold', 'no-underline', 'cursor-pointer',
+    'text-body-strong', 'no-underline', 'cursor-pointer',
+    'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring',
     'disabled:opacity-60', 'disabled:cursor-not-allowed',
     '[&.htmx-request]:cursor-progress', '[&.htmx-request]:opacity-60',
     '[&.htmx-request]:after:inline-block',
-    '[&.htmx-request]:after:ml-1', '[&.htmx-request]:after:w-3', '[&.htmx-request]:after:h-3',
+    '[&.htmx-request]:after:ml-inline-xs', '[&.htmx-request]:after:w-3', '[&.htmx-request]:after:h-3',
     '[&.htmx-request]:after:rounded-full', '[&.htmx-request]:after:border-2',
     '[&.htmx-request]:after:border-current', '[&.htmx-request]:after:border-r-transparent',
     '[&.htmx-request]:after:animate-[spin_0.6s_linear_infinite]',

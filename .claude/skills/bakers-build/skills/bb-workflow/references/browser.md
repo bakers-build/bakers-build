@@ -3,7 +3,7 @@
 Read only when the confirmed scope and verification plan select a browser surface. Automated
 browser suites, including Playwright, run through [verify](verify.md). Apply the
 [result records](results.md); personas come from qualification's `test_as`, environment and access
-from [provision](provision.md). Preserve anonymous, intentionally denied and missing personas;
+from the frame's *Provision* rule. Preserve anonymous, intentionally denied and missing personas;
 unresolved access blocks the dependent path, and an administrator session is never a substitute.
 
 ## Paths
@@ -19,7 +19,9 @@ nothing, provisions nothing and creates no account.
 
 ## Inspection
 
-For a confirmed path with mode `agent`, use `playwright-cli`. Load the persona's saved auth state
+For a confirmed path with mode `agent`, use `playwright-cli` where the project's testing setup
+runs it; a sandboxed agent may reach the site only through a runtime tool that runs outside the
+sandbox. Load the persona's saved auth state
 before the first authenticated action and confirm the actual identity; use an anonymous session for
 an anonymous path. Run the ordered actions against the resolved absolute URL. Record persona,
 environment, starting URL, actions or selectors, and expected versus observed behavior. Capture

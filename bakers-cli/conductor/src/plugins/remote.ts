@@ -173,6 +173,12 @@ export interface FinalizableRun {
    * stays transcript-derived (BB-151). '' / undefined when unset.
    */
   startedAt?: string;
+  /**
+   * The server's current run-log policy for this run (workspace opt-in AND
+   * the operator flag), read fresh on every finalize query. Only `true`
+   * allows uploading the transcript; absent (an older server) means no.
+   */
+  runLogStorageAllowed?: boolean;
 }
 
 /**
@@ -318,7 +324,29 @@ export interface AddonRegistration {
   rejected: Array<{ name: string; version: string; error: string }>;
 }
 
+/**
+ * The site's own MCP tools (`/mcp`, `tool_api__<tool>`), reached with the
+ * conductor's credentials. `call` throws with the site's text when the tool
+ * reports an error.
+ */
+export interface SiteToolClient {
+  list(): Promise<
+    Array<{
+      name: string;
+      description?: string;
+      inputSchema: Record<string, unknown>;
+    }>
+  >;
+  call(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<{ content: unknown[]; structuredContent?: unknown }>;
+  close(): Promise<void>;
+}
+
 export interface BbRemote {
+  /** The site's tools, served to agent runs on the `bakers` MCP server; absent: none. */
+  siteTools?: SiteToolClient;
   /** POSTs heartbeat registration; returns the Drupal entity uuid. */
   registerConductor(reg: ConductorRegistration): Promise<string>;
   /**

@@ -19,7 +19,7 @@
  *           `linked_worktree_source`.
  *   Bug B — web/sites/default is 0555 and settings.php 0444, so the removal
  *           unlink hits EACCES unless write perms are restored first.
- * Both are confirmed live above; this asserts the fixed removeWorktree fully
+ * Both are confirmed live above; this asserts the fixed teardown (HerdrWorkspace.remove) fully
  * tears the worktree down where the pre-fix code left it on disk.
  */
 import { execFileSync } from 'node:child_process';
@@ -27,7 +27,7 @@ import { chmodSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { HerdrExecutor } from '@bakers-build/addon-herdr';
+import { HerdrWorkspace } from '@bakers-build/addon-herdr';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   herdrAvailable,
@@ -50,7 +50,7 @@ function git(cwd: string, args: string[]): string {
 
 const BRANCH = 'bakers/cleanup-regression';
 
-describe.skipIf(!HAS_HERDR)('herdr removeWorktree (real herdr + git)', () => {
+describe.skipIf(!HAS_HERDR)('HerdrWorkspace.remove (real herdr + git)', () => {
   let repo: string;
   let worktreePath: string;
 
@@ -88,7 +88,7 @@ describe.skipIf(!HAS_HERDR)('herdr removeWorktree (real herdr + git)', () => {
         // canonicalizes a relative `--path` against its OWN `current_dir()`,
         // not against `--cwd`. Relative, this materialised the worktree inside
         // the bakers checkout that happens to be vitest's cwd instead of inside
-        // the throwaway repo — so a run that failed before `removeWorktree`
+        // the throwaway repo — so a run that failed before `remove`
         // left it behind and the NEXT run died in `beforeAll` with
         // `worktree_create_failed … already exists`.
         '--path',
@@ -126,7 +126,7 @@ describe.skipIf(!HAS_HERDR)('herdr removeWorktree (real herdr + git)', () => {
   afterAll(async () => {
     // Best-effort cleanup in case the assertions failed mid-way. The worktree
     // is removed EXPLICITLY, not just left to `rmSync(repo)`: a run that fails
-    // before `removeWorktree` must not leave it on disk, or the next run cannot
+    // before `remove` must not leave it on disk, or the next run cannot
     // even reach an assertion (`worktree create` refuses an existing path).
     try {
       if (worktreePath && existsSync(worktreePath)) {
@@ -156,12 +156,12 @@ describe.skipIf(!HAS_HERDR)('herdr removeWorktree (real herdr + git)', () => {
   });
 
   it('tears down a closed, Drupal-hardened worktree (Bug A + Bug B)', async () => {
-    const executor = new HerdrExecutor({ root: repo });
+    const workspace = new HerdrWorkspace({ root: repo });
 
     // Must not throw: the fix reattaches from the parent root (no
     // linked_worktree_source) and restores write perms before the unlink.
     // Returns 'removed' — the worktree was present on this host and torn down.
-    await expect(executor.removeWorktree(BRANCH, worktreePath)).resolves.toBe(
+    await expect(workspace.remove(BRANCH, worktreePath)).resolves.toBe(
       'removed',
     );
 

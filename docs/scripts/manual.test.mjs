@@ -78,15 +78,17 @@ function navigation(t, mutate = () => {}) {
   mkdirSync(join(root, 'docs/scripts'), { recursive: true })
   mkdirSync(join(root, 'docs/.vitepress'), { recursive: true })
   const areas = [
-    { label: 'Getting Started', link: '/get-started/' },
-    { label: 'Configuration', link: '/configuration/' },
+    { label: 'Get started', link: '/get-started/' },
+    { label: 'Provision', link: '/provision/' },
+    { label: 'Agents', link: '/agents/' },
+    { label: 'Skills & Workflows', link: '/skills-and-workflows/' },
     { label: 'Addons', link: '/addons/' },
+    { label: 'Configuration', link: '/configuration/' },
+    { label: 'Self-hosting', link: '/self-hosting/' },
   ]
-  const sidebar = {
-    '/get-started/': [{ text: 'Getting Started', items: ['connector', 'machine', 'connect-a-project', 'first-ticket'].map(slug => ({ link: `/get-started/${slug}` })) }],
-    '/configuration/': ['Connector', 'Machine', 'Project', 'Provisioning', 'Clients', 'Agents', 'Workflows', 'Security'].map(text => ({ text, items: [{ link: `/configuration/${text.toLowerCase()}` }] })),
-    '/addons/': [{ text: 'Addons', items: [{ link: '/addons/' }] }],
-  }
+  const sidebar = Object.fromEntries(areas.map(({ label, link }) => [link, [{ text: label, items: [{ link }] }]]))
+  sidebar['/get-started/'][0].items.push(...['connector', 'connect-a-project', 'first-ticket'].map(slug => ({ link: `/get-started/${slug}` })))
+  sidebar['/provision/'][0].items.push(...['machine', 'guide', 'tools', 'security/', 'examples'].map(slug => ({ link: `/provision/${slug}` })))
   for (const route of [...areas.map(a => a.link), ...Object.values(sidebar).flatMap(gs => gs.flatMap(g => g.items.map(i => i.link)))]) {
     const file = join(root, 'docs', route.slice(1) + (route.endsWith('/') ? 'index.md' : '.md'))
     mkdirSync(dirname(file), { recursive: true })
@@ -94,20 +96,20 @@ function navigation(t, mutate = () => {}) {
   }
   sidebar['/get-started/'][0].items.push({ link: '/get-started/' })
   sidebar['/configuration/'][0].items.push({ link: '/configuration/' })
+  mkdirSync(join(root, 'docs/development'))
+  writeFileSync(join(root, 'docs/development/internal-only.md'), '---\ndraft: true\n---\n# Internal contributor notes\n')
   mutate(areas, sidebar)
   copyFileSync(new URL('./check-pages.mjs', import.meta.url), join(root, 'docs/scripts/check-pages.mjs'))
-  writeFileSync(join(root, 'docs/.vitepress/manual.mjs'), `export const AREAS = ${JSON.stringify(areas)}; export const SIDEBAR = ${JSON.stringify(sidebar)}; export const SRC_EXCLUDE = ['bakers/**'];`)
+  writeFileSync(join(root, 'docs/.vitepress/manual.mjs'), `export const AREAS = ${JSON.stringify(areas)}; export const SIDEBAR = ${JSON.stringify(sidebar)}; export const SRC_EXCLUDE = ['bakers/**', 'development/**'];`)
   return spawnSync(process.execPath, [join(root, 'docs/scripts/check-pages.mjs')], { encoding: 'utf8' })
 }
 
-test('requires the three manual areas and primary configuration topics', t => {
+test('requires exactly seven public manual areas', t => {
   const result = navigation(t, (areas, sidebar) => {
-    areas.push({ label: 'Advanced', link: '/advanced/' })
-    sidebar['/configuration/'] = sidebar['/configuration/'].filter(g => g.text !== 'Security')
+    areas.push({ label: 'Development', link: '/development/' })
   })
   assert.equal(result.status, 1, result.stdout)
   assert.match(result.stdout, /manual areas/)
-  assert.match(result.stdout, /Configuration topics/)
 })
 
 test('accepts complete navigation and rejects missing setup or excluded sidebar destinations', t => {
@@ -115,11 +117,19 @@ test('accepts complete navigation and rejects missing setup or excluded sidebar 
   assert.equal(valid.status, 0, valid.stdout)
   const invalid = navigation(t, (_areas, sidebar) => {
     sidebar['/get-started/'][0].items = sidebar['/get-started/'][0].items.filter(i => i.link !== '/get-started/connector')
-    sidebar['/addons/'][0].items.push({ link: '/bakers/development/architecture' })
+    sidebar['/addons/'][0].items.push({ link: '/development/internal-only' })
   })
   assert.equal(invalid.status, 1, invalid.stdout)
   assert.match(invalid.stdout, /missing setup entry/)
   assert.match(invalid.stdout, /missing or excluded/)
+})
+
+test('requires machine setup, tools and security under Provision', t => {
+  const result = navigation(t, (_areas, sidebar) => {
+    sidebar['/provision/'][0].items = sidebar['/provision/'][0].items.filter(i => !['/provision/machine', '/provision/tools', '/provision/security/'].includes(i.link))
+  })
+  assert.equal(result.status, 1, result.stdout)
+  for (const slug of ['machine', 'tools', 'security/']) assert.ok(result.stdout.includes(`missing provision entry: ${slug}`), result.stdout)
 })
 
 test('redirect HTML preserves an incoming fragment unless its target specifies one', async () => {

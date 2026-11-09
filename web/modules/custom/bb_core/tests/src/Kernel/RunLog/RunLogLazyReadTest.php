@@ -55,6 +55,7 @@ final class RunLogLazyReadTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
+    $this->allowRunLogStorage();
     $this->installEntitySchema('bb_workspace');
     $this->installEntitySchema('bb_group');
     $this->installEntitySchema('bb_project');

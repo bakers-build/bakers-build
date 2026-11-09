@@ -6,17 +6,15 @@
 // same code the commands run; the cockpit renders their result and drives their
 // actions.
 
-export type {
-  RawDiagnostic,
-  RawDiscovery,
-  RawPort,
-  Tri,
-} from '@bakers-build/addon-ddev';
 export {
   type ClaimContext,
   type ClaimedDiscovery,
   type ClaimedService,
+  type Claimer,
+  type ClaimerDeps,
+  type ClaimerDiscovery,
   type ClaimStatus,
+  type ConfigFileDeps,
   claimServices,
   discoverClaimedServices,
   type HttpProbe,
@@ -25,6 +23,7 @@ export {
 } from './claims.js';
 export {
   assertNoMachinePorts,
+  loadClaimers,
   loadPortsTransport,
   PORTS_NEEDS_ENTRY,
   PORTS_RETIRED,
@@ -80,4 +79,11 @@ export {
   upsertRecord,
   writeMachineTunnelState,
 } from './tunnel-state.js';
-export type { TunnelRecord, TunnelState } from './types.js';
+export type {
+  RawDiagnostic,
+  RawDiscovery,
+  RawPort,
+  Tri,
+  TunnelRecord,
+  TunnelState,
+} from './types.js';

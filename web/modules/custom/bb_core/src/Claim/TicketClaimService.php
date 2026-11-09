@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Claim;
 
 use Drupal\Component\Datetime\TimeInterface;
-use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Lock\LockBackendInterface;
@@ -40,7 +39,6 @@ final class TicketClaimService {
   private const CANDIDATE_LIMIT = 50;
   public const DEFAULT_LEASE_SECONDS = 300;
   public const MAX_LEASE_SECONDS = 3600;
-  private const SETTINGS = 'bb_core.settings';
 
   /**
    * Constructs a TicketClaimService.
@@ -53,9 +51,6 @@ final class TicketClaimService {
    *   The distributed lock backend used to serialise concurrent claim attempts.
    * @param \Drupal\Core\Database\Connection $database
    *   The database connection used to wrap claim logic in a transaction.
-   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
-   *   Config factory, read for the lease bounds (bb_core.settings); the class
-   *   constants are the fallbacks.
    * @param \Drupal\bb_core\Claim\FailedRunCircuitBreaker $circuitBreaker
    *   The failed-run re-claim circuit breaker.
    * @param \Symfony\Contracts\EventDispatcher\EventDispatcherInterface $dispatcher
@@ -68,27 +63,10 @@ final class TicketClaimService {
     private readonly TimeInterface $time,
     private readonly LockBackendInterface $lock,
     private readonly Connection $database,
-    private readonly ConfigFactoryInterface $configFactory,
     private readonly FailedRunCircuitBreaker $circuitBreaker,
     private readonly EventDispatcherInterface $dispatcher,
     private readonly ConductorOwnerAccess $ownerAccess,
   ) {
-  }
-
-  /**
-   * Reads a positive integer setting, falling back to a default.
-   *
-   * @param string $key
-   *   The bb_core.settings key.
-   * @param int $fallback
-   *   The value used when the config is unset or not a positive integer.
-   *
-   * @return int
-   *   The effective setting value.
-   */
-  private function setting(string $key, int $fallback): int {
-    $value = $this->configFactory->get(self::SETTINGS)->get($key);
-    return is_numeric($value) && (int) $value > 0 ? (int) $value : $fallback;
   }
 
   /**
@@ -113,8 +91,7 @@ final class TicketClaimService {
    *   check failure, or a state change detected during the transaction).
    */
   public function claim(BbTicketInterface $ticket, BbConductorInterface $conductor, ?int $lease_seconds = NULL): BbRunInterface {
-    $lease_seconds ??= $this->setting('default_lease_seconds', self::DEFAULT_LEASE_SECONDS);
-    $lease_seconds = max(1, min($lease_seconds, $this->setting('max_lease_seconds', self::MAX_LEASE_SECONDS)));
+    $lease_seconds = max(1, min($lease_seconds ?? self::DEFAULT_LEASE_SECONDS, self::MAX_LEASE_SECONDS));
     $lock_name = 'bb_claim:' . $ticket->id();
     if (!$this->lock->acquire($lock_name, 10.0)) {
       throw new ClaimConflictException('claim_conflict: ticket is being claimed concurrently.');

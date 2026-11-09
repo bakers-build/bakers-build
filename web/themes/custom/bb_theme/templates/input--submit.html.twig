@@ -10,8 +10,9 @@
  */
 #}
 <input{{ attributes.addClass([
-  'submit', 'flex', 'items-center', 'justify-center', 'gap-[8px]', 'w-full',
+  'submit', 'flex', 'items-center', 'justify-center', 'gap-inline', 'w-full',
   'h-[40px]', 'rounded-sm', 'bg-surface-2', 'border', 'border-border', 'text-text',
-  'text-body', 'font-bold', 'cursor-pointer', 'hover:bg-surface-3',
+  'text-body-strong', 'cursor-pointer', 'hover:bg-surface-3',
   'disabled:opacity-60', 'disabled:cursor-not-allowed',
+  'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring',
 ]) }} />{{ children }}

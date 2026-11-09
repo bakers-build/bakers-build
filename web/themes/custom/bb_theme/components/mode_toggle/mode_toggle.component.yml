@@ -4,8 +4,9 @@ name: Mode Toggle
 status: stable
 group: Action
 description: >-
-  Appearance picker with five palettes and independent light/dark mode.
-  Persists selections locally through the synchronous skin bootstrap.
+  Appearance picker: Light, Dark or System, where System follows the operating
+  system's colour scheme. Persists the choice locally through the synchronous
+  mode bootstrap (js/skin.src.js).
 provider: bb_theme
 props:
   type: object
@@ -15,10 +16,12 @@ props:
       enum:
         - light
         - dark
+        - system
       title: Mode
       description: >-
-        Current colour mode, for static rendering only -- the runtime source of
-        truth is html[data-mode], read and flipped by js/skin.src.js.
+        Choice checked before the runtime reads the stored one, for static
+        rendering only -- the runtime source of truth is js/skin.src.js, which
+        sets html[data-mode].
     label:
       type: string
       title: Accessible label

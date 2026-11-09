@@ -1,6 +1,10 @@
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  killRunProcesses,
   type ProcProbe,
+  type RunProcessProbe,
   signalVerifiedProcess,
   verifyConductorProcess,
 } from '../../src/core/proc.js';
@@ -365,3 +369,79 @@ function fakeProbe(
     },
   } as FakeProbe;
 }
+
+describe('killRunProcesses', () => {
+  const RUN = '11111111-2222-3333-4444-555555555555';
+  function fakeProbe(procs: Record<number, { uid: number; env: string[] }>) {
+    const sent: [number, string][] = [];
+    const alive = new Set(Object.keys(procs).map(Number));
+    const probe: RunProcessProbe = {
+      supported: true,
+      pids: () => [...alive],
+      environOf: (pid) => (alive.has(pid) ? procs[pid]?.env : undefined),
+      uidOf: (pid) => procs[pid]?.uid,
+      send(pid, signal) {
+        sent.push([pid, signal]);
+        // 20 ignores TERM; everything else exits on it.
+        if (signal === 'SIGKILL' || pid !== 20) alive.delete(pid);
+      },
+    };
+    return { probe, sent };
+  }
+
+  it('signals only same-uid processes carrying the run uuid, then kills survivors', async () => {
+    const uid = process.getuid?.() ?? 0;
+    const { probe, sent } = fakeProbe({
+      10: { uid, env: [`BB_RUN_UUID=${RUN}`, 'PATH=/bin'] },
+      20: { uid, env: [`BB_RUN_UUID=${RUN}`] },
+      30: { uid, env: ['BB_RUN_UUID=other'] },
+      40: { uid: uid + 1, env: [`BB_RUN_UUID=${RUN}`] },
+      50: { uid, env: [`X_BB_RUN_UUID=${RUN}`] },
+    });
+    const result = await killRunProcesses(RUN, probe, 0);
+    expect(sent).toEqual([
+      [10, 'SIGTERM'],
+      [20, 'SIGTERM'],
+      [20, 'SIGKILL'],
+    ]);
+    expect(result).toEqual({ supported: true, pids: [10, 20] });
+  });
+
+  it('is a no-op on an unsupported platform', async () => {
+    const { probe, sent } = fakeProbe({});
+    expect(
+      await killRunProcesses(RUN, { ...probe, supported: false }, 0),
+    ).toEqual({ supported: false, pids: [] });
+    expect(sent).toEqual([]);
+  });
+
+  it.runIf(process.platform === 'linux')(
+    'ends a detached real process of the run and spares another run',
+    async () => {
+      const start = (uuid: string) => {
+        const child = spawn('sleep', ['60'], {
+          detached: true,
+          stdio: 'ignore',
+          env: { ...process.env, BB_RUN_UUID: uuid },
+        });
+        child.unref();
+        return child.pid as number;
+      };
+      const ours = start(RUN);
+      const theirs = start('99999999-2222-3333-4444-555555555555');
+      try {
+        await new Promise((r) => setTimeout(r, 200));
+        await killRunProcesses(RUN);
+        await new Promise((r) => setTimeout(r, 200));
+        expect(existsSync(`/proc/${ours}`)).toBe(false);
+        expect(existsSync(`/proc/${theirs}`)).toBe(true);
+      } finally {
+        for (const pid of [ours, theirs]) {
+          try {
+            process.kill(pid, 'SIGKILL');
+          } catch {}
+        }
+      }
+    },
+  );
+});

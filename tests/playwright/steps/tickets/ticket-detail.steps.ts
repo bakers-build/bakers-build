@@ -76,7 +76,7 @@ Then('exactly one canvas is present in the document', async ({ page }) => {
   await expect(page.locator(CANVAS)).toHaveCount(1);
 });
 
-// Asserted against the team screen too (a @negative-control scenario), because
+// Asserted against a gate screen too (a @negative-control scenario), because
 // a selector with a typo in it is empty everywhere and this claim is a NEGATIVE
 // on every other scenario that makes it.
 Then('no canvas is present in the document', async ({ page }) => {
@@ -598,4 +598,51 @@ Then('the run history comes before the handoff stream', async ({ page }) => {
 Then('no run history is shown', async ({ page }) => {
   await expect(runHistoryHeading(page)).toHaveCount(0);
   await expect(page.locator(`${MAIN_REGION} [data-cell="state"]`)).toHaveCount(0);
+});
+
+// ---------------------------------------------------------------------------
+// Semantics: the state flow marks one current step.
+// ---------------------------------------------------------------------------
+
+Then(
+  'the workflow list marks the state of ticket {string} as its one current step',
+  async ({ page }, identifier: string) => {
+    const state = php(
+      'print (($e = current(\\Drupal::entityTypeManager()->getStorage("bb_ticket")' +
+        `->loadByProperties(["identifier" => "${safe(identifier)}"]))) ? $e->get("state")->value : "");`,
+    );
+    const list = page.getByRole('list', { name: 'Workflow', exact: true });
+    const current = list.locator('li[aria-current="step"]');
+    await expect(current, 'the workflow list marks no single current step').toHaveCount(1);
+    await expect(current).toContainText(state);
+  },
+);
+
+// ---------------------------------------------------------------------------
+// Data formats: handoff times and the report source.
+// ---------------------------------------------------------------------------
+
+Then('every handoff time is a time element with its exact date on hover', async ({ page }) => {
+  const times = page.locator(`${MAIN_REGION} details.collapsible time`);
+  const count = await times.count();
+  expect(count, 'the handoff stream shows no time').toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    await expect(times.nth(i)).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}T/);
+    await expect(times.nth(i)).toHaveAttribute('title', /\d{4}, \d{2}:\d{2}/);
+  }
+});
+
+Then('every report row names its source before its counts', async ({ page }) => {
+  const rows = page.locator('.summary-band__links .link-report-row');
+  const count = await rows.count();
+  expect(count, 'the band shows no report row').toBeGreaterThan(0);
+  for (let i = 0; i < count; i++) {
+    const source = rows.nth(i).locator('.link-report-row__title');
+    await expect(source, 'a report row names no source').not.toHaveText('');
+    const leads = await source.evaluate(
+      (title, counts) => Boolean(counts && title.compareDocumentPosition(counts) & Node.DOCUMENT_POSITION_FOLLOWING),
+      await rows.nth(i).locator('.link-report-row__counts').elementHandle(),
+    );
+    expect(leads, 'the counts come before the source').toBe(true);
+  }
 });

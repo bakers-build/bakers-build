@@ -97,6 +97,9 @@ const PERMITTED_SIBLINGS = {
     '@bakers-build/addon-herdr',
     '@bakers-build/addon-workspace-git',
   ],
+  // herdr-core reuses herdr's 0600 launch wrapper and its watch
+  // (`addon-herdr/shared`).
+  '@bakers-build/addon-herdr-core': ['@bakers-build/addon-herdr'],
   // BB-403 added `addon-name-refs` on the same footing `addon-workspace`
   // used to carry: an essentials child, so the single non-auth `plugins[]`
   // entry every committed config already carries stays exactly as it is.
@@ -111,24 +114,29 @@ const PERMITTED_SIBLINGS = {
   // addon edges it exactly as `addon-herdr` edges the owner of
   // `loadInstructions`. Acyclicity check (a) is what keeps it honest.
   '@bakers-build/addon-bakers-ui-artifacts': ['@bakers-build/addon-bakers-ui'],
-  // BB-676 spec v2: `bakers ports` must not fire Docker/DDEV calls itself
-  // (operator decision 2026-10-15), so discovery/claim for DDEV moved to a
-  // sibling addon it calls through a plain function import, exactly as
-  // `addon-herdr` calls `addon-workspace-git`'s `loadInstructions` above.
-  // `addon-ddev` in turn consumes `addon-docker-compose`'s generic container
-  // discovery, one level further down the same one-directional chain.
-  // BB-681 Task 1: `addon-ports-drupal` (the Drupal host-header policy
-  // layer) is removed; a pluggable-transport replacement for any CMS-specific
-  // policy is a later task's concern.
-  '@bakers-build/addon-ports': ['@bakers-build/addon-ddev'],
-  '@bakers-build/addon-ddev': ['@bakers-build/addon-docker-compose'],
+  // BB-676 spec v2: `bakers ports` must not fire Docker calls itself
+  // (operator decision 2026-10-15). `addon-ports` owns the `Claimer` contract
+  // (its `./core` export) and loads claimer packages by name from its
+  // settings, never depending on one; `addon-ddev` implements that contract
+  // over `addon-docker-compose`'s generic container discovery.
+  // `addon-ports` takes only the generic `ss` parser from
+  // `addon-docker-compose`. BB-681 Task 1: `addon-ports-drupal` (the Drupal
+  // host-header policy layer) is removed.
+  '@bakers-build/addon-ports': ['@bakers-build/addon-docker-compose'],
+  '@bakers-build/addon-ddev': [
+    '@bakers-build/addon-ports',
+    '@bakers-build/addon-docker-compose',
+  ],
   // BB-681 Task 2/3/4: the pluggable-transport packages implement
   // `@bakers-build/addon-ports`'s `PortsTransport` contract (its `./core` export)
   // but are never depended on BY it — a one-directional edge, same shape as
-  // `addon-ddev -> addon-docker-compose` above.
+  // `addon-ddev -> addon-ports` above.
   '@bakers-build/addon-ports-cloudflare': ['@bakers-build/addon-ports'],
   '@bakers-build/addon-ports-cloudflare-quick': ['@bakers-build/addon-ports'],
   '@bakers-build/addon-ports-frp': ['@bakers-build/addon-ports'],
+  // `bakers deployment tickets` resolves identifiers through the Drupal remote
+  // built from the connection alone, so it runs on a machine with no conductor.
+  '@bakers-build/addon-deployment': ['@bakers-build/addon-remote-drupal'],
 };
 /** The conductor-surface preset accumulator names (see core's `SURFACE_KEYS`). */
 const CONDUCTOR_PRESET_KEYS = [
@@ -136,7 +144,6 @@ const CONDUCTOR_PRESET_KEYS = [
   'executors',
   'workspaces',
   'agents',
-  'processHosts',
   // Addon inbox (BB-661): a value export, but it compiles against the
   // conductor's `InboxMessages`, so it makes the addon a conductor-surface
   // contributor.
@@ -188,7 +195,9 @@ function exportsAnyAccumulator(dir, keys) {
 function readPackages() {
   const pkgs = new Map(); // name -> { deps, peers, dir, group, conductorSurface }
   const bakers = (obj) =>
-    new Set(Object.keys(obj ?? {}).filter((n) => n.startsWith('@bakers-build/')));
+    new Set(
+      Object.keys(obj ?? {}).filter((n) => n.startsWith('@bakers-build/')),
+    );
   const record = (dir, relDir, group) => {
     let pkg;
     try {
@@ -287,7 +296,9 @@ if (messageEdges.size > 0) {
 // (c) no edge to @bakers-build/bakers (the meta is a sink).
 for (const [name, targets] of edges) {
   if (targets.has('@bakers-build/bakers')) {
-    fail(`@bakers-build/bakers must have no incoming edge, but ${name} depends on it`);
+    fail(
+      `@bakers-build/bakers must have no incoming edge, but ${name} depends on it`,
+    );
   }
 }
 

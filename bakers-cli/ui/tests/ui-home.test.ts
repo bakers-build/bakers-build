@@ -2,35 +2,12 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { resolveAgentCommand, resolveProjectRooting } from '../src/ui-home.js';
+import { resolveProjectRooting } from '../src/ui-home.js';
 
-const machine = {
-  machine_id: 'host',
-  user_id: 'cw',
-  base_url: 'https://bakers.example',
-  client_id: 'bakers-agent',
-  client_secret: 's3cret',
-};
-
-describe('resolveAgentCommand', () => {
-  it('defaults to claude and shell-quotes the prompt', () => {
-    const cmd = resolveAgentCommand(machine);
-    expect(cmd('work BB-1')).toBe("claude 'work BB-1'");
-  });
-  it('returns the bare launch command for an empty prompt', () => {
-    expect(resolveAgentCommand(machine)('')).toBe('claude');
-  });
-  it('honours a configured agent_command binary', () => {
-    expect(
-      resolveAgentCommand({ ...machine, agent_command: 'codex' })('x'),
-    ).toBe("codex 'x'");
-  });
-});
-
-// BB-219 (AC-9, D5): `bakers ui` roots its agents in the project you STARTED
-// IT IN, not in whatever project the conductor registry happens to prefer. The
-// trigger is the cwd — deliberately NOT the winning connection config, so an
-// explicit `--config` cannot silently relocate the agents' working directory.
+// BB-219 (AC-9, D5): `bakers ui` roots in the project you STARTED IT IN, not in
+// whatever project the conductor registry happens to prefer. The trigger is the
+// cwd — deliberately NOT the winning connection config, so an explicit
+// `--config` cannot silently relocate the cockpit's working directory.
 // The walk-up itself is core's `findProjectBbDir` — "is there a `.bakers/`
 // here", NOT the connection walk-up `findBbConfig`, which since BB-230
 // skips an engine-only `conductor.config.js`. This helper only decides what to

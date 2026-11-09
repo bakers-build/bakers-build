@@ -18,7 +18,7 @@ import { presentation } from '../../src/Screen/screen.js';
 // renderer paints from `borderColor`, and a body Yoga placed inside it. The Node
 // suite can only see the tree (spec D8).
 
-const CONTENT = ['▸ Title:', '    the value', '  [ Create directly ]'];
+const CONTENT = ['▸ Title:', '    the value', '  [ Save ]'];
 
 const input = (over: Partial<ChromeInput> = {}): ChromeInput => ({
   tab: null,
@@ -26,7 +26,7 @@ const input = (over: Partial<ChromeInput> = {}): ChromeInput => ({
   reloadable: false,
   modal: true,
   width: 80,
-  title: '⚡ New ticket',
+  title: '⚡ Edit ticket',
   meta: 'bakers',
   status: ' Esc cancel ',
   ...over,
@@ -94,7 +94,7 @@ describe('the modal box holds a screen`s tree (spec D1)', () => {
     // the same box as the tree.
     expect(text).toContain('╭');
     expect(text).toContain('╰');
-    expect(text).toContain('⚡ New ticket · bakers');
+    expect(text).toContain('⚡ Edit ticket · bakers');
     expect(text).toContain('Esc cancel');
   });
 

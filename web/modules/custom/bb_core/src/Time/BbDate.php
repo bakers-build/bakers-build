@@ -10,27 +10,29 @@ use Drupal\Core\Datetime\FormattedDateDiff;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 
 /**
- * Product date display: named absolute format, and relative ago/hence.
+ * The one product path for displayed times and durations.
  *
- * `normal` is the Drupal date format. Relative time is TimeDiff, not a
- * date-format pattern.
+ * Under seven days a stamp reads relative ("2 hours ago", "in 3 hours"),
+ * older ones absolute ("15 Jun, 13:30"), another year as a date
+ * ("15 Jun 2025"). Rendered through `bb_theme:time` as
+ * `<time datetime title>`.
  */
 final class BbDate {
 
   use StringTranslationTrait;
 
   /**
-   * The product absolute date format id.
+   * Stamps closer than this read relative.
    */
-  public const NORMAL = 'normal';
+  private const RELATIVE_WINDOW = 7 * 86400;
 
   /**
    * Constructs the formatter.
    *
    * @param \Drupal\Core\Datetime\DateFormatterInterface $dateFormatter
-   *   Formats absolute timestamps through the `normal` date format.
+   *   Formats timestamps in the user's timezone.
    * @param \Drupal\Component\Datetime\TimeInterface $time
-   *   Request time, so ago versus hence is stable per request.
+   *   Request time, so relative labels are stable per request.
    */
   public function __construct(
     private readonly DateFormatterInterface $dateFormatter,
@@ -38,54 +40,150 @@ final class BbDate {
   ) {}
 
   /**
-   * Absolute timestamp in the product `normal` format.
+   * The `bb_theme:time` element for a point in time.
    *
    * @param int $timestamp
    *   Unix timestamp.
    *
-   * @return string
-   *   A value such as "30 Jun 2026, 15:50".
+   * @return array<string, mixed>
+   *   A component render array; a relative label carries its max-age.
    */
-  public function normal(int $timestamp): string {
-    return $this->dateFormatter->format($timestamp, self::NORMAL);
-  }
-
-  /**
-   * Relative timestamp: "@interval ago" in the past, "@interval hence" ahead.
-   *
-   * @param int $timestamp
-   *   Unix timestamp.
-   *
-   * @return string
-   *   A value such as "2 hours ago" or "9 minutes hence".
-   */
-  public function ago(int $timestamp): string {
-    $options = ['granularity' => 1];
-    if ($timestamp > $this->time->getRequestTime()) {
-      return (string) $this->t('@interval hence', [
-        '@interval' => $this->interval(
-          $this->dateFormatter->formatTimeDiffUntil($timestamp, $options),
-        ),
-      ]);
+  public function time(int $timestamp): array {
+    $relative = $this->relative($timestamp);
+    $element = $this->element($timestamp, $relative?->getString() ?? $this->absolute($timestamp));
+    if ($relative) {
+      $element['#cache']['max-age'] = $relative->getCacheMaxAge();
     }
-    return (string) $this->t('@interval ago', [
-      '@interval' => $this->interval(
-        $this->dateFormatter->formatTimeDiffSince($timestamp, $options),
-      ),
-    ]);
+    return $element;
   }
 
   /**
-   * The printable interval from a TimeDiff result.
+   * The `bb_theme:time` element for a calendar date ("6 Jan"), never relative.
    *
-   * @param \Drupal\Core\Datetime\FormattedDateDiff|string $diff
-   *   Cacheable diff object or already-plain string.
+   * @param int $timestamp
+   *   Unix timestamp.
+   *
+   * @return array<string, mixed>
+   *   A component render array.
+   */
+  public function dateElement(int $timestamp): array {
+    return $this->element($timestamp, $this->date($timestamp));
+  }
+
+  /**
+   * The `time` cell of a `bb_theme:table` or `bb_theme:list` row.
+   *
+   * @param int $timestamp
+   *   Unix timestamp.
+   *
+   * @return array<string, string>
+   *   The cell: `kind`, `label`, `datetime`, `title`.
+   */
+  public function cell(int $timestamp): array {
+    // shortcut: a cell is plain data and carries no max-age, so a relative
+    // label ages until the surrounding render expires; move cells to render
+    // arrays if a cached screen shows stale "ago" labels.
+    return ['kind' => 'time'] + $this->element($timestamp, $this->label($timestamp))['#props'];
+  }
+
+  /**
+   * The `bb_theme:time` element with a given label.
+   *
+   * @return array<string, mixed>
+   *   The component render array.
+   */
+  private function element(int $timestamp, string $label): array {
+    return [
+      '#type' => 'component',
+      '#component' => 'bb_theme:time',
+      '#props' => [
+        'datetime' => $this->dateFormatter->format($timestamp, 'custom', 'c'),
+        'title' => $this->dateFormatter->format($timestamp, 'custom', 'D, j M Y, H:i T'),
+        'label' => $label,
+      ],
+    ];
+  }
+
+  /**
+   * The display label of a point in time, for plain-text contexts.
+   *
+   * @param int $timestamp
+   *   Unix timestamp.
    *
    * @return string
-   *   The interval text.
+   *   "2 hours ago", "in 3 hours", "15 Jun, 13:30" or "15 Jun 2025".
    */
-  private function interval(FormattedDateDiff|string $diff): string {
-    return $diff instanceof FormattedDateDiff ? $diff->getString() : $diff;
+  public function label(int $timestamp): string {
+    return $this->relative($timestamp)?->getString() ?? $this->absolute($timestamp);
+  }
+
+  /**
+   * A calendar date: "6 Jan", or "6 Jan 2025" in another year.
+   *
+   * @param int $timestamp
+   *   Unix timestamp.
+   *
+   * @return string
+   *   The date label.
+   */
+  public function date(int $timestamp): string {
+    return $this->dateFormatter->format($timestamp, 'custom', $this->sameYear($timestamp) ? 'j M' : 'j M Y');
+  }
+
+  /**
+   * A duration: "41s", "36 min", or "1h 10m" past an hour.
+   *
+   * @param int $seconds
+   *   Length in seconds; negative counts as zero.
+   *
+   * @return string
+   *   The duration label.
+   */
+  public function duration(int $seconds): string {
+    $seconds = max(0, $seconds);
+    if ($seconds < 60) {
+      return $seconds . 's';
+    }
+    if ($seconds < 3600) {
+      return intdiv($seconds, 60) . ' min';
+    }
+    return intdiv($seconds, 3600) . 'h ' . intdiv($seconds % 3600, 60) . 'm';
+  }
+
+  /**
+   * The relative label within the window, else NULL.
+   */
+  private function relative(int $timestamp): ?FormattedDateDiff {
+    $now = $this->time->getRequestTime();
+    if (abs($timestamp - $now) >= self::RELATIVE_WINDOW) {
+      return NULL;
+    }
+    $options = ['granularity' => 1, 'return_as_object' => TRUE];
+    $ahead = $timestamp > $now;
+    $diff = $ahead
+      ? $this->dateFormatter->formatTimeDiffUntil($timestamp, $options)
+      : $this->dateFormatter->formatTimeDiffSince($timestamp, $options);
+    // `return_as_object` yields an object; the interface still types a string.
+    $interval = $diff instanceof FormattedDateDiff ? $diff->getString() : $diff;
+    $maxAge = $diff instanceof FormattedDateDiff ? $diff->getCacheMaxAge() : 0;
+    $label = $ahead
+      ? $this->t('in @interval', ['@interval' => $interval])
+      : $this->t('@interval ago', ['@interval' => $interval]);
+    return new FormattedDateDiff((string) $label, $maxAge);
+  }
+
+  /**
+   * The absolute label: "15 Jun, 13:30", or "15 Jun 2025" in another year.
+   */
+  private function absolute(int $timestamp): string {
+    return $this->dateFormatter->format($timestamp, 'custom', $this->sameYear($timestamp) ? 'j M, H:i' : 'j M Y');
+  }
+
+  /**
+   * Whether the stamp falls in the request's year, in the user's timezone.
+   */
+  private function sameYear(int $timestamp): bool {
+    return $this->dateFormatter->format($timestamp, 'custom', 'Y') === $this->dateFormatter->format($this->time->getRequestTime(), 'custom', 'Y');
   }
 
 }

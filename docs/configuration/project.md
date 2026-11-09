@@ -44,13 +44,14 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `addons` | Packages that contribute the slots: a name, or `{ use, with }`. A direct slot beats an addon; otherwise the last contributor wins with a warning. |
 | `states` | Workflow states this conductor serves. Omitted or empty serves every claimable state. |
 | `poll_interval_ms` | Positive integer, default `5000`. |
-| `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600 unless configured otherwise. It is an ownership duration, not a task timeout. |
-| `hooks` | Lifecycle commands `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`, and the agent tool `provision_up`; see [Hooks](/configuration/provisioning/hooks). Omitted hooks do nothing. |
+| `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600. It is an ownership duration, not a task timeout. |
+| `hooks` | Lifecycle commands `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`, and the agent tool `provision_up`, which brings the environment up and reuses a ready one; see [Hooks](/provision/hooks). Omitted hooks do nothing. |
 | `prompt` | Agent prompt template with `{identifier}`, `{state}` and `{runUuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
-| `selectAgent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/configuration/agents). |
+| `security` | Run security for every agent of every machine that runs this project: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/provision/security/shared-settings). |
+| `selectAgent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/agents/guide). |
 | `schema_version` | Written by `bakers config init` and `upgrade`; the current project schema is 1. |
 
-`capture_logs` is written as `true` by the generator. Set it to `false` to keep this conductor's run transcripts off the server: the footprint (tokens, turns, tool calls) is still recorded, the transcript stays on this machine.
+`capture_logs` is written as `true` by the generator. The server decides whether a run's transcript is uploaded at all ([Run-log storage](/self-hosting/server#run-log-storage)); `true` follows that decision. Set it to `false` to keep this conductor's run transcripts off the server even where storage is allowed: the footprint (tokens, turns, tool calls) is still recorded, the transcript stays on this machine.
 
 The loader rejects two old shapes: top-level `project` or `bb_workspace` instead of `bakers`, and `agent`, `agents`, `default_agent` or `agent_routes` (agent policy lives in the machine file). `site`, `plugins` and `max_parallel` are ignored with a warning; the run budget is set on the machine in the backend. Move or remove them by hand; `bakers config upgrade` no longer rewrites them ([Configuration migration](/configuration/project/migration)). Agent addons listed in `addons` are dropped with a warning.
 
@@ -87,7 +88,7 @@ states: ['working', 'review'],
 poll_interval_ms: 10000,
 ```
 
-Use real workflow state names ([Workflows and states](/configuration/workflows/states)). A restricted conductor never claims a ticket in another state. Add `qualification` when it should qualify hand-written tickets.
+Use real workflow state names ([Workflows and states](/skills-and-workflows/states)). A restricted conductor never claims a ticket in another state. Add `qualification` when it should qualify hand-written tickets.
 
 ## Named variants
 

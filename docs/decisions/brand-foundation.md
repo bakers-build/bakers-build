@@ -154,9 +154,17 @@ People at every station (decided 2026-10-23): people take part at every station,
 
 The bakers are the people: the agency lead, the client and the developer. They own the recipes and make the decisions. The agents are the tools and machines of the line.
 
-### Core line
+### Current slogan {#current-slogan}
 
-The owner likes both (decided: shortlist). One is chosen in the next step.
+**A ticket-driven software factory.**
+
+Provisional canonical slogan, agreed on 2026-11-08. This section owns its wording; product guidance and the Designbook vision reference it rather than maintaining another slogan.
+
+The production line carries tickets through workflow states. Agents do the work; people observe, discuss and decide at the relevant stations. Clients are windows onto that line: herdr-cli, herdr-app, Orca and Hermes expose different views and actions. They can complement each other without sharing a terminal host or offering identical capabilities.
+
+### Earlier core-line candidates
+
+The owner liked both in the 2026-10-23 shortlist. Kept as history; the current provisional choice is maintained above.
 
 1. "You're the baker. Agents run the line."
 2. "Your recipes. Your line. Fresh builds every day."

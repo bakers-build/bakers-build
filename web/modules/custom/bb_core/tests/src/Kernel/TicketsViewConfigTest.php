@@ -236,7 +236,7 @@ final class TicketsViewConfigTest extends KernelTestBase {
       'title' => 'string',
       'state' => 'bb_ticket_state_icon_cell',
       'priority' => 'bb_ticket_priority_cell',
-      'created' => 'timestamp_ago',
+      'created' => 'bb_time',
       'owner' => 'bb_ticket_owner_cell',
       'assignee' => 'bb_ticket_assignee_avatar_cell',
       'conductor' => 'bb_ticket_conductor_cell',

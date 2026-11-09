@@ -79,7 +79,6 @@ export async function runTicketTui(
   const environment = {
     services: {
       ...services,
-      ...(options.agents ? { agents: options.agents } : {}),
       ...(options.writeClient ? { writeClient: options.writeClient } : {}),
       ...(options.conductorProcess
         ? { conductorProcess: options.conductorProcess }
@@ -104,9 +103,6 @@ export async function runTicketTui(
         : {}),
       ...(options.currentUser ? { currentUser: options.currentUser } : {}),
       isWorkspaceAdmin: options.isWorkspaceAdmin ?? false,
-      ...(options.ownConductorMachineId
-        ? { ownConductorMachineId: options.ownConductorMachineId }
-        : {}),
     },
     nowSeconds,
   };
@@ -508,7 +504,7 @@ export async function runTicketTui(
         return;
       }
       // `back()` false means there was nowhere to go back TO, and `fallback()`
-      // re-enters the current route — which is why Escape on the root dashboard
+      // re-enters the current route — which is why Escape on the root landing screen
       // correctly does nothing visible. The trace records which of the two ran,
       // because from the operator's chair they are indistinguishable.
       const went = router.back();

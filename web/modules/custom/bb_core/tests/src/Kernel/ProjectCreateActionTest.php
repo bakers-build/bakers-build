@@ -337,15 +337,21 @@ final class ProjectCreateActionTest extends KernelTestBase {
       $sources = $data['display']['workspace_list']['display_options']['display_extenders']['display_builder']['sources'] ?? NULL;
       self::assertIsArray($sources, "$where composes no workspace_list display_builder tree.");
 
-      $listing = $sources[0]['source']['component'] ?? [];
+      $canvas = $sources[0]['source']['component'] ?? [];
+      self::assertSame(
+        ['block', 'component'],
+        array_column($canvas['slots']['main']['sources'] ?? [], 'source_id'),
+        "$where must lead with the status messages, then the listing zone.",
+      );
+      $listing = $canvas['slots']['main']['sources'][1]['source']['component'] ?? [];
       self::assertSame('bb_theme:zone', $listing['component_id'] ?? NULL, "$where does not compose the listing zone.");
       self::assertArrayNotHasKey(
         'header',
-        $listing['slots'] ?? [],
+        $canvas['slots'] ?? [],
         "$where still paints a page_header; the heading is the shell island.",
       );
       self::assertSame(
-        ['block', 'component', 'view_rows', 'view_pager', 'view_exposed'],
+        ['component', 'view_rows', 'view_pager', 'view_exposed'],
         array_column($listing['slots']['content']['sources'] ?? [], 'source_id'),
         "$where must place the search toolbar above the listing rows.",
       );
@@ -376,7 +382,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
             '#props' => ['size' => $size],
           ];
           $html = (string) $this->container->get('renderer')->renderInIsolation($brand);
-          self::assertStringContainsString('bakers-braid.svg?v=' . $token . '"', $html);
+          self::assertStringContainsString('/themes/custom/bb_theme/logo-wordmark.svg?v=' . $token . '"', $html);
         }
       }
     }
@@ -390,7 +396,7 @@ final class ProjectCreateActionTest extends KernelTestBase {
       AssetQueryString::STATE_KEY, 'boundary',
     );
     $handler = $this->container->get('module_handler');
-    foreach (['dist/assets/icons/sprite.svg', 'assets/brand/bakers-braid.svg'] as $asset) {
+    foreach (['dist/assets/icons/sprite.svg', 'logo-wordmark.svg'] as $asset) {
       foreach (['', '/'] as $prefix) {
         $uri = $prefix . 'themes/custom/bb_theme/' . $asset;
         $expected = $uri . '?v=boundary';
@@ -403,11 +409,11 @@ final class ProjectCreateActionTest extends KernelTestBase {
     foreach ([
       '/themes/custom/bb_theme/dist/js/skin.js',
       '/themes/custom/bb_theme/dist/css/base.css',
-      '/themes/custom/other/assets/brand/bakers-braid.svg',
-      'https://example.test/themes/custom/bb_theme/assets/brand/bakers-braid.svg',
-      '//example.test/themes/custom/bb_theme/assets/brand/bakers-braid.svg',
-      'public://bakers-braid.svg',
-      '/themes/custom/bb_theme/assets/brand/bakers-braid.svg?other=1',
+      '/themes/custom/other/logo-wordmark.svg',
+      'https://example.test/themes/custom/bb_theme/logo-wordmark.svg',
+      '//example.test/themes/custom/bb_theme/logo-wordmark.svg',
+      'public://logo-wordmark.svg',
+      '/themes/custom/bb_theme/logo-wordmark.svg?other=1',
       '/themes/custom/bb_theme/dist/assets/icons/sprite.svg#plus',
     ] as $original) {
       $uri = $original;

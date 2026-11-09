@@ -343,7 +343,7 @@ export function runDetailTree(
  * The run block as PLAIN TEXT — the pipe's own output (spec F5).
  *
  * The operator's ruling after plan Task 10: a run is handled exactly like every
- * other entity. `ticket.detail`, the dashboard and the project picker each print
+ * other entity. `ticket.detail` and the project picker each print
  * a deliberately different text into a pipe rather than a rendering of their
  * surface; the run detail was the only entity detail that did not, which is the
  * only reason its rows went through the tree→text path at all. That path renders

@@ -11,7 +11,11 @@ database:
     version: "11.8"
 use_dns_when_possible: true
 composer_version: "2"
-web_environment: []
+# Untrusted Playwright code runs here (docs/bakers/testing.md#setup); nothing here needs these credentials.
+web_environment:
+  - KEYTEC_REGISTRY_TOKEN=
+  - KEYTEC_REGISTRY_WRITE_TOKEN=
+omit_containers: [ddev-ssh-agent]
 corepack_enable: true
 
 # Key features of DDEV's config.yaml:

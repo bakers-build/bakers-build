@@ -11,7 +11,7 @@ slots:
           - review
           - done
         current: working
-        label: Workflow state flow
+        label: Workflow
   summary:
     - type: component
       component: bb_theme:event
@@ -22,7 +22,11 @@ slots:
         role: agent
         tag: summary
         timestamp: 2026-06-29 09:14
-        body: <p>Extracted the transition table into <code>config/install/bb_ticket.workflow.yml</code>. Loaded transitions in the constructor, validated edges against the config on save, kept the e2e fixture states unchanged.</p>
+        body: >-
+          <p>Extracted the transition table into
+          <code>config/install/bb_ticket.workflow.yml</code>. Loaded transitions
+          in the constructor, validated edges against the config on save, kept
+          the e2e fixture states unchanged.</p>
   links:
     - type: component
       component: bb_theme:link-group

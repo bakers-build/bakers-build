@@ -13,6 +13,8 @@ while [ "$#" -gt 0 ]; do
 done
 case "$provider" in existing-config|recipe|recipe-test) ;; *) echo 'Unsupported init provider' >&2; exit 1 ;; esac
 cd "${DDEV_APPROOT:-$(pwd)}"
+# Any reinstall invalidates `ddev provision`'s record of the installed provider.
+rm -f .ddev/.bakers-test/profile
 node scripts/setup-worktree.mjs
 # Check the registry before startup: an existing name must belong to this exact root.
 ddev list -j | node --input-type=module -e '
@@ -40,6 +42,7 @@ if (project.name !== name || realpathSync(project.approot) !== realpathSync(".")
 ddev start
 ddev composer install
 ddev exec 'cd web/themes/custom/bb_theme && pnpm install --frozen-lockfile && pnpm build'
+ddev exec 'cd tests/playwright && npm ci --no-audit --no-fund'
 case "$provider" in
   existing-config)
     mkdir -p .ddev/.bakers-test

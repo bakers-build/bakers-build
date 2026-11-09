@@ -230,17 +230,8 @@ final class ConfigCopyDriftTest extends UnitTestCase {
     'bb_core.bb_vocabulary.recipe',
     'bb_core.bb_vocabulary.type',
     'search_api.index.bb_runs',
-    // The three admin listings under /admin/bakers (BB-471). They used to
-    // reach the recipe path through bb_dashboard's own `config: import:`
-    // block; with that module gone they need the two homes every other
-    // shipped view has. No `config: import:` entry — a file in the recipe's
-    // own config/ is on the same strict list, so naming it would be a second
-    // route to one file.
     'views.view.conductors',
     'views.view.conductor_tickets',
-    'views.view.bb_conductors',
-    'views.view.bb_runs',
-    'views.view.bb_tickets',
     'views.view.groups',
     'views.view.machines',
     'views.view.project_board',

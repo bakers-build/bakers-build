@@ -1,4 +1,5 @@
 import type { RootGitExec } from '@bakers-build/core';
+import type { OrcaOpenLayout } from './workspace.js';
 
 export interface OrcaStateConfig {
   /**
@@ -13,15 +14,8 @@ export interface OrcaStateConfig {
 export interface OrcaExecutorOptions {
   /** Fallback agent command when the conductor supplies none. */
   command?: string;
-  /** Lifecycle-hook commands, copied from `config.hooks` by the factory. */
-  hooks?: {
-    after_create?: string;
-    before_run?: string;
-    after_run?: string;
-    after_done?: string;
-    on_freeze?: string;
-    on_resume?: string;
-  };
+  /** Overview terminal of a fresh worktree. Unset → `DEFAULT_OPEN_LAYOUT`. */
+  open?: OrcaOpenLayout;
   /** Main clone; otherwise derived from the git common dir by the factory. */
   root?: string;
   /** Overrideable git exec for root derivation (tests). */

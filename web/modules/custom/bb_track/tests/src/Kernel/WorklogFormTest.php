@@ -516,6 +516,22 @@ final class WorklogFormTest extends KernelTestBase {
   }
 
   /**
+   * On the full-page form, Delete opens the confirm page.
+   *
+   * That page renders in the zone layout, which has no overlay to target.
+   */
+  public function testPageFormDeleteLinksToTheConfirmPage(): void {
+    $this->actAs($this->employee);
+    $entry = $this->createRecorded($this->employee);
+    $form = $this->container->get('form_builder')->getForm(WorklogForm::class, $entry);
+    $props = $form['delete']['#props'];
+    self::assertStringContainsString('/time/' . $entry->uuid() . '/delete', $props['href']);
+    $attributes = (string) ($props['attributes'] ?? '');
+    self::assertStringNotContainsString('hx-target', $attributes);
+    self::assertStringNotContainsString('hx-get', $attributes);
+  }
+
+  /**
    * An unresolved ticket is removed by picking No ticket.
    */
   public function testUnresolvedTicketIsRemovedWithNoTicket(): void {
@@ -1041,6 +1057,61 @@ final class WorklogFormTest extends KernelTestBase {
     self::assertSame('bb_track.worklog.edit', $cancel->getRouteName());
     self::assertSame($entry->uuid(), $cancel->getRouteParameters()['bb_track_worklog']);
     self::assertSame($destination, $cancel->getOption('query')['destination'] ?? NULL);
+  }
+
+  /**
+   * The edit form's Delete opens the confirm dialog over the same overview.
+   */
+  public function testDeleteOpensTheDialogOverTheOverview(): void {
+    $this->actAs($this->employee);
+    $entry = $this->createRecorded($this->employee);
+    $destination = '/workspace-a/time?mode=day&date=2026-10-06';
+    $this->pushFormRequest('/time/' . $entry->uuid() . '/edit', [
+      '_wrapper_format' => 'island_dialog',
+      'destination' => $destination,
+    ]);
+    $form = $this->container->get('form_builder')->getForm(WorklogForm::class, $entry);
+    $attributes = $form['delete']['#props']['attributes']->toArray();
+    parse_str((string) parse_url((string) $attributes['data-hx-get'], PHP_URL_QUERY), $query);
+    self::assertSame('island_dialog', $query['_wrapper_format'] ?? NULL);
+    self::assertSame($destination, $query['destination'] ?? NULL, 'the dialog closes to the overview under the edit dialog');
+    self::assertSame('#bakers-overlay', $attributes['data-hx-target'] ?? NULL);
+  }
+
+  /**
+   * The delete confirm answers the dialog: posts back, cancel closes it.
+   */
+  public function testDeleteDialogRequestAttachesHtmx(): void {
+    $this->actAs($this->employee);
+    $entry = $this->createRecorded($this->employee);
+    $destination = '/workspace-a/time?mode=day&date=2026-10-06';
+    $this->pushFormRequest('/time/' . $entry->uuid() . '/delete', [
+      '_wrapper_format' => 'island_dialog',
+      'destination' => $destination,
+    ]);
+    $form = $this->container->get('form_builder')->getForm(WorklogDeleteForm::class, $entry);
+    self::assertStringContainsString('_wrapper_format=island_dialog', (string) ($form['#attributes']['data-hx-post'] ?? ''));
+    $row = $form[WrappedRouteRenderer::ACTIONS_SLOT_PROPERTY] ?? [];
+    self::assertSame($destination, $row['cancel']['#props']['href'] ?? NULL);
+    self::assertSame('form', array_key_first(array_intersect_key($row['submit']['#attributes'] ?? [], ['form' => 1])), 'the confirm sits in the footer');
+  }
+
+  /**
+   * A confirmed delete lands on the overview it was opened from.
+   */
+  public function testDeleteLandsOnTheOverview(): void {
+    $this->actAs($this->employee);
+    $entry = $this->createRecorded($this->employee);
+    $destination = '/workspace-a/time?mode=day&date=2026-10-06';
+    $this->pushFormRequest('/time/' . $entry->uuid() . '/delete', ['destination' => $destination]);
+
+    $delete_state = $this->submitDelete($entry);
+    $delete_state->setProgrammed(FALSE);
+
+    self::assertSame([], $delete_state->getErrors());
+    $redirect = $delete_state->getRedirect();
+    self::assertInstanceOf(Url::class, $redirect);
+    self::assertSame($destination, $redirect->toString());
   }
 
   /**

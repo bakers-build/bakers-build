@@ -1,4 +1,5 @@
 import { createBbConnectionContext, toUnixSeconds } from '@bakers-build/core';
+import { createToolClient } from '@dropsh/plugin-tool';
 
 // BB-224 (Finding 6, decision 8): the Drupal control-plane remote — formerly
 // `@bakers-build/core`'s `plugins/remote/drupal.ts`, now its own conductor-surface
@@ -23,6 +24,7 @@ import type {
   RemotePlugin,
   RunMetrics,
   RunWriteAttributes,
+  SiteToolClient,
   Ticket,
   TicketMetric,
   UncleanTicket,
@@ -167,6 +169,7 @@ async function throwingRunLogFetcher(): Promise<string> {
 }
 
 export class DrupalBbRemote implements BbRemote {
+  siteTools?: SiteToolClient;
   constructor(
     private readonly api: JsonApiClient,
     private readonly selection?: BbProjectSelection,
@@ -718,6 +721,8 @@ export class DrupalBbRemote implements BbRemote {
       worktreePath: r.attr<string>('worktree_path') ?? '',
       agent: r.attr<string>('agent') ?? '',
       startedAt: r.attr<string>('started_at') ?? '',
+      // Strict: an older server sends nothing, which must mean "do not upload".
+      runLogStorageAllowed: r.attr<unknown>('run_log_storage_allowed') === true,
     }));
   }
 
@@ -734,6 +739,7 @@ export class DrupalBbRemote implements BbRemote {
         'started_at',
         'state_at_start',
         'ticket_id',
+        'run_log_storage_allowed',
       ])
       .page(100)
       .list();
@@ -938,7 +944,7 @@ export class DrupalBbRemote implements BbRemote {
     const run = await this.api
       .collection('bb_run')
       .where('id', '=', runUuid)
-      .fields(['id'])
+      .fields(['id', 'run_log_storage_allowed'])
       .first();
     if (!run) {
       // Refuse rather than guess. With no row read, `existing` below would be ''
@@ -949,6 +955,11 @@ export class DrupalBbRemote implements BbRemote {
       throw new Error(
         `bb_run ${runUuid} could not be read — run note not written`,
       );
+    }
+    // Transcript storage is off for this run: the note belongs in the
+    // transcript, so neither download nor rewrite it.
+    if (run.attr<unknown>('run_log_storage_allowed') !== true) {
+      return;
     }
     // BB-556: the JSON:API `log` attribute is ALWAYS empty on a reload —
     // `BbRun::preSave()` moves any payload to a file and clears the field —
@@ -1083,12 +1094,19 @@ export function drupalRemote(): RemotePlugin {
           ),
         },
       );
-      return new DrupalBbRemote(
+      const remote = new DrupalBbRemote(
         context.client,
         config.bakers,
         config.resolved_bakers?.projectId,
         createRunLogFetcher(context.http, context.auth, context.baseUrl),
       );
+      // The site's tools for agent runs, on the same auth profile: the run never holds it.
+      remote.siteTools = createToolClient({
+        auth: context.auth,
+        baseUrl: context.baseUrl,
+        endpoint: '/mcp',
+      });
+      return remote;
     },
   };
 }

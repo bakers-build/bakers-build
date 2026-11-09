@@ -1,7 +1,7 @@
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { ConductorLogger } from '@bakers-build/core';
 import { afterEach, describe, expect, it } from 'vitest';
 import { OrcaWorkspace, orcaWorkspace } from '../src/workspace.js';
 import { fakeOrca, notFound } from './fakes.js';
@@ -124,10 +124,41 @@ describe('OrcaWorkspace.ensure', () => {
     ]);
   });
 
-  it('tracks a branch that only exists on origin', async () => {
+  it('checks out a branch that only exists on origin without tracking it', async () => {
     const root = tmpRoot();
     const { git, calls } = fakeGit({ refs: ['refs/remotes/origin/feat/x'] });
     await workspace(root, fakeOrca().orca, git).ensure('BAKERS-1', 'feat/x');
+    const path = join(root, '.bakers-worktrees', 'feat/x');
+    expect(worktreeAdds(calls)).toEqual([
+      ['-C', root, 'worktree', 'add', '-b', 'feat/x', path, 'origin/feat/x'],
+    ]);
+  });
+
+  it('sets branch.autoSetupMerge=false in the root and gives the run push.default=current', async () => {
+    const root = tmpRoot();
+    execFileSync('git', ['init', '-q', root]);
+    const ws = await workspace(root, fakeOrca().orca, fakeGit().git).ensure(
+      'BAKERS-1',
+      'feat/x',
+    );
+    expect(
+      execFileSync('git', ['-C', root, 'config', 'branch.autoSetupMerge'], {
+        encoding: 'utf8',
+      }).trim(),
+    ).toBe('false');
+    const env = ws.env ?? {};
+    const last = Number(env.GIT_CONFIG_COUNT) - 1;
+    expect(env[`GIT_CONFIG_KEY_${last}`]).toBe('push.default');
+    expect(env[`GIT_CONFIG_VALUE_${last}`]).toBe('current');
+  });
+
+  it('tracks a branch that only exists on origin with autoSetupMerge: true', async () => {
+    const root = tmpRoot();
+    const { git, calls } = fakeGit({ refs: ['refs/remotes/origin/feat/x'] });
+    const ws = await workspace(root, fakeOrca().orca, git, {
+      autoSetupMerge: true,
+    }).ensure('BAKERS-1', 'feat/x');
+    expect(ws.env).toBeUndefined();
     const path = join(root, '.bakers-worktrees', 'feat/x');
     expect(worktreeAdds(calls)).toEqual([
       [
@@ -144,7 +175,7 @@ describe('OrcaWorkspace.ensure', () => {
     ]);
   });
 
-  it('reuses a registered worktree on disk without applying the open layout', async () => {
+  it('reuses a registered worktree on disk (created=false, so no open layout)', async () => {
     const root = tmpRoot();
     const path = join(root, '.bakers-worktrees', 'feat/x');
     mkdirSync(path, { recursive: true });
@@ -156,11 +187,6 @@ describe('OrcaWorkspace.ensure', () => {
     const result = await ws.ensure('BAKERS-1', 'feat/x');
     expect(result.created).toBe(false);
     expect(worktreeAdds(gitCalls)).toEqual([]);
-    await ws.applyOpenLayout(path, {
-      identifier: 'BAKERS-1',
-      branch: 'feat/x',
-      title: 'T',
-    });
     expect(calls.some((c) => c[0] === 'terminal')).toBe(false);
   });
 
@@ -189,63 +215,6 @@ describe('OrcaWorkspace.ensure', () => {
         'feat/x',
       ),
     ).rejects.toThrow(/Orca did not pick up worktree .* within 3s/);
-  });
-});
-
-describe('OrcaWorkspace.applyOpenLayout', () => {
-  const ctx = {
-    identifier: 'BAKERS-1',
-    branch: 'feat/x',
-    title: 'Fix the labels',
-  };
-
-  it('opens the ticket overview terminal on a freshly created worktree', async () => {
-    const root = tmpRoot();
-    const { orca, calls } = fakeOrca();
-    const ws = workspace(root, orca, fakeGit().git);
-    const { path } = await ws.ensure('BAKERS-1', 'feat/x');
-    await ws.applyOpenLayout(path, ctx);
-    expect(calls).toContainEqual([
-      'terminal',
-      'create',
-      '--worktree',
-      `path:${path}`,
-      '--title',
-      'BAKERS-1 · Fix the labels',
-      '--command',
-      'bakers ui --ticket BAKERS-1',
-    ]);
-  });
-
-  it('opens nothing with open: {}', async () => {
-    const root = tmpRoot();
-    const { orca, calls } = fakeOrca();
-    const ws = workspace(root, orca, fakeGit().git, { open: {} });
-    const { path } = await ws.ensure('BAKERS-1', 'feat/x');
-    await ws.applyOpenLayout(path, ctx);
-    expect(calls.some((c) => c[0] === 'terminal')).toBe(false);
-  });
-
-  it('logs and swallows a failing terminal create', async () => {
-    const root = tmpRoot();
-    const warnings: unknown[] = [];
-    const logger: ConductorLogger = {
-      debug() {},
-      info() {},
-      warn(obj: object) {
-        warnings.push(obj);
-      },
-      error() {},
-    };
-    const { orca } = fakeOrca({
-      'terminal create': () => {
-        throw new Error('boom');
-      },
-    });
-    const ws = workspace(root, orca, fakeGit().git, { logger });
-    const { path } = await ws.ensure('BAKERS-1', 'feat/x');
-    await expect(ws.applyOpenLayout(path, ctx)).resolves.toBeUndefined();
-    expect(warnings).toHaveLength(1);
   });
 });
 

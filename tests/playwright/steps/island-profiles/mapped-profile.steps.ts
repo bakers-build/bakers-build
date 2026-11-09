@@ -55,7 +55,7 @@ Then('component placement {string} retains the app user name mapping and body {s
 });
 
 Given('I open the mapped profile fixture', async ({ page }) => {
-  await page.goto('/admin/structure/island/browser-mapping');
+  await page.goto('/island-browser/browser-mapping');
   await markDocument(page);
 });
 

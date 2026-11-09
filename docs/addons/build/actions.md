@@ -2,7 +2,7 @@
 
 Build an addon whose messages appear in the ticket detail page's right-hand column, in an inline message card (with two or more addons, one tab each, labeled with the addon's label), and in the matching card in `bakers ui` — run on the conductor that owns the ticket's worktree. No page or tab anywhere is named "Addons"; that word stays internal/author-facing.
 
-**You need:** a bakers.build CLI built from source (see [build from source](/configuration/project/contributing#build-from-source)), a conductor you can restart, and the package basics in [addon contracts](/addons/build/contracts#write-an-addon).
+**You need:** a bakers.build CLI built from source, a conductor you can restart, and the package basics in [addon contracts](/addons/build/contracts#write-an-addon).
 
 ## Write the addon
 
@@ -144,7 +144,7 @@ Both UIs render from the message definitions and the personal result alone.
 ## Where it shows up
 
 - **Web:** open a ticket; the right-hand column carries a card; with two or more message-capable addons it shows one tab per addon (label = the addon's `label`, e.g. "Ports"). Each addon stacks its `MessageForm`s, one per message type, each with a *send* button — switching tabs never sends. The requester's own latest answer renders below the forms; sending replaces it in place.
-- **`bakers ui`:** **Overview** has a second card under Details/Stats/Related. `↓`/`j` reaches it (`Tab` switches panes, not this card). `Enter` opens the send/poll screen: `←`/`→` switch addon, `Enter` sends or opens a form, `l` copies a link, `Esc` returns.
+- **`bakers ui`:** **Overview** has a second card under Details/Related. `↓`/`j` reaches it (`Tab` switches panes, not this card). `Enter` opens the send/poll screen: `←`/`→` switch addon, `Enter` sends or opens a form, `l` copies a link, `Esc` returns.
 
 ## Reference
 
@@ -203,7 +203,7 @@ export const inbox: Preset['inbox'] = {
 };
 ```
 
-**A login link for a DDEV Drupal site** is a sketch, not a shipped addon. It shows the security rules an addon that hands out credentials follows:
+**A login link for a Drupal site** is a sketch, not a shipped addon. It shows the security rules an addon that hands out credentials follows:
 
 - `users` is a view-access message listing only the users the addon is configured for, never the site's user table, as a Markdown list.
 - `uli` has `access: update` and an `input` with one integer field, `uid`. The handler refuses any uid outside its configured options, whatever the form sent.

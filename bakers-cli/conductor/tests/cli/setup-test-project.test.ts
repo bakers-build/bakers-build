@@ -90,6 +90,8 @@ esac
       'conductor',
       ...[
         'herdr',
+        'herdr-core',
+        'workspace-git',
         'claude',
         'codex',
         'remote-drupal',

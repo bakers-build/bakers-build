@@ -1,13 +1,13 @@
-// BB-676 spec v2 — generic Docker Compose discovery, no DDEV knowledge.
+// BB-676 spec v2 — generic Docker Compose discovery, no knowledge of any one
+// container runtime.
 //
-// Split out of `@bakers-build/addon-ports` (operator decision 2026-10-15: "ddev
-// darf nicht im ports dabei sein, zumindest wenn es direkt ddev calls
-// abfeuert") so firing `docker` is not that package's job. This package knows
-// nothing about `HTTP(S)_EXPOSE`, `VIRTUAL_HOST` or any other DDEV
-// convention — it reports containers, their labels/env/bound ports, and the
-// confirmed in-container sockets + supervisor daemons, correlated by pid.
-// Interpreting what those mean (a DDEV router mapping, a Drupal site, …) is a
-// consumer's job — see `@bakers-build/addon-ddev`.
+// Split out of `@bakers-build/addon-ports` (operator decision 2026-10-15: the
+// ports addon must not fire runtime commands itself) so firing `docker` is not
+// that package's job. This package knows nothing about `HTTP(S)_EXPOSE`,
+// `VIRTUAL_HOST` or any other runtime convention — it reports containers, their
+// labels/env/bound ports, and the confirmed in-container sockets + supervisor
+// daemons, correlated by pid. Interpreting what those mean (a router mapping,
+// a Drupal site, …) is a consumer's job.
 
 /** The injected seam — only `run`, since this package never reads `/proc`
  *  itself (that is `addon-ports`' own host-listener discovery). `stderr` is
@@ -58,7 +58,7 @@ export interface ComposeSocket {
   /** The bind address `ss`/`/proc/net/tcp` reported — `127.0.0.11` is
    *  Docker's own embedded DNS resolver stub inside every container's
    *  network namespace, never an operator-addressable service; a consumer
-   *  (`listeningSibling`, `@bakers-build/addon-ddev`) excludes it when picking a
+   *  (`listeningSibling`) excludes it when picking a
    *  diagnostic "what IS listening" candidate for a dead claim. */
   readonly address?: string;
   readonly pid?: number;
@@ -323,9 +323,8 @@ export function parseSupervisorStatus(text: string): SupervisorEntry[] {
  * Discover this worktree's Docker Compose containers: `docker ps -a` (label
  * filters supplied by the caller — `com.docker.compose.project.working_dir`
  * is always included, since that is the label Compose itself sets; a
- * DDEV-flavored caller passes `extraLabelFilters: ['com.ddev.approot']` to
- * union DDEV's own worktree label, without this package knowing what that
- * label means), `docker inspect`, and one bounded per-running-container
+ * caller passes `extraLabelFilters` to union its runtime's own worktree label,
+ * without this package knowing what that label means), `docker inspect`, and one bounded per-running-container
  * `docker exec` (socket `ss -ltnp` + `supervisorctl status`, run concurrently
  * across containers, pid-correlated).
  */
@@ -539,7 +538,7 @@ export async function discoverCompose(
           // D/4: exit 127 means `supervisorctl` is not installed in this
           // image at all (phpMyAdmin, OpenSearch, OpenSearch Dashboards,
           // `db`, …) — an absent tool is not a probe failure, just "this
-          // container has no supervisor" (true of most non-DDEV-web
+          // container has no supervisor" (true of most non-web
           // containers), and must never withhold an unrelated reap record.
           // Exit 126 without a "permission denied" stderr signal is treated
           // the same way — some engines report a missing binary as 126
