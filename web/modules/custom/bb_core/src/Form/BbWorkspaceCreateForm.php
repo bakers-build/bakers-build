@@ -139,60 +139,38 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
       '#required_error' => $this->t('Enter a team name.'),
       '#maxlength' => 255,
     ];
-    // THE FIRST PROJECT IS OFFERED HERE because a new account has no workspace
+    // THE FIRST PROJECT IS ASKED HERE because a new account has no workspace
     // while it is in the onboarding wizard, so this is where it can be asked.
-    // Later is the default: the fields stay hidden and nothing is created.
-    $form['first_project'] = [
-      '#type' => 'radios',
-      '#title' => $this->t('Create your first project now?'),
-      '#options' => [
-        'yes' => $this->t('Yes'),
-        'later' => $this->t('Later'),
-      ],
-      '#default_value' => 'later',
-      // After the settings fields, just above the action row (weight 100).
-      '#weight' => 50,
-    ];
-    $visible = ['visible' => [':input[name="first_project"]' => ['value' => 'yes']]];
+    // Its fields are always shown; Skip creates the workspace without it.
     $form['project_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Project name'),
+      '#description' => $this->t('Your first project. Skip it to add one later.'),
       '#maxlength' => 255,
-      '#weight' => 51,
-      '#states' => $visible,
+      '#weight' => 50,
     ];
     $form['repository_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Repository URL'),
       '#maxlength' => 2048,
-      '#weight' => 52,
-      '#states' => $visible,
+      '#weight' => 51,
     ];
     $form['group_name'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Group name'),
       '#description' => $this->t('A group bundles related projects.'),
       '#maxlength' => 255,
-      '#weight' => 53,
-      '#states' => $visible,
+      '#weight' => 52,
     ];
     // Nothing else on the entity is asked about, so nothing else needs a
     // presenter position — nulling `#group`/`#weight` scaffolding a display
     // that shipped no `core.entity_form_display` config might otherwise add.
     unset($form['langcode']);
 
-    // The page's one h1: the gate chrome carries the mark, not a heading.
-    $form['heading'] = [
-      '#type' => 'component',
-      '#component' => 'bb_theme:text',
-      '#props' => [
-        'text' => $this->t('Create a workspace'),
-        'as' => 'h1',
-        'size' => 'section-title',
-        'align' => 'center',
-      ],
-      '#weight' => -20,
-    ];
+    // INSIDE THE FORM: the page's messages block stands outside the gate, so
+    // an error about the project is printed here, beside the fields. The
+    // page's one h1 is the gate's own title, set by the presenter.
+    $form['messages'] = ['#type' => 'status_messages', '#weight' => -20];
 
     return $form;
   }
@@ -204,6 +182,14 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     $actions = parent::actions($form, $form_state);
     $actions['submit']['#value'] = $this->t('Create workspace');
     $actions['submit']['#theme_wrappers'] = ['input__submit__bb_button'];
+    // Skip makes the workspace alone: the same handlers, and the project fields
+    // are not asked for.
+    $actions['skip'] = [
+      '#value' => $this->t('Skip'),
+      '#name' => 'skip_project',
+      '#bb_variant' => 'ghost',
+      '#weight' => 10,
+    ] + $actions['submit'];
     unset($actions['delete']);
     return $actions;
   }
@@ -224,11 +210,18 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
   }
 
   /**
+   * Whether the Skip button made this submission.
+   */
+  private function skipsProject(FormStateInterface $form_state): bool {
+    return ($form_state->getTriggeringElement()['#name'] ?? '') === 'skip_project';
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state): ContentEntityInterface {
     $entity = parent::validateForm($form, $form_state);
-    if ($form_state->getValue('first_project') !== 'yes') {
+    if ($this->skipsProject($form_state)) {
       return $entity;
     }
     $messages = [
@@ -274,7 +267,7 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
         'description' => $entity->get('description')->getValue(),
         'image' => $entity->get('image')->getValue(),
       ]);
-      if ($form_state->getValue('first_project') === 'yes') {
+      if (!$this->skipsProject($form_state)) {
         $project = $this->firstProject->create(
           $workspace,
           $account,

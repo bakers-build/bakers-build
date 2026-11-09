@@ -117,7 +117,11 @@ async function submit(page: Page): Promise<void> {
     return;
   }
   const navigation = page.waitForEvent('load');
-  await form(page).getByRole('button', { name: creating ? 'Create workspace' : 'Save', exact: true }).click();
+  if (creating) {
+    // A workspace asks for its first team; Skip makes it without a first project.
+    await form(page).getByLabel('Team name', { exact: true }).fill('Core Team');
+  }
+  await form(page).getByRole('button', { name: creating ? 'Skip' : 'Save', exact: true }).click();
   await navigation;
   if (creating) {
     remember();

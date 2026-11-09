@@ -357,7 +357,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
       'team_name' => 'Core Team',
       'description' => [['value' => 'A workspace, described on creation.']],
       'image' => [['fids' => (string) $upload->id()]],
-      'op' => 'Create workspace',
+      'skip_project' => 'Skip',
     ]);
     $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
     self::assertSame([], array_map('strval', $form_state->getErrors()));
@@ -381,7 +381,6 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
     $form_state = (new FormState())->setValues([
       'name' => [['value' => 'Project Co']],
       'team_name' => 'Core Team',
-      'first_project' => 'yes',
       'project_name' => 'Bakery App',
       'repository_url' => 'https://example.com/acme/bakery.git',
       'group_name' => 'Platform',
@@ -408,7 +407,6 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
     $form_state = (new FormState())->setValues([
       'name' => [['value' => 'Doomed Co']],
       'team_name' => 'Core Team',
-      'first_project' => 'yes',
       'project_name' => 'Bakery App',
       'repository_url' => 'not a url',
       'group_name' => 'Platform',
@@ -421,14 +419,30 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
   }
 
   /**
-   * Yes without the project's fields is refused on those fields.
+   * Skip makes the workspace alone, without asking for the project's fields.
    */
-  public function testYesNeedsTheProjectFields(): void {
+  public function testSkipCreatesTheWorkspaceWithoutProject(): void {
+    $this->prepareCreateForm();
+    $form_state = (new FormState())->setValues([
+      'name' => [['value' => 'Plain Co']],
+      'team_name' => 'Core Team',
+      'skip_project' => 'Skip',
+    ]);
+    $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
+
+    self::assertSame([], array_map('strval', $form_state->getErrors()));
+    self::assertCount(1, $this->container->get('entity_type.manager')->getStorage('bb_workspace')->loadByProperties(['name' => 'Plain Co']));
+    self::assertSame(0, $this->counts()['bb_project']);
+  }
+
+  /**
+   * Create without the project's fields is refused on those fields.
+   */
+  public function testCreateNeedsTheProjectFields(): void {
     $this->prepareCreateForm();
     $form_state = (new FormState())->setValues([
       'name' => [['value' => 'Empty Co']],
       'team_name' => 'Core Team',
-      'first_project' => 'yes',
       'op' => 'Create workspace',
     ]);
     $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);

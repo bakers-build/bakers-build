@@ -16,7 +16,20 @@ const expect = baseExpect.configure({ timeout: 15_000 });
 
 /** The create-workspace finish control; `&` in the label must not be required as an entity. */
 function finishAndCreateButton(page: Page) {
-    return page.getByRole('button', { name: /Finish .* create a new workspace/ });
+    return page.getByRole('button', { name: 'Create a workspace', exact: true });
+}
+
+/**
+ * Leaves the setup page for Home: Finish when the account has a workspace or an
+ * invitation, Set up later when creating a workspace is the preferred way out.
+ */
+async function leaveForHome(page: Page) {
+    const finish = page.getByRole('button', { name: 'Finish', exact: true });
+    if (await finish.count()) {
+        await finish.click();
+    } else {
+        await page.getByRole('button', { name: 'Set up later', exact: true }).click();
+    }
 }
 Then('the identity step is present', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'What should we call you?' })).toBeVisible();
@@ -61,14 +74,14 @@ When('I finish the onboarding wizard', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Tell us about yourself' })).toBeVisible();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
-    await page.getByRole('button', { name: 'Finish', exact: true }).click();
+    await leaveForHome(page);
     await expect(page).not.toHaveURL(/\/home\/onboarding\/?$/);
     await expect(page).toHaveURL(/\/home$/);
 });
 
 When('I finish the setup guide', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
-    await page.getByRole('button', { name: 'Finish', exact: true }).click();
+    await leaveForHome(page);
     await expect(page).not.toHaveURL(/\/home\/onboarding\/?$/);
     await expect(page).toHaveURL(/\/home$/);
 });
@@ -105,8 +118,10 @@ Then('only the home finish action is offered', async ({ page }) => {
 });
 
 Then('both finish actions are offered', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'Finish', exact: true })).toBeVisible();
+    // Creating a workspace leads; Set up later is its way out, and Finish is not shown beside them.
     await expect(finishAndCreateButton(page)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Set up later', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Finish', exact: true })).toHaveCount(0);
 });
 
 Then('the wizard progress reads {string}', async ({ page }, text: string) => {

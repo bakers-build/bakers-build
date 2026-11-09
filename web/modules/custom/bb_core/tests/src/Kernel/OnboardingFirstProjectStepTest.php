@@ -107,7 +107,7 @@ final class OnboardingFirstProjectStepTest extends KernelTestBase {
     $form = $this->build(3);
 
     self::assertSame('Step 3 of 3', (string) $form['#bb_copy']['progress']);
-    self::assertArrayHasKey('finish', $form['actions']);
+    self::assertArrayHasKey('finish_create', $form['actions']);
     self::assertArrayNotHasKey('project_yes', $form['actions']);
     self::assertCount(3, $form['#bb_copy']['steps']);
   }

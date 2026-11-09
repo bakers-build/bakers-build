@@ -49,7 +49,8 @@
   "weight": -20,
   "conditions": {
     "paths": [
-      "/home/onboarding"
+      "/home/onboarding",
+      "/home/new-workspace"
     ]
   }
 }

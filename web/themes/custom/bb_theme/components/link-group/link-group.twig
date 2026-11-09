@@ -45,9 +45,12 @@
   chat: 'inbox'
 } %}
 {% if rows or links is not empty %}
-  <div{{ (attributes ?: create_attribute()).addClass(['link-group', 'flex', 'flex-col', 'gap-[5px]']) }}>
+  <div{{ (attributes ?: create_attribute()).addClass(['link-group', 'flex', 'flex-col', 'gap-[5px]']|merge(framed ? ['p-gutter', 'rounded-md', 'border', 'border-border', 'bg-surface'] : [])) }}>
     {% if label %}
       <div class="link-group__label text-eyebrow text-text-faint uppercase">{{ label }}</div>
+    {% endif %}
+    {% if description %}
+      <p class="link-group__description m-0 mb-1 text-body text-text-light">{{ description }}</p>
     {% endif %}
     <div class="link-group__rows flex flex-col gap-[3px]">
       {% block rows %}

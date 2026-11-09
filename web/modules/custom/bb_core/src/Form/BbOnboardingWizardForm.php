@@ -33,7 +33,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * The template composes `bb_theme:onboarding` from `#bb_copy` and the
  * fields, so heading, copy and inputs swap as one HTMX fragment. The step
  * lives in Form API state, with one resumable integer in core user.data.
- * Finish, Finish & create, and Set up later are the only writes of
+ * Finish, Create a workspace, and Set up later are the only writes of
  * field_onboarding_completed. The picture is the `user_picture` widget of the
  * account form display — the same square-crop widget the account form uses —
  * and its file travels with the step's multipart POST.
@@ -630,18 +630,15 @@ final class BbOnboardingWizardForm extends FormBase {
     }
 
     if ($step === $this->setupStep()) {
-      $form['actions']['finish'] = $this->primarySubmit($this->t('Finish'), 'finish');
-      if ($this->mayCreateWorkspaceOnFinish()) {
-        $form['actions']['finish_create'] = [
-          '#type' => 'submit',
-          '#value' => $this->t('Finish & create a new workspace'),
-          '#name' => 'finish_create',
-          '#bb_variant' => 'neutral',
-          '#weight' => 5,
-          '#theme_wrappers' => ['input__submit__bb_button'],
-        ];
+      // ONE PREFERRED WAY OUT. An account with no workspace and no invitation
+      // is best served by creating one; anyone else just finishes. Finish and
+      // Set up later both end on Home, so they are never offered together.
+      if ($this->prefersWorkspaceCreate()) {
+        $form['actions']['finish_create'] = $this->primarySubmit($this->t('Create a workspace'), 'finish_create');
+        $form['actions']['set_up_later'] = $this->ghostSubmit($this->t('Set up later'), 'set_up_later');
+        return;
       }
-      $form['actions']['set_up_later'] = $this->ghostSubmit($this->t('Set up later'), 'set_up_later');
+      $form['actions']['finish'] = $this->primarySubmit($this->t('Finish'), 'finish');
     }
   }
 
@@ -738,7 +735,17 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
-   * Whether Finish & create is still the right exit for this account.
+   * Whether creating a workspace is the preferred way out of the wizard.
+   *
+   * Only for an account that may create one and has none yet.
+   */
+  private function prefersWorkspaceCreate(): bool {
+    return $this->mayCreateWorkspaceOnFinish()
+      && $this->readScope->workspaceIds($this->currentUser()) === [];
+  }
+
+  /**
+   * Whether creating a workspace is still the right exit for this account.
    *
    * Rechecked at submit: a late invitation offer, or a workspace bypass,
    * sends the account Home instead of hiding the offer behind create.
@@ -835,21 +842,6 @@ final class BbOnboardingWizardForm extends FormBase {
   }
 
   /**
-   * A short instruction line.
-   */
-  private function plainText(string $text): array {
-    return [
-      '#type' => 'component',
-      '#component' => 'bb_theme:text',
-      '#props' => [
-        'text' => $text,
-        'size' => 'meta',
-        'tone' => 'light',
-      ],
-    ];
-  }
-
-  /**
    * One audience: a caption, then its labelled documentation links.
    *
    * The links open in a new tab, separately from the unfinished wizard.
@@ -874,12 +866,13 @@ final class BbOnboardingWizardForm extends FormBase {
         'kind' => 'doc',
       ];
     }
-    $form['fields'][$key . '_caption'] = $this->plainText($caption);
     $form['fields'][$key] = [
       '#type' => 'component',
       '#component' => 'bb_theme:link-group',
       '#props' => [
         'label' => $label,
+        'description' => $caption,
+        'framed' => TRUE,
         'links' => $rows,
       ],
     ];

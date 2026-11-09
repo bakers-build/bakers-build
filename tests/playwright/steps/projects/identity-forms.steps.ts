@@ -131,7 +131,7 @@ When(
     await descriptionField(form(page)).fill(WORKSPACE_DESCRIPTION);
     await upload(page, file);
     const navigation = page.waitForURL('**/home', { waitUntil: 'load' });
-    await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+    await page.getByRole('button', { name: 'Skip', exact: true }).click();
     await navigation;
     const found = JSON.parse(php(
       `$e = current(\\Drupal::entityTypeManager()->getStorage("bb_workspace")->loadByProperties(["name" => "${safe(state.name)}"]));` +

@@ -380,8 +380,9 @@ When('I create the workspace {string}', async ({ page }, name: string) => {
     }
     await page.getByLabel('Workspace name', { exact: true }).fill(name);
     await page.getByLabel('Team name', { exact: true }).fill('Core Team');
+    // Skip makes the workspace without a first project.
     const navigation = page.waitForNavigation({ waitUntil: 'load' });
-    await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+    await page.getByRole('button', { name: 'Skip', exact: true }).click();
     lastResponse = await navigation;
 });
 
@@ -393,7 +394,7 @@ When('I try to create the workspace {string} without a team name', async ({ page
         await openNav;
     }
     await page.getByLabel('Workspace name', { exact: true }).fill(name);
-    await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+    await page.getByRole('button', { name: 'Skip', exact: true }).click();
     await expect(page.getByLabel('Team name', { exact: true })).toBeVisible();
 });
 
@@ -585,7 +586,6 @@ When(
         }
         await page.getByLabel('Workspace name', { exact: true }).fill(name);
         await page.getByLabel('Team name', { exact: true }).fill('Core Team');
-        await page.getByLabel('Yes', { exact: true }).check();
         await page.getByLabel('Project name', { exact: true }).fill(project);
         await page.getByLabel('Repository URL', { exact: true }).fill(repository);
         await page.getByLabel('Group name', { exact: true }).fill(group);

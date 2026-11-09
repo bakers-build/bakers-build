@@ -207,7 +207,6 @@ final class AppProfileRuntimeTest extends KernelTestBase {
     $app = App::load('runtime');
     $framed = [
       '/home',
-      '/home/new-workspace',
       '/home/join',
       '/home/join/42',
       '/user/login',
