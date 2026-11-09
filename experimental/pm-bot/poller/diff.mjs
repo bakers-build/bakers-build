@@ -1,6 +1,8 @@
 // Pure core of the PM bot's poller: which posts a set of ticket states calls for,
 // given the states the poller saw last time. No I/O.
 
+import { CLOSED } from './channels.mjs';
+
 /**
  * @param {Record<string, string> | null} previous identifier → state from the last run; null on the first run
  * @param {Array<{identifier: string, title: string, state: string, conversation: {channel: string, thread_ts?: string} | null, inherited?: boolean}>} tickets
@@ -15,7 +17,8 @@ export function diff(previous, tickets, summaries, messages) {
     if (!t.conversation) continue;
     next[t.identifier] = t.state;
     const before = previous?.[t.identifier];
-    if (before === undefined || before === t.state) continue;
+    // A ticket first seen open needs no post; first seen closed, its channel still owes the final one.
+    if (before === t.state || (before === undefined && !(previous && CLOSED.includes(t.state)))) continue;
     let text = messages.states[t.state];
     if (!text) continue;
     if (t.state === 'done') {
@@ -28,11 +31,11 @@ export function diff(previous, tickets, summaries, messages) {
 }
 
 /**
- * The identifiers whose `done` post needs the latest summary: tickets with a conversation that were seen before in another state and are now done.
+ * The identifiers whose `done` post needs the latest summary: the tickets `diff` posts `done` for.
  */
 export function reachedDone(previous, tickets) {
   return tickets
-    .filter((t) => t.conversation && t.state === 'done' && previous?.[t.identifier] !== undefined && previous[t.identifier] !== 'done')
+    .filter((t) => t.conversation && t.state === 'done' && previous && previous[t.identifier] !== 'done')
     .map((t) => t.identifier);
 }
 

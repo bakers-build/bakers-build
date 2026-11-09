@@ -218,6 +218,17 @@ test('cancelled archives the channel after its post', async (t) => {
   assert.deepEqual(slack.calls.filter((c) => ['chat.postMessage', 'conversations.archive'].includes(c.method)).map((c) => c.method), ['chat.postMessage', 'conversations.archive']);
 });
 
+test('a ticket first seen as cancelled gets its final post before the archive', async (t) => {
+  const { s, slack, poller, botChannels } = await setup(t);
+  botChannels(requestChannel());
+  await poller.pass();
+  s.addTicket({ state: 'cancelled', links: [channel()] });
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(slack.calls.filter((c) => ['chat.postMessage', 'conversations.archive'].includes(c.method)).map((c) => c.method), ['chat.postMessage', 'conversations.archive']);
+  assert.equal(slack.posts()[0].text, messages.states.cancelled);
+});
+
 test('a reopened ticket gets a fresh channel with the requester, a link back and its state, once', async (t) => {
   const { s, slack, poller, botChannels, restart, state } = await setup(t);
   botChannels(requestChannel());
@@ -243,6 +254,26 @@ test('a reopened ticket gets a fresh channel with the requester, a link back and
   ticket.state = 'review';
   await poller.pass();
   assert.deepEqual(slack.posts().at(-1), { channel: fresh, text: messages.states.review });
+});
+
+test('a reopen channel whose link was stored but whose reply was lost is still admitted and archived', async (t) => {
+  const { s, slack, poller, botChannels, state } = await setup(t);
+  botChannels(requestChannel());
+  const ticket = s.addTicket({ title: 'Comic Sans', state: 'review', links: [channel()] });
+  await poller.pass();
+  ticket.state = 'done';
+  await poller.pass();
+  ticket.state = 'working';
+  s.loseReplyOnce('bakers_ticket_transition');
+  await poller.pass();
+  assert.equal(slack.calls.filter((c) => c.method === 'conversations.create').length, 1);
+  const id = ticket.links.at(-1).uri.split('/').pop();
+  assert.equal(state().channels[id]?.ticket, 'ACME-1', 'the fresh channel is recorded, so the plugin admits it');
+  ticket.state = 'done';
+  await poller.pass();
+  await poller.pass();
+  const archives = slack.calls.filter((c) => c.method === 'conversations.archive').map((c) => c.body.channel);
+  assert.deepEqual(archives, ['C0000000001', id]);
 });
 
 test('a request channel without a ticket is closed after 7 silent days, not after 6', async (t) => {

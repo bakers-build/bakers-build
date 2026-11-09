@@ -1,12 +1,16 @@
-"""Pure core of the bot-channels plugin: request-channel names, the set of open bot
-channels, and the channel prompt. No Hermes import, no I/O.
+"""Core of the bot-channels plugin: request-channel names, the set of open bot channels,
+the channel prompt, and the state-file read. No Hermes import.
 
 shortcut: two copies of the slug rule (here and poller/channels.mjs), held together by
 slug-examples.json; merge them if a third writer appears.
 """
 
+import json
+import logging
 import re
 import unicodedata
+
+logger = logging.getLogger("pm_bot.bot_channels")
 
 MAX_NAME = 40
 _MENTION = re.compile(r"<[@#!][^>]*>")
@@ -54,3 +58,18 @@ def channel_prompt(channel_id, workspace_url, ticket):
         f"This is the request channel {channel_id}. Its conversation link is {link}. "
         f"Its ticket: {ticket or 'none yet'}."
     )
+
+
+def read_json(path, strict=False):
+    """A state file's JSON, {} when it is missing. An unreadable file is logged and read as {},
+    or raises when ``strict``: a caller that writes the file back must not wipe it."""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except FileNotFoundError:
+        return {}
+    except (OSError, ValueError) as exc:
+        if strict:
+            raise
+        logger.error("bot-channels: cannot read %s: %s", path, exc)
+        return {}

@@ -18,7 +18,7 @@ import { spawn } from 'node:child_process';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createBakersClient } from '../lib/bakers-client.mjs';
-import { channelSteps, ticketChannelName, WEEK } from './channels.mjs';
+import { channelSteps, CLOSED, ticketChannelName, WEEK } from './channels.mjs';
 import { diff, reachedDone } from './diff.mjs';
 import { pollInterval } from './interval.mjs';
 import { openNote, QUESTION_LABEL, relay, TECHNICAL_PROBLEM_LABEL } from './questions.mjs';
@@ -117,8 +117,8 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
   }
 
   // The state file: {tickets: identifier → posted state, relayed: comment UUIDs,
-  // channels: channel ID → {ticket, requester, name, generation, renamed, archived, seen,
-  // closing, successor, previous}}. The plugin reads `channels` for the open channels.
+  // channels: channel ID → {ticket, requester, name, generation, renamed, final, archived,
+  // seen, closing, successor, reopened, previous}}. The plugin reads `channels` for the open channels.
   async function readJson(file, empty) {
     try {
       return JSON.parse(await readFile(file, 'utf8'));
@@ -153,6 +153,9 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
     for (const p of posts) {
       try {
         await slack.post(p);
+        // The ticket's own channel may be archived only after this post.
+        const record = !p.thread_ts && state.channels[p.channel];
+        if (record?.ticket === p.identifier && CLOSED.includes(next[p.identifier])) record.final = true;
         log.log(`${stamp()} posted ${p.identifier}: ${next[p.identifier]}`);
       } catch (error) {
         // Keep the old state of this ticket only, so the next pass retries just this post.
@@ -222,6 +225,8 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
       if (!next.channel) {
         const created = await freeName(ticket, (old.generation ?? 1) + 1, (n) => slack.create(n));
         Object.assign(next, { channel: created.id, name: created.name, generation: created.generation });
+        // Recorded at once: should the link be stored but its reply lost, the plugin still admits it and it is still archived.
+        state.channels[created.id] = { ticket: ticket.identifier, requester: old.requester, name: created.name, generation: created.generation, renamed: true, previous: channel };
         await writeState(state);
       }
       if (!next.invited) {
@@ -238,7 +243,6 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
       }
       const uri = `${workspaceUrl.replace(/\/$/, '')}/archives/${next.channel}`;
       await client.tool('bakers_ticket_transition', { ticket: ticket.id, links: [{ uri, title: 'Slack channel' }] });
-      state.channels[next.channel] = { ticket: ticket.identifier, requester: old.requester, name: next.name, generation: next.generation, renamed: true, previous: channel };
       delete old.successor;
       old.reopened = next.channel;
       ticket.conversation = { channel: next.channel, url: uri };

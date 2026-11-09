@@ -34,11 +34,11 @@ export function ticketChannelName(identifier, title, n = 1) {
 /**
  * The steps owed to the bot's channels:
  * - `rename`: a request channel a ticket now links;
- * - `archive`: a ticket channel whose `done` or `cancelled` was posted;
+ * - `archive`: a ticket channel whose `done` or `cancelled` was posted (`final`);
  * - `reopen`: an archived ticket channel whose ticket left `done` or `cancelled`;
  * - `abandon`: a request channel no ticket links, silent for 7 days.
  *
- * @param {{tickets: Record<string, string> | null, channels: Record<string, {ticket?: string, renamed?: boolean, archived?: boolean, seen?: number}>}} state
+ * @param {{tickets: Record<string, string> | null, channels: Record<string, {ticket?: string, renamed?: boolean, final?: boolean, archived?: boolean, seen?: number}>}} state
  *   the poller's state: the posted state per identifier, and its record per channel
  * @param {Array<{identifier: string, state: string, conversation: {channel: string, thread_ts?: string} | null, inherited?: boolean}>} tickets
  * @param {Record<string, {created: string}>} botChannels the request channels the bot opened (bot-channels.json)
@@ -59,7 +59,7 @@ export function channelSteps(state, tickets, botChannels, now) {
       continue;
     }
     if (!record?.renamed) steps.push({ kind: 'rename', channel: c.channel, ticket });
-    if (CLOSED.includes(state.tickets?.[ticket.identifier])) steps.push({ kind: 'archive', channel: c.channel, ticket });
+    if (record?.final && CLOSED.includes(state.tickets?.[ticket.identifier])) steps.push({ kind: 'archive', channel: c.channel, ticket });
   }
   for (const [channel, info] of Object.entries(botChannels)) {
     const record = state.channels[channel];
