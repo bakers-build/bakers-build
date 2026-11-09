@@ -82,7 +82,7 @@ export const SIDEBAR = {
   "/agents/": [
     group("Agents", [
       ["Overview", "/agents/"],
-      ["Choose agents and models", "/agents/guide"],
+      ["Configure and select agents", "/agents/guide"],
       ["Agent policy reference", "/agents/reference"],
     ]),
   ],

@@ -1,31 +1,26 @@
 # Agents
 
-Choose which agent works on a ticket, or configure the choices offered by an execution machine. Start with the guide to understand agents, models and routes.
+Configure agents on an execution machine, then select one by its alias. The guide separates these two tasks.
 
-## Choose your task
+<span id="choose-your-task"></span>
+<span id="add-an-agent"></span>
+<span id="configure-machine-and-project-settings"></span>
+<span id="select-an-agent-on-a-ticket"></span>
 
 <DocTiles :tiles="[
-  { title: 'Understand and set up agents', text: 'Learn the concepts, create a route and verify a ticket run.', link: '/agents/guide', icon: 'terminal', meta: 'Follow the guide →' },
-  { title: 'Select for a ticket', text: 'Choose an existing alias or route with a ticket label.', link: '/agents/guide#select-a-route-or-an-alias', icon: 'ticket', meta: 'Choose a ticket agent →' }
+  { title: 'Configure agents', text: 'Enable a harness addon, configure an agent plugin and give it an alias.', link: '/agents/guide#configure-agents', icon: 'terminal', meta: 'Configure an agent →' },
+  { title: 'Select an agent', text: 'Choose an alias as the machine default or through a ticket label.', link: '/agents/guide#select-an-agent', icon: 'ticket', meta: 'Choose what runs →' }
 ]" />
 
-## Add an agent
+[Agent policy reference](/agents/reference) contains the complete fields, defaults, precedence and machine configuration example.
 
-Follow the guide's [prerequisites and catalog check](/agents/guide#manual-configuration-and-what-it-controls); it links the vendor-specific setup instructions.
+<span id="route-work-to-different-agents"></span>
 
-## Configure machine and project settings
+For different selections per workflow state, follow [Add a route](/agents/guide#add-a-route).
 
-[Agent policy reference](/agents/reference) owns fields, defaults, precedence and the complete machine configuration example.
+<span id="provide-tools-and-access"></span>
 
-## Route work to different agents
-
-Follow [Add a route](/agents/guide#add-a-route) for a small example and its explanation.
-
-## Select an agent on a ticket
-
-Follow [Select a route or an alias](/agents/guide#select-a-route-or-an-alias), then verify the actual run.
-
-## Provide tools and access
+## Tools and access
 
 <DocQuickLinks aria-label="Agent tools and access" :items="[
   { label: 'Tools and integrations', text: 'Understand which operations addons make available to agents.', link: '/provision/tools' },

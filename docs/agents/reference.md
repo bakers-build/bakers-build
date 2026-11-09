@@ -1,6 +1,6 @@
 # Agent policy reference
 
-Configure aliases, models and routing in `~/.bakers/machine.config.js`; keep it private. This reference is for machine owners with an installed harness and a connected project checkout. For setup, start with [Choose agents and models](/agents/guide); after changes, [verify the resolved catalog](#old-keys-and-verification).
+Configure agent plugins and selection policy in `~/.bakers/machine.config.js`; keep it private. This reference is for machine owners with an installed harness program and a connected project checkout. Start with [Configure and select agents](/agents/guide) for the two separate tasks; after changes, [verify the resolved catalog](#old-keys-and-verification).
 
 ## The agents object
 
@@ -8,17 +8,26 @@ Configure aliases, models and routing in `~/.bakers/machine.config.js`; keep it 
 agents: { catalog, enabled, disabled, default_agent, routes }
 ```
 
-The candidates come from the harnesses in the top-level `addons`.
+Harness addons in the top-level `addons` supply agent plugins and their initial configurations. Each available configuration has an alias used for selection.
+
+### Configure the catalog
 
 | Field | Meaning and default |
 |---|---|
 | `catalog` | Optional overlays `{ harness, alias?, with? }`. `harness` must also appear in the top-level `addons`. An overlay with an existing alias replaces that candidate; a new alias adds one. A harness that publishes several candidates needs `alias`. |
 | `enabled` | Optional allowlist of aliases. Omitted means every candidate. `[]` removes all and fails. An unknown alias fails. |
 | `disabled` | Denylist applied after `enabled`. Default empty. An unknown alias fails. |
-| `default_agent` | Fallback alias. Default is the first remaining candidate. It must survive the filters or loading fails. |
-| `routes` | Named maps from a workflow state (or `'*'`) to an alias. If `default` is missing it becomes `{ '*': default_agent }`. Every route needs at least one entry and every value a non-empty alias. |
 
 Loading builds the effective catalog in this order: candidates from the top-level `addons`, then `catalog` overlays (later wins), then `enabled`, then `disabled`. Errors appear when the conductor or `bakers agents` loads the file; `bakers config check --scope machine` does not inspect `agents`. Each failure is a one-line message, for example `agents.default_agent names unavailable alias 'codex'`.
+
+### Configure selection
+
+These fields choose among the configured aliases; they do not configure the plugins themselves. Ticket labels can override them according to the rules below.
+
+| Field | Meaning and default |
+|---|---|
+| `default_agent` | Fallback alias. Default is the first remaining candidate. It must survive the filters or loading fails. |
+| `routes` | Named maps from a workflow state (or `'*'`) to an alias. If `default` is missing it becomes `{ '*': default_agent }`. Every route needs at least one entry and every value a non-empty alias. |
 
 ### Which agent runs a state
 
