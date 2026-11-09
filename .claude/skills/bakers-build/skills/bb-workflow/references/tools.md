@@ -21,7 +21,7 @@ with a JSON encoder
 | 1 | the tool refused; the message names the cause | report it; correct only arguments the message shows wrong |
 | 3 | credentials rejected | `bakers auth status` outside a run; report |
 | 4 | invalid arguments or unknown tool, nothing sent | fix the arguments against `bakers tools <tool> --schema` |
-| 5 | HTTP or protocol error | report it |
+| 5 | HTTP or protocol error | report |
 
 **An error is not a negative**: a failed read or search found nothing out. A timed-out or exit-5 write
 may have happened: reconcile with a read, never resend it.
