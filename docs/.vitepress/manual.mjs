@@ -100,12 +100,20 @@ export const SIDEBAR = {
     ]),
   ],
   "/addons/": [
-    group("Catalog", [
-      ["Supported addons", "/addons/catalog"],
-    ]),
-    group("Addons", [
-      ["Overview", "/addons/"],
+    group("Start here", [
+      ["Introduction", "/addons/"],
+      ["Available addons", "/addons/catalog"],
       ["Configure addons", "/addons/configure"],
+    ]),
+    group("Build an addon", [
+      ["Build your first addon", "/addons/build/first-addon"],
+      ["Add a new agent harness", "/addons/build/agent"],
+      ["Connect a new client", "/addons/build/client"],
+      ["Extend the control panel", "/addons/build/control-panel"],
+      ["Tools", "/addons/build/tools"],
+      ["Messages", "/addons/build/actions"],
+      ["Addon API reference", "/addons/build/contracts"],
+      ["Executor and workspace API", "/addons/build/executor-workspace"],
     ]),
     group("Agents", [
       ["Claude", "/addons/claude"],
@@ -155,20 +163,10 @@ export const SIDEBAR = {
       ["Time evidence", "/addons/track"],
     ]),
     group("Connection support", [
-      ["Essentials", "/addons/essentials"],
-      ["Name references", "/addons/name-refs"],
-      ["Ambient workspace", "/addons/workspace"],
       ["HTTP Basic sign-in", "/addons/auth-basic"],
     ]),
     group("Internal test fixture", [
       ["Fake conductor fixture", "/addons/fake"],
-    ]),
-    group("Build your own", [
-      ["Build your first addon", "/addons/build/first-addon"],
-      ["Addon contracts", "/addons/build/contracts"],
-      ["Write an executor or a workspace", "/addons/build/executor-workspace"],
-      ["Write an addon with inbox messages", "/addons/build/actions"],
-      ["Write an addon with agent tools", "/addons/build/tools"],
     ]),
   ],
   "/configuration/": [

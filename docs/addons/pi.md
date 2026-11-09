@@ -49,7 +49,7 @@ pi has no OS sandbox and no tool-permission gate: its tools run with the conduct
 `custom` takes `config: { extensions: ['<path or builtin:name>', ...] }`, at least one entry and no other key. Only these extensions load, for example one that sandboxes pi's tools; whether they protect anything is up to the extension, not bakers.build.
 
 ```js
-{ harness: '@bakers-build/addon-pi', with: { security: 'custom', config: { extensions: ['./pi-sandbox.ts'] } } }
+{ use: '@bakers-build/addon-pi', with: { security: 'custom', config: { extensions: ['./pi-sandbox.ts'] } } }
 ```
 
 ## Check it works

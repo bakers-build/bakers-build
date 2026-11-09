@@ -360,7 +360,7 @@ it('the reference documents the project deep-link escape fallbacks', () => {
     /ticket, run, addon tab, or picker.*Esc.*opens \*\*My work\*\*/,
   );
   expect(referenceDeepLinks).toMatch(
-    /direct project deep link opens Work.*Esc.*root-level project list/,
+    /direct project deep link opens Overview.*Esc.*root-level project list/,
   );
   expect(referenceDeepLinks).toMatch(
     /Other project tabs preserve the selected project.*registered project fallback/,

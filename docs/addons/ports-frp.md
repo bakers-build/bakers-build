@@ -19,7 +19,7 @@ addons: [
           zone: 'preview.example',
           clientConfigPath: '/etc/frp/frpc.json',
           adminPort: 7400,
-          adminUser: 'admin',
+          adminUser: 'bakers',
           adminPassword: '<local admin password>',
         },
       },
@@ -64,11 +64,13 @@ For a private Coder home (adapt paths for your host), create the includes direct
 
 ## Check it works
 
-Sharing a service returns a `https://<ticket>-<key>.<zone>` URL that serves it.
+Use `bakers ports list`, then `bakers ports up <service-key>` with the conductor running. Sharing returns a `https://<ticket>-<key>.<zone>` URL that serves it.
 
 ## Good to know
 
-- It writes only `<BB_HOME>/frp/routes.json`. It never starts `frpc` or reads its token.
+- The URL exposes the service publicly. Stop sharing with `bakers ports down <service-key>` when finished.
+
+- It writes only `<BB_HOME>/frp/routes.json`. It never starts `frpc`. It reads the client config to validate it, but does not use its server-auth token.
 - A client config of the wrong shape is rejected before anything changes.
 - A service whose claim names a container address is proxied straight to that IP. An unreachable IP, for example on Docker Desktop, fails that service; OrbStack works.
 - An HTTPS origin is shared only when its rule allows skipping certificate checks, because frp's `http2https` plugin cannot verify it.

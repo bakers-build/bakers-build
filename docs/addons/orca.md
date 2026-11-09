@@ -38,6 +38,6 @@ No `with` options are required. [Orca options](/addons/orca/options) owns defaul
 
 ## Verify
 
-Run `bakers oven check`, then [a small ticket](/get-started/first-ticket). The Git worktree should appear in Orca and the agent should run in its terminal. Adoption may take up to 30 seconds. An unreachable-runtime error requires starting Orca and retrying dispatch.
+Run `bakers oven check`, then [a small ticket](/get-started/first-ticket). The Git worktree should appear in Orca and the agent should run in its terminal. Adoption waits up to 35 seconds by default. An unreachable-runtime error requires starting Orca and retrying dispatch.
 
 Package source in a checkout: `bakers-cli/addons/orca`.

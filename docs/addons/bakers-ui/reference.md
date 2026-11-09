@@ -22,16 +22,11 @@ bakers ui [target] [--ticket <id>] [--project <id>] [--run <uuid>] [--here]
 | `--yes` | Never prompt for a workspace |
 | `--print-config` | Print the resolved connection and exit |
 
-The renderer needs the Bun runtime that `@bakers-build/addon-bakers-ui` installs, so `bakers ui` re-runs itself under it (`--print-config` stays on Node); `BB_UI_NO_BUN=1` uses Node 26 or later with `--experimental-ffi` instead.
+The renderer needs the Bun runtime that `@bakers-build/addon-bakers-ui` installs, so `bakers ui` re-runs itself under it (`--print-config` stays on Node); `BB_UI_NO_BUN=1` uses Node 26.1 or later with `--experimental-ffi` instead.
 
 ## Which control plane answers
 
-`bakers ui` loads its connection like `bakers tools`; first match wins:
-
-1. `--config <path>`, else `$BB_CONFIG`, else `$DROPSH_CONFIG`.
-2. `--connection <id>`, else `$BB_CONNECTION` or `$DROPSH_CONNECTION`.
-3. The checkout's selector file, `.bakers/connection.config.local.js`, which names one connection.
-4. The default connection, normally `~/.bakers/bakers.config.js`.
+The [connection selection order](/configuration/connector/connections#which-connection-is-used) is shared with the CLI. Explicit selectors override the checkout selector and defaults.
 
 When the cockpit talks to a server you did not expect, run `bakers ui --print-config`: it prints the connection file, how it was selected (`selection`), `base_url` and the project's `.bakers` directory (`bb_dir`). Precedence in full: [Connections](/configuration/connector/connections).
 
@@ -55,7 +50,7 @@ Run detail has no bar; `Esc` returns to the preceding screen. An addon places a 
 
 **Every bar is drawn in the same row**, under the header box, and is clickable where it is drawn and only at its own level: on root **Projects** a click at the column where the project bar's `Runs` would sit is inert, because that bar is not there. On the ticket screen the same column may fall inside ` Runs `, opening that tab, but still reaches no project screen. Workspace Member **Overview** shows the person's username, position and About me.
 
-The root **Members** tab is for workspace leads.
+The root **Members** tab is available to workspace leads.
 
 ## The ticket sections
 
