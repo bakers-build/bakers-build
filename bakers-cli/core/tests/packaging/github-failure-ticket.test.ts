@@ -96,7 +96,10 @@ describe('GitHub checks failure ticket', () => {
       'bakers_ticket_create',
       'bakers_ticket_update',
     ]);
-    expect(result.calls[0].args).toEqual({ query: TITLE, project: BAKERS });
+    expect(result.calls[0].args).toEqual({
+      query: 'CI failure:',
+      project: BAKERS,
+    });
     const created = result.calls[1].args;
     expect(created).toMatchObject({
       title: TITLE,
@@ -140,8 +143,20 @@ describe('GitHub checks failure ticket', () => {
     expect(result.calls[2].args).toEqual(ASSIGN);
   });
 
-  it('files a release failure on its own ticket, apart from the checks ticket', () => {
-    const release = 'CI failure: GitHub release on main';
+  it('treats a cancelled CI-failure ticket as closed and creates a new one', () => {
+    const result = report([
+      { identifier: 'BAKERS-70', title: TITLE, state: 'cancelled' },
+    ]);
+    expect(result.status, result.stderr).toBe(0);
+    expect(tools(result.calls)).toEqual([
+      'bakers_ticket_search',
+      'bakers_ticket_create',
+      'bakers_ticket_update',
+    ]);
+    expect(result.calls[2].args).toEqual(ASSIGN);
+  });
+
+  it('comments a release failure on main on the open checks ticket', () => {
     const result = report(
       [{ identifier: 'BAKERS-90', title: TITLE, state: 'working' }],
       { WORKFLOW: 'GitHub release', BRANCH: 'main' },
@@ -149,18 +164,34 @@ describe('GitHub checks failure ticket', () => {
     expect(result.status, result.stderr).toBe(0);
     expect(tools(result.calls)).toEqual([
       'bakers_ticket_search',
-      'bakers_ticket_create',
-      'bakers_ticket_update',
+      'bakers_comment_publish',
     ]);
-    expect(result.calls[0].args).toEqual({ query: release, project: BAKERS });
     expect(result.calls[1].args).toMatchObject({
-      title: release,
-      type: 'bug',
-      recipe: 'superpowers',
+      ticket: 'BAKERS-90',
+      type: 'comment',
     });
-    expect(result.calls[1].args.description).toContain(
+    expect(result.calls[1].args.body).toContain(
       '`GitHub release` failed on `main`',
     );
-    expect(result.calls[2].args).toEqual(ASSIGN);
+    namesTheFailure(result.calls[1].args.body);
+  });
+
+  it('comments on the newest open CI-failure ticket when several are open', () => {
+    // Search rows come newest first.
+    const result = report([
+      { identifier: 'BAKERS-95', title: TITLE, state: 'done' },
+      {
+        identifier: 'BAKERS-94',
+        title: 'CI failure: GitHub release on main',
+        state: 'working',
+      },
+      { identifier: 'BAKERS-93', title: TITLE, state: 'qualification' },
+    ]);
+    expect(result.status, result.stderr).toBe(0);
+    expect(tools(result.calls)).toEqual([
+      'bakers_ticket_search',
+      'bakers_comment_publish',
+    ]);
+    expect(result.calls[1].args.ticket).toBe('BAKERS-94');
   });
 });
