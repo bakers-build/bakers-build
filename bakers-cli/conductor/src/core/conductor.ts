@@ -15,6 +15,7 @@ import {
   matchesEnvDeny,
   type RunEnvPolicy,
 } from '../plugins/agent.js';
+import { homeKey, homePath } from '../plugins/agent-home.js';
 import type {
   BbExecutor,
   HookListenerContext,
@@ -1418,6 +1419,61 @@ export class Conductor {
     }
   }
 
+  /**
+   * Install the project's `marketplaces` into the run's agent home and log
+   * one `plugins` entry. A failed install throws, failing the run start.
+   */
+  private async installPlugins(
+    chosen: ResolvedAgent,
+    t: Ticket,
+    run: ClaimedRun,
+  ): Promise<{ env: Record<string, string>; args: string[] }> {
+    const marketplaces = this.config.marketplaces ?? [];
+    const harness = chosen.agent.id;
+    const entry: Record<string, unknown> = {
+      harness,
+      alias: chosen.alias ?? chosen.id,
+      mode: chosen.security,
+    };
+    const log = () =>
+      this.logger.info(
+        { ticket: t.identifier, run: run.runUuid, plugins: entry },
+        'plugins',
+      );
+    const off =
+      marketplaces.length === 0
+        ? 'none declared'
+        : chosen.agent.pluginsDisabled
+          ? 'disabled'
+          : !chosen.agent.installPlugins
+            ? 'unsupported'
+            : undefined;
+    if (off || !chosen.agent.installPlugins) {
+      entry.state = `off (${off})`;
+      log();
+      return { env: {}, args: [] };
+    }
+    const hash = homeKey(marketplaces);
+    const home = homePath(harness, hash);
+    Object.assign(entry, { state: 'on', hash, home, marketplaces });
+    try {
+      const launch = await chosen.agent.installPlugins(marketplaces, home);
+      Object.assign(entry, {
+        outcome: launch.home,
+        ...(launch.trust_bypass?.length
+          ? { trust_bypass: launch.trust_bypass }
+          : {}),
+        ...(launch.gaps?.length ? { gaps: launch.gaps } : {}),
+      });
+      log();
+      return { env: launch.env, args: launch.args };
+    } catch (err) {
+      entry.failure = err instanceof Error ? err.message : String(err);
+      log();
+      throw new Error(`plugins: ${harness} install failed: ${entry.failure}`);
+    }
+  }
+
   /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
   private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
     const t = await this.remote.getTicket(run.ticketUuid);
@@ -1619,12 +1675,15 @@ export class Conductor {
     const tools = chosen.agent.withoutConductorTools
       ? undefined
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
+    const plugins = await this.installPlugins(chosen, t, run);
+    Object.assign(env, plugins.env);
     const command = chosen.agent.launchCommand(
       prompt,
       identity,
       ws.path,
       tools ? { url: tools.url } : undefined,
       env,
+      plugins.args,
     );
     // Read after launchCommand: a warning may depend on what this launch got.
     const warnings = chosen.agent.launchWarnings;
