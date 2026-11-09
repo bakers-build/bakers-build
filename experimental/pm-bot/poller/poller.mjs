@@ -329,11 +329,12 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
       const current = await tickets();
       await channelWork(state, current, ['reopen', 'rename']);
       await postStates(state, current);
-      await postUpdates(state, current);
       // After the posts: a channel is archived only once its final state is posted.
       await channelWork(state, current, ['archive', 'abandon']);
       // Notes are relayed on the first pass too: they wait for an answer or for keytec.
       await relayNotes(state, current);
+      // Last, so a heartbeat sees every other post of the pass.
+      await postUpdates(state, current);
       await writeState(state);
     } catch (error) {
       // bakers.build unreachable: the state file stays as it was, the next pass catches up.

@@ -399,3 +399,15 @@ test('a working ticket in a quiet conversation gets one heartbeat per interval w
   await poller.pass();
   assert.deepEqual(slack.posts().map((p) => p.text), [messages.stillWorking, messages.states.review]);
 });
+
+test('a question relayed while the run still runs is the only post of its pass, with no heartbeat beside it', async (t) => {
+  const { s, slack, sent, poller, clock } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  s.addRun(ticket, { started_at: clock.now / 1000 - 3600 });
+  await poller.pass();
+  clock.now += 30 * MINUTE;
+  frozenWithQuestion(s, ticket);
+  await poller.pass();
+  assert.deepEqual(sent.map((p) => p.kind), ['question']);
+  assert.deepEqual(slack.posts(), []);
+});
