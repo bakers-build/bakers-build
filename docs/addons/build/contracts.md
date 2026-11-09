@@ -1,6 +1,6 @@
 # Addon API reference
 
-An addon is a JavaScript package whose preset declares contributions to bakers.build. The **preset** is a module with named exports that Bakers recognizes, such as `tools` or `inbox`. Start with [What an addon is](/addons/build/first-addon#what-an-addon-is) for the package/module basics and a complete local example; this page defines the API.
+An addon is a JavaScript package whose preset declares contributions to bakers.build. The **preset** is a module with named exports that Bakers recognizes, such as `tools` or `inbox`. Start with [Build your first addon](/addons/build/first-addon#how-bakers-loads-an-addon) for the package/module basics and a complete local example; this page defines the API.
 
 Expose a `./preset` entry in the package's `exports` so the loader can find your contributions. Packages under `bakers-cli/addons/` without a `./preset` (`docker-compose`, `name-refs`, the `ports-*` transports) are libraries another addon or the host loads; they never appear in an `addons` list. The shipped reference for a complete addon is [Ports](/addons/ports): preset, lazy `commands`, an `inbox` message and tests, in `bakers-cli/addons/ports` in a source checkout.
 

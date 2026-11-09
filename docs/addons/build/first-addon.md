@@ -1,33 +1,27 @@
 # Build your first addon
 
-Addons let you extend Bakers with your own integrations and operations. This guide explains what an addon can do, how Bakers loads it, and how to build one as a JavaScript package.
-
-## What an addon is
-
-In a JavaScript application, an **addon** is extra code that the application loads to add functionality. The application defines where that code can participate: its **extension points**. Each extension point has an API describing what the addon must provide and when the application calls it.
-
-In Bakers, an addon is an ordinary **JavaScript package**: a directory containing `package.json` and JavaScript modules. You enable it in configuration, and Bakers loads the capabilities it provides. The package can live in your project or be installed from a package registry; publishing it to npm is optional.
+Use addons to make agents available in Bakers, give them project tools, and add operations to tickets. This guide shows what you can build, how to package it, and how to enable it.
 
 ## What can you extend?
 
-An addon can change how Bakers runs work, connect it to other systems, or add operations that people and agents can call.
+Start with the capability your project needs:
 
 | You want to… | The addon provides… |
 |---|---|
 | Use an AI coding program with Bakers | An **agent** integration that starts and configures that program for a run. |
-| Run work in another terminal application | An **executor** that starts and manages the agent's terminal there. |
 | Control how a ticket's checkout is prepared | A **workspace** integration that creates and manages its working directory. |
 | Give agents an additional operation | A **tool** that an agent can call during a run. |
 | Let someone request an operation from a ticket | A **message** with a button or form and an answer in the control panel. |
-| Connect to a ticket backend | A **remote** integration that reads and updates tickets. |
 
 One addon can provide several of these capabilities. It can implement them in JavaScript, reuse other addons with chosen settings, or do both. Reusing addons inside another package is called **composition**.
 
-These are common extension points. The [API reference](/addons/build/contracts#surfaces-and-extension-points) also covers CLI commands, lifecycle hooks and connection extensions.
+The [API reference](/addons/build/contracts) describes the supported exports and their contracts.
+
+<span id="what-an-addon-is"></span>
 
 ## How Bakers loads an addon
 
-The package contains a **preset**: a JavaScript module that tells Bakers what the addon provides. You list the package in configuration; Bakers imports its preset and registers the declared capabilities.
+Create a JavaScript package with a **preset**: a module that tells Bakers what the addon provides. List the package in configuration; Bakers imports its preset and registers the declared capabilities. The package can live in your project; publishing it to npm is optional.
 
 | Piece | Purpose |
 |---|---|
