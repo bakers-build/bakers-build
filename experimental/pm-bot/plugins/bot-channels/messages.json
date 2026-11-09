@@ -1,0 +1,14 @@
+{
+  "de": {
+    "acknowledge": "<@{user}> Danke, ich habe deine Anfrage erhalten und schaue sie mir an. Ich antworte gleich hier.",
+    "opened": "<@{user}> Ich habe <#{channel}> für diese Anfrage eröffnet. Lass uns dort weitermachen.",
+    "open_failed": "<@{user}> Ich konnte keinen Kanal für diese Anfrage eröffnen. Bitte versuch es gleich noch einmal.",
+    "repeat": "<@{user}>, bitte schreib deine Anfrage hier noch einmal."
+  },
+  "en": {
+    "acknowledge": "<@{user}> Thanks, I've got your request and I'm looking into it. I'll answer here shortly.",
+    "opened": "<@{user}> I opened <#{channel}> for this request. Let's continue there.",
+    "open_failed": "<@{user}> I could not open a channel for this request. Please try again in a moment.",
+    "repeat": "<@{user}>, please repeat your request here."
+  }
+}

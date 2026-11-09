@@ -117,8 +117,9 @@ class Middleware(unittest.IsolatedAsyncioTestCase):
         (ack_channel, ack), (home_channel, opened) = self.posts()
         self.assertEqual(ack_channel, "CNEW")
         self.assertTrue(ack.startswith("<@U1> "))
-        self.assertIn("looking into it", ack)
-        self.assertEqual((home_channel, opened), (HOME, "<@U1> I opened <#CNEW> for this request. Let's continue there."))
+        # No language configured here, so the texts are German.
+        self.assertIn("schaue sie mir an", ack)
+        self.assertEqual((home_channel, opened), (HOME, "<@U1> Ich habe <#CNEW> für diese Anfrage eröffnet. Lass uns dort weitermachen."))
         self.assertEqual(self.calls[-1], ("hermes", {"channel": "CNEW", "ts": "1.1"}))
 
     async def test_a_mention_delivered_twice_is_acknowledged_once(self):
