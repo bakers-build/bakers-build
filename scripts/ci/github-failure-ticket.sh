@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Files a failed workflow run (`GitHub checks`, `GitHub release`) in bakers.build: comments on the
-# open CI-failure ticket for that workflow and branch if there is one, otherwise creates a bug.
+# newest open CI-failure ticket (any workflow or branch), otherwise creates a bug, so only one is open.
 # Needs a signed-in `bakers` CLI.
 # Inputs: WORKFLOW, BRANCH, FAILED_JOBS, GITHUB_SHA, RUN_URL.
 set -euo pipefail
@@ -13,7 +13,7 @@ work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
 # JSON is built with node so job names and URLs cannot break the quoting.
-node -e 'process.stdout.write(JSON.stringify({query: process.env.TITLE, project: process.env.PROJECT}))' \
+node -e 'process.stdout.write(JSON.stringify({query: "CI failure:", project: process.env.PROJECT}))' \
   >"$work/search.json"
 bakers tools tool_api__bakers_ticket_search --data @"$work/search.json" >"$work/found.json"
 
@@ -22,7 +22,10 @@ const fs = require('fs');
 const dir = process.argv[2];
 const env = process.env;
 const { tickets = [] } = JSON.parse(fs.readFileSync(`${dir}/found.json`, 'utf8'));
-const open = tickets.find((t) => t.title.startsWith(env.TITLE) && t.state !== 'done');
+// Search rows come newest first. shortcut: only the first 50 rows are seen, an older open ticket gets a duplicate.
+const open = tickets.find(
+  (t) => t.title.startsWith('CI failure:') && !['done', 'cancelled'].includes(t.state),
+);
 const body = [
   `\`${env.WORKFLOW}\` failed on \`${env.BRANCH}\`.`,
   '',
