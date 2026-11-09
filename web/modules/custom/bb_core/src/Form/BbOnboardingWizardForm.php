@@ -428,33 +428,29 @@ final class BbOnboardingWizardForm extends FormBase {
   /**
    * Approved copy for the current step.
    *
-   * @return array{title: string, description: string, explanation_title: string, explanation: string}
-   *   Visible heading, lede and the left band's explanation.
+   * @return array{title: string, description: string, explanation: string}
+   *   Visible heading, lede and the band's explanation.
    */
   private function copyForStep(int $step): array {
     return match (TRUE) {
       $step === self::STEP_ABOUT => [
         'title' => (string) $this->t('Tell us about yourself'),
         'description' => (string) $this->t('So we speak your language — matched to your work and your background.'),
-        'explanation_title' => (string) $this->t('Your data'),
         'explanation' => (string) $this->t('bakers.build passes these details as context to the AI assistants it uses, so that explanations and support match your background and your goals. You can change or delete them later.'),
       ],
       $this->isProjectStep($step) => [
         'title' => (string) $this->t('Create your first project?'),
         'description' => (string) $this->t('Start right away, or set one up later from your overview.'),
-        'explanation_title' => (string) $this->t('Why a project'),
         'explanation' => (string) $this->t('A project connects a repository to your team. Creating it now takes you straight into it; you can always add one later.'),
       ],
       $step === $this->setupStep() => [
         'title' => (string) $this->t('Get started with bakers.build'),
         'description' => (string) $this->t('Pick how you will work. Each guide opens in a new tab.'),
-        'explanation_title' => (string) $this->t('Two ways to work'),
         'explanation' => (string) $this->t('bakers.build works from a chat connector or from an agent on your own machine. These guides cover both.'),
       ],
       default => [
         'title' => (string) $this->t('What should we call you?'),
         'description' => (string) $this->t('A name and a picture — and bakers.build feels less like software and more like your team.'),
-        'explanation_title' => (string) $this->t('Why we ask'),
         'explanation' => (string) $this->t('A name and a picture let your team recognize you. You can change both at any time.'),
       ],
     };
@@ -831,7 +827,7 @@ final class BbOnboardingWizardForm extends FormBase {
       '#value' => $value,
       '#name' => $name,
       '#button_type' => 'primary',
-      // First in the row, so Enter submits it and the stacked frame leads
+      // First in the row, so Enter submits it and the gate form frame leads
       // with it.
       '#weight' => 0,
       '#theme_wrappers' => ['input__submit__bb_button'],

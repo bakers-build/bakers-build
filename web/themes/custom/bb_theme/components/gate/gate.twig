@@ -38,19 +38,17 @@
           {% if title %}
             <h1 class="gate__title m-0 font-display text-gate-headline text-balance{{ focus_title ? ' outline-none' : '' }}"{% if focus_title %} tabindex="-1" x-init="$el.focus({preventScroll: true})"{% endif %}>{{ title }}</h1>
           {% endif %}
-          {% if description %}<p class="gate__description m-0 text-body max-w-[40ch]">{{ description }}</p>{% endif %}
+          {% if description %}<p class="gate__description m-0 text-section-title font-normal max-w-[40ch]">{{ description }}</p>{% endif %}
+          {% if explanation %}<p class="gate__explanation m-0 text-section-title font-normal max-w-[40ch]">{{ explanation }}</p>{% endif %}
         </div>
       {% else %}
         {# SDC does not apply schema defaults at render time. #}
         <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("Knead it. Ship it."|t) }}</p>
       {% endif %}
-      {# A step's explanation stands apart from the slogan in its own inset field: a hairline
-         frame, so it reads as the answer to "why am I asked this" and not as more slogan. #}
-      {% if explanation %}
-        <div class="gate__explanation flex flex-col gap-inline-xs max-w-[40ch] p-gutter rounded-md border border-gate-band-ink/25 bg-gate-band-ink/5">
-          {% if explanation_title %}<p class="m-0 text-meta uppercase tracking-wide opacity-70">{{ explanation_title }}</p>{% endif %}
-          <p class="m-0 text-body">{{ explanation }}</p>
-        </div>
+      {# Beside the slogan, an explanation is its own line; with the title in the band it joins the
+         text above (see there), in the same type and with no frame. #}
+      {% if explanation and not title_in_band %}
+        <p class="gate__explanation m-0 text-section-title font-normal max-w-[40ch]">{{ explanation }}</p>
       {% endif %}
     </aside>
     <main class="gate__main relative flex-1 flex items-start lg:items-center justify-center p-gutter lg:p-section bg-app lg:bg-surface">

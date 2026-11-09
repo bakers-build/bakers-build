@@ -34,12 +34,12 @@ props:
         `form` (default) for a form of its own; `div` when the parts already stand inside a
         `<form>` that wraps a larger frame, as in the onboarding wizard.
       default: form
-    stacked:
+    pills:
       type: boolean
-      title: Stacked actions
+      title: Pill buttons
       description: >-
-        Lays the action row out as full-width pills in a column, the first being the main action,
-        as the onboarding wizard's steps do. Default off.
+        Gives the buttons the pill shape of sign-in without making them full width, so a main
+        action and its alternatives stand side by side. Default off.
       default: false
     divider:
       type: string

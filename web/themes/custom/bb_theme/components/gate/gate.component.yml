@@ -40,13 +40,9 @@ props:
       type: string
       title: Explanation
       description: >-
-        Optional plain text in an inset field under the slogan in the band, saying why this
+        Optional plain text in the band, continuing the sentence above it, saying why this
         page asks. A multi-step flow such as onboarding sets one per step; sign-in and the
         other gates leave it out and render unchanged.
-    explanation_title:
-      type: string
-      title: Explanation title
-      description: A short label above the explanation, such as "Why we ask". Optional.
     progress:
       type: string
       title: Progress

@@ -6,8 +6,8 @@
    pills and a dashed divider with its word stands between the two doors. #}
 {% set centered = align|default('start') == 'center' %}
 {% set doors = alternative is not empty %}
-{# `stacked`: the action row becomes full-width pills in a column, the first being the main action. #}
-{% set stacked = stacked|default(false) %}
+{# `pills`: the buttons are the pill shape of sign-in, side by side, the main action first. #}
+{% set pills = pills|default(false) %}
 {# `div` frames the parts of a form that already stands inside a `<form>`: the onboarding wizard, whose form element wraps the whole gate. #}
 {% set tag = tag|default('form') %}
 <{{ tag }}{{ (attributes ?: create_attribute()).addClass([
@@ -15,7 +15,7 @@
   '[&_.form-actions]:flex', '[&_.form-actions]:flex-wrap', '[&_.form-actions]:items-center', '[&_.form-actions]:gap-stack',
   '[&_:is(input,button,a):focus-visible]:outline-2', '[&_:is(input,button,a):focus-visible]:outline-solid',
   '[&_:is(input,button,a):focus-visible]:outline-focus-ring', '[&_:is(input,button,a):focus-visible]:outline-offset-2',
-]|merge(centered ? ['text-center', '[&_.form-actions]:justify-center'] : [])|merge(stacked ? ['[&_.form-actions]:flex-col', '[&_.form-actions]:flex-nowrap', '[&_.form-actions]:items-stretch'] : [])|merge(doors or stacked ? [
+]|merge(centered ? ['text-center', '[&_.form-actions]:justify-center'] : [])|merge(pills ? ['[&_.button]:h-[38px]', '[&_.button]:rounded-full', '[&_.button]:px-5'] : [])|merge(doors ? [
   '[&_.button]:w-full', '[&_.button]:h-[38px]', '[&_.button]:rounded-full',
 ] : [])) }}>
   {% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}

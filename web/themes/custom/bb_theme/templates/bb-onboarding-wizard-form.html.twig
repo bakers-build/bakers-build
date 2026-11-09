@@ -40,12 +40,11 @@
   {{ form.actions }}
   {{ form|without('#bb_copy', 'messages', 'fields', 'actions') }}
 {% endset %}
-{% set card %}{{ include('bb_theme:gate_form', {tag: 'div', stacked: true, content: parts}, with_context = false) }}{% endset %}
+{% set card %}{{ include('bb_theme:gate_form', {tag: 'div', pills: true, content: parts}, with_context = false) }}{% endset %}
 {{ include('bb_theme:gate', {
   title: form['#bb_copy'].title,
   description: form['#bb_copy'].description,
   explanation: form['#bb_copy'].explanation,
-  explanation_title: form['#bb_copy'].explanation_title,
   progress: form['#bb_copy'].progress,
   steps: form['#bb_copy'].steps,
   title_in_band: true,
