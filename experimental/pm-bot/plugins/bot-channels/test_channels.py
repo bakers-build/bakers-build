@@ -62,6 +62,12 @@ class ChannelPrompt(unittest.TestCase):
         self.assertTrue(channel_prompt("C1", "https://acme.slack.com", None).endswith("Answer in the language with ISO 639-1 code `de`."))
         self.assertTrue(channel_prompt("C1", "https://acme.slack.com", "YF-12", "fr").endswith("Answer in the language with ISO 639-1 code `fr`."))
 
+    def test_carries_the_requesters_email_address_or_none(self):
+        prompt = channel_prompt("C1", "https://acme.slack.com", "YF-12", "de", "ada@example.test")
+        self.assertIn("Its requester's e-mail address: ada@example.test.", prompt)
+        self.assertTrue(prompt.endswith("Answer in the language with ISO 639-1 code `de`."))
+        self.assertIn("Its requester's e-mail address: none.", channel_prompt("C1", "https://acme.slack.com", None))
+
     def test_the_main_channel_line_names_the_language_only(self):
         self.assertEqual(language_prompt("en"), "Answer in the language with ISO 639-1 code `en`.")
 
