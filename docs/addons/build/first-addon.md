@@ -33,35 +33,16 @@ For example, `agents` registers an agent harness, `tools` registers callable ope
 
 Each example implements a new integration:
 
-1. [Add an agent](#add-an-agent): write a harness for a program Bakers does not yet support.
-2. [Add a client](#add-a-client): connect your own terminal application through its runtime API.
+<span id="example-configure-an-existing-agent"></span>
+<span id="create-two-files"></span>
+<span id="example-connect-an-existing-terminal-client"></span>
+<span id="enable-in-project"></span>
+
+1. <span id="add-an-agent"></span>[Add an agent](/addons/build/agent): write a harness for a program Bakers does not yet support.
+2. <span id="add-a-client"></span>[Add a client](/addons/build/client): connect your own terminal application through its runtime API.
 3. [Extend the control panel](/addons/build/control-panel): implement an operation and make it callable from a ticket.
 
 The harness and client guides define a small example CLI/API, then show the complete adapter, registration and verification. Their external programs are hypothetical so you can see which parts must be adapted to your own software.
-
-## Add an agent
-
-<span id="example-configure-an-existing-agent"></span>
-
-Bakers needs to know how to launch your agent, which transcript belongs to a run, and how to read its usage metrics. A harness implements those operations through `AgentPlugin` and `BbAgent`.
-
-The example integrates a new `my-agent` CLI. Its preset exports an `agents` function that registers your plugin. The plugin constructs the adapter; the adapter supplies `launchCommand`, `getRunLog` and `parseFootprint`.
-
-<span id="create-two-files"></span>
-
-[Implement a new harness](/addons/build/agent) includes the program's CLI contract, the Bakers interfaces, the package manifest and the complete JavaScript implementation.
-
-## Add a client
-
-<span id="example-connect-an-existing-terminal-client"></span>
-
-Your terminal or desktop application has its own way to create, display and remove agent sessions. A Bakers addon translates run lifecycle calls into that application's API.
-
-The example defines an HTTP session API for **My Client** and implements a new `ExecutorPlugin` / `BbExecutor` that calls it. Bakers supplies the prepared worktree, agent command and environment; your runtime hosts the terminal. The existing workspace provider still prepares the checkout.
-
-<span id="enable-in-project"></span>
-
-[Connect a new client](/addons/build/client) shows both sides of the API: the methods Bakers calls and the requests your runtime must accept, including authentication, launch confirmation and cleanup of one specific run.
 
 ## Verify
 
