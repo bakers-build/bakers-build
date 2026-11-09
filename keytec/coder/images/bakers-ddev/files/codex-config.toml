@@ -1,0 +1,4 @@
+# Codex on a keytec bakers-ddev box. The start script copies this to ~/.codex/config.toml when the
+# home has none; later edits on the box win. Approvals and sandbox come from bakers.build's Codex
+# addon on each run, so they are not set here.
+check_for_update_on_startup = false

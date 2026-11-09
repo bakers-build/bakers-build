@@ -1,0 +1,29 @@
+# keytec bakers-ddev workspace image (keytec/infra: ci/bakers-ddev.gitlab-ci.yml, included from
+# .gitlab-ci.yml). Extends infra's .docker_image_build for its runner, login and Docker socket;
+# the script adds the version tag and reports the pushed digest, which the template's `image`
+# variable takes (coder/templates/bakers-ddev/README.md › Push).
+variables:
+  BAKERS_DDEV_IMAGE_VERSION: "1.0.0"
+
+build-coder-bakers-ddev-image:
+  extends: .docker_image_build
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      changes:
+        - ci/bakers-ddev.gitlab-ci.yml
+        - coder/images/bakers-ddev/**/*
+  variables:
+    IMAGE_NAME: "coder-bakers-ddev"
+    BUILD_DIR: "coder/images/bakers-ddev"
+  script:
+    - cd "${BUILD_DIR}"
+    - IMAGE_TAG="${CI_REGISTRY_IMAGE}/${IMAGE_NAME}:${BAKERS_DDEV_IMAGE_VERSION}"
+    - docker build --pull --build-arg "BASE_IMAGE=${CI_REGISTRY_IMAGE}/coder-drupal-ddev-base:${DDEV_BASE_IMAGE_VERSION}" -t "${IMAGE_TAG}" .
+    - docker run --rm "${IMAGE_TAG}" /usr/local/share/bakers-ddev/smoke.sh
+    - docker push "${IMAGE_TAG}"
+    - docker inspect --format '{{index .RepoDigests 0}}' "${IMAGE_TAG}" | tee "${CI_PROJECT_DIR}/digest.txt"
+    - 'echo "image = \"${IMAGE_TAG}@$(cut -d@ -f2 "${CI_PROJECT_DIR}/digest.txt")\""'
+  artifacts:
+    paths:
+      - digest.txt
+    expire_in: 1 year

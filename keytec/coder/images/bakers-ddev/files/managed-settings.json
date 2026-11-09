@@ -1,0 +1,24 @@
+{
+  "env": {
+    "DISABLE_AUTOUPDATER": "1"
+  },
+  "extraKnownMarketplaces": {
+    "keytec": {
+      "source": { "source": "git", "url": "https://git.key-tec.de/keytec/laws-of-robotics.git" }
+    },
+    "bakers": {
+      "source": { "source": "github", "repo": "bakers-build/bakers-build" }
+    },
+    "mattpocock": {
+      "source": { "source": "github", "repo": "mattpocock/skills" }
+    }
+  },
+  "enabledPlugins": {
+    "keytec-base@keytec": true,
+    "keytec-drupal@keytec": true,
+    "keytec-qa@keytec": true,
+    "bakers@bakers": true,
+    "mattpocock-skills@mattpocock": true,
+    "superpowers@claude-plugins-official": true
+  }
+}
