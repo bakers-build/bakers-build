@@ -301,3 +301,144 @@ test('a channel link to a channel the bot did not create is posted to, never ren
   assert.equal(slack.posts().length, 1);
   assert.deepEqual(slack.calls.filter((c) => c.method.startsWith('conversations.')), []);
 });
+
+const MINUTE = 60 * 1000;
+
+test('a ticket walking plan, working, review and done gets its state lines, a work-start line, a line per summary and the preview link, in order', async (t) => {
+  const { s, slack, poller, clock } = await setup(t);
+  const ticket = s.addTicket({ state: 'plan', links: [thread()] });
+  s.addComment(ticket, { type: 'summary', body: '### Outcome\n\nThe request is written up.', created: '2026-11-05T11:00:00Z' });
+  await poller.pass();
+
+  ticket.state = 'working';
+  const working = s.addRun(ticket, { state_at_start: 'working' });
+  await poller.pass();
+
+  clock.now += 20 * MINUTE;
+  s.addComment(ticket, { type: 'summary', body: '### 🎯 Outcome\n\nThe import reads the **supplier** file. Prices update every night.', created: '2026-11-05T12:19:00Z' });
+  ticket.links.push({ uri: 'https://acme-1.ddev.site/prices', title: 'Price list' });
+  working.state = 'done';
+  ticket.state = 'review';
+  const review = s.addRun(ticket, { state_at_start: 'review' });
+  await poller.pass();
+
+  clock.now += 10 * MINUTE;
+  s.addComment(ticket, { type: 'summary', body: '### Outcome\n\nAll checks pass.\n\n### 🧪 Manual review\n\nOpen the price list.', created: '2026-11-05T12:29:00Z' });
+  review.state = 'done';
+  ticket.state = 'done';
+  await poller.pass();
+  await poller.pass();
+
+  assert.deepEqual(slack.posts().map((p) => p.text), [
+    messages.states.working,
+    messages.runStart.working,
+    messages.states.review,
+    'The import reads the supplier file. Prices update every night.',
+    `${messages.previewLead} Price list\nhttps://acme-1.ddev.site/prices`,
+    messages.runStart.review,
+    `${messages.states.done}\n\n${messages.testHint}\n\nOpen the price list.`,
+  ]);
+});
+
+test('runs, summaries and links from before the poller followed a ticket are not posted', async (t) => {
+  const { s, slack, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread(), { uri: 'https://acme-1.ddev.site/', title: 'Site' }] });
+  s.addRun(ticket, { state: 'failed' });
+  s.addRun(ticket);
+  s.addComment(ticket, { type: 'summary', body: '### Outcome\n\nSomething was done earlier.' });
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(slack.posts(), []);
+});
+
+test('a status line Slack refused is posted on a later pass, once, also after a restart', async (t) => {
+  const { s, slack, poller, restart } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  s.addRun(ticket);
+  slack.fail('chat.postMessage');
+  await poller.pass();
+  slack.heal();
+  const refused = slack.posts().length;
+  const again = restart();
+  await again.pass();
+  await again.pass();
+  assert.deepEqual(slack.posts().slice(refused).map((p) => p.text), [messages.runStart.working]);
+});
+
+test('a run whose start line Slack refused once gets its start and end lines once each, in order', async (t) => {
+  const accepted = [];
+  let refusals = 1;
+  const { s, poller } = await setup(t, {
+    slackAnswers: {
+      'chat.postMessage': (body) => {
+        if (body.text === messages.runStart.working && refusals-- > 0) return { ok: false, error: 'ratelimited' };
+        accepted.push(body.text);
+        return { ok: true, ts: `1800000000.${String(accepted.length).padStart(6, '0')}` };
+      },
+    },
+  });
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  s.addRun(ticket, { state: 'failed' });
+  await poller.pass();
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(accepted, [messages.runStart.working, messages.runPaused]);
+});
+
+test('a summary comment without a body posts nothing and fails nothing', async (t) => {
+  const { s, slack, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  delete s.addComment(ticket, { type: 'summary' }).body;
+  s.addRun(ticket);
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), [messages.runStart.working]);
+});
+
+test('a ticket whose runs cannot be read is skipped for the pass and caught up on the next', async (t) => {
+  const { s, slack, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  await poller.pass();
+  s.addRun(ticket);
+  s.failOnce('bakers_ticket_runs_list');
+  await poller.pass();
+  assert.deepEqual(slack.posts(), []);
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), [messages.runStart.working]);
+});
+
+test('a working ticket in a quiet conversation gets one heartbeat per interval while its run runs', async (t) => {
+  const { s, slack, poller, clock } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  const running = s.addRun(ticket, { started_at: clock.now / 1000 - 3600 });
+  await poller.pass();
+  clock.now += 30 * MINUTE - 1;
+  await poller.pass();
+  assert.deepEqual(slack.posts(), []);
+  clock.now += 1;
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), [messages.stillWorking]);
+  clock.now += 30 * MINUTE;
+  running.state = 'done';
+  ticket.state = 'review';
+  await poller.pass();
+  clock.now += 30 * MINUTE;
+  await poller.pass();
+  assert.deepEqual(slack.posts().map((p) => p.text), [messages.stillWorking, messages.states.review]);
+});
+
+test('a question relayed while the run still runs is the only post of its pass, with no heartbeat beside it', async (t) => {
+  const { s, slack, sent, poller, clock } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  s.addRun(ticket, { started_at: clock.now / 1000 - 3600 });
+  await poller.pass();
+  clock.now += 30 * MINUTE;
+  frozenWithQuestion(s, ticket);
+  await poller.pass();
+  assert.deepEqual(sent.map((p) => p.kind), ['question']);
+  assert.deepEqual(slack.posts(), []);
+});

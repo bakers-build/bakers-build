@@ -12,5 +12,15 @@
   "questionLead": "{identifier} · \"{title}\" has a question:",
   "technicalProblemLead": "The work on the \"{title}\" ticket is stuck on a technical problem that keytec has to solve:",
   "reopened": "The earlier conversation on this request is in {previous}.",
-  "abandoned": "Nothing was written here for a week, so this request is closed without a ticket. To start again, mention the bot in its main channel."
+  "abandoned": "Nothing was written here for a week, so this request is closed without a ticket. To start again, mention the bot in its main channel.",
+  "runStart": {
+    "qualification": "We are looking at your request.",
+    "plan": "We are writing up how to do it.",
+    "working": "We are working on it now.",
+    "review": "We are checking the work."
+  },
+  "runPaused": "The work is paused because of a problem; the developers are looking at it.",
+  "runWaiting": "This step is finished and waits for a decision.",
+  "previewLead": "There is something to look at:",
+  "stillWorking": "Still working on it."
 }
