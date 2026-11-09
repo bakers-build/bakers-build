@@ -10,7 +10,7 @@
 #     only the bot's own toolsets
 #   - memory writes and self-written skills wait for approval
 #   - one shared session per channel, not per user, and flat replies (reply_in_thread: false)
-#   - only the bot's own plugin, bot-channels, is enabled; its pure core passes its unit tests
+#   - only the bot's own plugin, bot-channels, is enabled; it passes its unit tests
 #   - bakers.build is reached only through its own MCP endpoint: the remote
 #     server `bakers` at ${BAKERS_URL}/mcp, the API key as a static bearer that
 #     Hermes fills from the env file, exactly eight bakers tools, no OAuth
@@ -21,8 +21,10 @@
 #     and the answer path
 #   - no bb_question tool is named anywhere in the bot
 #   - every user in the allowed channels is served unless an allowlist is set
-#   - poller and client call no LLM
-#   - the Slack app neither reads nor opens direct messages, and may manage public channels
+#   - poller, client and plugin call no LLM, except the plugin's language.py, which only takes
+#     back a validated language code; the persona answers in the language the trusted line names
+#   - the Slack app neither reads nor opens direct messages, may manage public channels and
+#     may react to messages
 #   - persona, skill and scripts name no customer; only .env.example may
 #   - the bot passes answers on without a "Correct?" confirmation round
 #   - customer wording says what happens, not what a team does
@@ -49,6 +51,7 @@ for f in "$TEMPLATE" "$BOT/SOUL.template.md" "$BOT/.env.example" \
          "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
          "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/poller/channels.mjs" "$BOT/lib/bakers-client.mjs" \
          "$BOT/plugins/bot-channels/plugin.yaml" "$BOT/plugins/bot-channels/__init__.py" "$BOT/plugins/bot-channels/channels.py" \
+         "$BOT/plugins/bot-channels/language.py" "$BOT/plugins/bot-channels/messages.json" \
          "$BOT/slack-app-manifest.yaml"; do
   [ -f "$f" ] || fail "$f is missing"
 done
@@ -160,15 +163,16 @@ for scope in sorted(scopes & {"im:write", "im:history", "im:read", "mpim:history
 for event in sorted(events & {"message.im", "message.mpim"}): errors.append(f"bot events include {event}")
 if home.get("messages_tab_enabled") is not False: errors.append("app_home.messages_tab_enabled is not false")
 if "channels:manage" not in scopes: errors.append("bot scopes lack channels:manage (create, invite, rename, archive)")
+if "reactions:write" not in scopes: errors.append("bot scopes lack reactions:write (the eyes marker on a message in work)")
 if not (manifest.get("settings") or {}).get("socket_mode_enabled"): errors.append("socket mode is off")
 for e in errors:
     print("FAIL:", e, file=sys.stderr)
 sys.exit(1 if errors else 0)
 PY
-pass "Slack app talks in channels only, over Socket Mode, and manages public channels"
+pass "Slack app talks in channels only, over Socket Mode, manages public channels and reacts"
 
-python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qx OK || fail "the bot-channels plugin core fails its unit tests"
-pass "bot-channels plugin core passes its unit tests"
+python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qx OK || fail "the bot-channels plugin fails its unit tests"
+pass "bot-channels plugin passes its unit tests"
 
 # Questions are ticket comments under the Question label; the old question entity is gone.
 if git grep --untracked -nIE 'bb_question|bakers_question_|client_id: *hermes|bring_in_expert|chat_thread' -- "$BOT"; then
@@ -181,11 +185,19 @@ grep -qF '[ -n "${SLACK_ALLOWED_USERS:-}" ] || export GATEWAY_ALLOW_ALL_USERS=tr
   || fail "entrypoint.sh does not serve every user when SLACK_ALLOWED_USERS is empty"
 pass "every user in the allowed channels unless SLACK_ALLOWED_USERS is set"
 
-# The poller and the relay relay; they never call a model.
-if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/lib" "$BOT/plugins"; then
-  fail "poller, client or plugin call an LLM"
+# The poller and the plugin relay; they never call a model. One exception: the plugin's
+# language.py asks it which language the service account's background names, and takes back
+# nothing but a validated code.
+LANG_PY="$BOT/plugins/bot-channels/language.py"
+if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/lib" "$BOT/plugins" ":!$LANG_PY"; then
+  fail "poller, client or plugin call an LLM outside $LANG_PY"
 fi
-pass "poller, client and plugin make no LLM call"
+grep -qF 'parse_code(ask(' "$LANG_PY" || fail "$LANG_PY does not validate the model's answer with parse_code"
+pass "poller, client and plugin make no LLM call but the validated language read"
+
+grep -qF "the language your channel's trusted line names; German when it names none" "$SOUL" \
+  || fail "$SOUL does not answer in the trusted line's language, German by default"
+pass "the persona answers in the trusted line's language, German by default"
 
 # Customer specifics live in the env file only; .env.example may show them as examples.
 if git grep --untracked -nIiE 'pnf|park ?(and|&|n) ?fly' -- "$BOT" ":!$BOT/.env.example"; then

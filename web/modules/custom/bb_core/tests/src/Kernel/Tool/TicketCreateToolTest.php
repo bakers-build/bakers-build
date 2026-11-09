@@ -87,6 +87,20 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * The result links the ticket's canonical page under its workspace slug.
+   */
+  public function testResultCarriesAbsoluteTicketUrl(): void {
+    $this->container->get('router.builder')->rebuild();
+    $this->project->set('key', 'TOOL')->save();
+    $out = $this->outputs($this->runTool('bakers_ticket_create', [
+      'title' => 'Linked',
+      'workflow' => 'bb_work',
+      'project' => 'TOOL',
+    ]));
+    self::assertMatchesRegularExpression('#^https?://[^/]+(/.*)?/tool-workspace/ticket/tool-1$#', $out['url']);
+  }
+
+  /**
    * A missing recipe term is created in the project's workspace.
    */
   public function testMissingRecipeIsCreated(): void {

@@ -41,12 +41,15 @@ test('a channel the bot did not create is left alone', () => {
 });
 
 test('a ticket whose final state was posted is owed the archive, at done and at cancelled', () => {
-  const channels = { C1: { ticket: 'YF-12', renamed: true } };
+  const channels = { C1: { ticket: 'YF-12', renamed: true, final: true } };
   for (const state of ['done', 'cancelled']) {
     assert.deepEqual(kinds(channelSteps({ tickets: { 'YF-12': state }, channels }, [ticket('YF-12', state, 'C1')], bot, now)), [['archive', 'C1']]);
   }
   // Not yet posted: the poller still holds the previous state.
   assert.deepEqual(channelSteps({ tickets: { 'YF-12': 'review' }, channels }, [ticket('YF-12', 'done', 'C1')], bot, now), []);
+  // Recorded as closed, but its post never went out.
+  const unposted = { C1: { ticket: 'YF-12', renamed: true } };
+  assert.deepEqual(channelSteps({ tickets: { 'YF-12': 'done' }, channels: unposted }, [ticket('YF-12', 'done', 'C1')], bot, now), []);
 });
 
 test('a ticket that leaves done or cancelled with an archived channel is owed a reopen', () => {

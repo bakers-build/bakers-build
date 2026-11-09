@@ -7,6 +7,7 @@ const messages = {
     working: 'Work on this has started.',
     review: 'The work is finished and is being checked.',
     done: 'This is finished and ready for you to try.',
+    cancelled: 'This was cancelled.',
   },
   testHint: 'Where and how to test:',
   noTestHint: 'The ticket does not say yet where or how to test this.',
@@ -70,15 +71,16 @@ test('done without a manual review section says that none is recorded', () => {
   );
 });
 
-test('a ticket the poller has not seen before posts nothing', () => {
-  const { posts, next } = diff({ 'ACME-1': 'plan' }, [ticket('ACME-1', 'plan'), ticket('ACME-2', 'plan')], {}, messages);
-  assert.deepEqual(posts, []);
-  assert.deepEqual(next, { 'ACME-1': 'plan', 'ACME-2': 'plan' });
+test('a ticket the poller has not seen before posts nothing while open, its final state once closed', () => {
+  const { posts, next } = diff({ 'ACME-1': 'plan' }, [ticket('ACME-1', 'plan'), ticket('ACME-2', 'plan'), ticket('ACME-3', 'cancelled')], {}, messages);
+  assert.deepEqual(posts.map((p) => [p.identifier, p.text]), [['ACME-3', messages.states.cancelled]]);
+  assert.deepEqual(next, { 'ACME-1': 'plan', 'ACME-2': 'plan', 'ACME-3': 'cancelled' });
+  assert.deepEqual(diff(null, [ticket('ACME-3', 'cancelled')], {}, messages).posts, [], 'the first run still posts nothing');
 });
 
-test('reachedDone names only tickets with a conversation that changed to done', () => {
+test('reachedDone names the tickets with a conversation that changed to done or are first seen done', () => {
   const tickets = [ticket('ACME-1', 'done'), ticket('ACME-2', 'done'), ticket('ACME-3', 'done', null), ticket('ACME-4', 'done')];
-  assert.deepEqual(reachedDone({ 'ACME-1': 'review', 'ACME-2': 'done', 'ACME-3': 'review' }, tickets), ['ACME-1']);
+  assert.deepEqual(reachedDone({ 'ACME-1': 'review', 'ACME-2': 'done', 'ACME-3': 'review' }, tickets), ['ACME-1', 'ACME-4']);
   assert.deepEqual(reachedDone(null, tickets), []);
 });
 

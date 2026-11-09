@@ -18,6 +18,7 @@
 #     secret-free clone, logs in to the registry with the token on stdin only
 #     and brings the compose project up with the pinned image
 #   - empty allowed users serve everyone; a list serves only those users
+#   - an empty home channel becomes the first allowed channel; a set one wins
 #   - without a repository URL the clone directory is emptied; a changed URL
 #     replaces the clone; a secret file in the clone stops the bot
 #   - a failing clone, login or up takes the bot down and exits 0
@@ -207,7 +208,7 @@ ENVFILE="$(DATA)/.env"
 [ "$(mode "$ENVFILE")" = 600 ] || fail "full: env file mode is $(mode "$ENVFILE"), not 600"
 for line in "SLACK_BOT_TOKEN=$BOT_TOKEN" "SLACK_APP_TOKEN=$APP_TOKEN" SLACK_ALLOWED_CHANNELS=C01,C02,C03,C04 \
   SLACK_ALLOWED_USERS= GATEWAY_ALLOW_ALL_USERS=true SLACK_ADMIN_USERS=U0000000009 \
-  SLACK_WORKSPACE_URL=https://example.slack.com SLACK_HOME_CHANNEL= BAKERS_URL=https://bakers.example.test \
+  SLACK_WORKSPACE_URL=https://example.slack.com SLACK_HOME_CHANNEL=C01 BAKERS_URL=https://bakers.example.test \
   "BAKERS_API_KEY=$BAKERS_KEY" \
   PM_BOT_PROJECT=00000000-0000-4000-8000-000000000000 PM_BOT_TICKET_WORKFLOW=bb_work PM_BOT_CONDUCTOR= \
   "ANTHROPIC_API_KEY=$API_KEY" CLAUDE_CODE_OAUTH_TOKEN= PM_BOT_MODEL=claude-sonnet-5-5 \
@@ -279,6 +280,13 @@ expect_up users
 grep -qx SLACK_ALLOWED_USERS=U01,U02 "$(DATA)/.env" || fail "users: allowed users not normalized"
 ! grep -q GATEWAY_ALLOW_ALL_USERS "$(DATA)/.env" || fail "users: allow-all set although users are listed"
 pass "allowed users set: only they are allowed"
+
+# --- 7a. A set home channel wins over the first allowed channel -----------------
+fresh home
+run "${FULL[@]}" PM_BOT_SLACK_HOME_CHANNEL=C0000000002
+expect_up home
+grep -qx SLACK_HOME_CHANNEL=C0000000002 "$(DATA)/.env" || fail "home: the set home channel did not win"
+pass "an empty home channel defaults to the first allowed channel; a set one wins"
 
 # --- 8. A public registry: no login --------------------------------------------
 fresh public

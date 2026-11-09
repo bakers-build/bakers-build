@@ -1,7 +1,9 @@
 import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
 import claudeAgentDefault, {
   ClaudeAgent,
@@ -52,6 +54,50 @@ describe('ClaudeAgent.launchCommand', () => {
     );
     expect(cmd).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'para one\n\npara two' --dangerously-skip-permissions",
+    );
+  });
+});
+
+describe('ClaudeAgent.launchCommand in a worktree', () => {
+  const trust = fileURLToPath(
+    new URL('../trust/claude-trust.mjs', import.meta.url),
+  );
+  const measure = fileURLToPath(
+    new URL('../measure/claude-measure.mjs', import.meta.url),
+  );
+
+  it('trusts the worktree through the trust wrapper before claude starts', () => {
+    expect(
+      new ClaudeAgent({ security: 'yolo' }).launchCommand(
+        'x',
+        undefined,
+        "/w/it's",
+      ),
+    ).toBe(
+      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${trust}' '/w/it'\\''s' claude 'x' --dangerously-skip-permissions`,
+    );
+  });
+  it('puts the trust wrapper in front of the measure wrapper', () => {
+    expect(
+      new ClaudeAgent({ security: 'yolo', measure: true }).launchCommand(
+        'x',
+        undefined,
+        '/w',
+      ),
+    ).toMatch(
+      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${trust}' '/w' node '${measure}' claude 'x'`,
+    );
+  });
+  it('trusts nothing without a worktree or a prompt', () => {
+    const agent = new ClaudeAgent({ security: 'yolo' });
+    expect(agent.launchCommand('x')).not.toContain('claude-trust');
+    expect(agent.launchCommand('', undefined, '/w')).toBe('claude');
+  });
+  it('runs its node:test suite', () => {
+    execFileSync(
+      process.execPath,
+      ['--test', trust.replace(/\.mjs$/, '.test.mjs')],
+      { stdio: 'pipe' },
     );
   });
 });
@@ -194,13 +240,23 @@ describe('ClaudeAgent.launchCommand with a run identity', () => {
   });
 });
 
+// The stub is an executable on PATH, not a shell function, so a wrapper
+// process (the trust wrapper) reaches it too; HOME keeps ~/.claude.json untouched.
 function captureArgv(binary: string, command: string): string[] {
-  const output = execFileSync(
-    'bash',
-    ['-c', `${binary}() { printf '%s\\0' "${binary}" "$@"; }; ${command}`],
-    { encoding: 'utf8' },
-  );
-  return output.split('\0').slice(0, -1);
+  const dir = mkdtempSync(join(tmpdir(), 'claude-argv-'));
+  try {
+    const stub = join(dir, binary);
+    writeFileSync(stub, `#!/bin/sh\nprintf '%s\\0' "${binary}" "$@"\n`, {
+      mode: 0o755,
+    });
+    const output = execFileSync('bash', ['-c', command], {
+      encoding: 'utf8',
+      env: { ...process.env, HOME: dir, PATH: `${dir}:${process.env.PATH}` },
+    });
+    return output.split('\0').slice(0, -1);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 describe('ClaudeAgent args and effort', () => {
