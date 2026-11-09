@@ -21,8 +21,15 @@ If the project is ready, go straight to [your first ticket](/get-started/first-t
 
 <span id="run-agents-for-a-project"></span>
 
-<span id="how-it-works"></span>
 <span id="from-ticket-to-result"></span>
+
+## How it works
+
+A **workspace** groups your team's projects and access. A **project** connects repository work to **tickets**: requests with checkable acceptance criteria.
+
+A **conductor** runs on a worker machine and starts a coding **agent** for eligible tickets. Each attempt is a **run**; code changes live in a separate Git checkout called a **worktree**.
+
+You approve the plan, inspect the result and authorize merging. [Agent review and human review](/skills-and-workflows/accept-results) are separate checks.
 
 ## After your first ticket
 
