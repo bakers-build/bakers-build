@@ -34,7 +34,7 @@ It publishes one alias, `opencode`, which uses your locally configured OpenCode 
 
 ## Security
 
-OpenCode has no OS sandbox, and its permission policies do not sandbox plugin code, so bakers.build cannot protect an OpenCode run. Its default is therefore `system`, not `sandbox` as for Claude, Codex and Grok:
+OpenCode has no OS sandbox, and its permission policies do not sandbox plugin code, so bakers.build cannot protect an OpenCode run. It therefore runs in `system`, the default for every harness, and rejects `sandbox`:
 
 | `security` | Launch flags |
 |---|---|

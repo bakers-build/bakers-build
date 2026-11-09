@@ -34,7 +34,7 @@ One custom candidate:
 |---|---|---|---|
 | `model` | string | none | Passed as `--model`. Replaces `opus`, `sonnet` and `fable` with one custom candidate. |
 | `effort` | string | none | Passed as `--effort`. |
-| `security` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'sandbox'` | How strictly a run starts; see [Security](#security). |
+| `security` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'system'` | How strictly a run starts; see [Security](#security). |
 | `sandbox` | object | see below | Only with `security: 'sandbox'`. Each key set replaces its default; lists are not merged. |
 | `config` | object | none | Required with, and only valid with, `security: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
@@ -43,7 +43,7 @@ One custom candidate:
 
 ## Security
 
-Default: OS sandbox. See [Execution security](/provision/security/execution) for boundaries, environment filtering and isolation risks.
+Default: `system`. See [Execution security](/provision/security/execution) for boundaries, environment filtering and isolation risks.
 
 | `security` | Launch flags |
 |---|---|
@@ -56,14 +56,14 @@ Default: OS sandbox. See [Execution security](/provision/security/execution) for
 
 | Key | Default | Becomes |
 |---|---|---|
-| `trusted_commands` | `['bakers', 'git']` | `sandbox.excludedCommands` as `<name> *`, or unchanged if ending in `*`: these run outside the sandbox |
+| `trusted_commands` | `[]` | `sandbox.excludedCommands` as `<name> *`, or unchanged if ending in `*`: these run outside the sandbox |
 | `deny_read` | `['~/.ssh', '~/.bakers']` | `sandbox.filesystem.denyRead` and the rules `Read(<path>)`, `Read(<path>/**)`; an absolute path becomes `//<path>` |
 | `allow_write` | `[]` | `sandbox.filesystem.allowWrite`, plus worktree, `$TMPDIR`, [Git metadata](/provision/security/execution#git-metadata-in-codex-and-claude-sandboxes); `.git` dropped |
 | `network` | `['*']` | `sandbox.network.allowedDomains`; `['*']` allows every host |
 | `mcp_servers` | `{}` | `--mcp-config`, in Claude's `mcpServers` shape; plus [`bakers`](/addons/build/tools) |
 
 ```js
-{ use: '@bakers-build/addon-claude', with: { sandbox: { trusted_commands: ['bakers', 'git', 'docker'] } } }
+{ use: '@bakers-build/addon-claude', with: { security: 'sandbox', sandbox: { trusted_commands: ['git', 'docker'] } } }
 ```
 
 ## Check it works

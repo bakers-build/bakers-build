@@ -456,7 +456,7 @@ export function resolveSecurityOptions(
   });
   const modeLayer = [...layers].reverse().find((l) => l.block.mode);
   const mode: SecurityMode =
-    input.security ?? modeLayer?.block.mode ?? 'sandbox';
+    input.security ?? modeLayer?.block.mode ?? 'system';
   const modeSource: SecuritySource =
     input.security !== undefined ? 'agent' : (modeLayer?.source ?? 'default');
   if (!SECURITY_MODES.includes(mode)) {

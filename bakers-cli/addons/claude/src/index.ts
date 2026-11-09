@@ -61,7 +61,8 @@ const MEASURE_FLAGS: readonly (readonly string[])[] = [
 ];
 
 const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
-  trusted_commands: ['bakers', 'git'],
+  // No global tools: whatever a sandboxed run needs beyond its worktree comes through addon tools.
+  trusted_commands: [],
   deny_read: ['~/.ssh', '~/.bakers'],
   allow_write: [],
   network: ['*'],

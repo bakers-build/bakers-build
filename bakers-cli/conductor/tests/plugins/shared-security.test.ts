@@ -28,6 +28,7 @@ const resolve = (
 describe('shared run security layers', () => {
   it('a project list with $inherit adds to the harness default', () => {
     const r = resolve({
+      security: 'sandbox',
       shared_security: {
         project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
       },
@@ -42,6 +43,7 @@ describe('shared run security layers', () => {
 
   it('the machine replaces the project, and [] vetoes its grant', () => {
     const r = resolve({
+      security: 'sandbox',
       shared_security: {
         project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
         machine: { sandbox: { trusted_commands: [] } },
@@ -56,6 +58,7 @@ describe('shared run security layers', () => {
 
   it('machine $inherit keeps the project grant; duplicates are dropped', () => {
     const r = resolve({
+      security: 'sandbox',
       shared_security: {
         project: { sandbox: { allow_write: ['~/.designbook'] } },
         machine: { sandbox: { allow_write: ['$inherit', '~/.designbook'] } },
@@ -68,6 +71,7 @@ describe('shared run security layers', () => {
 
   it('an entry list without $inherit replaces every shared layer', () => {
     const r = resolve({
+      security: 'sandbox',
       shared_security: { machine: { sandbox: { deny_read: ['~/.aws'] } } },
       sandbox: { deny_read: ['~/.gnupg'] },
     });
@@ -76,6 +80,7 @@ describe('shared run security layers', () => {
 
   it('an entry list with $inherit adds to the machine layer', () => {
     const r = resolve({
+      security: 'sandbox',
       shared_security: {
         machine: { sandbox: { deny_read: ['$inherit', '~/.aws'] } },
       },
@@ -89,7 +94,7 @@ describe('shared run security layers', () => {
     ]);
   });
 
-  it('mode: entry over machine over project over the sandbox default', () => {
+  it('mode: entry over machine over project over the system default', () => {
     const layers = {
       project: { mode: 'yolo' },
       machine: { mode: 'system' },
@@ -105,7 +110,7 @@ describe('shared run security layers', () => {
       resolve({ shared_security: layers, security: 'sandbox' }).report.mode,
     ).toEqual({ value: 'sandbox', source: 'agent' });
     expect(resolve({}).report.mode).toEqual({
-      value: 'sandbox',
+      value: 'system',
       source: 'default',
     });
   });
@@ -124,6 +129,7 @@ describe('shared run security layers', () => {
   it('a shared key the harness cannot express is not applied', () => {
     const r = resolve(
       {
+        security: 'sandbox',
         shared_security: {
           machine: {
             sandbox: { deny_read: ['~/.aws'], allow_write: ['~/.y'] },
@@ -154,8 +160,11 @@ describe('shared run security layers', () => {
   });
 
   it('without shared layers the entry behaves as before', () => {
-    const r = resolve({ sandbox: { trusted_commands: ['$inherit', 'make'] } });
+    const r = resolve({
+      security: 'sandbox',
+      sandbox: { trusted_commands: ['$inherit', 'make'] },
+    });
     expect(r.sandbox.trusted_commands).toEqual(['bakers', 'git', 'make']);
-    expect(resolve({}).sandbox).toEqual(DEFAULTS);
+    expect(resolve({ security: 'sandbox' }).sandbox).toEqual(DEFAULTS);
   });
 });

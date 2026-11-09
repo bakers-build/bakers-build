@@ -52,7 +52,7 @@ Review, merge and deployment stay explicit human decisions, whatever your rank.
 
 ## Agent execution boundaries
 
-Claude and Codex default to their OS sandbox. Verify [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites) as the conductor user before dispatch. Config roots, provider credentials and readable paths need separate consideration; a worktree is not a full security boundary. Other harnesses do not acquire the same sandbox simply by running under bakers.build.
+Runs default to `system` mode; Claude, Codex and Grok run in their OS sandbox only with `security: 'sandbox'`, which grants no global tools. Then verify [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites) as the conductor user before dispatch. Config roots, provider credentials and readable paths need separate consideration; a worktree is not a full security boundary. Other harnesses do not acquire the same sandbox simply by running under bakers.build.
 
 [Execution security](/provision/security/execution) owns modes, allowlists, environment filtering and limitations. Package-specific flags stay with [agent addons](/addons/). Review commands from untrusted ticket text against the current scope. Hooks run with the worker's permissions; failures do not stop dispatch, so required readiness checks belong in `WORKFLOW.md`.
 

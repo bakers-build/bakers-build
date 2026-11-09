@@ -423,16 +423,15 @@ describe('ClaudeAgent security: shared project and machine layers', () => {
   };
 
   it('applies them in the generated settings and reports their sources', async () => {
-    const plugin = claudeAgent({ shared_security } as never);
+    const plugin = claudeAgent({
+      security: 'sandbox',
+      shared_security,
+    } as never);
     const agent = await plugin.createAgent({} as never);
     const settings = JSON.parse(
       flagValue(captureArgv('claude', agent.launchCommand('x')), '--settings'),
     );
-    expect(settings.sandbox.excludedCommands).toEqual([
-      'bakers *',
-      'git *',
-      'make *',
-    ]);
+    expect(settings.sandbox.excludedCommands).toEqual(['make *']);
     expect(settings.sandbox.filesystem.allowWrite).toEqual(['/srv/cache']);
     expect(settings.sandbox.filesystem.denyRead).toEqual([
       '~/.ssh',
@@ -447,9 +446,12 @@ describe('ClaudeAgent security: shared project and machine layers', () => {
   });
 });
 
-describe('ClaudeAgent security: sandbox (default)', () => {
+describe('ClaudeAgent security: sandbox', () => {
   const argv = () =>
-    captureArgv('claude', new ClaudeAgent({}).launchCommand('x'));
+    captureArgv(
+      'claude',
+      new ClaudeAgent({ security: 'sandbox' }).launchCommand('x'),
+    );
 
   it('starts without a bypass, in default mode, with project/local settings only and no MCP server', () => {
     const a = argv();
@@ -462,13 +464,13 @@ describe('ClaudeAgent security: sandbox (default)', () => {
     });
   });
 
-  it('generates OS-sandbox settings that fail closed and deny reads of ~/.ssh and ~/.bakers', () => {
+  it('generates OS-sandbox settings that fail closed, trust no command and deny reads of ~/.ssh and ~/.bakers', () => {
     const settings = JSON.parse(flagValue(argv(), '--settings'));
     expect(settings.sandbox).toEqual({
       enabled: true,
       failIfUnavailable: true,
       allowUnsandboxedCommands: false,
-      excludedCommands: ['bakers *', 'git *'],
+      excludedCommands: [],
       filesystem: {
         denyRead: ['~/.ssh', '~/.bakers'],
         allowWrite: [],
@@ -496,6 +498,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
     const a = captureArgv(
       'claude',
       new ClaudeAgent({
+        security: 'sandbox',
         sandbox: {
           trusted_commands: ['git', 'make', 'docker compose *'],
           deny_read: ['~/.aws', '/etc/secret', '~/.netrc'],
@@ -569,6 +572,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
         captureArgv(
           'claude',
           new ClaudeAgent({
+            security: 'sandbox',
             sandbox: { allow_write: ['/srv/cache'] },
           }).launchCommand('x', undefined, path, {
             url: 'http://127.0.0.1:4100',
@@ -612,6 +616,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
           captureArgv(
             'claude',
             new ClaudeAgent({
+              security: 'sandbox',
               sandbox: { allow_write: ['/repo/.git', '/srv/cache'] },
             }).launchCommand('x'),
           ),
@@ -684,6 +689,7 @@ describe('ClaudeAgent conductor tools', () => {
 
   it('merges the bakers server into the sandbox MCP config, the token by env reference only', () => {
     const agent = new ClaudeAgent({
+      security: 'sandbox',
       sandbox: { mcp_servers: { playwright: { command: 'npx' } } },
     });
     const a = launch(agent);
@@ -699,6 +705,7 @@ describe('ClaudeAgent conductor tools', () => {
 
   it("replaces a sandbox MCP server named bakers with the conductor's, and warns", () => {
     const agent = new ClaudeAgent({
+      security: 'sandbox',
       sandbox: { mcp_servers: { bakers: { command: 'old-bakers-mcp' } } },
     });
     expect(JSON.parse(flagValue(launch(agent), '--mcp-config'))).toEqual({
@@ -711,6 +718,7 @@ describe('ClaudeAgent conductor tools', () => {
 
   it('keeps a sandbox MCP server named bakers, without a warning, in a run without the conductor server', () => {
     const agent = new ClaudeAgent({
+      security: 'sandbox',
       sandbox: { mcp_servers: { bakers: { command: 'old-bakers-mcp' } } },
     });
     const a = captureArgv('claude', agent.launchCommand('x'));
@@ -758,10 +766,13 @@ describe('ClaudeAgent security load errors', () => {
       /sandbox is only valid with security: 'sandbox'/,
     ],
     [
-      { sandbox: { network: 'all' } },
+      { security: 'sandbox', sandbox: { network: 'all' } },
       /sandbox.network must be an array of strings/,
     ],
-    [{ sandbox: { nope: [] } }, /unknown sandbox key nope/],
+    [
+      { security: 'sandbox', sandbox: { nope: [] } },
+      /unknown sandbox key nope/,
+    ],
     [{ env_deny: 'X' }, /env_deny must be an array of strings/],
   ])('%j fails loading', (options, message) => {
     expect(() => new ClaudeAgent(options as never)).toThrow(message);
@@ -793,7 +804,9 @@ describe('ClaudeAgent.sandboxPreflight', () => {
 
   it('names a missing socat and the apt install command', async () => {
     const { host: h } = host({ tools: ['bwrap', 'apt-get'] });
-    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({
+    expect(
+      await new ClaudeAgent({ security: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({
       ok: false,
       cause: 'socat not found',
       fix: 'install it with sudo apt-get install -y socat',
@@ -802,7 +815,9 @@ describe('ClaudeAgent.sandboxPreflight', () => {
 
   it('names both tools and the dnf command when bwrap and socat are missing', async () => {
     const { host: h, calls } = host({ tools: ['dnf'] });
-    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({
+    expect(
+      await new ClaudeAgent({ security: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({
       ok: false,
       cause: 'bwrap and socat not found',
       fix: 'install it with sudo dnf install -y bubblewrap socat',
@@ -818,7 +833,9 @@ describe('ClaudeAgent.sandboxPreflight', () => {
           'bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces.\n',
       },
     });
-    const result = await new ClaudeAgent().sandboxPreflight(h);
+    const result = await new ClaudeAgent({
+      security: 'sandbox',
+    }).sandboxPreflight(h);
     expect(result).toMatchObject({
       ok: false,
       cause:
@@ -829,7 +846,9 @@ describe('ClaudeAgent.sandboxPreflight', () => {
 
   it('is ok when both tools are present and the probe starts', async () => {
     const { host: h, calls } = host();
-    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(
+      await new ClaudeAgent({ security: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({ ok: true });
     expect(calls[0]?.slice(0, 2)).toEqual(['bwrap', '--unshare-user']);
   });
 
@@ -856,6 +875,8 @@ describe('ClaudeAgent.sandboxPreflight', () => {
 
   it('skips the probe on macOS (Seatbelt is built in)', async () => {
     const { host: h } = host({ platform: 'darwin', tools: [] });
-    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(
+      await new ClaudeAgent({ security: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({ ok: true });
   });
 });

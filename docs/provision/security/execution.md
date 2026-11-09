@@ -5,18 +5,18 @@ description: How strictly Claude, Codex and Grok runs start on a machine - the s
 
 # Run security
 
-A run executes untrusted ticket content on your machine. Review its limits before dispatch. Claude, Codex and Grok default to their configured sandbox mode. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
+A run executes untrusted ticket content on your machine. Review its limits before dispatch. The default mode is `system`; choose `sandbox` for untrusted tickets. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
 
 ## Modes
 
 | `security` | Meaning | MCP servers | Denied ticket env vars |
 |---|---|---|---|
-| `sandbox` (default) | No permission bypass; the harness's own OS sandbox, tuned by the `sandbox` keys | only `sandbox.mcp_servers` (default none) | dropped |
-| `system` | bakers.build adds no security flag; your own harness configuration decides | yours | dropped |
+| `sandbox` | No permission bypass; the harness's own OS sandbox, tuned by the `sandbox` keys | only `sandbox.mcp_servers` (default none) | dropped |
+| `system` (default) | bakers.build adds no security flag; your own harness configuration decides | yours | dropped |
 | `yolo` | Full access, permissions and sandbox bypassed | yours | passed |
 | `custom` | Only your `config`, handed to the harness unchanged | as `config` says | dropped |
 
-The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security), [OpenCode](/addons/opencode#security) and [Pi](/addons/pi#security) pages; Grok and OpenCode reject `custom`. OpenCode and Pi have no OS sandbox, so their default is `system` and an explicit `security: 'sandbox'` fails loading; Pi also rejects `yolo`. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
+The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security), [OpenCode](/addons/opencode#security) and [Pi](/addons/pi#security) pages; Grok and OpenCode reject `custom`. OpenCode and Pi have no OS sandbox, so an explicit `security: 'sandbox'` fails loading for them; Pi also rejects `yolo`. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
 
 ## Sandbox prerequisites
 
@@ -43,7 +43,7 @@ Install the Linux packages with your package manager:
 
 Other distributions need `bubblewrap` and `socat`.
 
-OpenCode has no OS sandbox on any platform; it defaults to `system` and rejects `sandbox` when loading, so `bakers oven check` never checks it.
+OpenCode has no OS sandbox on any platform; it runs in `system` and rejects `sandbox` when loading, so `bakers oven check` never checks it.
 
 A host or container that forbids unprivileged user namespaces shows `bwrap cannot set up its sandbox: …` (Claude) or `codex sandbox cannot start: …` (Codex). Allow them on the host (on Ubuntu 24.04 and later, AppArmor restricts them), or run the conductor where they are allowed.
 
@@ -63,7 +63,7 @@ What the default blocks:
 
 What it does not block:
 
-- `trusted_commands` run with your full rights: an injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox. Drop unneeded ones: with the [`bakers` server](/addons/build/tools#site-tools), only `bakers deployment tickets` and `bakers ui` need `bakers`.
+- Commands you list in `trusted_commands` (default [none](/provision/security/shared-settings#no-global-tools)) run with your full rights: an injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox. With the [`bakers` server](/addons/build/tools#site-tools), only `bakers deployment tickets` and `bakers ui` need `bakers`.
 - With `network: ['*']`, a sandboxed command can still reach any host.
 - Unconfirmed: whether `--strict-mcp-config` hides plugin MCP servers.
 

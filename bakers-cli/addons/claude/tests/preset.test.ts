@@ -23,8 +23,9 @@ describe('Claude catalog', () => {
     expect(candidates.every((c) => Boolean(c.description))).toBe(true);
   });
 
-  it('carries options and the default sandbox into the Fable launch', async () => {
+  it('carries options and the sandbox into the Fable launch', async () => {
     const candidates = await agents([], {
+      security: 'sandbox',
       effort: 'high',
       args: ['--verbose'],
       env_deny: ['SECRET_*'],

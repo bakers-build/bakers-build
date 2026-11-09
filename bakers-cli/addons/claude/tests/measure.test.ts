@@ -293,7 +293,7 @@ describe('ClaudeAgent measure', () => {
       'bash',
       [
         '-c',
-        `node() { printf '%s\\0' "$@"; }; ${new ClaudeAgent({ measure: true }).launchCommand('go')}`,
+        `node() { printf '%s\\0' "$@"; }; ${new ClaudeAgent({ security: 'sandbox', measure: true }).launchCommand('go')}`,
       ],
       { encoding: 'utf8' },
     )

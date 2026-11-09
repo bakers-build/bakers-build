@@ -159,7 +159,7 @@ describe('shared run security from the machine and project config', () => {
   it('every harness gets both layers, with sources and warnings', async () => {
     writeMachine(`export default {
       addons: ['@bakers-build/addon-claude', '@bakers-build/addon-codex'],
-      security: { sandbox: { allow_write: ['$inherit', '/srv/cache'] } },
+      security: { mode: 'sandbox', sandbox: { allow_write: ['$inherit', '/srv/cache'] } },
     };`);
     const project = writeProject(
       projectWithSecurity(

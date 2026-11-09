@@ -20,7 +20,7 @@ security: {
 
 **One rule for every layer.** The layers, from bottom to top, are: harness default, project, machine, then the harness entry's `with`. A layer that sets a key replaces the value below it. The list element `'$inherit'` inserts the value of the layer below at that position; duplicates are dropped. `mode` replaces, with no placeholder; an entry's `security` replaces both shared modes.
 
-- Add one command without restating `bakers` and `git`: `trusted_commands: ['$inherit', 'docker']`, on any layer.
+- Add one command without restating the layer below: `trusted_commands: ['$inherit', 'docker']`, on any layer. No harness trusts a command by default.
 - Veto a project grant on your machine: `trusted_commands: []`, or a list without `'$inherit'`, in `machine.config.js`.
 - A harness entry's list without `'$inherit'` replaces everything below it, so existing entries behave as before.
 
@@ -30,7 +30,13 @@ Shared lists apply only while an agent's effective mode is `sandbox`. Codex and 
 
 `bakers agents` prints each alias's effective `security`: the `mode` and its source, every list entry with its source (`default`, `project`, `machine`, `agent`), the `removed` defaults and the shared keys `not_applied` with the reason.
 
-**Risk.** A committed project config that loosens the sandbox (a `mode` other than `sandbox`, an `allow_write` or `trusted_commands` entry, a `deny_read` without `'$inherit'`) gives **anyone who can push to the repository** more rights on every machine that runs the project and does not replace that key. With `mode: 'yolo'` that is everything your user can do. Each such loosening prints a warning whenever the conductor loads, including at `bakers oven start`, naming the file and the grant. Replace the key in `machine.config.js` to refuse it. See [Risk of loosening](/provision/security/execution#risk-of-loosening).
+**Risk.** Without any `mode`, runs use `system`. A committed project config that loosens the sandbox (a `mode` other than `sandbox`, an `allow_write` or `trusted_commands` entry, a `deny_read` without `'$inherit'`) gives **anyone who can push to the repository** more rights on every machine that runs the project and does not replace that key. With `mode: 'yolo'` that is everything your user can do. Each such loosening prints a warning whenever the conductor loads, including at `bakers oven start`, naming the file and the grant. Replace the key in `machine.config.js` to refuse it. See [Risk of loosening](/provision/security/execution#risk-of-loosening).
+
+## No global tools
+
+When no layer sets `mode`, runs use `system`. A `sandbox` run trusts no command by default: no harness exempts `bakers`, `git` or any other command from its sandbox. Whatever a run needs beyond its worktree comes through tools the conductor serves for an addon, such as `provision_up`, `ddev_exec` and `ports_up`. Delivery is planned to work the same way, through forge tools; the reasoning is in the repository's decision record `docs/decisions/sandbox-forge-tools.md`.
+
+Until those tools exist, a sandboxed run cannot push or open a PR/MR on its own. To allow it, list the commands on the project or machine layer, for example `trusted_commands: ['bakers', 'git', 'gh']` (or `glab`). Each listed command runs with your full rights.
 
 ## Verify
 
