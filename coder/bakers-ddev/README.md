@@ -79,7 +79,17 @@ A start that fails to download a tool stops the install script, marks the start 
 
 ## Logs
 
-The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its container ([PM bot › Logs](#logs-and-skip-lines)). `/tmp/herdr-server.log`, `/tmp/frpc.log` and `/tmp/cloudflared.log` hold the console output of `herdr server` and the connectors. `/tmp` lives for one start. herdr keeps its own log in `~/.config/herdr/herdr-server.log`.
+The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its container ([PM bot › Logs](#logs-and-skip-lines)). `/tmp/bakers-conductors.log` holds the [conductor autostart](#conductor-autostart)'s background retries. `/tmp/herdr-server.log`, `/tmp/frpc.log` and `/tmp/cloudflared.log` hold the console output of `herdr server` and the connectors. `/tmp` lives for one start. herdr keeps its own log in `~/.config/herdr/herdr-server.log`.
+
+## Conductor autostart
+
+Conductors are yours to start, and a restart, rebuild or template update stops them. Switch on the workspace parameter **Start conductors on workspace start** (`conductor_autostart`, default off) and every start runs `bakers oven start` in each `~/projects/*` checkout that has `.bakers/conductor.config.js`. Each conductor runs as a detached background process, as when you start it by hand.
+
+```sh
+coder update <workspace> --parameter conductor_autostart=true
+```
+
+The startup log has one line per checkout: `conductors: started <path>` once `bakers oven status` shows it `online`, or `conductors: failed <path>: <reason>` with the last line `bakers oven start` printed. A stopped workspace kills its conductors before they can report themselves offline, so for some minutes after a restart `bakers oven start` takes the dead conductor for a live one and starts nothing. Such a checkout logs `conductors: waiting <path>: <reason>` and is retried every 30 seconds in the background, for up to 12 minutes, until it is online; those lines go to `/tmp/bakers-conductors.log`. A failed checkout never stops the start or the other checkouts. The checkout's sign-ins (bakers.build, the agent, git) must already be in place; the autostart only starts what you configured.
 
 ## PM bot
 
@@ -113,7 +123,7 @@ At api.slack.com/apps, choose **Create New App → From a manifest**, pick your 
 2. **Install App → Install to Workspace.** The bot token (`xoxb-…`) goes into `pm_bot_slack_bot_token`.
 3. Invite the bot to the project's channel (`/invite @<bot>`). Its channel ID (channel name → **View channel details**, at the bottom) goes into `pm_bot_slack_allowed_channels`. That is the bot's main channel: a mention there opens a request channel. The bot has exactly one; with more than one ID the container refuses to start.
 4. Copy the operators' member IDs (profile → **⋮ → Copy member ID**) into `pm_bot_slack_admin_users`.
-5. Optional: create a private channel with only the operators in it and invite the bot. That is Hermes' home channel for its restart notices (`pm_bot_slack_home_channel`).
+5. Optional: create a private channel with only the operators in it and invite the bot. Set it as Hermes' home channel for its restart notices (`pm_bot_slack_home_channel`); without one, the home channel is the allowed channel.
 
 ### 3. Parameters
 
@@ -127,7 +137,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 | `pm_bot_slack_allowed_users` | no | Member IDs the bot answers. Empty: every user in its channels. Set: only these users |
 | `pm_bot_slack_admin_users` | yes | Operators' member IDs: the only users who may run Hermes slash commands |
 | `pm_bot_slack_workspace_url` | yes | `https://<workspace>.slack.com`, for channel links |
-| `pm_bot_slack_home_channel` | no | Channel ID of the operators' channel |
+| `pm_bot_slack_home_channel` | no | Channel ID of the operators' channel; empty means the first allowed channel |
 | `pm_bot_bakers_url` | yes | The bakers.build server, `https://…` |
 | `pm_bot_bakers_api_key` | yes | The service account's API key (masked) |
 | `pm_bot_project` | yes | Project UUID |

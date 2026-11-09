@@ -29,11 +29,17 @@ export async function site({ pageSize = 50 } = {}) {
       .map((c) => ({ id: c.id, type: c.type, body: c.body, created: c.created, author: 'Agent' }));
 
   const once = {};
+  const lost = {};
   const guard = (name, fn) => (args) => {
     s.log.push(`tool ${name}`);
     if (once[name] > 0) {
       once[name] -= 1;
       throw new Error(`${name} failed`);
+    }
+    if (lost[name] > 0) {
+      lost[name] -= 1;
+      fn(args);
+      throw new Error(`${name}: reply lost`);
     }
     return fn(args);
   };
@@ -87,7 +93,11 @@ export async function site({ pageSize = 50 } = {}) {
   const failOnce = (name, n = 1) => {
     once[name] = n;
   };
-  return { ...s, state: s, stub, addTicket, addComment, failOnce, close: stub.close };
+  // loseReplyOnce(tool): the next call takes effect, but its caller gets an error.
+  const loseReplyOnce = (name) => {
+    lost[name] = 1;
+  };
+  return { ...s, state: s, stub, addTicket, addComment, failOnce, loseReplyOnce, close: stub.close };
 }
 
 export const thread = (channel = 'C0000000001', ts = '1700000000.000100') => ({

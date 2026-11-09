@@ -47,7 +47,7 @@ The image supplies tools; your private home stores identity, credentials and che
 
    The first start installs `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh`, `glab` and `ss` into your home volume, and starts `herdr server`. The log is `/tmp/coder-startup-script.log`.
 
-3. Sign in to your chosen agent and follow [skill installation](/skills-and-workflows/skills) for the bakers plugin. Open the agent from `~/projects` and run `/bb-init`. Trust that parent folder when asked so new worktrees inherit trust; otherwise the first run waits in its terminal. The wizard guides the remaining steps and confirms configuration writes.
+3. Sign in to your chosen agent and follow [skill installation](/skills-and-workflows/skills) for the bakers plugin. Open the agent from `~/projects`, answer its trust question for that folder and run `/bb-init`. Conductor runs of Claude Code trust their own ticket worktree, so a new ticket does not wait at the trust dialog. The wizard guides the remaining steps and confirms configuration writes.
 
 4. Sign in to bakers.build. An unattended conductor needs a machine consumer that an operator issues ([connections](/configuration/connector/connections)); give its secret to this command only. `bakers init` writes it into a private file under `~/.bakers`.
 
@@ -123,7 +123,7 @@ Host <name>.coder
 
 ## After a workspace restart
 
-Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Conductors and project runtimes do not come back by themselves. Start each project's runtime and run `bakers oven start` again in each checkout, and share a preview again with `bakers ports up`.
+Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Project runtimes do not come back by themselves, and conductors only with the workspace parameter `conductor_autostart` on (the template README's *Conductor autostart*). Otherwise run `bakers oven start` again in each checkout. Start each project's runtime where you need it, and share a preview again with `bakers ports up`.
 
 ## Update a tool
 
