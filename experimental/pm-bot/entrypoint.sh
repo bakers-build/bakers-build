@@ -81,6 +81,11 @@ ours = sorted(p.manifest.name for p in manager._plugins.values() if p.enabled an
 print("plugins: " + ",".join(ours))
 assert any(name == "bot-channels" for _, name in manager.get_platform_handler_factories("slack")), "bot-channels registered no Slack handler"
 assert inspect.iscoroutinefunction(SlackAdapter._handle_slack_message), "SlackAdapter._handle_slack_message is gone"
+for helper in ("_track_reacting_message", "_event_team_id"):
+    assert callable(getattr(SlackAdapter, helper, None)), f"SlackAdapter.{helper} is gone"
+assert inspect.iscoroutinefunction(SlackAdapter.on_processing_complete), "SlackAdapter.on_processing_complete is gone"
+from gateway.platforms.event import ProcessingOutcome
+assert "CANCELLED" in ProcessingOutcome.__members__, "ProcessingOutcome.CANCELLED is gone"
 for getter in ("_slack_allowed_channels", "_slack_free_response_channels"):
     assert callable(getattr(SlackAdapter, getter, None)), f"SlackAdapter.{getter} is gone"
 assert "channel_prompts" in inspect.getsource(resolve_channel_prompt), "resolve_channel_prompt no longer reads channel_prompts"

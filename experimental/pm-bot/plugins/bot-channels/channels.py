@@ -1,5 +1,5 @@
 """Core of the bot-channels plugin: request-channel names, the set of open bot channels,
-the channel prompt, and the state-file read. No Hermes import.
+the channel prompt, the fixed texts, and the state-file read. No Hermes import.
 
 shortcut: two copies of the slug rule (here and poller/channels.mjs), held together by
 slug-examples.json; merge them if a third writer appears.
@@ -14,6 +14,14 @@ logger = logging.getLogger("pm_bot.bot_channels")
 
 MAX_NAME = 40
 _MENTION = re.compile(r"<[@#!][^>]*>")
+
+# Every fixed text the plugin posts, in one place for the bot's language setting.
+TEXTS = {
+    "acknowledge": "<@{user}> Thanks, I've got your request and I'm looking into it. I'll answer here shortly.",
+    "opened": "<@{user}> I opened <#{channel}> for this request. Let's continue there.",
+    "open_failed": "<@{user}> I could not open a channel for this request. Please try again in a moment.",
+    "repeat": "<@{user}>, please repeat your request here.",
+}
 
 
 def slug(text):
