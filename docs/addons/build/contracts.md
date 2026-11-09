@@ -1,6 +1,6 @@
 # Addon API reference
 
-An addon is a JavaScript package whose preset declares contributions to bakers.build. The **preset** is a module with named exports that Bakers recognizes, such as `tools` or `inbox`. Start with [Build your first addon](/addons/build/first-addon#how-bakers-loads-an-addon) for the package/module basics and a complete local example; this page defines the API.
+An addon is a JavaScript package whose preset declares contributions to bakers.build. The **preset** is a module with named exports that bakers.build recognizes, such as `tools` or `inbox`. Start with [Build your first addon](/addons/build/first-addon#how-bakers-loads-an-addon) for the package/module basics and a complete local example; this page defines the API.
 
 Expose a `./preset` entry in the package's `exports` so the loader can find your contributions. Packages under `bakers-cli/addons/` without a `./preset` (`docker-compose`, `name-refs`, the `ports-*` transports) are libraries another addon or the host loads; they never appear in an `addons` list. The shipped reference for a complete addon is [Ports](/addons/ports): preset, lazy `commands`, an `inbox` message and tests, in `bakers-cli/addons/ports` in a source checkout.
 
@@ -106,7 +106,7 @@ Terminal UI tabs are layered. The three lists concatenate in the order machine, 
 
 ## Write an addon
 
-1. Create a JavaScript package with `"type": "module"` and an export such as `"./preset": "./preset.js"`. The [harness tutorial](/addons/build/agent#create-the-package) includes a complete manifest. A local package can live in `.bakers/addons/`; it does not need to be added to the Bakers source repository.
+1. Create a JavaScript package with `"type": "module"` and an export such as `"./preset": "./preset.js"`. The [harness tutorial](/addons/build/agent#create-the-package) includes a complete manifest. A local package can live in `.bakers/addons/`; it does not need to be added to the bakers.build source repository.
 2. Export only the contributions you need. Accumulators preserve previous contributions, for example `(acc, opts) => [...acc, myWorkspace(opts)]`. `tools` and `inbox` are values with their own contract versions.
 3. For TypeScript, import `BbPreset` from `@bakers-build/core`, or the typed conductor `Preset` from `@bakers-build/conductor/contract`. That subpath also exports `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin`, `AgentPlugin` and their interfaces. Use `import type` for types and compile before loading the package; export the compiled JavaScript path.
 4. Declare the contract packages you use as peer dependencies with compatible published versions. You can also use them as development dependencies for local type checking. Keep preset imports light: commands return lazy module descriptors, UI entries return module specifiers, and tool/message handler factories load their implementation only when needed.

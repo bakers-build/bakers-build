@@ -1,6 +1,6 @@
 # Add a new agent harness
 
-Implement the adapter between Bakers and an agent program that has no Bakers integration yet. A **harness** tells Bakers how to launch that program and collect its run transcript.
+Implement the adapter between bakers.build and an agent program that has no bakers.build integration yet. A **harness** tells bakers.build how to launch that program and collect its run transcript.
 
 This example targets `my-agent`, a hypothetical CLI with the contract below. The adapter is complete for that contract; the agent program itself is something you provide. No Claude addon or other existing harness is loaded.
 
@@ -15,11 +15,11 @@ This example targets `my-agent`, a hypothetical CLI with the contract below. The
 
 Replace this command and transcript format with your program's actual API when adapting the example. Node.js and your agent executable must be available to the conductor user. Configure its model and authentication in the agent's own settings.
 
-## The Bakers API
+## The bakers.build API {#the-bakers-api}
 
 The public interfaces are exported from `@bakers-build/conductor/contract`. JavaScript packages implement their methods directly; TypeScript authors can import `AgentPlugin`, `BbAgent`, `AgentRunIdentity` and `AgentFootprint` as types.
 
-| Part | What Bakers calls or reads |
+| Part | What bakers.build calls or reads |
 |---|---|
 | Preset `agents(acc)` | Return the previous candidates plus your candidate. |
 | Candidate `{ alias, agent }` | Give the integration a selectable name and its plugin. |
@@ -28,7 +28,7 @@ The public interfaces are exported from `@bakers-build/conductor/contract`. Java
 | `getRunLog(worktreePath, run?)` | Return only the named run's transcript; return `''` when unavailable. |
 | `parseFootprint(log)` | Return usage metrics without throwing on missing or partial logs. |
 
-The preset registers the harness; it does not start it. During dispatch, Bakers selects the candidate, constructs the adapter and asks for a launch command. During finalization it reads the transcript and metrics.
+The preset registers the harness; it does not start it. During dispatch, bakers.build selects the candidate, constructs the adapter and asks for a launch command. During finalization it reads the transcript and metrics.
 
 ## Create the package
 
@@ -113,15 +113,15 @@ bakers config check --scope machine --online
 bakers agents
 ```
 
-Restart the conductor and expect the `my-agent` alias with harness ID `my-agent`. With your CLI installed, dispatch a disposable ticket labelled `agent:my-agent`: check that it receives the prompt, writes the run's transcript and completes the ticket through your normal Bakers workflow.
+Restart the conductor and expect the `my-agent` alias with harness ID `my-agent`. With your CLI installed, dispatch a disposable ticket labelled `agent:my-agent`: check that it receives the prompt, writes the run's transcript and completes the ticket through your normal bakers.build workflow.
 
 ## Limits and responsibilities
 
 This adapter reports zero metrics because the example transcript API supplies no usage data. Implement `parseFootprint` for your program's format to collect them. It does not configure MCP or implement an OS sandbox: the program runs with the conductor user's access. See [run security](/provision/security/) before enabling a real harness.
 
-The optional `tools` argument is the run's conductor MCP URL. Its bearer token is provided in `BB_CONDUCTOR_TOKEN`; use your program's MCP configuration mechanism without putting tokens in command arguments or logs. A program that cannot use MCP can call `bakers tools` from its run environment.
+The optional `tools` argument is an object with a `url` field: `tools.url` is the run's conductor MCP URL. Its bearer token is provided in `BB_CONDUCTOR_TOKEN`; use your program's MCP configuration mechanism without putting tokens in command arguments or logs. A program that cannot use MCP can call `bakers tools` from its run environment.
 
-An agent that refuses reused session IDs also implements `sessionExists(worktreePath, sessionId)`. Bakers can then choose a new attempt identity. Transcript lookup must respect `run.attemptFamily`; selecting the newest file in a directory can attach another run's transcript.
+An agent that refuses reused session IDs also implements `sessionExists(worktreePath, sessionId)`. bakers.build can then choose a new attempt identity. Transcript lookup must respect `run.attemptFamily`; selecting the newest file in a directory can attach another run's transcript.
 
 Remove the addon/catalog entry and restart the conductor before deleting this package.
 

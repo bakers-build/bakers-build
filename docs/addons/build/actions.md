@@ -6,7 +6,7 @@ Let a person request an addon operation from a ticket and receive a Markdown ans
 
 ## Extend the control panel
 
-Use the preset's `inbox` export to add controls to a ticket's **message card** in the web control panel. You describe the operation and its inputs; Bakers builds the interface from that definition.
+Use the preset's `inbox` export to add controls to a ticket's **message card** in the web control panel. You describe the operation and its inputs; bakers.build builds the interface from that definition.
 
 | You declare | The user gets |
 |---|---|

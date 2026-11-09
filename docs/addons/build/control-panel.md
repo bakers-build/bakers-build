@@ -4,9 +4,9 @@ An addon can make a project operation available directly from a ticket: request 
 
 ## How the extension works
 
-The addon declares a **message**: its label, who can request it, any input fields and the operation to run. Bakers uses that definition to display a button or form in the ticket's message card.
+The addon declares a **message**: its label, who can request it, any input fields and the operation to run. bakers.build uses that definition to display a button or form in the ticket's message card.
 
-When someone submits the request, the conductor runs the addon's handler with the ticket context and returns an answer. The addon supplies the operation; Bakers supplies the controls, request status and result display.
+When someone submits the request, the conductor runs the addon's handler with the ticket context and returns an answer. The addon supplies the operation; bakers.build supplies the controls, request status and result display.
 
 A message can have its own handler or call a **tool** that agents can also use. This lets people and agents request the same operation through different interfaces.
 
@@ -20,7 +20,7 @@ This example counts staged changes, unstaged changes and untracked files. Ignore
 
 Use a disposable ticket in a working conductor project, with Git and Node.js on the conductor's machine. You need permission to edit project configuration and restart the conductor. The [addon basics](/addons/build/first-addon#what-an-addon-is) explain packages, presets and exports.
 
-The preset supplies two connected capabilities: `tools` declares `git_is_dirty`, and `inbox` describes the ticket button bound to it. Bakers renders the controls and answer; the JavaScript function runs on the conductor.
+The preset supplies two connected capabilities: `tools` declares `git_is_dirty`, and `inbox` describes the ticket button bound to it. bakers.build renders the controls and answer; the JavaScript function runs on the conductor.
 
 ## Create two files
 

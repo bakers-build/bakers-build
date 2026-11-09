@@ -1,6 +1,6 @@
 # Addons
 
-An **addon** adds functionality to Bakers: it can connect an agent or terminal application, give agents more tools, or make an operation available from a ticket. Addons are JavaScript packages that you enable in configuration. You can use an existing package or write your own.
+An **addon** adds functionality to bakers.build: it can connect an agent or terminal application, give agents more tools, or make an operation available from a ticket. Addons are JavaScript packages that you enable in configuration. You can use an existing package or write your own.
 
 ## Choose your task
 
@@ -8,7 +8,7 @@ Most projects can start with the shipped addons. Developing an addon is a separa
 
 <DocTiles :tiles="[
   { title: 'Use an existing addon', text: 'Find an integration for your project, then follow its setup and verification steps.', link: '/addons/catalog', icon: 'plug', meta: 'Browse available addons →' },
-  { title: 'Build an addon', text: 'Learn what addons can extend, how packages connect to Bakers, and how to build your own.', link: '/addons/build/first-addon', icon: 'code', meta: 'Build your first addon →' }
+  { title: 'Build an addon', text: 'Learn what addons can extend, how packages connect to bakers.build, and how to build your own.', link: '/addons/build/first-addon', icon: 'code', meta: 'Build your first addon →' }
 ]" />
 
 ## Enable an existing addon
@@ -25,7 +25,7 @@ Follow the package's own instructions; naming an addon does not install its unde
 
 Start with [Build your first addon](/addons/build/first-addon) to choose a capability for your project and learn how to package and enable it. The examples implement a [new agent harness](/addons/build/agent) and an adapter for a [new terminal client](/addons/build/client), including the APIs they connect.
 
-To [extend the control panel](/addons/build/control-panel), an addon declares **messages**: ticket buttons or forms with a result. Bakers renders the controls; the conductor runs the operation. A message can call an agent tool or have its own handler.
+To [extend the control panel](/addons/build/control-panel), an addon declares **messages**: ticket buttons or forms with a result. bakers.build renders the controls; the conductor runs the operation. A message can call an agent tool or have its own handler.
 
 Continue with [Tools](/addons/build/tools), [Messages](/addons/build/actions) and the [API reference](/addons/build/contracts). Specialized extensions can supply an [executor or workspace](/addons/build/executor-workspace), [lifecycle listeners](/provision/hooks#add-a-listener-from-an-addon), or a [terminal tab](/addons/bakers-ui/tabs).
 
