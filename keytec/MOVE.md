@@ -96,6 +96,8 @@ Values this branch could not confirm; each is a default you can change without a
 | bakers.build instance `https://app.bakers.build` | `locals.bakers_url`, `template.tf` | keytec's instance |
 | Enabled plugins (`keytec-base`, `keytec-drupal`, `keytec-qa`, `bakers`, `mattpocock-skills`, `superpowers`) and marketplaces | `files/managed-settings.json` (rebuild) | What keytec boxes run with; the `managed-settings.json` keys were written for Claude Code 2.1 |
 | Codex `check_for_update_on_startup = false` | `files/codex-config.toml` (rebuild) | Confirm the key for the pinned Codex |
+| infra's `DDEV_BASE_IMAGE_VERSION` | infra's `.gitlab-ci.yml` variables | The job builds on `coder-drupal-ddev-base:$DDEV_BASE_IMAGE_VERSION`; it must name a tag infra has pushed |
+| Registry login of `.docker_image_build` | infra's CI template | The job pushes to `git.key-tec.de:5050` only if `.docker_image_build` logs in there; check it still does |
 | The frps certificate | frps host (`/opt/frp/tls`) | Must verify against the system CA bundle, since `frpc.json` trusts `/etc/ssl/certs/ca-certificates.crt`. A private CA does not, until it is in the image |
 
 ## 7. Operator checks
@@ -106,7 +108,7 @@ On a workspace created as in step 5:
 2. **PM bot (AC-2):** mention the bot in its Slack channel; it answers.
 3. **Git (AC-3):** in a run or `coder ssh`, clone, commit and push to a GitHub and a `git.key-tec.de` test project; `git log -1` shows the service identity. No `gh`/`glab` login by hand.
 4. **Previews (AC-4):** `bakers ports up web` in a DDEV project returns an `https://…frps.preview.bakers.build` URL; a run's environment has `BB_TUNNEL=1`.
-5. **Nothing by hand (AC-5), no installs (AC-6):** `/tmp/coder-startup-script.log` of the first start has no download or install line, only `git:`, `bakers:`, `projects:`, `frp:`, `machine-config:`, `pm-bot:` and `conductors:` lines.
+5. **Nothing by hand (AC-5), no installs (AC-6):** `/tmp/coder-startup-script.log` of the first start has no download or install line, only `git:`, `bakers:`, `projects:`, `frp:`, `machine-config:`, `codex:`, `herdr:`, `pm-bot:`, `conductors:` and `health:` lines.
 6. **Rebuild (AC-7):** rebuild the workspace on the same template version, repeat 1 to 4, then `NODE_PATH=/usr/local/lib/node_modules node -e "require('playwright').chromium.launch().then(b => b.close())"` succeeds with no browser download.
 7. **Health (AC-10):** the dashboard shows *PM bot*, *PM bot poller* and *Conductor*. `docker compose -p pm-bot stop`; *PM bot* shows `down` within a minute. `docker compose -p pm-bot start` afterwards.
 

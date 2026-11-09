@@ -39,11 +39,19 @@ pw=$(cat "$HOME/.config/frp/admin-password")
 BOX_FRP_ENROLLMENT=$GOOD bash "$SCRIPTS/frp-setup.sh" >"$ROOT/out"
 check "admin password created once" test "$(cat "$HOME/.config/frp/admin-password")" = "$pw"
 
+# A warning Node prints on stderr does not end up in the zone.
+setup
+fake frpc
+echo 'process.stderr.write("some warning\n")' >"$ROOT/warn.cjs"
+NODE_OPTIONS="--require $ROOT/warn.cjs" BOX_FRP_ENROLLMENT=$GOOD bash "$SCRIPTS/frp-setup.sh" >"$ROOT/out" 2>/dev/null
+check "stderr warning: zone intact" has "$ROOT/out" "frp: configured for frps.preview.example"
+check "stderr warning: not in the zone line" lacks "$ROOT/out" "some warning"
+
 # A malformed enrollment writes nothing and starts nothing.
 for bad in 'bkfrp1.not-base64!' "$(enroll '{"server":"x"}')" 'other.abc'; do
   setup
   fake frpc
-  BOX_FRP_ENROLLMENT=$bad bash "$SCRIPTS/frp-setup.sh" >"$ROOT/out"
+  BOX_FRP_ENROLLMENT=$bad bash "$SCRIPTS/frp-setup.sh" >"$ROOT/out" 2>&1
   check "malformed '$bad': exit 0" test $? -eq 0
   check "malformed '$bad': nothing written" test ! -e "$HOME/.config/frp" -a ! -e "$HOME/.bakers"
   check "malformed '$bad': frpc not started" test ! -s "$CALLS"

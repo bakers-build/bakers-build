@@ -8,6 +8,11 @@ set -f # the URL list is split unquoted; no globbing
 BOX_PROJECTS="${BOX_PROJECTS:-}"
 
 for url in ${BOX_PROJECTS//,/ }; do
+  # A token in the URL would land in .git/config and the log; the URL itself is not printed.
+  if [[ $url == *://*@* ]]; then
+    echo "projects: skipped a URL with credentials; the github_token and gitlab_token parameters sign git in"
+    continue
+  fi
   if [[ $url != https://* ]]; then
     echo "projects: skipped $url (not an https:// URL)"
     continue

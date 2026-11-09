@@ -26,6 +26,15 @@ BOX_PROJECTS="git@github.com:acme/site.git" bash "$SCRIPTS/projects.sh" >"$ROOT/
 check "non-HTTPS: no git call" test ! -s "$CALLS"
 check "non-HTTPS: logged" has "$ROOT/out" "projects: skipped git@github.com:acme/site.git (not an https:// URL)"
 
+# A URL with credentials is refused before git runs, and the URL (its token) is not logged.
+setup
+fake git "$GIT_FAKE"
+BOX_PROJECTS="https://bot:fake-token-555@git.key-tec.de/acme/site.git" bash "$SCRIPTS/projects.sh" >"$ROOT/out"
+check "credentials: no git call" test ! -s "$CALLS"
+check "credentials: nothing cloned" test ! -e "$HOME/projects/site"
+check "credentials: token not logged" lacks "$ROOT/out" "fake-token-555"
+check "credentials: refusal logged" has "$ROOT/out" "projects: skipped a URL with credentials"
+
 # None configured: nothing.
 setup
 fake git "$GIT_FAKE"

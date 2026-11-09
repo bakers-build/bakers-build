@@ -10,8 +10,8 @@ if [ -z "${BOX_FRP_ENROLLMENT:-}" ]; then
   echo "frp: off (no enrollment)"
   exit 0
 fi
-if ! zone=$(BOX_FRP_ENROLLMENT=$BOX_FRP_ENROLLMENT node "$(dirname "$0")/frp-config.mjs" 2>&1); then
-  echo "$zone"
+# stdout only: a Node warning must not become the zone. Errors reach the startup log on stderr.
+if ! zone=$(BOX_FRP_ENROLLMENT=$BOX_FRP_ENROLLMENT node "$(dirname "$0")/frp-config.mjs"); then
   exit 0
 fi
 # The container's /tmp and processes live for one start, so no earlier frpc runs here.

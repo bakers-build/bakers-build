@@ -16,14 +16,32 @@ check "secret not in argv" lacks "$CALLS" "$SECRET"
 check "init saw the secret in its environment" has "$HOME/.bakers/bakers.config.js" "secret=$SECRET"
 check "logged as signed in" has "$ROOT/out" "bakers: signed in to https://bakers.example"
 
-# An existing connection: nothing runs.
+# An existing connection: no new init, the session is renewed with auth login.
 setup
 fake bakers
 mkdir -p "$HOME/.bakers" && echo 'export default {};' >"$HOME/.bakers/bakers.config.js"
 BAKERS_URL=https://bakers.example BAKERS_CLIENT_ID=box-client BAKERS_CLIENT_SECRET=$SECRET WORKSPACE_NAME=box-1 \
   bash "$SCRIPTS/bakers-setup.sh" >"$ROOT/out"
-check "existing connection: no bakers call" test ! -s "$CALLS"
-check "existing connection: logged" has "$ROOT/out" "bakers: connection exists"
+check "existing connection: no init" lacks "$CALLS" "bakers init"
+check "existing connection: auth login" has "$CALLS" "bakers auth login"
+check "existing connection: logged" has "$ROOT/out" "bakers: signed in (existing connection)"
+
+# init succeeds but auth login fails: the next start logs in again, without anyone running init.
+setup
+fake bakers 'case "$1" in
+  init) mkdir -p "$HOME/.bakers"; echo "export default {};" >"$HOME/.bakers/bakers.config.js" ;;
+  auth) [ -f "$HOME/login-failed-once" ] || { touch "$HOME/login-failed-once"; exit 1; } ;;
+esac'
+run() { BAKERS_URL=https://bakers.example BAKERS_CLIENT_ID=box-client BAKERS_CLIENT_SECRET=$SECRET WORKSPACE_NAME=box-1 \
+  bash "$SCRIPTS/bakers-setup.sh" >"$ROOT/out"; }
+run
+check "first start: login failure logged" has "$ROOT/out" "bakers: sign-in failed"
+check "first start: no manual repair asked" lacks "$ROOT/out" "by hand"
+: >"$CALLS"
+run
+check "second start: auth login again" has "$CALLS" "bakers auth login"
+check "second start: no second init" lacks "$CALLS" "bakers init"
+check "second start: signed in" has "$ROOT/out" "bakers: signed in (existing connection)"
 
 # No client: skipped.
 setup

@@ -24,6 +24,7 @@ fi
 
 # Own session (setsid): herdr treats a server outside one as not surviving SSH loss and refuses saved machines.
 setsid nohup herdr server >"${TMPDIR:-/tmp}/herdr-server.log" 2>&1 </dev/null &
+echo "herdr: started"
 
 # The PM bot, when the workspace has its parameters (README › PM bot). Through bash: the Docker
 # upload makes it root-owned, so neither coder nor the bot can change it.
@@ -34,4 +35,5 @@ bash /usr/local/bin/bakers-conductors || true
 
 # The dashboard's conductor item reads this loop's snapshot (README › Health).
 setsid nohup bash "$S/health.sh" conductor-loop >/dev/null 2>&1 </dev/null &
+echo "health: loop started"
 exit 0

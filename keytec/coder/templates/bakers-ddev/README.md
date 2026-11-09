@@ -60,7 +60,9 @@ Not secret, so they live in the template rather than in parameters: the bakers.b
 | `gitlab_token` | The `git.key-tec.de` service account's access token (`api`, `write_repository`), masked. Empty: no GitLab sign-in |
 | `git_user_name`, `git_user_email` | The commit identity; keytec defaults |
 
-On every start [`scripts/git-setup.sh`](scripts/git-setup.sh) hands each token on stdin to `gh auth login` and `glab auth login`, then makes them git's credential helpers for `github.com` (`gh auth setup-git`) and `git.key-tec.de` (`glab auth git-credential`). The tokens live only in the CLIs' own stores in the home volume (`~/.config/gh`, `~/.config/glab-cli`); they reach no argument list or log. Log lines: `git: <host> signed in`, `skipped (no token)` or `sign-in failed`.
+On every start [`scripts/git-setup.sh`](scripts/git-setup.sh) hands each token on stdin to `gh auth login` and `glab auth login`, then makes them git's credential helpers for `github.com` (`gh auth setup-git`) and `git.key-tec.de` (`glab auth git-credential`). The tokens live only in the CLIs' own stores in the home volume (`~/.config/gh`, `~/.config/glab-cli`); they reach no argument list or log. An empty token signs its host out, so clearing the parameter revokes the box's earlier login. Log lines: `git: <host> signed in`, `skipped (no token; signed out)` or `sign-in failed`.
+
+Like the PM bot's tokens, the git tokens, `bakers_client_secret` and `frp_enrollment` reach the start script through the Coder agent's environment, so every session on the box can read them. That is accepted: the box's agents act with these accounts anyway.
 
 The PM bot keeps its own read-only `pm_bot_repo_*` parameters.
 
@@ -71,11 +73,11 @@ The PM bot keeps its own read-only `pm_bot_repo_*` parameters.
 | `bakers_client_id` | Client ID of the box's bakers.build consumer (client credentials) |
 | `bakers_client_secret` | Its secret, masked |
 
-When `~/.bakers/bakers.config.js` is missing, [`scripts/bakers-setup.sh`](scripts/bakers-setup.sh) runs `bakers init --auth-type client_credentials --secret-env …` against keytec's instance with the workspace name as label, then `bakers auth login`. `bakers init` stores the secret in `~/.bakers/bakers.config.js` (mode 0600) and writes the machine identity. A box that already has a connection is left alone. To switch clients, delete that file and restart. If the sign-in fails, the log says `bakers: sign-in failed`; run `bakers init` by hand.
+When `~/.bakers/bakers.config.js` is missing, [`scripts/bakers-setup.sh`](scripts/bakers-setup.sh) runs `bakers init --auth-type client_credentials --secret-env …` against keytec's instance with the workspace name as label, then `bakers auth login`. `bakers init` stores the secret in `~/.bakers/bakers.config.js` (mode 0600) and writes the machine identity. A box that already has a connection only runs `bakers auth login` on each start, so a failed login is retried by the next start. To switch clients, delete that file and restart. Log lines: `bakers: signed in to <url>`, `signed in (existing connection)`, `skipped (no OAuth client)` or `sign-in failed; retried on the next start`.
 
 ## Projects
 
-`projects` takes HTTPS repository URLs, separated by spaces, commas or new lines. Each start clones a missing one into `~/projects/<repo-name>` with the service accounts' credentials, before the conductors start. An existing checkout is never pulled or reset. Log lines: `projects: cloned`, `kept`, `failed <url>` or `skipped <url> (not an https:// URL)`.
+`projects` takes HTTPS repository URLs, separated by spaces, commas or new lines. Each start clones a missing one into `~/projects/<repo-name>` with the service accounts' credentials, before the conductors start. An existing checkout is never pulled or reset. Log lines: `projects: cloned`, `kept`, `failed <url>` or `skipped <url> (not an https:// URL)`. A URL with credentials (`https://user:token@…`) is skipped without being logged; the `github_token` and `gitlab_token` parameters sign git in.
 
 ## Previews
 
@@ -97,9 +99,9 @@ The workspace page in the Coder dashboard shows three items besides `coder stat`
 
 | Item | Shows | Refresh |
 |---|---|---|
-| PM bot | `up (restarts: N)`, or `down (<state>, restarts: N)` for a stopped, exited or restarting container, `down (no container)` | 10 s |
-| PM bot poller | `up (last pass Ns ago)`, `down` once its state file is older than 60 s (it passes every 15 s) | 10 s |
-| Conductor | `<checkout> <status>` per conductor checkout, from a snapshot a background loop takes every 30 s with `bakers oven status`; `unknown` when the snapshot is older than 90 s | 30 s |
+| PM bot | `up (restarts: N)`, or `down (<state>, restarts: N)` for a stopped, exited or restarting container, `down (no container)`, `down (gone)`; `off (not configured)` without `pm_bot_image` or Slack bot token | 10 s |
+| PM bot poller | `up (last pass Ns ago)`, `down` once its state file is older than 60 s (it passes every 15 s); `off (not configured)` like the PM bot | 10 s |
+| Conductor | `<checkout> <status>` per conductor checkout, from a snapshot a background loop takes every 30 s with `bakers oven status` (at most 20 s each); `unknown` when the snapshot is older than 90 s | 30 s |
 
 ## Logs
 

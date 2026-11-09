@@ -24,15 +24,26 @@ check "no token in any argv" lacks "$CALLS" testtoken
 check "no token in the home outside the CLIs' stores" lacks "$HOME" testtoken
 check "one line per host in the log" test "$(grep -c '^git: ' "$ROOT/out")" -ge 2
 
-# No tokens: both hosts skipped, nothing signed in, identity still set.
+# No tokens: both hosts signed out (a cleared token revokes an earlier login), nothing signed in,
+# identity still set.
 setup
 fake gh
 fake glab
 GIT_USER_NAME="keytec bot" GIT_USER_EMAIL=bot@example.com bash "$SCRIPTS/git-setup.sh" >"$ROOT/out"
-check "empty tokens: no gh or glab call" test ! -s "$CALLS"
+check "empty tokens: no login" lacks "$CALLS" "auth login"
+check "empty GitHub token: gh signs out of github.com" has "$CALLS" "gh auth logout --hostname github.com"
+check "empty GitLab token: glab signs out of the GitLab host" has "$CALLS" "glab auth logout --hostname git.key-tec.de"
 check "empty tokens: github.com skipped" has "$ROOT/out" "git: github.com skipped"
 check "empty tokens: GitLab skipped" has "$ROOT/out" "git: git.key-tec.de skipped"
 check "empty tokens: identity still set" test "$(git config --global user.email)" = bot@example.com
+
+# No earlier login: a failing logout is ignored.
+setup
+fake gh 'exit 1'
+fake glab 'exit 1'
+bash "$SCRIPTS/git-setup.sh" >"$ROOT/out"
+check "failing logout exits 0" test $? -eq 0
+check "failing logout: still logged as skipped" has "$ROOT/out" "git: github.com skipped"
 
 # A failing login is logged and never fails the start.
 setup
