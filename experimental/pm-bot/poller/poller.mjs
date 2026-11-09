@@ -7,7 +7,8 @@
 // moving the ticket on, a new summary's outcome and a new preview link, and a heartbeat while a
 // run works and the conversation has been quiet for PM_BOT_HEARTBEAT_INTERVAL. For the channels the bot created it renames a request channel after its
 // ticket, archives it after the final post, opens a fresh one when the ticket is reopened, and
-// closes a request channel that stayed silent for a week without a ticket. No LLM, no dependencies.
+// closes a request channel that stayed silent for a week without a ticket. It posts in the bot's
+// language, which the bot-channels plugin writes to bot-language.json. No LLM, no dependencies.
 //
 //   node experimental/pm-bot/poller/poller.mjs          # loop
 //   node experimental/pm-bot/poller/poller.mjs --once   # one pass, then exit
@@ -77,13 +78,17 @@ export function hermesSend({ channel, thread_ts, text }) {
 /**
  * @param {{client: ReturnType<typeof createBakersClient>, slack: ReturnType<typeof createSlack>,
  *   send: (message: {comment: string, kind: 'question' | 'technical_problem', identifier: string, channel: string, thread_ts?: string, text: string}) => Promise<void>,
- *   stateFile: string, botChannelsFile: string, workspaceUrl: string, now?: () => number,
- *   project: string, messages: any, heartbeat?: number, log?: {log: Function, error: Function}}} options
+ *   stateFile: string, botChannelsFile: string, languageFile: string, workspaceUrl: string, now?: () => number,
+ *   project: string, messages: {de: any, en: any}, heartbeat?: number, log?: {log: Function, error: Function}}} options
  *   heartbeat: the quiet time in ms after which a working ticket's conversation gets a heartbeat
  *   botChannelsFile: the request channels the bot's plugin opened, which only the plugin writes
+ *   languageFile: the bot's language as the plugin read it, {"language": "<ISO 639-1 code>"}; only the plugin writes it
+ *   messages: the fixed texts per language
  */
-export function createPoller({ client, slack, send, stateFile, botChannelsFile, workspaceUrl, now = Date.now, project, messages, heartbeat = heartbeatInterval(), log = console }) {
+export function createPoller({ client, slack, send, stateFile, botChannelsFile, languageFile, workspaceUrl, now = Date.now, project, messages: texts, heartbeat = heartbeatInterval(), log = console }) {
   const stamp = () => new Date().toISOString();
+  // The texts of the current pass: the plugin's language, German without texts for it.
+  let messages = texts.de;
 
   // Every ticket of the project, page by page, through the bakers list tool.
   async function tickets() {
@@ -132,6 +137,18 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
     } catch (error) {
       if (error.code === 'ENOENT') return empty;
       throw error;
+    }
+  }
+
+  // German while the plugin has written no language; an unreadable file is logged.
+  async function language() {
+    try {
+      const { language: code } = await readJson(languageFile, {});
+      if (code !== undefined && typeof code !== 'string') throw new Error('language is not a string');
+      return Object.hasOwn(texts, code ?? '') ? texts[code] : texts.de;
+    } catch (error) {
+      log.error(`${stamp()} ${languageFile}: ${error.message}; posting in German`);
+      return texts.de;
     }
   }
 
@@ -331,6 +348,7 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
   }
 
   async function pass() {
+    messages = await language();
     try {
       const state = await readState();
       const current = await tickets();
@@ -366,6 +384,7 @@ if (isMain) {
     send: hermesSend,
     stateFile: join(env('HERMES_HOME'), 'poller-state.json'),
     botChannelsFile: join(env('HERMES_HOME'), 'bot-channels.json'),
+    languageFile: join(env('HERMES_HOME'), 'bot-language.json'),
     workspaceUrl: env('SLACK_WORKSPACE_URL'),
     project: env('PM_BOT_PROJECT'),
     messages: JSON.parse(await readFile(new URL('./messages.json', import.meta.url), 'utf8')),

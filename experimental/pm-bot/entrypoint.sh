@@ -119,6 +119,8 @@ fi
 pids=()
 stop() { kill -TERM "${pids[@]}" 2>/dev/null || true; }
 trap stop TERM INT
+# German until the plugin writes this run's language; the poller starts before the plugin.
+rm -f "$DATA/bot-language.json"
 node "$BOT/poller/poller.mjs" &
 pids+=($!)
 hermes gateway run &
