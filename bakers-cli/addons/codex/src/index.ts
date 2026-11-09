@@ -1,7 +1,9 @@
-import { readFileSync } from 'node:fs';
+import { execFile } from 'node:child_process';
+import { existsSync, readFileSync, symlinkSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
 import {
   type AgentFootprint,
   type AgentPlugin,
@@ -9,8 +11,13 @@ import {
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,
+  ensureHome,
+  homeKey,
+  homePath,
   type KnownOptionSpec,
   lastLine,
+  type MarketplaceDeclaration,
+  type PluginLaunch,
   type ResolvedSecurity,
   type RunEnvPolicy,
   resolveAgentCliOptions,
@@ -20,6 +27,7 @@ import {
   type SandboxPreflight,
   type SecurityOptions,
   systemSandboxHost,
+  validateOptionalBoolean,
 } from '@bakers-build/conductor/contract';
 import {
   gitSandboxPaths,
@@ -34,7 +42,36 @@ export interface CodexAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
   args?: string[];
+  /** False runs this agent in the user's own Codex home, without the project's plugins. */
+  plugins?: boolean;
 }
+
+const run = promisify(execFile);
+
+/** Run `codex <args>` in `codexHome`; a failure names `what` and the CLI's output. */
+async function codex(
+  codexHome: string,
+  what: string,
+  args: string[],
+): Promise<string> {
+  try {
+    const { stdout } = await run('codex', args, {
+      env: { ...process.env, CODEX_HOME: codexHome },
+    });
+    return stdout;
+  } catch (error) {
+    const { stderr, stdout, message } = error as {
+      stderr?: string;
+      stdout?: string;
+      message: string;
+    };
+    throw new Error(
+      `${what}: codex ${args.join(' ')} failed: ${(stderr || stdout || message).trim()}`,
+    );
+  }
+}
+
+const HOOK_TRUST = '--dangerously-bypass-hook-trust';
 
 const CODEX_RESERVED = [
   '--sandbox',
@@ -134,6 +171,10 @@ export class CodexAgent implements BbAgent {
   readonly security: ResolvedSecurity;
   private readonly allowWrite: string[];
   readonly runEnvPolicy: RunEnvPolicy;
+  readonly pluginsDisabled: boolean;
+  /** The Codex home runs read and write: the agent home while plugins are on. */
+  configDir: string;
+  private pluginsOn = false;
 
   constructor(
     options: CodexAgentOptions = {},
@@ -150,6 +191,9 @@ export class CodexAgent implements BbAgent {
     });
     this.runEnvPolicy = this.security.runEnvPolicy;
     this.allowWrite = withoutGitDirs(this.security.sandbox.allow_write);
+    this.pluginsDisabled =
+      validateOptionalBoolean(options.plugins, 'plugins') === false;
+    this.configDir = this.userCodexHome();
     // Codex has no read deny or unsandboxed-command list to map these onto.
     for (const key of ['trusted_commands', 'deny_read'] as const) {
       if (this.security.sandbox[key].length > 0) {
@@ -168,6 +212,52 @@ export class CodexAgent implements BbAgent {
         );
       }
     }
+  }
+
+  private userCodexHome(): string {
+    return process.env.CODEX_HOME || join(this.home, '.codex');
+  }
+
+  /** Point this agent at the agent home of the project's declared marketplaces. */
+  useMarketplaces(marketplaces: readonly MarketplaceDeclaration[]): void {
+    if (this.pluginsDisabled || marketplaces.length === 0) return;
+    this.pluginsOn = true;
+    this.configDir = homePath(this.id, homeKey([...marketplaces]));
+  }
+
+  async installPlugins(
+    marketplaces: readonly MarketplaceDeclaration[],
+    home: string,
+  ): Promise<PluginLaunch> {
+    const outcome = await ensureHome(home, async (dir) => {
+      const auth = join(this.userCodexHome(), 'auth.json');
+      if (!existsSync(auth))
+        throw new Error(
+          `codex: no credential file at ${auth}; log in with codex login`,
+        );
+      symlinkSync(auth, join(dir, 'auth.json'));
+      for (const { url, ref, plugins } of marketplaces) {
+        const added = await codex(dir, url, [
+          'plugin',
+          'marketplace',
+          'add',
+          url,
+          '--ref',
+          ref,
+        ]);
+        const name = /Added marketplace `([^`]+)`/.exec(added)?.[1];
+        if (!name)
+          throw new Error(`${url}: codex named no marketplace: ${added.trim()}`);
+        for (const plugin of plugins)
+          await codex(dir, plugin, ['plugin', 'add', `${plugin}@${name}`]);
+      }
+    });
+    return {
+      env: { CODEX_HOME: home },
+      args: [HOOK_TRUST],
+      home: outcome,
+      trust_bypass: ['hook trust'],
+    };
   }
 
   /** A `config.toml` server the conductor's own replaces, named once per dispatch. */
@@ -236,7 +326,7 @@ export class CodexAgent implements BbAgent {
   }
 
   private userMcpServers(): string[] {
-    const codexHome = process.env.CODEX_HOME || join(this.home, '.codex');
+    const codexHome = this.userCodexHome();
     let toml: string;
     try {
       toml = readFileSync(join(codexHome, 'config.toml'), 'utf8');
@@ -252,6 +342,7 @@ export class CodexAgent implements BbAgent {
     workspacePath = process.cwd(),
     tools?: { url: string },
     env: Readonly<Record<string, string>> = {},
+    pluginArgs: readonly string[] = [],
   ): string {
     // Quote at assembly; a plain word has nothing for the shell to expand.
     const word = (t: string) => (/^[\w./=-]+$/.test(t) ? t : shellQuote(t));
@@ -259,6 +350,13 @@ export class CodexAgent implements BbAgent {
       'codex',
       ...this.securityFlags(workspacePath, tools !== undefined).map(word),
     ];
+    for (const arg of pluginArgs) if (!parts.includes(arg)) parts.push(word(arg));
+    // The agent home starts with no trusted project; trust this run's worktree only.
+    if (this.pluginsOn)
+      parts.push(
+        '-c',
+        word(`projects.${JSON.stringify(workspacePath)}.trust_level="trusted"`),
+      );
     // Codex's default shell env filter drops `*KEY*` names; without its key a
     // `GIT_CONFIG_COUNT` entry makes every git call fail.
     for (const [name, value] of Object.entries(env)) {
@@ -299,7 +397,7 @@ export class CodexAgent implements BbAgent {
     worktreePath: string,
     run?: AgentRunIdentity,
   ): Promise<string> {
-    const sessionsDir = join(this.home, '.codex', 'sessions');
+    const sessionsDir = join(this.configDir, 'sessions');
     let entries: string[];
     try {
       entries = await readdir(sessionsDir, { recursive: true });
@@ -402,7 +500,8 @@ export function codexAgent(options: CodexAgentOptions = {}): AgentPlugin {
     id: 'codex',
     requiredModules: [],
     permissions: agent.security.report,
-    async createAgent() {
+    async createAgent(config) {
+      agent.useMarketplaces(config.marketplaces ?? []);
       return agent;
     },
   };

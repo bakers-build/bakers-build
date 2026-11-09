@@ -3,11 +3,13 @@
  *
  *   node claude-trust.mjs <worktree> <command> [args…]
  *
- * Marks exactly <worktree> as trusted in `~/.claude.json`
+ * Marks exactly <worktree> as trusted in `~/.claude.json`, or `$CLAUDE_CONFIG_DIR/.claude.json`
+ * when the run has an agent home
  * (`projects[<worktree>].hasTrustDialogAccepted`), so Claude Code does not stop the run at
  * its workspace trust dialog, then runs the command. Every other key is kept; an already
  * trusted worktree is not written. The write goes to a temporary file that is renamed over
- * the original. When the file cannot be read or parsed, it is left untouched: the command
+ * the original, under a `<file>.lock` so concurrent runs sharing one agent home keep each
+ * other's entries. When the file cannot be read or parsed, it is left untouched: the command
  * still runs and shows the dialog, with a warning on stderr.
  */
 
@@ -22,11 +24,42 @@ if (!worktree || !command) {
   process.exit(2);
 }
 
+/** Holds `<file>.lock` while `write` runs; after 10 s of waiting the lock counts as left over. */
+function locked(file, write) {
+  const lock = `${file}.lock`;
+  const until = Date.now() + 10_000;
+  for (;;) {
+    try {
+      fs.writeFileSync(lock, String(process.pid), { flag: 'wx' });
+      break;
+    } catch (err) {
+      if (err.code !== 'EEXIST') throw err;
+      if (Date.now() > until) {
+        fs.rmSync(lock, { force: true });
+        continue;
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
+    }
+  }
+  try {
+    write();
+  } finally {
+    fs.rmSync(lock, { force: true });
+  }
+}
+
 function trust() {
   if (!path.isAbsolute(worktree)) {
     throw new Error(`not an absolute path: ${worktree}`);
   }
-  const file = path.join(os.homedir(), '.claude.json');
+  const file = path.join(
+    process.env.CLAUDE_CONFIG_DIR || os.homedir(),
+    '.claude.json',
+  );
+  locked(file, () => trustIn(file));
+}
+
+function trustIn(file) {
   let config = {};
   let mode = 0o600;
   try {
@@ -41,7 +74,7 @@ function trust() {
     ...config.projects[worktree],
     hasTrustDialogAccepted: true,
   };
-  // shortcut: no lock; a Claude Code write in the same moment can be lost. Lock if one is.
+  // shortcut: Claude Code itself does not take this lock; its own write in the same moment can be lost.
   const tmp = `${file}.${process.pid}.tmp`;
   fs.writeFileSync(tmp, `${JSON.stringify(config, null, 2)}\n`, { mode });
   fs.chmodSync(tmp, mode);
