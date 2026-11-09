@@ -1,31 +1,63 @@
 # Build your first addon
 
-Build two small JavaScript packages: **Add an agent** gives your machine a named Claude agent; **Add a client** connects a project's runs to herdr-app. Both examples compose shipped adapters, so you can learn the package and preset API with working integrations.
-
-For a button you can call from a ticket, follow [Extend the control panel](/addons/build/control-panel): an **Is dirty?** check of the ticket's worktree.
+Addons let you extend Bakers with your own integrations and operations. This guide explains what an addon can do, how Bakers loads it, and how to build one as a JavaScript package.
 
 ## What an addon is
 
-An addon extends an application through its extension API. In bakers.build, it is an ordinary **JavaScript package**: a directory containing `package.json` and JavaScript modules. It can be local or installed; publishing it to npm is optional.
+In a JavaScript application, an **addon** is extra code that the application loads to add functionality. The application defines where that code can participate: its **extension points**. Each extension point has an API describing what the addon must provide and when the application calls it.
+
+In Bakers, an addon is an ordinary **JavaScript package**: a directory containing `package.json` and JavaScript modules. You enable it in configuration, and Bakers loads the capabilities it provides. The package can live in your project or be installed from a package registry; publishing it to npm is optional.
+
+## What can you extend?
+
+An addon can change how Bakers runs work, connect it to other systems, or add operations that people and agents can call.
+
+| You want to… | The addon provides… |
+|---|---|
+| Use an AI coding program with Bakers | An **agent** integration that starts and configures that program for a run. |
+| Run work in another terminal application | An **executor** that starts and manages the agent's terminal there. |
+| Control how a ticket's checkout is prepared | A **workspace** integration that creates and manages its working directory. |
+| Give agents an additional operation | A **tool** that an agent can call during a run. |
+| Let someone request an operation from a ticket | A **message** with a button or form and an answer in the control panel. |
+| Connect to a ticket backend | A **remote** integration that reads and updates tickets. |
+
+One addon can provide several of these capabilities. It can implement them in JavaScript, reuse other addons with chosen settings, or do both. Reusing addons inside another package is called **composition**.
+
+These are common extension points. The [API reference](/addons/build/contracts#surfaces-and-extension-points) also covers CLI commands, lifecycle hooks and connection extensions.
+
+## How Bakers loads an addon
+
+The package contains a **preset**: a JavaScript module that tells Bakers what the addon provides. You list the package in configuration; Bakers imports its preset and registers the declared capabilities.
 
 | Piece | Purpose |
 |---|---|
 | `package.json` | Names and versions the package and exposes its entry points. |
 | `preset.js` | A module whose named exports declare the addon's capabilities. Bakers calls this module a **preset**. |
-| An `addons` configuration entry | Tells Bakers to load the package in machine or project configuration. |
+| An `addons` configuration entry | Enables the package on a machine or in a project. |
 
-JavaScript's `export` makes a value available to the module's importer. The conductor imports the preset and reads the exports its API recognizes. Here, `export const addons` lists other addons to load. This is called **composition**: your package bundles existing integrations and their settings.
+JavaScript's `export` makes a value available to the code importing a module. Bakers recognizes specific export names: for example, `agents` provides agent integrations, `tools` provides callable operations, and `inbox` provides ticket messages. An `addons` export lists other addons to load as part of this package.
 
-Other presets export implementations through `agents`, `executors`, `workspaces`, `tools` or `inbox`; see the [API reference](/addons/build/contracts). These examples reuse the shipped implementations.
+The package's `scopes` export declares whether it belongs in machine configuration, project configuration, or both. Agent integrations belong to the machine where their programs run. Project tools and workflows can be enabled for the project that needs them.
 
 ## What you will build
 
-1. [Add an agent](#add-an-agent): a machine-scoped package with a `review` agent alias.
-2. [Add a client](#add-a-client): a project-scoped package selecting the executor and workspace for herdr-app.
+Choose an example by the part of Bakers you want to extend:
+
+1. [Add an agent](#add-an-agent): make an agent available for work on your machine.
+2. [Add a client](#add-a-client): connect project runs to a terminal application.
+3. [Extend the control panel](/addons/build/control-panel): make an operation available from a ticket.
+
+The first two examples package existing integrations and their settings. The control-panel example implements an operation and exposes it as a ticket message. Each shows a different use of the same package-and-preset structure.
 
 Use an existing conductor setup and a disposable project for the client example. You need Node.js, access to the relevant configuration and permission to restart the conductor. Naming a package does not install its underlying application.
 
 ## Add an agent
+
+An agent integration tells Bakers how to start an AI coding program for a ticket. It can also expose named configurations, so a run can select an agent with particular settings.
+
+You can write an integration for another program or reuse an existing one. The example below reuses one to show how a package supplies settings and a selectable name.
+
+### Example: configure an existing agent
 
 Make a `review` alias backed by Claude's `sonnet` model. The shipped Claude addon must be available to your Bakers installation; [install and authenticate Claude Code](/addons/claude#setup) as the conductor user first.
 
@@ -81,7 +113,13 @@ This adds a named configuration of an existing agent. Supporting a new agent pro
 
 ## Add a client
 
-Connect the project's runs to **herdr-app**. Its integration needs two contributions: an **executor** hosts agent terminals in herdr-core, and a **workspace** creates each ticket's Git worktree. There is no `clients` export; you supply these capabilities to the conductor. The application itself provides the client UI.
+A terminal client lets you see and interact with running agents. To connect one to Bakers, an addon supplies the run infrastructure the client uses: an **executor** manages the agent's terminal, and a **workspace** prepares the ticket's working directory.
+
+There is no `clients` export. The application provides its own UI; the addon connects Bakers to its runtime through the executor and workspace APIs. A package can reuse existing integrations or implement these interfaces for another runtime.
+
+### Example: connect an existing terminal client
+
+This example connects project runs to **herdr-app**. Its executor hosts agent terminals in herdr-core, and its workspace creates each ticket's Git worktree.
 
 Follow [herdr-core setup](/addons/herdr-core#setup) first and make `hc` available on the conductor's `PATH`. The shipped herdr-core and Git workspace addons must be available to Bakers. Use the [client guide](/get-started/use-your-client#herdr-app) to connect herdr-app to the same local runtime.
 
@@ -132,7 +170,7 @@ Use each example's configuration check before dispatch. A successful configurati
 
 ## Add a ticket message
 
-An agent or client integration does not automatically add a ticket button. Continue with [Extend the control panel](/addons/build/control-panel) to implement **Is dirty?** through `tools` and `inbox`.
+To let someone call an operation from a ticket, declare a **message**. Bakers displays its button or form and the returned answer. [Extend the control panel](/addons/build/control-panel) explains this connection and walks through a complete example.
 
 ## Remove the example
 

@@ -1,6 +1,18 @@
 # Extend the control panel
 
-Add an **Is dirty?** button to a ticket. Clicking it checks **that ticket's worktree** and answers whether it has uncommitted changes.
+An addon can make a project operation available directly from a ticket: request it, supply any required input, and read the result in the control panel.
+
+## How the extension works
+
+The addon declares a **message**: its label, who can request it, any input fields and the operation to run. Bakers uses that definition to display a button or form in the ticket's message card.
+
+When someone submits the request, the conductor runs the addon's handler with the ticket context and returns an answer. The addon supplies the operation; Bakers supplies the controls, request status and result display.
+
+A message can have its own handler or call a **tool** that agents can also use. This lets people and agents request the same operation through different interfaces.
+
+## Example: check for uncommitted changes
+
+The following example adds an **Is dirty?** button. Clicking it checks **that ticket's worktree** and answers whether it has uncommitted changes.
 
 This example counts staged changes, unstaged changes and untracked files. Ignored files do not count. It reports a yes/no status, not filenames, and changes no project files. A dirty worktree is a successful check result; a Git failure is an error.
 
