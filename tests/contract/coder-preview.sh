@@ -23,9 +23,9 @@
 #   - keys are found in code only: an addons key sharing its line gets the
 #     entry, addons or tunnel inside a comment or string is ignored, and a
 #     shorthand addons key gets a log line instead of a second key
-#   - keys of a helper object above the export are ignored; a stray quote in a
-#     template, regex or before a later quoted comment gives a log line and no
-#     change, never a second, shadowed addons or tunnel key
+#   - keys of a helper object above the export are ignored; a regex literal or
+#     `${}` in a template gives the "cannot read" line and no change, never a
+#     second, shadowed addons or tunnel key
 #   - a broken machine file stays untouched, with exit 0 and a log line
 #   - install.sh: none starts and installs nothing even with the token file and
 #     frpc.json present; cloudflare-quick installs cloudflared and starts no
@@ -192,40 +192,83 @@ grep -qi 'cannot place' "$OUT" || fail "shorthand addons: no log line: $(cat "$O
 [ "$(tunnel_value)" = true ] || fail "shorthand addons: tunnel is $(tunnel_value)"
 pass "keys sharing a line, in comments or strings, or in shorthand are found or named"
 
-# Only keys of the exported object count; a scan the script cannot follow leaves the file alone.
+# Only keys of the exported object count.
 printf '%s\n' '// @bakers-schema-version 1' 'const defaults = { tunnel: false, addons: [] };' 'const more = {' ' tunnel: false,' ' addons: [' ' ],' '};' 'export default {' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
 edit cloudflare-quick
 [ "$(tunnel_value)" = true ] || fail "tunnel in a helper const: tunnel is $(tunnel_value): $(cat "$M")"
 grep -qi 'sets tunnel itself' "$OUT" && fail "a helper const's tunnel is named as the machine's: $(cat "$OUT")"
 quick_with_hand "addons in a helper const"
-printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' tpl: `a${"`"}b`,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
-cp "$M" "$SCRATCH/nested"
-edit cloudflare-quick
-if ! cmp -s "$M" "$SCRATCH/nested"; then
-  quick_with_hand "a backtick nested in a template literal"
-  [ "$(grep -cE "^\s*addons\s*:" "$M")" = 1 ] || fail "a nested backtick: not exactly one addons key: $(cat "$M")"
-else
-  grep -qi 'cannot read' "$OUT" || fail "a nested backtick left the file unchanged without a log line: $(cat "$OUT")"
-fi
-# A stray quote that a later quote in a comment closes: one key holding the entry, or the log and no change.
-unreadable_or_one() {
-  if cmp -s "$M" "$SCRATCH/lost"; then
-    grep -qi 'cannot read' "$OUT" || fail "$1: unchanged without a log line: $(cat "$OUT")"
-  else
-    [ "$(grep -cE "^\s*$2\s*:" "$M")" = 1 ] || fail "$1: not exactly one $2 key: $(cat "$M")"
-    quick_with_hand "$1"
-  fi
-}
-for stray in ' tpl: `a${"`"}b`,|// the 27" screen box' " re: /it's/,|// it's fine"; do
-  printf '%s\n' '// @bakers-schema-version 1' 'export default {' " ${stray%%|*}" ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' " ${stray#*|}" '};' > "$M"
+# A file the scan cannot follow (a regex literal, `${}` in a template) gets the log and no change,
+# never a second, shadowed addons or tunnel key.
+unreadable() {
+  cat > "$M"
   cp "$M" "$SCRATCH/lost"
   edit cloudflare-quick
-  unreadable_or_one "a stray quote closed in a later comment (${stray%%|*})" addons
-done
-printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' tpl: `a${"`"}b`,' ' tunnel: false,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' ' // the 27" screen box' '};' > "$M"
-cp "$M" "$SCRATCH/lost"
-edit cloudflare-quick
-unreadable_or_one "a stray quote hiding a hand tunnel key" tunnel
+  cmp -s "$M" "$SCRATCH/lost" || fail "$1: changed: $(diff "$SCRATCH/lost" "$M")"
+  grep -qi 'cannot read' "$OUT" || fail "$1: no 'cannot read' line: $(cat "$OUT")"
+}
+unreadable "a backtick nested in a template literal" <<'EOF'
+export default {
+ tpl: `a${"`"}b`,
+ addons: [
+  { use: '@bakers-build/addon-ddev' },
+ ],
+ // the 27" screen box
+};
+EOF
+unreadable "a regex apostrophe closed in a later comment" <<'EOF'
+export default {
+ re: /it's/,
+ addons: [
+  { use: '@bakers-build/addon-ddev' },
+ ],
+ // it's fine
+};
+EOF
+unreadable "a regex apostrophe closed on the addons line" <<'EOF'
+export default {
+ re: /it's/, addons: [ // don't reorder
+  { use: '@bakers-build/addon-ddev' },
+ ],
+};
+EOF
+unreadable "a regex apostrophe continued by a comment's backslash" <<'EOF'
+export default {
+ re: /it's/, // dir C:\
+ addons: [ // it's mine
+  { use: '@bakers-build/addon-ddev' },
+ ],
+};
+EOF
+unreadable "a pair of regex double quotes around addons" <<'EOF'
+export default {
+ re: /"/, addons: [ { use: '@bakers-build/addon-ddev' } ], re2: /"/,
+};
+EOF
+unreadable "a regex backtick closed in a later comment" <<'EOF'
+export default {
+ re: /`/,
+ addons: [
+  { use: '@bakers-build/addon-ddev' },
+ ],
+ // a ` here
+};
+EOF
+unreadable "a stray quote hiding a hand tunnel key" <<'EOF'
+export default {
+ tpl: `a${"`"}b`,
+ tunnel: false,
+ addons: [
+  { use: '@bakers-build/addon-ddev' },
+ ],
+ // the 27" screen box
+};
+EOF
+unreadable "a regex apostrophe on the hand tunnel line" <<'EOF'
+export default {
+ re: /it's/, tunnel: false, // don't
+};
+EOF
 pass "keys of a helper const are ignored, and an unreadable file is named and left unchanged"
 
 # --- F5: a broken file stays untouched -------------------------------------

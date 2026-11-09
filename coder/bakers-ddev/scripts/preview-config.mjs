@@ -36,9 +36,9 @@ function parses(text) {
 /**
  * The text without its comments (`code`), and the text with comments and string contents blanked
  * to spaces, newlines kept (`blank`); a string used as a property key stays. Null when a string
- * or comment never closes, or a quoted string crosses a line, which means the scan lost track.
- * shortcut: a backtick inside a regex literal, or one that a stray quote leaves unpaired, can still
- * throw the scan off unnoticed; machine files hold none, parse them if they do.
+ * or comment never closes, a quoted string crosses a line, or the text holds a `/` that starts no
+ * comment or a `${` in a template: only a regex literal or a template expression can hide a quote
+ * from this scan, so without them a file that parses has no stray quote. Division reads as lost too.
  */
 function scan(text) {
   let code = '';
@@ -57,9 +57,14 @@ function scan(text) {
       const stop = end + 2;
       blank += text.slice(i, stop).replace(/[^\n]/g, ' ');
       i = stop - 1;
+    } else if (c === '/') {
+      return null; // a regex literal or division
     } else if (c === '"' || c === "'" || c === '`') {
       let end = i + 1;
-      for (; end < text.length && text[end] !== c; end++) if (text[end] === '\\') end++;
+      for (; end < text.length && text[end] !== c; end++) {
+        if (text[end] === '\\') end++;
+        else if (c === '`' && text[end] === '$' && text[end + 1] === '{') return null;
+      }
       if (end >= text.length) return null;
       const str = text.slice(i, end + 1);
       // An unescaped newline ends no quoted string in JS: a stray quote opened this one.
