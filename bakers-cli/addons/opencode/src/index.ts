@@ -89,18 +89,18 @@ export class OpencodeAgent implements BbAgent {
   ) {
     // OpenCode has no OS sandbox, so its default is system, not the shared sandbox.
     this.security = resolveSecurityOptions(
-      { ...options, security: options.security ?? 'system' },
+      { ...options, permissions: options.permissions ?? 'system' },
       SANDBOX_DEFAULTS,
     );
     this.runEnvPolicy = this.security.runEnvPolicy;
     if (this.security.mode === 'sandbox') {
       throw new Error(
-        "OpenCode has no OS sandbox, so security: 'sandbox' cannot be enforced; leave security unset or set 'system' (your own OpenCode configuration) or 'yolo'",
+        "OpenCode has no OS sandbox, so permissions: 'sandbox' cannot be enforced; leave permissions unset or set 'system' (your own OpenCode configuration) or 'yolo'",
       );
     }
     if (this.security.mode === 'custom') {
       throw new Error(
-        "OpenCode has no config hand-off for security: 'custom'; use security: 'system' with your own OpenCode configuration",
+        "OpenCode has no config hand-off for permissions: 'custom'; use permissions: 'system' with your own OpenCode configuration",
       );
     }
     const cli = resolveAgentCliOptions(
@@ -232,7 +232,7 @@ export function opencodeAgent(options: OpencodeAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'opencode',
     requiredModules: [],
-    security: agent.security.report,
+    permissions: agent.security.report,
     async createAgent() {
       return agent;
     },

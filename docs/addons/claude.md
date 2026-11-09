@@ -34,9 +34,9 @@ One custom candidate:
 |---|---|---|---|
 | `model` | string | none | Passed as `--model`. Replaces `opus`, `sonnet` and `fable` with one custom candidate. |
 | `effort` | string | none | Passed as `--effort`. |
-| `security` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'system'` | How strictly a run starts; see [Security](#security). |
-| `sandbox` | object | see below | Only with `security: 'sandbox'`. Each key set replaces its default; lists are not merged. |
-| `config` | object | none | Required with, and only valid with, `security: 'custom'`. |
+| `permissions` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'system'` | How strictly a run starts; see [Security](#security). |
+| `sandbox` | object | see below | Only with `permissions: 'sandbox'`. Each key set replaces its default; lists are not merged. |
+| `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `measure` | boolean | `false` | Starts Claude through the addon's measure wrapper. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
@@ -45,11 +45,11 @@ One custom candidate:
 
 Default: `system`. See [Execution security](/provision/security/execution) for boundaries, environment filtering and isolation risks.
 
-| `security` | Launch flags |
+| `permissions` | Launch flags |
 |---|---|
 | `sandbox` | `--permission-mode default --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
 | `system` | none: your own Claude settings apply unchanged |
-| `yolo` | `--dangerously-skip-permissions`, the launch before `security` existed |
+| `yolo` | `--dangerously-skip-permissions`, the launch before `permissions` existed |
 | `custom` | `--settings '<config as JSON>'`, nothing else |
 
 `sandbox` keys and their defaults:
@@ -63,7 +63,7 @@ Default: `system`. See [Execution security](/provision/security/execution) for b
 | `mcp_servers` | `{}` | `--mcp-config`, in Claude's `mcpServers` shape; plus [`bakers`](/addons/build/tools) |
 
 ```js
-{ use: '@bakers-build/addon-claude', with: { security: 'sandbox', sandbox: { trusted_commands: ['git', 'docker'] } } }
+{ use: '@bakers-build/addon-claude', with: { permissions: 'sandbox', sandbox: { trusted_commands: ['git', 'docker'] } } }
 ```
 
 ## Check it works
@@ -81,7 +81,7 @@ bakers agents
 - `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1` installs `.claude/settings.json` plugins before the first turn.
 - The addon starts `claude` without installing or authenticating it. Non-interactive shells need the binary on `PATH`, not an alias.
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
-- `skip_permissions` was removed; setting it fails loading. Use `security: 'yolo'` for the old bypass.
+- `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
 - Listed in a conductor config, an agent addon is ignored with a warning.
 

@@ -14,7 +14,7 @@ No addon settings. Run inside a configured project, or pass `--config <path>` fo
 
 ## Check it works
 
-The command prints JSON with each alias, its harness and model, plus `security`, `enabled_agents`, `disabled_agents`, `default_agent` and `routes`.
+The command prints JSON with each alias, its harness and model, plus `permissions`, `enabled_agents`, `disabled_agents`, `default_agent` and `routes`.
 
 ::: details Per CLI
 ```sh

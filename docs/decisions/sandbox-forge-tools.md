@@ -38,6 +38,16 @@ or machine layer, for example `trusted_commands: ['bakers', 'git', 'gh']` (or `g
 repository pins `bakers` and `git` in `.bakers/conductor.config.js`. Every such entry runs outside
 the sandbox with the operator's full rights; see [Run security](/provision/security/execution).
 
+## The key is `permissions`, not `security`
+
+The mode key (`sandbox`, `system`, `yolo`, `custom`) chooses the rights a harness starts with. It
+is not a security level: harness sandboxes differ in strength, and none of them is a boundary for
+the host. With `system` as the default, bakers.build sets no flag and promises nothing, so the key
+is named `permissions` on agent entries and in the machine and project blocks, e.g.
+`permissions: { mode: 'sandbox', sandbox: { trusted_commands: ['bakers', 'git'] } }`. `security`
+fails loading with a message that names `permissions`. There is no alias, because two keys for
+one setting would need a precedence rule.
+
 ## Network
 
 `network: ['*']` stays the sandbox default. Without a credential in the sandbox, open egress can

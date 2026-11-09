@@ -1,22 +1,22 @@
 ---
 title: Run security
-description: How strictly Claude, Codex and Grok runs start on a machine - the security modes, what each harness sandbox blocks and what it does not, the ticket env var filter, the risk of loosening and operator-side isolation.
+description: How strictly Claude, Codex and Grok runs start on a machine - the permission modes, what each harness sandbox blocks and what it does not, the ticket env var filter, the risk of loosening and operator-side isolation.
 ---
 
 # Run security
 
-A run executes untrusted ticket content on your machine. Review its limits before dispatch. The default mode is `system`; choose `sandbox` for untrusted tickets. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
+A run executes untrusted ticket content on your machine. Review its limits before dispatch. The default mode is `system`; choose `sandbox` for untrusted tickets. Each harness entry's `with` takes `permissions`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
 
 ## Modes
 
-| `security` | Meaning | MCP servers | Denied ticket env vars |
+| `permissions` | Meaning | MCP servers | Denied ticket env vars |
 |---|---|---|---|
 | `sandbox` | No permission bypass; the harness's own OS sandbox, tuned by the `sandbox` keys | only `sandbox.mcp_servers` (default none) | dropped |
 | `system` (default) | bakers.build adds no security flag; your own harness configuration decides | yours | dropped |
 | `yolo` | Full access, permissions and sandbox bypassed | yours | passed |
 | `custom` | Only your `config`, handed to the harness unchanged | as `config` says | dropped |
 
-The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security), [OpenCode](/addons/opencode#security) and [Pi](/addons/pi#security) pages; Grok and OpenCode reject `custom`. OpenCode and Pi have no OS sandbox, so an explicit `security: 'sandbox'` fails loading for them; Pi also rejects `yolo`. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
+The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security), [OpenCode](/addons/opencode#security) and [Pi](/addons/pi#security) pages; Grok and OpenCode reject `custom`. OpenCode and Pi have no OS sandbox, so an explicit `permissions: 'sandbox'` fails loading for them; Pi also rejects `yolo`. Loading fails for an unknown mode, `skip_permissions`, `security` (renamed `permissions`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
 
 ## Sandbox prerequisites
 
@@ -109,7 +109,7 @@ What it does not block:
 
 ## Ticket env vars
 
-Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `security` (Kimi) always drop with the default list:
+Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `permissions` (Kimi) always drop with the default list:
 
 `ANTHROPIC_*`, `OPENAI_*`, `CLAUDE_*`, `CODEX_*`, `NODE_OPTIONS`, `LD_*`, `DYLD_*`, `PATH`, `BASH_ENV`, `ENV`, `GIT_*`, `SSH_*`, `*_PROXY`, `*_proxy`
 
@@ -119,7 +119,7 @@ The inbox and addon listener contexts for `after_done`, `on_freeze` and `on_resu
 
 ## Risk of loosening
 
-Every step away from `sandbox` gives ticket authors more of your rights: `system` gives them whatever your own harness configuration allows, `yolo` gives them everything your user can do (files, keys, network, every MCP server, your GitLab token), and an env var you take off the deny list can redirect the model API or run code in every process. Loosen per agent, not for the whole harness, and only for projects whose ticket authors you trust; a committed project [`security` block](/provision/security/shared-settings) loosens for everyone with push access.
+Every step away from `sandbox` gives ticket authors more of your rights: `system` gives them whatever your own harness configuration allows, `yolo` gives them everything your user can do (files, keys, network, every MCP server, your GitLab token), and an env var you take off the deny list can redirect the model API or run code in every process. Loosen per agent, not for the whole harness, and only for projects whose ticket authors you trust; a committed project [`permissions` block](/provision/security/shared-settings) loosens for everyone with push access.
 
 The harness sandboxes do not isolate a machine. Where runs handle untrusted tickets, also run the conductor in a container or VM, give it credentials scoped to the project (a project-only Git token, no personal SSH key), and restrict outbound traffic with a host firewall.
 
@@ -133,7 +133,7 @@ Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([mac
 {
   use: '@bakers-build/addon-claude',
   with: {
-    security: 'custom',
+    permissions: 'custom',
     config: {
       permissions: { defaultMode: 'dontAsk', allow: ['Bash', 'Edit(./**)'], deny: ['Read(~/.ssh/**)', 'Read(~/.bakers/**)'] },
       disableClaudeAiConnectors: true,
@@ -142,7 +142,7 @@ Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([mac
 },
 {
   use: '@bakers-build/addon-codex',
-  with: { security: 'custom', config: { sandbox_mode: 'danger-full-access', approval_policy: 'never' } },
+  with: { permissions: 'custom', config: { sandbox_mode: 'danger-full-access', approval_policy: 'never' } },
 },
 ```
 

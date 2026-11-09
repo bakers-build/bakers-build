@@ -4,7 +4,7 @@ import {
   type SandboxOptions,
 } from '../../src/plugins/agent-args.js';
 
-// Run security is layered: harness default → project → machine → agent entry.
+// Run permissions are layered: harness default → project → machine → agent entry.
 // A layer that sets a key replaces the one below; '$inherit' inserts it.
 
 const DEFAULTS: Required<SandboxOptions> = {
@@ -25,11 +25,11 @@ const resolve = (
     unsupported ? { unsupported } : undefined,
   );
 
-describe('shared run security layers', () => {
+describe('shared run permissions layers', () => {
   it('a project list with $inherit adds to the harness default', () => {
     const r = resolve({
-      security: 'sandbox',
-      shared_security: {
+      permissions: 'sandbox',
+      shared_permissions: {
         project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
       },
     });
@@ -43,8 +43,8 @@ describe('shared run security layers', () => {
 
   it('the machine replaces the project, and [] vetoes its grant', () => {
     const r = resolve({
-      security: 'sandbox',
-      shared_security: {
+      permissions: 'sandbox',
+      shared_permissions: {
         project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
         machine: { sandbox: { trusted_commands: [] } },
       },
@@ -58,8 +58,8 @@ describe('shared run security layers', () => {
 
   it('machine $inherit keeps the project grant; duplicates are dropped', () => {
     const r = resolve({
-      security: 'sandbox',
-      shared_security: {
+      permissions: 'sandbox',
+      shared_permissions: {
         project: { sandbox: { allow_write: ['~/.designbook'] } },
         machine: { sandbox: { allow_write: ['$inherit', '~/.designbook'] } },
       },
@@ -71,8 +71,8 @@ describe('shared run security layers', () => {
 
   it('an entry list without $inherit replaces every shared layer', () => {
     const r = resolve({
-      security: 'sandbox',
-      shared_security: { machine: { sandbox: { deny_read: ['~/.aws'] } } },
+      permissions: 'sandbox',
+      shared_permissions: { machine: { sandbox: { deny_read: ['~/.aws'] } } },
       sandbox: { deny_read: ['~/.gnupg'] },
     });
     expect(r.sandbox.deny_read).toEqual(['~/.gnupg']);
@@ -80,8 +80,8 @@ describe('shared run security layers', () => {
 
   it('an entry list with $inherit adds to the machine layer', () => {
     const r = resolve({
-      security: 'sandbox',
-      shared_security: {
+      permissions: 'sandbox',
+      shared_permissions: {
         machine: { sandbox: { deny_read: ['$inherit', '~/.aws'] } },
       },
       sandbox: { deny_read: ['$inherit', '~/.gnupg'] },
@@ -99,15 +99,16 @@ describe('shared run security layers', () => {
       project: { mode: 'yolo' },
       machine: { mode: 'system' },
     };
-    expect(resolve({ shared_security: layers }).report.mode).toEqual({
+    expect(resolve({ shared_permissions: layers }).report.mode).toEqual({
       value: 'system',
       source: 'machine',
     });
     expect(
-      resolve({ shared_security: { project: { mode: 'yolo' } } }).mode,
+      resolve({ shared_permissions: { project: { mode: 'yolo' } } }).mode,
     ).toBe('yolo');
     expect(
-      resolve({ shared_security: layers, security: 'sandbox' }).report.mode,
+      resolve({ shared_permissions: layers, permissions: 'sandbox' }).report
+        .mode,
     ).toEqual({ value: 'sandbox', source: 'agent' });
     expect(resolve({}).report.mode).toEqual({
       value: 'system',
@@ -117,8 +118,8 @@ describe('shared run security layers', () => {
 
   it('shared lists are not applied outside the sandbox mode', () => {
     const r = resolve({
-      shared_security: { project: { sandbox: { allow_write: ['~/.x'] } } },
-      security: 'system',
+      shared_permissions: { project: { sandbox: { allow_write: ['~/.x'] } } },
+      permissions: 'system',
     });
     expect(r.sandbox.allow_write).toEqual([]);
     expect(r.report.not_applied).toEqual([
@@ -129,8 +130,8 @@ describe('shared run security layers', () => {
   it('a shared key the harness cannot express is not applied', () => {
     const r = resolve(
       {
-        security: 'sandbox',
-        shared_security: {
+        permissions: 'sandbox',
+        shared_permissions: {
           machine: {
             sandbox: { deny_read: ['~/.aws'], allow_write: ['~/.y'] },
           },
@@ -148,23 +149,32 @@ describe('shared run security layers', () => {
   it('rejects keys and modes the shared block does not take', () => {
     expect(() =>
       resolve({
-        shared_security: { project: { sandbox: { network: ['x.org'] } } },
+        shared_permissions: { project: { sandbox: { network: ['x.org'] } } },
       }),
-    ).toThrow(/project security\.sandbox: unknown key network/);
+    ).toThrow(/project permissions\.sandbox: unknown key network/);
     expect(() =>
-      resolve({ shared_security: { machine: { mode: 'custom' } } }),
-    ).toThrow(/machine security\.mode must be one of sandbox, system, yolo/);
+      resolve({ shared_permissions: { machine: { mode: 'custom' } } }),
+    ).toThrow(/machine permissions\.mode must be one of sandbox, system, yolo/);
     expect(() =>
-      resolve({ shared_security: { machine: { env_deny: [] } } }),
-    ).toThrow(/machine security: unknown key env_deny/);
+      resolve({ shared_permissions: { machine: { env_deny: [] } } }),
+    ).toThrow(/machine permissions: unknown key env_deny/);
+  });
+
+  it('rejects the renamed key security and names permissions', () => {
+    expect(() => resolve({ security: 'sandbox' })).toThrow(
+      'security was renamed: use permissions',
+    );
+    expect(() => resolve({ skip_permissions: true })).toThrow(
+      "use permissions: 'yolo'",
+    );
   });
 
   it('without shared layers the entry behaves as before', () => {
     const r = resolve({
-      security: 'sandbox',
+      permissions: 'sandbox',
       sandbox: { trusted_commands: ['$inherit', 'make'] },
     });
     expect(r.sandbox.trusted_commands).toEqual(['bakers', 'git', 'make']);
-    expect(resolve({ security: 'sandbox' }).sandbox).toEqual(DEFAULTS);
+    expect(resolve({ permissions: 'sandbox' }).sandbox).toEqual(DEFAULTS);
   });
 });

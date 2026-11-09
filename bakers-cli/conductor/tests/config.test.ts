@@ -1840,7 +1840,7 @@ export default {
           with: {
             model: 'sonnet',
             effort: 'medium',
-            security: 'system',
+            permissions: 'system',
             args: ['--fallback-model', 'opus'],
           },
         }],

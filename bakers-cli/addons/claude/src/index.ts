@@ -482,7 +482,7 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'claude',
     requiredModules: [],
-    security: agent.security.report,
+    permissions: agent.security.report,
     async createAgent() {
       return agent;
     },

@@ -280,7 +280,7 @@ describe('ClaudeAgent measure', () => {
     const cmd = new ClaudeAgent({
       model: 'opus',
       measure: true,
-      security: 'yolo',
+      permissions: 'yolo',
       args: ['--verbose'],
     }).launchCommand('go');
     expect(cmd).toBe(
@@ -293,7 +293,7 @@ describe('ClaudeAgent measure', () => {
       'bash',
       [
         '-c',
-        `node() { printf '%s\\0' "$@"; }; ${new ClaudeAgent({ security: 'sandbox', measure: true }).launchCommand('go')}`,
+        `node() { printf '%s\\0' "$@"; }; ${new ClaudeAgent({ permissions: 'sandbox', measure: true }).launchCommand('go')}`,
       ],
       { encoding: 'utf8' },
     )
@@ -313,7 +313,9 @@ describe('ClaudeAgent measure', () => {
 
   it('leaves the launch untouched without measure', () => {
     expect(
-      new ClaudeAgent({ model: 'opus', security: 'yolo' }).launchCommand('go'),
+      new ClaudeAgent({ model: 'opus', permissions: 'yolo' }).launchCommand(
+        'go',
+      ),
     ).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions",
     );

@@ -55,7 +55,7 @@ else process.exitCode = Number(process.env.TEST_EXIT || 0);
     env: { ...process.env, GROK_HOME: '', PATH: `${bin}:${process.env.PATH}` },
   };
   const command = new GrokAgent(
-    { security: 'sandbox', sandbox: { allow_write: [grant] } },
+    { permissions: 'sandbox', sandbox: { allow_write: [grant] } },
     home,
   ).launchCommand('work');
   return { home, grokHome, grant, command, options, original };
@@ -223,7 +223,7 @@ it('rejects missing/non-directory grants and a conflicting Grok home before agen
     join(f.grokHome, 'auth.json'),
   ]) {
     const command = new GrokAgent(
-      { security: 'sandbox', sandbox: { allow_write: [grant] } },
+      { permissions: 'sandbox', sandbox: { allow_write: [grant] } },
       f.home,
     ).launchCommand('work');
     await expect(execute(command, f.options)).rejects.toMatchObject({

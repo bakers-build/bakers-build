@@ -63,12 +63,12 @@ Run `bakers agents` in the project checkout to see the aliases and models your i
 
 ## Run security
 
-Runs start in `system` mode by default; choose `security: 'sandbox'` for Claude, Codex or Grok runs on untrusted tickets. Set `security`, the `sandbox` keys, `config` and `env_deny` in a harness entry's `with`; a `catalog` entry uses only its own `with`. The mode and the `deny_read`, `allow_write` and `trusted_commands` lists can also be set once for every agent in a top-level `security` block of `machine.config.js` or the project's `.bakers/conductor.config.js`; layers combine as [Shared run security](/provision/security/shared-settings) describes, including the risk of a committed project block that loosens the sandbox.
+Runs start in `system` mode by default; choose `permissions: 'sandbox'` for Claude, Codex or Grok runs on untrusted tickets. Set `permissions`, the `sandbox` keys, `config` and `env_deny` in a harness entry's `with`; a `catalog` entry uses only its own `with`. The mode and the `deny_read`, `allow_write` and `trusted_commands` lists can also be set once for every agent in a top-level `permissions` block of `machine.config.js` or the project's `.bakers/conductor.config.js`; layers combine as [Shared run security](/provision/security/shared-settings) describes, including the risk of a committed project block that loosens the sandbox.
 
 ```js
 agents: {
   catalog: [
-    { harness: '@bakers-build/addon-claude', alias: 'opus-yolo', with: { model: 'opus', security: 'yolo' } },
+    { harness: '@bakers-build/addon-claude', alias: 'opus-yolo', with: { model: 'opus', permissions: 'yolo' } },
   ],
 },
 ```
