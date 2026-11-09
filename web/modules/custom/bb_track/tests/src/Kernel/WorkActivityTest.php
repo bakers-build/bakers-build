@@ -34,6 +34,15 @@ final class WorkActivityTest extends WorkTimeTestBase {
   }
 
   /**
+   * An activity input leaves other entities' persistent cache entries alone.
+   */
+  public function testInputKeepsTheSharedEntityCache(): void {
+    \Drupal::cache('entity')->set('values:node:1', 'unrelated');
+    \Drupal::service('bb_track.activity_input')->input($this->activity('cache'));
+    self::assertNotFalse(\Drupal::cache('entity')->get('values:node:1'));
+  }
+
+  /**
    * Without an active account the activity is refused, actionably.
    */
   public function testMissingAccountIsRefused(): void {
