@@ -34,37 +34,55 @@ function parses(text) {
 }
 
 /**
- * The brace depth at the start of each line, skipping strings and comments, and the text without
- * its comments.
+ * The text without its comments (`code`), and the text with comments and string contents blanked
+ * to spaces, newlines kept (`blank`); a string used as a property key stays.
  * shortcut: a quote inside a regex literal throws the scan off; machine files hold none, parse one
  * if they do.
  */
 function scan(text) {
-  const depths = [0];
-  let depth = 0;
   let code = '';
+  let blank = '';
+  const colon = /\s*:/y;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
-    const from = i;
-    if (c === '\n') depths.push(depth);
-    else if (c === '/' && text[i + 1] === '/') {
-      while (i + 1 < text.length && text[i + 1] !== '\n') i++;
-      continue;
+    if (c === '/' && text[i + 1] === '/') {
+      const end = text.indexOf('\n', i);
+      const stop = end === -1 ? text.length : end;
+      blank += ' '.repeat(stop - i);
+      i = stop - 1;
     } else if (c === '/' && text[i + 1] === '*') {
       const end = text.indexOf('*/', i + 2);
-      const stop = end === -1 ? text.length : end + 1;
-      for (; i < stop; i++) if (text[i + 1] === '\n') depths.push(depth);
-      continue;
+      const stop = end === -1 ? text.length : end + 2;
+      blank += text.slice(i, stop).replace(/[^\n]/g, ' ');
+      i = stop - 1;
     } else if (c === '"' || c === "'" || c === '`') {
-      for (i++; i < text.length && text[i] !== c; i++) {
-        if (text[i] === '\\') i++;
-        if (text[i] === '\n') depths.push(depth);
-      }
-    } else if (c === '{' || c === '[' || c === '(') depth++;
-    else if (c === '}' || c === ']' || c === ')') depth--;
-    code += text.slice(from, i + 1);
+      let end = i + 1;
+      for (; end < text.length && text[end] !== c; end++) if (text[end] === '\\') end++;
+      const str = text.slice(i, end + 1);
+      colon.lastIndex = end + 1;
+      const key = c !== '`' && colon.test(text);
+      code += str;
+      blank += key ? str : c + str.slice(1, -1).replace(/[^\n]/g, ' ') + c;
+      i = end;
+    } else {
+      code += c;
+      blank += c;
+    }
   }
-  return { depths, code };
+  return { code, blank };
+}
+
+/** The offset of the top-level `key` (quoted, shorthand or on a shared line) in `blank`, or -1. */
+function topKey(blank, key) {
+  for (const m of blank.matchAll(new RegExp(`(?<=(?:^|[{,])\\s*)(["']?)${key}\\1\\s*(?=[:,}])`, 'gm'))) {
+    let depth = 0;
+    for (const ch of blank.slice(0, m.index)) {
+      if ('{[('.includes(ch)) depth++;
+      else if ('}])'.includes(ch)) depth--;
+    }
+    if (depth === 1) return m.index;
+  }
+  return -1;
 }
 
 /**
@@ -91,24 +109,25 @@ function edit(text, transport) {
   const base = unmarked(text);
   if (transport === 'none') return base;
   const lines = base.split('\n');
-  const { depths, code } = scan(base);
-  const top = (re) => lines.findIndex((l, i) => depths[i] === 1 && re.test(l));
-  const head = lines.findIndex((l) => /^\s*export\s+default\s*\{\s*$/.test(l));
+  const { code, blank } = scan(base);
+  const head = blank.split('\n').findIndex((l) => /^\s*export\s+default\s*\{\s*$/.test(l));
   if (head === -1) {
     log('machine.config.js has no `export default {` line; add tunnel and the ports entry by hand');
     return base;
   }
   const hasPorts = /['"]@bakers-build\/addon-ports['"]/.test(code);
-  // Looked up before any splice below, which shifts lines against depths.
-  const ownTunnel = top(/^\s*["']?tunnel["']?\s*:/) !== -1;
+  // Looked up before any splice below, which shifts lines against blank.
+  const ownTunnel = topKey(blank, 'tunnel') !== -1;
   if (transport === 'cloudflare-quick') {
     const block = [` ${BEGIN}`, ` ${QUICK_ENTRY}`, ` ${END}`];
-    const addons = top(/^\s*["']?addons["']?\s*:/);
+    const addons = topKey(blank, 'addons');
+    const rest = blank.slice(addons).split('\n')[0];
     if (hasPorts) log('machine.config.js has its own addon-ports entry; it wins over the parameter');
     // A created addons key sits inside the markers, so none removes it with the entry.
     else if (addons === -1) lines.splice(head + 1, 0, ` ${BEGIN}`, ' addons: [', ` ${QUICK_ENTRY}`, ' ],', ` ${END}`);
-    else if (/^\s*["']?addons["']?\s*:\s*\[\s*$/.test(lines[addons])) lines.splice(addons + 1, 0, ...block);
-    else log('cannot place the ports entry in the addons list; add it by hand');
+    else if (/^["']?addons["']?\s*:\s*\[\s*$/.test(rest)) {
+      lines.splice(blank.slice(0, addons).split('\n').length, 0, ...block);
+    } else log('cannot place the ports entry in the addons list; add it by hand');
   } else if (!hasPorts) {
     log(`no addon-ports entry for ${transport}; add the ports entry by hand (README › Optional previews)`);
   }

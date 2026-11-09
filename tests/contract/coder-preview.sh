@@ -20,6 +20,9 @@
 #     hand addon added inside that list keeps it
 #   - a multi-line template literal or quoted keys still give one addons key
 #     holding the Quick entry
+#   - keys are found in code only: an addons key sharing its line gets the
+#     entry, addons or tunnel inside a comment or string is ignored, and a
+#     shorthand addons key gets a log line instead of a second key
 #   - a broken machine file stays untouched, with exit 0 and a log line
 #   - install.sh: none starts and installs nothing even with the token file and
 #     frpc.json present; cloudflare-quick installs cloudflared and starts no
@@ -159,6 +162,32 @@ edit cloudflare-quick
 one_addons "quoted keys"
 [ "$(grep -c 'tunnel' "$M")" = 1 ] || fail "a quoted hand tunnel key got a duplicate: $(cat "$M")"
 pass "a template literal or quoted keys before the list leave one addons key with the Quick entry"
+
+# Keys are found in code only: not in comments or strings, and not only at the start of a line.
+quick_with_hand() {
+  [ "$(ports_entries)" = 1 ] || fail "$1: $(ports_entries) addon-ports entries: $(cat "$M")"
+  exported | grep -q 'addon-ddev' || fail "$1: the hand addon is gone: $(cat "$M")"
+}
+printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' machine_id: "m1", addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+edit cloudflare-quick
+quick_with_hand "an addons key sharing its line"
+printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' /*' ' addons: [' ' */' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+edit cloudflare-quick
+quick_with_hand "an addons line in a block comment"
+printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' label: `x' ' addons: [' ' `,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+edit cloudflare-quick
+quick_with_hand "an addons line in a template literal"
+exported | grep -q '"label":"x\\n addons: \[\\n "' || fail "the template literal changed: $(cat "$M")"
+printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' /*' ' tunnel: true,' ' */' '};' > "$M"
+edit cloudflare-quick
+[ "$(tunnel_value)" = true ] || fail "tunnel in a block comment: tunnel is $(tunnel_value)"
+grep -qi 'sets tunnel itself' "$OUT" && fail "a commented-out tunnel key is named as the machine's: $(cat "$OUT")"
+printf '%s\n' '// @bakers-schema-version 1' "const addons = [{ use: '@bakers-build/addon-ddev' }];" 'export default {' ' addons,' '};' > "$M"
+edit cloudflare-quick
+[ "$(grep -c 'addons' "$M")" = 2 ] || fail "shorthand addons: a second addons key: $(cat "$M")"
+grep -qi 'cannot place' "$OUT" || fail "shorthand addons: no log line: $(cat "$OUT")"
+[ "$(tunnel_value)" = true ] || fail "shorthand addons: tunnel is $(tunnel_value)"
+pass "keys sharing a line, in comments or strings, or in shorthand are found or named"
 
 # --- F5: a broken file stays untouched -------------------------------------
 printf 'export default {\n machine_id: "x",\n' > "$M"
