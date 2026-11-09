@@ -59,12 +59,13 @@ def language_prompt(code=DEFAULT_LANGUAGE):
     return f"Answer in the language with ISO 639-1 code `{code}`."
 
 
-def channel_prompt(channel_id, workspace_url, ticket, code=DEFAULT_LANGUAGE):
+def channel_prompt(channel_id, workspace_url, ticket, code=DEFAULT_LANGUAGE, requester_email=None):
     """The trusted line Hermes puts before each turn in this channel: what the model cannot see."""
     link = f"{workspace_url.rstrip('/')}/archives/{channel_id}"
     return (
         f"This is the request channel {channel_id}. Its conversation link is {link}. "
-        f"Its ticket: {ticket or 'none yet'}. {language_prompt(code)}"
+        f"Its ticket: {ticket or 'none yet'}. "
+        f"Its requester's e-mail address: {requester_email or 'none'}. {language_prompt(code)}"
     )
 
 

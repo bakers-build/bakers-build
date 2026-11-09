@@ -9,9 +9,10 @@
 - Admission: Hermes answers only in the bot's channel and in its open channels, the request
   channels this plugin opened plus the poller's reopen channels, minus the archived ones; in an
   open channel without a mention.
-- Channel prompt: each open channel gets a trusted line with its ID, conversation link and
-  ticket, which the model cannot see otherwise, and the bot's language; the main channel gets the
-  language alone.
+- Channel prompt: each open channel gets a trusted line with its ID, conversation link,
+  ticket and requester's e-mail address, which the model cannot see otherwise, and the bot's
+  language; the main channel gets the language alone. The address comes from Slack's users.info
+  (scope users:read.email) when the request channel opens; without it the line says none.
 - Language: read once at start from the service account's background (language.py), German
   until then and on any failure; it also picks the plugin's own texts (messages.json).
 
@@ -84,10 +85,14 @@ def factory(app, adapter):
     def refresh_prompts():
         poller, channels = current()
         records = poller.get("channels") or {}
+        bot = read_json(BOT_FILE)
         prompts = adapter.config.extra.setdefault("channel_prompts", {})
         prompts[home] = language_prompt(lang["code"])
         for channel in channels:
-            prompts[channel] = channel_prompt(channel, workspace, (records.get(channel) or {}).get("ticket"), lang["code"])
+            prompts[channel] = channel_prompt(
+                channel, workspace, (records.get(channel) or {}).get("ticket"), lang["code"],
+                (bot.get(channel) or {}).get("requester_email"),
+            )
 
     def is_request(event):
         """A new mention of the bot at the top of its channel, from a served user."""
@@ -114,7 +119,20 @@ def factory(app, adapter):
     seen = set()  # a mention arrives as message and as app_mention, with one ts
     tasks = set()
 
+    async def requester_email(client, user):
+        """The requester's Slack e-mail address, None without one: never from message text."""
+        try:
+            info = await client.users_info(user=user)
+        except Exception as exc:
+            logger.warning("bot-channels: no e-mail address for %s: %s", user, exc)
+            return None
+        email = ((info.get("user") or {}).get("profile") or {}).get("email")
+        if not email:
+            logger.warning("bot-channels: Slack returns no e-mail address for %s", user)
+        return email or None
+
     async def open_request_channel(client, event):
+        email = await requester_email(client, event["user"])
         async with lock:
             # Strict: written back below, so an unreadable file fails the intake instead of being wiped.
             bot = read_json(BOT_FILE, strict=True)
@@ -132,6 +150,8 @@ def factory(app, adapter):
                 raise RuntimeError("no free request channel name")
             channel = created["channel"]["id"]
             bot[channel] = {"name": name, "requester": event["user"], "created": datetime.now(timezone.utc).isoformat()}
+            if email:
+                bot[channel]["requester_email"] = email
             _write(BOT_FILE, bot)
         return channel
 
