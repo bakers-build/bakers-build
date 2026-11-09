@@ -32,7 +32,7 @@ bakers oven start
 bakers oven status
 ```
 
-The catalog must contain an installed, authenticated agent and status must show your setup **online**. If checks fail, use [Troubleshooting](/configuration/clients/troubleshooting) before creating the ticket.
+Confirm the selected agent is signed in. `oven check` checks whether agents can start their sandboxes; it does not check your application. Status must show your conductor **online**. If checks fail, use [Troubleshooting](/configuration/clients/troubleshooting).
 
 <span id="ai-first-guide-the-first-run"></span>
 
@@ -48,13 +48,13 @@ Reuse working settings. Help me start its conductor and verify that it is online
 Follow these steps with either setup. If you already have a suitable ticket, reuse it.
 
 1. **[Create a ticket](/get-started/daily-work/create-a-ticket)** for a small documentation change. State the expected result and select the execution entry identified above.
-2. **Open the ticket's Runs tab.** Read the latest `summary`. Questions during a run appear in its terminal; a ticket comment reaches the next step. [Where to answer](/get-started/daily-work/follow-a-ticket#where-you-answer) explains both team and local work.
+2. **Open the ticket's Runs tab.** Inspect the latest run, then read its `summary` on the ticket. [Where to answer](/get-started/daily-work/follow-a-ticket#where-you-answer) explains how to respond during team and local work.
 3. **Check the first result.** Confirm the intended setup ran the ticket and its summary explains the outcome. This does not automatically approve the final implementation.
 
 <span id="what-happens-in-the-background"></span>
 
 ::: details What happens during the run
-The selected agent works in a ticket worktree, follows `WORKFLOW.md` and records a summary. Project hooks prepare the environment; required checks and approval gates still apply.
+The conductor starts the selected agent in a ticket worktree: a separate Git checkout. The agent follows `WORKFLOW.md` and records a summary. Configured hooks attempt environment setup; a started run alone does not prove setup succeeded. Required checks and approvals still apply.
 :::
 
 ## Verify

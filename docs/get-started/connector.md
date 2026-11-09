@@ -2,7 +2,7 @@
 
 Create and plan tickets through chat, then follow and accept work in the web UI. Your team's workers do the building; this path needs no developer machine setup.
 
-**You need:** your server address, your own bakers.build account with workspace access, and an MCP chat client supporting OAuth, such as Claude, ChatGPT or Cursor. Connector availability and settings depend on the client and plan.
+**You need:** your server address, your own bakers.build account with workspace access, and a chat client supporting remote MCP, OAuth and dynamic client registration. Check your client's connector requirements before starting.
 
 ## AI first: ask your chat to guide you
 
@@ -20,10 +20,10 @@ The client registers with your server and receives access for your account. It c
 
 ## Connect your account
 
-1. Open your client's custom MCP connector settings. In claude.ai, use **Settings → Connectors → Add custom connector**.
+1. Open your client's custom MCP connector settings; menu names vary by client.
 2. Enter your server's `/mcp` endpoint, for example `https://app.bakers.build/mcp`.
-3. Leave client ID and secret empty: the client registers automatically. Save, sign in with **your own account**, and approve access. Never borrow a teammate's credentials.
-4. Enable the connector in your conversation. In a claude.ai Project, also add the [project instructions](/configuration/connector/project-instructions). An organization owner may add a shared connector, but each person still signs in individually.
+3. Use dynamic registration rather than a shared client secret. Save, sign in with **your own account**, and approve access. Never borrow a teammate's credentials.
+4. Enable the connector in your conversation. For claude.ai Projects, add the [project instructions](/configuration/connector/project-instructions). Shared connector configuration still needs each person's own authorization.
 
 ## Verify
 
@@ -42,7 +42,7 @@ then read that ticket and its comments. Tell me which project it belongs to.
 Create a bakers.build ticket for <what I need and why>.
 ```
 
-Confirm the scope when asked. Feature and chore intake can reach `plan` through chat; bug diagnosis, coding and review use your team's agents. Open the ticket on the web to read summaries and record your verdict. Questions during a run appear in the worker's terminal; ticket comments reach the next step.
+Confirm the scope when asked. The supplied chat instructions stop feature and chore intake at `plan`; your team's coding agents handle diagnosis and implementation. This is an instruction policy, not a server restriction. Open the ticket to read summaries; [Follow a ticket](/get-started/daily-work/follow-a-ticket#where-you-answer) explains where to answer during a run.
 
 ## Continue with tickets
 
