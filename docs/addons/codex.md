@@ -30,6 +30,7 @@ Without a `model` it publishes `codex` (your locally configured Codex model) plu
 | `sandbox` | object | see below | Only with `permissions: 'sandbox'`. Each key set replaces its default; lists are not merged. |
 | `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
+| `plugins` | boolean | `true` | `false` runs this agent in your own agent home without the project's [agent plugins](/configuration/project#agent-plugins). |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
@@ -67,6 +68,7 @@ bakers agents
 ## Good to know
 
 - `--sandbox`, `-s`, `-a`, `--ask-for-approval`, `--dangerously-bypass-approvals-and-sandbox` and `--dangerously-bypass-hook-trust` are reserved; putting them in `args` fails loading.
+- With the project's [agent plugins](/configuration/project#agent-plugins) on, Codex runs with `CODEX_HOME` set to the agent home, trusts the run's worktree with `-c projects."<worktree>".trust_level="trusted"` and starts with `--dangerously-bypass-hook-trust`, so plugin hooks run without a trust prompt. Transcripts are read from that home's `sessions`; with plugins off, from `$CODEX_HOME/sessions` or `~/.codex/sessions`.
 - Listed in a conductor config, an agent addon is ignored with a warning.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).

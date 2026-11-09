@@ -39,6 +39,7 @@ One custom candidate:
 | `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `measure` | boolean | `false` | Starts Claude through the addon's measure wrapper. |
+| `plugins` | boolean | `true` | `false` runs this agent in your own agent home without the project's [agent plugins](/configuration/project#agent-plugins). |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
@@ -78,7 +79,7 @@ bakers agents
 
 ## Good to know
 
-- `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1` installs `.claude/settings.json` plugins before the first turn.
+- With the project's [agent plugins](/configuration/project#agent-plugins) on, Claude runs with `CLAUDE_CONFIG_DIR` set to the agent home and reads its transcripts there. With them off, `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1` installs `.claude/settings.json` plugins before the first turn.
 - The addon starts `claude` without installing or authenticating it. Non-interactive shells need the binary on `PATH`, not an alias.
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).

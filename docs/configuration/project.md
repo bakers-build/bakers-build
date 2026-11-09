@@ -47,6 +47,7 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600. It is an ownership duration, not a task timeout. |
 | `hooks` | Optional command object. [Lifecycle hooks](/configuration/project/hooks) owns its keys, timing, environment, failure behavior and on-demand `provision_up` profiles. |
 | `prompt` | Agent prompt template with `{identifier}`, `{state}` and `{runUuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
+| `marketplaces` | Optional array of agent plugin marketplaces every run of this project installs: `{ url, ref, plugins }`. See [Agent plugins](#agent-plugins). |
 | `permissions` | Run permissions for every agent of every machine that runs this project: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/provision/security/shared-settings). |
 | `selectAgent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/agents/guide). |
 | `schema_version` | Written by `bakers config init` and `upgrade`; the current project schema is 1. |
@@ -79,6 +80,25 @@ Use [Orca setup](/addons/orca) and its [options reference](/addons/orca/options)
 ### Git-only workspace
 
 [Git workspace](/addons/workspace-git) needs a compatible executor. Package options live with the addon.
+
+## Agent plugins
+
+Declare the plugins every run needs once, here, so every machine runs with the same skills and hooks:
+
+```js
+// Fragment: add inside the exported object.
+marketplaces: [
+  { url: 'https://github.com/mattpocock/skills.git', ref: 'v1.3.2', plugins: ['mattpocock-skills'] },
+  { url: 'https://github.com/obra/superpowers.git', ref: 'v7.0.0', plugins: ['superpowers'] },
+],
+```
+
+- `url` is a remote Git URL (`https://`, `ssh://` or `git@`); a local path or `file://` URL is rejected. `ref` is a tag (the fixed version) or a branch. `plugins` names the plugins to install from that marketplace.
+- Before each launch, in every security mode, the agent addon installs the list with the harness's own commands into an agent home at `~/.cache/bakers/agent-homes/<harness>/<hash>/` (`$XDG_CACHE_HOME` when set), keyed by a hash of the list. Runs with the same list reuse the home; a changed list builds a new one. The run uses only that home: the addon sets `CLAUDE_CONFIG_DIR` or `CODEX_HOME`, links only the credential file (`~/.claude/.credentials.json`, `~/.codex/auth.json`), trusts the run's worktree and leaves your own agent home untouched. A Claude login kept only in the macOS keychain cannot be linked, and the run start fails, saying so.
+- The run start also fails, naming each one, when a skill is missing: those in the `WORKFLOW.md` › `bb-phase-work` table, the ticket's recipe skill `bb-recipe-<recipe>` and the skills its `metadata.requires` (or `requires-<type>`) lists. Only the worktree's `.claude/skills`, `.agents/skills` and the agent home count.
+- Each run writes one `plugins` entry to the conductor log: harness, alias, mode, on or off with the reason, hash, home, `built` or `reused`, the marketplaces, any trust bypass and the required-skills result. A failed install or a missing skill fails the run with the reason in its error log.
+- Plugins are off, and the run uses your own agent home, when the project declares none, the harness addon cannot install plugins (only `claude` and `codex` can), or the machine's agent entry sets `plugins: false`.
+- `marketplaces` belongs to the project; in `machine.config.js` it fails loading.
 
 ## Serve fewer states or poll more slowly
 
