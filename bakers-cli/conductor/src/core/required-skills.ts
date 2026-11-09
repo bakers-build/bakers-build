@@ -6,7 +6,7 @@
  * the run's agent home; the user's own agent home never counts.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
 const read = (path: string): string => {
   try {
@@ -27,32 +27,66 @@ function skillsIn(dir: string): Array<[string, string]> {
   } catch {
     return [];
   }
-  return entries.flatMap((entry) => {
-    const path = join(dir, entry, 'SKILL.md');
-    if (!existsSync(path)) return [];
-    const name = /^name:\s*(\S+)\s*$/m.exec(frontmatter(read(path)))?.[1];
-    return [[name ?? entry, path] as [string, string]];
-  });
+  return entries.flatMap((entry) => skillAt(join(dir, entry), entry));
 }
 
-/** `<plugin name>:<skill>` for each skill of the plugin whose manifest is at `manifest`. */
-function pluginSkills(manifest: string): Array<[string, string]> {
-  let parsed: { name?: unknown; skills?: unknown };
+/** A skill directory's SKILL.md by its frontmatter name, if it holds one. */
+function skillAt(dir: string, fallback: string): Array<[string, string]> {
+  const path = join(dir, 'SKILL.md');
+  if (!existsSync(path)) return [];
+  const name = /^name:\s*(\S+)\s*$/m.exec(frontmatter(read(path)))?.[1];
+  return [[name ?? fallback, path]];
+}
+
+/** Every SKILL.md at or below `dir`, by its frontmatter name. */
+function skillsBelow(dir: string): Array<[string, string]> {
+  let files: string[];
   try {
-    parsed = JSON.parse(read(manifest));
+    files = readdirSync(dir, { recursive: true, encoding: 'utf8' });
   } catch {
     return [];
   }
-  if (typeof parsed.name !== 'string') return [];
-  const root = dirname(dirname(manifest));
-  const skills = typeof parsed.skills === 'string' ? parsed.skills : 'skills';
-  return skillsIn(join(root, skills)).map(([name, path]) => [
-    `${parsed.name}:${name}`,
-    path,
-  ]);
+  return files
+    .filter((file) => basename(file) === 'SKILL.md')
+    .filter((file) => !file.includes('node_modules/'))
+    .flatMap((file) => {
+      const skillDir = join(dir, dirname(file));
+      return skillAt(skillDir, basename(skillDir));
+    });
 }
 
-const MANIFEST = /(?:^|\/)\.(?:claude|codex)-plugin\/plugin\.json$/;
+/**
+ * `<plugin>:<skill>` for each skill of the plugin rooted at `root`. The
+ * manifest names the plugin and its `skills` paths (one or a list); without
+ * one, the plugin is `fallback` with `skills/`. Like the harnesses, every
+ * SKILL.md below a skills path counts.
+ */
+function pluginSkills(root: string, fallback: string): Array<[string, string]> {
+  let manifest: { name?: unknown; skills?: unknown } = {};
+  for (const kind of ['.claude-plugin', '.codex-plugin']) {
+    try {
+      manifest = JSON.parse(read(join(root, kind, 'plugin.json')));
+      break;
+    } catch {}
+  }
+  const plugin = typeof manifest.name === 'string' ? manifest.name : fallback;
+  const paths = (
+    Array.isArray(manifest.skills) ? manifest.skills : [manifest.skills ?? 'skills']
+  ).filter((path): path is string => typeof path === 'string');
+  return paths
+    .flatMap((path) => skillsBelow(join(root, path)))
+    .map(([name, path]) => [`${plugin}:${name}`, path]);
+}
+
+const dirs = (dir: string): string[] => {
+  try {
+    return readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name);
+  } catch {
+    return [];
+  }
+};
 
 function availableSkills(worktree: string, home: string): Map<string, string> {
   const found = new Map<string, string>();
@@ -62,16 +96,20 @@ function availableSkills(worktree: string, home: string): Map<string, string> {
   for (const root of ['.claude/skills', '.agents/skills']) {
     const dir = join(worktree, root);
     add(skillsIn(dir));
-    for (const entry of existsSync(dir) ? readdirSync(dir) : [])
-      for (const kind of ['.claude-plugin', '.codex-plugin'])
-        add(pluginSkills(join(dir, entry, kind, 'plugin.json')));
+    // A skills-directory plugin, such as the `bakers` skills of this repository.
+    for (const entry of dirs(dir))
+      if (
+        existsSync(join(dir, entry, '.claude-plugin', 'plugin.json')) ||
+        existsSync(join(dir, entry, '.codex-plugin', 'plugin.json'))
+      )
+        add(pluginSkills(join(dir, entry), entry));
   }
+  // Both harnesses install to plugins/cache/<marketplace>/<plugin>/<version>.
   const cache = join(home, 'plugins', 'cache');
-  const files = existsSync(cache)
-    ? readdirSync(cache, { recursive: true, encoding: 'utf8' })
-    : [];
-  for (const file of files)
-    if (MANIFEST.test(file)) add(pluginSkills(join(cache, file)));
+  for (const marketplace of dirs(cache))
+    for (const plugin of dirs(join(cache, marketplace)))
+      for (const version of dirs(join(cache, marketplace, plugin)))
+        add(pluginSkills(join(cache, marketplace, plugin, version), plugin));
   return found;
 }
 

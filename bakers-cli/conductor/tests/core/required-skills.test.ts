@@ -56,18 +56,19 @@ beforeEach(() => {
     'bb-recipe-matt',
     'metadata:\n  requires: "mattpocock-skills:grilling mattpocock-skills:tdd"\n  requires-bug: "mattpocock-skills:diagnosing-bugs mattpocock-skills:tdd"\n',
   );
-  // Installed plugins in the agent home (Claude and Codex cache layouts).
-  const designbook = join(home, 'plugins/cache/designbook/designbook/1.0.0');
-  write(join(designbook, '.claude-plugin/plugin.json'), '{ "name": "designbook" }');
+  // Installed plugins in the agent home: <home>/plugins/cache/<marketplace>/<plugin>/<version>.
+  // designbook ships no plugin manifest (its marketplace entry carries it).
+  const designbook = join(home, 'plugins/cache/designbook/designbook/a4fea9d7');
   skill(join(designbook, 'skills'), 'design-screen');
   skill(join(designbook, 'skills'), 'design-shell');
+  // mattpocock lists nested skill directories in its manifest.
   const matt = join(home, 'plugins/cache/mattpocock/mattpocock-skills/1.3.2');
   write(
-    join(matt, '.codex-plugin/plugin.json'),
-    '{ "name": "mattpocock-skills", "skills": "./skills/" }',
+    join(matt, '.claude-plugin/plugin.json'),
+    '{ "name": "mattpocock-skills", "skills": ["./skills/productivity/grilling", "./skills/engineering/tdd"] }',
   );
-  skill(join(matt, 'skills'), 'grilling');
-  skill(join(matt, 'skills'), 'tdd');
+  skill(join(matt, 'skills/productivity'), 'grilling');
+  skill(join(matt, 'skills/engineering'), 'tdd');
 });
 
 describe('checkRequiredSkills', () => {
@@ -110,6 +111,20 @@ describe('checkRequiredSkills', () => {
       checkRequiredSkills(worktree, home, { type: 'feature', recipe: 'nope' })
         .missing,
     ).toEqual(['bb-recipe-nope']);
+  });
+
+  it('finds every SKILL.md below a manifest path, as Codex lists `./` for a manifest-less plugin', () => {
+    const codexHome = mkdtempSync(join(tmpdir(), 'bakers-required-codex-'));
+    const root = join(codexHome, 'plugins/cache/designbook/designbook/local');
+    write(
+      join(root, '.codex-plugin/plugin.json'),
+      '{ "name": "designbook", "skills": ["./"] }',
+    );
+    skill(join(root, 'skills'), 'design-screen');
+    skill(join(root, 'skills'), 'design-shell');
+    expect(
+      checkRequiredSkills(worktree, codexHome, {}).missing,
+    ).toEqual([]);
   });
 
   it('never counts skills of the user home', () => {
