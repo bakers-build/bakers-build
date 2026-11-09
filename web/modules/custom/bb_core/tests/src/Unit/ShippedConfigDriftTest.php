@@ -189,7 +189,7 @@ final class ShippedConfigDriftTest extends UnitTestCase {
    * Each setting applies only when its own variable is set; no mode switch.
    */
   public function testContainerSettingsFollowTheirOwnVariables(): void {
-    $settings = $this->containerSettings(['DRUPAL_TRUSTED_PROXY_SUBNET' => '', 'DOMAIN' => '']);
+    $settings = $this->containerSettings(['TRUSTED_PROXY_SUBNET' => '', 'DOMAIN' => '']);
     self::assertArrayNotHasKey('reverse_proxy', $settings);
     self::assertSame(['.*'], $settings['trusted_host_patterns']);
     $settings = $this->containerSettings(['DOMAIN' => '']);
@@ -204,8 +204,8 @@ final class ShippedConfigDriftTest extends UnitTestCase {
   public function testContainerRejectsInvalidInputs(): void {
     foreach ([
       ['DOMAIN' => 'https://app.example.test/path'],
-      ['DRUPAL_TRUSTED_PROXY_SUBNET' => '0.0.0.0/0'],
-      ['DRUPAL_TRUSTED_PROXY_SUBNET' => 'invalid'],
+      ['TRUSTED_PROXY_SUBNET' => '0.0.0.0/0'],
+      ['TRUSTED_PROXY_SUBNET' => 'invalid'],
       ['MAIL_SMTP_DSN' => 'invalid'],
       ['MAIL_FROM_ADDRESS' => 'invalid'],
     ] as $overrides) {
@@ -229,7 +229,7 @@ final class ShippedConfigDriftTest extends UnitTestCase {
       'DB_HOST' => 'db',
       'DOMAIN' => 'app.example.test',
       'DRUPAL_HASH_SALT' => 'private-test-salt',
-      'DRUPAL_TRUSTED_PROXY_SUBNET' => '172.30.42.0/24',
+      'TRUSTED_PROXY_SUBNET' => '172.30.42.0/24',
       'MAIL_SMTP_DSN' => 'smtp://smtp.example.test:587',
       'MAIL_FROM_ADDRESS' => 'sender@example.test',
     ], $overrides);

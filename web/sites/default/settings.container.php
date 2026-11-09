@@ -8,10 +8,10 @@
 use Symfony\Component\HttpFoundation\Request;
 
 // Each block applies only when its own variable is set; unset leaves Drupal's default.
-if ($proxy_subnet = getenv('DRUPAL_TRUSTED_PROXY_SUBNET')) {
+if ($proxy_subnet = getenv('TRUSTED_PROXY_SUBNET')) {
   $cidr = explode('/', $proxy_subnet);
   if (count($cidr) !== 2 || !filter_var($cidr[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || !ctype_digit($cidr[1]) || (int) $cidr[1] < 1 || (int) $cidr[1] > 32) {
-    throw new \RuntimeException('DRUPAL_TRUSTED_PROXY_SUBNET must be an IPv4 CIDR with prefix 1 through 32');
+    throw new \RuntimeException('TRUSTED_PROXY_SUBNET must be an IPv4 CIDR with prefix 1 through 32');
   }
   $settings['reverse_proxy'] = TRUE;
   $settings['reverse_proxy_addresses'] = [$proxy_subnet];

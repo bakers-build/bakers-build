@@ -94,7 +94,7 @@ configure() { # dir project domain subnet https http mailpit pebble-management n
   set_env COMPOSE_PROJECT_NAME "$2"; set_env BAKERS_VERSION "$(image_tag "$FROM")"
   set_env DOMAIN "$3"; set_env ADMIN_EMAIL "$USER_MAIL"; set_env INTERNAL_SUBNET "$4"; set_env HTTP_PORT "$9"
   set_env DB_PASSWORD "$(openssl rand -hex 32)"; set_env DB_ROOT_PASSWORD "$(openssl rand -hex 32)"
-  set_env DRUPAL_HASH_SALT "$(openssl rand -hex 32)"
+  set_env HASH_SALT "$(openssl rand -hex 32)"
   set_env MAIL_SMTP_DSN "smtp://mailpit:1025"; set_env MAIL_FROM_ADDRESS "bakers@selfhost.test"
   write_overlay "$5" "$6" "$7" "$8"
   dc config -q

@@ -41,10 +41,9 @@ x-env: &env
   DB_DRIVER: mysql
   DB_PORT: "3306"
   DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
-  DRUSH_OPTIONS_URI: https://${DOMAIN}
-  DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT:?Set DRUPAL_HASH_SALT}
+  DRUPAL_HASH_SALT: ${HASH_SALT:?Set HASH_SALT}
   # Your reverse proxy reaches nginx from this network (or its gateway), so it is trusted.
-  DRUPAL_TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:-172.30.42.0/24}
+  TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:-172.30.42.0/24}
   MAIL_SMTP_DSN: ${MAIL_SMTP_DSN:?Set MAIL_SMTP_DSN; sign-in works by email}
   MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:?Set MAIL_FROM_ADDRESS}
   BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
@@ -107,7 +106,7 @@ services:
       deploy:
         condition: service_completed_successfully
     environment: *env
-    command: sh -c 'while true; do /var/www/html/vendor/bin/drush core:cron || true; sleep 300; done'
+    command: /var/www/html/scripts/deploy/site-cron.sh
 
   nginx:
     image: ghcr.io/bakers-build/bakers-build/nginx:${BAKERS_VERSION}
@@ -151,7 +150,7 @@ ADMIN_EMAIL=
 # Three random values (openssl rand -hex 32). Keep them for every update.
 DB_PASSWORD=
 DB_ROOT_PASSWORD=
-DRUPAL_HASH_SALT=
+HASH_SALT=
 # smtp:// or smtps:// URL; percent-encode the user and password, e.g. user%40example.org.
 MAIL_SMTP_DSN=
 MAIL_FROM_ADDRESS=
@@ -169,7 +168,7 @@ BB_OAUTH_GOOGLE_CLIENT_SECRET=
 | `BAKERS_VERSION` | Release without the leading `v`, e.g. `0.7.0`. |
 | `DOMAIN` | The public hostname, e.g. `bakers.example.org`. |
 | `ADMIN_EMAIL` | The first administrator's email address. |
-| `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `DRUPAL_HASH_SALT` | Three random values, e.g. from `openssl rand -hex 32`. Keep them; an update needs the same ones. |
+| `DB_PASSWORD`, `DB_ROOT_PASSWORD`, `HASH_SALT` | Three random values, e.g. from `openssl rand -hex 32`. Keep them; an update needs the same ones. |
 | `MAIL_SMTP_DSN`, `MAIL_FROM_ADDRESS` | Your SMTP URL, e.g. `smtp://user%40example.org:password@smtp.example.org:587`, and its sender address. |
 | `FEATURE_FLAG_RUN_LOG_STORAGE` | See [Run-log storage](#run-log-storage). |
 | `HTTP_PORT` | Loopback port your proxy forwards to. |

@@ -60,7 +60,7 @@ BASE_JSON="${TMPDIR:-/tmp}/bakers-base.json" python3 <<'PYTEST'
 import json, os, re, shutil, subprocess, tempfile
 src = "docker/compose"
 required = dict(BAKERS_VERSION="1.2.3", DOMAIN="app.example.test", ADMIN_EMAIL="admin@example.test",
-    DB_PASSWORD="dummy-pw", DB_ROOT_PASSWORD="dummy-root-pw", DRUPAL_HASH_SALT="dummy-salt",
+    DB_PASSWORD="dummy-pw", DB_ROOT_PASSWORD="dummy-root-pw", HASH_SALT="dummy-salt",
     MAIL_SMTP_DSN="smtp://smtp.example.test:587", MAIL_FROM_ADDRESS="sender@example.test")
 example = open(f"{src}/.env.example").read()
 keys = re.findall(r"^([A-Z_][A-Z0-9_]*)=", example, re.M)
@@ -91,7 +91,8 @@ subnet = c["networks"]["internal"]["ipam"]["config"][0]["subnet"]
 assert subnet == "172.30.42.0/24", subnet
 for name in ("deploy", "php", "cron"):
     e = s[name]["environment"]
-    assert e["DRUPAL_TRUSTED_PROXY_SUBNET"] == subnet, name
+    assert e["TRUSTED_PROXY_SUBNET"] == subnet, name
+    assert e["DRUPAL_HASH_SALT"] == "dummy-salt", name
     assert e["DOMAIN"] == "app.example.test", name
     assert e["FEATURE_FLAG_RUN_LOG_STORAGE"] == "0", name
     assert not s[name].get("ports"), name
@@ -105,6 +106,10 @@ base = json.load(open(os.environ["BASE_JSON"]))["services"]
 script = ["/var/www/html/scripts/deploy/site-deploy.sh"]
 assert s["deploy"]["command"] == script, s["deploy"]["command"]
 assert base["deploy"]["command"] == script, "docker-compose.yml deploy does not run site-deploy.sh"
+assert s["cron"]["command"] == ["/var/www/html/scripts/deploy/site-cron.sh"], s["cron"]["command"]
+# Operators read and fill these files; they speak of bakers, not of the framework underneath.
+assert "drupal" not in example.lower() and "drush" not in example.lower(), ".env.example names Drupal or Drush"
+assert "drush" not in open(f"{src}/docker-compose.yml").read().lower(), "the operator compose file runs drush itself"
 
 r = run({**required, "FEATURE_FLAG_RUN_LOG_STORAGE": "1"}, "config", "--format", "json")
 assert r.returncode == 0, r.stderr
@@ -141,20 +146,27 @@ case "$1" in
   sql:query)
     [ "$DB_UP" = 1 ] || exit 1
     case "$*" in *"'config'"*) echo "$HAS_CONFIG" ;; *) echo "$TABLES" ;; esac ;;
+  *)
+    echo "drush output for $*"; echo " [notice] Drupal says $*" >&2
+    if [ -n "$FAIL_ON" ]; then case "$*" in *"$FAIL_ON"*) exit 1 ;; esac; fi ;;
 esac
 """)
 os.chmod(stub, 0o755)
-def run(db_up, tables, has_config, admin="admin@example.test"):
+def run(db_up, tables, has_config, admin="admin@example.test", fail_on=""):
     open(log, "w").close()
     env = {"PATH": os.environ["PATH"], "DRUSH": stub, "LOG": log, "OAUTH_KEYS": f"{work}/keys",
-           "DB_UP": db_up, "TABLES": tables, "HAS_CONFIG": has_config, "ADMIN_EMAIL": admin, "DOMAIN": "app.example.test"}
+           "DB_UP": db_up, "TABLES": tables, "HAS_CONFIG": has_config, "ADMIN_EMAIL": admin, "DOMAIN": "app.example.test", "FAIL_ON": fail_on}
     r = subprocess.run(["sh", "scripts/deploy/site-deploy.sh"], env=env, capture_output=True, text=True)
+    if r.returncode == 0:
+        out = r.stdout + r.stderr
+        assert all(l.startswith("[bakers] ") for l in out.splitlines()), out
+        assert "drush" not in out.lower() and "drupal" not in out.lower(), out
     return r, open(log).read()
 r, calls = run("0", "0", "0")
 assert r.returncode != 0 and "site:install" not in calls and "deploy" not in calls.replace("sql:query", ""), (r, calls)
 r, calls = run("1", "0", "0")
 assert r.returncode == 0, r.stderr
-assert "site:install --existing-config --account-mail=admin@example.test" in calls, calls
+assert "site:install --existing-config --account-mail=admin@example.test\n" in calls, calls
 assert "admin@example.test" in r.stdout and "account-pass" not in r.stdout, r.stdout
 r, calls = run("1", "0", "0", admin="")
 assert r.returncode != 0 and "site:install" not in calls, calls
@@ -162,6 +174,8 @@ r, calls = run("1", "57", "1")
 assert r.returncode == 0, r.stderr
 assert "-y deploy" in calls and "site:install" not in calls, calls
 assert "sql:dump" not in calls, "the dump runs before the update, not inside it"
+r, calls = run("1", "57", "1", fail_on="-y deploy")
+assert r.returncode != 0 and "drush output for -y deploy" in r.stderr and "[bakers] " in r.stderr, r
 r, calls = run("1", "3", "0")
 assert r.returncode != 0 and "site:install" not in calls and "-y deploy" not in calls, calls
 PYTEST
