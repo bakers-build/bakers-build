@@ -15,8 +15,10 @@ step() {
   out=$("$DRUSH" "$@" 2>&1) || { printf '%s\n' "$out" >&2; fail "$what failed — see the output above"; }
 }
 
-tables=$($DRUSH sql:query "$count" 2>/dev/null) || fail "database unreachable — nothing changed"
-has_config=$($DRUSH sql:query "$count AND table_name = 'config'" 2>/dev/null) || fail "database unreachable — nothing changed"
+# Stderr stays out of the counts; on failure the query runs once more so its error is shown.
+unreachable() { "$DRUSH" sql:query "$1" >&2 2>&1 || true; fail "database unreachable — nothing changed"; }
+tables=$($DRUSH sql:query "$count" 2>/dev/null) || unreachable "$count"
+has_config=$($DRUSH sql:query "$count AND table_name = 'config'" 2>/dev/null) || unreachable "$count AND table_name = 'config'"
 
 if [ "$has_config" = 1 ]; then
   say "updating bakers.build"
