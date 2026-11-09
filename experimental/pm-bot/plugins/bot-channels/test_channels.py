@@ -5,7 +5,7 @@ import pathlib
 import tempfile
 import unittest
 
-from channels import channel_prompt, open_channels, read_json, request_channel_name, slug
+from channels import TEXTS, channel_prompt, open_channels, read_json, request_channel_name, slug
 
 HERE = pathlib.Path(__file__).parent
 
@@ -72,6 +72,15 @@ class ReadJson(unittest.TestCase):
                 self.assertEqual(read_json(path), {})
             with self.assertRaises(ValueError):
                 read_json(path, strict=True)
+
+
+class Texts(unittest.TestCase):
+    def test_the_acknowledgement_mentions_the_requester(self):
+        self.assertTrue(TEXTS["acknowledge"].format(user="U1").startswith("<@U1> "))
+
+    def test_every_fixed_text_is_in_the_table(self):
+        self.assertEqual(set(TEXTS), {"acknowledge", "opened", "open_failed", "repeat"})
+        self.assertIn("<#C9>", TEXTS["opened"].format(user="U1", channel="C9"))
 
 
 if __name__ == "__main__":
