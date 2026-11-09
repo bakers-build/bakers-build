@@ -11,7 +11,7 @@
 #   - on: every ~/projects/* checkout with .bakers/conductor.config.js gets one
 #     `bakers oven start` run from inside it; a directory without one does not
 #   - a failing start is named with its path and the others still start
-#   - herdr never ready: one skip line, no start
+#   - herdr is never asked: the detached start does not need it
 #   - a start that leaves the conductor not online (a stale "already running"
 #     after a hard stop) is retried in the background until it is online
 #   - it always exits 0
@@ -75,7 +75,7 @@ fixture() {
 }
 
 run() {
-  PATH="$STUB:$PATH" BAKERS_CONDUCTOR_WAIT=2 BAKERS_CONDUCTOR_RETRY_SECONDS=1 \
+  PATH="$STUB:$PATH" BAKERS_CONDUCTOR_RETRY_SECONDS=1 \
     BAKERS_CONDUCTOR_RETRY_FOR=5 BAKERS_CONDUCTOR_RETRY_LOG="$SCRATCH/retry.log" \
     bash "$SCRIPT" > "$SCRATCH/out" 2>&1 \
     || fail "exit code $? (expected 0)"
@@ -111,12 +111,13 @@ grep -q "^conductors: failed $HOME/projects/ALPHA: conductor did not come online
 grep -qx "conductors: started $HOME/projects/BETA" "$SCRATCH/out" || fail "BETA not started after ALPHA failed"
 pass "a failing checkout is named and the others start"
 
-# --- herdr never ready -------------------------------------------------------
+# --- herdr down -------------------------------------------------------------
+# `bakers oven start` runs the conductor detached, so it does not wait for herdr.
 fixture
 HERDR_DOWN=1 run
-grep -qx 'conductors: skipped: herdr server not ready' "$SCRATCH/out" || fail "herdr down: $(cat "$SCRATCH/out")"
-if grep -q '^bakers' "$CALLS"; then fail "herdr down: started a conductor"; fi
-pass "no start without a herdr server"
+[ "$(grep -c '^bakers oven start' "$CALLS")" = 2 ] || fail "herdr down: expected 2 starts: $(cat "$CALLS")"
+if grep -q '^herdr' "$CALLS"; then fail "herdr down: waited for herdr"; fi
+pass "conductors start without waiting for herdr"
 
 # --- A stale "already running" after a hard stop -----------------------------
 fixture

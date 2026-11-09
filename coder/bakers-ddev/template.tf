@@ -349,7 +349,7 @@ data "coder_parameter" "conductor_autostart" {
   type         = "bool"
   default      = "false"
   mutable      = true
-  order        = 1
+  order        = 20
 }
 
 resource "coder_agent" "main" {
