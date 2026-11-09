@@ -2,7 +2,7 @@
 
 **Gives each ticket its own plain Git worktree, without a terminal session.**
 
-For conductors that use an executor other than herdr.
+For operators pairing a terminal executor with plain Git worktrees. Git must be available, and the conductor needs a separate executor.
 
 ## Enable it
 
@@ -11,6 +11,7 @@ Add the package to `addons` in the project's `.bakers/conductor.config.js`, next
 ```js
 addons: [
   '@bakers-build/addon-remote-drupal',
+  '@bakers-build/addon-herdr-core',
   { use: '@bakers-build/addon-workspace-git', with: { branchPrefix: 'bakers/' } },
 ],
 ```
@@ -28,6 +29,8 @@ addons: [
 A dispatched ticket gets a worktree in `<checkout>-worktrees/` on a branch that matches your template.
 
 ## Good to know
+
+- This backend currently ignores the requested `baseRef` and derives its branch through the template. Creation uses the root checkout’s HEAD with `git worktree add --force -B`, which can reset an existing same-name branch. Use unique branch names; choose herdr or Orca when exact ticket branches and parent-base selection are required.
 
 - Worktrees are created next to the checkout, in `<root>-worktrees`.
 - The package also loads `WORKFLOW.md` from the worktree as run instructions, when the file exists.

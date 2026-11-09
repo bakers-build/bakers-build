@@ -1,83 +1,62 @@
 # Build your first addon
 
-Add a project lifecycle listener that writes a harmless marker before each run. It demonstrates loading, project scope and the hook context without publishing a package or adding a dependency.
+Use addons to make agents available in bakers.build, give them project tools, and add operations to tickets. This guide shows what you can build, how to package it, and where to implement each integration.
 
-**You need:** an existing working conductor project, Node.js, and permission to change its committed configuration. Hooks execute on the worker outside the agent sandbox. Use a disposable ticket for verification.
+## What can you extend?
 
-## Create two files
+Start with the capability your project needs:
 
-Create `.bakers/addons/run-marker/package.json`:
+| You want to… | The addon provides… |
+|---|---|
+| Use an AI coding program with bakers.build | An **agent harness** that translates between bakers.build and your program's launch and transcript APIs. |
+| Control how a ticket's checkout is prepared | A **workspace** integration that creates and manages its working directory. |
+| Give agents an additional operation | A **tool** that an agent can call during a run. |
+| Let someone request an operation from a ticket | A **message** with a button or form and an answer in the control panel. |
 
-```json
-{
-  "name": "example-run-marker",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "main": "./preset.js",
-  "exports": { ".": "./preset.js", "./preset": "./preset.js" }
-}
-```
+One addon can provide several capabilities. You implement the operations in JavaScript and register them through a preset. The [API reference](/addons/build/contracts) defines the supported exports.
 
-Create `.bakers/addons/run-marker/preset.js`:
+<span id="what-an-addon-is"></span>
 
-```js
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+## How bakers.build loads an addon {#how-bakers-loads-an-addon}
 
-export const scopes = ['project'];
-export const hooks = (listeners) => [
-  ...listeners,
-  {
-    id: 'example-run-marker',
-    async before_run(ctx) {
-      await writeFile(join(ctx.worktreePath, '.run-marker'), 'before_run reached\n');
-    },
-  },
-];
-```
+Create a JavaScript package with a **preset**: a module that tells bakers.build what the addon provides. List the package in configuration; bakers.build imports its preset and registers the declared capabilities. The package can live in your project; publishing it to npm is optional.
 
-The listener preserves earlier contributions and awaits its write. It overwrites the same small marker on retries. It never logs the environment. A write failure is reported through the conductor's best-effort [hook handling](/provision/hooks#failure-behavior), not treated as a readiness gate.
+| Piece | Purpose |
+|---|---|
+| `package.json` | Names the package and exposes its `./preset` entry. |
+| `preset.js` | Exports your implementations through names bakers.build recognizes. |
+| An `addons` configuration entry | Enables the package on a machine or in a project. |
 
-## Enable in the project
+For example, `agents` registers an agent harness, `tools` registers callable operations, and `inbox` declares ticket messages. The package's `scopes` export declares where it can be enabled. Agent harnesses belong to the machine where their programs run; project tools belong to the project that needs them.
 
-Add the local package path to the existing `addons` array in `.bakers/conductor.config.js`, keeping its engine addons and identity:
+## What you will build
 
-```js
-export default {
-  bakers: { project: 'demo', workspace: 'Engineering' },
-  addons: [
-    '@bakers-build/addon-remote-drupal',
-    '@bakers-build/addon-herdr',
-    './addons/run-marker',
-  ],
-};
-```
+Each example implements a new integration:
 
-The path resolves from the config directory. Discovery tries its `preset` subpath first, then the package main module, which exports the contributions above. No install or build step is needed for this local ESM package. Commit both files and the conductor change; add `.run-marker` to the repository's `.gitignore` so ticket worktrees ignore the generated artifact. Do not enable it in the machine file: its scope is project-only.
+<span id="example-configure-an-existing-agent"></span>
+<span id="create-two-files"></span>
+<span id="example-connect-an-existing-terminal-client"></span>
+<span id="enable-in-the-project"></span>
+<span id="enable-in-project"></span>
+
+1. <span id="add-an-agent"></span>[Add an agent](/addons/build/agent): write a harness for a program bakers.build does not yet support.
+2. <span id="add-a-client"></span>[Add a client](/addons/build/client): start and close agent terminals in your application through its CLI.
+3. [Extend the control panel](/addons/build/control-panel): implement an operation and make it callable from a ticket.
+
+The harness and client guides define a small example CLI/API, then show the complete adapter, registration and verification. Their external programs are hypothetical so you can see which parts must be adapted to your own software.
 
 ## Verify
 
-```sh
-bakers config check --scope project --online
-```
+Use a disposable project and the checks in each guide. First verify the adapter against your program's CLI or API, then check configuration, restart the conductor and dispatch a ticket. A configuration check proves registration; the live run proves your external program works with it.
 
-Reload the conductor using its normal [start/stop procedure](/configuration/project/conductor-commands), then dispatch a disposable ticket through that conductor. In the ticket worktree:
+## Add a ticket message
 
-```sh
-cat .run-marker
-```
+To let someone call an operation from a ticket, declare a **message**. bakers.build displays its button or form and the returned answer. [Extend the control panel](/addons/build/control-panel) implements a read-only worktree check through `tools` and `inbox`.
 
-**Success:** it prints `before_run reached`, and the conductor log has no `hook listener failed` for `example-run-marker`. Config validation alone does not execute the listener. A subsequent run overwrites the marker; cleanup removes it with the worktree.
+## Remove the example
 
-Remove the addon entry, reload the conductor, then remove its two files and any remaining marker when finished.
+Remove its addon entry and any catalog entry referring to it, restart the conductor, then delete only the example package. When replacing a client integration, restore the project's previous executor configuration before dispatching further runs.
 
 ## Extend your addon
 
-Choose the next guide for the capability you want to add.
-
-<DocQuickLinks aria-label="Extend your addon" :items="[
-  { label: 'Addon contracts', text: 'Build a typed package or prepare an addon for publication.', link: '/addons/build/contracts#write-an-addon' },
-  { label: 'Agent tools', text: 'Expose an operation that agents can call during a run.', link: '/addons/build/tools' },
-  { label: 'Inbox messages', text: 'Make operations available through ticket actions and external clients.', link: '/addons/build/actions' }
-]" />
+Continue with [Tools](/addons/build/tools), [Messages](/addons/build/actions), the [preset API](/addons/build/contracts) and the [executor/workspace lifecycle](/addons/build/executor-workspace).

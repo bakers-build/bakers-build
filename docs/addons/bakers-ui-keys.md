@@ -10,7 +10,7 @@ The deep-link targets, the auto-refresh signal and every keybinding of `bakers u
 |---|---|
 | `bakers ui` | **My work** for the active workspace |
 | `bakers ui SHOP-221`, `ticket:SHOP-221`, `ticket:<uuid>`, `--ticket SHOP-221` | that ticket's detail |
-| `project:shop`, `--project shop` | that project's **Work** screen |
+| `project:shop`, `--project shop` | that project's **Overview** screen |
 | `run:<uuid>`, `--run <uuid>` | that run's detail, over its ticket's Runs tab |
 | `'#19'`, `shop#19`, issue URL | [its origin's ticket](/addons/bakers-ui/usage) |
 | `--here` | derived from the working directory |
@@ -25,7 +25,7 @@ Every failure prints one line to stderr and exits 1 before the UI takes the term
 
 ### Deep links are not a dead end
 
-Booting straight into a ticket, run, addon tab, or picker pushes no back-history frame, so `Esc` on an empty history opens **My work** and the session joins normal navigation. A direct project deep link opens Work, whose `Esc` returns to the root-level project list. Other project tabs preserve the selected project while following their registered project fallback.
+Booting straight into a ticket, run, addon tab, or picker pushes no back-history frame, so `Esc` on an empty history opens **My work** and the session joins normal navigation. A direct project deep link opens Overview, whose `Esc` returns to the root-level project list. Other project tabs preserve the selected project while following their registered project fallback.
 
 ### Piping
 

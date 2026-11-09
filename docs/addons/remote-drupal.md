@@ -12,7 +12,7 @@ Add the package to `addons` in the project's `.bakers/conductor.config.js`.
 addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 ```
 
-It uses the connection that the conductor config resolves, so it needs no settings of its own.
+It uses the conductor’s resolved, signed-in [connection](/configuration/connector/connections), so it needs no addon settings. The account must have access to the configured project.
 
 ## Options
 
@@ -20,11 +20,11 @@ No options.
 
 ## Check it works
 
-The conductor starts and its tickets appear in the web UI and in `bakers ui`.
+The online check confirms project access. After starting the conductor, verify that it is online for the expected project; existing tickets alone do not prove that it connected.
 
 ::: details Per CLI
 ```sh
-bakers config check
+bakers config check --scope project --online
 ```
 :::
 

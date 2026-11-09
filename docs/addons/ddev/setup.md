@@ -94,7 +94,7 @@ hooks: {
 },
 ```
 
-Create `scripts/provision.sh`. It needs `jq` and `curl` on the host:
+Create `scripts/provision.sh`. It needs `jq` and `curl` on the host and the ticket-specific DDEV identity prepared above. The readiness check below only proves an HTTP response below 500, including 401/404; add your application’s actual readiness check before treating it as usable:
 
 ```sh
 set -eu

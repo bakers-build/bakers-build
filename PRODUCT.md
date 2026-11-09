@@ -90,7 +90,7 @@ Open core, like GitLab (decided 2026-10-23):
 - **Name:** `bakers.build`, always lowercase with the dot (it is the domain), also at sentence start.
 - **The brand's job:** lower the threshold of fear around AI.
 - **Reading of the name:** the bakers are the people (agency lead, client, developer). They own the recipes and make the decisions. The agents are the tools and machines of the line.
-- **Core line (shortlist):** "You're the baker. Agents run the line." is the headline candidate; "Your recipes. Your line." is the supporting line.
+- **Core line:** the canonical slogan lives in `docs/decisions/brand-foundation.md` › *Current slogan*; take its wording from there.
 - **Metaphor on public surfaces:** website, docs and conversations use line, station, recipe (`WORKFLOW.md`) and roll (what ships). The app and terminal keep the technical state names.
   - Everyone has a positive relation to a bakery: handcrafted and human, yet running on a production line.
   - The picture to aim for is an organic bakery with automation.
