@@ -90,6 +90,16 @@ final class BbLoginForm extends FormBase {
       $this->getRequest()->getSession()->set(BbOneTimeLoginController::DESTINATION_KEY, $destination);
     }
 
+    // The page's one h1: the gate's band carries the slogan as plain text.
+    $form['heading'] = [
+      '#type' => 'component',
+      '#component' => 'bb_theme:text',
+      '#props' => [
+        'text' => $this->t('Log in'),
+        'as' => 'h1',
+        'size' => 'section-title',
+      ],
+    ];
     $form['mail'] = [
       '#type' => 'email',
       '#title' => $this->t('E-mail address'),

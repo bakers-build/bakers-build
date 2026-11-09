@@ -15,7 +15,7 @@ import { AREAS, SIDEBAR, SRC_EXCLUDE } from '../.vitepress/manual.mjs'
 const DOCS = fileURLToPath(new URL('../../docs/', import.meta.url))
 const AREA_INDEX = new Set(['index.md', ...AREAS.map(({ link }) => `${link.slice(1)}index.md`)])
 const MAIN_AREAS = ['get-started/', 'addons/']
-const REFERENCE_AREAS = ['configuration/', 'provision/', 'agents/', 'skills-and-workflows/', 'self-hosting/', 'development/']
+const REFERENCE_AREAS = ['configuration/', 'provision/', 'agents/', 'skills-and-workflows/', 'self-hosting/']
 // landing.md and de/index.md render the Vue landing page (EN, DE); index.md is /manual,
 // reached from the nav.
 const NO_PROSE = new Set(['landing.md', 'de/index.md'])
@@ -83,8 +83,7 @@ requireNavigation(
     ['Addons', '/addons/'],
     ['Configuration', '/configuration/'],
     ['Self-hosting', '/self-hosting/'],
-    ['Development', '/development/'],
-  ]), 'manual areas must be Get started, Provision, Agents, Skills & Workflows, Addons, Configuration, Self-hosting, Development in that order',
+  ]), 'manual areas must be Get started, Provision, Agents, Skills & Workflows, Addons, Configuration, Self-hosting in that order',
 )
 for (const slug of ['connector', 'connect-a-project', 'first-ticket']) {
   requireNavigation(

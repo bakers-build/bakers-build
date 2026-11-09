@@ -2,7 +2,7 @@
 
 Extend the shared runner with a synthetic fixture and a small local validation/assertion profile.
 
-**You need:** the checkout, Node >=22.22.0, Python 3, npm and pnpm. Read [Test a skill](/development/test-skills) for model execution and result sharing.
+**You need:** the checkout, Node >=22.22.0, Python 3, npm and pnpm. Read [Test a skill](test-skills.md) for model execution and result sharing.
 
 1. Inspect the two maintained examples:
 
@@ -83,7 +83,7 @@ Extend the shared runner with a synthetic fixture and a small local validation/a
 
 **Done when:** the fixture loads, positive output passes, deliberate violations fail the expected checks, malformed input is an execution error, and a real isolated generation plus inspected semantic result demonstrates the intended behavior. CI uses saved synthetic outputs and makes no model calls.
 
-For actual recorded calls, use [Test a skill's tool calls](/development/test-skill-tools). Profiles can inspect the third argument `{ tool_trace }`; final prose is not execution evidence.
+For actual recorded calls, use [Test a skill's tool calls](test-skill-tools.md). Profiles can inspect the third argument `{ tool_trace }`; final prose is not execution evidence.
 
 ## Call profiles
 
@@ -108,7 +108,7 @@ export const diagnose = (f, _output, context) => analyze(f, context).diagnostics
 
 Cover each profile in `skill-tool-calls.test.ts` with a passing trace, the recovered variant, and one negative control per rule the recovery must not absorb.
 
-A call fixture that needs a tool, argument or fault the simulator does not model yet extends the simulator and the [real-CLI contract](/development/test-skill-tools) together:
+A call fixture that needs a tool, argument or fault the simulator does not model yet extends the simulator and the [real-CLI contract](test-skill-tools.md) together:
 
 - Put a new tool definition in `tests/skill-eval/contract-fixture.json`, which the simulator and the loopback MCP endpoint both read; copy tool definitions from what the site serves. Do not create a second copy.
 - Add the call to the matching case group in `core/tests/workflow/skill-cli-contract.test.ts`. Reuse a fixture's `simulation` instead of new data.

@@ -12,7 +12,7 @@ next:
 
 # Prepare your project
 
-Connect a repository on your computer so agents can work on its tickets. Keep the project's existing tools and workflow.
+Connect a repository on your computer so agents can work on its tickets. A server **project** holds those tickets within your team's **workspace**; your checkout holds the code.
 
 **You need:** a local Git checkout, [a bakers.build account](https://app.bakers.build/) with workspace access, and [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in.
 
@@ -58,7 +58,7 @@ Prepare WORKFLOW.md, check required skills, and show what changed.
 Your agent checks three parts of the project. Keep existing settings and use these guides when you need to change them.
 
 <DocTiles :tiles="[
-  { title: 'Choose your client', text: 'The client organizes agent sessions and worktrees. Keep your existing client, or start with the default herdr.', link: '/configuration/clients', icon: 'terminal', meta: 'Explore clients →' },
+  { title: 'Use your client', text: 'Choose how you observe, discuss and act on ticket work with herdr-cli, herdr-app, Orca or Hermes. Keep working project settings.', link: '/get-started/use-your-client', icon: 'terminal', meta: 'Explore clients →' },
   { title: 'Prepare your environment', text: 'The environment runs your application and dependencies. Reuse your project scripts and make them work independently in each ticket worktree.', link: '/provision/guide', icon: 'layers', meta: 'Prepare the environment →' },
   { title: 'Configure your workflow', text: 'WORKFLOW.md supplies project rules and checks. Keep the existing recipe, or start with the shipped Matt recipe.', link: '/skills-and-workflows/guide', icon: 'book', meta: 'Understand workflows →' }
 ]" />
@@ -69,7 +69,7 @@ Return here after any changes. Before starting agents, install every skill the w
 
 ::: details What changes
 
-The skill finds/creates the server project, writes `.bakers/conductor.config.js`, fills `WORKFLOW.md` and checks ignores. Record onboarding choices in README. It does not create the repository. Credentials and `*.local.js` overrides stay private.
+The skill resolves the server project, prepares `.bakers/conductor.config.js` and `WORKFLOW.md`, and checks ignores. Credentials and `*.local.js` overrides stay private. [Configuration](/configuration/) explains file ownership and precedence.
 :::
 
 ::: details Manual equivalent
@@ -79,7 +79,7 @@ After resolving the real server project:
 bakers config init --scope project --project <name> --workspace <name>
 ```
 
-Choose the client's canonical addon configuration, then approved hooks and [workflow rules](/skills-and-workflows/workflow-file). A named connection uses private `.bakers/connection.config.local.js`:
+Choose the project's [executor and workspace](/addons/slots), then approved hooks and [workflow rules](/skills-and-workflows/workflow-file). A named connection uses private `.bakers/connection.config.local.js`:
 
 ```js
 export default { connection: 'team' };
@@ -102,6 +102,8 @@ bakers info
 bakers oven check
 ```
 
-**Done when:** identities match, skills and client are ready, private files are ignored and application readiness passes.
+The online check verifies sign-in; confirm project access separately. `oven check` tests agent sandbox startup. Use your project's workflow checks to establish application readiness.
+
+**Done when:** project and account are correct, required skills are available, private files are ignored and the project's readiness checks pass.
 
 **Next:** [Run the first ticket](/get-started/first-ticket).

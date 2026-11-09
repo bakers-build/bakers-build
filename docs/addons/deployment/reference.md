@@ -67,4 +67,4 @@ A breaking server change needs a raised `min_client_version` in the same batch; 
 
 ## Roll back
 
-Roll back by version: point the prod stack's images at the last good `:<version>` and redeploy, then revert through a merge request ([Komodo server › Roll back](/self-hosting/server-komodo#roll-back)). A version tag is never moved or reused; the fix ships as the next version.
+For a standalone server, recover the matching code and data using [Restore onto empty isolated storage](/self-hosting/server#restore-onto-empty-isolated-storage). Changing only an image does not undo database updates. Follow up with a revert through a merge request. A version tag is never moved or reused; the fix ships as the next version.

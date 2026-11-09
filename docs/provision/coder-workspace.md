@@ -32,7 +32,7 @@ The image supplies tools; your private home stores identity, credentials and che
 
 ## Template, sign-in and project reference
 
-1. Push the template from `coder/bakers-ddev` in your operator-provided bakers.build source checkout. See the [operator prerequisites](/self-hosting/server). There is no default image: supply a compatible prebuilt image with `--variable image=<image>`. The template has no registry credentials, so the Docker host must be able to pull it itself. No public workspace image is published, and the server images cannot be used as workspace images. The README lists the image requirements and the variables.
+1. Push the template from `coder/bakers-ddev` in your operator-provided bakers.build source checkout. Use the operator prerequisites above and the template README. There is no default image: supply a compatible prebuilt image with `--variable image=<image>`. The template has no registry credentials, so the Docker host must be able to pull it itself. No compatible public workspace image has been verified for this template; the server images cannot be used as workspace images. The README lists the image requirements and the variables.
 
    ```sh
    coder templates push bakers-ddev -d coder/bakers-ddev --variable image=<workspace-image:version>
@@ -47,7 +47,7 @@ The image supplies tools; your private home stores identity, credentials and che
 
    The first start installs `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh`, `glab` and `ss` into your home volume, and starts `herdr server`. The log is `/tmp/coder-startup-script.log`.
 
-3. Sign in to your chosen agent and follow [skill installation](/skills-and-workflows/skills) for the bakers plugin. Open the agent from `~/projects` and run `/bb-init`. Trust that parent folder when asked so new worktrees inherit trust; otherwise the first run waits in its terminal. The wizard guides the remaining steps and confirms configuration writes.
+3. Sign in to your chosen agent and follow [skill installation](/skills-and-workflows/skills) for the bakers plugin. Open the agent from `~/projects`, answer its trust question for that folder and run `/bb-init`. Conductor runs of Claude Code trust their own ticket worktree, so a new ticket does not wait at the trust dialog. The wizard guides the remaining steps and confirms configuration writes.
 
 4. Sign in to bakers.build. An unattended conductor needs a machine consumer that an operator issues ([connections](/configuration/connector/connections)); give its secret to this command only. `bakers init` writes it into a private file under `~/.bakers`.
 
@@ -86,12 +86,15 @@ The image supplies tools; your private home stores identity, credentials and che
    ```sh
    ssh-keygen -t ed25519
    cat ~/.ssh/id_ed25519.pub
-   ssh-keyscan <git-host> >> ~/.ssh/known_hosts
+   ssh-keyscan <git-host> > /tmp/git-host.keys
+   ssh-keygen -lf /tmp/git-host.keys
+   # Compare the fingerprints with the Git host's trusted published values first.
+   cat /tmp/git-host.keys >> ~/.ssh/known_hosts
    ```
 
-8. Optionally choose a preview transport (skip this step for local-only work) using its canonical setup: [Cloudflare Quick](/addons/ports-cloudflare-quick), [Named Cloudflare](/addons/ports-cloudflare), or [frp](/addons/ports-frp). Configure the Ports entry in the private machine file. Public URLs expose the running application; review [Security](/provision/security/access-and-data#public-previews-and-ports) first.
+8. Optionally choose a preview transport (skip this step for local-only work) with the workspace parameter `preview_transport`: `none` (default), `cloudflare-quick`, `cloudflare` or `frp`. Set it in the workspace form or with `coder update <workspace> --parameter preview_transport=<value>`; it applies on the next start. Public URLs expose the running application; review [Security](/provision/security/access-and-data#public-previews-and-ports) first.
 
-   **Coder lifecycle:** Without provider configuration no tunnel client is installed or started. Named Cloudflare installs `cloudflared` and runs `cloudflared tunnel run` on every workspace startup while `~/.cloudflared/tunnel-token` exists. Cloudflare Quick needs an explicitly installed `cloudflared` but no persistent connector. A `~/.config/frp/frpc.json` likewise opts into installing and starting `frpc`; your config supplies your own zone and endpoint. Keep its secrets in the home volume. For frp, use `~/.config/frp/frpc.json`, create the directory referenced by `includes`, and set `loginFailExit: false`: nothing restarts a client that exits when the server is unavailable. Restart the workspace after configuring it, or start the connector manually. The frp transport page owns its complete config and addon descriptor.
+   **Coder lifecycle:** [Cloudflare Quick](/addons/ports-cloudflare-quick) needs nothing else. [Named Cloudflare](/addons/ports-cloudflare) and [frp](/addons/ports-frp) need your account values; the template README's *Optional previews* section names the files to create and says what each value installs, writes and starts. For frp, create the directory referenced by `includes` and set `loginFailExit: false`: nothing restarts a client that exits when the server is unavailable.
 
 9. Check out your projects and start their conductors. One conductor serves one checkout ([Conductors](/configuration/project/conductors)). `/bb-init` lists your projects, clones each chosen one from its repository at its default branch into `~/projects/<key>`, configures it with `bb-init-project` and, after you confirm, starts its conductor as a background process. By hand:
 
@@ -123,8 +126,8 @@ Host <name>.coder
 
 ## After a workspace restart
 
-Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and any connector whose config file exists. Conductors and project runtimes do not come back by themselves. Start each project's runtime and run `bakers oven start` again in each checkout, and share a preview again with `bakers ports up`.
+Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and the connector `preview_transport` selects, when its config file exists. Project runtimes do not come back by themselves, and conductors only with the workspace parameter `conductor_autostart` on (the template README's *Conductor autostart*). Otherwise run `bakers oven start` again in each checkout. Start each project's runtime where you need it, and share a preview again with `bakers ports up`.
 
 ## Update a tool
 
-A tool that is already installed is skipped, so a new version in the template reaches a workspace only when the tool is missing. Update one yourself with its own updater, for example `claude update` or `bakers update`, or delete it (`rm "$(command -v <tool>)"`) and restart the workspace.
+A tool that is already installed is skipped, so a new version in the template reaches a workspace only when the tool is missing. Update one yourself with its own updater, for example `claude update` or `bakers update`, or ask the operator to replace the selected tool using its documented package procedure.

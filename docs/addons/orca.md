@@ -1,6 +1,6 @@
 # Orca
 
-Host ticket worktrees, agent terminals, diff review and browser/mobile monitoring in Orca. The conductor still owns dispatch, claims and ticket status.
+Host ticket worktrees and agent terminals in Orca. The conductor still owns dispatch, claims and ticket status. See [Use your client](/get-started/use-your-client#orca) for the first action and everyday use.
 
 ## AI first
 

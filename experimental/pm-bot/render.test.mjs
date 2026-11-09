@@ -54,4 +54,6 @@ test('SOUL.template.md renders from the fixture env with no placeholder left', a
   assert.match(out, new RegExp(env.PM_BOT_PROJECT));
   assert.match(out, /`none`/);
   assert.doesNotMatch(out, new RegExp(env.BAKERS_API_KEY));
+  // Every PM bot replies with the ticket link the server returned.
+  assert.match(out, /\[<identifier>\]\(<url>\).*`url`.*`bakers_ticket_create`/);
 });

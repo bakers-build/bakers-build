@@ -5,15 +5,14 @@ status: stable
 group: Shell
 description: >-
   The product's second chrome, and the peer of `shell` rather than a variant of
-  it: a centred card that frames everything standing BEFORE the product, on a
+  it: a flat butter band with the product mark and the slogan beside the page's
+  own title and content, framing everything standing BEFORE the product
+  (sign-in, workspace choice and create, device sign-in, OAuth, errors), on a
   surface that is by definition outside every workspace. It carries no
-  navigation — the rail is workspace-ambient and would render a menu whose
-  entries lead nowhere — and it shares no slot with `shell`, which is a
-  full-viewport flex layout with sidebar/header/content/footer/overlay. Its
-  first and only inhabitant is the workspace chooser, in its two states: the
-  list of the reader's workspaces, and the named absence for a reader who
-  belongs to none. The auth pages are its intended second inhabitant and are a
-  later change to one page-layout condition, not a change to this component.
+  navigation and no link out — the rail is workspace-ambient and would render a
+  menu whose entries lead nowhere — and it shares no slot with `shell`. From
+  `lg` the band and the content sit side by side in one rounded frame of about
+  1100×640px centred on the page; below that the band stacks on top.
 provider: bb_theme
 props:
   type: object
@@ -22,7 +21,7 @@ props:
       type: string
       title: Title
       description: >-
-        The card's heading. A prop rather than a slot because it is a scalar the
+        The page's heading, its single `h1`. A prop rather than a slot because it is a scalar the
         page layout supplies once for every screen this chrome frames.
     description:
       type: string
@@ -30,13 +29,20 @@ props:
       description: >-
         One sentence under the heading, naming what this gate is for. Optional:
         a chooser whose list speaks for itself needs none.
+    claim:
+      type: string
+      title: Claim
+      description: >-
+        The slogan under the mark in the band, plain text and never a heading:
+        the page's title is its single `h1`. Defaults to the owner's call to action,
+        "Knead it. Ship it."
 slots:
   mark:
     title: Mark
     description: >-
-      The product mark above the heading. A slot and not a prop because a mark
-      is rendered content — an icon component or an image — and props carry
-      scalar data only.
+      The product mark above the slogan in the band. A slot and not a prop because
+      a mark is rendered content — an icon component or an image — and props
+      carry scalar data only.
   content:
     title: Content
     description: >-

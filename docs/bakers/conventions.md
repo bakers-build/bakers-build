@@ -13,6 +13,11 @@ One exception: the public landing page has a German copy set
 (`docs/.vitepress/theme/landing/copy.ts`, served at `/de/`). Only that landing copy may be German;
 the docs pages, code, comments and tests stay English.
 
+A product that posts in a configurable language may also ship its user-facing texts translated, each
+language next to English in one messages file (the PM bot's `plugins/bot-channels/messages.json` and
+`poller/messages.json` under `experimental/pm-bot/`);
+its code, comments and docs stay English, and its tests may assert the translated texts.
+
 ## Stay as close to standard Drupal as possible
 
 Core/contrib configuration and existing extension points before custom PHP. A listing is a View

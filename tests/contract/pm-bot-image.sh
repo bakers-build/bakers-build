@@ -15,8 +15,13 @@
 #     container of the same image) with the key as bearer and takes exactly the
 #     eight included tools; with a wrong key the check fails
 #   - the bot-channels plugin is installed and loaded, and the Hermes internals it relies on
-#     (SlackAdapter._handle_slack_message, the channel getters, resolve_channel_prompt,
-#     register_platform_handler) exist
+#     (SlackAdapter._handle_slack_message, the channel getters, the reaction lifecycle's
+#     _track_reacting_message, _event_team_id, on_processing_complete and
+#     ProcessingOutcome.CANCELLED, resolve_channel_prompt, register_platform_handler) exist,
+#     and with it loaded a requester's lost turn is selected for settling and the drain still
+#     settles one (SessionAuthority._claim_with_retry)
+#   - the plugin's recovery test (test_recovery.py) passes on Hermes' real session store: a
+#     conversation a hard restart left paused takes the next message, a healthy one is untouched
 #   - the shipped skills (bb-create-ticket, both recipes and the upstream method
 #     skills) are installed, the bundle version is printed, every relative link
 #     in them resolves, the upstream ones match pm-bot-upstream.sha256 (their
@@ -123,6 +128,12 @@ grep -qx 'plugins: bot-channels' <<<"$out" || { echo "$out" >&2; fail "Hermes do
 grep -qx 'plugin seams: ok' <<<"$out" || { echo "$out" >&2; fail "a Hermes internal the bot-channels plugin relies on is gone"; }
 in_data '[ -f /d/plugins/bot-channels/__init__.py ]' || fail "the bot-channels plugin is not in the data directory"
 pass "the bot-channels plugin is installed and loaded, and its Hermes seams exist"
+
+# The tests are not in the image (.dockerignore); piped in rather than mounted, for CI's Docker-in-Docker.
+tar -C experimental/pm-bot/plugins -cf - bot-channels | docker run -i --rm -e PM_BOT_REQUIRE_HERMES=1 --entrypoint sh "$IMAGE" -c \
+  'mkdir -p /tmp/t && tar -C /tmp/t -xf - && cd /opt/hermes && .venv/bin/python -m unittest discover -s /tmp/t/bot-channels -p test_recovery.py' \
+  || fail "a conversation a hard restart left paused is not recovered (test_recovery.py)"
+pass "a conversation a hard restart left paused takes the next message; a healthy one is untouched"
 
 # Every relative Markdown link of the installed shipped skills resolves to a file inside the
 # linking skill's own folder, the only files Hermes' skill_view serves; web links and anchors

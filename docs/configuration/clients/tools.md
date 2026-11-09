@@ -18,7 +18,7 @@ bakers tools [<global options>] [<wire name>] [--schema] [--data <json|@file>] [
 | `bakers tools <wire name> --data '<json>'` | Call it with inline JSON arguments |
 | `bakers tools <wire name> --param key=value` | Set one argument; repeatable, and wins over the same key in `--data` |
 
-A tool's wire name is `tool_api__<id>`, for example `tool_api__bakers_ticket_read`. An unprefixed id such as `bakers_ticket_read` is an unknown tool. Prefer `--data @file` for anything but a one-word value: write the file with an editor, a file tool or a JSON encoder, so Markdown bodies survive byte for byte and no shell quoting gets in the way.
+Use a plain ID such as `bakers_ticket_read` or its wire name `tool_api__bakers_ticket_read`. The CLI normalizes either form for the selected server. Prefer `--data @file` for anything but a one-word value: write the file with an editor, a file tool or a JSON encoder, so Markdown bodies survive byte for byte and no shell quoting gets in the way.
 
 ## Global options
 
@@ -29,7 +29,7 @@ A tool's wire name is `tool_api__<id>`, for example `tool_api__bakers_ticket_rea
 | `--connections-dir <path>` | Directory that holds the named connections (`$DROPSH_CONNECTIONS_DIR`) |
 | `--auth-profile <id>` | Auth profile to use; overrides the active profile and `$DROPSH_AUTH_PROFILE` |
 
-Global options follow the subcommand: `bakers tools --connection staging`. The connection is chosen by the same rule as in `bakers ui`: [Which control plane answers](/addons/bakers-ui/reference#which-control-plane-answers). Sign-in and profiles are covered in [bakers auth](/configuration/clients/auth).
+Global options follow the subcommand: `bakers tools --connection staging`. The connection is chosen by the same rule as in `bakers ui`: [Connection selection](/configuration/connector/connections#which-connection-is-used). Sign-in and profiles are covered in [bakers auth](/configuration/clients/auth).
 
 ## Results and exit codes
 
@@ -66,7 +66,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_ticket_read` | `ticket` (identifier or UUID) | A ticket with its comments, oldest first, as an agent run reads it first, and `deployments`: each deployment ticket that carries it, with its `identifier` and `environments` |
 | `bakers_ticket_search` | `query` or `branch_name`; optional `project` | Tickets matching a text or a branch |
 | `bakers_ticket_list` | `project` (UUID); `limit`, `offset` | Every ticket of the project you can read, closed ones included, oldest first. Each row has `id` (UUID), `identifier`, `title`, `state`, `links` (`uri`, `title`), `labels` (names), `frozen`, `frozen_at` (ISO 8601 or `null`), `parent` (the parent's UUID, `null` when absent or unreadable) and `closed` |
-| `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name` | Create a ticket |
+| `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee_email` | Create a ticket; an `assignee_email` that may not be assigned in the workspace leaves it unassigned |
 | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `labels_add`, `labels_remove`, `frozen`, `environments_add`, `referenced_tickets_add` | Edit a ticket; values not given are kept, `labels_remove` drops only the named labels, `environments_add` and `referenced_tickets_add` only add; a closed ticket refuses every edit |
 | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | Set recipe and type by name |
 | `bakers_ticket_transition` | `ticket`; `state`, `links` or both | Change the state or add links |

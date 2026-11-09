@@ -5,7 +5,7 @@ description: How strictly Claude, Codex and Grok runs start on a machine - the s
 
 # Run security
 
-A run executes text other people wrote (ticket title, description, comments, env vars) on your machine, so Claude, Codex and Grok runs start safe by default. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
+A run executes untrusted ticket content on your machine. Review its limits before dispatch. Claude, Codex and Grok default to their configured sandbox mode. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
 
 ## Modes
 
@@ -41,7 +41,7 @@ Install the Linux packages with your package manager:
 | dnf (Fedora, RHEL) | `sudo dnf install -y bubblewrap socat` |
 | pacman (Arch) | `sudo pacman -S --needed bubblewrap socat` |
 
-Other distributions: install the packages `bubblewrap` and `socat`.
+Other distributions need `bubblewrap` and `socat`.
 
 OpenCode has no OS sandbox on any platform; it defaults to `system` and rejects `sandbox` when loading, so `bakers oven check` never checks it.
 
@@ -113,9 +113,9 @@ Before a run, the conductor removes ticket and project `env_vars` whose names ma
 
 `ANTHROPIC_*`, `OPENAI_*`, `CLAUDE_*`, `CODEX_*`, `NODE_OPTIONS`, `LD_*`, `DYLD_*`, `PATH`, `BASH_ENV`, `ENV`, `GIT_*`, `SSH_*`, `*_PROXY`, `*_proxy`
 
-These names redirect the model API, inject code into every process, or reconfigure git, SSH and proxies. The server still stores any name; the filter is on your machine.
+These names redirect the model API, inject code into every process, or reconfigure git, SSH and proxies. The server stores any name; filtering happens locally.
 
-The inbox, `after_done`, `on_freeze` and `on_resume` hooks run without a run agent, so they always drop with the default list, even when the agent runs in `yolo` or sets `env_deny`.
+The inbox and addon listener contexts for `after_done`, `on_freeze` and `on_resume` use the default deny list because they have no run agent. The `after_done` shell command and `provision_up` inherit the conductor environment without injected ticket variables; see [hook environments](/configuration/project/hooks#environment).
 
 ## Risk of loosening
 
@@ -127,7 +127,7 @@ The harness sandboxes do not isolate a machine. Where runs handle untrusted tick
 
 For the provided Coder workspace template:
 
-Keep only the installed harnesses, `@bakers-build/addon-claude` and `@bakers-build/addon-codex`, in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)), and set both to `security: 'custom'`. The default `sandbox` cannot start in the workspace: its `bwrap` needs unprivileged user namespaces, which a Docker host on Ubuntu 23.10 or later restricts. The container is the boundary instead, so a run can still read everything in your home, including your sign-ins and SSH key ([Run security](/provision/security/execution)).
+Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)). Start with their sandbox defaults and run `bakers oven check`. If the host blocks the user namespaces required by a nested sandbox, fix host policy or explicitly choose the container boundary below. This example switches Claude and Codex to `custom`: the container becomes the boundary, and a run can read everything in its home, including sign-ins and SSH keys.
 
 ```js
 {

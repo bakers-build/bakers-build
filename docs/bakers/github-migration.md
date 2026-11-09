@@ -64,7 +64,7 @@ to its WarpBuild label when the variable is unset:
 
 | Tier | Variable | Default label | Jobs |
 |---|---|---|---|
-| checks | `RUNNER_CHECKS` | `warp-ubuntu-latest-x64-2x` | every `checks.yml` job except the after-merge jobs, including `required` and `report_failure` |
+| checks | `RUNNER_CHECKS` | `warp-ubuntu-latest-x64-2x` | every `checks.yml` job except the after-merge jobs, including `required` and `report_failure`; `report_failure` in `release.yml` |
 | image gate | `RUNNER_IMAGE_GATE` | `warp-ubuntu-latest-x64-16x` | `image_gate` in `checks.yml` (PHPUnit with 16 processes, Playwright with 6 workers) |
 | after-merge | `RUNNER_AFTER_MERGE` | `warp-ubuntu-latest-x64-4x` | `tui_musl`, `release_rehearsal` in `checks.yml`; `release` in `release.yml`; `registry` and `transfer` in `registry-rehearsal.yml` |
 
@@ -97,9 +97,12 @@ compatibility) and `release_rehearsal` (package and release notes) are after-mer
 When a push or dispatch run on `next` has a failed job, `report_failure` runs
 `scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service
 account and comments on the open BAKERS ticket titled `CI failure: GitHub checks on next`, or
-creates that ticket as a `bug` (workflow `bb_work`) when none is open and assigns it to the
-`cw-framework` conductor. The comment or ticket names the failed jobs, the commit and the run.
-The job needs repository secrets `BB_CI_CLIENT_ID` and `BB_CI_CLIENT_SECRET` (the service
+creates that ticket as a `bug` with recipe `superpowers` (workflow `bb_work`) when none is open
+and assigns it to the `cw-framework` conductor. The comment or ticket names the failed jobs, the
+commit and the run. When the `release` job of `release.yml` fails on `next` or `main`, the
+`report_failure` job of `release.yml` runs the same script for its own ticket,
+`CI failure: GitHub release on <branch>`, so release and checks failures never share a ticket.
+Both jobs need repository secrets `BB_CI_CLIENT_ID` and `BB_CI_CLIENT_SECRET` (the service
 account's OAuth client).
 The public fork full check passed; a separate probe confirmed secrets were absent and a write
 to the base repository failed with HTTP 403.

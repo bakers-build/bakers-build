@@ -2,7 +2,7 @@
 
 A ticket state is run by one frame skill, `bb-workflow`, which routes the state to its state file and binds the recipe, the runtime guide and the project's hints; this page states how those pieces fit together.
 
-bakers.build ships no workflow engine and no loader. It ships skills, which are Markdown instructions an agent reads, and the agent's native skill mechanism loads them. No CLI command reads or validates them. For the practical path, see [How it works](/skills-and-workflows/guide#how-it-works) and [Configure your workflow](/skills-and-workflows/workflow-file). The authoring reference is `.claude/skills/bakers-build/skills/bb-workflow/references/authoring.md`.
+bakers.build ships no workflow engine and no loader. It ships skills, which are Markdown instructions an agent reads, and the agent's native skill mechanism loads them. No CLI command reads or validates them. For the practical path, see [How it works](../skills-and-workflows/guide.md#how-it-works) and [Configure your workflow](../skills-and-workflows/workflow-file.md). The authoring reference is `.claude/skills/bakers-build/skills/bb-workflow/references/authoring.md`.
 
 ## Skills and references
 
@@ -17,6 +17,7 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-recipe-verify` | the ticket's `recipe` field; for `verification` tickets |
 | `bb-verdict` | the review state, as its subagent's start |
 | `bb-label-auto` | the `bb-workflow` frame, for a ticket labelled `auto`, in any state |
+| `bb-label-ticket-question` | the `bb-workflow` frame, for a ticket labelled `ticket-question`, in any state |
 | `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
 | `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person or a host, for a ticket or time proposals |
 
@@ -92,8 +93,6 @@ Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` per
 
 Use these guides to run or extend evaluations. They use synthetic facts, without live integration.
 
-<DocQuickLinks aria-label="Skill verification guides" :items="[
-  { label: 'Test a skill', text: 'Generate an isolated example and replay its checks offline.', link: '/development/test-skills' },
-  { label: 'Add a skill test', text: 'Extend fixtures, validation profiles and CI coverage.', link: '/development/add-skill-test' },
-  { label: 'Test the coding outtake', text: 'Check presentation, review resources and exact login URLs.', link: '/development/test-run-outtake' }
-]" />
+- [Test a skill](test-skills.md) — Generate an isolated example and replay its checks offline.
+- [Add a skill test](add-skill-test.md) — Extend fixtures, validation profiles and CI coverage.
+- [Test the coding outtake](test-run-outtake.md) — Check presentation, review resources and exact login URLs.

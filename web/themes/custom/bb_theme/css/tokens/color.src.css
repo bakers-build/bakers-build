@@ -52,4 +52,6 @@
   --color-avatar-b: #CFE69A;
   --color-avatar-c: #EAC6A4;
   --color-avatar-d: #D9D3C9;
+  --color-gate-band: var(--color-butter);
+  --color-gate-band-ink: var(--color-rye);
 }

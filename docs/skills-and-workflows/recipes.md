@@ -20,7 +20,7 @@ A recipe brings one engineering method to `plan`, `working` and `review`. It add
    ---
    ```
 
-2. **Write one section per state, one slot per phase.** `## bb-state-plan`, `## bb-state-working` and `## bb-state-review`, each with a `### bb-phase-<phase>` slot only where your method adds something, usually `### bb-phase-work`, naming the method's original skills. Add a `## <type>:bb-state-<state>` section only where a type behaves differently, for example `## bug:bb-state-plan`; per phase its slot wins over the general one. Leave inputs, comments, gates and transitions to the state files: a recipe links no `bb-workflow` reference and calls no other bakers.build skill, so it keeps working when those change. Keep the whole file under 500 words.
+2. **Write one section per state, one slot per phase.** `## bb-state-plan`, `## bb-state-working` and `## bb-state-review`, each with a `### bb-phase-<phase>` slot only where your method adds something, usually `### bb-phase-work`, naming the method's original skills. Add a `## <type>:bb-state-<state>` section only where a type behaves differently, for example `## bug:bb-state-plan`; per phase its slot wins over the general one. A recipe links no `bb-workflow` reference and calls no other bakers.build skill. Follow the authority limits below. Keep the whole file under 500 words.
 
    ```md
    ## bb-state-plan
@@ -38,8 +38,10 @@ A recipe brings one engineering method to `plan`, `working` and `review`. It add
 
 ## The rules
 
-Phases, routing, recipe resolution and the stop rules: [Skill contract](/development/skill-contract). Runtime guides and hints are covered in `bb-workflow/references/authoring.md`. Testing a skill's wording against a worker: [Test a skill](/development/test-skills).
+A type-specific phase slot wins; a missing phase falls back to the general state section, then to no recipe slot. The frame's state phase always runs. A recipe can replace a default deliverable, comment, merge or check when its slot names one explicitly. Approval, the coding gate, the verdict and readbacks remain mandatory; a transition slot can only choose a destination allowed by the gate.
+
+Install every required method skill before running a ticket. Keep runtime mechanics in runtime guides and project checks in `WORKFLOW.md`. [Workflow mechanics](/skills-and-workflows/guide#how-it-works) explains the surrounding run; the installed `bb-workflow/references/authoring.md` defines the authoring contract.
 
 ## Reader contract
 
-A recipe supplies method slots inside the frame's state files; it cannot widen approval, publication or transition authority. A type-specific slot wins over the general state slot. Required skills must be available before work starts. Keep runtime mechanics in runtime guides and project checks in `WORKFLOW.md`. [Workflow mechanics](/skills-and-workflows/guide#how-it-works) explains the seven phases; the implementation contract remains in `docs/development/skill-contract.md` in the source checkout.
+Qualification must be able to determine the method and supported ticket types from the complete recipe. Verify them through the small ticket above before using it on production work.

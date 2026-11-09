@@ -53,7 +53,7 @@ Ignore `.bakers/compose-project.local` in Git. Keep the Compose configuration co
 
 ## Readiness
 
-`up -d` starts containers; it does not prove the application is ready. Check container health and run your repository's HTTP/database readiness command before work begins. Put this mandatory gate in `WORKFLOW.md`. Run setup twice in a disposable worktree and confirm it reuses only that project's resources. [Hook failures](/provision/hooks#failure-behavior) are logged without stopping dispatch.
+`up -d` starts containers; it does not prove the application is ready. Check container health and run your repository's HTTP/database readiness command before work begins. Put this mandatory gate in `WORKFLOW.md`. Run setup twice in a disposable worktree and confirm it reuses only that project's resources. [Hook failures](/configuration/project/hooks#failure-behavior) are logged without stopping dispatch.
 
 ## Cleanup
 
@@ -68,7 +68,7 @@ docker compose --project-name "$project" down
 
 A missing/invalid identity aborts cleanup. This stops/removes that Compose project's containers and networks while retaining named volumes. Export needed data before adding destructive volume removal; never run global prune as ticket cleanup. External resources need their own scoped lifecycle.
 
-**Agents need the running services?** Configure [`provision_up`](/provision/hooks#provision-on-an-agent-s-request) with a command that follows its contract.
+**Agents need the running services?** Configure [`provision_up`](/configuration/project/hooks#provision-on-an-agent-s-request) with a command that follows its contract.
 
 **Done when:** two ticket worktrees can run concurrently, both pass application readiness, and cleaning one leaves the other working. [Docker Compose discovery](/addons/docker-compose) can expose the resulting services to [Ports](/addons/ports).
 

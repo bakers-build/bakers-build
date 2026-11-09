@@ -11,7 +11,7 @@ export const PROJECT = '11111111-1111-4111-8111-111111111111';
  *   per page, whatever limit is asked for (to exercise paging with few tickets).
  */
 export async function site({ pageSize = 50 } = {}) {
-  const s = { tickets: [], comments: [], log: [] };
+  const s = { tickets: [], comments: [], runs: [], log: [] };
   let next = 0;
   const uuid = (prefix) => `${prefix}-${++next}`;
 
@@ -29,11 +29,17 @@ export async function site({ pageSize = 50 } = {}) {
       .map((c) => ({ id: c.id, type: c.type, body: c.body, created: c.created, author: 'Agent' }));
 
   const once = {};
+  const lost = {};
   const guard = (name, fn) => (args) => {
     s.log.push(`tool ${name}`);
     if (once[name] > 0) {
       once[name] -= 1;
       throw new Error(`${name} failed`);
+    }
+    if (lost[name] > 0) {
+      lost[name] -= 1;
+      fn(args);
+      throw new Error(`${name}: reply lost`);
     }
     return fn(args);
   };
@@ -63,6 +69,12 @@ export async function site({ pageSize = 50 } = {}) {
       const t = find(a.ticket);
       return { id: t.id, identifier: t.identifier, title: t.title, state: t.state, labels: [...t.labels], links: t.links.map(link), frozen: t.frozen, comments: comments(t) };
     }),
+    // Newest first, as the tool lists them; started_at in epoch seconds.
+    bakers_ticket_runs_list: guard('bakers_ticket_runs_list', (a) => {
+      const t = find(a.ticket);
+      const runs = s.runs.filter((r) => r.ticket === t.id).reverse();
+      return { runs: runs.map(({ ticket, ...r }) => ({ ...r, closed: !['claimed', 'running'].includes(r.state) })), next_offset: null };
+    }),
     bakers_ticket_transition: guard('bakers_ticket_transition', (a) => {
       const t = find(a.ticket);
       for (const l of a.links ?? []) if (!t.links.some((x) => x.uri === l.uri)) t.links.push({ uri: l.uri, title: l.title });
@@ -82,12 +94,22 @@ export async function site({ pageSize = 50 } = {}) {
     return c;
   }
 
+  function addRun(t, { state = 'running', state_at_start = t.state, started_at = Math.floor(Date.now() / 1000) } = {}) {
+    const r = { uuid: uuid('run'), ticket: t.id, state, state_at_start, agent: 'opus', conductor: null, started_at };
+    s.runs.push(r);
+    return r;
+  }
+
   const stub = await bakersStub({ tools });
   // failOnce(tool, n): the next n calls of that tool are refused.
   const failOnce = (name, n = 1) => {
     once[name] = n;
   };
-  return { ...s, state: s, stub, addTicket, addComment, failOnce, close: stub.close };
+  // loseReplyOnce(tool): the next call takes effect, but its caller gets an error.
+  const loseReplyOnce = (name) => {
+    lost[name] = 1;
+  };
+  return { ...s, state: s, stub, addTicket, addComment, addRun, failOnce, loseReplyOnce, close: stub.close };
 }
 
 export const thread = (channel = 'C0000000001', ts = '1700000000.000100') => ({

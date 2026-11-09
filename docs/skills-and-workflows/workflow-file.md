@@ -26,19 +26,21 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 ## bb-phase-validate
 ## bb-phase-deliver
 ## bb-phase-outtake
+## bb-phase-transition
 ```
 
 | Section | Job |
 |---|---|
-| `## bb-phase-provision` | The [`provision_up`](/provision/hooks#provision-on-an-agent-s-request) profile each kind of check needs, and how container commands run. Leave it out when no work needs a runtime. |
+| `## bb-phase-provision` | The [`provision_up`](/configuration/project/hooks#provision-on-an-agent-s-request) profile each kind of check needs, and how container commands run. Leave it out when no work needs a runtime. |
 | `## bb-phase-work` | A `\| When \| Skill \|` table: extra skills for matching changes, for example a Drupal skill for `web/modules/`. |
 | `## bb-phase-validate` | A `\| When \| Command \|` table: the checks for matching changes. |
 | `## bb-phase-deliver` | How a merge request is merged: the merge gate and what runs in it. |
 | `## bb-phase-outtake` | Your test-user list and how test personas get a login for manual review. |
+| `## bb-phase-transition` | Optional origin-label mapping, described below. |
 
 A run applies every matching row, and the rows are binding: the agent loads each named skill before the work it governs and stops if one is missing. The engineering method is not in this file; each ticket carries a [recipe](/skills-and-workflows/types-recipes-labels). Repository conventions and test lore belong in your repository docs, linked from `CLAUDE.md`.
 
-The label `auto` alone lets a ticket work on its own; the entry line needs no clause for it. In any state, such a ticket then works on its own to `done`, asks the user only content questions, collected into one question per run, and one acceptance through the ticket, and refers technical problems to the developers. Label no ticket `auto` where nobody answers questions on tickets.
+The [`auto` and `ticket-question` labels](/skills-and-workflows/types-recipes-labels#labels) control unattended work and where the agent asks questions. Neither needs an extra entry-line clause.
 
 ## Example
 
@@ -66,7 +68,7 @@ The skills and commands are examples; name your own for other stacks. A runtime 
 
 ## Origin labels
 
-A ticket whose origin is an issue gets a customer-facing label on that issue at every transition. The labels come from one table in `## bb-phase-transition`, and from nowhere else:
+An authorized agent transition can mirror a GitLab origin issue's progress; manual state changes are not mirrored. Install and sign in to `glab` on the conductor host. Other origin adapters are not supplied by this rule. The mapping comes only from `## bb-phase-transition`:
 
 ```md
 ## bb-phase-transition
@@ -88,4 +90,4 @@ bakers.build creates no origin labels: the table must name labels that exist in 
 
 ### Publishing origin labels
 
-An agent step mirrors a GitLab origin's label immediately before its state write. Manual state changes are not mirrored. Install and sign in to `glab` on every conductor host, and make sure every label the table names exists in the GitLab project or a parent group, with its colour and description; bakers.build reads the labels before writing and never creates one.
+The agent writes the mapped label immediately before its ticket state write. With no origin, table or destination row, it makes no origin-label change. Missing labels or adapter failures warn without blocking the ticket transition.

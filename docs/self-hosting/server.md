@@ -5,10 +5,7 @@ description: Install a standalone control plane from public release images with 
 
 # Self-host the server
 
-The control plane runs on one Linux Docker host. It does not require Coder, FRP,
-Komodo, a private registry or a source build. Clients and workers are installed
-separately through [Machine setup](/provision/machine). Existing operator-managed
-Komodo stacks retain their [current deployment procedure](/self-hosting/server-komodo).
+Run the control plane on one Linux Docker host using public release images. Install clients and workers through [Machine setup](/provision/machine). Existing deployments need an operator-approved migration preserving their data and configuration.
 
 A release is a GitHub release `vX.Y.Z` of
 [`bakers-build/bakers-build`](https://github.com/bakers-build/bakers-build/releases).
@@ -98,7 +95,6 @@ contains secrets; use `-q` for validation and keep diagnostic output private.
 The self-host overlay forwards domain, SMTP and strict security settings to all
 PHP services. Drupal accepts only `DOMAIN`, trusts forwarding only from the
 selected ingress subnet, ignores forwarded host headers and requires a salt.
-The local development and existing Komodo configuration paths retain their current behavior.
 
 ## First install — empty project only
 
@@ -162,8 +158,9 @@ The conductor reads the policy for each run it finalizes, without a restart,
 and the server checks it again on every write: disabling before a run's upload
 stores nothing from that run. Turning storage off deletes no existing
 transcript and keeps who may read it; turning it on does not backfill.
-`capture_logs: false` keeps a conductor's transcripts local even when storage
-is allowed.
+The current CLI configuration loader drops `capture_logs`, so setting it to `false`
+in a conductor file does **not** prevent uploads. Use the server/workspace policy
+above to disable storage; see [Project configuration](/configuration/project).
 
 ## Verify before opening access
 

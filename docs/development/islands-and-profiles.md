@@ -35,4 +35,4 @@ The profile form embeds each condition plugin's own form at both levels, as the 
 
 ## Where to read more
 
-The island module's README (`web/modules/custom/island/README.md`) covers profile and placement conditions, client-side scripts, wrapped dialog forms, the page-cache request policy and fragment rendering. Components, stories and scenes are created through the Designbook skills, never by hand ([Development](/development/contributing)).
+The island module's README (`web/modules/custom/island/README.md`) covers profile and placement conditions, client-side scripts, wrapped dialog forms, the page-cache request policy and fragment rendering. Components, stories and scenes are created through the Designbook skills, never by hand ([Development](contributing.md)).

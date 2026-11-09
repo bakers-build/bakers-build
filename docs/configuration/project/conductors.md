@@ -14,9 +14,9 @@ This page covers the `bakers oven` commands, one polling cycle, logs, several co
 Run every command from inside the checkout. A conductor needs:
 
 - the committed `.bakers/conductor.config.js` ([Conductor configuration](/configuration/project));
-- a machine file with host identity and capacity ([Machines](/configuration/machine));
+- a machine file with host identity and agents ([Machines](/configuration/machine));
 - a signed-in connection ([Connections](/configuration/connector/connections));
-- herdr installed with a running session, because the herdr executor and workspace start the agent sessions and worktrees;
+- a configured [executor and workspace](/addons/slots), with their prerequisites available on this host;
 - the agent harness of your routes, installed and logged in.
 
 A conductor starts without a `WORKFLOW.md`, but then logs a warning and dispatches its runs with no prompt, so the project needs one.
@@ -39,19 +39,9 @@ bakers oven status
 bakers oven stop
 ```
 
-`start` accepts `--foreground` (run the loop in this process, for a service unit or debugging), `--no-update-check` (skip the daily notice about a newer `@bakers-build/bakers`) and `--force` (stop the running conductor with `SIGTERM`, then `SIGKILL` after a grace period, and start a new one; it fails instead of starting a second conductor when the old one cannot be verified or stopped). Neither mode needs herdr to start the conductor; agent runs still open in herdr panes when the herdr executor is configured. Without `--force`, a conductor that is already alive prints `already running` and exits.
+**Done when:** `status` reports this conductor online and a small assigned ticket starts a run. Stop the conductor on the host where it runs; already-started agent sessions may continue.
 
-Config changes [restart a conductor](/configuration/project/conductor-commands#restart-on-change).
-
-`stop --now` sends `SIGKILL` instead. A killed process cannot write `offline`, so the status changes when its lease expires. Stop signals the process itself, so run it on the host where the conductor runs; other hosts refuse. Runs already started keep going in their own herdr tabs. The control plane that protects server-maintained conductor fields needs this CLI: older generic status PATCH callers fail.
-
-`status` and `ls` print tab-separated columns: label, liveness, project, workspace root, conductor id (`<machine_id>-<project>-<variant>`). Liveness is derived the same way in the CLI, in `bakers ui` and on the server:
-
-| Word | Meaning |
-|---|---|
-| `online` | Heartbeat within the last 10 minutes and the lease not lapsed. |
-| `stale` | Not shut down cleanly, but the heartbeat is old or the lease lapsed, for example after a crash. |
-| `offline` | The conductor wrote `offline` as it exited cleanly, or a check on this host proves its recorded pid is gone. |
+[Conductor commands](/configuration/project/conductor-commands#start) owns start/restart flags, [restart on change](/configuration/project/conductor-commands#restart-on-change) and graceful versus hard stop. Its [status reference](/configuration/project/conductor-commands#status-and-ls) defines the columns and online/stale/offline states.
 
 The `bakers ui` Conductors tab shows the same list; see [bakers ui](/addons/bakers-ui/reference). The web UI has two listings: opening the person mark swaps the rail to Account, Conductors (`/user/{user}/conductors`, the conductors assigned to that account) and Machines (`/user/{user}/machines`), and `/{workspace}/project/{key}/conductors` is the conductors assigned to that project (Title search, status and reported load). Opening a row shows Overview at `/{workspace}/conductor/{id}`: Activities, the ticket activities of this conductor's own runs, newest first, with a **Refresh** button, beside one Identity card. An activity counts for a conductor only through its run, never through the ticket's later assignment, so work stays with the conductor and machine that did it; an activity without a run is in no conductor's or machine's feed. Activities list only tickets you may inspect.
 
@@ -62,9 +52,9 @@ The Identity card edits the label and the served states with its own **Save** an
 The loop repeats every `poll_interval_ms` (default 5000). Each cycle:
 
 1. Heartbeats its registration with its active-run count and reads the host budget.
-2. Finalises runs the control plane has closed: captures each transcript and footprint, uploads them and closes the hosted tab.
+2. Finalises runs the control plane has closed: records the footprint, uploads the transcript only when [run-log storage policy](/self-hosting/server#run-log-storage) allows it, and closes the hosted tab.
 3. Reaps worktrees of closed tickets that were not cleaned up.
-4. Claims tickets one at a time while the machine is below its run budget, and dispatches each: it ensures the worktree under `.bakers-worktrees/`, runs the `after_create` hook, lays out a fresh worktree's overview tab, runs `before_run` and starts the agent session detached.
+4. Claims tickets one at a time while the machine is below its run budget, and dispatches each: it ensures the worktree under `.bakers-worktrees/`, prepares it through [`after_create`](/configuration/project/hooks#when-each-hook-runs) when needed, lays out a fresh worktree's overview tab, runs `before_run` and starts the agent session detached.
 
 A cycle never writes ticket state; the agent does that. A dispatch error marks that run `failed` with the error; after repeated failures the server parks the ticket behind a circuit breaker.
 
@@ -84,18 +74,15 @@ Eligible tickets are taken by priority (lower value first), then oldest first. C
 
 ## Logs
 
-The conductor logs to `.bakers/log.txt` in the checkout and, when it has a terminal, to that terminal. Set the level and sink as flags before the subcommand or as environment variables:
-
-| Flag | Environment | Values |
-|---|---|---|
-| `--log-level` | `BB_LOG_LEVEL` | `debug`, `info` (default), `warn`, `error` |
-| `--log-sink` | `BB_CONDUCTOR_LOG` | `stdout`, `file`, `both` (default on a terminal; `file` otherwise) |
+Read `.bakers/log.txt` in the checkout. For one diagnostic cycle:
 
 ```sh
-bakers oven --log-level debug start --foreground
+bakers oven --log-level debug once
 ```
 
-Each run's own log and footprint are on the ticket's Runs tab.
+[Logging flags and defaults](/configuration/project/conductor-commands#global-flags) are in the command reference.
+
+The ticket's Runs tab shows the footprint and any transcript stored under the server policy.
 
 ## Clean up worktrees
 
@@ -103,7 +90,7 @@ Each run's own log and footprint are on the ticket's Runs tab.
 bakers oven clean
 ```
 
-Every cycle already reaps, so run this by hand when the conductor was down while tickets closed, was restarted or was reassigned. It is safe at any time.
+Every cycle already reaps, so run this by hand when the conductor was down while tickets closed, was restarted or was reassigned. It runs the configured cleanup commands; check their resource scope and preserve needed data first.
 
 ## Several conductors in one repository
 
@@ -116,14 +103,13 @@ One repository can serve several bakers.build projects, for example a Drupal mul
   intra.conductor.config.js   # stem: intra
 ```
 
-A file is a conductor config only if it is exactly `conductor.config.js` or ends in `.conductor.config.js`. Select one per invocation by stem, with the flag before the subcommand; the flag wins over the variable:
+Select a variant by its file stem:
 
 ```sh
 bakers --conductor shop oven start
-BB_CONDUCTOR=intra bakers oven status
 ```
 
-With no selector, `conductor.config.js` is the default; otherwise a lone config is used; otherwise the command fails and lists the stems. `--conductor conductor` names the default explicitly. `BB_CONDUCTOR_CONFIG` may name an exact file instead.
+[Selector precedence](/configuration/project/conductor-commands#global-flags) and the [project variant reference](/configuration/project#named-variants) define discovery and fallback.
 
 Each config is its own variant (its stem), so each is a separate conductor with its own claims, and `bakers oven ls` lists all of them. When a detached conductor starts, it carries its selector along, so it keeps the config you chose.
 
@@ -132,7 +118,7 @@ Each config is its own variant (its stem), so each is a separate conductor with 
 A team host provides execution capacity so project managers need no conductor of their own.
 
 1. Prepare the host: herdr with a running session, the agent harnesses, repository access, and a machine file from `bakers init` (its own `machine_id`, a UUID for a new machine, and `label`) ([Machines](/configuration/machine)); after its first start, set the machine's run budget in the backend to fit the hardware.
-2. Give the host a service identity: a connection with the `client_credentials` profile and a secret kept in an environment variable ([Connections](/configuration/connector/connections)). The identity needs workspace and project access.
+2. Give the host a service identity: a connection with the `client_credentials` profile and a secret kept private ([Connections](/configuration/connector/connections)). The identity needs workspace and project access.
 3. Clone each project on the host, commit its `.bakers/conductor.config.js`, and start one conductor per checkout with `bakers oven start`. Under a service manager, run `bakers oven start --foreground`; start herdr first when its executor runs the agent sessions.
 4. Check `bakers oven ls` from any machine, assign a small ticket to the conductor and confirm a run appears.
 

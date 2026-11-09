@@ -1,5 +1,5 @@
 // Shared navigation and rendered-page exclusions for VitePress and its checks.
-export const SRC_EXCLUDE = ["decisions/**", "bakers/**", "conductor/**", "bakers-metrics.md", "node_modules/**"]
+export const SRC_EXCLUDE = ["decisions/**", "bakers/**", "conductor/**", "development/**", "bakers-metrics.md", "node_modules/**"]
 
 export const AREAS = [
   { label: "Get started", link: "/get-started/", icon: "guide" },
@@ -9,7 +9,6 @@ export const AREAS = [
   { label: "Addons", link: "/addons/", icon: "reference" },
   { label: "Configuration", link: "/configuration/", icon: "contributing" },
   { label: "Self-hosting", link: "/self-hosting/", icon: "contributing" },
-  { label: "Development", link: "/development/", icon: "contributing" },
 ]
 
 export const NAV = [
@@ -31,6 +30,7 @@ export const SIDEBAR = {
   "/get-started/": [
     group("Start here", [
       ["Overview", "/get-started/"],
+      ["Use your client", "/get-started/use-your-client"],
       ["Prepare your project", "/get-started/connect-a-project"],
       ["Run the first ticket", "/get-started/first-ticket"],
     ]),
@@ -82,7 +82,7 @@ export const SIDEBAR = {
   "/agents/": [
     group("Agents", [
       ["Overview", "/agents/"],
-      ["Choose agents and models", "/agents/guide"],
+      ["Configure and select agents", "/agents/guide"],
       ["Agent policy reference", "/agents/reference"],
     ]),
   ],
@@ -189,12 +189,11 @@ export const SIDEBAR = {
     ]),
     group("Project", [
       ["Project", "/configuration/project"],
+      ["Lifecycle hooks", "/configuration/project/hooks"],
       ["Conductors", "/configuration/project/conductors"],
       ["Conductor commands", "/configuration/project/conductor-commands"],
-      ["Configuration migration", "/configuration/project/migration"],
     ]),
-    group("Clients", [
-      ["Clients", "/configuration/clients"],
+    group("CLI reference", [
       ["CLI commands", "/configuration/clients/cli"],
       ["bakers tools", "/configuration/clients/tools"],
       ["bakers auth", "/configuration/clients/auth"],
@@ -209,25 +208,6 @@ export const SIDEBAR = {
     group("Self-hosting", [
       ["Overview", "/self-hosting/"],
       ["Server", "/self-hosting/server"],
-      ["Komodo server", "/self-hosting/server-komodo"],
-    ]),
-  ],
-  "/development/": [
-    group("CLI contract", [
-      ["Test the CLI contract", "/development/test-cli-contract"],
-    ]),
-    group("Development", [
-      ["Overview", "/development/"],
-      ["Add a skill test", "/development/add-skill-test"],
-      ["Architecture", "/development/architecture"],
-      ["Build the CLI from source", "/development/build-from-source"],
-      ["Development", "/development/contributing"],
-      ["Islands and profiles", "/development/islands-and-profiles"],
-      ["Skill contract", "/development/skill-contract"],
-      ["Test the coding outtake", "/development/test-run-outtake"],
-      ["Test a skill's tool calls", "/development/test-skill-tools"],
-      ["Test a skill", "/development/test-skills"],
-      ["Write the docs", "/development/write-docs"],
     ]),
   ],
 }

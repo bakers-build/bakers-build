@@ -43,20 +43,8 @@ See [addon tools](/addons/build/tools) and [UI actions and messages](/addons/bui
 
 ## Prepare an environment with provision_up
 
-`provision_up` lets an agent request a ready application when a task needs it. You configure a command, or named profiles pointing to commands, in the project's `.bakers/conductor.config.js`:
+`provision_up` lets an agent request a ready application when a task needs it. Configure your project's command or named profiles using the [Configuration reference](/configuration/project/hooks#provision-on-an-agent-s-request). With a profile named `test`, the agent calls `provision_up` with `profile: 'test'`. The script owns reuse, readiness and the resulting URL.
 
-```js
-hooks: {
-  provision_up: {
-    test: 'sh scripts/provision.sh test',
-  },
-},
-```
-
-This example requires your project's `scripts/provision.sh`. The agent calls `provision_up` with `profile: 'test'`; it selects a configured profile rather than supplying a shell command as the tool argument.
-
-The script must reuse a ready environment, start a stopped one or prepare a missing one. It checks readiness, prints the application URL and exits non-zero on failure. bakers.build returns the output or error; it does not perform those application checks itself.
-
-The command runs outside the agent sandbox. This can let an agent prepare its environment while its own shell remains restricted. The script still runs with the execution user's rights, including any code it loads from the worktree. See [the security boundary](/provision/security/#provision-up-and-addon-tools) and the [full provisioning contract](/provision/hooks#provision-on-an-agent-s-request).
+The command runs outside the agent sandbox. This can let an agent prepare its environment while its own shell remains restricted. The script still runs with the execution user's rights, including any code it loads from the worktree. See [the security boundary](/provision/security/#provision-up-and-addon-tools) and the [full provisioning contract](/configuration/project/hooks#provision-on-an-agent-s-request).
 
 **Next:** [choose the agent's security context](/provision/security/), then return to [project verification](/provision/guide#verify-independent-operation).

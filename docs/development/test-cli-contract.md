@@ -30,4 +30,4 @@ The client checks each result against the advertised output schema, so a field t
 | Real CLI contract (this section) | CLI parsing, `--data` file handling, schema validation, request bytes, result handling and error classes, and simulator agreement | Bash quoting or expansion, the live site's tool definitions, permissions, workflow policy |
 | Live integration (a Conductor run, see the testing note) | Behavior against a real application | Anything about other environments |
 
-[Add a skill test](/development/add-skill-test) explains how to add a tool or fault.
+[Add a skill test](add-skill-test.md) explains how to add a tool or fault.

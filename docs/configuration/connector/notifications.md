@@ -26,4 +26,4 @@ Choose which ticket events bakers.build mails you about. Nothing is sent until y
 - Your own changes are mailed too.
 - A mail names the ticket and the event and links to the ticket. It never names who made the change.
 - A mail is sent only if you can open the ticket.
-- When bakers.build adds a new kind of event, it appears here unticked.
+- The three shipped event types default to unticked. A newly installed event type may define its own default; review your settings after an update.

@@ -347,6 +347,44 @@ describe('GitHub migration checks', () => {
     expect(step.run).toContain('--base-url https://app.bakers.build');
     expect(step.run).toContain('--secret-env BB_CI_CLIENT_SECRET');
     expect(step.run).not.toContain('$BB_CI_CLIENT_SECRET');
+    expect(step.env).toMatchObject({
+      WORKFLOW: 'GitHub checks',
+      BRANCH: 'next',
+    });
+  });
+
+  it('files a failed release on next or main as its own bakers.build ticket', () => {
+    const workflow = parse(read('.github/workflows/release.yml'));
+    const job = workflow.jobs.report_failure;
+    expect(job.needs).toBe('release');
+    for (const guard of [
+      'always()',
+      "needs.release.result == 'failure'",
+      '"next"',
+      '"main"',
+      'github.event.workflow_run.head_branch',
+    ])
+      expect(job.if).toContain(guard);
+    // container: jobs fail on the self-hosted runner a tier can be sent back to.
+    expect(job.container).toBeUndefined();
+    expect(job['runs-on']).toBe(CHECKS_RUNNER);
+    expect(job.steps[0].with).toMatchObject({
+      ref: '${{ github.event.workflow_run.head_sha }}',
+      'persist-credentials': false,
+    });
+    const step = job.steps.find((s: { run?: string }) =>
+      s.run?.includes('github-failure-ticket.sh'),
+    );
+    expect(step.env).toMatchObject({
+      WORKFLOW: 'GitHub release',
+      BRANCH: '${{ github.event.workflow_run.head_branch }}',
+      FAILED_JOBS: 'release',
+      GITHUB_SHA: '${{ github.event.workflow_run.head_sha }}',
+      BB_CI_CLIENT_ID: '${{ secrets.BB_CI_CLIENT_ID }}',
+      BB_CI_CLIENT_SECRET: '${{ secrets.BB_CI_CLIENT_SECRET }}',
+    });
+    expect(step.run).toContain('--secret-env BB_CI_CLIENT_SECRET');
+    expect(step.run).not.toContain('$BB_CI_CLIENT_SECRET');
   });
   it('retains the existing validation commands', () => {
     const old = parse(read('.gitlab-ci.yml'));

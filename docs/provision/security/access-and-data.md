@@ -30,14 +30,15 @@ A team makes its projects visible to its members. You see **every ticket of ever
 |---|---|
 | **Member** | Sees the team's projects. |
 | **Lead** | Edits the team's projects and billing accounts, sees the team's statistics and the recorded hours of active members. |
-| **Owner** | Also manages who is in the team. |
+| **Reporter** | Creates tickets in the team's projects, without general ticket-edit rights. |
+| **Owner** | Manages team membership and edits its projects; this role does not itself grant the Lead's worklog/statistics access. |
 
-### In short
+### Common tasks
 
 | You want to | You need |
 |---|---|
 | See a project and its tickets | Membership in one of its teams, or Admin |
-| Create, assign, freeze or cancel a ticket | Contributor |
+| Create, assign, freeze or cancel a ticket | Contributor with project access; Reporter grants creation only |
 | Review a ticket | To be listed under **Reviewers** on that ticket |
 | Record your time | Contributor; only you can edit your entries |
 | See a teammate's hours | Team Lead, for active members of your team |
@@ -65,21 +66,18 @@ Isolate each worktree's service names, ports and data. Cleanup that deletes a wo
 
 See [hosted or self-run](/self-hosting/choosing) for the server choice and [server operations](/self-hosting/server) for deployment and backups.
 
-# Where your code and data live
+## Where your code and data live
 
-**Your code stays in git on your machines. The server holds tickets, states, handoffs and run footprints.**
+**Your repository stays on the worker. Model requests, tool output, handoffs and optional transcripts can contain code; review each destination's access and retention.**
 
 | What | Where | Notes |
 |---|---|---|
-| Your repository and worktrees | Your machine, `<checkout>-worktrees/` or the configured `worktreeDir` | One git worktree per ticket; removed when the ticket is done or cancelled |
+| Your repository and worktrees | Your machine, `<checkout>/.bakers-worktrees/` by default with herdr, or the workspace backend's configured location | One git worktree per ticket; removed when the ticket is done or cancelled |
 | Tickets, comments, states, labels | The bakers.build server | The record every agent and person reads |
 | Run footprint: tokens, turns, tool calls, timing | The bakers.build server | Shown on each run; what the statistics count |
-| Run transcripts | Your own server when self-run and opted in; nowhere on hosted bakers.build | Uploaded at the end of a run only when the server's [run-log storage](/self-hosting/server#run-log-storage) allows it for the workspace; `capture_logs: false` keeps them local regardless |
+| Run transcripts | Your own server when self-run and opted in; nowhere on hosted bakers.build | Uploaded at the end of a run only when the server's [run-log storage](/self-hosting/server#run-log-storage) allows it for the workspace; see that reference for the current file-loader limitation |
 | Agent sessions and model traffic | Between your machine and your model provider | provider keys stay on the worker; stored run transcripts may contain prompts and tool output |
-| Machine identity, capacity, agent catalog | `~/.bakers/machine.config.js` | Private file, not in git |
-| Server address and sign-in | `~/.bakers/bakers.config.js` or `~/.bakers/connections/<id>.js` | Private; a device-code sign-in stores no secret, client-credential setup writes the secret into the private connection file |
-| Which connection a checkout uses | `.bakers/connection.config.local.js` | Private, ignored by git |
-| Project wiring and hooks | `.bakers/conductor.config.js` | Committed; local values in `.bakers/conductor.config.local.js` |
+| Connection, machine and project configuration | Worker files, with ownership defined in the [file map](/configuration/files) | Keep secrets and local selectors private; machine capacity is stored on the server |
 | Conductor log, temporary evidence | `.bakers/log.txt`, `assets-ai/` | Ignored by git, removed with the worktree |
 | API keys | Created and revoked by each user on the server | The secret is shown once; a key acts as its owner |
 
@@ -89,6 +87,4 @@ Access follows workspace ranks and team membership: [Who sees what](/provision/s
 
 ### Keeping secrets out
 
-Commit `WORKFLOW.md`, `.bakers/conductor.config.js` and the README entry; keep everything else above private. Credentials never belong in a ticket, a comment or the README. `git check-ignore` on the private paths is part of [connecting a project by hand](/get-started/connect-a-project).
-
-
+Follow [Credentials and access](#credentials-and-access) above. Check the ignored paths before committing; a secret in an ignored local file can still be read by a process with access to it.

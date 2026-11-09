@@ -524,10 +524,14 @@ the overlay for `$SPICEEDIT_FILE`. Everything degrades gracefully: a missing
 
 The Claude, Codex, Grok, Kimi, OpenCode and Pi addons declare their candidates in their presets.
 Run `bakers agents` to see effective aliases, descriptions, harnesses, model bindings, filters,
-the default agent and routes as JSON. Claude ships `opus` and `sonnet`; other addons expose
+the default agent and routes as JSON. Claude ships `opus`, `sonnet` and `fable`; other addons expose
 their harness alias. A missing machine policy enables every addon candidate and infers the first
 one as the default.
 Host-local variants may add family names such as `k3-pi` without changing a published addon.
+An explicit Claude `model` replaces its default catalog with one custom candidate.
+Select Fable with `agent:fable` or `agent:fable@working`; it launches with `--model fable`
+and supports Claude Code 2.1.257 or later. See the [Claude addon guide](../docs/addons/claude.md)
+for provider availability and family overrides.
 
 Tickets select an alias with `agent:<alias>`, optionally narrowed to a state with
 `agent:<alias>@coding`. Qualification proposes a suitable alias and writes it only after human

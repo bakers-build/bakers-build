@@ -1,6 +1,6 @@
 # Machines
 
-`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes; every field is listed here with its default and precedence. To set agents up step by step, use [Choose agents and models](/agents/guide). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`.
+`machine.config.js` is the private file that identifies one execution host and owns its capacity, preview-tunnel policy, agent harnesses and agent routes. This page defines the machine fields and links the detailed agent policy. For complete agent and route examples, use [Configure and select agents](/agents/guide#configure-agents). The web UI lists this account's machines at `/user/{user}/machines`. Opening a row shows View at `/user/{user}/machine/{id}` (UUID, max parallel, current load) and Settings when the account owns the machine and holds `update own bb_machine`. The heartbeat creates a machine; **Delete** on its Overview opens `/user/{user}/machine/{id}/delete`.
 
 ## Location
 
@@ -8,7 +8,7 @@
 |---|---|
 | File | `~/.bakers/machine.config.js` |
 | Relocate | `BB_HOME` names the `.bakers` directory itself, not a home containing one. It moves the machine file, the connection files and `connections/` together. A relative value resolves against the working directory. |
-| Create | `bakers init` writes identity and an `addons` list naming the Claude, Codex and Grok harnesses. `bakers config init --scope machine` does the machine step alone. |
+| Create | `bakers init` writes identity. Configure installed harnesses in `addons` before starting work. `bakers config init --scope machine` does the machine step alone. |
 | Commit | Never. It is per user and per host. |
 
 ## Minimal example
@@ -32,6 +32,7 @@ export default {
 | `label` | Display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. It names the machine on the server when the machine first registers, and a machine still named after its `machine_id` on its next start; rename it there afterwards. |
 | `max_parallel` | Not read here. The run budget is set on the machine in the backend (machine form, **Max parallel**); a new machine starts with 5. Every conductor on this host shares it and picks up a change on its next tick. A leftover key loads with a warning and is ignored; `bakers config upgrade` leaves it in place. |
 | `tunnel` | Optional literal boolean, default `false`. See below. |
+| `executor` | Optional executor descriptor `{ plugin, export?, with? }`. Overrides every project executor on this machine; remote and workspace remain project-owned. For example, [herdr-core](/addons/herdr-core). Omitted uses the project selection. |
 | `agents` | Object, described in the next section. An array is invalid. |
 | `security` | Optional. Run security for every agent on this host: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. It replaces the project's block key by key, and a harness entry's `with` replaces both; `'$inherit'` keeps the layer below. See [Shared run security](/provision/security/shared-settings). |
 | `addons` | This host's addons, the same entry shape as a conductor config's `addons`: a package name or `{ use, alias?, with? }` (`name` and `options` are accepted aliases of `use` and `with`). Agent harnesses go here and are the source of agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. See [Configure addons](/addons/configure). |
@@ -42,21 +43,23 @@ Server URLs and credentials do not belong here. `bakers config check` reports `b
 
 ## Preview-link tunnels
 
-`tunnel: true` lets agents on this host share a local HTTP(S) preview through a public `cloudflared` tunnel. It starts a tunnel only for the one service an agent is about to share, never for every port, and needs `cloudflared` on `PATH`. Agents read the result as `BB_TUNNEL` (`1` or `0`). With `tunnel` omitted, `false` or unresolvable, agents offer the local URL only. A public tunnel hostname is reachable from the internet for as long as the tunnel lives. `bakers config check --scope machine` prints `Machine tunnel: <value> (from <file>)`.
+`tunnel: true` tells workflow agents to share addon-claimed HTTP(S) services through [Ports](/addons/ports), using this machine's configured transport. The flag does not install or start a transport. Agents receive `BB_TUNNEL` (`1` or `0`); omitted or `false` means share local URLs only. Unknown policy or a failed share must be reported as local-only. Public URLs are reachable from the internet while the tunnel is active. `bakers config check --scope machine` reports the effective policy and its source.
 
 ## Shared service tunnels (`bakers ports`)
 
-Configure [Ports](/addons/ports) and a [transport](/addons/ports-cloudflare) in this machine’s `addons`. This policy is independent of the single-preview `tunnel` flag above.
+Configure [Ports](/addons/ports) and its chosen transport in this machine's `addons`. The [Ports reference](/addons/ports) lists the supported transports and their prerequisites. Share a claimed service key, never a raw port; an omitted key shares every eligible service. The `tunnel` flag guides workflow agents and does not disable manual `bakers ports` commands.
 
 ## Agents
 
+Agent configuration and selection share this machine file: top-level `addons` supplies harnesses; the sibling `agents` object holds the catalog, filters, default alias and routes. Keep these beside `machine_id`, not inside the project conductor configuration. The guide shows complete files for [one catalog agent](/agents/guide#use-one-agent) and [agent routes](/agents/guide#use-agent-routes).
+
 ### The agents object
 
-[Agent policy fields](/agents/reference#the-agents-object) defines catalog overlays and optional filters.
+`agents.catalog` adds or overrides configured aliases supplied by the harness addons. `enabled` and `disabled` filter what is available. See [all catalog fields, defaults and loading order](/agents/reference#configure-the-catalog).
 
 ### Which agent runs a state
 
-[Routing precedence](/agents/reference#which-agent-runs-a-state) defines labels, routes and fallback.
+`agents.default_agent` names the fallback alias. `agents.routes` maps workflow states to catalog aliases; its special `default` route applies without a route label. Ticket labels can select an alias or named route. See [selection fields](/agents/reference#configure-selection) and [the complete precedence order](/agents/reference#which-agent-runs-a-state), including why an explicit default route can override the fallback alias.
 
 ### Harnesses
 
