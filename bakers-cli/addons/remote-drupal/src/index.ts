@@ -305,7 +305,7 @@ export class DrupalBbRemote implements BbRemote {
     // in the SAME request — a `bb_project` belongs to a `bb_group` (the
     // OG group), and a `bb_group` belongs to a `bb_workspace`.
     const doc = (await this.api.get(
-      `bb_ticket/bb_ticket/${uuid}?include=labels,environments,project_id.group_id.workspace_id`,
+      `bb_ticket/bb_ticket/${uuid}?include=labels,environments,ticket_type,recipe,project_id.group_id.workspace_id`,
     )) as JsonApiTicketDoc;
     const attrs = doc.data?.attributes ?? {};
     const issueUrl =
@@ -337,6 +337,13 @@ export class DrupalBbRemote implements BbRemote {
         };
       })
       .filter((e) => e.name !== '');
+    const termName = (name: string): string | undefined => {
+      const r = ref(doc.data, name);
+      const value = r ? byId.get(`${r.type}:${r.id}`)?.attributes?.name : undefined;
+      return typeof value === 'string' ? value : undefined;
+    };
+    const type = termName('ticket_type');
+    const recipe = termName('recipe');
     const projectRef = ref(doc.data, 'project_id');
     const project = projectRef
       ? byId.get(`${projectRef.type}:${projectRef.id}`)
@@ -377,6 +384,8 @@ export class DrupalBbRemote implements BbRemote {
       ...(projectName ? { projectName } : {}),
       ...(workspaceRef ? { workspaceId: workspaceRef.id } : {}),
       ...(workspaceName ? { workspaceName } : {}),
+      ...(type ? { type } : {}),
+      ...(recipe ? { recipe } : {}),
       labels,
       environments,
     };

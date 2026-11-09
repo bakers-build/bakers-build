@@ -18,6 +18,9 @@ import type {
 } from '@bakers-build/conductor/contract';
 import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { homeKey, homePath } from '../../src/plugins/agent-home.js';
@@ -34,8 +37,13 @@ beforeEach(() => vi.stubEnv('XDG_CACHE_HOME', '/cache'));
 afterEach(() => vi.unstubAllEnvs());
 
 class RecordingWorkspace implements BbWorkspace {
+  constructor(private readonly path?: string) {}
   async ensure(identifier: string): Promise<EnsuredWorkspace> {
-    return { path: `/fake/${identifier}`, instructions: null, created: true };
+    return {
+      path: this.path ?? `/fake/${identifier}`,
+      instructions: null,
+      created: true,
+    };
   }
 }
 
@@ -62,9 +70,17 @@ class RecordingExecutor implements BbExecutor {
 async function dispatch(
   agent: BbAgent,
   marketplaces: MarketplaceDeclaration[] = [probe],
+  ticket: { recipe?: string; worktree?: string } = {},
 ) {
   const remote = new FakeBbRemote({
-    tickets: { 't-1': { identifier: 'BB-1', title: 'One', state: 'working' } },
+    tickets: {
+      't-1': {
+        identifier: 'BB-1',
+        title: 'One',
+        state: 'working',
+        ...(ticket.recipe ? { recipe: ticket.recipe, type: 'feature' } : {}),
+      },
+    },
   });
   remote.queue.push({
     runUuid: 'r-1',
@@ -98,7 +114,7 @@ async function dispatch(
     config,
     remote,
     executor,
-    new RecordingWorkspace(),
+    new RecordingWorkspace(ticket.worktree),
     [{ id: agent.id, alias: 'opus', security: 'sandbox', agent }],
     log,
     CHECKOUT,
@@ -153,6 +169,33 @@ describe('conductor: a run starts with the project plugins installed', () => {
       outcome: 'built',
       marketplaces: [probe],
       trust_bypass: ['hooks'],
+      required_skills: { required: [], missing: [] },
+    });
+  });
+
+  it('fails the run start, naming each missing required skill', async () => {
+    const worktree = mkdtempSync(join(tmpdir(), 'bakers-plugins-launch-'));
+    writeFileSync(
+      join(worktree, 'WORKFLOW.md'),
+      '## bb-phase-work\n\n| When | Skill |\n|---|---|\n| a | `testing` |\n',
+    );
+    const agent = baseAgent([], {
+      installPlugins: async (_m, home) => ({
+        env: {},
+        args: [],
+        home: 'reused',
+      }),
+    });
+    const { executor, remote, entry } = await dispatch(agent, [probe], {
+      recipe: 'matt',
+      worktree,
+    });
+    expect(executor.started).toHaveLength(0);
+    expect(remote.calls.markFailed[0]?.errorLog).toMatch(
+      /missing required skills: testing, bb-recipe-matt/,
+    );
+    expect(entry).toMatchObject({
+      required_skills: { missing: ['testing', 'bb-recipe-matt'] },
     });
   });
 
@@ -170,7 +213,11 @@ describe('conductor: a run starts with the project plugins installed', () => {
     const { executor, entry } = await dispatch(agent, [...marketplaces]);
     expect(install).not.toHaveBeenCalled();
     expect(executor.started).toHaveLength(1);
-    expect(entry).toMatchObject({ harness: 'claude', state: `off (${reason})` });
+    expect(entry).toMatchObject({
+      harness: 'claude',
+      state: `off (${reason})`,
+      required_skills: 'skipped (plugins off)',
+    });
   });
 
   it('fails the run start, naming harness and reason, when the install fails', async () => {
