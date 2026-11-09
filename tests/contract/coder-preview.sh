@@ -29,6 +29,7 @@
 #   - a JS line end inside a comment (U+2028, lone CR), a computed or spread
 #     addons key or a line-start ternary gives a log line and no change
 #   - a broken machine file stays untouched, with exit 0 and a log line
+#   - none removes the marked lines even from a file that throws on import here
 #   - install.sh: none starts and installs nothing even with the token file and
 #     frpc.json present; cloudflare-quick installs cloudflared and starts no
 #     connector; cloudflare and frp install their client and start it only
@@ -304,6 +305,18 @@ edit cloudflare-quick
 cmp -s "$M" "$SCRATCH/broken" || fail "a broken machine file was changed"
 [ -s "$OUT" ] || fail "a broken machine file left no log line"
 pass "a broken machine file stays untouched, exit 0"
+
+# none removes only lines the script marked, so a file that throws in this environment still loses them.
+printf "export default {\n machine_id: process.env.BB_PREVIEW_UNSET.trim(),\n};\n" > "$M"
+cp "$M" "$SCRATCH/throws"
+printf "export default {\n machine_id: 'x',\n};\n" > "$M"
+edit cloudflare-quick
+node -e "const f = require('fs'); f.writeFileSync(process.argv[1], f.readFileSync(process.argv[1], 'utf8').replace(\"'x'\", 'process.env.BB_PREVIEW_UNSET.trim()'))" "$M"
+grep -q 'bakers-ddev preview' "$M" || fail "throwing file: no marked lines to remove: $(cat "$M")"
+env -u BB_PREVIEW_UNSET node "$SCRIPT" none "$M" >"$OUT" 2>&1 || fail "none exit $?: $(cat "$OUT")"
+cmp -s "$M" "$SCRATCH/throws" || fail "none kept marked lines in a file that throws: $(diff "$SCRATCH/throws" "$M")"
+grep -q 'set for none' "$OUT" || fail "none on a throwing file: $(cat "$OUT")"
+pass "none removes the marked lines from a file that does not import here"
 
 # --- F6: client selection in install.sh ------------------------------------
 # Every tool install.sh checks for is a stub, so only the preview section acts.

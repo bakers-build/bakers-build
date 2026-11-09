@@ -187,7 +187,8 @@ function main() {
   mkdirSync(dir, { recursive: true });
   const text = exists ? readFileSync(path, 'utf8') : NEW_FILE;
   const base = unmarked(text);
-  const own = load(base, dir);
+  // none only removes lines this script marked, so it needs no import of a file this environment may not load.
+  const own = transport === 'none' ? {} : load(base, dir);
   if (!own) return log(`${path} does not load; left unchanged`);
   const next = transport === 'none' ? base : edit(base, transport, own);
   if (next === null || (exists && next === text)) return;
