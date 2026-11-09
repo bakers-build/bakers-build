@@ -90,6 +90,11 @@ for getter in ("_slack_allowed_channels", "_slack_free_response_channels"):
     assert callable(getattr(SlackAdapter, getter, None)), f"SlackAdapter.{getter} is gone"
 assert "channel_prompts" in inspect.getsource(resolve_channel_prompt), "resolve_channel_prompt no longer reads channel_prompts"
 assert callable(getattr(PluginContext, "register_platform_handler", None)), "PluginContext.register_platform_handler is gone"
+import gateway.session_unattended_unknown as unattended
+from gateway.session_authority import SessionAuthority
+lost = {"status": "unknown", "principal_id": "slack:U1", "payload": {}}
+assert unattended._unattended_unknown([lost]) == [lost], "a requester's lost turn is not settled: bot-channels did not take over _unattended_unknown"
+assert "settle_unattended_unknown" in inspect.getsource(SessionAuthority._claim_with_retry), "SessionAuthority._claim_with_retry no longer settles a lost turn"
 print("plugin seams: ok")
 PY
   )
