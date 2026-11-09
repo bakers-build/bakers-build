@@ -186,11 +186,11 @@ pass "every user in the allowed channels unless SLACK_ALLOWED_USERS is set"
 # The poller and the plugin relay; they never call a model. One exception: the plugin's
 # language.py asks it which language the service account's background names, and takes back
 # nothing but a validated code.
-LANG="$BOT/plugins/bot-channels/language.py"
-if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/lib" "$BOT/plugins" ":!$LANG"; then
-  fail "poller, client or plugin call an LLM outside $LANG"
+LANG_PY="$BOT/plugins/bot-channels/language.py"
+if git grep --untracked -nIiE 'anthropic|openai|api\.claude|/v1/messages|completions' -- "$BOT/poller" "$BOT/lib" "$BOT/plugins" ":!$LANG_PY"; then
+  fail "poller, client or plugin call an LLM outside $LANG_PY"
 fi
-grep -qF 'parse_code(ask(' "$LANG" || fail "$LANG does not validate the model's answer with parse_code"
+grep -qF 'parse_code(ask(' "$LANG_PY" || fail "$LANG_PY does not validate the model's answer with parse_code"
 pass "poller, client and plugin make no LLM call but the validated language read"
 
 grep -qF "the language your channel's trusted line names; German when it names none" "$SOUL" \
