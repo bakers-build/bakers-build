@@ -120,18 +120,32 @@ export default {
 
 Conductor core:
 
-1. Before each run, fetch each locked commit into a content-addressed cache (`~/.bakers/cache/plugins/<sha>`, read-only) unless it is already there, and verify it against the lock. A missing entry, a moved `ref` or a hash mismatch fails the run start.
-2. Call the agent addon's `installPlugins(lock, checkouts)`. It returns the launch environment and flags.
+1. Before each run, fetch each locked commit into a content-addressed cache (`~/.cache/bakers/plugins/<sha>`, read-only) unless it is already there, and verify it against the lock. A missing entry, a moved `ref` or a hash mismatch fails the run start.
+2. Call the agent addon's `installPlugins(lockedPlugins, runHome) → { env, args }`. The conductor knows nothing else about the harness.
 3. Record the locked commits in the run record.
 4. Fail the run start when a skill named by `WORKFLOW.md` or the ticket's recipe is missing from the installed set.
 
+**Every security mode.** `installPlugins` runs in every mode (`sandbox`, `system`, `custom`, `yolo`): the mode decides what the agent may do, the plugin set decides what it has, and that set is the same for every run of the project. The install runs in the addon before launch, outside the agent's sandbox, so the mode does not affect it. It can be switched off per agent (`plugins: false` in the agent's options); the agent then starts with its normal home and whatever is installed there, and the run start says so.
+
+**Homes.** A harness writes runtime state into its home as well as plugins (the Codex run home held SQLite databases, sessions and logs), so two runs must never share a writable home. Two levels:
+
+| Level | Path | Content | Lifetime |
+|---|---|---|---|
+| Plugin state, per harness and lock hash | `~/.cache/bakers/agent-homes/<harness>/<lock-hash>/` | the plugins as the harness's own install command lays them out | built once, then read-only; shared by every run with the same lock |
+| Run home, per run | `<worktree>/.bakers/agent-home/<harness>/` (in `info/exclude`) | links to the plugin state, a link to the credential file in the user's real home, folder trust for this worktree, and the run's own sessions, databases and transcript | the run; removed with the worktree |
+
+- **Parallel versions:** different lock states (two projects, or two branches of one project) have different hashes, so their plugin states sit side by side and their runs never meet.
+- **Readable in the sandbox:** both levels stay outside `~/.bakers`, which the agent sandbox denies reading. Agents read skill files and run skill scripts from the sandbox (Codex read `SKILL.md` with a shell command in the proof).
+- **Transcripts:** the addon reads the run's transcript from the run home at a known path (`getRunLog`, `sessionExists`), instead of scanning `~/.claude/projects` or `~/.codex/sessions`.
+- **Not yet proven:** two concurrent runs at different lock states, and whether each harness accepts linked instead of copied plugin directories. Follow-ups 3 and 4 prove both per harness.
+
 Each agent addon implements `installPlugins`. Its pieces:
 
-- **Home:** one per harness and lock hash, `~/.bakers/cache/agent-homes/<harness>/<lock-hash>/`. It is built once and reused by every run with the same lock.
-- **Install:** the harness's own command, from the local cached checkout, with no network.
+- **Install:** the harness's own command into the plugin state, from the local cached checkout, with no network.
 - **Login:** link only the harness's credential file from the user's real home. Nothing else from the user's home is visible.
 - **Trust:** pre-grant folder trust for the run's worktree. Both harnesses stopped at a trust prompt in the proof.
-- **Transcripts:** the addon reads the run's transcript from the run home (`getRunLog`, `sessionExists`).
+
+**Standard tool or own code.** `installPlugins` is the abstraction, and a standard tool can sit behind it where one fits. dotagents is the closest. It installs into one home directory, which fits a run home if it honours a redirected home. It does not carry hooks to Codex, and its project mode writes project config, which Codex ignores for plugins (round 2). The harness's own install commands are proven for Codex and Claude Code. dotagents is evaluated as a backend in follow-up 6; nothing in the contract depends on it.
 
 | Addon | Home | Install | Hooks | Proof |
 |---|---|---|---|---|
@@ -148,8 +162,8 @@ A plugin that ships no manifest for a harness falls back to option 1 on it: its 
 
 1. Conductor `plugins` slot: project declaration, `plugins.lock.json` and the lock command, verified cache, run-record commit, `installPlugins` call.
 2. Required-skill check: fail the run start when a skill named by `WORKFLOW.md` or the recipe is missing.
-3. `installPlugins` in the claude and codex addons: run-scoped home, credential link, trust pre-grant, transcript paths; Codex with `--dangerously-bypass-hook-trust`.
-4. `installPlugins` in the pi, opencode, grok and kimi addons, each with its proof.
+3. `installPlugins` in the claude and codex addons: plugin state and run home, credential link, trust pre-grant, transcript paths, `plugins: false`; Codex with `--dangerously-bypass-hook-trust`. Proof includes two concurrent runs at different lock states.
+4. `installPlugins` in the pi, opencode, grok and kimi addons, each with the same proof.
 5. Ship the `bakers` skills through the `plugins` list at a pinned version instead of the per-machine `bakers@bakers` plugin; add the manifests other harnesses need; replace its three `bakers:` references with bare names.
 6. Evaluate dotagents as the per-harness projector before writing installs by hand.
 7. Install docs: `docs/skills-and-workflows/skills.md` names the `plugins` list and lock and drops per-machine installs for runs.
