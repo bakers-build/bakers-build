@@ -467,7 +467,7 @@ resource "coder_agent" "main" {
   metadata {
     display_name = "PM bot"
     key          = "pm_bot"
-    script       = "bash /usr/local/share/bakers-ddev/health.sh pm-bot"
+    script       = "bash /usr/local/share/keytec-coder/health.sh pm-bot"
     interval     = 10
     timeout      = 2
   }
@@ -475,7 +475,7 @@ resource "coder_agent" "main" {
   metadata {
     display_name = "PM bot poller"
     key          = "poller"
-    script       = "bash /usr/local/share/bakers-ddev/health.sh poller"
+    script       = "bash /usr/local/share/keytec-coder/health.sh poller"
     interval     = 10
     timeout      = 2
   }
@@ -483,7 +483,7 @@ resource "coder_agent" "main" {
   metadata {
     display_name = "Conductor"
     key          = "conductor"
-    script       = "bash /usr/local/share/bakers-ddev/health.sh conductor"
+    script       = "bash /usr/local/share/keytec-coder/health.sh conductor"
     interval     = 30
     timeout      = 2
   }
@@ -562,43 +562,43 @@ resource "docker_container" "workspace" {
   # The start script's steps (scripts/install.sh) and the health items, root-owned.
   upload {
     content    = file("${path.module}/scripts/git-setup.sh")
-    file       = "/usr/local/share/bakers-ddev/git-setup.sh"
+    file       = "/usr/local/share/keytec-coder/git-setup.sh"
     executable = true
   }
 
   upload {
     content    = file("${path.module}/scripts/bakers-setup.sh")
-    file       = "/usr/local/share/bakers-ddev/bakers-setup.sh"
+    file       = "/usr/local/share/keytec-coder/bakers-setup.sh"
     executable = true
   }
 
   upload {
     content    = file("${path.module}/scripts/projects.sh")
-    file       = "/usr/local/share/bakers-ddev/projects.sh"
+    file       = "/usr/local/share/keytec-coder/projects.sh"
     executable = true
   }
 
   upload {
     content    = file("${path.module}/scripts/frp-setup.sh")
-    file       = "/usr/local/share/bakers-ddev/frp-setup.sh"
+    file       = "/usr/local/share/keytec-coder/frp-setup.sh"
     executable = true
   }
 
   upload {
     content    = file("${path.module}/scripts/frp-config.mjs")
-    file       = "/usr/local/share/bakers-ddev/frp-config.mjs"
+    file       = "/usr/local/share/keytec-coder/frp-config.mjs"
     executable = true
   }
 
   upload {
     content    = file("${path.module}/scripts/machine-config.mjs")
-    file       = "/usr/local/share/bakers-ddev/machine-config.mjs"
+    file       = "/usr/local/share/keytec-coder/machine-config.mjs"
     executable = true
   }
 
   upload {
     content    = file("${path.module}/scripts/health.sh")
-    file       = "/usr/local/share/bakers-ddev/health.sh"
+    file       = "/usr/local/share/keytec-coder/health.sh"
     executable = true
   }
 

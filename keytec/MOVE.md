@@ -1,6 +1,6 @@
 # Moving this folder to keytec/infra
 
-This folder holds keytec's bakers-ddev Coder image and template. It was built in the bakers.build repository and belongs in `git.key-tec.de/keytec/infra`, whose layout it mirrors. The template is forked from bakers.build's `coder/bakers-ddev` at `0633e1e4d21ee420a1d0fc3eae2114750eb103bd`; later changes there reach this fork only by a manual diff:
+This folder holds the keytec-coder Coder image and template. It was built in the bakers.build repository and belongs in `git.key-tec.de/keytec/infra`, whose layout it mirrors. The template is forked from bakers.build's `coder/bakers-ddev` at `0633e1e4d21ee420a1d0fc3eae2114750eb103bd`; later changes there reach this fork only by a manual diff:
 
 ```sh
 git -C <bakers-build> diff 0633e1e4d21ee420a1d0fc3eae2114750eb103bd..origin/next -- coder/bakers-ddev
@@ -18,11 +18,11 @@ Every file keeps its path below `keytec/`:
 | `keytec/coder/images/keytec-coder/files/managed-settings.json` | `coder/images/keytec-coder/files/managed-settings.json` |
 | `keytec/coder/images/keytec-coder/files/codex-config.toml` | `coder/images/keytec-coder/files/codex-config.toml` |
 | `keytec/coder/images/keytec-coder/files/smoke.sh` | `coder/images/keytec-coder/files/smoke.sh` |
-| `keytec/coder/templates/bakers-ddev/template.tf` | `coder/templates/bakers-ddev/template.tf` |
-| `keytec/coder/templates/bakers-ddev/README.md` | `coder/templates/bakers-ddev/README.md` |
-| `keytec/coder/templates/bakers-ddev/pm-bot.compose.yaml` | `coder/templates/bakers-ddev/pm-bot.compose.yaml` |
-| `keytec/coder/templates/bakers-ddev/scripts/*` (install.sh, git-setup.sh, bakers-setup.sh, projects.sh, frp-setup.sh, frp-config.mjs, machine-config.mjs, health.sh, pm-bot.sh, conductors.sh) | `coder/templates/bakers-ddev/scripts/` |
-| `keytec/coder/templates/bakers-ddev/tests/*` (run.sh, lib.sh, *.test.sh, template.tftest.hcl) | `coder/templates/bakers-ddev/tests/` |
+| `keytec/coder/templates/keytec-coder/template.tf` | `coder/templates/keytec-coder/template.tf` |
+| `keytec/coder/templates/keytec-coder/README.md` | `coder/templates/keytec-coder/README.md` |
+| `keytec/coder/templates/keytec-coder/pm-bot.compose.yaml` | `coder/templates/keytec-coder/pm-bot.compose.yaml` |
+| `keytec/coder/templates/keytec-coder/scripts/*` (install.sh, git-setup.sh, bakers-setup.sh, projects.sh, frp-setup.sh, frp-config.mjs, machine-config.mjs, health.sh, pm-bot.sh, conductors.sh) | `coder/templates/keytec-coder/scripts/` |
+| `keytec/coder/templates/keytec-coder/tests/*` (run.sh, lib.sh, *.test.sh, template.tftest.hcl) | `coder/templates/keytec-coder/tests/` |
 | `keytec/MOVE.md` | not copied; this guide |
 
 ```sh
@@ -52,7 +52,7 @@ Merge to `main` and take the `image = …@sha256:…` line from the job log. Bef
 docker login git.key-tec.de:5050
 cd coder/images/keytec-coder
 docker build --platform linux/amd64 -t git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0 .
-docker run --rm --platform linux/amd64 git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0 /usr/local/share/bakers-ddev/smoke.sh
+docker run --rm --platform linux/amd64 git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0 /usr/local/share/keytec-coder/smoke.sh
 docker push git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0
 docker inspect --format '{{index .RepoDigests 0}}' git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0
 ```
@@ -61,7 +61,7 @@ docker inspect --format '{{index .RepoDigests 0}}' git.key-tec.de:5050/keytec/in
 
 ```sh
 docker buildx imagetools inspect ghcr.io/bakers-build/bakers-build/pm-bot:<tag> --format '{{.Manifest.Digest}}'
-coder templates push bakers-ddev -d coder/templates/bakers-ddev \
+coder templates push keytec-coder -d coder/templates/keytec-coder \
   --variable image=git.key-tec.de:5050/keytec/infra/keytec-coder:1.0.0@sha256:<digest> \
   --variable pm_bot_image=ghcr.io/bakers-build/bakers-build/pm-bot:<tag>@sha256:<digest>
 ```
@@ -80,10 +80,10 @@ Fill these parameters (sensitive ones are masked):
 | `bakers_client_id`, `bakers_client_secret` | The box's bakers.build OAuth client (client credentials) |
 | `projects` | HTTPS URLs of the projects to check out |
 | `frp_enrollment` | The box's `bkfrp1.…` string: base64url JSON `{"server":"frps.preview.bakers.build","port":7000,"zone":"frps.preview.bakers.build","user":"<box>","token":"<from Vault secret/infrastructure/frp>"}` until `bakers ports setup frp` exists |
-| `pm_bot_*` | As in the [template README › PM bot](coder/templates/bakers-ddev/README.md#pm-bot) |
+| `pm_bot_*` | As in the [template README › PM bot](coder/templates/keytec-coder/README.md#pm-bot) |
 
 ```sh
-coder create <box> --template bakers-ddev   # the form asks for the parameters
+coder create <box> --template keytec-coder   # the form asks for the parameters
 ```
 
 ## 6. Defaults to check

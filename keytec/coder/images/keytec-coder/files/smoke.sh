@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # In-image smoke test (README › Build): every tool answers with its pinned version, glab can serve
 # git credentials, and Playwright launches Chromium headless from the image without a download.
-#   docker run --rm <image> /usr/local/share/bakers-ddev/smoke.sh
+#   docker run --rm <image> /usr/local/share/keytec-coder/smoke.sh
 set -uo pipefail
 status=0
 expect() { # expect NAME PATTERN COMMAND...

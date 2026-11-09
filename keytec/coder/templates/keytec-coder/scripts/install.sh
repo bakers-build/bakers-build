@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Coder agent startup script of the keytec bakers-ddev template: configures, installs nothing. Every
+# Coder agent startup script of the keytec-coder template: configures, installs nothing. Every
 # tool comes from the image at a pinned version (keytec/coder/images/keytec-coder); a version bump is
 # a new image. Each step logs its own lines and never fails the start.
 set -uo pipefail
 
-S=/usr/local/share/bakers-ddev
+S=/usr/local/share/keytec-coder
 
 bash "$S/git-setup.sh"
 bash "$S/bakers-setup.sh"
@@ -18,7 +18,7 @@ node "$S/machine-config.mjs" ${zone:+--frp "$zone"}
 
 # Codex settings from the image, only when the home has none.
 if [ ! -f "$HOME/.codex/config.toml" ]; then
-  mkdir -p "$HOME/.codex" && cp /usr/local/share/bakers-ddev/codex-config.toml "$HOME/.codex/config.toml" &&
+  mkdir -p "$HOME/.codex" && cp /usr/local/share/keytec-coder/codex-config.toml "$HOME/.codex/config.toml" &&
     echo "codex: config.toml written"
 fi
 

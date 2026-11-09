@@ -62,8 +62,8 @@ RUN playwright install --with-deps chromium \
 ENV DISABLE_AUTOUPDATER=1
 
 COPY files/managed-settings.json /etc/claude-code/managed-settings.json
-COPY files/codex-config.toml files/smoke.sh /usr/local/share/bakers-ddev/
-RUN chmod 644 /etc/claude-code/managed-settings.json /usr/local/share/bakers-ddev/codex-config.toml \
-  && chmod 755 /usr/local/share/bakers-ddev/smoke.sh
+COPY files/codex-config.toml files/smoke.sh /usr/local/share/keytec-coder/
+RUN chmod 644 /etc/claude-code/managed-settings.json /usr/local/share/keytec-coder/codex-config.toml \
+  && chmod 755 /usr/local/share/keytec-coder/smoke.sh
 
 USER coder

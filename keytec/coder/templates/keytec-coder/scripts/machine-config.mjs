@@ -13,7 +13,7 @@ import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync 
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-const MARK = '// bakers-ddev keytec';
+const MARK = '// keytec-coder';
 const BEGIN = `${MARK}: begin`;
 const END = `${MARK}: end`;
 const PORTS = '@bakers-build/addon-ports';

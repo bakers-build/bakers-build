@@ -1,6 +1,6 @@
 # keytec-coder workspace image
 
-The image of the [keytec bakers-ddev template](../../templates/bakers-ddev/README.md): `coder-drupal-ddev-base` plus every tool a bakers.build box runs, installed as root under `/usr/local` at pinned versions. The home volume holds data only, so a rebuild keeps tools and versions as the image has them.
+The image of the [keytec-coder template](../../templates/keytec-coder/README.md): `coder-drupal-ddev-base` plus every tool a bakers.build box runs, installed as root under `/usr/local` at pinned versions. The home volume holds data only, so a rebuild keeps tools and versions as the image has them.
 
 | Tool | Pin (`ARG`) | Installed as |
 |---|---|---|
@@ -18,8 +18,8 @@ DDEV, Docker, Node 22 and the entrypoint come from the base (`BASE_IMAGE`, defau
 The image also carries:
 
 - `/etc/claude-code/managed-settings.json` ([`files/managed-settings.json`](files/managed-settings.json)): the keytec, bakers and mattpocock marketplaces, the enabled plugins and `DISABLE_AUTOUPDATER`. Managed settings win over a user's own.
-- `/usr/local/share/bakers-ddev/codex-config.toml`: copied to `~/.codex/config.toml` by the start script when missing.
-- `/usr/local/share/bakers-ddev/smoke.sh`: checks every tool's version and launches Chromium headless.
+- `/usr/local/share/keytec-coder/codex-config.toml`: copied to `~/.codex/config.toml` by the start script when missing.
+- `/usr/local/share/keytec-coder/smoke.sh`: checks every tool's version and launches Chromium headless.
 
 Nothing updates itself on start (`DISABLE_AUTOUPDATER=1`, no installer in the start script).
 
@@ -28,7 +28,7 @@ Nothing updates itself on start (`DISABLE_AUTOUPDATER=1`, no installer in the st
 ```sh
 cd coder/images/keytec-coder
 docker build --platform linux/amd64 -t keytec-coder:dev .
-docker run --rm --platform linux/amd64 keytec-coder:dev /usr/local/share/bakers-ddev/smoke.sh
+docker run --rm --platform linux/amd64 keytec-coder:dev /usr/local/share/keytec-coder/smoke.sh
 ```
 
 The build needs pull access to `git.key-tec.de:5050`. CI runs the same build and smoke test, pushes the image and reports its digest ([`ci/keytec-coder.gitlab-ci.yml`](../../../ci/keytec-coder.gitlab-ci.yml)).

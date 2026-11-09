@@ -1,4 +1,4 @@
-# keytec bakers-ddev Coder template
+# keytec-coder Coder template
 
 keytec's bakers.build worker box: one long-lived Coder workspace that comes up signed in and working on its first start. The [image](../../images/keytec-coder/) carries every tool at a pinned version; this template only configures. Forked from bakers.build's [`coder/bakers-ddev`](https://github.com/bakers-build/bakers-build/blob/next/coder/bakers-ddev) ([MOVE.md](../../../MOVE.md) names the revision).
 
@@ -41,7 +41,7 @@ Set them at push time with `--variable name=value`. A push needs only the two di
 ## Push
 
 ```sh
-coder templates push bakers-ddev -d coder/templates/bakers-ddev \
+coder templates push keytec-coder -d coder/templates/keytec-coder \
   --variable image=git.key-tec.de:5050/keytec/infra/keytec-coder:<tag>@sha256:<digest> \
   --variable pm_bot_image=ghcr.io/bakers-build/bakers-build/pm-bot:<tag>@sha256:<digest>
 ```
@@ -91,7 +91,7 @@ A malformed string writes nothing and logs `frp: enrollment malformed`. Empty: n
 
 ## Machine config
 
-[`scripts/machine-config.mjs`](scripts/machine-config.mjs) owns these entries of `~/.bakers/machine.config.js` and marks each line with `// bakers-ddev keytec`: the `@bakers-build/addon-claude` and `@bakers-build/addon-codex` addons, and with FRP the `@bakers-build/addon-ports` entry over frp and `tunnel: true`. Every other line stays; an entry or `tunnel` key you wrote yourself wins. A missing file is created with a new `machine_id` and the workspace name as label (mode 0600). A file that does not load, or whose `addons` list is not written as `addons: [` on its own line, stays untouched and the log names what to add by hand. Cursor is installed but not registered as an agent.
+[`scripts/machine-config.mjs`](scripts/machine-config.mjs) owns these entries of `~/.bakers/machine.config.js` and marks each line with `// keytec-coder`: the `@bakers-build/addon-claude` and `@bakers-build/addon-codex` addons, and with FRP the `@bakers-build/addon-ports` entry over frp and `tunnel: true`. Every other line stays; an entry or `tunnel` key you wrote yourself wins. A missing file is created with a new `machine_id` and the workspace name as label (mode 0600). A file that does not load, or whose `addons` list is not written as `addons: [` on its own line, stays untouched and the log names what to add by hand. Cursor is installed but not registered as an agent.
 
 ## Health
 
@@ -183,7 +183,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 Channel and member IDs are separated by spaces, commas or both. On the command line, quote the list and separate it with spaces:
 
 ```sh
-coder create pm --template bakers-ddev \
+coder create pm --template keytec-coder \
   --parameter pm_bot_slack_bot_token=xoxb-… \
   --parameter pm_bot_slack_app_token=xapp-… \
   --parameter "pm_bot_slack_allowed_channels=C0123456789" \
@@ -213,7 +213,7 @@ pm_bot_image=ghcr.io/bakers-build/bakers-build/pm-bot:<tag>@sha256:<digest>
 Push the template with it, then update or restart each workspace. The package is public, so the registry variables stay empty:
 
 ```sh
-coder templates push bakers-ddev -d coder/templates/bakers-ddev \
+coder templates push keytec-coder -d coder/templates/keytec-coder \
   --variable pm_bot_image=ghcr.io/bakers-build/bakers-build/pm-bot:<tag>@sha256:<digest>
 ```
 

@@ -1,4 +1,4 @@
-# The PM bot in a bakers-ddev workspace (README › PM bot). scripts/pm-bot.sh brings it up on
+# The PM bot in a keytec-coder workspace (README › PM bot). scripts/pm-bot.sh brings it up on
 # every start with docker compose -p pm-bot, setting the PM_BOT_* variables below:
 #   PM_BOT_IMAGE  the pinned bot image (template variable pm_bot_image, tag and digest)
 #   PM_BOT_DATA   ~/.pm-bot/data: Hermes' home with sessions, memories and the env file
