@@ -241,3 +241,17 @@ Feature: bakers.build sign-up
     And I try to create the workspace "Teamless GmbH" without a team name
     Then the address is "/home/new-workspace"
     And no workspace is slugged "teamless-gmbh" in the database
+
+  Scenario: Creating a workspace can create the first project in the same step
+    Given no project "Builder App" and no group "Builder Crew" exist
+    And no account exists for "builder@example.com"
+    And no workspace is slugged "builder-gmbh"
+    When I open anonymous login
+    And I request an login link for "builder@example.com"
+    And I follow the login link for "builder@example.com"
+    Then the identity step is present
+    When I continue from the identity step
+    And I finish the onboarding wizard
+    And I create the workspace "Builder GmbH" with the first project "Builder App" from "https://example.com/acme/builder.git" in the group "Builder Crew"
+    Then I land on the new project "Builder App"
+    And the project "Builder App" is in the group "Builder Crew" of the workspace "builder-gmbh"

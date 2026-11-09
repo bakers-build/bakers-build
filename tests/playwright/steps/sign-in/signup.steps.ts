@@ -572,3 +572,45 @@ When('I exercise isolated login throttling', async ({ page, baseURL }) => {
         clearLoginFloodFor(address);
     }
 });
+
+/** The create form offers a first project; Yes shows its fields and lands on the new project. */
+When(
+    'I create the workspace {string} with the first project {string} from {string} in the group {string}',
+    async ({ page }, name: string, project: string, repository: string, group: string) => {
+        before = provisionState(lastAddress);
+        if (new URL(page.url()).pathname !== '/home/new-workspace') {
+            const openNav = page.waitForNavigation({ waitUntil: 'load' });
+            await page.getByRole('link', { name: 'Create a new workspace', exact: true }).click();
+            await openNav;
+        }
+        await page.getByLabel('Workspace name', { exact: true }).fill(name);
+        await page.getByLabel('Team name', { exact: true }).fill('Core Team');
+        await page.getByLabel('Yes', { exact: true }).check();
+        await page.getByLabel('Project name', { exact: true }).fill(project);
+        await page.getByLabel('Repository URL', { exact: true }).fill(repository);
+        await page.getByLabel('Group name', { exact: true }).fill(group);
+        const navigation = page.waitForNavigation({ waitUntil: 'load' });
+        await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+        lastResponse = await navigation;
+    },
+);
+
+Then('I land on the new project {string}', async ({ page }, project: string) => {
+    await expect(page).toHaveURL(/\/project\//);
+    await expect(page.getByRole('heading', { name: project }).first()).toBeVisible();
+});
+
+Then('the project {string} is in the group {string} of the workspace {string}', async ({}, project: string, group: string, slug: string) => {
+    const php = `$etm = \\Drupal::entityTypeManager(); $p = current($etm->getStorage("bb_project")->loadByProperties(["name" => "${project}"])); $w = current($etm->getStorage("bb_workspace")->loadByProperties(["slug" => "${slug}"])); print json_encode($p ? ["group" => $p->get("group_id")->entity->label(), "ws" => (string) $p->get("group_id")->entity->get("workspace_id")->target_id === (string) $w->id(), "teams" => array_map(fn ($t) => $t->label(), $p->get("teams")->referencedEntities())] : null);`;
+    const found = JSON.parse(Drush.exec(`ev '${php}'`).trim()) as { group: string; ws: boolean; teams: string[] } | null;
+    expect(found, 'The project was not created').not.toBeNull();
+    expect(found!.group).toBe(group);
+    expect(found!.ws).toBe(true);
+    expect(found!.teams).toEqual(['Core Team']);
+});
+
+/** So a re-run starts clean: key and name collisions would otherwise refuse the project. */
+Given('no project {string} and no group {string} exist', async ({}, project: string, group: string) => {
+    const php = `$etm = \\Drupal::entityTypeManager(); foreach ($etm->getStorage("bb_project")->loadByProperties(["name" => "${project}"]) as $p) { $p->delete(); } foreach ($etm->getStorage("bb_group")->loadByProperties(["name" => "${group}"]) as $g) { $g->delete(); }`;
+    Drush.exec(`ev '${php}'`);
+});

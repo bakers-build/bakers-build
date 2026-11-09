@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Config\FileStorage;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\file\Entity\File;
@@ -75,7 +76,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    foreach (['user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_invite'] as $type) {
+    foreach (['user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_group', 'bb_project', 'bb_invite'] as $type) {
       $this->installEntitySchema($type);
     }
     $this->installConfig(['system', 'user']);
@@ -339,22 +340,8 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    * draft entity.
    */
   public function testCreateFormKeepsDescriptionAndImage(): void {
-    // The private stream wrapper registers only on a container built with
-    // its path set.
-    $this->setSetting('file_private_path', $this->siteDirectory . '/private');
-    $this->container->get('kernel')->rebuildContainer();
-    $this->container->get('stream_wrapper_manager')->register();
-    foreach (['file', 'crop', 'bb_group', 'bb_project'] as $type) {
-      $this->installEntitySchema($type);
-    }
-    $this->installSchema('file', ['file_usage']);
-    $path = $this->container->get('extension.list.module')->getPath('bb_core');
-    $mode = (new FileStorage($path . '/config/install'))->read('core.entity_form_mode.bb_workspace.settings');
-    self::assertIsArray($mode);
+    $this->prepareCreateForm();
     $entity_type_manager = $this->container->get('entity_type.manager');
-    $entity_type_manager->getStorage('entity_form_mode')->create($mode)->save();
-    $this->installShippedFormDisplays('bb_workspace.bb_workspace.settings');
-    $this->setCurrentUser($this->operator);
 
     // A fresh upload: private, temporary and owned by the person creating
     // the workspace, as the image widget leaves it before the form is saved.
@@ -387,6 +374,91 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
   }
 
   /**
+   * Yes creates the group and project with the workspace and lands on it.
+   */
+  public function testCreateFormCanCreateTheFirstProject(): void {
+    $this->prepareCreateForm();
+    $form_state = (new FormState())->setValues([
+      'name' => [['value' => 'Project Co']],
+      'team_name' => 'Core Team',
+      'first_project' => 'yes',
+      'project_name' => 'Bakery App',
+      'repository_url' => 'https://example.com/acme/bakery.git',
+      'group_name' => 'Platform',
+      'op' => 'Create workspace',
+    ]);
+    $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
+    self::assertSame([], array_map('strval', $form_state->getErrors()));
+    self::assertSame([], array_map('strval', $this->container->get('messenger')->messagesByType('error')));
+
+    $projects = $this->container->get('entity_type.manager')->getStorage('bb_project')->loadByProperties(['name' => 'Bakery App']);
+    self::assertCount(1, $projects);
+    $project = reset($projects);
+    self::assertInstanceOf(ContentEntityInterface::class, $project);
+    self::assertSame('Platform', $project->get('group_id')->entity->label());
+    self::assertSame(['Core Team'], array_map(static fn ($team) => $team->label(), $project->get('teams')->referencedEntities()));
+  }
+
+  /**
+   * An invalid first project keeps the workspace from being created at all.
+   */
+  public function testInvalidFirstProjectCreatesNoWorkspace(): void {
+    $this->prepareCreateForm();
+    $before = $this->counts();
+    $form_state = (new FormState())->setValues([
+      'name' => [['value' => 'Doomed Co']],
+      'team_name' => 'Core Team',
+      'first_project' => 'yes',
+      'project_name' => 'Bakery App',
+      'repository_url' => 'not a url',
+      'group_name' => 'Platform',
+      'op' => 'Create workspace',
+    ]);
+    $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
+
+    self::assertSame($before, $this->counts(), 'Nothing is created when the project is invalid.');
+    self::assertNotEmpty($this->container->get('messenger')->messagesByType('error'));
+  }
+
+  /**
+   * Yes without the project's fields is refused on those fields.
+   */
+  public function testYesNeedsTheProjectFields(): void {
+    $this->prepareCreateForm();
+    $form_state = (new FormState())->setValues([
+      'name' => [['value' => 'Empty Co']],
+      'team_name' => 'Core Team',
+      'first_project' => 'yes',
+      'op' => 'Create workspace',
+    ]);
+    $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
+
+    self::assertEqualsCanonicalizing(['project_name', 'repository_url', 'group_name'], array_keys($form_state->getErrors()));
+  }
+
+  /**
+   * Installs what the workspace create form needs to render and submit.
+   */
+  private function prepareCreateForm(): void {
+    // The private stream wrapper registers only on a container built with
+    // its path set.
+    $this->setSetting('file_private_path', $this->siteDirectory . '/private');
+    $this->container->get('kernel')->rebuildContainer();
+    $this->container->get('stream_wrapper_manager')->register();
+    foreach (['file', 'crop'] as $type) {
+      $this->installEntitySchema($type);
+    }
+    $this->installSchema('file', ['file_usage']);
+    $path = $this->container->get('extension.list.module')->getPath('bb_core');
+    $mode = (new FileStorage($path . '/config/install'))->read('core.entity_form_mode.bb_workspace.settings');
+    self::assertIsArray($mode);
+    $entity_type_manager = $this->container->get('entity_type.manager');
+    $entity_type_manager->getStorage('entity_form_mode')->create($mode)->save();
+    $this->installShippedFormDisplays('bb_workspace.bb_workspace.settings');
+    $this->setCurrentUser($this->operator);
+  }
+
+  /**
    * How many of each entity exist right now.
    *
    * @return array<string, int>
@@ -394,7 +466,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    */
   private function counts(): array {
     $counts = [];
-    foreach (['user', 'bb_workspace', 'bb_team', 'og_membership'] as $type) {
+    foreach (['user', 'bb_workspace', 'bb_team', 'bb_group', 'bb_project', 'og_membership'] as $type) {
       $counts[$type] = (int) $this->container->get('entity_type.manager')
         ->getStorage($type)->getQuery()->accessCheck(FALSE)->count()->execute();
     }

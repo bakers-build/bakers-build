@@ -100,6 +100,17 @@ final class BbRankCapability implements BbRankCapabilityInterface {
   /**
    * {@inheritdoc}
    */
+  public function reset(?int $uid = NULL): void {
+    if ($uid === NULL) {
+      $this->permissions = [];
+      return;
+    }
+    unset($this->permissions[$uid]);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function hasSiteWidePermission(AccountInterface $account, string $permission): bool {
     $machine_answer = $this->machineScopeAnswer($account, $permission);
     if ($machine_answer !== NULL) {

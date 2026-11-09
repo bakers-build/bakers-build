@@ -56,7 +56,7 @@
         {# A multi-step flow shows where the reader is, in the corner of the form area: one segment per step, and the position as text
            (`aria-current` so a screen reader hears it once; the segments are decoration). #}
         {% if progress or steps %}
-          <div class="gate__progress absolute top-gutter right-gutter lg:top-section lg:right-section flex items-center gap-inline">
+          <div class="gate__progress self-end lg:absolute lg:top-section lg:right-section flex items-center gap-inline">
             {% if steps %}
               <ol aria-hidden="true" class="flex gap-inline-xs m-0 p-0 list-none">
                 {% for step in steps %}<li class="h-1 w-6 rounded-full {{ step.state == 'upcoming' ? 'bg-border' : 'bg-text' }}"></li>{% endfor %}

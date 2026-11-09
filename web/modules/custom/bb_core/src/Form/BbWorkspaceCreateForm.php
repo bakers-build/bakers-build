@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Form;
 
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Onboarding\FirstProjectCreator;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\bb_core\Workspace\WorkspaceSlugDeriver;
 use Drupal\user\UserInterface;
@@ -43,6 +46,10 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
    * @param \Drupal\bb_core\Workspace\WorkspaceSlugDeriver $slugDeriver
    *   Derives the slug for ::buildEntity()'s validation pass; the same
    *   stateless class the provisioner uses for the actual save.
+   * @param \Drupal\Core\Database\Connection $database
+   *   Carries the one transaction around the workspace and its first project.
+   * @param \Drupal\bb_core\Onboarding\FirstProjectCreator $firstProject
+   *   Creates the optional first group and project.
    */
   public function __construct(
     EntityRepositoryInterface $entityRepository,
@@ -53,6 +60,8 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // properties visible to its own scope.
     protected WorkspaceProvisioner $provisioner,
     protected WorkspaceSlugDeriver $slugDeriver,
+    protected Connection $database,
+    protected FirstProjectCreator $firstProject,
   ) {
     parent::__construct($entityRepository, $entityTypeBundleInfo, $time);
   }
@@ -68,6 +77,8 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
       $container->get('datetime.time'),
       $container->get('bb_core.workspace_provisioner'),
       $container->get('bb_core.workspace_slug_deriver'),
+      $container->get('database'),
+      $container->get('bb_core.onboarding_first_project'),
     );
     // A PLAIN `_form` ROUTE, NOT `_entity_form`: nothing else wires the
     // services `EntityForm` needs or hands this form an entity to work on, so
@@ -128,6 +139,43 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
       '#required_error' => $this->t('Enter a team name.'),
       '#maxlength' => 255,
     ];
+    // THE FIRST PROJECT IS OFFERED HERE because a new account has no workspace
+    // while it is in the onboarding wizard, so this is where it can be asked.
+    // Later is the default: the fields stay hidden and nothing is created.
+    $form['first_project'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Create your first project now?'),
+      '#options' => [
+        'yes' => $this->t('Yes'),
+        'later' => $this->t('Later'),
+      ],
+      '#default_value' => 'later',
+      // After the settings fields, just above the action row (weight 100).
+      '#weight' => 50,
+    ];
+    $visible = ['visible' => [':input[name="first_project"]' => ['value' => 'yes']]];
+    $form['project_name'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Project name'),
+      '#maxlength' => 255,
+      '#weight' => 51,
+      '#states' => $visible,
+    ];
+    $form['repository_url'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Repository URL'),
+      '#maxlength' => 2048,
+      '#weight' => 52,
+      '#states' => $visible,
+    ];
+    $form['group_name'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Group name'),
+      '#description' => $this->t('A group bundles related projects.'),
+      '#maxlength' => 255,
+      '#weight' => 53,
+      '#states' => $visible,
+    ];
     // Nothing else on the entity is asked about, so nothing else needs a
     // presenter position — nulling `#group`/`#weight` scaffolding a display
     // that shipped no `core.entity_form_display` config might otherwise add.
@@ -177,6 +225,27 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
 
   /**
    * {@inheritdoc}
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state): ContentEntityInterface {
+    $entity = parent::validateForm($form, $form_state);
+    if ($form_state->getValue('first_project') !== 'yes') {
+      return $entity;
+    }
+    $messages = [
+      'project_name' => $this->t('Enter a project name.'),
+      'repository_url' => $this->t('Enter the repository URL.'),
+      'group_name' => $this->t('Enter a group name.'),
+    ];
+    foreach ($messages as $field => $message) {
+      if (trim((string) $form_state->getValue($field, '')) === '') {
+        $form_state->setErrorByName($field, $message);
+      }
+    }
+    return $entity;
+  }
+
+  /**
+   * {@inheritdoc}
    *
    * Not `parent::save()`: a bare save would create the workspace without its
    * team and memberships. `WorkspaceProvisioner::provision()` runs that
@@ -196,10 +265,35 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // An unexpected failure becomes a 500 with the rollback already done, which
     // is honest; a caught throwable rendered as "something went wrong" beside a
     // half-provisioned workspace would not be.
-    $workspace = $this->provisioner->provision($entity->getName(), $account, trim((string) $form_state->getValue('team_name')), [
-      'description' => $entity->get('description')->getValue(),
-      'image' => $entity->get('image')->getValue(),
-    ]);
+    // ONE TRANSACTION AROUND BOTH: the provisioner's own is nested in it, so a
+    // first project that fails validation takes the workspace back with it.
+    $transaction = $this->database->startTransaction();
+    $project = NULL;
+    try {
+      $workspace = $this->provisioner->provision($entity->getName(), $account, trim((string) $form_state->getValue('team_name')), [
+        'description' => $entity->get('description')->getValue(),
+        'image' => $entity->get('image')->getValue(),
+      ]);
+      if ($form_state->getValue('first_project') === 'yes') {
+        $project = $this->firstProject->create(
+          $workspace,
+          $account,
+          trim((string) $form_state->getValue('project_name', '')),
+          trim((string) $form_state->getValue('repository_url', '')),
+          trim((string) $form_state->getValue('group_name', '')),
+        );
+      }
+    }
+    catch (\Throwable $error) {
+      $transaction->rollBack();
+      if (!$error instanceof \InvalidArgumentException) {
+        throw $error;
+      }
+      // Nothing was saved; the typed values stay and the message says why.
+      $this->messenger()->addError($error->getMessage());
+      $form_state->setRebuild();
+      return SAVED_NEW;
+    }
     // The form's own entity now stands for the SAVED one, so a caller reading
     // `$this->getEntity()` after submission sees the real, persisted row
     // rather than the discarded draft `buildEntity()` produced.
@@ -208,6 +302,10 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // Completed accounts creating a workspace stay on the overview. Incomplete
     // accounts never reach this form: the entry guard sends them to the wizard
     // first.
+    if ($project instanceof BbProjectInterface) {
+      $form_state->setRedirectUrl($project->toUrl());
+      return SAVED_NEW;
+    }
     $form_state->setRedirect('bb_core.home');
 
     return SAVED_NEW;
