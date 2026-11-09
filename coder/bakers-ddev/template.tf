@@ -342,6 +342,16 @@ data "coder_parameter" "pm_bot_repo_token" {
   styling      = jsonencode({ mask_input = true })
 }
 
+data "coder_parameter" "conductor_autostart" {
+  name         = "conductor_autostart"
+  display_name = "Start conductors on workspace start"
+  description  = "On: every start runs `bakers oven start` in each ~/projects/* checkout that has .bakers/conductor.config.js (README › Conductor autostart). Off: conductors are yours to start."
+  type         = "bool"
+  default      = "false"
+  mutable      = true
+  order        = 20
+}
+
 resource "coder_agent" "main" {
   arch           = "amd64"
   os             = "linux"
@@ -362,6 +372,8 @@ resource "coder_agent" "main" {
     GLAB_VERSION            = var.glab_version
     CLOUDFLARED_VERSION     = var.cloudflared_version
     FRP_VERSION             = var.frp_version
+    # Conductor autostart (scripts/conductors.sh).
+    BAKERS_CONDUCTOR_AUTOSTART = data.coder_parameter.conductor_autostart.value
     # The PM bot (scripts/pm-bot.sh). Never in coder_metadata: secrets stay off the workspace page.
     PM_BOT_IMAGE                  = var.pm_bot_image
     PM_BOT_REGISTRY_USER          = var.pm_bot_registry_user
@@ -450,6 +462,13 @@ resource "docker_container" "workspace" {
   upload {
     content    = file("${path.module}/scripts/pm-bot.sh")
     file       = "/usr/local/bin/pm-bot"
+    executable = true
+  }
+
+  # The conductor autostart (README › Conductor autostart), root-owned like the bot's script.
+  upload {
+    content    = file("${path.module}/scripts/conductors.sh")
+    file       = "/usr/local/bin/bakers-conductors"
     executable = true
   }
 

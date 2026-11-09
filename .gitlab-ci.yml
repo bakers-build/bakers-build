@@ -144,6 +144,7 @@ before_script:
   - coder/**/*
   - experimental/pm-bot/**/*
   - tests/contract/coder-pm-bot.sh
+  - tests/contract/coder-conductors.sh
   - .gitlab-ci.yml
 .changes_docs: &changes_docs
   - docs/**/*
@@ -415,8 +416,9 @@ coder_pm_bot:
   image: node:22
   before_script: []
   script:
-    - bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh
+    - bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh coder/bakers-ddev/scripts/conductors.sh
     - bash tests/contract/coder-pm-bot.sh
+    - bash tests/contract/coder-conductors.sh
 
 # BB-326: the renderer-coupled suite runs under Bun, because @opentui/core reaches its
 # native core through FFI that Node does not expose. It is its OWN job with its OWN junit
