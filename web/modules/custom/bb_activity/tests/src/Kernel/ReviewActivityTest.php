@@ -8,6 +8,7 @@ use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
 use Drupal\Tests\bb_core\Kernel\ReviewStateTrait;
 use Drupal\bb_activity\Entity\BbActivity;
 use Drupal\bb_core\Entity\BbCommentInterface;
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -75,11 +76,13 @@ final class ReviewActivityTest extends KernelTestBase {
     $group->save();
     $project = $storage('bb_project')->create(['name' => 'p', 'key' => 'REV', 'group_id' => $group->id()]);
     $project->save();
+    self::assertInstanceOf(BbProjectInterface::class, $project);
     $this->projectId = (int) $project->id();
     foreach (['owner', 'assignee', 'reviewer', 'second', 'reader'] as $name) {
       $account = $this->createUser(['access user profiles'], $name);
       self::assertInstanceOf(UserInterface::class, $account);
       $this->addMembership($workspace, $account, ['contributor']);
+      $this->seatOnProjectTeam($project, $account);
       $this->people[$name] = $account;
     }
   }
