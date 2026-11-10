@@ -1,0 +1,28 @@
+{# One unit of work split into done, in progress and open: identifier, title,
+   percent done, a three-part bar and the counts in words. The caller counts;
+   the bar is an SVG whose viewBox is `total` wide, so each part is as wide as
+   its count and no inline style carries a number. The caption says every
+   count in text, so the bar never carries meaning alone. #}
+{% set complete = total > 0 and done == total %}
+{% set span = max(total, 1) %}
+<div{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'gap-inline', 'py-stack', 'border-b', 'border-border', 'min-w-0']) }}>
+  <div class="flex items-baseline gap-inline min-w-0">
+    {% if identifier %}<span class="shrink-0 font-mono text-data text-text-light">{{ identifier }}</span>{% endif %}
+    {% if url %}
+      <a class="flex-1 min-w-0 truncate text-item-title text-text no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ url }}">{{ title }}</a>
+    {% else %}
+      <span class="flex-1 min-w-0 truncate text-item-title text-text">{{ title }}</span>
+    {% endif %}
+    <span class="shrink-0 text-body-strong text-text tabular-nums">{{ percent }} %</span>
+  </div>
+  <svg class="block h-1.5 w-full rounded-full overflow-hidden" viewBox="0 0 {{ span }} 6" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+    <rect width="{{ span }}" height="6" class="fill-surface-3"></rect>
+    {% if complete %}
+      <rect width="{{ total }}" height="6" class="fill-text-light"></rect>
+    {% else %}
+      <rect width="{{ done }}" height="6" class="fill-state-running"></rect>
+      <rect x="{{ done }}" width="{{ in_progress }}" height="6" class="fill-state-running opacity-35"></rect>
+    {% endif %}
+  </svg>
+  <p class="m-0 text-meta text-text-light">{{ done }} of {{ total }} done - {{ in_progress }} in progress - {{ open }} open</p>
+</div>

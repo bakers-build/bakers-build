@@ -1,0 +1,8 @@
+component: bb_theme:board-card
+name: Blocked by a hidden ticket
+props:
+  identifier: BOARD-11
+  title: Blocked by a ticket you cannot see
+  state: plan
+  status: idle
+  blocked_hidden: true

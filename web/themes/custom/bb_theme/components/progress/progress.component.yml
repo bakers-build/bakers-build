@@ -1,0 +1,59 @@
+$schema: >-
+  https://git.drupalcode.org/project/drupal/-/raw/HEAD/core/assets/schemas/v1/metadata.schema.json
+name: Progress
+status: stable
+group: Data Display
+description: >-
+  One unit of work split into parts done, in progress and open: identifier,
+  title, the percent done, a three-part bar and the counts in words ("7 of 12
+  done - 3 in progress - 2 open"). The project Overview lists its epics with it
+  (BAKERS-55 AC-5).
+
+
+  THE CALLER COUNTS, THE COMPONENT DRAWS. `percent`, `done`, `in_progress`,
+  `open` and `total` arrive computed; the bar is an SVG whose viewBox is `total`
+  wide, so each part is as wide as its count and no inline style or arbitrary
+  utility carries a number. Done is the running colour, in progress the same
+  colour lighter, open the empty track; a complete unit fills with text-light.
+  The caption says every count in text, so the bar never carries meaning alone.
+provider: bb_theme
+props:
+  type: object
+  properties:
+    identifier:
+      type: string
+      title: Identifier
+      description: Mono key before the title, such as GAIA-90.
+    title:
+      type: string
+      title: Title
+    url:
+      type: string
+      title: Link
+      description: Makes the title a link.
+    percent:
+      type: integer
+      title: Percent done
+      description: done / total, rounded by the caller; 0 when total is 0. Shown as "58 %".
+    done:
+      type: integer
+      title: Done
+    in_progress:
+      type: integer
+      title: In progress
+    open:
+      type: integer
+      title: Open
+    total:
+      type: integer
+      title: Total
+  required:
+    - title
+    - percent
+    - done
+    - in_progress
+    - open
+    - total
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

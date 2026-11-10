@@ -31,6 +31,25 @@
   'test': 'before:bg-state-offline',
   'failed': 'before:bg-state-attention-mark'
 } %}
+{#- THE COMPACT ROW: one 36 px line for the project Overview - avatar and who,
+    what, ticket, detail and when in fixed columns. No tag, no role badge and
+    no rich body; every other feed keeps the full entry below. -#}
+{% if compact|default(false) %}
+<article{{ (attributes ?: create_attribute()).addClass(['event', 'flex', 'items-center', 'gap-stack', 'min-h-9', 'min-w-0', 'border-b', 'border-border-2']) }}>
+  <span class="flex w-55 shrink-0 items-center gap-inline min-w-0">
+    {{- include('bb_theme:person', { variant: 'compact', initials: author_initials, color: author_color|default(role == 'agent' ? 'running' : 'lease'), size: 'sm' }, with_context = false) -}}
+    <span class="min-w-0 truncate text-body-strong text-text">{{ author_name }}</span>
+  </span>
+  <span class="w-22 shrink-0 truncate text-body text-text-light">{{ statement }}</span>
+  {% if subject_url %}
+    <a class="w-20 shrink-0 truncate font-mono text-data text-link no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ subject_url }}">{{ subject_label }}</a>
+  {% else %}
+    <span class="w-20 shrink-0 truncate font-mono text-data text-text-light">{{ subject_label }}</span>
+  {% endif %}
+  <span class="flex-1 min-w-0 truncate text-body text-text">{{ detail }}</span>
+  {% if timestamp %}{{ include('bb_theme:time', { label: timestamp, datetime: datetime|default(''), title: timestamp_title|default(''), attributes: create_attribute({ class: ['shrink-0', 'text-meta', 'text-text-light'] }) }, with_context = false) }}{% endif %}
+</article>
+{% else %}
 {% set typed = tag is not empty %}
 {% set root_classes = ['event', 'group', 'relative', 'flex', 'gap-[10px]', 'pl-[14px]', 'py-[10px]', "before:content-['']", 'before:absolute', 'before:left-0', 'before:top-0', 'before:bottom-0', 'before:w-[2px]', 'before:rounded-[2px]', rail_map[tag]|default('before:bg-border')] %}
 <article{{ (attributes ?: create_attribute()).addClass(root_classes).setAttribute('data-tag', tag|default('')) }}>
@@ -71,3 +90,4 @@
     {% endif %}
   </div>
 </article>
+{% endif %}

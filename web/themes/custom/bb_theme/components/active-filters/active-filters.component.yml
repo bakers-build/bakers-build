@@ -140,7 +140,9 @@ props:
             title: Chosen values
             description: >-
               The values themselves, rendered in full. The number of them is
-              what decides the operator when none is given.
+              what decides the operator when none is given. Left out or empty,
+              the chip reads the field alone, with no operator: a filter that is
+              a state rather than a field with values, such as "Unhealthy".
             items:
               type: string
           remove_url:
@@ -152,6 +154,12 @@ props:
               only the caller knows the address. Left out, the chip renders no
               dismiss affordance, which is the honest rendering for a caller
               that cannot answer it.
+          count:
+            type: integer
+            title: Match count
+            description: >-
+              How many results this filter matches, shown after the sentence as
+              "· N" (BAKERS-55: "Priority is High · 5", "Unhealthy · 3").
     empty_label:
       type: string
       title: Unfiltered statement
@@ -173,9 +181,6 @@ slots:
       Trailing region, right-aligned — on the tickets list the
       `collection-position` indicator, so "what am I looking at" and "where in
       it am I" are answered on one line.
-thirdPartySettings:
-  sdcStorybook:
-    disableBasicStory: true
 variants:
   chips_only:
     title: Chips only
@@ -183,3 +188,6 @@ variants:
       The inner half of a nested pair: the chip sentences with no wrapper, no
       unfiltered statement and no meta line, so an outer one can own those and
       test whether this rendered anything.
+thirdPartySettings:
+  sdcStorybook:
+    disableBasicStory: true

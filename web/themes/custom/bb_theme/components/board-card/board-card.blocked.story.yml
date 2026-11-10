@@ -5,4 +5,5 @@ props:
   title: Waiting for a dependency
   state: plan
   status: idle
-  blocked: true
+  blocked_by:
+    - GAIA-348

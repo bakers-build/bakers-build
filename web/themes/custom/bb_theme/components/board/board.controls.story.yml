@@ -1,0 +1,317 @@
+component: bb_theme:board
+name: Controls
+props:
+  details: false
+  done_open: false
+  columns:
+    - name: Not assigned
+      dot: wait
+      cards:
+        - identifier: GAIA-281
+          title: >-
+            Runs dispatch to the wrong agent: three conductors with divergent
+            agent configs
+          status: idle
+          priority: p1
+          state: plan
+        - identifier: GAIA-307
+          title: >-
+            Expired runs are never closed: 1333 stand open because no path
+            closes them
+          status: idle
+          priority: p1
+          state: plan
+          run_count: 4
+          last_run_state: failed
+    - name: Intake
+      dot: attention
+      count: 0
+      cards: []
+    - name: Working
+      dot: running
+      cards:
+        - identifier: GAIA-393
+          title: Conductor reap leaks worktree DDEV environments
+          status: running
+          priority: p1
+          state: plan
+          run_count: 6
+          last_run_state: running
+          assignee_name: Christian Wiedemann
+          assignee_initials: CW
+          assignee_color: attention
+        - identifier: GAIA-365
+          title: gaia deployment tickets ignore every project whose key is not GAIA
+          status: running
+          priority: p1
+          state: review
+          run_count: 2
+          last_run_state: running
+          assignee_name: Sven Gruber
+          assignee_initials: SG
+          assignee_color: running
+    - name: Done
+      dot: idle
+      count: 12
+      toggle:
+        label: Show done
+        url: '?done=show'
+      cards: []
+slots:
+  empty:
+    - type: element
+      tag: span
+      value: No ticket matches these filters.
+  toolbar:
+    - type: component
+      component: bb_theme:filters
+      props:
+        layout: toolbar
+        label: Board filters
+      slots:
+        controls:
+          - type: component
+            component: bb_theme:form_input
+            props:
+              type: search
+              name: search
+              id: board-search
+              value: ''
+              placeholder: Search tickets
+          - type: component
+            component: bb_theme:option_picker
+            props:
+              variant: field
+              label: State
+              icon: status-running
+              value_label: All
+              aria_label: Filter by state. Currently all states.
+              multiple: true
+              name: state
+              id: board-state
+            slots:
+              options:
+                - type: component
+                  component: bb_theme:option_list
+                  props:
+                    name: state
+                    multiple: true
+                    options:
+                      - value: plan
+                        label: plan
+                        count: 3
+                      - value: working
+                        label: working
+                        count: 1
+                      - value: review
+                        label: review
+                        count: 1
+          - type: component
+            component: bb_theme:option_picker
+            props:
+              variant: field
+              label: Priority
+              icon: alert-triangle
+              value_label: High
+              aria_label: Filter by priority. Currently High.
+              multiple: true
+              name: priority
+              id: board-priority
+              values:
+                - '1'
+            slots:
+              options:
+                - type: component
+                  component: bb_theme:option_list
+                  props:
+                    name: priority
+                    multiple: true
+                    options:
+                      - value: '1'
+                        label: High
+                        count: 5
+                        selected: true
+                      - value: '2'
+                        label: Normal
+                        count: 21
+                      - value: '3'
+                        label: Low
+                        count: 18
+          - type: component
+            component: bb_theme:text
+            props:
+              text: Assignee
+              as: span
+              size: meta
+              tone: light
+          - type: component
+            component: bb_theme:button
+            props:
+              variant: ghost
+              label: '18'
+              href: '?assignee[]=1'
+            slots:
+              icon:
+                - type: component
+                  component: bb_theme:person
+                  props:
+                    variant: compact
+                    initials: CW
+                    color: attention
+                    display_name: ''
+          - type: component
+            component: bb_theme:button
+            props:
+              variant: ghost
+              label: '3'
+              href: '?assignee[]=2'
+            slots:
+              icon:
+                - type: component
+                  component: bb_theme:person
+                  props:
+                    variant: compact
+                    initials: SG
+                    color: running
+                    display_name: ''
+          - type: component
+            component: bb_theme:button
+            props:
+              variant: neutral
+              label: Unassigned · 21
+              href: '?assignee[]=!'
+        actions:
+          - type: component
+            component: bb_theme:text
+            props:
+              text: Details
+              as: span
+              size: meta
+              tone: light
+          - type: component
+            component: bb_theme:segmented_control
+            props:
+              label: Details
+              items:
+                - label: Phases
+                  url: '?details=phases'
+                  active: true
+                - label: States
+                  url: '?details=states'
+                  active: false
+          - type: component
+            component: bb_theme:button
+            props:
+              variant: ghost
+              label: Clear filters
+              href: '?'
+  filters_active:
+    - type: component
+      component: bb_theme:active-filters
+      props:
+        label: Active filters
+        facets:
+          - field: Priority
+            values:
+              - High
+            count: 5
+            remove_url: '?'
+      slots:
+        meta:
+          - type: component
+            component: bb_theme:text
+            props:
+              text: 5 of 44 open tickets
+              as: span
+              size: meta
+              tone: light
+  conductors:
+    - type: component
+      component: bb_theme:zone
+      props:
+        inset: none
+        gap: sm
+        description: not affected by ticket filters
+      slots:
+        heading:
+          - type: element
+            tag: span
+            value: Active conductors
+        content:
+          - type: component
+            component: bb_theme:table
+            props:
+              variant: ''
+              columns:
+                - key: conductor
+                  label: Conductor
+                  row_header: true
+                - key: status
+                  label: Status
+                - key: tickets
+                  label: Active tickets
+                  num: true
+                - key: load
+                  label: Load
+                - key: heartbeat
+                  label: Last heartbeat
+              rows:
+                - cells:
+                    conductor:
+                      kind: mono
+                      value: cw-framework
+                    status:
+                      kind: badge
+                      label: running
+                      tone: running
+                      dot: true
+                    tickets:
+                      kind: text
+                      value: '5'
+                    load:
+                      kind: meter
+                      share: 67
+                      label: 2 / 3 parallel runs
+                    heartbeat:
+                      kind: time
+                      label: 12 s ago
+                      datetime: '2026-11-10T12:00:00Z'
+                - cells:
+                    conductor:
+                      kind: mono
+                      value: sg-design
+                    status:
+                      kind: badge
+                      label: online · idle
+                      tone: idle
+                      dot: true
+                    tickets:
+                      kind: text
+                      value: '1'
+                    load:
+                      kind: meter
+                      share: 0
+                      label: 0 / 2 parallel runs
+                    heartbeat:
+                      kind: time
+                      label: 2 min ago
+                      datetime: '2026-11-10T11:58:00Z'
+                - cells:
+                    conductor:
+                      kind: mono
+                      value: c-board
+                    status:
+                      kind: badge
+                      label: offline
+                      tone: offline
+                      dot: true
+                    tickets:
+                      kind: text
+                      value: '1'
+                    load:
+                      kind: meter
+                      label: Unknown capacity
+                    heartbeat:
+                      kind: time
+                      label: 3 h ago
+                      datetime: '2026-11-10T09:00:00Z'

@@ -1,0 +1,11 @@
+component: bb_theme:progress
+name: Default
+props:
+  identifier: GAIA-90
+  title: Ticket detail overhaul
+  url: '#'
+  percent: 58
+  done: 7
+  in_progress: 3
+  open: 2
+  total: 12

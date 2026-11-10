@@ -1,0 +1,184 @@
+component: bb_theme:list
+name: Attention
+props:
+  layout: lines
+  pattern:
+    avatar:
+      - state
+    headline:
+      - title
+      - priority
+    meta:
+      - identifier
+      - created
+      - workflow
+      - reason
+    right:
+      - assignee
+    captions:
+      created: Created
+  items:
+    - url: '#'
+      accent: attention
+      cells:
+        state:
+          kind: status
+          label: review
+          working: false
+        title:
+          kind: link
+          value: Conductor reap leaks worktree DDEV environments
+          url: '#'
+        priority:
+          kind: badge
+          label: P1
+          tone: critical
+        identifier:
+          kind: link
+          value: GAIA-365
+          url: '#'
+          mono: true
+        created:
+          kind: time
+          label: 2 days ago
+          datetime: '2026-11-08T10:00:00Z'
+          title: Sun, 8 Nov 2026, 10:00 UTC
+        workflow:
+          kind: badge
+          label: review
+          tone: neutral
+          dot: true
+        reason:
+          kind: badge
+          label: Last run failed
+          tone: critical
+          dot: true
+        assignee:
+          kind: person
+          initials: CW
+          display_name: Christian Wiedemann
+          name_hidden: true
+          color: attention
+    - url: '#'
+      accent: attention
+      cells:
+        state:
+          kind: status
+          label: working
+          working: false
+        title:
+          kind: link
+          value: Board cards lose their assignee after a reassign
+          url: '#'
+        priority:
+          kind: badge
+          label: P1
+          tone: critical
+        identifier:
+          kind: link
+          value: GAIA-412
+          url: '#'
+          mono: true
+        created:
+          kind: time
+          label: 2 days ago
+          datetime: '2026-11-08T10:00:00Z'
+          title: Sun, 8 Nov 2026, 10:00 UTC
+        workflow:
+          kind: badge
+          label: working
+          tone: neutral
+          dot: true
+        reason:
+          kind: badge
+          label: Conductor has no access
+          tone: critical
+          dot: true
+        assignee:
+          kind: person
+          initials: SG
+          display_name: Sven Gruber
+          name_hidden: true
+          color: attention
+    - url: '#'
+      accent: attention
+      cells:
+        state:
+          kind: status
+          label: working
+          working: false
+        title:
+          kind: link
+          value: Retire the Gin-era ticket components
+          url: '#'
+        priority:
+          kind: badge
+          label: P2
+          tone: neutral
+        identifier:
+          kind: link
+          value: GAIA-348
+          url: '#'
+          mono: true
+        created:
+          kind: time
+          label: 2 days ago
+          datetime: '2026-11-08T10:00:00Z'
+          title: Sun, 8 Nov 2026, 10:00 UTC
+        workflow:
+          kind: badge
+          label: working
+          tone: neutral
+          dot: true
+        reason:
+          kind: badge
+          label: Idle 6 days
+          tone: attention
+          dot: true
+        assignee:
+          kind: person
+          initials: SG
+          display_name: Sven Gruber
+          name_hidden: true
+          color: attention
+    - url: '#'
+      accent: attention
+      cells:
+        state:
+          kind: status
+          label: qualification
+          working: false
+        title:
+          kind: link
+          value: Billing account picker shows archived accounts
+          url: '#'
+        priority:
+          kind: badge
+          label: P2
+          tone: neutral
+        identifier:
+          kind: link
+          value: GAIA-307
+          url: '#'
+          mono: true
+        created:
+          kind: time
+          label: 2 days ago
+          datetime: '2026-11-08T10:00:00Z'
+          title: Sun, 8 Nov 2026, 10:00 UTC
+        workflow:
+          kind: badge
+          label: qualification
+          tone: neutral
+          dot: true
+        reason:
+          kind: badge
+          label: Needs info
+          tone: attention
+          dot: true
+        assignee:
+          kind: person
+          initials: RK
+          display_name: Rosa Klein
+          name_hidden: true
+          color: attention

@@ -337,7 +337,14 @@ DELETED_ALLOWLIST=''
 # 69 SINCE BAKERS-151: `onboarding` is deleted. The wizard is framed by `gate`,
 # the same chrome as sign-in, whose left band now takes an optional
 # per-step explanation. 70 - 1 = 69.
-TARGET_COMPONENT_COUNT=69
+# 70 SINCE BAKERS-55: `progress`, one unit of work split into done, in progress
+# and open - identifier, title, percent, a three-part bar and the counts in
+# words - for the epics on the project Overview. No component drew a bar of
+# several parts: `stat-breakdown` draws one share per entry and `table`'s
+# `meter` cell one load against a capacity. The Board's column header is NOT a
+# component: it is `board`'s own `column()` macro, so the board still owns its
+# columns (B1). Data Display (single word). 69 + 1 = 70.
+TARGET_COMPONENT_COUNT=70
 
 # The three containers and the props that make them containers (D2).
 CONTAINER_COMPONENTS='table list form'

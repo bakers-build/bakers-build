@@ -44,17 +44,33 @@
    `panel` is the default and the aside it always was, now filled with `bg-app`
    so it reads as a surface on the `bg-surface` main area. #}
 {% set filters_controls %}{% block controls %}{{ controls }}{% endblock %}{% endset %}
+{% set filters_actions %}{% block actions %}{{ actions }}{% endblock %}{% endset %}
+{#- The bar and the toolbar submit their own fields: a select on change, a
+    text field 500ms after the last keystroke, never the same value twice. -#}
+{% set send_attributes %}x-data="{ send(field) { if (field.form && field.dataset.sent !== field.value) { field.dataset.sent = field.value; field.form.requestSubmit(); } } }" @change="['search', 'text'].includes($event.target.type) || send($event.target)" @input.debounce.500ms="['search', 'text'].includes($event.target.type) && send($event.target)" @keydown.enter="['search', 'text'].includes($event.target.type) && ($event.target.dataset.sent = $event.target.value)"{% endset %}
 {% if layout|default('panel') == 'bar' %}
 <div{{ (attributes ?: create_attribute()).addClass([
     'flex', 'flex-row', 'flex-wrap', 'items-end', 'gap-stack', 'p-stack', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
     '*:first:flex-1', '*:first:basis-40', '*:first:min-w-0', '*:not-first:shrink-0', '*:not-first:max-w-full',
   ]) }} role="search"
   {%- if label %} aria-label="{{ label }}"{% endif %}
-  x-data="{ send(field) { if (field.form && field.dataset.sent !== field.value) { field.dataset.sent = field.value; field.form.requestSubmit(); } } }"
-  @change="['search', 'text'].includes($event.target.type) || send($event.target)"
-  @input.debounce.500ms="['search', 'text'].includes($event.target.type) && send($event.target)"
-  @keydown.enter="['search', 'text'].includes($event.target.type) && ($event.target.dataset.sent = $event.target.value)">
+  {{ send_attributes }}>
   {{- filters_controls -}}
+</div>
+{% elseif layout == 'toolbar' %}
+{#- The board filter bar: no surface, one centred row of at least 36 px that
+    wraps only when narrow; the first control (the search) is 240 px wide and
+    `actions` sits at the right end. -#}
+<div{{ (attributes ?: create_attribute()).addClass([
+    'flex', 'flex-row', 'flex-wrap', 'items-center', 'gap-inline', 'min-h-9', 'min-w-0',
+    '*:first:w-60', '*:first:shrink-0',
+  ]) }} role="search"
+  {%- if label %} aria-label="{{ label }}"{% endif %}
+  {{ send_attributes }}>
+  {{- filters_controls -}}
+  {%- if filters_actions|striptags|trim is not empty %}
+  <div class="ml-auto flex flex-wrap items-center gap-inline">{{ filters_actions }}</div>
+  {%- endif %}
 </div>
 {% else %}
 <aside{{ (attributes ?: create_attribute()).addClass([

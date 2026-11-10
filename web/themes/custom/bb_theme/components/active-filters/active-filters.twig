@@ -121,8 +121,13 @@
     {%- set derived = values|length > 1 ? 'is either of' : 'is' %}
     <span data-facet class="inline-flex items-baseline flex-wrap gap-x-inline-xs px-inline py-inline-xs rounded-xs bg-primary/10 border border-transparent text-meta text-primary">
       <span data-part="field" class="text-label">{{ facet.field }}</span>
+      {%- if values|length > 0 %}
       <span data-part="operator" class="text-text-faint">{{ facet.operator|default(derived) }}</span>
       <span data-part="values">{{ values|join(', ') }}</span>
+      {%- endif %}
+      {%- if facet.count is defined and facet.count is not null %}
+      <span data-part="count" class="text-text-faint">· {{ facet.count }}</span>
+      {%- endif %}
       {%- if facet.remove_url|default('') is not empty %}
         <a data-remove-facet class="inline-flex self-center text-body leading-none text-text-faint no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           href="{{ facet.remove_url }}"

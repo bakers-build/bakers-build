@@ -228,7 +228,10 @@ props:
               an empty string rather than the NULL a composed component types as
               a string and core's validator rejects. The `bare` story is what
               covers that, because a guard nothing renders is closed but not
-              covered.
+              covered. `meter` is a load against a capacity (BAKERS-55 Active
+              conductors): a 120 px bar filled to `share` and the caller's
+              `label` ("2 / 3 parallel runs"); without `share` only the label
+              ("Unknown capacity").
             additionalProperties:
               type: object
               properties:
@@ -247,6 +250,7 @@ props:
                     - time
                     - status
                     - input
+                    - meter
                   title: Cell kind
                 value:
                   type: string
@@ -717,6 +721,13 @@ props:
                   type: string
                   title: Full date and time
                   description: A `time` cell's absolute stamp, shown on hover.
+                share:
+                  type: integer
+                  title: Share
+                  description: >-
+                    A `meter` cell: the filled share of the bar, 0 to 100,
+                    computed by the caller. Absent, the cell shows its label
+                    alone (faint): an unknown capacity is not zero.
 slots:
   empty:
     title: Empty
