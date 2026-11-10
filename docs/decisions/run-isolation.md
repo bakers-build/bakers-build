@@ -17,8 +17,10 @@ The throwaway prototype in [`experimental/run-isolation/`](../../experimental/ru
 shows the launch rewrite as an executor decorator. Its self-check passes. A maintainer probe started a
 container from that rewrite on Linux. The worktree's Git, the host's loopback and the per-run home
 worked, and no SSH key, `~/.bakers` or Docker socket was visible. A full conductor run with Claude on
-a ticket state is still outstanding; its steps are recorded below. Docker Sandboxes (`sbx`) came up
-after the first draft and is assessed in writing only.
+a ticket state is still outstanding; its steps are recorded below. A second probe tested Docker Sandboxes
+(`sbx`) on the same host. It isolates well, but starts in about 6 s, does not reach the host's
+loopback through its proxy, and needs a Docker account and a running daemon. It is a later backend,
+not the first one.
 
 ## 1. Where the wrapper hooks in
 
@@ -98,8 +100,8 @@ Known risks to watch in that run:
 |---|---|---|---|---|---|---|---|
 | Dedicated Unix user | none | user per host, file permissions on shared paths | none, shared file system | separate home | host-wide firewall only | Linux, macOS | Rejected: one user for every run, so runs see each other and anything world-readable. |
 | Box as boundary (one VM per operator) | none per run | the box template | none | in the box | box firewall | any | Keep as the outer boundary. Runs on one box still share everything inside it. |
-| **Container per run** | sub-second plus plugin sync (to measure) | one image per harness | worktree, `.git`, transcript | per run, by name | allowlist with bridge network and proxy | Linux native, macOS through a VM | **Recommended first backend.** |
-| Docker Sandboxes (`sbx`), a microVM per sandbox with its own Docker engine | not measured | Docker's product and agent kits, Claude Code included | the project directory read/write; extra paths not documented | Claude login stays on the host; an API key goes in through `sbx secret` | preset policies (`balanced`: deny by default) and per-host rules | needs KVM; Linux support not confirmed (install docs unreachable) | **Candidate backend, untested.** It would replace the micro-VM and the egress allowlist. Still open: whether the Git common directory outside the worktree can be mounted, whether the host's `127.0.0.1` tool server is reachable, and whether runs can start headless with our flags. Not installed on the probe host. |
+| **Container per run** | 1.2 s cold, 0.4 s warm (measured), plus plugin sync | one image per harness | worktree, `.git`, transcript | per run, by name | allowlist with bridge network and proxy | Linux native, macOS through a VM | **Recommended first backend.** |
+| Docker Sandboxes (`sbx` 0.51), a microVM per sandbox with its own Docker engine | 6.1–6.4 s create with the image cached, 45 s with the first pull (measured) | Docker's agent kits; a daemon (`sbx daemon start`), a Docker account login and a global policy preset per host | extra workspaces at their host paths (`PATH[:TARGET][:ro]`), so the Git common directory works (measured) | Claude login stays on the host. Its MCP gateway can add a header from the host secret store, which would keep the run token out of the run (untested) | preset policies (`balanced`: deny by default, 195 allow rules) and per-sandbox rules; the run's own Docker engine is isolated (0 of the host's 11 containers visible) | needs KVM. Packaged for Ubuntu 24.04+ and Rocky only; on Debian 13 the Ubuntu `.deb` works but gets no updates | **Later backend.** The host's `127.0.0.1` is not reachable: `host.docker.internal` answered 403 from its proxy even with a per-sandbox allow rule. The conductor tools would have to go through `sbx mcp add --url http://127.0.0.1:<port>/ --skip-ssrf-check` (untested). |
 | Micro-VM per run (Firecracker, Kata) | about a second | kernel and rootfs images, KVM on the host | virtio-fs shares | per run | per-VM network | Linux with KVM only | Later backend. Kata as a Docker runtime reuses `isolation-docker`. |
 | Hosted sandbox per run | seconds, remote | provider image | the worktree is synced or cloned remotely, no local DDEV | sent to the provider | provider policy | any, needs network | Rejected for now. DDEV and the tool server are local, so every tool call crosses the network. |
 
@@ -140,6 +142,7 @@ is found.
 |---|---|---|
 | Launch rewrite self-check, `node --test experimental/run-isolation/isolation-docker.test.mjs` | passed | 4 tests pass: the argv a shell makes of the command is `docker run --rm -it --name bb-run-7 --network host …`; mounts are only the worktree, the Git common directory, the read-only CLI build, the run home and the transcript directory; secrets appear only as `-e KEY`; other methods delegate and `cleanupRun` removes `bb-run-<id>`. |
 | Container probe, `bash experimental/run-isolation/probe.sh` (maintainer, Debian 13 x86_64, Docker; `-it` dropped for lack of a TTY) | passed | The container started from the decorator's own `wrapRun` output. Inside it: `user: 1000 home: /home/run`; `git status` returned `## feat/bakers-155-spike-attach-r`, so the Git common directory resolves; `/home/run/.ssh`, `/home/run/.bakers`, `/home/*/.ssh` and `/root/.ssh` absent; `docker socket: absent`; a stand-in service on the host's `127.0.0.1` answered 200 (`host.docker.internal` gave `ENOTFOUND`, so `--network host` is what carries it); `git push --dry-run` failed; `claude: 2.1.321 (Claude Code)`. |
+| `sbx` probe, `sg kvm -c 'bash experimental/run-isolation/probe.sh --sbx-only'` (maintainer, same host, `sbx` 0.51.0 from the Ubuntu 24.04 `.deb`, policy `balanced`) | passed (as a probe) | `sbx create … shell <worktree> <git common dir>` took 44813 ms with the first kit pull and 6380 / 6145 ms after it; `sbx exec` took 465–1081 ms. Inside: `user: 1000 home: /home/agent`; `git status` worked; `.ssh` and `.bakers` absent; a Docker socket is present, but it is the sandbox's own engine (`containers on host: 11, inside: 0`); `127.0.0.1` failed; `host.docker.internal` returned 403, also after `sbx policy allow network --sandbox bb-probe host.docker.internal:<port>`; `git push --dry-run` failed; `BB_CONDUCTOR_TOKEN` set by `-e`. Setup needed `sbx daemon start`, `sbx login` and `sbx policy init balanced`. |
 | F2 Claude run of a ticket state, `bakers_ticket_read` from inside | not_run | The host-loopback path the tool server uses is proven by the probe. A real conductor run (steps 3–9) is still outstanding: the spike run's sandbox cannot reach the Docker socket and has no model credential. |
 | F3 no SSH key, no `~/.bakers`, no socket, push fails | passed | Container probe above. |
 | F4 start time and transcript read | passed (start time), not_run (transcript) | 1181 ms cold, 396 ms warm. The transcript read needs the conductor run (step 10). |
@@ -151,11 +154,13 @@ Tickets to create once this recommendation is approved:
 1. **`isolation` addon kind.** Core holds one backend and applies `wrap` and `cleanup` around
    `executor.startRun` and `cleanupRun`. It adds an operator setting separate from the harness
    permission mode, and the harness sandbox is off when a backend is set.
-2. **`isolation-docker` backend.** First, try `sbx` on a KVM host against the three open points in the
-   alternatives table. If it meets them, it becomes the backend instead. Otherwise the backend ports the prototype, makes the `docker` command configurable
+2. **`isolation-docker` backend.** It ports the prototype, makes the `docker` command configurable
    so Podman works, ships the image, and protects `.git/hooks` and `.git/config`. It also measures
    start time and plugin sync.
 3. **Egress allowlist.** A bridge network, the tool server reachable from it, and a proxy sidecar
    that also adds the model credential, so the credential leaves the run. macOS depends on this.
 4. **Push from the host.** Delivery pushes the branch outside the run, after it or through a
    conductor tool.
+5. **`isolation-sbx` backend, evaluation.** Register the conductor tool server through `sbx mcp add`
+   with the run token taken from the host secret store, and run one real Claude ticket state. Adopt
+   the backend if that works and about 6 s per run start is acceptable.
