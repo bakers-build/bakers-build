@@ -2,7 +2,7 @@ import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import type { SpawnRunInput } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import herdrCoreExecutor, {
   HcNotFound,
   HerdrCoreExecutor,
@@ -164,6 +164,36 @@ describe('HerdrCoreExecutor.startRun', () => {
     expect(calls).toContainEqual(['rm', 'bakers-109-4711', '--json']);
     const run = calls.find((c) => c[0] === 'run') as string[];
     expect(existsSync(dirname(run[run.length - 1] as string))).toBe(false);
+  });
+
+  it('ends the login watch 180 s after the claim, not after the launch', async () => {
+    vi.useFakeTimers({ now: 1_000_000, toFake: ['Date', 'setTimeout'] });
+    try {
+      const ex = new HerdrCoreExecutor(
+        { launch_watch: INSTANT_WATCH },
+        fakeHc().hc,
+      );
+      const starting = ex.startRun(
+        input({
+          claimedAt: Date.now() - 60_000, // setup took a minute
+          authFailurePatterns: [
+            { pattern: /^Select login method/m, reason: 'x' },
+          ],
+        }),
+      );
+      await vi.advanceTimersByTimeAsync(10);
+      const { authFailure } = await starting;
+      let ended = false;
+      authFailure?.then(() => {
+        ended = true;
+      });
+      await vi.advanceTimersByTimeAsync(110_000);
+      expect(ended).toBe(false);
+      await vi.advanceTimersByTimeAsync(15_000);
+      expect(ended).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

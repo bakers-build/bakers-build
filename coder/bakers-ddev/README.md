@@ -161,6 +161,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 | `pm_bot_model` | no | Default `claude-sonnet-5-5` |
 | `pm_bot_repo_url` | no | HTTPS URL of the project's repository, without credentials. The bot reads a secret-free clone of it. Empty: no code access |
 | `pm_bot_repo_user`, `pm_bot_repo_token` | no | A read-only token (`read_repository`) for that URL; the token is masked. Only git uses it, while cloning on the workspace; it never reaches the container |
+| `pm_bot_claude_oauth_token_expires_at`, `pm_bot_registry_token_expires_at`, `pm_bot_bakers_api_key_expires_at` | no | `YYYY-MM-DD` expiry dates. Each start writes the set ones into `~/.bakers/credential-expiry.yml` as `pm-bot-claude-oauth-token`, `pm-bot-registry-token` and `pm-bot-bakers-api-key`, keeping its other lines, so the conductor warns 14 days ahead ([Box credentials](../../docs/provision/security/credentials.md#box-credentials)). A malformed date is named in the log and not recorded |
 
 Channel and member IDs are separated by spaces, commas or both. On the command line, quote the list and separate it with spaces:
 

@@ -18,10 +18,12 @@ final class ConductorListToolTest extends BakersToolTestBase {
   use ForeignWorkspaceTrait;
 
   /**
-   * Only the project's conductors, by label.
+   * Only the project's conductors, by label, with their credential report.
    */
   public function testListsTheProjectsConductors(): void {
+    $report = '[{"name":"github","status":"error","reason":"Token revoked."}]';
     $online = $this->conductor('b-online', (int) $this->project->id(), 'online');
+    $online->set('credential_health', $report)->save();
     $offline = $this->conductor('a-offline', (int) $this->project->id(), 'offline', FALSE);
     $other = $this->entity('bb_project', [
       'name' => 'other-project',
@@ -35,7 +37,10 @@ final class ConductorListToolTest extends BakersToolTestBase {
       'label' => $conductor->label(),
       'active' => $active,
       'status' => $status,
+      'credential_health' => $conductor->get('credential_health')->value,
     ];
+    self::assertNull($offline->get('credential_health')->value);
+    self::assertSame($report, $online->get('credential_health')->value);
     self::assertSame([
       'conductors' => [$row($offline, FALSE, 'offline'), $row($online, TRUE, 'online')],
       'next_offset' => NULL,

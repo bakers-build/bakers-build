@@ -16,6 +16,10 @@
   max_parallel: 2
   current_load: 1
   last_pid: 481203
+  credential_health: >-
+    [{"name":"github","status":"warning","expires_at":"2026-11-20","reason":"Token expires in 10 days."},
+    {"name":"claude","status":"error","reason":"Not logged in; run claude login on the box."},
+    {"name":"gitlab","status":"ok","reason":""}]
   last_seen: '2026-06-30T09:15:00+00:00'
   lease_expires_at: '2026-06-30T09:20:00+00:00'
   active: false

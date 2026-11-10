@@ -3,9 +3,14 @@
      (core.entity_view_display.bb_conductor.bb_conductor.full).
 
      `main`: the Activities zone, its Refresh control and its rows.
-     `inspector`: one surface with one card —
+     `inspector`: one surface with its cards —
        Identity        editable label (Save) plus read-only Conductor ID,
                        Project, Machine and Owner.
+       Credentials     one table row per credential check that is not ok
+                       (name, status badge, expiry, reason), errors first;
+                       absent when every check is ok (the empty zone renders
+                       nothing). Drupal fills it with the
+                       `bb_credential_health` formatter on credential_health.
      The surface footer, below that card = Disable conductor when active,
      Enable conductor when not. States, status, last seen and load are not
      shown (heartbeat values; states set at registration).
@@ -29,6 +34,25 @@
   $active := $c.active != false;
   $conductorId := $c.conductor_id ? $c.conductor_id : ($c.machine_id and $c.conductor_name ? $c.machine_id & "/" & $c.conductor_name : undefined);
   $or := function ($v) { $v ? $v : "—" };
+  $tones := { "error": "critical", "warning": "attention" };
+  $labels := { "error": "Error", "warning": "Warning" };
+  $report := $c.credential_health ? $eval($c.credential_health) : [];
+  $problems := $sort(
+    $filter($report, function ($e) { $exists($lookup($tones, $e.status)) }),
+    function ($a, $b) { $a.status = "warning" and $b.status = "error" }
+  );
+  $credentialRows := $map($problems, function ($e) {
+    {
+      "cells": {
+        "name": { "kind": "mono", "value": $e.name },
+        "status": { "kind": "badge", "label": $lookup($labels, $e.status), "tone": $lookup($tones, $e.status) },
+        "expires": $e.expires_at
+          ? { "kind": "time", "label": $fromMillis($toMillis($e.expires_at & "T12:00:00Z"), "[D1] [MNn,3-3]"), "datetime": $e.expires_at }
+          : { "kind": "text", "value": "—" },
+        "reason": { "kind": "text", "value": $e.reason }
+      }
+    }
+  });
   $zone := function ($heading, $content) {
     {
       "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
@@ -60,7 +84,19 @@
                 & "<br>Project: " & $or($lookup($projects, $c.project_id))
                 & "<br>Machine: " & $or($lookup($machines, $c.id))
                 & "<br>Owner: " & $or($lookup($owners, $c.owner_user_id))
-                & "<br>Save")
+                & "<br>Save"),
+              $count($credentialRows) > 0 ? $zone("Credentials", [{
+                "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:table",
+                "props": {
+                  "columns": [
+                    { "key": "name", "label": "Credential" },
+                    { "key": "status", "label": "Status" },
+                    { "key": "expires", "label": "Expires" },
+                    { "key": "reason", "label": "Reason" }
+                  ],
+                  "rows": $credentialRows
+                }
+              }]) : undefined
             ],
             "footer": $active ? "Disable conductor" : "Enable conductor"
           }

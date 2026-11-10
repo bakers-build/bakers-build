@@ -81,6 +81,12 @@ use Drupal\tool\TypedData\OutputDefinition;
             label: new TranslatableMarkup('Status'),
             description: new TranslatableMarkup('online or offline.'),
           ),
+          'credential_health' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Credential health'),
+            description: new TranslatableMarkup('The JSON list of credential checks the conductor last reported (name, status ok|warning|error, expires_at, reason), or null before its first report.'),
+            nullable: TRUE,
+          ),
         ],
       ),
     ),
@@ -121,6 +127,7 @@ final class ConductorList extends ToolBase {
         'label' => $conductor->get('label')->value,
         'active' => (bool) $conductor->get('active')->value,
         'status' => (string) $conductor->get('status')->value,
+        'credential_health' => $conductor->get('credential_health')->value,
       ];
     }
     return ExecutableResult::success(new TranslatableMarkup('@count conductors found.', ['@count' => count($conductors)]), [

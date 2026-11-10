@@ -78,6 +78,29 @@ for name in slack_bot_token slack_app_token slack_allowed_channels slack_allowed
 done
 [ "$configured" = true ] || skip "no bot configured"
 
+# --- Credential expiry -----------------------------------------------------------------
+# The conductor warns ahead of a date recorded here (docs/provision/security/credentials.md ›
+# Box credentials). A set date replaces its name's line, other lines stay; an empty one writes
+# nothing, a malformed one is named and left out. Neither stops the bot.
+declare -A EXPIRY_NAMES=(
+  [claude_oauth_token_expires_at]=pm-bot-claude-oauth-token
+  [registry_token_expires_at]=pm-bot-registry-token
+  [bakers_api_key_expires_at]=pm-bot-bakers-api-key
+)
+expiry="$HOME/.bakers/credential-expiry.yml"
+for param in "${!EXPIRY_NAMES[@]}"; do
+  date="$(value "$param")"
+  [ -n "$date" ] || continue
+  if [[ ! "$date" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
+    echo "pm-bot: pm_bot_$param must be a YYYY-MM-DD date; not recorded"
+    continue
+  fi
+  name="${EXPIRY_NAMES[$param]}"
+  { mkdir -p "${expiry%/*}" && tmp="$(mktemp -p "${expiry%/*}")" \
+    && { grep -v "^$name:" "$expiry" 2>/dev/null; echo "$name: $date"; } >"$tmp" && mv -f "$tmp" "$expiry"; } \
+    || echo "pm-bot: recording $name in $expiry failed"
+done
+
 missing=()
 for name in "${REQUIRED[@]}"; do
   [ -n "$(value "$name")" ] || missing+=("pm_bot_$name")

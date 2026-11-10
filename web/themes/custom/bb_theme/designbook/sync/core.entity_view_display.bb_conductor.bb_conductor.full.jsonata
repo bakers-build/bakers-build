@@ -3,8 +3,10 @@
  *
  * The entity detail page: one `canvas` whose `main` is the
  * `bb_entity_detail_activities` feed and whose `inspector` holds one
- * surface `inspector` with one `zone` — the activities of this conductor's runs beside one
- * Identity card (`identity` form: label) with Disable/Enable in the surface footer. The
+ * surface `inspector` with two `zone`s — the activities of this conductor's runs beside an
+ * Identity card (`identity` form: label) and a Credentials card, with Disable/Enable in the
+ * surface footer. The Credentials card is the `bb_credential_health` formatter on
+ * `credential_health`, which renders a `bb_theme:table` of the checks that are not ok. The
  * page shows no states, status, last seen or load (heartbeat values; states set at registration).
  *
  * THE SHIPPED YAML IS THE SAVED FORM (see README.md): `content` and `hidden`
@@ -118,6 +120,56 @@
                                     }
                                   },
                                   "node_id": "conductor_identity"
+                                },
+                                {
+                                  "source_id": "component",
+                                  "source": {
+                                    "component": {
+                                      "component_id": "bb_theme:zone",
+                                      "variant_id": null,
+                                      "props": {
+                                        "inset": {
+                                          "source_id": "select",
+                                          "source": {
+                                            "value": "none"
+                                          }
+                                        },
+                                        "gap": {
+                                          "source_id": "select",
+                                          "source": {
+                                            "value": "sm"
+                                          }
+                                        }
+                                      },
+                                      "slots": {
+                                        "heading": {
+                                          "sources": [
+                                            {
+                                              "source_id": "token",
+                                              "source": {
+                                                "value": "Credentials"
+                                              },
+                                              "node_id": "conductor_credentials_heading"
+                                            }
+                                          ]
+                                        },
+                                        "content": {
+                                          "sources": [
+                                            {
+                                              "source_id": "field_formatter:bb_conductor:bb_conductor:credential_health",
+                                              "source": {
+                                                "type": "bb_credential_health",
+                                                "settings": {},
+                                                "third_party_settings": {}
+                                              },
+                                              "node_id": "conductor_credentials_value"
+                                            }
+                                          ]
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "node_id": "conductor_credentials"
                                 }
                               ]
                             },

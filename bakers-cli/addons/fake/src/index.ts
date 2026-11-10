@@ -23,10 +23,14 @@ export { FakeWorkspace, fakeWorkspace } from './workspace.js';
 export interface FakeExecutorOptions {
   outcome: 'exited' | 'failed';
   markerFile?: string;
+  /** The launch watch's verdict for runs started with auth patterns. */
+  authFailure?: string;
 }
 
 export class FakeExecutor implements BbExecutor {
   readonly id = 'fake';
+  /** The run ids `cleanupRun` closed. */
+  readonly cleanups: number[] = [];
 
   constructor(private readonly options: FakeExecutorOptions) {}
 
@@ -47,7 +51,12 @@ export class FakeExecutor implements BbExecutor {
         }),
       );
     }
-    return { sessionRef: branch };
+    return input.authFailurePatterns?.length
+      ? {
+          sessionRef: branch,
+          authFailure: Promise.resolve(this.options.authFailure),
+        }
+      : { sessionRef: branch };
   }
 
   private markerPath(workspacePath: string, markerFile: string): string {
@@ -70,8 +79,9 @@ export class FakeExecutor implements BbExecutor {
     // No-op for the fake executor — no hosted agent to signal.
   }
 
-  async cleanupRun(_branch: string): Promise<void> {
-    // No-op for the fake executor — no hosted tab to close.
+  async cleanupRun(_branch: string, runId?: number): Promise<void> {
+    // No hosted tab to close; recorded for tests.
+    if (runId !== undefined) this.cleanups.push(runId);
   }
 }
 

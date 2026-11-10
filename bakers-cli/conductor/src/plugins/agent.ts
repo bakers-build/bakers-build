@@ -262,4 +262,24 @@ export interface BbAgent {
    * throws. Optional: a run of an agent without it is never reported as blocked.
    */
   permissionDenials?(log: string): string[];
+  /**
+   * Whether this agent is logged in, asked after a claim and before the
+   * launch; a failure fails the run with `reason`, which names the agent and
+   * the fix. Optional: an agent without it is never checked.
+   */
+  credentialCheck?(): Promise<AgentCredentialCheck>;
+  /**
+   * Pane text that means the launched agent stopped at a login, onboarding or
+   * credential error; the launch watch fails the run with the matched reason.
+   */
+  readonly authFailurePatterns?: readonly AuthFailurePattern[];
+}
+
+/** See {@link BbAgent.credentialCheck}. */
+export type AgentCredentialCheck = { ok: true } | { ok: false; reason: string };
+
+/** See {@link BbAgent.authFailurePatterns}. */
+export interface AuthFailurePattern {
+  pattern: RegExp;
+  reason: string;
 }

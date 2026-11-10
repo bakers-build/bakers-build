@@ -342,6 +342,39 @@ data "coder_parameter" "pm_bot_repo_token" {
   styling      = jsonencode({ mask_input = true })
 }
 
+data "coder_parameter" "pm_bot_claude_oauth_token_expires_at" {
+  name         = "pm_bot_claude_oauth_token_expires_at"
+  display_name = "PM bot: Claude OAuth token expiry"
+  description  = "Optional. YYYY-MM-DD expiry date of the Claude OAuth token (`claude setup-token` tokens last one year); recorded in ~/.bakers/credential-expiry.yml so the conductor warns 14 days ahead."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 22
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_registry_token_expires_at" {
+  name         = "pm_bot_registry_token_expires_at"
+  display_name = "PM bot: registry token expiry"
+  description  = "Optional. YYYY-MM-DD expiry date of the template's pm_bot_registry_token; recorded in ~/.bakers/credential-expiry.yml so the conductor warns 14 days ahead."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 23
+  form_type    = "input"
+}
+
+data "coder_parameter" "pm_bot_bakers_api_key_expires_at" {
+  name         = "pm_bot_bakers_api_key_expires_at"
+  display_name = "PM bot: bakers.build API key expiry"
+  description  = "Optional. YYYY-MM-DD expiry date of the bakers.build API key; recorded in ~/.bakers/credential-expiry.yml so the conductor warns 14 days ahead."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  order        = 24
+  form_type    = "input"
+}
+
 data "coder_parameter" "conductor_autostart" {
   name         = "conductor_autostart"
   display_name = "Start conductors on workspace start"
@@ -425,6 +458,10 @@ resource "coder_agent" "main" {
     PM_BOT_REPO_URL               = data.coder_parameter.pm_bot_repo_url.value
     PM_BOT_REPO_USER              = data.coder_parameter.pm_bot_repo_user.value
     PM_BOT_REPO_TOKEN             = data.coder_parameter.pm_bot_repo_token.value
+    # Expiry dates for ~/.bakers/credential-expiry.yml (scripts/pm-bot.sh).
+    PM_BOT_CLAUDE_OAUTH_TOKEN_EXPIRES_AT = data.coder_parameter.pm_bot_claude_oauth_token_expires_at.value
+    PM_BOT_REGISTRY_TOKEN_EXPIRES_AT     = data.coder_parameter.pm_bot_registry_token_expires_at.value
+    PM_BOT_BAKERS_API_KEY_EXPIRES_AT     = data.coder_parameter.pm_bot_bakers_api_key_expires_at.value
   }
 
   metadata {

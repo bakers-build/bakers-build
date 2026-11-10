@@ -2,6 +2,7 @@ import { rmSync } from 'node:fs';
 import {
   type LaunchScript,
   type LaunchWatchOptions,
+  watchAuth,
   watchLaunch,
   writeLaunchScript,
 } from '@bakers-build/addon-herdr/shared';
@@ -165,11 +166,21 @@ export class HerdrCoreExecutor implements BbExecutor {
         launch.wrapPath,
       ]);
       started = true;
+      const readPane = () => this.hc(['read', name, '--lines', '40']);
       await watchLaunch(launch, {
         ...(this.options.launch_watch ?? {}),
-        readPane: () => this.hc(['read', name, '--lines', '40']),
+        readPane,
       });
-      return { sessionRef: name };
+      return input.authFailurePatterns?.length
+        ? {
+            sessionRef: name,
+            authFailure: watchAuth(
+              readPane,
+              input.authFailurePatterns,
+              input.claimedAt ? { since: input.claimedAt } : {},
+            ),
+          }
+        : { sessionRef: name };
     } catch (err) {
       if (launch) rmSync(launch.dir, { recursive: true, force: true });
       if (started) await this.drop(name, true);

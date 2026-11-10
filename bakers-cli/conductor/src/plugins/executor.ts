@@ -1,7 +1,14 @@
+import type { AuthFailurePattern } from './agent.js';
 import type { Ticket } from './remote.js';
 
 export interface SpawnedSession {
   sessionRef: string;
+  /**
+   * Settles once the launch watch ends: with the reason when the agent's
+   * pane showed one of `authFailurePatterns`, else undefined. Absent when the
+   * executor cannot read the pane or no patterns were given.
+   */
+  authFailure?: Promise<string | undefined>;
 }
 
 export interface ExecutorCapabilities {
@@ -22,6 +29,10 @@ export interface SpawnRunInput {
   instructions: { path: string; sha256: string; text: string } | null;
   command?: string;
   env?: Record<string, string>;
+  /** The agent's login and credential screens; see {@link SpawnedSession.authFailure}. */
+  authFailurePatterns?: readonly AuthFailurePattern[];
+  /** When the run was claimed (epoch ms); the launch watch counts from here. */
+  claimedAt?: number;
 }
 
 /** The lifecycle-hook slots, keyed exactly like `config.hooks`. */

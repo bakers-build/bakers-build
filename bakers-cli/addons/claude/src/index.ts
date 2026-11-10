@@ -6,9 +6,11 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import {
+  type AgentCredentialCheck,
   type AgentFootprint,
   type AgentPlugin,
   type AgentRunIdentity,
+  type AuthFailurePattern,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,
@@ -566,6 +568,67 @@ export class ClaudeAgent implements BbAgent {
   permissionDenials(log: string): string[] {
     if (this.securityMode !== 'sandbox') return [];
     return parseClaudePermissionDenials(log);
+  }
+
+  /** Screens and errors that mean the launched agent cannot work, anchored at line start so tool output quoting them never matches. */
+  readonly authFailurePatterns = [
+    {
+      pattern: /^[\s│]*Select login method/m,
+      reason:
+        'claude: not logged in (stopped at its login screen) — run claude /login',
+    },
+    {
+      pattern:
+        /^[\s│]*Choose the text style that looks best with your terminal/m,
+      reason:
+        'claude: not logged in (stopped at its first-run screen) — run claude /login',
+    },
+    {
+      // Claude's own error line, not a tool's output that mentions a 401.
+      pattern:
+        /^\s*⎿\s+API Error: 401\b|^[\s│]*(?:⎿\s+)?Invalid API key · Please run \/login/m,
+      reason: 'claude: credential rejected (API 401) — run claude /login',
+    },
+  ] satisfies readonly AuthFailurePattern[];
+
+  /** `claude auth status` in the user's config dir, which agent homes link their credential from. */
+  async credentialCheck(): Promise<AgentCredentialCheck> {
+    let stdout: string;
+    try {
+      // Only for another home: naming the default dir moves Claude's keychain entry, so a keychain login reads as logged out.
+      const env =
+        this.home === homedir() || process.env.CLAUDE_CONFIG_DIR
+          ? process.env
+          : { ...process.env, CLAUDE_CONFIG_DIR: join(this.home, '.claude') };
+      ({ stdout } = await run('claude', ['auth', 'status', '--json'], { env }));
+    } catch (error) {
+      stdout = (error as { stdout?: string }).stdout ?? '';
+    }
+    let status: { loggedIn?: unknown; loginExpiresAt?: unknown };
+    try {
+      status = JSON.parse(stdout);
+    } catch {
+      // shortcut: a CLI without `auth status` passes; the launch watch still catches its login screen.
+      return { ok: true };
+    }
+    if (status.loggedIn !== true) {
+      return {
+        ok: false,
+        reason:
+          'claude: not logged in — run claude /login, or set CLAUDE_CODE_OAUTH_TOKEN from claude setup-token',
+      };
+    }
+    const expires =
+      typeof status.loginExpiresAt === 'string'
+        ? Date.parse(status.loginExpiresAt)
+        : Number.NaN;
+    if (expires < Date.now()) {
+      return {
+        ok: false,
+        reason: `claude: login expired on ${new Date(expires).toISOString().slice(0, 10)} — run claude /login`,
+      };
+    }
+    return { ok: true };
   }
 
   /** Linux needs bwrap, socat and a user namespace; macOS ships Seatbelt. */

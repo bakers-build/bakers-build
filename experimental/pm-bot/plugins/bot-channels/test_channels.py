@@ -92,7 +92,7 @@ class Texts(unittest.TestCase):
         messages = json.loads((HERE / "messages.json").read_text(encoding="utf-8"))
         self.assertEqual(set(messages), {"de", "en"})
         self.assertEqual(set(messages["de"]), set(messages["en"]))
-        self.assertEqual(set(messages["de"]), {"acknowledge", "opened", "open_failed", "repeat"})
+        self.assertEqual(set(messages["de"]), {"acknowledge", "opened", "open_failed", "repeat", "model_credential"})
 
     def test_placeholders_are_filled_in_the_language(self):
         self.assertEqual(text("en", "opened", user="U1", channel="C1"), "<@U1> I opened <#C1> for this request. Let's continue there.")

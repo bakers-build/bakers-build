@@ -211,6 +211,10 @@
     "uuid": "1f1764cf-f41e-4077-8495-2bce8ed508b2",
     "entityType": "bb_conductor"
   },
+  "conductor.northside": {
+    "uuid": "dbc00000-0000-4000-8000-000000000001",
+    "entityType": "bb_conductor"
+  },
   "activity.conductor-properties": {
     "uuid": "d41d8e69-eae1-47a1-baf4-6c92154e77b9",
     "entityType": "bb_activity"

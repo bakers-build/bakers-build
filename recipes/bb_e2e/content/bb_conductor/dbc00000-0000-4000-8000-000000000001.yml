@@ -45,3 +45,8 @@ default:
   last_seen:
     -
       value: 1782837900
+  # One warning, one error and one ok check: the Credentials card lists the
+  # two problems only (features/conductors/conductor-credentials.feature).
+  credential_health:
+    -
+      value: '[{"name":"github","status":"warning","expires_at":"2026-12-31","reason":"Token expires soon."},{"name":"claude","status":"error","reason":"Not logged in."},{"name":"gitlab","status":"ok","reason":""}]'

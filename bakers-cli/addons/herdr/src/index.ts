@@ -17,6 +17,7 @@ import {
 } from './config.js';
 import {
   type LaunchScript,
+  watchAuth,
   watchLaunch,
   writeLaunchScript,
 } from './launch-script.js';
@@ -382,14 +383,24 @@ export class HerdrExecutor implements BbExecutor {
         vars,
         { env: AGENT_SHELL_ENV },
       );
+      const readPane = () =>
+        this.execHerdr(['pane', 'read', rootPaneId, '--lines', '40']);
       await watchLaunch(launch, {
         ...(this.options.launch_watch ?? {}),
-        readPane: () =>
-          this.execHerdr(['pane', 'read', rootPaneId, '--lines', '40']),
+        readPane,
       });
 
       // 6. Return branch as sessionRef (for logging)
-      return { sessionRef: branchName };
+      return input.authFailurePatterns?.length
+        ? {
+            sessionRef: branchName,
+            authFailure: watchAuth(
+              readPane,
+              input.authFailurePatterns,
+              input.claimedAt ? { since: input.claimedAt } : {},
+            ),
+          }
+        : { sessionRef: branchName };
     } catch (err) {
       // 7. Drop the 0600 command file (secrets) then close only the new tab.
       if (launch) {

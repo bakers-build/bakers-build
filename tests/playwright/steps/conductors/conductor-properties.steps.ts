@@ -68,6 +68,12 @@ Then('the fixture conductor {string} answers {int} on {string}', async ({ page }
   expect(response.status(), `${url}/${suffix}`).toBe(status);
 });
 
+Then('the fixture conductor {string} answers {int}', async ({ page }, name: string, status: number) => {
+  const { url } = fixture(name);
+  const response = await page.request.get(url, { maxRedirects: 0 });
+  expect(response.status(), url).toBe(status);
+});
+
 Then('the fixture conductor {string} serves the states {string}', async ({}, name: string, states: string) => {
   const stored = php(
     `print implode(", ", array_column(\\Drupal::service("entity.repository")->loadEntityByUuid("bb_conductor", "${fixture(name).uuid}")->get("states")->getValue(), "value"));`,

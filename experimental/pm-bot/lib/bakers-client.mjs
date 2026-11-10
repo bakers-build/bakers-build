@@ -22,6 +22,9 @@ export function createBakersClient({ url, apiKey }) {
       } catch (error) {
         throw new Error(`${name}: ${error.cause?.code ?? error.message}`);
       }
+      if (res.status === 401 || res.status === 403) {
+        throw Object.assign(new Error(`${name}: bakers.build rejected BAKERS_API_KEY (/mcp answered ${res.status})`), { credential: 'BAKERS_API_KEY' });
+      }
       if (!res.ok && res.status !== 202) throw new Error(`${name}: /mcp answered ${res.status}`);
       session = res.headers.get('mcp-session-id') ?? session;
       const text = await res.text();

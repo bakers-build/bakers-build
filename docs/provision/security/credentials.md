@@ -71,3 +71,37 @@ Setting up a worker with such a connection: [Set up a worker server](/provision/
 ## Scopes and permissions
 
 Both kinds sign in with the single `bb:session` scope. What a request may do is decided by the account's workspace rank and team membership on every call ([Who sees what](/provision/security/access-and-data#roles-and-permissions)), never by the key itself.
+
+## Box credentials
+
+A box is a machine that runs a conductor, and often the PM bot next to it. It holds the credentials below. The conductor checks them when it starts and every 6 hours, so an expiring credential is visible before a run or a Slack conversation fails.
+
+| Credential | Where it lives | Lifetime | Renewed by | Without it | Expiry | Renewal |
+|---|---|---|---|---|---|---|
+| Claude Code login | `~/.claude/.credentials.json` on the box | Until signed out or revoked; a `claude setup-token` token (`CLAUDE_CODE_OAUTH_TOKEN`) lasts 1 year | Box operator | A run fails within minutes: `claude: not logged in (…) — run claude /login (on <box>)`; with no agent signed in the conductor stops claiming | Checked as `claude` (`claude auth status`); a setup token's date recorded as `claude` | `claude /login`, or `claude setup-token` and record the new date |
+| Codex login | `~/.codex/auth.json` on the box | Until signed out or revoked | Box operator | A run fails within minutes with the same kind of reason | Checked as `codex` (`codex login status`); a date recorded as `codex` | `codex login --device-auth` |
+| PM bot model credential | Coder parameter `pm_bot_anthropic_api_key` or `pm_bot_claude_oauth_token` | API key: until revoked; setup token: 1 year | Box operator | The bot answers "My model credential is not working; ask the box operator to renew it." | Recorded as `pm-bot-claude-oauth-token` (parameter `pm_bot_claude_oauth_token_expires_at`) | New key or `claude setup-token`, update the parameter |
+| PM bot Slack bot and app tokens | Coder parameters `pm_bot_slack_bot_token`, `pm_bot_slack_app_token` | Until the app is uninstalled or the tokens are revoked | Slack workspace admin | The bot does not answer; the poller logs `Slack rejected SLACK_BOT_TOKEN` and waits 5 minutes between passes; at start the container logs `Slack rejected SLACK_APP_TOKEN` and waits 5 minutes before it restarts | Neither | Reinstall the Slack app, update both parameters |
+| PM bot bakers.build client | Coder parameter `pm_bot_bakers_api_key` | The key's: 90 days by default, at most 365 | Workspace administrator | No posts, no tickets; the poller logs `bakers.build rejected BAKERS_API_KEY` and waits 5 minutes | Recorded as `pm-bot-bakers-api-key` (parameter `pm_bot_bakers_api_key_expires_at`) | New service-account key, update the parameter |
+| Conductor's bakers.build client | `~/.bakers/connections/<id>.js` | The key's: 90 days by default, at most 365 | Box operator | The conductor stops claiming and retries every 5 minutes; `bakers conductor status` and its log name it | Neither: a rejection is shown at once | `bakers auth login` |
+| GitHub token for agents | `gh` configuration, `~/.config/gh/hosts.yml` | OAuth sign-in: until revoked; personal access token: its expiry date | Box operator | Pushes, pull requests and clones fail | Read from GitHub as `github` | `gh auth login` |
+| GitLab token for agents | `glab` configuration, `~/.config/glab-cli/config.yml` | OAuth sign-in: refreshed until revoked; personal access token: at most 1 year | Box operator | Pushes, merge requests and clones fail | Read from GitLab as `gitlab` | `glab auth login` |
+| PM bot registry token | Template variable `pm_bot_registry_token`, then `~/.docker/config.json` | The registry's | Template admin | `pm-bot: skipped: docker login … failed`; the bot does not start | Recorded as `pm-bot-registry-token` (parameter `pm_bot_registry_token_expires_at`) | New token, push the template |
+| keytec Vault token | keytec's workspace build; it reads `secret/infrastructure/keytec-coder` | 1 year | keytec infrastructure | A workspace build gets no keytec secrets | Read from Vault as `vault` when the box has the `vault` CLI, `VAULT_ADDR` and `VAULT_TOKEN`; otherwise recorded as `keytec-vault-token` | New token in keytec's infrastructure repository |
+| keytec registry deploy token | keytec's workspace build | The registry's | keytec infrastructure | Private images cannot be pulled | Recorded as `keytec-registry-deploy-token` | New deploy token in keytec's infrastructure repository |
+
+### Record an expiry date
+
+The conductor reads expiry dates from GitHub, GitLab and Vault itself (`github`, `gitlab`, `vault`), and checks the Claude Code and Codex sign-ins (`claude`, `codex`). Record every other dated credential in `~/.bakers/credential-expiry.yml` on the box, one line per credential:
+
+```yaml
+claude: 2027-03-31
+pm-bot-claude-oauth-token: 2027-03-31
+pm-bot-registry-token: 2027-01-15
+```
+
+A date under `claude` or `codex` applies to that sign-in check, for example a setup token's expiry. The recognized names are `claude`, `codex`, `pm-bot-claude-oauth-token`, `pm-bot-registry-token`, `pm-bot-bakers-api-key`, `keytec-vault-token` and `keytec-registry-deploy-token`; any other name is reported too. The Coder template writes the three `pm-bot-…` lines from its `pm_bot_…_expires_at` parameters and keeps the other lines. keytec's infrastructure repository writes its own entries.
+
+### Warnings and errors
+
+Each credential gets a status: **warning** from 14 days before its expiry date, **error** once it has expired or its issuer rejects it. Warnings and errors show on the conductor's page, in the conductors list, in `bakers ui`, and in the PM bot's Slack channel, where the bot posts each one when it first appears and once a day while it lasts. Renew the credential, update its recorded date, and the next check clears it.

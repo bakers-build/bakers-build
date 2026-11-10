@@ -18,8 +18,10 @@ export {
   resolveBbProjectContext,
 } from './bakers-project-context.js';
 export {
+  type AgentCredentialCheck,
   type AgentFootprint,
   type AgentRunIdentity,
+  type AuthFailurePattern,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,

@@ -600,6 +600,15 @@ content:
             stop.
           required: false
           multiple: false
+        credential_health:
+          type: text
+          title: Credential health
+          description: >-
+            The JSON list of credential checks the conductor last reported on
+            its heartbeat: name, status (ok | warning | error), expires_at
+            (YYYY-MM-DD, optional) and reason.
+          required: false
+          multiple: false
         node_status:
           type: string
           title: Node status

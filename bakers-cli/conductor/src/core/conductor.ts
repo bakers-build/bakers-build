@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { hostname } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import {
   type ConductorLogger,
@@ -42,12 +49,38 @@ import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
 import { attemptFamily } from './attempt.js';
+import {
+  boxProbes,
+  type CredentialHealth,
+  type CredentialProbe,
+  checkCredentials,
+  heartbeatCredentials,
+  readExpiryFile,
+} from './credentials.js';
 import { type HookRunner, shellHookRunner } from './hook-runner.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 import { checkRequiredSkills } from './required-skills.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
 import { signalUi } from './ui-signal.js';
+
+/** A dropsh `AuthError` or an HTTP 401/403: bakers.build refused the conductor itself. */
+function isCredentialRejection(err: unknown): boolean {
+  const e = err as { name?: unknown; status?: unknown } | null;
+  return e?.name === 'AuthError' || e?.status === 401 || e?.status === 403;
+}
+
+/** The rejection a serve process recorded in `file`, if any. */
+export function readAuthRejection(file: string): string | undefined {
+  try {
+    const { reason } = JSON.parse(readFileSync(file, 'utf8')) as {
+      reason?: unknown;
+    };
+    return typeof reason === 'string' ? reason : undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
@@ -349,6 +382,95 @@ export class Conductor {
    */
   private ownsServeProcess = false;
 
+  /** Where the serve process records a rejected bakers.build credential. */
+  authStatusFile: string | undefined;
+  /** The retry interval while bakers.build rejects the conductor. */
+  authBackoffMs = 5 * 60_000;
+
+  /** The box's last credential checks; unset until the first check. */
+  private credentials: CredentialHealth[] | undefined;
+  private credentialsCheckedAt = 0;
+  private recordedExpiry: Record<string, string> = {};
+  /** Where the checks read from; tests replace it. */
+  credentialSources: {
+    readExpiry: () => Promise<Record<string, string>>;
+    probes: readonly CredentialProbe[];
+    intervalMs: number;
+    now: () => Date;
+  } = {
+    readExpiry: () => readExpiryFile(),
+    probes: [],
+    intervalMs: 6 * 3600_000,
+    now: () => new Date(),
+  };
+
+  /** One probe per harness that can tell whether it is logged in. */
+  private agentProbes(): CredentialProbe[] {
+    const probes = new Map<string, CredentialProbe>();
+    for (const { agent } of this.agents) {
+      const check = agent.credentialCheck?.bind(agent);
+      if (!check || probes.has(agent.id)) continue;
+      probes.set(agent.id, {
+        name: agent.id,
+        check: async () => {
+          const result = await check();
+          return result.ok ? {} : { rejected: result.reason };
+        },
+      });
+    }
+    return [...probes.values()];
+  }
+
+  /** Replace the entries of `fresh`'s names, keeping the others. */
+  private mergeCredentials(fresh: CredentialHealth[]): void {
+    const names = new Set(fresh.map((c) => c.name));
+    this.credentials = [
+      ...(this.credentials ?? []).filter((c) => !names.has(c.name)),
+      ...fresh,
+    ];
+  }
+
+  /**
+   * Every check when the interval is due, otherwise only the agents in error,
+   * so a renewed login lifts the claim hold on the next tick.
+   */
+  private async refreshCredentials(): Promise<void> {
+    const src = this.credentialSources;
+    const now = src.now();
+    if (now.getTime() - this.credentialsCheckedAt >= src.intervalMs) {
+      this.recordedExpiry = await src.readExpiry();
+      this.credentials = await checkCredentials({
+        recorded: this.recordedExpiry,
+        probes: [...this.agentProbes(), ...src.probes],
+        now,
+      });
+      this.credentialsCheckedAt = now.getTime();
+      return;
+    }
+    const failing = new Set(
+      (this.credentials ?? [])
+        .filter((c) => c.status === 'error')
+        .map((c) => c.name),
+    );
+    const probes = this.agentProbes().filter((p) => failing.has(p.name));
+    if (probes.length === 0) return;
+    const recorded = Object.fromEntries(
+      Object.entries(this.recordedExpiry).filter(([n]) => failing.has(n)),
+    );
+    this.mergeCredentials(await checkCredentials({ recorded, probes, now }));
+  }
+
+  /** The reasons when no agent of this conductor is logged in; else empty. */
+  private loggedOutAgents(): string[] {
+    const harnesses = new Set(this.agentProbes().map((p) => p.name));
+    const errors = (this.credentials ?? []).filter(
+      (c) => c.status === 'error' && harnesses.has(c.name),
+    );
+    return harnesses.size > 0 && errors.length === harnesses.size
+      ? errors.map((c) => c.reason)
+      : [];
+  }
+
   /**
    * Declares that this instance runs *as* the conductor process, so its
    * registrations may carry the process identity a cockpit needs to stop it.
@@ -362,6 +484,9 @@ export class Conductor {
    */
   claimServeProcess(): void {
     this.ownsServeProcess = true;
+    // Only the serve process asks the issuers and reports the list, so a
+    // short-lived `oven once` cannot replace it with a partial one.
+    this.credentialSources.probes = boxProbes();
   }
 
   /** This conductor's registration payload, built from config. */
@@ -370,6 +495,9 @@ export class Conductor {
     const base = {
       ...registrationOf(this.config, this.checkoutRoot),
       id: this.id,
+      ...(this.ownsServeProcess && this.credentials
+        ? { credentials: heartbeatCredentials(this.credentials) }
+        : {}),
     };
     // Only the serve process reports its pid; poll and reap must not
     // overwrite the running conductor's.
@@ -447,6 +575,15 @@ export class Conductor {
   }
 
   async start() {
+    await this.refreshCredentials();
+    for (const c of this.credentials ?? []) {
+      if (c.status === 'ok') continue;
+      (c.status === 'error' ? this.logger.error : this.logger.warn).call(
+        this.logger,
+        { conductorId: this.config.conductor_id, credential: c.name },
+        `credential ${c.name}: ${c.reason}`,
+      );
+    }
     this.uuid = await this.remote.registerConductor(this.registration());
     this.logger.info(
       { conductorId: this.id, uuid: this.uuid, project: this.config.project },
@@ -550,10 +687,15 @@ export class Conductor {
       this.logger,
       this.queue,
     );
+    // After the heartbeat, so an agent error found since the last tick is
+    // reported once even when this re-check clears it.
+    await this.refreshCredentials();
     // A run that cannot start its sandbox would only fail and count against
     // the retry cap; claim nothing until every enabled agent can start.
     const unavailable =
-      machineLoad < maxParallel ? await sandboxFailures(this.agents) : [];
+      machineLoad < maxParallel
+        ? [...(await sandboxFailures(this.agents)), ...this.loggedOutAgents()]
+        : [];
     for (const line of unavailable) {
       this.logger.warn({ conductorId: this.id }, `claims withheld: ${line}`);
     }
@@ -578,10 +720,11 @@ export class Conductor {
         'claimed run',
       );
       this.signalUi();
+      const claimedAt = Date.now();
       this.queue.enqueue({
         key: `dispatch:${run.runUuid}`,
         lane: run.ticketUuid,
-        run: () => this.dispatchOrFail(run),
+        run: () => this.dispatchOrFail(run, claimedAt),
       });
       count += 1;
       machineLoad += 1;
@@ -1516,10 +1659,13 @@ export class Conductor {
   }
 
   /** Dispatches one claimed run; a failure terminalises it (BB-149). */
-  private async dispatchOrFail(run: ClaimedRun): Promise<void> {
+  private async dispatchOrFail(
+    run: ClaimedRun,
+    claimedAt = Date.now(),
+  ): Promise<void> {
     const at: { worktree?: string } = {};
     try {
-      await this.dispatch(run, at);
+      await this.dispatch(run, at, claimedAt);
     } catch (err) {
       // BB-149: terminalise the run to `failed` with the error captured,
       // instead of leaving it `claimed` to expire after the ~300s lease (the
@@ -1615,7 +1761,11 @@ export class Conductor {
   }
 
   /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
-  private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
+  private async dispatch(
+    run: ClaimedRun,
+    at: { worktree?: string } = {},
+    claimedAt = Date.now(),
+  ) {
     const t = await this.remote.getTicket(run.ticketUuid);
     // Resolve the ticket alias and machine defaults, or the project selection hook.
     // Persist the package id below so finalize can choose its transcript parser.
@@ -1628,6 +1778,16 @@ export class Conductor {
     // The tick's gate may be stale by now; spawn nothing that cannot start.
     const [unavailable] = await sandboxFailures([chosen]);
     if (unavailable) throw new Error(unavailable);
+    const login = await chosen.agent.credentialCheck?.();
+    if (login && !login.ok) {
+      // Held until a re-check passes; the next heartbeat reports it.
+      this.mergeCredentials([
+        { name: chosen.agent.id, status: 'error', reason: login.reason },
+      ]);
+      throw new Error(
+        `${login.reason} (on ${this.config.machine_label ?? hostname()})`,
+      );
+    }
     const baseRef = t.baseBranch ? `origin/${t.baseBranch}` : undefined;
     // Resolve the run env once (per-ticket env_vars + core BAKERS_* vars) and
     // inject it into BOTH the lifecycle hooks AND the agent run
@@ -1667,7 +1827,7 @@ export class Conductor {
       env,
       run: { uuid: run.runUuid, id: run.runId },
     };
-    const launch = { started: false };
+    const launch = { started: false, claimedAt };
     try {
       await this.launch(run, t, chosen, ws, ctx, launch);
     } catch (err) {
@@ -1686,7 +1846,7 @@ export class Conductor {
     chosen: ResolvedAgent,
     ws: EnsuredWorkspace,
     ctx: HookListenerContext,
-    launch: { started: boolean },
+    launch: { started: boolean; claimedAt: number },
   ): Promise<void> {
     const env = ctx.env;
     // Lifecycle hooks are conductor-owned + best-effort (BB-84): runHook never
@@ -1841,7 +2001,11 @@ export class Conductor {
         );
       }
     }
-    await this.executor.startRun({
+    const session = await this.executor.startRun({
+      ...(chosen.agent.authFailurePatterns?.length
+        ? { authFailurePatterns: chosen.agent.authFailurePatterns }
+        : {}),
+      claimedAt: launch.claimedAt,
       ticket: {
         uuid: t.uuid,
         identifier: t.identifier,
@@ -1889,6 +2053,29 @@ export class Conductor {
       startedAt: dispatchedAt,
     });
     this.signalUi(ws.path);
+    const authFailure = session.authFailure;
+    if (authFailure) {
+      // Its own lane: the watch must not hold up this ticket's finalize.
+      this.queue.enqueue({
+        key: `auth:${run.runUuid}`,
+        lane: `auth:${run.runUuid}`,
+        run: async () => {
+          const reason = await authFailure;
+          if (!reason) return;
+          this.mergeCredentials([
+            { name: chosen.agent.id, status: 'error', reason },
+          ]);
+          const box = this.config.machine_label ?? hostname();
+          this.logger.error(
+            { ticket: t.identifier, run: run.runUuid, reason },
+            'agent cannot authenticate; failing the run',
+          );
+          await this.remote.markFailed(run.runUuid, `${reason} (on ${box})`);
+          await this.executor.cleanupRun(t.branchName, run.runId);
+          this.signalUi(ws.path);
+        },
+      });
+    }
   }
 
   /**
@@ -1933,6 +2120,19 @@ export class Conductor {
     }
   }
 
+  private writeAuthStatus(reason: string): void {
+    if (!this.authStatusFile) return;
+    try {
+      mkdirSync(dirname(this.authStatusFile), { recursive: true });
+      writeFileSync(
+        this.authStatusFile,
+        `${JSON.stringify({ reason, since: new Date().toISOString() })}\n`,
+      );
+    } catch {
+      // best-effort: the log line already names the rejection.
+    }
+  }
+
   async serve(signal?: AbortSignal) {
     await this.pollLoop(signal);
   }
@@ -1965,15 +2165,26 @@ export class Conductor {
         return;
       }
       // Only produces: the loop never waits for the actions it enqueued.
+      let wait = this.config.poll_interval_ms;
       try {
         await this.produce();
+        if (this.authStatusFile) rmSync(this.authStatusFile, { force: true });
       } catch (err) {
-        this.logger.error(
-          { conductorId: this.id, err: String(err) },
-          'tick failed',
-        );
+        if (isCredentialRejection(err)) {
+          // Nothing is claimed without a heartbeat; retry slowly, never exit.
+          const message = err instanceof Error ? err.message : String(err);
+          const reason = `bakers.build rejected the conductor's client credential (${message}) — run bakers auth login`;
+          this.logger.error({ conductorId: this.id }, reason);
+          this.writeAuthStatus(reason);
+          wait = this.authBackoffMs;
+        } else {
+          this.logger.error(
+            { conductorId: this.id, err: String(err) },
+            'tick failed',
+          );
+        }
       }
-      await sleep(this.config.poll_interval_ms, signal);
+      await sleep(wait, signal);
     }
     await this.queue.drain();
     // NB: the poll loop never writes status=offline itself. A graceful stop

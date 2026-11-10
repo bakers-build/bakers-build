@@ -75,6 +75,39 @@ third_party_settings:
                                                 entity: entity
                                             node_id: conductor_identity_form
                                 node_id: conductor_identity
+                              -
+                                source_id: component
+                                source:
+                                  component:
+                                    component_id: 'bb_theme:zone'
+                                    variant_id: null
+                                    props:
+                                      inset:
+                                        source_id: select
+                                        source:
+                                          value: none
+                                      gap:
+                                        source_id: select
+                                        source:
+                                          value: sm
+                                    slots:
+                                      heading:
+                                        sources:
+                                          -
+                                            source_id: token
+                                            source:
+                                              value: Credentials
+                                            node_id: conductor_credentials_heading
+                                      content:
+                                        sources:
+                                          -
+                                            source_id: 'field_formatter:bb_conductor:bb_conductor:credential_health'
+                                            source:
+                                              type: bb_credential_health
+                                              settings: {  }
+                                              third_party_settings: {  }
+                                            node_id: conductor_credentials_value
+                                node_id: conductor_credentials
                           footer:
                             sources:
                               -
@@ -92,6 +125,7 @@ mode: full
 content: {  }
 hidden:
   active: true
+  credential_health: true
   last_seen_label: true
   node_load_label: true
   node_states_label: true

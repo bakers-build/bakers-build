@@ -187,7 +187,20 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
       ->setSetting('max_length', 255)
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'string_textfield', 'weight' => 16]);
+    $fields['credential_health'] = static::credentialHealthFieldDefinition();
     return $fields;
+  }
+
+  /**
+   * The credential report the box sends on each heartbeat, as JSON.
+   *
+   * Shared with bb_core_update_11001(), which installs it on existing sites.
+   */
+  public static function credentialHealthFieldDefinition(): BaseFieldDefinition {
+    return BaseFieldDefinition::create('string_long')
+      ->setLabel(new TranslatableMarkup('Credential health'))
+      ->setDescription(new TranslatableMarkup('The JSON list of credential checks the conductor last reported: name, status (ok, warning, error), expires_at and reason.'))
+      ->setDisplayConfigurable('view', TRUE);
   }
 
   /**

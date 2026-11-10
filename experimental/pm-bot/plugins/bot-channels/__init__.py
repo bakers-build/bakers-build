@@ -15,6 +15,8 @@
   (scope users:read.email) when the request channel opens; without it the line says none.
 - Language: read once at start from the service account's background (language.py), German
   until then and on any failure; it also picks the plugin's own texts (messages.json).
+- Model credential: Hermes' reply to a model credential its provider rejects (401/403) becomes
+  "ask the box operator to renew it" in the bot's language, and the plugin logs it.
 - Recovery: a requester's turn that a hard restart left unknown settles as interrupted on the
   channel's next message instead of pausing the conversation; it is not run again.
 
@@ -87,6 +89,22 @@ def factory(app, adapter):
         await complete(event, type(outcome).CANCELLED)
 
     adapter.on_processing_complete = on_processing_complete
+
+    # Hermes answers a rejected model credential with /login and `hermes doctor`, which a
+    # requester cannot run; the reply names who can. entrypoint.sh check asserts both texts.
+    from agent.i18n import t
+
+    rejected = {t("gateway.errors.auth_failed"), t("gateway.errors.no_credentials")}
+    send = adapter.send
+
+    async def send_naming_the_operator(chat_id, content, *args, **kwargs):
+        if content in rejected:
+            logger.error("bot-channels: the model provider rejected the bot's model credential; renew it "
+                         "(docs/provision/security/credentials.md › Box credentials)")
+            content = text(lang["code"], "model_credential")
+        return await send(chat_id, content, *args, **kwargs)
+
+    adapter.send = send_naming_the_operator
 
     def refresh_prompts():
         poller, channels = current()
