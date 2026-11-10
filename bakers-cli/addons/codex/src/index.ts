@@ -475,7 +475,7 @@ export class CodexAgent implements BbAgent {
   readonly authFailurePatterns = [
     {
       pattern:
-        /^[\s│>›]*\d\.\s+(?:Sign in with ChatGPT|Provide your own API key)/m,
+        /^[\s│>›]*(?:\d\.\s+)?(?:Sign in with ChatGPT|Provide your own API key)/m,
       reason:
         'codex: not logged in (stopped at its login screen) — run codex login',
     },

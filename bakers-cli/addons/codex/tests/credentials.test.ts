@@ -51,6 +51,16 @@ describe('CodexAgent.authFailurePatterns', () => {
     );
   });
 
+  it('names the login screen when its options are not numbered', () => {
+    expect(
+      reasonFor(
+        'Welcome to Codex\n\n› Sign in with ChatGPT\n  Provide your own API key',
+      ),
+    ).toBe(
+      'codex: not logged in (stopped at its login screen) — run codex login',
+    );
+  });
+
   it('names a rejected credential', () => {
     expect(
       reasonFor(
