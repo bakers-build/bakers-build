@@ -61,7 +61,11 @@ function byExpiry(
   const expiry = /^\d{4}-\d{2}-\d{2}$/.test(date)
     ? Date.parse(`${date}T00:00:00Z`)
     : Number.NaN;
-  if (Number.isNaN(expiry)) {
+  // Date.parse rolls 2027-02-30 over to March; only a round trip proves a real day.
+  if (
+    Number.isNaN(expiry) ||
+    new Date(expiry).toISOString().slice(0, 10) !== date
+  ) {
     return {
       name,
       status: 'error',
@@ -137,6 +141,31 @@ export async function checkCredentials(inputs: {
       out.push(byExpiry(name, date, inputs.now, EXPIRY_FILE));
   }
   return out;
+}
+
+/** bakers.build refuses a whole heartbeat over these limits. */
+const REPORT_MAX_ENTRIES = 50;
+const REPORT_MAX_CHARS = 200;
+const RANK = { error: 0, warning: 1, ok: 2 } as const;
+
+/** At most `max` code points, the cut marked with an ellipsis. */
+function cap(text: string, max = REPORT_MAX_CHARS): string {
+  const chars = Array.from(text);
+  return chars.length <= max ? text : `${chars.slice(0, max - 1).join('')}…`;
+}
+
+/**
+ * The list as the heartbeat may carry it: names and reasons capped, at most
+ * 50 entries with errors and warnings kept first. Issuer stderr or a pane
+ * line is unbounded, and one oversized entry would refuse every heartbeat.
+ */
+export function heartbeatCredentials(
+  list: readonly CredentialHealth[],
+): CredentialHealth[] {
+  return [...list]
+    .sort((a, b) => RANK[a.status] - RANK[b.status])
+    .slice(0, REPORT_MAX_ENTRIES)
+    .map((c) => ({ ...c, name: cap(c.name), reason: cap(c.reason) }));
 }
 
 export interface CommandResult {

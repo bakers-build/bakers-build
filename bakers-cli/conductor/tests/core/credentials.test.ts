@@ -3,6 +3,7 @@ import {
   boxProbes,
   type CommandResult,
   checkCredentials,
+  heartbeatCredentials,
   parseExpiryFile,
 } from '../../src/core/credentials.js';
 
@@ -102,6 +103,56 @@ describe('credential evaluator', () => {
 
   it('reads an empty or missing file as no recorded dates', () => {
     expect(parseExpiryFile('')).toEqual({});
+  });
+
+  it('reports an impossible calendar date as unreadable, not as an expiry', async () => {
+    expect(
+      await checkCredentials({
+        recorded: { claude: '2027-02-30' },
+        probes: [],
+        now: NOW,
+      }),
+    ).toEqual([
+      {
+        name: 'claude',
+        status: 'error',
+        reason:
+          'unreadable expiry date "2027-02-30" in ~/.bakers/credential-expiry.yml',
+      },
+    ]);
+  });
+});
+
+describe('heartbeat credential report', () => {
+  it('keeps every entry within what bakers.build accepts', () => {
+    const stderr = `gh: ${'x'.repeat(300)}`;
+    const report = heartbeatCredentials([
+      { name: 'github', status: 'error', reason: stderr },
+      { name: `n${'é'.repeat(250)}`, status: 'ok', reason: 'accepted' },
+    ]);
+    expect(report.map((c) => [c.name.length, c.reason.length])).toEqual([
+      [6, 200],
+      [200, 8],
+    ]);
+    expect(report[0]?.reason.endsWith('…')).toBe(true);
+  });
+
+  it('sends at most 50 entries, errors and warnings first', () => {
+    const many = Array.from({ length: 60 }, (_, i) => ({
+      name: `ok-${i}`,
+      status: 'ok' as const,
+      reason: 'accepted',
+    }));
+    const report = heartbeatCredentials([
+      ...many,
+      { name: 'late-warning', status: 'warning', reason: 'expires soon' },
+      { name: 'late-error', status: 'error', reason: 'expired' },
+    ]);
+    expect(report).toHaveLength(50);
+    expect(report.slice(0, 2).map((c) => c.name)).toEqual([
+      'late-error',
+      'late-warning',
+    ]);
   });
 });
 

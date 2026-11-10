@@ -54,6 +54,7 @@ import {
   type CredentialHealth,
   type CredentialProbe,
   checkCredentials,
+  heartbeatCredentials,
   readExpiryFile,
 } from './credentials.js';
 import { type HookRunner, shellHookRunner } from './hook-runner.js';
@@ -495,7 +496,7 @@ export class Conductor {
       ...registrationOf(this.config, this.checkoutRoot),
       id: this.id,
       ...(this.ownsServeProcess && this.credentials
-        ? { credentials: this.credentials }
+        ? { credentials: heartbeatCredentials(this.credentials) }
         : {}),
     };
     // Only the serve process reports its pid; poll and reap must not

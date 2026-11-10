@@ -213,6 +213,19 @@ describe('launch watch for login screens', () => {
     );
   });
 
+  it('reports an over-long failure reason on the heartbeat within its 200-character limit', async () => {
+    const long = `claude: API Error: 401 ${'x'.repeat(300)}`;
+    const { conductor, remote } = setup([
+      agentWith('claude', [{ ok: true }, { ok: false, reason: long }]),
+    ]);
+    await conductor.start();
+    await conductor.tick(); // r-1 fails at dispatch
+    await conductor.tick();
+    const claude = remote.lastCredentials?.find((c) => c.name === 'claude');
+    expect(claude?.status).toBe('error');
+    expect(claude?.reason).toHaveLength(200);
+  });
+
   it('leaves a run alone when the watch ends without a match', async () => {
     const agent = {
       ...agentWith('claude', [{ ok: true }]),

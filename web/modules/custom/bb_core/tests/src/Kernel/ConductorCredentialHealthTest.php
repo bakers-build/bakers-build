@@ -81,6 +81,22 @@ final class ConductorCredentialHealthTest extends KernelTestBase {
   }
 
   /**
+   * A report at the conductor's caps is accepted, so a capped error shows.
+   *
+   * The conductor cuts names and reasons to 200 code points and the list to
+   * 50 entries; one more would refuse the whole heartbeat.
+   */
+  public function testReportAtTheConductorsCapsIsAccepted(): void {
+    $owner = $this->createUser('owner-caps');
+    $capped = str_repeat('é', 199) . '…';
+    $report = array_fill(0, 50, ['name' => $capped, 'status' => 'error', 'reason' => $capped]);
+
+    $conductor = $this->heartbeat($owner, ['credentials' => $report]);
+
+    $this->assertSame($report, $this->stored($conductor));
+  }
+
+  /**
    * A heartbeat without the attribute keeps the stored report.
    */
   public function testHeartbeatWithoutTheReportKeepsIt(): void {
