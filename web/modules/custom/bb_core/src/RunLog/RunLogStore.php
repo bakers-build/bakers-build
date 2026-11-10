@@ -115,14 +115,7 @@ final class RunLogStore {
    * @SuppressWarnings("PHPMD.ErrorControlOperator")
    */
   public function read(FileInterface $file, BbRunInterface $run): string {
-    $path_workspace = self::workspaceUuidFromUri((string) $file->getFileUri());
-    $run_workspace = $this->workspaceUuid($run);
-    if ($path_workspace === '' || $path_workspace !== $run_workspace) {
-      // The path says one workspace and the run resolves to another. Refuse
-      // rather than pick one: this cross-check turns a resolution defect into a
-      // denial instead of a cross-workspace read.
-      throw new RunLogException('Run log does not belong to this run.');
-    }
+    $this->assertOwnedBy($file, $run);
     $contents = @file_get_contents((string) $file->getFileUri());
     if ($contents === FALSE) {
       throw new RunLogException('Run log could not be read.');
@@ -135,6 +128,60 @@ final class RunLogStore {
       throw new RunLogException('Run log could not be decompressed.');
     }
     return $decoded;
+  }
+
+  /**
+   * The first non-blank line of a log, read in chunks (never the whole file).
+   *
+   * @throws \Drupal\bb_core\RunLog\RunLogException
+   *
+   * @SuppressWarnings("PHPMD.ErrorControlOperator")
+   */
+  public function firstLine(FileInterface $file, BbRunInterface $run): string {
+    $this->assertOwnedBy($file, $run);
+    $handle = @fopen((string) $file->getFileUri(), 'rb');
+    $inflate = self::isGzipLog($file) ? inflate_init(ZLIB_ENCODING_GZIP) : FALSE;
+    if ($handle === FALSE || $inflate === FALSE && self::isGzipLog($file)) {
+      throw new RunLogException('Run log could not be read.');
+    }
+    $text = '';
+    try {
+      while (!feof($handle)) {
+        $chunk = fread($handle, 8192);
+        if ($chunk === FALSE || ($inflate !== FALSE && ($chunk = @inflate_add($inflate, $chunk)) === FALSE)) {
+          throw new RunLogException('Run log could not be read.');
+        }
+        $text .= $chunk;
+        // Only a completed line counts: the last chunk may end mid-line.
+        $lines = explode("\n", $text);
+        foreach (array_slice($lines, 0, -1) as $line) {
+          if (trim($line) !== '') {
+            return trim($line);
+          }
+        }
+        $text = end($lines);
+      }
+    }
+    finally {
+      fclose($handle);
+    }
+    return trim($text);
+  }
+
+  /**
+   * Refuses a file whose path names another workspace than the run's.
+   *
+   * @throws \Drupal\bb_core\RunLog\RunLogException
+   */
+  private function assertOwnedBy(FileInterface $file, BbRunInterface $run): void {
+    $path_workspace = self::workspaceUuidFromUri((string) $file->getFileUri());
+    $run_workspace = $this->workspaceUuid($run);
+    if ($path_workspace === '' || $path_workspace !== $run_workspace) {
+      // The path says one workspace and the run resolves to another. Refuse
+      // rather than pick one: this cross-check turns a resolution defect into a
+      // denial instead of a cross-workspace read.
+      throw new RunLogException('Run log does not belong to this run.');
+    }
   }
 
   /**

@@ -455,6 +455,9 @@ services:
   Drupal\bb_core\Time\BbDate:
     alias: bb_core.date
 
+  Drupal\bb_core\Run\RunExplanation:
+    autowire: true
+
   # Read-only formatting for the canonical run inspector.
   bb_core.run_inspector_rows:
     class: Drupal\bb_core\Run\BbRunInspectorRows
