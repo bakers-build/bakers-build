@@ -89,11 +89,16 @@ final class ProjectStatsRouteTest extends KernelTestBase {
   }
 
   /**
-   * A lead and a guest of the workspace reach the tab; an outsider gets 403.
+   * The workspace lead and a guest on the project's team reach the tab.
+   *
+   * An outsider gets 403.
    */
   public function testProjectViewersGetThePageOutsidersAre403(): void {
-    foreach (['lead', 'guest'] as $rank) {
-      self::assertTrue($this->access($this->member($this->north, 'north-' . $rank, [$rank]))->isAllowed(), "A $rank opens Project › Stats.");
+    $lead = $this->member($this->north, 'north-lead', ['lead']);
+    $guest = $this->member($this->north, 'north-guest', ['guest']);
+    $this->seatOnProjectTeam($this->atlas, $guest);
+    foreach (['lead' => $lead, 'guest' => $guest] as $rank => $account) {
+      self::assertTrue($this->access($account)->isAllowed(), "A $rank opens Project › Stats.");
     }
     $south = $this->workspace('South', 'south');
     $result = $this->access($this->member($south, 'south-contributor', ['contributor']));
