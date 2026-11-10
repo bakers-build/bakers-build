@@ -144,7 +144,7 @@ open(stub, "w").write("""#!/bin/sh
 echo "$*" >> "$LOG"
 case "$1" in
   sql:query)
-    [ "$DB_UP" = 1 ] || exit 1
+    [ "$DB_UP" = 1 ] || { echo "ERROR 2002: Can't connect to server" >&2; exit 1; }
     case "$*" in *"'config'"*) echo "$HAS_CONFIG" ;; *) echo "$TABLES" ;; esac ;;
   *)
     echo "drush output for $*"; echo " [notice] Drupal says $*" >&2
@@ -164,8 +164,12 @@ def run(db_up, tables, has_config, admin="admin@example.test", fail_on=""):
     return r, open(log).read()
 r, calls = run("0", "0", "0")
 assert r.returncode != 0 and "site:install" not in calls and "deploy" not in calls.replace("sql:query", ""), (r, calls)
+assert "ERROR 2002: Can't connect to server" in r.stderr, "an unreachable database shows why"
 r, calls = run("1", "0", "0")
 assert r.returncode == 0, r.stderr
+# drush hands the client a --defaults-file, so the image's my.cnf.d TLS opt-out never applies.
+queries = [l for l in calls.splitlines() if l.startswith("sql:query")]
+assert queries and all("--extra=--skip-ssl" in l for l in queries), calls
 assert "site:install --existing-config --account-mail=admin@example.test\n" in calls, calls
 assert "admin@example.test" in r.stdout and "account-pass" not in r.stdout, r.stdout
 r, calls = run("1", "0", "0", admin="")
