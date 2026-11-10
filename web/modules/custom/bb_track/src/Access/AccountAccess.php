@@ -18,12 +18,12 @@ use Drupal\bb_track\Entity\Account;
  * Billing account access follows the project's update access, both ways.
  *
  * View follows project visibility; the external ID and billing terms are
- * read only by those who may update the project. Create, update and deactivate (PATCH
- * active=false) of an active account follow project update access, the same
- * right the UI forms already require, so JSON:API and dropsh writes are
- * authorized identically to the form. An archived account is read-only, as in
- * the UI. Physical deletion stays prohibited for every actor: it is never the
- * retention contract's way to archive an account.
+ * read only by those who may update the project. Create, update and
+ * deactivate (PATCH active=false) of an active account follow project update
+ * access, the same right the UI forms already require, so JSON:API and dropsh
+ * writes are authorized identically to the form. An archived account is
+ * read-only, as in the UI. Physical deletion stays prohibited for every actor:
+ * it is never the retention contract's way to archive an account.
  */
 final class AccountAccess extends EntityAccessControlHandler {
 
@@ -69,12 +69,8 @@ final class AccountAccess extends EntityAccessControlHandler {
   protected function checkFieldAccess($operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items = NULL) {
     $name = $field_definition->getName();
     $entity = $items?->getEntity();
-    if ($operation === 'view' && in_array($name, ['external_id', ...AccountValidation::TERMS], TRUE) && $entity instanceof Account) {
-      // Prices are for those who may edit the project, archived or not.
-      return $this->projectUpdateAccess($entity, $account, FALSE);
-    }
     if ($operation !== 'edit') {
-      return parent::checkFieldAccess($operation, $field_definition, $account, $items);
+      return $this->fieldViewAccess($operation, $field_definition, $account, $items);
     }
     if (in_array($name, ['tickets', 'is_default'], TRUE)) {
       return AccessResult::forbidden('Tickets and the project default are managed by WorkAssignments, not the API.');
@@ -94,14 +90,33 @@ final class AccountAccess extends EntityAccessControlHandler {
   /**
    * The entity's project's update access, cacheable on both.
    */
-  private function projectUpdateAccess(Account $entity, AccountInterface $account, bool $refuseArchived = TRUE): AccessResultInterface {
+  private function projectUpdateAccess(Account $entity, AccountInterface $account): AccessResultInterface {
+    // The UI answers 404 for an archived account; the API matches it.
+    if ($entity->isArchivedInStorage()) {
+      return AccessResult::forbidden('Archived billing accounts cannot be edited.')->addCacheableDependency($entity);
+    }
+    return $this->projectEditorAccess($entity, $account);
+  }
+
+  /**
+   * Field view: prices are for those who may edit the project, archived too.
+   */
+  private function fieldViewAccess(string $operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items): AccessResultInterface {
+    $entity = $items?->getEntity();
+    $priced = ['external_id', ...AccountValidation::TERMS];
+    if ($operation === 'view' && $entity instanceof Account && in_array($field_definition->getName(), $priced, TRUE)) {
+      return $this->projectEditorAccess($entity, $account);
+    }
+    return parent::checkFieldAccess($operation, $field_definition, $account, $items);
+  }
+
+  /**
+   * Whether the account may update the entity's project, cacheable on both.
+   */
+  private function projectEditorAccess(Account $entity, AccountInterface $account): AccessResultInterface {
     $project = $entity->get('project_id')->entity;
     if (!$project) {
       return AccessResult::forbidden('Billing account needs an existing project.');
-    }
-    // The UI answers 404 for an archived account; the API matches it.
-    if ($refuseArchived && $entity->isArchivedInStorage()) {
-      return AccessResult::forbidden('Archived billing accounts cannot be edited.')->addCacheableDependency($entity);
     }
     return AccessResult::allowedIf($project->access('update', $account))
       ->addCacheableDependency($project->access('update', $account, TRUE))
