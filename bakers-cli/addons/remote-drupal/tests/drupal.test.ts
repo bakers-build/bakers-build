@@ -107,7 +107,7 @@ describe('DrupalBbRemote', () => {
     const rows = [
       fakeResource(
         'run-1',
-        { state: 'running', state_at_start: 'working', agent: 'claude' },
+        { state: 'running', state_at_start: 'working' },
         { ticket_id: 'tic-1' },
       ),
       fakeResource(
@@ -165,7 +165,6 @@ describe('DrupalBbRemote', () => {
         state: 'running',
         stateAtStart: 'working',
         worktreePath: '',
-        agent: 'claude',
       },
       {
         runUuid: 'run-2',
@@ -175,7 +174,6 @@ describe('DrupalBbRemote', () => {
         state: 'claimed',
         stateAtStart: 'review',
         worktreePath: '',
-        agent: '',
       },
     ]);
   });
@@ -1110,15 +1108,6 @@ describe('DrupalBbRemote', () => {
     expect(body.attributes).toHaveProperty('error_log', 'startRun boom');
     expect(body.attributes).toHaveProperty('closed', true);
     expect(body.attributes).toHaveProperty('closed_date');
-  });
-
-  it('cancelRun patches state=cancelled alone, leaving the close to finalisation', async () => {
-    const update = vi.fn(async () => fakeResource('x'));
-    const remote = new DrupalBbRemote(fakeClient({ update }));
-    await remote.cancelRun('run-1');
-    expect(update.mock.calls).toEqual([
-      ['bb_run', 'run-1', { attributes: { state: 'cancelled' } }],
-    ]);
   });
 
   const CLOSE_METRICS = {
