@@ -8,6 +8,7 @@ use Drupal\Tests\bb_core\Kernel\ProjectsViewTestTrait;
 use Drupal\Tests\bb_core\Kernel\WorkspaceReadScopeTestTrait;
 use Drupal\Core\TypedData\ComplexDataInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\search_api\Entity\Index;
@@ -147,12 +148,12 @@ final class ProjectBoardViewTest extends KernelTestBase {
 
     $backlog_ids = [$backlog->getIdentifier(), $fixture->getIdentifier()];
     sort($backlog_ids);
-    $working_ids = [$blocked->getIdentifier(), $working->getIdentifier()];
-    sort($working_ids);
+    $intake_ids = [$blocked->getIdentifier(), $intake->getIdentifier()];
+    sort($intake_ids);
 
     self::assertSame($backlog_ids, $this->identifiers('backlog', $this->projectA));
-    self::assertSame([$intake->getIdentifier()], $this->identifiers('intake', $this->projectA));
-    self::assertSame($working_ids, $this->identifiers('working', $this->projectA));
+    self::assertSame($intake_ids, $this->identifiers('intake', $this->projectA));
+    self::assertSame([$working->getIdentifier()], $this->identifiers('working', $this->projectA));
     $done_page = $this->identifiersInOrder('done', $this->projectA);
     self::assertCount(10, $done_page);
     self::assertSame($newest_on_page->getIdentifier(), $done_page[0]);
@@ -168,8 +169,9 @@ final class ProjectBoardViewTest extends KernelTestBase {
   /**
    * Classification cases for the derived work_state field.
    *
-   * @return array<string, array{bool, string, bool, bool, string}>
-   *   closed, state, assigned, frozen, expected work_state.
+   * @return array<string, array{bool, string, bool, bool, string, 2?: string|null, 3?: string|null}>
+   *   closed, state, assigned, frozen, expected work_state, then the state of
+   *   the ticket's single blocker and of its single run, each NULL for none.
    */
   public static function workStateCases(): array {
     return [
@@ -182,6 +184,11 @@ final class ProjectBoardViewTest extends KernelTestBase {
       'open cancelled unassigned' => [FALSE, 'cancelled', FALSE, FALSE, 'not_assigned'],
       'frozen assigned coding stays working' => [FALSE, 'coding', TRUE, TRUE, 'working'],
       'frozen unassigned stays not assigned' => [FALSE, 'coding', FALSE, TRUE, 'not_assigned'],
+      'blocked, conductor, no live run' => [FALSE, 'coding', TRUE, FALSE, 'intake', 'coding'],
+      'blocked, conductor, live run' => [FALSE, 'coding', TRUE, FALSE, 'working', 'coding', 'running'],
+      'blocked, conductor, finished run' => [FALSE, 'coding', TRUE, FALSE, 'intake', 'coding', 'done'],
+      'blocked, no conductor' => [FALSE, 'coding', FALSE, FALSE, 'not_assigned', 'coding'],
+      'blocker done' => [FALSE, 'coding', TRUE, FALSE, 'working', 'done'],
     ];
   }
 
@@ -195,11 +202,13 @@ final class ProjectBoardViewTest extends KernelTestBase {
     bool $assigned,
     bool $frozen,
     string $expected,
+    ?string $blockerState = NULL,
+    ?string $runState = NULL,
   ): void {
     $conductor_id = $assigned ? $this->fixture('a', 'bb_conductor')->id() : NULL;
     $ticket = $this->createTicket(
       $this->projectA,
-      'WS-' . substr(hash('sha256', $state . (int) $closed . (int) $assigned . (int) $frozen), 0, 8),
+      'WS-' . substr(hash('sha256', $state . (int) $closed . (int) $assigned . (int) $frozen . $blockerState . $runState), 0, 8),
       'coding',
       FALSE,
       $conductor_id,
@@ -207,6 +216,13 @@ final class ProjectBoardViewTest extends KernelTestBase {
     $ticket->set('state', $state);
     $ticket->set('closed', $closed);
     $ticket->setFrozen($frozen);
+    if ($blockerState !== NULL) {
+      $blocker = $this->createTicket($this->projectA, 'WS-BLK-' . $blockerState, $blockerState, FALSE, $conductor_id);
+      $ticket->set('blocked_by', [$blocker->id()]);
+    }
+    if ($runState !== NULL) {
+      $this->createRun($ticket, $runState);
+    }
     self::assertSame($expected, $ticket->get('work_state')->value);
   }
 
@@ -248,6 +264,35 @@ final class ProjectBoardViewTest extends KernelTestBase {
   }
 
   /**
+   * Closing a blocker re-indexes the tickets it blocks.
+   */
+  public function testWorkStateIndexFollowsBlockerClosure(): void {
+    $conductor = $this->fixture('a', 'bb_conductor');
+    $blocker = $this->createTicket($this->projectA, 'WS-BLKR', 'working', FALSE, $conductor->id());
+    $ticket = $this->createTicket($this->projectA, 'WS-BLKD', 'working', FALSE, $conductor->id());
+    $ticket->set('blocked_by', [$blocker->id()])->save();
+    $this->assertIndexedWorkState($ticket, 'intake');
+
+    $blocker->set('state', 'done')->save();
+    $this->assertIndexedWorkState($ticket, 'working');
+  }
+
+  /**
+   * Saving a run re-indexes its ticket.
+   */
+  public function testWorkStateIndexFollowsRunSave(): void {
+    $conductor = $this->fixture('a', 'bb_conductor');
+    $blocker = $this->createTicket($this->projectA, 'WS-RBLR', 'coding', FALSE, $conductor->id());
+    $ticket = $this->createTicket($this->projectA, 'WS-RUNT', 'coding', FALSE, $conductor->id());
+    $ticket->set('blocked_by', [$blocker->id()])->save();
+    $run = $this->createRun($ticket, 'running');
+    $this->assertIndexedWorkState($ticket, 'working');
+
+    $run->set('state', 'done')->save();
+    $this->assertIndexedWorkState($ticket, 'intake');
+  }
+
+  /**
    * Parent focus lists closed descendants in Done; active columns stay open.
    */
   public function testParentScopedDoneIncludesClosedDescendants(): void {
@@ -285,6 +330,20 @@ final class ProjectBoardViewTest extends KernelTestBase {
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     return $ticket;
+  }
+
+  /**
+   * Creates a run of the ticket in the given state.
+   */
+  private function createRun(BbTicketInterface $ticket, string $state): BbRunInterface {
+    $run = $this->createEntity('bb_run', [
+      'ticket_id' => $ticket->id(),
+      'conductor_id' => $this->fixture('a', 'bb_conductor')->id(),
+      'state' => $state,
+      'claim_expires_at' => time() + 600,
+    ]);
+    self::assertInstanceOf(BbRunInterface::class, $run);
+    return $run;
   }
 
   /**
