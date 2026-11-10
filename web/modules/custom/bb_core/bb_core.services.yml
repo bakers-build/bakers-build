@@ -332,6 +332,8 @@ services:
       - '@bb_core.rank_entity_fence'
       - '@bb_core.figure_context_repository'
       - '@context.handler'
+      - '@bb_core.workspace_read_scope'
+      - '@entity_type.manager'
 
   bb_core.figure_discovery:
     class: Drupal\bb_core\Statistics\FigureDiscovery
@@ -362,6 +364,7 @@ services:
       - '@entity_type.manager'
       - '@bb_core.figure_discovery'
       - '@bb_core.figure_evaluator'
+      - '@bb_core.figure_disclosure'
 
   bb_core.figure_renderer:
     class: Drupal\bb_core\Statistics\FigureRenderer
