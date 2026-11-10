@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_core\Kernel\Tool;
 
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -20,9 +21,25 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
 
   /**
    * {@inheritdoc}
+   *
+   * A run's `error_log` is always stored as a private file; core registers the
+   * `private` stream wrapper only when `file_private_path` is set at
+   * container-build time, before setUp() can set it.
+   */
+  public function register(ContainerBuilder $container): void {
+    parent::register($container);
+    $container->register('stream_wrapper.private', 'Drupal\Core\StreamWrapper\PrivateStream')
+      ->addTag('stream_wrapper', ['scheme' => 'private']);
+  }
+
+  /**
+   * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
+    $this->setSetting('file_private_path', $this->siteDirectory . '/private');
+    $this->installEntitySchema('file');
+    $this->installSchema('file', ['file_usage']);
     user_role_grant_permissions('skill_user', ['view bb_run']);
   }
 
