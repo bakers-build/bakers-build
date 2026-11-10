@@ -188,13 +188,15 @@ class DeviceVerificationForm extends FormBase {
       return;
     }
 
-    $device_code = $this->deviceCodeRepository
-      ->getDeviceCodeEntityByUserCode($this->normalize($form_state->getValue('user_code')));
+    $typed = $this->normalize($form_state->getValue('user_code'));
+    $device_code = $this->deviceCodeRepository->getDeviceCodeEntityByUserCode($typed);
+    // A page that described the link's device may decide only that one.
+    $linkCode = $this->normalize($this->getRequest()->query->get('user_code', ''));
 
     // A code already decided is refused with the same generic message as an
     // unknown one: no second submitter may reverse a deny or re-bind a
     // confirm before the CLI's next poll.
-    if ($device_code === NULL || $device_code->getUserIdentifier() !== NULL) {
+    if ($device_code === NULL || $device_code->getUserIdentifier() !== NULL || ($linkCode !== '' && $linkCode !== $typed)) {
       $this->flood->register(self::FLOOD_EVENT, self::FLOOD_WINDOW_SECONDS, $this->floodIdentifier());
       $form_state->setErrorByName('user_code', $this->t('That code is not valid. It may have expired — start the sign-in again in your terminal.'));
       return;

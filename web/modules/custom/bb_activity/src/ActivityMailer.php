@@ -127,7 +127,10 @@ final class ActivityMailer {
       }
       $summary = $text->subject();
       $identifier = $ticket->getIdentifier();
+      $ticket_url = $ticket->toUrl('canonical', ['absolute' => TRUE])->toString();
+      $settings_url = Url::fromRoute('bb_activity.notifications', ['user' => $uid], ['absolute' => TRUE])->toString();
       $params = [
+        'links' => [$ticket_url, $settings_url],
         'subject' => PlainTextOutput::renderFromHtml((string) $this->t('[@identifier] @summary', [
           '@identifier' => $identifier,
           '@summary' => $summary,
@@ -136,12 +139,8 @@ final class ActivityMailer {
           '# ' . $identifier . ': ' . $ticket->label(),
           $summary,
           ...array_filter([$text->body()]),
-          $this->t('Open the ticket: @url', [
-            '@url' => $ticket->toUrl('canonical', ['absolute' => TRUE])->toString(),
-          ], $options),
-          $this->t('Change which mails you get: @url', [
-            '@url' => Url::fromRoute('bb_activity.notifications', ['user' => $uid], ['absolute' => TRUE])->toString(),
-          ], $options),
+          $this->t('Open the ticket: @url', ['@url' => $ticket_url], $options),
+          $this->t('Change which mails you get: @url', ['@url' => $settings_url], $options),
         ],
       ];
       $message = $this->mailManager->mail('bb_activity', 'activity', (string) $recipient->getEmail(), $langcode, $params);

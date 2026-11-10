@@ -156,7 +156,7 @@ final class BbHtmlMail extends SymfonyMailer {
       '#subject' => (string) ($message['headline'] ?? $message['subject']),
       '#paragraphs' => self::paragraphs(isset($message['headline'])
         ? substr((string) $message['body'], strlen((string) $message['headline']))
-        : (string) $message['body'], $this->requestContext->getCompleteBaseUrl()),
+        : (string) $message['body'], $this->requestContext->getCompleteBaseUrl(), $message['bb_links'] ?? NULL),
       '#langcode' => (string) ($message['langcode'] ?? 'en'),
       '#logo_src' => 'cid:' . self::LOGO_CID,
     ];
@@ -176,19 +176,23 @@ final class BbHtmlMail extends SymfonyMailer {
    * or ends its paragraph after a colon, becomes its own paragraph with
    * `'action' => TRUE`, rendered as a button. When the colon closes a short
    * one-line label (`Sign in: <url>`), that label names the button instead
-   * of standing above it. Only URLs on the site's own origin are recognised:
-   * the body carries user text such as ticket titles and names, and a foreign
-   * URL there stays plain text. Markup is left to the template.
+   * of standing above it. The body carries user text such as ticket titles
+   * and names, so a mail whose hook_mail() names its links in `bb_links`
+   * links only those; any other mail links only the site's own origin.
+   * Markup is left to the template.
    *
    * @param string $body
    *   The formatted text body.
    * @param string $siteUrl
    *   The site's base URL, whose scheme, host and port a link must share.
+   * @param list<string>|null $links
+   *   The only URLs to link, exactly as they appear, or NULL for the origin
+   *   rule.
    *
    * @return list<list<array{text: string, url?: string, code?: true, action?: true, label?: string}>>
    *   The paragraphs, in order.
    */
-  public static function paragraphs(string $body, string $siteUrl): array {
+  public static function paragraphs(string $body, string $siteUrl, ?array $links = NULL): array {
     $paragraphs = [];
     foreach (preg_split('/\n(?:[ \t]*\n)+/', trim($body)) ?: [] as $block) {
       $block = trim($block, "\n");
@@ -204,7 +208,7 @@ final class BbHtmlMail extends SymfonyMailer {
       preg_match_all(self::URL_PATTERN, $block, $matches, PREG_OFFSET_CAPTURE);
       foreach ($matches[0] as [$url, $position]) {
         $url = self::trimUrl($url);
-        if (!self::isSiteUrl($url, $siteUrl)) {
+        if ($links !== NULL ? !in_array($url, $links, TRUE) : !self::isSiteUrl($url, $siteUrl)) {
           continue;
         }
         if ($position > $offset) {
@@ -254,11 +258,14 @@ final class BbHtmlMail extends SymfonyMailer {
 
   /**
    * Whether a URL shares the site's scheme, host and port.
+   *
+   * A backslash or a user part is refused: browsers read `\` as `/`, so
+   * parse_url() and the browser would disagree on the host.
    */
   private static function isSiteUrl(string $url, string $siteUrl): bool {
     $origin = static function (string $candidate): ?string {
       $parts = parse_url($candidate);
-      return isset($parts['scheme'], $parts['host'])
+      return isset($parts['scheme'], $parts['host']) && !isset($parts['user']) && !isset($parts['pass']) && !str_contains($candidate, '\\')
         ? strtolower($parts['scheme'] . '://' . $parts['host'] . ':' . ($parts['port'] ?? ''))
         : NULL;
     };

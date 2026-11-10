@@ -77,7 +77,8 @@ final class BbHtmlMailTest extends KernelTestBase {
     $url = 'https://bakers.example.com/user/login?destination=%2Facme%2Fjoin%2F7&x=1&y=(2)#frag';
     $result = $this->container->get('plugin.manager.mail')->mail('bb_core', 'invite', 'Invitee <invitee@example.com>', 'en', [
       'workspace_label' => '<script>alert(1)</script> Acme',
-      'inviter_label' => 'Eve',
+      // A name may carry the site's own URL; only the join URL is a link.
+      'inviter_label' => 'Eve https://bakers.example.com/user/logout',
       'validity_days' => 7,
       'join_url' => $url,
     ]);
@@ -279,6 +280,28 @@ final class BbHtmlMailTest extends KernelTestBase {
         [['text' => $ticket, 'url' => $ticket, 'action' => TRUE, 'label' => 'Open the ticket']],
       ],
       BbHtmlMail::paragraphs("BAKERS-7: Fix login\n\nReset your password: https://evil.example/r\n\nAlso https://bakers.example.com@evil.example/x, https://bakers.example.com.evil.example/y and http://bakers.example.com/z\n\nOpen the ticket: $ticket", 'https://bakers.example.com'),
+    );
+    // Browsers read `\` as `/`, so these lead to evil.example whatever
+    // parse_url() makes of the host.
+    $backslash = 'https://evil.example\@bakers.example.com/r';
+    $userinfo = 'https://evil:example@bakers.example.com/r';
+    self::assertSame(
+      [[['text' => "Reset your password: $backslash"]], [['text' => "Sign in: $userinfo"]]],
+      BbHtmlMail::paragraphs("Reset your password: $backslash\n\nSign in: $userinfo", 'https://bakers.example.com'),
+    );
+  }
+
+  /**
+   * A mail that names its links links nothing else, not even on the site.
+   */
+  public function testDeclaredLinksAreTheOnlyLinks(): void {
+    $ticket = 'https://bakers.example.com/acme/ticket/7';
+    self::assertSame(
+      [
+        [['text' => 'Reset your password: https://bakers.example.com/user/logout']],
+        [['text' => $ticket, 'url' => $ticket, 'action' => TRUE, 'label' => 'Open the ticket']],
+      ],
+      BbHtmlMail::paragraphs("Reset your password: https://bakers.example.com/user/logout\n\nOpen the ticket: $ticket", 'https://bakers.example.com', [$ticket]),
     );
   }
 

@@ -379,6 +379,26 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
   }
 
   /**
+   * A page that described one device cannot confirm another one.
+   */
+  public function testTypedCodeMustMatchTheDescribedOne(): void {
+    $shown = $this->requestDeviceAuthorization();
+    $other = $this->requestDeviceAuthorization();
+
+    $user = $this->drupalCreateUser(['grant simple_oauth codes']);
+    $this->assertInstanceOf(User::class, $user);
+    $this->setCurrentUser($user);
+    $messages = $this->submitVerificationForm($other['user_code'], 'confirm', $shown['user_code']);
+    $this->assertStringContainsString('That code is not valid.', $messages);
+    $this->assertSame('authorization_pending', $this->pollError($other['device_code']));
+    $this->assertSame('authorization_pending', $this->pollError($shown['device_code']));
+
+    // Typed the way a human retypes it, the described code still confirms.
+    $this->submitVerificationForm(strtolower(substr($shown['user_code'], 0, 4) . ' ' . substr($shown['user_code'], 4)), 'confirm', $shown['user_code']);
+    $this->assertSame('Bearer', $this->poll($shown['device_code'])['token_type']);
+  }
+
+  /**
    * The verification route is closed to an account without the permission.
    */
   public function testVerificationRouteIsPermissionGated(): void {
@@ -601,7 +621,7 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
    * on a validation error.
    *
    * @param string $userCode
-   *   The device user code to submit, prefilled or hand-typed.
+   *   The device user code the human typed.
    * @param string $decision
    *   Either 'confirm' or 'deny', the name of the button to trigger.
    * @param string|null $linkCode
