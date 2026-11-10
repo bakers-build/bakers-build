@@ -132,19 +132,19 @@ Everything under your home survives: the tools, the sign-ins, the machine config
 
 A restart keeps every worktree, the `.bakers/` state and the agent transcripts, but ends every agent terminal. Runs that were `running` stay `running` on the server while the box is down and appear as active in the ticket.
 
-On the conductor's first cycle after the restart whose terminal lookup answers (once `herdr server` is up), it checks every `running` run of its own:
+The conductor checks every `running` run of its own on the first cycle after the restart on which that run's terminal lookup answers (once `herdr server` is up):
 
 | The run | What happens |
 |---|---|
 | Its terminal still runs the conductor's launch | Nothing. |
-| Claude run, worktree and session still there, not resumed before | The same run continues in a new tab of its worktree with `claude --resume`, showing its earlier conversation. A question it was waiting on is still on screen; answer it in that tab. The ticket gets a comment *resumed after a conductor restart*. |
+| Claude run, worktree and session still there, not resumed before | The same run continues in a new tab of its worktree with `claude --resume`, showing its earlier conversation. If it was waiting on a question, type the answer in that tab. The ticket gets a comment *resumed after a conductor restart*. |
 | Any other run | Marked `failed` with `conductor restart: <reason>` (no session resume, no session, worktree gone, resume failed, or resumed once already). The ticket gets a comment, and the next claim gives it one fresh run. |
 
 herdr reopens its tabs after its own restart, and may restart Claude in them by itself, without the run's tools. Such a tab counts as gone: the conductor closes it and resumes or fails the run as above.
 
-Resuming and failing both happen on that first cycle; a fresh run is claimed on the same or the next cycle, within seconds of the conductor's start. `bakers_ticket_runs_list` shows each failed run's reason in `error_log`. A failed run counts towards the ticket's circuit breaker like any other failure. Afterwards, a terminal that disappears is failed without resuming.
+Resuming or failing happens on that cycle, and a fresh run is claimed on the same cycle or the next one. `bakers_ticket_runs_list` shows each failed run's reason in `error_log`. A failed run counts towards the ticket's circuit breaker like any other failure. Afterwards, a terminal that disappears is failed without resuming.
 
-To restart a box safely: restart it whenever no agent is in the middle of a push or a comment you care about. Nothing has to be stopped first. If conductor autostart is off, run `bakers oven start` in each checkout afterwards; recovery starts with it.
+To restart a box safely: restart it whenever no agent is in the middle of a push or a comment you care about. Nothing has to be stopped first. If conductor autostart is off, run `bakers conductor start` in each checkout afterwards; recovery starts with it.
 
 ## Update a tool
 

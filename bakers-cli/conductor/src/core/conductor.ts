@@ -281,8 +281,8 @@ export function registrationOf(
 
 export class Conductor {
   private uuid: string | null = null;
-  /** Until this process's first answering pane lookup: lost runs are resumed, not failed. */
-  private recovering = true;
+  /** Runs running at this process's first lost-run check whose pane lookup has not answered yet: resumed, not failed. */
+  private recovering?: Set<string>;
   /**
    * Frozen tickets seen on the last poll, by uuid, with the worktree their
    * hook ran in. Mirrored to `frozenStateFile` when one is given, so an
@@ -642,24 +642,22 @@ export class Conductor {
     const runs = (await this.remote.fetchActiveRuns(this.id)).filter(
       (r) => r.state === 'running',
     );
-    // Restart recovery is this process's first answering tick; with nothing running, it is over.
-    if (runs.length === 0) this.recovering = false;
-    const recovery = this.recovering;
+    this.recovering ??= new Set(runs.map((r) => r.runUuid));
     for (const r of runs) {
       this.queue.enqueue({
         key: `lost:${r.runUuid}`,
         lane: r.ticketUuid || r.runUuid,
-        run: () => this.lostOne(r, recovery),
+        run: () => this.lostOne(r),
       });
     }
   }
 
   /**
    * Fails and reports one run when its terminal is gone; a failed lookup
-   * changes nothing. During restart `recovery` it resumes the run instead,
-   * when its agent and session allow.
+   * changes nothing. On a run's first answering lookup after a restart it
+   * resumes the run instead, when its agent and session allow.
    */
-  private async lostOne(r: ActiveRun, recovery: boolean): Promise<void> {
+  private async lostOne(r: ActiveRun): Promise<void> {
     let alive: boolean;
     try {
       alive = (await this.executor.runAlive?.(r.branchName, r.runId)) ?? true;
@@ -670,7 +668,7 @@ export class Conductor {
       );
       return;
     }
-    this.recovering = false;
+    const recovery = this.recovering?.delete(r.runUuid) ?? false;
     if (alive) return;
     let refused: string | undefined;
     try {
@@ -756,6 +754,14 @@ export class Conductor {
       );
     } catch (err) {
       if (err instanceof RunClosed) {
+        this.logger.info(
+          { run: r.runUuid },
+          'lost run closed during its resume',
+        );
+        return undefined;
+      }
+      // A cancel during the launch makes the server reject it; that run is closed, not failed.
+      if (!(await this.stillRunning(r.runUuid).catch(() => true))) {
         this.logger.info(
           { run: r.runUuid },
           'lost run closed during its resume',

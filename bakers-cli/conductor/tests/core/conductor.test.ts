@@ -5923,6 +5923,87 @@ describe('Conductor lost runs (pane gone)', () => {
       expect(remote.calls.publishTicketComment).toEqual([]);
     });
 
+    it('neither fails nor reports a run cancelled while its agent is being launched', async () => {
+      const { agent } = resumableAgent(['r-1']);
+      const executor = new PaneExecutor();
+      executor.alive = false;
+      const { conductor, remote } = await restarted(agent, executor);
+      executor.startRun = async () => {
+        remote.markDone('r-1'); // cancelled meanwhile; the lease guard then rejects the launch
+        throw new Error('409 run is not active');
+      };
+
+      await conductor.tick();
+
+      expect(remote.calls.markFailed).toEqual([]);
+      expect(remote.calls.publishTicketComment).toEqual([]);
+    });
+
+    it('still resumes a run whose own lookup failed while another run answered', async () => {
+      const { agent } = resumableAgent(['r-1', 'r-2']);
+      const state = mkdtempSync(join(tmpdir(), 'restart-'));
+      const worktree = join(state, 'wt');
+      mkdirSync(worktree, { recursive: true });
+      const remote = new FakeBbRemote({
+        tickets: {
+          't-1': {
+            identifier: 'BB-1',
+            title: 'One',
+            state: 'working',
+            branchName: 'feat/bb-1',
+          },
+          't-2': {
+            identifier: 'BB-2',
+            title: 'Two',
+            state: 'working',
+            branchName: 'feat/bb-2',
+          },
+        },
+        runs: [
+          {
+            runUuid: 'r-1',
+            id: 7,
+            ticketUuid: 't-1',
+            stateAtStart: 'working',
+            state: 'running',
+            worktreePath: worktree,
+          },
+          {
+            runUuid: 'r-2',
+            id: 8,
+            ticketUuid: 't-2',
+            stateAtStart: 'working',
+            state: 'running',
+            worktreePath: worktree,
+          },
+        ],
+      });
+      remote.queue.length = 0;
+      const executor = new PaneExecutor();
+      let r2Lookups = 0;
+      executor.runAlive = async (_branch, runId) => {
+        if (runId === 7) return true;
+        if (r2Lookups++ === 0) throw new Error('herdr: timeout');
+        return false;
+      };
+      const conductor = new TestConductor(
+        makeConfig({ config_path: join(state, 'project.config.js') }),
+        remote,
+        executor,
+        new FakeWorkspace(),
+        resolved(agent),
+        spyLogger().log,
+        CHECKOUT,
+      );
+      await conductor.start();
+
+      await conductor.tick();
+      await conductor.tick();
+
+      expect(remote.calls.markFailed).toEqual([]);
+      expect(executor.started.map((s) => s.run.uuid)).toEqual(['r-2']);
+    });
+
     it('waits while the pane lookup fails, and fails without resuming a pane lost after recovery', async () => {
       const { agent } = resumableAgent(['r-1']);
       const executor = new PaneExecutor();
