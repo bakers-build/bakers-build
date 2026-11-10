@@ -5640,6 +5640,11 @@ describe('Conductor lost runs (pane gone)', () => {
     expect(comment?.body).toContain('`working`');
     expect(comment?.body).toMatch(/pane is gone/);
     expect(await remote.fetchActiveRuns('x')).toEqual([]);
+    expect(executor.calls).toContainEqual({
+      kind: 'cleanupRun',
+      branch: 'feat/bb-1',
+      runId: 7,
+    });
   });
 
   it('leaves a run with a live pane alone and does not report a normally ended run', async () => {
@@ -5874,6 +5879,12 @@ describe('Conductor lost runs (pane gone)', () => {
       expect(remote.calls.markFailed[0]?.errorLog).toMatch(
         /^conductor restart: the run was already resumed once/,
       );
+      // herdr may have restored the tab and restarted the agent in it.
+      expect(second.calls).toContainEqual({
+        kind: 'cleanupRun',
+        branch: 'feat/bb-1',
+        runId: 7,
+      });
     });
 
     it('still resumes a lost run when the resumed-runs file holds no list', async () => {
@@ -5890,21 +5901,23 @@ describe('Conductor lost runs (pane gone)', () => {
       expect(remote.calls.markFailed).toEqual([]);
     });
 
-    it('does not set a run back to running when it ends while it is resumed', async () => {
+    it('neither launches nor reports a run that ends while it is being resumed', async () => {
       const { agent } = resumableAgent(['r-1']);
       const executor = new PaneExecutor();
       executor.alive = false;
       const { conductor, remote } = await restarted(agent, executor);
-      const start = executor.startRun.bind(executor);
-      executor.startRun = async (opts) => {
-        await start(opts);
+      const cleanup = executor.cleanupRun.bind(executor);
+      executor.cleanupRun = async (branch, runId) => {
+        await cleanup(branch, runId);
         remote.markDone('r-1'); // e.g. cancelled by a human meanwhile
       };
 
       await conductor.tick();
 
-      expect(executor.started).toHaveLength(1);
+      expect(executor.started).toEqual([]);
       expect(await remote.fetchActiveRuns('x')).toEqual([]);
+      expect(remote.calls.markFailed).toEqual([]);
+      expect(remote.calls.publishTicketComment).toEqual([]);
     });
 
     it('waits while the pane lookup fails, and fails without resuming a pane lost after recovery', async () => {

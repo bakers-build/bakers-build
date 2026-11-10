@@ -231,6 +231,9 @@ function loadResumed(file: string): string[] {
 /** A lost run the restart recovery fails instead of resuming; the message is the reason. */
 class ResumeRefused extends Error {}
 
+/** A resume met a run that is no longer `running`: nothing to launch or fail. */
+class RunClosed extends Error {}
+
 function renderPrompt(
   template: string,
   values: {
@@ -668,16 +671,20 @@ export class Conductor {
     let refused: string | undefined;
     try {
       // The run may have ended normally since the snapshot.
-      const still = (await this.remote.fetchActiveRuns(this.id)).find(
-        (a) => a.runUuid === r.runUuid,
-      );
-      if (still?.state !== 'running') return;
+      if (!(await this.stillRunning(r.runUuid))) return;
       if (recovery) {
         refused = await this.resumeLost(r);
         if (refused === undefined) return;
       }
       const gone = `herdr pane gone: ${this.executor.id} found no live terminal for run #${r.runId} (branch ${r.branchName})`;
       const cause = refused ? `conductor restart: ${refused}; ${gone}` : gone;
+      // herdr may have restored the tab and restarted an agent in it; a fresh run would share the worktree.
+      await this.executor.cleanupRun(r.branchName, r.runId).catch((err: unknown) => {
+        this.logger.warn(
+          { run: r.runUuid, err: String(err) },
+          'lost run tab not closed',
+        );
+      });
       await this.remote.markFailed(r.runUuid, cause);
       this.revokeRunTools(r.runUuid);
       this.signalUi(r.worktreePath);
@@ -693,6 +700,12 @@ export class Conductor {
     await this.lostComment(
       r,
       `was marked \`failed\`: its terminal pane is gone (\`${this.executor.id}\` found no live terminal on branch \`${r.branchName}\`), so nobody was executing it any more.${refused ? ` It could not be resumed after the conductor restart: ${refused}. The ticket gets a fresh run.` : ''}`,
+    );
+  }
+
+  private async stillRunning(runUuid: string): Promise<boolean> {
+    return (await this.remote.fetchActiveRuns(this.id)).some(
+      (a) => a.runUuid === runUuid && a.state === 'running',
     );
   }
 
@@ -736,6 +749,10 @@ export class Conductor {
         true,
       );
     } catch (err) {
+      if (err instanceof RunClosed) {
+        this.logger.info({ run: r.runUuid }, 'lost run closed during its resume');
+        return undefined;
+      }
       return err instanceof ResumeRefused
         ? err.message
         : `the resume launch failed: ${err instanceof Error ? err.message : String(err)}`;
@@ -1845,6 +1862,8 @@ export class Conductor {
     // field's accepted formats and the PATCH would be rejected (review round
     // 4, Critical 1).
     const dispatchedAt = Math.floor(Date.now() / 1000);
+    // A resumed run already is `running`; one closed meanwhile (cancelled) is not relaunched.
+    if (resume && !(await this.stillRunning(run.runUuid))) throw new RunClosed();
     const tools = chosen.agent.withoutConductorTools
       ? undefined
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
@@ -1929,16 +1948,6 @@ export class Conductor {
     // it persists `worktree_path` to bb_run here alongside the running state.
     // It also persists the chosen agent id (BB-144) for finalize footprint
     // routing.
-    // A resumed run already is `running`; one closed meanwhile (cancelled) stays closed.
-    if (
-      resume &&
-      !(await this.remote.fetchActiveRuns(this.id)).some(
-        (a) => a.runUuid === run.runUuid && a.state === 'running',
-      )
-    ) {
-      this.signalUi(ws.path);
-      return;
-    }
     await this.remote.markRunning(run.runUuid, {
       worktree_path: ws.path,
       agent: chosen.id,
