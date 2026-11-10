@@ -3,7 +3,7 @@ prev:
   text: Get started
   link: /get-started/
 next:
-  text: Run your first ticket
+  text: Run the first ticket
   link: /get-started/first-ticket
 ---
 

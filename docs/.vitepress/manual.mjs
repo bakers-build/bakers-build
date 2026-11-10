@@ -37,7 +37,7 @@ export const SIDEBAR = {
     group("Daily work", [
       ["Create a ticket", "/get-started/daily-work/create-a-ticket"],
       ["Follow a ticket", "/get-started/daily-work/follow-a-ticket"],
-      ["Review and accept results", "/skills-and-workflows/accept-results"],
+      ["Accept results", "/skills-and-workflows/accept-results"],
       ["Freeze a ticket", "/get-started/daily-work/freeze-a-ticket"],
       ["Record time", "/get-started/daily-work/record-time"],
       ["See what the team works on", "/get-started/daily-work/team-overview"],
