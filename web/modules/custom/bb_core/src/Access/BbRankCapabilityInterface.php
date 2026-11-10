@@ -92,7 +92,7 @@ interface BbRankCapabilityInterface {
    * Whether the account's OWN rank in one group grants the permission.
    *
    * Reads only the roles on the membership itself: `hasGroupPermission()`
-   * allows the group owner via `group_manager_full_access`, and
+   * allows the group owner when `group_manager_full_access` is on, and
    * `hasPermission()` answers a machine identity's scopes site-wide. Use it
    * when a permission must be earned by rank alone.
    *

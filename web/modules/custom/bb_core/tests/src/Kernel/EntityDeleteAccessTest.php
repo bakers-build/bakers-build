@@ -48,7 +48,6 @@ final class EntityDeleteAccessTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installReadScopeEnvironment();
-    $this->installEntitySchema('bb_invite');
     $this->buildTwoWorkspaceWorld();
   }
 

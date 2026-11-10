@@ -112,8 +112,6 @@ export interface Ticket {
 
 export interface ActiveRun {
   runUuid: string;
-  /** Numeric run id (drupal_internal__id); names the run's terminal. */
-  runId: number;
   ticketUuid: string;
   ticketIdentifier: string;
   branchName: string;
@@ -121,8 +119,6 @@ export interface ActiveRun {
   stateAtStart: string;
   /** Absolute path of the per-run git worktree, or '' when unset. */
   worktreePath: string;
-  /** Id of the agent the run was dispatched to, '' / undefined when unset. */
-  agent?: string;
 }
 
 export interface ConductorStatus {
@@ -415,13 +411,6 @@ export interface BbRemote {
    * failure is visible immediately and its cause is recorded.
    */
   markFailed(runUuid: string, errorLog: string): Promise<void>;
-  /** Publishes one Markdown comment (type `comment`) on the ticket. */
-  publishTicketComment(ticketUuid: string, body: string): Promise<void>;
-  /**
-   * Cancel a live run (`cancel`: claimed/running → cancelled). Finalisation
-   * then captures its transcript and stops its agent, as for an operator's cancel.
-   */
-  cancelRun(runUuid: string): Promise<void>;
   /**
    * Runs this conductor owns that are state in (done, cancelled) but not yet
    * closed — the conductor's one-shot finalisation work list. Cancelled runs

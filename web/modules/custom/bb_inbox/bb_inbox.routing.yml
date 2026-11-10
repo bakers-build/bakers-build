@@ -9,6 +9,7 @@ bb_inbox.send:
     _jsonapi_resource_types: ['bb_inbox_message--bb_inbox_message']
   requirements:
     _user_is_logged_in: 'TRUE'
+    _csrf_request_header_token: 'TRUE'
 
 bb_inbox.pending:
   path: '/%jsonapi%/bakers/inbox/{conductor_id}'
@@ -26,6 +27,7 @@ bb_inbox.result:
     _jsonapi_resource_types: ['bb_inbox_message--bb_inbox_message']
   requirements:
     _permission: 'register bakers conductor'
+    _csrf_request_header_token: 'TRUE'
   options:
     parameters:
       bb_inbox_message:

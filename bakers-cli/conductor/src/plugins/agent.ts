@@ -210,20 +210,6 @@ export interface BbAgent {
     args?: readonly string[],
   ): string;
   /**
-   * The command that continues session `sessionId` in `workspacePath`, with
-   * the launch's own flags (see {@link launchCommand} for the other
-   * arguments). The conductor uses it after a restart, for a run whose pane
-   * is gone. Optional: an agent without it, or one returning undefined for
-   * this configuration, has its lost runs failed and retried instead.
-   */
-  resumeCommand?(
-    sessionId: string,
-    workspacePath?: string,
-    tools?: { url: string },
-    env?: Readonly<Record<string, string>>,
-    args?: readonly string[],
-  ): string | undefined;
-  /**
    * Locate and read this agent's run transcript for a run that executed in
    * `worktreePath`. MUST return '' (never throw) when nothing is found.
    *
@@ -247,14 +233,6 @@ export interface BbAgent {
    */
   sessionExists?(worktreePath: string, sessionId: string): Promise<boolean>;
   /**
-   * When the run's transcript was last written (epoch ms), from a stat alone;
-   * undefined when it has none yet. Optional, like {@link permissionDenials}.
-   */
-  runLogModified?(
-    worktreePath: string,
-    run: AgentRunIdentity,
-  ): Promise<number | undefined>;
-  /**
    * Parse this agent's run transcript (as returned by {@link getRunLog}) into
    * a footprint of effort metrics (BB-132). The transcript format is
    * agent-specific, so each agent owns its own parser. MUST be tolerant of
@@ -269,11 +247,4 @@ export interface BbAgent {
    * agent without it is never checked.
    */
   sandboxPreflight?(host?: SandboxHost): Promise<SandboxPreflight>;
-  /**
-   * The actions a permission rule denied in this run's transcript, each as
-   * `Tool(argument)`, in order, but only when the run stopped on one: the agent
-   * ended its turn after a denial with no call outstanding; [] otherwise. Never
-   * throws. Optional: a run of an agent without it is never reported as blocked.
-   */
-  permissionDenials?(log: string): string[];
 }

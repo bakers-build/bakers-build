@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Statistics\Figure;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\bb_core\Access\FigureDisclosure;
 use Drupal\bb_core\BbFigureGroupInterface;
 use Drupal\bb_core\Statistics\FigureDiscovery;
 use Drupal\bb_core\Statistics\Period\PeriodResolver;
@@ -19,6 +20,7 @@ final class FigureCollection {
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly FigureDiscovery $discovery,
     private readonly FigureEvaluator $evaluator,
+    private readonly FigureDisclosure $disclosure,
   ) {}
 
   /**
@@ -69,7 +71,7 @@ final class FigureCollection {
         if (isset($disclosed[$figureId])) {
           $selected = array_intersect_key($filters, $this->acceptedFilters($disclosed[$figureId]->getFilters()));
           $figures[] = $this->evaluator
-            ->evaluate($disclosed[$figureId], $contexts, $selected, $now)
+            ->evaluate($disclosed[$figureId], $contexts, $selected, $now, $this->disclosure->projectBound($account, $disclosed[$figureId], $contexts))
             ->toArray();
         }
       }

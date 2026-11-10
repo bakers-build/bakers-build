@@ -132,11 +132,6 @@ export interface MarkFailedCall {
   errorLog: string;
 }
 
-export interface PublishTicketCommentCall {
-  ticketUuid: string;
-  body: string;
-}
-
 interface FakeMachineState {
   maxParallel: number;
   /** Per-conductor load contributions; machine current_load is their sum. */
@@ -152,16 +147,12 @@ export class FakeBbRemote implements BbRemote {
     finalizeRun: FinalizeRunCall[];
     markCleanedUp: string[];
     appendRunNote: AppendRunNoteCall[];
-    publishTicketComment: PublishTicketCommentCall[];
-    cancelRun: string[];
   } = {
-    cancelRun: [],
     markRunning: [],
     markFailed: [],
     finalizeRun: [],
     markCleanedUp: [],
     appendRunNote: [],
-    publishTicketComment: [],
   };
 
   /**
@@ -354,14 +345,12 @@ export class FakeBbRemote implements BbRemote {
         (identifier ? `bakers/${identifier.toLowerCase()}` : '');
       return {
         runUuid: r.runUuid,
-        runId: r.runId,
         ticketUuid: r.ticketUuid,
         ticketIdentifier: identifier,
         branchName,
         state: r.state,
         stateAtStart: r.stateAtStart,
         worktreePath: r.worktreePath ?? '',
-        agent: r.agent ?? '',
       };
     });
   }
@@ -469,12 +458,6 @@ export class FakeBbRemote implements BbRemote {
     }
   }
 
-  async cancelRun(runUuid: string): Promise<void> {
-    this.calls.cancelRun.push(runUuid);
-    const run = this.runs.get(runUuid);
-    if (run) run.state = 'cancelled';
-  }
-
   async markFailed(runUuid: string, errorLog: string): Promise<void> {
     this.calls.markFailed.push({ runUuid, errorLog });
     const run = this.runs.get(runUuid);
@@ -482,10 +465,6 @@ export class FakeBbRemote implements BbRemote {
       run.state = 'failed';
       run.closed = true;
     }
-  }
-
-  async publishTicketComment(ticketUuid: string, body: string): Promise<void> {
-    this.calls.publishTicketComment.push({ ticketUuid, body });
   }
 
   async fetchFinalizableRuns(_conductorId: string): Promise<FinalizableRun[]> {

@@ -8,6 +8,7 @@ use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\bb_core\Conductor\ConductorRegistrar;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_inbox\Entity\BbInboxMessageInterface;
@@ -43,6 +44,7 @@ final class InboxPendingResource extends ResourceBase implements ContainerInject
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly AccountInterface $currentUser,
     private readonly TimeInterface $time,
+    private readonly ConductorRegistrar $registrar,
   ) {}
 
   /**
@@ -53,6 +55,7 @@ final class InboxPendingResource extends ResourceBase implements ContainerInject
       $container->get('entity_type.manager'),
       $container->get('current_user'),
       $container->get('datetime.time'),
+      $container->get('bb_core.conductor_registrar'),
     );
   }
 
@@ -109,7 +112,7 @@ final class InboxPendingResource extends ResourceBase implements ContainerInject
     if (!$conductor instanceof BbConductorInterface) {
       throw new NotFoundHttpException('No such conductor.');
     }
-    if (!$conductor->isOwnedBy($this->currentUser)) {
+    if (!$this->registrar->serves($conductor, $this->currentUser)) {
       throw new AccessDeniedHttpException('Only the conductor owner reads its inbox.');
     }
     return $conductor;

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Menu\MenuLinkTreeInterface;
 use Drupal\Core\Menu\MenuTreeParameters;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
@@ -73,8 +72,6 @@ final class BbMenuSource extends MenuSource {
     if (!$menu_id) {
       return [];
     }
-    $this->menuId = $menu_id;
-    assert($this->menuLinkTree instanceof MenuLinkTreeInterface);
     $level = (int) ($this->getSetting('level') ?: 1);
     $depth = (int) $this->getSetting('depth');
     $parameters = (new MenuTreeParameters())->setMinDepth($level);
@@ -97,8 +94,11 @@ final class BbMenuSource extends MenuSource {
    * cache term is declared here rather than taken from the built tree.
    */
   public function alterComponent(array $element): array {
-    $this->menuId = $this->getSetting('menu');
     $element = parent::alterComponent($element);
+    $menu_id = $this->getSetting('menu');
+    if ($menu_id) {
+      $element = $this->addMenuCacheTags($element, [$menu_id]);
+    }
     $action = $this->teamCreateAction();
     $element['#attached']['library'] = array_merge($element['#attached']['library'] ?? [], $action['#attached']['library'] ?? []);
     $cache = CacheableMetadata::createFromRenderArray($element)

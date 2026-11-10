@@ -58,6 +58,9 @@
 {% if parts is not empty %}<p class="text-meta text-text-light">{{ parts|join(' · ')|raw }}</p>{% endif %}
 {% if detail %}<pre><code>{{ detail }}</code></pre>{% endif %}
       {% endset %}
+      {#- ui_patterns trusts only Drupal markup for a string prop; a render
+          array reaches rich-text as filtered, trusted markup. #}
+      {% set body = { '#markup': body } %}
     {% endif %}
     {% if body %}
       {#- The table scroll region's name ties the body to its entry: the tag

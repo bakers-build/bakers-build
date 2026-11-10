@@ -231,10 +231,9 @@ final class ApiKeyOAuthTest extends KernelTestBase {
     // Orphan the token: its consumer row vanishes while the token row stays
     // — a raw delete, bypassing ApiKeyHooks::entityDelete(), which would
     // otherwise clean up the token through the ordinary entity-delete path
-    // this scenario exists to NOT go through. `TokenAuthUser::__construct()`
-    // assigns the (now NULL) client entity to its non-nullable `Consumer
-    // $consumer` property, which is the exact TypeError this decorator must
-    // translate into a clean 401.
+    // this scenario exists to NOT go through. Since simple_oauth 6.1.4
+    // `TokenAuthUser::__construct()` refuses the missing client itself with
+    // `invalid_client`; either way the caller gets a clean 401, not a 500.
     $cid = (int) $issued['consumer']->id();
     $database = $this->container->get('database');
     $database->delete('consumer')->condition('id', $cid)->execute();
@@ -246,7 +245,7 @@ final class ApiKeyOAuthTest extends KernelTestBase {
       self::fail('expected an OAuthUnauthorizedHttpException');
     }
     catch (OAuthUnauthorizedHttpException $exception) {
-      self::assertStringContainsString('invalid_token', $exception->getHeaders()['WWW-Authenticate'] ?? '');
+      self::assertStringContainsString('invalid_client', $exception->getHeaders()['WWW-Authenticate'] ?? '');
     }
   }
 

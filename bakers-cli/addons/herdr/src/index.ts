@@ -53,7 +53,10 @@ export {
   type HerdrWorkspaceOptions,
   herdrWorkspace,
 } from './workspace.js';
-export { parseWorkspaceList, type WorkspaceEntry } from './workspace-list.js';
+export {
+  parseWorkspaceList,
+  type WorkspaceEntry,
+} from './workspace-list.js';
 
 async function defaultExec(
   args: string[],
@@ -423,89 +426,22 @@ export class HerdrExecutor implements BbExecutor {
    * The branch worktree is untouched (that is `HerdrWorkspace.remove`).
    */
   async cleanupRun(branch: string, runId: number): Promise<void> {
-    // No tab for this run is a quiet best-effort no-op (AC-4).
-    for (const tabId of (await this.runTabs(branch, runId)).tabIds) {
-      try {
-        await this.execHerdr(['tab', 'close', tabId]);
-      } catch {
-        // ignore — best-effort: a failing tab-close must not abort finalisation
-      }
-    }
-  }
-
-  /**
-   * Whether a pane of the run's tab still runs the run's launch wrapper; a
-   * failing `herdr` call throws. After a server restart herdr restores tabs as
-   * bare shells, or resumes the agent itself without the run's flags and
-   * tools, so an open tab alone does not mean the run lives.
-   */
-  async runAlive(branch: string, runId: number): Promise<boolean> {
-    const { workspaceId, tabIds } = await this.runTabs(branch, runId);
-    if (tabIds.size === 0) {
-      return false;
-    }
-    const listed = parseJson(
-      await this.execHerdr(['pane', 'list', '--workspace', workspaceId]),
-      'pane list',
-    );
-    const panes = isRecord(listed)
-      ? (listed.result as { panes?: unknown } | undefined)?.panes
-      : undefined;
-    for (const pane of Array.isArray(panes) ? panes.filter(isRecord) : []) {
-      if (
-        !tabIds.has(pane.tab_id as string) ||
-        typeof pane.pane_id !== 'string'
-      ) {
-        continue;
-      }
-      const info = parseJson(
-        await this.execHerdr(['pane', 'process-info', '--pane', pane.pane_id]),
-        'pane process-info',
-      );
-      const procs = isRecord(info)
-        ? (
-            info.result as
-              | { process_info?: { foreground_processes?: unknown } }
-              | undefined
-          )?.process_info?.foreground_processes
-        : undefined;
-      const wrapper = /\/bakers-run-[^/]+\/run\.sh$/;
-      if (
-        Array.isArray(procs) &&
-        procs.some(
-          (p) =>
-            isRecord(p) &&
-            Array.isArray(p.argv) &&
-            p.argv.some((a) => typeof a === 'string' && wrapper.test(a)),
-        )
-      ) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /**
-   * The branch workspace's tabs labelled `#<runId>`: after a restart herdr can
-   * restore an old run tab beside the relaunched one.
-   */
-  private async runTabs(
-    branch: string,
-    runId: number,
-  ): Promise<{ workspaceId: string; tabIds: Set<string> }> {
     const workspaceId = await this.findWorkspaceByBranch(branch);
     if (!workspaceId) {
-      return { workspaceId: '', tabIds: new Set() };
+      return;
     }
     const tabs = parseTabList(
       await this.execHerdr(['tab', 'list', '--workspace', workspaceId]),
     );
-    return {
-      workspaceId,
-      tabIds: new Set(
-        tabs.filter((t) => labelMatchesRun(t.label, runId)).map((t) => t.tabId),
-      ),
-    };
+    const match = tabs.find((tab) => labelMatchesRun(tab.label, runId));
+    if (!match) {
+      return; // no tab for this run — quiet best-effort no-op (AC-4)
+    }
+    try {
+      await this.execHerdr(['tab', 'close', match.tabId]);
+    } catch {
+      // ignore — best-effort: a failing tab-close must not abort finalisation
+    }
   }
 
   private commandFor(input: SpawnRunInput): string {

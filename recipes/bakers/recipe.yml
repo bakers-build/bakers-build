@@ -776,8 +776,10 @@ config:
     #
     # simpleConfigUpdate sets the WHOLE `groups` key, so every entity type has
     # to be listed here: omitting one would unregister it.
+    # Owners hold rights through their rank only, so a demotion takes effect.
     og.settings:
       simpleConfigUpdate:
+        group_manager_full_access: false
         groups:
           bb_workspace:
             - bb_workspace

@@ -9,6 +9,7 @@ use Drupal\Core\Field\FieldItemBase;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\TypedData\DataDefinition;
+use Drupal\bb_core\Ticket\BranchName;
 
 /**
  * Defines the 'bb_repo' field type for storing repository metadata.
@@ -40,7 +41,8 @@ final class BbRepoItem extends FieldItemBase {
       ->setRequired(TRUE)
       ->addConstraint('BbRepoUrl');
     $properties['default_branch'] = DataDefinition::create('string')
-      ->setLabel(new TranslatableMarkup('Default branch'));
+      ->setLabel(new TranslatableMarkup('Default branch'))
+      ->addConstraint('Regex', ['pattern' => BranchName::PATTERN]);
     $properties['branch_convention'] = DataDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Branch convention'));
     return $properties;

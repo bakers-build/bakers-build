@@ -75,12 +75,6 @@
             "tbachert/spi": true,
             "cweagans/composer-patches": true
         },
-        "audit": {
-            "ignore": {
-                "PKSA-jj5t-2zs1-dcfm": "guzzlehttp/psr7 advisory; psr7 pinned by drupal/core-recommended ~2.8.0, no fixed release available within the core constraint yet",
-                "PKSA-gm5x-j3mz-71n9": "guzzlehttp/psr7 advisory; psr7 pinned by drupal/core-recommended ~2.8.0, no fixed release available within the core constraint yet"
-            }
-        },
         "sort-packages": true
     },
     "extra": {

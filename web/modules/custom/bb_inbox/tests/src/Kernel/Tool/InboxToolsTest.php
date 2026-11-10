@@ -99,6 +99,11 @@ final class InboxToolsTest extends KernelTestBase {
     $out = $this->outputs($this->runAs($this->guest, 'bakers_inbox_read', ['message' => $message->uuid()]));
     self::assertSame(['id' => $message->uuid(), 'status' => 'done', 'markdown' => 'web: shared at https://x'], $out);
 
+    $owner = $this->outputs($this->runAs($this->conductorOwner, 'bakers_inbox_read', ['message' => $message->uuid()]));
+    self::assertSame('done', $owner['status']);
+    // Seeing the ticket is not enough: only requester and conductor owner.
+    $this->assertFailure($this->runAs($this->contributor, 'bakers_inbox_read', ['message' => $message->uuid()]), 'not found');
+
     $denied = $this->runAs($this->outsider, 'bakers_inbox_read', ['message' => $message->uuid()]);
     $unknown = $this->runAs($this->guest, 'bakers_inbox_read', ['message' => '00000000-0000-4000-8000-000000000000']);
     $this->assertFailure($denied, 'not found');

@@ -17,6 +17,7 @@ use Drupal\jsonapi_resources\Resource\ResourceBase;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\bb_inbox\Kernel\InboxWorldTrait;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -70,6 +71,23 @@ final class AddonResourceTest extends KernelTestBase {
   }
 
   /**
+   * An owner removed from the conductor's workspace registers no addons there.
+   */
+  public function testRemovedOwnerRegistersNoAddons(): void {
+    $this->workspaceMember('b', $this->conductorOwner, 'contributor');
+    $this->container->get('bb_core.membership_writer')
+      ->remove($this->fixture('a', 'bb_workspace'), (int) $this->conductorOwner->id());
+
+    try {
+      $this->registerAddons($this->conductor, [self::portsDefinition()]);
+      self::fail('A removed owner must not register addons for the workspace.');
+    }
+    catch (AccessDeniedHttpException) {
+    }
+    self::assertSame([], $this->addons());
+  }
+
+  /**
    * Different workspaces registering the same name@version stay isolated.
    *
    * Two conductors in different workspaces get separate rows; neither's
@@ -112,14 +130,12 @@ final class AddonResourceTest extends KernelTestBase {
   }
 
   /**
-   * Same-workspace reuse leaves one row with both conductors.
+   * Loosely equal definitions are still different definitions.
    *
-   * Two conductors in one workspace registering the same identity leave one
-   * row with both conductors (BB-660/661 AC-11); a loosely-equal label
-   * difference (`"1.0" == "1"` in PHP) must not accidentally create a second
-   * row either.
+   * `"1.0" == "1"` in PHP must not let two conductors share a row whose
+   * definition only one of them sent.
    */
-  public function testSameWorkspaceReuseRetainsBothConductors(): void {
+  public function testLooselyEqualDefinitionsGetSeparateRows(): void {
     $second = $this->createConductor('node-loose', $this->conductorOwner);
     $one = self::portsDefinition();
     $one['label'] = '1.0';
@@ -127,10 +143,12 @@ final class AddonResourceTest extends KernelTestBase {
     $other['label'] = '1';
     $this->registerAddons($this->conductor, [$one]);
     $this->registerAddons($second, [$other]);
-    self::assertCount(1, $this->addons());
-    $addon = $this->addon('ports', '1.2.3');
-    self::assertTrue($addon->runsOn($this->conductor));
-    self::assertTrue($addon->runsOn($second));
+    $pairs = array_map(
+      fn (BbAddonInterface $addon): string => $addon->label() . ':' . implode(',', $this->conductorIds($addon)),
+      array_values($this->addonsByLabel()),
+    );
+    sort($pairs);
+    self::assertSame(['1.0:' . $this->conductor->id(), '1:' . $second->id()], $pairs);
   }
 
   /**
@@ -147,24 +165,73 @@ final class AddonResourceTest extends KernelTestBase {
   }
 
   /**
-   * A differing definition at the same identity is ignored.
+   * A differing definition at the same name@version gets its own row.
    *
-   * At the same (workspace, name, version): no duplicate row, no rejection,
-   * no overwrite of the first stored definition (BB-660/661 AC-11).
+   * Another member's earlier registration never sets the access level or
+   * input schema of a message on my conductor.
    */
-  public function testDifferingDefinitionAtSameIdentityIsIgnored(): void {
-    $first = self::portsDefinition('0.0.1');
-    $first['label'] = 'X';
-    $changed = self::portsDefinition('0.0.1');
-    $changed['label'] = 'Y';
-    $this->registerAddons($this->conductor, [$first]);
-    [$status] = $this->registerAddons($this->conductor, [$changed]);
+  public function testDifferingDefinitionAtSameIdentityGetsItsOwnRow(): void {
+    $other = $this->workspaceMember('a', $this->createAccount('owner-other', ['register bakers conductor']), 'contributor');
+    $otherConductor = $this->createEntity('bb_conductor', [
+      'conductor_id' => 'node-owner-other',
+      'label' => 'node-owner-other',
+      'project_id' => $this->fixture('a', 'bb_project')->id(),
+      'owner_user_id' => $other->id(),
+      'status' => 'online',
+    ]);
+    self::assertInstanceOf(BbConductorInterface::class, $otherConductor);
+    $theirs = self::portsDefinition('1.2.3');
+    $theirs['label'] = 'X';
+    $mine = self::portsDefinition('1.2.3');
+    $mine['label'] = 'Y';
+    $mine['messages']['up']['access'] = 'update';
+    $this->registerAddons($otherConductor, [$theirs], $other);
+    [$status] = $this->registerAddons($this->conductor, [$mine]);
     self::assertSame(200, $status);
 
     $rows = $this->addonsByLabel();
-    self::assertSame(['X'], array_keys($rows), 'The second, differing definition never overwrites the first.');
-    self::assertSame([(int) $this->conductor->id()], $this->conductorIds($rows['X']));
-    self::assertSame('X', $this->container->get('bb_addon.repository')->forConductor($this->conductor)['ports']->label());
+    self::assertSame(['X', 'Y'], array_keys($rows));
+    self::assertSame([(int) $otherConductor->id()], $this->conductorIds($rows['X']));
+    self::assertSame([(int) $this->conductor->id()], $this->conductorIds($rows['Y']));
+    $repository = $this->container->get('bb_addon.repository');
+    self::assertSame('update', $repository->forConductor($this->conductor)['ports']->message('up')['access']);
+    self::assertSame('view', $repository->forConductor($otherConductor)['ports']->message('up')['access']);
+  }
+
+  /**
+   * On an upgraded site the update replaces the old three-column unique key.
+   */
+  public function testUpdateReplacesOldUniqueKey(): void {
+    // Rebuild the schema as it stood before the fingerprint existed.
+    $schema = $this->container->get('database')->schema();
+    $keyValue = $this->container->get('keyvalue')->get('entity.storage_schema.sql');
+    $entitySchema = $keyValue->get('bb_addon.entity_schema_data');
+    $newKey = 'bb_addon__workspace_name_version_fingerprint';
+    $oldColumns = array_values(array_diff($entitySchema['bb_addon']['unique keys'][$newKey], ['fingerprint']));
+    unset($entitySchema['bb_addon']['unique keys'][$newKey]);
+    $entitySchema['bb_addon']['unique keys']['bb_addon__workspace_name_version'] = $oldColumns;
+    $keyValue->set('bb_addon.entity_schema_data', $entitySchema);
+    $keyValue->delete('bb_addon.field_schema_data.fingerprint');
+    $schema->dropUniqueKey('bb_addon', $newKey);
+    $schema->dropField('bb_addon', 'fingerprint');
+    $schema->addUniqueKey('bb_addon', 'bb_addon__workspace_name_version', $oldColumns);
+    $lastInstalled = $this->container->get('entity.last_installed_schema.repository');
+    $fingerprint = $lastInstalled->getLastInstalledFieldStorageDefinitions('bb_addon')['fingerprint'];
+    $lastInstalled->deleteLastInstalledFieldStorageDefinition($fingerprint);
+
+    $this->container->get('module_handler')->loadInclude('bb_addon', 'install');
+    bb_addon_update_11001();
+
+    self::assertFalse($schema->indexExists('bb_addon', 'bb_addon__workspace_name_version'));
+    self::assertTrue($schema->indexExists('bb_addon', $newKey));
+    $first = self::portsDefinition('1.2.3');
+    $first['label'] = 'X';
+    $second = self::portsDefinition('1.2.3');
+    $second['label'] = 'Y';
+    $this->registerAddons($this->conductor, [$first]);
+    [$status] = $this->registerAddons($this->conductor, [$second]);
+    self::assertSame(200, $status);
+    self::assertSame(['X', 'Y'], array_keys($this->addonsByLabel()));
   }
 
   /**
@@ -211,7 +278,7 @@ final class AddonResourceTest extends KernelTestBase {
    * Two conductors with two versions produce two coexisting rows.
    */
   public function testTwoConductorsTwoVersionsCoexist(): void {
-    $secondOwner = $this->createAccount('second-owner', ['register bakers conductor']);
+    $secondOwner = $this->workspaceMember('a', $this->createAccount('second-owner', ['register bakers conductor']), 'contributor');
     $second = $this->createConductor('node-second', $secondOwner);
     $this->registerAddons($this->conductor, [self::portsDefinition('1.2.3')]);
     $this->registerAddons($second, [self::portsDefinition('2.0.0')], $secondOwner);

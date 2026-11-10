@@ -4,7 +4,7 @@ parameters:
 services:
   bb_inbox.sender:
     class: Drupal\bb_inbox\InboxSender
-    arguments: ['@entity_type.manager', '@event_dispatcher']
+    arguments: ['@entity_type.manager', '@event_dispatcher', '@bb_core.conductor_registrar']
   Drupal\bb_inbox\InboxSender: '@bb_inbox.sender'
   bb_inbox.message_contract_validator:
     class: Drupal\bb_inbox\MessageContractValidator

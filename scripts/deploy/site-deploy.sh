@@ -11,9 +11,12 @@ count="SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATAB
 say() { echo "[bakers] $*"; }
 fail() { echo "[bakers] $*" >&2; exit 1; }
 # The log speaks of bakers.build; a step's own output is shown only when that step fails.
+# $on_fail, when set, runs before the failure is reported.
 step() {
-  out=$("$DRUSH" "$@" 2>&1) || { printf '%s\n' "$out" >&2; fail "$what failed — see the output above"; }
+  out=$("$DRUSH" "$@" 2>&1) || { printf '%s\n' "$out" >&2; ${on_fail:-true}; fail "$what failed — see the output above"; }
 }
+# Best effort: the failure being reported is the step's, not this one's.
+uninstall_devel() { "$DRUSH" -y pm:uninstall devel_entity_updates devel >/dev/null 2>&1 || true; }
 
 # The stack's database has no TLS, and drush's --defaults-file hides the image's my.cnf.d opt-out.
 query() { "$DRUSH" sql:query --extra=--skip-ssl "$1"; }
@@ -28,9 +31,12 @@ if [ "$has_config" = 1 ]; then
   step -y deploy
   # Code-defined entity schema changes are not created by config:import: enable the tool
   # just in time, apply, then re-import config so it is uninstalled again.
+  # devel must never stay on a live site, also when one of these fails.
+  on_fail=uninstall_devel
   step -y pm:install devel_entity_updates
   step -y devel-entity-updates
   step -y config:import
+  on_fail=
   say "bakers.build is up to date"
 elif [ "$tables" = 0 ]; then
   [ -n "${ADMIN_EMAIL:-}" ] || fail "empty database: set ADMIN_EMAIL to install bakers.build"

@@ -125,10 +125,13 @@ final class BbRankEntityFence {
    *   The entity type manager.
    * @param \Drupal\bb_core\Access\BbRankCapabilityInterface $capability
    *   The rank capability resolver.
+   * @param \Drupal\bb_core\Access\BbWorkspaceReadScopeInterface $readScope
+   *   The read scope; its projects are where teams let the account in.
    */
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly BbRankCapabilityInterface $capability,
+    private readonly BbWorkspaceReadScopeInterface $readScope,
   ) {
   }
 
@@ -162,7 +165,8 @@ final class BbRankEntityFence {
       return AccessResult::neutral();
     }
 
-    $scoped = new BbGroupScopedAccount($account, $groups, $this->capability);
+    // Outside the project's teams no rank counts, only a site-wide grant.
+    $scoped = new BbGroupScopedAccount($account, $this->outsideTeams($groups, $entity, $account) ? [] : $groups, $this->capability);
     $handler = $this->entityTypeManager->getAccessControlHandler($entity->getEntityTypeId());
 
     $this->inProgress[$key] = TRUE;
@@ -186,11 +190,49 @@ final class BbRankEntityFence {
     // only the denial would leave an ALLOW cached past the moment the
     // membership that justified it was revoked.
     $result = $allowed->isAllowed() ? AccessResult::neutral() : AccessResult::forbidden();
+    // The team fence reads each chain project's teams.
+    foreach ($groups as $group) {
+      if ($group->getEntityTypeId() === 'bb_project') {
+        $result->addCacheableDependency($group);
+      }
+    }
 
     return $result
       ->addCacheableDependency($allowed)
       ->addCacheContexts(['user'])
       ->addCacheTags(['og_membership_list']);
+  }
+
+  /**
+   * Whether the chain holds a saved project outside the account's read scope.
+   *
+   * Teams decide which projects a guest or contributor reaches, and the
+   * listings already follow the read scope; entity access follows the same
+   * set, so a direct address opens nothing a listing hides.
+   *
+   * @param array<\Drupal\Core\Entity\EntityInterface> $groups
+   *   The entity's chain.
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity being accessed.
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The account.
+   */
+  private function outsideTeams(array $groups, EntityInterface $entity, AccountInterface $account): bool {
+    $projects = array_filter(
+      $groups,
+      static fn (EntityInterface $group): bool => $group->getEntityTypeId() === 'bb_project' && $group->id() !== NULL,
+    );
+    // A conductor follows its owner and registration, not the project's teams.
+    if ($projects === [] || $entity->getEntityTypeId() === 'bb_conductor' || $this->readScope->isBypassed($account, $entity->getEntityTypeId())) {
+      return FALSE;
+    }
+    $scope = array_map('intval', $this->readScope->projectIds($account));
+    foreach ($projects as $project) {
+      if (!in_array((int) $project->id(), $scope, TRUE)) {
+        return TRUE;
+      }
+    }
+    return FALSE;
   }
 
   /**
