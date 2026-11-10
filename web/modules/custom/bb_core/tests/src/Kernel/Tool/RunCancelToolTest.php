@@ -205,6 +205,31 @@ final class RunCancelToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A caller who may not comment cancels nothing by machine.
+   */
+  public function testCallerWithoutCommentAccessIsRefused(): void {
+    $etm = $this->container->get('entity_type.manager');
+    $etm->getStorage('user_role')->create(['id' => 'no_comment', 'label' => 'No comment'])->save();
+    user_role_grant_permissions('no_comment', [
+      'view bb_ticket', 'update own bb_ticket', 'view bb_comment',
+      'view bb_term', 'view bb_project', 'register bakers conductor',
+    ]);
+    $owner = $this->account('box-owner', ['no_comment']);
+    foreach ($etm->getStorage('bb_team')->loadByProperties(['name' => 'tool-team']) as $team) {
+      $this->addMembership($team, $owner);
+    }
+    $here = $this->conductor('box-1-here', $owner, $this->machine($owner, 'box-1'));
+    $ticket = $this->ticket('MAC-7', ['owner_user_id' => $owner->id()]);
+    $run = $this->runOn($ticket, $here, 'running');
+    $this->container->get('current_user')->setAccount($owner);
+
+    $this->assertFailure($this->runTool('bakers_run_cancel', ['machine_id' => 'box-1', 'reason' => 'stop']), 'You may not comment on tickets.');
+
+    self::assertSame('running', $this->reloadRun($run)->getRunState());
+    self::assertSame([], $this->comments($ticket));
+  }
+
+  /**
    * Another owner's machine looks exactly like an unknown one.
    */
   public function testForeignMachineRevealsNothing(): void {

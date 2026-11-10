@@ -9,6 +9,7 @@ use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tool\Attribute\Tool;
@@ -125,6 +126,10 @@ final class RunCancel extends ToolBase {
    * owner's machine and a machine without active runs give the same result.
    */
   private function cancelByMachine(string $host_key, string $note): ExecutableResult {
+    // Checked before the lookup, so the refusal reveals nothing about machines.
+    if (!$this->entities()->getAccessControlHandler('bb_comment')->createAccess('bb_comment', $this->currentUser)) {
+      throw new \InvalidArgumentException('You may not comment on tickets.');
+    }
     $storage = $this->entities()->getStorage('bb_machine');
     // A conductor acts as its owner, so it reaches only the owner's machines.
     $ids = $storage->getQuery()->accessCheck(FALSE)
@@ -136,24 +141,50 @@ final class RunCancel extends ToolBase {
     $runs = $machine instanceof BbMachineInterface ? TicketInterventions::activeMachineRuns($machine, $this->entities()) : [];
     $cancelled = [];
     $lines = [];
-    foreach ($runs as $run) {
+    foreach ($runs as $i => $run) {
       $ticket = $this->entities()->getStorage('bb_ticket')->load($run->getTicketId());
       if (!$ticket instanceof BbTicketInterface || !TicketInterventions::mayCancelRun($run, $ticket)) {
+        unset($runs[$i]);
         continue;
       }
-      TicketInterventions::cancelRun($run, $note);
       $cancelled[] = ['run' => (string) $run->uuid(), 'ticket' => $ticket->getIdentifier()];
       $lines[$ticket->id()][] = sprintf('Run %s %s', $run->uuid(), $note);
     }
-    // One trace per ticket; its state, labels and freeze stay as they are.
+    // Validated before any run changes.
+    $comments = $this->traceComments($lines);
+    foreach ($runs as $run) {
+      TicketInterventions::cancelRun($run, $note);
+    }
+    foreach ($comments as $comment) {
+      $comment->save();
+    }
+    return $this->result($cancelled);
+  }
+
+  /**
+   * One validated, unsaved trace comment per ticket.
+   *
+   * The ticket's state, labels and freeze stay as they are.
+   *
+   * @param array<int|string, list<string>> $lines
+   *   The trace lines, keyed by ticket id.
+   *
+   * @return list<\Drupal\Core\Entity\ContentEntityInterface>
+   *   The comments.
+   */
+  private function traceComments(array $lines): array {
+    $comments = [];
     foreach ($lines as $ticket_id => $ticket_lines) {
-      $this->entities()->getStorage('bb_comment')->create([
+      $comment = $this->entities()->getStorage('bb_comment')->create([
         'ticket_id' => $ticket_id,
         'type' => 'comment',
         'body' => ['value' => implode("\n\n", $ticket_lines), 'format' => 'bb_rich'],
-      ])->save();
+      ]);
+      assert($comment instanceof ContentEntityInterface);
+      $this->assertValid($comment);
+      $comments[] = $comment;
     }
-    return $this->result($cancelled);
+    return $comments;
   }
 
   /**
