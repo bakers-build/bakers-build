@@ -41,17 +41,23 @@ final class ParentSameProjectConstraintValidator extends ConstraintValidator imp
     if ($items->isEmpty() || !$ticket instanceof BbTicketInterface || $ticket->get('project_id')->isEmpty()) {
       return;
     }
-    $parentId = (string) $items->first()?->getValue()['target_id'];
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
     $stored = $ticket->isNew() ? NULL : $storage->loadUnchanged($ticket->id());
-    if ($stored instanceof BbTicketInterface && (string) $stored->getParentId() === $parentId) {
-      return;
-    }
-    // Access-unchecked on purpose: the project of a parent the writer cannot
-    // read is still compared; ValidReference owns the access question.
-    $parent = $storage->load($parentId);
-    if ($parent instanceof BbTicketInterface && $parent->get('project_id')->target_id != $ticket->get('project_id')->target_id) {
-      $this->context->addViolation($constraint->message);
+    $kept = $stored instanceof BbTicketInterface
+      ? array_map('strval', array_column($stored->get($items->getName())->getValue(), 'target_id'))
+      : [];
+    $projectId = $ticket->get('project_id')->target_id;
+    foreach (array_column($items->getValue(), 'target_id') as $targetId) {
+      if (in_array((string) $targetId, $kept, TRUE)) {
+        continue;
+      }
+      // Access-unchecked on purpose: the project of a ticket the writer cannot
+      // read is still compared; ValidReference owns the access question.
+      $target = $storage->load($targetId);
+      if ($target instanceof BbTicketInterface && $target->get('project_id')->target_id != $projectId) {
+        $this->context->addViolation($constraint->message);
+        return;
+      }
     }
   }
 

@@ -58,7 +58,6 @@ export const SIDEBAR = {
       ["Run agents securely", "/provision/security/"],
     ]),
     group("Machine setup", [
-      ["Set up a Coder workspace", "/provision/coder-workspace"],
       ["Set up a worker server", "/provision/worker-server"],
       ["Install Node.js", "/provision/node"],
     ]),
@@ -145,6 +144,11 @@ export const SIDEBAR = {
       ["Named Cloudflare tunnel", "/addons/ports-cloudflare"],
       ["Cloudflare Quick tunnel", "/addons/ports-cloudflare-quick"],
       ["frp tunnel", "/addons/ports-frp"],
+    ]),
+    group("Delivery", [
+      ["Forge", "/addons/forge"],
+      ["Forge for GitHub", "/addons/forge-github"],
+      ["Forge for GitLab", "/addons/forge-gitlab"],
     ]),
     group("Terminal UI", [
       ["Terminal UI", "/addons/bakers-ui"],

@@ -14,6 +14,7 @@ use Drupal\bb_core\Field\PendingReviewsItemList;
 use Drupal\bb_core\Field\RunsItemList;
 use Drupal\bb_core\Field\SubTicketsItemList;
 use Drupal\bb_core\Field\SummaryCommentItemList;
+use Drupal\bb_core\Ticket\BranchName;
 
 /**
  * Computed reverse refs, branch fields, and lifecycle/owner ticket fields.
@@ -101,6 +102,7 @@ final class BbTicketFieldMap {
       ->setLabel(new TranslatableMarkup('Branch name'))
       ->setDescription(new TranslatableMarkup('Git branch for the ticket. May be supplied at creation — that is how a ticket lands on an existing release or integration branch; left empty it is derived on first save from the repo branch convention (default feat/<identifier>-<title>, capped at 30 chars). Frozen once the ticket exists.'))
       ->setSetting('max_length', 255)
+      ->addPropertyConstraints('value', ['Regex' => ['pattern' => BranchName::PATTERN]])
       ->setDisplayConfigurable('view', TRUE);
     $fields['base_branch'] = BaseFieldDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Base branch'))
@@ -153,7 +155,8 @@ final class BbTicketFieldMap {
     // save. Unlike bb_run — where the owner comes from the conductor and must
     // never follow the session (R3) — the acting account is the right default
     // here.
-    $fields['owner_user_id'] = self::ownerBaseFieldDefinition();
+    $fields['owner_user_id'] = self::ownerBaseFieldDefinition()
+      ->setSetting('handler', 'bb_assignee_in_ticket_workspace');
     return $fields;
   }
 

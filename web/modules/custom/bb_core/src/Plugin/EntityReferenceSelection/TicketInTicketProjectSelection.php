@@ -17,8 +17,10 @@ use Drupal\bb_core\Entity\BbTicketInterface;
  *
  * Never a field handler: the create and property form displays select it
  * for their relation pickers through the `bb_picker` `selection_handler`
- * setting, so API, CLI and the Settings form keep the field's default
- * handler. The access-checked query of DefaultSelection still applies.
+ * setting, and FormAlterHooks swaps it into the Settings form's
+ * autocomplete. API and CLI keep the field's default handler; the
+ * BbParentSameProject constraint guards their writes. The access-checked
+ * query of DefaultSelection still applies.
  *
  * There is no current-reference escape: a relation a saved ticket already
  * holds is kept by the widget and the forms' rule, not offered here.

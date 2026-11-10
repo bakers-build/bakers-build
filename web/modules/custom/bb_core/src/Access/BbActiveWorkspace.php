@@ -55,11 +55,11 @@ final class BbActiveWorkspace implements BbActiveWorkspaceInterface {
   /**
    * Whether this route supplies trusted context for creating an entity.
    *
-   * Standard add forms and the name-only group/team dialogs carry a workspace.
-   * Other create dialogs retain their existing context rules.
+   * Standard add forms and the create dialogs (group, team, project, ticket)
+   * carry a workspace.
    *
    * @return bool
-   *   TRUE for add operations and the two workspace-bound create operations.
+   *   TRUE for add and create operations.
    */
   private function isCreationForm(): bool {
     $route = $this->routeMatch->getRouteObject();
@@ -71,7 +71,7 @@ final class BbActiveWorkspace implements BbActiveWorkspaceInterface {
       return FALSE;
     }
     [, $operation] = array_pad(explode('.', $entity_form, 2), 2, '');
-    return $operation === 'add' || in_array($entity_form, ['bb_group.create', 'bb_team.create'], TRUE);
+    return in_array($operation, ['add', 'create'], TRUE);
   }
 
 }

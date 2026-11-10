@@ -135,4 +135,28 @@ final class BbRepoUrlConstraintTest extends KernelTestBase {
     ];
   }
 
+  /**
+   * A default branch that git could read as an option is refused.
+   */
+  public function testRefusesInvalidDefaultBranch(): void {
+    foreach (['--upload-pack=touch PWNED', '-x', 'a..b', 'a b'] as $branch) {
+      $this->assertContains('repository.0.default_branch', $this->defaultBranchPaths($branch), sprintf('%s should be refused.', $branch));
+    }
+    $this->assertNotContains('repository.0.default_branch', $this->defaultBranchPaths('release/1.2'));
+  }
+
+  /**
+   * The violation paths of a project whose repository has that default branch.
+   *
+   * @return list<string>
+   *   Property paths of every violation.
+   */
+  private function defaultBranchPaths(string $branch): array {
+    $project = BbProject::create([
+      'name' => 'p',
+      'repository' => [['url' => 'https://github.com/acme/widget.git', 'default_branch' => $branch]],
+    ]);
+    return array_map(fn ($v) => (string) $v->getPropertyPath(), iterator_to_array($project->validate(), FALSE));
+  }
+
 }

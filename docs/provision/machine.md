@@ -24,7 +24,7 @@ Continue with [ticket work](/get-started/daily-work/create-a-ticket). You can us
 Follow the path that matches what you have access to:
 
 - **An environment already prepared for you:** check access with your team, then [prepare your project](/get-started/connect-a-project) there.
-- **A Coder workspace:** [open the team's workspace](/provision/coder-workspace) and check its tools and sign-ins there.
+- **A Coder workspace:** open the team's workspace and check its tools and sign-ins there.
 - **A remote server you manage:** follow [worker server setup](/provision/worker-server), then connect your project on that server.
 - **Your own computer:** check and complete the local setup below.
 

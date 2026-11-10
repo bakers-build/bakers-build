@@ -9,10 +9,12 @@ use Drupal\Core\Entity\Sql\SqlContentEntityStorageSchema;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
- * Enforces registration identity: one row per (workspace, name, version).
+ * Enforces registration identity, one row per distinct definition.
  *
- * BB-661/BB-660: two conductors in the same workspace registering the
- * same name@version must resolve to exactly one row. The unique key is the
+ * The identity is (workspace, name, version, fingerprint).
+ * Two conductors in the same workspace registering an identical definition
+ * of a name@version resolve to exactly one row; a differing definition gets
+ * its own. The unique key is the
  * database-level guarantee a reload-on-collision retry (AddonsRegisterResource)
  * relies on under concurrent registration.
  *
@@ -35,10 +37,11 @@ final class BbAddonStorageSchema extends SqlContentEntityStorageSchema {
       default => NULL,
     };
     if ($workspace_column !== NULL) {
-      $schema[$table]['unique keys']['bb_addon__workspace_name_version'] = [
+      $schema[$table]['unique keys']['bb_addon__workspace_name_version_fingerprint'] = [
         $workspace_column,
         'name',
         'version',
+        'fingerprint',
       ];
     }
     return $schema;
