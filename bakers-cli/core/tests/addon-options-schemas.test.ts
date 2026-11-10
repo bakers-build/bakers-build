@@ -151,4 +151,15 @@ describe('addon options schemas', () => {
     expect(validate(good), JSON.stringify(validate.errors)).toBe(true);
     expect(validate({ ...good, modle: 'x' })).toBe(false);
   });
+
+  it('forge backends take the conductor CLI login; a GitHub App still needs its ids', () => {
+    const v = (addon: string) =>
+      ajv.getSchema(
+        `https://bakers.build/schema/addon-${addon}/options.schema.json`,
+      ) ?? ajv.compile(load(`addons/${addon}/options.schema.json`));
+    expect(v('forge-github')({ repository: 'a/b', auth: 'gh' })).toBe(true);
+    expect(v('forge-github')({ repository: 'a/b' })).toBe(false);
+    expect(v('forge-github')({ repository: 'a/b', auth: 'glab' })).toBe(false);
+    expect(v('forge-gitlab')({ project: 'g/r', auth: 'glab' })).toBe(true);
+  });
 });

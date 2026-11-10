@@ -1,6 +1,6 @@
 # Forge for GitHub
 
-**A [Forge](/addons/forge) backend that authenticates with a GitHub App installation token, scoped to one repository.**
+**A [Forge](/addons/forge) backend that authenticates with a GitHub App installation token scoped to one repository, or with the conductor's `gh` login.**
 
 For GitHub repositories. The conductor mints a short-lived installation token for the configured repository only and renews it shortly before it expires.
 
@@ -40,7 +40,22 @@ backend: {
 | `private_key_env` | string | — | Environment variable holding the App's PEM private key. |
 | `private_key` | string | — | The PEM key itself; only in `~/.bakers/machine.config.js`. |
 
-One of `private_key_env` or `private_key` is required.
+| `auth` | `'gh'` | — | Use the conductor's `gh` login instead of a GitHub App. |
+
+With `auth: 'gh'` no App option is needed. Otherwise `app_id`, `installation_id` and one of `private_key_env` or `private_key` are required.
+
+### With your gh login
+
+Without a GitHub App, the conductor can use its own `gh` login. Run `gh auth login` on the conductor's machine, then set:
+
+```js
+backend: {
+  use: '@bakers-build/addon-forge-github',
+  with: { repository: 'acme/shop', auth: 'gh' },
+},
+```
+
+The conductor reads the token with `gh auth token` and reads it again after five minutes. Runs still get only the forge tools, never the token. The login reaches every repository your account can, so the tools' ownership rules are the only limit.
 
 ## Check it works
 

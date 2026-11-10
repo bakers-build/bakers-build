@@ -1,4 +1,7 @@
 import { createVerify, generateKeyPairSync } from 'node:crypto';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import factory from '../src/index.js';
 
@@ -130,6 +133,49 @@ describe('forge-github', () => {
     );
     for (const mint of f.calls.filter((c) => c.path.startsWith('/app/')))
       expect(secrets).toContain(mint.auth!.replace('Bearer ', ''));
+  });
+
+  it("with auth 'gh' takes the conductor's gh login token, keeps it in secrets, and mints nothing", async () => {
+    const bin = mkdtempSync(join(tmpdir(), 'fake-gh-'));
+    writeFileSync(
+      join(bin, 'gh'),
+      '#!/bin/sh\n[ "$1 $2" = "auth token" ] && echo gho_LOGIN\n',
+      { mode: 0o755 },
+    );
+    const path = process.env.PATH;
+    process.env.PATH = `${bin}:${path}`;
+    try {
+      const f = fakeFetch({ 'GET /repos/acme/shop/pulls': () => [PULL] });
+      const b = await factory(
+        { repository: 'acme/shop', auth: 'gh' },
+        { home: '/h', fetch: f.doFetch },
+      );
+      expect((await b.findOpenPr('feat/bb-7-work'))?.number).toBe(5);
+      expect(f.calls.at(-1)?.auth).toBe('Bearer gho_LOGIN');
+      expect(f.mints()).toBe(0);
+      expect((await b.gitAuth()).header).toBe(
+        `Authorization: Basic ${Buffer.from('x-access-token:gho_LOGIN').toString('base64')}`,
+      );
+      expect(b.secrets()).toContain('gho_LOGIN');
+    } finally {
+      process.env.PATH = path;
+    }
+  });
+
+  it("rejects auth 'gh' when gh prints no token", async () => {
+    const bin = mkdtempSync(join(tmpdir(), 'fake-gh-'));
+    writeFileSync(join(bin, 'gh'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+    const path = process.env.PATH;
+    process.env.PATH = `${bin}:${path}`;
+    try {
+      const b = await factory(
+        { repository: 'acme/shop', auth: 'gh' },
+        { home: '/h', fetch: fakeFetch({}).doFetch },
+      );
+      await expect(b.findOpenPr('x')).rejects.toThrow(/gh auth login/);
+    } finally {
+      process.env.PATH = path;
+    }
   });
 
   it('finds, creates and updates PRs', async () => {

@@ -1,3 +1,6 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import factory from '../src/index.js';
 
@@ -20,7 +23,10 @@ function fakeFetch(routes: Record<string, Route>) {
       method,
       path: url.pathname + url.search,
       ...(init.body ? { body: JSON.parse(String(init.body)) } : {}),
-      token: new Headers(init.headers).get('private-token') ?? undefined,
+      token:
+        new Headers(init.headers)
+          .get('authorization')
+          ?.replace(/^Bearer /, '') ?? undefined,
     });
     const route = routes[`${method} ${url.pathname.replace(P, '')}`];
     if (!route) return new Response('not found', { status: 404 });
@@ -80,7 +86,49 @@ describe('forge-gitlab', () => {
     });
   });
 
-  it('finds, creates and updates MRs with the PRIVATE-TOKEN header', async () => {
+  it("with auth 'glab' takes the conductor's glab login token for the configured host and keeps it in secrets", async () => {
+    const bin = mkdtempSync(join(tmpdir(), 'fake-glab-'));
+    writeFileSync(
+      join(bin, 'glab'),
+      '#!/bin/sh\n[ "$*" = "config get token --host git.example.test" ] && echo glab-LOGIN\n',
+      { mode: 0o755 },
+    );
+    const path = process.env.PATH;
+    process.env.PATH = `${bin}:${path}`;
+    try {
+      const f = fakeFetch({ 'GET /merge_requests': () => [MR] });
+      const b = await factory(
+        { project: 'acme/shop', url: 'https://git.example.test', auth: 'glab' },
+        { home: '/h', fetch: f.doFetch },
+      );
+      expect((await b.findOpenPr('feat/bb-7-work'))?.number).toBe(9);
+      expect(f.calls.at(-1)?.token).toBe('glab-LOGIN');
+      expect((await b.gitAuth()).header).toBe(
+        `Authorization: Basic ${Buffer.from('oauth2:glab-LOGIN').toString('base64')}`,
+      );
+      expect(b.secrets()).toContain('glab-LOGIN');
+    } finally {
+      process.env.PATH = path;
+    }
+  });
+
+  it("rejects auth 'glab' when glab has no token for the host", async () => {
+    const bin = mkdtempSync(join(tmpdir(), 'fake-glab-'));
+    writeFileSync(join(bin, 'glab'), '#!/bin/sh\n', { mode: 0o755 });
+    const path = process.env.PATH;
+    process.env.PATH = `${bin}:${path}`;
+    try {
+      const b = await factory(
+        { project: 'acme/shop', auth: 'glab' },
+        { home: '/h', fetch: fakeFetch({}).doFetch },
+      );
+      await expect(b.findOpenPr('x')).rejects.toThrow(/glab auth login/);
+    } finally {
+      process.env.PATH = path;
+    }
+  });
+
+  it('finds, creates and updates MRs with a Bearer token', async () => {
     const f = fakeFetch({
       'GET /merge_requests': (url) =>
         url.searchParams.get('source_branch') === 'feat/bb-7-work' ||

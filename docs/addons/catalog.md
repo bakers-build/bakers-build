@@ -41,8 +41,8 @@ Choose an integration for your task, then follow its setup guide. [Configure add
 | Addon | What it adds |
 |---|---|
 | [Forge](/addons/forge) | Fetch, push, PR/MR, checks and merge as conductor tools; the token stays with the conductor |
-| [Forge for GitHub](/addons/forge-github) | GitHub App installation token for one repository |
-| [Forge for GitLab](/addons/forge-gitlab) | GitLab Project Access Token |
+| [Forge for GitHub](/addons/forge-github) | GitHub App installation token for one repository, or your `gh` login |
+| [Forge for GitLab](/addons/forge-gitlab) | GitLab Project Access Token, or your `glab` login |
 
 
 ## Provisioning support

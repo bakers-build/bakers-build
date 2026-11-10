@@ -2,19 +2,21 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://bakers.build/schema/addon-forge-github/options.schema.json",
   "title": "@bakers-build/addon-forge-github options",
-  "description": "The forge entry's with.backend.with for a GitHub App.",
+  "description": "The forge entry's with.backend.with: a GitHub App, or the conductor's gh login with auth 'gh'.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "repository",
-    "app_id",
-    "installation_id"
+    "repository"
   ],
   "properties": {
     "repository": {
       "type": "string",
       "pattern": "^[\\w.-]+/[\\w.-]+$",
       "description": "owner/repo."
+    },
+    "auth": {
+      "const": "gh",
+      "description": "Use the conductor's own gh login instead of a GitHub App."
     },
     "app_id": {
       "type": [
@@ -40,5 +42,16 @@
       "minLength": 1,
       "description": "Names the conductor environment variable that holds the credential."
     }
+  },
+  "if": {
+    "required": [
+      "auth"
+    ]
+  },
+  "else": {
+    "required": [
+      "app_id",
+      "installation_id"
+    ]
   }
 }

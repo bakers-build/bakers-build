@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://bakers.build/schema/addon-forge/options.schema.json",
   "title": "@bakers-build/addon-forge options",
-  "description": "The forge entry's with. A literal credential in the committed project file is refused at load by the addon itself.",
+  "description": "The forge entry's with.",
   "type": "object",
   "additionalProperties": false,
   "required": [

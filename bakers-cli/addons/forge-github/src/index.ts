@@ -1,11 +1,12 @@
 // The GitHub forge backend: a GitHub App's installation token, minted with
 // an RS256 app JWT, scoped to the one configured repository and cached until
-// shortly before it expires. The repository comes from config, never from a
-// clone's `origin`.
+// shortly before it expires; or, with `auth: 'gh'`, the conductor's own `gh`
+// login. The repository comes from config, never from a clone's `origin`.
 
 import { createSign } from 'node:crypto';
 import {
   type CheckStatus,
+  cliToken,
   type ForgeBackend,
   type ForgeBackendFactory,
   type ForgeCheck,
@@ -18,6 +19,7 @@ const REFRESH_MS = 60_000;
 
 interface Settings {
   repository: string;
+  gh: boolean;
   appId: string;
   installationId: string;
   privateKey: string;
@@ -30,6 +32,16 @@ function settingsOf(raw: unknown): Settings {
     !/^[\w.-]+\/[\w.-]+$/.test(s.repository)
   )
     throw new Error("repository must be 'owner/repo'");
+  if (s.auth === 'gh')
+    return {
+      repository: s.repository,
+      gh: true,
+      appId: '',
+      installationId: '',
+      privateKey: '',
+    };
+  if (s.auth !== undefined)
+    throw new Error("auth must be 'gh' or left out for a GitHub App");
   for (const k of ['app_id', 'installation_id'])
     if (typeof s[k] !== 'number' && (typeof s[k] !== 'string' || s[k] === ''))
       throw new Error(`${k} must be the App's numeric ${k.replace('_', ' ')}`);
@@ -45,6 +57,7 @@ function settingsOf(raw: unknown): Settings {
     );
   return {
     repository: s.repository,
+    gh: false,
     appId: String(s.app_id),
     installationId: String(s.installation_id),
     privateKey,
@@ -106,8 +119,18 @@ const factory: ForgeBackendFactory = async (raw, context) => {
   let token: { value: string; until: number } | undefined;
   // Every JWT and token ever minted: a value replaced by a refresh may still be echoed.
   const minted: string[] = [];
+  const ghToken = cliToken(
+    'gh',
+    ['auth', 'token', '--hostname', 'github.com'],
+    minted,
+  );
 
-  const installationToken = async (): Promise<string> => {
+  const accessToken = async (): Promise<string> => {
+    if (s.gh) {
+      const value = await ghToken();
+      if (!minted.includes(basic(value))) minted.push(basic(value));
+      return value;
+    }
     if (token && Date.now() < token.until) return token.value;
     const jwt = appJwt(s.appId, s.privateKey);
     minted.push(jwt);
@@ -139,7 +162,7 @@ const factory: ForgeBackendFactory = async (raw, context) => {
     requestJson(doFetch, `${repo}${path}`, {
       method: init.method ?? 'GET',
       headers: {
-        authorization: `Bearer ${await installationToken()}`,
+        authorization: `Bearer ${await accessToken()}`,
         accept: 'application/vnd.github+json',
         'content-type': 'application/json',
       },
@@ -151,10 +174,10 @@ const factory: ForgeBackendFactory = async (raw, context) => {
 
   const backend: ForgeBackend = {
     id: 'github',
-    secrets: () => [s.privateKey, ...minted],
+    secrets: () => [...(s.privateKey ? [s.privateKey] : []), ...minted],
     gitAuth: async () => ({
       url: `https://github.com/${s.repository}.git`,
-      header: `Authorization: Basic ${basic(await installationToken())}`,
+      header: `Authorization: Basic ${basic(await accessToken())}`,
     }),
     findOpenPr: async (head) => {
       const list = (await api(

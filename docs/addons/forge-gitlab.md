@@ -1,6 +1,6 @@
 # Forge for GitLab
 
-**A [Forge](/addons/forge) backend that authenticates with a GitLab Project Access Token.**
+**A [Forge](/addons/forge) backend that authenticates with a GitLab Project Access Token, or with the conductor's `glab` login.**
 
 For GitLab projects, on gitlab.com or a self-managed instance.
 
@@ -36,7 +36,22 @@ backend: {
 | `token_env` | string | — | Environment variable holding the token. |
 | `token` | string | — | The token itself; only in `~/.bakers/machine.config.js`. |
 
-One of `token_env` or `token` is required.
+| `auth` | `'glab'` | — | Use the conductor's `glab` login instead of a token. |
+
+One of `auth`, `token_env` or `token` is required.
+
+### With your glab login
+
+Without a Project Access Token, the conductor can use its own `glab` login. Run `glab auth login` on the conductor's machine, then set `auth: 'glab'` and no token:
+
+```js
+backend: {
+  use: '@bakers-build/addon-forge-gitlab',
+  with: { project: 'acme/shop', auth: 'glab' },
+},
+```
+
+The conductor reads the token with `glab config get token --host <host>` and reads it again after five minutes. Runs still get only the forge tools, never the token. The login reaches every project your account can, so the tools' ownership rules are the only limit.
 
 ## Check it works
 

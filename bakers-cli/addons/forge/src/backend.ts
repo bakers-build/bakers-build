@@ -3,6 +3,7 @@
 // `ForgeBackendFactory`; the forge tools know only this shape, never a
 // service's API. Ownership, titles and merge gates stay with the tools.
 
+import { execFile } from 'node:child_process';
 import type { GitAuth } from './git.js';
 
 export type { GitAuth };
@@ -91,6 +92,34 @@ export function assertForgeBackend(
   for (const m of METHODS)
     if (typeof obj[m] !== 'function')
       throw new Error(`forge backend '${spec}' is missing function "${m}"`);
+}
+
+/**
+ * A token from the conductor's own CLI login (`gh`, `glab`), run outside any
+ * sandbox and read again after five minutes so a new login is picked up.
+ * Every value read is pushed to `seen`, for the backend's `secrets()`.
+ */
+export function cliToken(
+  cmd: string,
+  args: string[],
+  seen: string[],
+): () => Promise<string> {
+  let cached: { value: string; until: number } | undefined;
+  return async () => {
+    if (cached && Date.now() < cached.until) return cached.value;
+    const value = await new Promise<string>((resolve) =>
+      execFile(cmd, args, { timeout: 10_000 }, (err, out) =>
+        resolve(err ? '' : String(out).trim()),
+      ),
+    );
+    if (!value)
+      throw new Error(
+        `${cmd} gave no token: run '${cmd} auth login' on the conductor's machine`,
+      );
+    seen.push(value);
+    cached = { value, until: Date.now() + 300_000 };
+    return value;
+  };
 }
 
 /** JSON over HTTP for backends: throws status and body text on failure. */

@@ -1,10 +1,12 @@
 // The GitLab forge backend: a Project Access Token (role Developer, with an
-// expiry date) for the one configured project. Every merge sends `squash`
+// expiry date) for the one configured project, or, with `auth: 'glab'`, the
+// conductor's own `glab` login. Every merge sends `squash`
 // and `should_remove_source_branch` explicitly, so nothing stored on the MR
 // or the project decides them.
 
 import {
   type CheckStatus,
+  cliToken,
   type ForgeBackend,
   type ForgeBackendFactory,
   type ForgePr,
@@ -46,35 +48,55 @@ const factory: ForgeBackendFactory = async (raw, context) => {
   const base = (
     typeof s.url === 'string' ? s.url : 'https://gitlab.com'
   ).replace(/\/+$/, '');
-  const token =
-    typeof s.token === 'string'
-      ? s.token
-      : typeof s.token_env === 'string'
-        ? process.env[s.token_env]
-        : undefined;
-  if (!token)
-    throw new Error(
-      'token or token_env (naming a set environment variable) must give the Project Access Token',
+  const seen: string[] = [];
+  let token: () => Promise<string>;
+  if (s.auth === 'glab') {
+    token = cliToken(
+      'glab',
+      ['config', 'get', 'token', '--host', new URL(base).host],
+      seen,
     );
+  } else if (s.auth !== undefined) {
+    throw new Error("auth must be 'glab' or left out for a token");
+  } else {
+    const fixed =
+      typeof s.token === 'string'
+        ? s.token
+        : typeof s.token_env === 'string'
+          ? process.env[s.token_env]
+          : undefined;
+    if (!fixed)
+      throw new Error(
+        'token or token_env (naming a set environment variable) must give the Project Access Token',
+      );
+    seen.push(fixed);
+    token = async () => fixed;
+  }
+  const basic = (t: string) => Buffer.from(`oauth2:${t}`).toString('base64');
   const doFetch = context.fetch ?? fetch;
   const project = `${base}/api/v4/projects/${encodeURIComponent(s.project)}`;
-  const api = (path: string, init: { method?: string; body?: unknown } = {}) =>
+  const api = async (
+    path: string,
+    init: { method?: string; body?: unknown } = {},
+  ) =>
     requestJson(doFetch, `${project}${path}`, {
       method: init.method ?? 'GET',
-      headers: { 'private-token': token, 'content-type': 'application/json' },
+      // Bearer takes access tokens and the OAuth token a `glab` login holds.
+      headers: {
+        authorization: `Bearer ${await token()}`,
+        'content-type': 'application/json',
+      },
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
     });
   const mr = async (iid: number) => (await api(`/merge_requests/${iid}`)) as Mr;
   const q = encodeURIComponent;
 
-  const basic = Buffer.from(`oauth2:${token}`).toString('base64');
-
   const backend: ForgeBackend = {
     id: 'gitlab',
-    secrets: () => [token, basic],
+    secrets: () => seen.flatMap((t) => [t, basic(t)]),
     gitAuth: async () => ({
       url: `${base}/${s.project}.git`,
-      header: `Authorization: Basic ${basic}`,
+      header: `Authorization: Basic ${basic(await token())}`,
     }),
     findOpenPr: async (head) => {
       const list = (await api(
