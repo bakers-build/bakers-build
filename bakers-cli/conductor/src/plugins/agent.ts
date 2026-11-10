@@ -257,8 +257,9 @@ export interface BbAgent {
   sandboxPreflight?(host?: SandboxHost): Promise<SandboxPreflight>;
   /**
    * The actions a permission rule denied in this run's transcript, each as
-   * `Tool(argument)`, in order; [] when none. Never throws. Optional: a run of
-   * an agent without it is never reported as blocked.
+   * `Tool(argument)`, in order, but only when the run stopped on one: the agent
+   * ended its turn after a denial with no call outstanding; [] otherwise. Never
+   * throws. Optional: a run of an agent without it is never reported as blocked.
    */
   permissionDenials?(log: string): string[];
 }
