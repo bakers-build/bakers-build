@@ -2,6 +2,11 @@
 # Prepare local identity before the sentinel; bootstrap only after successful setup.
 set -euo pipefail
 node scripts/setup-worktree.mjs
+# Register this worktree's own DDEV project (no containers start); unregistered, DDEV falls back
+# to the parent checkout. `ddev config` rewrites config.yaml, so the tracked file is kept.
+cp .ddev/config.yaml .ddev/config.yaml.keep
+ddev config --auto >/dev/null || echo '==> DDEV registration failed; provision_up refuses until it succeeds.' >&2
+mv .ddev/config.yaml.keep .ddev/config.yaml
 SENTINEL=".bakers/.worktree-post-done"
 if [ -f "${SENTINEL}" ]; then
   echo "==> bakers worktree bootstrap already done (${SENTINEL}); skipping." >&2
