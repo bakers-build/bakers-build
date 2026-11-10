@@ -137,17 +137,20 @@ final class ProjectBoardRouteTest extends KernelTestBase {
     // the same twice.
     self::assertArrayNotHasKey('board_conductor', $default['display_options']['filters']);
     self::assertSame('parent_id', $default['display_options']['filters']['board_parent']['expose']['identifier']);
-    foreach (['facets_state', 'facets_assignee_user_id', 'facets_priority', 'facets_work_state'] as $facet) {
+    foreach (['facets_state', 'facets_assignee_user_id', 'facets_priority'] as $facet) {
       self::assertArrayHasKey($facet, $default['display_options']['filters']);
     }
-    self::assertArrayNotHasKey('search_api_fulltext', $default['display_options']['filters']);
+    // The columns are the work states; Done is a column, not a filter.
+    self::assertArrayNotHasKey('facets_work_state', $default['display_options']['filters']);
     self::assertArrayNotHasKey('work_state', $default['display_options']['filters']);
+    self::assertSame('bb_ticket_search', $default['display_options']['filters']['bb_ticket_search']['plugin_id']);
+    self::assertSame('search', $default['display_options']['filters']['bb_ticket_search']['expose']['identifier']);
     $bef = $view->getDisplay('project_board')['display_options']['exposed_form']['options']['bef']['filter'] ?? [];
     self::assertArrayHasKey('board_parent', $bef);
     self::assertArrayHasKey('facets_state', $bef);
     self::assertArrayHasKey('facets_assignee_user_id', $bef);
     self::assertArrayHasKey('facets_priority', $bef);
-    self::assertArrayHasKey('facets_work_state', $bef);
+    self::assertArrayNotHasKey('facets_work_state', $bef);
     $page = $view->getDisplay('project_board');
     self::assertSame(
       '_workspace/%bb_workspace/project/%bb_project/board',
@@ -183,7 +186,8 @@ final class ProjectBoardRouteTest extends KernelTestBase {
       self::assertArrayNotHasKey('closed', $filters);
       self::assertArrayNotHasKey('conductor_id', $filters);
       self::assertArrayNotHasKey('state', $filters);
-      self::assertArrayHasKey('facets_work_state', $filters);
+      self::assertArrayNotHasKey('facets_work_state', $filters);
+      self::assertSame('search', $filters['bb_ticket_search']['expose']['identifier']);
       self::assertFalse($filters['work_state']['exposed']);
       self::assertSame('=', $filters['work_state']['operator']);
       self::assertSame($value, $filters['work_state']['value']['value']);

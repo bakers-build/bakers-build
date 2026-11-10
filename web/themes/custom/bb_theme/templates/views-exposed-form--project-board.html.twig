@@ -1,17 +1,28 @@
-{# The Board's hidden chip values (bb_board_summary).
+{# The Board filter bar: Search, the State and Priority pickers, the Assignee
+   avatars, then Details and Clear filters at its end (bb_board_summary adds
+   the avatars, Details and Clear to the form).
 
-   State, Assignee, Priority, Work state and Parent have no picker here: their
-   chips ARE those filters. Active values ride along as hidden inputs, so a
-   change to any other control (BEF autosubmit) keeps the chip selection.
-   Clear filters sits on the first chip group's heading, not in this form. #}
-<div{{ attributes.addClass(['hidden']) }} role="group" aria-label="Board filters">
-  {% for key in ['state', 'assignee', 'priority', 'work_state'] %}
-    {% for value in form[key]['#props'].values|default([]) %}
-      <input type="hidden" name="{{ key }}[]" value="{{ value }}">
-    {% endfor %}
-  {% endfor %}
-  {% for value in form.parent_id['#props'].values|default([]) %}
-    <input type="hidden" name="parent_id" value="{{ value }}">
-  {% endfor %}
-  {{ form|without('state', 'assignee', 'priority', 'work_state', 'parent_id', 'clear', 'actions') }}
-</div>
+   Assignee and the parent focus are links, not inputs; their active values
+   ride along as hidden inputs, so Apply and a picker keep them. Apply is the
+   submit without JavaScript; with it, the bar submits itself. #}
+{% for value in form.assignee['#props'].values|default([]) %}
+  <input type="hidden" name="assignee[]" value="{{ value }}">
+{% endfor %}
+{% for value in form.parent_id['#props'].values|default([]) %}
+  <input type="hidden" name="parent_id" value="{{ value }}">
+{% endfor %}
+{% embed 'bb_theme:filters' with {
+  layout: 'toolbar',
+  label: 'Board filters'|t,
+  search: form.search,
+  state: form.state,
+  priority: form.priority,
+  assignees: form.board_assignees,
+  submit: form.actions,
+  details: form.board_details,
+  clear: form.board_clear,
+} only %}
+  {% block controls %}{{ search }}{{ state }}{{ priority }}{{ assignees }}{{ submit }}{% endblock %}
+  {% block actions %}{{ details }}{{ clear }}{% endblock %}
+{% endembed %}
+{{ form|without('search', 'state', 'priority', 'assignee', 'parent_id', 'actions', 'board_assignees', 'board_details', 'board_clear') }}

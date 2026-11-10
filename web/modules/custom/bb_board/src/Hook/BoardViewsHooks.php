@@ -8,6 +8,8 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_board\BoardAddress;
+use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Project\ProjectHealth;
 use Drupal\search_api\Plugin\views\query\SearchApiQuery;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
 use Drupal\views\ViewExecutable;
@@ -17,33 +19,60 @@ use Drupal\views\ViewExecutable;
  */
 final class BoardViewsHooks {
 
+  /**
+   * The attention set per project id, read once per request.
+   *
+   * @var array<string, list<int>>
+   */
+  private array $unhealthy = [];
+
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly ProjectHealth $health,
   ) {}
 
   /**
    * Implements hook_views_query_alter().
    *
-   * Absent work_state is the three open columns as a real condition, so counts
-   * match the chips that look active, without writing work_state into the URL.
+   * The page's own search counts the open columns only; Done is a column, not
+   * a filter. `?health=unhealthy` narrows every display to the attention set,
+   * and an empty set matches nothing, never everything.
    */
   #[Hook('views_query_alter')]
   public function viewsQueryAlter(ViewExecutable $view, QueryPluginBase $query): void {
-    if ($view->id() !== 'project_board' || $view->current_display !== 'project_board') {
+    if ($view->id() !== 'project_board' || !$query instanceof SearchApiQuery || $query->shouldAbort()) {
       return;
     }
-    if (!$query instanceof SearchApiQuery) {
+    // Built already: a condition goes straight onto the Search API query.
+    if ($view->current_display === 'project_board') {
+      $query->createAndAddConditionGroup()->addCondition('work_state', BoardAddress::OPEN_WORK_STATES, 'IN');
+    }
+    if (($view->getExposedInput()['health'] ?? NULL) !== 'unhealthy') {
       return;
     }
-    $input = $view->getExposedInput();
-    $params = $view->getRequest()->query->all();
-    if (array_key_exists('work_state', $input) || array_key_exists('work_state', $params)) {
+    // The validated argument, an id; the raw view argument may be a key.
+    $ids = $this->unhealthyIds((string) ($view->argument['project_id']->argument ?? ''));
+    if ($ids === []) {
+      $query->abort();
       return;
     }
-    // Tagged so search_api_db drops this group when counting the work_state
-    // OR facet, matching an explicit open-three address.
-    $query->createAndAddConditionGroup('AND', ['facet:work_state'])
-      ->addCondition('work_state', BoardAddress::OPEN_WORK_STATES, 'IN');
+    // The indexed entity id, as the parent filter: search_api_db drops
+    // search_api_id from the facet queries.
+    $query->createAndAddConditionGroup()->addCondition('ticket_id', $ids, 'IN');
+  }
+
+  /**
+   * The attention set of the board's project, empty when it cannot be read.
+   *
+   * @return list<int>
+   *   Ticket ids.
+   */
+  private function unhealthyIds(string $project_id): array {
+    if (!isset($this->unhealthy[$project_id])) {
+      $project = $project_id === '' ? NULL : $this->entityTypeManager->getStorage('bb_project')->load($project_id);
+      $this->unhealthy[$project_id] = $project instanceof BbProjectInterface ? $this->health->unhealthyIds($project) : [];
+    }
+    return $this->unhealthy[$project_id];
   }
 
   /**
@@ -56,7 +85,7 @@ final class BoardViewsHooks {
   public function viewsDataAlter(array &$data): void {
     $data['views']['bb_board_summary'] = [
       'title' => new TranslatableMarkup('Project board control panel'),
-      'help' => new TranslatableMarkup('Facet chips counted over every page and column.'),
+      'help' => new TranslatableMarkup('The filter bar and active filters, counted over every page and column.'),
       'area' => ['id' => 'bb_board_summary'],
     ];
     // An index that is not installed yet has no Views table to extend.

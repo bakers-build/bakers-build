@@ -199,6 +199,21 @@ final class BoardAddressTest extends UnitTestCase {
   }
 
   /**
+   * A chip's removal drops its whole filter and the pagers, nothing else.
+   */
+  public function testWithoutDropsOneWholeFilterAndThePagers(): void {
+    $address = new BoardAddress('/board', [
+      'parent_id' => 'abc',
+      'state' => ['review', 'coding'],
+      'health' => 'unhealthy',
+      'page' => '0,1',
+    ]);
+    self::assertSame('/board?parent_id=abc&health=unhealthy', $address->without('state'));
+    self::assertSame('/board?parent_id=abc&state%5B0%5D=review&state%5B1%5D=coding', $address->without('health'));
+    self::assertSame('/board', (new BoardAddress('/board', ['parent_id' => 'abc']))->without('parent_id'));
+  }
+
+  /**
    * Title and work state are no longer clearable filters.
    */
   public function testTitleAndWorkStateAreNotClearable(): void {

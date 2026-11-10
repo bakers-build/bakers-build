@@ -134,6 +134,13 @@ final class BoardAddress {
   }
 
   /**
+   * The address without one whole filter: its active chip's removal.
+   */
+  public function without(string $identifier): string {
+    return $this->with(array_diff_key($this->query, array_flip(['page', $identifier])));
+  }
+
+  /**
    * The address with the Details toggle set to States (TRUE) or Phases.
    */
   public function withDetails(bool $on): string {
