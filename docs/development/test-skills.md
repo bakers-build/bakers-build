@@ -102,6 +102,37 @@ The default worker runs in a fresh temporary directory with no tools, MCP server
 
 ## Extend your tests
 
+### Setup conversations through herdr
+
+The setup audit uses separate tool-free Claude workers for the setup role and the synthetic
+user. Run the driver in a herdr TUI pane so its questions, answers and completion remain visible.
+Use the installed `herdr --skill` instructions to create a pane without changing user focus.
+From the repository root, with the existing CLI dependencies provisioned:
+
+```sh
+python3 -B tests/skill-eval/setup-conversation.py \
+  tests/skill-eval/fixtures/setup/setup-s5-named.json \
+  assets-ai/EXAMPLE-1/setup-attempt
+node tests/skill-eval/setup-attempt.mjs assets-ai/EXAMPLE-1/setup-attempt
+node --require ./tests/skill-eval/offline-guard.cjs tests/skill-eval/run.mjs replay \
+  --input assets-ai/EXAMPLE-1/setup-attempt/attempt.json \
+  --output assets-ai/EXAMPLE-1/setup-replay.json
+```
+
+Directories and replay files must be unused. The driver keeps private answers out of the setup
+role, retains per-role raw streams, and passes literal actions through a closed boundary. Local
+config commands use the real registered CLI implementation with `BAKERS_HOME` and auth state
+inside the case; external authentication and tracker responses are labelled fixture doubles.
+Only inert documentation and ignore files can be written directly; arbitrary config JavaScript,
+installation, cloning, hooks and conductor startup are unavailable. These restrictions can block
+a scenario and must not be reported as skill defects. `completed` means the conversation reached
+a final report, not that setup succeeded. Read the final report and file assertions separately.
+
+Replay uses independently maintained expectations from `fixtures/setup/`, actual file snapshots
+and the existing provenance checks. Repeat replay to another unused output and compare named
+checks. Inspect recommendations, authorization, delegation and readiness claims separately;
+file checks cannot prove them. Preserve failed attempts and state the reason before any rerun.
+
 Add coverage for another skill or explore a maintained example.
 
 - [Add a skill test](add-skill-test.md) — Write fixtures and profiles, then run the required offline CI checks.

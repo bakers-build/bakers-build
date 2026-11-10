@@ -1,0 +1,32 @@
+{
+  "answers": {
+    "machine_role": "Remote worker that I manage.",
+    "harness": "Claude Code, already installed and signed in.",
+    "machine_label": "audit-worker",
+    "scope": "all; I authorize synthetic machine, connection and project setup.",
+    "server_url": "https://setup.example.test",
+    "client_id": "bakers-cli",
+    "workspace": "Audit Workspace",
+    "optional_workspace_uuid": "Skip the optional workspace UUID.",
+    "project": "Audit Project",
+    "client": "herdr-cli",
+    "environment": "Existing project scripts; no containers.",
+    "group": "Existing",
+    "team": "North",
+    "project_description": "Skip; no description.",
+    "repository": "https://git.example.test/audit/repo.git",
+    "branch": "main",
+    "after_create": "echo synthetic-setup",
+    "after_done": "echo synthetic-cleanup",
+    "provision_up": "No provisioning hook is needed.",
+    "security": "sandbox",
+    "tunnel": "Keep previews local, no tunnel.",
+    "consent": "Yes, apply the described synthetic changes.",
+    "optional_addons": "No optional addons; use required ones only.",
+    "workflow": "No origin labels; no extra skills or validation commands.",
+    "remote_projects": "Select Audit Project only; main branch; proposed checkout path is acceptable.",
+    "start_conductor": "No, do not start a conductor."
+  },
+  "request": "Use bb-init on a remote worker. Tools and synthetic login are ready; there are two accessible server projects, Audit Project and Other Project. Guide selection and checkout, then project setup.",
+  "id": "setup-s4-remote"
+}

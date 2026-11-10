@@ -1,0 +1,6 @@
+{
+  "request": "Use bb-init-project for this new checkout. Ask before changes.",
+  "interaction": "cancelled",
+  "id": "setup-s6-cancelled",
+  "no_writes": true
+}

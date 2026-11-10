@@ -1,0 +1,35 @@
+{
+  "id": "setup-s6-skip-hooks",
+  "request": "Use bb-init-project, scope project, for a new checkout of the existing Audit Project in Audit Workspace. Machine and synthetic authentication are ready. Choose herdr-cli with sandbox permissions; no application environment is needed. Ask missing decisions one at a time.",
+  "files": {
+    "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker',addons:['@bakers-build/addon-claude'],permissions:{mode:'sandbox'}};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n"
+  },
+  "answers": {
+    "machine_role": "Run tickets on my own local computer.",
+    "harness": "Claude Code, already installed and signed in.",
+    "machine_label": "audit-worker",
+    "scope": "all; I authorize synthetic machine, connection and project setup.",
+    "server_url": "https://setup.example.test",
+    "client_id": "bakers-cli",
+    "workspace": "Audit Workspace",
+    "optional_workspace_uuid": "Skip the optional workspace UUID.",
+    "project": "Audit Project",
+    "client": "herdr-cli",
+    "environment": "Existing project scripts; no containers.",
+    "group": "Existing",
+    "team": "North",
+    "project_description": "Skip; no description.",
+    "repository": "https://git.example.test/audit/repo.git",
+    "branch": "main",
+    "after_create": "Leave empty; no after_create hook.",
+    "after_done": "Leave empty; no after_done hook.",
+    "provision_up": "None.",
+    "security": "sandbox",
+    "tunnel": "Keep previews local, no tunnel.",
+    "consent": "Yes, apply the described synthetic changes.",
+    "optional_addons": "No optional addons; use required ones only.",
+    "workflow": "No additional rules, tests or origin labels."
+  },
+  "max_turns": 32
+}

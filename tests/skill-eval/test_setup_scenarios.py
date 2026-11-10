@@ -36,6 +36,12 @@ class ProjectSetupScenario(Scenario):
     simulation = {'teams': [{'uuid': '77777777-7777-4777-8777-000000000001', 'name': 'North'}],
                   'groups': [{'uuid': '44444444-4444-4444-8444-000000000009', 'name': 'Existing', 'description': None}]}
 
+    def test_project_lookup_reuses_created_project(self):
+        created = self.tool('project_create', {'group': self.sim.config['groups'][0]['uuid'], 'name': 'Oven', 'teams': [self.sim.config['teams'][0]['uuid']]})
+        listed = self.tool('project_list', {'query': 'oven'})
+        self.assertEqual(listed['projects'][0]['uuid'], created['uuid'])
+        self.assertEqual(self.tool('project_list', {'query': 'missing'})['projects'], [])
+
     def test_group_and_project_are_created_and_read_back(self):
         workspace = self.tool('workspace_list', {})['workspaces'][0]['uuid']
         self.assertEqual(workspace, WORKSPACE)

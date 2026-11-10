@@ -1,0 +1,12 @@
+{
+  "request": "Use bb-init-project to connect this checkout; scope project. Synthetic connection authentication is ready but machine identity is absent. Ask for any other scope authorization before shared writes.",
+  "files": {
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n"
+  },
+  "id": "setup-s3-missing-identity",
+  "expected_files": {
+    "machine/machine.config.js": [
+      "label: 'audit-worker'"
+    ]
+  }
+}

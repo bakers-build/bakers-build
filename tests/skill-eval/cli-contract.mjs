@@ -81,6 +81,15 @@ function toolModel(simulation) {
   const project = ref => { if (![contractFixture.project, contractFixture.project_key].includes(ref)) throw new Refused(`Project ${ref} does not exist or is not readable.`); };
   // Term names (type, recipe, label) are reused or created: the fixture caller may create terms.
   const tools = {
+    project_list: a => {
+      const limit = a.limit ?? 50, offset = a.offset ?? 0;
+      if (limit < 1 || limit > 100 || offset < 0) throw new Refused('limit must be 1-100 and offset 0 or more.');
+      const rows = (sim.projects ?? []).filter(p => (!a.workspace || p.workspace === a.workspace) &&
+        (!a.group || p.group === a.group) && p.name.toLowerCase().includes((a.query ?? '').toLowerCase()))
+        .sort((a, b) => a.name.localeCompare(b.name) || a.uuid.localeCompare(b.uuid));
+      return { projects: rows.slice(offset, offset + limit).map(p => pick(p, ['uuid', 'key', 'name', 'group'])),
+        next_offset: rows.length > offset + limit ? offset + limit : null };
+    },
     ticket_classify: a => {
       if (!a.type && !a.recipe) throw new Refused('Give a recipe or a type.');
       const t = find(a.ticket);
