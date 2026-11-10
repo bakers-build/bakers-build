@@ -6,10 +6,11 @@
 {% for item in links %}
   {% if item.link['#url'] is defined %}
     {% set url = item.link['#url'] %}
+    {# An operation's own `attributes` key lands in the link's #options; the URL's win on a clash. #}
     {% set items = items|merge([{
       label: item.link['#title'] ~ '',
       url: url.toString(),
-      attributes: url.getOption('attributes')|default({}),
+      attributes: (item.link['#options'].attributes|default({}))|merge(url.getOption('attributes')|default({})),
     }]) %}
   {% endif %}
 {% endfor %}
