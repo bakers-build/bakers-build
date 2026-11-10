@@ -442,12 +442,44 @@ describe('HerdrExecutor.runAlive (by tab label #<runId>)', () => {
       runId,
     );
 
-  it('is true while the run has a tab', async () => {
-    const exec = makeFakeHerdr([], {
+  /** The run tab t2 with pane p2 (and a foreign tab's pane p9), running `fg` in front. */
+  const runTabWith = (fg: string[][], calls: string[][] = []) =>
+    makeFakeHerdr(calls, {
       'worktree list': worktreeWith('bakers/bb-123', 'ws1'),
       'tab list': tabsJson([{ tab_id: 't2', label: 'BB-123 · coding #12' }]),
+      'pane list': JSON.stringify({
+        result: {
+          panes: [
+            { pane_id: 'p9', tab_id: 't9' },
+            { pane_id: 'p2', tab_id: 't2' },
+          ],
+        },
+      }),
+      'pane process-info': JSON.stringify({
+        result: {
+          process_info: {
+            foreground_processes: fg.map((argv) => ({ argv })),
+          },
+        },
+      }),
     });
-    expect(await alive(exec)).toBe(true);
+
+  it('is true while a pane of the run tab runs the launch wrapper', async () => {
+    const calls: string[][] = [];
+    const running = [
+      ['claude', '--session-id', 'x'],
+      ['sh', '/tmp/bakers-run-AbC123/run.sh'],
+    ];
+    expect(await alive(runTabWith(running, calls))).toBe(true);
+    expect(calls).toContainEqual(['pane', 'process-info', '--pane', 'p2']);
+    expect(calls).not.toContainEqual(['pane', 'process-info', '--pane', 'p9']);
+  });
+
+  it.each([
+    ['only an idle shell', [['-zsh']]],
+    ['an agent herdr resumed by itself', [['claude', '--resume=x']]],
+  ])('is false when the restored run tab holds %s', async (_, fg) => {
+    expect(await alive(runTabWith(fg))).toBe(false);
   });
 
   it('is false when no tab carries the run id', async () => {

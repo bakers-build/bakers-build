@@ -5876,6 +5876,37 @@ describe('Conductor lost runs (pane gone)', () => {
       );
     });
 
+    it('still resumes a lost run when the resumed-runs file holds no list', async () => {
+      const { agent } = resumableAgent(['r-1']);
+      const executor = new PaneExecutor();
+      executor.alive = false;
+      const state = mkdtempSync(join(tmpdir(), 'restart-'));
+      writeFileSync(join(state, 'conductor.config.resumed.json'), '{}\n');
+      const { conductor, remote } = await restarted(agent, executor, state);
+
+      await conductor.tick();
+
+      expect(executor.started.map((s) => s.run.uuid)).toEqual(['r-1']);
+      expect(remote.calls.markFailed).toEqual([]);
+    });
+
+    it('does not set a run back to running when it ends while it is resumed', async () => {
+      const { agent } = resumableAgent(['r-1']);
+      const executor = new PaneExecutor();
+      executor.alive = false;
+      const { conductor, remote } = await restarted(agent, executor);
+      const start = executor.startRun.bind(executor);
+      executor.startRun = async (opts) => {
+        await start(opts);
+        remote.markDone('r-1'); // e.g. cancelled by a human meanwhile
+      };
+
+      await conductor.tick();
+
+      expect(executor.started).toHaveLength(1);
+      expect(await remote.fetchActiveRuns('x')).toEqual([]);
+    });
+
     it('waits while the pane lookup fails, and fails without resuming a pane lost after recovery', async () => {
       const { agent } = resumableAgent(['r-1']);
       const executor = new PaneExecutor();

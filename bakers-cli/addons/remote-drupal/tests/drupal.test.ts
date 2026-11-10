@@ -111,7 +111,7 @@ describe('DrupalBbRemote', () => {
       close: vi.fn(),
     } as unknown as NonNullable<DrupalBbRemote['siteTools']>;
 
-    await remote.publishTicketComment('tic-1', 'comment', 'Run #7 lost.\n');
+    await remote.publishTicketComment('tic-1', 'Run #7 lost.\n');
 
     expect(call).toHaveBeenCalledWith('bakers_comment_publish', {
       ticket: 'tic-1',
@@ -122,11 +122,7 @@ describe('DrupalBbRemote', () => {
 
   it('publishTicketComment rejects without site tools', async () => {
     await expect(
-      new DrupalBbRemote(fakeClient()).publishTicketComment(
-        't',
-        'comment',
-        'b',
-      ),
+      new DrupalBbRemote(fakeClient()).publishTicketComment('t', 'b'),
     ).rejects.toThrow();
   });
 

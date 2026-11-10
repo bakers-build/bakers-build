@@ -53,10 +53,7 @@ export {
   type HerdrWorkspaceOptions,
   herdrWorkspace,
 } from './workspace.js';
-export {
-  parseWorkspaceList,
-  type WorkspaceEntry,
-} from './workspace-list.js';
+export { parseWorkspaceList, type WorkspaceEntry } from './workspace-list.js';
 
 async function defaultExec(
   args: string[],
@@ -437,16 +434,60 @@ export class HerdrExecutor implements BbExecutor {
     }
   }
 
-  /** Whether the run's tab is still open; a failing `herdr` call throws. */
+  /**
+   * Whether a pane of the run's tab still runs the run's launch wrapper; a
+   * failing `herdr` call throws. After a server restart herdr restores tabs as
+   * bare shells, or resumes the agent itself without the run's flags and
+   * tools, so an open tab alone does not mean the run lives.
+   */
   async runAlive(branch: string, runId: number): Promise<boolean> {
-    return (await this.runTab(branch, runId)) !== null;
+    const tab = await this.runTab(branch, runId);
+    if (!tab) {
+      return false;
+    }
+    const listed = parseJson(
+      await this.execHerdr(['pane', 'list', '--workspace', tab.workspaceId]),
+      'pane list',
+    );
+    const panes = isRecord(listed)
+      ? (listed.result as { panes?: unknown } | undefined)?.panes
+      : undefined;
+    for (const pane of Array.isArray(panes) ? panes.filter(isRecord) : []) {
+      if (pane.tab_id !== tab.tabId || typeof pane.pane_id !== 'string') {
+        continue;
+      }
+      const info = parseJson(
+        await this.execHerdr(['pane', 'process-info', '--pane', pane.pane_id]),
+        'pane process-info',
+      );
+      const procs = isRecord(info)
+        ? (
+            info.result as
+              | { process_info?: { foreground_processes?: unknown } }
+              | undefined
+          )?.process_info?.foreground_processes
+        : undefined;
+      const wrapper = /\/bakers-run-[^/]+\/run\.sh$/;
+      if (
+        Array.isArray(procs) &&
+        procs.some(
+          (p) =>
+            isRecord(p) &&
+            Array.isArray(p.argv) &&
+            p.argv.some((a) => typeof a === 'string' && wrapper.test(a)),
+        )
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** The branch workspace's tab labelled `#<runId>`, or null. */
   private async runTab(
     branch: string,
     runId: number,
-  ): Promise<HerdrTab | null> {
+  ): Promise<(HerdrTab & { workspaceId: string }) | null> {
     const workspaceId = await this.findWorkspaceByBranch(branch);
     if (!workspaceId) {
       return null;
@@ -454,7 +495,8 @@ export class HerdrExecutor implements BbExecutor {
     const tabs = parseTabList(
       await this.execHerdr(['tab', 'list', '--workspace', workspaceId]),
     );
-    return tabs.find((tab) => labelMatchesRun(tab.label, runId)) ?? null;
+    const tab = tabs.find((t) => labelMatchesRun(t.label, runId));
+    return tab ? { ...tab, workspaceId } : null;
   }
 
   private commandFor(input: SpawnRunInput): string {

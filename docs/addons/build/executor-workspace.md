@@ -25,7 +25,7 @@ A dispatch:
 
 The run ends when the server marks it done or cancelled. The conductor then calls `stopRun`, stores the transcript, runs `after_run`, and calls `cleanupRun`. For an executor that is not `persistent`, it skips `stopRun` and that `cleanupRun`.
 
-While a run is `running`, the conductor asks `runAlive(branch, runId)` each tick, when the executor has it. Return `false` only when you know the run's terminal is gone or its process exited; the conductor then marks the run `failed` and comments on the ticket. Throw when you cannot tell, and the run is left alone.
+While a run is `running`, the conductor asks `runAlive(branch, runId)` each tick, when the executor has it. Return `false` only when you know the run's terminal is gone or its process exited; the conductor then marks the run `failed` and comments on the ticket. A tab your tool restored after its own restart counts as gone unless it still runs the process you started. Throw when you cannot tell, and the run is left alone.
 
 When the ticket is done, the reaper runs `after_done`, then `workspace.remove(branch, worktreePath)`.
 

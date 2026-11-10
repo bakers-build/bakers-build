@@ -134,7 +134,6 @@ export interface MarkFailedCall {
 
 export interface PublishTicketCommentCall {
   ticketUuid: string;
-  type: string;
   body: string;
 }
 
@@ -476,12 +475,8 @@ export class FakeBbRemote implements BbRemote {
     }
   }
 
-  async publishTicketComment(
-    ticketUuid: string,
-    type: string,
-    body: string,
-  ): Promise<void> {
-    this.calls.publishTicketComment.push({ ticketUuid, type, body });
+  async publishTicketComment(ticketUuid: string, body: string): Promise<void> {
+    this.calls.publishTicketComment.push({ ticketUuid, body });
   }
 
   async fetchFinalizableRuns(_conductorId: string): Promise<FinalizableRun[]> {

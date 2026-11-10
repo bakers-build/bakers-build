@@ -221,7 +221,8 @@ function resumedStateFileOf(config: ConductorFileConfig): string {
 
 function loadResumed(file: string): string[] {
   try {
-    return JSON.parse(readFileSync(file, 'utf8'));
+    const v: unknown = JSON.parse(readFileSync(file, 'utf8'));
+    return Array.isArray(v) ? v : [];
   } catch {
     return [];
   }
@@ -699,7 +700,6 @@ export class Conductor {
     await this.remote
       .publishTicketComment(
         r.ticketUuid,
-        'comment',
         `Run #${r.runId} (\`${r.runUuid}\`) in state \`${r.stateAtStart}\` ${what}\n`,
       )
       .catch((err: unknown) => {
@@ -1636,8 +1636,10 @@ export class Conductor {
     return { env: launch.env, args: launch.args };
   }
 
-  /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
-  /** `resume`: continue the run's newest agent session instead of prompting afresh. */
+  /**
+   * `at.worktree` is set once the workspace exists, so a failure can signal it.
+   * `resume`: continue the run's newest agent session instead of prompting afresh.
+   */
   private async dispatch(
     run: ClaimedRun,
     at: { worktree?: string } = {},
@@ -1927,6 +1929,16 @@ export class Conductor {
     // it persists `worktree_path` to bb_run here alongside the running state.
     // It also persists the chosen agent id (BB-144) for finalize footprint
     // routing.
+    // A resumed run already is `running`; one closed meanwhile (cancelled) stays closed.
+    if (
+      resume &&
+      !(await this.remote.fetchActiveRuns(this.id)).some(
+        (a) => a.runUuid === run.runUuid && a.state === 'running',
+      )
+    ) {
+      this.signalUi(ws.path);
+      return;
+    }
     await this.remote.markRunning(run.runUuid, {
       worktree_path: ws.path,
       agent: chosen.id,

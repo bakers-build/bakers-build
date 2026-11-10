@@ -136,11 +136,13 @@ On the conductor's first cycle after the restart whose terminal lookup answers (
 
 | The run | What happens |
 |---|---|
-| Its terminal still lives | Nothing. |
+| Its terminal still runs the conductor's launch | Nothing. |
 | Claude run, worktree and session still there, not resumed before | The same run continues in a new tab of its worktree with `claude --resume`, showing its earlier conversation. A question it was waiting on is still on screen; answer it in that tab. The ticket gets a comment *resumed after a conductor restart*. |
 | Any other run | Marked `failed` with `conductor restart: <reason>` (no session resume, no session, worktree gone, resume failed, or resumed once already). The ticket gets a comment, and the next claim gives it one fresh run. |
 
-Both happen on that first cycle; a fresh run is claimed on the same or the next cycle, within seconds of the conductor's start. `bakers_ticket_runs_list` shows each failed run's reason in `error_log`. A failed run counts towards the ticket's circuit breaker like any other failure. Afterwards, a terminal that disappears is failed without resuming.
+herdr reopens its tabs after its own restart, and may restart Claude in them by itself, without the run's tools. Such a tab counts as gone: the conductor closes it and resumes or fails the run as above.
+
+Resuming and failing both happen on that first cycle; a fresh run is claimed on the same or the next cycle, within seconds of the conductor's start. `bakers_ticket_runs_list` shows each failed run's reason in `error_log`. A failed run counts towards the ticket's circuit breaker like any other failure. Afterwards, a terminal that disappears is failed without resuming.
 
 To restart a box safely: restart it whenever no agent is in the middle of a push or a comment you care about. Nothing has to be stopped first. If conductor autostart is off, run `bakers oven start` in each checkout afterwards; recovery starts with it.
 

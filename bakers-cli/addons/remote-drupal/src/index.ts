@@ -208,15 +208,11 @@ export class DrupalBbRemote implements BbRemote {
   }
 
   /** Through the site's `bakers_comment_publish`, which throws on a tool error. */
-  async publishTicketComment(
-    ticketUuid: string,
-    type: string,
-    body: string,
-  ): Promise<void> {
+  async publishTicketComment(ticketUuid: string, body: string): Promise<void> {
     if (!this.siteTools) throw new Error('no site tools to publish a comment');
     await this.siteTools.call('bakers_comment_publish', {
       ticket: ticketUuid,
-      type,
+      type: 'comment',
       body,
     });
   }
