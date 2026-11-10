@@ -40,7 +40,7 @@ are term names, reused or created.
 | Set recipe and type | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | saved `recipe` and `type` |
 | Change state or add links | `bakers_ticket_transition` | `ticket`; `state`, `links` (`[{uri, title}]`) or both | saved `state` and all `links`; existing links kept, no duplicate `uri`; no `state` keeps it |
 | Publish a comment | `bakers_comment_publish` | `ticket`, `type`, `body` | new comment `id`, stored `type` |
-| Cancel runs | `bakers_run_cancel` | `ticket`, `reason` | `runs`: all active, or none |
+| Cancel runs | `bakers_run_cancel` | `ticket`/`machine_id`, `reason` | `runs`; by machine maybe none |
 | Record a measurement | `bakers_metric_write` | `ticket`, `name`, `rows` (`[{name, value, unit}]`), optional `label` | all metric rows; rows outside `<name>.` kept |
 
 User, workspace, project, conductor, label, template, run, activity and time tools: [lookups](tools-lookup.md).
