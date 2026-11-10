@@ -1,8 +1,6 @@
 // The herdr pieces a sibling host addon (`@bakers-build/addon-orca`) reuses
 // rather than copies: the 0600 launch wrapper + its watch, the label template,
 // the Drupal write-bit restore and the worktree base-ref resolution.
-import { validateBranch } from '@bakers-build/core';
-
 export { renderTemplate } from './config.js';
 export { restoreWritable } from './fs.js';
 export {
@@ -12,7 +10,6 @@ export {
   writeLaunchScript,
 } from './launch-script.js';
 export { truncateOpenTabTitle } from './open-layout.js';
-export { validateBranch };
 
 /** Runs `git <args>`; resolves with stdout, rejects on non-zero exit. */
 export type BaseRefGitExec = (args: string[]) => Promise<string>;
@@ -48,8 +45,6 @@ export async function resolveBaseRef(
     }
   };
   if (opts.override !== undefined) {
-    // The override carries the server's base_branch after the remote name.
-    validateBranch(opts.override.slice(opts.override.indexOf('/') + 1));
     await fetch(opts.override);
     try {
       await execGit([

@@ -183,6 +183,58 @@ final class BranchNameTest extends KernelTestBase {
   }
 
   /**
+   * A derived name is always a valid branch, whatever the title holds.
+   */
+  #[DataProvider('awkwardTitles')]
+  public function testDerivedNameIsAlwaysValid(string $title, string $expected): void {
+    $branch = (string) $this->createTicket('GL-7', $title)->get('branch_name')->value;
+    $this->assertSame($expected, $branch);
+    $this->assertMatchesRegularExpression(BranchName::PATTERN, $branch);
+  }
+
+  /**
+   * Data provider: titles git would refuse as they stand.
+   *
+   * @return array<string, array{string, string}>
+   *   Title and the expected branch, keyed by a readable label.
+   */
+  public static function awkwardTitles(): array {
+    return [
+      'trailing dot' => ['Fix v1.', 'feat/gl-7-fix-v1'],
+      'dot dot' => ['a..b', 'feat/gl-7-a.b'],
+      'lock suffix' => ['x.lock', 'feat/gl-7-x'],
+      'dot segment' => ['a/.b', 'feat/gl-7-a/b'],
+    ];
+  }
+
+  /**
+   * Stored names git would refuse are repaired once; valid ones stay.
+   */
+  public function testPostUpdateRepairsStoredBranchNames(): void {
+    $bad = $this->createTicket('GL-9', 'x');
+    $good = $this->createTicket('GL-10', 'y');
+    $database = $this->container->get('database');
+    $database->update('bb_ticket')->fields(['branch_name' => '--upload-pack=touch PWNED'])->condition('id', $bad->id())->execute();
+    $database->update('bb_ticket')->fields(['branch_name' => 'release/1.2'])->condition('id', $good->id())->execute();
+
+    $project = $this->container->get('entity_type.manager')->getStorage('bb_project')
+      ->create([
+        'name' => 'p',
+        'repository' => [['url' => 'https://github.com/acme/widget.git', 'default_branch' => 'main']],
+      ]);
+    $project->save();
+    $database->update('bb_project')->fields(['repository__default_branch' => '-x..y'])->condition('id', $project->id())->execute();
+
+    require_once __DIR__ . '/../../../bb_core.post_update.php';
+    bb_core_post_update_valid_branch_names();
+
+    $names = $database->select('bb_ticket', 't')->fields('t', ['id', 'branch_name'])->execute()->fetchAllKeyed();
+    $this->assertSame('upload-pack-touch-pwned', $names[$bad->id()]);
+    $this->assertSame('release/1.2', $names[$good->id()]);
+    $this->assertSame('x.y', $database->select('bb_project', 'p')->fields('p', ['repository__default_branch'])->execute()->fetchField());
+  }
+
+  /**
    * A supplied branch name that git or a shell could misread is refused.
    */
   #[DataProvider('invalidBranchNames')]

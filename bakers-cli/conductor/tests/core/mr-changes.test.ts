@@ -119,7 +119,7 @@ describe('measureMrChanges', () => {
     });
   });
 
-  it('refuses an option-shaped base branch before git runs', async () => {
+  it('never lets git read the base branch as an option', async () => {
     const root = mkdtempSync(join(tmpdir(), 'mr-changes-'));
     dirs.push(root);
     const origin = join(root, 'origin.git');
@@ -130,7 +130,7 @@ describe('measureMrChanges', () => {
 
     await expect(
       measureMrChanges(work, `--upload-pack=touch ${pwned}; git-upload-pack`),
-    ).rejects.toThrow('invalid branch');
+    ).rejects.toThrow();
     expect(existsSync(pwned)).toBe(false);
   });
 });

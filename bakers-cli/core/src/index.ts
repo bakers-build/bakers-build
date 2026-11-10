@@ -140,7 +140,6 @@ export type {
   MachineConfig,
   ProjectConfig,
 } from './config-types.generated.js';
-export { validateBranch } from './core/branch.js';
 export {
   configHomeOf,
   defaultRootGitExec,
