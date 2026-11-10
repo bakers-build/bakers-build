@@ -124,6 +124,22 @@ Then('the collapsed rail entry {string} shows an icon', async ({ page }, label: 
   await expect(page.locator(`${RAIL} [data-navigation]`).getByRole('link', { name: label }).locator('svg')).toBeVisible();
 });
 
+function railDisclosure(page: Page, name: string): Locator {
+  return page.locator(`${RAIL} [data-navigation] [data-navigation-toggle]`).and(page.getByRole('button', { name, exact: true }));
+}
+
+When('I toggle the rail disclosure {string}', async ({ page }, name: string) => {
+  await railDisclosure(page, name).click();
+});
+
+Then('the rail disclosure {string} is expanded', async ({ page }, name: string) => {
+  await expect(railDisclosure(page, name)).toHaveAttribute('aria-expanded', 'true');
+});
+
+Then('the rail disclosure {string} is collapsed', async ({ page }, name: string) => {
+  await expect(railDisclosure(page, name)).toHaveAttribute('aria-expanded', 'false');
+});
+
 Then('the rail heading {string} shows the {string} icon', async ({ page }, label: string, icon: string) => {
   const heading = page.locator(`${RAIL} [data-navigation]`).getByRole('button', { name: label });
   await expect(heading, `Rail heading "${label}" is missing`).toBeVisible();
