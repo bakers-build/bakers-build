@@ -38,11 +38,14 @@ or keytec-ai configuration tool is required. From the selected checkout root:
 
 ```sh
 node scripts/setup-worktree.mjs       # public env/identity only; leaves DDEV stopped
-bash .ddev/worktree-post.sh           # also prepares the CLI/test workspace, when needed
+bash .ddev/worktree-post.sh           # also registers the DDEV project and prepares the CLI/test workspace
 ddev init --provider recipe-test     # explicit database replacement, builds and seeds
 ```
 
-The conductor calls `worktree-post.sh`, which prepares env before checking its bootstrap sentinel.
+The conductor calls `worktree-post.sh`, which prepares env and registers the worktree's DDEV
+project (`ddev config --auto`, no containers) before checking its bootstrap sentinel. An
+unregistered worktree makes DDEV fall back to the registered parent checkout, so the DDEV hooks
+and agent tools refuse to run until `ddev describe` resolves the worktree itself.
 The script copies missing parent client/audience settings, sets the worktree-local base URL, and
 runs `setup-test-project.sh --workspace-only`. Only that setup script owns the conditional CLI
 build. Hooks remain conductor best-effort; a failed hook is not proof of a usable environment.

@@ -31,13 +31,16 @@ export default {
   // ticket is done, before the conductor tears the worktree down; `;` so the
   // DDEV cleanup runs whatever the preview stop returns.
   //
-  // The project bootstrap validates env before its sentinel, then prepares the
-  // local test workspace. It starts no DDEV; hook failures remain best-effort.
+  // The project bootstrap validates env and registers the worktree's DDEV
+  // project before its sentinel, then prepares the local test workspace. It
+  // starts no DDEV; hook failures remain best-effort. Every hook that acts on a
+  // DDEV project first runs scripts/ddev-own-project.sh, which refuses the
+  // parent checkout an unregistered worktree falls back to.
   hooks: {
     after_create: 'bash .ddev/worktree-post.sh',
     before_run: 'bash scripts/worktree-deps.sh',
     after_done:
-      'bash scripts/docs-preview.sh stop; bash scripts/conductor-e2e.sh teardown; ddev delete -Oy',
+      'bash scripts/docs-preview.sh stop; bash scripts/conductor-e2e.sh teardown; bash scripts/ddev-own-project.sh && ddev delete -Oy',
     // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
     // a trusted `ddev` nor `pnpm install`. Every profile installs the
     // bakers-cli and docs dependencies first; `deps` does only that.
@@ -54,15 +57,15 @@ export default {
       'docs-preview':
         'bash scripts/worktree-deps.sh --all && bash scripts/docs-preview.sh',
       'conductor-e2e':
-        'bash scripts/worktree-deps.sh --all && ddev provision --provider recipe-test && bash scripts/conductor-e2e.sh',
+        'bash scripts/worktree-deps.sh --all && bash scripts/ddev-own-project.sh && ddev provision --provider recipe-test && bash scripts/conductor-e2e.sh',
       'conductor-e2e-stop': 'bash scripts/conductor-e2e.sh stop',
       'conductor-e2e-start': 'bash scripts/conductor-e2e.sh start',
       'recipe-test':
-        'bash scripts/worktree-deps.sh && ddev provision --provider recipe-test',
+        'bash scripts/worktree-deps.sh && bash scripts/ddev-own-project.sh && ddev provision --provider recipe-test',
       'existing-config':
-        'bash scripts/worktree-deps.sh && ddev provision --provider existing-config',
+        'bash scripts/worktree-deps.sh && bash scripts/ddev-own-project.sh && ddev provision --provider existing-config',
       'existing-config-fresh':
-        'bash scripts/worktree-deps.sh && ddev init --provider existing-config',
+        'bash scripts/worktree-deps.sh && bash scripts/ddev-own-project.sh && ddev init --provider existing-config',
     },
   },
   // The agent plugins every run of this project gets, installed into a
@@ -111,6 +114,22 @@ export default {
         services: [{ key: 'docs', match: 'vitepress' }],
         // DDEV's containers are claimed by the addon-ddev claimer.
         claimers: ['@bakers-build/addon-ddev'],
+      },
+    },
+    // Runs fetch, push, open PRs, read checks and merge only through the forge
+    // tools; the conductor's own `gh` login supplies the token, which no run sees.
+    // `next` takes squashed feature PRs, `main` only merge commits from `next`.
+    {
+      use: '@bakers-build/addon-forge',
+      with: {
+        merge: {
+          next: { method: 'squash', delete_source: true },
+          main: { method: 'merge', delete_source: false },
+        },
+        backend: {
+          use: '@bakers-build/addon-forge-github',
+          with: { repository: 'bakers-build/bakers-build', auth: 'gh' },
+        },
       },
     },
   ],

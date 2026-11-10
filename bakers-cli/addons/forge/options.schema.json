@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-forge/options.schema.json",
+  "title": "@bakers-build/addon-forge options",
+  "description": "The forge entry's with.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "backend"
+  ],
+  "properties": {
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "use"
+      ],
+      "properties": {
+        "use": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The backend package."
+        },
+        "with": {
+          "description": "The backend package's own settings, checked by that package's options.schema.json."
+        }
+      }
+    },
+    "merge": {
+      "type": "object",
+      "description": "Merge rule per base branch; '*' for every other base.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "method",
+          "delete_source"
+        ],
+        "properties": {
+          "method": {
+            "enum": [
+              "squash",
+              "merge"
+            ]
+          },
+          "delete_source": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,11 +1,26 @@
 import { describe, expect, it } from 'vitest';
 import { type DdevRun, ddevTools, OUTPUT_CAP } from '../src/tools.js';
 
-function fake(result: { exitCode: number; output: string }) {
+const describeJson = (approot = '/work/bb-7') =>
+  JSON.stringify({
+    raw: {
+      name: 'bb-7',
+      approot,
+      status: 'running',
+      primary_url: 'https://bb-7.ddev.site',
+      services: { web: { status: 'running' }, db: { status: 'running' } },
+    },
+  });
+
+/** `describe` answers with `described`, every other command with `result`. */
+function fake(
+  result: { exitCode: number; output: string },
+  described = describeJson(),
+) {
   const calls: { args: string[]; cwd: string; timeoutMs: number }[] = [];
   const run: DdevRun = async (args, opts) => {
     calls.push({ args, cwd: opts.cwd, timeoutMs: opts.timeoutMs });
-    return result;
+    return args[0] === 'describe' ? { exitCode: 0, output: described } : result;
   };
   return { tools: ddevTools(run), calls };
 }
@@ -16,22 +31,17 @@ const req = (args: Record<string, unknown> = {}) => ({
   signal: new AbortController().signal,
 });
 
-const describeJson = JSON.stringify({
-  raw: {
-    name: 'bb-7',
-    status: 'running',
-    primary_url: 'https://bb-7.ddev.site',
-    services: { web: { status: 'running' }, db: { status: 'running' } },
-  },
-});
+const describeCall = {
+  args: ['describe', '-j'],
+  cwd: '/work/bb-7',
+  timeoutMs: 300_000,
+};
 
 describe('ddev tools', () => {
   it("ddev_status describes the worktree's project as a summary", async () => {
-    const { tools, calls } = fake({ exitCode: 0, output: describeJson });
+    const { tools, calls } = fake({ exitCode: 0, output: '' });
     const result = await tools.ddev_status(req());
-    expect(calls).toEqual([
-      { args: ['describe', '-j'], cwd: '/work/bb-7', timeoutMs: 300_000 },
-    ]);
+    expect(calls).toEqual([describeCall]);
     expect(JSON.parse(result.text)).toEqual({
       name: 'bb-7',
       status: 'running',
@@ -44,6 +54,7 @@ describe('ddev tools', () => {
     const { tools, calls } = fake({ exitCode: 0, output: 'Started' });
     expect((await tools.ddev_start(req())).text).toBe('exit 0\nStarted');
     expect(calls).toEqual([
+      describeCall,
       { args: ['start'], cwd: '/work/bb-7', timeoutMs: 600_000 },
     ]);
   });
@@ -54,11 +65,14 @@ describe('ddev tools', () => {
       req({ command: 'drush uli --name north-lead' }),
     );
     expect(result.text).toBe('exit 0\nhttp://login');
-    expect(calls[0]).toEqual({
-      args: ['exec', 'drush uli --name north-lead'],
-      cwd: '/work/bb-7',
-      timeoutMs: 300_000,
-    });
+    expect(calls).toEqual([
+      describeCall,
+      {
+        args: ['exec', 'drush uli --name north-lead'],
+        cwd: '/work/bb-7',
+        timeoutMs: 300_000,
+      },
+    ]);
   });
 
   it('fails with the exit code and keeps only the output tail', async () => {
@@ -71,5 +85,21 @@ describe('ddev tools', () => {
     expect(error?.message.startsWith('exit 2\n')).toBe(true);
     expect(error?.message.endsWith('TAIL')).toBe(true);
     expect(error?.message.length).toBeLessThanOrEqual(OUTPUT_CAP + 8);
+  });
+
+  // An unregistered worktree makes DDEV resolve the registered parent checkout.
+  it.each([
+    ['ddev_status', {}],
+    ['ddev_start', {}],
+    ['ddev_exec', { command: 'drush cr' }],
+  ])('%s refuses a project other than the worktree', async (tool, args) => {
+    const { tools, calls } = fake(
+      { exitCode: 0, output: 'ran' },
+      describeJson('/projects/main'),
+    );
+    await expect(tools[tool](req(args))).rejects.toThrow(
+      /\/projects\/main.*\/work\/bb-7/,
+    );
+    expect(calls).toEqual([describeCall]);
   });
 });

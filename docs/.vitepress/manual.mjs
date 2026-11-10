@@ -146,6 +146,11 @@ export const SIDEBAR = {
       ["Cloudflare Quick tunnel", "/addons/ports-cloudflare-quick"],
       ["frp tunnel", "/addons/ports-frp"],
     ]),
+    group("Delivery", [
+      ["Forge", "/addons/forge"],
+      ["Forge for GitHub", "/addons/forge-github"],
+      ["Forge for GitLab", "/addons/forge-gitlab"],
+    ]),
     group("Terminal UI", [
       ["Terminal UI", "/addons/bakers-ui"],
       ["bakers ui", "/addons/bakers-ui/reference"],
