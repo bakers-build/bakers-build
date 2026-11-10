@@ -45,6 +45,7 @@ import { type HookRunner, shellHookRunner } from './hook-runner.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
 import { checkRequiredSkills } from './required-skills.js';
+import { runStartHooks } from './start-hooks.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
 import { signalUi } from './ui-signal.js';
 
@@ -1886,5 +1887,3 @@ export class Conductor {
     // derived from status + last_seen/lease_expires_at, never from the loop.
   }
 }
-
-import { runStartHooks } from './start-hooks.js';

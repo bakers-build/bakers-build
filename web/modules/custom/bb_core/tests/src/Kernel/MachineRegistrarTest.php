@@ -74,7 +74,27 @@ final class MachineRegistrarTest extends KernelTestBase {
   }
 
   /**
-   * Capacity is never stored on the conductor entity.
+   * A second owner sharing a host_key never changes the first owner's address.
+   */
+  public function testConnectionUrlStaysWithItsOwner(): void {
+    $this->seedProjectChain('shared-host-project');
+    $registrar = $this->registrar();
+    $first = $this->createUser('shared-host-first');
+    $second = $this->createUser('shared-host-second');
+    $attrs = ['host_key' => 'shared-host', 'project' => 'shared-host-project'];
+    $mine = $registrar->heartbeat($first, $attrs + ['conductor_id' => 'shared-first', 'connection_url' => 'ssh://first@host:22'])->getMachine();
+    $this->assertInstanceOf(BbMachineInterface::class, $mine);
+    $theirs = $registrar->heartbeat($second, $attrs + ['conductor_id' => 'shared-second', 'connection_url' => 'https://second.example'])->getMachine();
+    $this->assertInstanceOf(BbMachineInterface::class, $theirs);
+    $this->assertNotSame($mine->id(), $theirs->id());
+    $registrar->heartbeat($second, $attrs + ['conductor_id' => 'shared-second', 'connection_url' => NULL]);
+    $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_machine')->loadUnchanged($mine->id());
+    $this->assertInstanceOf(BbMachineInterface::class, $reloaded);
+    $this->assertSame('ssh://first@host:22', $reloaded->get('connection_url')->value);
+  }
+
+  /**
+   * Missing preserves, a valid address replaces, null clears, unsafe is 422.
    */
   public function testConnectionUrlRegistration(): void {
     $this->seedProjectChain('connection-project');

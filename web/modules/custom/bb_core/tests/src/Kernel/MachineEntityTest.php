@@ -76,7 +76,7 @@ final class MachineEntityTest extends KernelTestBase {
   }
 
   /**
-   * Host key is required and unique (UniqueField).
+   * The field update is repeatable and keeps existing machines unchanged.
    */
   public function testConnectionUrlUpdatePreservesExistingMachines(): void {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_machine');
@@ -132,6 +132,9 @@ final class MachineEntityTest extends KernelTestBase {
       'ssh://-bad.host',
       'ssh://999.1.1.1',
       'ssh://[bad]',
+      'ssh://u@[fe80::1%25eth0]:22',
+      "ssh://us\u{e9}r@host",
+      "https://example.com/\u{202e}gnp.exe",
       'ssh://user%zz@host',
       'ssh://user%00@host',
       'ssh://user%20name@host',

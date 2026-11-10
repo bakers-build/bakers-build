@@ -14,7 +14,8 @@ final class MachineConnectionUrl {
    */
   public static function isValid(mixed $value): bool {
     if (!is_string($value) || mb_strlen($value) > 2048
-      || preg_match('/[\s\p{Cc}\\\\]/u', $value)
+      // Printable ASCII only, as in the CLI: link text cannot be spoofed.
+      || preg_match('/[^\x21-\x7e]|\\\\/', $value)
       || preg_match('/%(?![0-9a-f]{2})/i', $value)
       || !mb_check_encoding(rawurldecode($value), 'UTF-8')
       || preg_match('/[\s\p{Cc}]/u', rawurldecode($value))) {

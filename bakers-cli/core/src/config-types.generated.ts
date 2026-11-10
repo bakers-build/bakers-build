@@ -95,7 +95,7 @@ export interface MachineConfig {
   /** Display name for people. */
   label: string;
   /** Public SSH or HTTPS connection address; null clears it at the next conductor start. */
-  connection_url?: string | unknown;
+  connection_url?: string | null;
   /** Selection policy for the agents the addons contribute. */
   agents?: {
     /** Extra agent variants built from installed harnesses. */

@@ -5,7 +5,8 @@ export function isValidMachineConnectionUrl(value: unknown): value is string {
   if (
     typeof value !== 'string' ||
     value.length > 2048 ||
-    /[\s\p{Cc}\\]/u.test(value)
+    // Printable ASCII only: the server applies the same rule, and link text cannot be spoofed.
+    /[^\x21-\x7e]|\\/.test(value)
   )
     return false;
   const parts = /^(ssh|https):\/\/([^/?#]+)(.*)$/i.exec(value);
@@ -28,7 +29,9 @@ export function isValidMachineConnectionUrl(value: unknown): value is string {
     const [, host = '', port] = match;
     if (port !== undefined && (Number(port) < 1 || Number(port) > 65535))
       return false;
-    if (host.startsWith('[')) return isIP(host.slice(1, -1)) === 6;
+    // isIP accepts zone IDs (fe80::1%eth0); the server does not.
+    if (host.startsWith('['))
+      return !host.includes('%') && isIP(host.slice(1, -1)) === 6;
     if (/^[0-9.]+$/.test(host)) return isIP(host) === 4;
     return (
       host.length <= 253 &&
