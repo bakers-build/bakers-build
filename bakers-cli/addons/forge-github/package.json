@@ -5,10 +5,12 @@
   "type": "module",
   "license": "MIT",
   "exports": {
-    ".": "./dist/src/index.js"
+    ".": "./dist/src/index.js",
+    "./options.schema.json": "./options.schema.json"
   },
   "files": [
-    "dist/src"
+    "dist/src",
+    "options.schema.json"
   ],
   "scripts": {
     "build": "tsc",

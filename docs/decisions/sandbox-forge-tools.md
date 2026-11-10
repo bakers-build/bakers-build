@@ -35,7 +35,7 @@ Access Token with role Developer and an expiry date. The tokens live only with t
 
 A sandboxed run that has to push or open a PR/MR needs explicit trusted commands on the project
 or machine layer, for example `trusted_commands: ['bakers', 'git', 'gh']` (or `glab`). This
-repository pins `bakers` and `git` in `.bakers/conductor.config.js`. Every such entry runs outside
+repository pins `bakers` and `git` in `.bakers/project.config.js`. Every such entry runs outside
 the sandbox with the operator's full rights; see [Run security](/provision/security/execution).
 
 The addons now exist: [Forge](/addons/forge) with [Forge for GitHub](/addons/forge-github) or

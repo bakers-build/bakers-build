@@ -9,7 +9,8 @@ import { FORGE_TOOL_DEFINITIONS } from './tool-definitions.js';
 // Configurable on either level; the machine entry's with wins.
 export const scopes: BbPreset['scopes'] = ['machine', 'project'];
 
-export { checkWith, mergeWith } from './config.js';
+// Merge the entry's own settings across scopes; options.schema.json describes them.
+export { mergeWith } from './config.js';
 
 export const tools: Preset['tools'] = {
   contract: 1,

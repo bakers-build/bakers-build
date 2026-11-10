@@ -24,6 +24,33 @@ const cases: [addon: string, good: Record<string, unknown>][] = [
   ],
   ['codex', { model: 'gpt-5.6-sol', permissions: 'custom', config: { a: 1 } }],
   ['fake', { outcome: 'failed', marker_file: 'bakers-run.json' }],
+  [
+    'forge',
+    {
+      backend: { use: '@bakers-build/addon-forge-github', with: {} },
+      merge: {
+        main: { method: 'merge', delete_source: false },
+        '*': { method: 'squash', delete_source: true },
+      },
+    },
+  ],
+  [
+    'forge-github',
+    {
+      repository: 'acme/app',
+      app_id: 12345,
+      installation_id: '67890',
+      private_key_env: 'FORGE_GITHUB_KEY',
+    },
+  ],
+  [
+    'forge-gitlab',
+    {
+      url: 'https://gitlab.example.org',
+      project: 'group/app',
+      token_env: 'FORGE_GITLAB_TOKEN',
+    },
+  ],
   ['grok', { model: 'grok-4.5', reasoning_effort: 'low', permissions: 'yolo' }],
   [
     'herdr',

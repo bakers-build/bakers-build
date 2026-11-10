@@ -2,7 +2,7 @@ import type { ToolRequest } from '@bakers-build/conductor/contract';
 import { validateArgs } from '@bakers-build/message';
 import { describe, expect, it } from 'vitest';
 import type { ForgeBackend, ForgeCheck, ForgePr } from '../src/backend.js';
-import { checkWith, mergeRule } from '../src/config.js';
+import { mergeRule } from '../src/config.js';
 import { tools as presetTools } from '../src/preset.js';
 import { FORGE_TOOL_DEFINITIONS } from '../src/tool-definitions.js';
 import { FORGE_NEEDS_RUN, forgeTools, toolsFor } from '../src/tools.js';
@@ -374,32 +374,5 @@ describe('forge tools', () => {
       (e: Error) => e.message,
     );
     expect(err).toBe('401 for token [redacted]');
-  });
-});
-
-describe('forge config', () => {
-  it('names a missing backend and flags literal credentials only in the project file', () => {
-    expect(checkWith({})).toEqual([
-      { key: 'backend.use', message: 'must name a forge backend package' },
-    ]);
-    const literal = {
-      backend: {
-        use: '@bakers-build/addon-forge-gitlab',
-        with: { token: SECRET },
-      },
-    };
-    expect(checkWith(literal, 'machine')).toEqual([]);
-    expect(checkWith(literal, 'project')).toEqual([
-      expect.objectContaining({ key: 'backend.with.token' }),
-    ]);
-    expect(
-      checkWith(
-        {
-          backend: { use: 'x', with: { token_env: 'T' } },
-          merge: { main: { method: 'rebase' } },
-        },
-        'project',
-      ),
-    ).toEqual([expect.objectContaining({ key: 'merge.main' })]);
   });
 });
