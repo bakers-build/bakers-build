@@ -14,6 +14,7 @@ export function agentReport(
       harness: c.agent.id,
       model: c.model ?? null,
       permissions: c.agent.permissions ?? null,
+      guard: c.agent.guard ?? 'not_applied',
     })),
     enabled_agents: config.enabled_agents,
     disabled_agents: config.disabled_agents,

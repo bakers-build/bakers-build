@@ -56,7 +56,10 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 const agentFor = async (options = {}) => {
-  const agent = new ClaudeAgent({ permissions: 'yolo', ...options }, user);
+  const agent = new ClaudeAgent(
+    { permissions: 'yolo', guard: false, ...options },
+    user,
+  );
   agent.useMarketplaces([probe]);
   return agent;
 };

@@ -243,6 +243,19 @@ describe('shared run permissions from the machine and project config', () => {
     );
   });
 
+  it('a committed project config cannot switch the run guard off', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
+    const project = writeProject(
+      projectConfig().replace(
+        "bakers: { project: 'bakers' },",
+        "bakers: { project: 'bakers' },\n  permissions: { guard: false },",
+      ),
+    );
+    await expect(loadConductorConfig(project)).rejects.toThrow(
+      `${project}: project permissions: unknown key guard`,
+    );
+  });
+
   it('the renamed key security fails loading in the project and machine config', async () => {
     writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
     const project = writeProject(

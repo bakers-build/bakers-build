@@ -2,9 +2,11 @@ import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { guardHookCommand } from '@bakers-build/conductor/contract';
 import { describe, expect, it, vi } from 'vitest';
 import codexAgentDefault, {
   CodexAgent,
+  type CodexAgentOptions,
   codexAgent,
   parseCodexTranscript,
 } from '../src/index.js';
@@ -20,28 +22,37 @@ describe('default export', () => {
 
 describe('CodexAgent.launchCommand', () => {
   it('includes the prompt, model, sandbox, and bypass flag', () => {
-    const agent = new CodexAgent({ model: 'gpt-5', permissions: 'yolo' });
+    const agent = new CodexAgent({
+      model: 'gpt-5',
+      permissions: 'yolo',
+      guard: false,
+    });
     expect(agent.launchCommand('do the thing')).toBe(
       "codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model 'gpt-5' 'do the thing'",
     );
   });
 
   it('omits --model when no model is set', () => {
-    expect(new CodexAgent({ permissions: 'yolo' }).launchCommand('x')).toBe(
+    expect(
+      new CodexAgent({ permissions: 'yolo', guard: false }).launchCommand('x'),
+    ).toBe(
       "codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust 'x'",
     );
   });
 
   it('returns codex with run flags for an empty prompt', () => {
-    expect(new CodexAgent({ permissions: 'yolo' }).launchCommand('')).toBe(
+    expect(
+      new CodexAgent({ permissions: 'yolo', guard: false }).launchCommand(''),
+    ).toBe(
       'codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust',
     );
   });
 
   it('POSIX-quotes a multi-line prompt for the sh-evaluated launch file', () => {
-    const cmd = new CodexAgent({ permissions: 'yolo' }).launchCommand(
-      'para one\n\npara two',
-    );
+    const cmd = new CodexAgent({
+      permissions: 'yolo',
+      guard: false,
+    }).launchCommand('para one\n\npara two');
     expect(cmd).toBe(
       "codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust 'para one\n\npara two'",
     );
@@ -52,7 +63,7 @@ describe('CodexAgent run env', () => {
   it('restores the GIT_CONFIG_KEY_<n> names its default env filter drops (*KEY*)', () => {
     const argv = captureArgv(
       'codex',
-      new CodexAgent({ permissions: 'yolo' }).launchCommand(
+      new CodexAgent({ permissions: 'yolo', guard: false }).launchCommand(
         'x',
         undefined,
         '/w',
@@ -90,6 +101,7 @@ describe('CodexAgent args and effort', () => {
   it('appends args after generated elements and serializes effort as one -c assignment', () => {
     const command = new CodexAgent({
       permissions: 'yolo',
+      guard: false,
       model: 'gpt-5',
       effort: 'medium',
       args: ['--foo', 'bar baz'],
@@ -113,6 +125,7 @@ describe('CodexAgent args and effort', () => {
   it('suppresses generated model and effort when -c assignments override them', () => {
     const command = new CodexAgent({
       permissions: 'yolo',
+      guard: false,
       model: 'gpt-5',
       effort: 'low',
       args: ['-c', 'model=gpt-6', '-c', 'model_reasoning_effort="high"'],
@@ -134,6 +147,7 @@ describe('CodexAgent args and effort', () => {
   it('leaves unrelated -c keys in place and still generates model', () => {
     const command = new CodexAgent({
       permissions: 'yolo',
+      guard: false,
       model: 'gpt-5',
       args: ['-c', 'sandbox_mode="danger-full-access"'],
     }).launchCommand('x');
@@ -154,6 +168,7 @@ describe('CodexAgent args and effort', () => {
   it('does not treat JSON config values as independent flags', () => {
     const command = new CodexAgent({
       permissions: 'yolo',
+      guard: false,
       model: 'gpt-5',
       args: ['-c', 'notice="--model other"'],
     }).launchCommand('x');
@@ -189,6 +204,7 @@ describe('CodexAgent args and effort', () => {
   it('does not append args for an empty prompt', () => {
     const command = new CodexAgent({
       permissions: 'yolo',
+      guard: false,
       args: ['--foo'],
     }).launchCommand('');
     expect(command).not.toContain('--foo');
@@ -338,11 +354,10 @@ describe('CodexAgent permissions: sandbox', () => {
     expect(
       captureArgv(
         'codex',
-        new CodexAgent({ permissions: 'sandbox' }, home).launchCommand(
-          'x',
-          undefined,
+        new CodexAgent(
+          { permissions: 'sandbox', guard: false },
           home,
-        ),
+        ).launchCommand('x', undefined, home),
       ),
     ).toEqual([
       'codex',
@@ -499,7 +514,9 @@ describe('CodexAgent permissions: system, yolo, custom', () => {
     expect(
       captureArgv(
         'codex',
-        new CodexAgent({ permissions: 'system' }).launchCommand('x'),
+        new CodexAgent({ permissions: 'system', guard: false }).launchCommand(
+          'x',
+        ),
       ),
     ).toEqual(['codex', 'x']);
   });
@@ -510,6 +527,7 @@ describe('CodexAgent permissions: system, yolo, custom', () => {
         'codex',
         new CodexAgent({
           permissions: 'custom',
+          guard: false,
           config: {
             sandbox_mode: 'read-only',
             'sandbox_workspace_write.writable_roots': ['/a'],
@@ -524,6 +542,36 @@ describe('CodexAgent permissions: system, yolo, custom', () => {
       'sandbox_workspace_write.writable_roots=["/a"]',
       'x',
     ]);
+  });
+});
+
+describe('CodexAgent run guard', () => {
+  const hookFlag = `hooks.PreToolUse=[{hooks=[{type="command",command=${JSON.stringify(guardHookCommand())}}]}]`;
+
+  it.each([
+    { permissions: 'sandbox' },
+    { permissions: 'system' },
+    { permissions: 'yolo' },
+    { permissions: 'custom', config: {} },
+    {},
+  ] as CodexAgentOptions[])('hooks every tool call in %j', (options) => {
+    const agent = new CodexAgent(options);
+    const argv = captureArgv(
+      'codex',
+      agent.launchCommand('x', undefined, tmpdir()),
+    );
+    expect(argv[argv.indexOf(hookFlag) - 1]).toBe('-c');
+    expect(agent.guard).toBe('active');
+  });
+
+  it('is off only through guard: false', () => {
+    const agent = new CodexAgent({ permissions: 'yolo', guard: false });
+    expect(agent.launchCommand('x', undefined, '/w')).not.toContain(
+      'PreToolUse',
+    );
+    expect(agent.guard).toBe('off');
+    expect(codexAgent({ guard: false }).guard).toBe('off');
+    expect(codexAgent().guard).toBe('active');
   });
 });
 

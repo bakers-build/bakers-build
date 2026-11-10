@@ -554,6 +554,51 @@ describe('Conductor workspace env', () => {
     const beforeRun = executor.hookCalls.find((c) => c.name === 'before_run');
     expect(beforeRun?.env?.GIT_CONFIG_COUNT).toBe('1');
   });
+
+  it("hands the run guard the run's branch, worktree and log file", async () => {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': {
+          identifier: 'BB-1',
+          title: 'One',
+          state: 'working',
+          branchName: 'feat/bb-1-one',
+        },
+      },
+    });
+    remote.queue.push({
+      runUuid: 'r-1',
+      runId: 1,
+      ticketUuid: 't-1',
+      stateAtStart: 'working',
+      handler: 'code',
+    });
+    const workspace: BbWorkspace = {
+      ensure: async (identifier) => ({
+        path: `/fake/${identifier}`,
+        instructions: null,
+        created: true,
+        env: { BB_WORKTREE: '/evil', BB_BRANCH: 'main' },
+      }),
+    };
+    const executor = new RecordingExecutor();
+    const conductor = new TestConductor(
+      makeConfig(),
+      remote,
+      executor,
+      workspace,
+      [{ id: fakeAgent.id, agent: fakeAgent }],
+      spyLogger().log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    await conductor.tick();
+    const env = executor.started[0]?.env ?? {};
+    expect(env.BB_BRANCH).toBe('feat/bb-1-one');
+    expect(env.BB_WORKTREE).toBe('/fake/BB-1');
+    expect(env.BB_GUARD_LOG).toMatch(/runs\/r-1\.guard\.jsonl$/);
+    expect(env.BB_GUARD_LOG?.startsWith('/fake/BB-1')).toBe(false);
+  });
 });
 
 describe('Conductor agent tools', () => {

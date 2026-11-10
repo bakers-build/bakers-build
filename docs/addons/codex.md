@@ -12,7 +12,7 @@ Follow the [vendor installation guide](https://learn.chatgpt.com/docs/codex/cli)
 
 ## Enable it
 
-Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there. Keep the other fields there.
+Add the package to `addons` in `~/.bakers/machine.config.js`; agent harnesses may be listed only there.
 
 ```js
 addons: ['@bakers-build/addon-codex'],
@@ -30,6 +30,7 @@ Without a `model` it publishes `codex` (your locally configured Codex model) plu
 | `sandbox` | object | see below | Only with `permissions: 'sandbox'`. Each key set replaces its default; lists are not merged. |
 | `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
+| `guard` | boolean | `true` | `false`: no [run guard](/provision/security/run-guard). |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security

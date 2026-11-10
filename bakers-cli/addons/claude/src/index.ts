@@ -13,6 +13,7 @@ import {
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,
   ensureHome,
+  guardHookCommand,
   homeKey,
   homePath,
   installCommand,
@@ -77,15 +78,44 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
   mcp_servers: {},
 };
 
-/** The launch flags a security mode owns (`docs/addons/claude.md`). */
+type Hooks = Record<string, unknown[]>;
+
+/** The run guard's PreToolUse hook on every Bash call (`docs/provision/security/execution.md`). */
+function withGuard(hooks: unknown): Hooks {
+  const own = (hooks ?? {}) as Hooks;
+  return {
+    ...own,
+    PreToolUse: [
+      ...(own.PreToolUse ?? []),
+      {
+        matcher: 'Bash',
+        hooks: [{ type: 'command', command: guardHookCommand() }],
+      },
+    ],
+  };
+}
+
+/** The launch flags a security mode owns (`docs/addons/claude.md`), with the guard unless it is off. */
 function securityFlags(
   { mode, sandbox, config }: ResolvedSecurity,
   workspacePath: string | undefined,
-  pluginsOn = false,
+  pluginsOn: boolean,
+  guard: boolean,
 ): string[] {
-  if (mode === 'system') return [];
-  if (mode === 'yolo') return ['--dangerously-skip-permissions'];
-  if (mode === 'custom') return ['--settings', JSON.stringify(config)];
+  // Claude merges --settings over the user's own, so system keeps their settings.
+  const guardSettings = guard
+    ? ['--settings', JSON.stringify({ hooks: withGuard(undefined) })]
+    : [];
+  if (mode === 'system') return guardSettings;
+  if (mode === 'yolo')
+    return ['--dangerously-skip-permissions', ...guardSettings];
+  if (mode === 'custom')
+    return [
+      '--settings',
+      JSON.stringify(
+        guard ? { ...config, hooks: withGuard(config?.hooks) } : config,
+      ),
+    ];
   // Git metadata only for a known workspace; the conductor always passes one.
   const git =
     workspacePath === undefined
@@ -109,6 +139,7 @@ function securityFlags(
       network: { allowedDomains: sandbox.network },
     },
     disableClaudeAiConnectors: true,
+    ...(guard ? { hooks: withGuard(undefined) } : {}),
     // What is allowed here runs without a prompt; anything else, such as a
     // write to the protected `.claude/`, asks the human watching the run's
     // terminal (dontAsk would deny it, and no allow rule lifts that). Every
@@ -161,6 +192,8 @@ export interface ClaudeAgentOptions extends SecurityOptions {
   measure?: boolean;
   /** False runs this agent in the user's own `~/.claude`, without the project's plugins. */
   plugins?: boolean;
+  /** False switches the run guard off; no permissions mode does (`docs/provision/security/execution.md`). */
+  guard?: boolean;
 }
 
 const run = promisify(execFile);
@@ -219,6 +252,7 @@ export class ClaudeAgent implements BbAgent {
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
   readonly pluginsDisabled: boolean;
+  readonly guard: 'active' | 'off';
   /** The Claude config dir runs read and write: the agent home while plugins are on. */
   configDir: string;
   private pluginsOn = false;
@@ -247,6 +281,10 @@ export class ClaudeAgent implements BbAgent {
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
     this.pluginsDisabled =
       validateOptionalBoolean(options.plugins, 'plugins') === false;
+    this.guard =
+      validateOptionalBoolean(options.guard, 'guard') === false
+        ? 'off'
+        : 'active';
     this.configDir = join(home, '.claude');
   }
 
@@ -342,7 +380,12 @@ export class ClaudeAgent implements BbAgent {
     // The flags are constants; only their generated values need quoting.
     parts.push(
       ...[
-        ...securityFlags(this.security, workspacePath, this.pluginsOn),
+        ...securityFlags(
+          this.security,
+          workspacePath,
+          this.pluginsOn,
+          this.guard === 'active',
+        ),
         ...this.mcpFlags(tools),
       ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );
@@ -574,6 +617,7 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     id: 'claude',
     requiredModules: [],
     permissions: agent.security.report,
+    guard: agent.guard,
     async createAgent(config) {
       agent.useMarketplaces(config.marketplaces ?? []);
       return agent;
