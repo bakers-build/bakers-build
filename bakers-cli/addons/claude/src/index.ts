@@ -1,7 +1,10 @@
+import { execFile } from 'node:child_process';
+import { existsSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import {
   type AgentFootprint,
   type AgentPlugin,
@@ -9,9 +12,14 @@ import {
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,
+  ensureHome,
+  homeKey,
+  homePath,
   installCommand,
   type KnownOptionSpec,
   lastLine,
+  type MarketplaceDeclaration,
+  type PluginLaunch,
   type ResolvedSecurity,
   type RunEnvPolicy,
   resolveAgentCliOptions,
@@ -73,6 +81,7 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
 function securityFlags(
   { mode, sandbox, config }: ResolvedSecurity,
   workspacePath: string | undefined,
+  pluginsOn = false,
 ): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
@@ -124,8 +133,9 @@ function securityFlags(
   return [
     '--permission-mode',
     'default',
+    // The agent home's user settings enable its plugins; the person's own stay out.
     '--setting-sources',
-    'project,local',
+    pluginsOn ? 'user,project,local' : 'project,local',
     '--settings',
     JSON.stringify(settings),
   ];
@@ -149,6 +159,33 @@ export interface ClaudeAgentOptions extends SecurityOptions {
    * applies the state-group settings shipped with the addon.
    */
   measure?: boolean;
+  /** False runs this agent in the user's own `~/.claude`, without the project's plugins. */
+  plugins?: boolean;
+}
+
+const run = promisify(execFile);
+
+/** Run `claude <args> --json` in `configDir`; a failure names `what` and the CLI's output. */
+async function claudeJson(
+  configDir: string,
+  what: string,
+  args: string[],
+): Promise<Record<string, unknown>> {
+  try {
+    const { stdout } = await run('claude', [...args, '--json'], {
+      env: { ...process.env, CLAUDE_CONFIG_DIR: configDir },
+    });
+    return JSON.parse(lastLine(stdout) || '{}');
+  } catch (error) {
+    const { stderr, stdout, message } = error as {
+      stderr?: string;
+      stdout?: string;
+      message: string;
+    };
+    throw new Error(
+      `${what}: claude ${args.join(' ')} failed: ${(stderr || stdout || message).trim()}`,
+    );
+  }
 }
 
 const CLAUDE_RESERVED = [
@@ -181,6 +218,10 @@ export class ClaudeAgent implements BbAgent {
   private replacedBakersServer = false;
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
+  readonly pluginsDisabled: boolean;
+  /** The Claude config dir runs read and write: the agent home while plugins are on. */
+  configDir: string;
+  private pluginsOn = false;
 
   constructor(
     options: ClaudeAgentOptions = {},
@@ -204,6 +245,55 @@ export class ClaudeAgent implements BbAgent {
     this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
+    this.pluginsDisabled =
+      validateOptionalBoolean(options.plugins, 'plugins') === false;
+    this.configDir = join(home, '.claude');
+  }
+
+  /** Point this agent at the agent home of the project's declared marketplaces. */
+  useMarketplaces(marketplaces: readonly MarketplaceDeclaration[]): void {
+    if (this.pluginsDisabled || marketplaces.length === 0) return;
+    this.pluginsOn = true;
+    this.configDir = homePath(this.id, homeKey([...marketplaces]));
+  }
+
+  async installPlugins(
+    marketplaces: readonly MarketplaceDeclaration[],
+    home: string,
+  ): Promise<PluginLaunch> {
+    const outcome = await ensureHome(home, async (dir) => {
+      const credentials = join(this.home, '.claude', '.credentials.json');
+      if (!existsSync(credentials))
+        throw new Error(
+          `claude: no credential file at ${credentials} (a keychain login cannot be shared with an agent home); log in with a file-based credential`,
+        );
+      symlinkSync(credentials, join(dir, '.credentials.json'));
+      for (const { url, ref, plugins } of marketplaces) {
+        const added = await claudeJson(dir, url, [
+          'plugin',
+          'marketplace',
+          'add',
+          `${url}#${ref}`,
+        ]);
+        for (const plugin of plugins)
+          await claudeJson(dir, plugin, [
+            'plugin',
+            'install',
+            `${plugin}@${String(added.marketplace)}`,
+          ]);
+      }
+      // Skip the first-run onboarding; the CLI wrote the rest of this file.
+      const state = join(dir, '.claude.json');
+      const seeded = existsSync(state)
+        ? JSON.parse(readFileSync(state, 'utf8'))
+        : {};
+      writeFileSync(
+        state,
+        `${JSON.stringify({ ...seeded, hasCompletedOnboarding: true }, null, 2)}\n`,
+        { mode: 0o600 },
+      );
+    });
+    return { env: { CLAUDE_CONFIG_DIR: home }, args: [], home: outcome };
   }
 
   get launchWarnings(): readonly string[] {
@@ -224,6 +314,8 @@ export class ClaudeAgent implements BbAgent {
     run?: AgentRunIdentity,
     workspacePath?: string,
     tools?: { url: string },
+    _env?: Readonly<Record<string, string>>,
+    pluginArgs: readonly string[] = [],
   ): string {
     if (prompt === '') {
       return 'claude';
@@ -231,8 +323,9 @@ export class ClaudeAgent implements BbAgent {
     // Wait for project-declared plugins (extraKnownMarketplaces) to install
     // before the first turn; a fresh worktree otherwise starts without them.
     // A new worktree path would stop the run at Claude Code's trust dialog.
+    // With plugins on, the agent home already holds the installed plugins.
     const parts = [
-      'CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1',
+      ...(this.pluginsOn ? [] : ['CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1']),
       ...(workspacePath
         ? ['node', shellQuote(TRUST_WRAPPER), shellQuote(workspacePath)]
         : []),
@@ -249,7 +342,7 @@ export class ClaudeAgent implements BbAgent {
     // The flags are constants; only their generated values need quoting.
     parts.push(
       ...[
-        ...securityFlags(this.security, workspacePath),
+        ...securityFlags(this.security, workspacePath, this.pluginsOn),
         ...this.mcpFlags(tools),
       ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );
@@ -260,7 +353,7 @@ export class ClaudeAgent implements BbAgent {
     if (run?.sessionId) {
       parts.push('--session-id', run.sessionId);
     }
-    parts.push(...this.args.map(shellQuote));
+    parts.push(...pluginArgs.map(shellQuote), ...this.args.map(shellQuote));
     if (this.measure) {
       // The wrapper folds an inline --settings JSON into its profile file.
       for (const pair of MEASURE_FLAGS) {
@@ -316,8 +409,7 @@ export class ClaudeAgent implements BbAgent {
     sessionId: string,
   ): Promise<boolean> {
     const dir = join(
-      this.home,
-      '.claude',
+      this.configDir,
       'projects',
       encodeClaudeProjectDir(worktreePath),
     );
@@ -334,8 +426,7 @@ export class ClaudeAgent implements BbAgent {
     run?: AgentRunIdentity,
   ): Promise<string> {
     const dir = join(
-      this.home,
-      '.claude',
+      this.configDir,
       'projects',
       encodeClaudeProjectDir(worktreePath),
     );
@@ -483,7 +574,8 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     id: 'claude',
     requiredModules: [],
     permissions: agent.security.report,
-    async createAgent() {
+    async createAgent(config) {
+      agent.useMarketplaces(config.marketplaces ?? []);
       return agent;
     },
   };

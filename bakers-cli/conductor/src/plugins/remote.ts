@@ -100,6 +100,10 @@ export interface Ticket {
    */
   workspaceId?: string;
   workspaceName?: string;
+  /** The ticket type term name (`feature`, `bug`, …), sideloaded for the required-skills check. */
+  type?: string;
+  /** The recipe term name (`matt`, …): the run requires the skill `bb-recipe-<recipe>`. */
+  recipe?: string;
   /** Ticket label term names (`label` bundle), sideloaded for agent selection. Empty when none. */
   labels: string[];
   /** Ticket environments (bb_environment refs), each as name + tier, sideloaded for agent selection. Empty when none. */

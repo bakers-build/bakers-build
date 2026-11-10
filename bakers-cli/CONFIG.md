@@ -17,6 +17,9 @@ Interactive conductor starts may offer to install a newer CLI and migrate config
 The prompt, cache window, rerun, and `--no-update-check` opt-out are in
 [Update bakers.build](../docs/configuration/machine/updates.md).
 
+A project declares the agent plugins every run installs in `marketplaces`; see
+[Agent plugins](../docs/configuration/project.md#agent-plugins).
+
 Conductor lifecycle hooks, including `on_freeze` and `on_resume`, are in
 [Hooks](../docs/provision/hooks.md).
 

@@ -78,7 +78,6 @@ bakers agents
 
 ## Good to know
 
-- `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1` installs `.claude/settings.json` plugins before the first turn.
 - The addon starts `claude` without installing or authenticating it. Non-interactive shells need the binary on `PATH`, not an alias.
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).

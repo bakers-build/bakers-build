@@ -25,6 +25,7 @@ import {
   type SharedSecurity,
   validateSharedSecurity,
 } from './plugins/agent-args.js';
+import { validateMarketplaces } from './plugins/agent-home.js';
 import type { HookListener, HookName } from './plugins/executor.js';
 import { type LoadedInbox, loadInbox } from './plugins/message.js';
 import type {
@@ -189,6 +190,7 @@ type RawConfig = {
   poll_interval_ms?: unknown;
   lease_seconds?: unknown;
   restart_on_change?: unknown;
+  marketplaces?: unknown;
   hooks?: ConductorFileConfig['hooks'];
 };
 
@@ -500,7 +502,18 @@ export async function loadConductorConfig(
   const restartOnChange = config.restart_on_change ?? true;
   if (typeof restartOnChange !== 'boolean')
     throw new Error(`${configPath}: restart_on_change must be a boolean`);
+  const marketplaces = (() => {
+    try {
+      return validateMarketplaces(config.marketplaces);
+    } catch (error) {
+      throw new Error(`${configPath}: ${(error as Error).message}`);
+    }
+  })();
   const machineCtx = await readMachineContext();
+  if ('marketplaces' in machineCtx)
+    throw new Error(
+      `${machineContextPath()}: marketplaces is declared per project, in its conductor.config.js; remove it from the machine config`,
+    );
   warnIgnoredMaxParallel(machineContextPath(), machineCtx);
   const tunnel = machineCtx.tunnel === true;
   const variant = stemForConfigFile(basename(configPath)) ?? 'conductor';
@@ -791,6 +804,7 @@ export async function loadConductorConfig(
         }
       : {}),
     workspace,
+    marketplaces,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),
     ...(tools !== undefined ? { tools } : {}),

@@ -1,6 +1,9 @@
 ---
 name: bb-recipe-superpowers
 description: Recipe for tickets of type feature, bug or chore — the superpowers method; brainstorming to an approved design, writing-plans, executing-plans with test-driven-development, systematic-debugging for bugs, requesting-code-review.
+metadata:
+  requires: "superpowers:brainstorming superpowers:writing-plans superpowers:executing-plans superpowers:subagent-driven-development superpowers:test-driven-development superpowers:requesting-code-review superpowers:verification-before-completion"
+  requires-bug: "superpowers:systematic-debugging superpowers:executing-plans superpowers:subagent-driven-development superpowers:test-driven-development superpowers:requesting-code-review superpowers:verification-before-completion"
 ---
 
 # Superpowers method
