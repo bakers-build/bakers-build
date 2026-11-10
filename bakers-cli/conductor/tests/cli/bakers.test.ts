@@ -71,7 +71,9 @@ function makeConfig(
     remote: fakeRemote(),
     executor: fakeExecutor(),
     // `system`: nothing launches here, so the machine's sandbox must not gate claims.
-    agents: [{ agent: claudeAgent({ security: 'system' }), alias: 'claude' }],
+    agents: [
+      { agent: claudeAgent({ permissions: 'system' }), alias: 'claude' },
+    ],
     enabled_agents: ['claude'],
     disabled_agents: [],
     default_agent: 'claude',

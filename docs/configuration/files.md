@@ -7,8 +7,8 @@ Choose the file by who owns the value. These are JavaScript modules, so review i
 | `~/.bakers/bakers.config.js` | User; private | Default server connection and sign-in profile |
 | `~/.bakers/connections/<id>.js` | User; private | Named connection |
 | `.bakers/connection.config.local.js` | Checkout user; ignored | Selects one named connection |
-| `~/.bakers/machine.config.js` | Worker owner; private | Machine identity, harness addons, agent aliases/routes and shared security |
-| `.bakers/conductor.config.js` | Project maintainers; committed | Literal project identity, engine addons, hooks and project security |
+| `~/.bakers/machine.config.js` | Worker owner; private | Machine identity, harness addons, agent aliases/routes and shared permissions |
+| `.bakers/conductor.config.js` | Project maintainers; committed | Literal project identity, engine addons, hooks and project permissions |
 | `.bakers/<name>.conductor.config.js` | Project maintainers; committed | Complete named variant, not an overlay |
 | `.bakers/conductor.config.local.js` | Checkout user; ignored | Local values, only effective through explicit imports |
 | `WORKFLOW.md` | Project maintainers; committed | Instructions, provisioning profiles and validation; not a JavaScript config layer |

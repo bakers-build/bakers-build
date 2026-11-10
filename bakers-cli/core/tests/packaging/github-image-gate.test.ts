@@ -72,17 +72,28 @@ describe('disposable image gate', () => {
       'org.opencontainers.image.revision=0123456789abcdef',
     );
   });
-  it('tests built images, recipe first, then a separate config database', () => {
+  it('tests built images, recipe first, then a separate config database installed and updated by the deploy service', () => {
     const result = gate();
     expect(result.status).toBe(0);
     expect(result.calls).toContain('run --name phpunit');
     expect(result.calls).toContain('--processes 16 --log-junit /tmp/junit.xml');
     expect(result.calls).toContain('--workers=6');
+    const install = result.calls.indexOf(
+      'github-config:compose run --rm -e ADMIN_EMAIL=admin@example.test deploy\n',
+    );
     expect(
       result.calls.indexOf('github-recipe:compose run --rm install'),
-    ).toBeLessThan(
-      result.calls.indexOf('github-config:compose run --rm install'),
+    ).toBeLessThan(install);
+    expect(install).toBeGreaterThan(-1);
+    // compose run does not wait for depends_on health; site-deploy.sh queries the database at once.
+    const healthy = result.calls.indexOf(
+      'github-config:compose up -d --wait db\n',
     );
+    expect(healthy).toBeGreaterThan(-1);
+    expect(healthy).toBeLessThan(install);
+    expect(
+      result.calls.indexOf('github-config:compose run --rm deploy\n', install),
+    ).toBeGreaterThan(install);
     expect(result.calls).toContain(
       'github-config:compose down -v --remove-orphans',
     );
@@ -127,9 +138,7 @@ describe('disposable image gate', () => {
   ])('fails closed when %s fails', (failure) => {
     const result = gate(failure);
     expect(result.status).not.toBe(0);
-    expect(result.calls).not.toContain(
-      'github-config:compose run --rm install',
-    );
+    expect(result.calls).not.toContain('github-config:');
     if (failure.includes('browser'))
       expect(result.calls).toContain(
         'github-recipe:compose down -v --remove-orphans',

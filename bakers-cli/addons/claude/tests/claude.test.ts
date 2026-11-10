@@ -32,24 +32,24 @@ describe('ClaudeAgent.launchCommand', () => {
   it('includes the prompt, --model and the skip-permissions flag', () => {
     const agent = new ClaudeAgent({
       model: 'claude-opus-4-8',
-      security: 'yolo',
+      permissions: 'yolo',
     });
     expect(agent.launchCommand('do the thing')).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --model 'claude-opus-4-8' --dangerously-skip-permissions",
     );
   });
   it('omits --model when no model is set', () => {
-    expect(new ClaudeAgent({ security: 'yolo' }).launchCommand('x')).toBe(
+    expect(new ClaudeAgent({ permissions: 'yolo' }).launchCommand('x')).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
     );
   });
   it('returns the bare command for an empty prompt', () => {
-    expect(new ClaudeAgent({ security: 'yolo' }).launchCommand('')).toBe(
+    expect(new ClaudeAgent({ permissions: 'yolo' }).launchCommand('')).toBe(
       'claude',
     );
   });
   it('POSIX-quotes a multi-line prompt for the sh-evaluated launch file', () => {
-    const cmd = new ClaudeAgent({ security: 'yolo' }).launchCommand(
+    const cmd = new ClaudeAgent({ permissions: 'yolo' }).launchCommand(
       'para one\n\npara two',
     );
     expect(cmd).toBe(
@@ -68,7 +68,7 @@ describe('ClaudeAgent.launchCommand in a worktree', () => {
 
   it('trusts the worktree through the trust wrapper before claude starts', () => {
     expect(
-      new ClaudeAgent({ security: 'yolo' }).launchCommand(
+      new ClaudeAgent({ permissions: 'yolo' }).launchCommand(
         'x',
         undefined,
         "/w/it's",
@@ -79,7 +79,7 @@ describe('ClaudeAgent.launchCommand in a worktree', () => {
   });
   it('puts the trust wrapper in front of the measure wrapper', () => {
     expect(
-      new ClaudeAgent({ security: 'yolo', measure: true }).launchCommand(
+      new ClaudeAgent({ permissions: 'yolo', measure: true }).launchCommand(
         'x',
         undefined,
         '/w',
@@ -89,7 +89,7 @@ describe('ClaudeAgent.launchCommand in a worktree', () => {
     );
   });
   it('trusts nothing without a worktree or a prompt', () => {
-    const agent = new ClaudeAgent({ security: 'yolo' });
+    const agent = new ClaudeAgent({ permissions: 'yolo' });
     expect(agent.launchCommand('x')).not.toContain('claude-trust');
     expect(agent.launchCommand('', undefined, '/w')).toBe('claude');
   });
@@ -226,14 +226,14 @@ describe('ClaudeAgent.getRunLog', () => {
 
 describe('ClaudeAgent.launchCommand with a run identity', () => {
   it('pins the session id via --session-id when a run is given (BB-473)', () => {
-    const agent = new ClaudeAgent({ security: 'yolo' });
+    const agent = new ClaudeAgent({ permissions: 'yolo' });
     const cmd = agent.launchCommand('do the thing', { sessionId: 'r-123' });
     expect(cmd).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --dangerously-skip-permissions --session-id r-123",
     );
   });
   it('omits --session-id when no run is given (unchanged behaviour)', () => {
-    const agent = new ClaudeAgent({ security: 'yolo' });
+    const agent = new ClaudeAgent({ permissions: 'yolo' });
     expect(agent.launchCommand('x')).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
     );
@@ -262,7 +262,7 @@ function captureArgv(binary: string, command: string): string[] {
 describe('ClaudeAgent args and effort', () => {
   it('appends each args element as exactly one argv item, preserving order, duplicates and empty strings', () => {
     const agent = new ClaudeAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       args: ['--effort', 'medium', '--effort', 'high', '', '--foo', "it's"],
     });
     const command = agent.launchCommand('task');
@@ -284,7 +284,7 @@ describe('ClaudeAgent args and effort', () => {
 
   it('quotes a model value with spaces as one --model argument', () => {
     const command = new ClaudeAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       model: 'opus --injected',
     }).launchCommand('x');
     expect(captureArgv('claude', command)).toEqual([
@@ -304,7 +304,7 @@ describe('ClaudeAgent args and effort', () => {
 
   it('omits generated --model/--effort when args already override them', () => {
     const command = new ClaudeAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       model: 'sonnet',
       effort: 'medium',
       args: ['--model', 'opus', '--effort', 'high'],
@@ -322,7 +322,7 @@ describe('ClaudeAgent args and effort', () => {
 
   it('recognizes --model=VALUE and --effort=VALUE overrides', () => {
     const command = new ClaudeAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       model: 'sonnet',
       effort: 'low',
       args: ['--model=opus', '--effort=high'],
@@ -374,7 +374,7 @@ describe('ClaudeAgent args and effort', () => {
 
   it('keeps an absolute path with spaces and an embedded tilde as literal args', () => {
     const command = new ClaudeAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       args: ['--add-dir', '/home/cw/My Settings/a~b.json'],
     }).launchCommand('x');
     expect(captureArgv('claude', command)).toEqual([
@@ -412,7 +412,7 @@ function flagValue(argv: string[], flag: string): string {
 }
 
 describe('ClaudeAgent security: shared project and machine layers', () => {
-  const shared_security = {
+  const shared_permissions = {
     project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
     machine: {
       sandbox: {
@@ -423,16 +423,15 @@ describe('ClaudeAgent security: shared project and machine layers', () => {
   };
 
   it('applies them in the generated settings and reports their sources', async () => {
-    const plugin = claudeAgent({ shared_security } as never);
+    const plugin = claudeAgent({
+      permissions: 'sandbox',
+      shared_permissions,
+    } as never);
     const agent = await plugin.createAgent({} as never);
     const settings = JSON.parse(
       flagValue(captureArgv('claude', agent.launchCommand('x')), '--settings'),
     );
-    expect(settings.sandbox.excludedCommands).toEqual([
-      'bakers *',
-      'git *',
-      'make *',
-    ]);
+    expect(settings.sandbox.excludedCommands).toEqual(['make *']);
     expect(settings.sandbox.filesystem.allowWrite).toEqual(['/srv/cache']);
     expect(settings.sandbox.filesystem.denyRead).toEqual([
       '~/.ssh',
@@ -440,16 +439,21 @@ describe('ClaudeAgent security: shared project and machine layers', () => {
       '~/.aws',
     ]);
     expect(settings.permissions.deny).toContain('Read(~/.aws/**)');
-    expect(plugin.security?.sandbox.trusted_commands.entries).toContainEqual({
-      value: 'make',
-      source: 'project',
-    });
+    expect(plugin.permissions?.sandbox.trusted_commands.entries).toContainEqual(
+      {
+        value: 'make',
+        source: 'project',
+      },
+    );
   });
 });
 
-describe('ClaudeAgent security: sandbox (default)', () => {
+describe('ClaudeAgent permissions: sandbox', () => {
   const argv = () =>
-    captureArgv('claude', new ClaudeAgent({}).launchCommand('x'));
+    captureArgv(
+      'claude',
+      new ClaudeAgent({ permissions: 'sandbox' }).launchCommand('x'),
+    );
 
   it('starts without a bypass, in default mode, with project/local settings only and no MCP server', () => {
     const a = argv();
@@ -462,13 +466,13 @@ describe('ClaudeAgent security: sandbox (default)', () => {
     });
   });
 
-  it('generates OS-sandbox settings that fail closed and deny reads of ~/.ssh and ~/.bakers', () => {
+  it('generates OS-sandbox settings that fail closed, trust no command and deny reads of ~/.ssh and ~/.bakers', () => {
     const settings = JSON.parse(flagValue(argv(), '--settings'));
     expect(settings.sandbox).toEqual({
       enabled: true,
       failIfUnavailable: true,
       allowUnsandboxedCommands: false,
-      excludedCommands: ['bakers *', 'git *'],
+      excludedCommands: [],
       filesystem: {
         denyRead: ['~/.ssh', '~/.bakers'],
         allowWrite: [],
@@ -496,6 +500,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
     const a = captureArgv(
       'claude',
       new ClaudeAgent({
+        permissions: 'sandbox',
         sandbox: {
           trusted_commands: ['git', 'make', 'docker compose *'],
           deny_read: ['~/.aws', '/etc/secret', '~/.netrc'],
@@ -569,6 +574,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
         captureArgv(
           'claude',
           new ClaudeAgent({
+            permissions: 'sandbox',
             sandbox: { allow_write: ['/srv/cache'] },
           }).launchCommand('x', undefined, path, {
             url: 'http://127.0.0.1:4100',
@@ -612,6 +618,7 @@ describe('ClaudeAgent security: sandbox (default)', () => {
           captureArgv(
             'claude',
             new ClaudeAgent({
+              permissions: 'sandbox',
               sandbox: { allow_write: ['/repo/.git', '/srv/cache'] },
             }).launchCommand('x'),
           ),
@@ -639,18 +646,18 @@ describe('ClaudeAgent security: sandbox (default)', () => {
   });
 });
 
-describe('ClaudeAgent security: system, yolo, custom', () => {
+describe('ClaudeAgent permissions: system, yolo, custom', () => {
   it('system adds no security flag', () => {
     expect(
       captureArgv(
         'claude',
-        new ClaudeAgent({ security: 'system' }).launchCommand('x'),
+        new ClaudeAgent({ permissions: 'system' }).launchCommand('x'),
       ),
     ).toEqual(['claude', 'x']);
   });
 
   it("yolo restores today's bypass launch and keeps denied env vars", () => {
-    const agent = new ClaudeAgent({ security: 'yolo' });
+    const agent = new ClaudeAgent({ permissions: 'yolo' });
     expect(captureArgv('claude', agent.launchCommand('x'))).toEqual([
       'claude',
       'x',
@@ -663,7 +670,7 @@ describe('ClaudeAgent security: system, yolo, custom', () => {
     const config = { permissions: { defaultMode: 'acceptEdits' } };
     const a = captureArgv(
       'claude',
-      new ClaudeAgent({ security: 'custom', config }).launchCommand('x'),
+      new ClaudeAgent({ permissions: 'custom', config }).launchCommand('x'),
     );
     expect(a).toEqual(['claude', 'x', '--settings', JSON.stringify(config)]);
   });
@@ -684,6 +691,7 @@ describe('ClaudeAgent conductor tools', () => {
 
   it('merges the bakers server into the sandbox MCP config, the token by env reference only', () => {
     const agent = new ClaudeAgent({
+      permissions: 'sandbox',
       sandbox: { mcp_servers: { playwright: { command: 'npx' } } },
     });
     const a = launch(agent);
@@ -699,6 +707,7 @@ describe('ClaudeAgent conductor tools', () => {
 
   it("replaces a sandbox MCP server named bakers with the conductor's, and warns", () => {
     const agent = new ClaudeAgent({
+      permissions: 'sandbox',
       sandbox: { mcp_servers: { bakers: { command: 'old-bakers-mcp' } } },
     });
     expect(JSON.parse(flagValue(launch(agent), '--mcp-config'))).toEqual({
@@ -711,6 +720,7 @@ describe('ClaudeAgent conductor tools', () => {
 
   it('keeps a sandbox MCP server named bakers, without a warning, in a run without the conductor server', () => {
     const agent = new ClaudeAgent({
+      permissions: 'sandbox',
       sandbox: { mcp_servers: { bakers: { command: 'old-bakers-mcp' } } },
     });
     const a = captureArgv('claude', agent.launchCommand('x'));
@@ -722,9 +732,9 @@ describe('ClaudeAgent conductor tools', () => {
 
   it('adds the bakers server in the system, yolo and custom modes too', () => {
     for (const options of [
-      { security: 'system' },
-      { security: 'yolo' },
-      { security: 'custom', config: {} },
+      { permissions: 'system' },
+      { permissions: 'yolo' },
+      { permissions: 'custom', config: {} },
     ] as const) {
       const a = launch(new ClaudeAgent(options));
       expect(a).not.toContain('--strict-mcp-config');
@@ -736,7 +746,7 @@ describe('ClaudeAgent conductor tools', () => {
 
   it('leaves a measured run without MCP servers', () => {
     const command = new ClaudeAgent({
-      security: 'system',
+      permissions: 'system',
       measure: true,
     }).launchCommand('x', undefined, '/w', tools);
     expect(command).not.toContain('127.0.0.1:4100');
@@ -746,22 +756,25 @@ describe('ClaudeAgent conductor tools', () => {
 
 describe('ClaudeAgent security load errors', () => {
   it.each([
-    [{ skip_permissions: true }, /security: 'yolo'/],
-    [{ security: 'open' }, /security must be one of/],
+    [{ skip_permissions: true }, /permissions: 'yolo'/],
+    [{ permissions: 'open' }, /permissions must be one of/],
     [
-      { security: 'yolo', config: {} },
-      /config is only valid with security: 'custom'/,
+      { permissions: 'yolo', config: {} },
+      /config is only valid with permissions: 'custom'/,
     ],
-    [{ security: 'custom' }, /security: 'custom' requires config/],
+    [{ permissions: 'custom' }, /permissions: 'custom' requires config/],
     [
-      { security: 'system', sandbox: {} },
-      /sandbox is only valid with security: 'sandbox'/,
+      { permissions: 'system', sandbox: {} },
+      /sandbox is only valid with permissions: 'sandbox'/,
     ],
     [
-      { sandbox: { network: 'all' } },
+      { permissions: 'sandbox', sandbox: { network: 'all' } },
       /sandbox.network must be an array of strings/,
     ],
-    [{ sandbox: { nope: [] } }, /unknown sandbox key nope/],
+    [
+      { permissions: 'sandbox', sandbox: { nope: [] } },
+      /unknown sandbox key nope/,
+    ],
     [{ env_deny: 'X' }, /env_deny must be an array of strings/],
   ])('%j fails loading', (options, message) => {
     expect(() => new ClaudeAgent(options as never)).toThrow(message);
@@ -793,7 +806,9 @@ describe('ClaudeAgent.sandboxPreflight', () => {
 
   it('names a missing socat and the apt install command', async () => {
     const { host: h } = host({ tools: ['bwrap', 'apt-get'] });
-    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({
+    expect(
+      await new ClaudeAgent({ permissions: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({
       ok: false,
       cause: 'socat not found',
       fix: 'install it with sudo apt-get install -y socat',
@@ -802,7 +817,9 @@ describe('ClaudeAgent.sandboxPreflight', () => {
 
   it('names both tools and the dnf command when bwrap and socat are missing', async () => {
     const { host: h, calls } = host({ tools: ['dnf'] });
-    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({
+    expect(
+      await new ClaudeAgent({ permissions: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({
       ok: false,
       cause: 'bwrap and socat not found',
       fix: 'install it with sudo dnf install -y bubblewrap socat',
@@ -818,7 +835,9 @@ describe('ClaudeAgent.sandboxPreflight', () => {
           'bwrap: No permissions to create a new namespace, likely because the kernel does not allow non-privileged user namespaces.\n',
       },
     });
-    const result = await new ClaudeAgent().sandboxPreflight(h);
+    const result = await new ClaudeAgent({
+      permissions: 'sandbox',
+    }).sandboxPreflight(h);
     expect(result).toMatchObject({
       ok: false,
       cause:
@@ -829,7 +848,9 @@ describe('ClaudeAgent.sandboxPreflight', () => {
 
   it('is ok when both tools are present and the probe starts', async () => {
     const { host: h, calls } = host();
-    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(
+      await new ClaudeAgent({ permissions: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({ ok: true });
     expect(calls[0]?.slice(0, 2)).toEqual(['bwrap', '--unshare-user']);
   });
 
@@ -838,7 +859,9 @@ describe('ClaudeAgent.sandboxPreflight', () => {
     'yolo',
   ] as const)('skips the probe in %s mode', async (security) => {
     const { host: h, calls } = host({ tools: [] });
-    expect(await new ClaudeAgent({ security }).sandboxPreflight(h)).toEqual({
+    expect(
+      await new ClaudeAgent({ permissions: security }).sandboxPreflight(h),
+    ).toEqual({
       ok: true,
     });
     expect(calls).toEqual([]);
@@ -848,7 +871,7 @@ describe('ClaudeAgent.sandboxPreflight', () => {
     const { host: h } = host({ tools: [] });
     expect(
       await new ClaudeAgent({
-        security: 'custom',
+        permissions: 'custom',
         config: {},
       }).sandboxPreflight(h),
     ).toEqual({ ok: true });
@@ -856,6 +879,8 @@ describe('ClaudeAgent.sandboxPreflight', () => {
 
   it('skips the probe on macOS (Seatbelt is built in)', async () => {
     const { host: h } = host({ platform: 'darwin', tools: [] });
-    expect(await new ClaudeAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(
+      await new ClaudeAgent({ permissions: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({ ok: true });
   });
 });

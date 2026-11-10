@@ -839,7 +839,7 @@ config:
         default: bb_theme
     # Every outgoing mail goes through the shared HTML envelope with a
     # plain-text alternative. Only the backend is set; `mailer_dsn` stays the
-    # operator's. config/sync/system.mail.yml and settings.komodo.php select
+    # operator's. config/sync/system.mail.yml and settings.container.php select
     # the same plugin, which ShippedConfigDriftTest pins.
     system.mail:
       simpleConfigUpdate:

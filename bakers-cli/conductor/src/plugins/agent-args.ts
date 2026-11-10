@@ -311,17 +311,17 @@ export interface SandboxOptions {
 }
 
 export interface SecurityOptions {
-  security?: SecurityMode;
+  permissions?: SecurityMode;
   sandbox?: SandboxOptions;
   config?: Record<string, unknown>;
   env_deny?: string[];
 }
 
 /**
- * The `with` key the conductor fills with the top-level `security` blocks of
+ * The `with` key the conductor fills with the top-level `permissions` blocks of
  * the project and machine config; every harness addon passes it on here.
  */
-export const SHARED_SECURITY_KEY = 'shared_security';
+export const SHARED_SECURITY_KEY = 'shared_permissions';
 /** A list element that inserts the value of the layer below. */
 const INHERIT = '$inherit';
 const SHARED_MODES = ['sandbox', 'system', 'yolo'] as const;
@@ -334,7 +334,7 @@ export type SharedListKey = (typeof SHARED_LIST_KEYS)[number];
 export type SharedLayer = 'project' | 'machine';
 export type SecuritySource = 'default' | SharedLayer | 'agent';
 
-/** A top-level `security` block of the machine or project config. */
+/** A top-level `permissions` block of the machine or project config. */
 export interface SharedSecurity {
   mode?: (typeof SHARED_MODES)[number];
   sandbox?: Partial<Record<SharedListKey, string[]>>;
@@ -366,7 +366,7 @@ export interface ResolvedSecurity {
 }
 
 /**
- * Validate one shared `security` block; `layer` names it in the error. Only
+ * Validate one shared `permissions` block; `layer` names it in the error. Only
  * `mode` and the three sandbox lists may be shared, so any other key fails.
  */
 export function validateSharedSecurity(
@@ -374,27 +374,27 @@ export function validateSharedSecurity(
   layer: SharedLayer,
 ): SharedSecurity | undefined {
   if (value === undefined) return undefined;
-  const block = validatePlainObject(value, `${layer} security`);
+  const block = validatePlainObject(value, `${layer} permissions`);
   for (const key of Object.keys(block))
     if (key !== 'mode' && key !== 'sandbox')
-      throw new Error(`${layer} security: unknown key ${key}`);
+      throw new Error(`${layer} permissions: unknown key ${key}`);
   if (
     block.mode !== undefined &&
     !SHARED_MODES.includes(block.mode as SharedSecurity['mode'] & string)
   )
     throw new Error(
-      `${layer} security.mode must be one of ${SHARED_MODES.join(', ')}`,
+      `${layer} permissions.mode must be one of ${SHARED_MODES.join(', ')}`,
     );
   const sandbox: Partial<Record<SharedListKey, string[]>> = {};
   if (block.sandbox !== undefined)
     for (const [key, list] of Object.entries(
-      validatePlainObject(block.sandbox, `${layer} security.sandbox`),
+      validatePlainObject(block.sandbox, `${layer} permissions.sandbox`),
     )) {
       if (!SHARED_LIST_KEYS.includes(key as SharedListKey))
-        throw new Error(`${layer} security.sandbox: unknown key ${key}`);
+        throw new Error(`${layer} permissions.sandbox: unknown key ${key}`);
       sandbox[key as SharedListKey] = validateStringList(
         list,
-        `${layer} security.sandbox.${key}`,
+        `${layer} permissions.sandbox.${key}`,
       );
     }
   return {
@@ -426,9 +426,9 @@ function validatePlainObject(
 }
 
 /**
- * Validate the security options an agent addon takes in `with` and resolve
+ * Validate the permission options an agent addon takes in `with` and resolve
  * them over the harness defaults and the shared project and machine layers
- * (`with.shared_security`): default → project → machine → entry, a set key
+ * (`with.shared_permissions`): default → project → machine → entry, a set key
  * replaces the layer below and `'$inherit'` inserts it. Any misconfiguration
  * of the entry is a load error, so a run never starts with rights the operator
  * did not choose; a shared key in `unsupported` is reported, not applied.
@@ -436,6 +436,7 @@ function validatePlainObject(
 export function resolveSecurityOptions(
   input: SecurityOptions & {
     skip_permissions?: unknown;
+    security?: unknown;
     [SHARED_SECURITY_KEY]?: unknown;
   },
   defaults: Required<SandboxOptions>,
@@ -443,8 +444,11 @@ export function resolveSecurityOptions(
 ): ResolvedSecurity {
   if (input.skip_permissions !== undefined) {
     throw new Error(
-      "skip_permissions was removed: use security: 'yolo' for a permission bypass",
+      "skip_permissions was removed: use permissions: 'yolo' for a permission bypass",
     );
+  }
+  if (input.security !== undefined) {
+    throw new Error('security was renamed: use permissions');
   }
   const shared =
     input[SHARED_SECURITY_KEY] === undefined
@@ -456,21 +460,23 @@ export function resolveSecurityOptions(
   });
   const modeLayer = [...layers].reverse().find((l) => l.block.mode);
   const mode: SecurityMode =
-    input.security ?? modeLayer?.block.mode ?? 'sandbox';
+    input.permissions ?? modeLayer?.block.mode ?? 'system';
   const modeSource: SecuritySource =
-    input.security !== undefined ? 'agent' : (modeLayer?.source ?? 'default');
+    input.permissions !== undefined
+      ? 'agent'
+      : (modeLayer?.source ?? 'default');
   if (!SECURITY_MODES.includes(mode)) {
-    throw new Error(`security must be one of ${SECURITY_MODES.join(', ')}`);
+    throw new Error(`permissions must be one of ${SECURITY_MODES.join(', ')}`);
   }
   if (mode !== 'custom' && input.config !== undefined) {
-    throw new Error("config is only valid with security: 'custom'");
+    throw new Error("config is only valid with permissions: 'custom'");
   }
   if (mode === 'custom' && input.config === undefined) {
-    throw new Error("security: 'custom' requires config");
+    throw new Error("permissions: 'custom' requires config");
   }
   if (mode !== 'sandbox' && input.sandbox !== undefined) {
     throw new Error(
-      `sandbox is only valid with security: 'sandbox' (the ${modeSource} layer sets '${mode}')`,
+      `sandbox is only valid with permissions: 'sandbox' (the ${modeSource} layer sets '${mode}')`,
     );
   }
   const given =

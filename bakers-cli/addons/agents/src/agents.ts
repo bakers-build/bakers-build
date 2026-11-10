@@ -13,7 +13,7 @@ export function agentReport(
       description: c.description ?? '',
       harness: c.agent.id,
       model: c.model ?? null,
-      security: c.agent.security ?? null,
+      permissions: c.agent.permissions ?? null,
     })),
     enabled_agents: config.enabled_agents,
     disabled_agents: config.disabled_agents,

@@ -63,10 +63,11 @@ final class WorkActivityInput {
    */
   private function matchingRow(string $key, array $input): ?Worklog {
     $storage = $this->entities->getStorage('bb_track_worklog');
-    $storage->resetCache();
     $ids = $storage->getQuery()->accessCheck(FALSE)
       ->condition('owner_user_id', $this->records->owner())->condition('source_keys', $key)->execute();
-    $existing = $ids ? $storage->load(reset($ids)) : NULL;
+    // Not resetCache(): that clears the shared cache_entity bin inside the
+    // owner lock. loadUnchanged() drops only this row's cached copy.
+    $existing = $ids ? $storage->loadUnchanged(reset($ids)) : NULL;
     assert($existing === NULL || $existing instanceof Worklog);
     if (!$existing instanceof Worklog) {
       return NULL;

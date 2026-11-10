@@ -20,26 +20,26 @@ describe('default export', () => {
 
 describe('CodexAgent.launchCommand', () => {
   it('includes the prompt, model, sandbox, and bypass flag', () => {
-    const agent = new CodexAgent({ model: 'gpt-5', security: 'yolo' });
+    const agent = new CodexAgent({ model: 'gpt-5', permissions: 'yolo' });
     expect(agent.launchCommand('do the thing')).toBe(
       "codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust --model 'gpt-5' 'do the thing'",
     );
   });
 
   it('omits --model when no model is set', () => {
-    expect(new CodexAgent({ security: 'yolo' }).launchCommand('x')).toBe(
+    expect(new CodexAgent({ permissions: 'yolo' }).launchCommand('x')).toBe(
       "codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust 'x'",
     );
   });
 
   it('returns codex with run flags for an empty prompt', () => {
-    expect(new CodexAgent({ security: 'yolo' }).launchCommand('')).toBe(
+    expect(new CodexAgent({ permissions: 'yolo' }).launchCommand('')).toBe(
       'codex --sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust',
     );
   });
 
   it('POSIX-quotes a multi-line prompt for the sh-evaluated launch file', () => {
-    const cmd = new CodexAgent({ security: 'yolo' }).launchCommand(
+    const cmd = new CodexAgent({ permissions: 'yolo' }).launchCommand(
       'para one\n\npara two',
     );
     expect(cmd).toBe(
@@ -52,7 +52,7 @@ describe('CodexAgent run env', () => {
   it('restores the GIT_CONFIG_KEY_<n> names its default env filter drops (*KEY*)', () => {
     const argv = captureArgv(
       'codex',
-      new CodexAgent({ security: 'yolo' }).launchCommand(
+      new CodexAgent({ permissions: 'yolo' }).launchCommand(
         'x',
         undefined,
         '/w',
@@ -89,7 +89,7 @@ function captureArgv(binary: string, command: string): string[] {
 describe('CodexAgent args and effort', () => {
   it('appends args after generated elements and serializes effort as one -c assignment', () => {
     const command = new CodexAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       model: 'gpt-5',
       effort: 'medium',
       args: ['--foo', 'bar baz'],
@@ -112,7 +112,7 @@ describe('CodexAgent args and effort', () => {
 
   it('suppresses generated model and effort when -c assignments override them', () => {
     const command = new CodexAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       model: 'gpt-5',
       effort: 'low',
       args: ['-c', 'model=gpt-6', '-c', 'model_reasoning_effort="high"'],
@@ -133,7 +133,7 @@ describe('CodexAgent args and effort', () => {
 
   it('leaves unrelated -c keys in place and still generates model', () => {
     const command = new CodexAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       model: 'gpt-5',
       args: ['-c', 'sandbox_mode="danger-full-access"'],
     }).launchCommand('x');
@@ -153,7 +153,7 @@ describe('CodexAgent args and effort', () => {
 
   it('does not treat JSON config values as independent flags', () => {
     const command = new CodexAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       model: 'gpt-5',
       args: ['-c', 'notice="--model other"'],
     }).launchCommand('x');
@@ -188,7 +188,7 @@ describe('CodexAgent args and effort', () => {
 
   it('does not append args for an empty prompt', () => {
     const command = new CodexAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       args: ['--foo'],
     }).launchCommand('');
     expect(command).not.toContain('--foo');
@@ -239,7 +239,7 @@ async function homeWithCodexMcp(): Promise<string> {
   return home;
 }
 
-describe('CodexAgent security: sandbox (default)', () => {
+describe('CodexAgent permissions: sandbox', () => {
   it('grants Git metadata writes for the dispatched worktree without granting its parent repository', async () => {
     const dir = await mkdtemp(join(tmpdir(), 'codex-git-'));
     const main = join(dir, 'main "quoted" $name\nsecond line');
@@ -269,7 +269,11 @@ describe('CodexAgent security: sandbox (default)', () => {
       ]);
       const argv = captureArgv(
         'codex',
-        new CodexAgent().launchCommand('x', undefined, worktree),
+        new CodexAgent({ permissions: 'sandbox' }).launchCommand(
+          'x',
+          undefined,
+          worktree,
+        ),
       );
       const profile = argv.find((arg) => arg.startsWith('permissions.bakers='));
       expect(argv).toContain('default_permissions="bakers"');
@@ -300,7 +304,11 @@ describe('CodexAgent security: sandbox (default)', () => {
       expect(argv).toContain('never');
       const mainArgv = captureArgv(
         'codex',
-        new CodexAgent().launchCommand('x', undefined, main),
+        new CodexAgent({ permissions: 'sandbox' }).launchCommand(
+          'x',
+          undefined,
+          main,
+        ),
       );
       // Only protected entries that exist: no placeholder for bwrap to create.
       expect(
@@ -314,7 +322,11 @@ describe('CodexAgent security: sandbox (default)', () => {
         [join(common, 'worktrees')]: 'read',
       });
       expect(() =>
-        new CodexAgent().launchCommand('x', undefined, join(dir, 'missing')),
+        new CodexAgent({ permissions: 'sandbox' }).launchCommand(
+          'x',
+          undefined,
+          join(dir, 'missing'),
+        ),
       ).toThrow(/Cannot resolve workspace Git directories/);
     } finally {
       await rm(dir, { recursive: true, force: true });
@@ -326,7 +338,11 @@ describe('CodexAgent security: sandbox (default)', () => {
     expect(
       captureArgv(
         'codex',
-        new CodexAgent({}, home).launchCommand('x', undefined, home),
+        new CodexAgent({ permissions: 'sandbox' }, home).launchCommand(
+          'x',
+          undefined,
+          home,
+        ),
       ),
     ).toEqual([
       'codex',
@@ -350,6 +366,7 @@ describe('CodexAgent security: sandbox (default)', () => {
       'codex',
       new CodexAgent(
         {
+          permissions: 'sandbox',
           sandbox: {
             mcp_servers: { playwright: {} },
             allow_write: ['/srv/cache', '~/.cache/pnpm'],
@@ -375,6 +392,7 @@ describe('CodexAgent security: sandbox (default)', () => {
         'codex',
         new CodexAgent(
           {
+            permissions: 'sandbox',
             sandbox: {
               allow_write: ['/repo/.git', '/srv/cache', '/repo/.git/objects'],
             },
@@ -413,7 +431,7 @@ describe('CodexAgent security: sandbox (default)', () => {
     );
     const argv = captureArgv(
       'codex',
-      new CodexAgent({}, home).launchCommand('x'),
+      new CodexAgent({ permissions: 'sandbox' }, home).launchCommand('x'),
     );
     expect(argv.filter((a) => a.startsWith('mcp_servers.')).sort()).toEqual([
       'mcp_servers.beta.enabled=false',
@@ -430,7 +448,10 @@ describe('CodexAgent security: sandbox (default)', () => {
     try {
       const argv = captureArgv(
         'codex',
-        new CodexAgent({}, '/nonexistent-home').launchCommand('x'),
+        new CodexAgent(
+          { permissions: 'sandbox' },
+          '/nonexistent-home',
+        ).launchCommand('x'),
       );
       expect(argv).toContain('mcp_servers.gitlab.enabled=false');
     } finally {
@@ -446,32 +467,39 @@ describe('CodexAgent security: sandbox (default)', () => {
     const home = await mkdtemp(join(tmpdir(), 'codex-home-'));
     await mkdir(join(home, '.codex'), { recursive: true });
     await writeFile(join(home, '.codex', 'config.toml'), line);
-    expect(() => new CodexAgent({}, home).launchCommand('x')).toThrow(
-      /mcp_servers/,
-    );
+    expect(() =>
+      new CodexAgent({ permissions: 'sandbox' }, home).launchCommand('x'),
+    ).toThrow(/mcp_servers/);
   });
 
   it('runs without a Codex config file', () => {
     const argv = captureArgv(
       'codex',
-      new CodexAgent({}, '/nonexistent-home').launchCommand('x'),
+      new CodexAgent(
+        { permissions: 'sandbox' },
+        '/nonexistent-home',
+      ).launchCommand('x'),
     );
     expect(argv.some((a) => a.startsWith('mcp_servers.'))).toBe(false);
   });
 
   it('drops denied env vars, or keeps them in yolo', () => {
-    expect(new CodexAgent({}).runEnvPolicy.drop).toBe(true);
-    expect(new CodexAgent({ security: 'yolo' }).runEnvPolicy.drop).toBe(false);
+    expect(new CodexAgent({ permissions: 'sandbox' }).runEnvPolicy.drop).toBe(
+      true,
+    );
+    expect(new CodexAgent({ permissions: 'yolo' }).runEnvPolicy.drop).toBe(
+      false,
+    );
     expect(new CodexAgent({ env_deny: [] }).runEnvPolicy.deny).toEqual([]);
   });
 });
 
-describe('CodexAgent security: system, yolo, custom', () => {
+describe('CodexAgent permissions: system, yolo, custom', () => {
   it('system adds no security flag', () => {
     expect(
       captureArgv(
         'codex',
-        new CodexAgent({ security: 'system' }).launchCommand('x'),
+        new CodexAgent({ permissions: 'system' }).launchCommand('x'),
       ),
     ).toEqual(['codex', 'x']);
   });
@@ -481,7 +509,7 @@ describe('CodexAgent security: system, yolo, custom', () => {
       captureArgv(
         'codex',
         new CodexAgent({
-          security: 'custom',
+          permissions: 'custom',
           config: {
             sandbox_mode: 'read-only',
             'sandbox_workspace_write.writable_roots': ['/a'],
@@ -502,7 +530,8 @@ describe('CodexAgent security: system, yolo, custom', () => {
 describe('CodexAgent security: shared project and machine layers', () => {
   it('applies a shared allow_write and reports the keys it cannot express', async () => {
     const options = {
-      shared_security: {
+      permissions: 'sandbox',
+      shared_permissions: {
         project: { sandbox: { trusted_commands: ['$inherit', 'make'] } },
         machine: {
           sandbox: { allow_write: ['/srv/cache'], deny_read: ['~/.aws'] },
@@ -511,7 +540,7 @@ describe('CodexAgent security: shared project and machine layers', () => {
     } as never;
     const agent = new CodexAgent(options, await homeWithCodexMcp());
     expect(agent.launchCommand('x')).toContain('"/srv/cache" = true');
-    expect(codexAgent(options).security?.not_applied).toEqual([
+    expect(codexAgent(options).permissions?.not_applied).toEqual([
       { key: 'deny_read', source: 'machine', reason: 'unsupported' },
       { key: 'trusted_commands', source: 'project', reason: 'unsupported' },
     ]);
@@ -521,7 +550,8 @@ describe('CodexAgent security: shared project and machine layers', () => {
     expect(
       () =>
         new CodexAgent({
-          shared_security: { machine: { sandbox: { deny_read: ['~/.a'] } } },
+          permissions: 'sandbox',
+          shared_permissions: { machine: { sandbox: { deny_read: ['~/.a'] } } },
           sandbox: { deny_read: ['$inherit', '~/.b'] },
         } as never),
     ).toThrow(/Codex does not support sandbox.deny_read/);
@@ -531,16 +561,19 @@ describe('CodexAgent security: shared project and machine layers', () => {
 describe('CodexAgent security load errors', () => {
   it.each([
     [
-      { sandbox: { trusted_commands: ['git'] } },
+      { permissions: 'sandbox', sandbox: { trusted_commands: ['git'] } },
       /Codex does not support sandbox.trusted_commands/,
     ],
     [
-      { sandbox: { deny_read: ['~/.ssh'] } },
+      { permissions: 'sandbox', sandbox: { deny_read: ['~/.ssh'] } },
       /Codex does not support sandbox.deny_read/,
     ],
-    [{ skip_permissions: true }, /security: 'yolo'/],
-    [{ security: 'custom' }, /requires config/],
-    [{ security: 'custom', config: { x: { y: 1 } } }, /config.x.*dotted key/],
+    [{ skip_permissions: true }, /permissions: 'yolo'/],
+    [{ permissions: 'custom' }, /requires config/],
+    [
+      { permissions: 'custom', config: { x: { y: 1 } } },
+      /config.x.*dotted key/,
+    ],
   ])('%j fails loading', (options, message) => {
     expect(() => new CodexAgent(options as never)).toThrow(message);
   });
@@ -548,7 +581,10 @@ describe('CodexAgent security load errors', () => {
   it('accepts empty trusted_commands and deny_read', () => {
     expect(
       () =>
-        new CodexAgent({ sandbox: { trusted_commands: [], deny_read: [] } }),
+        new CodexAgent({
+          permissions: 'sandbox',
+          sandbox: { trusted_commands: [], deny_read: [] },
+        }),
     ).not.toThrow();
   });
 });
@@ -754,7 +790,9 @@ describe('CodexAgent.sandboxPreflight', () => {
       stderr:
         'WARNING: proceeding, even though we could not create PATH aliases\nbwrap: No permissions to create a new namespace\n',
     });
-    const result = await new CodexAgent().sandboxPreflight(h);
+    const result = await new CodexAgent({
+      permissions: 'sandbox',
+    }).sandboxPreflight(h);
     expect(calls).toEqual([['codex', 'sandbox', 'true']]);
     expect(result).toMatchObject({
       ok: false,
@@ -768,7 +806,9 @@ describe('CodexAgent.sandboxPreflight', () => {
       ok: false,
       stderr: 'sandbox-exec: denied',
     });
-    const result = await new CodexAgent().sandboxPreflight({
+    const result = await new CodexAgent({
+      permissions: 'sandbox',
+    }).sandboxPreflight({
       ...h,
       platform: 'darwin',
     });
@@ -778,7 +818,9 @@ describe('CodexAgent.sandboxPreflight', () => {
 
   it('is ok when the probe starts', async () => {
     const { host: h } = host(['codex']);
-    expect(await new CodexAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(
+      await new CodexAgent({ permissions: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({ ok: true });
   });
 
   it('is ok when this Codex release has no `sandbox` subcommand', async () => {
@@ -787,12 +829,16 @@ describe('CodexAgent.sandboxPreflight', () => {
       stderr:
         "error: unrecognized subcommand 'sandbox'\n\nUsage: codex [OPTIONS] [PROMPT]\n",
     });
-    expect(await new CodexAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(
+      await new CodexAgent({ permissions: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({ ok: true });
   });
 
   it('is ok without probing when the codex binary is missing', async () => {
     const { host: h, calls } = host([]);
-    expect(await new CodexAgent().sandboxPreflight(h)).toEqual({ ok: true });
+    expect(
+      await new CodexAgent({ permissions: 'sandbox' }).sandboxPreflight(h),
+    ).toEqual({ ok: true });
     expect(calls).toEqual([]);
   });
 
@@ -801,7 +847,9 @@ describe('CodexAgent.sandboxPreflight', () => {
     'yolo',
   ] as const)('skips the probe in %s mode', async (security) => {
     const { host: h, calls } = host(['codex'], { ok: false, stderr: 'x' });
-    expect(await new CodexAgent({ security }).sandboxPreflight(h)).toEqual({
+    expect(
+      await new CodexAgent({ permissions: security }).sandboxPreflight(h),
+    ).toEqual({
       ok: true,
     });
     expect(calls).toEqual([]);
@@ -815,7 +863,7 @@ describe('CodexAgent conductor tools', () => {
       join(home, '.codex', 'config.toml'),
       '[mcp_servers.gitlab]\ncommand = "g"\n',
     );
-    const agent = new CodexAgent({}, home);
+    const agent = new CodexAgent({ permissions: 'sandbox' }, home);
     const argv = captureArgv(
       'codex',
       agent.launchCommand('x', undefined, home, {
@@ -839,7 +887,7 @@ describe('CodexAgent conductor tools', () => {
       join(home, '.codex', 'config.toml'),
       '[mcp_servers.bakers]\ncommand = "old-bakers-mcp"\n',
     );
-    const agent = new CodexAgent({}, home);
+    const agent = new CodexAgent({ permissions: 'sandbox' }, home);
     const argv = captureArgv(
       'codex',
       agent.launchCommand('x', undefined, home, {
@@ -856,7 +904,7 @@ describe('CodexAgent conductor tools', () => {
   });
 
   it('adds nothing without a tool server', () => {
-    const command = new CodexAgent({ security: 'yolo' }).launchCommand('x');
+    const command = new CodexAgent({ permissions: 'yolo' }).launchCommand('x');
     expect(command).not.toContain('mcp_servers.bakers');
   });
 });

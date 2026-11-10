@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       from_version:
-        description: Installed first (vX.Y.Z or full commit SHA)
+        description: Installed first (vX.Y.Z or full commit SHA; must contain scripts/deploy/site-deploy.sh)
         required: true
       to_version:
         description: Updated to (vX.Y.Z or full commit SHA)

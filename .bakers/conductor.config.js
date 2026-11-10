@@ -45,6 +45,10 @@ const local = await loadLocal();
 
 export default {
   bakers: { project: 'bakers' },
+  // Runs stay sandboxed, though the default mode is `system`. `bakers` and `git`
+  // stay trusted until forge tools deliver (docs/decisions/sandbox-forge-tools.md);
+  // a sandbox grants no global tools by default.
+  permissions: { mode: 'sandbox', sandbox: { trusted_commands: ['bakers', 'git'] } },
   // The run budget (`max_parallel`) is set on the machine in the backend,
   // default 5. A `max_parallel` here is ignored with a warning.
   // Lifecycle hooks are conductor-owned + best-effort: the conductor runs each
