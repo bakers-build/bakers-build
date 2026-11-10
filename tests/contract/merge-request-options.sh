@@ -76,7 +76,7 @@ hasre() { printf '%s' "$1" | grep -E -- "$2" >/dev/null; }
 # renumbering the list or re-wrapping the prose leaves the region intact.
 impl_mr_region() {
   { awk '
-      /^Commit and push the scoped change/ { f = 1 }
+      /^Commit the scoped change/ { f = 1 }
       f && /^## / { exit }
       f { print }
     ' "$IMPL" | flat; } 2>/dev/null || true
@@ -114,7 +114,6 @@ MERGE_MR="$(merge_section)"
 MERGE_GATES="$(gates_section | tr -d '*')"
 MERGE_GATES_FLAT="$(printf '%s' "$MERGE_GATES" | flat)"
 MERGE_INPUT="$({ awk '/^## Input/ { f = 1; next } f && /^## / { exit } f { print }' "$MERGE" | flat; } 2>/dev/null || true)"
-MERGE_COMMAND="$({ awk '/^glab mr merge / { f = 1 } f && /^```/ { exit } f { print }' "$MERGE" | flat; } 2>/dev/null || true)"
 WF_FLAT="$({ flat < "$WF"; } 2>/dev/null || true)"
 
 check 'the MR-instruction region of bb-workflow is non-empty' test -n "$IMPL_MR"
@@ -139,38 +138,19 @@ check 'AC-1 the MR region names delete source branch as enabled' \
 check 'AC-1 the MR region says the properties are set on the MR itself, not left to a default' \
   hasi "$IMPL_MR" 'never left to a client default'
 
-# --- AC 2 — that instruction is tool-neutral, not a glab-only flag list --------------------------
+# --- AC 2 — that instruction names no client: the forge tools carry it ---------------------------
 #
-# Neutrality is asserted from BOTH directions: the region has to name a GitLab API field AND a
-# `glab` flag, and it has to mark the client forms as illustrations rather than as the rule. A
-# region naming only `glab` fails the API checks; a region naming only the API fails the `glab`
-# ones. Neither client may be deleted to reach neutrality — `step-contract.test.ts` asserts the
-# `glab` form in merge-mr, and dropping either one would prescribe a tool from the other direction.
+# The MR is opened and merged through `bb-workflow/references/forge.md`'s tools, which send the
+# target, method and deletion themselves; `skill-forge-commands.sh` keeps client command lines out
+# of the skills. What stays checkable here is that the region routes through those operations and
+# says the properties travel explicitly with the merge.
 
-check 'AC-2 the MR region names the GitLab API create endpoint' \
-  has "$IMPL_MR" 'POST /projects/:id/merge_requests'
-check 'AC-2 the MR region names the API target field target_branch' \
-  has "$IMPL_MR" '`target_branch`'
-check 'AC-2 the MR region names the API squash field squash: true' \
-  has "$IMPL_MR" '`squash: true`'
-check 'AC-2 the MR region names the API deletion field remove_source_branch: true' \
-  has "$IMPL_MR" '`remove_source_branch: true`'
-check 'AC-2 the MR region names the glab client form' \
-  has "$IMPL_MR" 'glab mr create'
-check 'AC-2 the MR region names a glab target flag' \
-  has "$IMPL_MR" '--target-branch'
-check 'AC-2 the MR region names a glab squash flag' \
-  has "$IMPL_MR" '--squash-before-merge'
-check 'AC-2 the MR region names a glab deletion flag' \
-  has "$IMPL_MR" '--remove-source-branch'
-check 'AC-2 the MR region marks the client forms as illustrations, not a prescription' \
-  hasi "$IMPL_MR" 'illustrations'
-check 'AC-2 the MR region says the properties are the instruction, not the client' \
-  hasi "$IMPL_MR" 'the properties are the instruction'
-check 'AC-2 the MR region says an agent holding only the API conforms' \
-  hasi "$IMPL_MR" 'only the API'
+check 'AC-2 the MR region routes push and MR through the forge operations' \
+  hasi "$IMPL_MR" 'create or update its MR through the forge operations'
+check 'AC-2 the MR region says the tools send method and deletion explicitly at the merge' \
+  hasi "$IMPL_MR" 'send method and deletion explicitly at the merge'
 
-# --- AC 3 — merge-mr states both as properties of the MERGE CALL, tool-neutrally -----------------
+# --- AC 3 — merge-mr states both as properties of the MERGE CALL ---------------------------------
 
 check 'AC-3 the ## Merge section states squash as a property of this merge call' \
   hasi "$MERGE_MR" 'on this merge call'
@@ -190,21 +170,9 @@ check 'AC-3 the ## Merge section requires both decisions explicitly on this call
 check 'AC-3 the ## Merge section says an omitted property inherits the MR stored value' \
   has "$MERGE_MR" 'omission inherits stored MR/project values.'
 check 'AC-3 the ## Merge section says the negative is sent explicitly, not omitted' \
-  has "$MERGE_MR" 'For retained sources, use the API to send `should_remove_source_branch: false`;'
-check 'AC-3 the ## Merge section keeps the glab merge form' \
-  has "$MERGE_MR" 'glab mr merge'
-check 'AC-3 the glab form carries the squash flag' \
-  hasre "$MERGE_COMMAND" '^glab mr merge .* --squash( |$)'
-check 'AC-3 the glab form carries the deletion flag' \
-  hasre "$MERGE_COMMAND" '^glab mr merge .* --remove-source-branch( |$)'
-check 'AC-3 the ## Merge section names the GitLab API merge endpoint' \
-  has "$MERGE_MR" 'PUT /projects/:id/merge_requests/:iid/merge'
-check 'AC-3 the API form names squash: true' \
-  has "$MERGE_MR" '`squash: true`'
-check 'AC-3 the API merge form explicitly enables squash and eligible-source deletion' \
-  has "$MERGE_MR" 'PUT /projects/:id/merge_requests/:iid/merge` with `squash: true`, `should_remove_source_branch: true`'
-check 'AC-3 either client form satisfies the properties for an eligible source' \
-  has "$MERGE_MR" 'For an eligible source, either client form satisfies these properties:'
+  has "$MERGE_MR" 'For retained sources, send the deletion negative explicitly.'
+check 'AC-3 the ## Merge section says forge_merge guarantees its properties' \
+  has "$MERGE_MR" '`forge_merge` guarantees every property in this section'
 
 # --- AC 3 — unchanged-guards: this ticket adds no gate and touches no trailer --------------------
 #
@@ -274,9 +242,7 @@ check 'AC-8 merge-mr tells the agent to check the source rather than assume it' 
 check 'AC-8 merge-mr says the forge is not a backstop' \
   has "$MERGE_MR" 'Forge protection is not a substitute for this check.'
 check 'AC-8 merge-mr sends the deletion negative on a source that fails the condition' \
-  has "$MERGE_MR" 'For retained sources, use the API to send `should_remove_source_branch: false`;'
-check 'AC-8 merge-mr explains why a false glab flag cannot protect the source' \
-  has "$MERGE_MR" 'a false glab flag can omit the field.'
+  has "$MERGE_MR" 'For retained sources, send the deletion negative explicitly.'
 check 'AC-8 merge-mr blocks forced deletion until the branch owner clears it' \
   has "$MERGE_MR" 'A stored `force_remove_source_branch: true` overrides this negative: block until the branch owner decides to clear it before merge.'
 check 'AC-8 merge-mr retains squash when source deletion is disabled' \
