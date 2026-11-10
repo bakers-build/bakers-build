@@ -62,8 +62,7 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
       // The Settings surface: exists so `EntityForm::init()` picks the
       // `settings` form mode of the same name.
       'settings' => BbProjectForm::class,
-      // Detail page cards, one Save each.
-      'identity' => BbEntityDetailCardForm::class,
+      // The detail page's Properties card.
       'properties' => BbEntityDetailCardForm::class,
       'delete' => BbContentEntityDeleteForm::class,
     ],

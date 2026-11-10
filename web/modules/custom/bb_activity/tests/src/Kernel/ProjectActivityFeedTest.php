@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_activity\Kernel;
 
+use Drupal\bb_activity\Activity\EntityDetailActivities;
 use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbVocabulary;
 use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
@@ -21,9 +22,10 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Project canonical Overview: `_entity_view` of `bb_project.full`.
+ * The Activities zone of the project Overview, and the feed rows it lists.
  *
- * Epics is the inspector list (`bb_project.epics` view mode), not a tab.
+ * The Overview lists compact rows; team, group, machine and conductor pages
+ * keep the full row, rendered here through the activity's `full` view mode.
  */
 #[Group('bb_activity')]
 #[RunTestsInSeparateProcesses]
@@ -41,6 +43,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
     'link', 'text', 'field', 'filter', 'markdown_easy', 'og', 'island',
+    'search_api',
     'bb_core', 'bb_activity', 'views',
     'display_builder', 'display_builder_entity_view',
     'ui_patterns', 'ui_patterns_field', 'ui_patterns_field_formatters',
@@ -116,12 +119,36 @@ final class ProjectActivityFeedTest extends KernelTestBase {
   }
 
   /**
-   * An empty Overview shows the Activities zone with its empty copy.
+   * A project without tickets has no Activities zone; one with tickets does.
    */
-  public function testEmptyOverviewShowsTheActivitiesZone(): void {
+  public function testNoActivitiesZoneForProjectWithoutTickets(): void {
+    $html = $this->renderMode('full');
+    self::assertStringNotContainsString('Activities', $html);
+    self::assertStringNotContainsString('No activity yet.', $html);
+
+    $ticket = $this->workTicket('Quiet ticket');
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_activity');
+    $storage->delete($storage->loadByProperties(['ticket_id' => $ticket->id()]));
     $html = $this->renderMode('full');
     self::assertStringContainsString('Activities', $html);
     self::assertStringContainsString('No activity yet.', $html);
+  }
+
+  /**
+   * The Overview lists compact rows: who, what, ticket, when; no tag or role.
+   */
+  public function testOverviewRowsAreCompact(): void {
+    $ticket = $this->workTicket('Compact work');
+    $ticket->getState()->applyTransitionById('qualify');
+    $ticket->save();
+
+    $row = $this->row($this->renderMode('full'), 'qualification → plan');
+    self::assertStringContainsString('href="' . $ticket->toUrl()->toString() . '"', $row);
+    self::assertStringContainsString('>' . $ticket->getIdentifier() . '<', $row);
+    self::assertStringContainsString('<time', $row);
+    self::assertStringNotContainsString('data-tag=', $row);
+    self::assertStringNotContainsString('>human<', $row);
+    self::assertStringContainsString('data-tag="status"', $this->row($this->fullRows(), 'qualification → plan'));
   }
 
   /**
@@ -133,8 +160,9 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     ));
     $canvas = $display['third_party_settings']['display_builder']['sources'][0];
     $main = $canvas['source']['component']['slots']['main']['sources'];
-    self::assertSame(['project_activities'], array_column($main, 'node_id'));
-    self::assertSame('bb_entity_detail_activities', $main[0]['source_id']);
+    $ids = array_column($main, 'node_id');
+    self::assertSame('project_activities', $ids[3] ?? NULL, 'Activities follow metrics, Needs attention and Epics.');
+    self::assertSame('bb_entity_detail_activities', $main[3]['source_id']);
   }
 
   /**
@@ -146,14 +174,16 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $ticket->save();
     $this->epicTicket('Hidden epic', 'done');
 
-    $html = $this->renderMode('full');
+    $overview = $this->renderMode('full');
+    self::assertStringContainsString('Activities', $overview);
+    self::assertStringNotContainsString('No activity yet.', $overview);
+
+    $html = $this->fullRows();
     $link = '<a href="' . $ticket->toUrl()->toString() . '" class="font-semibold">' . $ticket->getIdentifier() . '</a>';
-    self::assertStringContainsString('Activities', $html);
     self::assertStringContainsString($link . ' qualification → plan', $html);
     self::assertStringContainsString($link . ' created (work, qualification)', $html);
     self::assertStringContainsString('data-tag="status"', $html);
     self::assertStringContainsString('>human<', $html);
-    self::assertStringNotContainsString('No activity yet.', $html);
     self::assertStringNotContainsString('Shipped search', $html);
   }
 
@@ -181,7 +211,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $ticket->getState()->applyTransitionById('to_working');
     $ticket->save();
 
-    $html = $this->renderMode('full');
+    $html = $this->fullRows();
     self::assertStringContainsString('plan → working', $html);
     self::assertStringContainsString('claude-opus-5-5', $html);
     self::assertStringContainsString('>agent<', $html);
@@ -217,14 +247,14 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $this->setCurrentUser($member);
     self::assertFalse($run->access('view'));
 
-    $row = $this->row($this->renderMode('full'), 'plan → working');
+    $row = $this->row($this->fullRows(), 'plan → working');
     self::assertStringContainsString('>agent<', $row);
     self::assertStringNotContainsString('>human<', $row);
     self::assertStringNotContainsString('Run</a>', $row);
     self::assertStringNotContainsString('claude-opus-5-5', $row);
 
     $run->delete();
-    $row = $this->row($this->renderMode('full'), 'plan → working');
+    $row = $this->row($this->fullRows(), 'plan → working');
     self::assertStringContainsString('>agent<', $row);
     self::assertStringNotContainsString('Run</a>', $row);
   }
@@ -243,7 +273,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $ticket->getState()->applyTransitionById('to_working');
     $ticket->save();
 
-    $row = $this->row($this->renderMode('full'), 'plan → working');
+    $row = $this->row($this->fullRows(), 'plan → working');
     self::assertStringContainsString('claude-opus-5-5', $row);
     self::assertStringContainsString('claude-code · harness-conductor', $row);
   }
@@ -254,7 +284,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
   public function testCreatedRowNamesWorkflowWithoutRole(): void {
     $this->workTicket('Fresh ticket');
 
-    $row = $this->row($this->renderMode('full'), 'created');
+    $row = $this->row($this->fullRows(), 'created');
     self::assertStringContainsString('created (work, qualification)', $row);
     self::assertStringNotContainsString('>agent<', $row);
     self::assertStringNotContainsString('>human<', $row);
@@ -271,7 +301,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $this->createRun($ticket, $conductor, 'plan', 'claimed', [])->setRunState('expired')->save();
     $this->createRun($ticket, $conductor, 'plan', 'claimed', [])->setRunState('cancelled')->save();
 
-    $html = $this->renderMode('full');
+    $html = $this->fullRows();
     self::assertStringContainsString('data-tag="expired"', $this->row($html, 'run expired in plan'));
     self::assertStringContainsString('data-tag="cancelled"', $this->row($html, 'run cancelled in plan'));
   }
@@ -287,7 +317,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $run->set('error_log', "\nsetup: worktree missing\nstack line");
     $run->setRunState('failed')->save();
 
-    $html = $this->renderMode('full');
+    $html = $this->fullRows();
     self::assertStringContainsString('data-tag="failed"', $html);
     self::assertStringContainsString('run failed in plan', $html);
     self::assertStringContainsString('<code>setup: worktree missing</code>', $html);
@@ -311,7 +341,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
       'workflow' => 'bb_work',
     ])->save();
 
-    $row = $this->row($this->renderMode('full'), 'started work in plan');
+    $row = $this->row($this->fullRows(), 'started work in plan');
     self::assertStringContainsString('data-tag="started"', $row);
     self::assertStringContainsString('legacy-conductor', $row);
     self::assertStringNotContainsString('>agent<', $row);
@@ -339,7 +369,7 @@ final class ProjectActivityFeedTest extends KernelTestBase {
       ->getAccessControlHandler('bb_activity')
       ->resetCache();
 
-    $html = $this->renderMode('full');
+    $html = $this->fullRows();
     self::assertStringContainsString('System', $html);
     self::assertStringNotContainsString('Ada Overview', $html);
   }
@@ -353,6 +383,20 @@ final class ProjectActivityFeedTest extends KernelTestBase {
       ->getViewBuilder('bb_project')
       ->view($this->project, $mode);
     return (string) $this->container->get('renderer')->renderInIsolation($build);
+  }
+
+  /**
+   * The project's feed as full rows, as the other detail pages list them.
+   */
+  private function fullRows(): string {
+    $this->container->get('theme_installer')->install(['bb_theme']);
+    $builder = $this->container->get('entity_type.manager')->getViewBuilder('bb_activity');
+    $html = '';
+    foreach ($this->container->get(EntityDetailActivities::class)->activities($this->project) as $activity) {
+      $build = $builder->view($activity, 'full');
+      $html .= (string) $this->container->get('renderer')->renderInIsolation($build);
+    }
+    return $html;
   }
 
   /**
