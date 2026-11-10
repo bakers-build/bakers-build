@@ -146,7 +146,7 @@ describe('Conductor integration — claim → dispatch → running', () => {
       createLogger({
         checkoutRoot: process.cwd(),
         isTTY: false,
-        env: { BB_CONDUCTOR_LOG: 'stdout' },
+        env: { BAKERS_CONDUCTOR_LOG: 'stdout' },
       }),
     );
   });
@@ -327,7 +327,7 @@ print $run->uuid();
       createLogger({
         checkoutRoot: process.cwd(),
         isTTY: false,
-        env: { BB_CONDUCTOR_LOG: 'stdout' },
+        env: { BAKERS_CONDUCTOR_LOG: 'stdout' },
       }),
     );
     await gzipConductor.start();

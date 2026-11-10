@@ -178,3 +178,12 @@ describe('error handling and redaction', () => {
     ).rejects.toThrow(CloudflareApiError);
   });
 });
+
+describe('createTransport settings', () => {
+  it('names the replacement for a renamed camelCase key', async () => {
+    const { default: createTransport } = await import('../src/index.js');
+    await expect(
+      createTransport({ zone: 'z', apiToken: 't' }, { home: '/tmp' }),
+    ).rejects.toThrow('apiToken was renamed: use api_token');
+  });
+});

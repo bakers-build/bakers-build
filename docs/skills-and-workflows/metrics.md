@@ -55,7 +55,7 @@ bakers tools tool_api__bakers_metric_write --schema
 bakers tools tool_api__bakers_metric_write --data @metric.json
 ```
 
-`--schema` shows the exact row shape the server accepts. `label` is the definition's `label_term`; leave it out for a definition without one. The result lists every metric row of the ticket. See [bakers tools](/configuration/clients/tools) for exit codes; a write that ended with exit `5` may have been applied, so read the ticket back before trying again.
+`--schema` shows the exact row shape the server accepts. `label` is the definition's `label_term`; leave it out for a definition without one. The result lists every metric row of the ticket. See [bakers tools](/cli/tools) for exit codes; a write that ended with exit `5` may have been applied, so read the ticket back before trying again.
 
 Re-measuring keeps no history in the field. Preserve an earlier measurement in a comment if you need its history; run footprints are separate cost measurements. A human can also edit the metrics on the ticket's edit form, which has a Metrics widget.
 

@@ -8,7 +8,7 @@ Move a workstation to a newer bakers.build release: the CLI first, then your con
 
 ```text
 Check my CLI and bakers skills versions. Guide their updates using
-https://bakers.build/configuration/machine/updates. Preview configuration
+https://bakers.build/configuration/guides/updates. Preview configuration
 migration with --dry-run and show the effects before applying it.
 Use bb-upgrade-project for shared project files in a branch.
 ```
@@ -25,7 +25,7 @@ Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. 
    bakers --version
    ```
 
-   `bakers update` runs `npm install -g @bakers-build/bakers@latest` and prints `<before> → <after>`. To pin a release instead, run `npm install -g @bakers-build/bakers@<version>`. An interactive `bakers oven start` can run that install and the all-scope migration for you: Enter accepts, then the process exits so you can rerun start; `n` continues on the current release. Failures stop this start and leave a running conductor untouched. `bakers ui`, foreground, CI and non-TTY starts only print a notice. `--no-update-check` skips the lookup. Manual update and the dry-run path below still work.
+   `bakers update` runs `npm install -g @bakers-build/bakers@latest` and prints `<before> → <after>`. To pin a release instead, run `npm install -g @bakers-build/bakers@<version>`. An interactive `bakers conductor start` can run that install and the all-scope migration for you: Enter accepts, then the process exits so you can rerun start; `n` continues on the current release. Failures stop this start and leave a running conductor untouched. `bakers ui`, foreground, CI and non-TTY starts only print a notice. `--no-update-check` skips the lookup. Manual update and the dry-run path below still work.
 
 2. Preview the configuration migration. Add `--connection <id>` if you use a named connection.
 
@@ -33,7 +33,7 @@ Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. 
    bakers config upgrade --scope all --dry-run
    ```
 
-   The preview parses your files without running them and writes nothing. It shows each file's schema change and a redacted diff. Resolve blocking findings first: computed values it cannot move, conflicting destinations, or a future schema version. A file from an older release fails with a message naming `bakers init`; run it to write current files.
+   The preview parses your files without running them and writes nothing. It shows each file's schema change and a redacted diff. Resolve blocking findings first: computed values it cannot move, conflicting destinations, or a future schema version. A version 1 file, or a file or key under an old name, is refused at load with a message naming `bakers config upgrade`; the upgrade rewrites it at version 2 under the new names. Each file page lists its retired names: [connection](/configuration/connection#retired-names), [machine](/configuration/machine#retired-names), [project](/configuration/project#retired-names).
 
 3. Apply it, check it, and confirm nothing is left:
 
@@ -62,4 +62,4 @@ Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. 
 | Shared project files | A project developer, through review | 4 |
 | Server | The operator | 5 |
 
-Updating the CLI alone migrates neither your files nor the project, and deploys nothing. Automatic migration from an accepted start prompt uses the same all-scope planner, may touch selected project files, keeps backups and conflict protections, and deploys nothing. The cache is `~/.bakers/update-check.json` (or `$BB_HOME/update-check.json`); a decline lasts until that original check expires, not until 24 hours after you answer. A failed cache write is reported and does not claim suppression. Enter accepts; EOF or Ctrl-C cancels without installing or declining. The running process does not become the new release, and a source checkout or PATH shim may still run source after a global install. Keep the failing command, its key and the file path when you ask for help, and never paste secret values.
+Updating the CLI alone migrates neither your files nor the project, and deploys nothing. Automatic migration from an accepted start prompt uses the same all-scope planner, may touch selected project files, keeps backups and conflict protections, and deploys nothing. The cache is `~/.bakers/update-check.json` (or `$BAKERS_HOME/update-check.json`); a decline lasts until that original check expires, not until 24 hours after you answer. A failed cache write is reported and does not claim suppression. Enter accepts; EOF or Ctrl-C cancels without installing or declining. The running process does not become the new release, and a source checkout or PATH shim may still run source after a global install. Keep the failing command, its key and the file path when you ask for help, and never paste secret values.

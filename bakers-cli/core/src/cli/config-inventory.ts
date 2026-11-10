@@ -1,10 +1,12 @@
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { basename, dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { shellQuote } from '../core/shell.js';
 import {
   findConfigProjectBbDir,
   homeBbDir,
+  oldConfigFiles,
   stemForConfigFile,
 } from './bakers-dir.js';
 import {
@@ -24,6 +26,14 @@ import {
   type ConfigSourceProperty,
   inspectConfigSource,
 } from './config-source.js';
+import { type ConfigKind, checkConfigText } from './config-validate.js';
+
+const SCHEMA_KIND: Record<ConfigFileKind, ConfigKind> = {
+  machine: 'machine',
+  connection: 'connection',
+  'project-connection': 'connection',
+  project: 'project',
+};
 
 export interface ConfigInventoryOptions {
   operation?: ConfigOperation;
@@ -45,6 +55,10 @@ export interface ConfigInventoryOptions {
   currentVersions?: Partial<Record<ConfigFileKind, number>>;
   /** Internal planner overlay: proposed modules are validated without filesystem writes. */
   sourceTexts?: ReadonlyMap<string, string | null>;
+  /** Where addon packages resolve from (the CLI install), after the config's dir and cwd. */
+  addonBases?: string[];
+  /** Old file → new file moves the planner applies; the old file is then not reported. */
+  moves?: ReadonlyMap<string, string>;
 }
 
 export interface ConfigInventory {
@@ -74,7 +88,7 @@ export function inventoryConfig(
   options: ConfigInventoryOptions = {},
 ): ConfigInventory {
   const operation = options.operation ?? 'check';
-  // The `.bakers` root is core's decision (BB_HOME), not this function's; an
+  // The `.bakers` root is core's decision (BAKERS_HOME), not this function's; an
   // explicit options.home still pins it, which is what fixtures rely on.
   const bakersRoot = homeBbDir(options.home);
   const cwd = resolve(options.cwd ?? process.cwd());
@@ -82,7 +96,7 @@ export function inventoryConfig(
     options.machinePath ?? join(bakersRoot, 'machine.config.js'),
   );
   const connectionPath = resolve(
-    options.connectionPath ?? join(bakersRoot, 'bakers.config.js'),
+    options.connectionPath ?? join(bakersRoot, 'connections', 'default.js'),
   );
   const discovered = findConfigProjectBbDir(
     options.path ? resolve(cwd, options.path) : cwd,
@@ -347,7 +361,7 @@ export function inventoryConfig(
       selected &&
       source.properties.get('executor') &&
       (kind === 'machine' ||
-        (kind === 'conductor' && report.executor_source === undefined))
+        (kind === 'project' && report.executor_source === undefined))
     )
       report.executor_source = path;
     const startFindings = report.findings.length;
@@ -382,9 +396,11 @@ export function inventoryConfig(
         'unsupported_schema_version',
         'schema_version',
         `Schema version is ${currentVersion}.`,
-        kind === 'machine'
-          ? 'Run bakers init to rewrite it at version 1.'
-          : `Remove ${shellQuote(path)} and run bakers init to recreate it.`,
+        markers.every((version) => version === 1)
+          ? 'Run bakers config upgrade to rewrite it at version 2.'
+          : kind === 'machine'
+            ? 'Run bakers init to rewrite it.'
+            : `Remove ${shellQuote(path)} and run bakers init to recreate it.`,
         'schema',
         'error',
         field,
@@ -445,39 +461,10 @@ export function inventoryConfig(
     };
     const nonempty = (property: ConfigSourceProperty) =>
       typeof property.value === 'string' && property.value.trim() !== '';
-    if (field)
-      requireValue(
-        'schema_version',
-        'A positive integer schema version.',
-        (property) =>
-          typeof property.value === 'number' &&
-          Number.isInteger(property.value) &&
-          property.value > 0,
-      );
     if (kind === 'machine') {
-      // New machines get a UUID from bakers init; existing ones keep their id.
-      requireValue('machine_id', 'A nonempty machine id.', nonempty);
-      requireValue('label', 'A nonempty display label.', nonempty);
-      const userId = source.properties.get('user_id');
-      if (userId)
-        add(
-          'retired_key',
-          'user_id',
-          'No user_id: the server takes the owner from sign-in.',
-          'Run bakers init to rewrite the file without it.',
-          'schema',
-          'error',
-          userId,
-        );
       const tunnel = source.properties.get('tunnel');
       const tunnelExpected = 'A boolean tunnel sharing policy.';
       if (tunnel) {
-        requireValue(
-          'tunnel',
-          tunnelExpected,
-          (property) => typeof property.value === 'boolean',
-          false,
-        );
         setTunnelPolicy(
           tunnel.staticallyDetermined && typeof tunnel.value === 'boolean'
             ? tunnel.value
@@ -549,56 +536,14 @@ export function inventoryConfig(
           );
       }
     }
-    if (kind === 'project-connection')
-      add(
-        'superseded_file',
-        null,
-        'Legacy project connection overrides remain supported but are superseded by named global connections.',
-        `Create a named connection with bakers config init --scope connection --connection <id>, then select it in .bakers/connection.config.local.js.`,
-        'ownership',
-        'info',
-      );
-    if (kind === 'connection') {
-      requireValue(
-        'site',
-        'A site object.',
-        (property) => property.nodeType === 'ObjectExpression',
-      );
-      requireValue(
-        'site.base_url',
-        'An absolute HTTP or HTTPS URL.',
-        (property) => {
-          if (typeof property.value !== 'string') return false;
-          try {
-            return ['http:', 'https:'].includes(
-              new URL(property.value).protocol,
-            );
-          } catch {
-            return false;
-          }
-        },
-      );
-      requireValue(
-        'plugins',
-        'An array of plugin descriptors.',
-        (property) => property.nodeType === 'ArrayExpression',
-      );
+    if (kind === 'connection' || kind === 'project-connection') {
+      // The schema checks the shape; an OAuth provider also needs credentials.
       const plugins = source.properties.get('plugins');
       if (plugins?.nodeType === 'ArrayExpression') {
         for (let index = 0; index < (plugins.arrayLength ?? 0); index++) {
           const entry = `plugins[${index}]`;
-          requireValue(
-            entry,
-            'A plugin object or computed plugin instance.',
-            (property) => property.nodeType === 'ObjectExpression',
-          );
           const descriptor = source.properties.get(entry);
           if (descriptor?.nodeType === 'ObjectExpression') {
-            requireValue(
-              `${entry}.plugin`,
-              'A nonempty plugin module specifier.',
-              nonempty,
-            );
             if (
               source.properties.get(`${entry}.plugin`)?.value ===
               '@dropsh/plugin-oauth2'
@@ -618,33 +563,9 @@ export function inventoryConfig(
                   'A nonempty OAuth credential.',
                   nonempty,
                 );
-              const secretKey = `${entry}.with.client_secret`;
-              const secret = source.properties.get(secretKey);
-              void secret;
             }
           }
         }
-      }
-    }
-    if (kind === 'local') {
-      for (const key of [
-        'base_url',
-        'workspace_id',
-        'oauth',
-        'oauth.client_id',
-        'oauth.client_secret',
-      ]) {
-        const property = source.properties.get(key);
-        if (property)
-          add(
-            'dead_key',
-            key,
-            `${key} is no longer read from conductor.config.local.js.`,
-            `Remove ${key} from ${shellQuote(path)} after confirming the selected global connection contains the intended value.`,
-            'ownership',
-            'warning',
-            property,
-          );
       }
     }
     if (kind !== 'machine') {
@@ -661,38 +582,81 @@ export function inventoryConfig(
           'machine',
         );
     }
+    // Field checks: the same schema the loader applies, on the literal values.
+    const reported = new Set(
+      report.findings.slice(startFindings).map((finding) => finding.key),
+    );
+    for (const problem of checkConfigText(SCHEMA_KIND[kind], text, {
+      bases: [
+        pathToFileURL(`${dirname(path)}/`).href,
+        pathToFileURL(`${cwd}/`).href,
+        ...(options.addonBases ?? []),
+        import.meta.url,
+      ],
+    })) {
+      // Version markers are judged above against the command's current version.
+      if (problem.key === 'schema_version' || reported.has(problem.key))
+        continue;
+      const key = problem.key || null;
+      const at = key ? `${key} in ${shellQuote(path)}` : shellQuote(path);
+      add(
+        problem.code,
+        key,
+        key ? `${key}: ${problem.message}` : problem.message,
+        problem.code === 'renamed_key' || problem.code === 'retired_key'
+          ? `${problem.message} (${at}); bakers config upgrade rewrites literal old names.`
+          : problem.code === 'not_checked' ||
+              problem.code === 'options_not_checked'
+            ? `Nothing to repair offline; the loader checks ${at} when the conductor starts.`
+            : `Repair ${at}: ${problem.message.replace(/\.$/, '')}.`,
+        'schema',
+        problem.severity,
+        key ? source.properties.get(key) : undefined,
+      );
+      if (problem.line !== undefined) {
+        const finding = report.findings.at(-1);
+        if (finding && finding.key === key)
+          Object.assign(finding, {
+            line: problem.line,
+            column: problem.column,
+          });
+      }
+    }
     const findings = report.findings.slice(startFindings);
     if (findings.some((finding) => finding.severity === 'error'))
       file.state = 'partial';
-    else if (findings.some((finding) => finding.code === 'unknown_value'))
+    else if (
+      findings.some(
+        (finding) =>
+          finding.code === 'unknown_value' || finding.code === 'not_checked',
+      )
+    )
       file.state = 'computed';
   };
 
   inspectFile(machinePath, 'machine', 'machine', true);
   inspectFile(connectionPath, 'connection', 'connection', true);
-  // Conductor configs live in the project only. Historical global connections
-  // imported this retired sibling, so migrating one past it unseen would
-  // silently switch server or account: refuse until it is gone.
-  const retiredLocal = join(
-    dirname(connectionPath),
-    'conductor.config.local.js',
-  );
-  if (existsSync(retiredLocal))
+  // An old file name is never read and never ignored: each is answered with
+  // its replacement, which bakers config upgrade applies.
+  const oldFile = (from: string, to: string, owner: ConfigLayer) => {
+    if (!resolved.includes(owner) || options.moves?.has(from)) return;
     report.findings.push({
       code: 'superseded_file',
       severity: 'error',
       stage: 'inventory',
-      path: retiredLocal,
+      path: from,
       key: null,
-      expected:
-        'No conductor config beside the global connection; conductor overrides live in the project .bakers/conductor.config.local.js.',
+      expected: `${from} was renamed: use ${to}.`,
       observed: null,
-      owner: 'connection',
+      owner,
       related: [],
       statically_determined: true,
-      remediation: `Move any values from ${shellQuote(retiredLocal)} into the machine, connection or project local config, then delete it.`,
+      remediation: `Run bakers config upgrade${owner === 'project' && projectRoot ? ` --path ${shellQuote(projectRoot)}` : ''}, or rename ${shellQuote(from)} by hand: ${to}.`,
       recheck,
     });
+  };
+  for (const { from, to } of oldConfigFiles(bakersRoot, options.home))
+    oldFile(from, to, 'connection');
   if (projectRoot) {
     const bakersDir = join(projectRoot, '.bakers');
     let names: string[] = [];
@@ -703,18 +667,19 @@ export function inventoryConfig(
     } catch {
       /* Missing/partial roots still inventory their required default file. */
     }
-    if (names.length === 0) names = ['conductor.config.js'];
+    for (const target of options.moves?.values() ?? [])
+      if (dirname(target) === bakersDir && !names.includes(basename(target)))
+        names.push(basename(target));
+    names = names
+      .filter((name) => stemForConfigFile(name) !== undefined)
+      .sort();
+    const old = oldConfigFiles(bakersDir, options.home);
+    for (const { from, to } of old) oldFile(from, to, 'project');
+    if (names.length === 0 && old.length === 0) names = ['project.config.js'];
     for (const name of names)
-      inspectFile(join(bakersDir, name), 'conductor', 'project', true);
+      inspectFile(join(bakersDir, name), 'project', 'project', true);
     inspectFile(
-      join(bakersDir, 'conductor.config.local.js'),
-      'local',
-      'project',
-      false,
-      'supplementary',
-    );
-    inspectFile(
-      join(bakersDir, 'bakers.config.js'),
+      join(bakersDir, 'connection.config.js'),
       'project-connection',
       'project',
       false,

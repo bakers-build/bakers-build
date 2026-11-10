@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
+import { ConfigSourceEditor } from './config-source-edit.js';
+import { renameOldNames } from './config-upgrade.js';
 
 // BB-216: schema versioning for the generated CONNECTION config
-// (`bakers.config.js`, project + home). Decoupled from the npm package semver —
+// (connection file, project + home). Decoupled from the npm package semver —
 // the schema version bumps only when the config SHAPE changes, not every
 // release. Every generated connection config carries a machine-readable header
 // comment `// @bakers-schema-version <N>` (the source of truth for the upgrade
@@ -34,12 +36,21 @@ export interface ConnectionConfigMigration {
 }
 
 /**
- * The ordered, contiguous migration chain. bakers restarted every config file
- * at schema v1, so the chain is empty; a later shape change adds
- * its `v1 → v2` step here. `BB_CONFIG_SCHEMA_VERSION` derives from the chain's
+ * The ordered, contiguous migration chain; each shape change adds a step. `BB_CONFIG_SCHEMA_VERSION` derives from the chain's
  * last `to` — never hardcode it.
  */
-export const CONNECTION_MIGRATIONS: ConnectionConfigMigration[] = [];
+export const CONNECTION_MIGRATIONS: ConnectionConfigMigration[] = [
+  {
+    from: 1,
+    to: 2,
+    description: 'one name per thing: addons[] entries use { use, with }',
+    apply(text) {
+      const editor = new ConfigSourceEditor(text);
+      renameOldNames(editor, 'connection');
+      return editor.text;
+    },
+  },
+];
 
 /** The current connection-config schema version — single source of truth. */
 export const BB_CONFIG_SCHEMA_VERSION = CONNECTION_MIGRATIONS.at(-1)?.to ?? 1;

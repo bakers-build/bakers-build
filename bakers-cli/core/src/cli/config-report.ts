@@ -7,8 +7,7 @@ export type ConfigFileKind =
   | 'machine'
   | 'connection'
   | 'project-connection'
-  | 'conductor'
-  | 'local';
+  | 'project';
 export type ConfigFindingCode =
   | 'scope_required'
   | 'invalid_scope'
@@ -19,6 +18,10 @@ export type ConfigFindingCode =
   | 'syntax_error'
   | 'unsupported_source_shape'
   | 'unknown_value'
+  | 'not_checked'
+  | 'options_not_checked'
+  | 'unknown_key'
+  | 'renamed_key'
   | 'invalid_value'
   | 'version_marker_disagreement'
   | 'unsupported_schema_version'
@@ -34,7 +37,6 @@ export type ConfigFindingCode =
   | 'retired_key'
   | 'addon_scope_not_allowed'
   | 'addon_scope_skipped'
-  | 'addon_with_invalid'
   | 'write_failure';
 
 export interface ConfigLocation {

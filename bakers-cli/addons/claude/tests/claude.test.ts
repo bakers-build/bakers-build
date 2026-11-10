@@ -681,7 +681,7 @@ describe('ClaudeAgent conductor tools', () => {
   const conductorServer = {
     type: 'http',
     url: 'http://127.0.0.1:4100',
-    headers: { Authorization: 'Bearer ${BB_CONDUCTOR_TOKEN}' },
+    headers: { Authorization: 'Bearer ${BAKERS_CONDUCTOR_TOKEN}' },
   };
   const launch = (agent: ClaudeAgent) =>
     captureArgv(

@@ -10,7 +10,7 @@ import { resolveProjectRooting } from '../src/ui-home.js';
 // `--config` cannot silently relocate the cockpit's working directory.
 // The walk-up itself is core's `findProjectBbDir` — "is there a `.bakers/`
 // here", NOT the connection walk-up `findBbConfig`, which since BB-230
-// skips an engine-only `conductor.config.js`. This helper only decides what to
+// skips an engine-only `project.config.js`. This helper only decides what to
 // do with its answer, and owns no `existsSync` of its own (AC-6).
 describe('resolveProjectRooting (AC-9)', () => {
   let tmp: string;
@@ -18,7 +18,7 @@ describe('resolveProjectRooting (AC-9)', () => {
 
   const makeProject = (
     root: string,
-    file = 'bakers.config.js',
+    file = 'connection.config.js',
     src = 'export default {};\n',
   ): string => {
     const d = join(root, '.bakers');
@@ -27,7 +27,7 @@ describe('resolveProjectRooting (AC-9)', () => {
     return d;
   };
 
-  const originalBbHome = process.env.BB_HOME;
+  const originalBbHome = process.env.BAKERS_HOME;
 
   beforeEach(() => {
     tmp = mkdtempSync(join(tmpdir(), 'bakers-root-'));
@@ -35,15 +35,15 @@ describe('resolveProjectRooting (AC-9)', () => {
     // `resolveProjectRooting`'s `.bakers`-root comparison goes through
     // `homeBbDir()` with no argument, so a fixture that wants its OWN
     // `home/.bakers` excluded from the walk-up must point
-    // BB_HOME there instead of relying on the `homeDir` parameter, which is
+    // BAKERS_HOME there instead of relying on the `homeDir` parameter, which is
     // now only the fallback cwd.
-    process.env.BB_HOME = join(home, '.bakers');
+    process.env.BAKERS_HOME = join(home, '.bakers');
   });
   afterEach(() => {
     rmSync(tmp, { recursive: true, force: true });
     rmSync(home, { recursive: true, force: true });
-    if (originalBbHome === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = originalBbHome;
+    if (originalBbHome === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = originalBbHome;
   });
 
   it('roots at the repo root — NOT the .bakers dir — inside a project', () => {
@@ -88,16 +88,16 @@ describe('resolveProjectRooting (AC-9)', () => {
   });
 
   // The BB-218-canonical repo shape, and the regression the BB-230 rebase
-  // would otherwise have introduced here: an engine-only `conductor.config.js`
+  // would otherwise have introduced here: an engine-only `project.config.js`
   // is deliberately NOT a connection source (its connection is inherited from
-  // `~/.bakers/bakers.config.js`), but it is unambiguously a project. Keying AC-9
+  // `~/.bakers/connections/default.js`), but it is unambiguously a project. Keying AC-9
   // on the connection walk-up would root the most common repo shape in the
   // registry default instead of its own root.
-  it('an engine-only conductor.config.js still marks a project (BB-218 shape)', () => {
+  it('an engine-only project.config.js still marks a project (BB-218 shape)', () => {
     const bakersDir = makeProject(
       tmp,
-      'conductor.config.js',
-      "export default { project: 'p', machine_id: 'm' };\n",
+      'project.config.js',
+      "export default { project: { name: 'p' } };\n",
     );
     const r = resolveProjectRooting(tmp, home);
     expect(r.cwd).toBe(tmp);
@@ -107,8 +107,8 @@ describe('resolveProjectRooting (AC-9)', () => {
   it('an engine-only project resolved from a nested subdirectory roots at its root', () => {
     const _bakersDir = makeProject(
       tmp,
-      'conductor.config.js',
-      "export default { project: 'p', machine_id: 'm' };\n",
+      'project.config.js',
+      "export default { project: { name: 'p' } };\n",
     );
     const sub = join(tmp, 'bakers-cli', 'ui', 'src');
     mkdirSync(sub, { recursive: true });
@@ -119,8 +119,8 @@ describe('resolveProjectRooting (AC-9)', () => {
   it('a variant-only .bakers dir marks a project too', () => {
     const _bakersDir = makeProject(
       tmp,
-      'shop.conductor.config.js',
-      "export default { project: 'p', machine_id: 'm' };\n",
+      'project.shop.config.js',
+      "export default { project: { name: 'p' } };\n",
     );
     const r = resolveProjectRooting(tmp, home);
     expect(r.cwd).toBe(tmp);

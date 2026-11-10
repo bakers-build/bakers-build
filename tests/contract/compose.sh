@@ -286,32 +286,21 @@ if [ -n "$nginx_image" ] && docker image inspect "$nginx_image" >/dev/null 2>&1;
     || fail "nginx -t failed for docker/nginx/oauth-discovery.conf + oauth-register-zone.conf"
 fi
 
-# Loading the distributed workspace configuration must not enable a provider.
+# Loading the distributed project configuration must not enable a provider: the transport
+# belongs to each machine's own ports entry (~/.bakers/machine.config.js).
 node --input-type=module <<'JS'
 import assert from 'node:assert/strict';
-import { mkdtempSync, copyFileSync, writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-const dir = mkdtempSync(join(tmpdir(), 'bakers-conductor-'));
-const previous = process.env.BB_HOME;
-try {
-  process.env.BB_HOME = dir;
-  writeFileSync(join(dir, 'package.json'), '{"type":"module"}');
-  copyFileSync('.bakers/conductor.config.js', join(dir, 'conductor.mjs'));
-  const config = (await import(pathToFileURL(join(dir, 'conductor.mjs')))).default;
-  assert.deepEqual(config.addons, ['@bakers-build/addon-ddev'], 'default workspace must not register FRP');
-  const frp = { zone: 'preview.example.test', clientConfigPath: '/operator/frpc.json', adminPort: 7400, adminUser: 'operator', adminPassword: 'dummy' };
-  writeFileSync(join(dir, 'conductor.config.local.js'), `export default ${JSON.stringify({frp})}`);
-  const selected = (await import(`${pathToFileURL(join(dir, 'conductor.mjs'))}?selected`)).default;
-  assert.equal(selected.addons[0], '@bakers-build/addon-ddev');
-  assert.deepEqual(selected.addons[1].with.transport.with, frp);
-} finally {
-  if (previous === undefined) delete process.env.BB_HOME; else process.env.BB_HOME = previous;
-  rmSync(dir, {recursive: true, force: true});
-}
+const path = '.bakers/project.config.js';
+assert.doesNotMatch(readFileSync(path, 'utf8'), /^\s*import\s|await import\(/m, 'the project config imports no local file');
+const config = (await import(pathToFileURL(path))).default;
+assert.equal(config.addons[0], '@bakers-build/addon-ddev');
+const ports = config.addons.find((a) => a?.use === '@bakers-build/addon-ports');
+assert.ok(ports, 'the project lists its preview services');
+assert.equal(ports.with.transport, undefined, 'the committed project must not register a transport');
 JS
-pass "workspace preview requires explicit local provider configuration"
+pass "workspace preview requires explicit machine provider configuration"
 
 # Coder startup must not download or start unselected tunnel providers.
 node --input-type=module <<'JS'

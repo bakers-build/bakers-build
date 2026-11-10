@@ -75,15 +75,20 @@ export function normalizeEntry(entry: AddonEntry): {
   alias?: string;
 } {
   if (typeof entry === 'string') return { spec: entry, opts: undefined };
-  const spec = entry.use ?? entry.name;
+  const old = entry as { name?: unknown; options?: unknown };
+  if (old.name !== undefined)
+    throw new Error('addons[] entry name was renamed: use use');
+  if (old.options !== undefined)
+    throw new Error('addons[] entry options was renamed: use with');
+  const spec = entry.use;
   if (typeof spec !== 'string' || spec.trim() === '') {
     throw new Error(
-      `addons[] entry must name a package via a string or { use } / { name }; got ${JSON.stringify(entry)}`,
+      `addons[] entry must name a package via a string or { use }; got ${JSON.stringify(entry)}`,
     );
   }
   return {
     spec,
-    opts: entry.with ?? entry.options,
+    opts: entry.with,
     ...(entry.alias !== undefined ? { alias: entry.alias } : {}),
     ...(entry.priority ? { priority: entry.priority } : {}),
   };
@@ -91,6 +96,13 @@ export function normalizeEntry(entry: AddonEntry): {
 
 /** Does an imported module look like a preset (any accumulator fn or `addons`)? */
 function isPresetShaped(mod: Record<string, unknown>): boolean {
+  for (const [old, next] of [
+    ['remotes', 'servers'],
+    ['workspaces', 'worktrees'],
+    ['checkWith', 'an options.schema.json in the package'],
+  ] as const)
+    if (mod[old] !== undefined)
+      throw new Error(`addon preset export ${old} was renamed: use ${next}`);
   if (Array.isArray(mod.addons)) return true;
   if (typeof mod.inbox === 'object' && mod.inbox !== null) return true;
   if (typeof mod.tools === 'object' && mod.tools !== null) return true;
@@ -146,9 +158,9 @@ function adaptDefaultExport(
         ...(conn as DiscoveredContributions['connectionPlugins']),
       ];
     },
-    remotes: (acc, opts) => routeByKind(factory, opts, 'remote', acc),
+    servers: (acc, opts) => routeByKind(factory, opts, 'server', acc),
     executors: (acc, opts) => routeByKind(factory, opts, 'executor', acc),
-    workspaces: (acc, opts) => routeByKind(factory, opts, 'workspace', acc),
+    worktrees: (acc, opts) => routeByKind(factory, opts, 'worktree', acc),
     agents: (acc, opts) => {
       const built = factory(opts);
       const list = Array.isArray(built) ? built : [built];
@@ -162,9 +174,9 @@ function adaptDefaultExport(
 
 function isEngineKind(kind: unknown): boolean {
   return (
-    kind === 'remote' ||
+    kind === 'server' ||
     kind === 'executor' ||
-    kind === 'workspace' ||
+    kind === 'worktree' ||
     kind === 'agent'
   );
 }
@@ -514,22 +526,22 @@ function resolveSingleton<T>(
 /** Resolve discovered conductor contributions into the four engine slots. */
 export function resolveConductorSlots<R, E, W, A>(
   contributions: {
-    remotes: R[];
+    servers: R[];
     executors: E[];
-    workspaces: W[];
+    worktrees: W[];
     agents: A[];
   },
   logger?: ConductorLogger,
 ): ResolvedConductorSlots<R, E, W, A> {
-  const remote = resolveSingleton(contributions.remotes, 'remote', logger);
+  const remote = resolveSingleton(contributions.servers, 'server', logger);
   const executor = resolveSingleton(
     contributions.executors,
     'executor',
     logger,
   );
   const workspace = resolveSingleton(
-    contributions.workspaces,
-    'workspace',
+    contributions.worktrees,
+    'worktree',
     logger,
   );
   return {

@@ -14,7 +14,7 @@ the confirmation the caller already takes; reuse an answer already supplied for 
 For `cancelled`, ask for the reason before the cancellation decision, without requesting a score.
 A rating never supplies merge authorization or replaces the caller's lifecycle gates.
 
-There is no environment test for human presence: `BB_ID` is also set in supervised runs.
+There is no environment test for human presence: `BAKERS_ID` is also set in supervised runs.
 Use the host's available, non-blocking question facility or the existing confirmation interaction.
 If no answer is available (including dismissal, skip, an unattended interaction, or an already
 authorized close with no rating), proceed with **no rating, no comment**, and the authorized

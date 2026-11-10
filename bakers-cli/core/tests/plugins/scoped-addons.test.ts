@@ -29,7 +29,7 @@ function addon(name: string, body: string): string {
   return path;
 }
 
-const REMOTE = `export const remotes = (acc, opts) => [...acc, { kind: 'remote', id: 'r', opts }];`;
+const REMOTE = `export const servers = (acc, opts) => [...acc, { kind: 'server', id: 'r', opts }];`;
 
 function machine(entries: AddonEntry[]): AddonScopeInput {
   return {
@@ -42,7 +42,7 @@ function machine(entries: AddonEntry[]): AddonScopeInput {
 function project(entries: AddonEntry[]): AddonScopeInput {
   return {
     scope: 'project',
-    path: join(projectDir, 'conductor.config.js'),
+    path: join(projectDir, 'project.config.js'),
     entries,
     bases: [pathToFileURL(`${projectDir}/`).href],
   };
@@ -111,7 +111,7 @@ describe('scopeAddons', () => {
     ]);
     expect(warnings[0]).toContain(spec);
     expect(warnings[0]).toContain('machine.config.js');
-    expect(warnings[0]).toContain('.bakers/conductor.config.js');
+    expect(warnings[0]).toContain('.bakers/project.config.js');
   });
 
   it('undeclared addon is allowed in both scopes', async () => {
@@ -163,63 +163,26 @@ describe('scopeAddons', () => {
   });
 });
 
-describe('scopeAddons — checkWith', () => {
-  const CHECKS = `${REMOTE}
-export const checkWith = (w) => (w && w.bad ? [{ key: 'bad', message: 'is bad' }] : []);`;
-
-  it('scopeAddons returns checkWith findings with the entry path and index', async () => {
-    const spec = addon('checks.js', CHECKS);
-    const other = addon('other.js', REMOTE);
-    const { findings } = await scopeAddons(
-      [machine([other, { use: spec, with: { bad: 1 } }])],
-      { logger },
-    );
-    expect(findings).toEqual([
-      {
-        code: 'addon_with_invalid',
-        spec,
-        path: join(machineDir, 'machine.config.js'),
-        scope: 'machine',
-        index: 1,
-        key: 'bad',
-        message: 'is bad',
-      },
-    ]);
-  });
-
-  it('checks each scope before the merge', async () => {
-    const spec = addon('checks.js', CHECKS);
-    const { findings } = await scopeAddons(
-      [
-        machine([{ use: spec, with: { ok: 1 } }]),
-        project([{ use: spec, with: { bad: 1 } }]),
-      ],
-      { logger },
-    );
-    expect(findings.map((f) => [f.scope, f.code])).toEqual([
-      ['project', 'addon_with_invalid'],
-    ]);
-  });
-
-  it('an addon without checkWith yields no with findings', async () => {
-    const spec = addon('plain.js', REMOTE);
-    const { findings } = await scopeAddons(
-      [machine([{ use: spec, with: { bad: 1 } }])],
-      { logger },
-    );
-    expect(findings).toEqual([]);
-  });
-
-  it('a throwing checkWith becomes one finding', async () => {
+// BAKERS-159: `checkWith` is retired. An addon's `with` is checked offline
+// from its `options.schema.json` by `bakers config check`, so scopeAddons
+// refuses a `checkWith` export, naming its replacement, and never runs it.
+describe('scopeAddons — checkWith is retired', () => {
+  it('refuses an addon that still exports checkWith, without running it', async () => {
     const spec = addon(
-      'throws.js',
-      `${REMOTE}\nexport const checkWith = () => { throw new Error('boom'); };`,
+      'checks.js',
+      `${REMOTE}\nexport const checkWith = () => { throw new Error('checkWith must not run'); };`,
     );
-    const { findings } = await scopeAddons([machine([spec])], { logger });
-    expect(findings).toMatchObject([
-      { code: 'addon_with_invalid', index: 0, key: '' },
-    ]);
-    expect((findings[0] as { message: string }).message).toContain('boom');
+    await expect(
+      scopeAddons(
+        [
+          machine([{ use: spec, with: { bad: 1 } }]),
+          project([{ use: spec, with: { bad: 1 } }]),
+        ],
+        { logger },
+      ),
+    ).rejects.toThrow(
+      'addon preset export checkWith was renamed: use an options.schema.json in the package',
+    );
   });
 });
 
@@ -232,7 +195,7 @@ describe('discoverScoped', () => {
       project([{ use: './p.js', with: 'p' }]),
     ]);
     const out = await discoverScoped(addons, 'conductor');
-    expect(out.remotes.map((r) => (r as { opts: unknown }).opts)).toEqual([
+    expect(out.servers.map((r) => (r as { opts: unknown }).opts)).toEqual([
       'm',
       'p',
     ]);
@@ -249,7 +212,7 @@ describe('readEffectiveAddon', () => {
       `export default { addons: [${JSON.stringify(spec)}] };`,
     );
     mkdirSync(join(projectDir, '.bakers'));
-    const projectPath = join(projectDir, '.bakers', 'conductor.config.js');
+    const projectPath = join(projectDir, '.bakers', 'project.config.js');
     writeFileSync(
       projectPath,
       `export default { addons: [{ use: ${JSON.stringify(spec)}, with: { a: 1 } }] };`,

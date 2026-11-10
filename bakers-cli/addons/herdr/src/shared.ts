@@ -1,7 +1,7 @@
 // The herdr pieces a sibling host addon (`@bakers-build/addon-orca`) reuses
 // rather than copies: the 0600 launch wrapper + its watch, the label template,
 // the Drupal write-bit restore and the worktree base-ref resolution.
-export { renderTemplate } from './config.js';
+export { RENAMED_OPTIONS, rejectRenamed, renderTemplate } from './config.js';
 export { restoreWritable } from './fs.js';
 export {
   type LaunchScript,
@@ -20,7 +20,7 @@ export type BaseRefGitExec = (args: string[]) => Promise<string>;
  * run starts from the pushed remote state, not the host's local branch.
  *
  * A ticket's `override` (its `origin/<base_branch>`) wins only when it resolves
- * on the remote after a fetch; otherwise the configured `baseBranch`, else the
+ * on the remote after a fetch; otherwise the configured `base_branch`, else the
  * upstream of the repo's HEAD (e.g. `origin/develop`). A repo with no upstream
  * yields `undefined`. Fetch failures are non-fatal (offline / unknown remote).
  */

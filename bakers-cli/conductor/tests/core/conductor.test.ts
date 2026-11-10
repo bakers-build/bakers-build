@@ -199,7 +199,7 @@ function makeConfig(
     host_key: 'test-host',
     poll_interval_ms: 5000,
     lease_seconds: 300,
-    config_path: `${CHECKOUT}/conductor.config.js`,
+    config_path: `${CHECKOUT}/project.config.js`,
     ...overrides,
   };
 }
@@ -334,7 +334,7 @@ describe('Conductor', () => {
   // path (e.g. `/fake/BB-1`, reused across many tests) cannot leak into
   // another's "no record yet" assumption.
   beforeEach(() => {
-    rmSync(`${CHECKOUT}/conductor.config.bootstrapped.json`, {
+    rmSync(`${CHECKOUT}/project.config.bootstrapped.json`, {
       force: true,
     });
   });
@@ -1019,11 +1019,11 @@ describe('Conductor', () => {
     expect(input?.command).toBe('claude');
     expect(input?.env).toEqual({
       BB_URL: 'http://web',
-      BB_ID: 't-1',
-      BB_TICKET_IDENTIFIER: 'BB-1',
-      BB_STATE: 'todo',
-      BB_RUN_UUID: 'r-1',
-      BB_TUNNEL: '0',
+      BAKERS_ID: 't-1',
+      BAKERS_TICKET_IDENTIFIER: 'BB-1',
+      BAKERS_STATE: 'todo',
+      BAKERS_RUN_UUID: 'r-1',
+      BAKERS_TUNNEL: '0',
       WORKSPACE_ROOT: CHECKOUT,
       TICKET_URL: 'https://issues/1',
     });
@@ -1306,7 +1306,7 @@ describe('Conductor', () => {
     });
     const conductor = await startedConductor(
       makeConfig({
-        prompt: 'Custom {identifier} {state} {runUuid}',
+        prompt: 'Custom {identifier} {state} {run_uuid}',
       }),
       remote,
       executor,
@@ -1990,7 +1990,7 @@ describe('Conductor', () => {
         const child = spawn('sleep', ['60'], {
           detached: true,
           stdio: 'ignore',
-          env: { ...process.env, BB_RUN_UUID: uuid },
+          env: { ...process.env, BAKERS_RUN_UUID: uuid },
         });
         child.unref();
         return child.pid as number;
@@ -4109,7 +4109,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
       run: { uuid: 'r-1', id: 1 },
       ticket: { uuid: 't-1', identifier: 'BB-1' },
     });
-    expect(bBefore?.ctx.env.BB_RUN_UUID).toBe('r-1');
+    expect(bBefore?.ctx.env.BAKERS_RUN_UUID).toBe('r-1');
   });
 
   it('keeps conductor-owned env keys and drops invalid mutations, logging key names only', async () => {
@@ -4118,7 +4118,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
     const vandal: HookListener = {
       id: 'vandal',
       before_run: (ctx) => {
-        ctx.env.BB_ID = 'hijacked';
+        ctx.env.BAKERS_ID = 'hijacked';
         ctx.env.BB_EXTRA = 'reserved';
         delete ctx.env.WORKSPACE_ROOT;
         ctx.env['bad-key'] = 'x';
@@ -4136,7 +4136,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
     await conductor.tick();
 
     const env = executor.started[0]?.env ?? {};
-    expect(env.BB_ID).toBe('t-1');
+    expect(env.BAKERS_ID).toBe('t-1');
     expect(env.WORKSPACE_ROOT).toBe(CHECKOUT);
     expect(env.OK_KEY).toBe('fine');
     expect(env.DB_PASSWORD).toBe(SECRET);
@@ -4154,7 +4154,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
         ...((rejected?.obj as { keys?: string[] } | undefined)?.keys ?? []),
       ].sort(),
     ).toEqual(
-      ['BB_EXTRA', 'BB_ID', 'NUMERIC', 'WORKSPACE_ROOT', 'bad-key'].sort(),
+      ['BB_EXTRA', 'BAKERS_ID', 'NUMERIC', 'WORKSPACE_ROOT', 'bad-key'].sort(),
     );
     expect(JSON.stringify(calls)).not.toContain(SECRET);
   });
@@ -4444,7 +4444,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
         run: s.ctx.run,
         state: s.ctx.state,
         ticket: s.ctx.ticket.identifier,
-        envRun: s.ctx.env.BB_RUN_UUID,
+        envRun: s.ctx.env.BAKERS_RUN_UUID,
       })),
     ).toEqual([
       {
@@ -4460,7 +4460,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
         envRun: 'r-2',
       },
     ]);
-    expect(executor.shellEnv.after_run?.BB_RUN_UUID).toBe('r-2');
+    expect(executor.shellEnv.after_run?.BAKERS_RUN_UUID).toBe('r-2');
   });
 
   it('gives a shell-only after_run the rebuilt run env and the ticket identifier at run end', async () => {
@@ -4469,7 +4469,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
 
     await conductor.tick();
 
-    expect(executor.shellEnv.after_run?.BB_RUN_UUID).toBe('r-2');
+    expect(executor.shellEnv.after_run?.BAKERS_RUN_UUID).toBe('r-2');
     expect(executor.shellTicket.after_run).toBe('BB-2');
   });
 
@@ -5480,11 +5480,14 @@ describe('Conductor — bakers ui refresh signal', () => {
     const env = executor.started[0]?.env ?? {};
     const client = new Client({ name: 'test', version: '1.0.0' });
     await client.connect(
-      new StreamableHTTPClientTransport(new URL(env.BB_CONDUCTOR_URL ?? ''), {
-        requestInit: {
-          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+      new StreamableHTTPClientTransport(
+        new URL(env.BAKERS_CONDUCTOR_URL ?? ''),
+        {
+          requestInit: {
+            headers: { authorization: `Bearer ${env.BAKERS_CONDUCTOR_TOKEN}` },
+          },
         },
-      }),
+      ),
     );
     const result = await client.callTool({
       name: 'bakers_ticket_update',

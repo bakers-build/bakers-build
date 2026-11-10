@@ -46,7 +46,7 @@ replaces `## Loaded skills` and `## Skill set`; `## Skills` → `## bb-phase-wor
 `## Standards` and test lore → `CLAUDE.md` pointers and repository docs. Keep every command and its applicability; resolve ambiguity with the user.
 
 Ensure `/assets-ai/` ignored; remove retired `/issues/` ignore. Verify `git check-ignore -v assets-ai/probe`
-and every generated secret-bearing override, including `.bakers/conductor.config.local.js`.
+and `.bakers/connection.config.js`; `bakers config upgrade` migrates v1.
 
 For legacy archives (`docs/evidence/`, `docs/decisions/*-evidence/`, committed `issues/`), find/report
 readers before proposing deletion. Surviving readers need decisions. Authorized deletion rescues

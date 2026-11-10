@@ -121,7 +121,7 @@ function runBb(args: string[], home: string): typeof lastDropsh {
 
 function writeDropshConfig(base: string, account: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'bakers-edit-dropsh-'));
-  const config = join(dir, 'bakers.config.js');
+  const config = join(dir, 'connection.js');
   const clients: Record<string, string> = {
     'fixture-lead': 'bakers-e2e-session-lead',
     'north-contributor': 'bakers-e2e-session-member',
@@ -147,9 +147,9 @@ function writeDropshConfig(base: string, account: string): string {
       }`;
   writeFileSync(
     config,
-    `// @bakers-schema-version 1
+    `// @bakers-schema-version 2
 export default {
-  schema_version: 1,
+  schema_version: 2,
   site: { base_url: ${JSON.stringify(base)}, jsonapi_prefix: '/jsonapi' },
   plugins: [
     { plugin: '@bakers-build/addon-essentials' },

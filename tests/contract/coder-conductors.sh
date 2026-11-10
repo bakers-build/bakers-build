@@ -8,8 +8,8 @@
 #
 # Asserts:
 #   - autostart off (unset or false): one "off" line, no herdr or bakers call
-#   - on: every ~/projects/* checkout with .bakers/conductor.config.js gets one
-#     `bakers oven start` run from inside it; a directory without one does not
+#   - on: every ~/projects/* checkout with .bakers/project.config.js gets one
+#     `bakers conductor start` run from inside it; a directory without one does not
 #   - a failing start is named with its path and the others still start
 #   - herdr is never asked: the detached start does not need it
 #   - a start that leaves the conductor not online (a stale "already running"
@@ -43,7 +43,7 @@ cat > "$STUB/bakers" <<'EOF'
 printf 'bakers %s @ %s\n' "$*" "$PWD" >> "$CALLS"
 name="$(basename "$PWD")"
 case "$*" in
-  "oven status")
+  "conductor status")
     if [ -f "$CALLS.online.$name" ]; then state=online; else state=offline; fi
     printf '%s\t%s\tproject\tlabel\t%s\n' "$name" "$state" "$PWD"
     exit 0 ;;
@@ -70,7 +70,7 @@ fixture() {
   export HOME="$SCRATCH/home" CALLS="$SCRATCH/calls"
   rm -rf "$HOME" "$CALLS" "$CALLS".*
   mkdir -p "$HOME/projects/ALPHA/.bakers" "$HOME/projects/BETA/.bakers" "$HOME/projects/plain"
-  touch "$HOME/projects/ALPHA/.bakers/conductor.config.js" "$HOME/projects/BETA/.bakers/conductor.config.js"
+  touch "$HOME/projects/ALPHA/.bakers/project.config.js" "$HOME/projects/BETA/.bakers/project.config.js"
   touch "$CALLS"
 }
 
@@ -96,9 +96,9 @@ pass "autostart off starts nothing"
 fixture
 export BAKERS_CONDUCTOR_AUTOSTART=true
 run
-[ "$(grep -c '^bakers oven start' "$CALLS")" = 2 ] || fail "on: expected 2 starts: $(cat "$CALLS")"
-grep -q "^bakers oven start --no-update-check @ $HOME/projects/ALPHA$" "$CALLS" || fail "on: ALPHA not started from its checkout"
-grep -q "^bakers oven start --no-update-check @ $HOME/projects/BETA$" "$CALLS" || fail "on: BETA not started from its checkout"
+[ "$(grep -c '^bakers conductor start' "$CALLS")" = 2 ] || fail "on: expected 2 starts: $(cat "$CALLS")"
+grep -q "^bakers conductor start --no-update-check @ $HOME/projects/ALPHA$" "$CALLS" || fail "on: ALPHA not started from its checkout"
+grep -q "^bakers conductor start --no-update-check @ $HOME/projects/BETA$" "$CALLS" || fail "on: BETA not started from its checkout"
 if grep -q "@ $HOME/projects/plain$" "$CALLS"; then fail "on: started a directory without config"; fi
 grep -qx "conductors: started $HOME/projects/ALPHA" "$SCRATCH/out" || fail "on: no started line: $(cat "$SCRATCH/out")"
 pass "autostart on starts every configured checkout"
@@ -112,10 +112,10 @@ grep -qx "conductors: started $HOME/projects/BETA" "$SCRATCH/out" || fail "BETA 
 pass "a failing checkout is named and the others start"
 
 # --- herdr down -------------------------------------------------------------
-# `bakers oven start` runs the conductor detached, so it does not wait for herdr.
+# `bakers conductor start` runs the conductor detached, so it does not wait for herdr.
 fixture
 HERDR_DOWN=1 run
-[ "$(grep -c '^bakers oven start' "$CALLS")" = 2 ] || fail "herdr down: expected 2 starts: $(cat "$CALLS")"
+[ "$(grep -c '^bakers conductor start' "$CALLS")" = 2 ] || fail "herdr down: expected 2 starts: $(cat "$CALLS")"
 if grep -q '^herdr' "$CALLS"; then fail "herdr down: waited for herdr"; fi
 pass "conductors start without waiting for herdr"
 
@@ -132,7 +132,7 @@ for _ in $(seq 1 10); do
 done
 grep -qx "conductors: started $HOME/projects/ALPHA" "$SCRATCH/retry.log" \
   || fail "stale: not retried until online: $(cat "$SCRATCH/retry.log" 2>/dev/null)"
-[ "$(grep -c "^bakers oven start --no-update-check @ $HOME/projects/ALPHA$" "$CALLS")" = 3 ] \
+[ "$(grep -c "^bakers conductor start --no-update-check @ $HOME/projects/ALPHA$" "$CALLS")" = 3 ] \
   || fail "stale: expected 3 starts of ALPHA: $(cat "$CALLS")"
 pass "a stale start is retried in the background until online"
 

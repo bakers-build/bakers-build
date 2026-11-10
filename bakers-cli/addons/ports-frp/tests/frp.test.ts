@@ -756,4 +756,10 @@ describe('validateSettings', () => {
       "the @bakers-build/addon-ports entry's with.transport.with for 'frp' is missing: zone",
     );
   });
+
+  it('names the replacement for a renamed camelCase key', () => {
+    expect(() => validateSettings({ zone: 'z', adminPort: 7400 })).toThrow(
+      'adminPort was renamed: use admin_port',
+    );
+  });
 });

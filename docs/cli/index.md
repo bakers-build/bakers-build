@@ -8,7 +8,7 @@ Run `bakers <command> --help` for the options available in your installed versio
 
 | Option | Effect |
 |---|---|
-| `--conductor <name>` | Select a conductor config by file stem: `conductor` means `conductor.config.js`, anything else `<name>.conductor.config.js`. Environment: `$BB_CONDUCTOR`; the flag wins. Give it before the command. |
+| `--conductor <name>` | Select a project config by file stem: `conductor` means `project.config.js`, anything else `project.<name>.config.js`. Environment: `$BAKERS_CONDUCTOR`; the flag wins. Give it before the command. |
 | `-V`, `--version` | Print the CLI version |
 | `-h`, `--help` | Show help for `bakers` or for any command |
 
@@ -20,10 +20,10 @@ Run `bakers <command> --help` for the options available in your installed versio
 | `bakers init` | Set up machine identity and the server connection (not a project) |
 | `bakers config` | Initialize, migrate and validate scoped configuration: `init`, `upgrade`, `check` |
 | `bakers update` | Install the latest CLI |
-| `bakers oven` | Node-agent lifecycle and the registry of conductors: [bakers oven](/configuration/project/conductors) |
+| `bakers conductor` | Node-agent lifecycle and the registry of conductors: [bakers conductor](/cli/conductor) |
 | `bakers ui` | Interactive terminal UI: [bakers ui](/addons/bakers-ui/reference) and [keys](/addons/bakers-ui-keys) |
-| `bakers tools` | List, describe and call the server's named tools: [bakers tools](/configuration/clients/tools) |
-| `bakers auth` | Sign in, switch auth profiles and show the session: [bakers auth](/configuration/clients/auth) |
+| `bakers tools` | List, describe and call the server's named tools: [bakers tools](/cli/tools) |
+| `bakers auth` | Sign in, switch auth profiles and show the session: [bakers auth](/cli/auth) |
 | `bakers deployment` | Release and deployment helpers: [bakers deployment](/addons/deployment/reference) |
 | `bakers agents` | Print the locally resolved agent catalog as JSON |
 | `bakers info` | Print the resolved project and workspace context as JSON |
@@ -32,7 +32,7 @@ Run `bakers <command> --help` for the options available in your installed versio
 
 ## Install and update
 
-[Machine setup](/provision/machine) owns installation and sign-in. `bakers update` installs the latest CLI; [Updates](/configuration/machine/updates) separates code updates from configuration migration.
+[Machine setup](/provision/machine) owns installation and sign-in. `bakers update` installs the latest CLI; [Updates](/configuration/guides/updates) separates code updates from configuration migration.
 
 ## bakers init
 
@@ -58,7 +58,7 @@ bakers auth login
 | `--yes` | Disable prompts and automatic selections |
 | `--format <format>` | Report as `text` (default) or `json`; `json` disables prompts |
 
-Interactive runs prompt for what is missing. With `--yes`, `--format json`, `--dry-run` or `$CI` set, nothing is asked, so pass the values that have no default, such as `--base-url` and `--client-id`. The two location overrides steer only where those files are read and written; the committed `.bakers/conductor.config.js` always resolves its imports through `BB_HOME` (default `~/.bakers`) so it stays portable. Connection files and auth profiles: [Connections](/configuration/connector/connections); the machine file: [Machines](/configuration/machine).
+Interactive runs prompt for what is missing. With `--yes`, `--format json`, `--dry-run` or `$CI` set, nothing is asked, so pass the values that have no default, such as `--base-url` and `--client-id`. The two location overrides steer only where those files are read and written; the committed `.bakers/project.config.js` always resolves its imports through `BAKERS_HOME` (default `~/.bakers`) so it stays portable. Connection files and auth profiles: [Connections](/configuration/connection); the machine file: [Machines](/configuration/machine).
 
 ## bakers config
 
@@ -74,14 +74,14 @@ The three subcommands share one set of scopes, `machine`, `connection`, `project
 |---|---|
 | `init` | Initialize or repair the selected scope and verify readiness. Requires a scope: `--scope`, or a prompt on a terminal. Online verification follows. |
 | `check` | Validate offline; with `--online`, also authenticate and verify each workspace. Changes nothing. |
-| `upgrade` | Migrate the selected scope without changing existing values. `--dry-run` previews. |
+| `upgrade` | Migrate the selected scope without changing existing values, including a schema version 1 file to version 2. `--dry-run` previews. |
 
 `init` and `upgrade` also take `--dry-run`, `--label`, `--base-url`, `--client-id`, `--workspace-id`, `--secret-env` and `--auth-type` as above, plus:
 
 | Option | Meaning |
 |---|---|
-| `--workspace <name>` | Committed project workspace name (`bakers.workspace`) |
-| `--after-create <command>`, `--after-done <command>` | The committed conductor config's `after_create` and `after_done` hooks; empty means none |
+| `--workspace <name>` | Committed project workspace name (`project.workspace`) |
+| `--after-create <command>`, `--after-done <command>` | The committed project config's `after_create` and `after_done` hooks; empty means none |
 
 `--project` is required to initialize a project; `--workspace` names the committed workspace. `--connection <id>` picks a named connection from `~/.bakers/connections`; the old `--project-connection` is retired and fails with a pointer to it. Project and connection initialization sign in; machine initialization is local.
 
@@ -92,7 +92,7 @@ bakers agents
 bakers info
 ```
 
-- `bakers agents [--config <path>]` prints the available agent aliases and machine defaults as JSON; `--config` names the conductor config.
+- `bakers agents [--config <path>]` prints the available agent aliases and machine defaults as JSON; `--config` names the project config.
 - `bakers info [--config <path>] [--connection <id>]` prints the resolved project and workspace context as JSON.
 
 ## bakers ports

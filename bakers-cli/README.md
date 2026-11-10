@@ -34,7 +34,7 @@ cd bakers-cli && pnpm run bootstrap
 Then set your OAuth consumer secret and log in:
 
 ```bash
-export BB_CONSUMER_SECRET=<your consumer secret>
+export BAKERS_CONSUMER_SECRET=<your consumer secret>
 bakers auth login
 bakers auth status      # verify
 ```
@@ -72,7 +72,7 @@ bakers-cli/
 │               #                      `./plugins` back-compat barrel; the leaf sink
 ├── addons/*    # @bakers-build/addon-*   — every mountable, one package per addon
 ├── scripts/    # setup.sh, prepare-publish.mjs, release.mjs, verify-package.mjs, assert-acyclic.mjs
-└── templates/  # conductor.config.js, bakers.config.js, conductor.config.local.js, bakers.pathshim.sh
+└── templates/  # project.config.js, connection.config.js, bakers.pathshim.sh
 ```
 
 **Writing an addon:** peer-depend on `@bakers-build/core` and, if it contributes to the conductor
@@ -102,7 +102,7 @@ and runs eight idempotent steps:
    `minimumReleaseAge=0` mirrors the worktree `after_create` hook, dodging the workspace supply-chain
    deps-verify policy that would otherwise fail a plain install on a fresh tree.
 3. **Build the packages + addons** — `bakers-cli/bin/bakers` runs the compiled host
-   (`host/dist/src/host.js`), and `.bakers/conductor.config.js` resolves the workspace packages
+   (`host/dist/src/host.js`), and `.bakers/project.config.js` resolves the workspace packages
    whose `exports` point at `dist/src`. The workspace is `core` (kernel) + `conductor` (run
    engine) + `addons/*` (mountables) + `ui` (cockpit app) + `host` (the CLI), so the script
    builds in **layered dep order**, each step emitting the `.d.ts` the next one consumes:
@@ -118,7 +118,7 @@ and runs eight idempotent steps:
 
    It invokes `tsc` directly (not `pnpm run build`) to stay fresh-tree-safe.
 4. **Resolution farm** — creates a repo-root `node_modules/` symlink farm so
-   `.bakers/conductor.config.js` can resolve its bare imports. Node ESM resolves
+   `.bakers/project.config.js` can resolve its bare imports. Node ESM resolves
    `@bakers-build/bakers`, `@bakers-build/addon-*`, `@dropsh/*` by walking **up** from `.bakers/`; the
    repo-root farm is where it lands. Each package is linked under its **real `package.json`
    name** (not a directory-derived one — `@bakers-build/ui` lives beside `addons/`, and
@@ -145,21 +145,15 @@ and runs eight idempotent steps:
    new shim*. If `~/.local/bin` is not on your `PATH`, the script prints the `export` line
    to add — and if a global `bakers` sits **ahead** of `~/.local/bin` on `PATH` (shadowing
    the shim), it warns about that too (BB-84).
-6. **Config scaffold** — writes `.bakers/conductor.config.local.js` from
-   `bakers-cli/templates/conductor.config.local.js`. If the file already exists it is left
-   untouched. Interactive shells are prompted for `oauth.client_id` (default: `bakers-agent`);
-   non-interactive shells use the default. The file carries no identity: the machine's id
-   and label come from `bakers init`.
-   **No secret is ever written** — the scaffold reads `client_secret` from
-   `process.env.BB_CONSUMER_SECRET`.
-7. **herdr run-session plugins** — links the repo-local **spiceedit** herdr plugin
+6. **herdr run-session plugins** — links the repo-local **spiceedit** herdr plugin
    (`herdr/spiceedit`) that powers the review click-to-edit overlay (see *herdr
    run-session layouts* below). Best-effort and guarded: skipped when `herdr` is not
    on `PATH` (it is the executor, not a conductor-CLI prereq), and a missing
    `spiceedit` binary only prints a note — the overlay degrades to a message at run
    time, so nothing here fails the bootstrap.
-8. **Summary** — prints the next steps (export the secret, `bakers auth login`,
-   verify with `bakers auth status`).
+7. **Summary** — prints the next steps (export the secret, `bakers config init` for the
+   private connection `~/.bakers/connections/default.js`, `bakers auth login`, verify with
+   `bakers auth status`).
 
 ## `bakers ui` deep links (BB-223)
 
@@ -267,8 +261,8 @@ interview question, no personal secret. `--auth-type client_credentials` is the 
 
 Machine context owns host identity/capacity. The private global connection owns site,
 OAuth credentials and is the implicit `default` connection. The committed
-`.bakers/conductor.config.js` owns committed `bakers: { project, workspace? }`; its separate top-level
-`workspace` key remains the worktree plugin slot. An omitted `bakers.workspace` succeeds only when
+`.bakers/project.config.js` owns committed `project: { name, workspace? }`; its separate top-level
+`worktree` key is the worktree plugin slot. An omitted `project.workspace` succeeds only when
 one accessible project has that name; duplicates fail with workspace-qualified candidates and ask
 you to commit the workspace name. Connection setup works without a machine file, while
 project setup checks both prerequisites. Connection/project initialization reports ready
@@ -279,27 +273,24 @@ Create and use a second connection by id:
 ```bash
 bakers config init --scope connection --connection staging
 bakers tools --connection staging tool_api__bakers_project_list
-BB_CONNECTION=staging bakers info
+BAKERS_CONNECTION=staging bakers info
 bakers config check --scope connection --connection staging --format json
 ```
 
-To make that choice local to one checkout, add the gitignored file
-`.bakers/connection.config.local.js`:
-
-```js
-export default { connection: 'staging' };
-```
+To make that choice for one shell, export `BAKERS_CONNECTION=staging`; the retired
+`.bakers/connection.config.local.js` is refused with that replacement. A checkout may also
+carry its own gitignored `.bakers/connection.config.js`.
 
 The final command reports the selected id, selector and provenance for each effective field;
 omitted loader values such as `site.jsonapi_prefix` are identified as built-in defaults.
 Computed effective values are reported with `dynamic/not statically determined` provenance.
 An explicit `--config <path>` wins over named selection. Otherwise `--connection` wins over
-`BB_CONNECTION`, which wins over the checkout file. An unselected checkout uses
-`~/.bakers/bakers.config.js` when present; if it is absent, a sole named connection is selected
-automatically. Multiple named connection files require `--connection`,
-`BB_CONNECTION`, or the checkout-local selector file; bakers.build does not add another selection leg.
-Existing `.bakers/bakers.config.js` project overrides still load, but
-`bakers config check` reports them as superseded and `bakers config upgrade` leaves them untouched.
+`BAKERS_CONNECTION`, which wins over the checkout's `.bakers/connection.config.js`. An
+unselected checkout uses `~/.bakers/connections/default.js` when present; if it is absent, a
+sole named connection is selected automatically. Multiple named connection files require
+`--connection` or `BAKERS_CONNECTION`. Old file names (`bakers.config.js`,
+`conductor.config.js`, the `*.config.local.js` overrides) are refused with their replacement;
+`bakers config upgrade` renames them.
 
 Update code and migrate configuration separately:
 
@@ -312,20 +303,20 @@ bakers config check --scope all --online
 
 Upgrade plans all selected layers without importing configuration and preserves supported
 values; a repeated successful upgrade changes nothing. Missing inputs and conflicts have
-file/key repairs. Project upgrade migrates legacy top-level `project` and `bb_workspace`
-into the nested `bakers` object in every conductor variant. Runtime loading of the legacy shape
-directs you to `bakers config upgrade --scope project`. `--format json` produces one
+file/key repairs. Project upgrade rewrites every variant to schema version 2 (`project: { name,
+workspace? }`, slots `server`/`worktree` as `{ use, … }`). Runtime loading of an old name
+names its replacement and directs you to `bakers config upgrade`. `--format json` produces one
 non-interactive report. Offline checks and
 upgrades do not establish online readiness. Full ownership, scope options, supported
 history and the exact focused regression/CI gates are in [`CONFIG.md`](CONFIG.md).
 
-Interactive `bakers oven start` (stdin and stdout are TTYs, `CI` is unset or empty, and
+Interactive `bakers conductor start` (stdin and stdout are TTYs, `CI` is unset or empty, and
 `--foreground` is absent) offers to install a newer release and migrate configuration.
 Enter accepts; `n` continues and suppresses another prompt until the cached check expires.
 After an accepted update, rerun the start command. `bakers ui`, foreground, CI and non-TTY
 starts show only the notice. `--no-update-check` disables the lookup and notice; the
 installed-version line remains visible. The result is cached at `~/.bakers/update-check.json`
-(or `$BB_HOME/update-check.json`).
+(or `$BAKERS_HOME/update-check.json`).
 
 ## Understanding claim capacity
 
@@ -368,7 +359,7 @@ distinguish the two outcomes.
 
 ## Conductor lifecycle: identity, not paths (BB-450)
 
-`bakers oven stop` finds its conductor by its `conductor_id` (machine id, project and variant) in the
+`bakers conductor stop` finds its conductor by its `conductor_id` (machine id, project and variant) in the
 control-plane record — never by comparing the signalled process's working directory against
 `workspace_root`. That means `stop` (and `start`) work identically from the project root, from
 `.bakers/`, or from a linked worktree. Before signalling, the pid is verified as a live process
@@ -377,7 +368,7 @@ machine whose id matches this machine's own `machine_id` — never a colleague's
 never a recycled pid that happens to share the number. With no pid on record, `stop` refuses and
 says so; it never guesses which process to signal.
 
-`bakers oven start` reports exactly one of three outcomes: **started** (pid + host),
+`bakers conductor start` reports exactly one of three outcomes: **started** (pid + host),
 **already running** (the live pid + heartbeat age), or **failed** (the reason) — and "started"
 means a fresh heartbeat actually arrived, not merely that the spawn call returned. `start --force`
 turns "already running" into a restart: a verified `SIGTERM`, a bounded grace period, an
@@ -386,27 +377,27 @@ stopped, `--force` **fails** rather than starting a second conductor on the same
 
 ## Multiple conductors per repo (BB-126 / BB-137)
 
-A `.bakers/` dir may hold **several** configs — the default `conductor.config.js` plus any
-`<variant>.conductor.config.js` — each a complete config bound to its own `bb_project` and its
-own conductor (own variant, claims, worktrees). **Naming rule (BB-137):** a file is a
-conductor config **iff** it is exactly `conductor.config.js` or ends with `.conductor.config.js`
-(so `vite.config.js` and the near-miss `myconductor.config.js` are ignored). This is a **clean
-break** from the earlier `<name>.config.js` variant naming — old variant files must be renamed.
-Select one per invocation by conductor name (= file stem, the part before `.conductor.config.js`):
+A `.bakers/` dir may hold **several** configs — the default `project.config.js` plus any
+`project.<variant>.config.js` — each a complete config bound to its own `bb_project` and its
+own conductor (own variant, claims, worktrees). **Naming rule:** a file is a
+project config **iff** it is exactly `project.config.js` or matches `project.<variant>.config.js`
+(so `vite.config.js` is ignored). The old `conductor.config.js` and `<variant>.conductor.config.js`
+are refused; `bakers config upgrade` renames them.
+Select one per invocation by conductor name (= the variant; the default is `conductor`):
 
 ```bash
-bakers oven once                       # the default conductor.config.js, or a sole lone config
-bakers --conductor shop oven once      # → .bakers/shop.conductor.config.js
-BB_CONDUCTOR=intra bakers oven once  # → .bakers/intra.conductor.config.js
-bakers --conductor conductor oven once # → .bakers/conductor.config.js (the default, explicitly)
+bakers conductor once                         # the default project.config.js, or a sole lone config
+bakers --conductor shop conductor once        # → .bakers/project.shop.config.js
+BAKERS_CONDUCTOR=intra bakers conductor once  # → .bakers/project.intra.config.js
+bakers --conductor conductor conductor once   # → .bakers/project.config.js (the default, explicitly)
 ```
 
-With no selector: `conductor.config.js` present → it is the default (used automatically); else a
+With no selector: `project.config.js` present → it is the default (used automatically); else a
 single lone config → it (back-compat); else resolution errors and names the available stems plus
-the selector. `--conductor` wins over `$BB_CONDUCTOR`, and an explicit `--config <path>` /
-`$BB_CONDUCTOR_CONFIG` still wins over both. Two `conductor.config.js` cannot coexist in one
+the selector. `--conductor` wins over `$BAKERS_CONDUCTOR`, and an explicit `--config <path>` /
+`$BAKERS_CONDUCTOR_CONFIG` still wins over both. Two `project.config.js` cannot coexist in one
 dir, so an ambiguous default is structurally impossible. A config sets no identity: the
-`conductor_id` is derived from the machine id + `bakers.project` + variant (the file stem), so
+`conductor_id` is derived from the machine id + `project.name` + variant, so
 co-located conductors are distinct by construction. A config with `conductor_id`, `machine_id`
 or `label` is rejected; run `bakers init`. This is how a Drupal **multisite** repo maps
 each site to its own bakers.build project. Full model: [`CONFIG.md`](CONFIG.md) › *Multiple conductors per repo*.
@@ -427,7 +418,7 @@ shim, and builds in the layered order `core → conductor → addons → ui → 
 
 When the executor is [herdr](addons/herdr), each run opens **one tab**
 with the agent in the **root pane**. The executor is left **bare**
-(`executor: herdrExecutor()` in `.bakers/conductor.config.js`) — it does **not**
+(`executor: { use: '@bakers-build/addon-herdr' }` in `.bakers/project.config.js`) — it does **not**
 hard-wire a diff pane into any state:
 
 | State    | Executor panes | Human review surface |
@@ -441,7 +432,7 @@ human-confirm step of review. The selected review skill launches
 `hunk diff <base>...HEAD` in the human's own pane when `hunk` is on `PATH` and the
 run is interactive, and drives inline annotations with `hunk session comment apply`.
 In a non-interactive/CI run hunk is simply skipped. BB-58 adds **no** executor
-layout change — this is why the config ships a bare `herdrExecutor()`.
+layout change — this is why the config ships a bare herdr executor.
 
 ### The workspace tab's initial pane — `open` (BB-139/BB-234/BB-374)
 
@@ -460,27 +451,27 @@ when longer) and the overview **pane** (`herdr pane rename`)
 |---|---|
 | **absent** | the default — `bakers ui --ticket <IDENTIFIER>`, tab `{identifier} · {title@30…}`, pane `{identifier} · {title}` |
 | `{}` | the bare empty tab — the documented **opt-out** (no command, no splits, no labels) |
-| `{ command: '…', panes: [ … ], tabLabel?, panelLabel? }` | that command + optional chrome templates |
+| `{ command: '…', panes: [ … ], tab_label?, panel_label? }` | that command + optional chrome templates |
 
-The variables expand in `command`, every `panes[].command`, `tabLabel`, and `panelLabel`:
+The variables expand in `command`, every `panes[].command`, `tab_label`, and `panel_label`:
 
 | var | value |
 |---|---|
 | `{identifier}` | the ticket identifier `ensure()` was handed by the dispatcher — never re-derived from the branch |
 | `{branch}` | the worktree's branch |
 | `{title}` | the ticket title (BB-374) |
-| `{worktreePath}` | the absolute checkout path |
+| `{worktree_path}` | the absolute checkout path |
 
 An unknown `{key}` is left verbatim, so a brace-bearing command round-trips unchanged.
 The whole layout is **best-effort**: a failing command or rename is logged through the
 conductor logger and swallowed, so it can never wedge worktree creation or run
 dispatch. Per-state run tabs keep their existing
 `<identifier> · <state> #<run>` **tab** label for stop matching; their **pane** label
-defaults to `{title}` via `default.panelLabel` / `states.<state>.panelLabel`.
+defaults to `{title}` via `default.panel_label` / `states.<state>.panel_label`.
 
 > **Self-hosting checkouts** (a repo that builds its own `bakers`) must sequence the
 > command after that build — `after_create` runs *after* the workspace is ensured. See
-> this repo's own `.bakers/conductor.config.js` workspace slot for the sentinel-wait form.
+> this repo's own `.bakers/project.config.js` worktree slot for the sentinel-wait form.
 
 ### Click-to-edit: the spiceedit overlay
 
@@ -517,7 +508,7 @@ the overlay for `$SPICEEDIT_FILE`. Everything degrades gracefully: a missing
   `export PATH="$HOME/.local/bin:$PATH"`.
 - **`bakers: not in a bakers worktree and no global bakers on PATH`** → you are outside any bakers.build
   worktree and have no global `bakers`. `cd` into a clone/worktree, or re-run setup there.
-- **Auth failures** → confirm `BB_CONSUMER_SECRET` is exported and `bakers auth
+- **Auth failures** → confirm `BAKERS_CONSUMER_SECRET` is exported and `bakers auth
   login` has been run; check `bakers auth status`.
 
 ## Agent aliases

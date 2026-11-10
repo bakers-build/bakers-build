@@ -43,12 +43,12 @@ export async function resolveBbInfo(
   opts: ResolveBbInfoOptions,
 ): Promise<BbInfoResult> {
   const env = opts.env ?? process.env;
-  let project: string | null = env.BB_PROJECT ?? null;
-  let projectId: string | null = env.BB_PROJECT_ID ?? null;
-  let workspace: string | null = env.BB_WORKSPACE ?? null;
-  let workspaceId: string | null = env.BB_WORKSPACE_ID ?? null;
-  let workspaceIds: string[] = env.BB_WORKSPACE_IDS
-    ? env.BB_WORKSPACE_IDS.split(',').filter((id) => id !== '')
+  let project: string | null = env.BAKERS_PROJECT ?? null;
+  let projectId: string | null = env.BAKERS_PROJECT_ID ?? null;
+  let workspace: string | null = env.BAKERS_WORKSPACE ?? null;
+  let workspaceId: string | null = env.BAKERS_WORKSPACE_ID ?? null;
+  let workspaceIds: string[] = env.BAKERS_WORKSPACE_IDS
+    ? env.BAKERS_WORKSPACE_IDS.split(',').filter((id) => id !== '')
     : [];
 
   const loadOpts: {

@@ -28,7 +28,7 @@ export type GrokReasoningEffort = 'high' | 'medium' | 'low';
 
 export interface GrokAgentOptions extends SecurityOptions {
   model?: string;
-  reasoningEffort?: GrokReasoningEffort | string;
+  reasoning_effort?: GrokReasoningEffort | string;
   effort?: string;
   args?: string[];
 }
@@ -190,6 +190,9 @@ export class GrokAgent implements BbAgent {
     options: GrokAgentOptions = {},
     private readonly home: string = homedir(),
   ) {
+    if ('reasoningEffort' in options) {
+      throw new Error('reasoningEffort was renamed: use reasoning_effort');
+    }
     // Shared deny_read and trusted_commands have nothing to map onto here.
     this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS, {
       unsupported: ['deny_read', 'trusted_commands'],
@@ -234,7 +237,7 @@ export class GrokAgent implements BbAgent {
     this.model = cli.model;
     this.effort =
       cli.effort ??
-      validateOptionalString(options.reasoningEffort, 'reasoningEffort');
+      validateOptionalString(options.reasoning_effort, 'reasoning_effort');
     this.overrides = cli.overrides;
   }
 

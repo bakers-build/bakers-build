@@ -69,16 +69,16 @@ pass "a missing machine file is created with tunnel and the Cloudflare Quick ent
 
 # --- F2, F3: hand entries survive, runs are idempotent, none restores --------
 cat > "$SCRATCH/hand.js" <<'EOF'
-// @bakers-schema-version 1
+// @bakers-schema-version 2
 // Local host identity.
 export default {
- schema_version: 1,
+ schema_version: 2,
  machine_id: "4b0c5f0e-1d7a-4f39-9a51-6b2d1f3e8c11",
  label: "box",
- agents: { addons: [] },
+ agents: { enabled: [] },
  addons: [
   // my own addon
-  { use: '@bakers-build/addon-ddev', with: { apiToken: process.env.X } },
+  { use: '@bakers-build/addon-ddev', with: { api_token: process.env.X } },
  ],
 };
 EOF
@@ -135,7 +135,7 @@ edit cloudflare-quick
 [ "$(ports_entries)" = 1 ] || fail "a commented-out ports entry stopped the Quick entry: $(cat "$OUT")"
 pass "a commented-out addon-ports entry does not count as a hand entry"
 
-printf '// @bakers-schema-version 1\nexport default {\n machine_id: "x",\n};\n' > "$SCRATCH/bare.js"
+printf '// @bakers-schema-version 2\nexport default {\n machine_id: "x",\n};\n' > "$SCRATCH/bare.js"
 cp "$SCRATCH/bare.js" "$M"
 chmod 600 "$M"
 edit cloudflare-quick
@@ -162,10 +162,10 @@ one_addons() {
   [ "$(ports_entries)" = 1 ] || fail "$1: $(ports_entries) addon-ports entries"
   exported | grep -q 'addon-ddev' || fail "$1: the hand addon is gone"
 }
-printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' label: `two' 'lines`,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+printf '%s\n' '// @bakers-schema-version 2' 'export default {' ' label: `two' 'lines`,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
 edit cloudflare-quick
 one_addons "a multi-line template literal before addons"
-printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' "tunnel": true,' ' "addons": [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+printf '%s\n' '// @bakers-schema-version 2' 'export default {' ' "tunnel": true,' ' "addons": [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
 edit cloudflare-quick
 one_addons "quoted keys"
 [ "$(grep -c 'tunnel' "$M")" = 1 ] || fail "a quoted hand tunnel key got a duplicate: $(cat "$M")"
@@ -176,21 +176,21 @@ quick_with_hand() {
   [ "$(ports_entries)" = 1 ] || fail "$1: $(ports_entries) addon-ports entries: $(cat "$M")"
   exported | grep -q 'addon-ddev' || fail "$1: the hand addon is gone: $(cat "$M")"
 }
-printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' machine_id: "m1", addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+printf '%s\n' '// @bakers-schema-version 2' 'export default {' ' machine_id: "m1", addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
 edit cloudflare-quick
 quick_with_hand "an addons key sharing its line"
-printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' /*' ' addons: [' ' */' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+printf '%s\n' '// @bakers-schema-version 2' 'export default {' ' /*' ' addons: [' ' */' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
 edit cloudflare-quick
 quick_with_hand "an addons line in a block comment"
-printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' label: `x' ' addons: [' ' `,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+printf '%s\n' '// @bakers-schema-version 2' 'export default {' ' label: `x' ' addons: [' ' `,' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
 edit cloudflare-quick
 quick_with_hand "an addons line in a template literal"
 exported | grep -q '"label":"x\\n addons: \[\\n "' || fail "the template literal changed: $(cat "$M")"
-printf '%s\n' '// @bakers-schema-version 1' 'export default {' ' /*' ' tunnel: true,' ' */' '};' > "$M"
+printf '%s\n' '// @bakers-schema-version 2' 'export default {' ' /*' ' tunnel: true,' ' */' '};' > "$M"
 edit cloudflare-quick
 [ "$(tunnel_value)" = true ] || fail "tunnel in a block comment: tunnel is $(tunnel_value)"
 grep -qi 'sets tunnel itself' "$OUT" && fail "a commented-out tunnel key is named as the machine's: $(cat "$OUT")"
-printf '%s\n' '// @bakers-schema-version 1' "const addons = [{ use: '@bakers-build/addon-ddev' }];" 'export default {' ' addons,' '};' > "$M"
+printf '%s\n' '// @bakers-schema-version 2' "const addons = [{ use: '@bakers-build/addon-ddev' }];" 'export default {' ' addons,' '};' > "$M"
 edit cloudflare-quick
 [ "$(grep -c 'addons' "$M")" = 2 ] || fail "shorthand addons: a second addons key: $(cat "$M")"
 grep -qi 'cannot place' "$OUT" || fail "shorthand addons: no log line: $(cat "$OUT")"
@@ -198,7 +198,7 @@ grep -qi 'cannot place' "$OUT" || fail "shorthand addons: no log line: $(cat "$O
 pass "keys sharing a line, in comments or strings, or in shorthand are found or named"
 
 # Only keys of the exported object count.
-printf '%s\n' '// @bakers-schema-version 1' 'const defaults = { tunnel: false, addons: [] };' 'const more = {' ' tunnel: false,' ' addons: [' ' ],' '};' 'export default {' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
+printf '%s\n' '// @bakers-schema-version 2' 'const defaults = { tunnel: false, addons: [] };' 'const more = {' ' tunnel: false,' ' addons: [' ' ],' '};' 'export default {' ' addons: [' "  { use: '@bakers-build/addon-ddev' }," ' ],' '};' > "$M"
 edit cloudflare-quick
 [ "$(tunnel_value)" = true ] || fail "tunnel in a helper const: tunnel is $(tunnel_value): $(cat "$M")"
 grep -qi 'sets tunnel itself' "$OUT" && fail "a helper const's tunnel is named as the machine's: $(cat "$OUT")"

@@ -19,7 +19,7 @@ The alias is `grok`; `bakers agents` lists it.
 | Option | Default | Effect |
 |---|---|---|
 | `model` | CLI default | `--model` |
-| `effort` | none | `--reasoning-effort`; overrides `reasoningEffort` |
+| `effort` | none | `--reasoning-effort`; overrides `reasoning_effort` |
 | `permissions` | `system` | See below |
 | `sandbox` | below | Only in sandbox mode |
 | `env_deny` | [default list](/provision/security/execution#ticket-env-vars) | Filters ticket environment |
@@ -59,7 +59,7 @@ One managed run per Grok home: concurrent runs fail. After crashes, inspect `.ba
 
 Reserved arguments: `--permission-mode`, `--session-id`/`-s`; in sandbox mode also `--sandbox`, `--always-approve`, `--allow`, `--allowedTools`, `--allowed-tools`, `--add-dir`, `--cwd`, `--worktree`/`-w`, `--agents`, `--agent`. Managed profiles additionally reserve `--continue`/`-c`, `--resume`/`-r`, `--fork-session`, `--restore-code`, `--leader-socket`. Clustered flags and bare subcommands cannot bypass these restrictions.
 
-`bakers oven check` checks Linux prerequisites. Storage, directory and version checks precede launch. Shell approval prompts remain possible; unattended container-runtime completion is unverified.
+`bakers conductor check` checks Linux prerequisites. Storage, directory and version checks precede launch. Shell approval prompts remain possible; unattended container-runtime completion is unverified.
 
 Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools` in Bash, so they work in sandbox mode although `MCPTool(*)` is denied.
 

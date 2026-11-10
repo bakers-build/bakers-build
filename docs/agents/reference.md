@@ -5,7 +5,7 @@ Configure agent plugins and selection policy in `~/.bakers/machine.config.js`; k
 ## The agents object
 
 ```js
-agents: { catalog, enabled, disabled, default_agent, routes }
+agents: { catalog, enabled, disabled, routes }
 ```
 
 Harness addons in the top-level `addons` supply agent plugins and their initial configurations. Each available configuration has an alias used for selection.
@@ -18,7 +18,7 @@ Harness addons in the top-level `addons` supply agent plugins and their initial 
 | `enabled` | Optional allowlist of aliases. Omitted means every candidate. `[]` removes all and fails. An unknown alias fails. |
 | `disabled` | Denylist applied after `enabled`. Default empty. An unknown alias fails. |
 
-Loading builds the effective catalog in this order: candidates from the top-level `addons`, then `catalog` overlays (later wins), then `enabled`, then `disabled`. Errors appear when the conductor or `bakers agents` loads the file; `bakers config check --scope machine` does not inspect `agents`. Each failure is a one-line message, for example `agents.default_agent names unavailable alias 'codex'`.
+Loading builds the effective catalog in this order: candidates from the top-level `addons`, then `catalog` overlays (later wins), then `enabled`, then `disabled`. Errors appear when the conductor or `bakers agents` loads the file; `bakers config check --scope machine` checks only the shape of `agents`, not whether its aliases resolve. Each failure is a one-line message, for example `agents.routes.default names unavailable alias 'codex'`.
 
 ### Configure selection
 
@@ -26,8 +26,7 @@ These fields choose among the configured aliases; they do not configure the plug
 
 | Field | Meaning and default |
 |---|---|
-| `default_agent` | Fallback alias. Default is the first remaining candidate. It must survive the filters or loading fails. |
-| `routes` | Named maps from a workflow state (or `'*'`) to an alias. If `default` is missing it becomes `{ '*': default_agent }`. Every route needs at least one entry and every value a non-empty alias. |
+| `routes` | Named maps from a workflow state (or `'*'`) to an alias. `routes.default['*']` is the default agent; without it the first remaining candidate is the default and `default` becomes `{ '*': <that alias> }`. The default alias must survive the filters or loading fails. Every route needs at least one entry and every value a non-empty alias. |
 
 ### Which agent runs a state
 
@@ -39,10 +38,10 @@ The conductor takes the first match, top to bottom. Labels are ticket labels; `<
 4. `agent:<route>`, same rule.
 5. `routes.default[<state>]`.
 6. `routes.default['*']`.
-7. `default_agent`.
+7. The first remaining candidate, when there is no `routes.default['*']`.
 8. Priority order: candidates with a `priority` function first, then config order.
 
-Unknown or unavailable labels log a warning and fall through; `agent:default` is ignored. A direct alias always beats a route, whatever the label order. A conductor `selectAgent` function replaces this whole chain. Routes choose an agent for the current state only; they neither pick a conductor nor move the ticket, so the same route names must exist on every host that may run the ticket.
+Unknown or unavailable labels log a warning and fall through; `agent:default` is ignored. A direct alias always beats a route, whatever the label order. A project `select_agent` function replaces this whole chain. Routes choose an agent for the current state only; they neither pick a conductor nor move the ticket, so the same route names must exist on every host that may run the ticket.
 
 ## Harnesses
 
@@ -57,13 +56,13 @@ Options go in the addon entry's `with` object (or a `catalog` entry). The addon 
 | [Pi](/addons/pi) | Provider, model, thinking and local-file approval |
 | [Grok](/addons/grok) | Model pins, reasoning effort and reserved arguments |
 
-Run `bakers agents` in the project checkout to see the aliases and models your installed addons publish. A custom `model` can change that catalog; use the addon reference before pinning it. Harnesses belong in the machine file; a harness in a project conductor config is ignored with a warning.
+Run `bakers agents` in the project checkout to see the aliases and models your installed addons publish. A custom `model` can change that catalog; use the addon reference before pinning it. Harnesses belong in the machine file; a harness in a project config is ignored with a warning.
 
 `args` is a list of strings appended in order as separate shell-quoted arguments. Values starting with `~`, including `--option=~/path`, are rejected; use absolute paths. Supported passthrough arguments and flags reserved by bakers.build differ by harness and are listed in those references.
 
 ## Run security
 
-Runs start in `system` mode by default; choose `permissions: 'sandbox'` for Claude, Codex or Grok runs on untrusted tickets. Set `permissions`, the `sandbox` keys, `config` and `env_deny` in a harness entry's `with`; a `catalog` entry uses only its own `with`. The mode and the `deny_read`, `allow_write` and `trusted_commands` lists can also be set once for every agent in a top-level `permissions` block of `machine.config.js` or the project's `.bakers/conductor.config.js`; layers combine as [Shared run security](/provision/security/shared-settings) describes, including the risk of a committed project block that loosens the sandbox.
+Runs start in `system` mode by default; choose `permissions: 'sandbox'` for Claude, Codex or Grok runs on untrusted tickets. Set `permissions`, the `sandbox` keys, `config` and `env_deny` in a harness entry's `with`; a `catalog` entry uses only its own `with`. The mode and the `deny_read`, `allow_write` and `trusted_commands` lists can also be set once for every agent in a top-level `permissions` block of `machine.config.js` or the project's `.bakers/project.config.js`; layers combine as [Shared run security](/provision/security/shared-settings) describes, including the risk of a committed project block that loosens the sandbox.
 
 ```js
 agents: {
@@ -80,15 +79,14 @@ Modes, blocks, env var filter, risks and isolation: [Run security](/provision/se
 This complete file uses the special `default` route for Codex coding and Claude Opus review without a ticket label. The named `careful` route uses Opus throughout. For a complete opt-in route setup, follow [Use agent routes](/agents/guide#use-agent-routes).
 
 ```js
-// @bakers-schema-version 1
+// @bakers-schema-version 2
 export default {
-  schema_version: 1,
+  schema_version: 2,
   machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
   label: 'alex-laptop',
   addons: ['@bakers-build/addon-codex', '@bakers-build/addon-claude'],
   agents: {
     enabled: ['codex', 'opus'],
-    default_agent: 'codex',
     routes: {
       default: { working: 'codex', review: 'opus', '*': 'codex' },
       careful: { '*': 'opus' },
@@ -106,11 +104,11 @@ export default {
 
 ## Old keys and verification
 
-Agent addons in a conductor config are ignored with a warning, and the retired keys `agent`, `agents`, `default_agent` and `agent_routes` there are rejected. Move that policy here by hand.
+Agent addons in a project config are ignored with a warning, and the retired keys `agent`, `agents`, `default_agent` and `agent_routes` there are rejected. Move that policy here by hand. In this file, `agents.default_agent` is an old name: loading fails and names `agents.routes.default: { '*': '<alias>' }`; `bakers config upgrade` rewrites it.
 
 ```sh
 bakers config check --scope machine
 bakers agents
 ```
 
-`bakers agents` prints the resolved aliases, harnesses, models, `enabled_agents`, `disabled_agents`, `default_agent` and `routes` as JSON, without signing in or starting an agent. It reads the conductor config of the current checkout, so run it there. Its `enabled_agents` and `disabled_agents` are output fields, not configuration keys.
+`bakers agents` prints the resolved aliases, harnesses, models, `enabled_agents`, `disabled_agents`, `default_agent` and `routes` as JSON, without signing in or starting an agent. It reads the project config of the current checkout, so run it there. Its `enabled_agents`, `disabled_agents` and `default_agent` are output fields, not configuration keys.

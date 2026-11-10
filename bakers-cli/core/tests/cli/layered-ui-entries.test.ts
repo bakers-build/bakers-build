@@ -47,7 +47,7 @@ it('returns an empty layer for an absent file', async () => {
 });
 
 it('returns an empty layer for a config with no addons[]', async () => {
-  const path = write('conf.js', `export default { bakers: { project: 'p' } };`);
+  const path = write('conf.js', `export default { project: { name: 'p' } };`);
   const { machine: layer } = await readUiEntryLayers({
     machine: { path, bases: [] },
   });
@@ -91,7 +91,7 @@ it('ui addon in both scopes renders one tab', async () => {
     `export default { addons: [{ use: ${JSON.stringify(tab)}, with: { tab: './machine.js' } }] };`,
   );
   const project = write(
-    'proj/.bakers/conductor.config.js',
+    'proj/.bakers/project.config.js',
     `export default { addons: [{ use: ${JSON.stringify(tab)}, with: { tab: './project.js' } }] };`,
   );
   const layers = await readUiEntryLayers({
@@ -125,15 +125,15 @@ it('names the machine config under the given home', () => {
   expect(machineUiConfigPath('/h')).toBe('/h/.bakers/machine.config.js');
 });
 
-it('finds the project conductor config from a nested cwd', () => {
+it('finds the project config from a nested cwd', () => {
   mkdirSync(join(tmp, 'proj', '.bakers'), { recursive: true });
   writeFileSync(
-    join(tmp, 'proj', '.bakers', 'conductor.config.js'),
+    join(tmp, 'proj', '.bakers', 'project.config.js'),
     'export default {};',
   );
   mkdirSync(join(tmp, 'proj', 'src'), { recursive: true });
   expect(projectConductorConfigPath(join(tmp, 'proj', 'src'), tmp)).toBe(
-    join(tmp, 'proj', '.bakers', 'conductor.config.js'),
+    join(tmp, 'proj', '.bakers', 'project.config.js'),
   );
 });
 
@@ -142,14 +142,14 @@ it('returns undefined when no project .bakers exists', () => {
 });
 
 describe('machineUiConfigPath without an explicit home', () => {
-  const original = process.env.BB_HOME;
+  const original = process.env.BAKERS_HOME;
   afterEach(() => {
-    if (original === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = original;
+    if (original === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = original;
   });
 
-  it('resolves to the same file as machineContextPath under an overridden BB_HOME', () => {
-    process.env.BB_HOME = join(tmp, 'relocated');
+  it('resolves to the same file as machineContextPath under an overridden BAKERS_HOME', () => {
+    process.env.BAKERS_HOME = join(tmp, 'relocated');
     expect(machineUiConfigPath()).toBe(machineContextPath());
     expect(machineUiConfigPath()).toBe(
       join(tmp, 'relocated', 'machine.config.js'),
@@ -157,7 +157,7 @@ describe('machineUiConfigPath without an explicit home', () => {
   });
 
   it('resolves to the same file as machineContextPath under the default', () => {
-    delete process.env.BB_HOME;
+    delete process.env.BAKERS_HOME;
     expect(machineUiConfigPath()).toBe(machineContextPath());
     expect(machineUiConfigPath()).toBe(
       join(homedir(), '.bakers', 'machine.config.js'),

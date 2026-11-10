@@ -18,10 +18,10 @@ bakers deployment tickets --since <ref> --to <ref> [--project <name>]
 bakers deployment tickets --since v1.4.0 --to HEAD
 ```
 
-Run it inside the project's checkout: it reads `git log` for `<since>..<to>` in the working directory and resolves each identifier it finds against the control plane over your connection. It needs no conductor: the machine does not have to be set up to run one, and the conductor config is never loaded. The project comes from the first of these that is available:
+Run it inside the project's checkout: it reads `git log` for `<since>..<to>` in the working directory and resolves each identifier it finds against the control plane over your connection. It needs no conductor: the machine does not have to be set up to run one, and the project config is never loaded. The project comes from the first of these that is available:
 
 1. `--project <name>`;
-2. `bakers.project` in the checkout's `.bakers/conductor.config.js`, read without running the file;
+2. `project.name` in the checkout's `.bakers/project.config.js`, read without running the file;
 3. the one project whose repository is the checkout's `origin` remote. If none or several match, the command fails and asks for `--project`.
 
 ## What it prints
@@ -52,7 +52,7 @@ A deployment is a ticket of type `deployment` with the recipe `deploy-and-releas
 
 This command identifies a release batch; it does not choose a version, merge a branch, publish packages or deploy images. Those steps belong to your project's release workflow. Use the actual deployed ref and intended target ref rather than assuming a branch name.
 
-For choosing and checking an installed bakers.build version, see [Updates](/configuration/machine/updates).
+For choosing and checking an installed bakers.build version, see [Updates](/configuration/guides/updates).
 
 ## Roll back
 

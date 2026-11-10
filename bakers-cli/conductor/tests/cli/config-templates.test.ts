@@ -46,23 +46,23 @@ describe('rendered global connection', () => {
 });
 
 describe('rendered schema versions', () => {
-  it('renders the connection at schema version 1', () => {
+  it('renders the connection at schema version 2', () => {
     const text = renderGlobalConnection({
       ...base,
       clientId: 'bakers-cli',
       authType: 'oauth2_device_code',
     });
-    expect(text).toContain('// @bakers-schema-version 1\n');
-    expect(text).toContain('schema_version: 1,');
+    expect(text).toContain('// @bakers-schema-version 2\n');
+    expect(text).toContain('schema_version: 2,');
   });
 
-  it('renders the machine at schema version 1 with a UUID and label, without user_id', () => {
+  it('renders the machine at schema version 2 with a UUID and label, without user_id', () => {
     const text = renderHostMachine({
       machineId: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
       label: 'cw-laptop',
     });
-    expect(text).toContain('// @bakers-schema-version 1\n');
-    expect(text).toContain('schema_version: 1,');
+    expect(text).toContain('// @bakers-schema-version 2\n');
+    expect(text).toContain('schema_version: 2,');
     expect(text).toContain(
       'machine_id: "0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30"',
     );
@@ -130,9 +130,9 @@ describe('rendered committed conductor config', () => {
   });
 
   it('still renders the project and the optional workspace', () => {
-    expect(renderCommittedConfig(base)).toContain('project: "demo"');
+    expect(renderCommittedConfig(base)).toContain('project: { name: "demo" }');
     expect(
       renderCommittedConfig({ ...base, bakersWorkspace: 'acme' }),
-    ).toContain('workspace: "acme"');
+    ).toContain('project: { name: "demo", workspace: "acme" }');
   });
 });

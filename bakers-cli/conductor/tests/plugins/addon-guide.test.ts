@@ -343,7 +343,7 @@ it('starts runs through the new client CLI and cleans up one session after recon
     workspacePath: dir,
     instructions: null,
     command: "my-agent --prompt 'quotes; $(touch unexpected)'",
-    env: { BB_CONDUCTOR_TOKEN: 'run-secret' },
+    env: { BAKERS_CONDUCTOR_TOKEN: 'run-secret' },
   };
   expect(executor.capabilities()).toEqual({ persistent: true });
   const first = await executor.startRun(input);

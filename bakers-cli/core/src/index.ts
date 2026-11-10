@@ -5,11 +5,13 @@ export type {
   BbConfigSource,
 } from './cli/bakers-dir.js';
 export {
+  assertNoOldConfigFiles,
   findBbConfig,
   findBbDir,
   findConfigProjectBbDir,
   findProjectBbDir,
   homeBbDir,
+  oldConfigFiles,
   resolveBbConfigPath,
   resolveConfigPath,
   stemForConfigFile,
@@ -28,6 +30,13 @@ export {
   verifyConfigConnections,
   withBakersClientHeader,
 } from './cli/config-online.js';
+export {
+  type ConfigKind,
+  matchKeyPaths,
+  OLD_FILES,
+  OLD_NAMES,
+  type OldName,
+} from './cli/config-renames.js';
 export type {
   ConfigChange,
   ConfigFileKind,
@@ -65,6 +74,18 @@ export {
   skipTrivia,
 } from './cli/config-source.js';
 export {
+  addonOptionProblems,
+  assertValidConfig,
+  checkConfigText,
+  configAjv,
+  coreSchemaPath,
+  oldNameProblems,
+  type SchemaProblem,
+  type StaticConfig,
+  staticConfig,
+  validateConfig,
+} from './cli/config-validate.js';
+export {
   HOME_IMPORT_EXPRESSION_PATTERN,
   importConfig,
 } from './cli/import-config.js';
@@ -88,15 +109,16 @@ export {
 } from './cli/load-bakers-config.js';
 export {
   type AgentRoutes,
-  assertSchemaVersion1,
+  assertSchemaVersion,
+  CONFIG_SCHEMA_VERSION,
   type MachineContext,
   machineContextPath,
   readMachineContext,
   resolveMachineContextPath,
-  warnIgnoredMaxParallel,
 } from './cli/machine-context.js';
 export { corePackageRoot } from './cli/paths.js';
 export { resolveModuleEslintStyle } from './cli/resolve-module.js';
+export { RETIRED_ENV_NAMES, retiredEnvErrors } from './cli/retired-env.js';
 export {
   BB_PACKAGE,
   checkForUpdate,
@@ -121,6 +143,13 @@ export {
   type WorkspaceRecoveryOptions,
   workspaceSearchCommand,
 } from './cli/workspace-recovery.js';
+// BB-194 AC-2: there is no agent-host contract here; `bakers ui` no longer
+// hosts agents.
+export type {
+  ConnectionConfig,
+  MachineConfig,
+  ProjectConfig,
+} from './config-types.generated.js';
 export {
   configHomeOf,
   defaultRootGitExec,
@@ -202,5 +231,3 @@ export {
   readEffectiveAddon,
   scopeAddons,
 } from './plugins/scoped-addons.js';
-// BB-194 AC-2: there is no agent-host contract here; `bakers ui` no longer
-// hosts agents.

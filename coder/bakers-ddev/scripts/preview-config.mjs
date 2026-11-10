@@ -18,7 +18,7 @@ const QUICK_ENTRY =
   " { use: '@bakers-build/addon-ports', with: { transport: { use: '@bakers-build/addon-ports-cloudflare-quick' } } },";
 const TUNNEL_LINE = ` tunnel: true, ${MARK}`;
 const TRANSPORTS = ['none', 'cloudflare-quick', 'cloudflare', 'frp'];
-const NEW_FILE = '// @bakers-schema-version 1\nexport default {\n schema_version: 1,\n};\n';
+const NEW_FILE = '// @bakers-schema-version 2\nexport default {\n schema_version: 2,\n};\n';
 
 const log = (msg) => console.log(`preview: ${msg}`);
 
@@ -191,7 +191,7 @@ function intended(own, next) {
 }
 
 function main() {
-  const [transport, path = join(process.env.BB_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
+  const [transport, path = join(process.env.BAKERS_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
     process.argv.slice(2);
   if (!TRANSPORTS.includes(transport)) return log(`unknown transport "${transport}"; machine.config.js unchanged`);
   const exists = existsSync(path);

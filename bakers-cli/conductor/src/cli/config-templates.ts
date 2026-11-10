@@ -30,10 +30,11 @@ export function renderGlobalConnection(inputs: ConnectionInputs): string {
       ? `client_id: ${JSON.stringify(inputs.clientId)},
       device_authorization_url: ${JSON.stringify(`${baseUrl}/oauth/device_authorization`)},`
       : `client_id: ${JSON.stringify(inputs.clientId)}, client_secret: ${JSON.stringify(inputs.secret ?? '')},`;
-  return `// @bakers-schema-version 1
-// Global bakers.build connection: credentials and optional legacy workspace. Keep this file private.
+  return `// @bakers-schema-version 2
+// A bakers.build connection: credentials and optional workspace. Keep this file private.
+/** @type {import('@bakers-build/core').ConnectionConfig} */
 export default {
-  schema_version: 1,
+  schema_version: 2,
   site: { base_url: ${JSON.stringify(inputs.baseUrl)}, jsonapi_prefix: '/jsonapi' },
 ${inputs.workspaceId ? `  workspace_id: ${JSON.stringify(inputs.workspaceId)},\n` : ''}
   plugins: [
@@ -51,13 +52,14 @@ export function renderHostMachine(inputs: {
   machineId: string;
   label?: string;
 }): string {
-  return `// @bakers-schema-version 1
+  return `// @bakers-schema-version 2
 // Local host identity. The run budget is set on the machine in the backend;
-// server credentials belong to bakers.config.js. An \`executor\` slot here
-// (e.g. \`{ plugin: '@bakers-build/addon-herdr-core' }\`) overrides every
-// project's executor on this machine.
+// server credentials belong to the connection (connections/default.js). An
+// \`executor\` slot here (e.g. \`{ use: '@bakers-build/addon-herdr-core' }\`)
+// overrides every project's executor on this machine.
+/** @type {import('@bakers-build/core').MachineConfig} */
 export default {
- schema_version: 1,
+ schema_version: 2,
  machine_id: ${JSON.stringify(inputs.machineId)},
 ${inputs.label ? ` label: ${JSON.stringify(inputs.label)},\n` : ''}};
 `;
@@ -75,21 +77,18 @@ export function renderCommittedConfig(inputs: {
    */
   hooks?: { after_create?: string; after_done?: string };
 }): string {
-  return `// Canonical bakers.build conductor engine configuration — committed and
-// identical for everyone. It carries no identity: a conductor is this machine
-// (machine.config.js) + this project + the variant (this file's stem).
-// Connections belong to bakers.config.js.
+  return `// The project's bakers.build configuration — committed and identical for
+// everyone. A conductor is this machine (machine.config.js) + this project +
+// the variant (project.<name>.config.js). Connections are private files.
 //
-// IMPORT-FREE (BB-78): the plugin slots are \`{ plugin, with }\` descriptors
-// naming the REAL published package, not \`import\`ed constructors.
-// loadConductorConfig resolves each name ESLint-style (config dir → cwd →
-// conductor install). Every addon package default-exports its single factory, so
-// no slot needs an \`export:\` — EXCEPT the merged herdr workspace
-// (\`@bakers-build/addon-herdr\` default-exports the executor, so the workspace names
-// \`export: 'herdrWorkspace'\` — BB-139).
+// The slots are \`{ use, export?, with? }\` descriptors naming the published
+// package; the loader resolves each name (config dir → cwd → CLI install).
+// \`@bakers-build/addon-herdr\` default-exports the executor, so the worktree
+// slot names \`export: 'herdrWorkspace'\`.
 
+/** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
-  bakers: { project: ${JSON.stringify(inputs.project)}${inputs.bakersWorkspace ? `, workspace: ${JSON.stringify(inputs.bakersWorkspace)}` : ''} },
+  project: { name: ${JSON.stringify(inputs.project)}${inputs.bakersWorkspace ? `, workspace: ${JSON.stringify(inputs.bakersWorkspace)}` : ''} },
   // The run budget (max_parallel) is set on the machine in the backend.
   // Transcripts upload only where the server's run-log storage allows it.
   // Set to false to keep this conductor's transcripts local even then.
@@ -110,15 +109,10 @@ ${
     .filter(Boolean)
     .join(', ')} },\n`
     : ''
-}  remote: { plugin: '@bakers-build/addon-remote-drupal' },
-  executor: { plugin: '@bakers-build/addon-herdr' },
+}  server: { use: '@bakers-build/addon-remote-drupal' },
+  executor: { use: '@bakers-build/addon-herdr' },
   addons: ${DEFAULT_CONDUCTOR_AGENT_ADDONS},
-  // BB-139: the herdr workspace ships in @bakers-build/addon-herdr, which
-  // default-exports the EXECUTOR — so the workspace slot names export: 'herdrWorkspace'.
-  workspace: {
-    plugin: '@bakers-build/addon-herdr',
-    export: 'herdrWorkspace',
-  },
+  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
 };
 `;
 }

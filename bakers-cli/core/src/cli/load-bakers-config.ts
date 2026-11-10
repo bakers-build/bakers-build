@@ -12,22 +12,19 @@ import { discoverAddons } from '../plugins/discover-addons.js';
 import type { AddonEntry } from '../plugins/preset.js';
 import {
   type BbConfigSource,
-  findConfigProjectBbDir,
   homeBbDir,
   resolveBbConfigPath,
 } from './bakers-dir.js';
 import type { BbCommandHost } from './commands.js';
 import { inspectConfigSource } from './config-source.js';
+import { assertValidConfig } from './config-validate.js';
 import { importConfig } from './import-config.js';
 import {
   machineUiConfigPath,
   projectConductorConfigPath,
   readUiEntryLayers,
 } from './layered-ui-entries.js';
-import {
-  assertSchemaVersion1,
-  warnIgnoredMaxParallel,
-} from './machine-context.js';
+import { assertSchemaVersion } from './machine-context.js';
 import { resolveModuleEslintStyle } from './resolve-module.js';
 
 /**
@@ -65,11 +62,7 @@ export interface BbConnectionConfig {
   /** The selected named connection, or `default` for the global connection. */
   connection_id: string | undefined;
   /** Which user-facing selector chose the connection. */
-  selection_source:
-    | ConfigSourceKind
-    | 'project-file'
-    | 'default'
-    | 'legacy-project';
+  selection_source: ConfigSourceKind | 'default' | 'legacy-project';
   /** Current resolution never chooses a historical engine connection. */
   legacy: boolean;
   /**
@@ -190,46 +183,10 @@ export interface BbConnectionLoadOptions {
 export interface BbConnectionSelection {
   path: string;
   connectionId: string | undefined;
-  selectionSource:
-    | ConfigSourceKind
-    | 'project-file'
-    | 'default'
-    | 'legacy-project';
+  selectionSource: ConfigSourceKind | 'default' | 'legacy-project';
   source: BbConfigSource;
   fallback: boolean;
   legacy: boolean;
-}
-
-function projectConnectionSelection(
-  cwd: string,
-  home: string | undefined,
-): string | undefined {
-  const bakersDir = findConfigProjectBbDir(cwd, home);
-  if (!bakersDir) return undefined;
-  const path = join(bakersDir, 'connection.config.local.js');
-  if (!existsSync(path)) return undefined;
-  const inspected = inspectConfigSource(readFileSync(path, 'utf8'));
-  const topLevel = inspected.propertyOccurrences.filter(
-    (property) => !property.key.includes('.') && !property.key.includes('['),
-  );
-  const unknown = topLevel.find((property) => property.key !== 'connection');
-  if (unknown)
-    throw new BbConnectionConfigError(
-      `Unknown key '${unknown.key}' in ${path}; only 'connection' is allowed.`,
-    );
-  const connection = inspected.properties.get('connection');
-  if (
-    inspected.syntax !== 'valid' ||
-    inspected.shape !== 'object' ||
-    inspected.unknownKeys ||
-    !connection?.staticallyDetermined ||
-    typeof connection.value !== 'string' ||
-    connection.value.trim() === ''
-  )
-    throw new BbConnectionConfigError(
-      `${path} must default-export one literal string key: connection.`,
-    );
-  return connection.value.trim();
 }
 
 /** Resolve the connection source without importing or executing it. */
@@ -240,25 +197,16 @@ export async function resolveBbConnectionSelection(
   const connectionsDir = resolveConnectionsDir({
     flag: join(homeBbDir(opts.home), 'connections'),
   });
-  let projectConnection: string | undefined;
-  let projectConnectionRead = false;
+  // A project selects a named connection with BAKERS_CONNECTION or
+  // --connection; the retired .bakers/connection.config.local.js is refused
+  // by the project walk (assertNoOldConfigFiles).
   const dropshEnv = {
     ...env,
-    ...(env.BB_CONFIG ? { DROPSH_CONFIG: env.BB_CONFIG } : {}),
+    ...(env.BAKERS_CONFIG ? { DROPSH_CONFIG: env.BAKERS_CONFIG } : {}),
+    ...(env.BAKERS_CONNECTION
+      ? { DROPSH_CONNECTION: env.BAKERS_CONNECTION }
+      : {}),
   };
-  Object.defineProperty(dropshEnv, 'DROPSH_CONNECTION', {
-    enumerable: true,
-    get() {
-      const environmentConnection = env.BB_CONNECTION || env.DROPSH_CONNECTION;
-      if (environmentConnection) return environmentConnection;
-      projectConnectionRead = true;
-      projectConnection = projectConnectionSelection(
-        opts.cwd ?? process.cwd(),
-        opts.home,
-      );
-      return projectConnection;
-    },
-  });
   const defaultResolution = resolveBbConfigPath({
     ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
     explicit: undefined,
@@ -273,11 +221,7 @@ export async function resolveBbConnectionSelection(
     ...(opts.cwd !== undefined ? { cwd: opts.cwd } : {}),
   });
   let selectionSource: BbConnectionSelection['selectionSource'] =
-    selected.source === 'env-connection' &&
-    projectConnectionRead &&
-    projectConnection !== undefined
-      ? 'project-file'
-      : selected.source;
+    selected.source;
   const usesDefaultConfig =
     selected.source === 'cwd' || selected.source === 'default-config';
   const resolution = usesDefaultConfig
@@ -361,7 +305,9 @@ async function loadDescriptor(
 ): Promise<unknown> {
   const resolved = resolveModuleEslintStyle(entry.plugin, bases);
   if (resolved === undefined) {
-    throw new Error(`bakers.config.js cannot resolve plugin '${entry.plugin}'`);
+    throw new Error(
+      `connection config cannot resolve plugin '${entry.plugin}'`,
+    );
   }
   const mod = (await import(pathToFileURL(resolved).href)) as Record<
     string,
@@ -437,8 +383,12 @@ export async function loadBbConnectionBootstrap(
       `bakers connection config default export must be an object (${configPath})`,
     );
   }
-  assertSchemaVersion1(configPath, raw);
-  warnIgnoredMaxParallel(configPath, raw);
+  assertSchemaVersion(configPath, raw);
+  try {
+    assertValidConfig('connection', raw, configPath);
+  } catch (error) {
+    throw new BbConnectionConfigError((error as Error).message);
+  }
 
   const site = isRecord(raw.site) ? raw.site : {};
   const baseUrl = typeof site.base_url === 'string' ? site.base_url : '';
@@ -492,15 +442,15 @@ export async function loadBbConnectionBootstrap(
   const warn = (message: string) => {
     console.warn(message);
   };
-  // The `.bakers` root is core's decision (BB_HOME), not this function's: an
+  // The `.bakers` root is core's decision (BAKERS_HOME), not this function's: an
   // absent `opts.home` must reach `homeBbDir()`'s resolver rather than
-  // collapsing to the OS home here first, or BB_HOME never relocates
+  // collapsing to the OS home here first, or BAKERS_HOME never relocates
   // `machine.config.js` for this layer.
   const machineBbDir = homeBbDir(opts.home);
   // The project root is the SELECTED connection config's own directory only
   // when that config actually sits in A PROJECT's `.bakers/` dir — `configPath`
   // is `<project root>/.bakers/<file>` — whether resolved by walk-up or given
-  // explicitly. The home connection (`<home>/.bakers/bakers.config.js`, BB-218's
+  // explicitly. The home connection (`<home>/.bakers/connection file`, BB-218's
   // canonical engine-only shape) and a named connection
   // (`<home>/.bakers/connections/<id>.js`) both fail that test — the first
   // because its `.bakers/` dir IS the home one, the second because its parent

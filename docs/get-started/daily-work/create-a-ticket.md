@@ -20,7 +20,7 @@ Use bb-create-ticket for: <what you need and why>.
 
 Your agent checks for a similar ticket and asks for missing details. If it finds a match, choose whether to create, extend or drop the idea.
 
-With a coding agent, add *and specify it with me* to agree the change, criteria and scope first. An approved feature or chore can enter `working` with its plan and conductor. Bugs enter `plan` for diagnosis. The supplied [chat instructions](/configuration/connector/project-instructions) stop at `plan`.
+With a coding agent, add *and specify it with me* to agree the change, criteria and scope first. An approved feature or chore can enter `working` with its plan and conductor. Bugs enter `plan` for diagnosis. The supplied [chat instructions](/configuration/guides/project-instructions) stop at `plan`.
 
 **Or use the web:** in the project's ticket list choose **New ticket**, fill in the dialog and choose **Create ticket**. The ticket is saved as typed.
 

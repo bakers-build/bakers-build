@@ -93,7 +93,7 @@ describe('HerdrExecutor.startRun launch script', () => {
   it('types a pane-run line under 1024 bytes while the script holds a >4096-byte command including the session id', async () => {
     const calls: string[][] = [];
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       fakeExec(calls),
     );
     await executor.startRun(spawnOverCap());
@@ -146,7 +146,7 @@ describe('HerdrExecutor.startRun launch script', () => {
       return JSON.stringify({ result: {} });
     };
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.startRun(spawnOverCap());
@@ -181,7 +181,7 @@ describe('watchLaunch (real sh)', () => {
       // wrapper exits with the command's status; markers are the signal
     }
     await expect(
-      watchLaunch(script, { timeoutMs: 500, pollMs: 10 }),
+      watchLaunch(script, { timeout_ms: 500, poll_ms: 10 }),
     ).rejects.toThrow(/Launch failed: exit 1/);
   });
 
@@ -194,7 +194,7 @@ describe('watchLaunch (real sh)', () => {
     });
     child.unref();
     try {
-      await watchLaunch(script, { timeoutMs: 400, pollMs: 20 });
+      await watchLaunch(script, { timeout_ms: 400, poll_ms: 20 });
     } finally {
       try {
         process.kill(-child.pid!, 'SIGTERM');
@@ -212,9 +212,9 @@ describe('watchLaunch (real sh)', () => {
     }, 250);
     try {
       await watchLaunch(script, {
-        timeoutMs: 80,
-        startTimeoutMs: 1000,
-        pollMs: 20,
+        timeout_ms: 80,
+        start_timeout_ms: 1000,
+        poll_ms: 20,
       });
     } finally {
       clearTimeout(plant);
@@ -267,7 +267,7 @@ describe('HerdrExecutor.startRun POSIX env quoting', () => {
     const calls: string[][] = [];
     const long = `${'y'.repeat(1000)}'${'z'.repeat(999)}`;
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       fakeExec(calls),
     );
     await executor.startRun({
@@ -294,7 +294,7 @@ describe('HerdrExecutor.startRun POSIX env quoting', () => {
       const calls: string[][] = [];
       const long = `${'y'.repeat(1000)}'${'z'.repeat(999)}`;
       const executor = new HerdrExecutor(
-        { command: 'claude', launchWatch: INSTANT_WATCH },
+        { command: 'claude', launch_watch: INSTANT_WATCH },
         fakeExec(calls),
       );
       await executor.startRun({
@@ -350,7 +350,7 @@ describe('HerdrExecutor.startRun launch cleanup', () => {
     const executor = new HerdrExecutor(
       {
         command: 'claude',
-        launchWatch: { timeoutMs: 0, startTimeoutMs: 0, pollMs: 1 },
+        launch_watch: { timeout_ms: 0, start_timeout_ms: 0, poll_ms: 1 },
       },
       exec,
     );
@@ -408,7 +408,7 @@ describe('HerdrExecutor.startRun launch watch', () => {
       return JSON.stringify({ result: {} });
     };
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: { timeoutMs: 1500, pollMs: 15 } },
+      { command: 'claude', launch_watch: { timeout_ms: 1500, poll_ms: 15 } },
       exec,
     );
     const err = await executor
@@ -456,7 +456,7 @@ describe('HerdrExecutor.startRun launch watch', () => {
       return JSON.stringify({ result: {} });
     };
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: { timeoutMs: 400, pollMs: 20 } },
+      { command: 'claude', launch_watch: { timeout_ms: 400, poll_ms: 20 } },
       exec,
     );
     try {

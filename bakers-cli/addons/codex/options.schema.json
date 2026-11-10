@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-codex/options.schema.json",
+  "title": "@bakers-build/addon-codex options",
+  "$ref": "https://bakers.build/schema/harness-options.schema.json",
+  "properties": {},
+  "unevaluatedProperties": false
+}

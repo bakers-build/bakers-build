@@ -1,22 +1,13 @@
-// Canonical conductor config for the bakers-playground target repo. The
-// connection surface lives in the generated sibling bakers.config.js; this file
+// @bakers-schema-version 2
+// Canonical project config for the bakers-playground target repo. The
+// connection is the generated, untracked sibling connection.config.js; this file
 // only describes how the conductor creates and runs ticket worktrees.
 //
 // THIS FILE IS THE ONLY AUTHORITY FOR THE ENGINE SURFACE. bakers.build's
 // `scripts/setup-test-project.sh` used to generate over it on every run and hide the
 // difference with `--skip-worktree`; it no longer does. What that script still writes
-// is the untracked local override `conductor.config.local.js`, which supplies only
-// the project. It carries no identity: the conductor is this machine + project +
-// variant, keyed by the control plane. Everything structural is here and reviewable.
-
-async function loadLocal() {
-  try {
-    return (await import('./conductor.config.local.js')).default ?? {};
-  } catch {}
-  return {};
-}
-
-const local = await loadLocal();
+// is the untracked connection. The conductor carries no identity: it is this machine +
+// project + variant, keyed by the control plane. Everything structural is here and reviewable.
 
 // Claims are dispatched in a per-ticket worktree. Resolve the first worktree
 // as the parent clone, then inject the parent's local control-plane config and
@@ -37,9 +28,9 @@ const local = await loadLocal();
 const parentSetupHook = [
   'parent=$(git worktree list --porcelain | head -1 | cut -c 10-)',
   ['mkdir -p .claude', 'ln -sfn "$parent/.claude/skills" .claude/skills'].join(' && '),
-  ['mkdir -p .bakers', 'cp -f "$parent/.bakers/bakers.config.js" .bakers/bakers.config.js', 'cp -f "$parent/.bakers/conductor.config.local.js" .bakers/conductor.config.local.js'].join(' && '),
+  ['mkdir -p .bakers', 'cp -f "$parent/.bakers/connection.config.js" .bakers/connection.config.js'].join(' && '),
   'exclude=$(git rev-parse --git-path info/exclude)',
-  'for p in .bakers/bakers.config.js .bakers/conductor.config.local.js .claude/skills; do grep -qxF "$p" "$exclude" || echo "$p" >> "$exclude"; done',
+  'for p in .bakers/connection.config.js .claude/skills; do grep -qxF "$p" "$exclude" || echo "$p" >> "$exclude"; done',
   // Last: independent skill/client setup survives an observable env setup failure.
   'node scripts/setup-worktree.mjs',
 ].join('; ');
@@ -51,25 +42,21 @@ const parentSetupHook = [
 // ticket could never be claimed again. This rule used to live in the generated config
 // and was lost the moment generation stopped; it belongs here, with the file that now
 // decides it.
+/** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
-  // `bakers.project` is read STATICALLY (readBbProjectSelection in
+  schema_version: 2,
+  // `project.name` is read STATICALLY (readBbProjectSelection in
   // bakers-cli/conductor/src/cli/project-context.ts), without executing this
-  // file, so it must be a literal string — `local.project ?? '…'` throws
-  // "Cannot read committed bakers.project". The recipe-test world this fixture
+  // file, so it must be a literal string. The recipe-test world this fixture
   // targets always provisions the project named by
   // `scripts/setup-test-project.sh`'s `--project` default, so that literal is
   // hardcoded here; a run against a DIFFERENT `--project` name needs this
-  // line changed to match (a per-machine override is not supported for this
-  // key under the current engine).
-  bakers: { project: 'bakers-e2e-project' },
-  states: local.states ?? [],
+  // line changed to match, or BAKERS_PROJECT set for that conductor.
+  project: { name: 'bakers-e2e-project' },
   // Agent selection is a per-machine concern (~/.bakers/machine.config.js under
-  // `agents`), not declared here — the stale `default_agent: { '*': 'opus' }`
-  // this file used to carry collided with the engine's own reserved default
-  // route (`conflicting_values [default_agent]`).
+  // `agents.routes.default`), not declared here.
   // Agent addons are retired here too: the engine ignores/rejects them now —
-  // "agent addons in a conductor config are ignored; declare them in
-  // machine.config.js 'agents.addons'" — so `@bakers-build/addon-claude` moved out;
+  // agent addons belong in machine.config.js — so `@bakers-build/addon-claude` moved out;
   // the alias `opus` it provided must already be declared machine-wide.
   addons: [
     '@bakers-build/addon-remote-drupal',

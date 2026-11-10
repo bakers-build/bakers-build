@@ -9,10 +9,10 @@
 import type { Preset } from '@bakers-build/conductor/contract';
 import { gitWorkspace } from './index.js';
 
-export const workspaces: Preset['workspaces'] = (acc, opts) => [
+export const worktrees: Preset['worktrees'] = (acc, opts) => [
   ...acc,
   gitWorkspace(opts as Parameters<typeof gitWorkspace>[0]),
 ];
 
-// Conductor wiring of one project: list this addon in .bakers/conductor.config.js addons[].
+// Conductor wiring of one project: list this addon in .bakers/project.config.js addons[].
 export const scopes: Preset['scopes'] = ['project'];

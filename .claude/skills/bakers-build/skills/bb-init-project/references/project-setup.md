@@ -17,7 +17,7 @@ choices below. **Done when both choices and their owning files are understood.**
    When agents need the running application, explain `hooks.provision_up`
    ([hooks](https://bakers.build/provision/hooks#provision-on-an-agent-s-request)):
    one command per profile that reuses a ready environment. No flag writes it; the operator adds
-   it to `.bakers/conductor.config.js`.
+   it to `.bakers/project.config.js`.
 3. Preserve existing `WORKFLOW.md` and additions; create an absent file from
    [WORKFLOW.template.md](WORKFLOW.template.md). Keep its entry line verbatim.
 4. Fill the `## bb-phase-provision`, `## bb-phase-work`, `## bb-phase-validate`, `## bb-phase-deliver`
@@ -30,5 +30,5 @@ choices below. **Done when both choices and their owning files are understood.**
    goes in the `## bb-phase-work` hint.
 5. Ensure `.gitignore` contains `/assets-ai/` with a short explanatory comment
    ([transient root](../../bb-workflow/references/evidence.md)); prove it with `git check-ignore -v assets-ai/probe`.
-   Ignore `.bakers/conductor.config.local.js` and generated secret-bearing local overrides; verify
-   every applicable path with `git check-ignore -v`.
+   Ignore a project `.bakers/connection.config.js` that holds credentials; verify every
+   applicable path with `git check-ignore -v`.

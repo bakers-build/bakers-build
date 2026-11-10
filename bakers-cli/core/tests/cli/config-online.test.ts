@@ -27,7 +27,7 @@ beforeEach(async () => {
   root = mkdtempSync(join(tmpdir(), 'bakers-config-online-'));
   home = join(root, 'home');
   cwd = join(root, 'project');
-  mkdirSync(join(home, '.bakers'), { recursive: true });
+  mkdirSync(join(home, '.bakers', 'connections'), { recursive: true });
   mkdirSync(join(cwd, '.bakers'), { recursive: true });
   requests = [];
   server = createServer((req, res) => {
@@ -88,11 +88,11 @@ beforeEach(async () => {
   );
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:1};",
+    "export default {machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator'};",
   );
   writeFileSync(
-    join(cwd, '.bakers/conductor.config.js'),
-    "export default {project:'demo',conductor_id:'worker'};",
+    join(cwd, '.bakers/project.config.js'),
+    "export default {project:{name:'demo'}};",
   );
 });
 afterEach(async () => {
@@ -106,8 +106,8 @@ function connection(path: string, prefix = '/jsonapi') {
   );
 }
 it('uses configured auth and reads the authenticated identity for each selected connection', async () => {
-  connection(join(home, '.bakers/bakers.config.js'));
-  connection(join(cwd, '.bakers/bakers.config.js'), '/project');
+  connection(join(home, '.bakers/connections/default.js'));
+  connection(join(cwd, '.bakers/connection.config.js'), '/project');
   const report = inventoryConfig({ scope: 'all', home, cwd }).report;
   const result = await online.verifyConfigConnections(report, {
     host: { resolveBases: [] },
@@ -116,8 +116,8 @@ it('uses configured auth and reads the authenticated identity for each selected 
   });
   expect(result.verification.readiness).toBe('ready');
   expect(result.verification.online.connections).toEqual([
-    { path: join(home, '.bakers/bakers.config.js'), status: 'passed' },
-    { path: join(cwd, '.bakers/bakers.config.js'), status: 'passed' },
+    { path: join(home, '.bakers/connections/default.js'), status: 'passed' },
+    { path: join(cwd, '.bakers/connection.config.js'), status: 'passed' },
   ]);
   expect(requests).toEqual([
     'GET /jsonapi/ Bearer fixture-token',
@@ -133,10 +133,10 @@ it('verifies a fresh OAuth connection after login through the real dropsh provid
     new URL('../../package.json', import.meta.url),
   );
   const dropsh = requireCore.resolve('dropsh');
-  const path = join(home, '.bakers/bakers.config.js');
+  const path = join(home, '.bakers/connections/default.js');
   writeFileSync(
     path,
-    `export default {schema_version:1,site:{base_url:'${base}',jsonapi_prefix:'/jsonapi'},workspace_id:'${id}',plugins:[{plugin:${JSON.stringify(oauth)},export:'oauth2Plugin',with:{id:'bakers',default:true,type:'oauth2_client_credentials',scope:'bb:session',client_id:'fixture-client',client_secret:'fixture-secret',token_url:'${base}/oauth/token'}}]};`,
+    `export default {schema_version:2,site:{base_url:'${base}',jsonapi_prefix:'/jsonapi'},workspace_id:'${id}',plugins:[{plugin:${JSON.stringify(oauth)},export:'oauth2Plugin',with:{id:'bakers',default:true,type:'oauth2_client_credentials',scope:'bb:session',client_id:'fixture-client',client_secret:'fixture-secret',token_url:'${base}/oauth/token'}}]};`,
   );
   const { runAuthLogin } = await import(
     pathToFileURL(join(dirname(dropsh), 'commands/auth.js')).href
@@ -175,8 +175,8 @@ it('verifies a fresh OAuth connection after login through the real dropsh provid
   ]);
 });
 it('attributes denial to the global connection even when project access works', async () => {
-  connection(join(home, '.bakers/bakers.config.js'), '/denied');
-  connection(join(cwd, '.bakers/bakers.config.js'));
+  connection(join(home, '.bakers/connections/default.js'), '/denied');
+  connection(join(cwd, '.bakers/connection.config.js'));
   const report = await online.verifyConfigConnections(
     inventoryConfig({ scope: 'all', home, cwd }).report,
     { host: { resolveBases: [] }, cwd },
@@ -186,7 +186,7 @@ it('attributes denial to the global connection even when project access works', 
   const finding = report.findings.find(
     (f) => f.code === 'authentication_failure',
   );
-  expect(finding?.path).toBe(join(home, '.bakers/bakers.config.js'));
+  expect(finding?.path).toBe(join(home, '.bakers/connections/default.js'));
   expect(finding?.recheck).toContain('--config');
   expect(requests).toHaveLength(2);
 });
@@ -199,7 +199,7 @@ it('machine scope performs no network request', async () => {
   expect(requests).toEqual([]);
 });
 it('verifies inherited global connection only once', async () => {
-  connection(join(home, '.bakers/bakers.config.js'));
+  connection(join(home, '.bakers/connections/default.js'));
   const report = await online.verifyConfigConnections(
     inventoryConfig({ scope: 'all', home, cwd }).report,
     { host: { resolveBases: [] }, cwd },
@@ -207,8 +207,8 @@ it('verifies inherited global connection only once', async () => {
   expect(report.result).toBe('ok');
   expect(requests).toHaveLength(1);
 });
-it('establishes online readiness for a computed base_url while retaining incomplete static validation', async () => {
-  const path = join(home, '.bakers/bakers.config.js');
+it('establishes online readiness for a computed base_url while reporting it as not checked offline', async () => {
+  const path = join(home, '.bakers/connections/default.js');
   connection(path);
   writeFileSync(
     path,
@@ -221,7 +221,17 @@ it('establishes online readiness for a computed base_url while retaining incompl
     inventoryConfig({ scope: 'connection', home, cwd }).report,
     { host: { resolveBases: [] }, cwd },
   );
-  expect(report.verification.offline.status).toBe('incomplete');
+  // BAKERS-159: a computed value is a `not_checked` warning, which leaves
+  // offline validation passed, instead of `unknown_value`/`incomplete`.
+  expect(report.findings).toContainEqual(
+    expect.objectContaining({
+      code: 'not_checked',
+      severity: 'warning',
+      key: 'site.base_url',
+      path,
+    }),
+  );
+  expect(report.verification.offline.status).toBe('passed');
   expect(report.verification.readiness).toBe('ready');
   expect(report.result).toBe('ok');
 });

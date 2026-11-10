@@ -23,7 +23,7 @@ The launch flags per mode, the `sandbox` keys and their defaults are on the [Cla
 `sandbox` mode needs the harness's OS sandbox on the machine that runs the conductor. Check every enabled agent with:
 
 ```sh
-bakers oven check
+bakers conductor check
 ```
 
 It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix>`, and exits 1 when one agent cannot start its sandbox. `system`, `yolo` and `custom` agents are not checked.
@@ -43,11 +43,11 @@ Install the Linux packages with your package manager:
 
 Other distributions need `bubblewrap` and `socat`.
 
-OpenCode has no OS sandbox on any platform; it runs in `system` and rejects `sandbox` when loading, so `bakers oven check` never checks it.
+OpenCode has no OS sandbox on any platform; it runs in `system` and rejects `sandbox` when loading, so `bakers conductor check` never checks it.
 
 A host or container that forbids unprivileged user namespaces shows `bwrap cannot set up its sandbox: …` (Claude) or `codex sandbox cannot start: …` (Codex). Allow them on the host (on Ubuntu 24.04 and later, AppArmor restricts them), or run the conductor where they are allowed.
 
-While an enabled agent cannot start its sandbox, the conductor claims nothing and logs `claims withheld: sandbox unavailable: …` on every cycle; `bakers oven start` prints the same line as a warning. No run is created, so no ticket is parked by the failed-run limit. After the fix the next cycle claims, without a restart. A run whose sandbox becomes unavailable between the cycle and its start fails with the same message in its error log, and no agent starts.
+While an enabled agent cannot start its sandbox, the conductor claims nothing and logs `claims withheld: sandbox unavailable: …` on every cycle; `bakers conductor start` prints the same line as a warning. No run is created, so no ticket is parked by the failed-run limit. After the fix the next cycle claims, without a restart. A run whose sandbox becomes unavailable between the cycle and its start fails with the same message in its error log, and no agent starts.
 
 ## Claude in `sandbox` mode
 
@@ -87,7 +87,7 @@ A linked worktree's run writes its Git dir and the shared `objects`, `refs`, `lo
 
 Known limit (upstream report pending): in a linked worktree, Claude Code creates empty `config.lock`, `config.worktree`, `remotes/`, `branches/` in the shared `.git`; all but `config.lock` persist.
 
-At run end the conductor ends processes carrying the run's `BB_RUN_UUID` (Linux).
+At run end the conductor ends processes carrying the run's `BAKERS_RUN_UUID` (Linux).
 
 ## Grok in `sandbox` mode
 
@@ -127,7 +127,7 @@ The harness sandboxes do not isolate a machine. Where runs handle untrusted tick
 
 For the provided Coder workspace template:
 
-Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)). Start with their sandbox defaults and run `bakers oven check`. If the host blocks the user namespaces required by a nested sandbox, fix host policy or explicitly choose the container boundary below. This example switches Claude and Codex to `custom`: the container becomes the boundary, and a run can read everything in its home, including sign-ins and SSH keys.
+Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)). Start with their sandbox defaults and run `bakers conductor check`. If the host blocks the user namespaces required by a nested sandbox, fix host policy or explicitly choose the container boundary below. This example switches Claude and Codex to `custom`: the container becomes the boundary, and a run can read everything in its home, including sign-ins and SSH keys.
 
 ```js
 {

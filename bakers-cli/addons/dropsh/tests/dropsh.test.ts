@@ -72,7 +72,7 @@ describe('@bakers-build/addon-dropsh command plugin', () => {
       const d = join(tmp, '.bakers');
       mkdirSync(d, { recursive: true });
       writeFileSync(
-        join(d, 'bakers.config.js'),
+        join(d, 'connection.config.js'),
         `export default { site: { base_url: 'https://x.test' }, workspace_id: '00000000-0000-4000-8000-000000000000', plugins: [] };\n`,
       );
       const origCwd = process.cwd();
@@ -90,8 +90,8 @@ describe('@bakers-build/addon-dropsh command plugin', () => {
   });
 
   it('dropshConfigHint names the connection sources', () => {
-    const hint = dropshConfigHint('/x/bakers.config.js');
-    expect(hint).toMatch(/bakers\.config\.js/);
+    const hint = dropshConfigHint('/x/connection.config.js');
+    expect(hint).toMatch(/connection\.config\.js/);
     expect(hint).toMatch(/--config/);
   });
 });

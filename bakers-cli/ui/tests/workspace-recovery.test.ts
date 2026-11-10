@@ -21,13 +21,13 @@ function hostWithProjectContext(configPath?: string) {
       workspacePlugin({ workspace_id: workspaceId }),
     projectContext: {
       resolveConfigPath: () =>
-        configPath ?? join(f.root, '.bakers/conductor.config.js'),
+        configPath ?? join(f.root, '.bakers/project.config.js'),
       readWorkspace: (path: string) => readBbProjectSelection(path).workspace,
       writeWorkspace: async (configPath: string, name: string) => {
         await writeBbWorkspaceSelection(
           bakersProjectOwner(configPath),
           name,
-          `Set bakers.workspace in ${configPath} to switch manually.`,
+          `Set project.workspace in ${configPath} to switch manually.`,
         );
       },
     },
@@ -40,15 +40,15 @@ beforeEach(async () => {
   await f.login();
 });
 it('reads and updates the selected conductor variant', async () => {
-  const defaultConductor = join(f.root, '.bakers/conductor.config.js');
-  const variantConductor = join(f.root, '.bakers/night.conductor.config.js');
+  const defaultConductor = join(f.root, '.bakers/project.config.js');
+  const variantConductor = join(f.root, '.bakers/project.night.config.js');
   writeFileSync(
     defaultConductor,
-    "export default { bakers: { project: 'default', workspace: 'First' } };\n",
+    "export default { project: { name: 'default', workspace: 'First' } };\n",
   );
   writeFileSync(
     variantConductor,
-    "export default { bakers: { project: 'night', workspace: 'Second' } };\n",
+    "export default { project: { name: 'night', workspace: 'Second' } };\n",
   );
 
   await cmdUi({
@@ -71,11 +71,11 @@ it('reads and updates the selected conductor variant', async () => {
     "workspace: 'First'",
   );
 });
-it('uses committed bakers.workspace without consuming the workspace plugin slot', async () => {
-  const conductor = join(f.root, '.bakers/conductor.config.js');
+it('uses committed project.workspace without consuming the worktree plugin slot', async () => {
+  const conductor = join(f.root, '.bakers/project.config.js');
   writeFileSync(
     conductor,
-    `export default { bakers: { project: 'demo', workspace: 'Second' }, workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' } };\n`,
+    `export default { project: { name: 'demo', workspace: 'Second' }, worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' } };\n`,
   );
   writeFileSync(f.config, f.source(firstWorkspace));
 
@@ -96,11 +96,11 @@ it('uses committed bakers.workspace without consuming the workspace plugin slot'
 
   const written = readFileSync(conductor, 'utf8');
   expect(written).toContain('workspace: "First"');
-  expect(written).toContain("workspace: { plugin: '@bakers-build/addon-herdr'");
+  expect(written).toContain("worktree: { use: '@bakers-build/addon-herdr'");
 });
 it('derives UI workspace from the unique committed project when no workspace is named', async () => {
-  const conductor = join(f.root, '.bakers/conductor.config.js');
-  writeFileSync(conductor, `export default { bakers: { project: 'demo' } };\n`);
+  const conductor = join(f.root, '.bakers/project.config.js');
+  writeFileSync(conductor, `export default { project: { name: 'demo' } };\n`);
   writeFileSync(f.config, f.source(firstWorkspace));
   const base = hostWithProjectContext();
   const resolveContext = vi.fn(
@@ -129,12 +129,12 @@ it('derives UI workspace from the unique committed project when no workspace is 
   });
   expect(resolveContext).toHaveBeenCalledOnce();
   expect(readFileSync(conductor, 'utf8')).toBe(
-    `export default { bakers: { project: 'demo' } };\n`,
+    `export default { project: { name: 'demo' } };\n`,
   );
 });
 it('prints connection configuration without an online project lookup', async () => {
-  const conductor = join(f.root, '.bakers/conductor.config.js');
-  writeFileSync(conductor, `export default { bakers: { project: 'demo' } };\n`);
+  const conductor = join(f.root, '.bakers/project.config.js');
+  writeFileSync(conductor, `export default { project: { name: 'demo' } };\n`);
   const base = hostWithProjectContext();
   const resolveContext = vi.fn(async () => {
     throw new Error('online project lookup must not run');
@@ -161,18 +161,19 @@ afterEach(async () => {
 });
 // BB-495 F8: `loadReadyBbConnection` no longer prompts or writes a
 // workspace selection back to disk — that recovery flow, and the requirement
-// it existed to satisfy, are both gone. A local project config still names
-// its own workspace explicitly, and the UI still attaches its own
+// it existed to satisfy, are both gone. A connection still names its own
+// workspace explicitly (here computed from a module it imports; the retired
+// conductor.config.local.js is not that module any more, BAKERS-159), and the UI still attaches its own
 // `workspacePlugin` for whatever value it resolves.
-it('picks up a workspace named in the local project config, without any prompt', async () => {
-  const local = join(f.root, '.bakers/conductor.config.local.js');
+it('picks up a workspace the connection computes from an imported module, without any prompt', async () => {
+  const local = join(f.root, '.bakers/workspace.local.js');
   writeFileSync(
     local,
     `export default {workspace_id:${JSON.stringify(secondWorkspace)}};`,
   );
   writeFileSync(
     f.config,
-    `import local from './conductor.config.local.js';export default {site:{base_url:'${f.base}'},workspace_id:local.workspace_id,plugins:${f.plugins}};`,
+    `import local from './workspace.local.js';export default {site:{base_url:'${f.base}'},workspace_id:local.workspace_id,plugins:${f.plugins}};`,
   );
   let rendered = false;
   let error = '';
