@@ -42,7 +42,7 @@ const en = {
       ['Plan', 'You describe what you need: in the browser, in a chat with Claude or in the terminal. The agent sorts it, asks what’s unclear and proposes a plan with acceptance criteria you can check.', 'Nothing gets built until you approve the scope.'],
       ['Build', 'The agent works on its own branch, in its own environment on your machines. Automated tests run before the ticket moves on.', 'You confirm the result.'],
       ['Review', 'A second agent reviews independently and gives a verdict. When it needs an expert eye, a developer joins.', 'Confirm it, or send it back with a clear expectation.'],
-      ['Ship', 'A deployment ticket can then roll a batch of merged tickets out to an environment and tag the release.', 'A person authorizes the merge: you or someone on your team.'],
+      ['Ship', 'After the merge, a deployment ticket can roll a batch of merged tickets out to an environment and tag the release.', 'A person authorizes the merge: you or someone on your team.'],
     ],
   },
   run: {
@@ -134,7 +134,7 @@ const de: Copy = {
       ['Planen', 'Du beschreibst, was du brauchst: im Browser, im Chat mit Claude oder im Terminal. Der Agent ordnet ein, fragt nach und legt einen Plan mit prüfbaren Abnahmekriterien vor.', 'Gebaut wird erst, wenn du den Umfang freigibst.'],
       ['Umsetzen', 'Der Agent arbeitet auf eigenem Branch in einer eigenen Umgebung auf deinen Rechnern. Automatische Tests laufen, bevor das Ticket weitergeht.', 'Du bestätigst das Ergebnis.'],
       ['Prüfen', 'Ein zweiter Agent prüft unabhängig und gibt ein Urteil ab. Wenn es den Blick vom Fach braucht, kommt ein Entwickler dazu.', 'Bestätigen oder mit klarer Erwartung zurückschicken.'],
-      ['Fertig', 'Ein Deployment-Ticket kann danach einen Stapel gemergter Tickets in eine Umgebung ausrollen und das Release taggen.', 'Ein Mensch gibt den Merge frei: du selbst oder jemand aus deinem Team.'],
+      ['Fertig', 'Nach dem Merge kann ein Deployment-Ticket einen Stapel gemergter Tickets in eine Umgebung ausrollen und das Release taggen.', 'Ein Mensch gibt den Merge frei: du selbst oder jemand aus deinem Team.'],
     ],
   },
   run: {

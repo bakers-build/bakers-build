@@ -2,7 +2,7 @@
 
 An **agent** is the coding agent that works a ticket on your worker machine, with your own subscription to its provider. Each one comes as an addon that connects its harness: [Claude Code](/addons/claude), [Codex](/addons/codex), [Grok Build](/addons/grok), [Kimi Code](/addons/kimi), [OpenCode](/addons/opencode) and [pi](/addons/pi).
 
-You give each configured agent and model an **alias**, such as `coder` or `opus`; the aliases on a machine form its **catalog**. A **route** maps workflow states to aliases, so a different agent can run each state, for example one model for working and another for review. An `agent:` **label** on the ticket, added by whoever edits it, picks an alias or a route for that ticket. Without a label or a `default` route, the machine's `default_agent` runs, and without that, the first agent in the catalog. A machine with no agent addon runs no agent.
+You give each configured agent and model an **alias**, such as `coder` or `opus`; the aliases on a machine form its **catalog**. A **route** maps workflow states to aliases, so a different agent can run each state, for example one model for working and another for review. An `agent:` **label** on the ticket, added by whoever edits it, picks an alias or a route for that ticket. Without a label or a `default` route, the machine's `default_agent` runs, and without that, the first available agent in priority order ([reference](/agents/reference#which-agent-runs-a-state)). A machine with no agent addon runs no agent.
 
 <span id="choose-your-task"></span>
 <span id="add-an-agent"></span>
