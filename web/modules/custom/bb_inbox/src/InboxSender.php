@@ -64,8 +64,8 @@ final class InboxSender {
     // The handler sees the sender through `requested_by`. The server-set
     // references are left out: the caller checked ticket view access itself,
     // and the reference check asks the read-scoped ticket query, which can
-    // disagree with entity access (a workspace guest outside the ticket's
-    // team may view it but not list it).
+    // disagree with entity access (a site-wide role sees every ticket but
+    // lists only its workspaces').
     $violations = [];
     $found = $message->validate();
     $found->filterByFields(['ticket_id', 'requested_by']);

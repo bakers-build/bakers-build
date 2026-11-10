@@ -84,6 +84,41 @@ final class RankEntityAccessTest extends KernelTestBase {
   }
 
   /**
+   * Outside a project's teams, only a workspace lead opens or changes tickets.
+   *
+   * Entity access agrees with the listings: the ticket is opened, changed and
+   * listed exactly where it is in the account's read scope.
+   */
+  public function testTeamsFenceTicketsByDirectAddress(): void {
+    $ticket = $this->fixture('a', 'bb_ticket');
+    $facts = [];
+    foreach (['guest', 'contributor', 'lead'] as $rank) {
+      $outside = $this->createAccount("outside-$rank");
+      $this->addMembership($this->fixture('a', 'bb_workspace'), $outside, [$rank]);
+      $facts["outside $rank"] = [
+        $ticket->access('view', $outside),
+        $ticket->access('update', $outside),
+        in_array((int) $ticket->id(), $this->queryIdsAs('bb_ticket', $outside), TRUE),
+      ];
+    }
+    $inside = $this->createAccount('inside-contributor');
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $inside, ['contributor']);
+    $this->addMembership($this->fixture('a', 'bb_team'), $inside, []);
+    $facts['inside contributor'] = [
+      $ticket->access('view', $inside),
+      $ticket->access('update', $inside),
+      in_array((int) $ticket->id(), $this->queryIdsAs('bb_ticket', $inside), TRUE),
+    ];
+
+    self::assertSame([
+      'outside guest' => [FALSE, FALSE, FALSE],
+      'outside contributor' => [FALSE, FALSE, FALSE],
+      'outside lead' => [TRUE, TRUE, TRUE],
+      'inside contributor' => [TRUE, TRUE, TRUE],
+    ], $facts);
+  }
+
+  /**
    * Local editors may assign, but cannot borrow a foreign lead's secret access.
    */
   public function testRankFieldGateDoesNotLeakAcrossWorkspaces(): void {
@@ -92,6 +127,7 @@ final class RankEntityAccessTest extends KernelTestBase {
     // no explicit role now grants nothing — an explicit `contributor` role is
     // what makes alice a "local ticket editor" in workspace A.
     $this->addMembership($this->fixture('a', 'bb_workspace'), $alice, ['contributor']);
+    $this->addMembership($this->fixture('a', 'bb_team'), $alice, []);
     $this->grantRank($alice, $this->fixture('b', 'bb_workspace'), 'lead');
 
     // Layer A: the union really does carry the borrowed permission. Without
