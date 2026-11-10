@@ -38,17 +38,6 @@ export {
 /** Default branch template: `<prefix><key>-<title-slug>` (readable). */
 export const DEFAULT_BRANCH_TEMPLATE = '{branch_prefix}{key}-{title_slug}';
 
-/** Old option keys and template placeholders, each with its replacement. */
-const RENAMED: Record<string, string> = {
-  branchPrefix: 'branch_prefix',
-  branchTemplate: 'branch_template',
-  autoSetupMerge: 'auto_setup_merge',
-};
-const RENAMED_PLACEHOLDERS: Record<string, string> = {
-  '{branchPrefix}': '{branch_prefix}',
-  '{titleSlug}': '{title_slug}',
-};
-
 function renderBranchTemplate(
   template: string,
   vars: Record<string, string>,
@@ -199,14 +188,6 @@ export interface GitWorkspaceAddonOptions {
 export function gitWorkspace(
   opts: GitWorkspaceAddonOptions = {},
 ): WorkspacePlugin {
-  for (const [old, use] of Object.entries(RENAMED)) {
-    if (old in opts) throw new Error(`${old} was renamed: use ${use}`);
-  }
-  for (const [old, use] of Object.entries(RENAMED_PLACEHOLDERS)) {
-    if (opts.branch_template?.includes(old)) {
-      throw new Error(`${old} was renamed: use ${use}`);
-    }
-  }
   return {
     kind: 'worktree',
     id: 'git',

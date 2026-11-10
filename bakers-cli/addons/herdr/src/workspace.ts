@@ -14,7 +14,6 @@ import type {
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
 import { exec } from '@bakers-build/core';
-import { rejectRenamed } from './config.js';
 import { isRecord, parseJson } from './pane-layout.js';
 import { deriveHerdrRoot, type RootGitExec } from './root-anchor.js';
 import { resolveBaseRef } from './shared.js';
@@ -267,7 +266,6 @@ export function herdrWorkspace(
     execHerdr?: HerdrExec;
   } = {},
 ): WorkspacePlugin {
-  rejectRenamed(opts);
   return {
     kind: 'worktree',
     id: 'herdr',

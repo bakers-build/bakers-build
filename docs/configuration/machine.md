@@ -14,10 +14,10 @@
 ## Minimal example
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 /** @type {import('@bakers-build/core').MachineConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
   label: 'alex-laptop',
   addons: ['@bakers-build/addon-codex'],
@@ -28,39 +28,26 @@ export default {
 
 | Field | Meaning and default |
 |---|---|
-| `schema_version` | `2`. The `// @bakers-schema-version 2` header and this field must agree. Version 1 is refused; run `bakers config upgrade`. |
+| `schema_version` | `1`. The `// @bakers-schema-version 1` header and this field must agree. |
 | `machine_id` | Required. This host's key on the server, so each machine has its own. `bakers init` generates a UUID for a new machine; an existing machine keeps the id it already has. A UUID in any case loads lowercased. Conductor ids are derived from it, so two users cannot share a `machine_id`: the second one's `bakers conductor start` is refused; remove `machine_id` and run `bakers init` for a fresh UUID. |
 | `label` | Required display name for people, never a key. `bakers init` asks for it (default: the short hostname, used without a prompt when there is no terminal) or takes `--label`. It names the machine on the server when the machine first registers, and a machine still named after its `machine_id` on its next start; rename it there afterwards. |
 | `addons` | This host's addons: a package name or `{ use, alias?, with? }`, the same shape as the project's `addons`. Agent harnesses go here and are the source of agent candidates; with none, the catalog is empty and the conductor fails to load. Any addon whose page allows the machine file may go here too, for example `@bakers-build/addon-bakers-ui-artifacts` or `@bakers-build/addon-ports`. An entry in a file its addon does not allow is not loaded. `with` is checked against the addon's options schema. See [Configure addons](/addons/configure). |
+| `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
 | `agents` | Object, described [below](#agents). An array is invalid. |
 | `agents.catalog` | Extra aliases `{ harness, alias?, with? }` built from installed harnesses. |
+| `agents.catalog[].harness`, `agents.catalog[].alias`, `agents.catalog[].with` | The installed harness package, the alias it is offered as, and its options. |
 | `agents.enabled` | Aliases to keep; omitted keeps all. |
 | `agents.disabled` | Aliases to drop. |
 | `agents.routes` | Named routes from workflow states (or `'*'`) to aliases. |
 | `agents.routes.default` | The automatic route, applied without a route label. `agents.routes.default['*']` is the default agent; without it the first enabled alias is. |
 | `tunnel` | Optional literal boolean, default `false`. See [below](#preview-link-tunnels). |
 | `permissions` | Optional. Run permissions for every agent on this host: `mode` (`sandbox`, `system` or `yolo`) and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. It replaces the project's block key by key, and a harness entry's `with` replaces both; `'$inherit'` keeps the layer below. See [Shared run security](/provision/security/shared-settings). |
+| `permissions.mode` | `sandbox`, `system` or `yolo`. |
+| `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists; see [Shared run security](/provision/security/shared-settings). |
 | `executor` | Optional executor slot `{ use, export?, with? }`. Overrides every project executor on this machine; server and worktree remain project-owned. For example, [herdr-core](/addons/herdr-core). Omitted uses the project selection. |
+| `executor.use`, `executor.export`, `executor.with` | The slot's package, its named factory and the factory's options. |
 
 Unknown keys fail. The run budget (**Max parallel**) is set on the machine in the backend; a new machine starts with 5. Every conductor on this host shares it and picks up a change on its next tick.
-
-## Retired names
-
-Each fails loading with its exact replacement; `bakers config upgrade` rewrites the renamed ones.
-
-| Old name | Replacement |
-|---|---|
-| `agents.default_agent` | `agents.routes.default: { '*': '<alias>' }` |
-| `agents.addons` | The top-level `addons` |
-| `ports` | `addons: [{ use: '@bakers-build/addon-ports', with: … }]` |
-| `security` | `permissions` |
-| `executor.plugin`, `executor.options` | `executor.use`, `executor.with` |
-| `addons[].name`, `addons[].options` | `addons[].use`, `addons[].with` |
-| `user_id` | Removed; the server takes the owner from sign-in. Run `bakers init`, which keeps `machine_id`. |
-| `marketplaces` | Declared per project, in `.bakers/project.config.js` |
-| `base_url`, `client_id`, `client_secret`, `workspace_id` | Belong in the [connection](/configuration/connection) |
-| `max_parallel` | Ignored with a warning; the run budget is set in the backend |
-| `BB_HOME`, `BB_TUNNEL` | `BAKERS_HOME`, `BAKERS_TUNNEL` |
 
 ## Preview-link tunnels
 

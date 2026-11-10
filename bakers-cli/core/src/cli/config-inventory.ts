@@ -1,12 +1,11 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
-import { basename, dirname, join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { shellQuote } from '../core/shell.js';
 import {
   findConfigProjectBbDir,
   homeBbDir,
-  oldConfigFiles,
   stemForConfigFile,
 } from './bakers-dir.js';
 import {
@@ -57,8 +56,6 @@ export interface ConfigInventoryOptions {
   sourceTexts?: ReadonlyMap<string, string | null>;
   /** Where addon packages resolve from (the CLI install), after the config's dir and cwd. */
   addonBases?: string[];
-  /** Old file → new file moves the planner applies; the old file is then not reported. */
-  moves?: ReadonlyMap<string, string>;
 }
 
 export interface ConfigInventory {
@@ -396,11 +393,9 @@ export function inventoryConfig(
         'unsupported_schema_version',
         'schema_version',
         `Schema version is ${currentVersion}.`,
-        markers.every((version) => version === 1)
-          ? 'Run bakers config upgrade to rewrite it at version 2.'
-          : kind === 'machine'
-            ? 'Run bakers init to rewrite it.'
-            : `Remove ${shellQuote(path)} and run bakers init to recreate it.`,
+        kind === 'machine'
+          ? 'Run bakers init to rewrite it at version 1.'
+          : `Remove ${shellQuote(path)} and run bakers init to recreate it.`,
         'schema',
         'error',
         field,
@@ -603,12 +598,9 @@ export function inventoryConfig(
         problem.code,
         key,
         key ? `${key}: ${problem.message}` : problem.message,
-        problem.code === 'renamed_key' || problem.code === 'retired_key'
-          ? `${problem.message} (${at}); bakers config upgrade rewrites literal old names.`
-          : problem.code === 'not_checked' ||
-              problem.code === 'options_not_checked'
-            ? `Nothing to repair offline; the loader checks ${at} when the conductor starts.`
-            : `Repair ${at}: ${problem.message.replace(/\.$/, '')}.`,
+        problem.code === 'not_checked' || problem.code === 'options_not_checked'
+          ? `Nothing to repair offline; the loader checks ${at} when the conductor starts.`
+          : `Repair ${at}: ${problem.message.replace(/\.$/, '')}.`,
         'schema',
         problem.severity,
         key ? source.properties.get(key) : undefined,
@@ -636,27 +628,6 @@ export function inventoryConfig(
 
   inspectFile(machinePath, 'machine', 'machine', true);
   inspectFile(connectionPath, 'connection', 'connection', true);
-  // An old file name is never read and never ignored: each is answered with
-  // its replacement, which bakers config upgrade applies.
-  const oldFile = (from: string, to: string, owner: ConfigLayer) => {
-    if (!resolved.includes(owner) || options.moves?.has(from)) return;
-    report.findings.push({
-      code: 'superseded_file',
-      severity: 'error',
-      stage: 'inventory',
-      path: from,
-      key: null,
-      expected: `${from} was renamed: use ${to}.`,
-      observed: null,
-      owner,
-      related: [],
-      statically_determined: true,
-      remediation: `Run bakers config upgrade${owner === 'project' && projectRoot ? ` --path ${shellQuote(projectRoot)}` : ''}, or rename ${shellQuote(from)} by hand: ${to}.`,
-      recheck,
-    });
-  };
-  for (const { from, to } of oldConfigFiles(bakersRoot, options.home))
-    oldFile(from, to, 'connection');
   if (projectRoot) {
     const bakersDir = join(projectRoot, '.bakers');
     let names: string[] = [];
@@ -667,15 +638,7 @@ export function inventoryConfig(
     } catch {
       /* Missing/partial roots still inventory their required default file. */
     }
-    for (const target of options.moves?.values() ?? [])
-      if (dirname(target) === bakersDir && !names.includes(basename(target)))
-        names.push(basename(target));
-    names = names
-      .filter((name) => stemForConfigFile(name) !== undefined)
-      .sort();
-    const old = oldConfigFiles(bakersDir, options.home);
-    for (const { from, to } of old) oldFile(from, to, 'project');
-    if (names.length === 0 && old.length === 0) names = ['project.config.js'];
+    if (names.length === 0) names = ['project.config.js'];
     for (const name of names)
       inspectFile(join(bakersDir, name), 'project', 'project', true);
     inspectFile(

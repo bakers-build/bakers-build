@@ -4,7 +4,7 @@
 /** A project's committed conductor configuration: .bakers/project.config.js and its variants .bakers/project.<name>.config.js. */
 export interface ProjectConfig {
   /** Configuration schema version. */
-  schema_version?: 2;
+  schema_version?: 1;
   /** The bakers.build project this repository belongs to. */
   project: {
     /** Project name on the server; BAKERS_PROJECT overrides it. */
@@ -89,7 +89,7 @@ export interface ProjectConfig {
 /** This machine's private configuration: ~/.bakers/machine.config.js. */
 export interface MachineConfig {
   /** Configuration schema version. */
-  schema_version?: 2;
+  schema_version?: 1;
   /** Host key; bakers init writes a UUID. */
   machine_id: string;
   /** Display name for people. */
@@ -142,7 +142,7 @@ export interface MachineConfig {
 /** A connection to a bakers.build server: ~/.bakers/connections/<id>.js, or a project's .bakers/connection.config.js. dropsh reads the same file. */
 export interface ConnectionConfig {
   /** Configuration schema version. */
-  schema_version?: 2;
+  schema_version?: 1;
   site: {
     /** The server's absolute HTTP(S) URL. */
     base_url: string;

@@ -63,7 +63,7 @@ function spawnOverCap() {
     run: { id: 1, uuid: SESSION_ID, handler: 'code' },
     workspacePath: '/repo/wt',
     instructions: null,
-    env: { BB_URL: 'https://bakers.example', SECRET_DSN: SECRET },
+    env: { BAKERS_URL: 'https://bakers.example', SECRET_DSN: SECRET },
     command: `claude '${PROMPT}' --session-id ${SESSION_ID}`,
   };
 }
@@ -110,7 +110,7 @@ describe('HerdrExecutor.startRun launch script', () => {
     expect(command).toContain(PROMPT);
     expect(Buffer.byteLength(command)).toBeGreaterThan(4096);
     expect(command).toBe(
-      `BB_URL='https://bakers.example' SECRET_DSN='${SECRET}' claude '${PROMPT}' --session-id ${SESSION_ID}`,
+      `BAKERS_URL='https://bakers.example' SECRET_DSN='${SECRET}' claude '${PROMPT}' --session-id ${SESSION_ID}`,
     );
   });
 

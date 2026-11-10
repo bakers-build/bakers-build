@@ -174,18 +174,6 @@ describe('GitWorkspace run branches', () => {
     expect(ws.env).toBeUndefined();
   });
 
-  it('rejects the old camelCase option key, naming its replacement', () => {
-    expect(() => gitWorkspace({ autoSetupMerge: true } as never)).toThrow(
-      'autoSetupMerge was renamed: use auto_setup_merge',
-    );
-  });
-
-  it('rejects an old branch template placeholder, naming its replacement', () => {
-    expect(() =>
-      gitWorkspace({ branch_template: '{branchPrefix}{key}' }),
-    ).toThrow('{branchPrefix} was renamed: use {branch_prefix}');
-  });
-
   it('honours auto_setup_merge: true from the addon options', async () => {
     mkdirSync(join(main, '.bakers'));
     const ws = await gitWorkspace({ auto_setup_merge: true })

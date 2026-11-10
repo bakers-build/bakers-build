@@ -1,4 +1,4 @@
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 // Canonical CONNECTION config for a bakers.build target repo (BB-215 addon form). This
 // is the CONNECTION surface only — `site` + the auth / renderer plugins. `bakers
 // tools`, `bakers auth`, `bakers ui`, and the conductor's auth all read this small file
@@ -25,7 +25,7 @@
 
 /** @type {import('@bakers-build/core').ConnectionConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   site: {
     base_url: 'https://bakers.example.com',
     jsonapi_prefix: '/jsonapi',

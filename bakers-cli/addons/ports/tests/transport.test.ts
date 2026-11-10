@@ -369,12 +369,11 @@ describe('portsSettings', () => {
     );
   });
 
-  // BAKERS-159: the machine schema refuses the retired key at load, naming
-  // the file and its addons[] replacement.
-  it('machine ports key throws the retired-key remediation', async () => {
+  // The machine schema refuses the old key at load, naming the file.
+  it('machine ports key throws as an unknown key', async () => {
     await machine(`{ ports: { transport: { use: 'old-t' } } }`);
     await expect(portsSettings(worktree)).rejects.toThrow(
-      `${join(bakersHome, 'machine.config.js')}: ports is retired: configure it as addons: [{ use: '@bakers-build/addon-ports', with: … }]`,
+      `${join(bakersHome, 'machine.config.js')}: ports unknown key`,
     );
   });
 });

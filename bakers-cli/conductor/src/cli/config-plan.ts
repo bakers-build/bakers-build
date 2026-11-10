@@ -11,7 +11,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { createRequire } from 'node:module';
-import { dirname, join, resolve } from 'node:path';
+import { dirname } from 'node:path';
 import {
   type ConfigFileReport,
   type ConfigFinding,
@@ -20,11 +20,8 @@ import {
   type ConfigReport,
   configRecheckCommand,
   finalizeConfigReport,
-  findConfigProjectBbDir,
-  homeBbDir,
   inspectConfigSource,
   inventoryConfig,
-  oldConfigFiles,
   shellQuote,
 } from '@bakers-build/core';
 import { applyMigrations, BB_CONFIG_SCHEMA_VERSION } from './config-schema.js';
@@ -38,7 +35,6 @@ import {
   renderGlobalConnection,
   renderHostMachine,
 } from './config-templates.js';
-import { renameOldNames } from './config-upgrade.js';
 import { validateConfigSources } from './config-validation.js';
 
 export interface ConfigPlanOptions extends ConfigInventoryOptions {
@@ -67,48 +63,13 @@ export interface ConfigPlan {
   writes: ConfigWrite[];
   fingerprints: Map<string, string | null>;
 }
-// Version 2 renamed files and keys (one name per thing); upgrade rewrites v1.
+// Every config file is at schema v1; no migration step exists yet.
 const CURRENT = {
-  machine: 2,
-  project: 2,
-  connection: 2,
-  'project-connection': 2,
+  machine: 1,
+  project: 1,
+  connection: 1,
+  'project-connection': 1,
 };
-const SCHEMA_KIND = {
-  machine: 'machine',
-  project: 'project',
-  connection: 'connection',
-  'project-connection': 'connection',
-} as const;
-
-/** Old files the upgrade moves to their new name, old path → new path. */
-function plannedMoves(options: ConfigPlanOptions): Map<string, string> {
-  const moves = new Map<string, string>();
-  if ((options.operation ?? 'upgrade') !== 'upgrade') return moves;
-  const scope = options.scope ?? 'all';
-  const cwd = resolve(options.cwd ?? process.cwd());
-  const projectDir = options.path
-    ? join(resolve(cwd, options.path), '.bakers')
-    : findConfigProjectBbDir(cwd, options.home);
-  const dirs: [string, 'connection' | 'project'][] = [
-    [homeBbDir(options.home), 'connection'],
-    ...(projectDir ? [[projectDir, 'project'] as [string, 'project']] : []),
-  ];
-  for (const [dir, layer] of dirs) {
-    if (
-      scope !== 'all' &&
-      scope !== layer &&
-      !(scope === 'conductor' && layer === 'project')
-    )
-      continue;
-    for (const { from, to } of oldConfigFiles(dir, options.home)) {
-      if (!to.endsWith('.js')) continue; // a retired file has no new name
-      const target = join(dir, to);
-      if (!existsSync(target)) moves.set(from, target);
-    }
-  }
-  return moves;
-}
 function fingerprint(text: string) {
   return `sha256:${createHash('sha256').update(text).digest('hex')}`;
 }
@@ -139,46 +100,14 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       : requestedScope !== undefined
         ? { scope: requestedScope }
         : {};
-  const moves = plannedMoves(options);
-  const movedText = new Map(
-    [...moves].map(([from, to]) => [to, readFileSync(from, 'utf8')] as const),
-  );
-  const sourceTexts = new Map(options.sourceTexts ?? []);
-  for (const [from, to] of moves) {
-    sourceTexts.set(to, movedText.get(to) as string);
-    sourceTexts.set(from, null);
-  }
   const inventoryOptions = {
     ...options,
     ...inventoryScopeOverride,
     operation: options.operation ?? 'upgrade',
     currentVersions: CURRENT,
-    ...(moves.size ? { moves, sourceTexts } : {}),
   };
   const inventory = inventoryConfig(inventoryOptions);
   const report = inventory.report;
-  if (inventoryOptions.operation === 'upgrade')
-    for (const finding of report.findings) {
-      // A retired local file is not moved or deleted: upgrade reports it and
-      // carries its literal project name over as a BAKERS_PROJECT hint.
-      if (
-        finding.code !== 'superseded_file' ||
-        !finding.path.endsWith('.local.js')
-      )
-        continue;
-      finding.severity = 'warning';
-      let hint = '';
-      try {
-        const project = inspectConfigSource(
-          readFileSync(finding.path, 'utf8'),
-        ).properties.get('project');
-        if (project?.staticallyDetermined && typeof project.value === 'string')
-          hint = ` Set BAKERS_PROJECT=${shellQuote(project.value)} where the conductor runs.`;
-      } catch {
-        /* Unreadable: nothing to carry over. */
-      }
-      finding.remediation = `Delete ${shellQuote(finding.path)} once its values live elsewhere: ${finding.expected}${hint}`;
-    }
   const original = new Map(
     [...inventory.sources].map(([path, source]) => [path, source.text]),
   );
@@ -204,10 +133,8 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     (f) =>
       (['scope', 'syntax', 'inventory'].includes(f.stage) &&
         f.code !== 'missing_required_file') ||
-      // Version 1 is rewritten below; an old machine file keeps its machine_id.
-      (f.code === 'unsupported_schema_version' &&
-        f.path !== machine?.path &&
-        files.find((file) => file.path === f.path)?.version.effective !== 1) ||
+      // An old machine file is rewritten below, keeping its machine_id.
+      (f.code === 'unsupported_schema_version' && f.path !== machine?.path) ||
       f.code === 'version_marker_disagreement',
   );
   const recheck =
@@ -802,27 +729,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     migrateStateDefaults(file, source);
     migrateCatalog(file, source);
   }
-  // Version 1 → 2: literal old names are rewritten; a computed value that
-  // still carries one is named for hand editing (never guessed at).
-  const renamed = (file: ConfigFileReport) => {
-    const e = editors.get(file.path);
-    if (!e || (file.version.effective ?? 1) >= 2) return;
-    for (const { key, message } of renameOldNames(e, SCHEMA_KIND[file.kind]))
-      errors.push({
-        code: 'renamed_key',
-        severity: 'warning',
-        stage: 'planning',
-        path: file.path,
-        key,
-        expected: message,
-        observed: '[COMPUTED]',
-        owner: file.layer,
-        related: [],
-        statically_determined: false,
-        remediation: `Rewrite ${key} in ${shellQuote(file.path)} by hand: ${message}.`,
-        recheck,
-      });
-  };
   for (const file of files) {
     if (protectedFile(file) || !file.selected) continue;
     let e = editors.get(file.path);
@@ -840,12 +746,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         editor(file).remove('user_id');
         fill(file, 'machine_id', randomUUID());
         fill(file, 'label', options.inputs?.label);
-        renamed(file);
-        editor(file).stamp(2);
-      }
-      if (file.kind === 'project-connection' && e) {
-        renamed(file);
-        e.stamp(2);
+        editor(file).stamp(1);
       }
       if (file.kind === 'project') {
         if (
@@ -867,7 +768,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         if (!e) continue;
         {
           e = editor(file);
-          renamed(file);
           fill(file, 'project.name', options.project);
           const canonical = new ConfigSourceEditor(
             renderCommittedConfig({
@@ -909,7 +809,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               'project.workspace',
               JSON.stringify(options.inputs.workspace),
             );
-          e.stamp(2);
+          e.stamp(1);
         }
       }
     } catch {
@@ -999,24 +899,8 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
   ];
   report.verification.skipped = proposed.verification.skipped;
   const writes: ConfigWrite[] = [];
-  const movedTo = new Set(moves.values());
-  for (const [from, to] of moves) {
-    const before = movedText.get(to) as string;
-    writes.push({ path: from, before, after: null, mode: 0o600 });
-    report.changes.push({
-      path: from,
-      layer: from.startsWith(homeBbDir(options.home))
-        ? 'connection'
-        : 'project',
-      before_version: null,
-      after_version: null,
-      diff: `--- ${from}\n+++ ${to} (moved)`,
-    });
-  }
   for (const file of files.filter((f) => f.selected)) {
-    const before = movedTo.has(file.path)
-      ? null
-      : (original.get(file.path) ?? null);
+    const before = original.get(file.path) ?? null;
     const after = overlay.has(file.path)
       ? (overlay.get(file.path) ?? null)
       : before;
@@ -1055,13 +939,8 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     });
   }
   const fingerprints = new Map(
-    files.map((file) => [
-      file.path,
-      movedTo.has(file.path) ? null : file.fingerprint,
-    ]),
+    files.map((file) => [file.path, file.fingerprint]),
   );
-  for (const [from, to] of moves)
-    fingerprints.set(from, fingerprint(movedText.get(to) as string));
   finalizeConfigReport(report);
   return { report, writes, fingerprints };
 }

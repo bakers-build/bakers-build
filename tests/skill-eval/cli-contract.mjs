@@ -278,7 +278,7 @@ export async function runCli(argv, { origin, files = {}, timeoutMs = 30000 } = {
     const auth = join(cliRoot, 'addons', 'auth-basic', 'dist', 'src', 'index.js');
     const essentials = join(cliRoot, 'addons', 'essentials', 'dist', 'src', 'index.js');
     writeFileSync(join(work, '.bakers', 'connection.config.js'),
-      `import basic from ${JSON.stringify(auth)};\nexport default { schema_version: 2, site: { base_url: ${JSON.stringify(origin)}, jsonapi_prefix: '/jsonapi' }, plugins: [{ plugin: ${JSON.stringify(essentials)} }, basic(${JSON.stringify(basicToken)})] };\n`);
+      `import basic from ${JSON.stringify(auth)};\nexport default { schema_version: 1, site: { base_url: ${JSON.stringify(origin)}, jsonapi_prefix: '/jsonapi' }, plugins: [{ plugin: ${JSON.stringify(essentials)} }, basic(${JSON.stringify(basicToken)})] };\n`);
     const materialized = argv.map(token => {
       for (const [virtual, content] of Object.entries(files)) {
         const at = token.indexOf(`@${virtual}`);

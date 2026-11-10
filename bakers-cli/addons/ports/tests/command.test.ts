@@ -709,9 +709,9 @@ describe('ports list with the retired machine ports key', () => {
       spy.mockRestore();
       vi.unstubAllEnvs();
     }
-    // BAKERS-159: the machine schema now refuses the retired key at load.
+    // The machine schema refuses the old key at load.
     expect(out[0]).toBe(
-      `tunnel sharing off (${join(home, 'machine.config.js')}: ports is retired: configure it as addons: [{ use: '@bakers-build/addon-ports', with: … }]) — listing only\n`,
+      `tunnel sharing off (${join(home, 'machine.config.js')}: ports unknown key) — listing only\n`,
     );
     process.exitCode = undefined;
   });

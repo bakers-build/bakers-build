@@ -79,9 +79,9 @@ Modes, blocks, env var filter, risks and isolation: [Run security](/provision/se
 This complete file uses the special `default` route for Codex coding and Claude Opus review without a ticket label. The named `careful` route uses Opus throughout. For a complete opt-in route setup, follow [Use agent routes](/agents/guide#use-agent-routes).
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 export default {
-  schema_version: 2,
+  schema_version: 1,
   machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
   label: 'alex-laptop',
   addons: ['@bakers-build/addon-codex', '@bakers-build/addon-claude'],
@@ -104,7 +104,7 @@ export default {
 
 ## Old keys and verification
 
-Agent addons in a project config are ignored with a warning, and the retired keys `agent`, `agents`, `default_agent` and `agent_routes` there are rejected. Move that policy here by hand. In this file, `agents.default_agent` is an old name: loading fails and names `agents.routes.default: { '*': '<alias>' }`; `bakers config upgrade` rewrites it.
+Agent addons in a project config are ignored with a warning, and the retired keys `agent`, `agents`, `default_agent` and `agent_routes` there are rejected. Move that policy here by hand. In this file, `agents.default_agent` is an old name and fails as an unknown key; set `agents.routes.default: { '*': '<alias>' }` instead.
 
 ```sh
 bakers config check --scope machine

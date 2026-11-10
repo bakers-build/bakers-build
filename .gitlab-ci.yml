@@ -149,6 +149,7 @@ before_script:
   - .gitlab-ci.yml
 .changes_docs: &changes_docs
   - docs/**/*
+  - bakers-cli/core/schema/**/*
   - .gitlab-ci.yml
 
 # Linters run only in merge request pipelines, not on branch pushes (e.g.
@@ -233,7 +234,7 @@ docs_pages:
   before_script: []
   script:
     - node docs/scripts/check-pages.mjs
-    - node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
+    - node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs docs/scripts/config-fields.test.mjs
 
 # The MR title becomes the squash subject, from which `release:version` derives version and
 # release notes. GitLab reads the title when the pipeline is created: after fixing a title, run a
@@ -576,7 +577,7 @@ tui_musl:
     # indicator in a plain scalar, and an unquoted line here took the whole
     # pipeline to `failed` with zero jobs.
     - 'mkdir -p ~/.bakers/connections'
-    - 'echo "export default { schema_version: 2, site: { base_url: ''https://ci.invalid'' }, workspace_id: ''00000000-0000-4000-8000-000000000000'' };" > ~/.bakers/connections/default.js'
+    - 'echo "export default { schema_version: 1, site: { base_url: ''https://ci.invalid'' }, workspace_id: ''00000000-0000-4000-8000-000000000000'' };" > ~/.bakers/connections/default.js'
     - node bin/bakers ui --print-config
     # PRODUCT leg (A1) — no OPENTUI_LIBC in this environment. Asserts our own detection
     # says musl, that it sets the variable, and that libopentui.so then really opens.

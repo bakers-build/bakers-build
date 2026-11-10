@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-  rejectRenamed,
   resolveBaseRef,
   restoreWritable,
   validateBranch,
@@ -359,7 +358,6 @@ export function orcaWorkspace(
     execGit?: RootGitExec;
   } = {},
 ): WorkspacePlugin {
-  rejectRenamed(opts);
   return {
     kind: 'worktree',
     id: 'orca',

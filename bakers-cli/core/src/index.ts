@@ -5,13 +5,11 @@ export type {
   BbConfigSource,
 } from './cli/bakers-dir.js';
 export {
-  assertNoOldConfigFiles,
   findBbConfig,
   findBbDir,
   findConfigProjectBbDir,
   findProjectBbDir,
   homeBbDir,
-  oldConfigFiles,
   resolveBbConfigPath,
   resolveConfigPath,
   stemForConfigFile,
@@ -30,13 +28,6 @@ export {
   verifyConfigConnections,
   withBakersClientHeader,
 } from './cli/config-online.js';
-export {
-  type ConfigKind,
-  matchKeyPaths,
-  OLD_FILES,
-  OLD_NAMES,
-  type OldName,
-} from './cli/config-renames.js';
 export type {
   ConfigChange,
   ConfigFileKind,
@@ -76,10 +67,10 @@ export {
 export {
   addonOptionProblems,
   assertValidConfig,
+  type ConfigKind,
   checkConfigText,
   configAjv,
   coreSchemaPath,
-  oldNameProblems,
   type SchemaProblem,
   type StaticConfig,
   staticConfig,
@@ -118,7 +109,6 @@ export {
 } from './cli/machine-context.js';
 export { corePackageRoot } from './cli/paths.js';
 export { resolveModuleEslintStyle } from './cli/resolve-module.js';
-export { RETIRED_ENV_NAMES, retiredEnvErrors } from './cli/retired-env.js';
 export {
   BB_PACKAGE,
   checkForUpdate,

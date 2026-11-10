@@ -33,7 +33,7 @@ Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. 
    bakers config upgrade --scope all --dry-run
    ```
 
-   The preview parses your files without running them and writes nothing. It shows each file's schema change and a redacted diff. Resolve blocking findings first: computed values it cannot move, conflicting destinations, or a future schema version. A version 1 file, or a file or key under an old name, is refused at load with a message naming `bakers config upgrade`; the upgrade rewrites it at version 2 under the new names. Each file page lists its retired names: [connection](/configuration/connection#retired-names), [machine](/configuration/machine#retired-names), [project](/configuration/project#retired-names).
+   The preview parses your files without running them and writes nothing. It shows each file's schema change and a redacted diff. Resolve blocking findings first: computed values it cannot move, conflicting destinations, or a future schema version. The upgrade does not rename old file or key names: an old key fails as an unknown key, and an old file name is not read. Rename them by hand, using the field tables of the [connection](/configuration/connection), [machine](/configuration/machine) and [project](/configuration/project) files.
 
 3. Apply it, check it, and confirm nothing is left:
 

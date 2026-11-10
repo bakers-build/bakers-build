@@ -88,26 +88,6 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     );
   });
 
-  it('refuses a connection at schema version 1, naming bakers config upgrade', async () => {
-    writeFileSync(
-      join(bakersDir(), 'connection.config.js'),
-      `// @bakers-schema-version 1\nexport default { schema_version: 1, site: { base_url: 'https://x.test' }, plugins: [] };`,
-    );
-    await expect(loadBbConfig(host, { cwd: tmp })).rejects.toThrow(
-      'schema version 1 is not supported; run bakers config upgrade to rewrite it at version 2',
-    );
-  });
-
-  it('refuses an old project bakers.config.js, naming connection.config.js', async () => {
-    writeFileSync(
-      join(bakersDir(), 'bakers.config.js'),
-      `export default { site: { base_url: 'https://x.test' }, plugins: [] };`,
-    );
-    await expect(loadBbConfig(host, { cwd: tmp })).rejects.toThrow(
-      'bakers.config.js was renamed: use connection.config.js',
-    );
-  });
-
   it('reads site + already-constructed plugins from a project connection.config.js', async () => {
     const d = bakersDir();
     writeFileSync(
@@ -257,29 +237,6 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     });
     expect(cfg.site.base_url).toBe('https://explicit.test');
     expect(cfg.selection_source).toBe('flag-config');
-  });
-
-  // BAKERS-159: the checkout selection file `.bakers/connection.config.local.js`
-  // is retired; BAKERS_CONNECTION / --connection select a connection. A
-  // checkout still holding the file is refused with that replacement.
-  it('refuses a retired connection.config.local.js, naming BAKERS_CONNECTION', async () => {
-    const projectBb = bakersDir();
-    writeFileSync(
-      join(projectBb, 'connection.config.local.js'),
-      `export default { connection: 'staging' };\n`,
-    );
-    const home = join(tmp, 'home');
-    const connections = join(home, '.bakers', 'connections');
-    mkdirSync(connections, { recursive: true });
-    writeFileSync(
-      join(connections, 'staging.js'),
-      `export default { site: { base_url: 'https://staging.test' }, plugins: [] };\n`,
-    );
-    await expect(
-      loadBbConfig(host, { cwd: tmp, home, env: {} }),
-    ).rejects.toThrow(
-      `${join(projectBb, 'connection.config.local.js')} was renamed: use BAKERS_CONNECTION or --connection; the file is retired`,
-    );
   });
 
   it('--connection beats BAKERS_CONNECTION', async () => {
@@ -497,7 +454,7 @@ export const mkComposite = () => ([{ id: 'child-a' }, { id: 'child-b' }]);\n`,
     writeFileSync(
       join(d, 'project.config.js'),
       `export default {
-        schema_version: 2,
+        schema_version: 1,
         project: { name: 'p' },
         server: { use: '@bakers-build/addon-remote-drupal' },
       };\n`,

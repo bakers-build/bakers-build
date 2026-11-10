@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # Start this workspace's conductors (README › Conductor autostart). install.sh runs it as coder on
 # every start, after its services. With the workspace parameter conductor_autostart on
-# (BAKERS_CONDUCTOR_AUTOSTART=true), it runs `bakers conductor start` (detached, no herdr needed) in
-# every ~/projects/* checkout that has .bakers/project.config.js, then checks with `bakers conductor status`
-# that the conductor is online. Each checkout gets one line in the startup log:
+# (BAKERS_CONDUCTOR_AUTOSTART=true), it runs `bakers oven start` (detached, no herdr needed) in
+# every ~/projects/* checkout that has .bakers/project.config.js (or conductor.config.js, its
+# older name), then checks with `bakers oven status` that the conductor is online. `oven` is
+# the command on the pinned older releases and an alias of `conductor` on newer ones.
+# Each checkout gets one line in the startup log:
 #   conductors: started <path>
 #   conductors: failed <path>: <reason>
 #   conductors: waiting <path>: <reason>   (retried in the background, see below)
 # A stopped workspace kills its conductors without their offline write, so for some minutes after
-# a restart `bakers conductor start` still takes the dead conductor for a live one and starts nothing.
+# a restart `bakers oven start` still takes the dead conductor for a live one and starts nothing.
 # Such a checkout is retried in the background until its conductor is online or the retry window
 # ends; those lines go to /tmp/bakers-conductors.log. It never fails the workspace start.
 set -uo pipefail
@@ -26,11 +28,11 @@ fi
 # conductor is online, 1 when the start failed, 2 when it started nothing (not online).
 start() {
   local output
-  if ! output=$(cd "$1" && bakers conductor start --no-update-check 2>&1); then
+  if ! output=$(cd "$1" && bakers oven start --no-update-check 2>&1); then
     printf '%s' "$output" | tail -n 1
     return 1
   fi
-  if (cd "$1" && bakers conductor status 2>/dev/null) | cut -f2 | grep -qx online; then
+  if (cd "$1" && bakers oven status 2>/dev/null) | cut -f2 | grep -qx online; then
     echo started
     return 0
   fi
@@ -52,9 +54,8 @@ retry() {
   echo "conductors: failed $1: not online after ${RETRY_FOR}s: $reason"
 }
 
-for config in "$HOME"/projects/*/.bakers/project.config.js; do
-  [ -f "$config" ] || continue
-  checkout="${config%/.bakers/project.config.js}"
+for checkout in "$HOME"/projects/*; do
+  [ -f "$checkout/.bakers/project.config.js" ] || [ -f "$checkout/.bakers/conductor.config.js" ] || continue
   reason=$(start "$checkout")
   case $? in
     0) echo "conductors: started $checkout" ;;

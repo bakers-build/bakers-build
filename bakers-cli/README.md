@@ -289,8 +289,7 @@ An explicit `--config <path>` wins over named selection. Otherwise `--connection
 unselected checkout uses `~/.bakers/connections/default.js` when present; if it is absent, a
 sole named connection is selected automatically. Multiple named connection files require
 `--connection` or `BAKERS_CONNECTION`. Old file names (`bakers.config.js`,
-`conductor.config.js`, the `*.config.local.js` overrides) are refused with their replacement;
-`bakers config upgrade` renames them.
+`conductor.config.js`, the `*.config.local.js` overrides) are not read; rename them by hand.
 
 Update code and migrate configuration separately:
 
@@ -303,9 +302,8 @@ bakers config check --scope all --online
 
 Upgrade plans all selected layers without importing configuration and preserves supported
 values; a repeated successful upgrade changes nothing. Missing inputs and conflicts have
-file/key repairs. Project upgrade rewrites every variant to schema version 2 (`project: { name,
-workspace? }`, slots `server`/`worktree` as `{ use, … }`). Runtime loading of an old name
-names its replacement and directs you to `bakers config upgrade`. `--format json` produces one
+file/key repairs. Every file is at schema version 1; an old key name is an unknown key, and
+`bakers config upgrade` does not rename it. `--format json` produces one
 non-interactive report. Offline checks and
 upgrades do not establish online readiness. Full ownership, scope options, supported
 history and the exact focused regression/CI gates are in [`CONFIG.md`](CONFIG.md).
@@ -382,7 +380,7 @@ A `.bakers/` dir may hold **several** configs — the default `project.config.js
 own conductor (own variant, claims, worktrees). **Naming rule:** a file is a
 project config **iff** it is exactly `project.config.js` or matches `project.<variant>.config.js`
 (so `vite.config.js` is ignored). The old `conductor.config.js` and `<variant>.conductor.config.js`
-are refused; `bakers config upgrade` renames them.
+are not read; rename them by hand.
 Select one per invocation by conductor name (= the variant; the default is `conductor`):
 
 ```bash

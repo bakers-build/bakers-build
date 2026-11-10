@@ -1,7 +1,6 @@
 import { rmSync } from 'node:fs';
 import {
   type LaunchScript,
-  rejectRenamed,
   renderTemplate,
   truncateOpenTabTitle,
   watchLaunch,
@@ -315,7 +314,6 @@ export class OrcaExecutor implements BbExecutor {
 export function orcaExecutor(
   options: OrcaExecutorOptions = {},
 ): ExecutorPlugin {
-  rejectRenamed(options);
   return {
     kind: 'executor',
     id: 'orca',

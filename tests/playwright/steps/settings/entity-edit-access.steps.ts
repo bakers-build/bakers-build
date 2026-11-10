@@ -147,9 +147,9 @@ function writeDropshConfig(base: string, account: string): string {
       }`;
   writeFileSync(
     config,
-    `// @bakers-schema-version 2
+    `// @bakers-schema-version 1
 export default {
-  schema_version: 2,
+  schema_version: 1,
   site: { base_url: ${JSON.stringify(base)}, jsonapi_prefix: '/jsonapi' },
   plugins: [
     { plugin: '@bakers-build/addon-essentials' },

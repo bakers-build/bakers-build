@@ -15,7 +15,7 @@ export const AGENT_SHELL_ENV: Record<string, string> = {
   BAKERS_AGENT_SHELL: '1',
 };
 
-/** BAKERS_* (and the unrenamed BB_URL-style BB_*) env vars as `--env KEY=VALUE` args (never dump the full environment). */
+/** BAKERS_* (and the internal BB_* hand-offs) env vars as `--env KEY=VALUE` args (never dump the full environment). */
 export function envArgs(env: Record<string, string | undefined>): string[] {
   const out: string[] = [];
   for (const [key, value] of Object.entries(env)) {

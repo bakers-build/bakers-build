@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildHostProgram,
   DEFAULT_COMMANDS,
-  main,
   resolveCliVersion,
   resolveCommands,
   runHost,
@@ -238,26 +237,6 @@ describe('runHost — unknown command surfaces an error (AC-2)', () => {
     process.exitCode = 0;
     await runHost(['definitely-not-a-command']);
     expect(process.exitCode).not.toBe(0);
-  });
-});
-
-describe('main — retired BB_* variables (BAKERS-159)', () => {
-  const savedCode = process.exitCode;
-  afterEach(() => {
-    process.exitCode = savedCode;
-    delete process.env.BB_HOME;
-    vi.restoreAllMocks();
-  });
-  it('fails with exit 1 and names the replacement before dispatch', async () => {
-    process.env.BB_HOME = '/tmp/old';
-    process.exitCode = 0;
-    const err = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
-    await main(['node', 'bakers', '--version']);
-    expect(process.exitCode).toBe(1);
-    // stringContaining: an agent session may carry other retired BB_* vars.
-    expect(err).toHaveBeenCalledWith(
-      expect.stringContaining('BB_HOME was renamed: set BAKERS_HOME instead\n'),
-    );
   });
 });
 

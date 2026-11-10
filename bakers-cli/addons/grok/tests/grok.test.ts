@@ -463,12 +463,6 @@ function captureArgv(binary: string, command: string): string[] {
 }
 
 describe('GrokAgent args and effort', () => {
-  it('rejects the old reasoningEffort key, naming its replacement', () => {
-    expect(() => new GrokAgent({ reasoningEffort: 'low' } as never)).toThrow(
-      'reasoningEffort was renamed: use reasoning_effort',
-    );
-  });
-
   it('prefers effort over reasoning_effort and quotes both values', () => {
     const command = new GrokAgent({
       model: 'grok-4.5',

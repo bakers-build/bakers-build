@@ -26,7 +26,7 @@ it('generates a current connection with credentials and workspace independent of
     expect(applyConfigPlan(plan).result).toBe('ok');
     const config = (await import(pathToFileURL(connectionPath).href)).default;
     expect(config).toMatchObject({
-      schema_version: 2,
+      schema_version: 1,
       site: { base_url: 'https://package.test' },
       workspace_id: '11111111-1111-4111-8111-111111111111',
     });

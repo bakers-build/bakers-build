@@ -5,7 +5,6 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -125,13 +124,7 @@ it.each([
   },
   {
     source: `export default { bakers: { project: 'demo' } };`,
-    finding: {
-      key: 'bakers',
-      code: 'renamed_key',
-      remediation: expect.stringContaining(
-        'bakers was renamed: use project: { name, workspace }',
-      ),
-    },
+    finding: { key: 'bakers', code: 'unknown_key' },
   },
 ])('config check names project: { name } for a legacy identity: $source', ({
   source,
@@ -195,21 +188,21 @@ function world() {
   const engine = join(cwd, '.bakers/project.config.js');
   writeFileSync(
     machine,
-    "// @bakers-schema-version 2\nexport default { schema_version: 2, machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'operator' };\n",
+    "// @bakers-schema-version 1\nexport default { schema_version: 1, machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'operator' };\n",
   );
   writeFileSync(connection, connectionText());
   writeFileSync(engine, engineText());
   return { home, cwd, machine, connection, engine, scope: 'all' as const };
 }
 function connectionText(secret = 'private-value') {
-  return `// @bakers-schema-version 2\nexport default { schema_version: 2, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: '${secret}' } }] };\n`;
+  return `// @bakers-schema-version 1\nexport default { schema_version: 1, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: '${secret}' } }] };\n`;
 }
 afterEach(() => {
   for (const root of roots.splice(0))
     rmSync(root, { recursive: true, force: true });
 });
 describe('offline scoped configuration plan and apply', () => {
-  it('renders schema-v2 zero-config agent templates', () => {
+  it('renders schema-v1 zero-config agent templates', () => {
     const machine = renderHostMachine({
       machineId: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
       label: 'operator',
@@ -222,8 +215,8 @@ describe('offline scoped configuration plan and apply', () => {
       },
     });
 
-    expect(machine).toContain('// @bakers-schema-version 2');
-    expect(machine).toContain('schema_version: 2');
+    expect(machine).toContain('// @bakers-schema-version 1');
+    expect(machine).toContain('schema_version: 1');
     expect(machine).not.toMatch(/^\s*agents:/m);
     // The run budget is a backend setting.
     expect(machine).not.toContain('max_parallel');
@@ -309,7 +302,6 @@ export default {
   schema_version: 1,
   machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
   label: 'operator',
-  max_parallel: 2,
   agents: ['opus', 'k3-pi'],
   disabled_agents: ['codex'],
   agent_routes: {
@@ -322,10 +314,10 @@ export default {
     writeFileSync(
       w.engine,
       `export default {
-  bakers: { project: 'demo' },
-  remote: { plugin: '@bakers-build/addon-remote-drupal' },
-  executor: { plugin: '@bakers-build/addon-herdr' },
-  workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
+  project: { name: 'demo' },
+  server: { use: '@bakers-build/addon-remote-drupal' },
+  executor: { use: '@bakers-build/addon-herdr' },
+  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
   addons: [
     { use: '@bakers-build/addon-claude' },
     { use: '@bakers-build/addon-pi' },
@@ -345,7 +337,7 @@ export default {
     const machine = (
       await import(`${pathToFileURL(w.machine).href}?agents=${Date.now()}`)
     ).default;
-    expect(machine.schema_version).toBe(2);
+    expect(machine.schema_version).toBe(1);
     expect(machine.agents).toEqual({
       catalog: [
         {
@@ -590,10 +582,10 @@ export default {
     writeFileSync(
       w.engine,
       `export default {
-  bakers: { project: 'demo' },
-  remote: { plugin: '@bakers-build/addon-remote-drupal' },
-  executor: { plugin: '@bakers-build/addon-herdr' },
-  workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
+  project: { name: 'demo' },
+  server: { use: '@bakers-build/addon-remote-drupal' },
+  executor: { use: '@bakers-build/addon-herdr' },
+  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
   agent: { plugin: '@bakers-build/addon-claude', alias: 'writer' },
 };\n`,
@@ -716,8 +708,8 @@ export default {
   ])('blocks schema version %i before any write, naming bakers init', (version) => {
     const w = world();
     const source = connectionText()
-      .replaceAll('schema-version 2', `schema-version ${version}`)
-      .replace('schema_version: 2', `schema_version: ${version}`);
+      .replaceAll('schema-version 1', `schema-version ${version}`)
+      .replace('schema_version: 1', `schema_version: ${version}`);
     writeFileSync(w.connection, source);
     const plan = service.planConfig(w);
     expect(
@@ -918,33 +910,11 @@ it('checks a generated project config clean', () => {
   expect(plan.report.result).toBe('ok');
   expect(plan.report.findings).toEqual([]);
 });
-// The local project override is retired: BAKERS_PROJECT replaces it.
-it('refuses a retired conductor.config.local.js, naming BAKERS_PROJECT', () => {
-  const w = world();
-  const local = join(w.cwd, '.bakers/conductor.config.local.js');
-  writeFileSync(w.engine, renderCommittedConfig({ project: 'demo' }));
-  writeFileSync(local, "export default { project: 'local-demo' };\n");
-
-  const plan = service.planConfig({
-    ...w,
-    operation: 'check',
-    scope: 'project',
-  });
-
-  expect(plan.report.result).toBe('blocked');
-  expect(plan.report.findings).toContainEqual(
-    expect.objectContaining({
-      code: 'superseded_file',
-      path: local,
-      expected: expect.stringContaining('use BAKERS_PROJECT'),
-    }),
-  );
-});
 it.each([
   ['conductor_id', "'my-worker'"],
   ['machine_id', "'host'"],
   ['label', "'Worker'"],
-])('check rejects project.config.js carrying %s, naming the conductor identity', (key, value) => {
+])('check rejects project.config.js carrying %s as an unknown key', (key, value) => {
   const w = world();
   const path = w.engine;
   writeFileSync(
@@ -963,14 +933,7 @@ it.each([
 
   expect(plan.report.result).toBe('blocked');
   expect(plan.report.findings).toContainEqual(
-    expect.objectContaining({
-      code: 'retired_key',
-      key,
-      path,
-      remediation: expect.stringContaining(
-        'a conductor is machine + project + variant',
-      ),
-    }),
+    expect.objectContaining({ code: 'unknown_key', key, path }),
   );
 });
 it.each([
@@ -1055,18 +1018,19 @@ it('upgrade adds no max_parallel to a machine that names none', () => {
   expect(service.applyConfigPlan(plan).result).toBe('ok');
   expect(readFileSync(w.machine, 'utf8')).not.toContain('max_parallel');
 });
-it('upgrade leaves a leftover max_parallel alone', () => {
+it('upgrade blocks on a leftover max_parallel and writes nothing', () => {
   const w = world();
-  writeFileSync(
-    w.machine,
-    readFileSync(w.machine, 'utf8').replace(
-      "label: 'operator'",
-      "label: 'operator', max_parallel: 2",
-    ),
+  const machine = readFileSync(w.machine, 'utf8').replace(
+    "label: 'operator'",
+    "label: 'operator', max_parallel: 2",
   );
+  writeFileSync(w.machine, machine);
   const plan = service.planConfig({ ...w, scope: 'machine' });
-  expect(service.applyConfigPlan(plan).result).toBe('ok');
-  expect(readFileSync(w.machine, 'utf8')).toMatch(/max_parallel:\s*2/);
+  expect(plan.report.findings).toContainEqual(
+    expect.objectContaining({ code: 'unknown_key', key: 'max_parallel' }),
+  );
+  expect(service.applyConfigPlan(plan).result).toBe('blocked');
+  expect(readFileSync(w.machine, 'utf8')).toBe(machine);
 });
 it('blocks computed machine credentials without printing secret-bearing expressions', () => {
   const w = world();
@@ -1180,54 +1144,10 @@ it('statically reads and updates project.workspace without replacing the worktre
   });
   expect(written).toContain("worktree: { use: '@bakers-build/addon-herdr'");
 });
-// bakers.config.js in a project was renamed connection.config.js: upgrade
-// moves it with its values unchanged.
-it('upgrade moves a legacy project connection to connection.config.js unchanged', async () => {
-  const w = world();
-  const path = join(w.cwd, '.bakers/bakers.config.js');
-  const moved = join(w.cwd, '.bakers/connection.config.js');
-  writeFileSync(path, connectionText());
-  const before = (await import(`${pathToFileURL(path).href}?t=${Date.now()}`))
-    .default;
-  const plan = service.planConfig({ ...w, connectionPath: w.connection });
-  expect(plan.writes).toContainEqual(
-    expect.objectContaining({ path, after: null }),
-  );
-  expect(service.applyConfigPlan(plan).result).toBe('ok');
-  expect(existsSync(path)).toBe(false);
-  expect(
-    (await import(`${pathToFileURL(moved).href}?t=${Date.now()}`)).default,
-  ).toEqual(before);
-});
-// The local connection override is retired: BAKERS_CONNECTION or --connection.
-it('check refuses a retired connection.config.local.js, naming its replacement', () => {
-  const w = world();
-  const local = join(w.cwd, '.bakers/connection.config.local.js');
-  writeFileSync(
-    local,
-    "export default { base_url:'https://old.test', oauth:{client_secret:'old'}, workspace_id:'old' };",
-  );
-  const plan = service.planConfig({
-    ...w,
-    operation: 'check',
-    scope: 'project',
-  });
-  expect(plan.report.result).toBe('blocked');
-  expect(plan.report.findings).toContainEqual(
-    expect.objectContaining({
-      code: 'superseded_file',
-      path: local,
-      expected: expect.stringContaining(
-        'use BAKERS_CONNECTION or --connection',
-      ),
-    }),
-  );
-  expect(JSON.stringify(plan.report)).not.toContain("client_secret:'old'");
-});
 it('keeps disagreeing schema markers unchanged before any write', () => {
   const w = world();
   const before = connectionText().replace(
-    'schema_version: 2',
+    'schema_version: 1',
     'schema_version: 3',
   );
   writeFileSync(w.connection, before);
@@ -1268,23 +1188,15 @@ it('never reads or removes a conductor machine file under ~/.config/conductor', 
   expect(readFileSync(legacy, 'utf8')).toBe(original);
   expect(readFileSync(w.machine, 'utf8')).not.toContain('foreign');
 });
-// Upgrade reports a retired local file and leaves it for the operator to delete;
-// it never merges its values into the connection.
-it('upgrade reports a retired home-local override and merges nothing from it', () => {
+// An old local file is not read: upgrade neither merges nor removes it.
+it('upgrade leaves an old home-local override alone and merges nothing from it', () => {
   const w = world();
   const local = join(w.home, '.bakers/conductor.config.local.js');
   const original =
     'export default { oauth: { client_secret:process.env.CUSTOM_SECRET } };';
   writeFileSync(local, original);
   const plan = service.planConfig(w);
-  expect(plan.report.findings).toContainEqual(
-    expect.objectContaining({
-      code: 'superseded_file',
-      severity: 'warning',
-      path: local,
-      remediation: expect.stringContaining(`Delete '${local}'`),
-    }),
-  );
+  expect(plan.writes.some((write) => write.path === local)).toBe(false);
   expect(service.applyConfigPlan(plan).result).toBe('ok');
   expect(readFileSync(local, 'utf8')).toBe(original);
   expect(readFileSync(w.connection, 'utf8')).not.toContain('CUSTOM_SECRET');
@@ -1300,7 +1212,7 @@ it('an explicit isolated machine target never migrates or removes unrelated home
   const custom = join(w.home, 'fixture-machine.js');
   writeFileSync(
     custom,
-    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'fixture',max_parallel:1};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'fixture'};",
   );
   const plan = service.planConfig({
     ...w,

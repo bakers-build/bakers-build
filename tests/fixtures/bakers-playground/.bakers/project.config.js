@@ -1,4 +1,4 @@
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 // Canonical project config for the bakers-playground target repo. The
 // connection is the generated, untracked sibling connection.config.js; this file
 // only describes how the conductor creates and runs ticket worktrees.
@@ -44,7 +44,7 @@ const parentSetupHook = [
 // decides it.
 /** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   // `project.name` is read STATICALLY (readBbProjectSelection in
   // bakers-cli/conductor/src/cli/project-context.ts), without executing this
   // file, so it must be a literal string. The recipe-test world this fixture

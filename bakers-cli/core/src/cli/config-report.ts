@@ -21,7 +21,6 @@ export type ConfigFindingCode =
   | 'not_checked'
   | 'options_not_checked'
   | 'unknown_key'
-  | 'renamed_key'
   | 'invalid_value'
   | 'version_marker_disagreement'
   | 'unsupported_schema_version'

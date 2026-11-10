@@ -12,7 +12,6 @@ import { exec, shellQuote, slugify } from '@bakers-build/core';
 import {
   type HerdrExecutorOptions,
   type ResolvedConfig,
-  rejectRenamed,
   renderTemplate,
   resolveStateConfig,
 } from './config.js';
@@ -464,7 +463,6 @@ export class HerdrExecutor implements BbExecutor {
 export function herdrExecutor(
   options: HerdrExecutorOptions = {},
 ): ExecutorPlugin {
-  rejectRenamed(options);
   return {
     kind: 'executor',
     id: 'herdr',

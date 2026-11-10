@@ -49,8 +49,8 @@ addons: [
 
 | Field | Meaning |
 |---|---|
-| `use` | The package name. Required, or loading fails; the old name `name` fails with its replacement. |
-| `with` | Options handed to the addon's accumulators as `opts`. In the machine and project files, `bakers config check` checks it against the addon's `options.schema.json` when the addon ships one. The old name `options` fails with its replacement. |
+| `use` | The package name. Required, or loading fails; the old name `name` fails as an unknown key. |
+| `with` | Options handed to the addon's accumulators as `opts`. In the machine and project files, `bakers config check` checks it against the addon's `options.schema.json` when the addon ships one. The old name `options` fails as an unknown key. |
 | `alias` | For agents only. Selects one named variant of the addon, or names a single custom contribution. Fails when the alias does not pick exactly one variant. |
 | `priority` | For agents only. A function `(ticket) => number` for priority selection. Normally use named routes instead. |
 

@@ -30,11 +30,11 @@ export function renderGlobalConnection(inputs: ConnectionInputs): string {
       ? `client_id: ${JSON.stringify(inputs.clientId)},
       device_authorization_url: ${JSON.stringify(`${baseUrl}/oauth/device_authorization`)},`
       : `client_id: ${JSON.stringify(inputs.clientId)}, client_secret: ${JSON.stringify(inputs.secret ?? '')},`;
-  return `// @bakers-schema-version 2
+  return `// @bakers-schema-version 1
 // A bakers.build connection: credentials and optional workspace. Keep this file private.
 /** @type {import('@bakers-build/core').ConnectionConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   site: { base_url: ${JSON.stringify(inputs.baseUrl)}, jsonapi_prefix: '/jsonapi' },
 ${inputs.workspaceId ? `  workspace_id: ${JSON.stringify(inputs.workspaceId)},\n` : ''}
   plugins: [
@@ -52,14 +52,14 @@ export function renderHostMachine(inputs: {
   machineId: string;
   label?: string;
 }): string {
-  return `// @bakers-schema-version 2
+  return `// @bakers-schema-version 1
 // Local host identity. The run budget is set on the machine in the backend;
 // server credentials belong to the connection (connections/default.js). An
 // \`executor\` slot here (e.g. \`{ use: '@bakers-build/addon-herdr-core' }\`)
 // overrides every project's executor on this machine.
 /** @type {import('@bakers-build/core').MachineConfig} */
 export default {
- schema_version: 2,
+ schema_version: 1,
  machine_id: ${JSON.stringify(inputs.machineId)},
 ${inputs.label ? ` label: ${JSON.stringify(inputs.label)},\n` : ''}};
 `;

@@ -35,9 +35,9 @@ Both setups live in `~/.bakers/machine.config.js` on the execution machine. [Con
 If the catalog already contains the agent you want, select its alias directly. A custom catalog entry is optional. This complete example enables the [Claude addon](/addons/claude), adds a Sonnet configuration named `coder`, and makes it the default:
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 export default {
-  schema_version: 2,
+  schema_version: 1,
   machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', // Keep your existing ID.
   label: 'alex-laptop',
   addons: ['@bakers-build/addon-claude'],
@@ -67,9 +67,9 @@ The `default` route selects an alias from that catalog for every state (`'*'`). 
 Use routes when different workflow states need different agents. This alternative complete file keeps the same catalog and adds a named route to `agents.routes` **alongside** `catalog` and the `default` route:
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 export default {
-  schema_version: 2,
+  schema_version: 1,
   machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', // Keep your existing ID.
   label: 'alex-laptop',
   addons: ['@bakers-build/addon-claude'],

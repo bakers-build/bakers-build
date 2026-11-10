@@ -23,12 +23,12 @@ function project(source: string) {
   // A project check also checks the machine and connection it depends on.
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "// @bakers-schema-version 2\nexport default { schema_version: 2, machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'operator' };\n",
+    "// @bakers-schema-version 1\nexport default { schema_version: 1, machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'operator' };\n",
   );
   mkdirSync(join(home, '.bakers/connections'));
   writeFileSync(
     join(home, '.bakers/connections/default.js'),
-    "// @bakers-schema-version 2\nexport default { schema_version: 2, site: { base_url: 'https://example.test' }, plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: 'secret' } }] };\n",
+    "// @bakers-schema-version 1\nexport default { schema_version: 1, site: { base_url: 'https://example.test' }, plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: 'secret' } }] };\n",
   );
   const check = () =>
     planConfig({ operation: 'check', scope: 'project', home, cwd, path: cwd })
@@ -37,9 +37,9 @@ function project(source: string) {
 }
 
 // The committed config the ticket found passing, in today's names.
-const SAMPLE = `// @bakers-schema-version 2
+const SAMPLE = `// @bakers-schema-version 1
 export default {
-  schema_version: 2,
+  schema_version: 1,
   project: { name: 'demo', workspace: 'Engineering' },
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
   poll_intervall_ms: 'fast',
@@ -99,7 +99,7 @@ describe('bakers config check --scope project, offline', () => {
   });
 
   it('the loader rejects exactly the keys the check reports', async () => {
-    const t = project(SAMPLE.replace('// @bakers-schema-version 2\n', ''));
+    const t = project(SAMPLE.replace('// @bakers-schema-version 1\n', ''));
     const error = await loadConductorConfig(t.path).then(
       () => undefined,
       (e: Error) => e.message,

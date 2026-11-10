@@ -75,11 +75,6 @@ export function normalizeEntry(entry: AddonEntry): {
   alias?: string;
 } {
   if (typeof entry === 'string') return { spec: entry, opts: undefined };
-  const old = entry as { name?: unknown; options?: unknown };
-  if (old.name !== undefined)
-    throw new Error('addons[] entry name was renamed: use use');
-  if (old.options !== undefined)
-    throw new Error('addons[] entry options was renamed: use with');
   const spec = entry.use;
   if (typeof spec !== 'string' || spec.trim() === '') {
     throw new Error(
@@ -96,13 +91,6 @@ export function normalizeEntry(entry: AddonEntry): {
 
 /** Does an imported module look like a preset (any accumulator fn or `addons`)? */
 function isPresetShaped(mod: Record<string, unknown>): boolean {
-  for (const [old, next] of [
-    ['remotes', 'servers'],
-    ['workspaces', 'worktrees'],
-    ['checkWith', 'an options.schema.json in the package'],
-  ] as const)
-    if (mod[old] !== undefined)
-      throw new Error(`addon preset export ${old} was renamed: use ${next}`);
   if (Array.isArray(mod.addons)) return true;
   if (typeof mod.inbox === 'object' && mod.inbox !== null) return true;
   if (typeof mod.tools === 'object' && mod.tools !== null) return true;

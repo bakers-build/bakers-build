@@ -25,13 +25,6 @@ export class FrpConfigError extends Error {
   }
 }
 
-const RENAMED: Record<string, string> = {
-  clientConfigPath: 'client_config_path',
-  adminPort: 'admin_port',
-  adminUser: 'admin_user',
-  adminPassword: 'admin_password',
-};
-
 /** Reads the snake_case `with` keys into the internal {@link FrpSettings}. */
 export function validateSettings(settings: unknown): FrpSettings {
   if (typeof settings !== 'object' || settings === null) {
@@ -40,9 +33,6 @@ export function validateSettings(settings: unknown): FrpSettings {
     );
   }
   const obj = settings as Record<string, unknown>;
-  for (const old of Object.keys(RENAMED))
-    if (old in obj)
-      throw new FrpConfigError(`${old} was renamed: use ${RENAMED[old]}`);
   if (typeof obj.zone !== 'string' || obj.zone === '') {
     throw new FrpConfigError(
       "the @bakers-build/addon-ports entry's with.transport.with for 'frp' is missing: zone",

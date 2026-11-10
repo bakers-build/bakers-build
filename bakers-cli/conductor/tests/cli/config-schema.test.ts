@@ -22,11 +22,9 @@ describe('config-schema', () => {
       expect(end).toBe(BB_CONFIG_SCHEMA_VERSION);
     });
 
-    it('is at v2 with the one-step chain from v1', () => {
-      expect(CONNECTION_MIGRATIONS.map((m) => [m.from, m.to])).toEqual([
-        [1, 2],
-      ]);
-      expect(BB_CONFIG_SCHEMA_VERSION).toBe(2);
+    it('restarts at v1 with an empty migration chain', () => {
+      expect(CONNECTION_MIGRATIONS).toEqual([]);
+      expect(BB_CONFIG_SCHEMA_VERSION).toBe(1);
     });
   });
 

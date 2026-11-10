@@ -1,6 +1,6 @@
 // One JSON Schema per configuration file kind, applied by the loaders to the
 // imported value and by `config check` to the literal values parsed from the
-// source without running it. Old names are answered from `config-renames.ts`.
+// source without running it.
 
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -13,44 +13,10 @@ import {
 } from 'acorn';
 import type { ErrorObject, ValidateFunction } from 'ajv';
 import { Ajv2020 } from 'ajv/dist/2020.js';
-import { type ConfigKind, matchKeyPaths, OLD_NAMES } from './config-renames.js';
 import { resolveModuleEslintStyle } from './resolve-module.js';
-import { RETIRED_ENV_NAMES } from './retired-env.js';
 
-const OLD_ENV = new RegExp(
-  `\\$\\{?BB_(${[...RETIRED_ENV_NAMES].sort((a, b) => b.length - a.length).join('|')})(?![A-Z0-9_])`,
-  'g',
-);
-
-/** Hook commands that still read a renamed `BB_*` variable. */
-function hookEnvProblems(value: unknown): SchemaProblem[] {
-  const hooks = (value as { hooks?: unknown } | undefined)?.hooks;
-  if (!hooks || typeof hooks !== 'object') return [];
-  const commands: [string, unknown][] = [];
-  for (const [slot, command] of Object.entries(hooks))
-    if (command && typeof command === 'object')
-      for (const [profile, sub] of Object.entries(command))
-        commands.push([`hooks.${slot}.${profile}`, sub]);
-    else commands.push([`hooks.${slot}`, command]);
-  return commands.flatMap(([key, command]) => {
-    if (typeof command !== 'string') return [];
-    const names = [...new Set([...command.matchAll(OLD_ENV)].map((m) => m[1]))];
-    return names.length
-      ? [
-          {
-            key,
-            code: 'renamed_key' as const,
-            severity: 'error' as const,
-            message: names
-              .map((name) => `BB_${name} was renamed: use BAKERS_${name}`)
-              .join('; '),
-          },
-        ]
-      : [];
-  });
-}
-
-export type { ConfigKind } from './config-renames.js';
+/** The three configuration file kinds, one schema each. */
+export type ConfigKind = 'connection' | 'machine' | 'project';
 
 export interface SchemaProblem {
   /** Key path such as `hooks.after_create` or `addons[0].use`; `''` is the whole file. */
@@ -59,14 +25,10 @@ export interface SchemaProblem {
     | 'unknown_key'
     | 'invalid_value'
     | 'missing_required_key'
-    | 'renamed_key'
-    | 'retired_key'
     | 'not_checked'
     | 'options_not_checked';
   severity: 'error' | 'warning';
   message: string;
-  /** The exact replacement key of a renamed key. */
-  replacement?: string;
   line?: number;
   column?: number;
 }
@@ -232,31 +194,6 @@ function problemsOf(errors: ErrorObject[]): SchemaProblem[] {
   return [...problems.values()];
 }
 
-/** Old names met in `value`, each with its replacement. */
-export function oldNameProblems(
-  kind: ConfigKind,
-  value: unknown,
-): SchemaProblem[] {
-  const problems: SchemaProblem[] = [];
-  for (const rule of OLD_NAMES[kind])
-    for (const key of matchKeyPaths(value, rule.from))
-      problems.push({
-        key,
-        code: rule.code,
-        severity: rule.severity ?? 'error',
-        message: rule.message,
-        ...(rule.to
-          ? {
-              replacement: rule.to.replace(
-                /\[\*\]/g,
-                key.match(/\[\d+\]/)?.[0] ?? '[]',
-              ),
-            }
-          : {}),
-      });
-  return problems;
-}
-
 interface ValidateOptions {
   /** Key paths whose value is not statically known. */
   computed?: ReadonlySet<string>;
@@ -271,35 +208,6 @@ export function validateConfig(
   opts: ValidateOptions = {},
 ): SchemaProblem[] {
   const data = withoutUndefined(value);
-  const prompt = (data as { prompt?: unknown } | undefined)?.prompt;
-  const oldPlaceholders =
-    kind === 'project' && typeof prompt === 'string'
-      ? ['runUuid', 'ticketUuid'].filter((name) => prompt.includes(`{${name}}`))
-      : [];
-  const old = [
-    ...oldNameProblems(kind, data),
-    ...(kind === 'project' ? hookEnvProblems(data) : []),
-    ...(oldPlaceholders.length
-      ? [
-          {
-            key: 'prompt',
-            code: 'renamed_key' as const,
-            severity: 'error' as const,
-            message: oldPlaceholders
-              .map(
-                (name) =>
-                  `{${name}} was renamed: use {${name.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)}}`,
-              )
-              .join('; '),
-          },
-        ]
-      : []),
-  ];
-  // A renamed variable or placeholder inside a value leaves the key itself valid.
-  const oldKeys = old
-    .filter((p) => !p.key.startsWith('hooks.') && p.key !== 'prompt')
-    .map((p) => p.key);
-  const replaced = new Set(old.flatMap((p) => p.replacement ?? []));
   const validate = validatorFor(
     `https://bakers.build/schema/${kind}.schema.json`,
   );
@@ -307,11 +215,6 @@ export function validateConfig(
   const computed = [...(opts.computed ?? [])];
   const partial = [...(opts.partial ?? [])];
   const schema = problemsOf(validate.errors ?? []).filter((problem) => {
-    if (oldKeys.some((k) => k === problem.key || under(problem.key, k)))
-      return false;
-    // The value is there under its old name, answered above.
-    if (problem.code === 'missing_required_key' && replaced.has(problem.key))
-      return false;
     if (
       computed.some(
         (c) =>
@@ -344,7 +247,6 @@ export function validateConfig(
   }));
   const notChecked: SchemaProblem[] = [...computed, ...partial]
     .filter((key) => !identity.includes(key))
-    .filter((key) => !oldKeys.some((k) => k === key || under(key, k)))
     .map((key) => ({
       key,
       code: 'not_checked' as const,
@@ -353,7 +255,7 @@ export function validateConfig(
         ? 'value is computed; it is checked when the conductor loads the file'
         : 'object has a spread; its keys are checked when the conductor loads the file',
     }));
-  return [...old, ...schema, ...identityProblems, ...notChecked].sort((a, b) =>
+  return [...schema, ...identityProblems, ...notChecked].sort((a, b) =>
     a.key < b.key ? -1 : a.key > b.key ? 1 : 0,
   );
 }
@@ -372,11 +274,7 @@ export function assertValidConfig(
   if (errors.length)
     throw new Error(
       `${path}: ${errors
-        .map((p) =>
-          p.code === 'renamed_key' || p.code === 'retired_key'
-            ? p.message
-            : `${p.key || '(file)'} ${p.message}`,
-        )
+        .map((p) => `${p.key || '(file)'} ${p.message}`)
         .join('; ')}`,
     );
 }

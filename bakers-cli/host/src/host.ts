@@ -13,7 +13,6 @@ import {
   resolveCliVersion,
   resolveConfigPath,
   resolveModuleEslintStyle,
-  retiredEnvErrors,
 } from '@bakers-build/core';
 import { commands as uiCommands } from '@bakers-build/ui/preset';
 import { Command } from 'commander';
@@ -322,11 +321,5 @@ export async function runHost(
 
 /** The `bakers` entrypoint: drop node + script path, run the host. */
 export async function main(argv: string[]): Promise<void> {
-  const retired = retiredEnvErrors(process.env);
-  if (retired.length > 0) {
-    process.stderr.write(`${retired.join('\n')}\n`);
-    process.exitCode = 1;
-    return;
-  }
   await runHost(argv.slice(2));
 }

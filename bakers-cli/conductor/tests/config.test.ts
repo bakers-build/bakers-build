@@ -445,25 +445,18 @@ describe('loadConductorConfig', () => {
     ['conductor_id', "'cw-framework'"],
     ['machine_id', "'cw-laptop'"],
     ['label', "'my custom label'"],
-  ])('rejects a project config carrying %s, naming where identity comes from', async (key, value) => {
+  ])('rejects a project config carrying %s as an unknown key', async (key, value) => {
     const stale = VALID.replace(
       "project: { name: 'bakers' },",
       `project: { name: 'bakers' },\n  ${key}: ${value},`,
     );
     const path = writeConfig(stale);
     await expect(loadConductorConfig(path)).rejects.toThrow(
-      `${path}: ${key} no longer belongs in a project config: a conductor is machine + project + variant`,
+      `${path}: ${key} unknown key`,
     );
   });
 
-  it('rejects a version-1 project config, naming bakers config upgrade', async () => {
-    const path = writeConfig(`// @bakers-schema-version 1\n${VALID}`);
-    await expect(loadConductorConfig(path)).rejects.toThrow(
-      `${path}: schema version 1 is not supported; run bakers config upgrade to rewrite it at version 2`,
-    );
-  });
-
-  it('rejects a project config at a schema version other than 1 or 2, naming bakers init', async () => {
+  it('rejects a project config at a schema version other than 1, naming bakers init', async () => {
     const stale = `// @bakers-schema-version 3\n${VALID}`;
     await expect(loadConductorConfig(writeConfig(stale))).rejects.toThrow(
       /schema version 3 is not supported; remove the file and run bakers init/,
@@ -489,23 +482,19 @@ describe('loadConductorConfig', () => {
     expect(config.hooks?.after_done).toBe('make clean');
   });
 
-  it('ignores a machine max_parallel with one warning naming the backend', async () => {
+  it('rejects a machine max_parallel as an unknown key', async () => {
+    const machine = join(
+      process.env.HOME as string,
+      '.bakers/machine.config.js',
+    );
     writeFileSync(
-      join(process.env.HOME as string, '.bakers/machine.config.js'),
+      machine,
       machineSource(
         `export default { max_parallel: 2, addons: ['@bakers-build/addon-codex'] };`,
       ),
     );
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const config = await loadConductorConfig(writeConfig(VALID));
-    const budget = warn.mock.calls.filter((c) =>
-      /max_parallel/.test(String(c[0])),
-    );
-    warn.mockRestore();
-    expect('max_parallel' in config).toBe(false);
-    expect(budget).toHaveLength(1);
-    expect(String(budget[0]?.[0])).toMatch(
-      /machine\.config\.js.*ignored.*backend/,
+    await expect(loadConductorConfig(writeConfig(VALID))).rejects.toThrow(
+      `${machine}: max_parallel unknown key`,
     );
   });
 
@@ -565,20 +554,13 @@ describe('loadConductorConfig', () => {
   // BB-201: site/base_url is a CONNECTION concern (the connection file), no longer
   // required by the engine loader — see core's load-bakers-config tests.
 
-  it('ignores a conductor-file max_parallel with one warning naming the backend', async () => {
+  it('rejects a project max_parallel as an unknown key', async () => {
     const path = writeConfig(
       VALID.replace('export default {', 'export default {max_parallel: 2,'),
     );
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const config = await loadConductorConfig(path);
-    const budget = warn.mock.calls.filter((c) =>
-      /max_parallel/.test(String(c[0])),
+    await expect(loadConductorConfig(path)).rejects.toThrow(
+      `${path}: max_parallel unknown key`,
     );
-    warn.mockRestore();
-    expect('max_parallel' in config).toBe(false);
-    expect(budget).toHaveLength(1);
-    expect(String(budget[0]?.[0])).toContain(path);
-    expect(String(budget[0]?.[0])).toMatch(/ignored.*backend/);
   });
 });
 
@@ -648,13 +630,13 @@ describe('marketplaces: the project declares its agent plugins', () => {
     ).rejects.toThrow(message);
   });
 
-  it('rejects marketplaces in the machine config: plugins are declared per project', async () => {
+  it('rejects marketplaces in the machine config as an unknown key', async () => {
     writeFileSync(
       join(process.env.HOME as string, '.bakers/machine.config.js'),
       `export default { addons: ['@bakers-build/addon-codex'], marketplaces: [] };`,
     );
     await expect(loadConductorConfig(writeConfig(VALID))).rejects.toThrow(
-      /machine\.config\.js.*marketplaces.*project/,
+      /machine\.config\.js: .*marketplaces unknown key/,
     );
   });
 });
@@ -680,7 +662,7 @@ describe('BB-218 AC-6: engine loader refuses leftover site/plugins', () => {
     }
   };
 
-  it('refuses the file naming both keys and the connection file', async () => {
+  it('refuses the file naming both keys', async () => {
     const path = writeConfig(
       VALID.replace(
         'export default {',
@@ -688,7 +670,7 @@ describe('BB-218 AC-6: engine loader refuses leftover site/plugins', () => {
       ),
     );
     await expect(loadConductorConfig(path)).rejects.toThrow(
-      `${path}: plugins belongs in the connection file (~/.bakers/connections/default.js); site belongs in the connection file (~/.bakers/connections/default.js)`,
+      `${path}: plugins unknown key; site unknown key`,
     );
   });
 
@@ -967,36 +949,18 @@ describe('resolveConfigPath — cwd walk-up (BB-88)', () => {
     expect(message).not.toContain('Cannot find module');
   });
 
-  // The retired local files and the old file names are never read silently.
-  it('refuses a .bakers dir holding an old file name, naming each replacement', () => {
-    const { root } = makeTree();
+  // An old file name is simply not found: the project file resolves as usual.
+  it('ignores old file names beside the project file', () => {
+    const { root, configPath } = makeTree();
     const bakersDir = join(root, '.bakers');
-    writeFileSync(join(bakersDir, 'shop.conductor.config.js'), VALID);
-    writeFileSync(
-      join(bakersDir, 'conductor.config.local.js'),
-      'export default {};',
-    );
-    writeFileSync(
-      join(bakersDir, 'connection.config.local.js'),
-      'export default {};',
-    );
+    for (const name of [
+      'shop.conductor.config.js',
+      'conductor.config.local.js',
+      'connection.config.local.js',
+    ])
+      writeFileSync(join(bakersDir, name), 'export default {};');
     delete process.env.BAKERS_CONDUCTOR_CONFIG;
-    let message = '';
-    try {
-      resolveConfigPath(undefined, root);
-    } catch (error) {
-      message = (error as Error).message;
-    }
-    expect(message).toContain(
-      `${join(bakersDir, 'shop.conductor.config.js')} was renamed: use project.shop.config.js`,
-    );
-    expect(message).toContain(
-      `${join(bakersDir, 'conductor.config.local.js')} was renamed: use BAKERS_PROJECT (environment) for the project name; the file is retired`,
-    );
-    expect(message).toContain(
-      `${join(bakersDir, 'connection.config.local.js')} was renamed: use BAKERS_CONNECTION or --connection; the file is retired`,
-    );
-    expect(message).toContain('run bakers config upgrade');
+    expect(resolveConfigPath(undefined, root)).toBe(configPath);
   });
 });
 
@@ -1736,21 +1700,21 @@ export default {
     expect(cfg.default_agent).toBe('luna');
   });
 
-  it('refuses the old { name } addon descriptor, naming use', async () => {
+  it('refuses the old { name } addon descriptor as an unknown key', async () => {
     writeMachine(
       `export default { addons: [{ name: '@bakers-build/addon-codex' }] };`,
     );
     await expect(loadConductorConfig(writeConfig(slotConfig))).rejects.toThrow(
-      /machine\.config\.js: addons\[\]\.name was renamed: use use/,
+      /machine\.config\.js: .*addons\[0\]\.name unknown key/,
     );
   });
 
-  it('refuses agents.default_agent, naming agents.routes.default', async () => {
+  it('refuses agents.default_agent as an unknown key', async () => {
     writeMachine(
       `export default { addons: ['@bakers-build/addon-codex'], agents: { default_agent: 'luna' } };`,
     );
     await expect(loadConductorConfig(writeConfig(slotConfig))).rejects.toThrow(
-      "agents.default_agent was renamed: use agents.routes.default: { '*': '<alias>' }",
+      'agents.default_agent unknown key',
     );
   });
 
@@ -1785,14 +1749,14 @@ export default {
     'agents',
     'default_agent',
     'agent_routes',
-  ])('rejects retired project key %s, naming the machine config', async (key) => {
+  ])('rejects the old project key %s as an unknown key', async (key) => {
     const value = key === 'agent' ? "slot('agent')" : '{}';
     const source = slotConfig.replace(
       "project: { name: 'bakers' },",
       `project: { name: 'bakers' }, ${key}: ${value},`,
     );
     await expect(loadConductorConfig(writeConfig(source))).rejects.toThrow(
-      `${key} is retired in a project config: agents and their policy belong in ~/.bakers/machine.config.js (addons and agents.routes)`,
+      `${key} unknown key`,
     );
   });
 });

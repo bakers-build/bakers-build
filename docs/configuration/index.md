@@ -1,6 +1,6 @@
 # Configuration
 
-Choose the file by who owns the value. All are JavaScript modules at schema version 2; review imported code before running a conductor.
+Choose the file by who owns the value. All are JavaScript modules at schema version 1; review imported code before running a conductor.
 
 | File | Owner, Git | Reference |
 |---|---|---|
@@ -25,10 +25,10 @@ No file overlays another.
 ## Example
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 // ~/.bakers/machine.config.js
 export default {
-  schema_version: 2,
+  schema_version: 1,
   machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
   label: 'worker-one',
   addons: ['@bakers-build/addon-codex'],
@@ -36,10 +36,10 @@ export default {
 ```
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 // .bakers/project.config.js
 export default {
-  schema_version: 2,
+  schema_version: 1,
   project: { name: 'demo', workspace: 'Engineering' },
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
@@ -52,4 +52,4 @@ bakers config check --scope all --online
 bakers config upgrade --scope all --dry-run
 ```
 
-Version 1 files and old names are refused with their replacement; `bakers config upgrade` rewrites them. See [Update bakers.build](/configuration/guides/updates).
+An old key name fails as an unknown key, and an old file name is not read; rename them by hand. See [Update bakers.build](/configuration/guides/updates).

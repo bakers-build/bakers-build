@@ -197,9 +197,7 @@ export async function resolveBbConnectionSelection(
   const connectionsDir = resolveConnectionsDir({
     flag: join(homeBbDir(opts.home), 'connections'),
   });
-  // A project selects a named connection with BAKERS_CONNECTION or
-  // --connection; the retired .bakers/connection.config.local.js is refused
-  // by the project walk (assertNoOldConfigFiles).
+  // A project selects a named connection with BAKERS_CONNECTION or --connection.
   const dropshEnv = {
     ...env,
     ...(env.BAKERS_CONFIG ? { DROPSH_CONFIG: env.BAKERS_CONFIG } : {}),

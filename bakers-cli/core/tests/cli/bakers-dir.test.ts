@@ -135,21 +135,13 @@ describe('resolveBbConfigPath (connection precedence, AC-4)', () => {
     });
   });
 
-  // BAKERS-159: the old connection file names are refused with their
-  // replacement instead of being read or silently skipped.
-  it('refuses an old project bakers.config.js, naming connection.config.js', () => {
-    const proj = bakersDir(tmp);
-    write(proj, 'bakers.config.js');
-    expect(() => resolveBbConfigPath({ cwd: tmp, home })).toThrow(
-      `${join(proj, 'bakers.config.js')} was renamed: use connection.config.js — run bakers config upgrade`,
-    );
-  });
-
-  it('refuses an old home bakers.config.js, naming connections/default.js', () => {
+  it('does not read an old bakers.config.js, in the project or at home', () => {
+    write(bakersDir(tmp), 'bakers.config.js');
     write(bakersDir(home), 'bakers.config.js');
-    expect(() => resolveBbConfigPath({ cwd: tmp, home })).toThrow(
-      `${join(home, '.bakers', 'bakers.config.js')} was renamed: use ${join('connections', 'default.js')}`,
-    );
+    expect(resolveBbConfigPath({ cwd: tmp, home })).toMatchObject({
+      path: homeConnection(home),
+      source: 'home',
+    });
   });
 
   it('findBbConfig returns undefined when neither file exists up the tree', () => {
@@ -284,7 +276,7 @@ describe('a project file is never a connection source (BB-230)', () => {
 
   /** The canonical project file: engine-only, no `site`. */
   const ENGINE_ONLY = `export default {
-  schema_version: 2,
+  schema_version: 1,
   project: { name: 'p' },
   server: { use: '@bakers-build/addon-remote-drupal' },
 };

@@ -15,7 +15,7 @@ import type { BbExecutor, SpawnRunInput } from '@bakers-build/bakers/plugin';
 import { exec } from '@bakers-build/core';
 import { describe, expect, it } from 'vitest';
 import { restoreWritable } from '../src/fs.js';
-import herdrExecutor, { HerdrExecutor, herdrWorkspace } from '../src/index.js'; // already exported (index.ts)
+import herdrExecutor, { HerdrExecutor } from '../src/index.js'; // already exported (index.ts)
 import { removeHerdrWorktree } from '../src/worktrees.js';
 import { INSTANT_WATCH, plantStarted } from './plant-started.js';
 
@@ -1615,21 +1615,6 @@ describe('herdrExecutor factory root derivation (BB-177)', () => {
       (executor as unknown as { options: { launch_watch?: unknown } }).options
         .launch_watch,
     ).toEqual({ timeout_ms: 1234, start_timeout_ms: 5678 });
-  });
-
-  it('rejects a schema_version 1 camelCase key or placeholder with its replacement', () => {
-    expect(() => herdrExecutor({ launchWatch: {} } as never)).toThrow(
-      'launchWatch was renamed: use launch_watch',
-    );
-    expect(() =>
-      herdrExecutor({ states: { coding: { tabLabel: 'x' } } } as never),
-    ).toThrow('tabLabel was renamed: use tab_label');
-    expect(() =>
-      herdrExecutor({ open: { command: 'cd {worktreePath}' } }),
-    ).toThrow('{worktreePath} was renamed: use {worktree_path}');
-    expect(() =>
-      herdrWorkspace({ baseBranch: 'origin/main' } as never),
-    ).toThrow('baseBranch was renamed: use base_branch');
   });
 });
 

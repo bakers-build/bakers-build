@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { SpawnRunInput } from '@bakers-build/conductor/contract';
 import { describe, expect, it } from 'vitest';
-import { FakeExecutor, fakeExecutor } from '../src/index.js';
+import { FakeExecutor } from '../src/index.js';
 
 function input(workspacePath: string): SpawnRunInput {
   return {
@@ -66,11 +66,5 @@ describe('FakeExecutor', () => {
     await expect(
       plugin.cleanupRun(session.sessionRef),
     ).resolves.toBeUndefined();
-  });
-
-  it('rejects the old markerFile option key, naming its replacement', () => {
-    expect(() => fakeExecutor({ markerFile: 'x' } as never)).toThrow(
-      'markerFile was renamed: use marker_file',
-    );
   });
 });

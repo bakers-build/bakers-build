@@ -8,7 +8,7 @@ const roots: string[] = [];
 const workspace = '11111111-1111-4111-8111-111111111111';
 
 function connectionText() {
-  return `// @bakers-schema-version 2\nexport default { schema_version: 2, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: 'private-value' } }] };\n`;
+  return `// @bakers-schema-version 1\nexport default { schema_version: 1, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: 'private-value' } }] };\n`;
 }
 
 function world() {

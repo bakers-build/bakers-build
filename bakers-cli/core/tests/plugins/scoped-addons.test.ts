@@ -163,29 +163,6 @@ describe('scopeAddons', () => {
   });
 });
 
-// BAKERS-159: `checkWith` is retired. An addon's `with` is checked offline
-// from its `options.schema.json` by `bakers config check`, so scopeAddons
-// refuses a `checkWith` export, naming its replacement, and never runs it.
-describe('scopeAddons — checkWith is retired', () => {
-  it('refuses an addon that still exports checkWith, without running it', async () => {
-    const spec = addon(
-      'checks.js',
-      `${REMOTE}\nexport const checkWith = () => { throw new Error('checkWith must not run'); };`,
-    );
-    await expect(
-      scopeAddons(
-        [
-          machine([{ use: spec, with: { bad: 1 } }]),
-          project([{ use: spec, with: { bad: 1 } }]),
-        ],
-        { logger },
-      ),
-    ).rejects.toThrow(
-      'addon preset export checkWith was renamed: use an options.schema.json in the package',
-    );
-  });
-});
-
 describe('discoverScoped', () => {
   it('resolves each entry against its own scope bases', async () => {
     writeFileSync(join(machineDir, 'm.js'), REMOTE);

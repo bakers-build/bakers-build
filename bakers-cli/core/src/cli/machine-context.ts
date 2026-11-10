@@ -73,13 +73,12 @@ function isUuid(value: unknown): value is string {
 }
 
 /** The configuration schema version every file kind is at. */
-export const CONFIG_SCHEMA_VERSION = 2;
+export const CONFIG_SCHEMA_VERSION = 1;
 
 /**
- * Every config file (machine, connection, project) is at schema version 2.
+ * Every config file (machine, connection, project) is at schema version 1.
  * Any other version, in the `schema_version` field or the
- * `@bakers-schema-version` header, is refused: version 1 names
- * `bakers config upgrade`, which rewrites it.
+ * `@bakers-schema-version` header, is refused.
  */
 export function assertSchemaVersion(
   path: string,
@@ -98,11 +97,7 @@ export function assertSchemaVersion(
   const other = versions.find((version) => version !== CONFIG_SCHEMA_VERSION);
   if (other !== undefined)
     throw new Error(
-      `${path}: schema version ${String(other)} is not supported; ${
-        other === 1
-          ? 'run bakers config upgrade to rewrite it at version 2'
-          : 'remove the file and run bakers init'
-      }`,
+      `${path}: schema version ${String(other)} is not supported; remove the file and run bakers init`,
     );
 }
 

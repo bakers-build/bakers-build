@@ -18,7 +18,7 @@ const QUICK_ENTRY =
   " { use: '@bakers-build/addon-ports', with: { transport: { use: '@bakers-build/addon-ports-cloudflare-quick' } } },";
 const TUNNEL_LINE = ` tunnel: true, ${MARK}`;
 const TRANSPORTS = ['none', 'cloudflare-quick', 'cloudflare', 'frp'];
-const NEW_FILE = '// @bakers-schema-version 2\nexport default {\n schema_version: 2,\n};\n';
+const NEW_FILE = '// @bakers-schema-version 1\nexport default {\n schema_version: 1,\n};\n';
 
 const log = (msg) => console.log(`preview: ${msg}`);
 

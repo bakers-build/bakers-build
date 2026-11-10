@@ -2,7 +2,6 @@ import { rmSync } from 'node:fs';
 import {
   type LaunchScript,
   type LaunchWatchOptions,
-  rejectRenamed,
   watchLaunch,
   writeLaunchScript,
 } from '@bakers-build/addon-herdr/shared';
@@ -241,7 +240,6 @@ export class HerdrCoreExecutor implements BbExecutor {
 export function herdrCoreExecutor(
   options: HerdrCoreExecutorOptions = {},
 ): ExecutorPlugin {
-  rejectRenamed(options);
   return {
     kind: 'executor',
     id: 'herdr-core',

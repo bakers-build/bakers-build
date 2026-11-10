@@ -1,7 +1,7 @@
 // The herdr pieces a sibling host addon (`@bakers-build/addon-orca`) reuses
 // rather than copies: the 0600 launch wrapper + its watch, the label template,
 // the Drupal write-bit restore and the worktree base-ref resolution.
-export { RENAMED_OPTIONS, rejectRenamed, renderTemplate } from './config.js';
+export { renderTemplate } from './config.js';
 export { restoreWritable } from './fs.js';
 export {
   type LaunchScript,

@@ -59,11 +59,11 @@ function seed() {
   mkdirSync(join(home, '.bakers/connections'), { recursive: true });
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {schema_version:2,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator'};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator'};",
   );
   writeFileSync(
     join(home, '.bakers/connections/default.js'),
-    `export default {schema_version:2,site:{base_url:'https://example.test'},workspace_id:'${workspace}',plugins:[]};`,
+    `export default {schema_version:1,site:{base_url:'https://example.test'},workspace_id:'${workspace}',plugins:[]};`,
   );
 }
 it('checks a named connection with id, selector and field provenance', async () => {
@@ -71,7 +71,7 @@ it('checks a named connection with id, selector and field provenance', async () 
   const path = join(home, '.bakers/connections/staging.js');
   writeFileSync(
     path,
-    "export default {schema_version:2,site:{base_url:'https://staging.test'},plugins:[{plugin:'@bakers-build/addon-essentials'}]};",
+    "export default {schema_version:1,site:{base_url:'https://staging.test'},plugins:[{plugin:'@bakers-build/addon-essentials'}]};",
   );
   const report = await run([
     'check',
@@ -94,7 +94,7 @@ it('checks a named connection with id, selector and field provenance', async () 
   });
   expect(report.connection_resolution.fields).toEqual(
     expect.arrayContaining([
-      { key: 'schema_version', value: 2, source: path },
+      { key: 'schema_version', value: 1, source: path },
       { key: 'site.base_url', value: 'https://staging.test', source: path },
       {
         key: 'site.jsonapi_prefix',
@@ -114,7 +114,7 @@ it('reports the computed effective JSON:API prefix without inventing a default',
   const path = join(home, '.bakers/connections/default.js');
   writeFileSync(
     path,
-    `const prefix = '/custom'; export default { schema_version: 2, site: { base_url: 'https://example.test', jsonapi_prefix: prefix }, plugins: [] };`,
+    `const prefix = '/custom'; export default { schema_version: 1, site: { base_url: 'https://example.test', jsonapi_prefix: prefix }, plugins: [] };`,
   );
   const report = await run([
     'check',
@@ -168,7 +168,7 @@ it('rewrites an existing machine file in place, keeping its machine_id', async (
   mkdirSync(join(home, '.bakers'), { recursive: true });
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'framework', user_id: 'cw', max_parallel: 2 };\n",
+    "// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: 'framework', user_id: 'cw' };\n",
   );
   const args = ['init', '--scope', 'machine', '--format', 'json'];
   const report = await run([...args, '--label', 'cw-laptop']);
@@ -176,8 +176,7 @@ it('rewrites an existing machine file in place, keeping its machine_id', async (
   const machine = await machineFile();
   expect(machine.machine_id).toBe('framework');
   expect(machine.label).toBe('cw-laptop');
-  expect(machine.max_parallel).toBe(2);
-  expect(machine.schema_version).toBe(2);
+  expect(machine.schema_version).toBe(1);
   expect(machine).not.toHaveProperty('user_id');
   expect((await run(args)).changes).toEqual([]);
 });
@@ -415,7 +414,7 @@ it('bakers init is not blocked by the project layer inside a project checkout', 
   mkdirSync(join(cwd, '.bakers'));
   writeFileSync(
     join(cwd, '.bakers/project.config.js'),
-    "export default {schema_version:2,server:{command:'true'}};",
+    "export default {schema_version:1,server:{command:'true'}};",
   );
   let output = '';
   const program = new Command().exitOverride();
@@ -487,7 +486,7 @@ it('upgrade migrates applicable shared files and reports offline success without
   const connection = join(home, '.bakers/connections/default.js');
   writeFileSync(
     machine,
-    "export default {machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2};",
+    "export default {machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator'};",
   );
   writeFileSync(
     connection,
@@ -785,7 +784,7 @@ it('does not prompt for shared prerequisite values outside the project write sco
   seed();
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    'export default {schema_version:2,max_parallel:1};',
+    'export default {schema_version:1};',
   );
   let output = '';
   const program = new Command().exitOverride();
@@ -886,7 +885,7 @@ it.each([
   const path = join(home, '.bakers/machine.config.js');
   writeFileSync(
     path,
-    `export default {schema_version:2,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,${field}};`,
+    `export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',${field}};`,
   );
   const json = await run(['check', '--scope', 'machine', '--format', 'json']);
   expect(json.machine_policy).toEqual({ tunnel: expected, source: path });
@@ -900,7 +899,7 @@ it('check --scope machine names the machine file that sets the executor', async 
   const path = join(home, '.bakers/machine.config.js');
   writeFileSync(
     path,
-    "export default {schema_version:2,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',executor:{plugin:'@bakers-build/addon-herdr-core'}};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',executor:{plugin:'@bakers-build/addon-herdr-core'}};",
   );
   const json = await run(['check', '--scope', 'machine', '--format', 'json']);
   expect(json.executor_source).toBe(path);
@@ -913,7 +912,7 @@ it('check --scope machine reports unresolved tunnel policy for invalid literals'
   const path = join(home, '.bakers/machine.config.js');
   writeFileSync(
     path,
-    "export default {schema_version:2,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,tunnel:'true'};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',tunnel:'true'};",
   );
   const json = await run(['check', '--scope', 'machine', '--format', 'json']);
   expect(json.machine_policy).toEqual({ tunnel: null, source: path });
@@ -941,7 +940,7 @@ it('check --scope connection does not take tunnel policy from a connection file'
   seed();
   writeFileSync(
     join(home, '.bakers/connections/default.js'),
-    `export default {schema_version:2,site:{base_url:'https://example.test'},workspace_id:'${workspace}',plugins:[],tunnel:true};`,
+    `export default {schema_version:1,site:{base_url:'https://example.test'},workspace_id:'${workspace}',plugins:[],tunnel:true};`,
   );
   const json = await run([
     'check',
@@ -967,7 +966,7 @@ it('check --machine-path reports tunnel policy from the selected file', async ()
   const path = join(root, 'other-machine.js');
   writeFileSync(
     path,
-    "export default {schema_version:2,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'other',max_parallel:1,tunnel:true};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'other',tunnel:true};",
   );
   const json = await run([
     'check',
@@ -1128,7 +1127,7 @@ it('reads the grant off the OAuth plugin even when an earlier plugin carries its
   const baseUrl = 'https://example.test';
   writeFileSync(
     join(home, '.bakers/connections/default.js'),
-    `export default {schema_version:2,site:{base_url:'${baseUrl}'},workspace_id:'${workspace}',plugins:[
+    `export default {schema_version:1,site:{base_url:'${baseUrl}'},workspace_id:'${workspace}',plugins:[
       {plugin:'@bakers-build/addon-essentials', with:{type:'oauth2_client_credentials'}},
       {plugin:'@dropsh/plugin-oauth2', export:'oauth2Plugin', with:{
         id:'bakers', default:true, type:'oauth2_device_code',
@@ -1249,7 +1248,7 @@ it('reports an addon in a scope it does not allow', async () => {
   seed();
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {schema_version:2,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,addons:['@bakers-build/addon-herdr']};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',addons:['@bakers-build/addon-herdr']};",
   );
   const report = await run([
     'check',
@@ -1276,7 +1275,7 @@ it('config check reports an invalid addon option at addons[0].with.services[0].k
   seed();
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {schema_version:2,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,addons:[{use:'@bakers-build/addon-ports',with:{services:[{key:'Docs!',match:'vitepress'}]}}]};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',addons:[{use:'@bakers-build/addon-ports',with:{services:[{key:'Docs!',match:'vitepress'}]}}]};",
   );
   const report = await run(['check', '--scope', 'machine', '--format', 'json']);
   const found = report.findings.filter(
@@ -1295,7 +1294,7 @@ it('offline check skips the scope check with an info finding', async () => {
   seed();
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {schema_version:2,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:2,addons:['@bakers-build/addon-herdr']};",
+    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',addons:['@bakers-build/addon-herdr']};",
   );
   const report = await run(['check', '--scope', 'machine', '--format', 'json']);
   expect(

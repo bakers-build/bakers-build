@@ -541,9 +541,9 @@ console.log(m[1]);
     mkdirSync(join(proj, '.bakers'), { recursive: true });
     writeFileSync(
       join(proj, '.bakers', 'project.config.js'),
-      `// @bakers-schema-version 2
+      `// @bakers-schema-version 1
   export default {
-    schema_version: 2,
+    schema_version: 1,
     project: { name: 'demo' },
     states: ['coding'],
     server: { use: '@bakers-build/addon-remote-drupal' },
@@ -575,9 +575,9 @@ console.log(m[1]);
     mkdirSync(machineHome, { recursive: true });
     writeFileSync(
       join(machineHome, 'machine.config.js'),
-      `// @bakers-schema-version 2
+      `// @bakers-schema-version 1
   export default {
-    schema_version: 2,
+    schema_version: 1,
     machine_id: '9f1d4e4e-0000-4000-8000-000000000001',
     label: 'verify-package',
     addons: [{ use: '@bakers-build/addon-grok', with: { model: 'grok-4.5' } }],
@@ -593,9 +593,9 @@ console.log(m[1]);
     mkdirSync(join(proj, '.bakers-addons'), { recursive: true });
     writeFileSync(
       join(proj, '.bakers-addons', 'project.config.js'),
-      `// @bakers-schema-version 2
+      `// @bakers-schema-version 1
   export default {
-    schema_version: 2,
+    schema_version: 1,
     project: { name: 'demo-addons' },
     states: ['coding'],
     addons: [
@@ -607,9 +607,9 @@ console.log(m[1]);
     );
     writeFileSync(
       join(proj, '.bakers-addons', 'connection.config.js'),
-      `// @bakers-schema-version 2
+      `// @bakers-schema-version 1
   export default {
-    schema_version: 2,
+    schema_version: 1,
     site: { base_url: 'https://x.test' },
     workspace_id: '9f1d4e4e-0000-4000-8000-abcdefabcdef',
     addons: [

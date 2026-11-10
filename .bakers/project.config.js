@@ -1,4 +1,4 @@
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 // The bakers repository's own project configuration (dogfood). The
 // connection and its credentials are private (~/.bakers/connections/), the
 // agents and their policy belong to each machine (~/.bakers/machine.config.js).
@@ -10,7 +10,7 @@
 
 /** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   project: { name: 'bakers' },
   // Runs stay sandboxed, though the default mode is `system`. `bakers` and `git`
   // stay trusted until forge tools deliver (docs/decisions/sandbox-forge-tools.md);

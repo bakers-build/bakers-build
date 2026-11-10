@@ -1,9 +1,8 @@
 // Each configuration file page lists exactly the keys its schema allows in its
-// field table, and every old name of that file in its Retired names list.
+// field table, nested keys included.
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
-import { OLD_FILES, OLD_NAMES } from '../../bakers-cli/core/src/cli/config-renames.ts'
 
 const SCHEMAS = new URL('../../bakers-cli/core/schema/', import.meta.url)
 const PAGES = { connection: 'connection.md', machine: 'machine.md', project: 'project.md' }
@@ -37,7 +36,7 @@ function allowedPaths(kind) {
   }
   const schema = schemaFile(`${kind}.schema.json`)
   walk(schema, `${kind}.schema.json`, '')
-  return { top: Object.keys(schema.properties), paths, open }
+  return { paths, open }
 }
 
 const allows = ({ paths, open }, key) =>
@@ -61,37 +60,19 @@ function fieldKeys(markdown) {
     .flatMap((line) => codes(line.split('|')[1]))
 }
 
-function oldNames(kind) {
-  const keys = OLD_NAMES[kind].map(({ from }) => from.replace(/\[\*\]/g, '[]'))
-  const files = OLD_FILES.filter(({ to }) => {
-    const target = to(['', '<name>'])
-    return kind === 'project' ? target.startsWith('project.') : kind === 'connection' && target.startsWith('connection.')
-  }).map(({ from }) => from.source.replace(/^\^|\$$/g, '').replace('(.+)', '<name>').replace(/\\\./g, '.'))
-  return [...keys, ...files]
-}
-
 for (const [kind, page] of Object.entries(PAGES)) {
   const markdown = readFileSync(new URL(`../configuration/${page}`, import.meta.url), 'utf8')
   const allowed = allowedPaths(kind)
   const listed = fieldKeys(markdown)
-  const retired = new Set(oldNames(kind))
 
-  test(`${page} field table lists every top-level ${kind} schema key`, () => {
+  test(`${page} field table lists every ${kind} schema key, nested keys included`, () => {
     assert.ok(listed.length > 0, `${page} has no field table under "## Fields"`)
-    const missing = allowed.top.filter((key) => !listed.includes(key))
+    const missing = [...allowed.paths].filter((key) => !listed.includes(key))
     assert.deepEqual(missing, [], `${page} field table misses schema keys`)
   })
 
   test(`${page} field table lists only keys the ${kind} schema allows`, () => {
     const unknown = listed.filter((key) => !allows(allowed, key))
     assert.deepEqual(unknown, [], `${page} field table lists keys the schema rejects`)
-    const old = listed.filter((key) => retired.has(key))
-    assert.deepEqual(old, [], `${page} field table lists old names`)
-  })
-
-  test(`${page} Retired names lists every old ${kind} name`, () => {
-    const documented = new Set(codes(section(markdown, 'Retired names')))
-    const missing = [...retired].filter((name) => !documented.has(name))
-    assert.deepEqual(missing, [], `${page} Retired names misses old names`)
   })
 }

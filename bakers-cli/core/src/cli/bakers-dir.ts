@@ -15,51 +15,6 @@ const PROJECT_CONNECTION = 'connection.config.js';
 const DEFAULT_CONNECTION = join('connections', 'default.js');
 
 /**
- * Old file names in a `.bakers` dir, each with its replacement. The loader
- * refuses a directory that still holds one, so an old file is never ignored.
- */
-export function oldConfigFiles(
-  bakersDir: string,
-  home?: string,
-): { from: string; to: string }[] {
-  let names: string[];
-  try {
-    names = readdirSync(bakersDir);
-  } catch {
-    return [];
-  }
-  const out: { from: string; to: string }[] = [];
-  for (const name of names.sort()) {
-    const variant = /^(.+)\.conductor\.config\.js$/.exec(name);
-    const to =
-      name === 'conductor.config.js'
-        ? 'project.config.js'
-        : variant
-          ? `project.${variant[1]}.config.js`
-          : name === 'bakers.config.js'
-            ? resolve(bakersDir) === resolve(homeBbDir(home))
-              ? DEFAULT_CONNECTION
-              : PROJECT_CONNECTION
-            : name === 'conductor.config.local.js'
-              ? 'BAKERS_PROJECT (environment) for the project name; the file is retired'
-              : name === 'connection.config.local.js'
-                ? 'BAKERS_CONNECTION or --connection; the file is retired'
-                : undefined;
-    if (to) out.push({ from: join(bakersDir, name), to });
-  }
-  return out;
-}
-
-/** Throw naming every old file in `bakersDir` and its replacement. */
-export function assertNoOldConfigFiles(bakersDir: string, home?: string): void {
-  const old = oldConfigFiles(bakersDir, home);
-  if (old.length)
-    throw new Error(
-      `${old.map((f) => `${f.from} was renamed: use ${f.to}`).join('; ')} — run bakers config upgrade`,
-    );
-}
-
-/**
  * List the conductor variants in a `.bakers/` dir: `project.config.js` is the
  * default variant `conductor`, `project.<name>.config.js` is variant `<name>`.
  * Every other file (`vite.config.js`, `connection.config.js`) is ignored.
@@ -123,11 +78,7 @@ export function findBbDir(cwd: string): string | undefined {
   let dir = resolve(cwd);
   for (;;) {
     const bakersDir = join(dir, BB_DIR);
-    if (
-      existsSync(bakersDir) &&
-      (configStems(bakersDir).length > 0 ||
-        oldConfigFiles(bakersDir).length > 0)
-    ) {
+    if (existsSync(bakersDir) && configStems(bakersDir).length > 0) {
       return bakersDir;
     }
     const parent = dirname(dir);
@@ -150,7 +101,6 @@ export function findBbDir(cwd: string): string | undefined {
  *      one config → use it (back-compat); else → error naming the stems.
  * 3. No `.bakers/` config anywhere up the tree → an `ENOENT` error naming
  *    `bakers config init --scope project`.
- * A `.bakers/` dir still holding an old file name fails, naming its replacement.
  */
 export function resolveConfigPath(
   override?: string,
@@ -180,7 +130,6 @@ export function resolveConfigPath(
       { code: 'ENOENT' },
     );
   }
-  assertNoOldConfigFiles(bakersDir);
   const stems = configStems(bakersDir);
   const name = conductorName ?? process.env.BAKERS_CONDUCTOR;
   if (name !== undefined && name !== '') {
@@ -231,15 +180,6 @@ export function findBbConfig(
   for (;;) {
     const bakersDir = join(dir, BB_DIR);
     if (existsSync(bakersDir)) {
-      // An old connection file here would have been read: refuse it. Other old
-      // names belong to the project walk, so a parent checkout cannot block us.
-      const oldConnection = oldConfigFiles(bakersDir).filter(({ from }) =>
-        /(^|\/)(bakers\.config|connection\.config\.local)\.js$/.test(from),
-      );
-      if (oldConnection.length)
-        throw new Error(
-          `${oldConnection.map((f) => `${f.from} was renamed: use ${f.to}`).join('; ')} — run bakers config upgrade`,
-        );
       const bakersCfg = join(bakersDir, PROJECT_CONNECTION);
       if (existsSync(bakersCfg)) return { path: bakersCfg, legacy: false };
     }
@@ -252,7 +192,7 @@ export function findBbConfig(
 /**
  * Walk root-ward for the nearest `.bakers/` dir that marks a **project** — one
  * holding any bakers config at all, a `connection.config.js` or at least one
- * project config (an old file name counts, so its loader can name the rename). Returns that `.bakers/` dir, or `undefined` up to the filesystem root.
+ * project config. Returns that `.bakers/` dir, or `undefined` up to the filesystem root.
  *
  * Deliberately a different question from `findBbConfig` (BB-219 AC-9):
  * "which project am I standing in" is not "where does my connection come from".
@@ -273,8 +213,7 @@ export function findProjectBbDir(cwd: string): string | undefined {
     if (
       existsSync(bakersDir) &&
       (existsSync(join(bakersDir, PROJECT_CONNECTION)) ||
-        configStems(bakersDir).length > 0 ||
-        oldConfigFiles(bakersDir).length > 0)
+        configStems(bakersDir).length > 0)
     ) {
       return bakersDir;
     }
@@ -318,11 +257,6 @@ export function resolveBbConfigPath(
       source: 'explicit',
     };
   }
-  if (
-    !existsSync(homeCfg) &&
-    existsSync(join(homeBbDir(opts.home), 'bakers.config.js'))
-  )
-    assertNoOldConfigFiles(homeBbDir(opts.home), opts.home);
   const cwd = opts.cwd ?? process.cwd();
   const project = findBbConfig(cwd);
   if (project !== undefined) {

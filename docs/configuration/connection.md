@@ -17,10 +17,10 @@ Create a named connection with `bakers config init --scope connection --connecti
 ## Fields
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 /** @type {import('@bakers-build/core').ConnectionConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   site: { base_url: 'https://bakers.example.test', jsonapi_prefix: '/jsonapi' },
   workspace_id: '00000000-0000-4000-8000-000000000000',
   plugins: [{ plugin: '@bakers-build/addon-essentials' }],
@@ -30,28 +30,16 @@ export default {
 
 | Field | Meaning and default |
 |---|---|
-| `schema_version` | `2`. The `// @bakers-schema-version 2` header and this field must agree. Version 1 is refused; run `bakers config upgrade`. |
+| `schema_version` | `1`. The `// @bakers-schema-version 1` header and this field must agree. |
 | `site` | Required object naming the server. |
 | `site.base_url` | Required absolute `http` or `https` URL of the server. |
 | `site.jsonapi_prefix` | API path prefix, default `/jsonapi`. |
 | `workspace_id` | Optional workspace UUID. Only `bakers ui` reads it, to focus its picker; `bakers ui --workspace <name|uuid>` overrides it for one run. It does not scope API calls and does not replace `project.workspace` in the [project file](/configuration/project). |
 | `plugins` | dropsh plugin descriptors `{ plugin, export?, with?, options? }` or constructed plugins. `@bakers-build/addon-essentials` supplies the Markdown renderer and the JSON:API schema, so keep it. The sign-in profile goes here. |
 | `addons` | Optional package entries: a name or `{ use, alias?, with? }`. Contributions are appended after `plugins`. UI addons add tabs to `bakers ui`; see [Addons](/addons/configure). An entry that cannot be resolved is an error here. |
+| `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
 
 Unknown keys fail. The top-level values are passed to every plugin as base options; an entry's own `with` wins. There is no merge of arbitrary plugins across files.
-
-## Retired names
-
-Each fails loading with its exact replacement until `bakers config upgrade` rewrites it.
-
-| Old name | Replacement |
-|---|---|
-| `bakers.config.js` | `~/.bakers/connections/default.js` at home, `.bakers/connection.config.js` in a project |
-| `connection.config.local.js` | Retired. Select a connection with `--connection <id>` or `BAKERS_CONNECTION` |
-| `addons[].name` | `addons[].use` |
-| `addons[].options` | `addons[].with` |
-| `max_parallel` | Ignored with a warning; the run budget is set on the machine in the backend |
-| `BB_CONFIG`, `BB_CONNECTION`, `BB_HOME` | `BAKERS_CONFIG`, `BAKERS_CONNECTION`, `BAKERS_HOME` |
 
 ## Which connection is used
 
@@ -98,10 +86,10 @@ A connection declares one `@dropsh/plugin-oauth2` entry with `id: 'bakers'` and 
 What `bakers init` writes:
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 /** @type {import('@bakers-build/core').ConnectionConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   site: { base_url: 'https://bakers.example.test', jsonapi_prefix: '/jsonapi' },
   plugins: [
     { plugin: '@bakers-build/addon-essentials' },
@@ -161,10 +149,10 @@ bakers init --auth-type client_credentials --client-id <id> --secret-env BAKERS_
 The CLI writes the secret into the private file:
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 /** @type {import('@bakers-build/core').ConnectionConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   site: { base_url: 'https://bakers.example.test', jsonapi_prefix: '/jsonapi' },
   plugins: [
     { plugin: '@bakers-build/addon-essentials' },

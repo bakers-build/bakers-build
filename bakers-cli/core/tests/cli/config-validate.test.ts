@@ -15,7 +15,7 @@ describe('validateConfig: one schema per file kind', () => {
   it('accepts a complete project config', () => {
     expect(
       validateConfig('project', {
-        schema_version: 2,
+        schema_version: 1,
         project: { name: 'demo', workspace: 'Engineering' },
         addons: [
           '@bakers-build/addon-remote-drupal',
@@ -36,7 +36,7 @@ describe('validateConfig: one schema per file kind', () => {
 
   it('reports the description sample field by field', () => {
     const problems = validateConfig('project', {
-      schema_version: 2,
+      schema_version: 1,
       project: { name: 'demo' },
       poll_intervall_ms: 'fast',
       poll_interval_ms: 'fast',
@@ -89,26 +89,24 @@ describe('validateConfig: one schema per file kind', () => {
     ).toEqual(['invalid_value site.base_url', 'unknown_key plugins[0].wiht']);
   });
 
-  it('answers an old name with its exact replacement', () => {
-    const problems = validateConfig('project', {
-      bakers: { project: 'demo' },
-      remote: { plugin: '@bakers-build/addon-remote-drupal' },
-      selectAgent: () => undefined,
-      addons: [{ name: 'x', options: {} }],
-    });
-    expect(codes(problems)).toEqual([
-      'renamed_key addons[0].name',
-      'renamed_key addons[0].options',
-      'renamed_key bakers',
-      'renamed_key remote',
-      'renamed_key selectAgent',
+  it('rejects an old name as an unknown key', () => {
+    expect(
+      codes(
+        validateConfig('project', {
+          project: { name: 'demo' },
+          bakers: { project: 'demo' },
+          remote: { use: '@bakers-build/addon-remote-drupal' },
+          selectAgent: () => undefined,
+          addons: [{ use: 'x', name: 'x', options: {} }],
+        }),
+      ),
+    ).toEqual([
+      'unknown_key addons[0].name',
+      'unknown_key addons[0].options',
+      'unknown_key bakers',
+      'unknown_key remote',
+      'unknown_key selectAgent',
     ]);
-    expect(problems.find((p) => p.key === 'bakers')?.message).toBe(
-      'bakers was renamed: use project: { name, workspace }',
-    );
-    expect(problems.find((p) => p.key === 'remote')?.replacement).toBe(
-      'server',
-    );
     expect(
       codes(
         validateConfig('machine', {
@@ -117,7 +115,7 @@ describe('validateConfig: one schema per file kind', () => {
           agents: { default_agent: 'opus' },
         }),
       ),
-    ).toEqual(['renamed_key agents.default_agent']);
+    ).toEqual(['unknown_key agents.default_agent']);
   });
 });
 
@@ -235,37 +233,5 @@ describe('addon options: checked offline from the package schema', () => {
         ),
       ),
     ).toEqual(['unknown_key agents.catalog[0].with.modle']);
-  });
-});
-
-describe('hook commands: renamed environment variables', () => {
-  it('names the replacement of an old $BB_* variable in a literal hook', () => {
-    const problems = validateConfig('project', {
-      project: { name: 'demo' },
-      hooks: {
-        after_create: 'echo $BB_TICKET_UUID ${BB_STATE} $BB_E2E_KEEP',
-        provision_up: { deps: 'echo $BB_RUN_UUID' },
-      },
-    });
-    expect(codes(problems)).toEqual([
-      'renamed_key hooks.after_create',
-      'renamed_key hooks.provision_up.deps',
-    ]);
-    expect(problems[0]?.message).toBe(
-      'BB_TICKET_UUID was renamed: use BAKERS_TICKET_UUID; BB_STATE was renamed: use BAKERS_STATE',
-    );
-  });
-});
-
-describe('prompt placeholders', () => {
-  it('names the snake_case placeholder of an old one', () => {
-    expect(
-      validateConfig('project', {
-        project: { name: 'demo' },
-        prompt: 'Work {identifier} in run {runUuid} for {ticketUuid}',
-      }).map((p) => p.message),
-    ).toEqual([
-      '{runUuid} was renamed: use {run_uuid}; {ticketUuid} was renamed: use {ticket_uuid}',
-    ]);
   });
 });

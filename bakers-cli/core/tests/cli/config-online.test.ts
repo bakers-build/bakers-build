@@ -136,7 +136,7 @@ it('verifies a fresh OAuth connection after login through the real dropsh provid
   const path = join(home, '.bakers/connections/default.js');
   writeFileSync(
     path,
-    `export default {schema_version:2,site:{base_url:'${base}',jsonapi_prefix:'/jsonapi'},workspace_id:'${id}',plugins:[{plugin:${JSON.stringify(oauth)},export:'oauth2Plugin',with:{id:'bakers',default:true,type:'oauth2_client_credentials',scope:'bb:session',client_id:'fixture-client',client_secret:'fixture-secret',token_url:'${base}/oauth/token'}}]};`,
+    `export default {schema_version:1,site:{base_url:'${base}',jsonapi_prefix:'/jsonapi'},workspace_id:'${id}',plugins:[{plugin:${JSON.stringify(oauth)},export:'oauth2Plugin',with:{id:'bakers',default:true,type:'oauth2_client_credentials',scope:'bb:session',client_id:'fixture-client',client_secret:'fixture-secret',token_url:'${base}/oauth/token'}}]};`,
   );
   const { runAuthLogin } = await import(
     pathToFileURL(join(dirname(dropsh), 'commands/auth.js')).href

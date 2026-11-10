@@ -1,6 +1,6 @@
 ---
 title: Project configuration
-description: The committed .bakers/project.config.js - project identity, engine slots, served states, scheduling, hooks, permissions, named variants and retired names.
+description: The committed .bakers/project.config.js - project identity, engine slots, served states, scheduling, hooks, permissions, and named variants.
 ---
 
 # Project
@@ -12,10 +12,10 @@ It holds no credentials and no agent policy. The server and sign-in come from th
 ## The generated file
 
 ```js
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 /** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   project: { name: 'demo', workspace: 'Engineering' },
   server: { use: '@bakers-build/addon-remote-drupal' },
   executor: { use: '@bakers-build/addon-herdr' },
@@ -38,14 +38,16 @@ The file carries no identity and is identical for everyone. A conductor is ident
 
 | Field | Meaning and default |
 |---|---|
-| `schema_version` | `2`, written by `bakers config init` and `upgrade`. Version 1 is refused; run `bakers config upgrade`. |
+| `schema_version` | `1`, written by `bakers config init`. |
 | `project` | Required object `{ name, workspace? }`, written literally: the loader reads it without running the file, so no variables or spreads. |
 | `project.name` | Required project name. `BAKERS_PROJECT` overrides it for one process. |
 | `project.workspace` | Workspace name. Required only when the project name exists in more than one workspace; the error names the candidates. |
 | `server` | Engine slot that talks to the control plane: `{ use, export?, with? }`, or a constructed plugin with `kind: 'server'`. |
 | `executor` | Engine slot that runs agent sessions, same shape. A machine `executor` overrides it. |
 | `worktree` | Engine slot that creates ticket worktrees, same shape. |
+| `server.use`, `server.export`, `server.with`, `executor.use`, `executor.export`, `executor.with`, `worktree.use`, `worktree.export`, `worktree.with` | A slot's package, its named factory and the factory's options; see [Slot descriptors](#slot-descriptors). |
 | `addons` | Packages that contribute slots and tools: a name, or `{ use, alias?, with? }`. A direct slot beats an addon; otherwise the last contributor wins with a warning. `with` is checked against the addon's options schema. Agent harnesses belong in the machine file. |
+| `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
 | `states` | Optional array of non-empty state strings; omitted or empty seeds all claimable states on first registration. Later edits belong on the conductor Identity card or API; changing this file does not update an existing registration. |
 | `prompt` | Agent prompt template with `{identifier}`, `{state}`, `{run_uuid}` and `{ticket_uuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
 | `poll_interval_ms` | Positive integer, default `5000`. |
@@ -53,37 +55,15 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `restart_on_change` | Boolean, default `true`: a foreground conductor restarts itself when a config file changes. Needs Node.js 22.15 or later. |
 | `capture_logs` | Boolean, default `true`. Transcripts upload only where the server's [run-log storage policy](/self-hosting/server#run-log-storage) allows it; `false` keeps this conductor's transcripts local even then. Metrics are unaffected. |
 | `hooks` | Optional command object. [Lifecycle hooks](/configuration/project/hooks) owns its keys, timing, environment, failure behavior and on-demand `provision_up` profiles. |
+| `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume`, `hooks.provision_up` | The lifecycle hooks; see [Lifecycle hooks](/configuration/project/hooks). |
 | `marketplaces` | Optional array of agent plugin marketplaces every run of this project installs: `{ url, ref, plugins }`. See [Agent plugins](#agent-plugins). |
+| `marketplaces[].url`, `marketplaces[].ref`, `marketplaces[].plugins` | The marketplace's Git URL, the ref to check out and the plugins to install from it. |
 | `permissions` | Run permissions for every agent of every machine that runs this project: `mode` and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. The machine's own block and a harness entry replace it key by key; `'$inherit'` keeps the layer below. A block that loosens the sandbox gives anyone who can push here more rights on those machines and warns at every load. See [Shared run security](/provision/security/shared-settings). |
+| `permissions.mode` | `sandbox`, `system` or `yolo`. |
+| `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists; see [Shared run security](/provision/security/shared-settings). |
 | `select_agent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/agents/guide). |
 
 Unknown keys fail.
-
-## Retired names
-
-Each fails loading with its exact replacement (`max_parallel` only warns). `bakers config upgrade` rewrites renamed keys and files; move retired keys by hand.
-
-| Old name | Replacement |
-|---|---|
-| `conductor.config.js` | `project.config.js` |
-| `<name>.conductor.config.js` | `project.<name>.config.js` |
-| `conductor.config.local.js` | Retired; `BAKERS_PROJECT` overrides the project name |
-| `bakers` (`bakers.project`, `bakers.workspace`) | `project: { name, workspace }` |
-| `bb_workspace` | `project.workspace` |
-| `remote` | `server` |
-| `workspace` | `worktree` |
-| `selectAgent` | `select_agent` |
-| `security` | `permissions` |
-| `server.plugin`, `executor.plugin`, `worktree.plugin` | `use` in the same slot |
-| `server.options`, `executor.options`, `worktree.options` | `with` in the same slot |
-| `addons[].name`, `addons[].options` | `addons[].use`, `addons[].with` |
-| `agent`, `agents`, `default_agent`, `agent_routes` | The [machine file](/configuration/machine): `addons` and `agents.routes` |
-| `site`, `plugins` | The [connection](/configuration/connection) |
-| `conductor_id`, `machine_id`, `label` | Removed: a conductor is machine + project + variant |
-| `tunnel` | The [machine file](/configuration/machine) |
-| `max_parallel` | Ignored with a warning; the run budget is set on the machine in the backend |
-| `{runUuid}` | `{run_uuid}` in `prompt` |
-| `BB_CONDUCTOR`, `BB_CONDUCTOR_CONFIG`, `BB_PROJECT` | `BAKERS_CONDUCTOR`, `BAKERS_CONDUCTOR_CONFIG`, `BAKERS_PROJECT` |
 
 ## Slot descriptors
 

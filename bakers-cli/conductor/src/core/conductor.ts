@@ -1344,7 +1344,7 @@ export class Conductor {
       );
     }
     const core: Record<string, string> = {
-      BB_URL: this.config.site.base_url,
+      BAKERS_URL: this.config.site.base_url,
       BAKERS_ID: t.uuid,
       // BB-569: lets a launch wrapper key off the ticket and the run's
       // start state without parsing the prompt (addon-claude `measure`).

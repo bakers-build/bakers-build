@@ -41,7 +41,7 @@ The successful preparation record survives conductor restarts and is cleared dur
 
 | Variable | Value |
 |---|---|
-| `BB_URL` | Server URL of the selected connection |
+| `BAKERS_URL` | Server URL of the selected connection |
 | `BAKERS_ID` | Ticket UUID |
 | `BAKERS_TICKET_IDENTIFIER` | Ticket identifier |
 | `BAKERS_STATE` | Run's start state; current state for freeze hooks |

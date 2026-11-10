@@ -26,13 +26,6 @@ const REQUIRED_FIELDS = [
   'api_token',
 ] as const;
 
-const RENAMED: Record<string, string> = {
-  accountId: 'account_id',
-  tunnelId: 'tunnel_id',
-  zoneId: 'zone_id',
-  apiToken: 'api_token',
-};
-
 function validateSettings(settings: unknown): CloudflareConfig {
   if (typeof settings !== 'object' || settings === null) {
     throw new Error(
@@ -40,8 +33,6 @@ function validateSettings(settings: unknown): CloudflareConfig {
     );
   }
   const obj = settings as Record<string, unknown>;
-  for (const old of Object.keys(RENAMED))
-    if (old in obj) throw new Error(`${old} was renamed: use ${RENAMED[old]}`);
   const missing = REQUIRED_FIELDS.filter(
     (f) => typeof obj[f] !== 'string' || obj[f] === '',
   );

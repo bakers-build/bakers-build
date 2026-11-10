@@ -190,9 +190,6 @@ export class GrokAgent implements BbAgent {
     options: GrokAgentOptions = {},
     private readonly home: string = homedir(),
   ) {
-    if ('reasoningEffort' in options) {
-      throw new Error('reasoningEffort was renamed: use reasoning_effort');
-    }
     // Shared deny_read and trusted_commands have nothing to map onto here.
     this.security = resolveSecurityOptions(options, SANDBOX_DEFAULTS, {
       unsupported: ['deny_read', 'trusted_commands'],

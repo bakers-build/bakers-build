@@ -82,9 +82,6 @@ export function fakeExecutor(
     marker_file?: string;
   } = {},
 ): ExecutorPlugin {
-  if ('markerFile' in options) {
-    throw new Error('markerFile was renamed: use marker_file');
-  }
   const executor = new FakeExecutor({
     outcome: options.outcome ?? 'exited',
     ...(options.marker_file !== undefined

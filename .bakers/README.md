@@ -44,8 +44,7 @@ So: **add explanation here, not there.** If `bakers ui` starts failing with
 ## `schema_version` (BB-216)
 
 The connection-config schema version, kept in sync with the `@bakers-schema-version`
-marker in the file header; any version other than 2 fails loading (version 1 names
-`bakers config upgrade`).
+marker in the file header; any version other than 1 fails loading.
 
 ## `workspace_id` — the ambient workspace (BB-351)
 
@@ -64,7 +63,7 @@ Because it is a **per-install** value it lives in the private connection, never 
 committed file (`~/.bakers/connections/default.js`):
 
 ```js
-export default { schema_version: 2, site: { … }, workspace_id: '<bb_workspace uuid>', … };
+export default { schema_version: 1, site: { … }, workspace_id: '<bb_workspace uuid>', … };
 ```
 
 Read the uuid with:

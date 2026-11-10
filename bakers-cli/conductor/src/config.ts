@@ -3,7 +3,6 @@ import { basename, dirname, isAbsolute, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   type AddonEntry,
-  assertNoOldConfigFiles,
   assertSchemaVersion,
   assertValidConfig,
   type BbConnectionConfig,
@@ -408,7 +407,6 @@ export async function loadConductorConfig(
   configFile: string,
 ): Promise<ConductorEngineConfig> {
   const configPath = resolve(configFile);
-  assertNoOldConfigFiles(dirname(configPath));
   const bakers = readBbProjectSelection(configPath);
   const module = (await import(pathToFileURL(configPath).href)) as {
     default?: unknown;
@@ -418,7 +416,7 @@ export async function loadConductorConfig(
     throw new Error(`${configPath}: default export must be an object`);
   }
   assertSchemaVersion(configPath, raw);
-  // The same schema config check applies; it names every old key's replacement.
+  // The same schema config check applies.
   assertValidConfig('project', raw, configPath);
   const config = raw as RawConfig;
 

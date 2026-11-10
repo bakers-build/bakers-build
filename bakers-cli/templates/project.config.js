@@ -1,4 +1,4 @@
-// @bakers-schema-version 2
+// @bakers-schema-version 1
 // Canonical PROJECT config for a bakers.build target repo (BB-215 addon
 // form), committed as `.bakers/project.config.js`. This is the run machinery
 // only (server/executor/worktree). The CONNECTION surface (site + auth +
@@ -25,7 +25,7 @@
 
 /** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
-  schema_version: 2,
+  schema_version: 1,
   project: { name: 'bakers-playground' },
   // The run budget (max_parallel) is set on the machine in the backend,
   // default 5. See bakers-cli/CONFIG.md.

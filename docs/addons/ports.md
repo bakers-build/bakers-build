@@ -32,7 +32,7 @@ The conductor registers the addon; a **Share tunnels** message then appears in t
 | `claimers` | Runtime claimer packages; see [Shared processes](/addons/ports-services). |
 | `services`, `all_node` | Which host processes are shared; see [Shared processes](/addons/ports-services). |
 
-Without a ports entry with `transport.use`, tunnel commands refuse with `bakers ports needs '@bakers-build/addon-ports' in addons[] …`; `bakers ports list` still works. Projects naming different transports are refused at runtime. A top-level `ports` key in the machine file is retired; `bakers config upgrade --scope machine` moves it into the entry.
+Without a ports entry with `transport.use`, tunnel commands refuse with `bakers ports needs '@bakers-build/addon-ports' in addons[] …`; `bakers ports list` still works. Projects naming different transports are refused at runtime. A top-level `ports` key in the machine file fails as an unknown key; move it into the entry by hand.
 
 ## Check it works
 

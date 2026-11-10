@@ -77,16 +77,6 @@ describe('resolveProjectRooting (AC-9)', () => {
     expect(r.cwd).toBe(tmp);
   });
 
-  it('accepts a legacy conductor.config.js carrying a connection as the marker', () => {
-    const _bakersDir = makeProject(
-      tmp,
-      'conductor.config.js',
-      "export default { site: { base_url: 'https://legacy.test' } };\n",
-    );
-    const r = resolveProjectRooting(tmp, home);
-    expect(r.cwd).toBe(tmp);
-  });
-
   // The BB-218-canonical repo shape, and the regression the BB-230 rebase
   // would otherwise have introduced here: an engine-only `project.config.js`
   // is deliberately NOT a connection source (its connection is inherited from

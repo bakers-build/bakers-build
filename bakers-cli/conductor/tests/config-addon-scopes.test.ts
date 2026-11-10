@@ -136,15 +136,13 @@ describe('conductor addons per scope', () => {
     expect(cfg.executor.id).toBe('herdr-core');
   });
 
-  it('agents.addons throws the retired-key remediation', async () => {
+  it('agents.addons is an unknown key', async () => {
     writeMachine(
       `export default { agents: { addons: ['@bakers-build/addon-codex'] } };`,
     );
     await expect(
       loadConductorConfig(writeProject(projectConfig())),
-    ).rejects.toThrow(
-      'agents.addons is retired: list the harnesses in the top-level addons',
-    );
+    ).rejects.toThrow('agents.addons unknown key');
   });
 
   it('catalog harness must be in machine addons[]', async () => {
@@ -252,7 +250,7 @@ describe('shared run permissions from the machine and project config', () => {
     ).rejects.toThrow(`${machine}: permissions.sandbox.network unknown key`);
   });
 
-  it('the renamed key security fails loading in the project and machine config', async () => {
+  it('the old key security fails loading in the project and machine config', async () => {
     writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
     const project = writeProject(
       projectConfig().replace(
@@ -261,7 +259,7 @@ describe('shared run permissions from the machine and project config', () => {
       ),
     );
     await expect(loadConductorConfig(project)).rejects.toThrow(
-      `${project}: security was renamed: use permissions`,
+      `${project}: security unknown key`,
     );
     const machine = writeMachine(`export default {
       addons: ['@bakers-build/addon-codex'],
@@ -269,7 +267,7 @@ describe('shared run permissions from the machine and project config', () => {
     };`);
     await expect(
       loadConductorConfig(writeProject(projectConfig())),
-    ).rejects.toThrow(`${machine}: security was renamed: use permissions`);
+    ).rejects.toThrow(`${machine}: security unknown key`);
   });
 });
 
