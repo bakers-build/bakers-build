@@ -31,6 +31,8 @@ export interface SpawnRunInput {
   env?: Record<string, string>;
   /** The agent's login and credential screens; see {@link SpawnedSession.authFailure}. */
   authFailurePatterns?: readonly AuthFailurePattern[];
+  /** When the run was claimed (epoch ms); the launch watch counts from here. */
+  claimedAt?: number;
 }
 
 /** The lifecycle-hook slots, keyed exactly like `config.hooks`. */

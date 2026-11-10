@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { watchAuth } from '../src/launch-script.js';
+import { AUTH_WATCH_MS, watchAuth } from '../src/launch-script.js';
 
 const PATTERNS = [
   { pattern: /Select login method/, reason: 'claude: not logged in' },
@@ -39,6 +39,48 @@ describe('watchAuth', () => {
       now: () => now,
     });
     expect(result).toBeUndefined();
+  });
+
+  it('counts its window from the claim, not the launch', async () => {
+    let now = 100_000;
+    let reads = 0;
+    await watchAuth(
+      async () => {
+        reads += 1;
+        return '> working on BB-1';
+      },
+      PATTERNS,
+      {
+        since: now - 60_000, // claimed a minute before the launch
+        pollMs: 1000,
+        sleep: async (ms) => {
+          now += ms;
+        },
+        now: () => now,
+      },
+    );
+    expect(reads).toBe((AUTH_WATCH_MS - 60_000) / 1000);
+  });
+
+  it('still watches briefly after a setup that outlasted the window', async () => {
+    let now = 1_000_000;
+    let reads = 0;
+    await watchAuth(
+      async () => {
+        reads += 1;
+        return '> working on BB-1';
+      },
+      PATTERNS,
+      {
+        since: now - AUTH_WATCH_MS - 60_000,
+        pollMs: 1000,
+        sleep: async (ms) => {
+          now += ms;
+        },
+        now: () => now,
+      },
+    );
+    expect(reads).toBe(30);
   });
 
   it('keeps watching through an unreadable pane', async () => {

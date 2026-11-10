@@ -226,6 +226,26 @@ describe('launch watch for login screens', () => {
     expect(claude?.reason).toHaveLength(200);
   });
 
+  it('hands the executor the claim time, so the watch counts from the claim', async () => {
+    const agent = {
+      ...agentWith('claude', [{ ok: true }]),
+      authFailurePatterns: PATTERNS,
+    };
+    const { conductor, executor } = setup([agent]);
+    const started: (number | undefined)[] = [];
+    const startRun = executor.startRun.bind(executor);
+    executor.startRun = async (input) => {
+      started.push(input.claimedAt);
+      return startRun(input);
+    };
+    await conductor.start();
+    const before = Date.now();
+    await conductor.tick();
+    expect(started).toHaveLength(1);
+    expect(started[0]).toBeGreaterThanOrEqual(before);
+    expect(started[0]).toBeLessThanOrEqual(Date.now());
+  });
+
   it('leaves a run alone when the watch ends without a match', async () => {
     const agent = {
       ...agentWith('claude', [{ ok: true }]),

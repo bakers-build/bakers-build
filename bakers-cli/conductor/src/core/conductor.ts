@@ -720,10 +720,11 @@ export class Conductor {
         'claimed run',
       );
       this.signalUi();
+      const claimedAt = Date.now();
       this.queue.enqueue({
         key: `dispatch:${run.runUuid}`,
         lane: run.ticketUuid,
-        run: () => this.dispatchOrFail(run),
+        run: () => this.dispatchOrFail(run, claimedAt),
       });
       count += 1;
       machineLoad += 1;
@@ -1658,10 +1659,13 @@ export class Conductor {
   }
 
   /** Dispatches one claimed run; a failure terminalises it (BB-149). */
-  private async dispatchOrFail(run: ClaimedRun): Promise<void> {
+  private async dispatchOrFail(
+    run: ClaimedRun,
+    claimedAt = Date.now(),
+  ): Promise<void> {
     const at: { worktree?: string } = {};
     try {
-      await this.dispatch(run, at);
+      await this.dispatch(run, at, claimedAt);
     } catch (err) {
       // BB-149: terminalise the run to `failed` with the error captured,
       // instead of leaving it `claimed` to expire after the ~300s lease (the
@@ -1757,7 +1761,11 @@ export class Conductor {
   }
 
   /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
-  private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
+  private async dispatch(
+    run: ClaimedRun,
+    at: { worktree?: string } = {},
+    claimedAt = Date.now(),
+  ) {
     const t = await this.remote.getTicket(run.ticketUuid);
     // Resolve the ticket alias and machine defaults, or the project selection hook.
     // Persist the package id below so finalize can choose its transcript parser.
@@ -1819,7 +1827,7 @@ export class Conductor {
       env,
       run: { uuid: run.runUuid, id: run.runId },
     };
-    const launch = { started: false };
+    const launch = { started: false, claimedAt };
     try {
       await this.launch(run, t, chosen, ws, ctx, launch);
     } catch (err) {
@@ -1838,7 +1846,7 @@ export class Conductor {
     chosen: ResolvedAgent,
     ws: EnsuredWorkspace,
     ctx: HookListenerContext,
-    launch: { started: boolean },
+    launch: { started: boolean; claimedAt: number },
   ): Promise<void> {
     const env = ctx.env;
     // Lifecycle hooks are conductor-owned + best-effort (BB-84): runHook never
@@ -1997,6 +2005,7 @@ export class Conductor {
       ...(chosen.agent.authFailurePatterns?.length
         ? { authFailurePatterns: chosen.agent.authFailurePatterns }
         : {}),
+      claimedAt: launch.claimedAt,
       ticket: {
         uuid: t.uuid,
         identifier: t.identifier,
