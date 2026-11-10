@@ -41,6 +41,11 @@ $settings['reverse_proxy_addresses'] = ['10.0.0.0/8', '172.16.0.0/12', '192.168.
 // IS_DDEV_PROJECT so it can live in the tracked settings.php and take effect on
 // every `ddev init` without touching production.
 if (getenv('IS_DDEV_PROJECT') === 'true') {
+  // Keep sites/default and settings.php writable. Drupal makes both read-only
+  // after an install (permissions hardening); under DDEV that blocks git from
+  // rewriting settings files on a merge or checkout. The generated
+  // settings.ddev.php sets this too, but this file does not include it.
+  $settings['skip_permissions_hardening'] = TRUE;
   // Own services file (not the Composer-scaffolded development.services.yml,
   // which gets overwritten on `composer require`) — carries twig.config debug.
   $settings['container_yamls'][] = dirname(__DIR__) . '/bakers.dev.services.yml';
