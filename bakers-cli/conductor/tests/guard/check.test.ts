@@ -54,6 +54,11 @@ describe('git push (AC-1, AC-5)', () => {
     'git config user.email a@b',
     'git config --get remote.origin.url',
     'git remote -v',
+    'git push --dry-run -u origin HEAD',
+    'git push --no-verify --porcelain origin HEAD:feat/x-1',
+    'git add -A && git commit -m x && git push -u origin HEAD',
+    'git fetch origin && git rebase origin/next && git push origin HEAD:feat/x-1',
+    'git symbolic-ref --short HEAD && git push origin HEAD',
   ])('allows %s', (command) => {
     expect(denied(command)).toBeNull();
   });
@@ -105,6 +110,26 @@ describe('git push (AC-1, AC-5)', () => {
     'git config set alias.p "push -f"',
     'git remote set-url origin https://example.com/r.git',
     "GIT_CONFIG_PARAMETERS=\"'remote.origin.mirror'='true'\" git push origin",
+    // git accepts any unambiguous prefix of a long option.
+    'git push --force-w origin feat/x-1',
+    'git push --forc origin feat/x-1',
+    'git push --del origin feat/x-1',
+    'git push --tag origin HEAD',
+    'git push --mir origin HEAD:feat/x-1',
+    'git push --rep=other origin HEAD:feat/x-1',
+    // Commands that may leave another branch checked out.
+    'git checkout - && git push origin HEAD',
+    'git symbolic-ref HEAD refs/heads/main && git push origin HEAD',
+    'git rebase main main && git push -u origin HEAD',
+    'git stash branch main && git push origin HEAD',
+    // Configuration that renames push or loads other configuration.
+    'git config -f .git/config alias.p "push --force"',
+    'git config --file=.git/config alias.p "push --force"',
+    'git config --type bool alias.p "push --force"',
+    'git config include.path ../evil',
+    'git config includeIf.gitdir:~/.path ../evil',
+    'git -c include.path=../evil push origin HEAD',
+    'git bisect start main && git push origin HEAD',
   ] as (string | [string, Partial<GuardContext>])[])('refuses %s', (row) => {
     const [command, at] = Array.isArray(row) ? row : [row, {}];
     expect(denied(command, at)).not.toBeNull();
@@ -125,6 +150,8 @@ describe('git discarding work (AC-2)', () => {
     'git update-ref refs/heads/feat/x-1 HEAD~1',
     'git stash list',
     'git branch -D feat/x-1-old',
+    'git branch --list',
+    'git branch --contains HEAD',
   ])('allows %s', (command) => {
     expect(denied(command)).toBeNull();
   });
@@ -147,6 +174,13 @@ describe('git discarding work (AC-2)', () => {
     'git checkout -- /etc/hosts',
     'git stash drop',
     'git stash clear',
+    'git -C ~/Documents reset --har',
+    'git -C ~/Documents reset $H',
+    'git $SUB --force origin feat/x-1',
+    'git $(echo push) --force origin feat/x-1',
+    'git branch --del main',
+    'git branch --move main y',
+    'git branch --forc main HEAD',
   ])('refuses %s', (command) => {
     expect(denied(command)).not.toBeNull();
   });
@@ -182,6 +216,25 @@ describe('file deletion (AC-3)', () => {
     '$HOME/bin/tool --version',
     'echo ${HOME}',
     'constructor x',
+    'rm -rf build/../build/a',
+    '(cd build && rm -rf out)',
+    'mkdir -p out && cd out && rm -rf x',
+    `cd ${home} && (cd ${worktree} && rm -rf build)`,
+    '(cd build) && rm -rf out',
+    'bash scripts/x.sh',
+    'bash -e scripts/x.sh arg',
+    'bash -o pipefail -c "rm -rf build"',
+    'source .venv/bin/activate',
+    'echo $(git rev-parse HEAD)',
+    'git commit -m "$(cat msg.txt)"',
+    'echo `date`',
+    'find -x build -delete',
+    'find . -name x -exec grep -l y {} +',
+    "find build -exec sh -c 'rm -rf build' \\;",
+    'watch -n 1 ls',
+    "trap 'rm -rf build' EXIT",
+    'trap - EXIT',
+    'setsid ls',
   ])('allows %s', (command) => {
     expect(denied(command)).toBeNull();
   });
@@ -244,6 +297,59 @@ describe('file deletion (AC-3)', () => {
     '${R:-rm} -rf ~/x',
     '"$R" -rf ~/x',
     '$(echo rm) -rf ~/x',
+    // `..` after a symlink leaves the directory the link points to.
+    'rm -rf link/../x',
+    'cd link/.. && rm -rf x',
+    // A cd that may fail, or runs in a subshell, leaves the directory unknown.
+    `cd ${home}; cd ${worktree}/nope; rm -rf x`,
+    `cd ${home}/Documents && (cd ${worktree}) && rm -rf x`,
+    `cd ${home} && pushd ${worktree} && popd && rm -rf x`,
+    `cd ${home} && cd ${worktree}/nope || rm -rf x`,
+    `cd ${home} && true | cd ${worktree} && rm -rf x`,
+    `cd ${worktree}; rm -rf x`,
+    // A shell reading code from stdin, a here-string or a computed string.
+    'echo "rm -f ~/x" | bash',
+    "bash <<< 'rm -rf ~/x'",
+    'sh -c "rm -rf $X"',
+    'bash -c "$(echo rm -rf ~/x)"',
+    'bash -s < cmds',
+    'bash $SCRIPT',
+    'source <(echo rm -rf ~/x)',
+    '. <(echo rm -rf ~/x)',
+    "ksh -c 'rm -rf ~/x'",
+    // A computed command name, and a word the shell splits.
+    'CMD="rm -f ~/x"; $CMD',
+    '$(echo rm -rf ~/x)',
+    'rm${IFS}-rf${IFS}~/x',
+    'rm -rf${IFS}~/x',
+    // A command substitution runs too.
+    'echo $(rm -rf ~/x)',
+    'echo `rm -rf ~/x`',
+    'echo "$(rm -rf ~/x)"',
+    'git commit -m "$(git push --force origin feat/x-1)"',
+    // `>|` is a redirect, not a pipe.
+    'rm -f >| foo ~/x',
+    "rm -rf {a/b/c,' '/../../x}",
+    // find options before the start path, and what -exec runs.
+    'find -x ~/x -delete',
+    'find -- ~/x -delete',
+    'find -E ~/x -delete',
+    'find -O3 ~/x -delete',
+    'find -f ~/x -delete',
+    "find . -exec sh -c 'rm -rf ~/x' \\;",
+    'find ~ -exec env rm {} +',
+    'find ~ -execdir sudo rm {} \\;',
+    'find -L link -exec rm {} +',
+    // Commands that run other commands.
+    'setsid rm -rf ~/x',
+    'watch -n 1 rm -rf ~/x',
+    "watch 'rm -rf ~/x'",
+    'flock /tmp/l rm -rf ~/x',
+    "flock -n /tmp/l -c 'rm -rf ~/x'",
+    'caffeinate -i rm -rf ~/x',
+    "trap 'rm -rf ~/x' EXIT",
+    'ls | xargs env rm -rf',
+    'xargs sudo rm < list',
   ])('refuses %s', (command) => {
     expect(denied(command)).not.toBeNull();
   });
@@ -276,6 +382,10 @@ describe('DDEV and forge (AC-4)', () => {
     'gh api repos/o/r/contents/x -X PUT -f branch=feat/x-1 -f message=m -f content=Yg==',
     'gh -R o/r pr view 1',
     'gh api repos/o/r/pulls/1 --jq .state',
+    'gh api repos/o/r/issues -F title=x',
+    'ddev stop --remove-data=true',
+    'gh alias list',
+    'git config -f .gitmodules submodule.x.url y',
   ])('allows %s', (command) => {
     expect(denied(command)).toBeNull();
   });
@@ -316,6 +426,16 @@ describe('DDEV and forge (AC-4)', () => {
     'gh api graphql -f query=\'mutation { closePullRequest(input: {pullRequestId: "x"}) { clientMutationId } }\'',
     'gh api graphql -f query=\'mutation { deleteRef(input: {refId: "x"}) { clientMutationId } }\'',
     'gh api -X PATCH repos/o/r/pulls/1 --input body.json',
+    'ddev stop --remove-data=true other',
+    'ddev delete --all=true -y',
+    // A field read from a file is a body the guard cannot see.
+    'gh api -X PATCH repos/o/r/pulls/1 -F state=@s.txt',
+    'gh api graphql -F query=@q.graphql',
+    'gh api -X PATCH repos/o/r/pulls/1 --field=state=@s.txt',
+    'gh api -X PATCH repos/o/r/pulls/1 --input=body.json',
+    "gh alias set c 'pr close'",
+    "glab alias set c 'mr close'",
+    'gh api graphql -f query=\'mutation { updateRef(input: {refId: "x", oid: "y", force: true}) { clientMutationId } }\'',
   ] as (string | [string, Partial<GuardContext>])[])('refuses %s', (row) => {
     const [command, at] = Array.isArray(row) ? row : [row, {}];
     expect(denied(command, at)).not.toBeNull();

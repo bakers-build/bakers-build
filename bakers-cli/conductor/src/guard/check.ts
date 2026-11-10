@@ -29,20 +29,58 @@ interface Word {
   dynamic: boolean;
   glob: boolean;
   op?: 'redirect';
+  /** Stands for what `find -L` finds, so a symlink is followed. */
+  follow?: boolean;
+}
+
+/** One simple command, or a subshell's `(` or `)`. */
+interface Segment {
+  words: Word[];
+  /** The operator after it: `&&`, `||`, `;`, `|`, `&`, a newline or ``. */
+  end: string;
+  paren?: '(' | ')';
+  /** The scripts of its `$(…)` and backtick substitutions, which run first. */
+  subs: string[];
 }
 
 const ALLOW: GuardDecision = { allow: true };
 /** Stands in for `$PWD`, which the segment's tracked cwd replaces. */
 const PWD = '\0PWD\0';
 const DELETERS = new Set(['rm', 'rmdir', 'unlink', 'shred']);
-const SHELLS = new Set(['bash', 'sh', 'zsh', 'dash']);
-/** Command wrappers: the options that take a value, and the positionals before the command. */
-const WRAPPERS: Record<string, { values: string[]; positionals?: number }> = {
+const SHELLS = new Set([
+  'bash',
+  'sh',
+  'zsh',
+  'dash',
+  'ksh',
+  'mksh',
+  'ash',
+  'fish',
+  'csh',
+  'tcsh',
+]);
+/** Shell options that take a value. */
+const SHELL_VALUES = ['-o', '+o', '-O', '+O', '--rcfile', '--init-file'];
+interface Wrapper {
+  /** Options that take a value. */
+  values: string[];
+  /** Positionals before the command. */
+  positionals?: number;
+  /** Options whose following words are a command line to run. */
+  scripts?: string[];
+  /** Joins its words into a command line for `sh -c`. */
+  joins?: boolean;
+}
+/** Commands that run the command after their options. */
+const WRAPPERS: Record<string, Wrapper> = {
   sudo: {
     values: ['-u', '-g', '-C', '-h', '-p', '-U', '-D', '-r', '-t', '-T'],
   },
   doas: { values: ['-u', '-C'] },
-  env: { values: ['-u', '--unset', '-C', '--chdir'] },
+  env: {
+    values: ['-u', '--unset', '-C', '--chdir'],
+    scripts: ['-S', '--split-string'],
+  },
   command: { values: [] },
   builtin: { values: [] },
   exec: { values: ['-a'] },
@@ -52,6 +90,40 @@ const WRAPPERS: Record<string, { values: string[]; positionals?: number }> = {
   ionice: { values: ['-c', '-n', '-p'] },
   stdbuf: { values: ['-i', '-o', '-e'] },
   timeout: { values: ['-s', '--signal', '-k', '--kill-after'], positionals: 1 },
+  gtimeout: {
+    values: ['-s', '--signal', '-k', '--kill-after'],
+    positionals: 1,
+  },
+  setsid: { values: [] },
+  watch: { values: ['-n', '--interval', '-q', '--equexit'], joins: true },
+  flock: {
+    values: ['-w', '--timeout', '-E', '--conflict-exit-code'],
+    positionals: 1,
+    scripts: ['-c', '--command'],
+  },
+  caffeinate: { values: ['-t', '-w'] },
+  chronic: { values: [] },
+  unbuffer: { values: [] },
+  busybox: { values: [] },
+  arch: { values: [] },
+  taskset: { values: [], positionals: 1 },
+  chrt: { values: [], positionals: 1 },
+  strace: {
+    values: [
+      '-e',
+      '-o',
+      '-p',
+      '-s',
+      '-u',
+      '-E',
+      '-P',
+      '-I',
+      '-b',
+      '-S',
+      '-X',
+      '-a',
+    ],
+  },
 };
 /** Shell grammar words before a simple command. */
 const GRAMMAR = new Set([
@@ -66,16 +138,104 @@ const GRAMMAR = new Set([
   'until',
   'do',
 ]);
+/** Brace expansion; a quoted part (`{a,' '/../x}`) is still inside the braces. */
+const BRACE_PART = `([^\\s{}'"]|'[^']*'|"[^"]*")*`;
+const BRACE = new RegExp(`^\\{${BRACE_PART}(,|\\.\\.)${BRACE_PART}\\}`);
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 /** Environment that points git at another repository or configuration. */
 const GIT_ENV = /^GIT_(CONFIG|DIR|WORK_TREE|COMMON_DIR|NAMESPACE)/;
-/** Config keys that change what `git push` sends or where. */
-const PUSH_KEYS = /^(alias|remote|push|url)\./i;
+/** Subcommands that leave the same branch checked out (as far as the guard tracks). */
+const KEEPS_HEAD = new Set([
+  'add',
+  'am',
+  'apply',
+  'archive',
+  'blame',
+  'branch',
+  'cat-file',
+  'check-ignore',
+  'checkout',
+  'cherry',
+  'cherry-pick',
+  'clean',
+  'clone',
+  'commit',
+  'config',
+  'count-objects',
+  'describe',
+  'diff',
+  'diff-files',
+  'diff-index',
+  'diff-tree',
+  'fetch',
+  'for-each-ref',
+  'format-patch',
+  'fsck',
+  'gc',
+  'grep',
+  'hash-object',
+  'help',
+  'init',
+  'log',
+  'ls-files',
+  'ls-remote',
+  'ls-tree',
+  'maintenance',
+  'merge',
+  'merge-base',
+  'mv',
+  'name-rev',
+  'notes',
+  'prune',
+  'pull',
+  'push',
+  'range-diff',
+  'rebase',
+  'reflog',
+  'remote',
+  'repack',
+  'reset',
+  'restore',
+  'rev-list',
+  'rev-parse',
+  'revert',
+  'rm',
+  'shortlog',
+  'show',
+  'show-ref',
+  'stash',
+  'status',
+  'submodule',
+  'switch',
+  'symbolic-ref',
+  'tag',
+  'update-index',
+  'update-ref',
+  'version',
+  'worktree',
+]);
+/** Subcommands where a computed word could be the option that discards work. */
+const DISCARDS = new Set([
+  'reset',
+  'clean',
+  'branch',
+  'update-ref',
+  'worktree',
+  'stash',
+  'config',
+  'remote',
+  'checkout',
+  'restore',
+  'switch',
+]);
+/** Config keys that change what `git push` sends or where, or load other configuration. */
+const PUSH_KEYS = /^(alias|remote|push|url|include|includeif)\./i;
 
 /** Split a command into segments of words, one per simple command. */
-function tokenize(command: string, ctx: GuardContext): Word[][] {
-  const segments: Word[][] = [];
+function tokenize(command: string, ctx: GuardContext): Segment[] {
+  const segments: Segment[] = [];
   let words: Word[] = [];
+  let subs: string[] = [];
   let word: Word | null = null;
   const cur = () => {
     word ??= { text: '', dynamic: false, glob: false };
@@ -85,10 +245,15 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
     if (word) words.push(word);
     word = null;
   };
-  const endSegment = () => {
+  const endSegment = (end: string) => {
     endWord();
-    if (words.length) segments.push(words);
+    if (words.length || subs.length) segments.push({ words, end, subs });
+    else {
+      const last = segments.at(-1);
+      if (last && !last.end) last.end = end;
+    }
     words = [];
+    subs = [];
   };
   const vars: Record<string, string> = {
     HOME: ctx.home,
@@ -105,11 +270,13 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
       return null;
     }
     if (next === '(') {
+      const start = i + 2;
       let depth = 0;
       for (i += 1; i < command.length; i++) {
         if (command[i] === '(') depth++;
         else if (command[i] === ')' && --depth === 0) break;
       }
+      subs.push(command.slice(start, i));
       i++;
       return null;
     }
@@ -133,6 +300,7 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
   };
   const backtick = () => {
     const end = command.indexOf('`', i + 1);
+    subs.push(command.slice(i + 1, end === -1 ? undefined : end));
     i = end === -1 ? command.length : end + 1;
   };
   while (i < command.length) {
@@ -140,8 +308,12 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
     if (c === ' ' || c === '\t') {
       endWord();
       i++;
-    } else if (c === '\n' || c === ';' || c === '(' || c === ')') {
-      endSegment();
+    } else if (c === '\n' || c === ';') {
+      endSegment(c);
+      i++;
+    } else if (c === '(' || c === ')') {
+      endSegment(c);
+      segments.push({ words: [], end: '', paren: c, subs: [] });
       i++;
     } else if (c === '&' || c === '|') {
       if (c === '&' && command[i + 1] === '>') {
@@ -149,8 +321,9 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
         words.push({ text: '&>', dynamic: false, glob: false, op: 'redirect' });
         i += command[i + 2] === '>' ? 3 : 2;
       } else {
-        endSegment();
-        i += command[i + 1] === c ? 2 : 1;
+        const op = command[i + 1] === c ? c + c : c;
+        endSegment(op);
+        i += op.length;
       }
     } else if (c === '>' || c === '<') {
       // A file descriptor number before the operator belongs to it.
@@ -158,6 +331,8 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
       endWord();
       words.push({ text: c, dynamic: false, glob: false, op: 'redirect' });
       i++;
+      // `>|` overwrites despite noclobber.
+      if (c === '>' && command[i] === '|') i++;
       while (command[i] === '>' || command[i] === '&') i++;
     } else if (c === "'") {
       const end = command.indexOf("'", i + 1);
@@ -207,14 +382,30 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
       const w = cur();
       if ('*?['.includes(c)) w.glob = true;
       // Brace expansion (`{a,../x}`, `{1..3}`) yields words the guard does not expand.
-      if (c === '{' && /^\{[^\s{}]*(,|\.\.)[^\s{}]*\}/.test(command.slice(i)))
-        w.dynamic = true;
+      if (c === '{' && BRACE.test(command.slice(i))) w.dynamic = true;
       w.text += c;
       i++;
     }
   }
-  endSegment();
+  endSegment('');
   return segments;
+}
+
+/** `p` with `..` applied after each symlink before it is followed, as the kernel does. */
+function physical(p: string): string {
+  let at = '/';
+  for (const part of p.split('/')) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') {
+      try {
+        at = realpathSync(at);
+      } catch {
+        // A missing directory fails the command; its text is all there is.
+      }
+      at = dirname(at);
+    } else at = join(at, part);
+  }
+  return at;
 }
 
 /** The real path of `p`'s parent (a symlink itself is what `rm` removes). */
@@ -258,6 +449,12 @@ const deny = (
   alternative: string,
 ): GuardDecision => ({ allow: false, rule, reason, alternative });
 
+/** `t` names one of `full`, also as the abbreviation git accepts for any unambiguous prefix. */
+const longOpt = (t: string, ...full: string[]) => {
+  const name = t.split('=')[0] as string;
+  return name.length > 2 && full.some((f) => f.startsWith(name));
+};
+
 const unresolvable = (what: string) =>
   deny(
     'unresolvable',
@@ -282,7 +479,7 @@ class Checker {
   path(word: Word, cwd: string | null, follow = false): string | null {
     if (word.dynamic) return null;
     let text = word.text;
-    const through = follow || word.glob || /\/\.?$/.test(text);
+    const through = follow || word.follow || word.glob || /\/\.?$/.test(text);
     if (text.includes(PWD)) {
       if (cwd === null) return null;
       text = text.replaceAll(PWD, cwd);
@@ -294,9 +491,9 @@ class Checker {
     }
     if (!isAbsolute(text)) {
       if (cwd === null) return null;
-      text = resolve(cwd, text);
+      text = `${cwd}/${text}`;
     }
-    return through ? followed(resolve(text)) : canonical(resolve(text));
+    return through ? followed(physical(text)) : canonical(physical(text));
   }
 
   deletable(p: string): boolean {
@@ -309,52 +506,50 @@ class Checker {
     return name === branch || name.startsWith(`${branch}-`);
   }
 
+  headOwned(): boolean {
+    return this.head !== null && this.owned(this.head);
+  }
+
+  pushAlternative(): string {
+    const own = this.ctx.branch;
+    return `push only this run's branch without force: git push -u origin HEAD (on ${own}) or git push origin HEAD:${own} (or a new ${own}-<suffix> branch)`;
+  }
+
   run(command: string, cwd: string | null): GuardDecision {
-    for (const segment of tokenize(command, this.ctx)) {
+    // A subshell restores the directory; a cd that may have failed leaves it
+    // unknown after the first operator that is not `&&`.
+    const stack: { cwd: string | null; uncertain: boolean }[] = [];
+    let uncertain = false;
+    let before = '';
+    for (const { words: segment, end, paren, subs } of tokenize(
+      command,
+      this.ctx,
+    )) {
+      if (paren === '(') {
+        stack.push({ cwd, uncertain });
+        continue;
+      }
+      if (paren === ')') {
+        const outer = stack.pop();
+        cwd = outer ? outer.cwd : null;
+        uncertain = outer?.uncertain ?? false;
+        before = end;
+        continue;
+      }
+      if (uncertain && before !== '&&') {
+        cwd = null;
+        uncertain = false;
+      }
+      const piped = before === '|' || end === '|';
+      before = end;
+      for (const sub of subs) {
+        const d = this.run(sub, cwd);
+        if (!d.allow) return d;
+      }
       const words = segment.filter((w, i) => !w.op && !segment[i - 1]?.op);
       const assigned: Word[] = [];
-      // Strip grammar words, assignments and wrappers down to the command.
-      for (let changed = true; changed && words[0]; ) {
-        changed = false;
-        const first = words[0] as Word;
-        if (GRAMMAR.has(first.text) || first.text === 'time') {
-          words.shift();
-          changed = true;
-        } else if (ASSIGNMENT.test(first.text)) {
-          assigned.push(first);
-          words.shift();
-          changed = true;
-        } else if (Object.hasOwn(WRAPPERS, basename(first.text))) {
-          const spec = WRAPPERS[basename(first.text)] as {
-            values: string[];
-            positionals?: number;
-          };
-          words.shift();
-          let positionals = spec.positionals ?? 0;
-          while (words[0]) {
-            const t = words[0].text;
-            if (t === '-S' || t === '--split-string') {
-              // `env -S 'cmd …'` runs the string as a command line.
-              const rest = words.slice(1);
-              if (rest.some((w) => w.dynamic))
-                return unresolvable('the command env -S runs');
-              const d = this.run(rest.map((w) => w.text).join(' '), cwd);
-              if (!d.allow) return d;
-              words.length = 0;
-              break;
-            }
-            if (spec.values.includes(t)) words.splice(0, 2);
-            else if (t.startsWith('-') || ASSIGNMENT.test(t)) {
-              if (ASSIGNMENT.test(t)) assigned.push(words[0]);
-              words.shift();
-            } else if (positionals > 0) {
-              positionals--;
-              words.shift();
-            } else break;
-          }
-          changed = true;
-        }
-      }
+      const stripped = this.unwrap(words, assigned, cwd);
+      if (stripped) return stripped;
       const verb = words[0];
       const setsGit = (w: Word) => GIT_ENV.test(w.text);
       // An assignment alone or an export holds for the rest of the command.
@@ -365,17 +560,26 @@ class Checker {
       if (sticky) this.gitEnv = true;
       if (!verb) continue;
       // A computed command name could be any verb, a destructive one included.
-      if (verb.dynamic && words.length > 1)
-        return unresolvable('the command a computed name runs');
+      if (verb.dynamic) return unresolvable('the command a computed name runs');
       const name = basename(verb.text);
       const args = words.slice(1);
       const gitEnv = this.gitEnv;
       if (assigned.some(setsGit)) this.gitEnv = true;
-      if (name === 'cd' || name === 'pushd') {
+      if (name === 'cd' || name === 'pushd' || name === 'popd') {
         const target = args.find((w) => !w.text.startsWith('-'));
-        cwd = target
-          ? this.path({ ...target, glob: false }, cwd)
-          : this.ctx.home;
+        // A pipeline runs cd in a subshell (or not, in zsh); `-`, `+N` and popd name a stack entry.
+        const known =
+          !piped &&
+          name !== 'popd' &&
+          !args.some((w) => w.text === '-') &&
+          !target?.text.startsWith('+') &&
+          (target !== undefined || name === 'cd');
+        cwd = !known
+          ? null
+          : target
+            ? this.path({ ...target, glob: false }, cwd)
+            : this.ctx.home;
+        uncertain = true;
         continue;
       }
       const d = this.simple(name, args, cwd);
@@ -385,13 +589,107 @@ class Checker {
     return ALLOW;
   }
 
-  simple(name: string, args: Word[], cwd: string | null): GuardDecision {
-    if (SHELLS.has(name)) {
-      const flag = args.findIndex((w) => /^-[a-z]*c[a-z]*$/.test(w.text));
-      const script = flag === -1 ? undefined : args[flag + 1];
-      // A script the guard cannot read is out of its reach, like a file.
-      return script && !script.dynamic ? this.run(script.text, cwd) : ALLOW;
+  /**
+   * Strip grammar words, assignments and wrappers from `words` down to the
+   * command, in place; a refusal when a wrapper runs a string it refuses.
+   */
+  unwrap(
+    words: Word[],
+    assigned: Word[],
+    cwd: string | null,
+  ): GuardDecision | null {
+    // A wrapper that runs a string as a command line (`env -S`, `flock -c`, `watch`).
+    const script = (rest: Word[], what: string): GuardDecision | null => {
+      if (rest.some((w) => w.dynamic))
+        return unresolvable(`the command ${what} runs`);
+      const d = this.run(rest.map((w) => w.text).join(' '), cwd);
+      words.length = 0;
+      return d.allow ? null : d;
+    };
+    for (let changed = true; changed && words[0]; ) {
+      changed = false;
+      const first = words[0] as Word;
+      if (GRAMMAR.has(first.text) || first.text === 'time') {
+        words.shift();
+        changed = true;
+      } else if (ASSIGNMENT.test(first.text)) {
+        assigned.push(first);
+        words.shift();
+        changed = true;
+      } else if (Object.hasOwn(WRAPPERS, basename(first.text))) {
+        const name = basename(first.text);
+        const spec = WRAPPERS[name] as Wrapper;
+        words.shift();
+        let positionals = spec.positionals ?? 0;
+        while (words[0]) {
+          const t = words[0].text;
+          if (spec.scripts?.includes(t))
+            return script(words.slice(1), `${name} ${t}`);
+          if (spec.values.includes(t)) words.splice(0, 2);
+          else if (t.startsWith('-') || ASSIGNMENT.test(t)) {
+            if (ASSIGNMENT.test(t)) assigned.push(words[0]);
+            words.shift();
+          } else if (positionals > 0) {
+            positionals--;
+            words.shift();
+          } else break;
+        }
+        if (spec.joins && words.length) return script([...words], name);
+        changed = true;
+      }
     }
+    return null;
+  }
+
+  /** A command another command runs (`xargs`, `find -exec`): no cd, no environment. */
+  exec(words: Word[], cwd: string | null): GuardDecision {
+    const d = this.unwrap(words, [], cwd);
+    if (d) return d;
+    const verb = words[0];
+    if (!verb) return ALLOW;
+    if (verb.dynamic) return unresolvable('the command a computed name runs');
+    return this.simple(basename(verb.text), words.slice(1), cwd);
+  }
+
+  simple(name: string, args: Word[], cwd: string | null): GuardDecision {
+    if (name === 'trap') {
+      const action = args[0];
+      if (!action || (!action.dynamic && action.text.startsWith('-')))
+        return ALLOW;
+      return action.dynamic
+        ? unresolvable('the command trap runs')
+        : this.run(action.text, cwd);
+    }
+    if (SHELLS.has(name)) {
+      let i = 0;
+      let inline = false;
+      let stdin = false;
+      for (; i < args.length; i++) {
+        const w = args[i] as Word;
+        if (w.dynamic || !/^[-+]./.test(w.text)) break;
+        if (w.text === '--') {
+          i++;
+          break;
+        }
+        if (SHELL_VALUES.includes(w.text)) i++;
+        else if (/^-[a-zA-Z]*c/.test(w.text)) inline = true;
+        else if (/^-[a-zA-Z]*s/.test(w.text)) stdin = true;
+      }
+      const operand = args[i];
+      if (inline)
+        return operand && !operand.dynamic
+          ? this.run(operand.text, cwd)
+          : unresolvable(`the script ${name} -c runs`);
+      // Code on stdin, a pipe or a here-string is out of the guard's sight, like eval's.
+      if (!operand || stdin)
+        return unresolvable(`the commands ${name} reads from its input`);
+      // A script file is out of the guard's reach, like an interpreter.
+      return operand.dynamic ? unresolvable(`the script ${name} runs`) : ALLOW;
+    }
+    if (name === 'source' || name === '.')
+      return args[0] && !args[0].dynamic
+        ? ALLOW
+        : unresolvable(`the commands ${name} reads`);
     if (name === 'eval') {
       if (args.some((w) => w.dynamic))
         return unresolvable('the command eval runs');
@@ -412,14 +710,9 @@ class Checker {
     let i = 0;
     while (i < args.length && (args[i] as Word).text.startsWith('-'))
       i += values.includes((args[i] as Word).text) ? 2 : 1;
-    const verb = args[i];
-    if (!verb) return ALLOW;
+    if (!args[i]) return ALLOW;
     const unknown: Word = { text: '', dynamic: true, glob: false };
-    return this.simple(
-      basename(verb.text),
-      [...args.slice(i + 1), unknown],
-      cwd,
-    );
+    return this.exec([...args.slice(i), unknown], cwd);
   }
 
   targets(
@@ -444,8 +737,9 @@ class Checker {
   deleting(name: string, args: Word[], cwd: string | null): GuardDecision {
     const end = args.findIndex((w) => w.text === '--');
     const paths = [
+      // A computed word may split into options and paths: a target either way.
       ...(end === -1 ? args : args.slice(0, end)).filter(
-        (w) => !w.text.startsWith('-'),
+        (w) => w.dynamic || !w.text.startsWith('-'),
       ),
       ...(end === -1 ? [] : args.slice(end + 1)),
     ];
@@ -453,23 +747,49 @@ class Checker {
   }
 
   find(args: Word[], cwd: string | null): GuardDecision {
-    const destructive = args.some(
-      (w, i) =>
-        w.text === '-delete' ||
-        (['-exec', '-execdir', '-ok', '-okdir'].includes(w.text) &&
-          DELETERS.has(basename(args[i + 1]?.text ?? ''))),
-    );
-    if (!destructive) return ALLOW;
-    const follow = args.some((w) => w.text === '-L' || w.text === '-H');
-    const rest = args.filter((w) => !['-H', '-L', '-P'].includes(w.text));
-    const end = rest.findIndex((w) => /^[-(!]/.test(w.text));
-    const starts = rest.slice(0, end === -1 ? undefined : end);
-    return this.targets(
-      'find',
-      starts.length ? starts : [{ text: '.', dynamic: false, glob: false }],
-      cwd,
-      follow,
-    );
+    const starts: Word[] = [];
+    let follow = false;
+    let i = 0;
+    // Options before the start paths; BSD `-f <path>` names one.
+    for (; i < args.length; i++) {
+      const t = (args[i] as Word).text;
+      if (t === '--') {
+        i++;
+        break;
+      }
+      if (t === '-f' || t === '-D') {
+        const v = args[++i];
+        if (t === '-f' && v) starts.push(v);
+      } else if (/^-([HLPEXdsx]+|O\d*)$/.test(t)) {
+        if (/[HL]/.test(t)) follow = true;
+      } else break;
+    }
+    for (; i < args.length && !/^[-(!]/.test((args[i] as Word).text); i++)
+      starts.push(args[i] as Word);
+    if (!starts.length) starts.push({ text: '.', dynamic: false, glob: false });
+    const expr = args.slice(i);
+    for (let j = 0; j < expr.length; j++) {
+      const t = (expr[j] as Word).text;
+      if (t === '-delete') {
+        const d = this.targets('find', starts, cwd, follow);
+        if (!d.allow) return d;
+      } else if (['-exec', '-execdir', '-ok', '-okdir'].includes(t)) {
+        let end = expr.findIndex(
+          (w, k) => k > j && (w.text === ';' || w.text === '+'),
+        );
+        if (end === -1) end = expr.length;
+        // `{}` stands for what find finds: the start paths, followed with -L.
+        const clause = expr
+          .slice(j + 1, end)
+          .flatMap((w) =>
+            w.text.includes('{}') ? starts.map((s) => ({ ...s, follow })) : [w],
+          );
+        const d = this.exec(clause, cwd);
+        if (!d.allow) return d;
+        j = end;
+      }
+    }
+    return ALLOW;
   }
 
   git(args: Word[], cwd: string | null): GuardDecision {
@@ -502,8 +822,12 @@ class Checker {
         gitDir = true;
       } else if (!t.startsWith('-')) break;
     }
+    if (args[i]?.dynamic) return unresolvable('the git subcommand');
     const sub = args[i]?.text;
     const rest = args.slice(i + 1);
+    if (sub !== undefined && DISCARDS.has(sub) && rest.some((w) => w.dynamic))
+      return unresolvable(`the options of git ${sub}`);
+    if (sub !== undefined && !KEEPS_HEAD.has(sub)) this.head = null;
     const flags = rest.map((w) => w.text);
     const own = this.ctx.branch;
     // The tree a destructive subcommand acts on.
@@ -532,7 +856,7 @@ class Checker {
         return deny(
           'git-push',
           `git ${sub} updates remote refs past the push rules`,
-          `push only this run's branch without force: git push -u origin HEAD (on ${own})`,
+          this.pushAlternative(),
         );
       case 'config':
         return this.config(rest);
@@ -551,13 +875,29 @@ class Checker {
             ? undefined
             : positional[0]);
         this.head = to && !to.dynamic ? to.text : null;
-        return ALLOW;
+        return flags.some(
+          (f) =>
+            longOpt(f, '--force', '--discard-changes') ||
+            /^-[a-zA-Z]*f/.test(f),
+        )
+          ? inTree()
+          : ALLOW;
       }
+      case 'rebase':
+        // `git rebase <upstream> <branch>` checks the branch out first.
+        if (positional.length > 1) this.head = null;
+        return ALLOW;
+      case 'symbolic-ref':
+        if (
+          positional.length > 1 ||
+          flags.some((f) => f === '-d' || longOpt(f, '--delete'))
+        )
+          this.head = null;
+        return ALLOW;
       case 'branch': {
         const destructive = flags.some(
           (f) =>
-            f === '--delete' ||
-            f === '--force' ||
+            longOpt(f, '--delete', '--force', '--move') ||
             /^-[a-zA-Z]*[dDfMC]/.test(f) ||
             f === '-m',
         );
@@ -583,7 +923,7 @@ class Checker {
             );
       }
       case 'update-ref': {
-        if (flags.includes('--stdin'))
+        if (flags.some((f) => longOpt(f, '--stdin')))
           return unresolvable('the refs git update-ref --stdin changes');
         const ref = positional[0];
         if (!flags.includes('-d')) {
@@ -591,7 +931,7 @@ class Checker {
             ref &&
             !ref.dynamic &&
             (ref.text === 'HEAD'
-              ? this.head !== null && this.owned(this.head)
+              ? this.headOwned()
               : ref.text.startsWith('refs/heads/') && this.owned(ref.text));
           return mine
             ? ALLOW
@@ -601,10 +941,7 @@ class Checker {
                 `move only refs/heads/${own}`,
               );
         }
-        return ref &&
-          !ref.dynamic &&
-          this.ctx.branch &&
-          ref.text.replace(/^refs\/heads\//, '') === own
+        return ref && !ref.dynamic && this.owned(ref.text)
           ? ALLOW
           : deny(
               'git-update-ref',
@@ -613,7 +950,7 @@ class Checker {
             );
       }
       case 'reset':
-        return flags.includes('--hard') ? inTree() : ALLOW;
+        return flags.some((f) => longOpt(f, '--hard')) ? inTree() : ALLOW;
       case 'clean':
         return inTree();
       case 'checkout':
@@ -622,7 +959,8 @@ class Checker {
         if (sub === 'checkout' && end === -1) {
           // A branch switch, or a path the guard reads as one: unknown either way.
           const to = named(['-b', '-B', '--orphan']) ?? positional[0];
-          if (to) this.head = to.dynamic ? null : to.text;
+          if (flags.includes('-')) this.head = null;
+          else if (to) this.head = to.dynamic ? null : to.text;
         }
         if (sub === 'checkout' && end === -1 && !flags.includes('-f'))
           return ALLOW;
@@ -645,6 +983,7 @@ class Checker {
         return ALLOW;
       }
       case 'stash':
+        if (positional[0]?.text === 'branch') this.head = null;
         return ['drop', 'clear'].includes(positional[0]?.text ?? '')
           ? deny(
               'git-stash',
@@ -659,7 +998,19 @@ class Checker {
 
   config(args: Word[]): GuardDecision {
     const flags = args.map((w) => w.text);
-    const positional = args.filter((w) => !w.text.startsWith('-'));
+    const values = [
+      '-f',
+      '--file',
+      '--blob',
+      '--type',
+      '--default',
+      '--comment',
+      '--value',
+    ];
+    const positional = args.filter(
+      (w, i) =>
+        !w.text.startsWith('-') && !values.includes(args[i - 1]?.text ?? ''),
+    );
     const reads = ['--get', '--get-all', '--get-regexp', '--get-urlmatch'];
     const sub = [
       'get',
@@ -699,13 +1050,8 @@ class Checker {
   }
 
   push(args: Word[], tree: string | null): GuardDecision {
-    const own = this.ctx.branch;
     const refuse = (reason: string) =>
-      deny(
-        'git-push',
-        reason,
-        `push only this run's branch without force: git push -u origin HEAD (on ${own}) or git push origin HEAD:${own} (or a new ${own}-<suffix> branch)`,
-      );
+      deny('git-push', reason, this.pushAlternative());
     if (tree === null) return unresolvable('the repository git push runs in');
     if (!inside(realDir(tree), this.ctx.worktree))
       return refuse(
@@ -717,20 +1063,19 @@ class Checker {
       const w = args[i] as Word;
       const t = w.text;
       if (t.startsWith('--')) {
-        if (/^--(force|force-with-lease|force-if-includes)(=|$)/.test(t))
+        if (longOpt(t, '--force', '--force-with-lease', '--force-if-includes'))
           return refuse(`git push ${t} would force-push`);
-        if (t === '--delete') deleting = true;
+        if (longOpt(t, '--delete')) deleting = true;
         else if (
-          ['--mirror', '--all', '--branches', '--tags', '--prune'].includes(t)
+          longOpt(t, '--mirror', '--all', '--branches', '--tags', '--prune')
         )
           return refuse(
             `git push ${t} would change or delete remote refs beyond this run's branch`,
           );
-        if (t === '--repo' || t.startsWith('--repo=')) {
+        if (longOpt(t, '--repo'))
           return refuse(
             'git push --repo pushes to a remote the guard does not check',
           );
-        }
         if (t === '--push-option' || t === '--receive-pack' || t === '--exec')
           i++;
       } else if (t.startsWith('-') && t.length > 1) {
@@ -758,10 +1103,10 @@ class Checker {
       // A run deletes no remote branch or tag, its own included.
       if (deleting || t.startsWith(':'))
         return refuse(`git push would delete ${dst} on the remote`);
-      if (dst === 'HEAD' || (!t.includes(':') && t === 'HEAD')) {
+      if (dst === 'HEAD') {
         if (this.head === null)
           return unresolvable('the branch HEAD points at');
-        if (!this.owned(this.head))
+        if (!this.headOwned())
           return refuse(
             `git push HEAD would update ${this.head}, which this run does not own`,
           );
@@ -775,7 +1120,8 @@ class Checker {
 
   ddev(args: Word[], cwd: string | null): GuardDecision {
     const sub = args.find((w) => !w.text.startsWith('-'));
-    const flags = args.map((w) => w.text);
+    // `--remove-data=true` sets the flag as well.
+    const flags = args.map((w) => w.text.split('=')[0] as string);
     // Short options bundle (`-aR`): `-R` is --remove-data, `-a` is --all.
     const short = (c: string) =>
       flags.some((f) => new RegExp(`^-[a-zA-Z]*${c}`).test(f));
@@ -829,13 +1175,19 @@ class Checker {
     const words: string[] = [];
     let method: string | undefined;
     let fields = false;
+    let fromFile = false;
     for (let i = 0; i < args.length; i++) {
       const t = (args[i] as Word).text;
       const value = args[i + 1]?.text ?? '';
       if (t === '-X' || t === '--method') method = value;
       else if (t.startsWith('--method=')) method = t.slice(9);
       else if (/^-X./.test(t)) method = t.slice(2);
-      if (/^(-f|-F|--field|--raw-field|--input)(=|$)/.test(t)) fields = true;
+      if (/^(-f|-F|--(field|raw-field|input)(=|$))/.test(t)) fields = true;
+      // `-F key=@file` reads the value from a file.
+      const typed = /^(-F|--field)$/.test(t)
+        ? value
+        : /^(?:-F|--field=)(.+)$/.exec(t)?.[1];
+      if (typed !== undefined && /^[^=]*=@/.test(typed)) fromFile = true;
       if (values.has(t)) i++;
       else if (!t.startsWith('-')) words.push(t);
     }
@@ -853,6 +1205,12 @@ class Checker {
       repo: ['delete', 'archive'],
       label: ['delete'],
     };
+    if (group === 'alias' && (action === 'set' || action === 'import'))
+      return deny(
+        'forge-alias',
+        `${name} alias ${action} could give a refused command another name`,
+        `run the ${name} command itself`,
+      );
     if ((group === 'pr' || group === 'mr') && action === 'checkout')
       this.head = null;
     if (group && action && closes[group]?.includes(action))
@@ -862,11 +1220,15 @@ class Checker {
     const verb = (method ?? (fields ? 'POST' : 'GET')).toUpperCase();
     if (verb === 'GET') return ALLOW;
     const texts = args.map((w) => w.text);
-    if (texts.includes('--input') || args.some((w) => w.dynamic))
+    if (
+      texts.some((t) => t === '--input' || t.startsWith('--input=')) ||
+      fromFile ||
+      args.some((w) => w.dynamic)
+    )
       return unresolvable(`the body ${name} api sends`);
     if (action === 'graphql')
       return texts.some((t) =>
-        /\b(close[A-Z]\w*|delete[A-Z]\w*|\w+(Delete|Destroy)|CLOSED?)\b/.test(
+        /\b(close[A-Z]\w*|delete[A-Z]\w*|\w+(Delete|Destroy)|CLOSED?)\b|\bforce\s*:\s*true\b/.test(
           t,
         ),
       )
