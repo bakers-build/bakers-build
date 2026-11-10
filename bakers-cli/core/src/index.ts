@@ -221,3 +221,4 @@ export {
   readEffectiveAddon,
   scopeAddons,
 } from './plugins/scoped-addons.js';
+export { isValidMachineConnectionUrl } from './cli/machine-connection.js';

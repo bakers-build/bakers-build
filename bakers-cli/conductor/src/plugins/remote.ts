@@ -17,6 +17,7 @@ export interface ConductorRegistration {
   host_key?: string;
   /** This machine's display label; names a newly created bb_machine. */
   machine_label?: string;
+  connection_url?: string | null;
   project: string;
   /** Empty = serve all claimable states in the project (BB-207). */
   states: string[];

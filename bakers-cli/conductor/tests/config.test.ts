@@ -511,6 +511,14 @@ describe('loadConductorConfig', () => {
     expect(config.tunnel).toBe(expected);
   });
 
+  it.each([undefined, null, 'ssh://user@host:22'])('carries connection_url %s into start config', async (value) => {
+    writeFileSync(join(process.env.HOME as string, '.bakers/machine.config.js'),
+      `export default ${JSON.stringify({ machine_id: 'm1', label: 'M1', addons: ['@bakers-build/addon-codex'], ...(value !== undefined ? { connection_url: value } : {}) })};`);
+    const config = await loadConductorConfig(writeConfig(VALID));
+    expect(config.connection_url).toBe(value);
+    expect(Object.hasOwn(config, 'connection_url')).toBe(value !== undefined);
+  });
+
   it('refuses a non-boolean machine tunnel value instead of coercing it to true', async () => {
     const machine = join(
       process.env.HOME as string,

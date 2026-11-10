@@ -79,3 +79,17 @@ bakers agents
 ```
 
 Check host identity; from a connected checkout, the agent catalog must contain an installed, authenticated harness.
+
+## Connection address
+
+Set `connection_url: 'ssh://christian@192.168.1.20:22'` or an absolute HTTPS URL
+in the machine configuration. Only public addresses belong here: never include
+passwords, tokens or secret query parameters. SSH permits an optional username and
+port (1–65535), DNS, IPv4 or bracketed IPv6, and no path except `/`. HTTPS permits
+paths, queries and fragments but no username. The maximum length is 2048 characters.
+
+An actual conductor start publishes the address. A manual value takes precedence
+over addon discovery; `connection_url: null` explicitly clears it. Omitting the
+field preserves the saved address. Later heartbeats and CLI preflight registrations
+do not change it. Invalid manual addresses are omitted with a warning and disable
+start discovery for that start. The address is a snapshot, not proof of reachability.
