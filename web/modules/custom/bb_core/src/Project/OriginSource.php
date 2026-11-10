@@ -7,8 +7,9 @@ namespace Drupal\bb_core\Project;
 /**
  * The source a ticket's Origin URL came from, as a labelled link.
  *
- * GitLab and GitHub give the repository path, Jira the project key, any other
- * host the host itself. A URL that is not http(s) with a host names no source.
+ * GitLab and GitHub give the repository path, Jira (`*.atlassian.net` or a
+ * `/browse/KEY-1` path) the project key, any other host the host itself.
+ * A URL that is not http(s) with a host names no source.
  */
 final class OriginSource {
 
@@ -30,8 +31,19 @@ final class OriginSource {
     $base = strtolower($parts['scheme']) . '://' . $host;
     $path = $parts['path'] ?? '';
 
-    if (preg_match('#^/browse/(?<key>[A-Za-z][A-Za-z0-9_]*)-\d+/?$#', $path, $match)) {
-      return ['label' => 'Jira - ' . $match['key'], 'url' => $base . '/browse/' . $match['key']];
+    $atlassian = str_ends_with($host, '.atlassian.net');
+    // Jira Cloud also names the project in `/projects/KEY`; other hosts only
+    // count as Jira through a `/browse/KEY-1` path.
+    $key = match (TRUE) {
+      (bool) preg_match('#^/browse/(?<key>[A-Za-z][A-Za-z0-9_]*)-\d+/?$#', $path, $match) => $match['key'],
+      $atlassian && preg_match('#/projects/(?<key>[A-Za-z][A-Za-z0-9_]*)(?:/|$)#', $path, $match) => $match['key'],
+      default => NULL,
+    };
+    if ($key !== NULL) {
+      return ['label' => 'Jira - ' . $key, 'url' => $base . '/browse/' . $key];
+    }
+    if ($atlassian) {
+      return ['label' => 'Jira - ' . $host, 'url' => $base];
     }
     $provider = match (TRUE) {
       $host === 'github.com' => 'GitHub',

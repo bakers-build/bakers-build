@@ -7,7 +7,6 @@ namespace Drupal\bb_core\Field;
 use Drupal\Core\Field\FieldItemList;
 use Drupal\Core\TypedData\ComputedItemListTrait;
 use Drupal\bb_core\Entity\BbProjectInterface;
-use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Project\OriginSource;
 
 /**
@@ -28,15 +27,16 @@ final class OriginSourcesItemList extends FieldItemList {
     if (!$project instanceof BbProjectInterface || $project->isNew()) {
       return;
     }
-    $storage = \Drupal::entityTypeManager()->getStorage('bb_ticket');
-    $ids = $storage->getQuery()
+    /** @var list<array{origin: string}> $rows */
+    $rows = \Drupal::entityTypeManager()->getStorage('bb_ticket')->getAggregateQuery()
       ->accessCheck(TRUE)
       ->condition('project_id', $project->id())
       ->condition('origin', '', '<>')
+      ->groupBy('origin')
       ->execute();
     $sources = [];
-    foreach ($storage->loadMultiple($ids) as $ticket) {
-      $source = $ticket instanceof BbTicketInterface ? OriginSource::fromUrl((string) $ticket->get('origin')->value) : NULL;
+    foreach ($rows as $row) {
+      $source = OriginSource::fromUrl($row['origin']);
       if ($source !== NULL) {
         $sources[$source['url']] = $source;
       }

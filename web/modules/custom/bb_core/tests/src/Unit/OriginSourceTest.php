@@ -52,6 +52,14 @@ final class OriginSourceTest extends UnitTestCase {
         'https://acme.atlassian.net/browse/BIBB-7',
         ['label' => 'Jira - BIBB', 'url' => 'https://acme.atlassian.net/browse/BIBB'],
       ],
+      'jira cloud board' => [
+        'https://acme.atlassian.net/jira/software/projects/BIBB/boards/1',
+        ['label' => 'Jira - BIBB', 'url' => 'https://acme.atlassian.net/browse/BIBB'],
+      ],
+      'jira cloud without a key' => [
+        'https://acme.atlassian.net/wiki/home',
+        ['label' => 'Jira - acme.atlassian.net', 'url' => 'https://acme.atlassian.net'],
+      ],
       'jira by path' => [
         'https://jira.example.org/browse/OPS-1',
         ['label' => 'Jira - OPS', 'url' => 'https://jira.example.org/browse/OPS'],
