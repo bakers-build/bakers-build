@@ -63,7 +63,10 @@ describe('forge-gitlab', () => {
       { project: 'a/b', token_env: 'BB_TEST_GL_TOKEN' },
       { home: '/h' },
     );
-    expect(b.secrets()).toEqual(['glpat-ENV']);
+    expect(b.secrets()).toEqual([
+      'glpat-ENV',
+      Buffer.from('oauth2:glpat-ENV').toString('base64'),
+    ]);
   });
 
   it('authenticates git with an oauth2 basic header on the configured project URL', async () => {

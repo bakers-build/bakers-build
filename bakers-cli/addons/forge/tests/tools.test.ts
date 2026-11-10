@@ -356,6 +356,25 @@ describe('forge tools', () => {
     ];
     for (const text of results) expect(text).not.toContain(SECRET);
   });
+
+  it('redacts a token the backend mints only during the call', async () => {
+    const minted = 'ghs_MINTED_LATE';
+    let token: string | undefined;
+    const { backend } = fakeBackend({});
+    const late: ForgeBackend = {
+      ...backend,
+      secrets: () => (token ? [token] : []),
+      findOpenPr: async () => {
+        token = minted;
+        throw new Error(`401 for token ${minted}`);
+      },
+    };
+    const tools = forgeTools({ backend: async () => late, settings: {} });
+    const err = await tools.forge_checks!(request({})).catch(
+      (e: Error) => e.message,
+    );
+    expect(err).toBe('401 for token [redacted]');
+  });
 });
 
 describe('forge config', () => {

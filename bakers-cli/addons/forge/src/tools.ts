@@ -65,22 +65,20 @@ export function overall(checks: readonly ForgeCheck[]): ForgeCheck['status'] {
 }
 
 export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
-  let secrets: readonly string[] = [];
-  const backend = async () => {
-    const b = await deps.backend();
-    secrets = b.secrets();
-    return b;
-  };
+  let loaded: ForgeBackend | undefined;
+  const backend = async () => (loaded = await deps.backend());
+  // Read at redaction time: a backend may mint or refresh its token mid-call.
+  const secrets = () => loaded?.secrets() ?? [];
   // Every result and error leaves through the redactor.
   const guarded =
     (handler: ToolHandler): ToolHandler =>
     async (req) => {
       try {
         const result = await handler(req);
-        return { text: redact(result.text, secrets) };
+        return { text: redact(result.text, secrets()) };
       } catch (err) {
         throw new Error(
-          redact(err instanceof Error ? err.message : String(err), secrets),
+          redact(err instanceof Error ? err.message : String(err), secrets()),
         );
       }
     };

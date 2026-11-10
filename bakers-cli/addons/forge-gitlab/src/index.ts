@@ -67,12 +67,14 @@ const factory: ForgeBackendFactory = async (raw, context) => {
   const mr = async (iid: number) => (await api(`/merge_requests/${iid}`)) as Mr;
   const q = encodeURIComponent;
 
+  const basic = Buffer.from(`oauth2:${token}`).toString('base64');
+
   const backend: ForgeBackend = {
     id: 'gitlab',
-    secrets: () => [token],
+    secrets: () => [token, basic],
     gitAuth: async () => ({
       url: `${base}/${s.project}.git`,
-      header: `Authorization: Basic ${Buffer.from(`oauth2:${token}`).toString('base64')}`,
+      header: `Authorization: Basic ${basic}`,
     }),
     findOpenPr: async (head) => {
       const list = (await api(

@@ -105,6 +105,9 @@ describe('forge-github', () => {
     expect(JSON.parse(Buffer.from(p!, 'base64url').toString()).iss).toBe('123');
     expect(f.calls[1]!.auth).toBe('Bearer ghs_TOKEN1');
     expect(b.secrets()).toContain('ghs_TOKEN1');
+    expect(b.secrets()).toContain(
+      auth.header.replace('Authorization: Basic ', ''),
+    );
 
     const soon = fakeFetch({}, 30_000);
     const short = await factory(SETTINGS, { home: '/h', fetch: soon.doFetch });

@@ -95,6 +95,9 @@ function stateStatus(state: string): CheckStatus {
   return state === 'pending' ? 'pending' : 'failure';
 }
 
+const basic = (token: string) =>
+  Buffer.from(`x-access-token:${token}`).toString('base64');
+
 const factory: ForgeBackendFactory = async (raw, context) => {
   const s = settingsOf(raw);
   const doFetch = context.fetch ?? fetch;
@@ -143,10 +146,13 @@ const factory: ForgeBackendFactory = async (raw, context) => {
 
   const backend: ForgeBackend = {
     id: 'github',
-    secrets: () => [s.privateKey, ...(token ? [token.value] : [])],
+    secrets: () => [
+      s.privateKey,
+      ...(token ? [token.value, basic(token.value)] : []),
+    ],
     gitAuth: async () => ({
       url: `https://github.com/${s.repository}.git`,
-      header: `Authorization: Basic ${Buffer.from(`x-access-token:${await installationToken()}`).toString('base64')}`,
+      header: `Authorization: Basic ${basic(await installationToken())}`,
     }),
     findOpenPr: async (head) => {
       const list = (await api(
