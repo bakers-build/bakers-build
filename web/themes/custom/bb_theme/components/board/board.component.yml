@@ -34,9 +34,10 @@ description: >-
   headers stick to its top while the page header, the toolbar, the active
   filters and the conductors stay put. Columns keep at least 240 px at the
   default density. Native scrolling only: Shift + mouse wheel scrolls the region
-  sideways without any script, and no scrollbar is drawn. A soft gradient strip
-  sticks to the right edge while columns are cut off; a cover of the page
-  surface at the end of the row hides it once the last column is in view.
+  sideways without any script, and no scrollbar is drawn. A hairline with the
+  shadow-2 token sticks to the right edge while columns are cut off; a cover of
+  the page surface at the end of the row hides it once the last column is in
+  view.
 
 
   `details` and `done_open` are the real Details and Done preferences: on the

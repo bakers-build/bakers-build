@@ -414,7 +414,7 @@
         alone and faint - an unknown capacity is not zero. -#}
     <span class="inline-flex items-center gap-inline">
       {%- if c.share is defined and c.share is not null -%}
-      <svg class="block h-1.5 w-30 shrink-0 rounded-full overflow-hidden" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="100" height="6" class="fill-surface-3"></rect><rect width="{{ c.share }}" height="6" class="fill-state-running"></rect></svg>
+      <svg class="block h-2 w-30 shrink-0 rounded-full overflow-hidden" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="100" height="6" class="fill-surface-3"></rect><rect width="{{ c.share }}" height="6" class="fill-state-running"></rect></svg>
       <span class="text-meta text-text">{{ c.label }}</span>
       {%- else -%}
       <span class="text-meta text-text-light">{{ c.label }}</span>

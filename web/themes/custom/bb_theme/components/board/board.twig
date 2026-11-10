@@ -6,10 +6,10 @@
 
    The region is the only sideways scroll area and is bounded to the viewport
    height, so column headers stick to its top. Native scrolling only: Shift +
-   wheel scrolls it sideways without a script. The gradient strip sticks to
-   the right edge while columns are cut off; the cover after it hides the
-   strip once the end of the row is in view; the region carries the page
-   surface itself, so the cover matches it wherever the board is placed. #}
+   wheel scrolls it sideways without a script. A hairline with a token shadow
+   sticks to the right edge while columns are cut off; the cover after it
+   hides that edge once the end of the row is in view. The region carries the
+   page surface itself, so the cover matches it wherever the board is placed. #}
 {% import _self as board %}
 
 {% macro column(c) %}
@@ -25,9 +25,9 @@
   {% set collapsed = c.collapsed|default(false) %}
   {#- A group grows like a lane but never below its nested columns (no
       min-w-0: its minimum is their min-content). -#}
-  {% set width = collapsed ? ['shrink-0', 'min-w-0'] : (group ? ['flex-1', 'shrink-0'] : ['flex-1', 'basis-60', 'min-w-60', 'shrink-0', 'min-w-0']) %}
+  {% set width = collapsed ? ['shrink-0', 'min-w-0'] : (group ? ['flex-1', 'shrink-0'] : ['flex-1', 'basis-60', 'min-w-60', 'shrink-0']) %}
   {% set surface = nested
-    ? ['gap-inline', 'p-1.5', 'bg-surface-2', 'rounded-xs']
+    ? ['gap-inline', 'p-inline-xs', 'bg-surface-2', 'rounded-xs']
     : (terminal
       ? ['gap-inline', 'p-stack', 'border', 'border-dashed', 'border-border', 'rounded-md']
       : ['gap-inline', 'p-inline', 'bg-surface-2', 'rounded-md']) %}
@@ -36,12 +36,12 @@
   {% set has_content = c.content is defined and c.content|render|striptags('<img><svg><input>')|trim is not empty %}
   <section{{ (c.attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'self-start']|merge(width)|merge(surface)).setAttribute('data-col', c.label).setAttribute('data-count', c.count|default(0)) }}>
     {% if nested %}
-      <h3 class="flex items-baseline gap-inline m-0 px-1 py-0.5">
+      <h3 class="flex items-baseline gap-inline m-0 px-inline-xs">
         <span class="font-mono text-data text-text">{{ c.label }}</span>
         <span class="text-meta text-text-light">{{ c.count|default(0) }}</span>
       </h3>
     {% else %}
-      <h2 class="sticky top-0 z-10 flex flex-wrap items-center gap-x-inline gap-y-inline-xs m-0 p-1 {{ terminal ? 'bg-surface' : 'bg-surface-2' }}">
+      <h2 class="sticky top-0 z-10 flex flex-wrap items-center gap-x-inline gap-y-inline-xs m-0 p-inline-xs {{ terminal ? 'bg-surface' : 'bg-surface-2' }}">
         <span class="size-2 shrink-0 rounded-full {{ dot_map[c.tone|default('neutral')]|default('bg-border') }}" aria-hidden="true"></span>
         <span class="text-section-title text-title">{{ c.label }}</span>
         <span class="text-meta text-text-light">{{ c.count|default(0) }}</span>
@@ -51,7 +51,7 @@
       </h2>
     {% endif %}
     {% if c.caption|default('') is not empty %}
-      <p class="m-0 px-1 text-meta text-text-light">{{ c.caption }}</p>
+      <p class="m-0 px-inline-xs text-meta text-text-light">{{ c.caption }}</p>
     {% endif %}
     {% if not collapsed %}
       {% if has_content %}
@@ -103,11 +103,13 @@
           {% endif %}
         {% endfor %}
       {% endif %}
-      {#- The strip follows the last column and sticks to the right edge while
-          it is cut off; the cover takes back the gap and its own width, so at
-          the end of the row it lies exactly over the strip. -#}
-      <span class="sticky right-0 z-20 w-4 shrink-0 self-stretch pointer-events-none bg-linear-to-l from-text/10 to-transparent" aria-hidden="true"></span>
-      <span class="relative -left-4 z-30 w-4 -ml-group shrink-0 self-stretch bg-surface" aria-hidden="true"></span>
+      {#- The edge follows the last column and sticks to the right edge while
+          it is cut off: a hairline with the shadow-2 token. The cover takes
+          back the gap, then reaches 16 px left and right of the hairline, so
+          at the end of the row it hides the hairline and its shadow and stays
+          inside the gap. -#}
+      <span class="sticky right-0 z-20 w-px shrink-0 self-stretch pointer-events-none bg-border shadow-shadow-2" aria-hidden="true"></span>
+      <span class="relative -left-4 z-30 w-8 -ml-group shrink-0 self-stretch bg-surface" aria-hidden="true"></span>
     </div>
   </div>
   {% if conductors is not empty %}<div class="min-w-0">{{ conductors }}</div>{% endif %}

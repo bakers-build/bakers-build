@@ -29,8 +29,15 @@
   'running': ['bg-state-running-tint', 'text-state-running-ink', 'border', 'border-state-running', 'hover:opacity-90'],
   'idle': ['bg-surface-3', 'text-text-light', 'border', 'border-border', 'hover:bg-surface-2'],
 } %}
+{#- A TOGGLE says whether it is on. `pressed` makes the control a toggle: a
+    button carries aria-pressed, a link (a filter that navigates) carries
+    aria-current="true" while it is on, because a link cannot be pressed. On,
+    it takes the primary look, the house look of an active filter chip; the
+    state is never colour alone, the attribute names it. -#}
+{% set is_toggle = pressed is defined and pressed is not null %}
+{% set is_on = is_toggle and pressed %}
 {% set tone_key = tone|default('') %}
-{% set color_classes = tone_classes[tone_key]|default(variant_classes[variant|default('primary')]|default(variant_classes['primary'])) %}
+{% set color_classes = tone_classes[tone_key]|default(is_on ? variant_classes['primary'] : (variant_classes[variant|default('primary')]|default(variant_classes['primary']))) %}
 {% set is_icon_only = icon_only|default(false) %}
 {# The `[&.htmx-request]` utilities are a spinner while htmx.org marks this
    control busy; they live here, not in app.src.css, because token-discipline's
@@ -50,7 +57,8 @@
   ]|merge(color_classes)) }}
   {%- if is_link %} href="{{ href }}"{% else %} type="{{ type|default('button') }}"{% endif %}
   {%- if disabled and not is_link %} disabled{% endif %}
-  {%- if is_icon_only and label %} aria-label="{{ label }}"{% endif %}>
+  {%- if aria_label %} aria-label="{{ aria_label }}"{% elseif is_icon_only and label %} aria-label="{{ label }}"{% endif %}
+  {%- if is_toggle %}{% if is_link %}{% if is_on %} aria-current="true"{% endif %}{% else %} aria-pressed="{{ is_on ? 'true' : 'false' }}"{% endif %}{% endif %}>
   {%- block icon %}{% if icon %}{{ icon }}{% endif %}{% endblock %}
   {%- if label and not is_icon_only %}<span class="button__label">{{ label }}</span>{% endif %}
 </{{ tag }}>

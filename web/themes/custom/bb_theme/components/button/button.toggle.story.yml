@@ -1,0 +1,16 @@
+component: bb_theme:button
+name: Toggle
+props:
+  label: '18'
+  href: '?assignee[]=1'
+  pressed: true
+  aria_label: Christian Wiedemann, 18 tickets
+slots:
+  icon:
+    - type: component
+      component: bb_theme:person
+      props:
+        variant: compact
+        initials: CW
+        color: attention
+        display_name: ''

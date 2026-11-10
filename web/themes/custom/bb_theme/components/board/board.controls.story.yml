@@ -150,6 +150,8 @@ slots:
               variant: ghost
               label: '18'
               href: '?assignee[]=1'
+              pressed: true
+              aria_label: Christian Wiedemann, 18 tickets
             slots:
               icon:
                 - type: component
@@ -164,7 +166,9 @@ slots:
             props:
               variant: ghost
               label: '3'
-              href: '?assignee[]=2'
+              href: '?assignee[]=1&assignee[]=2'
+              pressed: false
+              aria_label: Sven Gruber, 3 tickets
             slots:
               icon:
                 - type: component
@@ -179,7 +183,8 @@ slots:
             props:
               variant: neutral
               label: Unassigned · 21
-              href: '?assignee[]=!'
+              href: '?assignee[]=1&assignee[]=!'
+              pressed: false
         actions:
           - type: component
             component: bb_theme:text

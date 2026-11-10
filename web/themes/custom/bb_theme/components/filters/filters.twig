@@ -59,17 +59,17 @@
 </div>
 {% elseif layout == 'toolbar' %}
 {#- The board filter bar: no surface, one centred row of at least 36 px that
-    wraps only when narrow; the first control (the search) is 240 px wide and
-    `actions` sits at the right end. -#}
+    wraps only when narrow. The controls group leads with the search (240 px);
+    `actions` is a second group the row pushes to the right end
+    (justify-between, no outer margin). -#}
 <div{{ (attributes ?: create_attribute()).addClass([
-    'flex', 'flex-row', 'flex-wrap', 'items-center', 'gap-inline', 'min-h-9', 'min-w-0',
-    '*:first:w-60', '*:first:shrink-0',
+    'flex', 'flex-row', 'flex-wrap', 'items-center', 'justify-between', 'gap-inline', 'min-h-9', 'min-w-0',
   ]) }} role="search"
   {%- if label %} aria-label="{{ label }}"{% endif %}
   {{ send_attributes }}>
-  {{- filters_controls -}}
+  <div class="flex flex-wrap items-center gap-inline min-w-0 *:first:w-60 *:first:shrink-0">{{ filters_controls }}</div>
   {%- if filters_actions|striptags|trim is not empty %}
-  <div class="ml-auto flex flex-wrap items-center gap-inline">{{ filters_actions }}</div>
+  <div class="flex flex-wrap items-center gap-inline">{{ filters_actions }}</div>
   {%- endif %}
 </div>
 {% else %}
