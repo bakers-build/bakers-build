@@ -102,6 +102,8 @@ coder update <workspace> --parameter conductor_autostart=true
 
 The startup log has one line per checkout: `conductors: started <path>` once `bakers oven status` shows it `online`, or `conductors: failed <path>: <reason>` with the last line `bakers oven start` printed. A stopped workspace kills its conductors before they can report themselves offline, so for some minutes after a restart `bakers oven start` takes the dead conductor for a live one and starts nothing. Such a checkout logs `conductors: waiting <path>: <reason>` and is retried every 30 seconds in the background, for up to 12 minutes, until it is online; those lines go to `/tmp/bakers-conductors.log`. A failed checkout never stops the start or the other checkouts. The checkout's sign-ins (bakers.build, the agent, git) must already be in place; the autostart only starts what you configured.
 
+Before any conductor starts, every start (autostart on or off) cancels the runs the previous container left active, with reason `box restart`, for every ticket with a worktree in a configured checkout, and comments once on each such ticket. Its log lines are `conductors: box restart cancelled <ticket> (<n> run(s))` and `conductors: box restart cancel failed <branch>: <reason>`; a failure never stops the start. See [Runs during a restart](../../docs/provision/coder-workspace.md#runs-during-a-restart).
+
 ## PM bot
 
 For the Hermes requester experience, return to [Use your client](https://bakers.build/get-started/use-your-client#hermes). This section owns operator setup.
