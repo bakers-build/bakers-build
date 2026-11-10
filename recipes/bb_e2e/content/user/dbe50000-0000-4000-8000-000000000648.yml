@@ -1,0 +1,31 @@
+# A Northside lead whose onboarding is not completed.
+#
+# The wizard offers the first-project step only to an account that may create
+# a group and a project, so this account is a `lead` of the seeded workspace
+# and a member of Design Crew. `field_onboarding_completed` is left at its
+# default (FALSE); scenarios reset it before they run.
+_meta:
+  version: '1.0'
+  entity_type: user
+  uuid: dbe50000-0000-4000-8000-000000000648
+  default_langcode: en
+default:
+  preferred_langcode:
+    -
+      value: "en"
+  name:
+    -
+      value: fixture-onboarding
+  mail:
+    -
+      value: fixture-onboarding@example.test
+  timezone:
+    -
+      value: "Europe/Berlin"
+  status:
+    -
+      value: true
+  pass:
+    -
+      value: "Bb-test-login-426!"
+      pre_hashed: false

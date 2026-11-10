@@ -139,6 +139,8 @@ section is absent on every other site.
 |---|---|---|
 | `fixture-agent` | Northside lead, Platform Crew, Southside member | Conductor agent of `bakers-e2e-project` and the Conductor test setup |
 | `fixture-automation` | Northside contributor service account, Automation Crew (no password) | Execution identity of the seeded monthly trigger on *Monthly Drupal update* |
+| `fixture-onboarding` | Northside lead, Design Crew; onboarding not completed (scenarios reset it) | Onboarding wizard's first-project step: Yes, Later, invalid input |
+| `fixture-onboarding-guest` | Northside guest; onboarding not completed (scenarios reset it) | Onboarding wizard without the first-project step |
 | `fixture-app` | Northside lead, North Crew | Registers conductors, which grants it the app rank |
 | `fixture-lead` | Northside lead, North Crew | JSON:API lead matrix; lead of the disposable detail-card worlds |
 | `fixture-conductor-owner` | Northside contributor, only in Conductor Owner Crew (not in API home's team) | Owns the edit and conductor-properties conductors and their machine |

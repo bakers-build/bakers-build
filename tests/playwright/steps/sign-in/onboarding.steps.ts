@@ -4,7 +4,7 @@
 // `I finish the onboarding wizard` starts on About you, opens setup and
 // Finishes on Home. Nickname is required; remaining
 // identity and about-you fields are optional.
-import { When, Then } from '../../bdd.fixtures';
+import { Given, When, Then } from '../../bdd.fixtures';
 import { Drush } from '../../support/drush';
 import { expect as baseExpect, type Page } from '@playwright/test';
 
@@ -16,7 +16,20 @@ const expect = baseExpect.configure({ timeout: 15_000 });
 
 /** The create-workspace finish control; `&` in the label must not be required as an entity. */
 function finishAndCreateButton(page: Page) {
-    return page.getByRole('button', { name: /Finish .* create a new workspace/ });
+    return page.getByRole('button', { name: 'Create your first workspace', exact: true });
+}
+
+/**
+ * Leaves the setup page for Home: Finish when the account has a workspace or an
+ * invitation, Set up later when creating a workspace is the preferred way out.
+ */
+async function leaveForHome(page: Page) {
+    const finish = page.getByRole('button', { name: 'Finish', exact: true });
+    if (await finish.count()) {
+        await finish.click();
+    } else {
+        await page.getByRole('button', { name: 'Set up later', exact: true }).click();
+    }
 }
 Then('the identity step is present', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'What should we call you?' })).toBeVisible();
@@ -61,14 +74,14 @@ When('I finish the onboarding wizard', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Tell us about yourself' })).toBeVisible();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
-    await page.getByRole('button', { name: 'Finish', exact: true }).click();
+    await leaveForHome(page);
     await expect(page).not.toHaveURL(/\/home\/onboarding\/?$/);
     await expect(page).toHaveURL(/\/home$/);
 });
 
 When('I finish the setup guide', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
-    await page.getByRole('button', { name: 'Finish', exact: true }).click();
+    await leaveForHome(page);
     await expect(page).not.toHaveURL(/\/home\/onboarding\/?$/);
     await expect(page).toHaveURL(/\/home$/);
 });
@@ -105,8 +118,10 @@ Then('only the home finish action is offered', async ({ page }) => {
 });
 
 Then('both finish actions are offered', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'Finish', exact: true })).toBeVisible();
+    // Creating a workspace leads; Set up later is its way out, and Finish is not shown beside them.
     await expect(finishAndCreateButton(page)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Set up later', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Finish', exact: true })).toHaveCount(0);
 });
 
 Then('the wizard progress reads {string}', async ({ page }, text: string) => {
@@ -248,3 +263,111 @@ function accountOnboardingComplete(address: string): boolean {
         'print $a && (int) $a->get("field_onboarding_completed")->value ? "yes" : "no";';
     return Drush.exec(`ev '${php}'`).trim() === 'yes';
 }
+
+// First-project step: offered only to an account that may create a group and
+// a project; `fixture-onboarding` is such a lead whose onboarding is open.
+
+/** The group and project the scenarios create, so a re-run starts clean. */
+const FIRST_PROJECT_GROUP = 'Onboarding Crew';
+const FIRST_PROJECT_NAME = 'Onboarding Bakery';
+
+Given('the onboarding of {string} is reset', async ({}, name: string) => {
+    const php = '$etm = \\Drupal::entityTypeManager();' +
+        `foreach ($etm->getStorage("bb_project")->loadByProperties(["name" => "${FIRST_PROJECT_NAME}"]) as $p) { $p->delete(); }` +
+        `foreach ($etm->getStorage("bb_group")->loadByProperties(["name" => "${FIRST_PROJECT_GROUP}"]) as $g) { $g->delete(); }` +
+        `$a = current($etm->getStorage("user")->loadByProperties(["name" => "${name}"]));` +
+        '$a->set("field_onboarding_completed", FALSE)->save();' +
+        '\\Drupal::service("user.data")->delete("bb_core", (int) $a->id(), "onboarding_step");';
+    Drush.exec(`ev '${php}'`);
+});
+
+Then('the first project step is present', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Create your first project?' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Yes', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Later', exact: true })).toBeVisible();
+});
+
+Then('the first project step is not offered', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Create your first project?' })).toHaveCount(0);
+});
+
+When('I continue to the first project step', async ({ page }) => {
+    await expect(page.getByRole('heading', { name: 'Tell us about yourself' })).toBeVisible();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Create your first project?' })).toBeVisible();
+});
+
+When('I choose to create the first project now', async ({ page }) => {
+    await page.getByRole('button', { name: 'Yes', exact: true }).click();
+    await expect(page.getByLabel('Project name', { exact: true })).toBeVisible();
+});
+
+When('I choose to create the first project later', async ({ page }) => {
+    await page.getByRole('button', { name: 'Later', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Get started with bakers.build' })).toBeVisible();
+});
+
+When('I go back from the first project step', async ({ page }) => {
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Tell us about yourself' })).toBeVisible();
+});
+
+When('I go back from the setup guide step', async ({ page }) => {
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Create your first project?' })).toBeVisible();
+});
+
+When('I fill in the first project with repository {string} and group {string}', async ({ page }, repository: string, group: string) => {
+    await page.getByLabel('Project name', { exact: true }).fill(FIRST_PROJECT_NAME);
+    await page.getByLabel('Repository URL', { exact: true }).fill(repository);
+    await page.getByLabel('Group name', { exact: true }).fill(group === '' ? FIRST_PROJECT_GROUP : group);
+});
+
+When('I create the first project', async ({ page }) => {
+    await page.getByRole('button', { name: 'Create project', exact: true }).click();
+});
+
+Then('I land on the new first project', async ({ page }) => {
+    await expect(page).toHaveURL(/\/project\//);
+    await expect(page.getByRole('heading', { name: FIRST_PROJECT_NAME }).first()).toBeVisible();
+});
+
+Then('the first project step shows an error and keeps what I typed', async ({ page }) => {
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByLabel('Project name', { exact: true })).toHaveValue(FIRST_PROJECT_NAME);
+    await expect(page.getByLabel('Repository URL', { exact: true })).toHaveValue('not a url');
+    await expect(page.getByRole('button', { name: 'Create project', exact: true })).toBeVisible();
+});
+
+Then('the first project exists in the group {string} on the team {string}', async ({}, group: string, team: string) => {
+    const php = '$etm = \\Drupal::entityTypeManager();' +
+        `$p = current($etm->getStorage("bb_project")->loadByProperties(["name" => "${FIRST_PROJECT_NAME}"]));` +
+        'print json_encode($p ? ["group" => $p->get("group_id")->entity->label(), "teams" => array_map(fn ($t) => $t->label(), $p->get("teams")->referencedEntities())] : null);';
+    const found = JSON.parse(Drush.exec(`ev '${php}'`).trim()) as { group: string; teams: string[] } | null;
+    expect(found, 'The project was not created').not.toBeNull();
+    expect(found!.group).toBe(group);
+    expect(found!.teams).toContain(team);
+});
+
+Then('no first project exists', async ({}) => {
+    const php = `print count(\\Drupal::entityTypeManager()->getStorage("bb_project")->loadByProperties(["name" => "${FIRST_PROJECT_NAME}"]));`;
+    expect(Drush.exec(`ev '${php}'`).trim()).toBe('0');
+});
+
+Then('the onboarding of {string} is complete', async ({}, name: string) => {
+    const php = `$a = current(\\Drupal::entityTypeManager()->getStorage("user")->loadByProperties(["name" => "${name}"])); print (int) $a->get("field_onboarding_completed")->value ? "yes" : "no";`;
+    expect(Drush.exec(`ev '${php}'`).trim()).toBe('yes');
+});
+
+When('I open the onboarding wizard', async ({ page }) => {
+    await page.goto('/home/onboarding');
+    await expect(page.getByRole('heading', { name: 'What should we call you?' })).toBeVisible();
+});
+
+/** The wizard uses the sign-in gate: its left band explains the current step. */
+Then('the gate band explains the step', async ({ page }) => {
+    const explanation = page.locator('.gate__band .gate__explanation');
+    await expect(explanation).toBeVisible();
+    await expect(explanation).not.toHaveText('');
+});

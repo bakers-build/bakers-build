@@ -21,9 +21,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * The bb_workspace entity's own form, asking the settings fields.
  *
  * Renders the shared `settings` form display (`name`, `description`,
- * `image`); the slug is derived, and `::save()` hands the values to
- * `WorkspaceProvisioner` instead of saving the entity. `create bb_workspace`
- * is granted to nobody, so the route guards on `_user_is_logged_in` only.
+ * `image`) plus a required first-team name; the slug is derived, and
+ * `::save()` hands the values to `WorkspaceProvisioner` instead of saving
+ * the entity. `create bb_workspace` is granted to nobody, so the route
+ * guards on `_user_is_logged_in` only.
  *.
  */
 final class BbWorkspaceCreateForm extends ContentEntityForm {
@@ -117,23 +118,25 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
       $widget['#required_error'] = $this->t('Please enter a name for the workspace.');
       unset($widget);
     }
+    // THE FIRST TEAM IS NAMED HERE, not silently: the first project is created
+    // for it, so the customer picks its name at sign-up.
+    $form['team_name'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Team name'),
+      '#description' => $this->t('Your first team in this workspace.'),
+      '#required' => TRUE,
+      '#required_error' => $this->t('Enter a team name.'),
+      '#maxlength' => 255,
+    ];
     // Nothing else on the entity is asked about, so nothing else needs a
     // presenter position — nulling `#group`/`#weight` scaffolding a display
     // that shipped no `core.entity_form_display` config might otherwise add.
     unset($form['langcode']);
 
-    // The page's one h1: the gate chrome carries the mark, not a heading.
-    $form['heading'] = [
-      '#type' => 'component',
-      '#component' => 'bb_theme:text',
-      '#props' => [
-        'text' => $this->t('Create a workspace'),
-        'as' => 'h1',
-        'size' => 'section-title',
-        'align' => 'center',
-      ],
-      '#weight' => -20,
-    ];
+    // INSIDE THE FORM: the page's messages block stands outside the gate, so
+    // an error is printed here, beside the fields. The page's one h1 is the
+    // gate's own title, set by the presenter.
+    $form['messages'] = ['#type' => 'status_messages', '#weight' => -20];
 
     return $form;
   }
@@ -185,7 +188,7 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // An unexpected failure becomes a 500 with the rollback already done, which
     // is honest; a caught throwable rendered as "something went wrong" beside a
     // half-provisioned workspace would not be.
-    $workspace = $this->provisioner->provision($entity->getName(), $account, [
+    $workspace = $this->provisioner->provision($entity->getName(), $account, trim((string) $form_state->getValue('team_name')), [
       'description' => $entity->get('description')->getValue(),
       'image' => $entity->get('image')->getValue(),
     ]);
@@ -194,10 +197,11 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // rather than the discarded draft `buildEntity()` produced.
     $this->entity = $workspace;
 
-    // Completed accounts creating a workspace stay on the overview. Incomplete
-    // accounts never reach this form: the entry guard sends them to the wizard
-    // first.
-    $form_state->setRedirect('bb_core.home');
+    // The first project is asked on its own page, which can be skipped. It is
+    // never reached by an account that may not create one: its route says no.
+    // Incomplete accounts never reach this form: the entry guard sends them to
+    // the wizard first.
+    $form_state->setRedirect('bb_core.first_project', ['bb_workspace' => $workspace->getSlug()]);
 
     return SAVED_NEW;
   }

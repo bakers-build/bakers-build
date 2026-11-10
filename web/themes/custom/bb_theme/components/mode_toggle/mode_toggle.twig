@@ -1,5 +1,7 @@
 {# The native popover owns dismissal, Escape and focus return. The mode lives on html; js/skin.src.js keeps the choice. #}
 {% set initial = mode|default('system') in ['light', 'dark'] ? mode : 'system' %}
+{# The panel opens beside its button: up from the rail's footer (start), or down from a page corner (end). #}
+{% set panel_position = align|default('start') == 'end' ? 'right-4 top-14' : 'left-4 bottom-12' %}
 <div{{ (attributes ?: create_attribute()).addClass(['inline-flex', 'shrink-0']) }}
   x-data="{ choice: '{{ initial }}' }"
   x-init="if (window.bakersModeChoice) choice = window.bakersModeChoice()"
@@ -13,7 +15,7 @@
     {{ include('bb_theme:icon', { name: 'sun-moon', size: 'md' }, with_context = false) }}
   </button>
   <div popover="auto" x-ref="panel" :id="$id('appearance')" aria-label="Appearance"
-    class="fixed inset-auto left-4 bottom-12 m-0 max-w-full p-group rounded-md border border-control-border bg-surface text-text">
+    class="fixed inset-auto {{ panel_position }} m-0 max-w-full p-group rounded-md border border-control-border bg-surface text-text">
     <fieldset class="flex flex-col gap-inline m-0 p-0 border-0">
       <legend class="mb-inline p-0 text-label">Appearance</legend>
       {% for value, title in { light: 'Light', dark: 'Dark', system: 'System' } %}

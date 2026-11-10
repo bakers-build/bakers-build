@@ -27,6 +27,23 @@ bb_core.workspace_create:
   requirements:
     _user_is_logged_in: 'TRUE'
 
+# The first project, asked right after a workspace is created. A page of its
+# own and skippable, so only the project part can be left for later. The
+# workspace-scoped create check answers for the group the project needs; an
+# account that may not create one gets a 403 and the form never renders.
+bb_core.first_project:
+  path: '/home/first-project/{bb_workspace}'
+  defaults:
+    _form: '\Drupal\bb_core\Form\BbFirstProjectForm'
+    _title: 'Create your first project'
+  requirements:
+    _user_is_logged_in: 'TRUE'
+    _bb_workspace_create: 'bb_group'
+  options:
+    parameters:
+      bb_workspace:
+        type: 'bb_workspace_slug'
+
 # Confirming a join, and the POST that performs it.
 #
 # A screen, not a row button or a tokened GET: a CSRF token in a URL leaks via

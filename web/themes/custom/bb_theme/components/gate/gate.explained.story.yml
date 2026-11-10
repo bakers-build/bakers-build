@@ -1,0 +1,24 @@
+component: bb_theme:gate
+name: Explained
+props:
+  title: Create your first project?
+  description: Start right away, or set one up later from your overview.
+  progress: Step 3 of 4
+  explanation: A project connects a repository to your team. Creating it now takes you straight into it; you can always add one later.
+  steps:
+    - { label: Your name, state: done }
+    - { label: About you, state: done }
+    - { label: First project, state: current }
+    - { label: Get started, state: upcoming }
+slots:
+  mark:
+    - type: component
+      component: bb_theme:brand
+      props:
+        size: compact
+  content:
+    - type: element
+      value: >-
+        <div><label>Project name<input></label><label>Repository URL<input></label><label>Group
+        name<input></label><button type="submit">Back</button><button
+        type="submit">Create project</button></div>

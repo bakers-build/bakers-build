@@ -118,10 +118,11 @@ Feature: bakers.build sign-up
     When I continue from the identity step
     And I finish the onboarding wizard
     And I create the workspace "Ärzte & Söhne GmbH"
-    Then the address is "/home"
+    Then the address is "/aerzte-soehne-gmbh/tickets"
     And the invite screen is not present
     And the workspace "aerzte-soehne-gmbh" is owned by "founder@example.com" as lead
     And the workspace "aerzte-soehne-gmbh" has one team with that account as lead
+    And the workspace "aerzte-soehne-gmbh" has a team named "Core Team"
     And the sign-up provisioned exactly one workspace, one team and two memberships
 
   Scenario: Both shell clicks keep the document after landing in a new workspace
@@ -134,7 +135,6 @@ Feature: bakers.build sign-up
     When I continue from the identity step
     And I finish the onboarding wizard
     And I create the workspace "Click Test"
-    And I choose the workspace "/click-test/tickets"
     Then the application shell is present
     When I mark the authenticated login document
     And I click the rail entry "Projects"
@@ -155,7 +155,7 @@ Feature: bakers.build sign-up
     And the joinable row carries a workspace, a slug and a join link
     And the account holds no membership on "other"
     When I join the invited workspace "other"
-    Then the address is "/home"
+    Then the address is "/other/tickets"
     And the invite screen is not present
     And the account is an active member of "other"
     And the invitation for "invited@example.com" is consumed
@@ -223,7 +223,34 @@ Feature: bakers.build sign-up
     When I continue from the identity step
     And I finish the onboarding wizard
     And I create the workspace "No Script GmbH"
-    Then the address is "/home"
+    Then the address is "/no-script-gmbh/tickets"
 
   Scenario: Signed-out workspace entry preserves the existing 404
     When I check anonymous workspace privacy
+
+  Scenario: A workspace cannot be created without a team name
+    Given no account exists for "teamless@example.com"
+    And no workspace is slugged "teamless-gmbh"
+    When I open anonymous login
+    And I request an login link for "teamless@example.com"
+    And I follow the login link for "teamless@example.com"
+    Then the identity step is present
+    When I continue from the identity step
+    And I finish the onboarding wizard
+    And I try to create the workspace "Teamless GmbH" without a team name
+    Then the address is "/home/new-workspace"
+    And no workspace is slugged "teamless-gmbh" in the database
+
+  Scenario: Creating a workspace can create the first project in the same step
+    Given no project "Builder App" and no group "Builder Crew" exist
+    And no account exists for "builder@example.com"
+    And no workspace is slugged "builder-gmbh"
+    When I open anonymous login
+    And I request an login link for "builder@example.com"
+    And I follow the login link for "builder@example.com"
+    Then the identity step is present
+    When I continue from the identity step
+    And I finish the onboarding wizard
+    And I create the workspace "Builder GmbH" with the first project "Builder App" from "https://example.com/acme/builder.git" in the group "Builder Crew"
+    Then I land on the new project "Builder App"
+    And the project "Builder App" is in the group "Builder Crew" of the workspace "builder-gmbh"

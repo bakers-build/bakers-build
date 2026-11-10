@@ -75,7 +75,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    foreach (['user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_invite'] as $type) {
+    foreach (['user', 'og_membership', 'bb_workspace', 'bb_team', 'bb_group', 'bb_project', 'bb_invite'] as $type) {
       $this->installEntitySchema($type);
     }
     $this->installConfig(['system', 'user']);
@@ -112,7 +112,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
     $lead->delete();
 
     try {
-      $this->provisioner()->provision('Rollback GmbH', $this->operator);
+      $this->provisioner()->provision('Rollback GmbH', $this->operator, 'Core Team');
       self::fail('Provisioning must not report success when the lead rank cannot be granted.');
     }
     catch (\RuntimeException $expected) {
@@ -140,7 +140,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
   public function testProvisioningCreatesExactlyOneOfEach(): void {
     $before = $this->counts();
 
-    $workspace = $this->provisioner()->provision('Ärzte & Söhne GmbH', $this->operator);
+    $workspace = $this->provisioner()->provision('Ärzte & Söhne GmbH', $this->operator, 'Core Team');
 
     $after = $this->counts();
     self::assertSame($before['bb_workspace'] + 1, $after['bb_workspace']);
@@ -171,6 +171,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
     ]);
     self::assertCount(1, $teams, 'A workspace is provisioned with exactly one first team.');
     $team = reset($teams);
+    self::assertSame('Core Team', $team->label(), 'The first team carries the name the customer typed.');
     $onTeam = $manager->getMembership($team, (int) $this->operator->id());
     self::assertNotNull($onTeam);
     self::assertContains(
@@ -238,7 +239,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    * A colliding name is uniquified rather than refused.
    */
   public function testCollidingNameGetsSuffix(): void {
-    $this->provisioner()->provision('Acme', $this->operator);
+    $this->provisioner()->provision('Acme', $this->operator, 'Core Team');
     self::assertSame('acme-2', $this->deriver()->derive('Acme'));
   }
 
@@ -264,7 +265,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    * row away.
    */
   public function testInviteMatchingIsCaseInsensitive(): void {
-    $workspace = $this->provisioner()->provision('Invited Co', $this->operator);
+    $workspace = $this->provisioner()->provision('Invited Co', $this->operator, 'Core Team');
     $newcomer = $this->createUser([], 'newcomer');
     self::assertInstanceOf(UserInterface::class, $newcomer);
     $newcomer->setEmail('Pascal@Keytec.de')->save();
@@ -287,7 +288,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    * stranger a workspace — and the join route's access reads the same rule.
    */
   public function testAnInvitationForAnotherAddressNeverMatches(): void {
-    $workspace = $this->provisioner()->provision('Somebody Else Co', $this->operator);
+    $workspace = $this->provisioner()->provision('Somebody Else Co', $this->operator, 'Core Team');
     $stranger = $this->createUser([], 'stranger');
     self::assertInstanceOf(UserInterface::class, $stranger);
     $stranger->setEmail('stranger@example.com')->save();
@@ -311,7 +312,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    * rule. Without that second step `first_last@` would match `firstXlast@`.
    */
   public function testUnderscoreIsNotTreatedAsWildcard(): void {
-    $workspace = $this->provisioner()->provision('Wildcard Co', $this->operator);
+    $workspace = $this->provisioner()->provision('Wildcard Co', $this->operator, 'Core Team');
     $account = $this->createUser([], 'wildcard');
     self::assertInstanceOf(UserInterface::class, $account);
     $account->setEmail('firstXlast@example.com')->save();
@@ -338,22 +339,8 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    * draft entity.
    */
   public function testCreateFormKeepsDescriptionAndImage(): void {
-    // The private stream wrapper registers only on a container built with
-    // its path set.
-    $this->setSetting('file_private_path', $this->siteDirectory . '/private');
-    $this->container->get('kernel')->rebuildContainer();
-    $this->container->get('stream_wrapper_manager')->register();
-    foreach (['file', 'crop', 'bb_group', 'bb_project'] as $type) {
-      $this->installEntitySchema($type);
-    }
-    $this->installSchema('file', ['file_usage']);
-    $path = $this->container->get('extension.list.module')->getPath('bb_core');
-    $mode = (new FileStorage($path . '/config/install'))->read('core.entity_form_mode.bb_workspace.settings');
-    self::assertIsArray($mode);
+    $this->prepareCreateForm();
     $entity_type_manager = $this->container->get('entity_type.manager');
-    $entity_type_manager->getStorage('entity_form_mode')->create($mode)->save();
-    $this->installShippedFormDisplays('bb_workspace.bb_workspace.settings');
-    $this->setCurrentUser($this->operator);
 
     // A fresh upload: private, temporary and owned by the person creating
     // the workspace, as the image widget leaves it before the form is saved.
@@ -366,6 +353,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
 
     $form_state = (new FormState())->setValues([
       'name' => [['value' => 'Described Co']],
+      'team_name' => 'Core Team',
       'description' => [['value' => 'A workspace, described on creation.']],
       'image' => [['fids' => (string) $upload->id()]],
       'op' => 'Create workspace',
@@ -385,6 +373,28 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
   }
 
   /**
+   * Installs what the workspace create form needs to render and submit.
+   */
+  private function prepareCreateForm(): void {
+    // The private stream wrapper registers only on a container built with
+    // its path set.
+    $this->setSetting('file_private_path', $this->siteDirectory . '/private');
+    $this->container->get('kernel')->rebuildContainer();
+    $this->container->get('stream_wrapper_manager')->register();
+    foreach (['file', 'crop'] as $type) {
+      $this->installEntitySchema($type);
+    }
+    $this->installSchema('file', ['file_usage']);
+    $path = $this->container->get('extension.list.module')->getPath('bb_core');
+    $mode = (new FileStorage($path . '/config/install'))->read('core.entity_form_mode.bb_workspace.settings');
+    self::assertIsArray($mode);
+    $entity_type_manager = $this->container->get('entity_type.manager');
+    $entity_type_manager->getStorage('entity_form_mode')->create($mode)->save();
+    $this->installShippedFormDisplays('bb_workspace.bb_workspace.settings');
+    $this->setCurrentUser($this->operator);
+  }
+
+  /**
    * How many of each entity exist right now.
    *
    * @return array<string, int>
@@ -392,7 +402,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
    */
   private function counts(): array {
     $counts = [];
-    foreach (['user', 'bb_workspace', 'bb_team', 'og_membership'] as $type) {
+    foreach (['user', 'bb_workspace', 'bb_team', 'bb_group', 'bb_project', 'og_membership'] as $type) {
       $counts[$type] = (int) $this->container->get('entity_type.manager')
         ->getStorage($type)->getQuery()->accessCheck(FALSE)->count()->execute();
     }

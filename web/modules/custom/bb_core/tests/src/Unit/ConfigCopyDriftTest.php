@@ -538,13 +538,13 @@ final class ConfigCopyDriftTest extends UnitTestCase {
    * screen, both mounted before a session exists in the same way `/user/login`
    * is — a CLI sign-in reaches them with no application shell to render into.
    *
-   * The onboarding wizard `/home/onboarding` is not on this list: it has its
-   * own island profile, `bb_onboarding`.
+   * The onboarding wizard `/home/onboarding` and the workspace form
+   * `/home/new-workspace` are not on this list: both compose their own gate and
+   * have their own island profile, `bb_onboarding`.
    */
   public function testGateEntryPathsAgreeWithLoginScope(): void {
     $expected = [
       '/home',
-      '/home/new-workspace',
       '/home/join',
       '/home/join/*',
       '/user/login',

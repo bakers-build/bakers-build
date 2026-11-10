@@ -72,7 +72,6 @@
   "conditions": {
     "paths": [
       "/home",
-      "/home/new-workspace",
       "/home/join",
       "/home/join/*",
       "/user/login",
