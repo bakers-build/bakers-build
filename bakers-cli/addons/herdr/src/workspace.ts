@@ -13,7 +13,7 @@ import type {
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { exec, validateBranch } from '@bakers-build/core';
+import { exec } from '@bakers-build/core';
 import { isRecord, parseJson } from './pane-layout.js';
 import { deriveHerdrRoot, type RootGitExec } from './root-anchor.js';
 import { resolveBaseRef } from './shared.js';
@@ -136,7 +136,6 @@ export class HerdrWorkspace implements BbWorkspace {
     if (branch === undefined) {
       throw new Error('herdr workspace requires a branch name');
     }
-    validateBranch(branch);
     const extra = this.options.autoSetupMerge
       ? {}
       : { env: await runBranchGit(this.root, this.logger) };

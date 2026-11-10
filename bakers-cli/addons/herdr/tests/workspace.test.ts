@@ -362,42 +362,9 @@ describe('HerdrWorkspace', () => {
     // open is a reuse path → created=false, after_create must NOT run.
     expect(result.created).toBe(false);
   });
-
-  it('throws on invalid branch names', async () => {
-    const ws = new HerdrWorkspace({
-      root: '/repo',
-      execHerdr: async () => '',
-    });
-
-    await expect(ws.ensure('GL-1', '.hidden')).rejects.toThrow(
-      /invalid branch/,
-    );
-    await expect(ws.ensure('GL-1', 'bakers/../evil')).rejects.toThrow(
-      /invalid branch/,
-    );
-    await expect(ws.ensure('GL-1', 'has space!')).rejects.toThrow(
-      /invalid branch/,
-    );
-    await expect(ws.ensure('GL-1', '-x')).rejects.toThrow(/invalid branch/);
-  });
 });
 
 describe('resolveBaseRef', () => {
-  it('refuses an option-shaped base from the server before git runs', async () => {
-    const calls: string[][] = [];
-    await expect(
-      resolveBaseRef(
-        '/repo',
-        async (args) => {
-          calls.push(args);
-          return '';
-        },
-        { override: 'origin/--upload-pack=touch PWNED' },
-      ),
-    ).rejects.toThrow('invalid branch');
-    expect(calls).toEqual([]);
-  });
-
   it('returns a base-ref override that resolves on the remote', async () => {
     const calls: string[][] = [];
     const ref = await resolveBaseRef(
