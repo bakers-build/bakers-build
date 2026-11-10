@@ -49,7 +49,7 @@
   font-family: var(--lp-mono);
 }
 
-/* Buttons: butter (hero), ink (bands, hosted card), paper (add-ons card). */
+/* Buttons: butter (hero), ink (bands, hosted card), paper (docs, self-host and addons links). */
 .lp-btn {
   display: inline-flex;
   align-items: center;

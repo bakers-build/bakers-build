@@ -62,8 +62,10 @@ if [ "$status" != 0 ]; then exit "$status"; fi
 # A separate database proves config/sync without importing it into the recipe world.
 export COMPOSE_PROJECT_NAME=github-config
 export COMPOSE_FILE=docker-compose.yml
-export COMPOSE_PROFILES=install
-docker compose run --rm install
-docker compose run --rm --no-deps --entrypoint /var/www/html/vendor/bin/drush php -y cim
-docker compose run --rm --no-deps --entrypoint /var/www/html/vendor/bin/drush php cr
+export COMPOSE_PROFILES=
+# `compose run` ignores depends_on health, and site-deploy.sh queries the database at once.
+docker compose up -d --wait db
+# The deploy service as every `up` runs it: the empty database installs, the next run updates it.
+docker compose run --rm -e ADMIN_EMAIL=admin@example.test deploy
+docker compose run --rm deploy
 docker compose run --rm --no-deps --entrypoint /var/www/html/vendor/bin/drush php status

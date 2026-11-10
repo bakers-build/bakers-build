@@ -37,7 +37,7 @@ export const SIDEBAR = {
     group("Daily work", [
       ["Create a ticket", "/get-started/daily-work/create-a-ticket"],
       ["Follow a ticket", "/get-started/daily-work/follow-a-ticket"],
-      ["Review and accept results", "/skills-and-workflows/accept-results"],
+      ["Accept results", "/skills-and-workflows/accept-results"],
       ["Freeze a ticket", "/get-started/daily-work/freeze-a-ticket"],
       ["Record time", "/get-started/daily-work/record-time"],
       ["See what the team works on", "/get-started/daily-work/team-overview"],
@@ -82,7 +82,7 @@ export const SIDEBAR = {
   "/agents/": [
     group("Agents", [
       ["Overview", "/agents/"],
-      ["Choose agents and models", "/agents/guide"],
+      ["Configure and select agents", "/agents/guide"],
       ["Agent policy reference", "/agents/reference"],
     ]),
   ],
@@ -100,12 +100,20 @@ export const SIDEBAR = {
     ]),
   ],
   "/addons/": [
-    group("Catalog", [
-      ["Supported addons", "/addons/catalog"],
-    ]),
-    group("Addons", [
-      ["Overview", "/addons/"],
+    group("Start here", [
+      ["Introduction", "/addons/"],
+      ["Available addons", "/addons/catalog"],
       ["Configure addons", "/addons/configure"],
+    ]),
+    group("Build an addon", [
+      ["Build your first addon", "/addons/build/first-addon"],
+      ["Add a new agent harness", "/addons/build/agent"],
+      ["Connect a new client", "/addons/build/client"],
+      ["Extend the control panel", "/addons/build/control-panel"],
+      ["Tools", "/addons/build/tools"],
+      ["Messages", "/addons/build/actions"],
+      ["Addon API reference", "/addons/build/contracts"],
+      ["Executor and workspace API", "/addons/build/executor-workspace"],
     ]),
     group("Agents", [
       ["Claude", "/addons/claude"],
@@ -155,20 +163,10 @@ export const SIDEBAR = {
       ["Time evidence", "/addons/track"],
     ]),
     group("Connection support", [
-      ["Essentials", "/addons/essentials"],
-      ["Name references", "/addons/name-refs"],
-      ["Ambient workspace", "/addons/workspace"],
       ["HTTP Basic sign-in", "/addons/auth-basic"],
     ]),
     group("Internal test fixture", [
       ["Fake conductor fixture", "/addons/fake"],
-    ]),
-    group("Build your own", [
-      ["Build your first addon", "/addons/build/first-addon"],
-      ["Addon contracts", "/addons/build/contracts"],
-      ["Write an executor or a workspace", "/addons/build/executor-workspace"],
-      ["Write an addon with inbox messages", "/addons/build/actions"],
-      ["Write an addon with agent tools", "/addons/build/tools"],
     ]),
   ],
   "/configuration/": [
@@ -189,9 +187,9 @@ export const SIDEBAR = {
     ]),
     group("Project", [
       ["Project", "/configuration/project"],
+      ["Lifecycle hooks", "/configuration/project/hooks"],
       ["Conductors", "/configuration/project/conductors"],
       ["Conductor commands", "/configuration/project/conductor-commands"],
-      ["Configuration migration", "/configuration/project/migration"],
     ]),
     group("CLI reference", [
       ["CLI commands", "/configuration/clients/cli"],
@@ -208,7 +206,7 @@ export const SIDEBAR = {
     group("Self-hosting", [
       ["Overview", "/self-hosting/"],
       ["Server", "/self-hosting/server"],
-      ["Komodo server", "/self-hosting/server-komodo"],
+      ["Reverse proxy", "/self-hosting/proxy"],
     ]),
   ],
 }

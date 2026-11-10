@@ -33,7 +33,7 @@ Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. 
    bakers config upgrade --scope all --dry-run
    ```
 
-   The preview parses your files without running them and writes nothing. It shows each file's schema change and a redacted diff. Resolve blocking findings first: computed values it cannot move, conflicting destinations, or a future schema version. A file from an older release fails with a message naming `bakers init`; run it to write current files. [Configuration migration](/configuration/project/migration) explains each finding.
+   The preview parses your files without running them and writes nothing. It shows each file's schema change and a redacted diff. Resolve blocking findings first: computed values it cannot move, conflicting destinations, or a future schema version. A file from an older release fails with a message naming `bakers init`; run it to write current files.
 
 3. Apply it, check it, and confirm nothing is left:
 

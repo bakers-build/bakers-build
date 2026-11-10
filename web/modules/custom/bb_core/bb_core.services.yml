@@ -216,6 +216,13 @@ services:
       - '@database'
       - '@bb_core.workspace_slug_deriver'
       - '@logger.channel.bb_core'
+  # Creates the onboarding wizard's first group and project, or neither.
+  bb_core.onboarding_first_project:
+    class: Drupal\bb_core\Onboarding\FirstProjectCreator
+    arguments:
+      - '@entity_type.manager'
+      - '@database'
+      - '@bb_core.workspace_provisioner'
   # Where "Next"/"Skip" send an account after the onboarding
   # profile screen — the invite step for a lead, My work for everyone else.
   bb_core.onboarding_destination:

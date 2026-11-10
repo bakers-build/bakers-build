@@ -21,8 +21,7 @@ describe('grok catalog', () => {
       expect(candidate.model).toBe(options?.model);
       const agent = await candidate.agent.createAgent({} as never);
       expect(agent.launchCommand('x')).toBe(
-        "grok 'x' --sandbox workspace --permission-mode acceptEdits --allow 'Bash(*)' --deny 'MCPTool(*)'" +
-          (options?.model === undefined ? '' : " -m 'grok-4.5'"),
+        "grok 'x'" + (options?.model === undefined ? '' : " -m 'grok-4.5'"),
       );
     }
   });

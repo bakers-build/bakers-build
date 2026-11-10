@@ -1,8 +1,8 @@
 # CLI commands
 
-The `bakers` command is one program with twelve top-level commands; this page lists them all and covers the setup and configuration commands in detail, while the larger ones have a page of their own.
+Use the installed `bakers` CLI to manage your connection, configuration and conductors. This reference lists the shipped commands and setup options; larger commands have their own pages. For installation and sign-in, start with [Machine setup](/provision/machine).
 
-Options and subcommands are copied from `bakers --help` and the help of each command; run `bakers <command> --help` on your installed version for its complete output.
+Run `bakers <command> --help` for the options available in your installed version. After setup, verify the selected connection and configuration with `bakers config check --scope all --online`.
 
 ## Global options
 
@@ -74,7 +74,7 @@ The three subcommands share one set of scopes, `machine`, `connection`, `project
 |---|---|
 | `init` | Initialize or repair the selected scope and verify readiness. Requires a scope: `--scope`, or a prompt on a terminal. Online verification follows. |
 | `check` | Validate offline; with `--online`, also authenticate and verify each workspace. Changes nothing. |
-| `upgrade` | Migrate the selected scope without changing existing values. `--dry-run` previews. See [Configuration migration](/configuration/project/migration). |
+| `upgrade` | Migrate the selected scope without changing existing values. `--dry-run` previews. |
 
 `init` and `upgrade` also take `--dry-run`, `--label`, `--base-url`, `--client-id`, `--workspace-id`, `--secret-env` and `--auth-type` as above, plus:
 

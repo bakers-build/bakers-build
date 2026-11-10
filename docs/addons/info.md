@@ -10,7 +10,7 @@ Nothing to enable. The command ships with the bakers.build CLI as `bakers info`.
 
 ## Options
 
-No options. The command accepts `--config` and `--connection` to pick a connection.
+No addon settings. The command accepts `--config` and `--connection` to pick a connection.
 
 ## Check it works
 

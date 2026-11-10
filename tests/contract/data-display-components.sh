@@ -334,7 +334,10 @@ DELETED_ALLOWLIST=''
 # `form-element` presenter rendered stable9 markup and styled the help text
 # itself; the field also owns the space below it, so forms stack evenly.
 # Form (snake_case). 69 + 1 = 70.
-TARGET_COMPONENT_COUNT=70
+# 69 SINCE BAKERS-151: `onboarding` is deleted. The wizard is framed by `gate`,
+# the same chrome as sign-in, whose left band now takes an optional
+# per-step explanation. 70 - 1 = 69.
+TARGET_COMPONENT_COUNT=69
 
 # The three containers and the props that make them containers (D2).
 CONTAINER_COMPONENTS='table list form'

@@ -141,7 +141,11 @@ Given(
     const result = php(
       `$u = current(\\Drupal::entityTypeManager()->getStorage("user")->loadByProperties(["name" => "${safe(account)}"]));` +
         `$p = current(\\Drupal::entityTypeManager()->getStorage("bb_project")->loadByProperties(["name" => "${safe(project)}"]));` +
-        '\\Drupal::entityTypeManager()->getStorage("bb_track_worklog")->create(["owner_user_id" => $u->id(), ' +
+        // An earlier attempt's entry would merge into the cell; replace it so a retry starts clean.
+        '$s = \\Drupal::entityTypeManager()->getStorage("bb_track_worklog");' +
+        `$s->delete($s->loadByProperties(["owner_user_id" => $u->id(), "work_date" => "${safe(date)}", ` +
+        `"project_id" => $p->id(), "description" => "${safe(description)}"]));` +
+        '$s->create(["owner_user_id" => $u->id(), ' +
         `"work_date" => "${safe(date)}", "timezone" => "Europe/Berlin", "duration_seconds" => ${hours * 3600 + minutes * 60}, ` +
         `"description" => "${safe(description)}", "derivation" => "manual", "state" => "recorded", "project_id" => $p->id()])->save(); print "ok";`,
     );

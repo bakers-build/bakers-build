@@ -87,6 +87,20 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * The result links the ticket's canonical page under its workspace slug.
+   */
+  public function testResultCarriesAbsoluteTicketUrl(): void {
+    $this->container->get('router.builder')->rebuild();
+    $this->project->set('key', 'TOOL')->save();
+    $out = $this->outputs($this->runTool('bakers_ticket_create', [
+      'title' => 'Linked',
+      'workflow' => 'bb_work',
+      'project' => 'TOOL',
+    ]));
+    self::assertMatchesRegularExpression('#^https?://[^/]+(/.*)?/tool-workspace/ticket/tool-1$#', $out['url']);
+  }
+
+  /**
    * A missing recipe term is created in the project's workspace.
    */
   public function testMissingRecipeIsCreated(): void {
@@ -102,6 +116,65 @@ final class TicketCreateToolTest extends BakersToolTestBase {
     self::assertInstanceOf(ContentEntityInterface::class, $recipe);
     self::assertSame('fresh', $recipe->label());
     self::assertSame($this->workspace->id(), $recipe->get('workspace_id')->target_id);
+  }
+
+  /**
+   * The workspace member with that e-mail address becomes the assignee.
+   */
+  public function testAssigneeEmailOfWorkspaceMemberIsAssigned(): void {
+    $member = $this->account('member');
+    $member->set('mail', 'member@example.test')->save();
+    $this->addMembership($this->workspace, $member, ['contributor']);
+    // The caller's read scope is memoised per request; this is a new one.
+    $this->container->get('bb_core.workspace_read_scope')->reset();
+    $result = $this->runTool('bakers_ticket_create', [
+      'title' => 'Mine',
+      'workflow' => 'bb_work',
+      'project' => $this->project->uuid(),
+      'assignee_email' => 'Member@Example.TEST',
+    ]);
+    $out = $this->outputs($result);
+    self::assertSame('Ticket created.', (string) $result->getMessage());
+    self::assertSame('member', $out['assignee']);
+    $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $stored);
+    self::assertSame($member->id(), $stored->get('assignee_user_id')->target_id);
+  }
+
+  /**
+   * An unknown address and one outside the workspace give the same answer.
+   *
+   * The ticket is created unassigned either way, no account is created, and
+   * the response does not tell the two apart.
+   */
+  public function testUnassignableAssigneeEmailLeavesTheTicketUnassigned(): void {
+    $etm = $this->container->get('entity_type.manager');
+    $elsewhere = $etm->getStorage('bb_workspace')->create(['name' => 'elsewhere', 'slug' => 'elsewhere']);
+    assert($elsewhere instanceof ContentEntityInterface);
+    $elsewhere->save();
+    $outsider = $this->account('outsider');
+    $outsider->set('mail', 'outsider@example.test')->save();
+    $this->addMembership($elsewhere, $outsider, ['contributor']);
+    $this->container->get('bb_core.workspace_read_scope')->reset();
+    $users = $etm->getStorage('user')->getQuery()->accessCheck(FALSE)->count()->execute();
+    $answers = [];
+    foreach (['nobody@example.test', 'outsider@example.test'] as $email) {
+      $result = $this->runTool('bakers_ticket_create', [
+        'title' => 'Unassigned',
+        'workflow' => 'bb_work',
+        'project' => $this->project->uuid(),
+        'assignee_email' => $email,
+      ]);
+      $out = $this->outputs($result);
+      $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+      self::assertInstanceOf(BbTicketInterface::class, $stored);
+      self::assertTrue($stored->get('assignee_user_id')->isEmpty(), $email);
+      $answers[$email] = [(string) $result->getMessage(), $out['assignee'], array_keys($out)];
+    }
+    self::assertSame('Ticket created without an assignee: no account with this e-mail address can be assigned in this workspace.', $answers['nobody@example.test'][0]);
+    self::assertNull($answers['nobody@example.test'][1]);
+    self::assertSame($answers['nobody@example.test'], $answers['outsider@example.test']);
+    self::assertSame($users, $etm->getStorage('user')->getQuery()->accessCheck(FALSE)->count()->execute());
   }
 
   /**

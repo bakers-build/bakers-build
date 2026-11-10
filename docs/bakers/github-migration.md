@@ -98,7 +98,8 @@ When a push or dispatch run on `next` has a failed job, `report_failure` runs
 `scripts/ci/github-failure-ticket.sh`. It signs in to `https://app.bakers.build` as a service
 account and comments on the open BAKERS ticket titled `CI failure: GitHub checks on next`, or
 creates that ticket as a `bug` with recipe `superpowers` (workflow `bb_work`) when none is open
-and assigns it to the `cw-framework` conductor. The comment or ticket names the failed jobs, the
+and assigns it to the `cw-framework` conductor with the label `auto`, so the conductor carries it
+to `done` without approvals; a comment on an open ticket leaves its labels alone. The comment or ticket names the failed jobs, the
 commit and the run. When the `release` job of `release.yml` fails on `next` or `main`, the
 `report_failure` job of `release.yml` runs the same script for its own ticket,
 `CI failure: GitHub release on <branch>`, so release and checks failures never share a ticket.

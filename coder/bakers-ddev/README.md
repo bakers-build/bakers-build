@@ -8,7 +8,7 @@ A workspace is one Sysbox container with its own Docker daemon, a home volume an
 
 ## Tools
 
-`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh` and `glab`. Docker and DDEV come from the image. `frpc` and `cloudflared` are installed and started only when their operator configuration files exist. With PM bot parameters, the bot runs as a container on the workspace's Docker daemon.
+`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh` and `glab`. Docker and DDEV come from the image. `cloudflared` and `frpc` are installed only when the [`preview_transport` parameter](#optional-previews) selects them. With PM bot parameters, the bot runs as a container on the workspace's Docker daemon.
 
 ## Prerequisites
 
@@ -63,13 +63,20 @@ Coder gives a new template to everyone by default. Restrict it in the Coder UI i
 
 ## Optional previews
 
-Without provider configuration no tunnel client is downloaded or started. For FRP,
-create `~/.config/frp/frpc.json` with your server and credentials. For named
-Cloudflare, create `~/.cloudflared/tunnel-token`. Protect these files and restart
-the workspace to install/start the selected client. For Cloudflare Quick, install
-`cloudflared` explicitly before selecting that transport; it needs no token file.
-The transport configuration must supply your own zone and endpoint; no company
-preview zone is provided. Local development works without any of these providers.
+The workspace parameter `preview_transport` (*Preview transport*) chooses how runs share preview links. Set it in the workspace form, or with `--parameter preview_transport=<value>` on `coder create` and `coder update`. A changed value applies on the next start.
+
+| Value | On every start |
+|---|---|
+| `none` (default) | Installs and starts no tunnel client, and removes what the parameter wrote earlier |
+| `cloudflare-quick` | Installs `cloudflared` and writes `tunnel: true` and the [Cloudflare Quick](../../docs/addons/ports-cloudflare-quick.md) ports entry. `bakers ports up` starts the tunnel, so no connector runs |
+| `cloudflare` | Installs `cloudflared`, writes `tunnel: true` and runs `cloudflared tunnel run` when `~/.cloudflared/tunnel-token` exists |
+| `frp` | Installs `frpc`, writes `tunnel: true` and starts `frpc` when `~/.config/frp/frpc.json` exists |
+
+The parameter edits `~/.bakers/machine.config.js` through [`scripts/preview-config.mjs`](scripts/preview-config.mjs), and creates the file when it is missing. It owns only the lines it marks with `// bakers-ddev preview`; every other line stays as it is. A `tunnel` key or an `@bakers-build/addon-ports` entry you wrote yourself wins over the parameter, and the start log says so. A file that does not load, or whose keys it cannot place so that they take effect (a spread or computed `addons` key, for example), stays untouched, and the start log names what to add by hand. At `none` it still removes its marked lines from a file that does not load here, unless the result would not parse. A `begin` or `end` marker line without its pair leaves the file untouched for every value. A running conductor reads `tunnel` again for each run; a changed ports entry needs a conductor restart, which a workspace restart gives.
+
+Named Cloudflare and FRP need your account values, so you supply their files: `~/.cloudflared/tunnel-token`, or `~/.config/frp/frpc.json` with your server and credentials, and the ports entry in `machine.config.js` as the [named Cloudflare](../../docs/addons/ports-cloudflare.md) and [frp](../../docs/addons/ports-frp.md) pages show. The start log names a missing ports entry. Protect these files. The transport configuration must supply your own zone and endpoint; no company preview zone is provided. Local development works without any of these providers.
+
+**Upgrading:** a token file or `frpc.json` alone no longer starts a connector. A workspace that relied on one needs `preview_transport` set to `cloudflare` or `frp`.
 
 ## Updating versions
 
@@ -79,7 +86,17 @@ A start that fails to download a tool stops the install script, marks the start 
 
 ## Logs
 
-The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its container ([PM bot › Logs](#logs-and-skip-lines)). `/tmp/herdr-server.log`, `/tmp/frpc.log` and `/tmp/cloudflared.log` hold the console output of `herdr server` and the connectors. `/tmp` lives for one start. herdr keeps its own log in `~/.config/herdr/herdr-server.log`.
+The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its container ([PM bot › Logs](#logs-and-skip-lines)). `/tmp/bakers-conductors.log` holds the [conductor autostart](#conductor-autostart)'s background retries. `/tmp/herdr-server.log`, `/tmp/frpc.log` and `/tmp/cloudflared.log` hold the console output of `herdr server` and the connectors. `/tmp` lives for one start. herdr keeps its own log in `~/.config/herdr/herdr-server.log`.
+
+## Conductor autostart
+
+Conductors are yours to start, and a restart, rebuild or template update stops them. Switch on the workspace parameter **Start conductors on workspace start** (`conductor_autostart`, default off) and every start runs `bakers oven start` in each `~/projects/*` checkout that has `.bakers/conductor.config.js`. Each conductor runs as a detached background process, as when you start it by hand.
+
+```sh
+coder update <workspace> --parameter conductor_autostart=true
+```
+
+The startup log has one line per checkout: `conductors: started <path>` once `bakers oven status` shows it `online`, or `conductors: failed <path>: <reason>` with the last line `bakers oven start` printed. A stopped workspace kills its conductors before they can report themselves offline, so for some minutes after a restart `bakers oven start` takes the dead conductor for a live one and starts nothing. Such a checkout logs `conductors: waiting <path>: <reason>` and is retried every 30 seconds in the background, for up to 12 minutes, until it is online; those lines go to `/tmp/bakers-conductors.log`. A failed checkout never stops the start or the other checkouts. The checkout's sign-ins (bakers.build, the agent, git) must already be in place; the autostart only starts what you configured.
 
 ## PM bot
 
@@ -102,6 +119,8 @@ As a bakers.build workspace administrator:
 
 1. **Workspace → Service accounts → Add**: an account for the bot, with a rank that may create and update tickets, as a member of the bot's project's team only. The bot reaches bakers.build only through its tools on `/mcp`, with this account's rights, so the membership is its reach.
 2. On that account's profile, set its **position** and **background**: `bb-create-ticket` reads its own user first and works the way they say. For example, position *Project manager*, background *Specifies every idea with its requester before work starts and answers technical questions itself.*
+
+   The **background** also sets the bot's language. The bot posts German unless the background names another language, in any wording, e.g. *Antworte auf Englisch.* or *Language: English*. The model's answers follow any language; the fixed texts of the plugin and the poller exist in German and English and stay German for other languages. The poller follows the plugin's language. The bot reads the language when it starts: after a change, run `docker compose -p pm-bot restart` in the workspace; no rebuild is needed.
 3. On that account, create an API key. It goes into `pm_bot_bakers_api_key`; the bot sends it as the bearer on `/mcp`. The site must accept an API key as bearer and offer the project ticket list tool, `bakers_user_read` and `labels_remove` on `bakers_ticket_update`.
 4. Note the project's UUID for `pm_bot_project`. To have new tickets qualified at once, also note a conductor's UUID for `pm_bot_conductor`.
 
@@ -113,7 +132,7 @@ At api.slack.com/apps, choose **Create New App → From a manifest**, pick your 
 2. **Install App → Install to Workspace.** The bot token (`xoxb-…`) goes into `pm_bot_slack_bot_token`.
 3. Invite the bot to the project's channel (`/invite @<bot>`). Its channel ID (channel name → **View channel details**, at the bottom) goes into `pm_bot_slack_allowed_channels`. That is the bot's main channel: a mention there opens a request channel. The bot has exactly one; with more than one ID the container refuses to start.
 4. Copy the operators' member IDs (profile → **⋮ → Copy member ID**) into `pm_bot_slack_admin_users`.
-5. Optional: create a private channel with only the operators in it and invite the bot. That is Hermes' home channel for its restart notices (`pm_bot_slack_home_channel`).
+5. Optional: create a private channel with only the operators in it and invite the bot. Set it as Hermes' home channel for its restart notices (`pm_bot_slack_home_channel`); without one, the home channel is the allowed channel.
 
 ### 3. Parameters
 
@@ -127,7 +146,7 @@ Set these in the workspace form, or with `--parameter` on `coder create` and `co
 | `pm_bot_slack_allowed_users` | no | Member IDs the bot answers. Empty: every user in its channels. Set: only these users |
 | `pm_bot_slack_admin_users` | yes | Operators' member IDs: the only users who may run Hermes slash commands |
 | `pm_bot_slack_workspace_url` | yes | `https://<workspace>.slack.com`, for channel links |
-| `pm_bot_slack_home_channel` | no | Channel ID of the operators' channel |
+| `pm_bot_slack_home_channel` | no | Channel ID of the operators' channel; empty means the first allowed channel |
 | `pm_bot_bakers_url` | yes | The bakers.build server, `https://…` |
 | `pm_bot_bakers_api_key` | yes | The service account's API key (masked) |
 | `pm_bot_project` | yes | Project UUID |

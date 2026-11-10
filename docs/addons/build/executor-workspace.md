@@ -29,52 +29,9 @@ When the ticket is done, the reaper runs `after_done`, then `workspace.remove(br
 
 ## Write an executor
 
-Both interfaces come from `@bakers-build/conductor/contract`. This executor starts the agent as a detached process in the worktree:
+Import `BbExecutor`, `ExecutorPlugin` and `SpawnRunInput` from `@bakers-build/conductor/contract`. A plugin has `kind: 'executor'`, an `id`, `requiredModules` and an async `createExecutor(config, deps)` factory. The factory returns an executor implementing the methods below.
 
-```ts
-import { spawn } from 'node:child_process';
-import type { BbExecutor, ExecutorPlugin, SpawnRunInput } from '@bakers-build/conductor/contract';
-
-class MyExecutor implements BbExecutor {
-  readonly id = 'my-executor';
-
-  constructor(private readonly command: string) {}
-
-  capabilities() {
-    return { persistent: true };
-  }
-
-  async startRun(input: SpawnRunInput) {
-    const child = spawn('sh', ['-c', input.command ?? this.command], {
-      cwd: input.workspacePath,
-      env: { ...process.env, ...input.env },
-      detached: true,
-      stdio: 'ignore',
-    });
-    child.unref();
-    return { sessionRef: `${input.ticket.identifier}-${input.run.id}` };
-  }
-
-  async stopRun(_branch: string) {}
-
-  async cleanupRun(branch: string, runId: number) {
-    // Find and end only this run's terminal. Never throw.
-  }
-}
-
-export function myExecutor(options: { command?: string } = {}): ExecutorPlugin {
-  return {
-    kind: 'executor',
-    id: 'my-executor',
-    requiredModules: [],
-    async createExecutor() {
-      return new MyExecutor(options.command ?? 'claude');
-    },
-  };
-}
-
-export default myExecutor;
-```
+The [new client tutorial](/addons/build/client) implements an adapter with two client CLI commands: start and close. For a shipped implementation, inspect `bakers-cli/addons/herdr-core/src/index.ts`. A detached process with empty cleanup methods is not a complete executor: it would leave agents running and cannot recover its terminals after restart.
 
 The rules each method must keep:
 
@@ -89,48 +46,9 @@ Label each terminal with the branch and run id when you start it, so `cleanupRun
 
 ## Write a workspace
 
-```ts
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { removeGitWorktree, loadInstructions } from '@bakers-build/addon-workspace-git';
-import type { BbWorkspace, WorkspacePlugin } from '@bakers-build/conductor/contract';
-import { type ConductorLogger, exec } from '@bakers-build/core';
+Import `BbWorkspace`, `EnsuredWorkspace` and `WorkspacePlugin` from `@bakers-build/conductor/contract`. A workspace plugin has `kind: 'workspace'`, an `id`, `requiredModules` and an async `createWorkspace(config, deps?)` factory.
 
-class MyWorkspace implements BbWorkspace {
-  constructor(
-    private readonly root: string,
-    private readonly logger: ConductorLogger,
-  ) {}
-
-  async ensure(identifier: string, branch = `bakers/${identifier}`) {
-    const path = join(this.root, '.bakers-worktrees', identifier);
-    const created = !existsSync(path);
-    if (created) await exec('git', ['-C', this.root, 'worktree', 'add', '-B', branch, path]);
-    return { path, created, instructions: loadInstructions(path) };
-  }
-
-  remove(branch: string, worktreePath?: string) {
-    return removeGitWorktree(
-      this.root,
-      branch,
-      worktreePath,
-      (args, cwd) => exec('git', ['-C', cwd, ...args]),
-      this.logger,
-    );
-  }
-}
-
-export function myWorkspace(options: { root: string }): WorkspacePlugin {
-  return {
-    kind: 'workspace',
-    id: 'my-workspace',
-    requiredModules: [],
-    async createWorkspace(_config, deps) {
-      return new MyWorkspace(options.root, deps?.logger ?? console);
-    },
-  };
-}
-```
+Inspect `bakers-cli/addons/workspace-git/src/index.ts` for the shipped Git backend and reusable teardown helper. Its current [branch/base limitation](/addons/workspace-git#good-to-know) is not a model for implementing parent-base selection. `ensure` must validate reuse and branch/base selection; checking only whether a directory exists is insufficient. Never reset an existing branch just to attach a worktree.
 
 The rules:
 
@@ -141,10 +59,11 @@ The rules:
 
 ## Package and select it
 
-Package it as [Addon contracts](/addons/build/contracts#write-an-addon) describes, and export the plugin from `src/preset.ts`:
+The following registration fragment assumes your tested `myExecutor` factory exists. Package it as [Addon contracts](/addons/build/contracts#write-an-addon) describes, and export the plugin from `src/preset.ts`:
 
 ```ts
 import type { Preset } from '@bakers-build/conductor/contract';
+// Your implementation must satisfy every lifecycle rule above.
 import { myExecutor } from './index.js';
 
 export const executors: Preset['executors'] = (acc, opts) => [
@@ -170,3 +89,7 @@ A machine may override the executor in `~/.bakers/machine.config.js`; the worksp
 ## Test it
 
 Test the executor through `startRun` and `cleanupRun` with your tool's CLI replaced by a recording function, as `bakers-cli/addons/herdr-core/tests/executor.test.ts` does. Test a Git workspace against a real temporary repository, as `bakers-cli/addons/workspace-git/tests/` does. The conductor's own suites use `@bakers-build/addon-fake` as both slots.
+
+## Migrating an addon
+
+`BbExecutor.runHook`, `BbExecutor.removeWorktree` and `BbWorkspace.applyOpenLayout` are retired. The conductor runs project hooks; move removal to `BbWorkspace.remove` and the open layout to `BbExecutor.openWorkspace`. herdr rejects `with.hooks`; move those commands to top-level `hooks`.

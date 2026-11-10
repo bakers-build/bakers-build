@@ -388,6 +388,54 @@ describe('Conductor dispatch env injection', () => {
     expect(executor.started[0]?.env?.BB_TUNNEL).toBe('1');
   });
 
+  it('re-reads tunnel from the machine file for each run and keeps the last good value', async () => {
+    const remote = new FakeBbRemote({
+      tickets: {
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
+        't-2': { identifier: 'BB-2', title: 'Two', state: 'working' },
+        't-3': { identifier: 'BB-3', title: 'Three', state: 'working' },
+      },
+    });
+    const executor = new RecordingExecutor();
+    const { log, calls } = spyLogger();
+    let machine: { machine_id?: string; tunnel?: boolean } = {
+      machine_id: 'm-1',
+    };
+    const conductor = new TestConductor(
+      makeConfig(),
+      remote,
+      executor,
+      new RecordingWorkspace(),
+      [{ id: fakeAgent.id, agent: fakeAgent }],
+      log,
+      CHECKOUT,
+      undefined,
+      undefined,
+      async () => machine,
+    );
+    await conductor.start();
+    const runFor = async (ticketUuid: string, n: number) => {
+      remote.queue.push({
+        runUuid: `r-${n}`,
+        runId: n,
+        ticketUuid,
+        stateAtStart: 'working',
+        handler: 'code',
+      });
+      await conductor.tick();
+      return executor.started.at(-1)?.env?.BB_TUNNEL;
+    };
+    expect(await runFor('t-1', 1)).toBe('0');
+    machine = { machine_id: 'm-1', tunnel: true };
+    expect(await runFor('t-2', 2)).toBe('1');
+    // A missing or broken file reads as {}: keep the last good value.
+    machine = {};
+    expect(await runFor('t-3', 3)).toBe('1');
+    expect(
+      calls.some((c) => c.level === 'warn' && /tunnel/.test(c.msg ?? '')),
+    ).toBe(true);
+  });
+
   it('exports BB_TUNNEL=0 when policy is absent and a parent 1 cannot leak in', async () => {
     const previous = process.env.BB_TUNNEL;
     process.env.BB_TUNNEL = '1';

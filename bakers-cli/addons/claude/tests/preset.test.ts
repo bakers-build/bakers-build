@@ -23,8 +23,9 @@ describe('Claude catalog', () => {
     expect(candidates.every((c) => Boolean(c.description))).toBe(true);
   });
 
-  it('carries options and the default sandbox into the Fable launch', async () => {
+  it('carries options and the sandbox into the Fable launch', async () => {
     const candidates = await agents([], {
+      permissions: 'sandbox',
       effort: 'high',
       args: ['--verbose'],
       env_deny: ['SECRET_*'],
@@ -58,7 +59,7 @@ describe('Claude catalog', () => {
     ['--model', 'custom-model'],
     ['--model=custom-model'],
   ])('lets explicit args %j override the Fable model', async (...args) => {
-    const candidates = await agents([], { args, security: 'system' });
+    const candidates = await agents([], { args, permissions: 'system' });
     const agent = await candidates
       .find((c) => c.alias === 'fable')!
       .agent.createAgent({} as never);

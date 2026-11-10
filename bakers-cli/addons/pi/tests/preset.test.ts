@@ -15,8 +15,8 @@ describe('pi catalog', () => {
     ]);
   });
   it('rejects sandbox mode passed through addon options', () => {
-    expect(() => agents([], { security: 'sandbox' })).toThrow(
-      "Pi does not support security: 'sandbox'",
+    expect(() => agents([], { permissions: 'sandbox' })).toThrow(
+      "Pi does not support permissions: 'sandbox'",
     );
   });
 });

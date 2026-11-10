@@ -3,7 +3,7 @@ import type { Copy } from './copy'
 
 const props = defineProps<{ t: Copy }>()
 // The step icons are the hero's four illustrations at 44 px (stroke 2).
-const meta = [['01', 'spec', 'scale'], ['02', 'coding', 'oven'], ['03', 'review', 'magnifier'], ['04', 'done', 'bun']]
+const meta = [['01', 'plan', 'scale'], ['02', 'working', 'oven'], ['03', 'review', 'magnifier'], ['04', 'done', 'bun']]
 const stations = props.t.line.stations.map(([title, text, decision], i) => {
   const [n, state, icon] = meta[i]
   return { n, state, icon, title, text, decision }

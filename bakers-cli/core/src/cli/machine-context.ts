@@ -42,7 +42,9 @@ export interface MachineContext {
    * Omitted or false keeps the original local URL.
    */
   tunnel?: boolean;
-  /** Shared run security for every agent; the conductor validates it. */
+  /** Shared run permissions for every agent; the conductor validates it. */
+  permissions?: unknown;
+  /** Renamed to `permissions`; the conductor rejects it on load. */
   security?: unknown;
   /**
    * This machine's executor, an `executor` slot value as in a conductor

@@ -42,6 +42,6 @@ Using another stack? Apply the same [worktree requirements](/provision/guide#mak
 Continue here when you need precise command timing or want to operate the application server.
 
 <DocQuickLinks aria-label="Related provision guides" :items="[
-  { label: 'Lifecycle hooks', text: 'See when preparation, run and cleanup commands execute.', link: '/provision/hooks' },
+  { label: 'Lifecycle hooks', text: 'Connect repeatable project setup and cleanup commands.', link: '/provision/hooks' },
   { label: 'Self-hosting', text: 'Run the bakers.build application server on your own infrastructure.', link: '/self-hosting/' }
 ]" />

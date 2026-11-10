@@ -878,7 +878,7 @@ describe('Conductor', () => {
     const cwd = '/fake/BB-1';
     const dir = join(home, '.claude', 'projects', encodeClaudeProjectDir(cwd));
     // `system`: nothing launches here, so the machine's sandbox must not gate claims.
-    const agent = new ClaudeAgent({ security: 'system' }, home);
+    const agent = new ClaudeAgent({ permissions: 'system' }, home);
 
     class ClaudeLikeExecutor extends RecordingExecutor {
       async startRun(input: SpawnRunInput) {

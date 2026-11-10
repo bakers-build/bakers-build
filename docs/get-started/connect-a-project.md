@@ -3,7 +3,7 @@ prev:
   text: Get started
   link: /get-started/
 next:
-  text: Run your first ticket
+  text: Run the first ticket
   link: /get-started/first-ticket
 ---
 
@@ -12,7 +12,7 @@ next:
 
 # Prepare your project
 
-Connect a repository on your computer so agents can work on its tickets. Keep the project's existing tools and workflow.
+Connect a repository on your computer so agents can work on its tickets. A server **project** holds those tickets within your team's **workspace**; your checkout holds the code.
 
 **You need:** a local Git checkout, [a bakers.build account](https://app.bakers.build/) with workspace access, and [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in.
 
@@ -69,7 +69,7 @@ Return here after any changes. Before starting agents, install every skill the w
 
 ::: details What changes
 
-The skill finds/creates the server project, writes `.bakers/conductor.config.js`, fills `WORKFLOW.md` and checks ignores. Record onboarding choices in README. It does not create the repository. Credentials and `*.local.js` overrides stay private.
+The skill resolves the server project, prepares `.bakers/conductor.config.js` and `WORKFLOW.md`, and checks ignores. Credentials and `*.local.js` overrides stay private. [Configuration](/configuration/) explains file ownership and precedence.
 :::
 
 ::: details Manual equivalent
@@ -102,6 +102,8 @@ bakers info
 bakers oven check
 ```
 
-**Done when:** identities match, skills and client are ready, private files are ignored and application readiness passes.
+The online check verifies sign-in; confirm project access separately. `oven check` tests agent sandbox startup. Use your project's workflow checks to establish application readiness.
+
+**Done when:** project and account are correct, required skills are available, private files are ignored and the project's readiness checks pass.
 
 **Next:** [Run the first ticket](/get-started/first-ticket).

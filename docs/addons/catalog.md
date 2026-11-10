@@ -1,6 +1,8 @@
-# Addons
+# Available addons
 
-Choose supported extensions by purpose.
+<span id="addons"></span>
+
+Choose an integration for your task, then follow its setup guide. [Configure addons](/addons/configure) explains file ownership and activation.
 
 ## Agents
 
@@ -37,7 +39,7 @@ Choose supported extensions by purpose.
 
 ## Provisioning support
 
-Runtime addons and [Compose discovery](/addons/docker-compose) find ports; they do not provision environments. Use [project hooks](/provision/guide) for your project's runtime. Native Node is not an addon.
+The [DDEV addon](/addons/ddev) and [Compose discovery](/addons/docker-compose) find ports; they do not provision environments. Use [project hooks](/provision/guide) for your project's runtime. Native Node is not an addon.
 
 ## Terminal UI
 
@@ -64,11 +66,8 @@ Runtime addons and [Compose discovery](/addons/docker-compose) find ports; they 
 
 | Addon | What it adds |
 |---|---|
-| [Essentials](/addons/essentials) | Markdown, schema and name resolution |
-| [Name references](/addons/name-refs) | Labels and environments by name |
-| [Ambient workspace](/addons/workspace) | Fills in your workspace |
 | [HTTP Basic sign-in](/addons/auth-basic) | Fixed Basic auth token |
 
-[Fake conductor fixture](/addons/fake) is test-only.
+Generated connection support needs no separate selection; see [connection defaults](/addons/configure#connection-defaults).
 
-[Configure addons](/addons/configure) · [Build your own](/addons/build/contracts)
+[Configure addons](/addons/configure) · [Build your own](/addons/build/first-addon)

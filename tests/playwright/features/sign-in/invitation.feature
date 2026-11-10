@@ -23,7 +23,6 @@ Feature: A workspace invitation
     Then the overview offers joining "bakers"
     And the create action stands 20 pixels below the content above it
     When I join the invited workspace "bakers"
-    And I choose the workspace "/bakers/tickets"
     Then the address is "/bakers/tickets"
     When I click the tab "Stats" and count the requests
     Then the tab change made exactly one navigation request
@@ -38,7 +37,6 @@ Feature: A workspace invitation
     And I finish the onboarding wizard
     Then the overview offers joining "bakers"
     When I join the invited workspace "bakers"
-    And I choose the workspace "/bakers/tickets"
     Then the address is "/bakers/tickets"
     When I click the tab "Stats" and count the requests
     Then the tab change made exactly one navigation request

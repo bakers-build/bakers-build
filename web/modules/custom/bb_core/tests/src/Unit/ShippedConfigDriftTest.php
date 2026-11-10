@@ -162,13 +162,13 @@ final class ShippedConfigDriftTest extends UnitTestCase {
   }
 
   /**
-   * The independent installation trusts only its host and ingress subnet.
+   * A configured domain and proxy subnet trust only that host and subnet.
    *
    * Runs isolated because trusted proxies are process-global Request state.
    */
   #[RunInSeparateProcess]
-  public function testSelfHostedTrustBoundary(): void {
-    $settings = $this->selfHostedSettings([]);
+  public function testContainerTrustBoundary(): void {
+    $settings = $this->containerSettings([]);
     self::assertSame(['^app\\.example\\.test$'], $settings['trusted_host_patterns']);
     self::assertSame(['172.30.42.0/24'], $settings['reverse_proxy_addresses']);
     self::assertSame(26, $settings['reverse_proxy_trusted_headers']);
@@ -186,20 +186,32 @@ final class ShippedConfigDriftTest extends UnitTestCase {
   }
 
   /**
-   * Missing secrets and invalid host/proxy inputs fail closed.
+   * Each setting applies only when its own variable is set; no mode switch.
    */
-  public function testSelfHostedRejectsInvalidInputs(): void {
+  public function testContainerSettingsFollowTheirOwnVariables(): void {
+    $settings = $this->containerSettings(['TRUSTED_PROXY_SUBNET' => '', 'DOMAIN' => '']);
+    self::assertArrayNotHasKey('reverse_proxy', $settings);
+    self::assertSame(['.*'], $settings['trusted_host_patterns']);
+    $settings = $this->containerSettings(['DOMAIN' => '']);
+    self::assertTrue($settings['reverse_proxy']);
+    self::assertSame(['.*'], $settings['trusted_host_patterns']);
+    self::assertStringNotContainsString('BB_SELF_HOSTED', (string) file_get_contents($this->repositoryRoot() . '/web/sites/default/settings.container.php'));
+  }
+
+  /**
+   * Invalid host, proxy and mail inputs fail closed when they are set.
+   */
+  public function testContainerRejectsInvalidInputs(): void {
     foreach ([
-      ['DRUPAL_HASH_SALT' => ''],
-      ['DOMAIN' => ''],
       ['DOMAIN' => 'https://app.example.test/path'],
-      ['DRUPAL_TRUSTED_PROXY_SUBNET' => '0.0.0.0/0'],
-      ['DRUPAL_TRUSTED_PROXY_SUBNET' => 'invalid'],
+      ['TRUSTED_PROXY_SUBNET' => '0.0.0.0/0'],
+      ['TRUSTED_PROXY_SUBNET' => 'invalid'],
       ['MAIL_SMTP_DSN' => 'invalid'],
+      ['MAIL_FROM_ADDRESS' => 'invalid'],
     ] as $overrides) {
       $error = NULL;
       try {
-        $this->selfHostedSettings($overrides);
+        $this->containerSettings($overrides);
       }
       catch (\RuntimeException $exception) {
         $error = $exception;
@@ -212,13 +224,12 @@ final class ShippedConfigDriftTest extends UnitTestCase {
   /**
    * Loads the shipped settings with a private, restored test environment.
    */
-  private function selfHostedSettings(array $overrides): array {
+  private function containerSettings(array $overrides): array {
     $environment = array_replace([
-      'BB_SELF_HOSTED' => '1',
       'DB_HOST' => 'db',
       'DOMAIN' => 'app.example.test',
       'DRUPAL_HASH_SALT' => 'private-test-salt',
-      'DRUPAL_TRUSTED_PROXY_SUBNET' => '172.30.42.0/24',
+      'TRUSTED_PROXY_SUBNET' => '172.30.42.0/24',
       'MAIL_SMTP_DSN' => 'smtp://smtp.example.test:587',
       'MAIL_FROM_ADDRESS' => 'sender@example.test',
     ], $overrides);
@@ -229,7 +240,7 @@ final class ShippedConfigDriftTest extends UnitTestCase {
     }
     try {
       $settings = ['trusted_host_patterns' => ['.*']];
-      include $this->repositoryRoot() . '/web/sites/default/settings.komodo.php';
+      include $this->repositoryRoot() . '/web/sites/default/settings.container.php';
       return $settings;
     }
     finally {
@@ -240,10 +251,10 @@ final class ShippedConfigDriftTest extends UnitTestCase {
   }
 
   /**
-   * An SMTP DSN on Komodo changes the transport, never the HTML backend.
+   * An SMTP DSN in a container changes the transport, never the HTML backend.
    */
-  public function testKomodoSmtpKeepsTheHtmlMailBackend(): void {
-    $file = $this->repositoryRoot() . '/web/sites/default/settings.komodo.php';
+  public function testContainerSmtpKeepsTheHtmlMailBackend(): void {
+    $file = $this->repositoryRoot() . '/web/sites/default/settings.container.php';
     putenv('MAIL_SMTP_DSN=smtp://mailer%40example.com:p%40ss@smtp.example.com:587?verify_peer=0');
     try {
       $config = (static function (string $file): array {

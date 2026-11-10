@@ -1,3 +1,4 @@
+import type { MarketplaceDeclaration } from './agent-home.js';
 import type { SandboxHost, SandboxPreflight } from './sandbox-preflight.js';
 
 /**
@@ -131,9 +132,35 @@ export const CONDUCTOR_TOKEN_ENV = 'BB_CONDUCTOR_TOKEN';
 /** The run env var holding that server's URL, for `bakers oven tools`. */
 export const CONDUCTOR_URL_ENV = 'BB_CONDUCTOR_URL';
 
+/** What {@link BbAgent.installPlugins} hands the run's launch. */
+export interface PluginLaunch {
+  /** Merged into the run env: the harness's config-dir variable, never `HOME`. */
+  env: Record<string, string>;
+  /** Passed to `launchCommand` as its `args`. */
+  args: string[];
+  /** `built` when this call built the home, `reused` when it was complete. */
+  home: 'built' | 'reused';
+  /** Trust checks this run skips, for the run's `plugins` log entry. */
+  trust_bypass?: string[];
+  /** Declared plugins the harness cannot load, for the same entry. */
+  gaps?: string[];
+}
+
 export interface BbAgent {
   /** Stable id, e.g. 'claude'. */
   readonly id: string;
+  /** True when the catalog entry sets `plugins: false`: the run uses the user's own agent home. */
+  readonly pluginsDisabled?: boolean;
+  /**
+   * Install the project's plugin marketplaces into `home` with the harness's
+   * own commands (once; see `ensureHome`) and return how a run in it
+   * launches. Called before every launch, in every security mode. Throws,
+   * naming the plugin and the harness output, when the install fails.
+   */
+  installPlugins?(
+    marketplaces: readonly MarketplaceDeclaration[],
+    home: string,
+  ): Promise<PluginLaunch>;
   /**
    * How the conductor treats ticket/project env_vars whose names match
    * `deny`: dropped when `drop`, kept (and still logged) otherwise. Omitted →
@@ -171,6 +198,8 @@ export interface BbAgent {
    * `env` is the run env the command starts in, for an agent whose harness
    * filters it (Codex). Its values may be secret: never put them in argv
    * unless the harness drops them otherwise.
+   *
+   * `args` are the {@link PluginLaunch} args of this run, when plugins are on.
    */
   launchCommand(
     prompt: string,
@@ -178,6 +207,7 @@ export interface BbAgent {
     workspacePath?: string,
     tools?: { url: string },
     env?: Readonly<Record<string, string>>,
+    args?: readonly string[],
   ): string;
   /**
    * Locate and read this agent's run transcript for a run that executed in

@@ -54,7 +54,7 @@ export function encodePiHomeSessionSlug(cwd: string): string {
 }
 
 /**
- * `security` is `system` (default) or `custom`; `custom`'s `config` is
+ * `permissions` is `system` (default) or `custom`; `custom`'s `config` is
  * `{ extensions: string[] }`, each passed as `-e`. Pi has no OS sandbox.
  */
 export interface PiAgentOptions extends SecurityOptions {
@@ -151,15 +151,17 @@ function piSecurity(options: PiAgentOptions): {
   const { mode, config, runEnvPolicy, report } = resolveSecurityOptions(
     {
       ...options,
-      security: (validateOptionalString(options.security, 'security') ??
-        'system') as SecurityMode,
+      permissions: (validateOptionalString(
+        options.permissions,
+        'permissions',
+      ) ?? 'system') as SecurityMode,
     },
     NO_SANDBOX_DEFAULTS,
   );
   if (mode === 'system') return { extensions: undefined, runEnvPolicy, report };
   if (mode !== 'custom') {
     throw new Error(
-      `Pi does not support security: '${mode}'; use 'system' or 'custom'`,
+      `Pi does not support permissions: '${mode}'; use 'system' or 'custom'`,
     );
   }
   const keys = Object.keys(config ?? {});
@@ -173,7 +175,7 @@ function piSecurity(options: PiAgentOptions): {
     )
   ) {
     throw new Error(
-      "Pi security: 'custom' needs config: { extensions: ['<path or builtin:name>', ...] } and nothing else",
+      "Pi permissions: 'custom' needs config: { extensions: ['<path or builtin:name>', ...] } and nothing else",
     );
   }
   return { extensions: [...extensions], runEnvPolicy, report };
@@ -296,7 +298,7 @@ export function piAgent(options: PiAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'pi',
     requiredModules: [],
-    security: agent.security,
+    permissions: agent.security,
     async createAgent() {
       return agent;
     },

@@ -22,6 +22,15 @@ props:
         Choice checked before the runtime reads the stored one, for static
         rendering only -- the runtime source of truth is js/skin.src.js, which
         sets html[data-mode].
+    align:
+      type: string
+      enum:
+        - start
+        - end
+      title: Align
+      description: >-
+        Where the panel opens: `start` (default) up from the bottom left, as in the rail's footer;
+        `end` down from the top right, for a toggle standing in a page corner.
     label:
       type: string
       title: Accessible label

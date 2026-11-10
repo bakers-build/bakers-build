@@ -24,7 +24,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_create',
   label: new TranslatableMarkup('Create a ticket'),
-  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. Returns the new ticket’s UUID, identifier and state.'),
+  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. An assignee e-mail address assigns that account when it may be assigned in the project’s workspace; otherwise the ticket is created unassigned and the message says so. Returns the new ticket’s UUID, identifier, state, assignee and URL.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -78,6 +78,13 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('Git branch for a carrier ticket, e.g. release/1.2; omit to derive it from the identifier and title. Fixed after creation.'),
       required: FALSE,
     ),
+    'assignee_email' => new InputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Assignee e-mail address'),
+      description: new TranslatableMarkup('E-mail address of the account to assign, when it may be assigned in the project’s workspace.'),
+      required: FALSE,
+      constraints: ['Email' => []],
+    ),
   ],
   output_definitions: [
     'id' => new OutputDefinition(
@@ -101,6 +108,17 @@ use Drupal\tool\TypedData\OutputDefinition;
       label: new TranslatableMarkup('Branch name'),
       description: new TranslatableMarkup('The ticket’s git branch.'),
       nullable: TRUE,
+    ),
+    'assignee' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Assignee'),
+      description: new TranslatableMarkup('The assignee’s display name, or none.'),
+      nullable: TRUE,
+    ),
+    'url' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('URL'),
+      description: new TranslatableMarkup('The ticket’s absolute URL, to link it.'),
     ),
   ],
 )]
@@ -134,14 +152,57 @@ final class TicketCreate extends ToolBase {
     if (isset($fields['branch_name']) && !$ticket->get('branch_name')->access('edit', $this->currentUser)) {
       throw new \InvalidArgumentException('You may not set branch_name.');
     }
+    $unassigned = !empty($values['assignee_email']) && !$this->assign($ticket, $values['assignee_email']);
     $this->assertValid($ticket);
     $ticket->save();
-    return ExecutableResult::success(new TranslatableMarkup('Ticket created.'), [
+    return $this->created($ticket, $unassigned);
+  }
+
+  /**
+   * The result for a created ticket.
+   *
+   * One message for an unknown and an unassignable address, so the response
+   * reveals no account.
+   */
+  private function created(BbTicketInterface $ticket, bool $unassigned): ExecutableResult {
+    $message = $unassigned
+      ? new TranslatableMarkup('Ticket created without an assignee: no account with this e-mail address can be assigned in this workspace.')
+      : new TranslatableMarkup('Ticket created.');
+    $assignee = $ticket->get('assignee_user_id')->entity;
+    return ExecutableResult::success($message, [
       'id' => $ticket->uuid(),
       'identifier' => $ticket->getIdentifier() ?: NULL,
       'state' => $ticket->get('state')->value,
       'branch_name' => $ticket->get('branch_name')->value,
+      'assignee' => $assignee instanceof AccountInterface ? $assignee->getDisplayName() : NULL,
+      'url' => $ticket->toUrl()->setAbsolute()->toString(),
     ]);
+  }
+
+  /**
+   * Assigns the active account of this address when the field's rule allows.
+   *
+   * The assignee field's own validation (ValidReference with its selection
+   * handler) decides, as in the web form. Returns whether it was assigned.
+   */
+  private function assign(BbTicketInterface $ticket, string $email): bool {
+    $storage = $this->entities()->getStorage('user');
+    // Case-insensitive, like core's unique-mail check; escaped as escapeLike().
+    $ids = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('mail', addcslashes($email, '\\%_'), 'LIKE')
+      ->condition('status', 1)
+      ->range(0, 1)
+      ->execute();
+    $account = $ids ? $storage->load(reset($ids)) : NULL;
+    if (!$account instanceof AccountInterface) {
+      return FALSE;
+    }
+    $ticket->set('assignee_user_id', $account->id());
+    if ($ticket->get('assignee_user_id')->validate()->count() === 0) {
+      return TRUE;
+    }
+    $ticket->set('assignee_user_id', NULL);
+    return FALSE;
   }
 
   /**

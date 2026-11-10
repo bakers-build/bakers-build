@@ -105,6 +105,9 @@ for name in slack_allowed_channels slack_allowed_users slack_admin_users; do
   { [ -z "$v" ] && [ "$name" = slack_allowed_users ]; } || [[ "$v" =~ ^[A-Z0-9]+(,[A-Z0-9]+)*$ ]] \
     || skip "pm_bot_$name must list Slack IDs (letters and digits), separated by commas or spaces"
 done
+# Hermes needs a home channel and `/hermes sethome` does not reach it from Slack: an empty
+# parameter means the first allowed channel.
+[ -n "$PM_BOT_SLACK_HOME_CHANNEL" ] || PM_BOT_SLACK_HOME_CHANNEL="${PM_BOT_SLACK_ALLOWED_CHANNELS%%,*}"
 v="$(value slack_home_channel)"
 [ -z "$v" ] || [[ "$v" =~ ^[A-Z0-9]+$ ]] || skip "pm_bot_slack_home_channel must be a Slack ID"
 for name in project conductor; do

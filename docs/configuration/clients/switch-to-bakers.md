@@ -6,7 +6,7 @@ bakers.build is driven by the `bakers` command from `@bakers-build/bakers`. The 
 
 ## Before you switch
 
-- **The new server starts empty.** Nothing is carried over from GAIA: no tickets, projects, workspaces or accounts. The first admin creates the workspace and invites you; you need that invitation before step 3 works.
+- **The new server starts empty.** Nothing is carried over from GAIA: no tickets, projects, workspaces or accounts. The first admin creates the workspace and invites you; you need access before connecting a project.
 - **From the switch on, create tickets only in bakers.build.** The old system takes no new tickets. Finish or move open work by hand.
 
 ## What changes
@@ -40,24 +40,7 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
    bakers --version
    ```
 
-3. **Configure `~/.bakers` and sign in.** Run outside a project checkout, then approve the displayed code:
-
-   ```sh
-   bakers init
-   bakers auth login
-   bakers config check --scope connection --online
-   ```
-
-   `bakers init` asks four questions:
-
-   | Prompt | Answer |
-   |---|---|
-   | Machine identity | a name for this computer; the suggestion is fine |
-   | Local operator identifier | your short handle, for example `cw`; there is no default |
-   | Server base URL | keep `https://app.bakers.build`, or enter your team's URL if it runs its own |
-   | OAuth client identifier | keep `bakers-cli` |
-
-   It ends with `Offline: passed`. `bakers auth login` then prints a code: open the link, confirm, and the terminal reports `logged in`. Details are in [Install the CLI](/provision/machine).
+3. **Configure the machine and sign in.** Follow [machine setup](/provision/machine) using your bakers.build server URL. It owns the current initialization prompts and verification. The machine UUID is generated; your account identity comes from sign-in.
 
 4. **Connect each project and register its oven.** In the project checkout:
 
@@ -68,11 +51,11 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
 
    `bakers oven once` registers the oven for this checkout and runs one cycle. Start it for good with `bakers oven start`. See [Connect a project by hand](/get-started/connect-a-project) and [bakers oven](/configuration/project/conductors).
 
-5. **Clean up.** Once `bakers oven status` shows the new oven, delete the old `~/.gaia` directory and each checkout's `.gaia` and `.gaia-worktrees`. Nothing reads them any more.
+5. **Clean up.** After a test ticket succeeds, inspect and back up the old `~/.gaia`, `.gaia` and `.gaia-worktrees` directories. Preserve uncommitted work and data before removing obsolete files; the new CLI does not read them.
 
 ## Try it on dev first
 
-The dev server `https://develop.dev.bakers.build` runs the latest `develop`. Every deploy there publishes a matching CLI under the npm dist-tag `next`:
+The dev server `https://develop.dev.bakers.build` tracks `next`. Pre-release CLI versions use the npm dist-tag `next`; check the deployed server’s required version before testing:
 
 ```sh
 npm install -g @bakers-build/bakers@next

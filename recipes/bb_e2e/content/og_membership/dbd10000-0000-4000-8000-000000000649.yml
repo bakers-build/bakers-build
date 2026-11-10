@@ -1,0 +1,29 @@
+# fixture-onboarding is a member of Design Crew, the team its first project gets.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: dbd10000-0000-4000-8000-000000000649
+  bundle: default
+  default_langcode: en
+  depends:
+    dbc70000-0000-4000-8000-000000000002: bb_team
+    dbe50000-0000-4000-8000-000000000648: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_team
+  entity_bundle:
+    -
+      value: bb_team
+  entity_id:
+    -
+      value: dbc70000-0000-4000-8000-000000000002
+  uid:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000648"
+  state:
+    -
+      value: active

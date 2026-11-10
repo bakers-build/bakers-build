@@ -1,0 +1,5 @@
+{
+  "name": "probe-plugin",
+  "version": "1.0.0",
+  "description": "Test plugin: a skill, a namespaced cross-reference and a SessionStart hook."
+}

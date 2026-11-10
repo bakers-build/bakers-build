@@ -27,6 +27,14 @@ props:
       type: string
       title: Label
       description: Small uppercase eyebrow header rendered above the rows.
+    description:
+      type: string
+      title: Description
+      description: One sentence under the label saying who the group is for. Optional.
+    framed:
+      type: boolean
+      title: Framed
+      description: Draws a hairline frame with padding around the group, for groups that stand side by side. Off by default.
     links:
       type: array
       title: Links

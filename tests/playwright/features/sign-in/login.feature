@@ -16,6 +16,7 @@ Feature: bakers.build sign-in
     Then the login form is accessible
     And no password field is present
     And the gate chrome is present
+    And the gate shows the appearance switch
     And the application shell is not present
     And the gate band shows the product mark and the slogan "Knead it. Ship it."
     And the gate offers no navigation
