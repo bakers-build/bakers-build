@@ -232,62 +232,6 @@ describe('HerdrCoreExecutor.cleanupRun', () => {
   });
 });
 
-describe('HerdrCoreExecutor.runAlive', () => {
-  const lookup = [
-    'ls',
-    '--all',
-    '--label',
-    'bakers.branch=feat/x',
-    '--label',
-    'bakers.run=4711',
-    '--json',
-  ];
-
-  it('is false when the run has no terminal', async () => {
-    const { hc, calls } = fakeHc({ terminals: [] });
-    expect(await new HerdrCoreExecutor({}, hc).runAlive('feat/x', 4711)).toBe(
-      false,
-    );
-    expect(calls).toEqual([lookup]);
-  });
-
-  it('is false when its terminals have all finished', async () => {
-    const { hc } = fakeHc({
-      terminals: [{ address: 't8', name: 'n', state: 'finished' }],
-    });
-    expect(await new HerdrCoreExecutor({}, hc).runAlive('feat/x', 4711)).toBe(
-      false,
-    );
-  });
-
-  it('is true while a terminal of the run lives', async () => {
-    const { hc } = fakeHc({
-      terminals: [
-        { address: 't8', name: 'n', state: 'finished' },
-        { address: 't7', name: 'n', state: 'live' },
-      ],
-    });
-    expect(await new HerdrCoreExecutor({}, hc).runAlive('feat/x', 4711)).toBe(
-      true,
-    );
-  });
-
-  it('rejects when hc cannot answer', async () => {
-    await expect(
-      new HerdrCoreExecutor({}, fakeHc({ failOn: 'ls' }).hc).runAlive(
-        'feat/x',
-        4711,
-      ),
-    ).rejects.toThrow('hc ls failed');
-    await expect(
-      new HerdrCoreExecutor({}, fakeHc({ missing: true }).hc).runAlive(
-        'feat/x',
-        4711,
-      ),
-    ).rejects.toBeInstanceOf(HcNotFound);
-  });
-});
-
 describe('HerdrCoreExecutor.stopRun', () => {
   it('is a no-op', async () => {
     const { hc, calls } = fakeHc();

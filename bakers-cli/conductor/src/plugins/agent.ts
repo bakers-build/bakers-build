@@ -210,20 +210,6 @@ export interface BbAgent {
     args?: readonly string[],
   ): string;
   /**
-   * The command that continues session `sessionId` in `workspacePath`, with
-   * the launch's own flags (see {@link launchCommand} for the other
-   * arguments). The conductor uses it after a restart, for a run whose pane
-   * is gone. Optional: an agent without it, or one returning undefined for
-   * this configuration, has its lost runs failed and retried instead.
-   */
-  resumeCommand?(
-    sessionId: string,
-    workspacePath?: string,
-    tools?: { url: string },
-    env?: Readonly<Record<string, string>>,
-    args?: readonly string[],
-  ): string | undefined;
-  /**
    * Locate and read this agent's run transcript for a run that executed in
    * `worktreePath`. MUST return '' (never throw) when nothing is found.
    *
