@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ADDONS_URL, SIGN_UP_URL, type Copy } from './copy'
+import { ADDONS_URL, SELF_HOST_URL, SIGN_UP_URL, type Copy } from './copy'
 
 defineProps<{ t: Copy }>()
 </script>
@@ -19,6 +19,7 @@ defineProps<{ t: Copy }>()
           <h3 class="lp-display m-0 mt-[18px] text-[36px] font-extrabold leading-[0.98] tracking-[-1.26px]">{{ t.oven.self[1] }}</h3>
           <p class="m-0 mt-[14px] max-w-[334px] text-[16.5px] leading-[1.55]">{{ t.oven.self[2] }}</p>
           <img src="/landing/icon-terminal.svg" alt="" width="64" height="64" class="mt-[14px]" />
+          <div class="mt-auto pt-[22px]"><a :href="SELF_HOST_URL" class="lp-btn lp-btn--paper">{{ t.oven.self[3] }}</a></div>
         </article>
         <article class="lp-card rounded-[18px] bg-[color:var(--lp-butter)] lg:rounded-none lg:border-r-0">
           <span class="lp-tag">{{ t.oven.hosted[0] }}</span>
