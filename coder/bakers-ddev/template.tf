@@ -345,7 +345,7 @@ data "coder_parameter" "pm_bot_repo_token" {
 data "coder_parameter" "conductor_autostart" {
   name         = "conductor_autostart"
   display_name = "Start conductors on workspace start"
-  description  = "On: every start runs `bakers oven start` in each ~/projects/* checkout that has .bakers/conductor.config.js (README › Conductor autostart). Off: conductors are yours to start."
+  description  = "On: every start runs `bakers oven start` in each ~/projects/* checkout that has .bakers/project.config.js or the older conductor.config.js (README › Conductor autostart). Off: conductors are yours to start."
   type         = "bool"
   default      = "false"
   mutable      = true

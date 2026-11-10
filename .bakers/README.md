@@ -1,39 +1,39 @@
 # `.bakers/` — connection and engine configuration
 
-> **This repo no longer commits `bakers.config.js`.** It pointed every checkout at the
+> **This repo commits no connection.** It once pointed every checkout at the
 > develop control plane (dev2); bakers's own tickets now live on prod
-> (`https://app.bakers.build`), so `bakers` falls back to each developer's
-> `~/.bakers/bakers.config.js`. The committed `conductor.config.js` carries
+> (`https://app.bakers.build`), so `bakers` uses each developer's private
+> `~/.bakers/connections/default.js` (another with `--connection <id>` or
+> `BAKERS_CONNECTION`). The committed `project.config.js` carries
 > no identity: bakers derives the conductor id from this machine's `machine_id` (a UUID for a new machine; an existing id stays; written by
 > `bakers init` to `~/.bakers/machine.config.js`), the project and the variant. The notes below
-> still apply to any project-level `bakers.config.js`.
+> still apply to any project-level `.bakers/connection.config.js` (never committed).
 
-Reference for `bakers.config.js`, the bakers.build **connection**
+Reference for the bakers.build **connection**
 config (BB-201): a dropsh-shaped `{ site, plugins }` read by `bakers ui`,
-`bakers tools`, `bakers auth`, and this conductor's auth. Connection host and credentials come
-from your user-global machine context (`~/.bakers/machine.config.js`). The engine
-wiring lives in the sibling [`conductor.config.js`](conductor.config.js)
+`bakers tools`, `bakers auth`, and this conductor's auth. The engine
+wiring lives in the sibling [`project.config.js`](project.config.js)
 (engine-only).
 
-## Keep `bakers.config.js` small — it is a hard runtime limit, not a style rule
+## Keep the connection small — it is a hard runtime limit, not a style rule
 
-**`bakers.config.js` must stay under ~2.4 KB on disk.** This is why the prose that
+**A connection file must stay under ~2.4 KB on disk.** This is why the prose that
 used to sit in that file lives here instead. It is not tidiness; a larger file
 makes `bakers ui` fail to start.
 
 `bakers ui` re-execs itself under **Bun** (`bakers-cli/ui/src/bun-runtime.ts`), while
 `bakers tools` and `bakers auth` stay on Node. Since BB-448, `importConfig`
 (`bakers-cli/core/src/cli/import-config.ts`) loads a config not as a file but as a
-base64 `data:` URL, with `machine.config.js` and `conductor.config.local.js`
+base64 `data:` URL, with any file it imports
 inlined recursively as nested `data:` URLs of their own. Bun's module resolver
 treats that URL as a package specifier and refuses it past roughly 6 KiB —
 measured on Bun 1.3.14: last URL that resolves 6128 bytes, first that fails 6192,
 reported as `NameTooLong while resolving package 'data:text/javascript;base64,…'`.
 Node has no such limit, which is why only `bakers ui` breaks.
 
-The budget works backwards from that ceiling: the two inlined configs already
-cost about 2.1 KB of the URL, and base64 inflates by 4/3, so a source file over
-roughly 2.5 KB pushes the URL past the limit. An 8.9 KB `bakers.config.js` produced
+The budget works backwards from that ceiling: base64 inflates by 4/3, and inlined
+imports cost their own share of the URL, so a source file over
+roughly 2.5 KB pushes the URL past the limit. An 8.9 KB connection file produced
 a ~14.7 KB URL and `bakers ui` painted nothing — the real error was swallowed by an
 empty `catch` in `load-bakers-config.ts` and surfaced only as *"Could not import
 connection …; check its syntax"*.
@@ -44,7 +44,7 @@ So: **add explanation here, not there.** If `bakers ui` starts failing with
 ## `schema_version` (BB-216)
 
 The connection-config schema version, kept in sync with the `@bakers-schema-version`
-marker in the file header; any version other than 1 fails loading, naming `bakers init`.
+marker in the file header; any version other than 1 fails loading.
 
 ## `workspace_id` — the ambient workspace (BB-351)
 
@@ -59,12 +59,11 @@ It fills `workspace_id` into a `bb_group` / `bb_team` CREATE payload (dropsh
 `bb_project` / `bb_ticket` are untouched because their anchor (`group_id` /
 `project_id`) is a real choice the caller must make.
 
-Because it is a **per-install** value it is resolved from an override rather than
-committed. Set it in the machine context (`~/.bakers/machine.config.js`) or in
-`.bakers/conductor.config.local.js`:
+Because it is a **per-install** value it lives in the private connection, never in a
+committed file (`~/.bakers/connections/default.js`):
 
 ```js
-export default { workspace_id: '<bb_workspace uuid>' };
+export default { schema_version: 1, site: { … }, workspace_id: '<bb_workspace uuid>', … };
 ```
 
 Read the uuid with:

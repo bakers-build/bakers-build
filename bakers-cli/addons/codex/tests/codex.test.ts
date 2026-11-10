@@ -871,7 +871,7 @@ describe('CodexAgent conductor tools', () => {
       }),
     );
     expect(argv).toContain(
-      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}',
+      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BAKERS_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}',
     );
     expect(argv).toContain('mcp_servers.gitlab.enabled=false');
     expect(argv.filter((arg) => arg.includes('approval_mode'))).toHaveLength(1);
@@ -895,7 +895,7 @@ describe('CodexAgent conductor tools', () => {
       }),
     );
     expect(argv).toContain(
-      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BB_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}',
+      'mcp_servers.bakers={url="http://127.0.0.1:4100",bearer_token_env_var="BAKERS_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}',
     );
     expect(argv).not.toContain('mcp_servers.bakers.enabled=false');
     expect(agent.launchWarnings).toEqual([

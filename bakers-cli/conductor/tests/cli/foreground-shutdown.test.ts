@@ -35,23 +35,23 @@ vi.mock('dropsh', async (orig) => {
  * have stopped is the value trustworthy, and the only party that knows they
  * have stopped is the process that stopped them.
  */
-describe('bakers oven start --foreground shutdown', () => {
+describe('bakers conductor start --foreground shutdown', () => {
   let home: string;
-  const originalHome = process.env.BB_HOME;
-  const originalLog = process.env.BB_CONDUCTOR_LOG;
+  const originalHome = process.env.BAKERS_HOME;
+  const originalLog = process.env.BAKERS_CONDUCTOR_LOG;
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'bakers-fg-shutdown-'));
-    process.env.BB_HOME = join(home, '.bakers');
-    process.env.BB_CONDUCTOR_LOG = 'silent';
+    process.env.BAKERS_HOME = join(home, '.bakers');
+    process.env.BAKERS_CONDUCTOR_LOG = 'silent';
   });
 
   afterEach(() => {
     rmSync(home, { recursive: true, force: true });
-    if (originalHome === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = originalHome;
-    if (originalLog === undefined) delete process.env.BB_CONDUCTOR_LOG;
-    else process.env.BB_CONDUCTOR_LOG = originalLog;
+    if (originalHome === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = originalHome;
+    if (originalLog === undefined) delete process.env.BAKERS_CONDUCTOR_LOG;
+    else process.env.BAKERS_CONDUCTOR_LOG = originalLog;
   });
 
   it('writes offline for its own conductor once serve unwinds', async () => {
@@ -92,7 +92,7 @@ describe('bakers oven start --foreground shutdown', () => {
       agents: [{ id: 'claude', agent: claudeAgent() }],
     };
     const program = buildConductorProgram(deps);
-    await program.parseAsync(['oven', 'start', '--foreground'], {
+    await program.parseAsync(['conductor', 'start', '--foreground'], {
       from: 'user',
     });
   }
@@ -112,7 +112,7 @@ describe('bakers oven start --foreground shutdown', () => {
       poll_interval_ms: 5,
       lease_seconds: 300,
       conductor_id: 'mid-fg',
-      config_path: join(home, 'conductor.config.js'),
+      config_path: join(home, 'project.config.js'),
     } as ConductorFileConfig;
   }
 });

@@ -49,11 +49,11 @@ The image supplies tools; your private home stores identity, credentials and che
 
 3. Sign in to your chosen agent and follow [skill installation](/skills-and-workflows/skills) for the bakers plugin. Open the agent from `~/projects`, answer its trust question for that folder and run `/bb-init`. Conductor runs of Claude Code trust their own ticket worktree, so a new ticket does not wait at the trust dialog. The wizard guides the remaining steps and confirms configuration writes.
 
-4. Sign in to bakers.build. An unattended conductor needs a machine consumer that an operator issues ([connections](/configuration/connector/connections)); give its secret to this command only. `bakers init` writes it into a private file under `~/.bakers`.
+4. Sign in to bakers.build. An unattended conductor needs a machine consumer that an operator issues ([connections](/configuration/connection)); give its secret to this command only. `bakers init` writes it into a private file under `~/.bakers`.
 
    ```sh
-   BB_CLIENT_SECRET='<issued secret>' bakers init --scope all --label <name> \
-     --base-url <server-url> --auth-type client_credentials --client-id <id> --secret-env BB_CLIENT_SECRET --yes
+   BAKERS_CLIENT_SECRET='<issued secret>' bakers init --scope all --label <name> \
+     --base-url <server-url> --auth-type client_credentials --client-id <id> --secret-env BAKERS_CLIENT_SECRET --yes
    bakers auth login
    ```
 
@@ -101,7 +101,7 @@ The image supplies tools; your private home stores identity, credentials and che
    ```sh
    git clone --branch <default-branch> <repository-url> ~/projects/<key>
    cd ~/projects/<key>
-   bakers oven start
+   bakers conductor start
    ```
 
 10. Verify.
@@ -109,7 +109,7 @@ The image supplies tools; your private home stores identity, credentials and che
     ```sh
     herdr workspace list
     bakers config check --scope connection --online
-    bakers oven status
+    bakers conductor status
     ```
 
 **Done when:** `herdr workspace list` succeeds, the online check has no findings and each conductor shows `online`. Continue with [your first ticket](/get-started/first-ticket). For another repository, start at [project setup](/get-started/connect-a-project) inside this workspace.
@@ -126,7 +126,7 @@ Host <name>.coder
 
 ## After a workspace restart
 
-Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and the connector `preview_transport` selects, when its config file exists. Project runtimes do not come back by themselves, and conductors only with the workspace parameter `conductor_autostart` on (the template README's *Conductor autostart*). Otherwise run `bakers oven start` again in each checkout. Start each project's runtime where you need it, and share a preview again with `bakers ports up`.
+Everything under your home survives: the tools, the sign-ins, the machine config and your projects. The container is new, so the start log shows every tool as skipped, and the workspace starts `herdr server` and the connector `preview_transport` selects, when its config file exists. Project runtimes do not come back by themselves, and conductors only with the workspace parameter `conductor_autostart` on (the template README's *Conductor autostart*). Otherwise run `bakers conductor start` again in each checkout. Start each project's runtime where you need it, and share a preview again with `bakers ports up`.
 
 ### Runs during a restart
 

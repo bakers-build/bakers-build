@@ -135,11 +135,11 @@ describe('importConfig under the pinned Bun (BB-470)', () => {
     cleanup();
   });
 
-  // Review finding: the renderer moved to a BB_HOME-aware computed
+  // Review finding: the renderer moved to a BAKERS_HOME-aware computed
   // import, and the recogniser above kept matching only the old
   // `${process.env.HOME}/.bakers/…` shape — the new shape fell to the generic
   // computed-import branch and lost recursive refresh (measured STALE).
-  it('preserves semantics for a computed BB_HOME import (AC-3)', () => {
+  it('preserves semantics for a computed BAKERS_HOME import (AC-3)', () => {
     tmp = tmpDir();
     const bakersHome = tmpDir();
     writeFileSync(
@@ -150,7 +150,7 @@ describe('importConfig under the pinned Bun (BB-470)', () => {
     const configPath = join(tmp, 'bakers.config.js');
     writeFileSync(
       configPath,
-      `const { machineValue, leafUrl } = await import(\`\${process.env.BB_HOME ?? \`\${process.env.HOME}/.bakers\`}/machine.config.js\`);\n` +
+      `const { machineValue, leafUrl } = await import(\`\${process.env.BAKERS_HOME ?? \`\${process.env.HOME}/.bakers\`}/machine.config.js\`);\n` +
         `export default { site: { base_url: 'https://x.test' }, workspace_id: machineValue, plugins: [], leaf: leafUrl() };\n`,
     );
     const runner = join(tmp, 'run.mjs');
@@ -158,7 +158,7 @@ describe('importConfig under the pinned Bun (BB-470)', () => {
 
     const result = spawnSync(bun, ['run', runner], {
       encoding: 'utf8',
-      env: { ...process.env, BB_HOME: bakersHome },
+      env: { ...process.env, BAKERS_HOME: bakersHome },
     });
 
     expect(result.status).toBe(0);
@@ -170,10 +170,10 @@ describe('importConfig under the pinned Bun (BB-470)', () => {
     cleanup();
   });
 
-  // AC-4 for the BB_HOME-computed import specifically: a re-import within
+  // AC-4 for the BAKERS_HOME-computed import specifically: a re-import within
   // one process must see an edited machine.config.js, which is the exact
   // contract the review finding measured broken.
-  it('reloads a changed BB_HOME import within one process (AC-4)', () => {
+  it('reloads a changed BAKERS_HOME import within one process (AC-4)', () => {
     tmp = tmpDir();
     const bakersHome = tmpDir();
     const leaf = join(bakersHome, 'machine.config.js');
@@ -181,7 +181,7 @@ describe('importConfig under the pinned Bun (BB-470)', () => {
     const configPath = join(tmp, 'bakers.config.js');
     writeFileSync(
       configPath,
-      `const { value } = await import(\`\${process.env.BB_HOME ?? \`\${process.env.HOME}/.bakers\`}/machine.config.js\`);\n` +
+      `const { value } = await import(\`\${process.env.BAKERS_HOME ?? \`\${process.env.HOME}/.bakers\`}/machine.config.js\`);\n` +
         `export default { site: { base_url: 'https://x.test' }, workspace_id: value, plugins: [] };\n`,
     );
     const runner = join(tmp, 'run.mjs');
@@ -189,7 +189,7 @@ describe('importConfig under the pinned Bun (BB-470)', () => {
 
     const result = spawnSync(process.execPath, [runner], {
       encoding: 'utf8',
-      env: { ...process.env, BB_HOME: bakersHome },
+      env: { ...process.env, BAKERS_HOME: bakersHome },
     });
 
     expect(result.status).toBe(0);
@@ -201,7 +201,7 @@ describe('importConfig under the pinned Bun (BB-470)', () => {
 
   // Review finding, second pass: widening the recogniser to an alternation
   // must not leave the OLD `${process.env.HOME}/.bakers/…` shape stale — the
-  // same single-process reload contract the BB_HOME shape is held to above.
+  // same single-process reload contract the BAKERS_HOME shape is held to above.
   it('reloads a changed HOME import within one process (AC-4)', () => {
     tmp = tmpDir();
     const home = tmpDir();
@@ -280,22 +280,22 @@ describe('importConfig under the pinned Bun (BB-470)', () => {
 
 // homeBbDirInline() re-spells homeBbDir()'s no-home branch for this file's
 // raw-entry-point constraint. Nothing else asserts the two agree; this pins
-// that they do, under both an overridden and a default BB_HOME.
+// that they do, under both an overridden and a default BAKERS_HOME.
 describe('homeBbDirInline parity with homeBbDir', () => {
-  const original = process.env.BB_HOME;
+  const original = process.env.BAKERS_HOME;
 
   afterEach(() => {
-    if (original === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = original;
+    if (original === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = original;
   });
 
-  it('agrees with homeBbDir() under an overridden BB_HOME', () => {
-    process.env.BB_HOME = join(tmpdir(), 'bakers-inline-parity');
+  it('agrees with homeBbDir() under an overridden BAKERS_HOME', () => {
+    process.env.BAKERS_HOME = join(tmpdir(), 'bakers-inline-parity');
     expect(homeBbDirInline()).toBe(homeBbDir());
   });
 
-  it('agrees with homeBbDir() under the default (no BB_HOME)', () => {
-    delete process.env.BB_HOME;
+  it('agrees with homeBbDir() under the default (no BAKERS_HOME)', () => {
+    delete process.env.BAKERS_HOME;
     expect(homeBbDirInline()).toBe(homeBbDir());
   });
 });

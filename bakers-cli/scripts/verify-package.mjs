@@ -27,7 +27,7 @@
 // asserts:
 //   1. every published manifest ships NO scripts (no end-user build step);
 //   2. the `bakers` bin is on PATH and `bakers --help` prints usage;
-//   3. a real descriptor `conductor.config.js` (no `import`, real package
+//   3. a real descriptor `project.config.js` (no `import`, real package
 //      names, no `export:` on single-factory slots) resolves its remote,
 //      executor and workspace slots via `loadConductorConfig` (from
 //      `@bakers-build/conductor`), and the agent from an isolated
@@ -176,16 +176,19 @@ function main() {
       };
       const name = PUBLISH_PACKAGE_NAMES[i];
       const declared = JSON.parse(read(join(src, 'package.json'))).license;
-      if (JSON.parse(read(join(installed, 'package.json'))).license !== declared)
+      if (
+        JSON.parse(read(join(installed, 'package.json'))).license !== declared
+      )
         fail(`${name} installed with a license other than ${declared}`);
-      const license =
-        read(join(src, 'LICENSE')) ?? read(join(root, 'LICENSE'));
+      const license = read(join(src, 'LICENSE')) ?? read(join(root, 'LICENSE'));
       if (read(join(installed, 'LICENSE')) !== license)
         fail(`${name} installed without its LICENSE text`);
       if (read(join(installed, 'NOTICE')) !== read(join(src, 'NOTICE')))
         fail(`${name} installed without its NOTICE`);
     });
-    ok('every installed package carries its declared license, LICENSE and NOTICE');
+    ok(
+      'every installed package carries its declared license, LICENSE and NOTICE',
+    );
 
     // The installed @bakers-build/addon-claude must ship the measure wrapper ClaudeAgent
     // resolves when measure: true, and that wrapper must write the state-group
@@ -223,8 +226,8 @@ console.log(m[1]);
         cwd: measureCwd,
         env: {
           ...process.env,
-          BB_STATE: 'diagnose',
-          BB_TICKET_IDENTIFIER: 'VERIFY-1',
+          BAKERS_STATE: 'diagnose',
+          BAKERS_TICKET_IDENTIFIER: 'VERIFY-1',
         },
       });
       try {
@@ -385,32 +388,49 @@ console.log(m[1]);
           );
         }
       }
-      ok('packaged @bakers-build/conductor ships the skill-neutral dispatch prompt');
+      ok(
+        'packaged @bakers-build/conductor ships the skill-neutral dispatch prompt',
+      );
     }
 
     // 1. bin on PATH + --help
     const bin = join(proj, 'node_modules', '.bin', 'bakers');
     const help = run(bin, ['--help']);
-    if (!/bakers.build conductor/.test(help)) fail('`bakers --help` did not print usage');
+    if (!/bakers.build conductor/.test(help))
+      fail('`bakers --help` did not print usage');
     ok('`bakers --help` prints usage from the installed meta-package bin');
 
     // Public commands remain discoverable without loading their runtimes.
-    for (const cmd of ['oven', 'ui', 'tools', 'auth', 'deployment']) {
+    for (const cmd of ['conductor', 'ui', 'tools', 'auth', 'deployment']) {
       if (!new RegExp(`\\b${cmd}\\b`).test(help)) {
         fail(`\`bakers --help\` did not list the '${cmd}' command`);
       }
     }
-    if (/\bdropsh\b/.test(help)) fail('Compatibility command leaked into top-level help');
-    for (const [command, expected] of [['tools', '--schema'], ['auth', 'login']]) {
+    if (/\boven\b/.test(help))
+      fail('Hidden oven alias leaked into top-level help');
+    if (/\bdropsh\b/.test(help))
+      fail('Compatibility command leaked into top-level help');
+    for (const [command, expected] of [
+      ['tools', '--schema'],
+      ['auth', 'login'],
+    ]) {
       const aliasHelp = run(bin, [command, '--help']);
-      if (!aliasHelp.includes(`bakers ${command}`) || !aliasHelp.includes(expected) || /\bdropsh\b/.test(aliasHelp)) {
-        fail(`Installed ${command} alias did not expose its own help: ${aliasHelp}`);
+      if (
+        !aliasHelp.includes(`bakers ${command}`) ||
+        !aliasHelp.includes(expected) ||
+        /\bdropsh\b/.test(aliasHelp)
+      ) {
+        fail(
+          `Installed ${command} alias did not expose its own help: ${aliasHelp}`,
+        );
       }
     }
     if (!run(bin, ['dropsh', '--help']).includes('JSON:API')) {
       fail('Hidden compatibility command no longer dispatches');
     }
-    ok('public tools/auth help and hidden compatibility dispatch work in the installed package');
+    ok(
+      'public tools/auth help and hidden compatibility dispatch work in the installed package',
+    );
 
     // 1c. the deployment command really MOUNTS from its own package (not from the
     //     conductor command plugin): its subcommand help must render.
@@ -420,12 +440,14 @@ console.log(m[1]);
         '`bakers deployment tickets --help` did not mount from @bakers-build/addon-deployment',
       );
     }
-    ok('`bakers deployment tickets` mounts from @bakers-build/addon-deployment');
+    ok(
+      '`bakers deployment tickets` mounts from @bakers-build/addon-deployment',
+    );
 
     // Configuration help/dispatch remains available on an unbootable checkout.
     const broken = join(proj, 'broken');
     mkdirSync(join(broken, '.bakers'), { recursive: true });
-    const brokenConfig = join(broken, '.bakers/bakers.config.js');
+    const brokenConfig = join(broken, '.bakers/connection.config.js');
     const brokenMachine = join(broken, 'machine.config.js');
     const source =
       "throw new Error('configuration must never import'); export default {";
@@ -433,10 +455,9 @@ console.log(m[1]);
     writeFileSync(brokenMachine, source);
     const offlineEnv = {
       ...process.env,
-      BB_CONFIG: brokenConfig,
-      BB_MACHINE_CONFIG: brokenMachine,
-      BB_CONDUCTOR_LOG: 'stdout',
-      BB_LOG_LEVEL: 'silent',
+      BAKERS_CONFIG: brokenConfig,
+      BAKERS_CONDUCTOR_LOG: 'stdout',
+      BAKERS_LOG_LEVEL: 'silent',
     };
     for (const args of [
       ['config', '--help'],
@@ -452,7 +473,12 @@ console.log(m[1]);
     }
     // `bakers init` is not in this list: it returned as the shortcut for
     // `bakers config init` (device-code sign-in), so it must not be rejected.
-    for (const args of [['upgrade'], ['conductor'], ['bake'], ['oven', 'init']]) {
+    for (const args of [
+      ['upgrade'],
+      ['conductor', 'init'],
+      ['bake'],
+      ['oven', 'init'],
+    ]) {
       let rejected = false;
       try {
         run(bin, args, { cwd: broken, env: offlineEnv });
@@ -505,22 +531,24 @@ console.log(m[1]);
       'canonical config help, removed-command rejection and offline check/upgrade preserve broken files',
     );
 
-    // 2. BB-201 split config: the ENGINE conductor.config.js resolves all 4
+    // 2. BB-201 split config: the ENGINE project.config.js resolves all 4
     //    slots via loadConductorConfig (no site/plugins), and the CONNECTION
-    //    bakers.config.js resolves site + plugins[] via loadBbConfig (never the
+    //    connection.config.js resolves site + plugins[] via loadBbConfig (never the
     //    engine). BB-224: the remote slot names the real addon package
     //    `@bakers-build/addon-remote-drupal` (default-exports its factory), so the only
     //    surviving `export:` is the merged herdr workspace (herdrWorkspace);
     //    remote/executor/agent all auto-pick.
     mkdirSync(join(proj, '.bakers'), { recursive: true });
     writeFileSync(
-      join(proj, '.bakers', 'conductor.config.js'),
-      `export default {
-    bakers: { project: 'demo' },
+      join(proj, '.bakers', 'project.config.js'),
+      `// @bakers-schema-version 1
+  export default {
+    schema_version: 1,
+    project: { name: 'demo' },
     states: ['coding'],
-    remote: { plugin: '@bakers-build/addon-remote-drupal' },
-    executor: { plugin: '@bakers-build/addon-herdr' },
-    workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
+    server: { use: '@bakers-build/addon-remote-drupal' },
+    executor: { use: '@bakers-build/addon-herdr' },
+    worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
   };
   `,
     );
@@ -530,10 +558,10 @@ console.log(m[1]);
       `
       import { planConfig, applyConfigPlan } from '@bakers-build/conductor/config';
       const plan = planConfig({ scope: 'connection', home: ${JSON.stringify(join(work, 'isolated-home'))}, cwd: process.cwd(),
-        connectionPath: ${JSON.stringify(join(proj, '.bakers/bakers.config.js'))},
+        connectionPath: ${JSON.stringify(join(proj, '.bakers/connection.config.js'))},
         inputs: { baseUrl: 'https://x.test', clientId: 'bakers-agent', secret: 'fixture-secret', workspaceId: '9f1d4e4e-0000-4000-8000-abcdefabcdef' } });
       if (applyConfigPlan(plan).result !== 'ok') throw new Error(JSON.stringify(plan.report));
-      const generated = (await import(${JSON.stringify(pathToFileURL(join(proj, '.bakers/bakers.config.js')).href)})).default;
+      const generated = (await import(${JSON.stringify(pathToFileURL(join(proj, '.bakers/connection.config.js')).href)})).default;
       const providers = generated.plugins.filter(entry => entry.plugin === '@dropsh/plugin-oauth2');
       if (providers.length !== 1 || providers[0].with.id !== 'bakers' || providers[0].with.scope !== 'bb:session' || providers[0].with.client_secret !== 'fixture-secret') throw new Error('generated connection did not preserve one configured identity');
     `,
@@ -547,7 +575,11 @@ console.log(m[1]);
     mkdirSync(machineHome, { recursive: true });
     writeFileSync(
       join(machineHome, 'machine.config.js'),
-      `export default {
+      `// @bakers-schema-version 1
+  export default {
+    schema_version: 1,
+    machine_id: '9f1d4e4e-0000-4000-8000-000000000001',
+    label: 'verify-package',
     addons: [{ use: '@bakers-build/addon-grok', with: { model: 'grok-4.5' } }],
   };
   `,
@@ -560,9 +592,11 @@ console.log(m[1]);
     // package set, alongside the per-slot/plugins[] back-compat configs above.
     mkdirSync(join(proj, '.bakers-addons'), { recursive: true });
     writeFileSync(
-      join(proj, '.bakers-addons', 'conductor.config.js'),
-      `export default {
-    bakers: { project: 'demo-addons' },
+      join(proj, '.bakers-addons', 'project.config.js'),
+      `// @bakers-schema-version 1
+  export default {
+    schema_version: 1,
+    project: { name: 'demo-addons' },
     states: ['coding'],
     addons: [
       '@bakers-build/addon-remote-drupal',
@@ -572,8 +606,10 @@ console.log(m[1]);
   `,
     );
     writeFileSync(
-      join(proj, '.bakers-addons', 'bakers.config.js'),
-      `export default {
+      join(proj, '.bakers-addons', 'connection.config.js'),
+      `// @bakers-schema-version 1
+  export default {
+    schema_version: 1,
     site: { base_url: 'https://x.test' },
     workspace_id: '9f1d4e4e-0000-4000-8000-abcdefabcdef',
     addons: [
@@ -593,12 +629,12 @@ console.log(m[1]);
   import { loadBbConfig } from '@bakers-build/core';
   import { loadConductorConfig } from '@bakers-build/conductor';
   // ENGINE half: the four slots resolve; site/plugins are NOT part of it (BB-201).
-  const eng = await loadConductorConfig('./.bakers/conductor.config.js');
-  if (eng.remote?.kind !== 'remote') { console.error('remote plugin did not resolve'); process.exit(1); }
+  const eng = await loadConductorConfig('./.bakers/project.config.js');
+  if (eng.remote?.kind !== 'server') { console.error('remote plugin did not resolve'); process.exit(1); }
   if (eng.executor?.kind !== 'executor') { console.error('executor plugin did not resolve'); process.exit(1); }
   const resolvedAgent = eng.agents?.find((candidate) => candidate.agent?.id === 'grok');
   if (resolvedAgent?.agent?.kind !== 'agent' || eng.default_agent !== resolvedAgent.alias) { console.error('Grok agent did not resolve from machine.config.js addons[]: ' + JSON.stringify(eng.agents)); process.exit(1); }
-  if (eng.workspace?.kind !== 'workspace') { console.error('workspace plugin did not resolve'); process.exit(1); }
+  if (eng.workspace?.kind !== 'worktree') { console.error('workspace plugin did not resolve'); process.exit(1); }
   if (eng.site !== undefined || eng.plugins !== undefined) { console.error('engine config leaked site/plugins'); process.exit(1); }
   // CONNECTION half: site + plugins[] resolve via loadBbConfig (lenient, no engine).
   const host = { resolveBases: [import.meta.url] };
@@ -665,13 +701,13 @@ console.log(m[1]);
   // executor + workspace; the agent comes from the machine context. Connection: the one 'bakers' oauth2
   // provider (BB-391) + essentials. NOTE: this text lives INSIDE the check.mjs
   // template literal, so it must never use a backtick.
-  const engB = await loadConductorConfig('./.bakers-addons/conductor.config.js');
+  const engB = await loadConductorConfig('./.bakers-addons/project.config.js');
   if (engB.remote?.id !== 'drupal') { console.error('addon remote (@bakers-build/addon-remote-drupal) did not auto-wire: ' + JSON.stringify(engB.remote?.id)); process.exit(1); }
   if (engB.executor?.id !== 'herdr') { console.error('addon executor (herdr) did not auto-wire'); process.exit(1); }
   if (engB.workspace?.id !== 'herdr') { console.error('addon workspace (herdr, same entry) did not auto-wire'); process.exit(1); }
   const addonAgent = engB.agents?.find((candidate) => candidate.agent?.id === 'grok')?.agent;
   if (addonAgent?.kind !== 'agent') { console.error('machine agent (grok) did not resolve beside the addon-form config: ' + JSON.stringify(engB.agents)); process.exit(1); }
-  const connB = await loadBbConfig(host, { explicit: process.cwd() + '/.bakers-addons/bakers.config.js' });
+  const connB = await loadBbConfig(host, { explicit: process.cwd() + '/.bakers-addons/connection.config.js' });
   if (connB.site?.base_url !== 'https://x.test') { console.error('addon connection site did not resolve'); process.exit(1); }
   const idsB = connB.plugins.map((p) => p?.id);
   if (!idsB.includes('markdown') || !idsB.includes('jsonapi-schema')) {
@@ -691,7 +727,7 @@ console.log(m[1]);
     );
     const out = run('node', ['check.mjs'], {
       cwd: proj,
-      env: { ...process.env, BB_HOME: machineHome },
+      env: { ...process.env, BAKERS_HOME: machineHome },
     });
     if (!/engine config resolved/.test(out)) {
       fail('split-config resolution check failed');
@@ -700,7 +736,9 @@ console.log(m[1]);
       fail('addon-form config resolution check failed');
     }
     if (
-      !/drupal remote resolves from @bakers-build\/addon-remote-drupal/.test(out)
+      !/drupal remote resolves from @bakers-build\/addon-remote-drupal/.test(
+        out,
+      )
     ) {
       fail(
         'the drupal remote did not resolve from @bakers-build/addon-remote-drupal',
@@ -730,8 +768,8 @@ console.log(m[1]);
       cwd: proj,
       env: {
         ...process.env,
-        BB_CONDUCTOR_LOG: 'stdout',
-        BB_LOG_LEVEL: 'silent',
+        BAKERS_CONDUCTOR_LOG: 'stdout',
+        BAKERS_LOG_LEVEL: 'silent',
       },
     });
     if (!/^base_url:\s+https:\/\/x\.test$/m.test(uiConfig)) {
@@ -741,7 +779,7 @@ console.log(m[1]);
     }
     if (
       !new RegExp(
-        `^connection:\\s+${proj}/\\.bakers/bakers\\.config\\.js$`,
+        `^connection:\\s+${proj}/\\.bakers/connection\\.config\\.js$`,
         'm',
       ).test(uiConfig)
     ) {
@@ -749,7 +787,9 @@ console.log(m[1]);
         `\`bakers ui --print-config\` did not report the project config as the winner:\n${uiConfig}`,
       );
     }
-    ok('`bakers ui --print-config` runs on Node from the installed package set');
+    ok(
+      '`bakers ui --print-config` runs on Node from the installed package set',
+    );
 
     // 7. BB-582: the TUI renders without React. A React runtime the addon
     //    still pulled in would only show in an INSTALLED tree (the workspace

@@ -13,8 +13,8 @@ let f: Awaited<ReturnType<typeof workspaceFixture>>;
 const savedExitCode = process.exitCode;
 beforeEach(async () => {
   // These calls go to the site; a run's conductor env would reroute them.
-  vi.stubEnv('BB_CONDUCTOR_URL', '');
-  vi.stubEnv('BB_CONDUCTOR_TOKEN', '');
+  vi.stubEnv('BAKERS_CONDUCTOR_URL', '');
+  vi.stubEnv('BAKERS_CONDUCTOR_TOKEN', '');
   f = await workspaceFixture();
   await f.login();
 });

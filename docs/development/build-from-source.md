@@ -34,7 +34,7 @@ To use bakers.build, install the published CLI with `npm install -g @bakers-buil
 
 4. Sign in as described in [Install and sign in](../provision/machine.md), calling `./bakers-cli/bin/bakers` in place of `bakers`.
 
-**Done when:** `./bakers-cli/bin/bakers --help` lists `oven`, `ui`, `tools`, `auth`, `deployment`, `agents`, `info` and `ports`. A source build reports the workspace version, currently `0.0.1`.
+**Done when:** `./bakers-cli/bin/bakers --help` lists `conductor`, `ui`, `tools`, `auth`, `deployment`, `agents`, `info` and `ports`. A source build reports the workspace version, currently `0.0.1`.
 
 ## Rebuild after an edit
 
@@ -48,20 +48,15 @@ pnpm install && pnpm -r run build
 
 ## What the bootstrap does
 
-`bakers-cli/scripts/setup.sh` finds the repository root from its own path and runs eight steps.
+`bakers-cli/scripts/setup.sh` finds the repository root from its own path and runs seven steps.
 
 1. **Prerequisites.** It checks that pnpm exists and that Node is 20.19 or later.
 2. **Install.** It runs `pnpm install --config.minimumReleaseAge=0` in `bakers-cli/`. The flag avoids the workspace's supply-chain age policy, which would fail a plain install on a fresh tree.
 3. **Build.** It calls `tsc` for each package in dependency order: `core`, then `conductor`, then every folder under `addons/`, then `ui`, then `host`. The conductor comes before the addons because every conductor addon imports its contract. The addon `workspace-git` is forced first because `herdr` depends on it.
-4. **Resolution farm.** It links every package into the repository's `node_modules/@bakers-build/` under its real package name, and the `@dropsh/*` packages beside it, so a `.bakers/conductor.config.js` can resolve its bare imports.
+4. **Resolution farm.** It links every package into the repository's `node_modules/@bakers-build/` under its real package name, and the `@dropsh/*` packages beside it, so a `.bakers/project.config.js` can resolve its bare imports.
 5. **PATH shim.** It copies `bakers-cli/templates/bakers.pathshim.sh` to `~/.local/bin/bakers`. This writes outside the repository. A different `bakers` already there is left untouched and the script prints the command that replaces it.
-6. **Local scaffold.** It writes `.bakers/conductor.config.local.js` from a template, asking for an OAuth client id in an interactive shell. It carries no identity; `bakers init` generates the machine UUID. The file is gitignored. See the warning below.
-7. **herdr plugin.** When `herdr` is on the PATH it links the repository's `spiceedit` plugin. This is best effort and never fails the bootstrap.
-8. **Summary.** It prints next steps. They are out of date; use `bakers init` from [Install and sign in](../provision/machine.md) instead.
-
-::: warning The scaffold and the printed next steps are retired
-`bakers config check` reports the `oauth` keys that step 6 writes as dead keys, because sign-in is now `bakers init` and `bakers auth login`. Ignore the printed instructions to export a consumer secret, and delete the scaffold's `oauth` block if a check warns about it.
-:::
+6. **herdr plugin.** When `herdr` is on the PATH it links the repository's `spiceedit` plugin. This is best effort and never fails the bootstrap.
+7. **Summary.** It prints next steps: `bakers config init` writes the private connection (`~/.bakers/connections/default.js`) and the machine file, then `bakers auth login` signs in. [Install and sign in](../provision/machine.md) is the full procedure.
 
 ## Monorepo layout
 

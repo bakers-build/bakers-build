@@ -128,9 +128,9 @@ export interface AgentRunIdentity {
 /** The MCP server name agents see for the conductor's addon tools. */
 export const CONDUCTOR_TOOLS_SERVER = 'bakers';
 /** The run env var holding the run's bearer token for that server. */
-export const CONDUCTOR_TOKEN_ENV = 'BB_CONDUCTOR_TOKEN';
-/** The run env var holding that server's URL, for `bakers oven tools`. */
-export const CONDUCTOR_URL_ENV = 'BB_CONDUCTOR_URL';
+export const CONDUCTOR_TOKEN_ENV = 'BAKERS_CONDUCTOR_TOKEN';
+/** The run env var holding that server's URL, for `bakers conductor tools`. */
+export const CONDUCTOR_URL_ENV = 'BAKERS_CONDUCTOR_URL';
 
 /** What {@link BbAgent.installPlugins} hands the run's launch. */
 export interface PluginLaunch {

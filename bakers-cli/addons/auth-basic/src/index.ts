@@ -1,11 +1,11 @@
 // BB-224 (Finding 6, decision 8): the inline HTTP Basic auth provider —
 // formerly `@bakers-build/core`'s `plugins/auth/basic.ts` — now its own
-// CONNECTION-surface addon. Name it in a `bakers.config.js` `addons: []` as
+// CONNECTION-surface addon. Name it in a connection file `addons: []` as
 // `{ use: '@bakers-build/addon-auth-basic', with: { basic: '<base64>' } }`; it
 // replaces the deleted `@bakers-build/core/builtins` `{ basic }` entry.
 /**
  * Static HTTP Basic auth provider built from an inline base64 `user:pass` token
- * (conductor.config.local.js `auth.basic`, or the BB_E2E_BASIC env for tests).
+ * (project local file (retired) `auth.basic`, or the BB_E2E_BASIC env for tests).
  * Returns the `{ id, authProvider }` plugin shape that dropsh's resolveAuth reads
  * from `config.plugins`. Replaces the per-file basicAuthProvider that used to be
  * hand-written into each dropsh.config.js.

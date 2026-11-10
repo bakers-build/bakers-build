@@ -2,8 +2,10 @@
 # Start this workspace's conductors (README › Conductor autostart). install.sh runs it as coder on
 # every start, after its services. With the workspace parameter conductor_autostart on
 # (BAKERS_CONDUCTOR_AUTOSTART=true), it runs `bakers oven start` (detached, no herdr needed) in
-# every ~/projects/* checkout that has .bakers/conductor.config.js, then checks with `bakers oven status`
-# that the conductor is online. Each checkout gets one line in the startup log:
+# every ~/projects/* checkout that has .bakers/project.config.js (or conductor.config.js, its
+# older name), then checks with `bakers oven status` that the conductor is online. `oven` is
+# the command on the pinned older releases and an alias of `conductor` on newer ones.
+# Each checkout gets one line in the startup log:
 #   conductors: started <path>
 #   conductors: failed <path>: <reason>
 #   conductors: waiting <path>: <reason>   (retried in the background, see below)
@@ -52,9 +54,8 @@ retry() {
   echo "conductors: failed $1: not online after ${RETRY_FOR}s: $reason"
 }
 
-for config in "$HOME"/projects/*/.bakers/conductor.config.js; do
-  [ -f "$config" ] || continue
-  checkout="${config%/.bakers/conductor.config.js}"
+for checkout in "$HOME"/projects/*; do
+  [ -f "$checkout/.bakers/project.config.js" ] || [ -f "$checkout/.bakers/conductor.config.js" ] || continue
   reason=$(start "$checkout")
   case $? in
     0) echo "conductors: started $checkout" ;;

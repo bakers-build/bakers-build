@@ -23,7 +23,7 @@ The client registers with your server and receives access for your account. It c
 1. Open your client's custom MCP connector settings; menu names vary by client.
 2. Enter your server's `/mcp` endpoint, for example `https://app.bakers.build/mcp`.
 3. Use dynamic registration rather than a shared client secret. Save, sign in with **your own account**, and approve access. Never borrow a teammate's credentials.
-4. Enable the connector in your conversation. For claude.ai Projects, add the [project instructions](/configuration/connector/project-instructions). Shared connector configuration still needs each person's own authorization.
+4. Enable the connector in your conversation. For claude.ai Projects, add the [project instructions](/configuration/guides/project-instructions). Shared connector configuration still needs each person's own authorization.
 
 ## Verify
 
@@ -59,6 +59,6 @@ Use your connected chat to start a request, then follow the work and review its 
 Use these guides if chat access fails. The CLI connection file is a separate setup.
 
 <DocQuickLinks aria-label="Connection problems" :items="[
-  { label: 'Connector configuration', text: 'Check which connection settings belong to your client.', link: '/configuration/connector' },
-  { label: 'Client limits and errors', text: 'Understand supported operations and recover from sign-in errors.', link: '/configuration/connector/limits' }
+  { label: 'Connector configuration', text: 'Check which connection settings belong to your client.', link: '/configuration/connection' },
+  { label: 'Client limits and errors', text: 'Understand supported operations and recover from sign-in errors.', link: '/configuration/guides/connector-limits' }
 ]" />

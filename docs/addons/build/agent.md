@@ -119,7 +119,7 @@ Restart the conductor and expect the `my-agent` alias with harness ID `my-agent`
 
 This adapter reports zero metrics because the example transcript API supplies no usage data. Implement `parseFootprint` for your program's format to collect them. It does not configure MCP or implement an OS sandbox: the program runs with the conductor user's access. See [run security](/provision/security/) before enabling a real harness.
 
-The optional `tools` argument is an object with a `url` field: `tools.url` is the run's conductor MCP URL. Its bearer token is provided in `BB_CONDUCTOR_TOKEN`; use your program's MCP configuration mechanism without putting tokens in command arguments or logs. A program that cannot use MCP can call `bakers tools` from its run environment.
+The optional `tools` argument is an object with a `url` field: `tools.url` is the run's conductor MCP URL. Its bearer token is provided in `BAKERS_CONDUCTOR_TOKEN`; use your program's MCP configuration mechanism without putting tokens in command arguments or logs. A program that cannot use MCP can call `bakers tools` from its run environment.
 
 An agent that refuses reused session IDs also implements `sessionExists(worktreePath, sessionId)`. bakers.build can then choose a new attempt identity. Transcript lookup must respect `run.attemptFamily`; selecting the newest file in a directory can attach another run's transcript.
 

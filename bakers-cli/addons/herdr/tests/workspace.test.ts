@@ -56,7 +56,7 @@ function openResponse(branch: string, path: string): string {
 describe('@bakers-build/addon-herdr workspace factory', () => {
   it('default export builds a workspace plugin', () => {
     const ws = herdrWorkspace({ root: '/tmp/x' });
-    expect(ws.kind).toBe('workspace');
+    expect(ws.kind).toBe('worktree');
   });
   it('default and named export are the same factory', () => {
     expect(herdrWorkspace).toBe(named);
@@ -68,7 +68,7 @@ describe('@bakers-build/addon-herdr workspace factory', () => {
       execGit: async () => '/parent/.git\n',
     });
     const ws = await plugin.createWorkspace({
-      config_path: '/parent/.bakers-worktrees/x/.bakers/conductor.config.js',
+      config_path: '/parent/.bakers-worktrees/x/.bakers/project.config.js',
     } as never);
     expect((ws as unknown as { root: string }).root).toBe('/parent');
   });

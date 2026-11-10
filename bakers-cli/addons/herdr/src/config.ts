@@ -1,3 +1,4 @@
+import type { LaunchWatchOptions } from './launch-script.js';
 import type { OpenLayout } from './open-layout.js';
 import type { RootGitExec } from './root-anchor.js';
 
@@ -11,17 +12,17 @@ export interface StateConfig {
   /**
    * Tab label template. Must contain {identifier} — the conductor matches a
    * run's tab by its ticket identifier (stop/state), so the identifier is the
-   * stable anchor in the visible name. Other vars: {title}, {titleSlug},
-   * {runUuid}, {repoName}, {workspacePath}.
+   * stable anchor in the visible name. Other vars: {title}, {title_slug},
+   * {run_uuid}, {workspace_path}.
    */
-  tabLabel?: string;
-  workspaceLabel?: string;
+  tab_label?: string;
+  workspace_label?: string;
   /**
    * Root-pane (panel) label template applied via `herdr pane rename` after the
    * state tab is created (BB-374). Default `{title}`. Distinct from
-   * {@link tabLabel}: stop/state matching still anchors on the tab label.
+   * {@link tab_label}: stop/state matching still anchors on the tab label.
    */
-  panelLabel?: string;
+  panel_label?: string;
   /** Extra layout panes (diff/logs); NOT the agent command. */
   panes?: PaneSpec[];
 }
@@ -49,18 +50,13 @@ export interface HerdrExecutorOptions {
   default?: StateConfig;
   states?: Record<string, StateConfig>;
   /**
-   * Launch-watch windows. `startTimeoutMs` is how long startRun waits for the
+   * Launch-watch windows. `start_timeout_ms` is how long startRun waits for the
    * wrapper to write `started` (default 60s, so a slow interactive shell can
-   * finish rc). `timeoutMs` is the short window after `started` in which an
+   * finish rc). `timeout_ms` is the short window after `started` in which an
    * immediate agent exit fails the launch (default 4000 ms). Tests inject
-   * shorter windows, including `timeoutMs: 0` to skip the exit wait.
+   * shorter windows, including `timeout_ms: 0` to skip the exit wait.
    */
-  launchWatch?: {
-    timeoutMs?: number;
-    startTimeoutMs?: number;
-    pollMs?: number;
-    sleep?: (ms: number) => Promise<void>;
-  };
+  launch_watch?: Omit<LaunchWatchOptions, 'readPane'>;
 }
 
 export interface ResolvedConfig {
@@ -71,8 +67,8 @@ export interface ResolvedConfig {
 }
 
 export const BUILTIN_DEFAULTS: ResolvedConfig = {
-  tabLabel: '{identifier} · {titleSlug}',
-  workspaceLabel: '{repoName}',
+  tabLabel: '{identifier} · {title_slug}',
+  workspaceLabel: '{repo_name}',
   panelLabel: '{title}',
   panes: [],
 };
@@ -84,13 +80,13 @@ export function resolveStateConfig(
   const base = options.default ?? {};
   const stateCfg = options.states?.[state] ?? {};
   return {
-    tabLabel: stateCfg.tabLabel ?? base.tabLabel ?? BUILTIN_DEFAULTS.tabLabel,
+    tabLabel: stateCfg.tab_label ?? base.tab_label ?? BUILTIN_DEFAULTS.tabLabel,
     workspaceLabel:
-      stateCfg.workspaceLabel ??
-      base.workspaceLabel ??
+      stateCfg.workspace_label ??
+      base.workspace_label ??
       BUILTIN_DEFAULTS.workspaceLabel,
     panelLabel:
-      stateCfg.panelLabel ?? base.panelLabel ?? BUILTIN_DEFAULTS.panelLabel,
+      stateCfg.panel_label ?? base.panel_label ?? BUILTIN_DEFAULTS.panelLabel,
     panes: stateCfg.panes ?? base.panes ?? BUILTIN_DEFAULTS.panes,
   };
 }
@@ -108,7 +104,7 @@ export function renderTemplate(
 export function assertTabLabelTemplate(tabLabel: string): void {
   if (!tabLabel.includes('{identifier}')) {
     throw new Error(
-      `herdr tabLabel must contain {identifier} for stop/state matching: ${tabLabel}`,
+      `herdr tab_label must contain {identifier} for stop/state matching: ${tabLabel}`,
     );
   }
 }

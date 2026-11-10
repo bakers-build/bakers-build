@@ -10,15 +10,17 @@
   "exports": {
     ".": "./dist/src/index.js",
     "./conductor-registry": "./dist/src/conductor-registry/index.js",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./schema/*": "./schema/*"
   },
   "files": [
     "dist/src",
+    "schema",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "node scripts/schema-types.mjs && tsc",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --root .. core/tests"
   },

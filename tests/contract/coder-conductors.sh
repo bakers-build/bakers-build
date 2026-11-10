@@ -8,8 +8,10 @@
 #
 # Asserts:
 #   - autostart off (unset or false): one "off" line, no herdr or bakers call
-#   - on: every ~/projects/* checkout with .bakers/conductor.config.js gets one
-#     `bakers oven start` run from inside it; a directory without one does not
+#   - on: every ~/projects/* checkout with .bakers/project.config.js, or the
+#     conductor.config.js of a release before it, gets one `bakers oven start`
+#     run from inside it (`oven` works on old and new releases); a directory
+#     without one does not
 #   - a failing start is named with its path and the others still start
 #   - herdr is never asked: the detached start does not need it
 #   - a start that leaves the conductor not online (a stale "already running"
@@ -70,7 +72,7 @@ fixture() {
   export HOME="$SCRATCH/home" CALLS="$SCRATCH/calls"
   rm -rf "$HOME" "$CALLS" "$CALLS".*
   mkdir -p "$HOME/projects/ALPHA/.bakers" "$HOME/projects/BETA/.bakers" "$HOME/projects/plain"
-  touch "$HOME/projects/ALPHA/.bakers/conductor.config.js" "$HOME/projects/BETA/.bakers/conductor.config.js"
+  touch "$HOME/projects/ALPHA/.bakers/project.config.js" "$HOME/projects/BETA/.bakers/conductor.config.js"
   touch "$CALLS"
 }
 

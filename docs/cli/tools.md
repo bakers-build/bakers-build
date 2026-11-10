@@ -2,7 +2,7 @@
 
 `bakers tools` lists, describes and calls the bakers.build server's named tools over its MCP endpoint, bound to the same connection `bakers ui` uses. Every tracker operation an agent performs is one of these tools; an agent that has the bakers.build MCP connector calls the tool of the same name natively, and `bakers tools` is the transport for everyone else.
 
-Inside a conductor run (`BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` set), `bakers tools` calls the run's [`bakers` server](/addons/build/tools#site-tools) with the run token instead, needs no connection config and reaches only that run's project. Name a tool plainly (`bakers_ticket_read`) in either place; the `tool_api__` wire name works too.
+Inside a conductor run (`BAKERS_CONDUCTOR_URL` and `BAKERS_CONDUCTOR_TOKEN` set), `bakers tools` calls the run's [`bakers` server](/addons/build/tools#site-tools) with the run token instead, needs no connection config and reaches only that run's project. Name a tool plainly (`bakers_ticket_read`) in either place; the `tool_api__` wire name works too.
 
 ## Synopsis
 
@@ -29,7 +29,7 @@ Use a plain ID such as `bakers_ticket_read` or its wire name `tool_api__bakers_t
 | `--connections-dir <path>` | Directory that holds the named connections (`$DROPSH_CONNECTIONS_DIR`) |
 | `--auth-profile <id>` | Auth profile to use; overrides the active profile and `$DROPSH_AUTH_PROFILE` |
 
-Global options follow the subcommand: `bakers tools --connection staging`. The connection is chosen by the same rule as in `bakers ui`: [Connection selection](/configuration/connector/connections#which-connection-is-used). Sign-in and profiles are covered in [bakers auth](/configuration/clients/auth).
+Global options follow the subcommand: `bakers tools --connection staging`. The connection is chosen by the same rule as in `bakers ui`: [Connection selection](/configuration/connection#which-connection-is-used). Sign-in and profiles are covered in [bakers auth](/cli/auth).
 
 ## Results and exit codes
 

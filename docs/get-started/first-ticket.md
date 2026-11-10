@@ -27,12 +27,12 @@ In your local checkout, check the signed-in agent and the configured terminal ho
 
 ```sh
 bakers agents
-bakers oven check
-bakers oven start
-bakers oven status
+bakers conductor check
+bakers conductor start
+bakers conductor status
 ```
 
-Confirm the selected agent is signed in. `oven check` checks whether agents can start their sandboxes; it does not check your application. Status must show your conductor **online**. If checks fail, use [Troubleshooting](/configuration/clients/troubleshooting).
+Confirm the selected agent is signed in. `conductor check` checks whether agents can start their sandboxes; it does not check your application. Status must show your conductor **online**. If checks fail, use [Troubleshooting](/cli/troubleshooting).
 
 <span id="ai-first-guide-the-first-run"></span>
 

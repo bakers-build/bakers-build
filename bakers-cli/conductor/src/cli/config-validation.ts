@@ -14,16 +14,16 @@ import { ConfigSourceEditor } from './config-source-edit.js';
  * addon, fills no conductor slot" — a UI-only addon (BB-562) belongs in a
  * conductor `addons[]` but contributes a cockpit tab, not a slot. Listing it is
  * not cosmetic: an UNKNOWN specifier sets `addonsAreOpaque` below, which
- * downgrades a genuinely missing remote/executor/workspace from
+ * downgrades a genuinely missing server/executor/worktree from
  * `missing_required_key` to `unknown_value`.
  */
 export const CONDUCTOR_ADDON_SLOTS: Record<string, string[]> = {
-  '@bakers-build/addon-remote-drupal': ['remote'],
-  '@bakers-build/addon-herdr': ['executor', 'workspace'],
-  '@bakers-build/addon-orca': ['executor', 'workspace'],
+  '@bakers-build/addon-remote-drupal': ['server'],
+  '@bakers-build/addon-herdr': ['executor', 'worktree'],
+  '@bakers-build/addon-orca': ['executor', 'worktree'],
   '@bakers-build/addon-herdr-core': ['executor'],
-  '@bakers-build/addon-fake': ['remote', 'executor', 'workspace'],
-  '@bakers-build/addon-workspace-git': ['workspace'],
+  '@bakers-build/addon-fake': ['server', 'executor', 'worktree'],
+  '@bakers-build/addon-workspace-git': ['worktree'],
   '@bakers-build/addon-claude': ['agent'],
   '@bakers-build/addon-codex': ['agent'],
   '@bakers-build/addon-grok': ['agent'],
@@ -58,115 +58,37 @@ function validateConductorSources(
     (options.scope ?? 'all') as 'all',
     report.roots.project,
   );
-  const localFile = report.files.find(
-    (candidate) => candidate.kind === 'local',
-  );
-  const localEditor = localFile ? editors.get(localFile.path) : undefined;
   for (const file of report.files.filter(
-    (candidate) => candidate.selected && candidate.kind === 'conductor',
+    (candidate) => candidate.selected && candidate.kind === 'project',
   )) {
     const editor = editors.get(file.path);
     if (editor?.source.shape !== 'object') continue;
     const start = report.findings.length;
+    // Field shapes are the schema's; only what a schema cannot know is here:
+    // which slots the listed addons fill.
     const add = (
       code: ConfigFinding['code'],
       key: string,
       expected: string,
       property = editor.property(key),
-      findingPath = file.path,
     ) => {
       const unknown = code === 'unknown_value';
       report.findings.push({
         code,
         severity: unknown ? 'warning' : 'error',
         stage: 'schema',
-        path: findingPath,
+        path: file.path,
         key,
         expected,
         observed: unknown ? '[COMPUTED]' : (property?.value ?? null),
         owner: 'project',
         related: [],
         statically_determined: property?.staticallyDetermined ?? false,
-        remediation: `${unknown ? 'Determine' : 'Set'} ${key} in ${shellQuote(findingPath)}, then run ${recheck}.`,
+        remediation: `${unknown ? 'Determine' : 'Set'} ${key} in ${shellQuote(file.path)}, then run ${recheck}.`,
         recheck,
         ...(property ? { line: property.line, column: property.column } : {}),
       });
     };
-    for (const legacy of ['project', 'bb_workspace']) {
-      if (!editor.property(legacy)) continue;
-      add(
-        'misplaced_key',
-        legacy,
-        `Committed bakers.build identity belongs under bakers.${legacy === 'project' ? 'project' : 'workspace'}.`,
-      );
-      const finding = report.findings.at(-1);
-      if (finding)
-        finding.remediation = `Move ${legacy} to bakers.${legacy === 'project' ? 'project' : 'workspace'} in ${shellQuote(file.path)}, then run ${recheck}.`;
-    }
-    // A conductor is machine + project + variant: no project file names an id.
-    for (const [source, path] of [
-      [editor, file.path],
-      [localEditor, localFile?.path],
-    ] as const) {
-      if (!source || !path) continue;
-      for (const key of ['conductor_id', 'machine_id', 'label']) {
-        const property = source.property(key);
-        if (!property) continue;
-        add(
-          'retired_key',
-          key,
-          'No identity in a project config: a conductor is machine + project + variant.',
-          property,
-          path,
-        );
-        const finding = report.findings.at(-1);
-        if (finding)
-          finding.remediation = `Remove ${key} from ${shellQuote(path)}; the machine identity comes from bakers init.`;
-      }
-    }
-    const bakers = editor.property('bakers');
-    const bakersExpression = editor.expression('bakers');
-    if (
-      bakers &&
-      (bakers.nodeType !== 'ObjectExpression' ||
-        (bakersExpression &&
-          new ConfigSourceEditor(`export default ${bakersExpression};`).source
-            .unknownKeys))
-    ) {
-      add(
-        'unsupported_source_shape',
-        'bakers',
-        'A statically inspectable bakers object without spreads is required.',
-      );
-      const finding = report.findings.at(-1);
-      if (finding)
-        finding.remediation = `Write bakers as a literal object without spreads in ${shellQuote(file.path)}, then run ${recheck}.`;
-    }
-    const validateIdentity = (key: 'bakers.project') => {
-      const property = editor.property(key);
-      if (!property) {
-        add(
-          editor.source.unknownKeys ? 'unknown_value' : 'missing_required_key',
-          key,
-          'A nonempty conductor project.',
-        );
-      } else if (
-        property.staticallyDetermined &&
-        typeof property.value === 'string' &&
-        property.value.trim() !== ''
-      ) {
-        return;
-      } else {
-        add(
-          property.staticallyDetermined ? 'invalid_value' : 'unknown_value',
-          key,
-          'A nonempty conductor project.',
-          property,
-        );
-      }
-    };
-    validateIdentity('bakers.project');
-
     const addon = editor.property('addons');
     const addonSlots = new Set<string>();
     let addonsAreOpaque = false;
@@ -186,88 +108,13 @@ function validateConductorSources(
           }
         }
     }
-    // The `agent` slot is intentionally excluded: agent ownership now belongs to
-    // machine.config.js (machine schema v3+). A conductor config that declares
-    // no agent slot or no agent-contributing addons is valid — machine.config.js
-    // provides the candidates at runtime. Existing pre-migration configs that
-    // still carry agent addons continue to validate until the conductor 0→1
-    // migration removes them.
-    for (const slot of ['remote', 'executor', 'workspace']) {
-      const property = editor.property(slot);
-      if (
-        slot === 'workspace' &&
-        property?.staticallyDetermined &&
-        typeof property.value === 'string' &&
-        property.value.trim() !== '' &&
-        addonSlots.has('workspace')
-      )
-        continue;
-      if (!property) {
-        if (addonSlots.has(slot)) continue;
-        add(
-          addon && addonsAreOpaque ? 'unknown_value' : 'missing_required_key',
-          slot,
-          `A conductor ${slot} plugin supplied by an explicit slot or known addon.`,
-        );
-        continue;
-      }
-      if (!property.staticallyDetermined) {
-        add(
-          'unknown_value',
-          slot,
-          `A conductor ${slot} plugin supplied by an explicit slot or known addon.`,
-          property,
-        );
-        continue;
-      }
-      const descriptor = (prefix: string, kind: string) => {
-        const plugin = editor.property(`${prefix}.plugin`)?.value;
-        return (
-          (typeof plugin === 'string' && plugin.trim() !== '') ||
-          editor.property(`${prefix}.kind`)?.value === kind
-        );
-      };
-      if (slot === 'agent' && property.nodeType === 'ArrayExpression') {
-        let unknownCandidate = false;
-        let invalidCandidate = (property.arrayLength ?? 0) === 0;
-        for (let index = 0; index < (property.arrayLength ?? 0); index++) {
-          const prefix = `agent[${index}]`;
-          const candidate = editor.property(prefix);
-          const wrapped = editor.property(`${prefix}.agent`);
-          if (
-            !candidate?.staticallyDetermined ||
-            wrapped?.staticallyDetermined === false
-          )
-            unknownCandidate = true;
-          else if (
-            !descriptor(prefix, 'agent') &&
-            !descriptor(`${prefix}.agent`, 'agent')
-          )
-            invalidCandidate = true;
-        }
-        if (unknownCandidate)
-          add(
-            'unknown_value',
-            slot,
-            `A conductor ${slot} plugin supplied by an explicit slot or known addon.`,
-            property,
-          );
-        else if (invalidCandidate)
-          add(
-            'invalid_value',
-            slot,
-            `A conductor ${slot} plugin supplied by an explicit slot or known addon.`,
-            property,
-          );
-        continue;
-      }
-      if (property.nodeType !== 'ObjectExpression' || !descriptor(slot, slot))
-        add(
-          'invalid_value',
-          slot,
-          `A conductor ${slot} plugin supplied by an explicit slot or known addon.`,
-          property,
-        );
+    for (const slot of ['server', 'executor', 'worktree']) {
+      if (editor.property(slot) || addonSlots.has(slot)) continue;
+      add(
+        addon && addonsAreOpaque ? 'unknown_value' : 'missing_required_key',
+        slot,
+        `A ${slot} supplied by an explicit slot or a listed addon.`,
+      );
     }
     const findings = report.findings.slice(start);
     if (findings.some((finding) => finding.severity === 'error'))
@@ -290,9 +137,7 @@ export function validateConfigSources(
   );
   const resolved = new Set<string>();
   const global = files.find((f) => f.kind === 'connection');
-  const local = files.find((f) => f.kind === 'local');
   const globalEditor = global ? editors.get(global.path) : undefined;
-  const localEditor = local ? editors.get(local.path) : undefined;
   const primitive = (
     e: ConfigSourceEditor | undefined,
     key: string,
@@ -301,15 +146,6 @@ export function validateConfigSources(
     return p?.staticallyDetermined && p.value !== undefined
       ? JSON.stringify(p.value)
       : undefined;
-  };
-  const fallback = (
-    localKey: string,
-    defaultExpression: string | undefined,
-  ) => {
-    const p = localEditor?.property(localKey);
-    if (!p || (p.staticallyDetermined && p.value === null))
-      return defaultExpression;
-    return primitive(localEditor, localKey);
   };
   let inherits = false;
   for (const file of files) {
@@ -340,21 +176,14 @@ export function validateConfigSources(
         )?.[0]
         .replace(/\.plugin$/, '');
       const values: Record<string, string | undefined> = {
-        baseUrl: fallback('base_url', primitive(globalEditor, 'site.base_url')),
-        workspaceId: fallback(
-          'workspace_id',
-          primitive(globalEditor, 'workspace_id'),
-        ),
-        clientId: fallback(
-          'oauth.client_id',
-          auth ? primitive(globalEditor, `${auth}.with.client_id`) : undefined,
-        ),
-        clientSecret: fallback(
-          'oauth.client_secret',
-          auth
-            ? primitive(globalEditor, `${auth}.with.client_secret`)
-            : undefined,
-        ),
+        baseUrl: primitive(globalEditor, 'site.base_url'),
+        workspaceId: primitive(globalEditor, 'workspace_id'),
+        clientId: auth
+          ? primitive(globalEditor, `${auth}.with.client_id`)
+          : undefined,
+        clientSecret: auth
+          ? primitive(globalEditor, `${auth}.with.client_secret`)
+          : undefined,
       };
       for (const [name, value] of Object.entries(values))
         if (value !== undefined) declarations.set(name, value);
@@ -394,9 +223,7 @@ export function validateConfigSources(
     }
     for (const key of [...e.source.properties.keys()]) {
       const expression = e.expression(key);
-      let value = expression ? declarations.get(expression) : undefined;
-      if (expression === 'local.oauth?.client_secret')
-        value = primitive(localEditor, 'oauth.client_secret');
+      const value = expression ? declarations.get(expression) : undefined;
       if (value !== undefined) {
         e.set(key, value);
         resolved.add(`${file.path}:${key}`);
@@ -407,7 +234,7 @@ export function validateConfigSources(
   for (const [path, e] of editors) overlay.set(path, e.text);
   const report = inventoryConfig({ ...options, sourceTexts: overlay }).report;
   validateConductorSources(options, editors, report);
-  // Literal values resolved from the local file are not secrets stored in the committed file.
+  // Literal values resolved from generated wiring are not secrets stored in the committed file.
   report.findings = report.findings.filter(
     (f) =>
       !(

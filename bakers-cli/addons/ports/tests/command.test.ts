@@ -6,7 +6,7 @@ import { Command } from 'commander';
 import { describe, expect, it, vi } from 'vitest';
 import { servicesToShare } from '../src/claim-share.js';
 import type { ClaimedDiscovery, ClaimedService } from '../src/claims.js';
-import { PORTS_NEEDS_ENTRY, PORTS_RETIRED } from '../src/config.js';
+import { PORTS_NEEDS_ENTRY } from '../src/config.js';
 import {
   isLegacyKillCandidate,
   liveTunnel,
@@ -628,7 +628,7 @@ describe('quickTunnelNotice', () => {
 describe('ports list without a ports addon entry', () => {
   it('ports list works without an entry', async () => {
     const home = mkdtempSync(join(tmpdir(), 'bakers-ports-list-'));
-    vi.stubEnv('BB_HOME', home);
+    vi.stubEnv('BAKERS_HOME', home);
     const out: string[] = [];
     const spy = vi
       .spyOn(process.stdout, 'write')
@@ -656,12 +656,12 @@ describe('ports list with a malformed ports entry', () => {
     const home = mkdtempSync(join(tmpdir(), 'bakers-ports-list-'));
     const wt = mkdtempSync(join(tmpdir(), 'bakers-ports-wt-'));
     mkdirSync(join(wt, '.bakers'));
-    const config = join(wt, '.bakers', 'conductor.config.js');
+    const config = join(wt, '.bakers', 'project.config.js');
     writeFileSync(
       config,
-      "export default { addons: [{ use: '@bakers-build/addon-ports', with: { all_node: 'yes' } }] };",
+      "export default { project: { name: 'demo' }, addons: [{ use: '@bakers-build/addon-ports', with: { services: [{ key: 'docs', match: 'a' }, { key: 'docs', match: 'b' }] } }] };",
     );
-    vi.stubEnv('BB_HOME', home);
+    vi.stubEnv('BAKERS_HOME', home);
     const out: string[] = [];
     const spy = vi
       .spyOn(process.stdout, 'write')
@@ -678,7 +678,7 @@ describe('ports list with a malformed ports entry', () => {
       vi.unstubAllEnvs();
     }
     expect(out).toEqual([
-      `${config}: addons[@bakers-build/addon-ports].with.all_node must be true or false\n`,
+      `${config}: addons[@bakers-build/addon-ports].with.services[1].key duplicates 'docs'\n`,
     ]);
     expect(process.exitCode).toBe(1);
     process.exitCode = undefined;
@@ -691,9 +691,9 @@ describe('ports list with the retired machine ports key', () => {
     const wt = mkdtempSync(join(tmpdir(), 'bakers-ports-wt-'));
     writeFileSync(
       join(home, 'machine.config.js'),
-      "export default { ports: { transport: { use: 'old-t' } } };",
+      "export default { machine_id: 'm1', label: 'test', ports: { transport: { use: 'old-t' } } };",
     );
-    vi.stubEnv('BB_HOME', home);
+    vi.stubEnv('BAKERS_HOME', home);
     const out: string[] = [];
     const spy = vi
       .spyOn(process.stdout, 'write')
@@ -709,8 +709,9 @@ describe('ports list with the retired machine ports key', () => {
       spy.mockRestore();
       vi.unstubAllEnvs();
     }
+    // The machine schema refuses the old key at load.
     expect(out[0]).toBe(
-      `tunnel sharing off (${PORTS_RETIRED}) — listing only\n`,
+      `tunnel sharing off (${join(home, 'machine.config.js')}: ports unknown key) — listing only\n`,
     );
     process.exitCode = undefined;
   });
@@ -718,7 +719,7 @@ describe('ports list with the retired machine ports key', () => {
 
 describe('ports up/down/status/reap through the conductor (AC5, AC6)', () => {
   async function run(args: string[], wt: string, home: string) {
-    vi.stubEnv('BB_HOME', home);
+    vi.stubEnv('BAKERS_HOME', home);
     const out: string[] = [];
     const spy = vi
       .spyOn(process.stdout, 'write')
@@ -749,7 +750,7 @@ describe('ports up/down/status/reap through the conductor (AC5, AC6)', () => {
     const wt = mkdtempSync(join(tmpdir(), 'bakers-ports-wt-'));
     for (const args of [['up', 'web'], ['down'], ['status'], ['reap']]) {
       const { out, exitCode } = await run(args, wt, home);
-      expect(out).toMatch(/no running conductor.*bakers oven start/);
+      expect(out).toMatch(/no running conductor.*bakers conductor start/);
       expect(exitCode).toBe(1);
     }
     // A dead pid is no conductor either.

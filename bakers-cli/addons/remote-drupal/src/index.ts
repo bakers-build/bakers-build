@@ -1099,7 +1099,7 @@ export class DrupalBbRemote implements BbRemote {
 
 export function drupalRemote(): RemotePlugin {
   return {
-    kind: 'remote',
+    kind: 'server',
     id: 'drupal',
     requiredModules: [],
     async createRemote(config: ConductorFileConfig) {

@@ -320,7 +320,7 @@ it('starts runs through the new client CLI and cleans up one session after recon
     { kind: 'executor', id: 'my-client' },
   ]);
   expect(found.executors).toHaveLength(1);
-  expect(found.workspaces).toEqual([]);
+  expect(found.worktrees).toEqual([]);
   expect(found.agents).toEqual([]);
   const [plugin] = found.executors as ExecutorPlugin[];
   const logger = {
@@ -343,7 +343,7 @@ it('starts runs through the new client CLI and cleans up one session after recon
     workspacePath: dir,
     instructions: null,
     command: "my-agent --prompt 'quotes; $(touch unexpected)'",
-    env: { BB_CONDUCTOR_TOKEN: 'run-secret' },
+    env: { BAKERS_CONDUCTOR_TOKEN: 'run-secret' },
   };
   expect(executor.capabilities()).toEqual({ persistent: true });
   const first = await executor.startRun(input);

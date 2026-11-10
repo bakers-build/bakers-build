@@ -11,7 +11,7 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 EXCLUDE=(
-  ':!docs/configuration/clients/switch-to-bakers.md'
+  ':!docs/configuration/guides/switch-to-bakers.md'
   ':!tests/skill-eval/package-lock.json'
   ':!web/themes/custom/bb_theme/designbook/plans'
   ':!web/themes/custom/bb_theme/designbook/references'

@@ -182,7 +182,7 @@ function makeFakeHerdr(
 
 function makeExecutor(exec: (a: string[]) => Promise<string>): BbExecutor {
   // HerdrExecutor takes (options, execHerdr); inject the fake via the 2nd arg.
-  return new HerdrExecutor({ launchWatch: INSTANT_WATCH }, exec);
+  return new HerdrExecutor({ launch_watch: INSTANT_WATCH }, exec);
 }
 
 const input = {
@@ -205,7 +205,7 @@ describe('HerdrExecutor tab label', () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls);
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.startRun(
@@ -222,7 +222,7 @@ describe('HerdrExecutor.startRun panel label (BB-374)', () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls);
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.startRun({
@@ -243,9 +243,9 @@ describe('HerdrExecutor.startRun panel label (BB-374)', () => {
     const executor = new HerdrExecutor(
       {
         command: 'claude',
-        launchWatch: INSTANT_WATCH,
-        default: { panelLabel: 'Run · {title}' },
-        states: { coding: { panelLabel: 'Coding · {title}' } },
+        launch_watch: INSTANT_WATCH,
+        default: { panel_label: 'Run · {title}' },
+        states: { coding: { panel_label: 'Coding · {title}' } },
       },
       exec,
     );
@@ -268,7 +268,7 @@ describe('HerdrExecutor.startRun pane-run command (BB-101 / BB-128)', () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls);
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.startRun({
@@ -304,7 +304,7 @@ describe('HerdrExecutor.stopRun', () => {
       'tab list': tabsJson([{ tab_id: 't1', label: 'BB-123 · coding #12' }]),
     });
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.stopRun('bakers/bb-123');
@@ -328,7 +328,7 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
       ]),
     });
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.cleanupRun('bakers/bb-123', 12);
@@ -351,7 +351,7 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
       ]),
     });
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.cleanupRun('bakers/bb-123', 12);
@@ -369,7 +369,7 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
       ]),
     });
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       exec,
     );
     await expect(
@@ -389,7 +389,7 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
       ]),
     });
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.cleanupRun('bakers/bb-123', 12);
@@ -404,7 +404,7 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
         result: { worktrees: [{ branch: 'bakers/bb-1-t', path: '/repo/wt' }] },
       }),
     });
-    const executor = new HerdrExecutor({ launchWatch: INSTANT_WATCH }, exec);
+    const executor = new HerdrExecutor({ launch_watch: INSTANT_WATCH }, exec);
     await executor.cleanupRun('bakers/bb-1-t', 12);
     const subcommands = calls.map((c) => `${c[0]} ${c[1] ?? ''}`.trim());
     expect(subcommands).not.toContain('tab close');
@@ -426,7 +426,7 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
           return JSON.stringify({ result: {} });
       }
     };
-    const executor = new HerdrExecutor({ launchWatch: INSTANT_WATCH }, exec);
+    const executor = new HerdrExecutor({ launch_watch: INSTANT_WATCH }, exec);
     // Must not throw even though the matched close fails.
     await expect(
       executor.cleanupRun('bakers/bb-1-t', 2),
@@ -514,7 +514,7 @@ describe('HerdrExecutor.removeWorktree', () => {
     const exec = makeFakeHerdr(calls, {
       'worktree list': worktreeWith('bakers/bb-1-t', 'ws-1'),
     });
-    const executor = herdrTeardown({ launchWatch: INSTANT_WATCH }, exec);
+    const executor = herdrTeardown({ launch_watch: INSTANT_WATCH }, exec);
     await executor.removeWorktree('bakers/bb-1-t');
     expect(calls).toContainEqual([
       'worktree',
@@ -753,7 +753,7 @@ describe('HerdrExecutor.removeWorktree', () => {
         },
       }),
     });
-    const executor = herdrTeardown({ launchWatch: INSTANT_WATCH }, exec);
+    const executor = herdrTeardown({ launch_watch: INSTANT_WATCH }, exec);
     await executor.removeWorktree('bakers/bb-1-t', '/repo/wt');
     expect(calls).toContainEqual([
       'worktree',
@@ -803,7 +803,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       return JSON.stringify({ result: {} });
     };
     const executor = herdrTeardown(
-      { root: parentRoot, launchWatch: INSTANT_WATCH },
+      { root: parentRoot, launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.removeWorktree('bakers/x', linkedPath);
@@ -853,7 +853,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       return JSON.stringify({ result: {} });
     };
     const executor = herdrTeardown(
-      { root: '/repo/root', launchWatch: INSTANT_WATCH },
+      { root: '/repo/root', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.removeWorktree('bakers/x', root);
@@ -911,7 +911,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       return JSON.stringify({ result: {} });
     };
     const executor = herdrTeardown(
-      { root: '/repo/root', launchWatch: INSTANT_WATCH },
+      { root: '/repo/root', launch_watch: INSTANT_WATCH },
       exec,
     );
     const outcome = await executor.removeWorktree('main', '/repo/root');
@@ -980,7 +980,7 @@ describe('HerdrExecutor.removeWorktree', () => {
       }
       return JSON.stringify({ result: {} });
     };
-    const executor = herdrTeardown({ launchWatch: INSTANT_WATCH }, exec);
+    const executor = herdrTeardown({ launch_watch: INSTANT_WATCH }, exec);
     await executor.removeWorktree('bakers/bb-1-t');
     const subcommands = calls.map((c) => `${c[0]} ${c[1] ?? ''}`.trim());
     expect(subcommands).toContain('worktree open');
@@ -1076,7 +1076,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
       ],
     });
     const executor = herdrTeardown(
-      { root: '/repo', launchWatch: INSTANT_WATCH },
+      { root: '/repo', launch_watch: INSTANT_WATCH },
       exec,
     );
     await expect(
@@ -1105,7 +1105,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
       ],
     });
     const executor = herdrTeardown(
-      { root: '/repo', launchWatch: INSTANT_WATCH },
+      { root: '/repo', launch_watch: INSTANT_WATCH },
       exec,
     );
     await expect(
@@ -1133,7 +1133,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
       ],
     });
     const executor = herdrTeardown(
-      { root: '/repo', launchWatch: INSTANT_WATCH },
+      { root: '/repo', launch_watch: INSTANT_WATCH },
       exec,
     );
     await expect(
@@ -1158,7 +1158,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
       honorFocus: false, // focus command is issued but focus never moves
     });
     const executor = herdrTeardown(
-      { root: '/repo', launchWatch: INSTANT_WATCH },
+      { root: '/repo', launch_watch: INSTANT_WATCH },
       exec,
     );
     await expect(
@@ -1189,7 +1189,7 @@ describe('HerdrExecutor.removeWorktree focus guard (BB-166)', () => {
         ],
       });
       const executor = herdrTeardown(
-        { root: '/repo', launchWatch: INSTANT_WATCH },
+        { root: '/repo', launch_watch: INSTANT_WATCH },
         exec,
       );
       await expect(executor.removeWorktree('bakers/bb-1-t', dir)).resolves.toBe(
@@ -1240,7 +1240,7 @@ describe('HerdrExecutor.removeWorktree git metadata (real git)', () => {
         'worktree list': JSON.stringify({ result: { worktrees: [] } }),
       });
       const executor = herdrTeardown(
-        { root: repo, launchWatch: INSTANT_WATCH },
+        { root: repo, launch_watch: INSTANT_WATCH },
         exec,
       );
 
@@ -1290,7 +1290,7 @@ describe('HerdrExecutor.removeWorktree git metadata (real git)', () => {
         'worktree list': JSON.stringify({ result: { worktrees: [] } }),
       });
       const executor = herdrTeardown(
-        { root: repo, launchWatch: INSTANT_WATCH },
+        { root: repo, launch_watch: INSTANT_WATCH },
         exec,
       );
 
@@ -1342,7 +1342,7 @@ describe('HerdrExecutor.startRun worktree open', () => {
       return JSON.stringify({ result: {} });
     };
     const executor = new HerdrExecutor(
-      { command: 'claude', root: '/parent-root', launchWatch: INSTANT_WATCH },
+      { command: 'claude', root: '/parent-root', launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.startRun(
@@ -1430,7 +1430,7 @@ describe('HerdrExecutor.startRun workspace-id resolution (BB-114)', () => {
       openResult: { result: { workspace: { workspace_id: 'ws-open' } } },
     });
     const executor = new HerdrExecutor(
-      { root: '/repo', launchWatch: INSTANT_WATCH },
+      { root: '/repo', launch_watch: INSTANT_WATCH },
       exec,
     );
     await expect(executor.startRun(closedInput)).resolves.toEqual({
@@ -1457,7 +1457,7 @@ describe('HerdrExecutor.startRun workspace-id resolution (BB-114)', () => {
       openResult: { result: {} },
     });
     const executor = new HerdrExecutor(
-      { root: '/repo', launchWatch: INSTANT_WATCH },
+      { root: '/repo', launch_watch: INSTANT_WATCH },
       exec,
     );
     await expect(executor.startRun(closedInput)).resolves.toEqual({
@@ -1484,7 +1484,7 @@ describe('HerdrExecutor.startRun workspace-id resolution (BB-114)', () => {
       openResult: { result: {} },
     });
     const executor = new HerdrExecutor(
-      { root: '/repo', launchWatch: INSTANT_WATCH },
+      { root: '/repo', launch_watch: INSTANT_WATCH },
       exec,
     );
     await expect(executor.startRun(closedInput)).resolves.toEqual({
@@ -1508,7 +1508,7 @@ describe('HerdrExecutor.startRun workspace-id resolution (BB-114)', () => {
         openResult: { result: { worktree: { open_workspace_id: 'ws-open' } } },
       });
       const executor = new HerdrExecutor(
-        { root: '/repo', launchWatch: INSTANT_WATCH },
+        { root: '/repo', launch_watch: INSTANT_WATCH },
         exec,
       );
       await expect(executor.startRun(closedInput)).resolves.toEqual({
@@ -1534,7 +1534,7 @@ describe('HerdrExecutor.startRun workspace-id resolution (BB-114)', () => {
       openResult: { error: { code: 'some_real_cause' } },
     });
     const executor = new HerdrExecutor(
-      { root: '/repo', launchWatch: INSTANT_WATCH },
+      { root: '/repo', launch_watch: INSTANT_WATCH },
       exec,
     );
     const err = await executor.startRun(closedInput).catch((e) => e as Error);
@@ -1547,13 +1547,13 @@ describe('HerdrExecutor.startRun workspace-id resolution (BB-114)', () => {
 });
 
 // BB-64: every pane the executor opens for a run is agent-owned, so it gets
-// the `BB_AGENT_SHELL=1` marker at shell startup — the root pane via the tab
+// the `BAKERS_AGENT_SHELL=1` marker at shell startup — the root pane via the tab
 // it is created with, the layout panes via their split.
 describe('HerdrExecutor.startRun agent-shell marker', () => {
   it('marks the agent pane via tab create --env', async () => {
     const calls: string[][] = [];
     const executor = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       makeFakeHerdr(calls),
     );
     await executor.startRun(
@@ -1562,7 +1562,7 @@ describe('HerdrExecutor.startRun agent-shell marker', () => {
     const create = calls.find(
       (c) => c[0] === 'tab' && c[1] === 'create',
     ) as string[];
-    expect(create[create.indexOf('--env') + 1]).toBe('BB_AGENT_SHELL=1');
+    expect(create[create.indexOf('--env') + 1]).toBe('BAKERS_AGENT_SHELL=1');
   });
 
   it('marks each configured layout pane via pane split --env', async () => {
@@ -1570,7 +1570,7 @@ describe('HerdrExecutor.startRun agent-shell marker', () => {
     const executor = new HerdrExecutor(
       {
         command: 'claude',
-        launchWatch: INSTANT_WATCH,
+        launch_watch: INSTANT_WATCH,
         default: { panes: [{ direction: 'down', command: 'echo hi' }] },
       },
       makeFakeHerdr(calls, {
@@ -1583,7 +1583,7 @@ describe('HerdrExecutor.startRun agent-shell marker', () => {
     const split = calls.find(
       (c) => c[0] === 'pane' && c[1] === 'split',
     ) as string[];
-    expect(split[split.indexOf('--env') + 1]).toBe('BB_AGENT_SHELL=1');
+    expect(split[split.indexOf('--env') + 1]).toBe('BAKERS_AGENT_SHELL=1');
   });
 });
 
@@ -1634,7 +1634,7 @@ describe('herdrExecutor factory root derivation (BB-177)', () => {
     const plugin = herdrExecutor({ execGit: async () => '/parent/.git\n' });
     const executor = await plugin.createExecutor(
       {
-        config_path: '/parent/.bakers-worktrees/x/.bakers/conductor.config.js',
+        config_path: '/parent/.bakers-worktrees/x/.bakers/project.config.js',
       } as never,
       { logger: noopLogger },
     );
@@ -1650,7 +1650,7 @@ describe('herdrExecutor factory root derivation (BB-177)', () => {
     } as never);
     await expect(
       plugin.createExecutor(
-        { config_path: '/parent/.bakers/conductor.config.js' } as never,
+        { config_path: '/parent/.bakers/project.config.js' } as never,
         { logger: noopLogger },
       ),
     ).rejects.toThrow(/top-level `hooks`/);
@@ -1666,7 +1666,7 @@ describe('herdrExecutor factory root derivation (BB-177)', () => {
       },
     });
     const executor = await plugin.createExecutor(
-      { config_path: '/somewhere/.bakers/conductor.config.js' } as never,
+      { config_path: '/somewhere/.bakers/project.config.js' } as never,
       { logger: noopLogger },
     );
     expect(
@@ -1675,19 +1675,19 @@ describe('herdrExecutor factory root derivation (BB-177)', () => {
     expect(gitCalled).toBe(false);
   });
 
-  it('forwards launchWatch onto the constructed executor', async () => {
+  it('forwards launch_watch onto the constructed executor', async () => {
     const plugin = herdrExecutor({
       execGit: async () => '/parent/.git\n',
-      launchWatch: { timeoutMs: 1234, startTimeoutMs: 5678 },
+      launch_watch: { timeout_ms: 1234, start_timeout_ms: 5678 },
     });
     const executor = await plugin.createExecutor(
-      { config_path: '/parent/.bakers/conductor.config.js' } as never,
+      { config_path: '/parent/.bakers/project.config.js' } as never,
       { logger: noopLogger },
     );
     expect(
-      (executor as unknown as { options: { launchWatch?: unknown } }).options
-        .launchWatch,
-    ).toEqual({ timeoutMs: 1234, startTimeoutMs: 5678 });
+      (executor as unknown as { options: { launch_watch?: unknown } }).options
+        .launch_watch,
+    ).toEqual({ timeout_ms: 1234, start_timeout_ms: 5678 });
   });
 });
 
@@ -1710,7 +1710,7 @@ describe('BB-211 HerdrExecutor worktree list is root-anchored', () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls);
     const executor = new HerdrExecutor(
-      { command: 'claude', root: ROOT, launchWatch: INSTANT_WATCH },
+      { command: 'claude', root: ROOT, launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.startRun({ ...input });
@@ -1725,7 +1725,7 @@ describe('BB-211 HerdrExecutor worktree list is root-anchored', () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls);
     const executor = herdrTeardown(
-      { command: 'claude', root: ROOT, launchWatch: INSTANT_WATCH },
+      { command: 'claude', root: ROOT, launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.removeWorktree('bakers/bb-1-t', '/repo/wt');
@@ -1740,7 +1740,7 @@ describe('BB-211 HerdrExecutor worktree list is root-anchored', () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls);
     const executor = new HerdrExecutor(
-      { command: 'claude', root: ROOT, launchWatch: INSTANT_WATCH },
+      { command: 'claude', root: ROOT, launch_watch: INSTANT_WATCH },
       exec,
     );
     await executor.startRun({ ...input });
@@ -1768,7 +1768,7 @@ describe('BB-211 HerdrExecutor worktree list is root-anchored', () => {
       return makeFakeHerdr([], {})(args);
     };
     const executor = new HerdrExecutor(
-      { command: 'claude', root: ROOT, launchWatch: INSTANT_WATCH },
+      { command: 'claude', root: ROOT, launch_watch: INSTANT_WATCH },
       staleContextExec,
     );
     // Dispatch listing must succeed against the configured root regardless of

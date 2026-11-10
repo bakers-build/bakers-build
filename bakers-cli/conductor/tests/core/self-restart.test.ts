@@ -66,7 +66,7 @@ else { console.log('before', process.pid);
   );
 
   it('fires once for a write to a watched file, and once for a rename-replace save', async () => {
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(file, 'export default {};');
     const fired = watch({ files: [file], dirs: [] });
 
@@ -74,14 +74,14 @@ else { console.log('before', process.pid);
     await settle();
     expect(fired).toEqual([file]);
 
-    writeFileSync(join(dir, '.conductor.config.js.swp'), 'x');
-    renameSync(join(dir, '.conductor.config.js.swp'), file);
+    writeFileSync(join(dir, '.project.config.js.swp'), 'x');
+    renameSync(join(dir, '.project.config.js.swp'), file);
     await settle();
     expect(fired).toEqual([file, file]);
   });
 
   it('ignores an unrelated file next to a watched one', async () => {
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(file, 'export default {};');
     const fired = watch({ files: [file], dirs: [] });
 
@@ -91,7 +91,7 @@ else { console.log('before', process.pid);
   });
 
   it('fires when a not-yet-existing watched file is created', async () => {
-    const local = join(dir, 'conductor.config.local.js');
+    const local = join(dir, 'machine.config.js');
     const fired = watch({ files: [local], dirs: [] });
 
     writeFileSync(local, 'export default {};');
@@ -110,7 +110,7 @@ else { console.log('before', process.pid);
   });
 
   it('coalesces several changes in quick succession into one trigger', async () => {
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(file, '');
     const fired = watch({ files: [file], dirs: [] });
 
@@ -123,7 +123,7 @@ else { console.log('before', process.pid);
   });
 
   it('never runs two triggers at once; a change during one re-checks after it', async () => {
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(file, '');
     let running = 0;
     let overlap = false;
@@ -153,7 +153,7 @@ else { console.log('before', process.pid);
   });
 
   it('stops firing after close', async () => {
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(file, '');
     const fired = watch({ files: [file], dirs: [] });
     close?.();

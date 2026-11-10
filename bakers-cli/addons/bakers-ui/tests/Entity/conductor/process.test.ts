@@ -26,7 +26,7 @@ describe('conductor process host', () => {
     });
 
   describe('start', () => {
-    it('runs `bakers oven start` in the conductor’s own workspace', async () => {
+    it('runs `bakers conductor start` in the conductor’s own workspace', async () => {
       const spawn = vi.fn();
       const h = host({ spawn });
 
@@ -39,7 +39,7 @@ describe('conductor process host', () => {
       expect(spawn).toHaveBeenCalledOnce();
       const call = spawn.mock.calls[0]?.[0];
       expect(call.command).toBe('bakers');
-      expect(call.args).toEqual(['oven', 'start']);
+      expect(call.args).toEqual(['conductor', 'start']);
       expect(call.cwd).toBe(WORKSPACE);
     });
 
@@ -53,11 +53,11 @@ describe('conductor process host', () => {
         hostKey: HOST_KEY,
       });
 
-      expect(spawn.mock.calls[0]?.[0].env.BB_CONDUCTOR).toBe('shop');
+      expect(spawn.mock.calls[0]?.[0].env.BAKERS_CONDUCTOR).toBe('shop');
     });
 
-    it('CLEARS an inherited $BB_CONDUCTOR_CONFIG in the child', async () => {
-      // It beats $BB_CONDUCTOR in core's resolution, so a value inherited from
+    it('CLEARS an inherited $BAKERS_CONDUCTOR_CONFIG in the child', async () => {
+      // It beats $BAKERS_CONDUCTOR in core's resolution, so a value inherited from
       // the shell that started `bakers ui` would silently target another config —
       // the one failure mode of this whole screen that produces no error at all.
       const spawn = vi.fn();
@@ -69,7 +69,7 @@ describe('conductor process host', () => {
         hostKey: HOST_KEY,
       });
 
-      expect(spawn.mock.calls[0]?.[0].env.BB_CONDUCTOR_CONFIG).toBe('');
+      expect(spawn.mock.calls[0]?.[0].env.BAKERS_CONDUCTOR_CONFIG).toBe('');
     });
 
     it('omits the name when the conductor never reported one', async () => {
@@ -82,7 +82,7 @@ describe('conductor process host', () => {
         hostKey: HOST_KEY,
       });
 
-      expect(spawn.mock.calls[0]?.[0].env.BB_CONDUCTOR).toBeUndefined();
+      expect(spawn.mock.calls[0]?.[0].env.BAKERS_CONDUCTOR).toBeUndefined();
     });
 
     it('reports a synchronously thrown spawn failure instead of throwing into the TUI', async () => {

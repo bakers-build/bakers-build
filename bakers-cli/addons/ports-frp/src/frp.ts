@@ -7,7 +7,7 @@
 
 import type { TunnelDesiredRecord } from '@bakers-build/addon-ports/transport';
 
-/** The `@bakers-build/addon-ports` entry's `with.transport.with` for this transport. */
+/** The validated `with.transport.with` of this transport (internal names). */
 export interface FrpSettings {
   readonly zone: string;
   /** Absolute path to the operator-owned frpc client config (JSON). This
@@ -25,10 +25,11 @@ export class FrpConfigError extends Error {
   }
 }
 
+/** Reads the snake_case `with` keys into the internal {@link FrpSettings}. */
 export function validateSettings(settings: unknown): FrpSettings {
   if (typeof settings !== 'object' || settings === null) {
     throw new FrpConfigError(
-      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' must be an object with zone/clientConfigPath/adminPort/adminUser/adminPassword",
+      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' must be an object with zone/client_config_path/admin_port/admin_user/admin_password",
     );
   }
   const obj = settings as Record<string, unknown>;
@@ -38,34 +39,34 @@ export function validateSettings(settings: unknown): FrpSettings {
     );
   }
   if (
-    typeof obj.clientConfigPath !== 'string' ||
-    !obj.clientConfigPath.startsWith('/')
+    typeof obj.client_config_path !== 'string' ||
+    !obj.client_config_path.startsWith('/')
   ) {
     throw new FrpConfigError(
-      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' requires an absolute 'clientConfigPath'",
+      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' requires an absolute 'client_config_path'",
     );
   }
-  if (typeof obj.adminPort !== 'number' || !Number.isInteger(obj.adminPort)) {
+  if (typeof obj.admin_port !== 'number' || !Number.isInteger(obj.admin_port)) {
     throw new FrpConfigError(
-      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' requires an integer 'adminPort'",
+      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' requires an integer 'admin_port'",
     );
   }
-  if (typeof obj.adminUser !== 'string' || obj.adminUser === '') {
+  if (typeof obj.admin_user !== 'string' || obj.admin_user === '') {
     throw new FrpConfigError(
-      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' is missing: adminUser",
+      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' is missing: admin_user",
     );
   }
-  if (typeof obj.adminPassword !== 'string' || obj.adminPassword === '') {
+  if (typeof obj.admin_password !== 'string' || obj.admin_password === '') {
     throw new FrpConfigError(
-      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' is missing: adminPassword",
+      "the @bakers-build/addon-ports entry's with.transport.with for 'frp' is missing: admin_password",
     );
   }
   return {
     zone: obj.zone,
-    clientConfigPath: obj.clientConfigPath,
-    adminPort: obj.adminPort,
-    adminUser: obj.adminUser,
-    adminPassword: obj.adminPassword,
+    clientConfigPath: obj.client_config_path,
+    adminPort: obj.admin_port,
+    adminUser: obj.admin_user,
+    adminPassword: obj.admin_password,
   };
 }
 

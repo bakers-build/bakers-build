@@ -149,6 +149,7 @@ before_script:
   - .gitlab-ci.yml
 .changes_docs: &changes_docs
   - docs/**/*
+  - bakers-cli/core/schema/**/*
   - .gitlab-ci.yml
 
 # Linters run only in merge request pipelines, not on branch pushes (e.g.
@@ -233,7 +234,7 @@ docs_pages:
   before_script: []
   script:
     - node docs/scripts/check-pages.mjs
-    - node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs
+    - node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs docs/scripts/config-fields.test.mjs
 
 # The MR title becomes the squash subject, from which `release:version` derives version and
 # release notes. GitLab reads the title when the pipeline is created: after fixing a title, run a
@@ -568,15 +569,15 @@ tui_musl:
     - pnpm run build:all
     - ./addons/bakers-ui/node_modules/.bin/bun --version
     # The repo no longer commits a connection config (each developer's
-    # ~/.bakers/bakers.config.js points at prod), so a runner has none and the
+    # ~/.bakers/connections/default.js points at prod), so a runner has none and the
     # `--print-config` check below would exit 1 — seed a home connection. The
     # url and uuid are placeholders on purpose: this check prints the resolution
     # and boots nothing, so it reaches no control plane and needs no real workspace.
     # Single-quoted as one YAML scalar: the `: ` inside the echo is a mapping
     # indicator in a plain scalar, and an unquoted line here took the whole
     # pipeline to `failed` with zero jobs.
-    - 'mkdir -p ~/.bakers'
-    - 'echo "export default { schema_version: 1, site: { base_url: ''https://ci.invalid'' }, workspace_id: ''00000000-0000-4000-8000-000000000000'' };" > ~/.bakers/bakers.config.js'
+    - 'mkdir -p ~/.bakers/connections'
+    - 'echo "export default { schema_version: 1, site: { base_url: ''https://ci.invalid'' }, workspace_id: ''00000000-0000-4000-8000-000000000000'' };" > ~/.bakers/connections/default.js'
     - node bin/bakers ui --print-config
     # PRODUCT leg (A1) — no OPENTUI_LIBC in this environment. Asserts our own detection
     # says musl, that it sets the variable, and that libopentui.so then really opens.

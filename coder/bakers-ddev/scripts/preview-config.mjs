@@ -191,7 +191,7 @@ function intended(own, next) {
 }
 
 function main() {
-  const [transport, path = join(process.env.BB_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
+  const [transport, path = join(process.env.BAKERS_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
     process.argv.slice(2);
   if (!TRANSPORTS.includes(transport)) return log(`unknown transport "${transport}"; machine.config.js unchanged`);
   const exists = existsSync(path);

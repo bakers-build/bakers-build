@@ -88,7 +88,7 @@ bakers ports reap                         machine-wide reconciliation + legacy c
 ```
 
 `up`, `down`, `status` and `reap` call the ports tools of the running conductor of this checkout
-(found through `<BB_HOME>/conductors/*.json`, with its operator token): the conductor is the only
+(found through `<BAKERS_HOME>/conductors/*.json`, with its operator token): the conductor is the only
 writer of the tunnel routes. With no live conductor they exit 1 naming `bakers oven start` and write
 nothing. `list` stays local. Agents use the same tools, `ports_up`, `ports_down`, `ports_status` and
 `ports_reap`, through the conductor's MCP server (`src/tools.ts`).
@@ -149,7 +149,7 @@ A finished ticket must leave no tunnel behind. Wire this into the
 **machine-local** conductor configuration, never the committed one:
 
 ```jsonc
-// ~/.bakers/conductor.config.js (or the machine's conductor config)
+// .bakers/project.config.js (or ~/.bakers/machine.config.js)
 hooks: {
   after_done: 'bakers ports reap',
 }

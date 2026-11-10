@@ -25,8 +25,8 @@ export type HcExec = (args: string[]) => Promise<string>;
 export interface HerdrCoreExecutorOptions {
   /** Fallback agent command when the conductor supplies none. Default `claude`. */
   command?: string;
-  /** As for herdr: `startTimeoutMs` (default 60 s), then `timeoutMs` (4 s). */
-  launchWatch?: Omit<LaunchWatchOptions, 'readPane'>;
+  /** As for herdr: `start_timeout_ms` (default 60 s), then `timeout_ms` (4 s). */
+  launch_watch?: Omit<LaunchWatchOptions, 'readPane'>;
 }
 
 /** The oldest `hc` whose `run --bg --no-parent --outlive-parent` this addon uses. */
@@ -166,7 +166,7 @@ export class HerdrCoreExecutor implements BbExecutor {
       ]);
       started = true;
       await watchLaunch(launch, {
-        ...(this.options.launchWatch ?? {}),
+        ...(this.options.launch_watch ?? {}),
         readPane: () => this.hc(['read', name, '--lines', '40']),
       });
       return { sessionRef: name };

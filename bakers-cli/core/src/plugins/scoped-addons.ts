@@ -1,5 +1,5 @@
 // The effective addon list: `~/.bakers/machine.config.js` and the project's
-// `.bakers/conductor.config.js` each carry one `addons[]`, read the same way.
+// `.bakers/project.config.js` each carry one `addons[]`, read the same way.
 // The addon decides where it may be listed (its preset's `scopes`, default
 // both); an entry in a scope it does not declare is reported and not loaded.
 // The same addon (resolved module + alias) in both scopes becomes one entry
@@ -46,62 +46,30 @@ export interface EffectiveAddon {
   key: string;
 }
 
-/** An entry listed in a scope its addon does not declare, or whose own
- *  `with` its addon's `checkWith` rejects (`index` into that scope's list). */
-export type AddonScopeFinding =
-  | {
-      code: 'addon_scope_not_allowed';
-      spec: string;
-      path: string;
-      scope: AddonScope;
-      allowed: AddonScope[];
-    }
-  | {
-      code: 'addon_with_invalid';
-      spec: string;
-      path: string;
-      scope: AddonScope;
-      index: number;
-      key: string;
-      message: string;
-    };
-
-/** The addon's own findings for one entry's `with`; a throwing check is one. */
-function checkEntryWith(
-  preset: BbPreset,
-  entry: AddonEntry,
-): { key: string; message: string }[] {
-  if (!preset.checkWith) return [];
-  try {
-    return preset.checkWith(entryWith(entry));
-  } catch (error) {
-    return [
-      {
-        key: '',
-        message: `checkWith failed: ${error instanceof Error ? error.message : String(error)}`,
-      },
-    ];
-  }
-}
+/** An entry listed in a scope its addon does not declare. */
+export type AddonScopeFinding = {
+  code: 'addon_scope_not_allowed';
+  spec: string;
+  path: string;
+  scope: AddonScope;
+  allowed: AddonScope[];
+};
 
 const ALL_SCOPES: AddonScope[] = ['machine', 'project'];
 const SCOPE_FILE: Record<AddonScope, string> = {
   machine: '~/.bakers/machine.config.js',
-  project: '.bakers/conductor.config.js',
+  project: '.bakers/project.config.js',
 };
 
-/** The `with` an entry carries (`options` is its alias). */
+/** The `with` an entry carries. */
 function entryWith(entry: AddonEntry): unknown {
   return normalizeEntry(entry).opts;
 }
 
 /** `entry` as a descriptor carrying `with` (or none when undefined). */
 function withReplaced(entry: AddonEntry, value: unknown): AddonEntry {
-  const {
-    with: _with,
-    options: _options,
-    ...rest
-  } = typeof entry === 'string' ? { use: entry } : entry;
+  const { with: _with, ...rest } =
+    typeof entry === 'string' ? { use: entry } : entry;
   return value === undefined ? rest : { ...rest, with: value };
 }
 
@@ -127,7 +95,7 @@ export async function scopeAddons(
     ...inputs.filter((i) => i.scope !== 'machine'),
   ];
   for (const input of ordered) {
-    for (const [index, entry] of input.entries.entries()) {
+    for (const entry of input.entries) {
       const { spec, alias } = normalizeEntry(entry);
       if (isRetiredAddon(spec)) {
         // discoverAddons warns once and skips it.
@@ -169,15 +137,6 @@ export async function scopeAddons(
         );
         continue;
       }
-      for (const problem of checkEntryWith(loaded.preset, entry))
-        findings.push({
-          code: 'addon_with_invalid',
-          spec,
-          path: input.path,
-          scope: input.scope,
-          index,
-          ...problem,
-        });
       const match = `${loaded.key}\0${alias ?? ''}`;
       const at = input.scope === 'project' ? machineAt.get(match) : undefined;
       if (at !== undefined) {
@@ -224,23 +183,23 @@ export function discoverScoped(
 }
 
 /**
- * `<BB_HOME or ~/.bakers>/machine.config.js`. `home` stays optional and, when
+ * `<BAKERS_HOME or ~/.bakers>/machine.config.js`. `home` stays optional and, when
  * given, still wins (a fixture that pins an explicit home) — but an absent one
  * must reach `homeBbDir()`'s resolver rather than collapsing to the OS home
- * first, or `BB_HOME` never relocates this file.
+ * first, or `BAKERS_HOME` never relocates this file.
  */
 export function machineUiConfigPath(home?: string): string {
   return join(homeBbDir(home), 'machine.config.js');
 }
 
-/** The nearest project `.bakers/conductor.config.js` above `cwd`, or undefined. */
+/** The nearest project `.bakers/project.config.js` above `cwd`, or undefined. */
 export function projectConductorConfigPath(
   cwd: string,
   home?: string,
 ): string | undefined {
   const bakersDir = findConfigProjectBbDir(cwd, home);
   if (bakersDir === undefined) return undefined;
-  const path = join(dirname(bakersDir), '.bakers', 'conductor.config.js');
+  const path = join(dirname(bakersDir), '.bakers', 'project.config.js');
   return existsSync(path) ? path : undefined;
 }
 
@@ -259,7 +218,7 @@ export async function readConfigAddons(path: string): Promise<AddonEntry[]> {
 
 /**
  * The effective entry for one addon package from `machine.config.js` and the
- * nearest project `.bakers/conductor.config.js` above `cwd` (or `projectPath`).
+ * nearest project `.bakers/project.config.js` above `cwd` (or `projectPath`).
  * `bases` are appended to each scope's own (e.g. the caller's install).
  */
 export async function readEffectiveAddon(
@@ -292,7 +251,7 @@ export async function readEffectiveAddon(
   // Only this addon's entries: an unrelated broken entry must not block it.
   for (const input of inputs)
     input.entries = input.entries.filter(
-      (e) => (typeof e === 'string' ? e : (e?.use ?? e?.name)) === spec,
+      (e) => (typeof e === 'string' ? e : e?.use) === spec,
     );
   const { addons } = await scopeAddons(inputs, { unresolved: 'skip' });
   return addons[0];

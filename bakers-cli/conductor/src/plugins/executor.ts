@@ -37,7 +37,7 @@ export type HookName =
  * What an addon hook listener receives (BB-599). One context object is
  * shared by every listener of one dispatch, so a key a `before_run` listener
  * adds to `env` reaches the next listener, that slot's shell hook and the
- * agent launch. Reserved keys (`BB_*`, `WORKSPACE_ROOT`, `TICKET_URL`) and
+ * agent launch. Reserved keys (`BAKERS_*`, `BB_*`, `WORKSPACE_ROOT`, `TICKET_URL`) and
  * invalid entries are restored after each listener. `env` values may be
  * secret: never log them.
  *

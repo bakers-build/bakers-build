@@ -75,7 +75,7 @@ describe('loadPortsTransport', () => {
 
   it('refuses without a ports addon entry', async () => {
     await expect(loadPortsTransport(undefined, dir)).rejects.toThrow(
-      "bakers ports needs '@bakers-build/addon-ports' in addons[] of ~/.bakers/machine.config.js or .bakers/conductor.config.js, with with.transport.use naming a transport package; see docs/addons/ports",
+      "bakers ports needs '@bakers-build/addon-ports' in addons[] of ~/.bakers/machine.config.js or .bakers/project.config.js, with with.transport.use naming a transport package; see docs/addons/ports",
     );
     await expect(loadPortsTransport({}, dir)).rejects.toThrow(
       PORTS_NEEDS_ENTRY,
@@ -304,16 +304,19 @@ describe('portsSettings', () => {
     worktree = join(dir, 'project');
     await mkdir(bakersHome, { recursive: true });
     await mkdir(join(worktree, '.bakers'), { recursive: true });
-    vi.stubEnv('BB_HOME', bakersHome);
+    vi.stubEnv('BAKERS_HOME', bakersHome);
   });
   afterEach(() => vi.unstubAllEnvs());
 
   const machine = (body: string) =>
-    writeFile(join(bakersHome, 'machine.config.js'), `export default ${body};`);
+    writeFile(
+      join(bakersHome, 'machine.config.js'),
+      `export default { machine_id: 'm1', label: 'test', ...${body} };`,
+    );
   const project = (body: string) =>
     writeFile(
-      join(worktree, '.bakers', 'conductor.config.js'),
-      `export default ${body};`,
+      join(worktree, '.bakers', 'project.config.js'),
+      `export default { project: { name: 'demo' }, ...${body} };`,
     );
 
   it('uses the machine transport over the project one', async () => {
@@ -359,17 +362,18 @@ describe('portsSettings', () => {
   it('throws naming the file and key for a malformed project entry', async () => {
     await machine('{}');
     await project(
-      `{ addons: [{ use: '${ENTRY}', with: { services: [{ key: 'Docs!', match: 'vitepress' }] } }] }`,
+      `{ addons: [{ use: '${ENTRY}', with: { services: [{ key: 'docs', match: 'a' }, { key: 'docs', match: 'b' }] } }] }`,
     );
     await expect(portsSettings(worktree)).rejects.toThrow(
-      `${join(worktree, '.bakers', 'conductor.config.js')}: addons[${ENTRY}].with.services[0].key must be a DNS-safe label`,
+      `${join(worktree, '.bakers', 'project.config.js')}: addons[${ENTRY}].with.services[1].key duplicates 'docs'`,
     );
   });
 
-  it('machine ports key throws the retired-key remediation', async () => {
+  // The machine schema refuses the old key at load, naming the file.
+  it('machine ports key throws as an unknown key', async () => {
     await machine(`{ ports: { transport: { use: 'old-t' } } }`);
     await expect(portsSettings(worktree)).rejects.toThrow(
-      "machine ports is retired: move it to addons: [{ use: '@bakers-build/addon-ports', with: { transport: … } }]",
+      `${join(bakersHome, 'machine.config.js')}: ports unknown key`,
     );
   });
 });

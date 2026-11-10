@@ -80,7 +80,7 @@ function setup(agent: BbAgent) {
     host_key: 'test-box',
     poll_interval_ms: 5000,
     lease_seconds: 300,
-    config_path: '/tmp/bakers-preflight-test/conductor.config.js',
+    config_path: '/tmp/bakers-preflight-test/project.config.js',
   };
   const conductor = new Conductor(
     config,

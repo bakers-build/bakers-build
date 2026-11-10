@@ -9,7 +9,7 @@ export const executors: Preset['executors'] = (acc, opts) => [
   orcaExecutor(opts as Parameters<typeof orcaExecutor>[0]),
 ];
 
-export const workspaces: Preset['workspaces'] = (acc, opts) => [
+export const worktrees: Preset['worktrees'] = (acc, opts) => [
   ...acc,
   orcaWorkspace(opts as Parameters<typeof orcaWorkspace>[0]),
 ];

@@ -6,13 +6,13 @@ For every project conductor that works tickets from a bakers.build server.
 
 ## Enable it
 
-Add the package to `addons` in the project's `.bakers/conductor.config.js`.
+Add the package to `addons` in the project's `.bakers/project.config.js`.
 
 ```js
 addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 ```
 
-It uses the conductor’s resolved, signed-in [connection](/configuration/connector/connections), so it needs no addon settings. The account must have access to the configured project.
+It uses the conductor’s resolved, signed-in [connection](/configuration/connection), so it needs no addon settings. The account must have access to the configured project.
 
 ## Options
 
@@ -28,6 +28,6 @@ bakers config check --scope project --online
 ```
 :::
 
-More: [Conductor config](/configuration/project), [Connections](/configuration/connector/connections).
+More: [Project config](/configuration/project), [Connections](/configuration/connection).
 
 Package source in a checkout: `bakers-cli/addons/remote-drupal`.

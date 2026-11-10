@@ -170,33 +170,36 @@ export const SIDEBAR = {
     ]),
   ],
   "/configuration/": [
-    group("File map", [
-      ["Files and precedence", "/configuration/files"],
-    ]),
-    group("Connector", [
-      ["Overview", "/configuration/"],
-      ["Connector", "/configuration/connector"],
-      ["Connections", "/configuration/connector/connections"],
-      ["Claude.ai connector limits and errors", "/configuration/connector/limits"],
-      ["Get emails about ticket activity", "/configuration/connector/notifications"],
-      ["Claude Project instructions (connector bundle)", "/configuration/connector/project-instructions"],
-    ]),
-    group("Machine", [
+    group("Configuration files", [
+      ["Files and precedence", "/configuration/"],
+      ["Connection", "/configuration/connection"],
       ["Machine", "/configuration/machine"],
-      ["Update bakers.build", "/configuration/machine/updates"],
-    ]),
-    group("Project", [
       ["Project", "/configuration/project"],
       ["Lifecycle hooks", "/configuration/project/hooks"],
-      ["Conductors", "/configuration/project/conductors"],
-      ["Conductor commands", "/configuration/project/conductor-commands"],
+      ["Conductors and variants", "/configuration/project/conductors"],
+    ]),
+    group("Guides", [
+      ["Update bakers.build", "/configuration/guides/updates"],
+      ["Switch to the bakers CLI", "/configuration/guides/switch-to-bakers"],
+      ["Get emails about ticket activity", "/configuration/guides/notifications"],
+      ["Claude.ai connector limits and errors", "/configuration/guides/connector-limits"],
+      ["Claude Project instructions (connector bundle)", "/configuration/guides/project-instructions"],
     ]),
     group("CLI reference", [
-      ["CLI commands", "/configuration/clients/cli"],
-      ["bakers tools", "/configuration/clients/tools"],
-      ["bakers auth", "/configuration/clients/auth"],
-      ["Switch to the bakers CLI", "/configuration/clients/switch-to-bakers"],
-      ["Troubleshooting", "/configuration/clients/troubleshooting"],
+      ["CLI commands", "/cli/"],
+      ["bakers conductor", "/cli/conductor"],
+      ["bakers tools", "/cli/tools"],
+      ["bakers auth", "/cli/auth"],
+      ["Troubleshooting", "/cli/troubleshooting"],
+    ]),
+  ],
+  "/cli/": [
+    group("CLI reference", [
+      ["CLI commands", "/cli/"],
+      ["bakers conductor", "/cli/conductor"],
+      ["bakers tools", "/cli/tools"],
+      ["bakers auth", "/cli/auth"],
+      ["Troubleshooting", "/cli/troubleshooting"],
     ]),
   ],
   "/self-hosting/": [

@@ -10,7 +10,7 @@
  * request writes a readable Markdown document — led by a ranked table of what
  * is eating your context.
  *
- * Run:   BB_TICKET_IDENTIFIER=BB-569 node measure/agent-proxy.mjs
+ * Run:   BAKERS_TICKET_IDENTIFIER=BB-569 node measure/agent-proxy.mjs
  * Point Claude Code at it:
  *   ANTHROPIC_BASE_URL=http://127.0.0.1:8787 claude
  *
@@ -78,10 +78,10 @@ export function resolveLogDirectory({
   ticketIdentifier,
   subdir,
 } = {}) {
-  const id = ticketIdentifier ?? process.env.BB_TICKET_IDENTIFIER;
+  const id = ticketIdentifier ?? process.env.BAKERS_TICKET_IDENTIFIER;
   if (typeof id !== 'string' || !TICKET_ID.test(id)) {
     throw new Error(
-      '[agent-proxy] BB_TICKET_IDENTIFIER is required (ticket identifier such as BB-569, not a UUID)',
+      '[agent-proxy] BAKERS_TICKET_IDENTIFIER is required (ticket identifier such as BB-569, not a UUID)',
     );
   }
   const root = path.resolve(cwd, 'assets-ai', id, 'node');

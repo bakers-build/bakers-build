@@ -36,7 +36,7 @@ export {
 } from './remove-git-worktree.js';
 
 /** Default branch template: `<prefix><key>-<title-slug>` (readable). */
-export const DEFAULT_BRANCH_TEMPLATE = '{branchPrefix}{key}-{titleSlug}';
+export const DEFAULT_BRANCH_TEMPLATE = '{branch_prefix}{key}-{title_slug}';
 
 function renderBranchTemplate(
   template: string,
@@ -65,8 +65,8 @@ export interface GitWorkspaceOptions {
   /** Branch name prefix per ticket. Default: 'bakers/'. */
   branchPrefix?: string;
   /**
-   * Branch name template. Vars: {branchPrefix}, {key} (sanitized identifier),
-   * {identifier}, {titleSlug}. Default: `{branchPrefix}{key}-{titleSlug}`.
+   * Branch name template. Vars: {branch_prefix}, {key} (sanitized identifier),
+   * {identifier}, {title_slug}. Default: `{branch_prefix}{key}-{title_slug}`.
    */
   branchTemplate?: string;
   /**
@@ -112,10 +112,10 @@ export class GitWorkspace implements BbWorkspace {
   /** Render the branch name for a ticket from the configured template. */
   branchFor(identifier: string, title?: string): string {
     return renderBranchTemplate(this.branchTemplate, {
-      branchPrefix: this.branchPrefix,
+      branch_prefix: this.branchPrefix,
       key: this.keyFor(identifier),
       identifier,
-      titleSlug: slugify(title ?? ''),
+      title_slug: slugify(title ?? ''),
     });
   }
 
@@ -178,14 +178,18 @@ export class GitWorkspace implements BbWorkspace {
   }
 }
 
+/** The addon entry's `with` value (see options.schema.json). */
+export interface GitWorkspaceAddonOptions {
+  branch_prefix?: string;
+  branch_template?: string;
+  auto_setup_merge?: boolean;
+}
+
 export function gitWorkspace(
-  opts: Pick<
-    GitWorkspaceOptions,
-    'branchPrefix' | 'branchTemplate' | 'autoSetupMerge'
-  > = {},
+  opts: GitWorkspaceAddonOptions = {},
 ): WorkspacePlugin {
   return {
-    kind: 'workspace',
+    kind: 'worktree',
     id: 'git',
     requiredModules: [],
     async createWorkspace(config: ConductorFileConfig, deps?: ExecutorDeps) {
@@ -194,9 +198,11 @@ export function gitWorkspace(
       const root = await deriveCheckoutRoot(config.config_path);
       return new GitWorkspace({
         root,
-        ...(opts.branchPrefix ? { branchPrefix: opts.branchPrefix } : {}),
-        ...(opts.branchTemplate ? { branchTemplate: opts.branchTemplate } : {}),
-        ...(opts.autoSetupMerge ? { autoSetupMerge: true } : {}),
+        ...(opts.branch_prefix ? { branchPrefix: opts.branch_prefix } : {}),
+        ...(opts.branch_template
+          ? { branchTemplate: opts.branch_template }
+          : {}),
+        ...(opts.auto_setup_merge ? { autoSetupMerge: true } : {}),
         ...(deps?.logger ? { logger: deps.logger } : {}),
       });
     },

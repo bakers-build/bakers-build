@@ -82,7 +82,7 @@ bakers agents
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
-- Listed in a conductor config, an agent addon is ignored with a warning.
+- Listed in a project config, an agent addon is ignored with a warning.
 - After a restart, a lost run resumes with `claude --resume`.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
