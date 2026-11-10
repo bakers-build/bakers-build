@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\Session\AnonymousUserSession;
+use Drupal\bb_core\Controller\BbTicketDetailController;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -96,6 +97,31 @@ final class RunRetryAccessTest extends ClaimKernelTestBase {
     self::assertSame((int) $top->id(), (int) $history[0]['target_id'], 'The run history lists the newest-created run first.');
     self::assertTrue(TicketInterventions::mayRetryRun($top, $ticket));
     self::assertFalse(TicketInterventions::mayRetryRun($created_earlier, $ticket));
+  }
+
+  /**
+   * The confirmation is titled by its action, as Cancel's is.
+   */
+  public function testRunActionDialogTitleNamesTheAction(): void {
+    [$ticket, $run] = $this->failedRun();
+    $this->otherConductor();
+    $ticket = $this->reloadTicket($ticket);
+    $controller = $this->container->get('class_resolver')->getInstanceFromDefinition(BbTicketDetailController::class);
+    $request = $this->container->get('request_stack')->getCurrentRequest();
+    $titles = [
+      TicketInterventions::RETRY => 'Retry run',
+      TicketInterventions::REDISPATCH => 'Re-dispatch run',
+    ];
+    foreach ($titles as $action => $title) {
+      $this->ask($run, $action);
+      self::assertSame($title . ' #' . $run->id() . '?', $controller->interventionTitle($ticket, $request), $action);
+    }
+    // A reader who may not act gets the title without the run's number.
+    $this->actAs(new AnonymousUserSession());
+    foreach ($titles as $action => $title) {
+      $this->ask($run, $action);
+      self::assertSame($title . '?', $controller->interventionTitle($this->reloadTicket($ticket), $request), $action);
+    }
   }
 
   /**

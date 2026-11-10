@@ -33,14 +33,30 @@ final class BbTicketDetailController extends ControllerBase {
         : (string) $this->t('Unfreeze @ticket?', ['@ticket' => $label]);
     }
     if ($request->query->has(TicketInterventions::RUN_PARAMETER)) {
-      $run = TicketInterventions::runByUuid($request->query->get(TicketInterventions::RUN_PARAMETER), $this->entityTypeManager());
-      // Name only a run the reader may cancel; any other gets no number.
-      return $run !== NULL && TicketInterventions::mayCancelRun($run, $bb_ticket)
-        ? (string) $this->t('Cancel run #@run?', ['@run' => $run->id()])
-        : (string) $this->t('Cancel run?');
+      return $this->runTitle($bb_ticket, $request);
     }
     $label = $bb_ticket->getIdentifier() !== '' ? $bb_ticket->getIdentifier() : (string) $bb_ticket->label();
     return (string) $this->t('Cancel @ticket?', ['@ticket' => $label]);
+  }
+
+  /**
+   * The title of a run's confirmation: Cancel, Retry or Re-dispatch.
+   */
+  private function runTitle(BbTicketInterface $bb_ticket, Request $request): string {
+    $run = TicketInterventions::runByUuid($request->query->get(TicketInterventions::RUN_PARAMETER), $this->entityTypeManager());
+    $action = $request->query->get(TicketInterventions::RUN_ACTION_PARAMETER);
+    // Name only a run the reader may act on; any other gets no number.
+    return match ($action) {
+      TicketInterventions::RETRY => $run !== NULL && TicketInterventions::mayRetryRun($run, $bb_ticket)
+        ? (string) $this->t('Retry run #@run?', ['@run' => $run->id()])
+        : (string) $this->t('Retry run?'),
+      TicketInterventions::REDISPATCH => $run !== NULL && TicketInterventions::mayRedispatchRun($run, $bb_ticket)
+        ? (string) $this->t('Re-dispatch run #@run?', ['@run' => $run->id()])
+        : (string) $this->t('Re-dispatch run?'),
+      default => $run !== NULL && $action === NULL && TicketInterventions::mayCancelRun($run, $bb_ticket)
+        ? (string) $this->t('Cancel run #@run?', ['@run' => $run->id()])
+        : (string) $this->t('Cancel run?'),
+    };
   }
 
 }

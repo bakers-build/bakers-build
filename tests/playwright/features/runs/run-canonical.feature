@@ -68,4 +68,5 @@ Feature: A run has a ticket-relative canonical page
     And the run page offers no "Cancel run"
     Given I am signed in as "north-guest"
     When I visit the disposable ticket
-    Then the ticket page offers no intervention
+    Then the page heading is the disposable ticket title
+    And the ticket page offers no intervention

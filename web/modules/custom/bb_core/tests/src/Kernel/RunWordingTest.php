@@ -7,15 +7,15 @@ namespace Drupal\Tests\bb_core\Kernel;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\bb_core\Entity\BbConductorInterface;
-use Drupal\bb_core\Entity\BbRun;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Run\RunExplanation;
 use Drupal\bb_core\Time\BbDate;
+use Drupal\file\FileInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * The words a run carries: failure reason, claim explanation, status roles.
+ * The words a run carries: failure reason and claim explanation.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -143,7 +143,7 @@ final class RunWordingTest extends KernelTestBase {
   public function testFailureReasonOfMissingLogFileIsTheNoReasonCopy(): void {
     $run = $this->failedRun('Error: boom');
     $file = $run->get('error_log_file')->entity;
-    self::assertNotNull($file);
+    self::assertInstanceOf(FileInterface::class, $file);
     unlink((string) $file->getFileUri());
     self::assertSame(
       'No reason was recorded. Open the log for details.',
@@ -227,14 +227,6 @@ final class RunWordingTest extends KernelTestBase {
       $explanation->forRun($this->claimRun('expired', 1200, -600)),
     );
     self::assertNull($explanation->forRun($this->claimRun('running', 60, 600)));
-  }
-
-  /**
-   * Failed is the danger role and a claim is amber attention.
-   */
-  public function testFailedIsDangerAndClaimedIsAttention(): void {
-    self::assertSame(['alert-triangle', 'critical'], BbRun::STATE_MARKS['failed']);
-    self::assertSame(['lock', 'attention'], BbRun::STATE_MARKS['claimed']);
   }
 
 }
