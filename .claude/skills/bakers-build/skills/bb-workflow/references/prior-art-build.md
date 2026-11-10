@@ -3,8 +3,7 @@
 A sibling can deliver the ask between checkpoints; each invocation needs a fresh remote snapshot.
 Inputs: ticket UUID/identifier, creation date, ask, resolved `base_branch` and relevant paths.
 At qualification derive paths from the ask and repository; no implementation plan is required.
-Search the remote and never the local branch. Fetch `origin/<base_branch>` first through
-[forge operations](forge.md), then:
+After `forge_fetch` ([forge operations](forge.md)), search the remote, never the local branch:
 
 ```bash
 git log --oneline "origin/<base_branch>" --since='<ticket created>'

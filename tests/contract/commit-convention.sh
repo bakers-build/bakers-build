@@ -163,7 +163,7 @@ check 'AC-3 that input is marked Required' \
 check 'AC-3 the squash message writes the trailer LAST, after the signature' \
   grep -qF 'body: `Merged-by: bakers.build\nref:${run.identifier}`' "$FORGE_TOOLS"
 check 'AC-3 the merge sets the SQUASH commit message on a squash' \
-  grep -qF "o.method === 'squash' ? 'squash_commit_message' : 'merge_commit_message'" "$FORGE_GITLAB"
+  hasre "$(flatten "$FORGE_GITLAB")" "\[o.method === 'squash' \? 'squash_commit_message' : 'merge_commit_message'\]"
 check 'AC-3 merge-mr says the message goes on the squash commit' \
   has "$MERGE_FLAT" 'The message goes on the squash commit, the one that represents the change.'
 check 'AC-3 merge-mr sources the trailer from the ticket identifier FIELD, verbatim' \
