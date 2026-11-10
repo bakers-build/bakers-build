@@ -471,17 +471,18 @@ export class CodexAgent implements BbAgent {
     return latest?.log ?? '';
   }
 
-  /** Screens and errors that mean the launched agent cannot work. */
+  /** Screens and errors that mean the launched agent cannot work, anchored at line start so tool output quoting them never matches. */
   readonly authFailurePatterns = [
     {
-      pattern: /Sign in with ChatGPT|Provide your own API key/,
+      pattern:
+        /^[\s│>›]*\d\.\s+(?:Sign in with ChatGPT|Provide your own API key)/m,
       reason:
         'codex: not logged in (stopped at its login screen) — run codex login',
     },
     {
       // Codex's own error line (■), not a tool's output that mentions a 401.
       pattern:
-        /^\s*■ .*\b401 Unauthorized|access token could not be refreshed/im,
+        /^\s*■ .*(?:\b401 Unauthorized|access token could not be refreshed)/im,
       reason: 'codex: credential rejected (401) — run codex login',
     },
   ] satisfies readonly AuthFailurePattern[];

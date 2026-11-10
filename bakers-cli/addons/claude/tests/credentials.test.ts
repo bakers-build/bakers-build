@@ -1,4 +1,4 @@
-import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -95,6 +95,20 @@ describe('ClaudeAgent.authFailurePatterns', () => {
       reasonFor(
         '⏺ Bash(curl -s https://api.anthropic.com/v1/models)\n  ⎿  {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}\n⏺ Bash(grep -n "API Error: 401" src/index.ts)\n  ⎿  544:        /API Error: 401/',
       ),
+    ).toBeUndefined();
+  });
+
+  it('leaves an agent grepping the addon source alone', () => {
+    const source = readFileSync(
+      new URL('../src/index.ts', import.meta.url),
+      'utf8',
+    );
+    const grep = source
+      .split('\n')
+      .map((line, i) => `  ⎿  ${i + 1}:${line}`)
+      .join('\n');
+    expect(
+      reasonFor(`⏺ Bash(grep -n "" src/index.ts)\n${grep}`),
     ).toBeUndefined();
   });
 

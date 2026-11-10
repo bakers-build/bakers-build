@@ -1,4 +1,4 @@
-import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -57,6 +57,11 @@ describe('CodexAgent.authFailurePatterns', () => {
         '■ unexpected status 401 Unauthorized: Your access token could not be refreshed',
       ),
     ).toBe('codex: credential rejected (401) — run codex login');
+    expect(
+      reasonFor(
+        '■ Your access token could not be refreshed. Please log in again.',
+      ),
+    ).toBe('codex: credential rejected (401) — run codex login');
   });
 
   it('leaves a 401 in the output of a tool call alone', () => {
@@ -65,6 +70,18 @@ describe('CodexAgent.authFailurePatterns', () => {
         '• Ran curl -si https://gitlab.example/api/v4/user\n  └ HTTP/1.1 401 Unauthorized\n• Ran npm test\n  └ ✓ answers 401 Unauthorized without a token',
       ),
     ).toBeUndefined();
+  });
+
+  it('leaves an agent grepping the addon source alone', () => {
+    const source = readFileSync(
+      new URL('../src/index.ts', import.meta.url),
+      'utf8',
+    );
+    const grep = source
+      .split('\n')
+      .map((line, i) => `  └ ${i + 1}:${line}`)
+      .join('\n');
+    expect(reasonFor(`• Ran grep -n "" src/index.ts\n${grep}`)).toBeUndefined();
   });
 
   it('leaves a normal start alone', () => {

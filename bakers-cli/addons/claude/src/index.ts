@@ -570,21 +570,23 @@ export class ClaudeAgent implements BbAgent {
     return parseClaudePermissionDenials(log);
   }
 
-  /** Screens and errors that mean the launched agent cannot work. */
+  /** Screens and errors that mean the launched agent cannot work, anchored at line start so tool output quoting them never matches. */
   readonly authFailurePatterns = [
     {
-      pattern: /Select login method/,
+      pattern: /^[\s│]*Select login method/m,
       reason:
         'claude: not logged in (stopped at its login screen) — run claude /login',
     },
     {
-      pattern: /Choose the text style that looks best with your terminal/,
+      pattern:
+        /^[\s│]*Choose the text style that looks best with your terminal/m,
       reason:
         'claude: not logged in (stopped at its first-run screen) — run claude /login',
     },
     {
       // Claude's own error line, not a tool's output that mentions a 401.
-      pattern: /^\s*⎿\s+API Error: 401\b|Invalid API key · Please run \/login/m,
+      pattern:
+        /^\s*⎿\s+API Error: 401\b|^[\s│]*(?:⎿\s+)?Invalid API key · Please run \/login/m,
       reason: 'claude: credential rejected (API 401) — run claude /login',
     },
   ] satisfies readonly AuthFailurePattern[];
