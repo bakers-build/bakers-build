@@ -57,7 +57,7 @@ final class TicketTemplateInstantiationTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     $entity_types = [
-      'user', 'bb_project', 'bb_conductor', 'bb_ticket',
+      'user', 'og_membership', 'bb_project', 'bb_conductor', 'bb_ticket',
       'bb_ticket_template', 'bb_run', 'bb_comment', 'bb_term',
     ];
     foreach ($entity_types as $type) {
