@@ -218,6 +218,7 @@ class DeviceVerificationForm extends FormBase {
    */
   public function validateForm(array &$form, FormStateInterface $form_state): void {
     if (!$this->floodAllows()) {
+      $this->logger('bb_oauth_device')->notice('Device code attempts blocked for account %uid.', ['%uid' => $this->currentUser->id()]);
       $form_state->setErrorByName('user_code', $this->t('Too many attempts. Wait a few minutes and try again.'));
       return;
     }

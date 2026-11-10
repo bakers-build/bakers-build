@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_oauth_device\Kernel;
 
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\consumers\Entity\Consumer;
 use Drupal\bb_oauth_device\Form\DeviceVerificationForm;
@@ -433,6 +434,8 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
    * Looping past the verification form's limit refuses further attempts (J-4).
    */
   public function testVerificationFormFloodRefusesFurtherAttempts(): void {
+    $this->enableModules(['dblog']);
+    $this->installSchema('dblog', ['watchdog']);
     $account = $this->drupalCreateUser(['grant simple_oauth codes']);
     $this->assertInstanceOf(User::class, $account);
     $this->setCurrentUser($account);
@@ -441,8 +444,19 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
       $this->submitVerificationForm('WRONG-CODE', 'deny');
     }
 
+    $logged = fn (): array => $this->container->get('database')->select('watchdog', 'w')
+      ->fields('w', ['message', 'severity'])
+      ->condition('type', 'bb_oauth_device')
+      ->orderBy('wid')
+      ->execute()->fetchAll();
+    $before = count($logged());
     $messages = $this->submitVerificationForm('WRONG-CODE', 'deny');
     $this->assertStringContainsString('Too many attempts.', (string) $messages);
+    // Each refused attempt leaves one notice in the site log.
+    $rows = $logged();
+    $this->assertCount($before + 1, $rows);
+    $this->assertSame('Device code attempts blocked for account %uid.', end($rows)->message);
+    $this->assertSame(RfcLogLevel::NOTICE, (int) end($rows)->severity);
 
     // A different, unaffected account can still attempt a lookup.
     $body = $this->requestDeviceAuthorization();

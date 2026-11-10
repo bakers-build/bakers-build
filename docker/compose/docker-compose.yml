@@ -25,8 +25,8 @@ x-env: &env
   DB_PORT: "3306"
   DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
   DRUPAL_HASH_SALT: ${HASH_SALT:?Set HASH_SALT}
-  # Your reverse proxy reaches nginx from this network (or its gateway), so it is trusted.
-  TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:-172.30.42.0/24}
+  # Empty: any reverse proxy on a private network is trusted for the client address.
+  TRUSTED_PROXY_SUBNET: ${TRUSTED_PROXY_SUBNET:-}
   MAIL_SMTP_DSN: ${MAIL_SMTP_DSN:?Set MAIL_SMTP_DSN; sign-in works by email}
   MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:?Set MAIL_FROM_ADDRESS}
   BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}

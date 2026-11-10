@@ -42,8 +42,8 @@ x-env: &env
   DB_PORT: "3306"
   DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
   DRUPAL_HASH_SALT: ${HASH_SALT:?Set HASH_SALT}
-  # Your reverse proxy reaches nginx from this network (or its gateway), so it is trusted.
-  TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:-172.30.42.0/24}
+  # Empty: any reverse proxy on a private network is trusted for the client address.
+  TRUSTED_PROXY_SUBNET: ${TRUSTED_PROXY_SUBNET:-}
   MAIL_SMTP_DSN: ${MAIL_SMTP_DSN:?Set MAIL_SMTP_DSN; sign-in works by email}
   MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:?Set MAIL_FROM_ADDRESS}
   BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
@@ -159,6 +159,7 @@ FEATURE_FLAG_RUN_LOG_STORAGE=0
 # Optional.
 HTTP_PORT=8080
 INTERNAL_SUBNET=172.30.42.0/24
+TRUSTED_PROXY_SUBNET=
 BB_OAUTH_GOOGLE_CLIENT_ID=
 BB_OAUTH_GOOGLE_CLIENT_SECRET=
 ```
@@ -173,6 +174,7 @@ BB_OAUTH_GOOGLE_CLIENT_SECRET=
 | `FEATURE_FLAG_RUN_LOG_STORAGE` | See [Run-log storage](#run-log-storage). |
 | `HTTP_PORT` | Loopback port your proxy forwards to. |
 | `INTERNAL_SUBNET` | Change only if `172.30.42.0/24` is already used on the host. |
+| `TRUSTED_PROXY_SUBNET` | Leave empty: a proxy on any private network is trusted for the client address, never for the host. To narrow it, set the subnet your proxy connects from; `docker network inspect <its network>` shows it. |
 
 `docker compose config -q` reports a missing value. Keep `.env` private (`chmod 600 .env`).
 

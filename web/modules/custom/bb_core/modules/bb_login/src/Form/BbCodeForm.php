@@ -154,6 +154,7 @@ final class BbCodeForm extends FormBase {
       return;
     }
     if (!$this->flood->isAllowed(LoginCode::FLOOD_EVENT, LoginCode::MAX_ATTEMPTS, LoginCode::TTL, $mail)) {
+      $this->logger('bb_login')->notice('Login code attempts blocked for %mail.', ['%mail' => $mail]);
       $form_state->setErrorByName('code', $this->t('Too many attempts. Please request a new login link.'));
       return;
     }
@@ -163,6 +164,7 @@ final class BbCodeForm extends FormBase {
       // COUNTED ONLY ON A WRONG CODE, so a customer who types it correctly the
       // first time never approaches the limit.
       $this->flood->register(LoginCode::FLOOD_EVENT, LoginCode::TTL, $mail);
+      $this->logger('bb_login')->notice('Wrong login code for %mail.', ['%mail' => $mail]);
       $form_state->setErrorByName('code', $this->t('This code is wrong or has expired.'));
       return;
     }

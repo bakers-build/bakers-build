@@ -7,16 +7,21 @@
 
 use Symfony\Component\HttpFoundation\Request;
 
-// Each block applies only when its own variable is set; unset leaves Drupal's default.
-if ($proxy_subnet = getenv('TRUSTED_PROXY_SUBNET')) {
+// The proxy in front (Traefik, Caddy, …) sits on some private Docker network.
+// TRUSTED_PROXY_SUBNET narrows that to one subnet. The client address is read
+// right to left, so only a private-network peer could fake it; the host is
+// never taken from a header.
+$proxy_subnet = getenv('TRUSTED_PROXY_SUBNET');
+if ($proxy_subnet) {
   $cidr = explode('/', $proxy_subnet);
   if (count($cidr) !== 2 || !filter_var($cidr[0], FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) || !ctype_digit($cidr[1]) || (int) $cidr[1] < 1 || (int) $cidr[1] > 32) {
     throw new \RuntimeException('TRUSTED_PROXY_SUBNET must be an IPv4 CIDR with prefix 1 through 32');
   }
-  $settings['reverse_proxy'] = TRUE;
-  $settings['reverse_proxy_addresses'] = [$proxy_subnet];
-  $settings['reverse_proxy_trusted_headers'] = Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO | Request::HEADER_X_FORWARDED_PORT;
 }
+$settings['reverse_proxy'] = TRUE;
+$settings['reverse_proxy_addresses'] = $proxy_subnet ? [$proxy_subnet] : ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'];
+$settings['reverse_proxy_trusted_headers'] = Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO | Request::HEADER_X_FORWARDED_PORT;
+// Each block below applies only when its own variable is set.
 if ($smtp_dsn = getenv('MAIL_SMTP_DSN')) {
   $smtp = parse_url($smtp_dsn);
   if ($smtp === FALSE || !in_array($smtp['scheme'] ?? '', ['smtp', 'smtps'], TRUE) || empty($smtp['host'])) {

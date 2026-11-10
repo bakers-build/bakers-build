@@ -9,6 +9,7 @@ use Drupal\Component\Utility\Crypt;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\consumers\Entity\ConsumerInterface;
+use Drupal\simple_oauth\Plugin\Validation\Constraint\Oauth2PrivilegedConsumerField;
 
 /**
  * Creates, classifies and revokes self-service pipeline API keys.
@@ -166,12 +167,15 @@ final class ApiKeyManager {
       'bb_expires' => $expires,
     ]);
 
-    $violations = $consumer->validate();
-    if (count($violations) > 0) {
-      $messages = [];
-      foreach ($violations as $violation) {
+    $messages = [];
+    foreach ($consumer->validate() as $violation) {
+      // That constraint stops a user choosing privileged grants, scopes or a
+      // user; here this code fixes all three, and callers check who may create.
+      if (!$violation->getConstraint() instanceof Oauth2PrivilegedConsumerField) {
         $messages[] = (string) $violation->getMessage();
       }
+    }
+    if ($messages) {
       throw new \InvalidArgumentException(implode(' ', $messages));
     }
 
