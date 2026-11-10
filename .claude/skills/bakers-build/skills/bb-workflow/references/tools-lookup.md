@@ -17,7 +17,7 @@ needs every page. A conductor run is served only the lookups [conductor](tools-c
 | List conductors | `bakers_conductor_list` | `project` (key or UUID) | `conductors` (`uuid`, `conductor_id`, `label`, `active`, `status`) |
 | List labels | `bakers_label_list` | `workspace`; optional `query` | `labels` (`uuid`, `name`) |
 | Run a template | `bakers_ticket_template_run` | `template`; optional `title`, `description`, `workflow`, `project`, `conductor`, `labels`, `target_state` | `uuid`, `identifier` |
-| List runs | `bakers_ticket_runs_list` | `ticket` | `runs` (`uuid`, `state`, `state_at_start`, `agent`, `conductor`, `started_at`, `closed`, `error_log`); newest first |
+| List runs | `bakers_ticket_runs_list` | `ticket` | `runs` (`uuid`, `state`, `state_at_start`, `agent`, `conductor`, `started_at`, `closed`); newest first |
 | List activity | `bakers_ticket_activity_list` | `ticket` or `project`, not both | `events` (`uuid`, `kind`, `created`, `actor`, `ticket`, `message`); newest first |
 | Propose time | `bakers_time_propose` | `entries`; optional `project`, `account` | `submission`, `worklogs` in entry order; a failing entry stores nothing |
 | List own worklogs | `bakers_worklog_list` | `from`, `to` (`Y-m-d`); optional `limit` (1–50), `offset` | `data` (worklogs), `next_offset` |

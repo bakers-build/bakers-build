@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
 use Drupal\bb_core\Entity\BbRunInterface;
-use Drupal\bb_core\RunLog\RunLogException;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -20,12 +19,12 @@ use Drupal\tool\TypedData\MapOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
 
 /**
- * Lists a readable ticket's viewable runs, newest first, with why they failed.
+ * Lists a readable ticket's viewable runs, newest first, without their logs.
  */
 #[Tool(
   id: 'bakers_ticket_runs_list',
   label: new TranslatableMarkup('List ticket runs'),
-  description: new TranslatableMarkup('Lists the runs of a ticket you can view, newest first: state, the ticket state the run started in, agent, conductor, start time, whether the run is closed and why it failed.'),
+  description: new TranslatableMarkup('Lists the runs of a ticket you can view, newest first: state, the ticket state the run started in, agent, conductor, start time and whether the run is closed.'),
   operation: ToolOperation::Read,
   permission: 'view bb_run',
   input_definitions: [
@@ -95,12 +94,6 @@ use Drupal\tool\TypedData\OutputDefinition;
             label: new TranslatableMarkup('Closed'),
             description: new TranslatableMarkup('Whether the run is fully wound up.'),
           ),
-          'error_log' => new OutputDefinition(
-            data_type: 'string',
-            label: new TranslatableMarkup('Error log'),
-            description: new TranslatableMarkup('Why the run failed, e.g. what a conductor restart did to it; empty otherwise.'),
-            nullable: TRUE,
-          ),
         ],
       ),
     ),
@@ -140,26 +133,12 @@ final class TicketRunsList extends ToolBase {
         'conductor' => $run->get('conductor_id')->entity?->uuid(),
         'started_at' => $started === NULL ? NULL : (int) $started,
         'closed' => (bool) $run->get('closed')->value,
-        'error_log' => $this->errorLog($run),
       ];
     }
     return ExecutableResult::success(new TranslatableMarkup('@count runs found.', ['@count' => count($runs)]), [
       'runs' => $runs,
       'next_offset' => $next,
     ]);
-  }
-
-  /**
-   * The run's failure detail, at most 2000 characters; NULL when unreadable.
-   */
-  private function errorLog(BbRunInterface $run): ?string {
-    try {
-      $log = $run->readErrorLog();
-    }
-    catch (RunLogException) {
-      return NULL;
-    }
-    return $log === NULL ? NULL : mb_substr($log, 0, 2000);
   }
 
   /**
