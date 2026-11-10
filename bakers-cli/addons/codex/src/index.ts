@@ -12,6 +12,8 @@ import {
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,
   ensureHome,
+  type GuardState,
+  guardHookCommand,
   homeKey,
   homePath,
   type KnownOptionSpec,
@@ -44,6 +46,8 @@ export interface CodexAgentOptions extends SecurityOptions {
   args?: string[];
   /** False runs this agent in the user's own Codex home, without the project's plugins. */
   plugins?: boolean;
+  /** False switches the run guard off; no permissions mode does (`docs/provision/security/run-guard.md`). */
+  guard?: boolean;
 }
 
 const run = promisify(execFile);
@@ -172,6 +176,7 @@ export class CodexAgent implements BbAgent {
   private readonly allowWrite: string[];
   readonly runEnvPolicy: RunEnvPolicy;
   readonly pluginsDisabled: boolean;
+  readonly guard: Exclude<GuardState, 'not_applied'>;
   /** The Codex home runs read and write: the agent home while plugins are on. */
   configDir: string;
   private pluginsOn = false;
@@ -193,6 +198,11 @@ export class CodexAgent implements BbAgent {
     this.allowWrite = withoutGitDirs(this.security.sandbox.allow_write);
     this.pluginsDisabled =
       validateOptionalBoolean(options.plugins, 'plugins') === false;
+    this.guard =
+      validateOptionalBoolean(options.guard, 'guard') === false
+        ? 'off'
+        : // shortcut: unproven against a real Codex; `active` once a Codex run shows the hook blocks a shell call.
+          'partial';
     this.configDir = this.userCodexHome();
     // Codex has no read deny or unsandboxed-command list to map these onto.
     for (const key of ['trusted_commands', 'deny_read'] as const) {
@@ -354,6 +364,14 @@ export class CodexAgent implements BbAgent {
     ];
     for (const arg of pluginArgs)
       if (!parts.includes(arg)) parts.push(word(arg));
+    // The run guard on every tool call; the hook itself passes non-shell tools.
+    if (this.guard !== 'off')
+      parts.push(
+        '-c',
+        word(
+          `hooks.PreToolUse=[{hooks=[{type="command",command=${JSON.stringify(guardHookCommand())}}]}]`,
+        ),
+      );
     // The agent home starts with no trusted project; trust this run's worktree only.
     if (this.pluginsOn)
       parts.push(
@@ -503,6 +521,7 @@ export function codexAgent(options: CodexAgentOptions = {}): AgentPlugin {
     id: 'codex',
     requiredModules: [],
     permissions: agent.security.report,
+    guard: agent.guard,
     async createAgent(config) {
       agent.useMarketplaces(config.marketplaces ?? []);
       return agent;

@@ -250,6 +250,14 @@ describe('shared run permissions from the machine and project config', () => {
     ).rejects.toThrow(`${machine}: permissions.sandbox.network unknown key`);
   });
 
+  it('a committed project config cannot switch the run guard off', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
+    const project = writeProject(projectWithPermissions('{ guard: false }'));
+    await expect(loadConductorConfig(project)).rejects.toThrow(
+      `${project}: permissions.guard unknown key`,
+    );
+  });
+
   it('the old key security fails loading in the project and machine config', async () => {
     writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
     const project = writeProject(

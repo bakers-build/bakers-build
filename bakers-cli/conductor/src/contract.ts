@@ -17,6 +17,7 @@ export {
   type ResolvedBbProjectContext,
   resolveBbProjectContext,
 } from './bakers-project-context.js';
+export { type GuardState, guardHookCommand } from './guard/command.js';
 export {
   type AgentFootprint,
   type AgentRunIdentity,

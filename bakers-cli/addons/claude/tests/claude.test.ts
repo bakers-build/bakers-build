@@ -4,9 +4,11 @@ import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { guardHookCommand } from '@bakers-build/conductor/contract';
 import { describe, expect, it, vi } from 'vitest';
 import claudeAgentDefault, {
   ClaudeAgent,
+  type ClaudeAgentOptions,
   claudeAgent,
   encodeClaudeProjectDir,
 } from '../src/index.js';
@@ -33,25 +35,29 @@ describe('ClaudeAgent.launchCommand', () => {
     const agent = new ClaudeAgent({
       model: 'claude-opus-4-8',
       permissions: 'yolo',
+      guard: false,
     });
     expect(agent.launchCommand('do the thing')).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --model 'claude-opus-4-8' --dangerously-skip-permissions",
     );
   });
   it('omits --model when no model is set', () => {
-    expect(new ClaudeAgent({ permissions: 'yolo' }).launchCommand('x')).toBe(
+    expect(
+      new ClaudeAgent({ permissions: 'yolo', guard: false }).launchCommand('x'),
+    ).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
     );
   });
   it('returns the bare command for an empty prompt', () => {
-    expect(new ClaudeAgent({ permissions: 'yolo' }).launchCommand('')).toBe(
-      'claude',
-    );
+    expect(
+      new ClaudeAgent({ permissions: 'yolo', guard: false }).launchCommand(''),
+    ).toBe('claude');
   });
   it('POSIX-quotes a multi-line prompt for the sh-evaluated launch file', () => {
-    const cmd = new ClaudeAgent({ permissions: 'yolo' }).launchCommand(
-      'para one\n\npara two',
-    );
+    const cmd = new ClaudeAgent({
+      permissions: 'yolo',
+      guard: false,
+    }).launchCommand('para one\n\npara two');
     expect(cmd).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'para one\n\npara two' --dangerously-skip-permissions",
     );
@@ -68,7 +74,7 @@ describe('ClaudeAgent.launchCommand in a worktree', () => {
 
   it('trusts the worktree through the trust wrapper before claude starts', () => {
     expect(
-      new ClaudeAgent({ permissions: 'yolo' }).launchCommand(
+      new ClaudeAgent({ permissions: 'yolo', guard: false }).launchCommand(
         'x',
         undefined,
         "/w/it's",
@@ -79,17 +85,17 @@ describe('ClaudeAgent.launchCommand in a worktree', () => {
   });
   it('puts the trust wrapper in front of the measure wrapper', () => {
     expect(
-      new ClaudeAgent({ permissions: 'yolo', measure: true }).launchCommand(
-        'x',
-        undefined,
-        '/w',
-      ),
+      new ClaudeAgent({
+        permissions: 'yolo',
+        guard: false,
+        measure: true,
+      }).launchCommand('x', undefined, '/w'),
     ).toMatch(
       `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${trust}' '/w' node '${measure}' claude 'x'`,
     );
   });
   it('trusts nothing without a worktree or a prompt', () => {
-    const agent = new ClaudeAgent({ permissions: 'yolo' });
+    const agent = new ClaudeAgent({ permissions: 'yolo', guard: false });
     expect(agent.launchCommand('x')).not.toContain('claude-trust');
     expect(agent.launchCommand('', undefined, '/w')).toBe('claude');
   });
@@ -249,14 +255,14 @@ describe('ClaudeAgent.getRunLog', () => {
 
 describe('ClaudeAgent.launchCommand with a run identity', () => {
   it('pins the session id via --session-id when a run is given (BB-473)', () => {
-    const agent = new ClaudeAgent({ permissions: 'yolo' });
+    const agent = new ClaudeAgent({ permissions: 'yolo', guard: false });
     const cmd = agent.launchCommand('do the thing', { sessionId: 'r-123' });
     expect(cmd).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'do the thing' --dangerously-skip-permissions --session-id r-123",
     );
   });
   it('omits --session-id when no run is given (unchanged behaviour)', () => {
-    const agent = new ClaudeAgent({ permissions: 'yolo' });
+    const agent = new ClaudeAgent({ permissions: 'yolo', guard: false });
     expect(agent.launchCommand('x')).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
     );
@@ -286,6 +292,7 @@ describe('ClaudeAgent args and effort', () => {
   it('appends each args element as exactly one argv item, preserving order, duplicates and empty strings', () => {
     const agent = new ClaudeAgent({
       permissions: 'yolo',
+      guard: false,
       args: ['--effort', 'medium', '--effort', 'high', '', '--foo', "it's"],
     });
     const command = agent.launchCommand('task');
@@ -308,6 +315,7 @@ describe('ClaudeAgent args and effort', () => {
   it('quotes a model value with spaces as one --model argument', () => {
     const command = new ClaudeAgent({
       permissions: 'yolo',
+      guard: false,
       model: 'opus --injected',
     }).launchCommand('x');
     expect(captureArgv('claude', command)).toEqual([
@@ -328,6 +336,7 @@ describe('ClaudeAgent args and effort', () => {
   it('omits generated --model/--effort when args already override them', () => {
     const command = new ClaudeAgent({
       permissions: 'yolo',
+      guard: false,
       model: 'sonnet',
       effort: 'medium',
       args: ['--model', 'opus', '--effort', 'high'],
@@ -346,6 +355,7 @@ describe('ClaudeAgent args and effort', () => {
   it('recognizes --model=VALUE and --effort=VALUE overrides', () => {
     const command = new ClaudeAgent({
       permissions: 'yolo',
+      guard: false,
       model: 'sonnet',
       effort: 'low',
       args: ['--model=opus', '--effort=high'],
@@ -398,6 +408,7 @@ describe('ClaudeAgent args and effort', () => {
   it('keeps an absolute path with spaces and an embedded tilde as literal args', () => {
     const command = new ClaudeAgent({
       permissions: 'yolo',
+      guard: false,
       args: ['--add-dir', '/home/cw/My Settings/a~b.json'],
     }).launchCommand('x');
     expect(captureArgv('claude', command)).toEqual([
@@ -680,13 +691,15 @@ describe('ClaudeAgent permissions: system, yolo, custom', () => {
     expect(
       captureArgv(
         'claude',
-        new ClaudeAgent({ permissions: 'system' }).launchCommand('x'),
+        new ClaudeAgent({ permissions: 'system', guard: false }).launchCommand(
+          'x',
+        ),
       ),
     ).toEqual(['claude', 'x']);
   });
 
   it("yolo restores today's bypass launch and keeps denied env vars", () => {
-    const agent = new ClaudeAgent({ permissions: 'yolo' });
+    const agent = new ClaudeAgent({ permissions: 'yolo', guard: false });
     expect(captureArgv('claude', agent.launchCommand('x'))).toEqual([
       'claude',
       'x',
@@ -699,9 +712,73 @@ describe('ClaudeAgent permissions: system, yolo, custom', () => {
     const config = { permissions: { defaultMode: 'acceptEdits' } };
     const a = captureArgv(
       'claude',
-      new ClaudeAgent({ permissions: 'custom', config }).launchCommand('x'),
+      new ClaudeAgent({
+        permissions: 'custom',
+        config,
+        guard: false,
+      }).launchCommand('x'),
     );
     expect(a).toEqual(['claude', 'x', '--settings', JSON.stringify(config)]);
+  });
+});
+
+describe('ClaudeAgent run guard', () => {
+  const guardHook = {
+    matcher: 'Bash',
+    hooks: [{ type: 'command', command: guardHookCommand() }],
+  };
+  const settingsOf = (options: ClaudeAgentOptions) =>
+    JSON.parse(
+      flagValue(
+        captureArgv('claude', new ClaudeAgent(options).launchCommand('x')),
+        '--settings',
+      ),
+    );
+
+  it.each([
+    { permissions: 'sandbox' },
+    { permissions: 'system' },
+    { permissions: 'yolo' },
+    { permissions: 'custom', config: {} },
+    {},
+  ] as ClaudeAgentOptions[])('hooks every Bash call in %j', (options) => {
+    expect(settingsOf(options).hooks).toEqual({ PreToolUse: [guardHook] });
+    expect(new ClaudeAgent(options).guard).toBe('active');
+  });
+
+  it("keeps the custom config's own hooks beside the guard", () => {
+    const own = { matcher: 'Edit', hooks: [{ type: 'command', command: 'x' }] };
+    const settings = settingsOf({
+      permissions: 'custom',
+      config: { hooks: { PreToolUse: [own], Stop: [own] } },
+    });
+    expect(settings.hooks).toEqual({
+      PreToolUse: [own, guardHook],
+      Stop: [own],
+    });
+  });
+
+  it('is off only through guard: false', () => {
+    const agent = new ClaudeAgent({ permissions: 'yolo', guard: false });
+    expect(agent.launchCommand('x')).not.toContain('PreToolUse');
+    expect(agent.guard).toBe('off');
+    expect(claudeAgent({ guard: false }).guard).toBe('off');
+    expect(claudeAgent().guard).toBe('active');
+  });
+
+  it('keeps the guard hook through the measure fold', () => {
+    const command = new ClaudeAgent({
+      permissions: 'yolo',
+      measure: true,
+    }).launchCommand('x');
+    expect(command).toContain('PreToolUse');
+    expect(command).not.toContain('claude-measure.settings.json');
+  });
+
+  it('rejects a guard that is not a boolean', () => {
+    expect(() => new ClaudeAgent({ guard: 'no' } as never)).toThrow(
+      /guard must be a boolean/,
+    );
   });
 });
 

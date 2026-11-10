@@ -8,7 +8,7 @@ A workspace is one Sysbox container with its own Docker daemon, a home volume an
 
 ## Tools
 
-`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh` and `glab`. Docker and DDEV come from the image. `cloudflared` and `frpc` are installed only when the [`preview_transport` parameter](#optional-previews) selects them. With PM bot parameters, the bot runs as a container on the workspace's Docker daemon.
+`ss` (from Ubuntu's `iproute2`), `bakers`, `herdr`, `claude`, `codex`, `cursor-agent`, `gh` and `glab`. Claude and Codex runs start with the [run guard](../../docs/provision/security/run-guard.md) active, without configuration; `bakers agents` shows `guard: active` for Claude and `partial` for Codex. Docker and DDEV come from the image. `cloudflared` and `frpc` are installed only when the [`preview_transport` parameter](#optional-previews) selects them. With PM bot parameters, the bot runs as a container on the workspace's Docker daemon.
 
 ## Prerequisites
 

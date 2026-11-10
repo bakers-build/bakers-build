@@ -281,6 +281,7 @@ describe('ClaudeAgent measure', () => {
       model: 'opus',
       measure: true,
       permissions: 'yolo',
+      guard: false,
       args: ['--verbose'],
     }).launchCommand('go');
     expect(cmd).toBe(
@@ -313,9 +314,11 @@ describe('ClaudeAgent measure', () => {
 
   it('leaves the launch untouched without measure', () => {
     expect(
-      new ClaudeAgent({ model: 'opus', permissions: 'yolo' }).launchCommand(
-        'go',
-      ),
+      new ClaudeAgent({
+        model: 'opus',
+        permissions: 'yolo',
+        guard: false,
+      }).launchCommand('go'),
     ).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions",
     );

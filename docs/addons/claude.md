@@ -39,6 +39,7 @@ One custom candidate:
 | `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `measure` | boolean | `false` | Starts Claude through the addon's measure wrapper. |
+| `guard` | boolean | `true` | `false` turns the [run guard](/provision/security/run-guard) off. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
@@ -47,10 +48,10 @@ Default: `system`. See [Execution security](/provision/security/execution) for b
 
 | `permissions` | Launch flags |
 |---|---|
-| `sandbox` | `--permission-mode dontAsk --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
-| `system` | none: your own Claude settings apply unchanged |
-| `yolo` | `--dangerously-skip-permissions`, the launch before `permissions` existed |
-| `custom` | `--settings '<config as JSON>'`, nothing else |
+| `sandbox` | `--permission-mode dontAsk --setting-sources project,local --settings '<generated, with the guard hook>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
+| `system` | `--settings '<guard hook>'` over your own settings |
+| `yolo` | `--dangerously-skip-permissions --settings '<guard hook>'` |
+| `custom` | `--settings '<config as JSON, plus the guard hook>'` |
 
 `sandbox` keys and their defaults:
 

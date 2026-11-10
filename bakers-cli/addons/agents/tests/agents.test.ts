@@ -36,6 +36,7 @@ describe('agent catalog report', () => {
           harness: 'test-harness',
           model: 'model-test',
           permissions: null,
+          guard: 'not_applied',
         },
       ],
       enabled_agents: ['fast'],
@@ -65,6 +66,31 @@ describe('agent catalog report', () => {
       default_agent: 'local',
       routes: { default: { '*': 'local' } },
     });
+  });
+
+  it('shows whether the run guard is active, off or not applied per alias', () => {
+    const withGuard = (alias: string, guard?: 'active' | 'partial' | 'off') => {
+      const c = candidate(alias);
+      return guard ? { ...c, agent: { ...c.agent, guard } } : c;
+    };
+    const report = agentReport({
+      agents: [
+        withGuard('a', 'active'),
+        withGuard('p', 'partial'),
+        withGuard('o', 'off'),
+        withGuard('n'),
+      ],
+      enabled_agents: ['a', 'p', 'o', 'n'],
+      disabled_agents: [],
+      default_agent: 'a',
+      routes: { default: { '*': 'a' } },
+    });
+    expect(report.agents.map((a) => a.guard)).toEqual([
+      'active',
+      'partial',
+      'off',
+      'not_applied',
+    ]);
   });
 
   it('shows the effective run security of every alias with its source layers', () => {

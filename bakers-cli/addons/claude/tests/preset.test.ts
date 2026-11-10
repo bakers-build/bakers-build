@@ -59,7 +59,11 @@ describe('Claude catalog', () => {
     ['--model', 'custom-model'],
     ['--model=custom-model'],
   ])('lets explicit args %j override the Fable model', async (...args) => {
-    const candidates = await agents([], { args, permissions: 'system' });
+    const candidates = await agents([], {
+      args,
+      permissions: 'system',
+      guard: false,
+    });
     const agent = await candidates
       .find((c) => c.alias === 'fable')!
       .agent.createAgent({} as never);

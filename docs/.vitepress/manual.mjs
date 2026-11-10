@@ -74,6 +74,7 @@ export const SIDEBAR = {
     ]),
     group("Security", [
       ["Execution limits", "/provision/security/execution"],
+      ["Run guard", "/provision/security/run-guard"],
       ["Machine and project policy", "/provision/security/shared-settings"],
       ["Access and data", "/provision/security/access-and-data"],
       ["API keys and service accounts", "/provision/security/credentials"],

@@ -5,7 +5,7 @@ description: How strictly Claude, Codex and Grok runs start on a machine - the p
 
 # Run security
 
-A run executes untrusted ticket content on your machine. Review its limits before dispatch. The default mode is `system`; choose `sandbox` for untrusted tickets. Each harness entry's `with` takes `permissions`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
+A run executes untrusted ticket content on your machine. The default mode is `system`; choose `sandbox` for untrusted tickets. Claude and Codex also apply the [run guard](/provision/security/run-guard) in every mode. Each harness entry's `with` takes `permissions`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
 
 ## Modes
 
@@ -40,8 +40,6 @@ Install the Linux packages with your package manager:
 | apt (Debian, Ubuntu) | `sudo apt-get install -y bubblewrap socat` |
 | dnf (Fedora, RHEL) | `sudo dnf install -y bubblewrap socat` |
 | pacman (Arch) | `sudo pacman -S --needed bubblewrap socat` |
-
-Other distributions need `bubblewrap` and `socat`.
 
 OpenCode has no OS sandbox on any platform; it runs in `system` and rejects `sandbox` when loading, so `bakers conductor check` never checks it.
 

@@ -1,5 +1,7 @@
+import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+import { promisify } from 'node:util';
 import {
   type ConductorLogger,
   killRunProcesses,
@@ -7,6 +9,7 @@ import {
   shellQuote,
   stemForConfigFile,
 } from '@bakers-build/core';
+import { guardLogPath, readGuardLog } from '../guard/log.js';
 import type { PluginLaunch } from '../plugins/agent.js';
 import {
   type BbAgent,
@@ -66,6 +69,8 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
     signal?.addEventListener('abort', onAbort, { once: true });
   });
 }
+
+const execFileAsync = promisify(execFile);
 
 /**
  * A run-env key is reserved when it names a conductor-provided core variable:
@@ -794,11 +799,75 @@ export class Conductor {
         { run: r.runUuid, state: r.state, footprint: captured.metrics },
         'run finalised',
       );
+      // After the close, so a retried finalize never repeats the report.
+      await this.reportGuardRefusals(r);
     } catch (err) {
       this.logger.warn(
         { run: r.runUuid, err: String(err) },
         'run finalise failed',
       );
+    }
+  }
+
+  /**
+   * One run note per command the run guard refused, and one ticket comment
+   * when the run ends without delivery: cancelled, or its branch not on the
+   * remote. Best effort.
+   */
+  private async reportGuardRefusals(r: FinalizableRun): Promise<void> {
+    const refusals = readGuardLog(r.runUuid);
+    if (refusals.length === 0) return;
+    const line = (e: (typeof refusals)[number]) =>
+      `\`${e.command}\` (${e.rule}): ${e.reason}; allowed instead: ${e.alternative}`;
+    try {
+      for (const e of refusals)
+        await this.remote.appendRunNote(
+          r.runUuid,
+          `run guard refused ${line(e)}`,
+        );
+      const branch = await this.remote.getRunTicketBranchName(r.runUuid);
+      if (
+        !r.ticketUuid ||
+        (r.state === 'done' && (await this.branchOnRemote(branch)))
+      )
+        return;
+      if (!this.remote.siteTools) {
+        this.logger.warn(
+          { run: r.runUuid },
+          'run guard refusals not posted: no site tools',
+        );
+        return;
+      }
+      await this.remote.siteTools.call('tool_api__bakers_comment_publish', {
+        ticket: r.ticketUuid,
+        type: 'comment',
+        body: `The run ended without delivering \`${branch}\`. The bakers run guard refused:\n\n${refusals
+          .map((e) => `- ${line(e)}`)
+          .join('\n')}\n`,
+      });
+    } catch (err) {
+      this.logger.warn(
+        { run: r.runUuid, err: String(err) },
+        'run guard report failed',
+      );
+    }
+  }
+
+  /**
+   * Whether origin has `branch`, asked from the checkout: the run's worktree
+   * may already be removed. An unreadable remote counts as no.
+   */
+  private async branchOnRemote(branch: string): Promise<boolean> {
+    if (!branch) return false;
+    try {
+      await execFileAsync(
+        'git',
+        ['ls-remote', '--exit-code', '--heads', 'origin', branch],
+        { cwd: this.checkoutRoot, timeout: 30_000 },
+      );
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -1474,6 +1543,9 @@ export class Conductor {
       ...(t.identifier ? { BAKERS_TICKET_IDENTIFIER: t.identifier } : {}),
       ...(state ? { BAKERS_STATE: state } : {}),
       ...(runUuid ? { BAKERS_RUN_UUID: runUuid } : {}),
+      // The run guard's inputs (guard/hook.ts); BAKERS_WORKTREE joins at dispatch.
+      ...(t.branchName ? { BAKERS_BRANCH: t.branchName } : {}),
+      ...(runUuid ? { BAKERS_GUARD_LOG: guardLogPath(runUuid) } : {}),
       BAKERS_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
       WORKSPACE_ROOT: this.checkoutRoot,
       ...(t.issueUrl ? { TICKET_URL: t.issueUrl } : {}),
@@ -1647,6 +1719,7 @@ export class Conductor {
     for (const [key, value] of Object.entries(ws.env ?? {})) {
       if (!isReservedEnvKey(key)) env[key] = value;
     }
+    env.BAKERS_WORKTREE = ws.path;
     // A claimable state has no project policy without a WORKFLOW.md. Warn and
     // proceed so the missing project instructions are observable without
     // wedging the run. `ws.instructions` is the loaded file (null when absent).
