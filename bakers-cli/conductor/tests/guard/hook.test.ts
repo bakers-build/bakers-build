@@ -108,7 +108,8 @@ describe('guard hook', () => {
     expect(runHook('{not json', env()).exitCode).toBe(0);
     expect(runHook('{"cmd": "git push -f', env()).exitCode).toBe(2);
     expect(
-      runHook(claudeInput('ls -la'), { ...env(), BAKERS_WORKTREE: '' }).exitCode,
+      runHook(claudeInput('ls -la'), { ...env(), BAKERS_WORKTREE: '' })
+        .exitCode,
     ).toBe(0);
     expect(
       runHook(claudeInput('rm x'), { ...env(), BAKERS_WORKTREE: '' }).exitCode,
