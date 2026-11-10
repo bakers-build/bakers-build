@@ -27,7 +27,7 @@
 #     a learned skill and a session are kept
 #   - a missing required key stops the start and is named, and so does more than
 #     one allowed channel
-#   - run mode, with the capabilities and options of the template's compose
+#   - run mode, with the capabilities and options of the bot's compose
 #     file: the poller and exactly one gateway run, as hermes, on the first
 #     start and again on a start over the same data directory
 # Needs Docker.
@@ -38,9 +38,9 @@ ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
 
 HERMES_VERSION=v0.22.5
-# The coder user of the bakers-ddev workspace image.
+# The coder user of a Coder workspace image.
 OWNER=1000
-COMPOSE=coder/bakers-ddev/pm-bot.compose.yaml
+COMPOSE=experimental/pm-bot/compose.yaml
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 pass() { echo "ok: $*"; }

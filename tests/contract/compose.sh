@@ -232,31 +232,4 @@ try {
 JS
 pass "workspace preview requires explicit local provider configuration"
 
-# Coder startup must not download or start unselected tunnel providers.
-node --input-type=module <<'JS'
-import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { spawnSync } from 'node:child_process';
-const dir = mkdtempSync(join(tmpdir(), 'bakers-coder-'));
-try {
-  const bin = join(dir, 'bin'); mkdirSync(bin);
-  for (const tool of ['ss', 'bakers', 'herdr', 'claude', 'codex', 'cursor-agent', 'gh', 'glab', 'setsid', 'nohup']) {
-    writeFileSync(join(bin, tool), '#!/bin/sh\nexit 0\n', {mode: 0o755});
-  }
-  writeFileSync(join(bin, 'curl'), '#!/bin/sh\necho unexpected-download >&2\nexit 91\n', {mode: 0o755});
-  const result = spawnSync('bash', ['coder/bakers-ddev/scripts/install.sh'], {
-    encoding: 'utf8', env: {HOME: dir, TMPDIR: dir, PATH: `${bin}:/usr/bin:/bin`, FRP_VERSION: 'unused', CLOUDFLARED_VERSION: 'unused'}
-  });
-  assert.equal(result.status, 0, result.stderr);
-  assert.doesNotMatch(result.stdout, /(?:frpc|cloudflared): installing/);
-  const template = readFileSync('coder/bakers-ddev/template.tf', 'utf8');
-  const image = template.match(/variable "image" \{[\s\S]*?\n\}/)?.[0];
-  assert.ok(image, 'image input exists');
-  assert.doesNotMatch(image, /default\s*=/, 'Coder image must be explicitly supplied');
-} finally { rmSync(dir, {recursive: true, force: true}); }
-JS
-pass "Coder requires an image and leaves tunnel providers unselected"
-
 pass "compose.sh"

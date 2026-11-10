@@ -137,15 +137,7 @@ before_script:
   - .gitlab-ci.yml
 .changes_pm_bot: &changes_pm_bot
   - experimental/pm-bot/**/*
-  - coder/bakers-ddev/pm-bot.compose.yaml
   - tests/contract/pm-bot*
-  - .gitlab-ci.yml
-.changes_coder_pm_bot: &changes_coder_pm_bot
-  - coder/**/*
-  - experimental/pm-bot/**/*
-  - tests/contract/coder-pm-bot.sh
-  - tests/contract/coder-conductors.sh
-  - tests/contract/coder-preview.sh
   - .gitlab-ci.yml
 .changes_docs: &changes_docs
   - docs/**/*
@@ -405,22 +397,6 @@ pm_bot:
     expire_in: 1 week
     reports:
       junit: junit-pm-bot.xml
-
-coder_pm_bot:
-  stage: test
-  tags:
-    - parallel
-  needs: []
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      changes: *changes_coder_pm_bot
-  image: node:22
-  before_script: []
-  script:
-    - bash -n coder/bakers-ddev/scripts/install.sh coder/bakers-ddev/scripts/pm-bot.sh coder/bakers-ddev/scripts/conductors.sh
-    - bash tests/contract/coder-pm-bot.sh
-    - bash tests/contract/coder-conductors.sh
-    - bash tests/contract/coder-preview.sh
 
 # BB-326: the renderer-coupled suite runs under Bun, because @opentui/core reaches its
 # native core through FFI that Node does not expose. It is its OWN job with its OWN junit

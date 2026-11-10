@@ -73,6 +73,6 @@ bakers ports list
 - With [frp](/addons/ports-frp), DDEV services are proxied straight to the container IP. An unreachable IP, for example on Docker Desktop, fails that service; OrbStack works.
 - It has no CMS-specific rules. A project that needs a particular `Host` header handles that itself.
 - Linux only. It does not need root.
-- A [Coder workspace](/provision/coder-workspace) from the `bakers-ddev` template ships Docker and DDEV.
+- A Coder workspace whose template ships Docker and DDEV.
 
 Package source in a checkout: `bakers-cli/addons/ddev`.

@@ -58,7 +58,6 @@ export const SIDEBAR = {
       ["Run agents securely", "/provision/security/"],
     ]),
     group("Machine setup", [
-      ["Set up a Coder workspace", "/provision/coder-workspace"],
       ["Set up a worker server", "/provision/worker-server"],
       ["Install Node.js", "/provision/node"],
     ]),
