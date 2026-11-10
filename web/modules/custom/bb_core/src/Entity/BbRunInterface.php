@@ -129,9 +129,8 @@ interface BbRunInterface extends BbContentEntityInterface {
    * One-line reason a failed run failed, or NULL for any other state.
    *
    * The first non-empty error-log line without a leading "Error: ", cut at 140
-   * characters; a failed run with no error log gets the no-reason copy.
-   *
-   * @throws \Drupal\bb_core\RunLog\RunLogException
+   * characters; a failed run with no or an unreadable error log gets the
+   * no-reason copy. Never throws.
    */
   public function failureReason(): ?string;
 

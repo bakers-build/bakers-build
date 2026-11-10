@@ -19,6 +19,7 @@ use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\bb_core\Form\BbRunForm;
 use Drupal\bb_core\ListBuilder\BbRunListBuilder;
 use Drupal\bb_core\Routing\BbRunRouteProvider;
+use Drupal\bb_core\RunLog\RunLogException;
 use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\bb_core\RunLog\RunLogStorageAllowedItemList;
 use Drupal\bb_core\RunLog\RunLogStore;
@@ -456,9 +457,19 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
       return NULL;
     }
     $file = $this->get('error_log_file')->entity;
-    $line = $file instanceof FileInterface
-      ? \Drupal::service(RunLogStore::class)->firstLine($file, $this)
-      : '';
+    $line = '';
+    try {
+      if ($file instanceof FileInterface) {
+        $line = \Drupal::service(RunLogStore::class)->firstLine($file, $this);
+      }
+    }
+    catch (RunLogException $e) {
+      // One unreadable log must not break the screens that show the reason.
+      \Drupal::logger('bb_core')->warning('Run @id: failure reason unreadable: @message', [
+        '@id' => $this->id(),
+        '@message' => $e->getMessage(),
+      ]);
+    }
     $line = preg_replace('/^Error: /', '', $line);
     return $line === '' || $line === NULL
       ? (string) new TranslatableMarkup('No reason was recorded. Open the log for details.')

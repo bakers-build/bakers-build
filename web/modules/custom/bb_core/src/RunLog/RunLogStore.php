@@ -27,6 +27,11 @@ final class RunLogStore {
 
   public const DIRECTORY = 'bakers-run-logs';
 
+  /**
+   * Bytes of a line firstLine() keeps before it stops reading.
+   */
+  private const FIRST_LINE_CAP = 4096;
+
   public function __construct(
     private readonly WorkspaceResolverInterface $workspaceResolver,
     private readonly FileSystemInterface $fileSystem,
@@ -133,6 +138,9 @@ final class RunLogStore {
   /**
    * The first non-blank line of a log, read in chunks (never the whole file).
    *
+   * A line longer than FIRST_LINE_CAP bytes comes back cut there; callers
+   * shorten it further.
+   *
    * @throws \Drupal\bb_core\RunLog\RunLogException
    *
    * @SuppressWarnings("PHPMD.ErrorControlOperator")
@@ -144,22 +152,26 @@ final class RunLogStore {
     if ($handle === FALSE || $inflate === FALSE && self::isGzipLog($file)) {
       throw new RunLogException('Run log could not be read.');
     }
+    // Pending text of the line being read, never longer than the cap.
     $text = '';
     try {
       while (!feof($handle)) {
-        $chunk = fread($handle, 8192);
+        $chunk = fread($handle, 1024);
         if ($chunk === FALSE || ($inflate !== FALSE && ($chunk = @inflate_add($inflate, $chunk)) === FALSE)) {
           throw new RunLogException('Run log could not be read.');
         }
-        $text .= $chunk;
-        // Only a completed line counts: the last chunk may end mid-line.
-        $lines = explode("\n", $text);
-        foreach (array_slice($lines, 0, -1) as $line) {
-          if (trim($line) !== '') {
-            return trim($line);
+        $parts = explode("\n", $chunk);
+        $tail = array_pop($parts);
+        foreach ($parts as $part) {
+          $text = trim($text . $part);
+          if ($text !== '') {
+            return substr($text, 0, self::FIRST_LINE_CAP);
           }
         }
-        $text = end($lines);
+        $text = ltrim($text . $tail);
+        if (strlen($text) >= self::FIRST_LINE_CAP) {
+          return substr($text, 0, self::FIRST_LINE_CAP);
+        }
       }
     }
     finally {

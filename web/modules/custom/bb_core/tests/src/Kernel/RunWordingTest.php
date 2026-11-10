@@ -121,6 +121,36 @@ final class RunWordingTest extends KernelTestBase {
   }
 
   /**
+   * A huge single line is bounded: its first 140 characters, cut.
+   */
+  public function testFailureReasonOfHugeSingleLineIsBounded(): void {
+    $reason = $this->failedRun(str_repeat('a', 100000))->failureReason();
+    self::assertSame(str_repeat('a', 139) . '…', $reason);
+  }
+
+  /**
+   * Blank lines spanning several read chunks are skipped.
+   */
+  public function testFailureReasonSkipsBlankLinesBeyondOneChunk(): void {
+    $run = $this->failedRun(str_repeat("\n", 20000) . 'Error: after the blanks');
+    self::assertSame('after the blanks', $run->failureReason());
+  }
+
+  /**
+   * An unreadable error log reads as no reason instead of throwing.
+   */
+  public function testFailureReasonOfMissingLogFileIsTheNoReasonCopy(): void {
+    $run = $this->failedRun('Error: boom');
+    $file = $run->get('error_log_file')->entity;
+    self::assertNotNull($file);
+    unlink((string) $file->getFileUri());
+    self::assertSame(
+      'No reason was recorded. Open the log for details.',
+      $run->failureReason(),
+    );
+  }
+
+  /**
    * Without an error log the reason says so.
    */
   public function testFailureReasonWithoutErrorLog(): void {
