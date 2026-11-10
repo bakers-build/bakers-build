@@ -6004,6 +6004,56 @@ describe('Conductor lost runs (pane gone)', () => {
       expect(executor.started.map((s) => s.run.uuid)).toEqual(['r-2']);
     });
 
+    it('still resumes a lost run when the remote failed right after its pane lookup', async () => {
+      const { agent } = resumableAgent(['r-1']);
+      const executor = new PaneExecutor();
+      executor.alive = false;
+      const { conductor, remote } = await restarted(agent, executor);
+      let failNext = false;
+      const runAlive = executor.runAlive.bind(executor);
+      executor.runAlive = async (branch, runId) => {
+        failNext = true;
+        return runAlive(branch, runId);
+      };
+      const fetchActiveRuns = remote.fetchActiveRuns.bind(remote);
+      remote.fetchActiveRuns = async (id) => {
+        if (failNext) {
+          failNext = false;
+          throw new Error('503');
+        }
+        return fetchActiveRuns(id);
+      };
+
+      await conductor.tick();
+      expect(executor.started).toEqual([]);
+      executor.runAlive = runAlive;
+      await conductor.tick();
+
+      expect(remote.calls.markFailed).toEqual([]);
+      expect(executor.started.map((s) => s.run.uuid)).toEqual(['r-1']);
+    });
+
+    it('keeps the restart reason when failing a refused run is retried', async () => {
+      const { agent } = resumableAgent(['r-1']);
+      const executor = new PaneExecutor();
+      executor.alive = false;
+      const { conductor, remote, worktree } = await restarted(agent, executor);
+      rmSync(worktree, { recursive: true });
+      const markFailed = remote.markFailed.bind(remote);
+      let failures = 1;
+      remote.markFailed = async (runUuid, errorLog) => {
+        if (failures-- > 0) throw new Error('503');
+        return markFailed(runUuid, errorLog);
+      };
+
+      await conductor.tick();
+      await conductor.tick();
+
+      expect(remote.calls.markFailed[0]?.errorLog).toMatch(
+        /^conductor restart: its worktree .* is gone/,
+      );
+    });
+
     it('waits while the pane lookup fails, and fails without resuming a pane lost after recovery', async () => {
       const { agent } = resumableAgent(['r-1']);
       const executor = new PaneExecutor();

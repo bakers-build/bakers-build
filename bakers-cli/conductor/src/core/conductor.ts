@@ -704,6 +704,8 @@ export class Conductor {
       this.signalUi(r.worktreePath);
       this.logger.warn({ run: r.runUuid }, cause);
     } catch (err) {
+      // A transient remote error must not cost the retry its resume or its restart reason.
+      if (recovery) this.recovering?.add(r.runUuid);
       this.logger.warn(
         { run: r.runUuid, err: String(err) },
         'lost run not marked failed; retried next tick',
@@ -763,15 +765,11 @@ export class Conductor {
         true,
       );
     } catch (err) {
-      if (err instanceof RunClosed) {
-        this.logger.info(
-          { run: r.runUuid },
-          'lost run closed during its resume',
-        );
-        return undefined;
-      }
       // A cancel during the launch makes the server reject it; that run is closed, not failed.
-      if (!(await this.stillRunning(r.runUuid).catch(() => true))) {
+      if (
+        err instanceof RunClosed ||
+        !(await this.stillRunning(r.runUuid).catch(() => true))
+      ) {
         this.logger.info(
           { run: r.runUuid },
           'lost run closed during its resume',
