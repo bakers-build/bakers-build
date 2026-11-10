@@ -14,7 +14,7 @@ source. A target whose `branch` is `main` is the **release environment**.
 
 1. A target `branch` equal to `base_branch` leaves nothing to merge: stop and say so.
 2. Freeze the candidate once: `forge_fetch`, target in `branches`
-   ([forge operations](../bb-workflow/references/forge.md)), then the SHA of `origin/<base_branch>`;
+   (the frame's forge operations), then the SHA of `origin/<base_branch>`;
    a pushed `origin/<branch_name>` keeps its head.
 3. Batch: `bakers deployment tickets --since origin/<target branch> --to <SHA>`; report unresolved
    identifiers.
