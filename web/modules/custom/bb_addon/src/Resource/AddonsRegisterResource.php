@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_addon\Resource;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\bb_core\Conductor\ConductorRegistrar;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -47,6 +48,7 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
     private readonly AddonContractValidator $validator,
     private readonly AddonWorkspaceResolver $workspaceResolver,
     private readonly LockBackendInterface $lock,
+    private readonly ConductorRegistrar $registrar,
   ) {}
 
   /**
@@ -59,6 +61,7 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
       $container->get('bb_addon.contract_validator'),
       $container->get('bb_addon.workspace_resolver'),
       $container->get('lock'),
+      $container->get('bb_core.conductor_registrar'),
     );
   }
 
@@ -237,7 +240,7 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
     if (!$conductor instanceof BbConductorInterface) {
       throw new NotFoundHttpException('No such conductor.');
     }
-    if (!$conductor->isOwnedBy($this->currentUser)) {
+    if (!$this->registrar->serves($conductor, $this->currentUser)) {
       throw new AccessDeniedHttpException('Only the conductor owner registers its addons.');
     }
     return $conductor;

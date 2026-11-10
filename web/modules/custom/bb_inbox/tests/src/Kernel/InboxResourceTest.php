@@ -198,6 +198,23 @@ final class InboxResourceTest extends KernelTestBase {
   }
 
   /**
+   * An owner removed from the conductor's workspace reads no inbox there.
+   *
+   * A seat in another workspace keeps the route permission, not the inbox.
+   */
+  public function testRemovedOwnerReadsNoInbox(): void {
+    $this->send($this->guest, 'test.echo', ['text' => 'before removal']);
+    $this->workspaceMember('b', $this->conductorOwner, 'contributor');
+    $this->container->get('bb_core.membership_writer')
+      ->remove($this->fixture('a', 'bb_workspace'), (int) $this->conductorOwner->id());
+
+    $this->container->get('current_user')->setAccount($this->conductorOwner);
+    $this->expectException(AccessDeniedHttpException::class);
+    $this->resource(InboxPendingResource::class)
+      ->process(Request::create('/', 'GET'), (string) $this->conductor->get('conductor_id')->value);
+  }
+
+  /**
    * Reads the pending resource as the given account.
    *
    * @return array<string, mixed>
