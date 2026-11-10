@@ -359,6 +359,24 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
     expect(calls).not.toContainEqual(['tab', 'close', 't2']);
   });
 
+  it('closes every tab carrying the run-ID, such as one herdr restored beside a relaunch', async () => {
+    const calls: string[][] = [];
+    const exec = makeFakeHerdr(calls, {
+      'worktree list': worktreeWith('bakers/bb-123', 'ws1'),
+      'tab list': tabsJson([
+        { tab_id: 't1', label: 'BB-123 · coding #12' },
+        { tab_id: 't2', label: 'BB-123 · coding #12' },
+      ]),
+    });
+    const executor = new HerdrExecutor(
+      { command: 'claude', launch_watch: INSTANT_WATCH },
+      exec,
+    );
+    await executor.cleanupRun('bakers/bb-123', 12);
+    expect(calls).toContainEqual(['tab', 'close', 't1']);
+    expect(calls).toContainEqual(['tab', 'close', 't2']);
+  });
+
   it('is a quiet no-op when no tab matches the run-ID (AC-4)', async () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls, {
@@ -480,6 +498,46 @@ describe('HerdrExecutor.runAlive (by tab label #<runId>)', () => {
     ['an agent herdr resumed by itself', [['claude', '--resume=x']]],
   ])('is false when the restored run tab holds %s', async (_, fg) => {
     expect(await alive(runTabWith(fg))).toBe(false);
+  });
+
+  it('is true when a restored idle tab with the same run id comes before the live one', async () => {
+    const fg: Record<string, string[][]> = {
+      p1: [['-zsh']],
+      p2: [['sh', '/tmp/bakers-run-AbC123/run.sh']],
+    };
+    const exec = async (args: string[]): Promise<string> => {
+      switch (`${args[0]} ${args[1] ?? ''}`.trim()) {
+        case 'worktree list':
+          return worktreeWith('bakers/bb-123', 'ws1');
+        case 'tab list':
+          return tabsJson([
+            { tab_id: 't1', label: 'BB-123 · coding #12' },
+            { tab_id: 't2', label: 'BB-123 · coding #12' },
+          ]);
+        case 'pane list':
+          return JSON.stringify({
+            result: {
+              panes: [
+                { pane_id: 'p1', tab_id: 't1' },
+                { pane_id: 'p2', tab_id: 't2' },
+              ],
+            },
+          });
+        case 'pane process-info':
+          return JSON.stringify({
+            result: {
+              process_info: {
+                foreground_processes: (fg[args[3] ?? ''] ?? []).map((argv) => ({
+                  argv,
+                })),
+              },
+            },
+          });
+        default:
+          return JSON.stringify({ result: {} });
+      }
+    };
+    expect(await alive(exec)).toBe(true);
   });
 
   it('is false when no tab carries the run id', async () => {
