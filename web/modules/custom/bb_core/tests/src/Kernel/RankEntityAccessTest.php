@@ -119,6 +119,26 @@ final class RankEntityAccessTest extends KernelTestBase {
   }
 
   /**
+   * A conductor's owner outside its project's teams still manages it.
+   *
+   * Teams fence the project's tickets, not the owner's own conductor; such a
+   * conductor gets no inbox and registers nothing (ConductorRegistrar).
+   */
+  public function testOwnerOutsideTheTeamsManagesTheirConductor(): void {
+    $owner = $this->createAccount('conductor-owner-outside');
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $owner, ['contributor']);
+    $conductor = $this->createEntity('bb_conductor', [
+      'conductor_id' => 'node-outside',
+      'label' => 'node-outside',
+      'project_id' => $this->fixture('a', 'bb_project')->id(),
+      'owner_user_id' => $owner->id(),
+    ]);
+    self::assertTrue($conductor->access('view', $owner));
+    self::assertTrue($conductor->access('update', $owner));
+    self::assertFalse($this->fixture('a', 'bb_ticket')->access('view', $owner));
+  }
+
+  /**
    * Local editors may assign, but cannot borrow a foreign lead's secret access.
    */
   public function testRankFieldGateDoesNotLeakAcrossWorkspaces(): void {

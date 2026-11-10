@@ -216,7 +216,8 @@ final class BbRankEntityFence {
       $groups,
       static fn (EntityInterface $group): bool => $group->getEntityTypeId() === 'bb_project' && $group->id() !== NULL,
     );
-    if ($projects === [] || $this->readScope->isBypassed($account, $entity->getEntityTypeId())) {
+    // A conductor follows its owner and registration, not the project's teams.
+    if ($projects === [] || $entity->getEntityTypeId() === 'bb_conductor' || $this->readScope->isBypassed($account, $entity->getEntityTypeId())) {
       return FALSE;
     }
     $scope = array_map('intval', $this->readScope->projectIds($account));
