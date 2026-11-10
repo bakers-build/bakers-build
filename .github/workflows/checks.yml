@@ -190,6 +190,22 @@ jobs:
           bash tests/config-sync/check-config-sync.sh
           bash tests/config-sync/check-ci-wiring.sh
     container: php:8.4
+  # A known advisory in a locked dependency fails the checks; abandoned packages are only reported.
+  composer_audit:
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Audit locked dependencies
+        shell: sh
+        run: |-
+          set -eu
+          curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+          composer audit --locked --abandoned=report --no-interaction
+    container: php:8.4
   compose_render:
     runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
     if: *checks
@@ -463,6 +479,7 @@ jobs:
       DB_PASSWORD: db
       DB_ROOT_PASSWORD: root
       DRUPAL_HASH_SALT: gate-stack-hash-salt-not-a-secret-0123
+      INTERNAL_SUBNET: 10.250.0.0/24
       REGISTRY_IMAGE_PHP: bakers-gate/php:local
       REGISTRY_IMAGE_NGINX: bakers-gate/nginx:local
       REGISTRY_IMAGE_E2E: bakers-gate/e2e:local
@@ -530,6 +547,7 @@ jobs:
       - phpstan
       - docs_pages
       - config_sync
+      - composer_audit
       - compose_render
       - pm_bot
       - coder_pm_bot

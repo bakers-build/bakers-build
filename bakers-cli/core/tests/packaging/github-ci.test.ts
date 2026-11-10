@@ -189,6 +189,7 @@ describe('GitHub migration checks', () => {
       'docs_pages',
       'mr_title',
       'config_sync',
+      'composer_audit',
       'compose_render',
       'pm_bot',
       'coder_pm_bot',

@@ -32,7 +32,7 @@ render() {
   COMPOSE_PROJECT_NAME=bakers-contract DOMAIN=dummy.example.test \
   STACK_NAME=dummy-stack \
   DB_NAME=dummy DB_USER=dummy DB_PASSWORD=dummy-pw DB_ROOT_PASSWORD=dummy-root-pw \
-  DRUPAL_HASH_SALT=dummy-salt \
+  DRUPAL_HASH_SALT=dummy-salt INTERNAL_SUBNET=172.30.99.0/24 \
   REGISTRY_IMAGE_PHP=dummy/php:dummy REGISTRY_IMAGE_NGINX=dummy/nginx:dummy \
   REGISTRY_IMAGE_E2E=dummy/e2e:dummy REGISTRY_IMAGE_DOCS=dummy/docs:dummy \
   DOCS_DOMAIN=docs.example.test DOCS_ALIAS_DOMAIN=www.docs.example.test \
@@ -134,6 +134,30 @@ shutil.rmtree(work)
 PYTEST
 pass "operator compose file is standalone, trusts its subnet, requires its inputs and matches the docs"
 
+# The hosted stack, like the operator one: its own host, its own proxy network, its own salt.
+BASE_JSON="${TMPDIR:-/tmp}/bakers-base.json" python3 <<'PYTEST'
+import json, os, subprocess
+c = json.load(open(os.environ["BASE_JSON"]))
+s = c["services"]
+subnet = c["networks"]["internal"]["ipam"]["config"][0]["subnet"]
+assert subnet == "172.30.99.0/24", subnet
+for name in ("deploy", "install", "php", "cron"):
+    e = s[name]["environment"]
+    assert e.get("DOMAIN") == "dummy.example.test", name
+    assert e.get("TRUSTED_PROXY_SUBNET") == subnet, name
+assert all("NGINX_ERROR_LOG_LEVEL" not in v.get("environment", {}) for v in s.values()), "a service sets the nginx error log level"
+env = {**os.environ, "COMPOSE_PROJECT_NAME": "bakers-contract", "DOMAIN": "dummy.example.test", "STACK_NAME": "dummy-stack",
+       "DB_NAME": "dummy", "DB_USER": "dummy", "DB_PASSWORD": "dummy-pw", "DB_ROOT_PASSWORD": "dummy-root-pw",
+       "DRUPAL_HASH_SALT": "dummy-salt", "INTERNAL_SUBNET": "172.30.99.0/24",
+       "REGISTRY_IMAGE_PHP": "dummy/php:dummy", "REGISTRY_IMAGE_NGINX": "dummy/nginx:dummy"}
+for name in ("DOMAIN", "DRUPAL_HASH_SALT", "INTERNAL_SUBNET"):
+    r = subprocess.run(["docker", "compose", "-f", "docker-compose.yml", "-f", "docker-compose.traefik.yml", "--profile", "install", "config", "-q"],
+                       env={**env, name: ""}, capture_output=True, text=True)
+    assert r.returncode != 0, f"the hosted stack renders without {name}"
+    assert name in r.stderr, r.stderr
+PYTEST
+pass "hosted stack requires DOMAIN, DRUPAL_HASH_SALT and INTERNAL_SUBNET, trusts only its network and logs no debug"
+
 # site-deploy.sh installs only a reachable, empty database and updates only an installed one.
 python3 <<'PYTEST'
 import os, subprocess, tempfile
@@ -180,6 +204,13 @@ assert "-y deploy" in calls and "site:install" not in calls, calls
 assert "sql:dump" not in calls, "the dump runs before the update, not inside it"
 r, calls = run("1", "57", "1", fail_on="-y deploy")
 assert r.returncode != 0 and "drush output for -y deploy" in r.stderr and "[bakers] " in r.stderr, r
+# A failure while the development module is on still takes it off again.
+for step in ("-y devel-entity-updates", "-y config:import"):
+    r, calls = run("1", "57", "1", fail_on=step)
+    assert r.returncode != 0, (step, r)
+    assert calls.splitlines()[-1] == "-y pm:uninstall devel_entity_updates devel", (step, calls)
+r, calls = run("1", "57", "1")
+assert "pm:uninstall" not in calls, calls
 r, calls = run("1", "3", "0")
 assert r.returncode != 0 and "site:install" not in calls and "-y deploy" not in calls, calls
 PYTEST
@@ -245,6 +276,12 @@ done
 [ "$(grep -c '^COMPOSE_PROFILES=docs$' komodo/bakers.toml)" = 2 ] \
   || fail "komodo/bakers.toml: a stack other than develop and prod enables the docs profile"
 pass "komodo/bakers.toml enables the docs host on develop and prod only"
+
+# Every stack pins its own proxy network: one shared subnet stops the second stack from starting.
+stacks="$(grep -c '^\[\[stack\]\]$' komodo/bakers.toml)"
+[ "$(grep -E '^INTERNAL_SUBNET=172\.30\.[0-9]+\.0/24$' komodo/bakers.toml | sort -u | wc -l)" = "$stacks" ] \
+  || fail "komodo/bakers.toml: not every stack sets its own INTERNAL_SUBNET"
+pass "komodo/bakers.toml gives every stack its own INTERNAL_SUBNET"
 
 # The merge gate's e2e overlay: no host port anywhere, the recipe world never runs
 # `drush deploy` (it imports config/sync), and the runner is opt-in by profile.

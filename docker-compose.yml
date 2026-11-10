@@ -3,7 +3,8 @@
 # environment (set per branch by the keytec-ai CLI / Resource Sync TOML):
 #   REGISTRY_IMAGE_PHP / REGISTRY_IMAGE_NGINX  image refs (registry, tagged per build)
 #   STACK_NAME                                 unique per branch -> isolated ingress routers
-#   DOMAIN, DB_*, DRUPAL_HASH_SALT             env + secrets
+#   DOMAIN, DB_*, DRUPAL_HASH_SALT             env + secrets (DOMAIN and the salt required)
+#   INTERNAL_SUBNET                            the stack's own /24, the only trusted proxy
 services:
   # One-shot root service: the wodby php/nginx images run as uid 1000, but Docker
   # creates named volumes owned by root. This fixes ownership of files dirs + /tmp
@@ -58,7 +59,10 @@ services:
       DB_DRIVER: "mysql"
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
-      DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
+      DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
+      DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT:?Set DRUPAL_HASH_SALT}
+      # The only forwarded-header source settings.container.php trusts: this stack's own network.
+      TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:?Set INTERNAL_SUBNET to this stack's own /24}
       # SaaS: run-log storage stays off; only docker/compose/docker-compose.yml may enable it.
       FEATURE_FLAG_RUN_LOG_STORAGE: "0"
     volumes:
@@ -98,7 +102,10 @@ services:
       DB_DRIVER: "mysql"
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
-      DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
+      DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
+      DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT:?Set DRUPAL_HASH_SALT}
+      # The only forwarded-header source settings.container.php trusts: this stack's own network.
+      TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:?Set INTERNAL_SUBNET to this stack's own /24}
       # SaaS: run-log storage stays off; only docker/compose/docker-compose.yml may enable it.
       FEATURE_FLAG_RUN_LOG_STORAGE: "0"
       BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
@@ -147,7 +154,10 @@ services:
       CONF_DIR: /var/www/conf
       DRUPAL_VERSION: "11"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
-      DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
+      DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
+      DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT:?Set DRUPAL_HASH_SALT}
+      # The only forwarded-header source settings.container.php trusts: this stack's own network.
+      TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:?Set INTERNAL_SUBNET to this stack's own /24}
       # SaaS: run-log storage stays off; only docker/compose/docker-compose.yml may enable it.
       FEATURE_FLAG_RUN_LOG_STORAGE: "0"
       # Outbound SMTP: settings.container.php reads these at runtime (getenv). The
@@ -178,7 +188,6 @@ services:
       - php
     environment:
       NGINX_STATIC_OPEN_FILE_CACHE: "off"
-      NGINX_ERROR_LOG_LEVEL: debug
       NGINX_BACKEND_HOST: php
       NGINX_SERVER_ROOT: /var/www/html/web
       NGINX_VHOST_PRESET: "drupal10"
@@ -215,7 +224,10 @@ services:
       DB_DRIVER: "mysql"
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
-      DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
+      DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
+      DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT:?Set DRUPAL_HASH_SALT}
+      # The only forwarded-header source settings.container.php trusts: this stack's own network.
+      TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:?Set INTERNAL_SUBNET to this stack's own /24}
       # SaaS: run-log storage stays off; only docker/compose/docker-compose.yml may enable it.
       FEATURE_FLAG_RUN_LOG_STORAGE: "0"
       # Cron sends scheduled mail too, so it needs the same SMTP passthrough.
@@ -254,5 +266,8 @@ volumes:
 
 networks:
   internal:
+    ipam:
+      config:
+        - subnet: ${INTERNAL_SUBNET:?Set INTERNAL_SUBNET to this stack's own /24}
   # The public-facing ingress network (traefik_proxy) is declared by
   # the per-environment ingress overlay, not here — see the nginx service note.

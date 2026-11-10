@@ -1,0 +1,613 @@
+ ------------------------------------------------ ------------- 
+  Name                                             State        
+ ------------------------------------------------ ------------- 
+  bb_browser_test.import                           Only         
+                                                   in DB        
+  bb_connector.connector.api_gitlab                Only         
+                                                   in DB        
+  bb_core.bb_comment_type.bb_comment               Only         
+                                                   in sync dir  
+  bb_core.bb_comment_type.review                   Only         
+                                                   in sync dir  
+  bb_core.bb_figure.project_flow                   Only         
+                                                   in sync dir  
+  bb_core.bb_figure.project_overview               Only         
+                                                   in sync dir  
+  bb_core.bb_figure.project_people                 Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_members                   Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_members_tickets_trend     Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_models                    Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_models_trend              Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_projects                  Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_runs_trend                Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_tickets_trend             Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_tokens_trend              Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_user_overview             Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_user_projects             Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_user_runs_trend           Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_user_tickets_trend        Only         
+                                                   in sync dir  
+  bb_core.bb_figure.team_user_tokens_trend         Only         
+                                                   in sync dir  
+  bb_core.bb_figure.user_flow                      Only         
+                                                   in sync dir  
+  bb_core.bb_figure.user_overview                  Only         
+                                                   in sync dir  
+  bb_core.bb_figure.user_projects                  Only         
+                                                   in sync dir  
+  bb_core.bb_figure.user_tickets                   Only         
+                                                   in sync dir  
+  bb_core.bb_figure.workspace_flow                 Only         
+                                                   in sync dir  
+  bb_core.bb_figure.workspace_models               Only         
+                                                   in sync dir  
+  bb_core.bb_figure.workspace_overview             Only         
+                                                   in sync dir  
+  bb_core.bb_figure.workspace_people               Only         
+                                                   in sync dir  
+  bb_core.bb_figure.workspace_projects             Only         
+                                                   in sync dir  
+  bb_core.bb_figure.workspace_projects_tokens      Only         
+                                                   in sync dir  
+  bb_core.bb_figure_group.breakdown                Only         
+                                                   in sync dir  
+  bb_core.bb_figure_group.insights                 Only         
+                                                   in sync dir  
+  bb_core.bb_figure_group.my_work                  Only         
+                                                   in sync dir  
+  bb_core.bb_figure_group.overview                 Only         
+                                                   in sync dir  
+  bb_core.bb_figure_group.runs                     Only         
+                                                   in sync dir  
+  bb_core.bb_figure_group.tickets                  Only         
+                                                   in sync dir  
+  bb_core.bb_figure_group.tokens                   Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.closed_tickets            Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.closed_tickets_many_run   Only         
+  s                                                in sync dir  
+  bb_core.bb_measurement.created_tickets           Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.job_rating                Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.open_tickets              Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.rated_tickets             Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.run_tokens                Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.run_tokens_claimed        Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.run_tokens_done           Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.run_tokens_expired        Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.run_tokens_failed         Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.run_tokens_running        Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.runs                      Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.runs_per_ticket           Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.tickets_per_run           Only         
+                                                   in sync dir  
+  bb_core.bb_measurement.tokens_per_ticket         Only         
+                                                   in sync dir  
+  bb_core.bb_vocabulary.label                      Only         
+                                                   in sync dir  
+  bb_core.bb_vocabulary.recipe                     Only         
+                                                   in sync dir  
+  bb_core.bb_vocabulary.type                       Only         
+                                                   in sync dir  
+  core.date_format.fallback                        Only         
+                                                   in sync dir  
+  core.date_format.html_date                       Only         
+                                                   in sync dir  
+  core.date_format.html_datetime                   Only         
+                                                   in sync dir  
+  core.date_format.html_month                      Only         
+                                                   in sync dir  
+  core.date_format.html_time                       Only         
+                                                   in sync dir  
+  core.date_format.html_week                       Only         
+                                                   in sync dir  
+  core.date_format.html_year                       Only         
+                                                   in sync dir  
+  core.date_format.html_yearless_date              Only         
+                                                   in sync dir  
+  core.date_format.long                            Only         
+                                                   in sync dir  
+  core.date_format.medium                          Only         
+                                                   in sync dir  
+  core.date_format.normal                          Only         
+                                                   in sync dir  
+  core.date_format.short                           Only         
+                                                   in sync dir  
+  core.entity_form_display.bb_group.bb_group.cre   Only         
+  ate                                              in sync dir  
+  core.entity_form_display.bb_group.bb_group.set   Only         
+  tings                                            in sync dir  
+  core.entity_form_display.bb_project.bb_project   Only         
+  .settings                                        in sync dir  
+  core.entity_form_display.bb_team.bb_team.setti   Only         
+  ngs                                              in sync dir  
+  core.entity_form_display.bb_ticket.bb_ticket.c   Only         
+  reate                                            in sync dir  
+  core.entity_form_display.bb_ticket.bb_ticket.p   Only         
+  roperty                                          in sync dir  
+  core.entity_form_display.bb_ticket.bb_ticket.s   Only         
+  ettings                                          in sync dir  
+  core.entity_form_display.bb_ticket_template.bb   Only         
+  _ticket_template.default                         in sync dir  
+  core.entity_form_display.bb_workspace.bb_works   Only         
+  pace.settings                                    in sync dir  
+  core.entity_form_display.og_membership.default   Only         
+  .default                                         in sync dir  
+  core.entity_form_display.user.user.default       Only         
+                                                   in sync dir  
+  core.entity_form_display.user.user.profile       Only         
+                                                   in sync dir  
+  core.entity_form_mode.bb_group.create            Only         
+                                                   in sync dir  
+  core.entity_form_mode.bb_group.settings          Only         
+                                                   in sync dir  
+  core.entity_form_mode.bb_project.settings        Only         
+                                                   in sync dir  
+  core.entity_form_mode.bb_team.settings           Only         
+                                                   in sync dir  
+  core.entity_form_mode.bb_ticket.create           Only         
+                                                   in sync dir  
+  core.entity_form_mode.bb_ticket.property         Only         
+                                                   in sync dir  
+  core.entity_form_mode.bb_ticket.settings         Only         
+                                                   in sync dir  
+  core.entity_form_mode.bb_workspace.settings      Only         
+                                                   in sync dir  
+  core.entity_form_mode.user.profile               Only         
+                                                   in sync dir  
+  core.entity_form_mode.user.register              Only         
+                                                   in sync dir  
+  core.entity_view_display.bb_activity.bb_activi   Only         
+  ty.full                                          in sync dir  
+  core.entity_view_display.bb_comment.bb_comment   Only         
+  .full                                            in sync dir  
+  core.entity_view_display.bb_comment.bb_comment   Only         
+  .teaser                                          in sync dir  
+  core.entity_view_display.bb_comment.review.ful   Only         
+  l                                                in sync dir  
+  core.entity_view_display.bb_comment.review.tea   Only         
+  ser                                              in sync dir  
+  core.entity_view_display.bb_conductor.bb_condu   Only         
+  ctor.full                                        in sync dir  
+  core.entity_view_display.bb_group.bb_group.ful   Only         
+  l                                                in sync dir  
+  core.entity_view_display.bb_machine.bb_machine   Only         
+  .full                                            in sync dir  
+  core.entity_view_display.bb_project.bb_project   Only         
+  .epics                                           in sync dir  
+  core.entity_view_display.bb_project.bb_project   Only         
+  .full                                            in sync dir  
+  core.entity_view_display.bb_run.bb_run.full      Only         
+                                                   in sync dir  
+  core.entity_view_display.bb_run.bb_run.overlay   Only         
+                                                   in sync dir  
+  core.entity_view_display.bb_run.bb_run.teaser    Only         
+                                                   in sync dir  
+  core.entity_view_display.bb_team.bb_team.full    Only         
+                                                   in sync dir  
+  core.entity_view_display.bb_ticket.bb_ticket.f   Only         
+  ull                                              in sync dir  
+  core.entity_view_display.bb_ticket_template.bb   Only         
+  _ticket_template.default                         in sync dir  
+  core.entity_view_display.og_membership.default   Only         
+  .default                                         in sync dir  
+  core.entity_view_display.user.user.compact       Only         
+                                                   in sync dir  
+  core.entity_view_display.user.user.full          Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_activity.full           Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_comment.full            Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_comment.teaser          Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_conductor.full          Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_group.full              Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_machine.full            Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_project.epics           Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_project.full            Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_run.full                Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_run.overlay             Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_run.teaser              Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_team.full               Only         
+                                                   in sync dir  
+  core.entity_view_mode.bb_ticket.full             Only         
+                                                   in sync dir  
+  core.entity_view_mode.user.compact               Only         
+                                                   in sync dir  
+  core.entity_view_mode.user.full                  Only         
+                                                   in sync dir  
+  core.extension                                   Dif          
+                                                   ferent       
+  crop.type.bb_avatar                              Only         
+                                                   in sync dir  
+  dblog.settings                                   Only         
+                                                   in sync dir  
+  display_builder.profile.default                  Only         
+                                                   in sync dir  
+  editor.editor.bb_rich                            Only         
+                                                   in sync dir  
+  field.field.og_membership.default.og_membershi   Only         
+  p_request                                        in sync dir  
+  field.field.user.user.field_bb_background        Only         
+                                                   in sync dir  
+  field.field.user.user.field_developer_title      Only         
+                                                   in sync dir  
+  field.field.user.user.field_full_name            Only         
+                                                   in sync dir  
+  field.field.user.user.field_onboarding_complet   Only         
+  ed                                               in sync dir  
+  field.field.user.user.user_picture               Only         
+                                                   in sync dir  
+  field.storage.og_membership.og_membership_requ   Only         
+  est                                              in sync dir  
+  field.storage.user.field_bb_background           Only         
+                                                   in sync dir  
+  field.storage.user.field_developer_title         Only         
+                                                   in sync dir  
+  field.storage.user.field_full_name               Only         
+                                                   in sync dir  
+  field.storage.user.field_onboarding_completed    Only         
+                                                   in sync dir  
+  field.storage.user.user_picture                  Only         
+                                                   in sync dir  
+  filter.format.bb_rich                            Only         
+                                                   in sync dir  
+  image.style.avatar                               Only         
+                                                   in sync dir  
+  island.app.bakers                                Only         
+                                                   in sync dir  
+  island.app.browser_test                          Only         
+                                                   in DB        
+  island.profile.bb_error                          Only         
+                                                   in sync dir  
+  island.profile.bb_gate                           Only         
+                                                   in sync dir  
+  island.profile.bb_onboarding                     Only         
+                                                   in sync dir  
+  island.profile.bb_shell                          Only         
+                                                   in sync dir  
+  island.profile.bb_shell_account                  Only         
+                                                   in sync dir  
+  island.profile.browser_conditional               Only         
+                                                   in DB        
+  island.profile.browser_mapping                   Only         
+                                                   in DB        
+  island.profile.browser_menu                      Only         
+                                                   in DB        
+  island.profile.browser_test                      Only         
+                                                   in DB        
+  markdown_easy.settings                           Only         
+                                                   in sync dir  
+  mcp_server.settings                              Dif          
+                                                   ferent       
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  comment_publish                                  in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  conductor_list                                   in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  group_create                                     in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  group_list                                       in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  inbox_read                                       in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  inbox_send                                       in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  label_list                                       in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  metric_write                                     in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  project_create                                   in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  project_list                                     in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  project_read                                     in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  run_cancel                                       in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  team_list                                        in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_activity_list                             in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_classify                                  in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_create                                    in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_list                                      in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_read                                      in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_runs_list                                 in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_search                                    in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_template_run                              in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_transition                                in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  ticket_update                                    in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  time_propose                                     in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  user_read                                        in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  worklog_list                                     in sync dir  
+  mcp_server_tool_bridge.mcp_tool_config.bakers_   Only         
+  workspace_list                                   in sync dir  
+  og.og_membership_type.default                    Only         
+                                                   in sync dir  
+  og.og_role.bb_team-bb_team-lead                  Only         
+                                                   in sync dir  
+  og.og_role.bb_team-bb_team-member                Only         
+                                                   in sync dir  
+  og.og_role.bb_team-bb_team-non-member            Only         
+                                                   in sync dir  
+  og.og_role.bb_team-bb_team-owner                 Only         
+                                                   in sync dir  
+  og.og_role.bb_team-bb_team-reporter              Only         
+                                                   in sync dir  
+  og.og_role.bb_workspace-bb_workspace-contribut   Only         
+  or                                               in sync dir  
+  og.og_role.bb_workspace-bb_workspace-guest       Only         
+                                                   in sync dir  
+  og.og_role.bb_workspace-bb_workspace-lead        Only         
+                                                   in sync dir  
+  og.og_role.bb_workspace-bb_workspace-member      Only         
+                                                   in sync dir  
+  og.og_role.bb_workspace-bb_workspace-non-membe   Only         
+  r                                                in sync dir  
+  og.settings                                      Dif          
+                                                   ferent       
+  r4032login.settings                              Dif          
+                                                   ferent       
+  search_api.index.bb_runs                         Only         
+                                                   in sync dir  
+  search_api.index.bb_tickets                      Only         
+                                                   in sync dir  
+  search_api.server.bb_db                          Only         
+                                                   in sync dir  
+  simple_oauth.oauth2_scope.bb_session             Only         
+                                                   in sync dir  
+  simple_oauth.oauth2_scope.bb_session_access_co   Only         
+  ntent                                            in sync dir  
+  simple_oauth.oauth2_scope.bb_session_access_mc   Only         
+  p_server                                         in sync dir  
+  simple_oauth.oauth2_scope.bb_session_claim_bak   Only         
+  ers_tickets                                      in sync dir  
+  simple_oauth.oauth2_scope.bb_session_create_bb   Only         
+  _comment                                         in sync dir  
+  simple_oauth.oauth2_scope.bb_session_create_bb   Only         
+  _environment                                     in sync dir  
+  simple_oauth.oauth2_scope.bb_session_create_bb   Only         
+  _group                                           in sync dir  
+  simple_oauth.oauth2_scope.bb_session_create_bb   Only         
+  _project                                         in sync dir  
+  simple_oauth.oauth2_scope.bb_session_create_bb   Only         
+  _team                                            in sync dir  
+  simple_oauth.oauth2_scope.bb_session_create_bb   Only         
+  _term                                            in sync dir  
+  simple_oauth.oauth2_scope.bb_session_create_bb   Only         
+  _ticket                                          in sync dir  
+  simple_oauth.oauth2_scope.bb_session_edit_bb_p   Only         
+  roject                                           in sync dir  
+  simple_oauth.oauth2_scope.bb_session_register_   Only         
+  bakers_conductor                                 in sync dir  
+  simple_oauth.oauth2_scope.bb_session_update_an   Only         
+  y_bb_group                                       in sync dir  
+  simple_oauth.oauth2_scope.bb_session_update_an   Only         
+  y_bb_term                                        in sync dir  
+  simple_oauth.oauth2_scope.bb_session_update_an   Only         
+  y_bb_ticket                                      in sync dir  
+  simple_oauth.oauth2_scope.bb_session_update_an   Only         
+  y_bb_workspace                                   in sync dir  
+  simple_oauth.oauth2_scope.bb_session_update_ow   Only         
+  n_bb_machine                                     in sync dir  
+  simple_oauth.oauth2_scope.bb_session_use_text_   Only         
+  format_bb_rich                                   in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bake   Only         
+  rs_memberships                                   in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_c   Only         
+  omment                                           in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_c   Only         
+  onductor                                         in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_e   Only         
+  nvironment                                       in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_g   Only         
+  roup                                             in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_m   Only         
+  achine                                           in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_p   Only         
+  roject                                           in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_r   Only         
+  un                                               in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_t   Only         
+  eam                                              in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_t   Only         
+  erm                                              in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_t   Only         
+  icket                                            in sync dir  
+  simple_oauth.oauth2_scope.bb_session_view_bb_w   Only         
+  orkspace                                         in sync dir  
+  simple_oauth.oauth2_scope.bb_session_write_bak   Only         
+  ers_via_session_scope                            in sync dir  
+  simple_oauth.settings                            Dif          
+                                                   ferent       
+  system.action.og_membership_add_multiple_roles   Only         
+  _action                                          in sync dir  
+  system.action.og_membership_add_single_role_ac   Only         
+  tion.contributor                                 in DB        
+  system.action.og_membership_add_single_role_ac   Only         
+  tion.guest                                       in DB        
+  system.action.og_membership_add_single_role_ac   Only         
+  tion.lead                                        in DB        
+  system.action.og_membership_add_single_role_ac   Only         
+  tion.owner                                       in DB        
+  system.action.og_membership_add_single_role_ac   Only         
+  tion.reporter                                    in DB        
+  system.action.og_membership_approve_pending_ac   Only         
+  tion                                             in sync dir  
+  system.action.og_membership_block_action         Only         
+                                                   in sync dir  
+  system.action.og_membership_delete_action        Only         
+                                                   in sync dir  
+  system.action.og_membership_remove_multiple_ro   Only         
+  les_action                                       in sync dir  
+  system.action.og_membership_remove_single_role   Only         
+  _action.contributor                              in DB        
+  system.action.og_membership_remove_single_role   Only         
+  _action.guest                                    in DB        
+  system.action.og_membership_remove_single_role   Only         
+  _action.lead                                     in DB        
+  system.action.og_membership_remove_single_role   Only         
+  _action.owner                                    in DB        
+  system.action.og_membership_remove_single_role   Only         
+  _action.reporter                                 in DB        
+  system.action.og_membership_unblock_action       Only         
+                                                   in sync dir  
+  system.action.user_add_role_action.api_machine   Only         
+                                                   in DB        
+  system.action.user_add_role_action.api_machine   Only         
+  _view                                            in DB        
+  system.action.user_add_role_action.api_manager   Only         
+                                                   in DB        
+  system.action.user_add_role_action.api_roster    Only         
+                                                   in DB        
+  system.action.user_add_role_action.api_session   Only         
+                                                   in DB        
+  system.action.user_add_role_action.api_statist   Only         
+  ics_outsider                                     in DB        
+  system.action.user_add_role_action.login_admin   Only         
+  istrator                                         in DB        
+  system.action.user_block_user_action             Only         
+                                                   in sync dir  
+  system.action.user_cancel_user_action            Only         
+                                                   in sync dir  
+  system.action.user_remove_role_action.api_mach   Only         
+  ine                                              in DB        
+  system.action.user_remove_role_action.api_mach   Only         
+  ine_view                                         in DB        
+  system.action.user_remove_role_action.api_mana   Only         
+  ger                                              in DB        
+  system.action.user_remove_role_action.api_rost   Only         
+  er                                               in DB        
+  system.action.user_remove_role_action.api_sess   Only         
+  ion                                              in DB        
+  system.action.user_remove_role_action.api_stat   Only         
+  istics_outsider                                  in DB        
+  system.action.user_remove_role_action.login_ad   Only         
+  ministrator                                      in DB        
+  system.action.user_unblock_user_action           Only         
+                                                   in sync dir  
+  system.menu.account                              Only         
+                                                   in sync dir  
+  system.menu.admin                                Only         
+                                                   in sync dir  
+  system.menu.bakers-account                       Only         
+                                                   in sync dir  
+  system.menu.bakers-rail                          Only         
+                                                   in sync dir  
+  system.menu.browser-test                         Only         
+                                                   in DB        
+  system.menu.footer                               Only         
+                                                   in sync dir  
+  system.menu.main                                 Only         
+                                                   in sync dir  
+  system.menu.tools                                Only         
+                                                   in sync dir  
+  system.site                                      Only         
+                                                   in sync dir  
+  update.settings                                  Only         
+                                                   in DB        
+  user.flood                                       Dif          
+                                                   ferent       
+  user.role.anonymous                              Only         
+                                                   in sync dir  
+  user.role.api_machine                            Only         
+                                                   in DB        
+  user.role.api_machine_view                       Only         
+                                                   in DB        
+  user.role.api_manager                            Only         
+                                                   in DB        
+  user.role.api_roster                             Only         
+                                                   in DB        
+  user.role.api_session                            Only         
+                                                   in DB        
+  user.role.api_statistics_outsider                Only         
+                                                   in DB        
+  user.role.authenticated                          Only         
+                                                   in sync dir  
+  user.role.login_administrator                    Only         
+                                                   in DB        
+  views.view.addons                                Only         
+                                                   in sync dir  
+  views.view.bb_api_keys                           Only         
+                                                   in sync dir  
+  views.view.bb_service_accounts                   Only         
+                                                   in sync dir  
+  views.view.bb_terms                              Only         
+                                                   in sync dir  
+  views.view.bb_ticket_templates                   Only         
+                                                   in sync dir  
+  views.view.bb_ticket_triggers                    Only         
+                                                   in sync dir  
+  views.view.conductor_tickets                     Only         
+                                                   in sync dir  
+  views.view.conductors                            Only         
+                                                   in sync dir  
+  views.view.files                                 Only         
+                                                   in sync dir  
+  views.view.groups                                Only         
+                                                   in sync dir  
+  views.view.machines                              Only         
+                                                   in sync dir  
+  views.view.project_board                         Only         
+                                                   in sync dir  
+  views.view.projects                              Only         
+                                                   in sync dir  
+  views.view.runs                                  Only         
+                                                   in sync dir  
+  views.view.tickets                               Only         
+                                                   in sync dir  
+  views.view.user_admin_people                     Only         
+                                                   in sync dir  
+  views.view.who_s_new                             Only         
+                                                   in sync dir  
+  views.view.who_s_online                          Only         
+                                                   in sync dir  
+  views.view.worklog                               Only         
+                                                   in sync dir  
+ ------------------------------------------------ ------------- 
+exit=0

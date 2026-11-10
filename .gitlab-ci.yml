@@ -761,6 +761,9 @@ build:
     REGISTRY_IMAGE_E2E: $CI_REGISTRY_IMAGE/e2e:tree-$GATE_TREE
   before_script:
     - apk add --no-cache bash
+    # Concurrent gate stacks each pin their own network; .env reaches after_script's `down` too.
+    # shortcut: job ids 256 apart share a subnet, upgrade to a pool if gates ever run that wide.
+    - echo "INTERNAL_SUBNET=10.250.$((CI_JOB_ID % 256)).0/24" > .env
     - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
     - bash scripts/ci/prune-gate-stacks.sh
 
