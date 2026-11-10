@@ -1,6 +1,6 @@
 # Set up a worker server
 
-Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example uses herdr, Docker and Claude Code; prepare the host with [machine setup](/provision/machine) and choose tooling per [project](/get-started/connect-a-project). On a Coder deployment, a workspace template does this setup for you: [Set up a Coder workspace](/provision/coder-workspace).
+Add a remote worker when you need more capacity. This Ubuntu 24.04 arm64 example uses herdr, Docker and Claude Code; prepare the host with [machine setup](/provision/machine) and choose tooling per [project](/get-started/connect-a-project).
 
 **You need:** root over SSH, a bakers.build account with a workspace rank, the control-plane URL and a Claude Code account.
 
