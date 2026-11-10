@@ -683,12 +683,14 @@ export class Conductor {
       const gone = `herdr pane gone: ${this.executor.id} found no live terminal for run #${r.runId} (branch ${r.branchName})`;
       const cause = refused ? `conductor restart: ${refused}; ${gone}` : gone;
       // herdr may have restored the tab and restarted an agent in it; a fresh run would share the worktree.
-      await this.executor.cleanupRun(r.branchName, r.runId).catch((err: unknown) => {
-        this.logger.warn(
-          { run: r.runUuid, err: String(err) },
-          'lost run tab not closed',
-        );
-      });
+      await this.executor
+        .cleanupRun(r.branchName, r.runId)
+        .catch((err: unknown) => {
+          this.logger.warn(
+            { run: r.runUuid, err: String(err) },
+            'lost run tab not closed',
+          );
+        });
       await this.remote.markFailed(r.runUuid, cause);
       this.revokeRunTools(r.runUuid);
       this.signalUi(r.worktreePath);
@@ -754,7 +756,10 @@ export class Conductor {
       );
     } catch (err) {
       if (err instanceof RunClosed) {
-        this.logger.info({ run: r.runUuid }, 'lost run closed during its resume');
+        this.logger.info(
+          { run: r.runUuid },
+          'lost run closed during its resume',
+        );
         return undefined;
       }
       return err instanceof ResumeRefused
@@ -1867,7 +1872,8 @@ export class Conductor {
     // 4, Critical 1).
     const dispatchedAt = Math.floor(Date.now() / 1000);
     // A resumed run already is `running`; one closed meanwhile (cancelled) is not relaunched.
-    if (resume && !(await this.stillRunning(run.runUuid))) throw new RunClosed();
+    if (resume && !(await this.stillRunning(run.runUuid)))
+      throw new RunClosed();
     const tools = chosen.agent.withoutConductorTools
       ? undefined
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });

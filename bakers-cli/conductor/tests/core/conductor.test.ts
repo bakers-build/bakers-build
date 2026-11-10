@@ -5747,7 +5747,7 @@ describe('Conductor lost runs (pane gone)', () => {
       const remote = runningRemote(worktree);
       const spy = spyLogger();
       const conductor = new TestConductor(
-        makeConfig({ config_path: join(state, 'conductor.config.js') }),
+        makeConfig({ config_path: join(state, 'project.config.js') }),
         remote,
         executor,
         new FakeWorkspace(),
@@ -5867,7 +5867,7 @@ describe('Conductor lost runs (pane gone)', () => {
       const second = new PaneExecutor();
       second.alive = false;
       const again = new TestConductor(
-        makeConfig({ config_path: join(state, 'conductor.config.js') }),
+        makeConfig({ config_path: join(state, 'project.config.js') }),
         remote,
         second,
         new FakeWorkspace(),
@@ -5895,7 +5895,7 @@ describe('Conductor lost runs (pane gone)', () => {
       const executor = new PaneExecutor();
       executor.alive = false;
       const state = mkdtempSync(join(tmpdir(), 'restart-'));
-      writeFileSync(join(state, 'conductor.config.resumed.json'), '{}\n');
+      writeFileSync(join(state, 'project.config.resumed.json'), '{}\n');
       const { conductor, remote } = await restarted(agent, executor, state);
 
       await conductor.tick();

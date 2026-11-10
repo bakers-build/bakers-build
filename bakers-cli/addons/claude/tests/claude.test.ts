@@ -253,7 +253,7 @@ describe('ClaudeAgent.resumeCommand', () => {
         '/p',
       ]),
     ).toBe(
-      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${trust}' '/w' claude --resume 's-1' --model 'opus' --dangerously-skip-permissions --mcp-config '{"mcpServers":{"bakers":{"type":"http","url":"http://127.0.0.1:9","headers":{"Authorization":"Bearer \${BB_CONDUCTOR_TOKEN}"}}}}' '--plugin-dir' '/p'`,
+      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${trust}' '/w' claude --resume 's-1' --model 'opus' --dangerously-skip-permissions --mcp-config '{"mcpServers":{"bakers":{"type":"http","url":"http://127.0.0.1:9","headers":{"Authorization":"Bearer \${BAKERS_CONDUCTOR_TOKEN}"}}}}' '--plugin-dir' '/p'`,
     );
   });
   it('waits for no plugin install when the run has its agent home', () => {
