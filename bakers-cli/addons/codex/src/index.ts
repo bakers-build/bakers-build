@@ -46,7 +46,7 @@ export interface CodexAgentOptions extends SecurityOptions {
   args?: string[];
   /** False runs this agent in the user's own Codex home, without the project's plugins. */
   plugins?: boolean;
-  /** False switches the run guard off; no permissions mode does (`docs/provision/security/execution.md`). */
+  /** False switches the run guard off; no permissions mode does (`docs/provision/security/run-guard.md`). */
   guard?: boolean;
 }
 

@@ -84,7 +84,7 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
 
 type Hooks = Record<string, unknown[]>;
 
-/** The run guard's PreToolUse hook on every Bash call (`docs/provision/security/execution.md`). */
+/** The run guard's PreToolUse hook on every Bash call (`docs/provision/security/run-guard.md`). */
 function withGuard(hooks: unknown): Hooks {
   const own = (hooks ?? {}) as Hooks;
   return {
@@ -202,7 +202,7 @@ export interface ClaudeAgentOptions extends SecurityOptions {
   measure?: boolean;
   /** False runs this agent in the user's own `~/.claude`, without the project's plugins. */
   plugins?: boolean;
-  /** False switches the run guard off; no permissions mode does (`docs/provision/security/execution.md`). */
+  /** False switches the run guard off; no permissions mode does (`docs/provision/security/run-guard.md`). */
   guard?: boolean;
 }
 

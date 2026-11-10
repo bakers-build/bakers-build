@@ -451,3 +451,122 @@ describe('a refusal (AC-6)', () => {
     expect(d.alternative).toMatch(/feat\/x-1/);
   });
 });
+
+describe('shell forms the guard must split like the shell (AC-1 to AC-4)', () => {
+  it.each([
+    // A heredoc body is data, apostrophes and all.
+    "git commit -F - <<'EOF'\nDon't break the build\nEOF\n",
+    "git commit -m \"$(cat <<'EOF'\nDon't break it\nEOF\n)\" && git push origin HEAD",
+    'cat <<EOF\nplain $HOME text\nEOF',
+    "echo hi # it's a comment",
+    '# just a comment',
+    'echo "a#b" && echo a#b',
+    'time -p ls',
+    'noglob ls *',
+    'function f { ls; }; f',
+    'cd build && rm -rf out',
+    'env -C build rm -rf out',
+    'git -c user.name=x -c commit.gpgsign=false commit -m y',
+    'git --no-pager log',
+    'git --attr-source HEAD status',
+    'grep -rn "git push" docs',
+    'grep -rn "rm -rf" docs',
+    'pnpm rm lodash',
+    'MSG="don\'t" && git commit -m "$MSG"',
+    'echo $((1 + 2))',
+    'x=$(echo \')\') && echo "$x"',
+    'GIT_AUTHOR_NAME=x git commit -m y',
+  ])('allows %s', (command) => {
+    expect(denied(command)).toBeNull();
+  });
+
+  it.each([
+    // Comments, ANSI-C quotes and quotes inside $(…).
+    "echo hi # '\nrm -rf ~/Documents/x\n# '",
+    "echo $'\\'' ; rm -rf ~/Documents/x ; echo $'\\''",
+    "echo $'\\'' ; git push --force origin main ; echo $'\\''",
+    "x=$(echo ')'); rm -rf ~/Documents/x #')",
+    'echo "unterminated',
+    "echo 'unterminated",
+    'echo $(unterminated',
+    'echo `unterminated',
+    'echo ${R:-$(rm -rf ~/x)}',
+    'cat <<EOF\n$(rm -rf ~/x)\nEOF',
+    // A glob before `..`.
+    'rm -rf */../../home/Documents/x',
+    // `{}` inside a longer find -exec word.
+    'find . -maxdepth 0 -exec rm -rf {}/../home/Documents/x ;',
+    'find link -exec rm -rf {}/x ;',
+    // $TMPDIR, $PWD and $HOME the command reassigns.
+    'TMPDIR=~/Documents; rm -rf $TMPDIR/x',
+    'PWD=~/Documents; rm -rf $PWD/x',
+    'export TMPDIR=~/Documents && rm -rf "$TMPDIR"/x',
+    'HOME=/ && rm -rf ~/etc',
+    "eval 'TMP''DIR=~/D'; rm -rf $TMPDIR/x",
+    'TMPDIR=~/D; echo $(rm -rf $TMPDIR/x)',
+    // CDPATH turns a relative cd into another directory.
+    'export CDPATH=~; cd Documents && rm -rf x',
+    // Keywords and precommand modifiers.
+    'function f { rm -rf ~/Documents/x; }; f',
+    'time -p rm -rf ~/Documents/x',
+    'time -p git -C ../other reset --hard',
+    'time -p git branch -D main',
+    'time -p ddev delete -Oy other',
+    'noglob rm -rf ~/Documents/x',
+    'noglob gh pr close 1',
+    'nocorrect rm -rf ~/Documents/x',
+    '- rm -rf ~/Documents/x',
+    '=rm -rf ~/Documents/x',
+    'repeat 1 rm -rf ~/Documents/x',
+    '{ true; } always { rm -rf ~/Documents/x; }',
+    'coproc rm -rf ~/Documents/x',
+    'coproc w { cd ..; rm -rf x; }',
+    'hash -p /bin/rm d; d -rf ~/Documents/x',
+    'hash d=/bin/rm; d -rf ~/Documents/x',
+    "alias d='rm -rf'\nd ~/Documents/x",
+    // git global options with a separate value.
+    'git --attr-source HEAD push --force origin feat/x-1',
+    'git --attr-source HEAD push --delete origin other',
+    'git --attr-source HEAD -C ~/Documents reset --hard',
+    'git --namespace x push origin HEAD',
+    'git --exec-path=/tmp/x status',
+    'git --frobnicate push origin HEAD',
+    // A git alias or command defined in the environment.
+    "GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.p GIT_CONFIG_VALUE_0='push -f origin main' git p",
+    "export GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=alias.p GIT_CONFIG_VALUE_0='push -f origin main'; git p",
+    "GIT_SSH_COMMAND='rm -rf ~/x' git fetch",
+    "EDITOR='rm -rf ~/x;' git commit",
+    // env -C and sudo -D set the wrapped command's directory.
+    'env -C ~/Documents rm -rf x',
+    'env --chdir=~/Documents rm -rf x',
+    'sudo -D ~/Documents rm -rf x',
+    // git runs some configuration through sh -c.
+    "git -c core.fsmonitor='rm -rf ~/Documents/x; false' status",
+    "git -c core.sshCommand='rm -rf ~/x' fetch",
+    'git --config-env=core.pager=X log',
+    'git push --receive-pack="rm -rf ~/x" origin HEAD',
+    // A deleter handed to a command the guard does not know.
+    'parallel rm ::: ~/x',
+    'pnpm exec rm -rf ~/x',
+    'pnpm exec git push --force origin feat/x-1',
+    "parallel 'rm -rf {}' ::: ~/x",
+    "su -c 'rm -rf ~/x'",
+  ])('refuses %s', (command) => {
+    expect(denied(command)).not.toBeNull();
+  });
+});
+
+describe('git configuration that runs a command (AC-1 to AC-3)', () => {
+  it.each([
+    'git config user.email a@b',
+    'git config branch.feat/x-1.rebase true',
+  ])('allows %s', (command) => {
+    expect(denied(command)).toBeNull();
+  });
+  it.each([
+    "git config core.fsmonitor 'rm -rf ~/x' && git status",
+    "git config core.sshCommand 'rm -rf ~/x'",
+  ])('refuses %s', (command) => {
+    expect(denied(command)).toBe('git-config');
+  });
+});

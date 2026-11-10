@@ -17,6 +17,8 @@ export interface GuardContext {
   head?: string;
   /** The `name` in the worktree's `.ddev/config.yaml`, if any. */
   ddevProject?: string;
+  /** The shell's environment sets `CDPATH`, so a relative `cd` may go elsewhere. */
+  cdpath?: boolean;
 }
 
 export type GuardDecision =
@@ -44,8 +46,14 @@ interface Segment {
 }
 
 const ALLOW: GuardDecision = { allow: true };
-/** Stands in for `$PWD`, which the segment's tracked cwd replaces. */
+/** Stand-ins for `$PWD` (the tracked cwd), `$HOME`/`~` and `$TMPDIR`, replaced at check time. */
 const PWD = '\0PWD\0';
+const HOME = '\0HOME\0';
+const TMPDIR = '\0TMPDIR\0';
+/** Variables a command may reassign, which then stop being known. */
+const TRACKED = ['HOME', 'TMPDIR', 'PWD', 'CDPATH'];
+/** A command the guard cannot split as the shell would. */
+class Unparsable extends Error {}
 const DELETERS = new Set(['rm', 'rmdir', 'unlink', 'shred']);
 const SHELLS = new Set([
   'bash',
@@ -70,16 +78,28 @@ interface Wrapper {
   scripts?: string[];
   /** Joins its words into a command line for `sh -c`. */
   joins?: boolean;
+  /** Options that set the wrapped command's working directory. */
+  chdir?: string[];
 }
 /** Commands that run the command after their options. */
 const WRAPPERS: Record<string, Wrapper> = {
   sudo: {
-    values: ['-u', '-g', '-C', '-h', '-p', '-U', '-D', '-r', '-t', '-T'],
+    values: ['-u', '-g', '-C', '-h', '-p', '-U', '-r', '-t', '-T'],
+    chdir: ['-D', '--chdir'],
   },
   doas: { values: ['-u', '-C'] },
   env: {
-    values: ['-u', '--unset', '-C', '--chdir'],
+    values: ['-u', '--unset'],
+    chdir: ['-C', '--chdir'],
     scripts: ['-S', '--split-string'],
+  },
+  su: {
+    values: ['-s', '--shell', '-g', '--group'],
+    scripts: ['-c', '--command'],
+  },
+  script: {
+    values: ['-T', '-I', '-O', '-B', '-t'],
+    scripts: ['-c', '--command'],
   },
   command: { values: [] },
   builtin: { values: [] },
@@ -137,13 +157,48 @@ const GRAMMAR = new Set([
   'while',
   'until',
   'do',
+  'always',
+  // zsh precommand modifiers.
+  'noglob',
+  'nocorrect',
+  '-',
 ]);
 /** Brace expansion; a quoted part (`{a,' '/../x}`) is still inside the braces. */
 const BRACE_PART = `([^\\s{}'"]|'[^']*'|"[^"]*")*`;
 const BRACE = new RegExp(`^\\{${BRACE_PART}(,|\\.\\.)${BRACE_PART}\\}`);
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
-/** Environment that points git at another repository or configuration. */
-const GIT_ENV = /^GIT_(CONFIG|DIR|WORK_TREE|COMMON_DIR|NAMESPACE)/;
+/** Environment that points git at another repository. */
+const GIT_ENV = /^GIT_(DIR|WORK_TREE|COMMON_DIR|NAMESPACE)/;
+/** Environment that gives git configuration, aliases or commands to run. */
+const GIT_RUNS =
+  /^GIT_(CONFIG|SSH|EXEC_PATH|EXTERNAL_DIFF|PAGER|EDITOR|SEQUENCE_EDITOR|ASKPASS|PROXY_COMMAND|TEMPLATE_DIR|ALTERNATE)/;
+/** `git -c` keys that run nothing and change no push. */
+const SAFE_GIT_KEYS =
+  /^(user|color|advice|i18n|log|column)\.|^(commit|tag)\.gpgsign$|^init\.defaultbranch$|^core\.(quotepath|autocrlf|safecrlf|filemode)$|^pull\.(rebase|ff)$|^merge\.ff$|^safe\.directory$|^gc\.auto$/i;
+/** git global options without a value. */
+const GIT_FLAGS = new Set([
+  '-p',
+  '-P',
+  '-v',
+  '-h',
+  '--paginate',
+  '--no-pager',
+  '--bare',
+  '--no-replace-objects',
+  '--no-lazy-fetch',
+  '--no-optional-locks',
+  '--no-advice',
+  '--literal-pathspecs',
+  '--glob-pathspecs',
+  '--noglob-pathspecs',
+  '--icase-pathspecs',
+  '--version',
+  '--help',
+  '--exec-path',
+  '--html-path',
+  '--man-path',
+  '--info-path',
+]);
 /** Subcommands that leave the same branch checked out (as far as the guard tracks). */
 const KEEPS_HEAD = new Set([
   'add',
@@ -231,12 +286,28 @@ const DISCARDS = new Set([
 /** Config keys that change what `git push` sends or where, or load other configuration. */
 const PUSH_KEYS = /^(alias|remote|push|url|include|includeif)\./i;
 
-/** Split a command into segments of words, one per simple command. */
-function tokenize(command: string, ctx: GuardContext): Segment[] {
+interface Heredoc {
+  delim: string;
+  strip: boolean;
+  quoted: boolean;
+}
+
+/**
+ * Split a command into segments of words, one per simple command. Nested, it
+ * reads a `$(…)` body from `from` and stops at its closing `)`. Throws
+ * Unparsable on what it cannot split as the shell would.
+ */
+function tokenize(
+  command: string,
+  from = 0,
+  nested = false,
+): { segments: Segment[]; end: number } {
   const segments: Segment[] = [];
   let words: Word[] = [];
   let subs: string[] = [];
   let word: Word | null = null;
+  let heredocs: Heredoc[] = [];
+  let depth = 0;
   const cur = () => {
     word ??= { text: '', dynamic: false, glob: false };
     return word;
@@ -255,29 +326,22 @@ function tokenize(command: string, ctx: GuardContext): Segment[] {
     words = [];
     subs = [];
   };
-  const vars: Record<string, string> = {
-    HOME: ctx.home,
-    TMPDIR: ctx.tmpdir,
-    PWD,
-  };
-  let i = 0;
+  const vars: Record<string, string> = { HOME, TMPDIR, PWD };
+  let i = from;
   // Reads `$…` at i; returns the expansion or null for an unknown one.
   const dollar = (): string | null => {
     const next = command[i + 1];
     if (next === "'") {
-      // `$'…'` decodes escapes the guard does not follow.
+      // `$'…'` decodes escapes the guard does not follow; `\'` does not end it.
+      for (i += 2; command[i] !== "'"; i += command[i] === '\\' ? 2 : 1)
+        if (i >= command.length) throw new Unparsable("an unterminated $'");
       i++;
       return null;
     }
     if (next === '(') {
-      const start = i + 2;
-      let depth = 0;
-      for (i += 1; i < command.length; i++) {
-        if (command[i] === '(') depth++;
-        else if (command[i] === ')' && --depth === 0) break;
-      }
-      subs.push(command.slice(start, i));
-      i++;
+      const { end } = tokenize(command, i + 2, true);
+      subs.push(command.slice(i + 2, end));
+      i = end + 1;
       return null;
     }
     const m =
@@ -286,9 +350,13 @@ function tokenize(command: string, ctx: GuardContext): Segment[] {
       );
     if (!m) {
       if (next === '{') {
-        // `${R:-rm}` and other parameter operators: a value the guard does not compute.
+        // `${R:-rm}` and other parameter operators: a value the guard does not
+        // compute, and one that hides no substitution or quote.
         const end = command.indexOf('}', i);
-        i = end === -1 ? command.length : end + 1;
+        const body = command.slice(i + 2, end);
+        if (end === -1 || /[$`'"\\{]/.test(body))
+          throw new Unparsable('a parameter expansion');
+        i = end + 1;
         return null;
       }
       i++;
@@ -299,19 +367,65 @@ function tokenize(command: string, ctx: GuardContext): Segment[] {
     return name !== undefined && name in vars ? (vars[name] as string) : null;
   };
   const backtick = () => {
-    const end = command.indexOf('`', i + 1);
-    subs.push(command.slice(i + 1, end === -1 ? undefined : end));
-    i = end === -1 ? command.length : end + 1;
+    let body = '';
+    for (i++; command[i] !== '`'; i++) {
+      if (i >= command.length) throw new Unparsable('an unterminated backtick');
+      if (command[i] === '\\' && '$`\\'.includes(command[i + 1] ?? '')) i++;
+      body += command[i];
+    }
+    subs.push(body);
+    i++;
+  };
+  // A heredoc: `<<[-]delim` here, its body after the line ends.
+  const heredoc = () => {
+    i += 2;
+    const strip = command[i] === '-';
+    if (strip) i++;
+    while (command[i] === ' ' || command[i] === '\t') i++;
+    let raw = '';
+    while (i < command.length && !/[\s;&|()<>]/.test(command[i] as string))
+      raw += command[i++];
+    if (!raw) throw new Unparsable('a heredoc without a delimiter');
+    heredocs.push({
+      delim: raw.replace(/['"\\]/g, ''),
+      strip,
+      quoted: /['"\\]/.test(raw),
+    });
+  };
+  const bodies = () => {
+    for (const h of heredocs) {
+      let body = '';
+      while (i < command.length) {
+        let eol = command.indexOf('\n', i);
+        if (eol === -1) eol = command.length;
+        const line = command.slice(i, eol);
+        i = eol + 1;
+        if ((h.strip ? line.replace(/^\t+/, '') : line) === h.delim) break;
+        body += line;
+      }
+      // An unquoted body runs its substitutions; the guard does not read them there.
+      if (!h.quoted && /\$\(|`/.test(body))
+        throw new Unparsable('a substitution in a heredoc');
+    }
+    heredocs = [];
   };
   while (i < command.length) {
     const c = command[i] as string;
     if (c === ' ' || c === '\t') {
       endWord();
       i++;
+    } else if (c === '#' && !word) {
+      // A comment runs to the end of the line.
+      while (i < command.length && command[i] !== '\n') i++;
     } else if (c === '\n' || c === ';') {
       endSegment(c);
       i++;
+      if (c === '\n') bodies();
+    } else if (c === ')' && nested && depth === 0) {
+      endSegment('');
+      return { segments, end: i };
     } else if (c === '(' || c === ')') {
+      depth += c === '(' ? 1 : -1;
       endSegment(c);
       segments.push({ words: [], end: '', paren: c, subs: [] });
       i++;
@@ -325,22 +439,28 @@ function tokenize(command: string, ctx: GuardContext): Segment[] {
         endSegment(op);
         i += op.length;
       }
+    } else if (c === '<' && command[i + 1] === '<' && command[i + 2] !== '<') {
+      if (word && /^\d+$/.test((word as Word).text)) word = null;
+      endWord();
+      heredoc();
     } else if (c === '>' || c === '<') {
       // A file descriptor number before the operator belongs to it.
       if (word && /^\d+$/.test((word as Word).text)) word = null;
       endWord();
       words.push({ text: c, dynamic: false, glob: false, op: 'redirect' });
       i++;
-      // `>|` overwrites despite noclobber.
+      // `>|` overwrites despite noclobber; `<<<` is a here-string.
       if (c === '>' && command[i] === '|') i++;
-      while (command[i] === '>' || command[i] === '&') i++;
+      while ('<>&'.includes(command[i] ?? '-')) i++;
     } else if (c === "'") {
       const end = command.indexOf("'", i + 1);
-      cur().text += command.slice(i + 1, end === -1 ? undefined : end);
-      i = end === -1 ? command.length : end + 1;
+      if (end === -1) throw new Unparsable('an unterminated quote');
+      cur().text += command.slice(i + 1, end);
+      i = end + 1;
     } else if (c === '"') {
       const w = cur();
-      for (i++; i < command.length && command[i] !== '"'; ) {
+      for (i++; command[i] !== '"'; ) {
+        if (i >= command.length) throw new Unparsable('an unterminated quote');
         const d = command[i] as string;
         if (d === '\\' && '"\\$`'.includes(command[i + 1] ?? '')) {
           w.text += command[i + 1];
@@ -369,13 +489,17 @@ function tokenize(command: string, ctx: GuardContext): Segment[] {
     } else if (c === '`') {
       cur().dynamic = true;
       backtick();
+    } else if (c === '~' && word && /[=:]$/.test((word as Word).text)) {
+      // bash expands `~` after `=` or `:` in any word, zsh only in an assignment.
+      cur().dynamic = true;
+      i++;
     } else if (c === '~' && !word) {
       // `~user`, `~+` and `~-` are directories the guard does not know.
       if (
         i + 1 === command.length ||
-        ' \t\n;&|/'.includes(command[i + 1] as string)
+        ' \t\n;&|/)'.includes(command[i + 1] as string)
       )
-        cur().text += ctx.home;
+        cur().text += HOME;
       else cur().dynamic = true;
       i++;
     } else {
@@ -387,9 +511,17 @@ function tokenize(command: string, ctx: GuardContext): Segment[] {
       i++;
     }
   }
+  if (nested) throw new Unparsable('an unterminated $(');
   endSegment('');
-  return segments;
+  bodies();
+  return { segments, end: i };
 }
+
+/** `text` names the variable other than by expanding it: an assignment, export, read or loop. */
+const mentions = (text: string, name: string) =>
+  new RegExp(`(^|[^$\\w])${name}(?!\\w)`).test(
+    text.replace(new RegExp(`\\$\\{${name}\\}`, 'g'), ''),
+  );
 
 /** `p` with `..` applied after each symlink before it is followed, as the kernel does. */
 function physical(p: string): string {
@@ -440,6 +572,12 @@ function realDir(p: string): string {
   }
 }
 
+/** A command word's name; zsh's `=rm` names the `rm` on the PATH. */
+const verbName = (w: Word) =>
+  basename(
+    w.text.length > 1 && w.text.startsWith('=') ? w.text.slice(1) : w.text,
+  );
+
 const inside = (p: string, dir: string) =>
   p === dir || p.startsWith(dir.endsWith('/') ? dir : `${dir}/`);
 
@@ -465,11 +603,29 @@ const unresolvable = (what: string) =>
 class Checker {
   /** The checked-out branch as the command goes on; null when unknown. */
   private head: string | null;
-  /** A segment so far set git's repository or configuration through the environment. */
-  private gitEnv = false;
+  /** `GIT_*` variables the command so far exported or assigned for the rest of it. */
+  private gitVars = new Set<string>();
+  /** TRACKED variables the command may have reassigned. */
+  private changed = new Set<string>();
 
   constructor(private readonly ctx: GuardContext) {
     this.head = ctx.head ?? null;
+    if (ctx.cdpath) this.changed.add('CDPATH');
+  }
+
+  /** Where the variables point at check time; null when the command may have reassigned one. */
+  expand(text: string, cwd: string | null): string | null {
+    const values: [string, string, string | null][] = [
+      [PWD, 'PWD', cwd],
+      [HOME, 'HOME', this.ctx.home],
+      [TMPDIR, 'TMPDIR', this.ctx.tmpdir],
+    ];
+    for (const [marker, name, value] of values) {
+      if (!text.includes(marker)) continue;
+      if (value === null || this.changed.has(name)) return null;
+      text = text.replaceAll(marker, value);
+    }
+    return text;
   }
 
   /**
@@ -478,15 +634,14 @@ class Checker {
    */
   path(word: Word, cwd: string | null, follow = false): string | null {
     if (word.dynamic) return null;
-    let text = word.text;
-    const through = follow || word.follow || word.glob || /\/\.?$/.test(text);
-    if (text.includes(PWD)) {
-      if (cwd === null) return null;
-      text = text.replaceAll(PWD, cwd);
-    }
+    const through =
+      follow || word.follow || word.glob || /\/\.?$/.test(word.text);
+    let text = this.expand(word.text, cwd);
+    if (text === null) return null;
     if (word.glob) {
-      // The directory the pattern expands in.
+      // The directory the pattern expands in; a `..` after a glob climbs out of what it matched.
       const at = text.search(/[*?[]/);
+      if (text.slice(at).includes('..')) return null;
       text = text.slice(0, text.lastIndexOf('/', at) + 1) || '.';
     }
     if (!isAbsolute(text)) {
@@ -516,15 +671,15 @@ class Checker {
   }
 
   run(command: string, cwd: string | null): GuardDecision {
+    for (const name of TRACKED)
+      if (mentions(command, name)) this.changed.add(name);
     // A subshell restores the directory; a cd that may have failed leaves it
     // unknown after the first operator that is not `&&`.
     const stack: { cwd: string | null; uncertain: boolean }[] = [];
     let uncertain = false;
     let before = '';
-    for (const { words: segment, end, paren, subs } of tokenize(
-      command,
-      this.ctx,
-    )) {
+    for (const { words: segment, end, paren, subs } of tokenize(command)
+      .segments) {
       if (paren === '(') {
         stack.push({ cwd, uncertain });
         continue;
@@ -548,84 +703,137 @@ class Checker {
       }
       const words = segment.filter((w, i) => !w.op && !segment[i - 1]?.op);
       const assigned: Word[] = [];
-      const stripped = this.unwrap(words, assigned, cwd);
+      const at = { cwd };
+      const stripped = this.unwrap(words, assigned, at);
       if (stripped) return stripped;
       const verb = words[0];
-      const setsGit = (w: Word) => GIT_ENV.test(w.text);
+      const name = verb ? verbName(verb) : '';
+      const args = words.slice(1);
       // An assignment alone or an export holds for the rest of the command.
-      const sticky = verb
-        ? ['export', 'declare', 'typeset'].includes(verb.text) &&
-          words.slice(1).some(setsGit)
-        : assigned.some(setsGit);
-      if (sticky) this.gitEnv = true;
+      const exported = [
+        'export',
+        'declare',
+        'typeset',
+        'local',
+        'readonly',
+      ].includes(name)
+        ? args.filter((w) => /^[A-Za-z_]/.test(w.text))
+        : [];
+      // A value may be a command line git or another program runs (`EDITOR`, `GIT_SSH_COMMAND`).
+      for (const w of [...assigned, ...exported]) {
+        const d = this.value(w, cwd);
+        if (!d.allow) return d;
+      }
+      const vars = (ws: Word[]) =>
+        ws
+          .map((w) => w.text.split('=')[0] as string)
+          .filter((n) => n.startsWith('GIT_'));
+      for (const n of vars(verb ? exported : assigned)) this.gitVars.add(n);
       if (!verb) continue;
       // A computed command name could be any verb, a destructive one included.
       if (verb.dynamic) return unresolvable('the command a computed name runs');
-      const name = basename(verb.text);
-      const args = words.slice(1);
-      const gitEnv = this.gitEnv;
-      if (assigned.some(setsGit)) this.gitEnv = true;
+      const sticky = this.gitVars;
+      this.gitVars = new Set([...sticky, ...vars(assigned)]);
       if (name === 'cd' || name === 'pushd' || name === 'popd') {
         const target = args.find((w) => !w.text.startsWith('-'));
         // A pipeline runs cd in a subshell (or not, in zsh); `-`, `+N` and popd name a stack entry.
+        // With CDPATH set, a bare relative directory may be found elsewhere.
         const known =
           !piped &&
           name !== 'popd' &&
           !args.some((w) => w.text === '-') &&
           !target?.text.startsWith('+') &&
+          !(
+            this.changed.has('CDPATH') &&
+            target &&
+            !/^(\/|\.\.?(\/|$)|\0)/.test(target.text)
+          ) &&
           (target !== undefined || name === 'cd');
         cwd = !known
           ? null
           : target
             ? this.path({ ...target, glob: false }, cwd)
-            : this.ctx.home;
+            : this.expand(HOME, cwd);
         uncertain = true;
+        this.gitVars = sticky;
         continue;
       }
-      const d = this.simple(name, args, cwd);
-      this.gitEnv = gitEnv;
+      const d = this.simple(name, args, at.cwd);
+      this.gitVars = sticky;
       if (!d.allow) return d;
     }
     return ALLOW;
   }
 
+  /** An assignment's value checked as the command line it may become. */
+  value(w: Word, cwd: string | null): GuardDecision {
+    const v = w.text.slice(w.text.indexOf('=') + 1);
+    if (w.dynamic || !w.text.includes('=') || !v) return ALLOW;
+    try {
+      return this.run(v, cwd);
+    } catch (err) {
+      // A value no shell can split is not a command line it runs.
+      if (err instanceof Unparsable) return ALLOW;
+      throw err;
+    }
+  }
+
   /**
    * Strip grammar words, assignments and wrappers from `words` down to the
    * command, in place; a refusal when a wrapper runs a string it refuses.
+   * A wrapper that changes the directory (`env -C`) sets `at.cwd`.
    */
   unwrap(
     words: Word[],
     assigned: Word[],
-    cwd: string | null,
+    at: { cwd: string | null },
   ): GuardDecision | null {
     // A wrapper that runs a string as a command line (`env -S`, `flock -c`, `watch`).
     const script = (rest: Word[], what: string): GuardDecision | null => {
       if (rest.some((w) => w.dynamic))
         return unresolvable(`the command ${what} runs`);
-      const d = this.run(rest.map((w) => w.text).join(' '), cwd);
+      const d = this.run(rest.map((w) => w.text).join(' '), at.cwd);
       words.length = 0;
       return d.allow ? null : d;
     };
     for (let changed = true; changed && words[0]; ) {
-      changed = false;
+      changed = true;
       const first = words[0] as Word;
-      if (GRAMMAR.has(first.text) || first.text === 'time') {
+      const name = verbName(first);
+      if (GRAMMAR.has(first.text)) words.shift();
+      else if (first.text === 'function') {
+        // `function f { …; }`; zsh's anonymous `function { …; }` has no name.
         words.shift();
-        changed = true;
+        if (words[0] && words[0].text !== '{') words.shift();
+      } else if (first.text === 'repeat') words.splice(0, 2);
+      else if (first.text === 'coproc') {
+        words.shift();
+        if (words[1]?.text === '{') words.shift();
       } else if (ASSIGNMENT.test(first.text)) {
         assigned.push(first);
         words.shift();
-        changed = true;
-      } else if (Object.hasOwn(WRAPPERS, basename(first.text))) {
-        const name = basename(first.text);
+      } else if (Object.hasOwn(WRAPPERS, name)) {
         const spec = WRAPPERS[name] as Wrapper;
         words.shift();
         let positionals = spec.positionals ?? 0;
         while (words[0]) {
           const t = words[0].text;
+          const chdir = spec.chdir?.find(
+            (o) => t === o || t.startsWith(o.length === 2 ? o : `${o}=`),
+          );
           if (spec.scripts?.includes(t))
             return script(words.slice(1), `${name} ${t}`);
-          if (spec.values.includes(t)) words.splice(0, 2);
+          if (chdir) {
+            const dir =
+              t === chdir
+                ? words[1]
+                : {
+                    ...words[0],
+                    text: t.slice(chdir.length).replace(/^=/, ''),
+                  };
+            at.cwd = dir ? this.path({ ...dir, glob: false }, at.cwd) : null;
+            words.splice(0, t === chdir ? 2 : 1);
+          } else if (spec.values.includes(t)) words.splice(0, 2);
           else if (t.startsWith('-') || ASSIGNMENT.test(t)) {
             if (ASSIGNMENT.test(t)) assigned.push(words[0]);
             words.shift();
@@ -635,20 +843,20 @@ class Checker {
           } else break;
         }
         if (spec.joins && words.length) return script([...words], name);
-        changed = true;
-      }
+      } else changed = false;
     }
     return null;
   }
 
   /** A command another command runs (`xargs`, `find -exec`): no cd, no environment. */
   exec(words: Word[], cwd: string | null): GuardDecision {
-    const d = this.unwrap(words, [], cwd);
+    const at = { cwd };
+    const d = this.unwrap(words, [], at);
     if (d) return d;
     const verb = words[0];
     if (!verb) return ALLOW;
     if (verb.dynamic) return unresolvable('the command a computed name runs');
-    return this.simple(basename(verb.text), words.slice(1), cwd);
+    return this.simple(verbName(verb), words.slice(1), at.cwd);
   }
 
   simple(name: string, args: Word[], cwd: string | null): GuardDecision {
@@ -695,13 +903,33 @@ class Checker {
         return unresolvable('the command eval runs');
       return this.run(args.map((w) => w.text).join(' '), cwd);
     }
+    // A new name for a command the guard would no longer recognise.
+    if (
+      (name === 'hash' &&
+        args.some((w) => w.text === '-p' || w.text.includes('='))) ||
+      (name === 'alias' && args.some((w) => w.dynamic || w.text.includes('=')))
+    )
+      return unresolvable(`the command ${name} gives another name`);
     if (DELETERS.has(name)) return this.deleting(name, args, cwd);
     if (name === 'find') return this.find(args, cwd);
     if (name === 'xargs') return this.xargs(args, cwd);
     if (name === 'git') return this.git(args, cwd);
     if (name === 'ddev') return this.ddev(args, cwd);
     if (name === 'gh' || name === 'glab') return this.forge(name, args);
-    return ALLOW;
+    // A command the guard does not know may run its arguments (`parallel`,
+    // `pnpm exec`): a destructive verb among them is checked as that command.
+    const k = args.findIndex(
+      (w) =>
+        !w.dynamic &&
+        (DESTRUCTIVE_VERBS.includes(basename(w.text)) ||
+          DELETERS.has(w.text.split(/\s/)[0] as string)),
+    );
+    if (k === -1) return ALLOW;
+    const [w, ...rest] = args.slice(k) as [Word, ...Word[]];
+    const head = /\s/.test(w.text)
+      ? (tokenize(w.text).segments[0]?.words ?? [])
+      : [w];
+    return this.exec([...head, ...rest], cwd);
   }
 
   /** The command xargs runs, with arguments the guard cannot know. */
@@ -779,11 +1007,12 @@ class Checker {
         );
         if (end === -1) end = expr.length;
         // `{}` stands for what find finds: the start paths, followed with -L.
-        const clause = expr
-          .slice(j + 1, end)
-          .flatMap((w) =>
-            w.text.includes('{}') ? starts.map((s) => ({ ...s, follow })) : [w],
-          );
+        const clause = expr.slice(j + 1, end).flatMap((w) =>
+          w.text === '{}'
+            ? starts.map((s) => ({ ...s, follow }))
+            : // `{}/x` names a path under what find finds, which the guard does not know.
+              [w.text.includes('{}') ? { ...w, dynamic: true } : w],
+        );
         const d = this.exec(clause, cwd);
         if (!d.allow) return d;
         j = end;
@@ -804,13 +1033,21 @@ class Checker {
         dir = w ? this.path({ ...w, glob: false }, dir) : null;
       } else if (t === '-c' || t.startsWith('--config-env')) {
         const w = t === '-c' || t === '--config-env' ? args[++i] : args[i];
-        const key = (w?.text ?? '').replace(/^--config-env=/, '');
-        if (!w || w.dynamic || PUSH_KEYS.test(key))
+        const key = (w?.text ?? '').replace(/^--config-env=/, '').split('=')[0];
+        // Most keys can name a command git runs through sh -c, or change what push sends.
+        if (!w || w.dynamic || !SAFE_GIT_KEYS.test(key ?? ''))
           return deny(
             'git-config',
-            `git ${t} ${w?.text ?? ''} could change what git push sends or where`,
-            'run git without -c for alias, remote, push or url keys',
+            `git ${t} ${w?.text ?? ''} could run a command or change what git push sends`,
+            'run git without -c, or with -c only for user.*, color.* and similar display keys',
           );
+      } else if (t === '--attr-source' || t === '--super-prefix') i++;
+      else if (t === '--namespace' || t.startsWith('--namespace=')) {
+        return deny(
+          'git-push',
+          `git ${t} changes which refs git reads and pushes`,
+          this.pushAlternative(),
+        );
       } else if (t === '--work-tree' || t.startsWith('--work-tree=')) {
         const w =
           t === '--work-tree'
@@ -821,7 +1058,17 @@ class Checker {
         if (t === '--git-dir') i++;
         gitDir = true;
       } else if (!t.startsWith('-')) break;
+      // `--exec-path=<dir>` runs subcommands from it; an unknown option may take a value.
+      else if (!GIT_FLAGS.has(t) && !/^--(attr-source|list-cmds)=/.test(t))
+        return unresolvable(`the git option ${t}`);
     }
+    const env = [...this.gitVars];
+    if (env.some((n) => GIT_RUNS.test(n)))
+      return deny(
+        'git-config',
+        `git with ${env.filter((n) => GIT_RUNS.test(n)).join(', ')} set could run a command or alias the guard does not see`,
+        'run git without GIT_CONFIG_* or GIT_*_COMMAND variables',
+      );
     if (args[i]?.dynamic) return unresolvable('the git subcommand');
     const sub = args[i]?.text;
     const rest = args.slice(i + 1);
@@ -832,7 +1079,11 @@ class Checker {
     const own = this.ctx.branch;
     // The tree a destructive subcommand acts on.
     const tree =
-      workTree !== undefined ? workTree : gitDir || this.gitEnv ? null : dir;
+      workTree !== undefined
+        ? workTree
+        : gitDir || env.some((n) => GIT_ENV.test(n))
+          ? null
+          : dir;
     const inTree = () => {
       if (tree === null) return unresolvable('the repository git acts on');
       return inside(realDir(tree), this.ctx.worktree)
@@ -1040,11 +1291,16 @@ class Checker {
       );
     if (!writes) return ALLOW;
     const key = positional[0];
-    return edits || !key || key.dynamic || PUSH_KEYS.test(key.text)
+    // Keys beyond display and submodule or branch settings can name a command git runs.
+    return edits ||
+      !key ||
+      key.dynamic ||
+      PUSH_KEYS.test(key.text) ||
+      !(SAFE_GIT_KEYS.test(key.text) || /^(submodule|branch)\./i.test(key.text))
       ? deny(
           'git-config',
-          `git config would change ${key?.text ?? 'the configuration'}, which decides what git push sends or where`,
-          'leave alias, remote, push and url settings as they are',
+          `git config would change ${key?.text ?? 'the configuration'}, which can run a command or decide what git push sends`,
+          'leave the configuration as it is, apart from user.*, color.* and similar display keys',
         )
       : ALLOW;
   }
@@ -1076,8 +1332,9 @@ class Checker {
           return refuse(
             'git push --repo pushes to a remote the guard does not check',
           );
-        if (t === '--push-option' || t === '--receive-pack' || t === '--exec')
-          i++;
+        if (longOpt(t, '--receive-pack', '--exec'))
+          return refuse(`git push ${t} runs a command on the remote side`);
+        if (t === '--push-option') i++;
       } else if (t.startsWith('-') && t.length > 1) {
         if (t.slice(1).includes('f'))
           return refuse(`git push ${t} would force-push`);
@@ -1277,7 +1534,13 @@ export function checkCommand(
     worktree: realDir(ctx.worktree),
     tmpdir: realDir(ctx.tmpdir),
   };
-  return new Checker(real).run(command, realDir(ctx.cwd));
+  try {
+    return new Checker(real).run(command, realDir(ctx.cwd));
+  } catch (err) {
+    if (err instanceof Unparsable)
+      return unresolvable(`how the shell splits this command (${err.message})`);
+    throw err;
+  }
 }
 
 /** Verbs whose refusal the hook keeps when the guard itself fails. */
