@@ -76,30 +76,38 @@ class DeviceVerificationForm extends FormBase {
       return $form;
     }
 
-    // Prefilling from the query string is what makes the RFC's
-    // verification_uri_complete worth sending.
-    $prefill = $this->getRequest()->query->get('user_code', '');
-    $prefill = is_string($prefill) ? $prefill : '';
+    // The link's code (RFC 8628 verification_uri_complete) only looks up the
+    // consent below; it is never prefilled, so a sent link cannot confirm a
+    // stranger's device with one click.
+    $linkCode = $this->getRequest()->query->get('user_code', '');
+    $linkCode = is_string($linkCode) ? $linkCode : '';
     // The page's one h1: the gate chrome carries the mark, not a heading.
     $form['heading'] = $this->text($this->t('Sign in a device'), [
       'as' => 'h1',
       'size' => 'section-title',
       'align' => 'center',
     ]) + ['#weight' => -20];
-    $form += $this->buildCodeField($prefill);
+    $form['user_code'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Device code'),
+      '#description' => $this->t('Type the code shown in your own terminal.'),
+      '#required' => TRUE,
+      '#maxlength' => 32,
+    ];
 
     // Resolving the code already on GET, before any decision is made, is what
     // gives the human something to consent to rather than a blind text field
     // (the consumer's name and the token's scopes). The lookup is an
     // existence oracle, so it is gated by the POST path's flood control.
-    if ($prefill !== '' && $this->floodAllows()) {
-      $device_code = $this->deviceCodeRepository->getDeviceCodeEntityByUserCode($this->normalize($prefill));
+    if ($linkCode !== '' && $this->floodAllows()) {
+      $device_code = $this->deviceCodeRepository->getDeviceCodeEntityByUserCode($this->normalize($linkCode));
       if ($device_code === NULL) {
         $this->flood->register(self::FLOOD_EVENT, self::FLOOD_WINDOW_SECONDS, $this->floodIdentifier());
       }
       if ($device_code !== NULL && $device_code->getUserIdentifier() === NULL) {
         $client = $this->drupalConsumer($device_code);
         $form['consent'] = $this->text($this->t('@client wants to sign in', ['@client' => $client->label()]));
+        $form['consent_account'] = $this->text($this->t('Signs in as @account', ['@account' => $this->currentUser->getDisplayName()]));
         $scopes = array_map(static fn ($scope) => $scope->getIdentifier(), $device_code->getScopes());
         $form['consent_scopes'] = $this->text($scopes
           ? $this->t('Requested access: @scopes', ['@scopes' => implode(', ', $scopes)])
@@ -168,48 +176,6 @@ class DeviceVerificationForm extends FormBase {
       '#type' => 'component',
       '#component' => 'bb_theme:text',
       '#props' => ['text' => $text] + $props,
-    ];
-  }
-
-  /**
-   * The device-code field: prefilled and non-editable, or blank and typed.
-   *
-   * Prefilled means decided by the terminal that printed it, not typed by
-   * the human confirming it: shown as text, not an editable/readonly input,
-   * and carried through as a hidden field so validateForm() still reads it
-   * from the POST.
-   */
-  protected function buildCodeField(string $prefill): array {
-    if ($prefill === '') {
-      return [
-        'user_code' => [
-          '#type' => 'textfield',
-          '#title' => $this->t('Device code'),
-          '#description' => $this->t('Enter the code shown in your terminal.'),
-          '#required' => TRUE,
-          '#maxlength' => 32,
-        ],
-      ];
-    }
-    return [
-      'user_code_display' => [
-        '#type' => 'item',
-        '#title' => $this->t('Device code'),
-        'code' => [
-          '#type' => 'component',
-          '#component' => 'bb_theme:text',
-          '#props' => [
-            'text' => $this->normalize($prefill),
-            'as' => 'span',
-            'size' => 'section-title',
-            'tracking' => 'widest',
-          ],
-        ],
-      ],
-      'user_code' => [
-        '#type' => 'hidden',
-        '#value' => $prefill,
-      ],
     ];
   }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_oauth_device\Kernel;
 
 use Drupal\Component\Serialization\Json;
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormState;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\consumers\Entity\Consumer;
@@ -352,6 +353,32 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
   }
 
   /**
+   * A sent link names the account and still needs the code typed.
+   */
+  public function testLinkedCodeMustBeTypedAndNamesTheAccount(): void {
+    $body = $this->requestDeviceAuthorization();
+
+    $user = $this->drupalCreateUser(['grant simple_oauth codes']);
+    $this->assertInstanceOf(User::class, $user);
+    $this->setCurrentUser($user);
+    $request = Request::create('/oauth/device', 'GET', ['user_code' => $body['user_code']]);
+    $content = (string) $this->httpKernel->handle($request)->getContent();
+    $this->assertStringContainsString('Device functional client', $content);
+    $this->assertStringContainsString('Signs in as ' . $user->getDisplayName(), $content);
+
+    $fields = (new \DOMXPath(Html::load($content)))->query('//input[@name="user_code"]');
+    $this->assertInstanceOf(\DOMNodeList::class, $fields);
+    $field = $fields->item(0);
+    $this->assertInstanceOf(\DOMElement::class, $field);
+    $this->assertSame('text', $field->getAttribute('type'));
+    $this->assertSame('', $field->getAttribute('value'));
+
+    $messages = $this->submitVerificationForm('', 'confirm', $body['user_code']);
+    $this->assertStringContainsString('Device code field is required.', $messages);
+    $this->assertSame('authorization_pending', $this->pollError($body['device_code']));
+  }
+
+  /**
    * The verification route is closed to an account without the permission.
    */
   public function testVerificationRouteIsPermissionGated(): void {
@@ -577,9 +604,11 @@ class DeviceAuthorizationFlowTest extends EntityKernelTestBase {
    *   The device user code to submit, prefilled or hand-typed.
    * @param string $decision
    *   Either 'confirm' or 'deny', the name of the button to trigger.
+   * @param string|null $linkCode
+   *   The code the opened link carries, when it differs from the typed one.
    */
-  protected function submitVerificationForm(string $userCode, string $decision): string {
-    $request = Request::create('/oauth/device', 'GET', ['user_code' => $userCode]);
+  protected function submitVerificationForm(string $userCode, string $decision, ?string $linkCode = NULL): string {
+    $request = Request::create('/oauth/device', 'GET', ['user_code' => $linkCode ?? $userCode]);
     $this->container->get('request_stack')->push($request);
     try {
       // FormBuilder::submitForm() immediately overwrites user input with
