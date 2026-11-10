@@ -26,6 +26,14 @@
    deleted nav.js achieved by wiring each trigger to the panel its own
    `aria-controls` named.
 
+   htmx boost swaps the whole rail on every navigation, so the `open` the user
+   chose is kept in localStorage (`bakers.nav.<url or title>`) and read back on
+   init. Only a user toggle or the active trail writes it, never the server
+   default, so stories with different defaults cannot leak into each other;
+   `$persist` would write the default on init. A row on the active trail opens
+   and stores open, so the current page is never inside a closed group. `menuOpen` is a transient popup and stays
+   unstored.
+
    The chevron is rendered TWICE with each copy bound to `hidden`, because an
    `include`d component cannot be bound from outside. The server still emits
    exactly one visible chevron with JavaScript disabled, which is what the
@@ -67,8 +75,14 @@
     ? item.open
     : (disclose or item.in_active_trail|default(false)) %}
   {% set menu_open = item.menu.open|default(false) %}
+  {% set store = ('bakers.nav.' ~ (item.url ?: item.title))|e('js') %}
+  {% set in_trail = item.in_active_trail|default(false) %}
   <li class="list-none{{ item.at_end|default(false) ? ' flex flex-col flex-1 justify-end' : '' }}"
-    x-data="{ open: {{ is_open ? 'true' : 'false' }}, menuOpen: {{ menu_open ? 'true' : 'false' }} }">
+    x-data="{ open: {{ is_open ? 'true' : 'false' }}, menuOpen: {{ menu_open ? 'true' : 'false' }},
+      {%- if children|length %}
+      init() { try { {{ in_trail ? "localStorage.setItem('" ~ store ~ "', true)" : "const v = localStorage.getItem('" ~ store ~ "'); if (v !== null) this.open = v === 'true'" }} } catch (e) {} },
+      {%- endif %}
+      toggle() { this.open = !this.open; try { localStorage.setItem('{{ store }}', this.open) } catch (e) {} } }">
     <div class="flex items-center gap-inline-xs"
       {%- if is_heading and not heading_keeps_icon %} data-collapse-hidden{% if collapsed %} hidden{% endif %}{% endif %}>
       {% if is_heading %}
@@ -78,7 +92,7 @@
           aria-label="{{ item.title }}"
           aria-controls="{{ panel_id }}"
           aria-expanded="{{ is_open ? 'true' : 'false' }}"
-          @click="open = !open"
+          @click="toggle()"
           :aria-expanded="open ? 'true' : 'false'">
           <span class="inline-flex" data-collapse-hidden{% if collapsed %} hidden{% endif %}>
             <span {% if not is_open %}hidden{% endif %} :hidden="!open">
@@ -157,7 +171,7 @@
           aria-controls="{{ panel_id }}"
           aria-expanded="{{ is_open ? 'true' : 'false' }}"
           aria-label="{{ item.title }} sub-navigation"
-          @click="open = !open"
+          @click="toggle()"
           :aria-expanded="open ? 'true' : 'false'"
           {%- if collapsed %} hidden{% endif %}>
           <span {% if not is_open %}hidden{% endif %} :hidden="!open">
