@@ -561,6 +561,83 @@ describe('loadConductorConfig', () => {
   });
 });
 
+describe('marketplaces: the project declares its agent plugins', () => {
+  const withMarketplaces = (literal: string) =>
+    writeConfig(
+      VALID.replace(
+        "bakers: { project: 'bakers' },",
+        `bakers: { project: 'bakers' },\n  marketplaces: ${literal},`,
+      ),
+    );
+
+  it('carries the declared marketplaces onto the engine config', async () => {
+    const config = await loadConductorConfig(
+      withMarketplaces(
+        "[{ url: 'https://github.com/DietrichGebert/ponytail.git', ref: 'v5.3.3', plugins: ['ponytail'] }, { url: 'git@github.com:obra/superpowers.git', ref: 'main', plugins: ['superpowers'] }]",
+      ),
+    );
+    expect(config.marketplaces).toEqual([
+      {
+        url: 'https://github.com/DietrichGebert/ponytail.git',
+        ref: 'v5.3.3',
+        plugins: ['ponytail'],
+      },
+      {
+        url: 'git@github.com:obra/superpowers.git',
+        ref: 'main',
+        plugins: ['superpowers'],
+      },
+    ]);
+  });
+
+  it('declares none when the key is absent', async () => {
+    const config = await loadConductorConfig(writeConfig(VALID));
+    expect(config.marketplaces).toEqual([]);
+  });
+
+  it.each([
+    [
+      'a local path',
+      "[{ url: './plugins', ref: 'main', plugins: ['p'] }]",
+      /marketplaces\[0\]\.url/,
+    ],
+    [
+      'a file:// URL',
+      "[{ url: 'file:///srv/p.git', ref: 'main', plugins: ['p'] }]",
+      /marketplaces\[0\]\.url/,
+    ],
+    [
+      'a missing ref',
+      "[{ url: 'https://x.test/p.git', plugins: ['p'] }]",
+      /marketplaces\[0\]\.ref/,
+    ],
+    [
+      'an empty plugin list',
+      "[{ url: 'https://x.test/p.git', ref: 'v1', plugins: [] }]",
+      /marketplaces\[0\]\.plugins/,
+    ],
+    [
+      'a non-array',
+      "{ url: 'https://x.test/p.git' }",
+      /marketplaces must be an array/,
+    ],
+  ])('rejects %s, naming the entry', async (_label, literal, message) => {
+    await expect(
+      loadConductorConfig(withMarketplaces(literal)),
+    ).rejects.toThrow(message);
+  });
+
+  it('rejects marketplaces in the machine config: plugins are declared per project', async () => {
+    writeFileSync(
+      join(process.env.HOME as string, '.bakers/machine.config.js'),
+      `export default { addons: ['@bakers-build/addon-codex'], marketplaces: [] };`,
+    );
+    await expect(loadConductorConfig(writeConfig(VALID))).rejects.toThrow(
+      /machine\.config\.js.*marketplaces.*project/,
+    );
+  });
+});
+
 // ---------------------------------------------------------------------------
 // BB-218 AC-6 — the engine loader warns (once) on leftover connection/auth and
 // never merges it. `site`/`plugins` are connection concerns (bakers.config.js).

@@ -1,0 +1,5 @@
+{
+  "name": "probe-market",
+  "owner": { "name": "bakers.build" },
+  "plugins": [{ "name": "probe-plugin", "source": "./" }]
+}

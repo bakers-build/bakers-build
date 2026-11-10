@@ -1,6 +1,9 @@
 ---
 name: bb-recipe-matt
 description: Recipe for tickets of type feature, bug or chore — the Matt method; grilling to a shared understanding, then a spec; diagnosing-bugs for bugs; tdd; code-review.
+metadata:
+  requires: "mattpocock-skills:grilling mattpocock-skills:tdd mattpocock-skills:code-review"
+  requires-bug: "mattpocock-skills:diagnosing-bugs mattpocock-skills:tdd mattpocock-skills:code-review"
 ---
 
 # Matt method

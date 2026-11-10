@@ -89,6 +89,20 @@ export default {
       'existing-config-fresh': 'bash scripts/worktree-deps.sh && ddev init --provider existing-config',
     },
   },
+  // The agent plugins every run of this project gets, installed into a
+  // per-declaration agent home (~/.cache/bakers/agent-homes/<harness>/<hash>):
+  // the skills WORKFLOW.md bb-phase-work and the recipes require. The bakers
+  // skills themselves come from this checkout's .claude/skills/bakers-build.
+  marketplaces: [
+    { url: 'https://github.com/mattpocock/skills.git', ref: 'v1.3.2', plugins: ['mattpocock-skills'] },
+    {
+      url: 'https://github.com/pen-drop/designbook.git',
+      ref: 'next',
+      plugins: ['designbook', 'designbook-drupal', 'designbook-css-tailwind', 'designbook-figma'],
+    },
+    { url: 'https://github.com/DietrichGebert/ponytail.git', ref: 'v5.3.2', plugins: ['ponytail'] },
+    { url: 'https://github.com/obra/superpowers.git', ref: 'v7.0.0', plugins: ['superpowers'] },
+  ],
   remote: { plugin: '@bakers-build/addon-remote-drupal' },
   // addon-ddev serves the `ddev_status`, `ddev_start` and `ddev_exec` agent
   // tools, so runs reach DDEV only through the conductor, never directly.

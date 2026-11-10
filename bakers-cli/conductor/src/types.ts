@@ -8,6 +8,7 @@ import type { AgentRoutes } from '@bakers-build/core';
 import type { DropSHPlugin } from 'dropsh/plugin';
 import type { ResolvedBbProjectContext } from './bakers-project-context.js';
 import type { BbProjectSelection } from './cli/project-context.js';
+import type { MarketplaceDeclaration } from './plugins/agent-home.js';
 import type { HookListener } from './plugins/executor.js';
 import type { LoadedInbox } from './plugins/message.js';
 import type {
@@ -113,6 +114,8 @@ export interface ConductorFileConfig extends ConductorSettings {
   /** Replaces the shipped label/default resolution for this project. */
   selectAgent?: (candidates: ResolvedAgent[], ticket: Ticket) => ResolvedAgent;
   workspace: WorkspacePlugin;
+  /** The project's agent plugin marketplaces; empty when it declares none. */
+  marketplaces: MarketplaceDeclaration[];
   /**
    * Addon lifecycle listeners from the conductor `addons[]` `hooks`
    * accumulator (BB-599), validated at load. Kept apart from the shell
