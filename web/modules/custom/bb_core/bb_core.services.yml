@@ -117,9 +117,12 @@ services:
   logger.channel.bb_core:
     parent: logger.channel_base
     arguments: ['bb_core']
+  bb_core.ticket_retry:
+    class: Drupal\bb_core\Run\TicketRetry
+    arguments: ['@keyvalue', '@datetime.time']
   bb_core.failed_run_circuit_breaker:
     class: Drupal\bb_core\Claim\FailedRunCircuitBreaker
-    arguments: ['@entity_type.manager', '@datetime.time']
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_retry']
   bb_core.ticket_stall_reason:
     class: Drupal\bb_core\Claim\TicketStallReason
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker', '@bb_core.conductor_owner_access']

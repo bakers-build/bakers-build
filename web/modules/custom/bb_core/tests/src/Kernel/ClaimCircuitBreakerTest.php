@@ -95,4 +95,43 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
     $this->assertSame('claimed', $run->getRunState());
   }
 
+  /**
+   * A retry lifts a tripped breaker, so the conductor claims the ticket again.
+   */
+  public function testRetryLiftsTrippedBreaker(): void {
+    $ticket = $this->seedAssignedTicket('plan');
+    for ($i = 0; $i < 3; $i++) {
+      $this->seedFailedRun($ticket, $this->now() - 600);
+    }
+    $breaker = $this->container->get('bb_core.failed_run_circuit_breaker');
+    $this->assertTrue($breaker->isTripped($this->reloadTicket($ticket)));
+
+    $this->container->get('bb_core.ticket_retry')->request($ticket);
+
+    $this->assertFalse($breaker->isTripped($this->reloadTicket($ticket)));
+    $run = $this->claimService->claimNext($this->conductor);
+    $this->assertNotNull($run);
+    $this->assertSame((int) $ticket->id(), $run->getTicketId());
+    $this->assertSame('claimed', $run->getRunState());
+  }
+
+  /**
+   * Failures after a retry count again: three of them trip the breaker anew.
+   */
+  public function testThreeFailuresAfterRetryTripAgain(): void {
+    $ticket = $this->seedAssignedTicket('plan');
+    for ($i = 0; $i < 3; $i++) {
+      $this->seedFailedRun($ticket, $this->now() - 600);
+    }
+    $this->container->get('bb_core.ticket_retry')->request($ticket);
+    $breaker = $this->container->get('bb_core.failed_run_circuit_breaker');
+
+    // Two new failures are below the cap: the older ones no longer count.
+    $this->seedFailedRun($ticket, $this->now() + 1);
+    $this->seedFailedRun($ticket, $this->now() + 2);
+    $this->assertFalse($breaker->isTripped($this->reloadTicket($ticket)));
+    $this->seedFailedRun($ticket, $this->now() + 3);
+    $this->assertTrue($breaker->isTripped($this->reloadTicket($ticket)));
+  }
+
 }

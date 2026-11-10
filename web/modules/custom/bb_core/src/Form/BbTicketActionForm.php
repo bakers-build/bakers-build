@@ -9,11 +9,15 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Run\TicketRetry;
 use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\island\Form\WrappedDialogFormTrait;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Confirms an intervention: freeze, unfreeze, cancel a ticket or a run.
+ * Confirms an intervention on a ticket or one of its runs.
+ *
+ * Freeze, unfreeze, cancel a ticket or a run, retry or re-dispatch a failed run.
  *
  * Opened from the detail page's Properties footer or a run row, as a dialog
  * over the ticket with JavaScript and as a plain page without it. The page
@@ -30,6 +34,20 @@ final class BbTicketActionForm extends EntityForm {
    * @var \Drupal\bb_core\Entity\BbTicketInterface
    */
   protected $entity;
+
+  /**
+   * Records retry requests.
+   */
+  private TicketRetry $ticketRetry;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container): static {
+    $instance = parent::create($container);
+    $instance->ticketRetry = $container->get('bb_core.ticket_retry');
+    return $instance;
+  }
 
   /**
    * {@inheritdoc}
@@ -54,6 +72,10 @@ final class BbTicketActionForm extends EntityForm {
       '#slots' => ['body' => ['#plain_text' => (string) $question]],
       '#weight' => -10,
     ];
+    if (($confirm['#bb_action']['kind'] ?? NULL) === TicketInterventions::REDISPATCH) {
+      $form['conductor'] = RedispatchPicker::element(TicketInterventions::redispatchTargets($ticket));
+      $form['#attached']['library'][] = 'core/components.bb_theme--option_picker';
+    }
     $form['actions'] = ['#type' => 'actions'];
     $form['actions']['keep'] = [
       '#type' => 'component',
@@ -81,6 +103,9 @@ final class BbTicketActionForm extends EntityForm {
     if ($this->getRequest()->query->has(TicketInterventions::FREEZE_PARAMETER)) {
       return $this->freezeConfirmation($ticket);
     }
+    if ($this->getRequest()->query->has(TicketInterventions::RUN_ACTION_PARAMETER)) {
+      return $this->runActionConfirmation($ticket, $run);
+    }
     if ($run !== NULL && TicketInterventions::mayCancelRun($run, $ticket)) {
       return [
         $this->t('Run #@run stops. The ticket stays in its current state, and the conductor may start another run.', [
@@ -107,6 +132,40 @@ final class BbTicketActionForm extends EntityForm {
       ]),
       $this->actionButton('bb_confirm', (string) $this->t('Cancel ticket'), $action, 'danger'),
     ];
+  }
+
+  /**
+   * The Retry or Re-dispatch question and button, when the run allows it now.
+   *
+   * @return array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: array<string, mixed>|null}
+   *   The question, and the button or NULL.
+   */
+  private function runActionConfirmation(BbTicketInterface $ticket, ?BbRunInterface $run): array {
+    $kind = $this->getRequest()->query->get(TicketInterventions::RUN_ACTION_PARAMETER);
+    $allowed = $run !== NULL && match ($kind) {
+      TicketInterventions::RETRY => TicketInterventions::mayRetryRun($run, $ticket),
+      TicketInterventions::REDISPATCH => TicketInterventions::mayRedispatchRun($run, $ticket),
+      default => FALSE,
+    };
+    if (!$allowed) {
+      return [$this->t('This action is no longer available. The ticket shows its current state.'), NULL];
+    }
+    $label = $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label();
+    $action = ['kind' => $kind, 'run' => $run->uuid()];
+    return $kind === TicketInterventions::RETRY
+      ? [
+        $this->t('@conductor claims @ticket again on its next check, and the new run appears in Run history.', [
+          '@conductor' => (string) $ticket->getConductor()?->label(),
+          '@ticket' => $label,
+        ]),
+        $this->actionButton('bb_confirm', (string) $this->t('Retry run'), $action, 'neutral'),
+      ]
+      : [
+        $this->t('Choose the conductor that takes over @ticket. It claims the ticket on its next check.', [
+          '@ticket' => $label,
+        ]),
+        $this->actionButton('bb_confirm', (string) $this->t('Re-dispatch'), $action, 'neutral'),
+      ];
   }
 
   /**
@@ -204,13 +263,20 @@ final class BbTicketActionForm extends EntityForm {
     $target = match ($action['kind']) {
       'run' => $this->cancellableRun($action['run'], $ticket),
       'freeze' => $this->freezeTarget($action, $ticket),
+      TicketInterventions::RETRY, TicketInterventions::REDISPATCH => $this->retryTarget($action, $ticket, $form_state),
       default => $this->transitionTarget($action, $ticket),
     };
     if ($target === NULL || count($target->validate()) > 0) {
       $this->rejectAction($form_state);
       return;
     }
-    $target->save();
+    // A retry changes no ticket; a re-dispatch writes the conductor first.
+    if ($action['kind'] !== TicketInterventions::RETRY) {
+      $target->save();
+    }
+    if (in_array($action['kind'], [TicketInterventions::RETRY, TicketInterventions::REDISPATCH], TRUE)) {
+      $this->ticketRetry->request($ticket);
+    }
     $this->messenger()->addStatus($this->statusMessage($action, $ticket));
     $this->respondAtReturnUrl($form_state);
   }
@@ -232,6 +298,37 @@ final class BbTicketActionForm extends EntityForm {
   }
 
   /**
+   * The ticket to write for a Retry or Re-dispatch, or NULL when refused.
+   *
+   * Re-checked on the fresh ticket, so a dialog that went stale writes
+   * nothing. A conductor the picker did not offer is refused.
+   *
+   * @param array<string, string> $action
+   *   The posted run action.
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The freshly loaded ticket.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The submitted form state, whose input names the chosen conductor.
+   */
+  private function retryTarget(array $action, BbTicketInterface $ticket, FormStateInterface $form_state): ?BbTicketInterface {
+    $run = TicketInterventions::runByUuid($action['run'], $this->entityTypeManager);
+    if ($run === NULL) {
+      return NULL;
+    }
+    if ($action['kind'] === TicketInterventions::RETRY) {
+      return TicketInterventions::mayRetryRun($run, $ticket) ? $ticket : NULL;
+    }
+    $chosen = $form_state->getUserInput()['conductor'] ?? NULL;
+    if (!TicketInterventions::mayRedispatchRun($run, $ticket)
+      || !is_string($chosen)
+      || !isset(TicketInterventions::redispatchTargets($ticket)[$chosen])) {
+      return NULL;
+    }
+    $ticket->set('conductor_id', (int) $chosen);
+    return $ticket;
+  }
+
+  /**
    * The success message for the action that just wrote.
    *
    * @param array<string, string> $action
@@ -243,6 +340,11 @@ final class BbTicketActionForm extends EntityForm {
     $label = $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label();
     return match ($action['kind']) {
       'run' => (string) $this->t('The run was cancelled.'),
+      TicketInterventions::RETRY => (string) $this->t('Retry requested.'),
+      TicketInterventions::REDISPATCH => (string) $this->t('@ticket moved to @conductor.', [
+        '@ticket' => $label,
+        '@conductor' => (string) $ticket->getConductor()?->label(),
+      ]),
       'freeze' => $action['frozen'] === '1'
         ? (string) $this->t('@ticket is frozen.', ['@ticket' => $label])
         : (string) $this->t('@ticket is no longer frozen.', ['@ticket' => $label]),

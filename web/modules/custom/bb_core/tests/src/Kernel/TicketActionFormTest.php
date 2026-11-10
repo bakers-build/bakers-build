@@ -9,6 +9,7 @@ use Drupal\Core\Form\FormState;
 use Drupal\Core\Render\Element;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Ticket\TicketInterventions;
@@ -276,6 +277,58 @@ final class TicketActionFormTest extends KernelTestBase {
   }
 
   /**
+   * Confirming Retry stamps the request and changes nothing else.
+   */
+  public function testRetryConfirmationRequestsRetry(): void {
+    [$ticket, $run] = $this->failedRunOnAssignedTicket();
+    $this->askRunAction($run, TicketInterventions::RETRY);
+    $form = $this->actionForm($ticket);
+    self::assertStringContainsString('claims', (string) $form['question']['#slots']['body']['#plain_text']);
+    self::assertStringContainsString('the new run appears in Run history.', (string) $form['question']['#slots']['body']['#plain_text']);
+    self::assertNull($this->container->get('bb_core.ticket_retry')->requestedAt($ticket), 'The dialog writes nothing.');
+
+    $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
+    self::assertSame(
+      $this->container->get('datetime.time')->getRequestTime(),
+      $this->container->get('bb_core.ticket_retry')->requestedAt($ticket),
+    );
+    self::assertSame(['Retry requested.'], array_map('strval', $this->container->get('messenger')->messagesByType('status')));
+    self::assertSame((int) $ticket->getConductor()?->id(), (int) $this->reload($ticket)->get('conductor_id')->target_id);
+  }
+
+  /**
+   * Confirming Re-dispatch hands the ticket to the chosen conductor.
+   */
+  public function testRedispatchMovesTheTicketToTheChosenConductor(): void {
+    [$ticket, $run] = $this->failedRunOnAssignedTicket();
+    $other = $this->adminConductor('other');
+    $this->askRunAction($run, TicketInterventions::REDISPATCH);
+    $form = $this->actionForm($ticket);
+    self::assertStringContainsString('Choose the conductor that takes over', (string) $form['question']['#slots']['body']['#plain_text']);
+
+    $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL)->setValue('conductor', (string) $other->id()));
+    self::assertSame((int) $other->id(), (int) $this->reload($ticket)->get('conductor_id')->target_id);
+    self::assertNotNull($this->container->get('bb_core.ticket_retry')->requestedAt($ticket));
+    $label = $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label();
+    self::assertSame([$label . ' moved to ' . $other->label() . '.'], array_map('strval', $this->container->get('messenger')->messagesByType('status')));
+  }
+
+  /**
+   * A conductor the picker did not offer is never assigned.
+   */
+  public function testRedispatchRefusesConductorOutsideThePicker(): void {
+    [$ticket, $run] = $this->failedRunOnAssignedTicket();
+    $this->adminConductor('other');
+    $this->askRunAction($run, TicketInterventions::REDISPATCH);
+    $current = (int) $ticket->getConductor()?->id();
+
+    $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL)->setValue('conductor', (string) $current));
+    self::assertSame($current, (int) $this->reload($ticket)->get('conductor_id')->target_id);
+    self::assertNull($this->container->get('bb_core.ticket_retry')->requestedAt($ticket));
+    self::assertNotEmpty($this->container->get('messenger')->messagesByType('error'));
+  }
+
+  /**
    * The edit address is the in-app Settings screen, never the admin theme.
    */
   public function testTheEditRouteIsTheInAppSettings(): void {
@@ -441,6 +494,44 @@ final class TicketActionFormTest extends KernelTestBase {
     assert($run instanceof BbRunInterface);
     $run->save();
     return $run;
+  }
+
+  /**
+   * A conductor of the project that its owner, uid 1, may work for.
+   */
+  private function adminConductor(string $name): BbConductorInterface {
+    $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
+      'conductor_id' => $name,
+      'label' => $name,
+      'owner_user_id' => 1,
+      'status' => 'online',
+      'project_id' => $this->projectId,
+      'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
+    ]);
+    assert($conductor instanceof BbConductorInterface);
+    $conductor->save();
+    return $conductor;
+  }
+
+  /**
+   * A working ticket on a conductor, with its newest run failed.
+   *
+   * @return array{0: \Drupal\bb_core\Entity\BbTicketInterface, 1: \Drupal\bb_core\Entity\BbRunInterface}
+   *   The ticket and the failed run.
+   */
+  private function failedRunOnAssignedTicket(): array {
+    $ticket = $this->ticket('bb_work', 'working');
+    $ticket->setConductor($this->adminConductor('first'))->save();
+    return [$this->reload($ticket), $this->createRun($ticket, 'failed')];
+  }
+
+  /**
+   * Puts a run and a run action on the request, as the dialog link does.
+   */
+  private function askRunAction(BbRunInterface $run, string $action): void {
+    $query = $this->container->get('request_stack')->getCurrentRequest()->query;
+    $query->set(TicketInterventions::RUN_PARAMETER, $run->uuid());
+    $query->set(TicketInterventions::RUN_ACTION_PARAMETER, $action);
   }
 
   /**
