@@ -181,12 +181,14 @@ Feature: The onboarding wizard before the workspace overview
     And I request an login link for "onboarding-create@example.com"
     And I follow the login link for "onboarding-create@example.com"
     Then the identity step is present
+    And the gate shows the appearance switch
     When I continue from the identity step
     And I continue from the about-you step
     Then both finish actions are offered
     When I choose finish and create a new workspace
     Then the address is "/home/new-workspace"
     And the page has exactly one h1
+    And the gate shows the appearance switch
     When I create the workspace "Setup Create GmbH"
     Then the address is "/setup-create-gmbh/tickets"
     And the workspace "setup-create-gmbh" is owned by "onboarding-create@example.com" as lead

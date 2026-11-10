@@ -121,6 +121,27 @@ final class FirstProjectCreatorTest extends KernelTestBase {
   }
 
   /**
+   * An account that may not create projects gets none, even on a team.
+   */
+  public function testRefusesWithoutProjectCreateRight(): void {
+    $groupOnly = $this->createAccount('first-project-group-only', []);
+    Og::createMembership($this->fixture('b', 'bb_team'), $groupOnly)
+      ->setState(OgMembershipInterface::STATE_ACTIVE)
+      ->save();
+    $before = $this->counts();
+
+    try {
+      $this->creator()->create($this->workspace(), $groupOnly, 'Bakery App', 'https://example.com/a/b.git', 'Platform');
+      self::fail('Creating a project needs the right to create projects.');
+    }
+    catch (\InvalidArgumentException) {
+      // Expected.
+    }
+
+    self::assertSame($before, $this->counts());
+  }
+
+  /**
    * The page's Create makes group and project on the owner's team.
    */
   public function testFirstProjectFormCreatesTheProject(): void {

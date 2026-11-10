@@ -44,10 +44,14 @@ final class FirstProjectCreator {
    *   The saved project.
    *
    * @throws \InvalidArgumentException
-   *   When the owner is on no team of the workspace or an entity is invalid;
+   *   When the owner may not create projects, is on no team of the workspace
+   *   or an entity is invalid;
    *   nothing is saved then.
    */
   public function create(BbWorkspaceInterface $workspace, UserInterface $owner, string $projectName, string $repositoryUrl, string $groupName): BbProjectInterface {
+    if (!$this->entityTypeManager->getAccessControlHandler('bb_project')->createAccess('bb_project', $owner)) {
+      throw new \InvalidArgumentException('You may not create projects.');
+    }
     $teamIds = $this->teamIds($workspace, $owner);
     if ($teamIds === []) {
       throw new \InvalidArgumentException('You are on no team of this workspace.');
