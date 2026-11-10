@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 // package makes every `bakers …` in a generated project throw). Resolution uses the
 // META package base (@bakers-build/bakers), the production-faithful location where a
 // global install keeps every addon. This checks resolvability only — it does NOT
-// construct the plugins. BAKERS-159: the templates are `project.config.js` and
+// construct the plugins. The templates are `project.config.js` and
 // `connection.config.js` and load no local file.
 const PROJECT_URL = new URL(
   '../../templates/project.config.js',

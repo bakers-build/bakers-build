@@ -75,7 +75,7 @@ export class FakeExecutor implements BbExecutor {
   }
 }
 
-/** dropsh-Plugin-Factory - Eintrag für das plugins-Array der project.config.js. */
+/** dropsh plugin factory: an entry for the `addons` list of project.config.js. */
 export function fakeExecutor(
   options: {
     outcome?: FakeExecutorOptions['outcome'];

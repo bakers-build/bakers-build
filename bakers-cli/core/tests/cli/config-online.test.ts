@@ -221,7 +221,7 @@ it('establishes online readiness for a computed base_url while reporting it as n
     inventoryConfig({ scope: 'connection', home, cwd }).report,
     { host: { resolveBases: [] }, cwd },
   );
-  // BAKERS-159: a computed value is a `not_checked` warning, which leaves
+  // A computed value is a `not_checked` warning, which leaves
   // offline validation passed, instead of `unknown_value`/`incomplete`.
   expect(report.findings).toContainEqual(
     expect.objectContaining({

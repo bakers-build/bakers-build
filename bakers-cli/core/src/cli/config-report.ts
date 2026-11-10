@@ -31,7 +31,6 @@ export type ConfigFindingCode =
   | 'authentication_failure'
   | 'no_workspace'
   | 'cancelled_selection'
-  | 'superseded_file'
   | 'dead_key'
   | 'retired_key'
   | 'addon_scope_not_allowed'

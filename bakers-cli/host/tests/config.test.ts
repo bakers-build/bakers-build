@@ -1269,7 +1269,7 @@ it('reports an addon in a scope it does not allow', async () => {
   expect(finding.remediation).toContain('.bakers/project.config.js');
   expect(report.result).toBe('blocked');
 });
-// BAKERS-159: addon options are checked offline from the addon's
+// Addon options are checked offline from the addon's
 // options.schema.json; the --online-only addon_with_invalid finding is gone.
 it('config check reports an invalid addon option at addons[0].with.services[0].key offline', async () => {
   seed();

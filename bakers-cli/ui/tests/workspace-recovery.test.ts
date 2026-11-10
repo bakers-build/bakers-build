@@ -163,7 +163,7 @@ afterEach(async () => {
 // workspace selection back to disk — that recovery flow, and the requirement
 // it existed to satisfy, are both gone. A connection still names its own
 // workspace explicitly (here computed from a module it imports; the retired
-// conductor.config.local.js is not that module any more, BAKERS-159), and the UI still attaches its own
+// conductor.config.local.js is not that module any more), and the UI still attaches its own
 // `workspacePlugin` for whatever value it resolves.
 it('picks up a workspace the connection computes from an imported module, without any prompt', async () => {
   const local = join(f.root, '.bakers/workspace.local.js');

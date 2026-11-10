@@ -15,7 +15,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 /**
  * BB-237 — `.ddev/worktree-post.sh` must run to its end and write its sentinel.
- * BAKERS-159 retired `conductor.config.local.js`: the script copies only
+ * With `conductor.config.local.js` gone, the script copies only
  * `audience.local.md` from the parent and no longer rewrites a base_url.
  */
 

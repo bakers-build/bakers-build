@@ -25,13 +25,16 @@ function allowedPaths(kind) {
   const open = new Set()
   const walk = (raw, file, prefix) => {
     const [node, at] = resolve(raw, file)
-    const shape = node.else ?? node
-    if (shape.items) walk(shape.items, at, `${prefix}[]`)
-    if (typeof shape.additionalProperties === 'object' || shape.additionalProperties === true) open.add(prefix)
-    for (const [key, child] of Object.entries(shape.properties ?? {})) {
-      const path = prefix ? `${prefix}.${key}` : key
-      paths.add(path)
-      walk(child, at, path)
+    // An `if` schema allows the keys of both branches.
+    const shapes = node.if ? [node.then, node.else].filter(Boolean) : [node]
+    for (const shape of shapes) {
+      if (shape.items) walk(shape.items, at, `${prefix}[]`)
+      if (typeof shape.additionalProperties === 'object' || shape.additionalProperties === true) open.add(prefix)
+      for (const [key, child] of Object.entries(shape.properties ?? {})) {
+        const path = prefix ? `${prefix}.${key}` : key
+        paths.add(path)
+        walk(child, at, path)
+      }
     }
   }
   const schema = schemaFile(`${kind}.schema.json`)

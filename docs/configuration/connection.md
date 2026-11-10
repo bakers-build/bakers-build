@@ -36,6 +36,7 @@ export default {
 | `site.jsonapi_prefix` | API path prefix, default `/jsonapi`. |
 | `workspace_id` | Optional workspace UUID. Only `bakers ui` reads it, to focus its picker; `bakers ui --workspace <name|uuid>` overrides it for one run. It does not scope API calls and does not replace `project.workspace` in the [project file](/configuration/project). |
 | `plugins` | dropsh plugin descriptors `{ plugin, export?, with?, options? }` or constructed plugins. `@bakers-build/addon-essentials` supplies the Markdown renderer and the JSON:API schema, so keep it. The sign-in profile goes here. |
+| `plugins[].plugin`, `plugins[].export`, `plugins[].with`, `plugins[].options` | A descriptor's package name, the named export to load (default export when absent), and its options: `with`, or `options` when `with` is absent. Other keys in a descriptor fail. |
 | `addons` | Optional package entries: a name or `{ use, alias?, with? }`. Contributions are appended after `plugins`. UI addons add tabs to `bakers ui`; see [Addons](/addons/configure). An entry that cannot be resolved is an error here. |
 | `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
 

@@ -320,7 +320,7 @@ describe('offline configuration inventory', () => {
     );
   });
 
-  // BAKERS-159: a computed value is a `not_checked` warning (the loader checks
+  // A computed value is a `not_checked` warning (the loader checks
   // it at start); the result stays `ok`.
   it('reports computed critical values as not checked with truthful source locations', () => {
     put(
@@ -426,7 +426,7 @@ describe('offline configuration inventory', () => {
     );
   });
 
-  // BAKERS-159: `.bakers/connection.config.js` is the project's own supported
+  // `.bakers/connection.config.js` is the project's own supported
   // connection file, no longer a superseded legacy override.
   it('reports an existing project connection as a supported file without leaking secrets', () => {
     const path = put(
@@ -445,11 +445,6 @@ describe('offline configuration inventory', () => {
         required: false,
       }),
     );
-    expect(
-      report.findings.filter(
-        (f) => f.path === path && f.code === 'superseded_file',
-      ),
-    ).toEqual([]);
     expect(JSON.stringify(report)).not.toContain('DO_NOT_LEAK');
   });
 

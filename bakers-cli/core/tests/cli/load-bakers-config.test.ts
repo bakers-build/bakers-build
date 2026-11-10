@@ -514,7 +514,7 @@ describe('loadBbConfig — workspace_id is optional (BB-495)', () => {
     expect(cfg.workspace_id).toBeUndefined();
   });
 
-  // BAKERS-159: the connection schema types workspace_id as a string, so a
+  // The connection schema types workspace_id as a string, so a
   // non-string is refused naming the key instead of being read as none.
   it('refuses a non-string workspace_id, naming the key', async () => {
     const d = bakersDir();

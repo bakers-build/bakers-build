@@ -183,8 +183,7 @@ describe('lazy mount — only the matched command module is imported (AC-2)', ()
   });
 });
 
-// BAKERS-159 F7: `oven` stays a hidden alias of `conductor`.
-describe('runHost — the hidden oven alias (BAKERS-159 F7)', () => {
+describe('runHost — `oven` stays a hidden alias of `conductor`', () => {
   const savedCode = process.exitCode;
   const saved = process.env.BAKERS_COMMANDS;
   afterEach(() => {
