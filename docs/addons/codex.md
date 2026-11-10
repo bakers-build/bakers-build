@@ -30,7 +30,6 @@ Without a `model` it publishes `codex` (your locally configured Codex model) plu
 | `sandbox` | object | see below | Only with `permissions: 'sandbox'`. Each key set replaces its default; lists are not merged. |
 | `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
-| `plugins` | boolean | `true` | Skips [agent plugins](/configuration/project#agent-plugins). |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security

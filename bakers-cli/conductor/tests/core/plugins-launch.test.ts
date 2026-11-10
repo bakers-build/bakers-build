@@ -115,7 +115,7 @@ async function dispatch(
     remote,
     executor,
     new RecordingWorkspace(ticket.worktree),
-    [{ id: agent.id, alias: 'opus', security: 'sandbox', agent }],
+    [{ id: agent.id, alias: 'opus', permissions: 'sandbox', agent }],
     log,
     CHECKOUT,
   );

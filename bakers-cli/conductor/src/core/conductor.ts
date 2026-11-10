@@ -1436,7 +1436,7 @@ export class Conductor {
     const entry: Record<string, unknown> = {
       harness,
       alias: chosen.alias ?? chosen.id,
-      mode: chosen.security,
+      mode: chosen.permissions,
     };
     const log = () =>
       this.logger.info(

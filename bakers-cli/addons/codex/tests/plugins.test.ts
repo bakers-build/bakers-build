@@ -57,7 +57,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 const agentFor = (options = {}) => {
-  const agent = new CodexAgent({ security: 'sandbox', ...options }, user);
+  const agent = new CodexAgent({ permissions: 'sandbox', ...options }, user);
   agent.useMarketplaces([probe]);
   return agent;
 };
@@ -116,7 +116,7 @@ describe('CodexAgent.installPlugins', () => {
 
 describe('CodexAgent with plugins on', () => {
   it('trusts the worktree and passes the plugin args once', () => {
-    const cmd = agentFor({ security: 'system' }).launchCommand(
+    const cmd = agentFor({ permissions: 'system' }).launchCommand(
       'go',
       undefined,
       '/srv/ws/BB-1',
@@ -126,7 +126,7 @@ describe('CodexAgent with plugins on', () => {
     );
     expect(cmd).toContain(`-c 'projects."/srv/ws/BB-1".trust_level="trusted"'`);
     expect(cmd.match(/--dangerously-bypass-hook-trust/g)).toHaveLength(1);
-    const yolo = agentFor({ security: 'yolo' }).launchCommand(
+    const yolo = agentFor({ permissions: 'yolo' }).launchCommand(
       'go',
       undefined,
       '/srv/ws/BB-1',

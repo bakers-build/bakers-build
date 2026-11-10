@@ -39,7 +39,6 @@ One custom candidate:
 | `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `measure` | boolean | `false` | Starts Claude through the addon's measure wrapper. |
-| `plugins` | boolean | `true` | Skips [agent plugins](/configuration/project#agent-plugins). |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security

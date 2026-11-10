@@ -119,8 +119,8 @@ export interface ResolvedAgent {
    * used instead. */
   modelVersion?: string;
   id: string;
-  /** The candidate's effective security mode, for the run's `plugins` log entry. */
-  security?: SecurityMode;
+  /** The candidate's effective permissions mode, for the run's `plugins` log entry. */
+  permissions?: SecurityMode;
   agent: BbAgent;
   priority?: (ticket: Ticket) => number;
 }
@@ -161,7 +161,9 @@ export async function selectAgents(
       ...(c.description !== undefined ? { description: c.description } : {}),
       ...(c.model !== undefined ? { model: c.model } : {}),
       ...(c.modelVersion !== undefined ? { modelVersion: c.modelVersion } : {}),
-      ...(c.agent.security ? { security: c.agent.security.mode.value } : {}),
+      ...(c.agent.permissions
+        ? { permissions: c.agent.permissions.mode.value }
+        : {}),
       agent: await c.agent.createAgent(config),
       ...(c.priority ? { priority: c.priority } : {}),
     })),

@@ -56,7 +56,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs());
 
 const agentFor = async (options = {}) => {
-  const agent = new ClaudeAgent({ security: 'yolo', ...options }, user);
+  const agent = new ClaudeAgent({ permissions: 'yolo', ...options }, user);
   agent.useMarketplaces([probe]);
   return agent;
 };
@@ -126,13 +126,17 @@ describe('ClaudeAgent with plugins on', () => {
   });
 
   it('reads the agent home settings, where the plugins are enabled, in sandbox mode', async () => {
-    const agent = new ClaudeAgent({}, user);
+    const agent = new ClaudeAgent({ permissions: 'sandbox' }, user);
     agent.useMarketplaces([probe]);
     expect(agent.launchCommand('go', undefined, root)).toContain(
       "--setting-sources 'user,project,local'",
     );
     expect(
-      new ClaudeAgent({}, user).launchCommand('go', undefined, root),
+      new ClaudeAgent({ permissions: 'sandbox' }, user).launchCommand(
+        'go',
+        undefined,
+        root,
+      ),
     ).toContain("--setting-sources 'project,local'");
   });
 
