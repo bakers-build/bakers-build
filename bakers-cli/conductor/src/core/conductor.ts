@@ -26,7 +26,6 @@ import type {
 } from '../plugins/executor.js';
 import { type ResolvedAgent, resolveAgent } from '../plugins/plugins.js';
 import type {
-  ActiveRun,
   BbRemote,
   ClaimedRun,
   ConductorRegistration,
@@ -84,9 +83,6 @@ function isReservedEnvKey(key: string): boolean {
 
 /** A portable environment variable name. */
 const ENV_KEY = /^[A-Za-z_][A-Za-z0-9_]*$/;
-
-/** How long a run's transcript stays unchanged before its permission denials are reported. */
-const STALL_QUIET_MS = 5 * 60_000;
 
 /**
  * What a failed listener is logged as: the error's class name, never its
@@ -269,12 +265,6 @@ export class Conductor {
     string,
     { identifier: string; worktreePath: string }
   > | null = null;
-
-  /** Transcript mtime each active run was last checked for denials at. */
-  private readonly stallChecked = new Map<string, number>();
-
-  /** Active runs already reported as blocked; never reported twice. */
-  private readonly stallReported = new Set<string>();
 
   /** The addons with contract-2 inbox messages this conductor runs. */
   private readonly inboxAddons: InboxRuntime;
@@ -542,7 +532,6 @@ export class Conductor {
     await this.step('finalize', () => this.enqueueFinalize());
     await this.step('reap', () => this.enqueueReap());
     await this.step('freeze', () => this.observeFreezes());
-    await this.step('stalls', () => this.observeStalls());
     await runInbox(
       this.remote,
       this.inboxAddons,
@@ -632,114 +621,6 @@ export class Conductor {
     }
   }
 
-  /**
-   * A run a permission rule denied cannot ask anyone on an unattended box,
-   * so it stops. Once its transcript has been quiet for {@link STALL_QUIET_MS}
-   * and holds a denial, report it once. One stat per running run per tick;
-   * the transcript is read once per modification.
-   */
-  private async observeStalls(): Promise<void> {
-    const runs = await this.remote.fetchActiveRuns(this.id);
-    const live = new Set(runs.map((r) => r.runUuid));
-    for (const seen of [this.stallChecked, this.stallReported])
-      for (const id of seen.keys()) if (!live.has(id)) seen.delete(id);
-    for (const r of runs) {
-      if (r.state !== 'running' || !r.worktreePath) continue;
-      if (this.stallReported.has(r.runUuid)) continue;
-      const agent = this.agentFor(r)?.agent;
-      if (!agent?.permissionDenials || !agent.runLogModified) continue;
-      const identity = {
-        sessionId: r.runUuid,
-        attemptFamily: attemptFamily(r.runUuid),
-      };
-      let denied: string[];
-      try {
-        const modified = await agent.runLogModified(r.worktreePath, identity);
-        if (
-          modified === undefined ||
-          Date.now() - modified < STALL_QUIET_MS ||
-          this.stallChecked.get(r.runUuid) === modified
-        )
-          continue;
-        denied = agent.permissionDenials(
-          await agent.getRunLog(r.worktreePath, identity),
-        );
-        // Only a successful read counts: a stuck transcript never changes again.
-        this.stallChecked.set(r.runUuid, modified);
-      } catch (err) {
-        this.logger.warn(
-          { conductorId: this.id, run: r.runUuid, err },
-          'could not read the run transcript for permission denials',
-        );
-        continue;
-      }
-      if (denied.length === 0) continue;
-      this.stallReported.add(r.runUuid);
-      this.queue.enqueue({
-        key: `stall:${r.runUuid}`,
-        lane: r.ticketUuid || r.runUuid,
-        run: () => this.reportBlocked(r, denied),
-      });
-    }
-  }
-
-  /**
-   * The technical-problem note, then the error: the PM bot relays the newest
-   * comment of a frozen, labelled ticket. Cancelling lets finalisation stop
-   * the agent and keep its transcript.
-   */
-  private async reportBlocked(r: ActiveRun, denied: string[]): Promise<void> {
-    const site = this.remote.siteTools;
-    // Without site tools nothing reaches the ticket; a silent cancel would hide the run.
-    // Unmarked, the next tick with site tools reports it.
-    if (!site) {
-      this.stallReported.delete(r.runUuid);
-      this.stallChecked.delete(r.runUuid);
-      throw new Error('no site tools to report the blocked run');
-    }
-    this.logger.warn(
-      { conductorId: this.id, run: r.runUuid, denied },
-      'run blocked on a permission denial; reporting and cancelling it',
-    );
-    const call = async (name: string, args: Record<string, unknown>) => {
-      const result = await site.call(`tool_api__${name}`, args);
-      if ((result as { isError?: boolean } | undefined)?.isError)
-        throw new Error(`${name}: ${JSON.stringify(result?.content)}`);
-    };
-    const comment = (body: string) =>
-      call('bakers_comment_publish', {
-        ticket: r.ticketUuid,
-        type: 'comment',
-        body,
-      });
-    try {
-      await comment('# Technical problem\n\nPlease contact the developers.\n');
-      await comment(
-        [
-          '# Error',
-          '',
-          `The sandboxed run stopped: a permission rule denied an action it needed, and its transcript has not changed for ${STALL_QUIET_MS / 60_000} minutes. An allow rule for the action is missing from the agent's \`permissions\` settings. Add it, then unfreeze the ticket.`,
-          '',
-          'Denied actions:',
-          '',
-          ...denied.map((action) => `- \`${action}\``),
-          '',
-        ].join('\n'),
-      );
-      await call('bakers_ticket_update', {
-        ticket: r.ticketUuid,
-        labels_add: ['technical problem'],
-        frozen: true,
-      });
-    } finally {
-      // A stuck run is cancelled even when the report fails; the warning names the actions.
-      // shortcut: the reported mark lives in memory, so if this cancel fails a restarted
-      // conductor reports the run again; persist the mark if duplicates show up.
-      await this.remote.cancelRun(r.runUuid);
-    }
-    this.signalUi();
-  }
-
   /** Finalises one run; a failure is logged and retried next tick. */
   private async finalizeOne(r: FinalizableRun): Promise<void> {
     try {
@@ -802,19 +683,15 @@ export class Conductor {
     }
   }
 
-  /**
-   * The agent that actually ran: the persisted run.agent id, falling back to
-   * the first candidate for a run written before the field existed (empty id).
-   */
-  private agentFor(r: { agent?: string }) {
-    return this.agents.find((a) => a.id === r.agent) ?? this.agents[0];
-  }
-
   /** Read the run's transcript and parse its footprint for the close write. */
   private async captureRun(
     r: FinalizableRun,
   ): Promise<{ log: string; metrics: RunMetrics }> {
-    const resolved = this.agentFor(r);
+    // Route to the agent that actually ran (BB-144): the persisted
+    // run.agent id, falling back to the first candidate for a run written
+    // before the field existed (empty id).
+    const resolved =
+      this.agents.find((a) => a.id === r.agent) ?? this.agents[0];
     if (!resolved) {
       throw new Error('no agent candidates configured for finalize');
     }
