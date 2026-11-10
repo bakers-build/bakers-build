@@ -249,7 +249,7 @@ describe('bakers conductor ls/status: local pid probe (BB-473)', () => {
   it('status names a credential bakers.build rejected, and a list it could not read', async () => {
     mkdirSync(join(home, '.bakers'), { recursive: true });
     writeFileSync(
-      join(home, '.bakers', 'conductor.config.auth.json'),
+      join(home, '.bakers', 'project.config.auth.json'),
       JSON.stringify({
         reason:
           "bakers.build rejected the conductor's client credential (invalid_client) — run bakers auth login",
@@ -264,7 +264,7 @@ describe('bakers conductor ls/status: local pid probe (BB-473)', () => {
       throw new Error('HTTP 401 Unauthorized');
     };
     await buildConductorProgram({ remote, config: makeConfig() }).parseAsync(
-      ['oven', 'status'],
+      ['conductor', 'status'],
       { from: 'user' },
     );
     expect(out[0]).toBe(
