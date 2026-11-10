@@ -692,6 +692,30 @@ final class ConductorRegistrarTest extends KernelTestBase {
   }
 
   /**
+   * An unknown workspace answers like a known one, so names cannot be probed.
+   */
+  public function testHeartbeatAnswersUnknownWorkspaceLikeUnknownProject(): void {
+    $owner = $this->createUser('owner-probe');
+    $answer = function (array $workspace) use ($owner): string {
+      try {
+        $this->registrar()->heartbeat($owner, [
+          'conductor_id' => 'mid-probe',
+          'host_key' => 'aeee0147-dd6e-5305-983a-6661dfd66529',
+          'project' => 'does-not-exist',
+        ] + $workspace);
+      }
+      catch (UnprocessableEntityHttpException $e) {
+        return $e->getMessage();
+      }
+      self::fail('The heartbeat was accepted.');
+    };
+    $known = $answer(['workspace' => 'ws-default-project']);
+    self::assertSame('bakers.build project "does-not-exist" not found.', $known);
+    self::assertSame($known, $answer(['workspace' => 'no-such-workspace']));
+    self::assertSame($known, $answer(['workspace_id' => 99999]));
+  }
+
+  /**
    * Machine current_load is the sum of online conductors' reported_load.
    */
   public function testMachineLoadAggregatesOnlineConductors(): void {

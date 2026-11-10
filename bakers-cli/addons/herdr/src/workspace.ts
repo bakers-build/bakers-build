@@ -100,17 +100,6 @@ function parseWorktreePath(output: string, command: string): string {
   return path;
 }
 
-/** Git-safe branch validation: safe ref chars only, no leading dot, no `..`. */
-export function validateBranch(branch: string): void {
-  if (
-    !/^[A-Za-z0-9._/-]+$/.test(branch) ||
-    branch.startsWith('.') ||
-    branch.includes('..')
-  ) {
-    throw new Error(`invalid workspace branch: ${branch}`);
-  }
-}
-
 export class HerdrWorkspace implements BbWorkspace {
   private readonly execHerdr: HerdrExec;
   private readonly execGit: GitExec;
@@ -147,7 +136,6 @@ export class HerdrWorkspace implements BbWorkspace {
     if (branch === undefined) {
       throw new Error('herdr workspace requires a branch name');
     }
-    validateBranch(branch);
     const extra = this.options.autoSetupMerge
       ? {}
       : { env: await runBranchGit(this.root, this.logger) };

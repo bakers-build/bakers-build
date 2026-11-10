@@ -56,7 +56,9 @@ export async function measureMrChanges(
   worktreePath: string,
   baseBranch: string,
 ): Promise<MrChanges> {
-  await exec('git', ['fetch', 'origin', baseBranch], { cwd: worktreePath });
+  await exec('git', ['fetch', 'origin', '--', baseBranch], {
+    cwd: worktreePath,
+  });
   const out = await exec(
     'git',
     ['diff', '--numstat', '-M', `origin/${baseBranch}...HEAD`],

@@ -30,6 +30,14 @@ final class BranchName {
   public const DEFAULT_CONVENTION = 'feat/[bb_ticket:identifier]-[bb_ticket:title]';
 
   /**
+   * A branch name a conductor may pass to git.
+   *
+   * `git check-ref-format` rules on [A-Za-z0-9._/+@-] ('@{' cannot occur and a
+   * bare '@' is refused), and no leading '-' that git reads as an option.
+   */
+  public const PATTERN = '#^(?![-.])(?!@\\z)(?!.*(\\.\\.|//|/\\.|\\.lock(/|\\z)))[A-Za-z0-9._/+@-]+(?<![/.])\\z#';
+
+  /**
    * The maximum branch-name length; longer names have their title truncated.
    */
   public const MAX_LENGTH = 30;
@@ -95,7 +103,8 @@ final class BranchName {
    * Sanitises a resolved convention into a git-safe branch ref.
    *
    * Lower-cases, collapses runs of characters outside [a-z0-9._/-] to '-',
-   * preserves '/' as the path separator, and trims stray '-'/'/'.
+   * preserves '/' as the path separator, and drops what git refuses, so the
+   * result always matches ::PATTERN or is empty.
    *
    * @param string $value
    *   The raw, token-resolved value.
@@ -109,7 +118,18 @@ final class BranchName {
     // Collapse dashes hugging a slash and repeated slashes.
     $v = (string) preg_replace('#-*/+-*#', '/', $v);
     $v = (string) preg_replace('#-{2,}#', '-', $v);
-    return trim($v, '-/');
+    // What git refuses: "..", a segment ending in ".lock" or starting with
+    // "." or "-", and a trailing ".". Each strip can expose another, so repeat
+    // until nothing changes.
+    do {
+      $before = $v;
+      $v = (string) preg_replace('#/{2,}#', '/', $v);
+      $v = (string) preg_replace('#\.{2,}#', '.', $v);
+      $v = (string) preg_replace('#\.lock(?=/|$)#', '', $v);
+      $v = (string) preg_replace('#(^|/)[.-]+#', '$1', $v);
+      $v = trim($v, '-/.');
+    } while ($v !== $before);
+    return $v;
   }
 
   /**
@@ -143,7 +163,8 @@ final class BranchName {
     if (mb_strlen($protected) >= self::MAX_LENGTH) {
       return $protected;
     }
-    return rtrim(mb_substr($branch, 0, self::MAX_LENGTH), '-/._');
+    // The cut can end a segment in ".lock"; sanitise again.
+    return self::sanitize(rtrim(mb_substr($branch, 0, self::MAX_LENGTH), '-/._'));
   }
 
 }

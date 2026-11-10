@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 import {
   resolveBaseRef,
   restoreWritable,
-  validateBranch,
 } from '@bakers-build/addon-herdr/shared';
 import {
   loadInstructions,
@@ -188,7 +187,6 @@ export class OrcaWorkspace implements BbWorkspace {
     if (branch === undefined) {
       throw new Error('orca workspace requires a branch name');
     }
-    validateBranch(branch);
     const extra = this.options.autoSetupMerge
       ? {}
       : { env: await runBranchGit(this.root, this.logger) };
@@ -254,7 +252,7 @@ export class OrcaWorkspace implements BbWorkspace {
       return;
     }
     try {
-      await this.execGit(['-C', this.root, 'fetch', 'origin', branch]);
+      await this.execGit(['-C', this.root, 'fetch', 'origin', '--', branch]);
     } catch {
       // Non-fatal: the branch is simply not on origin (yet).
     }
