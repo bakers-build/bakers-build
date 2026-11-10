@@ -254,7 +254,7 @@ export class OrcaWorkspace implements BbWorkspace {
       return;
     }
     try {
-      await this.execGit(['-C', this.root, 'fetch', 'origin', branch]);
+      await this.execGit(['-C', this.root, 'fetch', 'origin', '--', branch]);
     } catch {
       // Non-fatal: the branch is simply not on origin (yet).
     }

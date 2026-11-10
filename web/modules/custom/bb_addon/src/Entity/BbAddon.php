@@ -69,6 +69,11 @@ final class BbAddon extends ContentEntityBase implements BbAddonInterface {
     $fields['definition'] = BaseFieldDefinition::create('string_long')
       ->setLabel(new TranslatableMarkup('Definition'))
       ->setRequired(TRUE);
+    // Part of the identity: one row per distinct definition of a version.
+    $fields['fingerprint'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Fingerprint'))
+      ->setDescription(new TranslatableMarkup('SHA-256 of the stored definition.'))
+      ->setSetting('max_length', 64);
     $fields['conductors'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Conductors'))
       ->setSetting('target_type', 'bb_conductor')
@@ -86,6 +91,7 @@ final class BbAddon extends ContentEntityBase implements BbAddonInterface {
   public function preSave(EntityStorageInterface $storage): void {
     parent::preSave($storage);
     if ($this->isNew()) {
+      $this->set('fingerprint', self::fingerprintOf((string) $this->get('definition')->value));
       return;
     }
     $original = $storage->loadUnchanged($this->id());
@@ -98,6 +104,13 @@ final class BbAddon extends ContentEntityBase implements BbAddonInterface {
     if ($original instanceof BbAddonInterface && $original->workspaceId() !== 0 && $original->workspaceId() !== $this->workspaceId()) {
       throw new EntityStorageException(sprintf('The workspace of %s@%s is immutable.', $this->name(), $this->version()));
     }
+  }
+
+  /**
+   * The fingerprint a stored definition JSON is identified by.
+   */
+  public static function fingerprintOf(string $definition): string {
+    return hash('sha256', $definition);
   }
 
   /**

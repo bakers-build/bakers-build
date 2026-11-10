@@ -144,7 +144,14 @@ describe('HerdrWorkspace', () => {
 
     // Upstream resolved, then the remote branch fetched before create.
     expect(gitCalls[0]).toContain('rev-parse');
-    expect(gitCalls[1]).toEqual(['-C', '/repo', 'fetch', 'origin', 'develop']);
+    expect(gitCalls[1]).toEqual([
+      '-C',
+      '/repo',
+      'fetch',
+      'origin',
+      '--',
+      'develop',
+    ]);
 
     // list, then create — and nothing else. Since BB-237 the open layout's
     // `pane run` deep link is NO LONGER issued by `ensure()`: the conductor
@@ -248,7 +255,9 @@ describe('HerdrWorkspace', () => {
     await ws.ensure('GL-9', 'bakers/GL-9');
 
     // Override used verbatim; no rev-parse needed, fetch targets it.
-    expect(gitCalls).toEqual([['-C', '/repo', 'fetch', 'origin', 'main']]);
+    expect(gitCalls).toEqual([
+      ['-C', '/repo', 'fetch', 'origin', '--', 'main'],
+    ]);
     const create = herdrCalls[1];
     expect(create[create.indexOf('--base') + 1]).toBe('origin/main');
   });
@@ -361,18 +370,34 @@ describe('HerdrWorkspace', () => {
     });
 
     await expect(ws.ensure('GL-1', '.hidden')).rejects.toThrow(
-      /invalid workspace branch/,
+      /invalid branch/,
     );
     await expect(ws.ensure('GL-1', 'bakers/../evil')).rejects.toThrow(
-      /invalid workspace branch/,
+      /invalid branch/,
     );
     await expect(ws.ensure('GL-1', 'has space!')).rejects.toThrow(
-      /invalid workspace branch/,
+      /invalid branch/,
     );
+    await expect(ws.ensure('GL-1', '-x')).rejects.toThrow(/invalid branch/);
   });
 });
 
 describe('resolveBaseRef', () => {
+  it('refuses an option-shaped base from the server before git runs', async () => {
+    const calls: string[][] = [];
+    await expect(
+      resolveBaseRef(
+        '/repo',
+        async (args) => {
+          calls.push(args);
+          return '';
+        },
+        { override: 'origin/--upload-pack=touch PWNED' },
+      ),
+    ).rejects.toThrow('invalid branch');
+    expect(calls).toEqual([]);
+  });
+
   it('returns a base-ref override that resolves on the remote', async () => {
     const calls: string[][] = [];
     const ref = await resolveBaseRef(
@@ -384,7 +409,14 @@ describe('resolveBaseRef', () => {
       { override: 'origin/release' },
     );
     expect(ref).toBe('origin/release');
-    expect(calls).toContainEqual(['-C', '/repo', 'fetch', 'origin', 'release']);
+    expect(calls).toContainEqual([
+      '-C',
+      '/repo',
+      'fetch',
+      'origin',
+      '--',
+      'release',
+    ]);
   });
 
   it('falls back to the upstream when the override does not resolve', async () => {

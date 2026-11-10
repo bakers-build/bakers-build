@@ -157,15 +157,13 @@ final class HeartbeatRegistrationResolver {
    *   Registration attributes.
    *
    * @return int|null
-   *   Workspace id when an explicit token is present.
+   *   Workspace id when an explicit token is present; 0 for an unknown one,
+   *   so the project lookup answers "not found" without naming the workspace.
    */
   private function explicitWorkspaceId(array $attrs): ?int {
     if (isset($attrs['workspace_id']) && is_numeric($attrs['workspace_id'])) {
       $id = (int) $attrs['workspace_id'];
-      if ($this->entityTypeManager->getStorage('bb_workspace')->load($id) instanceof BbWorkspaceInterface) {
-        return $id;
-      }
-      throw new UnprocessableEntityHttpException(sprintf('bakers.build workspace id %d not found.', $id));
+      return $this->entityTypeManager->getStorage('bb_workspace')->load($id) instanceof BbWorkspaceInterface ? $id : 0;
     }
     if (!isset($attrs['workspace']) || !is_string($attrs['workspace']) || $attrs['workspace'] === '') {
       return NULL;
@@ -179,7 +177,7 @@ final class HeartbeatRegistrationResolver {
         return (int) $workspace->id();
       }
     }
-    throw new UnprocessableEntityHttpException(sprintf('bakers.build workspace "%s" not found.', $token));
+    return 0;
   }
 
 }

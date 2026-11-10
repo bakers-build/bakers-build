@@ -8,6 +8,7 @@ use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Ticket\BranchName;
 use Drupal\KernelTests\KernelTestBase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -179,6 +180,57 @@ final class BranchNameTest extends KernelTestBase {
       'feat/gl-7-fix-login-flow',
       BranchName::cap('feat/gl-7-fix-login-flow', 'gl-7'),
     );
+  }
+
+  /**
+   * A supplied branch name that git or a shell could misread is refused.
+   */
+  #[DataProvider('invalidBranchNames')]
+  public function testRefusesInvalidSuppliedBranchName(string $branch): void {
+    $this->assertContains('branch_name.0.value', $this->violationPaths($branch), sprintf('%s should be refused.', $branch));
+  }
+
+  /**
+   * Supplied release and feature branches stay valid.
+   */
+  public function testAcceptsValidSuppliedBranchName(): void {
+    foreach (['release/1.2', 'feat/gl-7-fix-login-flow', 'Main', 'next'] as $branch) {
+      $this->assertNotContains('branch_name.0.value', $this->violationPaths($branch), $branch);
+    }
+  }
+
+  /**
+   * The violation paths of a new ticket supplied with a branch name.
+   *
+   * @return list<string>
+   *   Property paths of every violation.
+   */
+  private function violationPaths(string $branch): array {
+    $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
+      ->create(['identifier' => 'GL-8', 'workflow' => 'bb_work', 'title' => 't', 'branch_name' => $branch]);
+    $this->assertInstanceOf(BbTicketInterface::class, $ticket);
+    return array_map(fn ($v) => (string) $v->getPropertyPath(), iterator_to_array($ticket->validate(), FALSE));
+  }
+
+  /**
+   * Data provider: branch names that must be refused.
+   *
+   * @return array<string, array{string}>
+   *   Test cases keyed by a readable label.
+   */
+  public static function invalidBranchNames(): array {
+    return [
+      'option' => ['--upload-pack=touch PWNED'],
+      'short option' => ['-x'],
+      'dot dot' => ['a..b'],
+      'space' => ['a b'],
+      'leading dot' => ['.hidden'],
+      'double slash' => ['a//b'],
+      'trailing slash' => ['a/'],
+      'lock suffix' => ['a.lock'],
+      'reflog' => ['a@{1}'],
+      'trailing newline' => ["main\n"],
+    ];
   }
 
 }

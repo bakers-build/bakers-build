@@ -13,7 +13,7 @@ import type {
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { exec } from '@bakers-build/core';
+import { exec, validateBranch } from '@bakers-build/core';
 import { isRecord, parseJson } from './pane-layout.js';
 import { deriveHerdrRoot, type RootGitExec } from './root-anchor.js';
 import { resolveBaseRef } from './shared.js';
@@ -98,17 +98,6 @@ function parseWorktreePath(output: string, command: string): string {
     throw new Error(`herdr ${command} returned invalid schema`);
   }
   return path;
-}
-
-/** Git-safe branch validation: safe ref chars only, no leading dot, no `..`. */
-export function validateBranch(branch: string): void {
-  if (
-    !/^[A-Za-z0-9._/-]+$/.test(branch) ||
-    branch.startsWith('.') ||
-    branch.includes('..')
-  ) {
-    throw new Error(`invalid workspace branch: ${branch}`);
-  }
 }
 
 export class HerdrWorkspace implements BbWorkspace {

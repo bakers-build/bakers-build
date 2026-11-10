@@ -12,9 +12,10 @@ registrations against it are rejected and their rows removed.
 
 - `bb_addon`: `name`, `version`, `contract`, `definition` (JSON, immutable,
   optionally carrying an inline SVG `icon`; a new icon needs a new version),
-  `conductors` (who runs this version). One row per `(workspace, name,
-  version)`; the first stored definition wins and a differing one is ignored.
-  A conductor resolves the row it is listed on. Entity
+  `conductors` (who runs this version), `fingerprint` (SHA-256 of
+  `definition`). One row per `(workspace, name, version, fingerprint)`: an
+  identical definition shares a row, a differing one gets its own. A conductor
+  resolves the row it is listed on, so its access levels are its own. Entity
   access is `administer bakers` only; product readers go through
   `AddonRepository` and check ticket or conductor access themselves.
 

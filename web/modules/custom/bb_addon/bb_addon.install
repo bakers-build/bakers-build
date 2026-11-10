@@ -1,0 +1,34 @@
+<?php
+
+/**
+ * @file
+ * Install and update hooks for bb_addon.
+ */
+
+declare(strict_types=1);
+
+use Drupal\bb_addon\Entity\BbAddon;
+
+/**
+ * Identifies addon rows by their definition's fingerprint as well.
+ *
+ * Adds the fingerprint column, fills it for every stored definition and
+ * widens the unique key to (workspace, name, version, fingerprint).
+ */
+function bb_addon_update_11001(): void {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+  if ($manager->getFieldStorageDefinition('fingerprint', 'bb_addon') === NULL) {
+    $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('bb_addon')['fingerprint'];
+    $manager->installFieldStorageDefinition('fingerprint', 'bb_addon', 'bb_addon', $definition);
+  }
+  $database = \Drupal::database();
+  $rows = $database->select('bb_addon', 'a')->fields('a', ['id', 'definition'])->execute();
+  foreach ($rows as $row) {
+    $database->update('bb_addon')
+      ->fields(['fingerprint' => BbAddon::fingerprintOf((string) $row->definition)])
+      ->condition('id', $row->id)
+      ->execute();
+  }
+  // Swaps the stored unique key for the one the storage schema now defines.
+  $manager->updateEntityType(\Drupal::entityTypeManager()->getDefinition('bb_addon'));
+}

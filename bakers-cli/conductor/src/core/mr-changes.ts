@@ -1,4 +1,4 @@
-import { exec } from '@bakers-build/core';
+import { exec, validateBranch } from '@bakers-build/core';
 import type { TicketMetric } from '../plugins/remote.js';
 
 /** The `mr_changes` measurement (skill definition `mr-changes.json`). */
@@ -56,7 +56,10 @@ export async function measureMrChanges(
   worktreePath: string,
   baseBranch: string,
 ): Promise<MrChanges> {
-  await exec('git', ['fetch', 'origin', baseBranch], { cwd: worktreePath });
+  validateBranch(baseBranch);
+  await exec('git', ['fetch', 'origin', '--', baseBranch], {
+    cwd: worktreePath,
+  });
   const out = await exec(
     'git',
     ['diff', '--numstat', '-M', `origin/${baseBranch}...HEAD`],

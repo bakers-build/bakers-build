@@ -112,14 +112,12 @@ final class AddonResourceTest extends KernelTestBase {
   }
 
   /**
-   * Same-workspace reuse leaves one row with both conductors.
+   * Loosely equal definitions are still different definitions.
    *
-   * Two conductors in one workspace registering the same identity leave one
-   * row with both conductors (BB-660/661 AC-11); a loosely-equal label
-   * difference (`"1.0" == "1"` in PHP) must not accidentally create a second
-   * row either.
+   * `"1.0" == "1"` in PHP must not let two conductors share a row whose
+   * definition only one of them sent.
    */
-  public function testSameWorkspaceReuseRetainsBothConductors(): void {
+  public function testLooselyEqualDefinitionsGetSeparateRows(): void {
     $second = $this->createConductor('node-loose', $this->conductorOwner);
     $one = self::portsDefinition();
     $one['label'] = '1.0';
@@ -127,10 +125,12 @@ final class AddonResourceTest extends KernelTestBase {
     $other['label'] = '1';
     $this->registerAddons($this->conductor, [$one]);
     $this->registerAddons($second, [$other]);
-    self::assertCount(1, $this->addons());
-    $addon = $this->addon('ports', '1.2.3');
-    self::assertTrue($addon->runsOn($this->conductor));
-    self::assertTrue($addon->runsOn($second));
+    $pairs = array_map(
+      fn (BbAddonInterface $addon): string => $addon->label() . ':' . implode(',', $this->conductorIds($addon)),
+      array_values($this->addonsByLabel()),
+    );
+    sort($pairs);
+    self::assertSame(['1.0:' . $this->conductor->id(), '1:' . $second->id()], $pairs);
   }
 
   /**
@@ -147,24 +147,37 @@ final class AddonResourceTest extends KernelTestBase {
   }
 
   /**
-   * A differing definition at the same identity is ignored.
+   * A differing definition at the same name@version gets its own row.
    *
-   * At the same (workspace, name, version): no duplicate row, no rejection,
-   * no overwrite of the first stored definition (BB-660/661 AC-11).
+   * Another member's earlier registration never sets the access level or
+   * input schema of a message on my conductor.
    */
-  public function testDifferingDefinitionAtSameIdentityIsIgnored(): void {
-    $first = self::portsDefinition('0.0.1');
-    $first['label'] = 'X';
-    $changed = self::portsDefinition('0.0.1');
-    $changed['label'] = 'Y';
-    $this->registerAddons($this->conductor, [$first]);
-    [$status] = $this->registerAddons($this->conductor, [$changed]);
+  public function testDifferingDefinitionAtSameIdentityGetsItsOwnRow(): void {
+    $other = $this->workspaceMember('a', $this->createAccount('owner-other', ['register bakers conductor']), 'contributor');
+    $otherConductor = $this->createEntity('bb_conductor', [
+      'conductor_id' => 'node-owner-other',
+      'label' => 'node-owner-other',
+      'project_id' => $this->fixture('a', 'bb_project')->id(),
+      'owner_user_id' => $other->id(),
+      'status' => 'online',
+    ]);
+    self::assertInstanceOf(BbConductorInterface::class, $otherConductor);
+    $theirs = self::portsDefinition('1.2.3');
+    $theirs['label'] = 'X';
+    $mine = self::portsDefinition('1.2.3');
+    $mine['label'] = 'Y';
+    $mine['messages']['up']['access'] = 'update';
+    $this->registerAddons($otherConductor, [$theirs], $other);
+    [$status] = $this->registerAddons($this->conductor, [$mine]);
     self::assertSame(200, $status);
 
     $rows = $this->addonsByLabel();
-    self::assertSame(['X'], array_keys($rows), 'The second, differing definition never overwrites the first.');
-    self::assertSame([(int) $this->conductor->id()], $this->conductorIds($rows['X']));
-    self::assertSame('X', $this->container->get('bb_addon.repository')->forConductor($this->conductor)['ports']->label());
+    self::assertSame(['X', 'Y'], array_keys($rows));
+    self::assertSame([(int) $otherConductor->id()], $this->conductorIds($rows['X']));
+    self::assertSame([(int) $this->conductor->id()], $this->conductorIds($rows['Y']));
+    $repository = $this->container->get('bb_addon.repository');
+    self::assertSame('update', $repository->forConductor($this->conductor)['ports']->message('up')['access']);
+    self::assertSame('view', $repository->forConductor($otherConductor)['ports']->message('up')['access']);
   }
 
   /**

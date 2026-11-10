@@ -30,6 +30,14 @@ final class BranchName {
   public const DEFAULT_CONVENTION = 'feat/[bb_ticket:identifier]-[bb_ticket:title]';
 
   /**
+   * A branch name a conductor may pass to git.
+   *
+   * `git check-ref-format` rules on [A-Za-z0-9._/-], and no leading '-' that
+   * git reads as an option.
+   */
+  public const PATTERN = '#^(?![-.])(?!.*(\\.\\.|//|/\\.|\\.lock(/|\\z)))[A-Za-z0-9._/-]+(?<![/.])\\z#';
+
+  /**
    * The maximum branch-name length; longer names have their title truncated.
    */
   public const MAX_LENGTH = 30;
