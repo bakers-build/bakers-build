@@ -60,8 +60,9 @@ final class IslandUiPatternsProfileTest extends KernelTestBase {
     $state = new FormState();
     $form = $this->container->get('form_builder')->buildForm($form_object, $state);
     $component = $form['placements']['banner_body']['placements']['mapped']['configuration']['component'];
-    $options = $component['props']['text']['source_id']['#options'] ?? [];
-    self::assertArrayHasKey('entity_field', $options['More data'] ?? []);
+    // ui_patterns 2.0.23 shows a closed row; its source resolves only among
+    // the offered candidates.
+    self::assertSame('entity_field', $component['props']['text']['source_id']['#value'] ?? NULL);
     $field_options = $component['props']['text']['source']['derivable_context']['#options'] ?? [];
     self::assertArrayHasKey('field:user:user:name', $field_options);
     $edited = $form_object->getEntity();

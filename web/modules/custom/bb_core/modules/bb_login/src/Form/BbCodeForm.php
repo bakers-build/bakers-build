@@ -156,6 +156,7 @@ final class BbCodeForm extends FormBase {
     }
     if (!$this->flood->isAllowed(LoginCode::FLOOD_EVENT, LoginCode::MAX_ATTEMPTS, LoginCode::TTL, $mail)
       || !$this->flood->isAllowed(LoginCode::CLIENT_FLOOD_EVENT, LoginCode::MAX_CLIENT_ATTEMPTS, LoginCode::CLIENT_WINDOW)) {
+      $this->logger('bb_login')->notice('Login code attempts blocked for %mail.', ['%mail' => $mail]);
       $form_state->setErrorByName('code', $this->t('Too many attempts. Please request a new login link.'));
       return;
     }
@@ -168,6 +169,7 @@ final class BbCodeForm extends FormBase {
       // Never cleared on success, so signing in to one account does not
       // reset a client's budget against the others.
       $this->flood->register(LoginCode::CLIENT_FLOOD_EVENT, LoginCode::CLIENT_WINDOW);
+      $this->logger('bb_login')->notice('Wrong login code for %mail.', ['%mail' => $mail]);
       $form_state->setErrorByName('code', $this->t('This code is wrong or has expired.'));
       return;
     }

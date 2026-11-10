@@ -40,7 +40,6 @@ describe('FakeBbRemote', () => {
         state: 'running',
         stateAtStart: 'running',
         worktreePath: '',
-        agent: '',
       },
       {
         runUuid: 'r-2',
@@ -50,7 +49,6 @@ describe('FakeBbRemote', () => {
         state: 'claimed',
         stateAtStart: 'claimed',
         worktreePath: '',
-        agent: '',
       },
     ]);
   });
@@ -77,7 +75,6 @@ describe('FakeBbRemote', () => {
         state: 'running',
         stateAtStart: 'running',
         worktreePath: '',
-        agent: '',
       },
     ]);
   });

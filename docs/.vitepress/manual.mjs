@@ -1,5 +1,5 @@
 // Shared navigation and rendered-page exclusions for VitePress and its checks.
-export const SRC_EXCLUDE = ["decisions/**", "bakers/**", "conductor/**", "development/**", "bakers-metrics.md", "node_modules/**"]
+export const SRC_EXCLUDE = ["decisions/**", "bakers/**", "conductor/**", "development/**", "drupal-updates/**", "bakers-metrics.md", "node_modules/**"]
 
 export const AREAS = [
   { label: "Get started", link: "/get-started/", icon: "guide" },
