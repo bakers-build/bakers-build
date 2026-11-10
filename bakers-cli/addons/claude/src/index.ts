@@ -583,8 +583,8 @@ export class ClaudeAgent implements BbAgent {
         'claude: not logged in (stopped at its first-run screen) — run claude /login',
     },
     {
-      pattern:
-        /API Error: 401|authentication_error|Invalid API key · Please run \/login/,
+      // Claude's own error line, not a tool's output that mentions a 401.
+      pattern: /^\s*⎿\s+API Error: 401\b|Invalid API key · Please run \/login/m,
       reason: 'claude: credential rejected (API 401) — run claude /login',
     },
   ] satisfies readonly AuthFailurePattern[];

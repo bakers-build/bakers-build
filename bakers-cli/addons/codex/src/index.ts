@@ -479,7 +479,9 @@ export class CodexAgent implements BbAgent {
         'codex: not logged in (stopped at its login screen) — run codex login',
     },
     {
-      pattern: /401 Unauthorized|access token could not be refreshed/i,
+      // Codex's own error line (■), not a tool's output that mentions a 401.
+      pattern:
+        /^\s*■ .*\b401 Unauthorized|access token could not be refreshed/im,
       reason: 'codex: credential rejected (401) — run codex login',
     },
   ] satisfies readonly AuthFailurePattern[];

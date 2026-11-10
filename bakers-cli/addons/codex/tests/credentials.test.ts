@@ -59,6 +59,14 @@ describe('CodexAgent.authFailurePatterns', () => {
     ).toBe('codex: credential rejected (401) — run codex login');
   });
 
+  it('leaves a 401 in the output of a tool call alone', () => {
+    expect(
+      reasonFor(
+        '• Ran curl -si https://gitlab.example/api/v4/user\n  └ HTTP/1.1 401 Unauthorized\n• Ran npm test\n  └ ✓ answers 401 Unauthorized without a token',
+      ),
+    ).toBeUndefined();
+  });
+
   it('leaves a normal start alone', () => {
     expect(
       reasonFor('>_ OpenAI Codex\n› /bb-workflow BB-1\n• Reading the ticket'),

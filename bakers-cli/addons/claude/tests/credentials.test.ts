@@ -90,6 +90,14 @@ describe('ClaudeAgent.authFailurePatterns', () => {
     );
   });
 
+  it('leaves an API answer printed by a tool call alone', () => {
+    expect(
+      reasonFor(
+        '⏺ Bash(curl -s https://api.anthropic.com/v1/models)\n  ⎿  {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"}}\n⏺ Bash(grep -n "API Error: 401" src/index.ts)\n  ⎿  544:        /API Error: 401/',
+      ),
+    ).toBeUndefined();
+  });
+
   it('leaves a normal start alone, even when the ticket talks about logins', () => {
     expect(
       reasonFor(
