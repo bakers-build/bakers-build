@@ -51,7 +51,9 @@ While an enabled agent cannot start its sandbox, the conductor claims nothing an
 
 ## Claude in `sandbox` mode
 
-The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)` and `AskUserQuestion`. They run without a prompt. Anything else asks you in the run's terminal, because Claude starts in `default` permission mode: `dontAsk` would deny it outright, and no allow rule can permit a write to a protected path such as `.claude/` or `.git`. A run nobody watches therefore waits at such a prompt.
+The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)`, `AskUserQuestion`, `Skill`, `bakers` tools and reading the agent's `plugins/` and `skills/`. In `dontAsk` mode, anything else, such as editing outside the worktree, is denied unprompted and named in the transcript.
+
+After a denial and 5 quiet minutes, the conductor cancels the run, comments the denied actions, labels the ticket `technical problem` and freezes it.
 
 What the default blocks:
 

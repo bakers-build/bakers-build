@@ -183,3 +183,42 @@ export function parseClaudeTranscript(jsonl: string): AgentFootprint {
     return wait;
   }
 }
+
+/** Claude Code's tool_result text when `--permission-mode dontAsk` refuses a call. */
+const DONT_ASK_DENIAL =
+  /^Permission to use \S+ has been denied because Claude Code is running in don't ask mode\./;
+
+/** The input field that names what a tool call acts on. */
+const ACTION_KEYS = ['file_path', 'command', 'url', 'pattern', 'path', 'skill'];
+
+/** Every tool call `dontAsk` denied in a Claude-Code transcript, as `Tool(argument)`. */
+export function parseClaudePermissionDenials(jsonl: string): string[] {
+  const calls = new Map<string, string>();
+  const denied: string[] = [];
+  for (const raw of jsonl.split('\n')) {
+    let entry: TranscriptEntry;
+    try {
+      entry = JSON.parse(raw) as TranscriptEntry;
+    } catch {
+      continue;
+    }
+    const content = entry?.message?.content;
+    if (!Array.isArray(content)) continue;
+    for (const block of content as Array<Record<string, unknown>>) {
+      if (block?.type === 'tool_use' && typeof block.id === 'string') {
+        const input = (block.input ?? {}) as Record<string, unknown>;
+        const key = ACTION_KEYS.find((k) => typeof input[k] === 'string');
+        const name = String(block.name);
+        calls.set(block.id, key ? `${name}(${input[key]})` : name);
+      } else if (
+        block?.type === 'tool_result' &&
+        block.is_error === true &&
+        typeof block.content === 'string' &&
+        DONT_ASK_DENIAL.test(block.content)
+      ) {
+        denied.push(calls.get(String(block.tool_use_id)) ?? 'unknown tool');
+      }
+    }
+  }
+  return denied;
+}

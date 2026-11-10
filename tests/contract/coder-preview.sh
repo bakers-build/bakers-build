@@ -32,6 +32,9 @@
 #   - none removes the marked lines even from a file that throws on import here
 #   - a missing begin or end marker, or a broken file at none, leaves the file
 #     unchanged with a log line
+#   - --mode sandbox: no machine file → created with permissions.mode
+#     sandbox; a hand file gains only the marked line, which the preview edit
+#     keeps; a hand permissions key wins; a broken file stays; reruns are no-ops
 #   - install.sh: none starts and installs nothing even with the token file and
 #     frpc.json present; cloudflare-quick installs cloudflared and starts no
 #     connector; cloudflare and frp install their client and start it only
@@ -342,6 +345,41 @@ cmp -s "$M" "$SCRATCH/broken" || fail "none rewrote a broken file: $(diff "$SCRA
 grep -q 'set for none' "$OUT" && fail "none logged success on a broken file: $(cat "$OUT")"
 pass "none leaves a broken file with a marked line untouched"
 
+# --- F7: the box names its permissions mode ---------------------------------
+mode_value() { exported | node -e "console.log(JSON.parse(require('fs').readFileSync(0, 'utf8')).permissions?.mode)"; }
+set_mode() { node "$SCRIPT" --mode sandbox "$M" >"$OUT" 2>&1 || fail "exit $? for --mode: $(cat "$OUT")"; }
+
+rm -f "$M"
+set_mode
+[ "$(mode_value)" = sandbox ] || fail "created file: permissions.mode is $(mode_value)"
+cp "$M" "$SCRATCH/moded"
+set_mode
+cmp -s "$M" "$SCRATCH/moded" || fail "a second --mode run changed the file: $(diff "$SCRATCH/moded" "$M")"
+pass "a missing machine file is created with permissions.mode sandbox, and a second run changes nothing"
+
+cp "$SCRATCH/hand.js" "$M"
+set_mode
+[ "$(mode_value)" = sandbox ] || fail "hand file: permissions.mode is $(mode_value)"
+[ "$(diff "$SCRATCH/hand.js" "$M" | grep -c '^>')" = 1 ] || fail "hand file: more than the mode line changed: $(diff "$SCRATCH/hand.js" "$M")"
+[ "$(diff "$SCRATCH/hand.js" "$M" | grep -c '^<')" = 0 ] || fail "hand file: a line was removed: $(diff "$SCRATCH/hand.js" "$M")"
+edit cloudflare-quick
+edit none
+[ "$(mode_value)" = sandbox ] || fail "the preview parameter dropped the mode line: $(cat "$M")"
+pass "the mode line is added to a hand file, every other byte stays, and the preview edit keeps it"
+
+printf "export default {\n permissions: { mode: 'system' },\n};\n" > "$M"
+cp "$M" "$SCRATCH/own-mode"
+set_mode
+cmp -s "$M" "$SCRATCH/own-mode" || fail "--mode overrode a hand permissions key: $(diff "$SCRATCH/own-mode" "$M")"
+grep -q 'wins' "$OUT" || fail "a hand permissions key: no log line: $(cat "$OUT")"
+pass "a hand permissions key wins over the template's mode"
+
+printf "export default {\n" > "$M"
+cp "$M" "$SCRATCH/broken-mode"
+set_mode
+cmp -s "$M" "$SCRATCH/broken-mode" || fail "--mode rewrote a broken file"
+pass "a broken machine file stays untouched by --mode"
+
 # --- F6: client selection in install.sh ------------------------------------
 # Every tool install.sh checks for is a stub, so only the preview section acts.
 # curl and nohup record their arguments; curl writes an executable or a tarball.
@@ -392,6 +430,9 @@ installed frp && fail "none installed frpc"
 started cloudflared && fail "none started cloudflared"
 started frpc && fail "none started frpc"
 pass "none installs and starts no tunnel client, even with the operator files"
+M="$SCRATCH/h-none-yes/.bakers/machine.config.js"
+[ "$(mode_value)" = sandbox ] || fail "install.sh: the machine file names no sandbox mode: $(cat "$M" 2>&1)"
+pass "install.sh writes permissions.mode sandbox into the machine file"
 
 start cloudflare-quick no
 installed cloudflared || fail "cloudflare-quick did not install cloudflared: $(cat "$CALLS")"

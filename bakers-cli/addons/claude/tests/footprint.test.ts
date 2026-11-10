@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { parseClaudeTranscript } from '../src/footprint.js';
 import { ClaudeAgent } from '../src/index.js';
@@ -330,5 +332,31 @@ describe('parseClaudeTranscript', () => {
       output_tokens: 3,
     });
     expect(agent.parseFootprint(jsonl).tokens).toBe(3);
+  });
+});
+
+describe('ClaudeAgent.permissionDenials', () => {
+  const agent = new ClaudeAgent();
+  // Recorded from `claude --permission-mode dontAsk`, with paths moved to a box home.
+  const recorded = readFileSync(
+    fileURLToPath(new URL('./fixtures/dontask-denial.jsonl', import.meta.url)),
+    'utf8',
+  );
+
+  it('names every action the dontAsk mode denied, tool and argument, in order', () => {
+    expect(agent.permissionDenials(recorded)).toEqual([
+      'Read(/home/coder/.claude/plugins/cache/bakers/bakers/0.64.0/skills/bb-workflow/references/read-ticket.md)',
+      'Write(/home/coder/outside.txt)',
+    ]);
+  });
+
+  it('ignores ordinary tool errors and a transcript without denials', () => {
+    const errorsOnly = recorded
+      .split('\n')
+      .filter((l) => !l.includes("don't ask mode"))
+      .join('\n');
+    expect(agent.permissionDenials(errorsOnly)).toEqual([]);
+    expect(agent.permissionDenials('')).toEqual([]);
+    expect(agent.permissionDenials('not json\n')).toEqual([]);
   });
 });

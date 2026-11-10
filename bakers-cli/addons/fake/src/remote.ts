@@ -147,7 +147,9 @@ export class FakeBbRemote implements BbRemote {
     finalizeRun: FinalizeRunCall[];
     markCleanedUp: string[];
     appendRunNote: AppendRunNoteCall[];
+    cancelRun: string[];
   } = {
+    cancelRun: [],
     markRunning: [],
     markFailed: [],
     finalizeRun: [],
@@ -351,6 +353,7 @@ export class FakeBbRemote implements BbRemote {
         state: r.state,
         stateAtStart: r.stateAtStart,
         worktreePath: r.worktreePath ?? '',
+        agent: r.agent ?? '',
       };
     });
   }
@@ -456,6 +459,12 @@ export class FakeBbRemote implements BbRemote {
             : attrs.startedAt;
       }
     }
+  }
+
+  async cancelRun(runUuid: string): Promise<void> {
+    this.calls.cancelRun.push(runUuid);
+    const run = this.runs.get(runUuid);
+    if (run) run.state = 'cancelled';
   }
 
   async markFailed(runUuid: string, errorLog: string): Promise<void> {
