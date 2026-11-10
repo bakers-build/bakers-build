@@ -29,6 +29,9 @@ function bb_addon_update_11001(): void {
       ->condition('id', $row->id)
       ->execute();
   }
-  // Swaps the stored unique key for the one the storage schema now defines.
-  $manager->updateEntityType(\Drupal::entityTypeManager()->getDefinition('bb_addon'));
+  // Installing the field added the new key; core never drops the old one.
+  $schema = $database->schema();
+  if ($schema->indexExists('bb_addon', 'bb_addon__workspace_name_version')) {
+    $schema->dropUniqueKey('bb_addon', 'bb_addon__workspace_name_version');
+  }
 }

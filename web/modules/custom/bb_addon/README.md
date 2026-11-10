@@ -11,7 +11,7 @@ registrations against it are rejected and their rows removed.
 ## Entities
 
 - `bb_addon`: `name`, `version`, `contract`, `definition` (JSON, immutable,
-  optionally carrying an inline SVG `icon`; a new icon needs a new version),
+  optionally carrying an inline SVG `icon`; a new icon gives a new row),
   `conductors` (who runs this version), `fingerprint` (SHA-256 of
   `definition`). One row per `(workspace, name, version, fingerprint)`: an
   identical definition shares a row, a differing one gets its own. A conductor

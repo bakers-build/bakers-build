@@ -53,8 +53,9 @@ function bb_core_post_update_clear_deployment_stamps(array &$sandbox): string {
  * Repairs stored branch names git would refuse.
  *
  * Covers tickets' `branch_name` and repositories' `default_branch` saved
- * before both were validated. Git cannot hold such a branch, so rewriting the
- * name loses nothing; valid names stay as they are.
+ * before both were validated. Names matching BranchName::PATTERN stay as they
+ * are. Every other name is rewritten; git refuses nearly all of them, but a
+ * non-ASCII name git would hold loses its link to that branch.
  */
 function bb_core_post_update_valid_branch_names(): string {
   $database = \Drupal::database();

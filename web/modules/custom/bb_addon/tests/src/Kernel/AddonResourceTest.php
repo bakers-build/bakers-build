@@ -181,6 +181,42 @@ final class AddonResourceTest extends KernelTestBase {
   }
 
   /**
+   * On an upgraded site the update replaces the old three-column unique key.
+   */
+  public function testUpdateReplacesOldUniqueKey(): void {
+    // Rebuild the schema as it stood before the fingerprint existed.
+    $schema = $this->container->get('database')->schema();
+    $keyValue = $this->container->get('keyvalue')->get('entity.storage_schema.sql');
+    $entitySchema = $keyValue->get('bb_addon.entity_schema_data');
+    $newKey = 'bb_addon__workspace_name_version_fingerprint';
+    $oldColumns = array_values(array_diff($entitySchema['bb_addon']['unique keys'][$newKey], ['fingerprint']));
+    unset($entitySchema['bb_addon']['unique keys'][$newKey]);
+    $entitySchema['bb_addon']['unique keys']['bb_addon__workspace_name_version'] = $oldColumns;
+    $keyValue->set('bb_addon.entity_schema_data', $entitySchema);
+    $keyValue->delete('bb_addon.field_schema_data.fingerprint');
+    $schema->dropUniqueKey('bb_addon', $newKey);
+    $schema->dropField('bb_addon', 'fingerprint');
+    $schema->addUniqueKey('bb_addon', 'bb_addon__workspace_name_version', $oldColumns);
+    $lastInstalled = $this->container->get('entity.last_installed_schema.repository');
+    $fingerprint = $lastInstalled->getLastInstalledFieldStorageDefinitions('bb_addon')['fingerprint'];
+    $lastInstalled->deleteLastInstalledFieldStorageDefinition($fingerprint);
+
+    $this->container->get('module_handler')->loadInclude('bb_addon', 'install');
+    bb_addon_update_11001();
+
+    self::assertFalse($schema->indexExists('bb_addon', 'bb_addon__workspace_name_version'));
+    self::assertTrue($schema->indexExists('bb_addon', $newKey));
+    $first = self::portsDefinition('1.2.3');
+    $first['label'] = 'X';
+    $second = self::portsDefinition('1.2.3');
+    $second['label'] = 'Y';
+    $this->registerAddons($this->conductor, [$first]);
+    [$status] = $this->registerAddons($this->conductor, [$second]);
+    self::assertSame(200, $status);
+    self::assertSame(['X', 'Y'], array_keys($this->addonsByLabel()));
+  }
+
+  /**
    * An invalid definition is rejected and the conductor is not listed.
    */
   public function testRegisterRejectsInvalidDefinition(): void {

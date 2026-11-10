@@ -204,6 +204,10 @@ final class BranchNameTest extends KernelTestBase {
       'dot dot' => ['a..b', 'feat/gl-7-a.b'],
       'lock suffix' => ['x.lock', 'feat/gl-7-x'],
       'dot segment' => ['a/.b', 'feat/gl-7-a/b'],
+      'lone dot segment' => ['a/./b', 'feat/gl-7-a/b'],
+      'lock segment' => ['a/.lock/b', 'feat/gl-7-a/b'],
+      'double lock suffix' => ['x.lock.lock', 'feat/gl-7-x'],
+      'cut ends in lock' => ['abcdefghijklmno.lockxyz', 'feat/gl-7-abcdefghijklmno'],
     ];
   }
 
@@ -216,6 +220,8 @@ final class BranchNameTest extends KernelTestBase {
     $database = $this->container->get('database');
     $database->update('bb_ticket')->fields(['branch_name' => '--upload-pack=touch PWNED'])->condition('id', $bad->id())->execute();
     $database->update('bb_ticket')->fields(['branch_name' => 'release/1.2'])->condition('id', $good->id())->execute();
+    $gitValid = $this->createTicket('GL-11', 'z');
+    $database->update('bb_ticket')->fields(['branch_name' => 'renovate/@types/node+x'])->condition('id', $gitValid->id())->execute();
 
     $project = $this->container->get('entity_type.manager')->getStorage('bb_project')
       ->create([
@@ -231,6 +237,8 @@ final class BranchNameTest extends KernelTestBase {
     $names = $database->select('bb_ticket', 't')->fields('t', ['id', 'branch_name'])->execute()->fetchAllKeyed();
     $this->assertSame('upload-pack-touch-pwned', $names[$bad->id()]);
     $this->assertSame('release/1.2', $names[$good->id()]);
+    // Git accepts '@' and '+', so the repair leaves such a branch alone.
+    $this->assertSame('renovate/@types/node+x', $names[$gitValid->id()]);
     $this->assertSame('x.y', $database->select('bb_project', 'p')->fields('p', ['repository__default_branch'])->execute()->fetchField());
   }
 
@@ -246,7 +254,7 @@ final class BranchNameTest extends KernelTestBase {
    * Supplied release and feature branches stay valid.
    */
   public function testAcceptsValidSuppliedBranchName(): void {
-    foreach (['release/1.2', 'feat/gl-7-fix-login-flow', 'Main', 'next'] as $branch) {
+    foreach (['release/1.2', 'feat/gl-7-fix-login-flow', 'Main', 'next', 'renovate/@types/node', 'fix+x'] as $branch) {
       $this->assertNotContains('branch_name.0.value', $this->violationPaths($branch), $branch);
     }
   }
@@ -281,6 +289,7 @@ final class BranchNameTest extends KernelTestBase {
       'trailing slash' => ['a/'],
       'lock suffix' => ['a.lock'],
       'reflog' => ['a@{1}'],
+      'bare at' => ['@'],
       'trailing newline' => ["main\n"],
     ];
   }

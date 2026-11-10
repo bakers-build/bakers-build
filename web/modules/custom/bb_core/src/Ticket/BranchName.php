@@ -32,10 +32,10 @@ final class BranchName {
   /**
    * A branch name a conductor may pass to git.
    *
-   * `git check-ref-format` rules on [A-Za-z0-9._/-], and no leading '-' that
-   * git reads as an option.
+   * `git check-ref-format` rules on [A-Za-z0-9._/+@-] ('@{' cannot occur and a
+   * bare '@' is refused), and no leading '-' that git reads as an option.
    */
-  public const PATTERN = '#^(?![-.])(?!.*(\\.\\.|//|/\\.|\\.lock(/|\\z)))[A-Za-z0-9._/-]+(?<![/.])\\z#';
+  public const PATTERN = '#^(?![-.])(?!@\\z)(?!.*(\\.\\.|//|/\\.|\\.lock(/|\\z)))[A-Za-z0-9._/+@-]+(?<![/.])\\z#';
 
   /**
    * The maximum branch-name length; longer names have their title truncated.
@@ -119,11 +119,17 @@ final class BranchName {
     $v = (string) preg_replace('#-*/+-*#', '/', $v);
     $v = (string) preg_replace('#-{2,}#', '-', $v);
     // What git refuses: "..", a segment ending in ".lock" or starting with
-    // "." or "-", and a trailing ".".
-    $v = (string) preg_replace('#\.{2,}#', '.', $v);
-    $v = (string) preg_replace('#\.lock(?=/|$)#', '', $v);
-    $v = (string) preg_replace('#(^|/)[.-]+#', '$1', $v);
-    return trim($v, '-/.');
+    // "." or "-", and a trailing ".". Each strip can expose another, so repeat
+    // until nothing changes.
+    do {
+      $before = $v;
+      $v = (string) preg_replace('#/{2,}#', '/', $v);
+      $v = (string) preg_replace('#\.{2,}#', '.', $v);
+      $v = (string) preg_replace('#\.lock(?=/|$)#', '', $v);
+      $v = (string) preg_replace('#(^|/)[.-]+#', '$1', $v);
+      $v = trim($v, '-/.');
+    } while ($v !== $before);
+    return $v;
   }
 
   /**
@@ -157,7 +163,8 @@ final class BranchName {
     if (mb_strlen($protected) >= self::MAX_LENGTH) {
       return $protected;
     }
-    return rtrim(mb_substr($branch, 0, self::MAX_LENGTH), '-/._');
+    // The cut can end a segment in ".lock"; sanitise again.
+    return self::sanitize(rtrim(mb_substr($branch, 0, self::MAX_LENGTH), '-/._'));
   }
 
 }
