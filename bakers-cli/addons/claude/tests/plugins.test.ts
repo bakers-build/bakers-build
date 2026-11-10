@@ -140,6 +140,15 @@ describe('ClaudeAgent with plugins on', () => {
     ).toContain("--setting-sources 'project,local'");
   });
 
+  it('allows reading the plugins and skills of the agent home, not of the user home, in sandbox mode', () => {
+    const agent = new ClaudeAgent({ permissions: 'sandbox' }, user);
+    agent.useMarketplaces([probe]);
+    const command = agent.launchCommand('go', undefined, root);
+    expect(command).toContain(`Read(/${agent.configDir}/plugins/**)`);
+    expect(command).toContain(`Read(/${agent.configDir}/skills/**)`);
+    expect(command).not.toContain(`${join(user, '.claude')}/plugins`);
+  });
+
   it('reads transcripts from the agent home it installed into', async () => {
     const agent = await agentFor();
     expect(agent.configDir).toMatch(

@@ -247,6 +247,14 @@ export interface BbAgent {
    */
   sessionExists?(worktreePath: string, sessionId: string): Promise<boolean>;
   /**
+   * When the run's transcript was last written (epoch ms), from a stat alone;
+   * undefined when it has none yet. Optional, like {@link permissionDenials}.
+   */
+  runLogModified?(
+    worktreePath: string,
+    run: AgentRunIdentity,
+  ): Promise<number | undefined>;
+  /**
    * Parse this agent's run transcript (as returned by {@link getRunLog}) into
    * a footprint of effort metrics (BB-132). The transcript format is
    * agent-specific, so each agent owns its own parser. MUST be tolerant of
@@ -261,4 +269,11 @@ export interface BbAgent {
    * agent without it is never checked.
    */
   sandboxPreflight?(host?: SandboxHost): Promise<SandboxPreflight>;
+  /**
+   * The actions a permission rule denied in this run's transcript, each as
+   * `Tool(argument)`, in order, but only when the run stopped on one: the agent
+   * ended its turn after a denial with no call outstanding; [] otherwise. Never
+   * throws. Optional: a run of an agent without it is never reported as blocked.
+   */
+  permissionDenials?(log: string): string[];
 }

@@ -6045,3 +6045,145 @@ describe('Conductor lost runs (pane gone)', () => {
     expect(remote.calls.publishTicketComment).toHaveLength(1);
   });
 });
+
+describe('Conductor — a run blocked on a permission denial', () => {
+  const MIN = 60_000;
+  const DENIED = 'Read(/home/coder/.claude/plugins/x.md)';
+
+  function blockedSeed(): FakeRemoteSeed {
+    return {
+      tickets: {
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
+      },
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: 'working',
+          state: 'running',
+          worktreePath: PRESENT_WORKTREE,
+          agent: 'claude',
+        },
+      ],
+    };
+  }
+
+  /** An agent whose transcript was last written `quietMs` ago. */
+  function stalledAgent(quietMs: number, denials: string[] = [DENIED]) {
+    const getRunLog = vi.fn(async () => 'transcript');
+    const mtime = Date.now() - quietMs;
+    const agent: BbAgent = {
+      ...fakeAgent,
+      getRunLog,
+      runLogModified: async () => mtime,
+      permissionDenials: () => denials,
+    };
+    return { agent, getRunLog };
+  }
+
+  async function blockedConductor(agent: BbAgent) {
+    const remote = new FakeBbRemote(blockedSeed());
+    remote.queue.length = 0;
+    const call = vi.fn(async () => ({ content: [] }));
+    remote.siteTools = { list: async () => [], call, close: async () => {} };
+    const conductor = new TestConductor(
+      makeConfig(),
+      remote,
+      new RecordingExecutor(),
+      new FakeWorkspace(),
+      resolved(agent),
+      spyLogger().log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    return { conductor, remote, call };
+  }
+
+  it('reports the denied action, labels and freezes the ticket and cancels the run, once', async () => {
+    const { conductor, remote, call } = await blockedConductor(
+      stalledAgent(6 * MIN).agent,
+    );
+    await conductor.tick();
+    await conductor.tick();
+
+    expect(call.mock.calls).toEqual([
+      [
+        'tool_api__bakers_comment_publish',
+        {
+          ticket: 't-1',
+          type: 'comment',
+          body: '# Technical problem\n\nPlease contact the developers.\n',
+        },
+      ],
+      [
+        'tool_api__bakers_comment_publish',
+        {
+          ticket: 't-1',
+          type: 'comment',
+          body: expect.stringMatching(
+            new RegExp(
+              `^# Error\\n[\\s\\S]*allow rule[\\s\\S]*- \`${DENIED.replace(/[()./]/g, '\\$&')}\``,
+            ),
+          ),
+        },
+      ],
+      [
+        'tool_api__bakers_ticket_update',
+        { ticket: 't-1', labels_add: ['technical problem'], frozen: true },
+      ],
+    ]);
+    expect(remote.calls.cancelRun).toEqual(['r-1']);
+  });
+
+  it('waits while the transcript changed within the last 5 minutes', async () => {
+    const { agent, getRunLog } = stalledAgent(4 * MIN);
+    const { conductor, remote, call } = await blockedConductor(agent);
+    await conductor.tick();
+    expect(getRunLog).not.toHaveBeenCalled();
+    expect(call).not.toHaveBeenCalled();
+    expect(remote.calls.cancelRun).toEqual([]);
+  });
+
+  it('reads a quiet transcript without denials once per modification and reports nothing', async () => {
+    const { agent, getRunLog } = stalledAgent(6 * MIN, []);
+    const { conductor, remote, call } = await blockedConductor(agent);
+    await conductor.tick();
+    await conductor.tick();
+    expect(getRunLog).toHaveBeenCalledTimes(1);
+    expect(call).not.toHaveBeenCalled();
+    expect(remote.calls.cancelRun).toEqual([]);
+  });
+
+  it('reports on the next tick when reading the transcript failed', async () => {
+    const { agent, getRunLog } = stalledAgent(6 * MIN);
+    getRunLog.mockRejectedValueOnce(new Error('EIO'));
+    const { conductor, remote } = await blockedConductor(agent);
+    await conductor.tick();
+    expect(remote.calls.cancelRun).toEqual([]);
+    await conductor.tick();
+    expect(remote.calls.cancelRun).toEqual(['r-1']);
+  });
+
+  it('does not cancel a run silently when the site tools are missing, and reports once they are back', async () => {
+    const { conductor, remote, call } = await blockedConductor(
+      stalledAgent(6 * MIN).agent,
+    );
+    const tools = remote.siteTools;
+    remote.siteTools = undefined;
+    await conductor.tick();
+    expect(remote.calls.cancelRun).toEqual([]);
+    remote.siteTools = tools;
+    await conductor.tick();
+    expect(call).toHaveBeenCalledTimes(3);
+    expect(remote.calls.cancelRun).toEqual(['r-1']);
+  });
+
+  it('never reads the transcript of an agent that cannot name denials', async () => {
+    const { agent, getRunLog } = stalledAgent(6 * MIN);
+    delete agent.permissionDenials;
+    const { conductor, call } = await blockedConductor(agent);
+    await conductor.tick();
+    expect(getRunLog).not.toHaveBeenCalled();
+    expect(call).not.toHaveBeenCalled();
+  });
+});

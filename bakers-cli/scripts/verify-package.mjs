@@ -377,7 +377,7 @@ console.log(m[1]);
       for (const marker of [
         'Read the ticket and all comments',
         'bakers_ticket_read',
-        `bakers tools bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+        `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
         './WORKFLOW.md',
         "that skill's {state} section",
         'Do not start or prepare a later state',

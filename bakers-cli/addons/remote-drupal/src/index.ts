@@ -190,6 +190,7 @@ export class DrupalBbRemote implements BbRemote {
         'state_at_start',
         'worktree_path',
         'drupal_internal__id',
+        'agent',
       ])
       .page(100)
       .list();
@@ -203,6 +204,7 @@ export class DrupalBbRemote implements BbRemote {
         state: r.attr<string>('state') ?? '',
         stateAtStart: r.attr<string>('state_at_start') ?? '',
         worktreePath: r.attr<string>('worktree_path') ?? '',
+        agent: r.attr<string>('agent') ?? '',
       })),
     );
   }
@@ -716,6 +718,12 @@ export class DrupalBbRemote implements BbRemote {
         closed: true,
         closed_date: t,
       },
+    });
+  }
+
+  async cancelRun(uuid: string): Promise<void> {
+    await this.api.update('bb_run', uuid, {
+      attributes: { state: 'cancelled' },
     });
   }
 

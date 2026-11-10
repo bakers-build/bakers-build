@@ -2,8 +2,11 @@
 // Writes the preview transport parameter into machine.config.js (README › Optional previews):
 //   bakers-preview-config <none|cloudflare-quick|cloudflare|frp> [path]
 // It owns only lines it marked: a `tunnel: true` line and, for Cloudflare Quick, an addon-ports
-// block. Every other byte stays. A hand-written tunnel key or addon-ports entry wins. Any
-// failure logs a line and exits 0, so it never fails the workspace start.
+// block. Every other byte stays. A hand-written tunnel key or addon-ports entry wins.
+//   bakers-preview-config --mode sandbox [path]
+// adds a marked `permissions: { mode: 'sandbox' }` line (README › Agent permissions) unless the
+// file sets `permissions` itself. Any failure logs a line and exits 0, so it never fails the
+// workspace start.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -190,7 +193,39 @@ function intended(own, next) {
   return want;
 }
 
+const MODE_MARK = '// bakers-ddev mode';
+const MODE_LINE = ` permissions: { mode: 'sandbox' }, ${MODE_MARK}`;
+
+/** Names the sandbox as the box's permissions mode, so it does not follow the CLI's default. */
+function ensureMode(path) {
+  const exists = existsSync(path);
+  const text = exists ? readFileSync(path, 'utf8') : NEW_FILE;
+  if (text.split('\n').some((line) => line.trimEnd().endsWith(MODE_MARK))) return;
+  const dir = dirname(path);
+  mkdirSync(dir, { recursive: true });
+  const blank = scan(text);
+  const start = blank === null ? -1 : blank.search(/^[ \t]*export[ \t]+default[ \t]*\{[ \t]*$/m);
+  const own = start === -1 ? null : load(text, dir);
+  if (!own) return log(`cannot read ${path}; add permissions: { mode: 'sandbox' } by hand; left unchanged`);
+  if (own.permissions !== undefined || topKey(blank, 'permissions', start) !== -1)
+    return log('machine.config.js sets permissions itself; it wins over the template mode');
+  const lines = text.split('\n');
+  lines.splice(blank.slice(0, start).split('\n').length, 0, MODE_LINE);
+  const next = lines.join('\n');
+  if (canonical(load(next, dir)) !== canonical({ ...own, permissions: { mode: 'sandbox' } }))
+    return log(`cannot place the permissions mode so it takes effect; add it by hand; ${path} left unchanged`);
+  const tmp = `${path}.mode-${process.pid}`;
+  writeFileSync(tmp, next, { mode: exists ? statSync(path).mode & 0o777 : 0o644 });
+  renameSync(tmp, path);
+  log(`${path} names the sandbox permissions mode`);
+}
+
 function main() {
+  if (process.argv[2] === '--mode') {
+    const [, mode, path = join(process.env.BAKERS_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
+      process.argv.slice(2);
+    return mode === 'sandbox' ? ensureMode(path) : log(`unknown mode "${mode}"; machine.config.js unchanged`);
+  }
   const [transport, path = join(process.env.BAKERS_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
     process.argv.slice(2);
   if (!TRANSPORTS.includes(transport)) return log(`unknown transport "${transport}"; machine.config.js unchanged`);

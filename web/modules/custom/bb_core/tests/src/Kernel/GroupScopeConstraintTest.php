@@ -35,6 +35,7 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 final class GroupScopeConstraintTest extends KernelTestBase {
 
   use WorkspaceReadScopeTestTrait;
+  use ProjectsViewTestTrait;
 
   /**
    * {@inheritdoc}
@@ -44,7 +45,9 @@ final class GroupScopeConstraintTest extends KernelTestBase {
   protected static $modules = [
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
-    'link', 'text', 'field', 'og', 'bb_core',
+    'link', 'text', 'filter', 'field', 'og', 'views', 'better_exposed_filters',
+    'ui_patterns', 'ui_patterns_views', 'display_builder', 'display_builder_views', 'island',
+    'bb_core',
   ];
 
   /**
@@ -280,6 +283,13 @@ final class GroupScopeConstraintTest extends KernelTestBase {
    * form does not edit, so the entity constraint alone never reaches it.
    */
   public function testTermAddFormRefusesTermInWorkspaceWithoutRank(): void {
+    // The form's Cancel action links to the vocabulary's settings tab, a
+    // display of the shipped term view addressed by the workspace slug.
+    foreach (['a', 'b'] as $side) {
+      $this->fixture($side, 'bb_workspace')->set('slug', "space-$side")->save();
+    }
+    $this->installConfig(['views']);
+    $this->installShippedView('views.view.bb_terms');
     $guest_role = OgRole::load('bb_workspace-bb_workspace-guest');
     self::assertNotNull($guest_role);
     Og::createMembership($this->fixture('a', 'bb_workspace'), $this->actor)

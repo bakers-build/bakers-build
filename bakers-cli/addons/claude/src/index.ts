@@ -37,7 +37,10 @@ import {
   shellQuote,
   withoutGitDirs,
 } from '@bakers-build/core';
-import { parseClaudeTranscript } from './footprint.js';
+import {
+  parseClaudePermissionDenials,
+  parseClaudeTranscript,
+} from './footprint.js';
 
 export { parseClaudeTranscript } from './footprint.js';
 
@@ -81,6 +84,7 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
 function securityFlags(
   { mode, sandbox, config }: ResolvedSecurity,
   workspacePath: string | undefined,
+  configDir: string,
   pluginsOn = false,
 ): string[] {
   if (mode === 'system') return [];
@@ -109,18 +113,23 @@ function securityFlags(
       network: { allowedDomains: sandbox.network },
     },
     disableClaudeAiConnectors: true,
-    // What is allowed here runs without a prompt; anything else, such as a
-    // write to the protected `.claude/`, asks the human watching the run's
-    // terminal (dontAsk would deny it, and no allow rule lifts that). Every
-    // Bash command is either sandboxed or a trusted command, and the Read
-    // deny covers the Read tool, which the OS sandbox does not confine.
+    // What is allowed here runs without a prompt; under dontAsk anything
+    // else, such as a write outside the worktree or to the protected
+    // `.claude/`, is denied at once, since nobody answers a prompt on a box.
+    // Every Bash command is either sandboxed or a trusted command, and the
+    // Read deny covers the Read tool, which the OS sandbox does not confine.
     permissions: {
       // The conductor's server binds every call to this run's worktree and project.
+      // The run's own plugins and skills live in its config dir, outside the worktree;
+      // Claude applies Read rules to Glob and Grep as well.
       allow: [
         'Bash',
         'Edit(./**)',
         'AskUserQuestion',
         `mcp__${CONDUCTOR_TOOLS_SERVER}`,
+        'Skill',
+        `Read(/${join(configDir, 'plugins')}/**)`,
+        `Read(/${join(configDir, 'skills')}/**)`,
       ],
       // Claude reads a single leading `/` as relative to the settings file;
       // the plain rule covers a file entry, `/**` a directory's contents.
@@ -132,7 +141,7 @@ function securityFlags(
   };
   return [
     '--permission-mode',
-    'default',
+    'dontAsk',
     // The agent home's user settings enable its plugins; the person's own stay out.
     '--setting-sources',
     pluginsOn ? 'user,project,local' : 'project,local',
@@ -380,7 +389,12 @@ export class ClaudeAgent implements BbAgent {
     // The flags are constants; only their generated values need quoting.
     parts.push(
       ...[
-        ...securityFlags(this.security, workspacePath, this.pluginsOn),
+        ...securityFlags(
+          this.security,
+          workspacePath,
+          this.configDir,
+          this.pluginsOn,
+        ),
         ...this.mcpFlags(tools),
       ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );
@@ -457,6 +471,29 @@ export class ClaudeAgent implements BbAgent {
     } catch {
       return false;
     }
+  }
+
+  /** The run's pinned transcript only: the newest existing attempt, as {@link getRunLog} prefers it. */
+  async runLogModified(
+    worktreePath: string,
+    run: AgentRunIdentity,
+  ): Promise<number | undefined> {
+    const dir = join(
+      this.configDir,
+      'projects',
+      encodeClaudeProjectDir(worktreePath),
+    );
+    const names = run.attemptFamily?.length
+      ? [...run.attemptFamily].reverse()
+      : [run.sessionId];
+    for (const name of names) {
+      try {
+        return (await stat(join(dir, `${name}.jsonl`))).mtimeMs;
+      } catch {
+        // try the next, lower-numbered attempt.
+      }
+    }
+    return undefined;
   }
 
   async getRunLog(
@@ -561,6 +598,12 @@ export class ClaudeAgent implements BbAgent {
 
   parseFootprint(log: string): AgentFootprint {
     return parseClaudeTranscript(log);
+  }
+
+  /** Only the sandbox launches in `dontAsk`; other modes are never reported. */
+  permissionDenials(log: string): string[] {
+    if (this.securityMode !== 'sandbox') return [];
+    return parseClaudePermissionDenials(log);
   }
 
   /** Linux needs bwrap, socat and a user namespace; macOS ships Seatbelt. */
