@@ -1,0 +1,10 @@
+fingerprint: 562b8f34e6cf8d21d2a1e3a8b2eadc074f302ee2a20bce0581ec84e776149f45
+note: 'BAKERS-56: captured read-only from Figma; screenshot approval awaits the user''s decision'
+scope:
+  states:
+    - default
+  subjects:
+    - runs-failure-visible-actionable
+  views:
+    - desktop
+status: pending

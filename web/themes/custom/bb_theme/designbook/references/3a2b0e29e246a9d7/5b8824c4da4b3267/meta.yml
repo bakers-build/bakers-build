@@ -1,0 +1,391 @@
+{
+  "source": {
+    "kind": "figma",
+    "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv",
+    "revision": null
+  },
+  "role": "reference",
+  "elements": [
+    {
+      "id": "system-spacing-typography",
+      "locator": {
+        "kind": "figma-node",
+        "value": "68:13"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1399,
+          "height": 2242
+        }
+      ]
+    },
+    {
+      "id": "ticket-detail-before",
+      "locator": {
+        "kind": "figma-node",
+        "value": "128:13395"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 1133
+        }
+      ]
+    },
+    {
+      "id": "ticket-detail-after",
+      "locator": {
+        "kind": "figma-node",
+        "value": "69:13"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 943
+        }
+      ]
+    },
+    {
+      "id": "label-ticket-detail",
+      "locator": {
+        "kind": "figma-node",
+        "value": "73:2570"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1120,
+          "height": 244
+        }
+      ]
+    },
+    {
+      "id": "ticket-list-before",
+      "locator": {
+        "kind": "figma-node",
+        "value": "128:13498"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "ticket-list-after",
+      "locator": {
+        "kind": "figma-node",
+        "value": "70:3749"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "label-ticket-list",
+      "locator": {
+        "kind": "figma-node",
+        "value": "73:2573"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1120,
+          "height": 216
+        }
+      ]
+    },
+    {
+      "id": "project-overview-before",
+      "locator": {
+        "kind": "figma-node",
+        "value": "128:13521"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "project-overview-after",
+      "locator": {
+        "kind": "figma-node",
+        "value": "71:4200"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "label-project-overview",
+      "locator": {
+        "kind": "figma-node",
+        "value": "73:2576"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1120,
+          "height": 216
+        }
+      ]
+    },
+    {
+      "id": "members-before",
+      "locator": {
+        "kind": "figma-node",
+        "value": "128:13626"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "members-after",
+      "locator": {
+        "kind": "figma-node",
+        "value": "71:4410"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "label-members",
+      "locator": {
+        "kind": "figma-node",
+        "value": "73:2579"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1120,
+          "height": 188
+        }
+      ]
+    },
+    {
+      "id": "my-time-before",
+      "locator": {
+        "kind": "figma-node",
+        "value": "128:13644"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "my-time-after",
+      "locator": {
+        "kind": "figma-node",
+        "value": "72:4801"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "label-my-time",
+      "locator": {
+        "kind": "figma-node",
+        "value": "73:2582"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1120,
+          "height": 188
+        }
+      ]
+    },
+    {
+      "id": "board-before",
+      "locator": {
+        "kind": "figma-node",
+        "value": "78:2762"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "board-after",
+      "locator": {
+        "kind": "figma-node",
+        "value": "80:3178"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "label-board",
+      "locator": {
+        "kind": "figma-node",
+        "value": "73:2585"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1120,
+          "height": 272
+        }
+      ]
+    }
+  ],
+  "assets_dir": "assets"
+}

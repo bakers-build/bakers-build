@@ -1,0 +1,22 @@
+fingerprint: 8dac37c54e686797db2d5e9a9f18ca33aa3723a9d0a955aa87911a781ab0b9ce
+note: 'BAKERS-56: captured read-only from Figma; screenshot approval awaits the user''s decision'
+scope:
+  states:
+    - default
+  subjects:
+    - overview-needs-attention
+    - overview-needs-attention-empty
+    - label-project-overview
+    - board-details-off
+    - board-details-on-done-collapsed
+    - board-details-on-done-open
+    - label-project-board
+    - tickets-parent-filter-multi-state
+    - tickets-state-popover-open
+    - tickets-parent-combobox-open
+    - label-ticket-overview
+    - ticket-detail-creator-runs-summary
+    - label-ticket-detail
+  views:
+    - desktop
+status: pending

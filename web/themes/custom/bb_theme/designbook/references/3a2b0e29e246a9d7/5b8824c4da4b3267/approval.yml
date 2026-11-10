@@ -1,0 +1,28 @@
+fingerprint: e730bf1ef3e6caf0c2c8c19ee0b4377d647a96cc2e73e5601db86b75e8903ebb
+note: 'BAKERS-56: captured read-only from Figma; screenshot approval awaits the user''s decision'
+scope:
+  states:
+    - default
+  subjects:
+    - system-spacing-typography
+    - ticket-detail-before
+    - ticket-detail-after
+    - label-ticket-detail
+    - ticket-list-before
+    - ticket-list-after
+    - label-ticket-list
+    - project-overview-before
+    - project-overview-after
+    - label-project-overview
+    - members-before
+    - members-after
+    - label-members
+    - my-time-before
+    - my-time-after
+    - label-my-time
+    - board-before
+    - board-after
+    - label-board
+  views:
+    - desktop
+status: pending
