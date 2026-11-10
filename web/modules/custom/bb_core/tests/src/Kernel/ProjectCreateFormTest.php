@@ -35,6 +35,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 final class ProjectCreateFormTest extends KernelTestBase {
 
   use UserCreationTrait;
+  use OgScopeFixtureTrait;
   use ShippedImageConfigTrait;
 
   /**
@@ -80,19 +81,24 @@ final class ProjectCreateFormTest extends KernelTestBase {
     // from the recipe, which IS the dialog — the fields, their widgets, their
     // regions and the map of everything a client may not send.
     $this->installConfig(['system', 'user', 'filter', 'bb_core']);
+    $this->installConfig(['og']);
+    $this->registerShippedOgGroups();
     $this->installShippedFormDisplays();
     // Uid 1 bypasses every access check, so it must not be an actor.
     $this->newAccount([], 'uid1-dummy');
 
-    $this->setCurrentUser($this->newAccount(
+    $creator = $this->newAccount(
       ['administer bakers', 'create bb_project'],
       'project-creator',
-    ));
+    );
+    $this->setCurrentUser($creator);
 
     $workspace = $this->container->get('entity_type.manager')
       ->getStorage('bb_workspace')
       ->create(['name' => 'Create-form workspace']);
     $workspace->save();
+    // The creator becomes the owner, and an owner is a workspace member.
+    $this->addMembership($workspace, $creator);
 
     $group = $this->container->get('entity_type.manager')
       ->getStorage('bb_group')

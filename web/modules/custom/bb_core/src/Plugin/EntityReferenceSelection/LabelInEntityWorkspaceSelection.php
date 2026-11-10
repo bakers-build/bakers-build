@@ -6,7 +6,6 @@ namespace Drupal\bb_core\Plugin\EntityReferenceSelection;
 
 use Drupal\Core\Entity\Attribute\EntityReferenceSelection;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\Plugin\EntityReferenceSelection\DefaultSelection;
 use Drupal\Core\Entity\Query\QueryInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Access\WorkspaceResolverInterface;
@@ -15,8 +14,10 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Offers only the terms of the referring row's workspace.
  *
- * Read scope alone offers every workspace the account belongs to; the
- * BbTicketLabelWorkspace constraint still guards the write.
+ * The workspace is the referring row's, else the active one on create; with
+ * neither, the read scope bounds the offer. Read scope alone offers every
+ * workspace the account belongs to; the BbTicketLabelWorkspace constraint
+ * still guards the write.
  */
 #[EntityReferenceSelection(
   id: 'bb_label_in_entity_workspace',
@@ -25,7 +26,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
   group: 'bb_label_in_entity_workspace',
   weight: 0,
 )]
-class LabelInEntityWorkspaceSelection extends DefaultSelection {
+class LabelInEntityWorkspaceSelection extends ActiveWorkspaceSelectionBase {
 
   /**
    * The row-to-workspace chain walker.
@@ -47,10 +48,11 @@ class LabelInEntityWorkspaceSelection extends DefaultSelection {
   protected function buildEntityQuery($match = NULL, $match_operator = 'CONTAINS'): QueryInterface {
     $query = parent::buildEntityQuery($match, $match_operator);
     $entity = $this->configuration['entity'] ?? NULL;
-    if ($entity instanceof EntityInterface) {
-      // A row without a resolvable workspace offers nothing; 0 is never an id.
-      $workspace = $this->workspaceResolver->resolve($entity);
-      $query->condition('workspace_id', $workspace === NULL ? 0 : $workspace->id());
+    $workspace_id = $entity instanceof EntityInterface ? $this->workspaceResolver->resolve($entity)?->id() : NULL;
+    $workspace_id ??= $this->activeWorkspaceId();
+    // With neither, the read scope already bounds the query.
+    if ($workspace_id !== NULL) {
+      $query->condition('workspace_id', $workspace_id);
     }
     return $query;
   }

@@ -63,7 +63,7 @@ final class AmbientWorkspaceSelectionTest extends KernelTestBase {
     $this->enterAddFormRouteWithWorkspace($this->fixture('a', 'bb_workspace'), 'bb_project');
     $this->switchTo($actor);
 
-    $ids = $this->referenceableIds('bb_group', 'bb_group_in_active_workspace');
+    $ids = $this->referenceableIds('bb_group', 'bb_in_entity_workspace');
 
     self::assertContains((int) $this->fixture('a', 'bb_group')->id(), $ids);
     self::assertNotContains((int) $this->fixture('b', 'bb_group')->id(), $ids);
@@ -85,7 +85,7 @@ final class AmbientWorkspaceSelectionTest extends KernelTestBase {
 
     $ids = $this->referenceableIds(
       'bb_group',
-      'bb_group_in_active_workspace',
+      'bb_in_entity_workspace',
       [ActiveWorkspaceSelectionBase::ACTIVE_WORKSPACE_SETTING => (int) $this->fixture('a', 'bb_workspace')->id()],
     );
 
@@ -147,7 +147,7 @@ final class AmbientWorkspaceSelectionTest extends KernelTestBase {
     $actor = $this->readerOfBothWorkspaces(['view bb_group']);
     $this->switchTo($actor);
 
-    $ids = $this->referenceableIds('bb_group', 'bb_group_in_active_workspace');
+    $ids = $this->referenceableIds('bb_group', 'bb_in_entity_workspace');
 
     self::assertContains((int) $this->fixture('a', 'bb_group')->id(), $ids);
     self::assertContains((int) $this->fixture('b', 'bb_group')->id(), $ids);
@@ -170,7 +170,7 @@ final class AmbientWorkspaceSelectionTest extends KernelTestBase {
     $this->switchTo($actor);
 
     $foreign_id = (int) $this->fixture('b', 'bb_group')->id();
-    $validated = $this->validatedIds('bb_group', 'bb_group_in_active_workspace', [$foreign_id]);
+    $validated = $this->validatedIds('bb_group', 'bb_in_entity_workspace', [$foreign_id]);
 
     self::assertSame([$foreign_id], $validated);
   }
@@ -207,7 +207,7 @@ final class AmbientWorkspaceSelectionTest extends KernelTestBase {
       'owner_user_id' => $this->worldOwner->id(),
     ]);
 
-    $validated = $this->validatedIds('bb_group', 'bb_group_in_active_workspace', [(int) $group->id()]);
+    $validated = $this->validatedIds('bb_group', 'bb_in_entity_workspace', [(int) $group->id()]);
 
     self::assertSame([(int) $group->id()], $validated);
   }
@@ -226,7 +226,7 @@ final class AmbientWorkspaceSelectionTest extends KernelTestBase {
     $this->switchTo($actor);
 
     $foreign_id = (int) $this->fixture('b', 'bb_group')->id();
-    $validated = $this->validatedIds('bb_group', 'bb_group_in_active_workspace', [$foreign_id]);
+    $validated = $this->validatedIds('bb_group', 'bb_in_entity_workspace', [$foreign_id]);
 
     self::assertSame([], $validated);
   }

@@ -153,7 +153,8 @@ final class BbTicketFieldMap {
     // save. Unlike bb_run — where the owner comes from the conductor and must
     // never follow the session (R3) — the acting account is the right default
     // here.
-    $fields['owner_user_id'] = self::ownerBaseFieldDefinition();
+    $fields['owner_user_id'] = self::ownerBaseFieldDefinition()
+      ->setSetting('handler', 'bb_assignee_in_ticket_workspace');
     return $fields;
   }
 
