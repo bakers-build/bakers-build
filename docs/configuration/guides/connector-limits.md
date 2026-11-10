@@ -32,7 +32,7 @@ including one issued to the CLI.
   run commands. It works only through the bakers tools that bakers.build serves at `/mcp`.
 - No conductor assignment, no working/review/done transitions, no bug tickets. The
   connector's instructions stop at `plan` (feature/chore) by design — see the
-  [instructions bundle](/configuration/connector/project-instructions)'s "What this bundle
+  [instructions bundle](/configuration/guides/project-instructions)'s "What this bundle
   deliberately drops" section. **This is an instructions-level policy**: `bakers_ticket_transition`
   allows every move the ticket's workflow and your permissions allow. Nothing in this setup blocks a
   later transition beyond Claude following the instructions and your account's permissions.

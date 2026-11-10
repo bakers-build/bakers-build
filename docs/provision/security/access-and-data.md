@@ -4,9 +4,9 @@ Security spans account access, the worker host, project configuration and previe
 
 ## Credentials and access
 
-Authorize chat connectors with your own account. [API keys and service accounts](/provision/security/credentials) explains issuing, revoking and limiting credentials. Keep connection files under `~/.bakers` private; sign-in tokens live in dropsh's per-host `~/.config/dropsh/` store. [Connections](/configuration/connector/connections) owns the authentication profiles and file permissions.
+Authorize chat connectors with your own account. [API keys and service accounts](/provision/security/credentials) explains issuing, revoking and limiting credentials. Keep connection files under `~/.bakers` private; sign-in tokens live in dropsh's per-host `~/.config/dropsh/` store. [Connections](/configuration/connection) owns the authentication profiles and file permissions.
 
-Never put credentials in tickets, README files or committed conductor configuration. Ignore `.bakers/*.local.js`, `.bakers/log.txt` and `assets-ai/`; verify with `git check-ignore` during [project setup](/get-started/connect-a-project).
+Never put credentials in tickets, README files or committed project configuration. Ignore `.bakers/connection.config.js`, `.bakers/log.txt` and `assets-ai/`; verify with `git check-ignore` during [project setup](/get-started/connect-a-project).
 
 ## Roles and permissions
 
@@ -77,7 +77,7 @@ See [hosted or self-run](/self-hosting/choosing) for the server choice and [serv
 | Run footprint: tokens, turns, tool calls, timing | The bakers.build server | Shown on each run; what the statistics count |
 | Run transcripts | Your own server when self-run and opted in; nowhere on hosted bakers.build | Uploaded at the end of a run only when the server's [run-log storage](/self-hosting/server#run-log-storage) allows it for the workspace; see that reference for the current file-loader limitation |
 | Agent sessions and model traffic | Between your machine and your model provider | provider keys stay on the worker; stored run transcripts may contain prompts and tool output |
-| Connection, machine and project configuration | Worker files, with ownership defined in the [file map](/configuration/files) | Keep secrets and local selectors private; machine capacity is stored on the server |
+| Connection, machine and project configuration | Worker files, with ownership defined in the [file map](/configuration/) | Keep secrets and local selectors private; machine capacity is stored on the server |
 | Conductor log, temporary evidence | `.bakers/log.txt`, `assets-ai/` | Ignored by git, removed with the worktree |
 | API keys | Created and revoked by each user on the server | The secret is shown once; a key acts as its owner |
 

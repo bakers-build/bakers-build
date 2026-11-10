@@ -257,9 +257,9 @@ export function herdrWorkspace(
      * the main clone is derived from the git common dir (BB-177).
      */
     root?: string;
-    worktreeDir?: string;
-    baseBranch?: string;
-    autoSetupMerge?: boolean;
+    worktree_dir?: string;
+    base_branch?: string;
+    auto_setup_merge?: boolean;
     /** Overrideable git exec for root derivation (tests). */
     execGit?: RootGitExec;
     /** Overrideable herdr exec (tests) — sibling of `execGit`. */
@@ -267,7 +267,7 @@ export function herdrWorkspace(
   } = {},
 ): WorkspacePlugin {
   return {
-    kind: 'workspace',
+    kind: 'worktree',
     id: 'herdr',
     requiredModules: [],
     // `deps` carries the conductor logger, so teardown warnings are actually
@@ -279,10 +279,10 @@ export function herdrWorkspace(
       });
       return new HerdrWorkspace({
         root,
-        ...(opts.worktreeDir ? { worktreeDir: opts.worktreeDir } : {}),
-        ...(opts.baseBranch ? { baseBranch: opts.baseBranch } : {}),
+        ...(opts.worktree_dir ? { worktreeDir: opts.worktree_dir } : {}),
+        ...(opts.base_branch ? { baseBranch: opts.base_branch } : {}),
         ...(opts.execHerdr ? { execHerdr: opts.execHerdr } : {}),
-        ...(opts.autoSetupMerge ? { autoSetupMerge: true } : {}),
+        ...(opts.auto_setup_merge ? { autoSetupMerge: true } : {}),
         ...(deps?.logger ? { logger: deps.logger } : {}),
       });
     },

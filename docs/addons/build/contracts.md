@@ -22,12 +22,12 @@ A preset declares contributions through named accumulator functions of the form 
 | Surface | Accumulators | Configured in | Element |
 |---|---|---|---|
 | command | `commands` | The registry of the `bakers` host | A descriptor: `name`, `plugin` module, `describe` text, optional `export` |
-| conductor | `remotes`, `executors`, `workspaces` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` |
+| conductor | `servers`, `executors`, `worktrees` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` |
 | conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/provision/hooks#add-a-listener-from-an-addon) |
 | conductor | `agents` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `AgentCandidate` |
 | conductor | `inbox`, `tools` (values, not accumulators) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions); `AddonTools`: [agent tools](/addons/build/tools) |
 | connection | `connectionPlugins` | `addons` of a connection config | A dropsh plugin: authentication, renderers, schema, request hooks |
-| connection | `uiEntries` | `addons` of the machine, connection or conductor config | A module specifier, a string |
+| connection | `uiEntries` | `addons` of the machine, connection or project config | A module specifier, a string |
 
 Contract 1 (`actions`: a contract definition and lazy handlers rendering tables/views/row actions) is retired; it is not a current surface and no addon may still export it (see [Migrating a contract-1 addon](/addons/build/actions#migrating-a-contract-1-addon)).
 
@@ -49,8 +49,8 @@ addons: [
 
 | Field | Meaning |
 |---|---|
-| `use` | The package name. `name` is accepted as an alias. One of the two is required, or loading fails. |
-| `with` | Options handed to the addon's accumulators as `opts`. `options` is accepted as an alias. |
+| `use` | The package name. Required, or loading fails; the old name `name` fails as an unknown key. |
+| `with` | Options handed to the addon's accumulators as `opts`. In the machine and project files, `bakers config check` checks it against the addon's `options.schema.json` when the addon ships one. The old name `options` fails as an unknown key. |
 | `alias` | For agents only. Selects one named variant of the addon, or names a single custom contribution. Fails when the alias does not pick exactly one variant. |
 | `priority` | For agents only. A function `(ticket) => number` for priority selection. Normally use named routes instead. |
 
@@ -65,15 +65,15 @@ One function, `discoverAddons`, in `bakers-cli/core/src/plugins/discover-addons.
 3. An exact repeat, meaning the same resolved module, options and alias, is skipped with a warning. The same package with different options loads again as a second instance.
 4. Discovery does not install packages. An unresolvable addon is an error, except in the machine file and the `uiEntries` layers, where it is skipped with a warning naming the package and file.
 
-Singleton slots (remote, executor, workspace) resolve last-wins, warning about the competitors. A wrong `kind` for its slot is an error. An explicit `remote`, `executor` or `workspace` descriptor in the config takes precedence over anything discovered; a machine `executor` wins ([slots](/addons/slots)). A conductor config with no remote, executor or workspace fails to load.
+Singleton slots (server, executor, worktree) resolve last-wins, warning about the competitors. A wrong `kind` for its slot is an error. An explicit `server`, `executor` or `worktree` descriptor in the config takes precedence over anything discovered; a machine `executor` wins ([slots](/addons/slots)). A project config with no server, executor or worktree fails to load.
 
-The machine file `~/.bakers/machine.config.js` and the project file `.bakers/conductor.config.js` each carry one `addons` list, merged into one effective list by `scopeAddons` (`bakers-cli/core/src/plugins/scoped-addons.ts`). The addon's `scopes` export (next section) decides where it may be listed; an entry elsewhere is not loaded and warns, and `bakers config check --online` reports `addon_scope_not_allowed`. The same resolved package and `alias` in both files becomes one entry at the machine position, machine entries first. An unresolvable machine entry is skipped with a warning; an unresolvable project entry fails the conductor load.
+The machine file `~/.bakers/machine.config.js` and the project file `.bakers/project.config.js` each carry one `addons` list, merged into one effective list by `scopeAddons` (`bakers-cli/core/src/plugins/scoped-addons.ts`). The addon's `scopes` export (next section) decides where it may be listed; an entry elsewhere is not loaded and warns, and `bakers config check --online` reports `addon_scope_not_allowed`. The same resolved package and `alias` in both files becomes one entry at the machine position, machine entries first. An unresolvable machine entry is skipped with a warning; an unresolvable project entry fails the conductor load.
 
 Agent harnesses are machine-scoped. The machine `agents.catalog` entries select and name variants; each `harness` must also appear in the machine `addons`. [Machines](/configuration/machine) lists the fields.
 
 ### Where an addon may be configured
 
-A preset may export `scopes`, `mergeWith` and `checkWith`:
+A preset may export `scopes` and `mergeWith`:
 
 ```ts
 import type { BbPreset } from '@bakers-build/core';
@@ -84,20 +84,11 @@ export const mergeWith: BbPreset['mergeWith'] = (project, machine) => ({
   ...(project as object),
   ...(machine as object),
 });
-// Optional. Each problem in one entry's own `with` (per file, before the
-// merge; `undefined` for none), keyed relative to it. `bakers config check
-// --online` reports each as `addon_with_invalid` at `addons[<i>].with.<key>`;
-// a throwing check becomes one finding.
-export const checkWith: BbPreset['checkWith'] = (value) =>
-  value === undefined ||
-  (value !== null && typeof value === 'object' && !Array.isArray(value))
-    ? []
-    : [{ key: '', message: 'must be an object' }];
 ```
 
 | Export | Meaning |
 |---|---|
-| `scopes` | Any non-empty subset of `'machine'` (`~/.bakers/machine.config.js`) and `'project'` (`.bakers/conductor.config.js`). Absent means both. |
+| `scopes` | Any non-empty subset of `'machine'` (`~/.bakers/machine.config.js`) and `'project'` (`.bakers/project.config.js`). Absent means both. |
 | `mergeWith(project, machine)` | Called when the addon is listed in both files, `undefined` for a missing `with`; returns the entry's `with`. Absent: a given machine `with` replaces the project `with` whole, else the project `with` is used. |
 
 [Configure addons](/addons/configure#which-file-takes-addons) lists the shipped declarations. An addon with hook listeners declares `['project']`, so no machine runs hooks for every project. Settings live only in the entry's `with`.

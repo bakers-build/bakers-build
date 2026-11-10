@@ -61,7 +61,7 @@ export interface ProjectRooting {
  *
  * The marker is core's `findProjectBbDir` — "is there a `.bakers/` here" —
  * NOT the connection walk-up `findBbConfig`. Since BB-230 the latter skips
- * an engine-only `conductor.config.js`, which BB-218 makes the canonical repo
+ * an engine-only `project.config.js`, which BB-218 makes the canonical repo
  * shape, so keying on it would leave the most common project rooted at home.
  *
  * `~/.bakers` is excluded for the same reason core labels it `home`: the walk-up
@@ -78,7 +78,7 @@ export function resolveProjectRooting(
   const bakersDir = findProjectBbDir(cwd);
   // Core owns where `.bakers` lives; the ui never spells the path itself. No
   // argument here: `homeDir` is the fallback cwd (the OS home), not the
-  // `.bakers` root, and an explicit argument would beat BB_HOME by design.
+  // `.bakers` root, and an explicit argument would beat BAKERS_HOME by design.
   const homeDotBb = resolve(homeBbDir());
 
   if (bakersDir !== undefined && resolve(bakersDir) !== homeDotBb) {

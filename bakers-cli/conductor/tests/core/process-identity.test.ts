@@ -41,7 +41,7 @@ describe('conductor process identity', () => {
   it('always reports its variant, so a first poll is matched to the right conductor', async () => {
     const remote = new RecordingRemote();
     const conductor = makeConductor(remote, {
-      config_path: `${CHECKOUT}/shop.conductor.config.js`,
+      config_path: `${CHECKOUT}/project.shop.config.js`,
     });
 
     await conductor.start();
@@ -63,7 +63,7 @@ describe('conductor process identity', () => {
   it('derives the conductor name from the config file it was loaded from', async () => {
     const remote = new RecordingRemote();
     const conductor = makeConductor(remote, {
-      config_path: `${CHECKOUT}/shop.conductor.config.js`,
+      config_path: `${CHECKOUT}/project.shop.config.js`,
     });
 
     conductor.claimServeProcess();
@@ -92,7 +92,7 @@ describe('conductor process identity', () => {
 
     const a = makeConductor(defaultRemote);
     const b = makeConductor(shopRemote, {
-      config_path: `${CHECKOUT}/shop.conductor.config.js`,
+      config_path: `${CHECKOUT}/project.shop.config.js`,
       conductor_id: 'mid-shop',
     });
     a.claimServeProcess();
@@ -147,7 +147,7 @@ function makeConductor(
       poll_interval_ms: 5000,
       lease_seconds: 300,
       conductor_id: 'mid-default',
-      config_path: `${CHECKOUT}/conductor.config.js`,
+      config_path: `${CHECKOUT}/project.config.js`,
       ...overrides,
     } as any,
     remote,

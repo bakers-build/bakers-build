@@ -24,7 +24,7 @@ Enable the addons you need in their supported [configuration scope](/addons/conf
 
 bakers.build collects the configured tools and makes them available to runs. A run's calls are bound to its ticket and worktree, so the tool operates on that environment.
 
-Claude and Codex receive the tools through **MCP**, a protocol for listing and calling tools. Other supported harnesses can use [`bakers tools`](/configuration/clients/tools) from their shell inside the run. For example:
+Claude and Codex receive the tools through **MCP**, a protocol for listing and calling tools. Other supported harnesses can use [`bakers tools`](/cli/tools) from their shell inside the run. For example:
 
 ```sh
 bakers tools

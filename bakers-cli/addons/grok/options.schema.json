@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-grok/options.schema.json",
+  "title": "@bakers-build/addon-grok options",
+  "$ref": "https://bakers.build/schema/harness-options.schema.json",
+  "properties": {
+    "permissions": { "enum": ["sandbox", "system", "yolo"] },
+    "config": false,
+    "reasoning_effort": {
+      "type": "string",
+      "description": "Reasoning effort (high, medium, low); effort wins when both are set."
+    }
+  },
+  "unevaluatedProperties": false
+}

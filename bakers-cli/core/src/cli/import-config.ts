@@ -5,27 +5,27 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { type Node, parse } from 'acorn';
 
-// Mirrors homeBbDir()'s BB_HOME precedence (bakers-dir.ts) without importing
+// Mirrors homeBbDir()'s BAKERS_HOME precedence (bakers-dir.ts) without importing
 // it: this file is spawned directly as a `.ts` entry point by tests (no
 // transpiler resolving `.js`-suffixed relative imports back to `.ts`
 // sources), so a same-package import here would break that execution path.
 export function homeBbDirInline(): string {
-  const override = process.env.BB_HOME;
+  const override = process.env.BAKERS_HOME;
   return override ? resolve(override) : join(homedir(), '.bakers');
 }
 
 /**
  * Recognises the computed `import()` expression `configImportExpression()`
  * (`conductor/src/cli/config-templates.ts`) renders for the home-inherited
- * `bakers.config.js`/`machine.config.js` imports. Exported so a cross-package
+ * connection file/`machine.config.js` imports. Exported so a cross-package
  * test can pin the renderer against this recogniser directly, rather than
  * the two drifting independently. An alternation, not a replacement: every
- * config generated before the renderer moved to the `BB_HOME`-aware form
+ * config generated before the renderer moved to the `BAKERS_HOME`-aware form
  * still carries the plain `${process.env.HOME}/.bakers/…` shape on disk, and
  * that shape must stay recognised alongside the new one.
  */
 export const HOME_IMPORT_EXPRESSION_PATTERN =
-  /^`\$\{process\.env\.BB_HOME \?\? `\$\{process\.env\.HOME\}\/\.bakers`\}\/(bakers\.config\.js|machine\.config\.js)`$|^`\$\{process\.env\.HOME\}\/\.bakers\/(bakers\.config\.js|machine\.config\.js)`$/;
+  /^`\$\{process\.env\.BAKERS_HOME \?\? `\$\{process\.env\.HOME\}\/\.bakers`\}\/(bakers\.config\.js|machine\.config\.js)`$|^`\$\{process\.env\.HOME\}\/\.bakers\/(bakers\.config\.js|machine\.config\.js)`$/;
 
 /** Import configuration as a fresh module graph without writing transient secret files.
  * Local literal imports are refreshed recursively; package imports retain normal

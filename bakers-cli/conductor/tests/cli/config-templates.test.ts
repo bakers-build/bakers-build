@@ -130,9 +130,9 @@ describe('rendered committed conductor config', () => {
   });
 
   it('still renders the project and the optional workspace', () => {
-    expect(renderCommittedConfig(base)).toContain('project: "demo"');
+    expect(renderCommittedConfig(base)).toContain('project: { name: "demo" }');
     expect(
       renderCommittedConfig({ ...base, bakersWorkspace: 'acme' }),
-    ).toContain('workspace: "acme"');
+    ).toContain('project: { name: "demo", workspace: "acme" }');
   });
 });

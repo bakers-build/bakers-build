@@ -13,7 +13,7 @@ export const UPDATE_CHECK_TTL_MS = 24 * 60 * 60 * 1000;
 
 /**
  * A module-level const would freeze the answer at import time, before a test
- * (or a container) sets BB_HOME — so this is a function, resolved through
+ * (or a container) sets BAKERS_HOME — so this is a function, resolved through
  * the one place that decides where `.bakers` lives.
  */
 export function defaultUpdateCachePath(): string {

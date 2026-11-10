@@ -80,7 +80,7 @@ function makeConfig(
     host_key: 'test-host',
     poll_interval_ms: 5000,
     lease_seconds: 300,
-    config_path: `${CHECKOUT}/conductor.config.js`,
+    config_path: `${CHECKOUT}/project.config.js`,
     ...overrides,
   };
 }
@@ -131,21 +131,21 @@ class RecordingExecutor implements BbExecutor {
 describe('resolveRunEnv', () => {
   it('drops reserved keys, lets core vars win, never logs values', () => {
     const { log, calls } = spyLogger();
-    const core = { BB_ID: 'real-uuid', WORKSPACE_ROOT: '/ws' };
+    const core = { BAKERS_ID: 'real-uuid', WORKSPACE_ROOT: '/ws' };
     const env = resolveRunEnv(
-      'APP_KEY=ok\nBB_ID=evil\nWORKSPACE_ROOT=/tmp',
+      'APP_KEY=ok\nBAKERS_ID=evil\nWORKSPACE_ROOT=/tmp',
       core,
       log,
     );
     expect(env).toEqual({
       APP_KEY: 'ok',
-      BB_ID: 'real-uuid',
+      BAKERS_ID: 'real-uuid',
       WORKSPACE_ROOT: '/ws',
     });
     // A warning names the ignored reserved keys…
     const warned = calls.filter((c) => c.level === 'warn');
     const warnBlob = JSON.stringify(warned);
-    expect(warnBlob).toContain('BB_ID');
+    expect(warnBlob).toContain('BAKERS_ID');
     expect(warnBlob).toContain('WORKSPACE_ROOT');
     // …but no log line — at any level — contains a value.
     const allLogs = JSON.stringify(calls);
@@ -156,8 +156,8 @@ describe('resolveRunEnv', () => {
 
   it('returns just the core vars when there are no user env vars', () => {
     const { log } = spyLogger();
-    expect(resolveRunEnv(undefined, { BB_ID: 'x' }, log)).toEqual({
-      BB_ID: 'x',
+    expect(resolveRunEnv(undefined, { BAKERS_ID: 'x' }, log)).toEqual({
+      BAKERS_ID: 'x',
     });
   });
 });
@@ -165,7 +165,7 @@ describe('resolveRunEnv', () => {
 describe('resolveRunEnv run-env policy', () => {
   const ticketVars =
     'ANTHROPIC_BASE_URL=http://evil\nNODE_OPTIONS=--require x\nGIT_CONFIG_COUNT=1\nHTTPS_PROXY=http://p\nFOO=bar';
-  const core = { BB_ID: 'real-uuid' };
+  const core = { BAKERS_ID: 'real-uuid' };
   const dangerous = [
     'ANTHROPIC_BASE_URL',
     'NODE_OPTIONS',
@@ -179,7 +179,7 @@ describe('resolveRunEnv run-env policy', () => {
       ticket: 'BB-1',
       policy: { drop: true, deny: DEFAULT_ENV_DENY },
     });
-    expect(env).toEqual({ FOO: 'bar', BB_ID: 'real-uuid' });
+    expect(env).toEqual({ FOO: 'bar', BAKERS_ID: 'real-uuid' });
     const warned = calls.filter((c) => c.level === 'warn');
     expect(warned).toHaveLength(1);
     expect(warned[0]?.obj).toMatchObject({ ticket: 'BB-1', keys: dangerous });
@@ -192,7 +192,7 @@ describe('resolveRunEnv run-env policy', () => {
       ticket: 'BB-1',
       policy: { drop: false, deny: DEFAULT_ENV_DENY },
     });
-    expect(Object.keys(env)).toEqual([...dangerous, 'FOO', 'BB_ID']);
+    expect(Object.keys(env)).toEqual([...dangerous, 'FOO', 'BAKERS_ID']);
     const warned = calls.filter((c) => c.level === 'warn');
     expect(warned).toHaveLength(1);
     expect(warned[0]?.obj).toMatchObject({ ticket: 'BB-1', keys: dangerous });
@@ -204,7 +204,7 @@ describe('resolveRunEnv run-env policy', () => {
       ticket: 'BB-1',
       policy: { drop: true, deny: [] },
     });
-    expect(Object.keys(env)).toEqual([...dangerous, 'FOO', 'BB_ID']);
+    expect(Object.keys(env)).toEqual([...dangerous, 'FOO', 'BAKERS_ID']);
     expect(calls.filter((c) => c.level === 'warn')).toHaveLength(0);
   });
 
@@ -212,7 +212,7 @@ describe('resolveRunEnv run-env policy', () => {
     const { log } = spyLogger();
     expect(resolveRunEnv(ticketVars, core, log)).toEqual({
       FOO: 'bar',
-      BB_ID: 'real-uuid',
+      BAKERS_ID: 'real-uuid',
     });
   });
 });
@@ -263,7 +263,7 @@ describe('Conductor dispatch env injection', () => {
           identifier: 'BB-1',
           title: 'One',
           state: 'working',
-          effectiveEnvVars: 'APP_KEY=secretval\nBB_ID=evil',
+          effectiveEnvVars: 'APP_KEY=secretval\nBAKERS_ID=evil',
         },
       },
     };
@@ -291,9 +291,9 @@ describe('Conductor dispatch env injection', () => {
     await conductor.tick();
 
     const agentEnv = executor.started[0]?.env ?? {};
-    // Agent sink: user var present, reserved BB_ID is the real uuid (not 'evil').
+    // Agent sink: user var present, reserved BAKERS_ID is the real uuid (not 'evil').
     expect(agentEnv.APP_KEY).toBe('secretval');
-    expect(agentEnv.BB_ID).toBe('t-1');
+    expect(agentEnv.BAKERS_ID).toBe('t-1');
     // Hook sink (conductor-owned): after_create + before_run see the
     // SAME resolved env — reserved keys already stripped, core vars won.
     const afterCreate = executor.hookCalls.find(
@@ -301,9 +301,9 @@ describe('Conductor dispatch env injection', () => {
     );
     const beforeRun = executor.hookCalls.find((c) => c.name === 'before_run');
     expect(afterCreate?.env?.APP_KEY).toBe('secretval');
-    expect(afterCreate?.env?.BB_ID).toBe('t-1');
+    expect(afterCreate?.env?.BAKERS_ID).toBe('t-1');
     expect(beforeRun?.env?.APP_KEY).toBe('secretval');
-    expect(beforeRun?.env?.BB_ID).toBe('t-1');
+    expect(beforeRun?.env?.BAKERS_ID).toBe('t-1');
   });
 
   // BB-495: the agent names the workspace on its own calls now, so it has
@@ -346,21 +346,21 @@ describe('Conductor dispatch env injection', () => {
     await conductor.tick();
 
     const env = executor.started[0]?.env ?? {};
-    expect(env.BB_PROJECT).toBe('Demo');
-    expect(env.BB_PROJECT_ID).toBe('project-uuid');
-    expect(env.BB_WORKSPACE).toBe('Acme');
-    expect(env.BB_WORKSPACE_ID).toBe('ws-uuid');
-    expect(env.BB_WORKSPACE_IDS?.split(',')).toContain('ws-uuid');
+    expect(env.BAKERS_PROJECT).toBe('Demo');
+    expect(env.BAKERS_PROJECT_ID).toBe('project-uuid');
+    expect(env.BAKERS_WORKSPACE).toBe('Acme');
+    expect(env.BAKERS_WORKSPACE_ID).toBe('ws-uuid');
+    expect(env.BAKERS_WORKSPACE_IDS?.split(',')).toContain('ws-uuid');
   });
 
-  it('exports BB_TUNNEL=1 when machine policy is true and ticket env cannot override it', async () => {
+  it('exports BAKERS_TUNNEL=1 when machine policy is true and ticket env cannot override it', async () => {
     const seed: FakeRemoteSeed = {
       tickets: {
         't-1': {
           identifier: 'BB-1',
           title: 'One',
           state: 'working',
-          effectiveEnvVars: 'BB_TUNNEL=0',
+          effectiveEnvVars: 'BAKERS_TUNNEL=0',
         },
       },
     };
@@ -385,7 +385,7 @@ describe('Conductor dispatch env injection', () => {
     );
     await conductor.start();
     await conductor.tick();
-    expect(executor.started[0]?.env?.BB_TUNNEL).toBe('1');
+    expect(executor.started[0]?.env?.BAKERS_TUNNEL).toBe('1');
   });
 
   it('re-reads tunnel from the machine file for each run and keeps the last good value', async () => {
@@ -423,7 +423,7 @@ describe('Conductor dispatch env injection', () => {
         handler: 'code',
       });
       await conductor.tick();
-      return executor.started.at(-1)?.env?.BB_TUNNEL;
+      return executor.started.at(-1)?.env?.BAKERS_TUNNEL;
     };
     expect(await runFor('t-1', 1)).toBe('0');
     machine = { machine_id: 'm-1', tunnel: true };
@@ -436,9 +436,9 @@ describe('Conductor dispatch env injection', () => {
     ).toBe(true);
   });
 
-  it('exports BB_TUNNEL=0 when policy is absent and a parent 1 cannot leak in', async () => {
-    const previous = process.env.BB_TUNNEL;
-    process.env.BB_TUNNEL = '1';
+  it('exports BAKERS_TUNNEL=0 when policy is absent and a parent 1 cannot leak in', async () => {
+    const previous = process.env.BAKERS_TUNNEL;
+    process.env.BAKERS_TUNNEL = '1';
     try {
       const seed: FakeRemoteSeed = {
         tickets: {
@@ -470,10 +470,10 @@ describe('Conductor dispatch env injection', () => {
       );
       await conductor.start();
       await conductor.tick();
-      expect(executor.started[0]?.env?.BB_TUNNEL).toBe('0');
+      expect(executor.started[0]?.env?.BAKERS_TUNNEL).toBe('0');
     } finally {
-      if (previous === undefined) delete process.env.BB_TUNNEL;
-      else process.env.BB_TUNNEL = previous;
+      if (previous === undefined) delete process.env.BAKERS_TUNNEL;
+      else process.env.BAKERS_TUNNEL = previous;
     }
   });
 
@@ -507,10 +507,10 @@ describe('Conductor dispatch env injection', () => {
     await conductor.tick();
 
     const env = executor.started[0]?.env ?? {};
-    expect(env).not.toHaveProperty('BB_PROJECT');
-    expect(env).not.toHaveProperty('BB_PROJECT_ID');
-    expect(env).not.toHaveProperty('BB_WORKSPACE');
-    expect(env).not.toHaveProperty('BB_WORKSPACE_ID');
+    expect(env).not.toHaveProperty('BAKERS_PROJECT');
+    expect(env).not.toHaveProperty('BAKERS_PROJECT_ID');
+    expect(env).not.toHaveProperty('BAKERS_WORKSPACE');
+    expect(env).not.toHaveProperty('BAKERS_WORKSPACE_ID');
   });
 });
 
@@ -533,7 +533,7 @@ describe('Conductor workspace env', () => {
         path: `/fake/${identifier}`,
         instructions: null,
         created: true,
-        env: { GIT_CONFIG_COUNT: '1', BB_ID: 'evil' },
+        env: { GIT_CONFIG_COUNT: '1', BAKERS_ID: 'evil' },
       }),
     };
     const executor = new RecordingExecutor();
@@ -550,7 +550,7 @@ describe('Conductor workspace env', () => {
     await conductor.tick();
     const env = executor.started[0]?.env ?? {};
     expect(env.GIT_CONFIG_COUNT).toBe('1');
-    expect(env.BB_ID).toBe('t-1');
+    expect(env.BAKERS_ID).toBe('t-1');
     const beforeRun = executor.hookCalls.find((c) => c.name === 'before_run');
     expect(beforeRun?.env?.GIT_CONFIG_COUNT).toBe('1');
   });
@@ -578,7 +578,7 @@ describe('Conductor workspace env', () => {
         path: `/fake/${identifier}`,
         instructions: null,
         created: true,
-        env: { BB_WORKTREE: '/evil', BB_BRANCH: 'main' },
+        env: { BAKERS_WORKTREE: '/evil', BAKERS_BRANCH: 'main' },
       }),
     };
     const executor = new RecordingExecutor();
@@ -594,10 +594,10 @@ describe('Conductor workspace env', () => {
     await conductor.start();
     await conductor.tick();
     const env = executor.started[0]?.env ?? {};
-    expect(env.BB_BRANCH).toBe('feat/bb-1-one');
-    expect(env.BB_WORKTREE).toBe('/fake/BB-1');
-    expect(env.BB_GUARD_LOG).toMatch(/runs\/r-1\.guard\.jsonl$/);
-    expect(env.BB_GUARD_LOG?.startsWith('/fake/BB-1')).toBe(false);
+    expect(env.BAKERS_BRANCH).toBe('feat/bb-1-one');
+    expect(env.BAKERS_WORKTREE).toBe('/fake/BB-1');
+    expect(env.BAKERS_GUARD_LOG).toMatch(/runs\/r-1\.guard\.jsonl$/);
+    expect(env.BAKERS_GUARD_LOG?.startsWith('/fake/BB-1')).toBe(false);
   });
 });
 
@@ -662,12 +662,12 @@ describe('Conductor agent tools', () => {
     const { conductor, env, launched } = await dispatchOnce(true);
     const url = (launched[0] as { url: string }).url;
     expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
-    expect(env.BB_CONDUCTOR_URL).toBe(url);
+    expect(env.BAKERS_CONDUCTOR_URL).toBe(url);
     const client = new Client({ name: 'test', version: '1.0.0' });
     await client.connect(
       new StreamableHTTPClientTransport(new URL(url), {
         requestInit: {
-          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+          headers: { authorization: `Bearer ${env.BAKERS_CONDUCTOR_TOKEN}` },
         },
       }),
     );
@@ -691,12 +691,12 @@ describe('Conductor agent tools', () => {
       siteTools,
     );
     const url = (launched[0] as { url: string }).url;
-    expect(env.BB_CONDUCTOR_URL).toBe(url);
+    expect(env.BAKERS_CONDUCTOR_URL).toBe(url);
     const client = new Client({ name: 'test', version: '1.0.0' });
     await client.connect(
       new StreamableHTTPClientTransport(new URL(url), {
         requestInit: {
-          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+          headers: { authorization: `Bearer ${env.BAKERS_CONDUCTOR_TOKEN}` },
         },
       }),
     );
@@ -706,23 +706,23 @@ describe('Conductor agent tools', () => {
     // The run's only credential is its run token.
     expect(
       Object.keys(env).filter((k) => /TOKEN|SECRET|AUTH|PASSWORD/i.test(k)),
-    ).toEqual(['BB_CONDUCTOR_TOKEN']);
+    ).toEqual(['BAKERS_CONDUCTOR_TOKEN']);
     await conductor.stopTools();
   });
 
   it('offers no tools to a run when no addon declares any', async () => {
     const { conductor, env, launched } = await dispatchOnce(false);
     expect(launched).toEqual([undefined]);
-    expect(env.BB_CONDUCTOR_TOKEN).toBeUndefined();
-    expect(env.BB_CONDUCTOR_URL).toBeUndefined();
+    expect(env.BAKERS_CONDUCTOR_TOKEN).toBeUndefined();
+    expect(env.BAKERS_CONDUCTOR_URL).toBeUndefined();
     await conductor.stopTools();
   });
 
   it('offers no tools to a run whose agent withholds them, like a measured claude run', async () => {
     const { conductor, env, launched } = await dispatchOnce(true, true);
     expect(launched).toEqual([undefined]);
-    expect(env.BB_CONDUCTOR_TOKEN).toBeUndefined();
-    expect(env.BB_CONDUCTOR_URL).toBeUndefined();
+    expect(env.BAKERS_CONDUCTOR_TOKEN).toBeUndefined();
+    expect(env.BAKERS_CONDUCTOR_URL).toBeUndefined();
     await conductor.stopTools();
   });
 });

@@ -68,7 +68,7 @@ bakers agents
 ## Good to know
 
 - `--sandbox`, `-s`, `-a`, `--ask-for-approval`, `--dangerously-bypass-approvals-and-sandbox` and `--dangerously-bypass-hook-trust` are reserved; putting them in `args` fails loading.
-- Listed in a conductor config, an agent addon is ignored with a warning.
+- Listed in a project config, an agent addon is ignored with a warning.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 

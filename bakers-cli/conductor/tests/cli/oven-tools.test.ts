@@ -58,7 +58,7 @@ async function run(
   const code = await ovenTools(
     name,
     opts,
-    env ?? { BB_CONDUCTOR_URL: server.url, BB_CONDUCTOR_TOKEN: token },
+    env ?? { BAKERS_CONDUCTOR_URL: server.url, BAKERS_CONDUCTOR_TOKEN: token },
     { out: (l) => out.push(l), err: (l) => err.push(l) },
   );
   const all = [...out, ...err].join('\n');
@@ -66,7 +66,7 @@ async function run(
   return { code, out: out.join('\n'), err: err.join('\n') };
 }
 
-describe('bakers oven tools', () => {
+describe('bakers conductor tools', () => {
   it("lists the conductor's tools for this run", async () => {
     const { code, out } = await run(undefined);
     expect(code).toBe(0);
@@ -113,7 +113,10 @@ describe('bakers oven tools', () => {
     const { code, err } = await run(
       undefined,
       {},
-      { BB_CONDUCTOR_URL: server.url, BB_CONDUCTOR_TOKEN: 'stale-token' },
+      {
+        BAKERS_CONDUCTOR_URL: server.url,
+        BAKERS_CONDUCTOR_TOKEN: 'stale-token',
+      },
     );
     expect(code).toBe(3);
     expect(err).not.toContain('stale-token');
@@ -130,8 +133,8 @@ describe('bakers oven tools', () => {
         undefined,
         {},
         {
-          BB_CONDUCTOR_URL: `http://127.0.0.1:${port}`,
-          BB_CONDUCTOR_TOKEN: 'tok-403',
+          BAKERS_CONDUCTOR_URL: `http://127.0.0.1:${port}`,
+          BAKERS_CONDUCTOR_TOKEN: 'tok-403',
         },
       );
       expect(code).toBe(3);
@@ -145,7 +148,10 @@ describe('bakers oven tools', () => {
     const { code, err } = await run(
       undefined,
       {},
-      { BB_CONDUCTOR_URL: 'not a url', BB_CONDUCTOR_TOKEN: 'tok-bad-url' },
+      {
+        BAKERS_CONDUCTOR_URL: 'not a url',
+        BAKERS_CONDUCTOR_TOKEN: 'tok-bad-url',
+      },
     );
     expect(code).toBe(4);
     expect(err).not.toContain('tok-bad-url');
@@ -160,8 +166,8 @@ describe('bakers oven tools', () => {
       undefined,
       {},
       {
-        BB_CONDUCTOR_URL: `http://127.0.0.1:${port}`,
-        BB_CONDUCTOR_TOKEN: 'tok-closed',
+        BAKERS_CONDUCTOR_URL: `http://127.0.0.1:${port}`,
+        BAKERS_CONDUCTOR_TOKEN: 'tok-closed',
       },
     );
     expect(code).toBe(5);

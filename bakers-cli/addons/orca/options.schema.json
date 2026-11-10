@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-orca/options.schema.json",
+  "title": "Orca executor + worktree options",
+  "type": "object",
+  "properties": {
+    "command": {
+      "type": "string",
+      "description": "Fallback agent command when the conductor supplies none. Default `claude`."
+    },
+    "open": {
+      "type": "object",
+      "description": "Overview terminal of a fresh worktree; `{}` opens nothing. Templates expand {identifier}, {branch}, {title}, {worktree_path}.",
+      "properties": {
+        "command": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "root": {
+      "type": "string",
+      "description": "Main clone; otherwise derived from the git common dir."
+    },
+    "default": {
+      "$ref": "#/$defs/state"
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/state"
+      }
+    },
+    "launch_watch": {
+      "type": "object",
+      "description": "Launch-watch windows: wait start_timeout_ms (default 60000) for the wrapper to start, then timeout_ms (default 4000) in which an immediate agent exit fails the launch.",
+      "properties": {
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "start_timeout_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "poll_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "adopt_timeout_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How long to wait for Orca to adopt a worktree. Default 35000."
+    },
+    "worktree_dir": {
+      "type": "string",
+      "description": "Directory (relative to root, or absolute) for new worktrees. Default `.bakers-worktrees`."
+    },
+    "base_branch": {
+      "type": "string",
+      "description": "Base ref for new branches. Default: the upstream of the root's HEAD."
+    },
+    "auto_setup_merge": {
+      "type": "boolean",
+      "description": "`true` leaves Git's branch.autoSetupMerge alone. Default `false`."
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "state": {
+      "type": "object",
+      "properties": {
+        "tab_label": {
+          "type": "string",
+          "pattern": "\\{identifier\\}",
+          "description": "Terminal title template; must contain {identifier}. Also {state}, {title}, {title_slug}, {run_uuid}, {workspace_path}."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

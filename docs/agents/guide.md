@@ -49,20 +49,22 @@ export default {
         with: { model: 'sonnet' },
       },
     ],
-    default_agent: 'coder',
+    routes: {
+      default: { '*': 'coder' },
+    },
   },
 };
 ```
 
 `addons` enables the harness. `agents.catalog` configures its agent plugin: `harness` identifies the addon, `with` supplies options, and `alias` names the resulting configuration. `coder` is added alongside the addon's built-in aliases, including `opus`; reusing an alias replaces its configuration.
 
-`default_agent` selects an alias from that catalog. With this file and no ticket selector, runs use `coder`. No `routes` block is needed. Continue to [selection](#select-an-agent), or read the [catalog and filter details in Configuration](/configuration/machine#the-agents-object).
+The `default` route selects an alias from that catalog for every state (`'*'`). With this file and no ticket selector, runs use `coder`. Without a `default` route, the first enabled alias is the default. Continue to [selection](#select-an-agent), or read the [catalog and filter details in Configuration](/configuration/machine#the-agents-object).
 
 <span id="add-a-route"></span>
 
 ### Use agent routes
 
-Use routes when different workflow states need different agents. This alternative complete file keeps the same catalog and adds `agents.routes` **alongside** `catalog` and `default_agent`:
+Use routes when different workflow states need different agents. This alternative complete file keeps the same catalog and adds a named route to `agents.routes` **alongside** `catalog` and the `default` route:
 
 ```js
 // @bakers-schema-version 1
@@ -79,8 +81,8 @@ export default {
         with: { model: 'sonnet' },
       },
     ],
-    default_agent: 'coder',
     routes: {
+      default: { '*': 'coder' },
       reviewed: {
         working: 'coder',
         review: 'opus',
@@ -93,7 +95,7 @@ export default {
 
 `reviewed` is the route name. Its keys are workflow states, its values are catalog aliases, and `'*'` covers other states. Both `coder` and `opus` are available from this file. Choose a route name that is not also an alias.
 
-Defining `reviewed` makes it available; [select it with a ticket label](#select-an-agent). Until selected, this file still defaults to `coder`. For a route applied without a ticket label, use the special `default` route described under [selection and routing in Configuration](/configuration/machine#which-agent-runs-a-state).
+Defining `reviewed` makes it available; [select it with a ticket label](#select-an-agent). Until selected, this file still defaults to `coder`. The special `default` route is the one applied without a ticket label; see [selection and routing in Configuration](/configuration/machine#which-agent-runs-a-state).
 
 Routes select existing agents; they neither choose a conductor nor move the ticket through its [workflow](/skills-and-workflows/states). Make the catalog and route available on every execution machine that may run the ticket.
 
@@ -118,13 +120,13 @@ Selection uses what you configured; it does not change a plugin's model or optio
 
 | What you want | Ticket selection | Result with the examples above |
 |---|---|---|
-| Use the machine default | No `agent:` label | `default_agent: 'coder'` applies. |
+| Use the machine default | No `agent:` label | The `default` route applies: `coder`. |
 | Use one catalog entry | `agent:coder` or `agent:opus` | That alias runs in every state. |
 | Use the configured route | `agent:reviewed` | `coder` in working, `opus` in review, `coder` otherwise. Requires the route setup. |
 
 Add the chosen label through the ticket's normal label editing. Use either an alias or a route label: a direct alias takes precedence if both are present. A state-specific label such as `agent:opus@review` applies only in that state.
 
-These results assume the shown files and no other selectors. On an existing machine, an explicit `routes.default` can take precedence over `default_agent`; custom selectors and state-specific labels can also change the result. See [Configuration's selection reference](/configuration/machine#which-agent-runs-a-state) for the complete order.
+These results assume the shown files and no other selectors. On an existing machine, a `default` route that maps states other than `'*'`, custom selectors and state-specific labels can also change the result. See [Configuration's selection reference](/configuration/machine#which-agent-runs-a-state) for the complete order.
 
 ### Verify the run
 
@@ -134,7 +136,7 @@ Run a small ticket and inspect the recorded agent and model. With `agent:coder`,
 
 ## When loading fails
 
-If `bakers agents` fails, check the named addon, alias or filter in its error. At least one agent must remain available, and `default_agent` must name one. [Machine verification](/configuration/machine#verify) and the [agent reference](/agents/reference#old-keys-and-verification) explain the checks and retired keys.
+If `bakers agents` fails, check the named addon, alias or filter in its error. At least one agent must remain available, and the `default` route's `'*'` alias must name one. [Machine verification](/configuration/machine#verify) and the [agent reference](/agents/reference#old-keys-and-verification) explain the checks and retired keys.
 
 ## Required and optional values
 

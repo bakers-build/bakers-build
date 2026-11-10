@@ -37,7 +37,7 @@ if (tool === 'git') {
 } else if (tool === 'node') {
   process.stdout.write('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30');
 } else if (tool === 'bakers') {
-  if (args.join(' ') !== 'oven stop --now') process.exit(1);
+  if (args.join(' ') !== 'conductor stop --now') process.exit(1);
 } else if (tool === 'ddev') {
   const statePath = path.join(root, 'projects.json');
   const projects = JSON.parse(fs.readFileSync(statePath, 'utf8'));
@@ -118,7 +118,7 @@ describe('playground teardown ownership', () => {
       `#!${process.execPath}\n${fakeTool}`,
       true,
     );
-    write(join(workspace, '.bakers/conductor.config.js'), 'export default {};');
+    write(join(workspace, '.bakers/project.config.js'), 'export default {};');
     write(join(`${workspace}.git`, 'HEAD'), 'ref: refs/heads/develop\n');
     write(
       join(workspace, '.ddev/config.worktree.yaml'),

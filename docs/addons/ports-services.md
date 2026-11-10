@@ -6,7 +6,7 @@ Services of a runtime addon need nothing here; a [claimer](/addons/ports#options
 
 ## Enable it
 
-Start the intended server in the ticket worktree. Add `services` alongside the configured transport in the `with` of the `@bakers-build/addon-ports` entry, in the project's `.bakers/conductor.config.js` or in `~/.bakers/machine.config.js`:
+Start the intended server in the ticket worktree. Add `services` alongside the configured transport in the `with` of the `@bakers-build/addon-ports` entry, in the project's `.bakers/project.config.js` or in `~/.bakers/machine.config.js`:
 
 ```js
 addons: [
@@ -37,7 +37,7 @@ bakers ports up docs
 bakers config check --scope project --online
 ```
 
-A malformed setting is never ignored: `bakers ports` names the file and the key, and `config check --online` reports `addon_with_invalid`.
+A malformed setting is never ignored: `bakers ports` names the file and the key, and `bakers config check` reports it against the addon's options schema.
 
 ## Good to know
 

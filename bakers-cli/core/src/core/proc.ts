@@ -59,14 +59,19 @@ export type VerifyOutcome =
 
 /**
  * Substrings a live bakers-conductor foreground process's command line must all
- * contain (see `cmdStartBody`'s `fgCmd`: `bakers oven … start --foreground
+ * contain (see `cmdStartBody`'s `fgCmd`: `bakers conductor … start --foreground
  * --no-update-check`). Deliberately loose — the proof this function performs
  * is "is a bakers conductor foreground loop", not an exact argv match.
  */
-const CONDUCTOR_CMDLINE_MARKERS = ['oven', 'start', '--foreground'];
+const CONDUCTOR_CMDLINE_MARKERS = ['start', '--foreground'];
+/** `conductor`, or `oven` for a conductor an older CLI started. */
+const CONDUCTOR_COMMAND = /(^|[\s\0])(conductor|oven)([\s\0]|$)/;
 
 function looksLikeBbConductor(cmdline: string): boolean {
-  return CONDUCTOR_CMDLINE_MARKERS.every((marker) => cmdline.includes(marker));
+  return (
+    CONDUCTOR_COMMAND.test(cmdline) &&
+    CONDUCTOR_CMDLINE_MARKERS.every((marker) => cmdline.includes(marker))
+  );
 }
 
 /**
@@ -259,7 +264,7 @@ export function defaultRunProcessProbe(): RunProcessProbe {
 }
 
 /**
- * Ends every process of this OS user that carries `BB_RUN_UUID=<runUuid>`:
+ * Ends every process of this OS user that carries `BAKERS_RUN_UUID=<runUuid>`:
  * the run's agent, its sandbox and background commands that outlive the
  * PTY. SIGTERM first, SIGKILL for survivors after `graceMs`. Best-effort.
  * shortcut: a process that clears its environment is not found; track
@@ -273,7 +278,7 @@ export async function killRunProcesses(
   if (!probe.supported || runUuid === '') {
     return { supported: probe.supported, pids: [] };
   }
-  const marker = `BB_RUN_UUID=${runUuid}`;
+  const marker = `BAKERS_RUN_UUID=${runUuid}`;
   const uid = process.getuid?.();
   const ofRun = (pid: number) =>
     probe.environOf(pid)?.includes(marker) === true;

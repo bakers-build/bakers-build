@@ -50,4 +50,4 @@ The shipped Matt recipe is included. Project-specific runtime, design or testing
 
 ## Updates
 
-Claude can refresh the marketplace and update the plugin through its plugin manager. For Codex, `codex plugin marketplace upgrade bakers` refreshes the registered Git source; update the installed plugin through Codex's plugin manager. Keep the source pinned to `main`. Restart the agent and verify its skills again. Keep [CLI/configuration updates](/configuration/machine/updates) separate.
+Claude can refresh the marketplace and update the plugin through its plugin manager. For Codex, `codex plugin marketplace upgrade bakers` refreshes the registered Git source; update the installed plugin through Codex's plugin manager. Keep the source pinned to `main`. Restart the agent and verify its skills again. Keep [CLI/configuration updates](/configuration/guides/updates) separate.

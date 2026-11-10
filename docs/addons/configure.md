@@ -11,9 +11,9 @@ Ask your agent to read the selected addon's guide and existing configuration, ex
 | Contributions | Configuration |
 |---|---|
 | Agent harnesses | Machine only: `~/.bakers/machine.config.js`. |
-| herdr, server remote, Git workspace | Project only: `.bakers/conductor.config.js`. |
+| herdr, server remote, Git workspace | Project only: `.bakers/project.config.js`. |
 | Ports, DDEV, herdr-core, Orca, Artifacts | Machine or project; follow the integration's guide. |
-| Authentication and connection plugins | Your private [connection file](/configuration/connector/connections). |
+| Authentication and connection plugins | Your private [connection file](/configuration/connection). |
 
 Append entries; keep existing identity and engine settings. Use a package name for defaults, or `{ use, with }` for options:
 
@@ -39,9 +39,9 @@ UI entries layer in machine, connection, project order and deduplicate resolved 
 
 Keep generated Essentials configuration: it supplies rendering, schema and name resolution. Do not enable its constituent packages separately.
 
-Type, recipe and label names are resolved or created in the ticket's workspace through the [named tools](/configuration/clients/tools#tools). Environment names must already exist in the ticket's project; an unknown name stops the write.
+Type, recipe and label names are resolved or created in the ticket's workspace through the [named tools](/cli/tools#tools). Environment names must already exist in the ticket's project; an unknown name stops the write.
 
-For UI workspace selection, use the [connection's `workspace_id`](/configuration/connector/connections#fields) or `bakers ui --workspace`. It does not scope ordinary CLI calls or replace the conductor's project/workspace configuration.
+For UI workspace selection, use the [connection's `workspace_id`](/configuration/connection#fields) or `bakers ui --workspace`. It does not scope ordinary CLI calls or replace the conductor's project/workspace configuration.
 
 ## Check
 
@@ -50,4 +50,4 @@ bakers config check --scope machine --online
 bakers config check --scope project --online
 ```
 
-Check the scope you changed, restart the conductor or UI, then follow the addon's success check. Old `agents.addons` and top-level `ports` settings require [configuration migration](/configuration/machine/updates).
+Check the scope you changed, restart the conductor or UI, then follow the addon's success check. Old `agents.addons` and top-level `ports` settings require [configuration migration](/configuration/guides/updates).

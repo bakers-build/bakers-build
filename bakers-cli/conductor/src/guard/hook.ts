@@ -76,8 +76,8 @@ export function runHook(
     const input = JSON.parse(stdin);
     command = commandOf(input);
     if (command === null) return { exitCode: 0, stderr: '' };
-    const worktree = env.BB_WORKTREE;
-    if (!worktree) throw new Error('BB_WORKTREE is not set');
+    const worktree = env.BAKERS_WORKTREE;
+    if (!worktree) throw new Error('BAKERS_WORKTREE is not set');
     cwd = typeof input.cwd === 'string' && input.cwd ? input.cwd : worktree;
     const project = ddevProject(worktree);
     const head = headOf(worktree);
@@ -86,7 +86,7 @@ export function runHook(
       worktree,
       tmpdir: env.TMPDIR || tmpdir(),
       home: env.HOME || '/',
-      branch: env.BB_BRANCH ?? '',
+      branch: env.BAKERS_BRANCH ?? '',
       ...(project ? { ddevProject: project } : {}),
       ...(head ? { head } : {}),
     });
@@ -112,10 +112,10 @@ export function runHook(
     reason: decision.reason,
     alternative: decision.alternative,
   };
-  if (env.BB_GUARD_LOG) {
+  if (env.BAKERS_GUARD_LOG) {
     try {
-      mkdirSync(dirname(env.BB_GUARD_LOG), { recursive: true });
-      appendFileSync(env.BB_GUARD_LOG, `${JSON.stringify(entry)}\n`);
+      mkdirSync(dirname(env.BAKERS_GUARD_LOG), { recursive: true });
+      appendFileSync(env.BAKERS_GUARD_LOG, `${JSON.stringify(entry)}\n`);
     } catch {
       // The refusal stands even when it cannot be logged.
     }

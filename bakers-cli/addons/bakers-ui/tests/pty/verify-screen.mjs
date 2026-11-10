@@ -219,7 +219,7 @@ function describeRuntime(pid) {
   const bun = seen.find((binary) => /(^|\/)bun(\.exe)?$/.test(binary));
   if (bun === undefined) {
     return `node ${process.version} — NO bun descendant; the cockpit painted on Node${
-      process.env.BB_UI_NO_BUN ? ' ($BB_UI_NO_BUN is set)' : ''
+      process.env.BAKERS_UI_NO_BUN ? ' ($BAKERS_UI_NO_BUN is set)' : ''
     }`;
   }
   let version = '(version unavailable)';
@@ -326,7 +326,9 @@ async function main() {
   say(`# runtime:  ${describeRuntime(child.pid)}`);
   say('#');
   say('# The runtime line is not decoration. Since BB-326 Task 2 the cockpit');
-  say('# re-execs under Bun, so a BEFORE run captured with $BB_UI_NO_BUN=1');
+  say(
+    '# re-execs under Bun, so a BEFORE run captured with $BAKERS_UI_NO_BUN=1',
+  );
   say('# would differ from the after run in the runtime AND the renderer, and');
   say(
     '# a difference in the screen could be blamed on either. This baseline is',

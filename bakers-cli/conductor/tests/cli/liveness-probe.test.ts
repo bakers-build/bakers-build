@@ -34,19 +34,19 @@ vi.mock('dropsh', async (orig) => {
  * the row is this machine's own conductor (`hostKey` matches) with a
  * positive `lastPid` on record.
  */
-describe('bakers oven ls/status: local pid probe (BB-473)', () => {
+describe('bakers conductor ls/status: local pid probe (BB-473)', () => {
   let home: string;
   let out: string[];
-  const originalHome = process.env.BB_HOME;
-  const originalLog = process.env.BB_CONDUCTOR_LOG;
+  const originalHome = process.env.BAKERS_HOME;
+  const originalLog = process.env.BAKERS_CONDUCTOR_LOG;
   const HOST = 'cw-dev-box';
   const CONDUCTOR_CMDLINE =
     'node /usr/local/bin/bakers oven start --foreground --no-update-check';
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'bakers-liveness-probe-'));
-    process.env.BB_HOME = join(home, '.bakers');
-    process.env.BB_CONDUCTOR_LOG = 'silent';
+    process.env.BAKERS_HOME = join(home, '.bakers');
+    process.env.BAKERS_CONDUCTOR_LOG = 'silent';
     out = [];
     vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
       out.push(args.map(String).join(' '));
@@ -56,10 +56,10 @@ describe('bakers oven ls/status: local pid probe (BB-473)', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     rmSync(home, { recursive: true, force: true });
-    if (originalHome === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = originalHome;
-    if (originalLog === undefined) delete process.env.BB_CONDUCTOR_LOG;
-    else process.env.BB_CONDUCTOR_LOG = originalLog;
+    if (originalHome === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = originalHome;
+    if (originalLog === undefined) delete process.env.BAKERS_CONDUCTOR_LOG;
+    else process.env.BAKERS_CONDUCTOR_LOG = originalLog;
   });
 
   function row(over: Partial<ConductorStatus> = {}): ConductorStatus {
@@ -88,7 +88,7 @@ describe('bakers oven ls/status: local pid probe (BB-473)', () => {
       config: makeConfig(),
       procProbe: probe,
     };
-    await buildConductorProgram(deps).parseAsync(['oven', 'ls'], {
+    await buildConductorProgram(deps).parseAsync(['conductor', 'ls'], {
       from: 'user',
     });
   }
@@ -102,7 +102,7 @@ describe('bakers oven ls/status: local pid probe (BB-473)', () => {
       config: makeConfig(),
       procProbe: probe,
     };
-    await buildConductorProgram(deps).parseAsync(['oven', 'status'], {
+    await buildConductorProgram(deps).parseAsync(['conductor', 'status'], {
       from: 'user',
     });
   }
@@ -123,7 +123,7 @@ describe('bakers oven ls/status: local pid probe (BB-473)', () => {
       lease_seconds: 300,
       conductor_id: 'mid-liveness',
       host_key: HOST,
-      config_path: join(home, '.bakers', 'conductor.config.js'),
+      config_path: join(home, '.bakers', 'project.config.js'),
     } as ConductorFileConfig;
   }
 

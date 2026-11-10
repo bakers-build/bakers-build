@@ -107,7 +107,7 @@ export async function defaultThisHostKey(): Promise<string> {
 /**
  * Start and stop a conductor from the cockpit.
  *
- * Start runs the same `bakers oven start` a human runs, in the conductor's
+ * Start runs the same `bakers conductor start` a human runs, in the conductor's
  * own workspace — rather than reimplementing the lifecycle in the TUI process.
  * How that command backgrounds itself (herdr, or a bare foreground child) is
  * not this screen's business, and keeping one implementation means the cockpit
@@ -161,18 +161,18 @@ export function createConductorProcessHost(
         // instead of an unhandled one.
         await spawn({
           command: 'bakers',
-          args: ['oven', 'start'],
+          args: ['conductor', 'start'],
           cwd: workspaceRoot,
           env: {
             ...process.env,
             // Target by NAME and let core resolve it — the stem→file mapping
             // has exactly one owner, and it is not this screen.
-            ...(conductorName ? { BB_CONDUCTOR: conductorName } : {}),
+            ...(conductorName ? { BAKERS_CONDUCTOR: conductorName } : {}),
             // Cleared, not merely unset: an inherited value beats
-            // $BB_CONDUCTOR in core's resolution, so a shell that exported it
+            // $BAKERS_CONDUCTOR in core's resolution, so a shell that exported it
             // would make this button start a DIFFERENT conductor — silently,
             // since both are valid configs and neither errors.
-            BB_CONDUCTOR_CONFIG: '',
+            BAKERS_CONDUCTOR_CONFIG: '',
           },
         });
         // BB-477 AC-5: `spawn` settling only proves the fork happened, not

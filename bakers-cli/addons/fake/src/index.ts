@@ -60,7 +60,7 @@ export class FakeExecutor implements BbExecutor {
       markerRelativePath.startsWith(`..${sep}`)
     ) {
       throw new Error(
-        `markerFile must stay inside the workspace: ${markerFile}`,
+        `marker_file must stay inside the workspace: ${markerFile}`,
       );
     }
     return marker;
@@ -75,14 +75,17 @@ export class FakeExecutor implements BbExecutor {
   }
 }
 
-/** dropsh-Plugin-Factory - Eintrag für das plugins-Array der conductor.config.js. */
+/** dropsh plugin factory: an entry for the `addons` list of project.config.js. */
 export function fakeExecutor(
-  options: Partial<FakeExecutorOptions> = {},
+  options: {
+    outcome?: FakeExecutorOptions['outcome'];
+    marker_file?: string;
+  } = {},
 ): ExecutorPlugin {
   const executor = new FakeExecutor({
     outcome: options.outcome ?? 'exited',
-    ...(options.markerFile !== undefined
-      ? { markerFile: options.markerFile }
+    ...(options.marker_file !== undefined
+      ? { markerFile: options.marker_file }
       : {}),
   });
   return {

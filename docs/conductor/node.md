@@ -30,7 +30,7 @@ The executable is `bakers-conductor`.
 ~/.config/bakers-conductor/conductor.config.js  # One dropsh-superset config:
                                               # site + plugins + conductors[].
                                               # Override with --config or
-                                              # BB_CONDUCTOR_CONFIG.
+                                              # BAKERS_CONDUCTOR_CONFIG.
                                               # DROPSH_CONFIG points to this
                                               # same file for inherited dropsh.
 ~/.config/dropsh/<host>.json                  # Session store only, managed by
@@ -58,8 +58,8 @@ export default {
   plugins: [
     oauth2Plugin({
       tokenUrl: 'https://bakers.example.com/oauth/token',
-      clientId: process.env.BB_CLIENT_ID,
-      clientSecret: process.env.BB_CLIENT_SECRET,
+      clientId: process.env.BAKERS_CLIENT_ID,
+      clientSecret: process.env.BAKERS_CLIENT_SECRET,
     }),
     herdrSpawnPlugin(),
   ],
@@ -70,7 +70,7 @@ export default {
       // in the project; list states to restrict this entry to them.
       states: [],
       // Optional: override the default project-instruction pointer.
-      // Placeholders: {identifier}, {state}, {runUuid}.
+      // Placeholders: {identifier}, {state}, {run_uuid}.
       prompt: 'You are working ticket {identifier}, current state: {state}. Read the ticket and all comments, then execute only the ordered "State: {state}" section of ./WORKFLOW.md. Do not start or prepare a later state.',
       workspace: '/srv/bakers/workspaces/platform',
       poll_interval_ms: 5000,
@@ -100,7 +100,7 @@ Config keys:
 | `conductors[].states` | no | `[]` (all claimable states) | Optional narrowing. Empty/absent = serve every state marked `claimable` in the project; a non-empty list restricts this entry to those states. |
 | `conductors[].workspace` | yes | none | Root directory for ticket workspaces. |
 | `conductors[].label` | no | machine ID | Human label for the Drupal conductor entity. |
-| `conductors[].prompt` | no | built-in project-instruction pointer | Agent prompt template. Placeholders: `{identifier}`, `{state}`, `{runUuid}`. The Conductor names no agent skill and does not parse the file; projects compose any capabilities directly in `WORKFLOW.md`. |
+| `conductors[].prompt` | no | built-in project-instruction pointer | Agent prompt template. Placeholders: `{identifier}`, `{state}`, `{run_uuid}`. The Conductor names no agent skill and does not parse the file; projects compose any capabilities directly in `WORKFLOW.md`. |
 | `conductors[].poll_interval_ms` | no | `5000` | Delay between daemon ticks. |
 | `conductors[].lease_seconds` | no | `300` | Lease duration requested for conductor and run leases. |
 | `conductors[].retry.base_backoff_ms` | no | `2000` | Initial retry delay after failed plugin state. |
@@ -125,9 +125,9 @@ bakers auth status --config ~/.config/bakers-conductor/conductor.config.js
 When the conductor config loads, the CLI sets `DROPSH_CONFIG` to the loaded
 `conductor.config.js`. Agent sessions call the server's named tools, natively
 through the MCP connector or with `bakers tools <wire name> --data @args.json`
-(see `docs/configuration/clients/tools.md`).
+(see `docs/cli/tools.md`).
 
-The conductor passes `DROPSH_CONFIG`, `BB_RUN_UUID`, and `BB_TICKET_UUID`
+The conductor passes `DROPSH_CONFIG`, `BAKERS_RUN_UUID`, and `BAKERS_TICKET_UUID`
 into every spawned session.
 
 ## Spawn Plugins
@@ -157,7 +157,7 @@ interactive `$SHELL` (`herdr pane run`). With oh-my-zsh's `share_history` that
 agent-authored command lands in the shared `~/.zsh_history`, so it surfaces in
 every interactive shell's Ctrl-R — commands you never typed.
 
-To let your shell isolate those panes, bakers exports `BB_AGENT_SHELL=1` into
+To let your shell isolate those panes, bakers exports `BAKERS_AGENT_SHELL=1` into
 the environment of every **agent** pane it opens. The marker is present at shell
 startup, so `.zshrc` can react to it. Which panes carry it:
 
@@ -179,7 +179,7 @@ oh-my-zsh is sourced so it overrides `share_history`/`HISTFILE`:
 ```zsh
 # bakers.build: keep agent-pane commands out of my shared shell history (opt-in).
 # Add AFTER oh-my-zsh is sourced so it overrides share_history/HISTFILE.
-if [[ -n "$BB_AGENT_SHELL" ]]; then
+if [[ -n "$BAKERS_AGENT_SHELL" ]]; then
   unset HISTFILE
 fi
 ```
@@ -188,12 +188,12 @@ Notes:
 
 - **Opt-in and per-user.** Without this snippet, history behaviour is exactly
   as it is today — the marker alone changes nothing.
-- **Your own terminals are unaffected.** They never have `BB_AGENT_SHELL`
+- **Your own terminals are unaffected.** They never have `BAKERS_AGENT_SHELL`
   set, so the guard is false there and your typed commands are saved as usual.
 - **Attaching to an agent pane.** That pane's `HISTFILE` is unset, so commands
   you type there are also not saved on disk — the agent pane is agent-owned.
 - **bash users** can use the same guard with `unset HISTFILE`.
-- The run's own env vars (`BB_ID` and friends) do **not** travel this way —
+- The run's own env vars (`BAKERS_ID` and friends) do **not** travel this way —
   they stay inline `KEY='value'` prefixes on the agent command, so no secret
   moves into a pane environment.
 

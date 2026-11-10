@@ -21,7 +21,7 @@ export interface ExecutorDeps {
 }
 
 export interface RemotePlugin extends DropSHPlugin {
-  readonly kind: 'remote';
+  readonly kind: 'server';
   readonly id: string;
   readonly requiredModules: string[];
   createRemote(config: ConductorFileConfig): Promise<BbRemote>;
@@ -38,7 +38,7 @@ export interface ExecutorPlugin extends DropSHPlugin {
 }
 
 export interface WorkspacePlugin extends DropSHPlugin {
-  readonly kind: 'workspace';
+  readonly kind: 'worktree';
   readonly id: string;
   readonly requiredModules: string[];
   /**

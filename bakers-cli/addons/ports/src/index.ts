@@ -368,7 +368,7 @@ export function quickTunnelNotice(url: string | undefined): string | undefined {
 }
 
 const NO_CONDUCTOR =
-  'no running conductor for this checkout — the conductor is the only writer of the tunnel routes (start it with `bakers oven start`)';
+  'no running conductor for this checkout — the conductor is the only writer of the tunnel routes (start it with `bakers conductor start`)';
 
 /** The live conductor endpoint whose workspace root holds `worktree`; the
  *  most specific root wins. A dead pid's leftover file does not count. */

@@ -36,10 +36,10 @@ describe('resolveStateConfig', () => {
 
   it('default block overrides built-ins', () => {
     const out = resolveStateConfig(
-      { default: { workspaceLabel: '{repoName}-ws' } },
+      { default: { workspace_label: '{repo_name}-ws' } },
       'coding',
     );
-    expect(out.workspaceLabel).toBe('{repoName}-ws');
+    expect(out.workspaceLabel).toBe('{repo_name}-ws');
     expect(out.tabLabel).toBe(BUILTIN_DEFAULTS.tabLabel);
     expect(out.panelLabel).toBe(BUILTIN_DEFAULTS.panelLabel);
   });
@@ -47,11 +47,11 @@ describe('resolveStateConfig', () => {
   it('state entry overrides default field-by-field', () => {
     const out = resolveStateConfig(
       {
-        default: { tabLabel: '{identifier} · {sessionRef}', panes: [] },
+        default: { tab_label: '{identifier} · {sessionRef}', panes: [] },
         states: {
           review: {
             panes: [
-              { direction: 'right', command: 'git -C {workspacePath} diff' },
+              { direction: 'right', command: 'git -C {workspace_path} diff' },
             ],
           },
         },
@@ -59,22 +59,22 @@ describe('resolveStateConfig', () => {
       'review',
     );
     expect(out.panes).toEqual([
-      { direction: 'right', command: 'git -C {workspacePath} diff' },
+      { direction: 'right', command: 'git -C {workspace_path} diff' },
     ]);
     expect(out.tabLabel).toBe('{identifier} · {sessionRef}');
   });
 
   it('merges panelLabel from default and state overrides', () => {
     const fromDefault = resolveStateConfig(
-      { default: { panelLabel: 'Default · {title}' } },
+      { default: { panel_label: 'Default · {title}' } },
       'coding',
     );
     expect(fromDefault.panelLabel).toBe('Default · {title}');
 
     const fromState = resolveStateConfig(
       {
-        default: { panelLabel: 'Default · {title}' },
-        states: { coding: { panelLabel: 'Coding · {title}' } },
+        default: { panel_label: 'Default · {title}' },
+        states: { coding: { panel_label: 'Coding · {title}' } },
       },
       'coding',
     );
@@ -96,7 +96,7 @@ describe('resolveStateConfig', () => {
 
   it('unknown state falls back to default', () => {
     const out = resolveStateConfig(
-      { default: { tabLabel: '{sessionRef}-x' } },
+      { default: { tab_label: '{sessionRef}-x' } },
       'totally-unknown',
     );
     expect(out.tabLabel).toBe('{sessionRef}-x');
@@ -106,11 +106,11 @@ describe('resolveStateConfig', () => {
 describe('assertTabLabelTemplate', () => {
   it('accepts a label containing {identifier}', () => {
     expect(() =>
-      assertTabLabelTemplate('{identifier} · {titleSlug}'),
+      assertTabLabelTemplate('{identifier} · {title_slug}'),
     ).not.toThrow();
   });
 
   it('throws when {identifier} is missing', () => {
-    expect(() => assertTabLabelTemplate('{titleSlug}')).toThrow(/identifier/);
+    expect(() => assertTabLabelTemplate('{title_slug}')).toThrow(/identifier/);
   });
 });

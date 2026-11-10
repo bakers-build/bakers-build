@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/machine.schema.json",
+  "title": "MachineConfig",
+  "description": "This machine's private configuration: ~/.bakers/machine.config.js.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Configuration schema version."
+    },
+    "machine_id": {
+      "$ref": "project.schema.json#/$defs/nonempty",
+      "description": "Host key; bakers init writes a UUID."
+    },
+    "label": {
+      "$ref": "project.schema.json#/$defs/nonempty",
+      "description": "Display name for people."
+    },
+    "agents": {
+      "type": "object",
+      "description": "Selection policy for the agents the addons contribute.",
+      "properties": {
+        "catalog": {
+          "type": "array",
+          "description": "Extra agent variants built from installed harnesses.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "harness": { "$ref": "project.schema.json#/$defs/nonempty" },
+              "alias": { "$ref": "project.schema.json#/$defs/nonempty" },
+              "with": { "description": "The harness options." }
+            },
+            "required": ["harness"],
+            "additionalProperties": false
+          }
+        },
+        "enabled": { "$ref": "#/$defs/alias_list" },
+        "disabled": { "$ref": "#/$defs/alias_list" },
+        "routes": {
+          "type": "object",
+          "description": "Named routes from states (or *) to aliases; routes.default is the automatic one.",
+          "additionalProperties": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": {
+              "$ref": "project.schema.json#/$defs/nonempty"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "addons": {
+      "type": "array",
+      "description": "Addons this machine uses.",
+      "items": { "$ref": "project.schema.json#/$defs/addon" }
+    },
+    "tunnel": {
+      "type": "boolean",
+      "description": "Share local preview links through bakers ports. Default false."
+    },
+    "permissions": { "$ref": "project.schema.json#/$defs/permissions" },
+    "executor": {
+      "$ref": "project.schema.json#/$defs/slot",
+      "description": "This machine's executor; overrides every project's."
+    }
+  },
+  "required": ["machine_id", "label"],
+  "additionalProperties": false,
+  "$defs": {
+    "alias_list": {
+      "type": "array",
+      "items": { "$ref": "project.schema.json#/$defs/nonempty" }
+    }
+  }
+}

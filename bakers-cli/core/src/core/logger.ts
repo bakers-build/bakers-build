@@ -22,7 +22,7 @@ export interface ConductorLogger {
 
 /**
  * Pick the log sink. Precedence: explicit CLI override (`sink`) > the
- * BB_CONDUCTOR_LOG env var > default (`both` on a TTY, `file` otherwise).
+ * BAKERS_CONDUCTOR_LOG env var > default (`both` on a TTY, `file` otherwise).
  *
  * BB-237: the TTY default used to be stdout-ONLY, which made the conductor's
  * own diagnostics non-durable exactly where it normally runs — inside a herdr
@@ -30,7 +30,7 @@ export interface ConductorLogger {
  * worktree + ticket + err) was therefore written nowhere and died with the pane,
  * so an aborting worktree bootstrap left no trace to find. The default now tees:
  * the operator keeps pretty stdout AND the record lands in `log.txt`. An
- * EXPLICIT `stdout` / `file` (CLI flag or BB_CONDUCTOR_LOG) keeps its exact
+ * EXPLICIT `stdout` / `file` (CLI flag or BAKERS_CONDUCTOR_LOG) keeps its exact
  * previous meaning — one stream, chosen deliberately.
  *
  * BB-450 D4: `checkoutRoot` is now genuinely the checkout root (its `.bakers`
@@ -46,7 +46,7 @@ export function resolveSink(
   override?: string,
 ): LogSink {
   const path = join(configHomeOf(checkoutRoot), 'log.txt');
-  const choice = override ?? env.BB_CONDUCTOR_LOG;
+  const choice = override ?? env.BAKERS_CONDUCTOR_LOG;
   if (choice === 'stdout') return { kind: 'stdout' };
   if (choice === 'file') return { kind: 'file', path };
   if (choice === 'both') return { kind: 'both', path };
@@ -55,13 +55,13 @@ export function resolveSink(
 
 /**
  * Pick the log level. Precedence: explicit CLI override (`level`) >
- * the BB_LOG_LEVEL env var > info.
+ * the BAKERS_LOG_LEVEL env var > info.
  */
 export function resolveLevel(
   env: NodeJS.ProcessEnv,
   override?: string,
 ): string {
-  return override ?? env.BB_LOG_LEVEL ?? 'info';
+  return override ?? env.BAKERS_LOG_LEVEL ?? 'info';
 }
 
 export function createLogger(opts: {

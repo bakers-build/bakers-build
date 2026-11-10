@@ -126,6 +126,11 @@ When('I open the Delete dialog of the disposable entity', async ({ page }) => {
       timeout: 20000,
     })
     .toBe(true);
+  // A list row's Delete sits in the row's closed action menu.
+  const menu = trigger.locator('xpath=ancestor::details[@data-action-menu][1]');
+  if ((await menu.count()) > 0 && !(await menu.evaluate((el) => (el as HTMLDetailsElement).open))) {
+    await menu.locator(':scope > summary').click();
+  }
   record.openedOver = page.url();
   await markDocument(page);
   const answered = page.waitForResponse(
@@ -173,9 +178,8 @@ Then('the delete dialog is closed', async ({ page }) => {
 });
 
 When('I confirm the deletion in the dialog', async ({ page }) => {
-  const before = page.url();
-  await Promise.all([
-    page.waitForURL((url) => url.toString() !== before),
-    deleteDialog(page).getByRole('button', { name: 'Delete', exact: true }).click(),
-  ]);
+  // The landing may be the page the dialog was opened over, so wait for the
+  // dialog to leave rather than for the address to change.
+  await deleteDialog(page).getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect(page.locator('dialog[data-dialog]:has(form[id$="-delete-form"])')).toHaveCount(0);
 });

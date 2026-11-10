@@ -71,7 +71,7 @@
 //   pino-pretty, which colours it (`ESC[32m`, `ESC[35m`, `ESC[36m`, `ESC[39m`).
 //   Those bytes are the LOGGER'S, not the renderer's, and counting them would
 //   both hide a missing `39m` and invent colours the cockpit never emitted.
-//   `BB_CONDUCTOR_LOG=file` sends that record to `log.txt` instead
+//   `BAKERS_CONDUCTOR_LOG=file` sends that record to `log.txt` instead
 //   (`core/src/core/logger.ts` › `resolveSink`), which leaves the pty stream
 //   carrying the renderer's output and nothing else.
 //
@@ -316,7 +316,11 @@ async function runSurface(name, options, say) {
     rows: options.rows,
     cwd: REPO_ROOT,
     // See the header: the logger's own colours are not the renderer's.
-    env: { ...process.env, TERM: 'xterm-256color', BB_CONDUCTOR_LOG: 'file' },
+    env: {
+      ...process.env,
+      TERM: 'xterm-256color',
+      BAKERS_CONDUCTOR_LOG: 'file',
+    },
   });
 
   let raw = '';
@@ -491,7 +495,9 @@ async function main() {
   say('#');
   say(`# cwd:      ${REPO_ROOT}`);
   say(`# pty:      ${options.cols}x${options.rows}, TERM=xterm-256color`);
-  say('# log:      BB_CONDUCTOR_LOG=file — pino-pretty’s own colours are not');
+  say(
+    '# log:      BAKERS_CONDUCTOR_LOG=file — pino-pretty’s own colours are not',
+  );
   say('#           the renderer’s and must not be counted as its vocabulary.');
   say(`# started:  ${new Date().toISOString()}`);
   say('');

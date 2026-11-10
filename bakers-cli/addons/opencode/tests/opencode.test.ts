@@ -40,6 +40,7 @@ describe('workspace package structure', () => {
     expect(pkg.exports).toEqual({
       '.': './dist/src/index.js',
       './preset': './dist/src/preset.js',
+      './options.schema.json': './options.schema.json',
     });
     expect(pkg.scripts).toMatchObject({
       build: 'tsc',

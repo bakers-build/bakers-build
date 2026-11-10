@@ -73,7 +73,7 @@ export function identityEquals(
   );
 }
 
-/** Deterministic, collision-proof per-route directory under `BB_HOME`:
+/** Deterministic, collision-proof per-route directory under `BAKERS_HOME`:
  *  worktree+ticket+key hashed together, so two different routes never share
  *  a directory even when a key string repeats across worktrees/tickets. */
 export function routeDirFor(

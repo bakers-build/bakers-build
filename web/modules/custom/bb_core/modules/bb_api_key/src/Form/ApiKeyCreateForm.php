@@ -289,18 +289,18 @@ final class ApiKeyCreateForm extends WrappedDialogFormBase {
             '#type' => 'component',
             '#component' => 'bb_theme:setup_command',
             '#props' => [
-              'command' => "Connect the bakers.build CLI to this site with client ID {$client_id} using client credentials; the secret is in the environment variable BB_CONSUMER_SECRET.",
+              'command' => "Connect the bakers.build CLI to this site with client ID {$client_id} using client credentials; the secret is in the environment variable BAKERS_CONSUMER_SECRET.",
               'label' => (string) $this->t('Copy the agent prompt'),
             ],
           ],
         ],
         'panel_b' => [
-          'caption' => $this->caption((string) $this->t('Run this command, with the secret in BB_CONSUMER_SECRET:')),
+          'caption' => $this->caption((string) $this->t('Run this command, with the secret in BAKERS_CONSUMER_SECRET:')),
           'command' => [
             '#type' => 'component',
             '#component' => 'bb_theme:setup_command',
             '#props' => [
-              'command' => "bakers config init --scope connection --auth-type client_credentials --client-id {$client_id} --secret-env BB_CONSUMER_SECRET",
+              'command' => "bakers config init --scope connection --auth-type client_credentials --client-id {$client_id} --secret-env BAKERS_CONSUMER_SECRET",
               'label' => (string) $this->t('Copy the config init command'),
             ],
           ],

@@ -35,9 +35,9 @@ import type { AddonTools, DiscoveredTools } from './tools.js';
  * the discovery call site (see {@link narrowConductorContributions}).
  */
 export interface ConductorContributions {
-  remotes: RemotePlugin[];
+  servers: RemotePlugin[];
   executors: ExecutorPlugin[];
-  workspaces: WorkspacePlugin[];
+  worktrees: WorkspacePlugin[];
   agents: AgentCandidate[];
   /** Lifecycle hook listeners, in accumulator order (BB-599). */
   hooks: HookListener[];
@@ -71,7 +71,7 @@ export type ConductorAddonEntry =
  */
 export interface Preset<O = unknown> extends BbPreset<O> {
   // ── conductor surface (engine) — concretely typed here ──
-  remotes?: (
+  servers?: (
     acc: RemotePlugin[],
     opts: O,
   ) => RemotePlugin[] | Promise<RemotePlugin[]>;
@@ -79,7 +79,7 @@ export interface Preset<O = unknown> extends BbPreset<O> {
     acc: ExecutorPlugin[],
     opts: O,
   ) => ExecutorPlugin[] | Promise<ExecutorPlugin[]>;
-  workspaces?: (
+  worktrees?: (
     acc: WorkspacePlugin[],
     opts: O,
   ) => WorkspacePlugin[] | Promise<WorkspacePlugin[]>;
@@ -107,9 +107,9 @@ export interface Preset<O = unknown> extends BbPreset<O> {
 export function narrowConductorContributions(
   discovered: Pick<
     DiscoveredContributions,
-    | 'remotes'
+    | 'servers'
     | 'executors'
-    | 'workspaces'
+    | 'worktrees'
     | 'agents'
     | 'hooks'
     | 'addonInbox'

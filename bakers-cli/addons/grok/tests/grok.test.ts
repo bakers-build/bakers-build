@@ -26,6 +26,7 @@ describe('workspace package structure', () => {
     expect(pkg.exports).toEqual({
       '.': './dist/src/index.js',
       './preset': './dist/src/preset.js',
+      './options.schema.json': './options.schema.json',
     });
     expect(pkg.peerDependencies).toEqual({
       '@bakers-build/conductor': 'workspace:^',
@@ -415,7 +416,7 @@ describe('GrokAgent.launchCommand', () => {
   it('adds a configured reasoning effort and never creates a worktree', () => {
     const command = new GrokAgent({
       model: 'grok-4.5',
-      reasoningEffort: 'medium',
+      reasoning_effort: 'medium',
     }).launchCommand('do it');
     expect(command).toBe(
       `grok 'do it' -m 'grok-4.5' --reasoning-effort 'medium'`,
@@ -462,10 +463,10 @@ function captureArgv(binary: string, command: string): string[] {
 }
 
 describe('GrokAgent args and effort', () => {
-  it('prefers effort over reasoningEffort and quotes both values', () => {
+  it('prefers effort over reasoning_effort and quotes both values', () => {
     const command = new GrokAgent({
       model: 'grok-4.5',
-      reasoningEffort: 'low',
+      reasoning_effort: 'low',
       effort: 'high',
       args: ['--rules', 'a b'],
     }).launchCommand('task');

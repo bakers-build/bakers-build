@@ -88,7 +88,7 @@ describe('HerdrExecutor', () => {
     exec.mockResolvedValueOnce(''); // pane rename (BB-374 panel label)
     exec.mockResolvedValueOnce(''); // pane run
     const plugin = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       withPlant(exec),
     );
     const session = await plugin.startRun(input());
@@ -107,7 +107,7 @@ describe('HerdrExecutor', () => {
       'GL-7 · coding #7',
       '--no-focus',
       '--env',
-      'BB_AGENT_SHELL=1',
+      'BAKERS_AGENT_SHELL=1',
     ]);
     // Assert NO --json in tab create
     expect(exec.mock.calls[1]).not.toContain('--json');
@@ -132,7 +132,7 @@ describe('HerdrExecutor', () => {
     exec.mockResolvedValueOnce(''); // pane rename (BB-374)
     exec.mockResolvedValueOnce(''); // pane run
     const plugin = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       withPlant(exec),
     );
     const session = await plugin.startRun(input());
@@ -160,7 +160,7 @@ describe('HerdrExecutor', () => {
       'GL-7 · coding #7',
       '--no-focus',
       '--env',
-      'BB_AGENT_SHELL=1',
+      'BAKERS_AGENT_SHELL=1',
     ]);
     expect(exec).toHaveBeenNthCalledWith(4, [
       'pane',
@@ -185,7 +185,7 @@ describe('HerdrExecutor', () => {
     exec.mockResolvedValueOnce(''); // pane rename
     exec.mockResolvedValueOnce(''); // pane run
     const plugin = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       withPlant(exec),
     );
     await plugin.startRun({
@@ -205,7 +205,7 @@ describe('HerdrExecutor', () => {
     exec.mockResolvedValueOnce(''); // pane rename
     exec.mockResolvedValueOnce(''); // pane run
     const plugin = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       withPlant(exec),
     );
     const secret = 'mysql://user:p@ss@h/db';
@@ -232,7 +232,7 @@ describe('HerdrExecutor', () => {
     exec.mockResolvedValueOnce(TAB_CREATED);
     exec.mockResolvedValueOnce(''); // pane rename (before env validation in layout)
     const plugin = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       withPlant(exec),
     );
     await expect(
@@ -248,17 +248,17 @@ describe('HerdrExecutor', () => {
     exec.mockResolvedValueOnce(''); // pane rename
     exec.mockResolvedValueOnce(''); // pane run
     const plugin = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       withPlant(exec),
     );
     await plugin.startRun({
       ...input(),
       command: undefined,
-      env: { BB_ID: 't-1' },
+      env: { BAKERS_ID: 't-1' },
     });
     const wrapPath = expectTypedScript(exec.mock.calls[3]?.[0], 'ws-branch-1');
     expect(readFileSync(join(dirname(wrapPath), 'command'), 'utf8')).toBe(
-      "BB_ID='t-1' claude",
+      "BAKERS_ID='t-1' claude",
     );
   });
 
@@ -267,7 +267,7 @@ describe('HerdrExecutor', () => {
     exec.mockResolvedValueOnce(WORKTREE_LIST_OPEN);
     exec.mockResolvedValueOnce(JSON.stringify({ result: {} }));
     const plugin = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       withPlant(exec),
     );
     await expect(plugin.startRun(input())).rejects.toThrow(
@@ -288,11 +288,11 @@ describe('HerdrExecutor', () => {
     const plugin = new HerdrExecutor(
       {
         command: 'claude',
-        launchWatch: INSTANT_WATCH,
+        launch_watch: INSTANT_WATCH,
         states: {
           coding: {
             panes: [
-              { direction: 'right', command: 'git -C {workspacePath} diff' },
+              { direction: 'right', command: 'git -C {workspace_path} diff' },
             ],
           },
         },
@@ -310,7 +310,7 @@ describe('HerdrExecutor', () => {
       '/tmp/ws/gl-7',
       '--no-focus',
       '--env',
-      'BB_AGENT_SHELL=1',
+      'BAKERS_AGENT_SHELL=1',
     ]);
     expect(exec).toHaveBeenNthCalledWith(6, [
       'pane',
@@ -328,7 +328,7 @@ describe('HerdrExecutor', () => {
     exec.mockRejectedValueOnce(new Error('pane run failed')); // pane run fails
     exec.mockResolvedValueOnce(''); // tab close (rollback)
     const plugin = new HerdrExecutor(
-      { command: 'claude', launchWatch: INSTANT_WATCH },
+      { command: 'claude', launch_watch: INSTANT_WATCH },
       withPlant(exec),
     );
     const err = await plugin.startRun(input()).catch((e) => e);
@@ -348,7 +348,7 @@ describe('herdrExecutor factory', () => {
   it('factory forwards default/states config into startRun', async () => {
     const { herdrExecutor } = await import('../src/index.js');
     const plugin = herdrExecutor({
-      states: { coding: { workspaceLabel: 'fixed-ws' } },
+      states: { coding: { workspace_label: 'fixed-ws' } },
     });
     expect(plugin.id).toBe('herdr');
     expect(plugin.kind).toBe('executor');

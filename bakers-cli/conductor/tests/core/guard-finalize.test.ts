@@ -61,12 +61,12 @@ let root: string;
 let previousHome: string | undefined;
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'bb-guard-finalize-'));
-  previousHome = process.env.BB_HOME;
-  process.env.BB_HOME = join(root, 'bakers');
+  previousHome = process.env.BAKERS_HOME;
+  process.env.BAKERS_HOME = join(root, 'bakers');
 });
 afterEach(() => {
-  if (previousHome === undefined) delete process.env.BB_HOME;
-  else process.env.BB_HOME = previousHome;
+  if (previousHome === undefined) delete process.env.BAKERS_HOME;
+  else process.env.BAKERS_HOME = previousHome;
 });
 
 async function finalize(

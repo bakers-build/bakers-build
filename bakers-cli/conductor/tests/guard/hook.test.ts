@@ -12,9 +12,9 @@ mkdirSync(worktree);
 
 function env(extra: Record<string, string> = {}) {
   return {
-    BB_WORKTREE: worktree,
-    BB_BRANCH: 'feat/x-1',
-    BB_GUARD_LOG: join(root, `guard-${Math.random()}.jsonl`),
+    BAKERS_WORKTREE: worktree,
+    BAKERS_BRANCH: 'feat/x-1',
+    BAKERS_GUARD_LOG: join(root, `guard-${Math.random()}.jsonl`),
     TMPDIR: join(root, 'tmp'),
     HOME: join(root, 'home'),
     ...extra,
@@ -34,7 +34,7 @@ describe('guard hook', () => {
     const e = env();
     const out = runHook(claudeInput('git status'), e);
     expect(out).toEqual({ exitCode: 0, stderr: '' });
-    expect(() => readFileSync(e.BB_GUARD_LOG)).toThrow();
+    expect(() => readFileSync(e.BAKERS_GUARD_LOG)).toThrow();
   });
 
   it('blocks a refused command with the rule and alternative, and logs it', () => {
@@ -44,7 +44,7 @@ describe('guard hook', () => {
     expect(out.stderr).toMatch(/bakers run guard refused/);
     expect(out.stderr).toMatch(/git-push/);
     expect(out.stderr).toMatch(/git push origin HEAD:feat\/x-1/);
-    const lines = readFileSync(e.BB_GUARD_LOG, 'utf8').trim().split('\n');
+    const lines = readFileSync(e.BAKERS_GUARD_LOG, 'utf8').trim().split('\n');
     expect(lines).toHaveLength(1);
     expect(JSON.parse(lines[0] as string)).toMatchObject({
       command: 'git push --force',
@@ -89,7 +89,7 @@ describe('guard hook', () => {
           tool_input: { command: 'git push -u origin HEAD' },
           cwd: repo,
         }),
-        env({ BB_WORKTREE: repo }),
+        env({ BAKERS_WORKTREE: repo }),
       ).exitCode;
     };
     expect(push('feat/x-1')).toBe(0);
@@ -108,10 +108,10 @@ describe('guard hook', () => {
     expect(runHook('{not json', env()).exitCode).toBe(0);
     expect(runHook('{"cmd": "git push -f', env()).exitCode).toBe(2);
     expect(
-      runHook(claudeInput('ls -la'), { ...env(), BB_WORKTREE: '' }).exitCode,
+      runHook(claudeInput('ls -la'), { ...env(), BAKERS_WORKTREE: '' }).exitCode,
     ).toBe(0);
     expect(
-      runHook(claudeInput('rm x'), { ...env(), BB_WORKTREE: '' }).exitCode,
+      runHook(claudeInput('rm x'), { ...env(), BAKERS_WORKTREE: '' }).exitCode,
     ).toBe(2);
   });
 });

@@ -14,7 +14,7 @@ import { registerDeployment } from './deployment.js';
 
 // `deployment` is its own COMMAND-surface addon. The batch gathering
 // (`src/deployment.ts`) takes the remote, the project and the cwd as thunks.
-// It needs only the connection (`bakers.config.js`) and a project name, never
+// It needs only the connection (connection file) and a project name, never
 // the conductor engine config: loading that one validates conductor identity,
 // agents and addons. So a machine that is not set up as a conductor, or has an
 // older config, could not compute a release batch.
@@ -68,7 +68,7 @@ async function resolveProject(
   if (names.length === 1) return names[0] as string;
   throw new Error(
     names.length === 0
-      ? `no bakers project owns the origin remote${origin ? ` ${origin}` : ''} and no .bakers/conductor.config.js names one; pass --project <name>`
+      ? `no bakers project owns the origin remote${origin ? ` ${origin}` : ''} and no .bakers/project.config.js names one; pass --project <name>`
       : `several bakers projects own the origin remote ${origin} (${names.join(', ')}); pass --project <name>`,
   );
 }
