@@ -45,17 +45,10 @@ final class InviteReadScopeTest extends KernelTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-    $this->installEntitySchema('bb_invite');
     $this->installReadScopeEnvironment();
     $this->buildTwoWorkspaceWorld();
-    $this->inviteA = $this->createEntity('bb_invite', [
-      'workspace_id' => $this->fixture('a', 'bb_workspace')->id(),
-      'email' => 'recruit-a@example.com',
-    ]);
-    $this->inviteB = $this->createEntity('bb_invite', [
-      'workspace_id' => $this->fixture('b', 'bb_workspace')->id(),
-      'email' => 'recruit-b@example.com',
-    ]);
+    $this->inviteA = $this->fixture('a', 'bb_invite');
+    $this->inviteB = $this->fixture('b', 'bb_invite');
   }
 
   /**

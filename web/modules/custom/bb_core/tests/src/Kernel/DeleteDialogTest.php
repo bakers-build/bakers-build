@@ -66,7 +66,6 @@ final class DeleteDialogTest extends KernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->installReadScopeEnvironment();
-    $this->installEntitySchema('bb_invite');
     $this->installConfig(['system', 'filter']);
     $this->container->get('theme_installer')->install(['bb_theme']);
     $this->config('system.theme')->set('default', 'bb_theme')->save();
