@@ -427,6 +427,29 @@ final class AccountJsonApiTest extends WorkTimeTestBase {
   }
 
   /**
+   * A reader without project edit sees the account, not its billing terms.
+   *
+   * The editor still reads the terms of an archived account.
+   */
+  public function testReaderSeesNoExternalIdOrTerms(): void {
+    $account = $this->createAccount('Priced', 'HARV-7');
+    $path = '/jsonapi/bb_track_account/bb_track_account/' . $account->uuid();
+    [$status, $document] = $this->jsonApi('GET', $path, $this->peer);
+    self::assertSame(200, $status, (string) json_encode($document));
+    self::assertSame('Priced', $document['data']['attributes']['name']);
+    self::assertSame([], array_values(array_intersect(
+      ['external_id', ...self::TERMS],
+      array_keys($document['data']['attributes']),
+    )));
+
+    $account->set('active', FALSE)->save();
+    [$status, $document] = $this->jsonApi('GET', $path, $this->employee);
+    self::assertSame(200, $status, (string) json_encode($document));
+    self::assertSame('HARV-7', $document['data']['attributes']['external_id']);
+    self::assertArrayHasKey('hourly_rate', $document['data']['attributes']);
+  }
+
+  /**
    * Terms are written with the per-type rules; a violation is 422, unstored.
    */
   public function testTermsReadableAndWritableWithValidation(): void {
