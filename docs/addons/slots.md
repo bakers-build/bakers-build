@@ -41,3 +41,7 @@ The executor resolves in this order: the machine's `executor`, the project's `ex
 ## Migrating an addon
 
 For custom implementations, follow the [executor/workspace migration notes](/addons/build/executor-workspace#migrating-an-addon). For configuration changes, keep lifecycle `hooks` at project level and move a legacy workspace `open` layout to the executor.
+
+The conductor's `hooks` listeners may define `before_conductor_start(machine,
+conductor)` for start-only machine enrichment. This is an addon callback, not a
+project shell-hook slot. See [the start contract](/addons/build/contracts#before-conductor-start).

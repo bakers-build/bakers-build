@@ -221,7 +221,7 @@ function validateHookListeners(value: unknown): HookListener[] {
   for (const [index, listener] of value.entries()) {
     if (!isRecord(listener))
       throw new Error(`hooks[${index}] must be a listener object`);
-    for (const slot of HOOK_SLOTS) {
+    for (const slot of [...HOOK_SLOTS, 'before_conductor_start']) {
       if (listener[slot] !== undefined && typeof listener[slot] !== 'function')
         throw new Error(`hooks[${index}].${slot} must be a function`);
     }

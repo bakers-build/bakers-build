@@ -65,6 +65,8 @@ export type {
   HookListener,
   HookListenerContext,
   HookListenerFn,
+  MachineRegistrationData,
+  ConductorStartContext,
   HookName,
   HookResult,
   OpenWorkspaceContext,

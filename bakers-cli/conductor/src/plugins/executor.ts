@@ -59,12 +59,25 @@ export interface HookListenerContext {
 /** A listener's callback for one slot. Awaited; a failure is logged, never fatal. */
 export type HookListenerFn = (ctx: HookListenerContext) => void | Promise<void>;
 
+export interface MachineRegistrationData {
+  host_key?: string;
+  machine_label?: string;
+  connection_url?: string | null;
+}
+
+export interface ConductorStartContext {
+  id: string;
+  project: string;
+  variant: string;
+}
+
 /**
  * One addon contribution to the conductor `hooks` accumulator (BB-599): an
  * object with an optional function per lifecycle slot. Listeners run in
  * accumulator order, each before the slot's project shell hook.
  */
 export type HookListener = { [K in HookName]?: HookListenerFn } & {
+  before_conductor_start?: (machine: MachineRegistrationData, conductor: Readonly<ConductorStartContext>) => void | Promise<void>;
   /** Names the listener in conductor logs. */
   id?: string;
 };

@@ -328,6 +328,27 @@ async function startedConductor(
 }
 
 describe('Conductor', () => {
+  it.each([false, true])('publishes connection only at actual serve start (serve=%s)', async (serve) => {
+    const remote = new FakeBbRemote();
+    const register = vi.spyOn(remote, 'registerConductor');
+    const heartbeat = vi.spyOn(remote, 'heartbeat');
+    const hook = vi.fn<NonNullable<HookListener['before_conductor_start']>>((machine) => { machine.connection_url = 'ssh://user@host:22'; });
+    const conductor = new TestConductor(
+      makeConfig({ hookListeners: [{ before_conductor_start: hook }] }),
+      remote, new RecordingExecutor(), new FakeWorkspace(), resolved(fakeAgent), spyLogger().log, CHECKOUT,
+    );
+    if (serve) conductor.claimServeProcess();
+    await conductor.start(); await conductor.tick(); await conductor.tick();
+    expect(hook).toHaveBeenCalledTimes(serve ? 1 : 0);
+    expect(register.mock.calls[0][0].connection_url).toBe(serve ? 'ssh://user@host:22' : undefined);
+    expect(heartbeat.mock.calls.length).toBeGreaterThan(0);
+    for (const [reg] of heartbeat.mock.calls) expect(reg).not.toHaveProperty('connection_url');
+    if (serve) {
+      expect(hook.mock.calls[0][0]).toEqual({ host_key: 'test-host', connection_url: 'ssh://user@host:22' });
+      expect(hook.mock.calls[0][1]).toEqual({ id: 'bakers-test-conductor', project: 'bakers', variant: 'conductor' });
+    }
+  });
+
   // BB-663: the after_create bootstrap record lives beside the shared
   // CHECKOUT config file, keyed by worktree path, not inside the worktree.
   // Clear it before every test so one test's recorded outcome for a fixed

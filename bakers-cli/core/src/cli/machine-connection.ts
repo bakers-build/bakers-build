@@ -7,7 +7,7 @@ export function isValidMachineConnectionUrl(value: unknown): value is string {
   if (!parts) return false;
   try {
     if (/[\s\x00-\x1f\x7f]/u.test(decodeURIComponent(value))) return false;
-    const [, scheme, authority, tail] = parts;
+    const [, scheme = '', authority = '', tail] = parts;
     const ssh = scheme.toLowerCase() === 'ssh';
     if (ssh && tail !== '' && tail !== '/') return false;
     const hostPart = authority.split('@');
@@ -16,7 +16,7 @@ export function isValidMachineConnectionUrl(value: unknown): value is string {
     const hostPort = hostPart.at(-1)!;
     const match = /^(\[[^\]]+\]|[^:]+)(?::([0-9]+))?$/.exec(hostPort);
     if (!match) return false;
-    const [, host, port] = match;
+    const [, host = '', port] = match;
     if (port !== undefined && (Number(port) < 1 || Number(port) > 65535)) return false;
     if (host.startsWith('[')) return isIP(host.slice(1, -1)) === 6;
     if (/^[0-9.]+$/.test(host)) return isIP(host) === 4;
