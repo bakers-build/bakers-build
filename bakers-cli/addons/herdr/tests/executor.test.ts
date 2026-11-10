@@ -359,6 +359,24 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
     expect(calls).not.toContainEqual(['tab', 'close', 't2']);
   });
 
+  it('closes every tab carrying the run-ID, such as one herdr restored beside a relaunch', async () => {
+    const calls: string[][] = [];
+    const exec = makeFakeHerdr(calls, {
+      'worktree list': worktreeWith('bakers/bb-123', 'ws1'),
+      'tab list': tabsJson([
+        { tab_id: 't1', label: 'BB-123 · coding #12' },
+        { tab_id: 't2', label: 'BB-123 · coding #12' },
+      ]),
+    });
+    const executor = new HerdrExecutor(
+      { command: 'claude', launch_watch: INSTANT_WATCH },
+      exec,
+    );
+    await executor.cleanupRun('bakers/bb-123', 12);
+    expect(calls).toContainEqual(['tab', 'close', 't1']);
+    expect(calls).toContainEqual(['tab', 'close', 't2']);
+  });
+
   it('is a quiet no-op when no tab matches the run-ID (AC-4)', async () => {
     const calls: string[][] = [];
     const exec = makeFakeHerdr(calls, {
@@ -432,6 +450,119 @@ describe('HerdrExecutor.cleanupRun (run-scoped by label #<runId>)', () => {
       executor.cleanupRun('bakers/bb-1-t', 2),
     ).resolves.toBeUndefined();
     expect(calls).toContainEqual(['tab', 'close', 't1']);
+  });
+});
+
+describe('HerdrExecutor.runAlive (by tab label #<runId>)', () => {
+  const alive = (exec: (a: string[]) => Promise<string>, runId = 12) =>
+    new HerdrExecutor({ launchWatch: INSTANT_WATCH }, exec).runAlive(
+      'bakers/bb-123',
+      runId,
+    );
+
+  /** The run tab t2 with pane p2 (and a foreign tab's pane p9), running `fg` in front. */
+  const runTabWith = (fg: string[][], calls: string[][] = []) =>
+    makeFakeHerdr(calls, {
+      'worktree list': worktreeWith('bakers/bb-123', 'ws1'),
+      'tab list': tabsJson([{ tab_id: 't2', label: 'BB-123 · coding #12' }]),
+      'pane list': JSON.stringify({
+        result: {
+          panes: [
+            { pane_id: 'p9', tab_id: 't9' },
+            { pane_id: 'p2', tab_id: 't2' },
+          ],
+        },
+      }),
+      'pane process-info': JSON.stringify({
+        result: {
+          process_info: {
+            foreground_processes: fg.map((argv) => ({ argv })),
+          },
+        },
+      }),
+    });
+
+  it('is true while a pane of the run tab runs the launch wrapper', async () => {
+    const calls: string[][] = [];
+    const running = [
+      ['claude', '--session-id', 'x'],
+      ['sh', '/tmp/bakers-run-AbC123/run.sh'],
+    ];
+    expect(await alive(runTabWith(running, calls))).toBe(true);
+    expect(calls).toContainEqual(['pane', 'process-info', '--pane', 'p2']);
+    expect(calls).not.toContainEqual(['pane', 'process-info', '--pane', 'p9']);
+  });
+
+  it.each([
+    ['only an idle shell', [['-zsh']]],
+    ['an agent herdr resumed by itself', [['claude', '--resume=x']]],
+  ])('is false when the restored run tab holds %s', async (_, fg) => {
+    expect(await alive(runTabWith(fg))).toBe(false);
+  });
+
+  it('is true when a restored idle tab with the same run id comes before the live one', async () => {
+    const fg: Record<string, string[][]> = {
+      p1: [['-zsh']],
+      p2: [['sh', '/tmp/bakers-run-AbC123/run.sh']],
+    };
+    const exec = async (args: string[]): Promise<string> => {
+      switch (`${args[0]} ${args[1] ?? ''}`.trim()) {
+        case 'worktree list':
+          return worktreeWith('bakers/bb-123', 'ws1');
+        case 'tab list':
+          return tabsJson([
+            { tab_id: 't1', label: 'BB-123 · coding #12' },
+            { tab_id: 't2', label: 'BB-123 · coding #12' },
+          ]);
+        case 'pane list':
+          return JSON.stringify({
+            result: {
+              panes: [
+                { pane_id: 'p1', tab_id: 't1' },
+                { pane_id: 'p2', tab_id: 't2' },
+              ],
+            },
+          });
+        case 'pane process-info':
+          return JSON.stringify({
+            result: {
+              process_info: {
+                foreground_processes: (fg[args[3] ?? ''] ?? []).map((argv) => ({
+                  argv,
+                })),
+              },
+            },
+          });
+        default:
+          return JSON.stringify({ result: {} });
+      }
+    };
+    expect(await alive(exec)).toBe(true);
+  });
+
+  it('is false when no tab carries the run id', async () => {
+    const exec = makeFakeHerdr([], {
+      'worktree list': worktreeWith('bakers/bb-123', 'ws1'),
+      'tab list': tabsJson([{ tab_id: 't2', label: 'BB-123 · coding #123' }]),
+    });
+    expect(await alive(exec)).toBe(false);
+  });
+
+  it('is false when no workspace is open for the branch', async () => {
+    const exec = makeFakeHerdr([], {
+      'worktree list': JSON.stringify({
+        result: { worktrees: [{ branch: 'bakers/bb-123', path: '/repo/wt' }] },
+      }),
+    });
+    expect(await alive(exec)).toBe(false);
+  });
+
+  it('rejects when herdr cannot answer', async () => {
+    await expect(
+      alive(async () => {
+        throw new Error('herdr not running');
+      }),
+    ).rejects.toThrow('herdr not running');
   });
 });
 

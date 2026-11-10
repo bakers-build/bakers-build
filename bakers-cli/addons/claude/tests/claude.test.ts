@@ -263,6 +263,40 @@ describe('ClaudeAgent.launchCommand with a run identity', () => {
   });
 });
 
+describe('ClaudeAgent.resumeCommand', () => {
+  const trust = fileURLToPath(
+    new URL('../trust/claude-trust.mjs', import.meta.url),
+  );
+
+  it('resumes the session in the worktree with the launch flags, without a new session id', () => {
+    const agent = new ClaudeAgent({ model: 'opus', permissions: 'yolo' });
+    expect(
+      agent.resumeCommand('s-1', '/w', { url: 'http://127.0.0.1:9' }, {}, [
+        '--plugin-dir',
+        '/p',
+      ]),
+    ).toBe(
+      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${trust}' '/w' claude --resume 's-1' --model 'opus' --dangerously-skip-permissions --mcp-config '{"mcpServers":{"bakers":{"type":"http","url":"http://127.0.0.1:9","headers":{"Authorization":"Bearer \${BAKERS_CONDUCTOR_TOKEN}"}}}}' '--plugin-dir' '/p'`,
+    );
+  });
+  it('waits for no plugin install when the run has its agent home', () => {
+    const agent = new ClaudeAgent({ permissions: 'yolo' });
+    agent.useMarketplaces([
+      { url: 'https://example.invalid/m.git', ref: 'main', plugins: ['p'] },
+    ]);
+    expect(agent.resumeCommand('s-1')).toBe(
+      "claude --resume 's-1' --dangerously-skip-permissions",
+    );
+  });
+  it('offers no resume for a measured run', () => {
+    expect(
+      new ClaudeAgent({ permissions: 'yolo', measure: true }).resumeCommand(
+        's-1',
+      ),
+    ).toBeUndefined();
+  });
+});
+
 // The stub is an executable on PATH, not a shell function, so a wrapper
 // process (the trust wrapper) reaches it too; HOME keeps ~/.claude.json untouched.
 function captureArgv(binary: string, command: string): string[] {
