@@ -31,6 +31,6 @@ What it refuses:
 
 The guard follows `&&`, `||`, `;`, `|`, newlines, a literal `cd`, `sudo`, `env` and `bash -c`/`sh -c`. It matches commands; it is not a security boundary. A command inside a script file or an interpreter (`python -c`, `node -e`) is not inspected, and no tool served to a run deletes a ticket. [Isolate the machine](/provision/security/execution#risk-of-loosening) where that matters.
 
-`bakers agents` shows `guard: active`, `off` or `not_applied` per alias. Grok, OpenCode, Pi and Kimi report `not_applied`. Only `guard: false` on a Claude or Codex entry in `~/.bakers/machine.config.js` switches the guard off. No mode does, and a committed project config cannot, because a project's `permissions` block refuses the key.
+`bakers agents` shows `guard: active`, `off` or `not_applied` per alias. Grok, OpenCode, Pi and Kimi report `not_applied`. Only `guard: false` on a Claude or Codex entry in `~/.bakers/machine.config.js` switches the guard off. No mode does, and a committed project config cannot, because agent entries are accepted only in the machine config.
 
 Codex receives the guard as a `-c hooks.PreToolUse=…` override. It has not yet been checked against a real Codex run.
