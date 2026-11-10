@@ -6,6 +6,7 @@ bb_addon.register:
     _jsonapi_resource: Drupal\bb_addon\Resource\AddonsRegisterResource
   requirements:
     _permission: 'register bakers conductor'
+    _csrf_request_header_token: 'TRUE'
 
 # The addons of a ticket's conductor, as `bakers ui` reads them.
 bb_addon.ticket:

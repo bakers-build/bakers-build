@@ -6,12 +6,16 @@ namespace Drupal\bb_inbox\Access;
 
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
+use Drupal\Core\Entity\EntityHandlerInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\entity\EntityAccessControlHandler;
+use Drupal\bb_core\Conductor\ConductorRegistrar;
 use Drupal\bb_inbox\Entity\BbInboxMessageInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Who sees and answers an inbox message.
@@ -25,9 +29,31 @@ use Drupal\bb_inbox\Entity\BbInboxMessageInterface;
  * Create: closed to everyone but administrators; messages are created by the
  * sender service, which asks the responsible handler for access.
  */
-final class BbInboxMessageAccessControlHandler extends EntityAccessControlHandler {
+final class BbInboxMessageAccessControlHandler extends EntityAccessControlHandler implements EntityHandlerInterface {
 
   private const CONDUCTOR_WRITABLE_FIELDS = ['status', 'result'];
+
+  /**
+   * Constructs a BbInboxMessageAccessControlHandler.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeInterface $entity_type
+   *   The entity type definition.
+   * @param \Drupal\bb_core\Conductor\ConductorRegistrar $registrar
+   *   Decides whether an owner may still run a conductor.
+   */
+  public function __construct(
+    EntityTypeInterface $entity_type,
+    private readonly ConductorRegistrar $registrar,
+  ) {
+    parent::__construct($entity_type);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function createInstance(ContainerInterface $container, EntityTypeInterface $entity_type): static {
+    return new static($entity_type, $container->get('bb_core.conductor_registrar'));
+  }
 
   /**
    * {@inheritdoc}
@@ -41,6 +67,7 @@ final class BbInboxMessageAccessControlHandler extends EntityAccessControlHandle
       'view' => $this->viewAccess($entity, $account),
       'update' => AccessResult::allowedIf($this->ownsConductor($entity, $account))
         ->cachePerUser()
+        ->addCacheTags(['og_membership_list'])
         ->addCacheableDependency($entity),
       default => $result,
     };
@@ -75,21 +102,22 @@ final class BbInboxMessageAccessControlHandler extends EntityAccessControlHandle
       return AccessResult::allowed()->cachePerUser()->addCacheableDependency($message);
     }
     if ($this->ownsConductor($message, $account)) {
-      return AccessResult::allowed()->cachePerUser()->addCacheableDependency($message);
+      return AccessResult::allowed()->cachePerUser()->addCacheTags(['og_membership_list'])->addCacheableDependency($message);
     }
     return AccessResult::forbidden('Only the requester or the processing conductor owner may view this message.')
       ->cachePerUser()
+      ->addCacheTags(['og_membership_list'])
       ->addCacheableDependency($message);
   }
 
   /**
-   * Whether the account owns the message's conductor and runs conductors.
+   * Whether the account owns the message's conductor and may still run it.
+   *
+   * A seat in another workspace keeps the site-wide permission, not this one.
    */
   private function ownsConductor(BbInboxMessageInterface $message, AccountInterface $account): bool {
     $conductor = $message->conductor();
-    return $conductor !== NULL
-      && $account->hasPermission('register bakers conductor')
-      && $conductor->isOwnedBy($account);
+    return $conductor !== NULL && $this->registrar->serves($conductor, $account);
   }
 
 }

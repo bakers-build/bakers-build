@@ -125,7 +125,7 @@ final class WorkspaceReadScopeFilterAccessTest extends KernelTestBase {
     $account = $this->createAccount('scoped-reader', [
       'view bb_workspace', 'view bb_group', 'view bb_team', 'view bb_project',
       'view bb_ticket', 'view bb_ticket_template', 'view bb_environment', 'view bb_conductor',
-      'view bb_machine', 'view bb_term',
+      'view bb_machine', 'view bb_term', 'view bb_invite',
       'view bb_run', 'view bb_comment', 'access user profiles',
       'view bakers memberships',
     ]);

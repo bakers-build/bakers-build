@@ -17,6 +17,7 @@ use Drupal\jsonapi_resources\Resource\ResourceBase;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\bb_inbox\Kernel\InboxWorldTrait;
 use PHPUnit\Framework\Attributes\Group;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -67,6 +68,23 @@ final class AddonResourceTest extends KernelTestBase {
     [$status] = $this->registerAddons($this->conductor, [self::portsDefinition()]);
     self::assertSame(200, $status);
     self::assertCount(1, $this->addons());
+  }
+
+  /**
+   * An owner removed from the conductor's workspace registers no addons there.
+   */
+  public function testRemovedOwnerRegistersNoAddons(): void {
+    $this->workspaceMember('b', $this->conductorOwner, 'contributor');
+    $this->container->get('bb_core.membership_writer')
+      ->remove($this->fixture('a', 'bb_workspace'), (int) $this->conductorOwner->id());
+
+    try {
+      $this->registerAddons($this->conductor, [self::portsDefinition()]);
+      self::fail('A removed owner must not register addons for the workspace.');
+    }
+    catch (AccessDeniedHttpException) {
+    }
+    self::assertSame([], $this->addons());
   }
 
   /**
@@ -260,7 +278,7 @@ final class AddonResourceTest extends KernelTestBase {
    * Two conductors with two versions produce two coexisting rows.
    */
   public function testTwoConductorsTwoVersionsCoexist(): void {
-    $secondOwner = $this->createAccount('second-owner', ['register bakers conductor']);
+    $secondOwner = $this->workspaceMember('a', $this->createAccount('second-owner', ['register bakers conductor']), 'contributor');
     $second = $this->createConductor('node-second', $secondOwner);
     $this->registerAddons($this->conductor, [self::portsDefinition('1.2.3')]);
     $this->registerAddons($second, [self::portsDefinition('2.0.0')], $secondOwner);

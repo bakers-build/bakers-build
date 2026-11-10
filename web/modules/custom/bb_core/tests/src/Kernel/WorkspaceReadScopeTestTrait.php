@@ -37,7 +37,7 @@ trait WorkspaceReadScopeTestTrait {
     'user', 'og_membership',
     'bb_workspace', 'bb_group', 'bb_team', 'bb_machine', 'bb_project',
     'bb_ticket', 'bb_run', 'bb_comment', 'bb_environment',
-    'bb_conductor', 'bb_term', 'bb_ticket_template',
+    'bb_conductor', 'bb_term', 'bb_ticket_template', 'bb_invite',
   ];
 
   /**
@@ -59,6 +59,7 @@ trait WorkspaceReadScopeTestTrait {
       'bb_group' => 'workspace_id',
       'bb_team' => 'workspace_id',
       'bb_term' => 'workspace_id',
+      'bb_invite' => 'workspace_id',
       'bb_project' => 'id',
       'bb_ticket' => 'project_id',
       'bb_ticket_template' => 'project_id',
@@ -215,6 +216,10 @@ trait WorkspaceReadScopeTestTrait {
       'workspace_id' => $workspace->id(),
       'owner_user_id' => $owner_id,
     ]);
+    $invite = $this->createEntity('bb_invite', [
+      'email' => "recruit-$side@example.com",
+      'workspace_id' => $workspace->id(),
+    ]);
     $conductor = $this->createEntity('bb_conductor', [
       'conductor_id' => "node-$side",
       'label' => "node-$side",
@@ -258,6 +263,7 @@ trait WorkspaceReadScopeTestTrait {
       'bb_run' => $run,
       'bb_comment' => $comment,
       'bb_term' => $term,
+      'bb_invite' => $invite,
       'member' => $this->createAccount("member-$side"),
     ];
   }

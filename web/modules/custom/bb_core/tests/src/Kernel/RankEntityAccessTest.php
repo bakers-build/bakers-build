@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Cache\CacheableDependencyInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\KernelTests\KernelTestBase;
@@ -84,6 +85,90 @@ final class RankEntityAccessTest extends KernelTestBase {
   }
 
   /**
+   * Outside a project's teams, only a workspace lead opens or changes tickets.
+   *
+   * Entity access agrees with the listings: the ticket is opened, changed and
+   * listed exactly where it is in the account's read scope.
+   */
+  public function testTeamsFenceTicketsByDirectAddress(): void {
+    $ticket = $this->fixture('a', 'bb_ticket');
+    $facts = [];
+    foreach (['guest', 'contributor', 'lead'] as $rank) {
+      $outside = $this->createAccount("outside-$rank");
+      $this->addMembership($this->fixture('a', 'bb_workspace'), $outside, [$rank]);
+      $facts["outside $rank"] = [
+        $ticket->access('view', $outside),
+        $ticket->access('update', $outside),
+        in_array((int) $ticket->id(), $this->queryIdsAs('bb_ticket', $outside), TRUE),
+      ];
+    }
+    $inside = $this->createAccount('inside-contributor');
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $inside, ['contributor']);
+    $this->addMembership($this->fixture('a', 'bb_team'), $inside, []);
+    $facts['inside contributor'] = [
+      $ticket->access('view', $inside),
+      $ticket->access('update', $inside),
+      in_array((int) $ticket->id(), $this->queryIdsAs('bb_ticket', $inside), TRUE),
+    ];
+
+    self::assertSame([
+      'outside guest' => [FALSE, FALSE, FALSE],
+      'outside contributor' => [FALSE, FALSE, FALSE],
+      'outside lead' => [TRUE, TRUE, TRUE],
+      'inside contributor' => [TRUE, TRUE, TRUE],
+    ], $facts);
+  }
+
+  /**
+   * A change of the project's teams reaches a cached ticket decision.
+   *
+   * The denial depends on the project, so saving its teams invalidates it,
+   * and the next check in the same request lets the new team's member in.
+   */
+  public function testProjectTeamsChangeReachesTicketAccess(): void {
+    $ticket = $this->fixture('a', 'bb_ticket');
+    $project = $this->fixture('a', 'bb_project');
+    $guest = $this->createAccount('later-team-guest');
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $guest, ['guest']);
+    $team = $this->createEntity('bb_team', [
+      'name' => 'later-team',
+      'workspace_id' => $this->fixture('a', 'bb_workspace')->id(),
+      'owner_user_id' => $project->get('owner_user_id')->target_id,
+    ]);
+    $this->addMembership($team, $guest, []);
+
+    $denied = $ticket->access('view', $guest, TRUE);
+    self::assertFalse($denied->isAllowed());
+    self::assertInstanceOf(CacheableDependencyInterface::class, $denied);
+    self::assertSame([], array_diff($project->getCacheTags(), $denied->getCacheTags()), 'the decision depends on the project');
+
+    $project->get('teams')->appendItem($team->id());
+    $project->save();
+    $this->container->get('entity_type.manager')->getAccessControlHandler('bb_ticket')->resetCache();
+    self::assertTrue($ticket->access('view', $guest), 'the new team lets its member in');
+  }
+
+  /**
+   * A conductor's owner outside its project's teams still manages it.
+   *
+   * Teams fence the project's tickets, not the owner's own conductor; such a
+   * conductor gets no inbox and registers nothing (ConductorRegistrar).
+   */
+  public function testOwnerOutsideTheTeamsManagesTheirConductor(): void {
+    $owner = $this->createAccount('conductor-owner-outside');
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $owner, ['contributor']);
+    $conductor = $this->createEntity('bb_conductor', [
+      'conductor_id' => 'node-outside',
+      'label' => 'node-outside',
+      'project_id' => $this->fixture('a', 'bb_project')->id(),
+      'owner_user_id' => $owner->id(),
+    ]);
+    self::assertTrue($conductor->access('view', $owner));
+    self::assertTrue($conductor->access('update', $owner));
+    self::assertFalse($this->fixture('a', 'bb_ticket')->access('view', $owner));
+  }
+
+  /**
    * Local editors may assign, but cannot borrow a foreign lead's secret access.
    */
   public function testRankFieldGateDoesNotLeakAcrossWorkspaces(): void {
@@ -92,6 +177,7 @@ final class RankEntityAccessTest extends KernelTestBase {
     // no explicit role now grants nothing — an explicit `contributor` role is
     // what makes alice a "local ticket editor" in workspace A.
     $this->addMembership($this->fixture('a', 'bb_workspace'), $alice, ['contributor']);
+    $this->addMembership($this->fixture('a', 'bb_team'), $alice, []);
     $this->grantRank($alice, $this->fixture('b', 'bb_workspace'), 'lead');
 
     // Layer A: the union really does carry the borrowed permission. Without
@@ -457,13 +543,14 @@ final class RankEntityAccessTest extends KernelTestBase {
   }
 
   /**
-   * The group owner keeps full access without holding a rank for it.
+   * The group owner's rights come from their rank, as the members list shows.
    *
-   * `group_manager_full_access: true` answers before any role is read, and the
-   * fence consults OgAccess rather than a role list precisely so that it does
-   * not have to restate this.
+   * With `group_manager_full_access` off, as shipped, ownership grants nothing
+   * of its own: the owner reaches content through the lead seat placed on
+   * creation, and loses it with that seat.
    */
-  public function testTheGroupOwnerIsNotFencedOut(): void {
+  public function testTheGroupOwnerHoldsRightsThroughTheRankOnly(): void {
+    $this->config('og.settings')->set('group_manager_full_access', FALSE)->save();
     $bob = $this->createAccount('bob');
     $workspace = $this->createEntity('bb_workspace', [
       'name' => 'bob-workspace',
@@ -492,6 +579,12 @@ final class RankEntityAccessTest extends KernelTestBase {
       $this->fixture('a', 'bb_ticket')->access('update', $bob),
       'and owning one workspace grants nothing in another',
     );
+
+    $membership = Og::getMembership($workspace, $bob);
+    self::assertNotNull($membership);
+    $membership->revokeRoleById('bb_workspace-bb_workspace-lead')->save();
+    $this->container->get('entity_type.manager')->getAccessControlHandler('bb_ticket')->resetCache();
+    self::assertFalse($ticket->access('update', $bob), 'a demoted owner keeps no rights');
   }
 
   /**

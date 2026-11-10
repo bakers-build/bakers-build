@@ -14,8 +14,8 @@ use Drupal\user\UserInterface;
 /**
  * Keeps service accounts from owning a workspace or team.
  *
- * A group owner gets full access (`group_manager_full_access`), so this
- * fails closed however the owner write is reached.
+ * A group owner would get full access if `group_manager_full_access` were
+ * on, so this fails closed however the owner write is reached.
  */
 final class ServiceAccountOwnerHooks {
 

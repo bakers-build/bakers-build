@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Entity;
 
+use Drupal\bb_core\Access\BbInviteQueryAccessHandler;
 use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
@@ -12,7 +13,6 @@ use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\entity\EntityAccessControlHandler;
 use Drupal\entity\EntityPermissionProvider;
 use Drupal\entity\Routing\AdminHtmlRouteProvider;
-use Drupal\entity\QueryAccess\QueryAccessHandler;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\user\EntityOwnerTrait;
@@ -35,11 +35,11 @@ use Drupal\user\EntityOwnerTrait;
   entity_keys: ['id' => 'id', 'uuid' => 'uuid', 'label' => 'email'],
   handlers: [
     'access' => EntityAccessControlHandler::class,
-    // Narrowed to the account's OG read scope by WorkspaceReadScopeSubscriber,
-    // exactly as `bb_team` and `bb_group` are.
-    // Without it every account holding `view bb_invite` would read every
-    // workspace's invitations, which is a list of who is being recruited.
-    'query_access' => QueryAccessHandler::class,
+    // Narrowed by WorkspaceReadScopeSubscriber to the workspaces whose rank
+    // grants `view bb_invite`. Without it every account holding the
+    // permission anywhere would read every workspace's invitations, which is
+    // a list of who is being recruited.
+    'query_access' => BbInviteQueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
     'form' => ['delete' => BbContentEntityDeleteForm::class],
     'route_provider' => ['html' => AdminHtmlRouteProvider::class],

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_activity\Kernel;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Logger\RfcLogLevel;
+use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
@@ -132,6 +134,27 @@ final class ActivityMailDeliveryTest extends ActivityMailKernelTestBase {
     self::assertStringNotContainsString('&amp;', (string) $email->getSubject());
     self::assertStringContainsString('<b>R&D</b> plan', (string) $email->getTextBody());
     self::assertStringNotContainsString('<b>R&D</b>', (string) $email->getHtmlBody());
+  }
+
+  /**
+   * A title naming one of the site's own URLs adds no link or button.
+   */
+  public function testTitleUrlNeverBecomesLink(): void {
+    $ticket = $this->ticket('a');
+    $site = $ticket->toUrl('canonical', ['absolute' => TRUE])->toString();
+    $logout = Url::fromRoute('user.logout', [], ['absolute' => TRUE])->toString();
+    $ticket->set('title', "Fix login\n\nReset your password: $logout")->save();
+    $this->changeState();
+    $email = $this->mailsTo($this->watcher)[0];
+
+    $html = Html::load((string) $email->getHtmlBody());
+    $hrefs = [];
+    foreach ($html->getElementsByTagName('a') as $link) {
+      $hrefs[] = $link->getAttribute('href');
+    }
+    $settings = Url::fromRoute('bb_activity.notifications', ['user' => $this->watcher->id()], ['absolute' => TRUE]);
+    self::assertSame([$site, $settings->toString()], $hrefs);
+    self::assertStringContainsString("Reset your password: $logout", (string) $email->getTextBody());
   }
 
   /**

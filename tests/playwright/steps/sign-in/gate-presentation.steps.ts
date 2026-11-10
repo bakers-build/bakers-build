@@ -31,11 +31,13 @@ When('I open the device verification page for that code', async ({ page }) => {
 });
 
 When('I confirm the device sign-in', async ({ page }) => {
+  await page.getByLabel('Device code').fill(userCode);
   await page.getByRole('button', { name: 'Confirm sign-in' }).click();
   await page.waitForURL('**/oauth/device?done=*');
 });
 
 When('I deny the device sign-in', async ({ page }) => {
+  await page.getByLabel('Device code').fill(userCode);
   await page.getByRole('button', { name: 'Deny' }).click();
   await page.waitForURL('**/oauth/device?done=*');
 });
@@ -53,8 +55,8 @@ Then('the consent names the requesting client', async ({ page }) => {
   await expect(page.locator(GATE_CONTENT).getByText(/wants to sign in/)).toBeVisible();
 });
 
-Then('the consent shows that device code', async ({ page }) => {
-  await expect(page.locator(GATE_CONTENT)).toContainText(userCode);
+Then('the consent asks for the device code', async ({ page }) => {
+  await expect(page.getByLabel('Device code')).toHaveValue('');
   await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
 });
 

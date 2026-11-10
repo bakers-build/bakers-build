@@ -2,7 +2,7 @@
 
 **Signs requests to the bakers.build server in with a fixed HTTP Basic token.**
 
-For servers that are set up for HTTP Basic, such as test instances. Most users use an [OAuth sign-in profile](/configuration/connection#sign-in-profiles) instead.
+For test instances only: a production bakers.build server does not enable HTTP Basic, because it signs in without passwords. Everyone else uses an [OAuth sign-in profile](/configuration/connection#sign-in-profiles) instead.
 
 ## Enable it
 

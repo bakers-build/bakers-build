@@ -1,7 +1,6 @@
 _core:
   default_config_hash: 4GIX5Esnc_umpXUBj4IIocRX7Mt5fPhm4AgXfE3E56E
 module:
-  basic_auth: 0
   bb_activity: 0
   bb_addon: 0
   bb_api_key: 0

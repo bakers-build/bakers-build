@@ -129,7 +129,7 @@ section is absent on every other site.
 | `north-lead` | Northside | lead; Design Crew | Default human persona: tickets, projects, machines, conductors, templates |
 | `north-contributor` | Northside | contributor; North Crew | Ordinary member reads and writes, project and team time |
 | `north-member` | Northside | member; Platform Crew (no password) | Crew member, reviewer and worklog author |
-| `north-guest` | Northside | guest (ticket view, no update, no conductor) | Guest and addon overlay access checks |
+| `north-guest` | Northside | guest; Platform Crew (ticket view, no update, no conductor) | Guest and addon overlay access checks |
 | `south-lead` | Southside | lead | Lead of the other bakery only |
 | `south-contributor` | Southside | contributor; South Crew | Cross-workspace visibility checks |
 | `south-member` | Southside | member (no password) | Member of the other bakery |

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Statistics\Figure;
 
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\bb_core\BbFigureInterface;
 use Drupal\bb_core\BbMeasurementInterface;
@@ -43,13 +44,16 @@ final class FigureEvaluator {
    *   filter selects a list of UUIDs.
    * @param int $now
    *   The request timestamp.
+   * @param list<int>|null $projectBound
+   *   The only projects the figure may show, or NULL for no bound; see
+   *   FigureDisclosure::projectBound().
    *
    * @return \Drupal\bb_core\Statistics\Figure\FigureResult
    *   The complete figure payload.
    */
-  public function evaluate(BbFigureInterface $figure, array $contexts, array $selectedFilters, int $now): FigureResult {
+  public function evaluate(BbFigureInterface $figure, array $contexts, array $selectedFilters, int $now, ?array $projectBound = NULL): FigureResult {
     $filters = $this->filterResolver->resolve($figure->getFilters(), $selectedFilters, $contexts);
-    $contexts = $this->restrict($contexts, $filters);
+    $contexts = $this->restrict($contexts, $filters, $projectBound);
     $definition = $figure->getCategories();
     $period = NULL;
     if (($definition['type'] ?? NULL) !== 'windows') {
@@ -117,11 +121,13 @@ final class FigureEvaluator {
    *   The named contexts.
    * @param array<string, array<string, mixed>> $filters
    *   The resolved filters; entity lists are removed in place.
+   * @param list<int>|null $projectBound
+   *   The only projects the figure may show, or NULL for no bound.
    *
    * @return array<string, \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>>
    *   The contexts plus restrictions.
    */
-  private function restrict(array $contexts, array &$filters): array {
+  private function restrict(array $contexts, array &$filters, ?array $projectBound): array {
     foreach ($filters as $key => $filter) {
       if (($filter['type'] ?? '') !== 'entities') {
         continue;
@@ -135,7 +141,35 @@ final class FigureEvaluator {
       }
       unset($filters[$key]['entities']);
     }
+    if ($projectBound !== NULL) {
+      $contexts['project'] = $this->bounded($contexts['project'] ?? NULL, $projectBound);
+    }
     return $contexts;
+  }
+
+  /**
+   * The project context narrowed to the bound; empty matches nothing.
+   *
+   * A selected project outside the bound is refused.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>|null $current
+   *   The project context or restriction, if any.
+   * @param list<int> $bound
+   *   The allowed project ids.
+   *
+   * @return array<\Drupal\Core\Entity\EntityInterface>
+   *   The allowed projects.
+   */
+  private function bounded(EntityInterface|array|null $current, array $bound): array {
+    $projects = $current ?? $this->entityTypeManager->getStorage('bb_project')->loadMultiple($bound);
+    $projects = array_values(array_filter(is_array($projects) ? $projects : [$projects]));
+    // Refused like an out-of-scope project, so the answer never tells whether
+    // the person works in a project the viewer cannot see.
+    $outside = array_diff(array_map(static fn (EntityInterface $project): int => (int) $project->id(), $projects), $bound);
+    if ($outside !== []) {
+      throw new \InvalidArgumentException(sprintf('Filter "project" does not accept project %d in this scope.', reset($outside)));
+    }
+    return $projects;
   }
 
   /**

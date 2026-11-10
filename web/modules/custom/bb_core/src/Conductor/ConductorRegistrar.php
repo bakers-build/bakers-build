@@ -73,6 +73,17 @@ final class ConductorRegistrar {
   }
 
   /**
+   * Whether the account owns the conductor and may still register it.
+   *
+   * The heartbeat's own check: an owner who left the conductor's workspace
+   * keeps the conductor row, not its inbox or addon registration.
+   */
+  public function serves(BbConductorInterface $conductor, AccountInterface $account): bool {
+    $projectId = (int) $conductor->get('project_id')->target_id;
+    return $conductor->isOwnedBy($account) && $projectId > 0 && $this->registration->mayRegister($account, $projectId);
+  }
+
+  /**
    * Runs one registration step while holding the lock for a conductor_id.
    *
    * Between a read and its save, a concurrent registration from another host
