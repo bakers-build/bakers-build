@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
-import { homedir, tmpdir } from 'node:os';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it, vi } from 'vitest';
@@ -124,29 +124,6 @@ describe('ClaudeAgent.sessionExists', () => {
   });
 });
 
-describe('ClaudeAgent.runLogModified', () => {
-  it("stats the newest existing attempt's transcript of the run, else undefined", async () => {
-    const home = await mkdtemp(join(tmpdir(), 'claude-home-'));
-    const cwd = '/srv/ws/PROJ-1';
-    const agent = new ClaudeAgent({}, home);
-    const run = {
-      sessionId: 'r-1',
-      attemptFamily: ['r-1', 'r-1-a2', 'r-1-a3'],
-    };
-    expect(await agent.runLogModified(cwd, run)).toBeUndefined();
-    const dir = join(home, '.claude', 'projects', encodeClaudeProjectDir(cwd));
-    await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, 'r-1.jsonl'), '{}');
-    await writeFile(join(dir, 'r-1-a2.jsonl'), '{}');
-    await utimes(join(dir, 'r-1.jsonl'), 1_000, 1_000);
-    await utimes(join(dir, 'r-1-a2.jsonl'), 2_000, 2_000);
-    expect(await agent.runLogModified(cwd, run)).toBe(2_000_000);
-    expect(await agent.runLogModified(cwd, { sessionId: 'r-1' })).toBe(
-      1_000_000,
-    );
-  });
-});
-
 describe('ClaudeAgent.getRunLog', () => {
   it('reads the newest .jsonl under the encoded project dir', async () => {
     const home = await mkdtemp(join(tmpdir(), 'claude-home-'));
@@ -260,40 +237,6 @@ describe('ClaudeAgent.launchCommand with a run identity', () => {
     expect(agent.launchCommand('x')).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'x' --dangerously-skip-permissions",
     );
-  });
-});
-
-describe('ClaudeAgent.resumeCommand', () => {
-  const trust = fileURLToPath(
-    new URL('../trust/claude-trust.mjs', import.meta.url),
-  );
-
-  it('resumes the session in the worktree with the launch flags, without a new session id', () => {
-    const agent = new ClaudeAgent({ model: 'opus', permissions: 'yolo' });
-    expect(
-      agent.resumeCommand('s-1', '/w', { url: 'http://127.0.0.1:9' }, {}, [
-        '--plugin-dir',
-        '/p',
-      ]),
-    ).toBe(
-      `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 node '${trust}' '/w' claude --resume 's-1' --model 'opus' --dangerously-skip-permissions --mcp-config '{"mcpServers":{"bakers":{"type":"http","url":"http://127.0.0.1:9","headers":{"Authorization":"Bearer \${BAKERS_CONDUCTOR_TOKEN}"}}}}' '--plugin-dir' '/p'`,
-    );
-  });
-  it('waits for no plugin install when the run has its agent home', () => {
-    const agent = new ClaudeAgent({ permissions: 'yolo' });
-    agent.useMarketplaces([
-      { url: 'https://example.invalid/m.git', ref: 'main', plugins: ['p'] },
-    ]);
-    expect(agent.resumeCommand('s-1')).toBe(
-      "claude --resume 's-1' --dangerously-skip-permissions",
-    );
-  });
-  it('offers no resume for a measured run', () => {
-    expect(
-      new ClaudeAgent({ permissions: 'yolo', measure: true }).resumeCommand(
-        's-1',
-      ),
-    ).toBeUndefined();
   });
 });
 
@@ -512,11 +455,10 @@ describe('ClaudeAgent permissions: sandbox', () => {
       new ClaudeAgent({ permissions: 'sandbox' }).launchCommand('x'),
     );
 
-  it('starts without a bypass, in dontAsk mode, with project/local settings only and no MCP server', () => {
+  it('starts without a bypass, in default mode, with project/local settings only and no MCP server', () => {
     const a = argv();
     expect(a).not.toContain('--dangerously-skip-permissions');
-    // Nobody answers a prompt on a box: anything outside the allow list is denied.
-    expect(flagValue(a, '--permission-mode')).toBe('dontAsk');
+    expect(flagValue(a, '--permission-mode')).toBe('default');
     expect(flagValue(a, '--setting-sources')).toBe('project,local');
     expect(a).toContain('--strict-mcp-config');
     expect(JSON.parse(flagValue(a, '--mcp-config'))).toEqual({
@@ -545,12 +487,7 @@ describe('ClaudeAgent permissions: sandbox', () => {
       'Edit(./**)',
       'AskUserQuestion',
       'mcp__bakers',
-      'Skill',
-      `Read(/${join(homedir(), '.claude', 'plugins')}/**)`,
-      `Read(/${join(homedir(), '.claude', 'skills')}/**)`,
     ]);
-    expect(settings.permissions.allow).not.toContain('WebFetch');
-    expect(settings.permissions.allow).not.toContain('WebSearch');
     expect(settings.permissions.deny).toEqual([
       'Read(~/.ssh)',
       'Read(~/.ssh/**)',

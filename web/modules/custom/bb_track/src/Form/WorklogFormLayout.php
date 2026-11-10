@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\bb_track\Form;
 
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Security\TrustedCallbackInterface;
 use Drupal\Core\Template\Attribute;
@@ -209,8 +208,8 @@ final class WorklogFormLayout implements TrustedCallbackInterface {
       'summary' => [
         '#type' => 'component',
         '#component' => 'bb_theme:text',
-        // ui_patterns marks string props safe, so names are escaped here.
-        '#props' => ['text' => Html::escape($summary), 'as' => 'p', 'size' => 'body'],
+        // ui_patterns escapes string props itself.
+        '#props' => ['text' => $summary, 'as' => 'p', 'size' => 'body'],
       ],
       'state' => [
         '#type' => 'component',

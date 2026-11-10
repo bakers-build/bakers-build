@@ -13,6 +13,7 @@ use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_addon\AddonContractValidator;
 use Drupal\bb_addon\AddonWorkspaceResolver;
+use Drupal\bb_addon\Entity\BbAddon;
 use Drupal\bb_addon\Entity\BbAddonInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
@@ -146,9 +147,10 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
   /**
    * The workspace's row of a name and version, creating it under a lock.
    *
-   * Identity is (workspace, name, version): the first stored definition for
-   * that identity wins and a differing one is silently ignored, never
-   * duplicated and never overwritten (BB-660/661). The unique database key
+   * Identity is (workspace, name, version, fingerprint): an identical
+   * definition shares a row, a differing one gets its own, so another
+   * member's registration never decides what runs on this conductor. The
+   * unique database key
    * (`BbAddonStorageSchema`) is the authority under concurrent
    * registration; a collision on create means another request won the race,
    * so this reloads the now-existing row instead of failing.
@@ -158,13 +160,14 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
    */
   private function stored(int $workspace_id, string $name, string $version, string $json): BbAddonInterface {
     $storage = $this->entityTypeManager->getStorage('bb_addon');
-    $lock_name = 'bb_addon_register:' . $workspace_id . ':' . $name . ':' . $version;
+    $fingerprint = BbAddon::fingerprintOf($json);
+    $lock_name = 'bb_addon_register:' . $workspace_id . ':' . $name . ':' . $version . ':' . $fingerprint;
     if (!$this->lock->acquire($lock_name)
       && ($this->lock->wait($lock_name, 5) || !$this->lock->acquire($lock_name))) {
       throw new \RuntimeException("Could not acquire the registration lock for {$name}@{$version}.");
     }
     try {
-      $existing = $this->existing($storage, $workspace_id, $name, $version);
+      $existing = $this->existing($storage, $workspace_id, $name, $version, $fingerprint);
       if ($existing instanceof BbAddonInterface) {
         return $existing;
       }
@@ -184,7 +187,7 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
       catch (EntityStorageException) {
         // The unique key rejected a concurrent duplicate; the winner is
         // already stored under this same lock name's prior holder.
-        $reloaded = $this->existing($storage, $workspace_id, $name, $version);
+        $reloaded = $this->existing($storage, $workspace_id, $name, $version, $fingerprint);
         if ($reloaded instanceof BbAddonInterface) {
           return $reloaded;
         }
@@ -199,11 +202,12 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
   /**
    * The existing row for this identity, or NULL.
    */
-  private function existing(EntityStorageInterface $storage, int $workspace_id, string $name, string $version): ?BbAddonInterface {
+  private function existing(EntityStorageInterface $storage, int $workspace_id, string $name, string $version, string $fingerprint): ?BbAddonInterface {
     $addons = $storage->loadByProperties([
       'workspace_id' => $workspace_id,
       'name' => $name,
       'version' => $version,
+      'fingerprint' => $fingerprint,
     ]);
     $addon = reset($addons);
     return $addon instanceof BbAddonInterface ? $addon : NULL;

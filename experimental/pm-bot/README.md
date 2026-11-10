@@ -4,7 +4,7 @@ For Hermes's place on the production line and a requester's first action, see [U
 
 The PM bot is a project manager for one bakers.build project in Slack, built on [Hermes Agent](https://github.com/NousResearch/hermes-agent). A mention in its main Slack channel opens a public channel for that request. There it runs bakers.build's `bb-create-ticket` skill to specify the request with its requester as a ticket, answers status questions, posts the ticket's state changes, relays agent questions and passes the answers back. The channel is renamed after its ticket and archived when the ticket is finished.
 
-It runs as one container from the image this folder builds, in a `bakers-ddev` Coder workspace configured by workspace parameters. To set it up and run it, follow [the template's README › PM bot](../../coder/bakers-ddev/README.md#pm-bot).
+It runs as one container from the image this folder builds, started with [`compose.yaml`](compose.yaml) by a Coder workspace template from workspace parameters. keytec's template is `keytec-coder` in keytec/infra (`coder/templates/keytec-coder/README.md` › PM bot), which also describes the setup.
 
 | Part | What it is |
 |---|---|

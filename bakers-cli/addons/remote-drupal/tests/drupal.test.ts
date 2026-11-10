@@ -103,44 +103,16 @@ function fakeClient(overrides: Partial<JsonApiClient> = {}): JsonApiClient {
 }
 
 describe('DrupalBbRemote', () => {
-  it('publishTicketComment publishes the body unchanged through the site tool', async () => {
-    const remote = new DrupalBbRemote(fakeClient());
-    const call = vi.fn(async () => ({ content: [] }));
-    remote.siteTools = {
-      call,
-      close: vi.fn(),
-    } as unknown as NonNullable<DrupalBbRemote['siteTools']>;
-
-    await remote.publishTicketComment('tic-1', 'Run #7 lost.\n');
-
-    expect(call).toHaveBeenCalledWith('bakers_comment_publish', {
-      ticket: 'tic-1',
-      type: 'comment',
-      body: 'Run #7 lost.\n',
-    });
-  });
-
-  it('publishTicketComment rejects without site tools', async () => {
-    await expect(
-      new DrupalBbRemote(fakeClient()).publishTicketComment('t', 'b'),
-    ).rejects.toThrow();
-  });
-
   it('fetchActiveRuns maps rows to {runUuid,ticketUuid,ticketIdentifier,state}', async () => {
     const rows = [
       fakeResource(
         'run-1',
-        {
-          state: 'running',
-          state_at_start: 'working',
-          drupal_internal__id: 11,
-          agent: 'claude',
-        },
+        { state: 'running', state_at_start: 'working' },
         { ticket_id: 'tic-1' },
       ),
       fakeResource(
         'run-2',
-        { state: 'claimed', state_at_start: 'review', drupal_internal__id: 12 },
+        { state: 'claimed', state_at_start: 'review' },
         { ticket_id: 'tic-2' },
       ),
     ];
@@ -187,25 +159,21 @@ describe('DrupalBbRemote', () => {
     expect(active).toEqual([
       {
         runUuid: 'run-1',
-        runId: 11,
         ticketUuid: 'tic-1',
         ticketIdentifier: 'BB-1',
         branchName: 'bakers/bb-1',
         state: 'running',
         stateAtStart: 'working',
         worktreePath: '',
-        agent: 'claude',
       },
       {
         runUuid: 'run-2',
-        runId: 12,
         ticketUuid: 'tic-2',
         ticketIdentifier: 'BB-2',
         branchName: 'bakers/bb-2',
         state: 'claimed',
         stateAtStart: 'review',
         worktreePath: '',
-        agent: '',
       },
     ]);
   });
@@ -1140,15 +1108,6 @@ describe('DrupalBbRemote', () => {
     expect(body.attributes).toHaveProperty('error_log', 'startRun boom');
     expect(body.attributes).toHaveProperty('closed', true);
     expect(body.attributes).toHaveProperty('closed_date');
-  });
-
-  it('cancelRun patches state=cancelled alone, leaving the close to finalisation', async () => {
-    const update = vi.fn(async () => fakeResource('x'));
-    const remote = new DrupalBbRemote(fakeClient({ update }));
-    await remote.cancelRun('run-1');
-    expect(update.mock.calls).toEqual([
-      ['bb_run', 'run-1', { attributes: { state: 'cancelled' } }],
-    ]);
   });
 
   const CLOSE_METRICS = {

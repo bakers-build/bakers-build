@@ -91,7 +91,8 @@ subnet = c["networks"]["internal"]["ipam"]["config"][0]["subnet"]
 assert subnet == "172.30.42.0/24", subnet
 for name in ("deploy", "php", "cron"):
     e = s[name]["environment"]
-    assert e["TRUSTED_PROXY_SUBNET"] == subnet, name
+    # Empty by default: settings.container.php then trusts any private-network proxy.
+    assert e["TRUSTED_PROXY_SUBNET"] == "", name
     assert e["DRUPAL_HASH_SALT"] == "dummy-salt", name
     assert e["DOMAIN"] == "app.example.test", name
     assert e["FEATURE_FLAG_RUN_LOG_STORAGE"] == "0", name
@@ -110,6 +111,10 @@ assert s["cron"]["command"] == ["/var/www/html/scripts/deploy/site-cron.sh"], s[
 # Operators read and fill these files; they speak of bakers, not of the framework underneath.
 assert "drupal" not in example.lower() and "drush" not in example.lower(), ".env.example names Drupal or Drush"
 assert "drush" not in open(f"{src}/docker-compose.yml").read().lower(), "the operator compose file runs drush itself"
+
+r = run({**required, "TRUSTED_PROXY_SUBNET": "172.18.0.0/16"}, "config", "--format", "json")
+assert r.returncode == 0, r.stderr
+assert {json.loads(r.stdout)["services"][n]["environment"]["TRUSTED_PROXY_SUBNET"] for n in ("php", "cron", "deploy")} == {"172.18.0.0/16"}
 
 r = run({**required, "FEATURE_FLAG_RUN_LOG_STORAGE": "1"}, "config", "--format", "json")
 assert r.returncode == 0, r.stderr
@@ -132,7 +137,31 @@ for doc, file in (("docs/self-hosting/server.md", "docker-compose.yml"), ("docs/
     assert open(f"{src}/{file}").read() in open(doc).read(), f"{doc} does not show {src}/{file} verbatim"
 shutil.rmtree(work)
 PYTEST
-pass "operator compose file is standalone, trusts its subnet, requires its inputs and matches the docs"
+pass "operator compose file is standalone, trusts a private proxy, requires its inputs and matches the docs"
+
+# The hosted stack, like the operator one: its own host and its own salt. The proxy sits on
+# a shared host network, so settings.container.php trusts private peers, not a pinned subnet.
+BASE_JSON="${TMPDIR:-/tmp}/bakers-base.json" python3 <<'PYTEST'
+import json, os, subprocess
+c = json.load(open(os.environ["BASE_JSON"]))
+s = c["services"]
+assert not c["networks"]["internal"].get("ipam", {}).get("config"), "the hosted stack pins a subnet that may clash on a shared host"
+for name in ("deploy", "install", "php", "cron"):
+    e = s[name]["environment"]
+    assert e.get("DOMAIN") == "dummy.example.test", name
+    assert "TRUSTED_PROXY_SUBNET" not in e, name
+assert all("NGINX_ERROR_LOG_LEVEL" not in v.get("environment", {}) for v in s.values()), "a service sets the nginx error log level"
+env = {**os.environ, "COMPOSE_PROJECT_NAME": "bakers-contract", "DOMAIN": "dummy.example.test", "STACK_NAME": "dummy-stack",
+       "DB_NAME": "dummy", "DB_USER": "dummy", "DB_PASSWORD": "dummy-pw", "DB_ROOT_PASSWORD": "dummy-root-pw",
+       "DRUPAL_HASH_SALT": "dummy-salt",
+       "REGISTRY_IMAGE_PHP": "dummy/php:dummy", "REGISTRY_IMAGE_NGINX": "dummy/nginx:dummy"}
+for name in ("DOMAIN", "DRUPAL_HASH_SALT"):
+    r = subprocess.run(["docker", "compose", "-f", "docker-compose.yml", "-f", "docker-compose.traefik.yml", "--profile", "install", "config", "-q"],
+                       env={**env, name: ""}, capture_output=True, text=True)
+    assert r.returncode != 0, f"the hosted stack renders without {name}"
+    assert name in r.stderr, r.stderr
+PYTEST
+pass "hosted stack requires DOMAIN and DRUPAL_HASH_SALT, pins no subnet and logs no debug"
 
 # site-deploy.sh installs only a reachable, empty database and updates only an installed one.
 python3 <<'PYTEST'
@@ -180,6 +209,13 @@ assert "-y deploy" in calls and "site:install" not in calls, calls
 assert "sql:dump" not in calls, "the dump runs before the update, not inside it"
 r, calls = run("1", "57", "1", fail_on="-y deploy")
 assert r.returncode != 0 and "drush output for -y deploy" in r.stderr and "[bakers] " in r.stderr, r
+# A failure while the development module is on still takes it off again.
+for step in ("-y devel-entity-updates", "-y config:import"):
+    r, calls = run("1", "57", "1", fail_on=step)
+    assert r.returncode != 0, (step, r)
+    assert calls.splitlines()[-1] == "-y pm:uninstall devel_entity_updates devel", (step, calls)
+r, calls = run("1", "57", "1")
+assert "pm:uninstall" not in calls, calls
 r, calls = run("1", "3", "0")
 assert r.returncode != 0 and "site:install" not in calls and "-y deploy" not in calls, calls
 PYTEST
@@ -246,6 +282,7 @@ done
   || fail "komodo/bakers.toml: a stack other than develop and prod enables the docs profile"
 pass "komodo/bakers.toml enables the docs host on develop and prod only"
 
+
 # The merge gate's e2e overlay: no host port anywhere, the recipe world never runs
 # `drush deploy` (it imports config/sync), and the runner is opt-in by profile.
 out="$(render docker/e2e/compose.yml --profile e2e)"
@@ -301,32 +338,5 @@ assert.ok(ports, 'the project lists its preview services');
 assert.equal(ports.with.transport, undefined, 'the committed project must not register a transport');
 JS
 pass "workspace preview requires explicit machine provider configuration"
-
-# Coder startup must not download or start unselected tunnel providers.
-node --input-type=module <<'JS'
-import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { spawnSync } from 'node:child_process';
-const dir = mkdtempSync(join(tmpdir(), 'bakers-coder-'));
-try {
-  const bin = join(dir, 'bin'); mkdirSync(bin);
-  for (const tool of ['ss', 'bakers', 'herdr', 'claude', 'codex', 'cursor-agent', 'gh', 'glab', 'setsid', 'nohup']) {
-    writeFileSync(join(bin, tool), '#!/bin/sh\nexit 0\n', {mode: 0o755});
-  }
-  writeFileSync(join(bin, 'curl'), '#!/bin/sh\necho unexpected-download >&2\nexit 91\n', {mode: 0o755});
-  const result = spawnSync('bash', ['coder/bakers-ddev/scripts/install.sh'], {
-    encoding: 'utf8', env: {HOME: dir, TMPDIR: dir, PATH: `${bin}:/usr/bin:/bin`, FRP_VERSION: 'unused', CLOUDFLARED_VERSION: 'unused'}
-  });
-  assert.equal(result.status, 0, result.stderr);
-  assert.doesNotMatch(result.stdout, /(?:frpc|cloudflared): installing/);
-  const template = readFileSync('coder/bakers-ddev/template.tf', 'utf8');
-  const image = template.match(/variable "image" \{[\s\S]*?\n\}/)?.[0];
-  assert.ok(image, 'image input exists');
-  assert.doesNotMatch(image, /default\s*=/, 'Coder image must be explicitly supplied');
-} finally { rmSync(dir, {recursive: true, force: true}); }
-JS
-pass "Coder requires an image and leaves tunnel providers unselected"
 
 pass "compose.sh"

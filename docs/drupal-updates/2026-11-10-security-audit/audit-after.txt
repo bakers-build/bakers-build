@@ -1,0 +1,9 @@
+$ composer audit --locked --abandoned=report --no-interaction
+No security vulnerability advisories found.
+Found 1 abandoned package:
++-------------------+----------------------------------------------------------------------------------+
+| Abandoned Package | Suggested Replacement                                                            |
++-------------------+----------------------------------------------------------------------------------+
+| doctrine/common   | none                                                                             |
++-------------------+----------------------------------------------------------------------------------+
+exit=0

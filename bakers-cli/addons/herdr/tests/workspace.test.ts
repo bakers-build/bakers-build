@@ -144,7 +144,14 @@ describe('HerdrWorkspace', () => {
 
     // Upstream resolved, then the remote branch fetched before create.
     expect(gitCalls[0]).toContain('rev-parse');
-    expect(gitCalls[1]).toEqual(['-C', '/repo', 'fetch', 'origin', 'develop']);
+    expect(gitCalls[1]).toEqual([
+      '-C',
+      '/repo',
+      'fetch',
+      'origin',
+      '--',
+      'develop',
+    ]);
 
     // list, then create — and nothing else. Since BB-237 the open layout's
     // `pane run` deep link is NO LONGER issued by `ensure()`: the conductor
@@ -248,7 +255,9 @@ describe('HerdrWorkspace', () => {
     await ws.ensure('GL-9', 'bakers/GL-9');
 
     // Override used verbatim; no rev-parse needed, fetch targets it.
-    expect(gitCalls).toEqual([['-C', '/repo', 'fetch', 'origin', 'main']]);
+    expect(gitCalls).toEqual([
+      ['-C', '/repo', 'fetch', 'origin', '--', 'main'],
+    ]);
     const create = herdrCalls[1];
     expect(create[create.indexOf('--base') + 1]).toBe('origin/main');
   });
@@ -353,23 +362,6 @@ describe('HerdrWorkspace', () => {
     // open is a reuse path → created=false, after_create must NOT run.
     expect(result.created).toBe(false);
   });
-
-  it('throws on invalid branch names', async () => {
-    const ws = new HerdrWorkspace({
-      root: '/repo',
-      execHerdr: async () => '',
-    });
-
-    await expect(ws.ensure('GL-1', '.hidden')).rejects.toThrow(
-      /invalid workspace branch/,
-    );
-    await expect(ws.ensure('GL-1', 'bakers/../evil')).rejects.toThrow(
-      /invalid workspace branch/,
-    );
-    await expect(ws.ensure('GL-1', 'has space!')).rejects.toThrow(
-      /invalid workspace branch/,
-    );
-  });
 });
 
 describe('resolveBaseRef', () => {
@@ -384,7 +376,14 @@ describe('resolveBaseRef', () => {
       { override: 'origin/release' },
     );
     expect(ref).toBe('origin/release');
-    expect(calls).toContainEqual(['-C', '/repo', 'fetch', 'origin', 'release']);
+    expect(calls).toContainEqual([
+      '-C',
+      '/repo',
+      'fetch',
+      'origin',
+      '--',
+      'release',
+    ]);
   });
 
   it('falls back to the upstream when the override does not resolve', async () => {

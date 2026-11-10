@@ -47,7 +47,7 @@ Default: `system`. See [Execution security](/provision/security/execution) for b
 
 | `permissions` | Launch flags |
 |---|---|
-| `sandbox` | `--permission-mode dontAsk --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
+| `sandbox` | `--permission-mode default --setting-sources project,local --settings '<generated>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
 | `system` | none: your own Claude settings apply unchanged |
 | `yolo` | `--dangerously-skip-permissions`, the launch before `permissions` existed |
 | `custom` | `--settings '<config as JSON>'`, nothing else |
@@ -66,8 +66,6 @@ Default: `system`. See [Execution security](/provision/security/execution) for b
 { use: '@bakers-build/addon-claude', with: { permissions: 'sandbox', sandbox: { trusted_commands: ['git', 'docker'] } } }
 ```
 
-Unlisted actions are denied without a prompt; see [Execution security](/provision/security/execution#claude-in-sandbox-mode).
-
 ## Check it works
 
 `bakers agents` lists these aliases under harness `claude`. Claude-only default: `opus`.
@@ -81,11 +79,10 @@ bakers agents
 ## Good to know
 
 - The addon starts `claude` without installing or authenticating it. Non-interactive shells need the binary on `PATH`, not an alias.
-- bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. In `args` they fail loading.
+- bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
-- With `measure: true`, the wrapper folds generated or `custom` settings into its state-group settings, joining permission lists.
-- In a project config, an agent addon is ignored with a warning.
-- A restart resumes lost runs with `claude --resume`.
+- With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
+- Listed in a project config, an agent addon is ignored with a warning.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 

@@ -34,25 +34,21 @@ describe('FakeBbRemote', () => {
     expect(active).toEqual([
       {
         runUuid: 'r-1',
-        runId: 1,
         ticketUuid: 't-1',
         ticketIdentifier: '',
         branchName: '',
         state: 'running',
         stateAtStart: 'running',
         worktreePath: '',
-        agent: '',
       },
       {
         runUuid: 'r-2',
-        runId: 2,
         ticketUuid: 't-2',
         ticketIdentifier: '',
         branchName: '',
         state: 'claimed',
         stateAtStart: 'claimed',
         worktreePath: '',
-        agent: '',
       },
     ]);
   });
@@ -73,14 +69,12 @@ describe('FakeBbRemote', () => {
     expect(active).toEqual([
       {
         runUuid: 'r-3',
-        runId: 1,
         ticketUuid: 't-3',
         ticketIdentifier: 'GL-3',
         branchName: 'bakers/gl-3',
         state: 'running',
         stateAtStart: 'running',
         worktreePath: '',
-        agent: '',
       },
     ]);
   });

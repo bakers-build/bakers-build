@@ -20,6 +20,7 @@ module:
   consumers: 0
   crop: 0
   datetime: 0
+  dblog: 0
   display_builder: 0
   display_builder_entity_view: 0
   display_builder_views: 0

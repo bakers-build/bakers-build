@@ -80,17 +80,21 @@ final class WorkspaceReadScopeFilterAccessTest extends KernelTestBase {
    */
   public function testWorkspaceScopedGroupIsUnmappableByTheEntityModule(): void {
     // An account holding the type's admin permission is not narrowed at all, so
-    // its group is empty and the contrib mapper grants AMONG_ALL.
+    // its group is empty. Since entity 1.8 the contrib mapper grants nothing
+    // even then; only bb_core's hook gives the admin AMONG_ALL back.
     $admin = $this->createAccount('trap-admin', ['view bb_term', 'administer bakers']);
     self::assertCount(
       0,
       $this->conditionsFor('bb_term', $admin),
       'The admin bypass leaves the condition group empty.',
     );
-    self::assertTrue(
+    self::assertFalse(
       $this->filterAccess('bb_term', $admin, 'entity')->isAllowed(),
-      'Over an empty group the entity module grants AMONG_ALL — the state '
-      . 'every filtered read relies on.',
+      'Over an empty group the entity module alone grants no AMONG_ALL.',
+    );
+    self::assertTrue(
+      $this->filterAccess('bb_term', $admin)->isAllowed(),
+      'bb_core grants the unnarrowed admin AMONG_ALL, so filtered reads stay full.',
     );
 
     // A plain member IS narrowed, and a workspace condition is neither the

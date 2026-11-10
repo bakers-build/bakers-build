@@ -71,7 +71,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | Set recipe and type by name |
 | `bakers_ticket_transition` | `ticket`; `state`, `links` or both | Change the state or add links |
 | `bakers_ticket_template_run` | `template` (UUID); optional `title`, `description`, `workflow`, `project`, `conductor`, `labels`, `target_state` | Create a ticket from a ticket template |
-| `bakers_ticket_runs_list` | `ticket` | A ticket's agent runs, with why each failed run failed |
+| `bakers_ticket_runs_list` | `ticket` | A ticket's agent runs |
 | `bakers_ticket_activity_list` | `ticket` or `project` | The activity feed of a ticket or a project |
 | `bakers_comment_publish` | `ticket`, `type`, `body` | Publish a comment |
 | `bakers_metric_write` | `ticket`, `name`, `rows`; optional `label` | Record a measurement ([Ticket metrics](/skills-and-workflows/metrics)) |

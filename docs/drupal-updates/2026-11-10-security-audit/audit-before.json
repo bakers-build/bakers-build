@@ -1,0 +1,1145 @@
+{
+    "advisories": {
+        "composer/composer": [
+            {
+                "advisoryId": "PKSA-ddsx-fjz2-sbs3",
+                "packageName": "composer/composer",
+                "affectedVersions": ">=1.0,<2.2.30|>=2.3.0,<2.10.3",
+                "title": "Composer: GHSA-gjfg-22fp-rrxx fix bypass via symlinked package bin path",
+                "cve": "CVE-2026-59944",
+                "link": "https://github.com/advisories/GHSA-96h3-5x6v-m776",
+                "reportedAt": "2026-10-02T19:14:34+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-96h3-5x6v-m776"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-ym19-cy3j-z6df",
+                "packageName": "composer/composer",
+                "affectedVersions": ">=1.0,<2.2.30|>=2.3.0,<2.10.3",
+                "title": "Composer arbitrary command execution via a malicious package's Perforce source URL",
+                "cve": "CVE-2026-84361",
+                "link": "https://github.com/advisories/GHSA-rvx4-ffvw-m9q3",
+                "reportedAt": "2026-09-08T21:25:41+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-rvx4-ffvw-m9q3"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-q3ht-3g42-rg8f",
+                "packageName": "composer/composer",
+                "affectedVersions": ">=1.0.0,<2.2.29|>=2.3.0,<2.10.2",
+                "title": "Composer: Path traversal in package bin field lets dependencies chmod arbitrary host files",
+                "cve": "CVE-2026-59946",
+                "link": "https://github.com/advisories/GHSA-gjfg-22fp-rrxx",
+                "reportedAt": "2026-07-20T21:57:40+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-gjfg-22fp-rrxx"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-4pm6-g63v-5rkr",
+                "packageName": "composer/composer",
+                "affectedVersions": ">=1.0.0,<2.2.29|>=2.3.0,<2.10.2",
+                "title": "Composer: URL-embedded HTTP-Basic username leaks to verbose logs (GitHub PAT exposure)",
+                "cve": "CVE-2026-59947",
+                "link": "https://github.com/advisories/GHSA-g6xq-892h-64w3",
+                "reportedAt": "2026-07-20T21:55:05+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-g6xq-892h-64w3"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-zcdk-qnhk-hq2g",
+                "packageName": "composer/composer",
+                "affectedVersions": ">=1.0.0,<2.2.29|>=2.3.0,<2.10.2",
+                "title": "Composer: Arbitrary file write outside vendor via malicious transitive package name",
+                "cve": "CVE-2026-59948",
+                "link": "https://github.com/advisories/GHSA-499r-g7pc-vmp9",
+                "reportedAt": "2026-07-20T19:15:29+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-499r-g7pc-vmp9"
+                    }
+                ],
+                "severity": "high"
+            }
+        ],
+        "drupal/core": [
+            {
+                "advisoryId": "SA-CORE-2026-007",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.5.12 || >=10.6.0 <10.6.11 || >=11.2.0 <11.2.14 || >=11.3.0 <11.3.12 || 11.0.* || 11.1.*",
+                "title": "Drupal core - Less critical - Cache poisoning and open redirect - SA-CORE-2026-007",
+                "cve": "CVE-2026-55806",
+                "link": "https://www.drupal.org/sa-core-2026-007",
+                "reportedAt": "2026-06-17T18:57:37+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Less critical - Cache poisoning and open redirect - SA-CORE-2026-007",
+                        "remoteId": "SA-CORE-2026-007"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-012",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.6.13 || >=11.3.0 <11.3.14 || >=11.4.0 <11.4.4 || 11.0.* || 11.1.* || 11.2.*",
+                "title": "Drupal core - Moderately critical - Cross-site scripting - SA-CORE-2026-012",
+                "cve": "CVE-2026-55805",
+                "link": "https://www.drupal.org/sa-core-2026-012",
+                "reportedAt": "2026-07-15T19:52:26+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Cross-site scripting - SA-CORE-2026-012",
+                        "remoteId": "SA-CORE-2026-012"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-008",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.5.12 || >=10.6.0 <10.6.11 || >=11.2.0 <11.2.14 || >=11.3.0 <11.3.12 || 11.0.* || 11.1.*",
+                "title": "Drupal core - Moderately critical - Server-side request forgery - SA-CORE-2026-008",
+                "cve": "CVE-2026-55807",
+                "link": "https://www.drupal.org/sa-core-2026-008",
+                "reportedAt": "2026-06-17T18:57:49+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Server-side request forgery - SA-CORE-2026-008",
+                        "remoteId": "SA-CORE-2026-008"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-009",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.5.12 || >=10.6.0 <10.6.11 || >=11.2.0 <11.2.14 || >=11.3.0 <11.3.12 || 11.0.* || 11.1.*",
+                "title": "Drupal core - Moderately critical - Improper validation - SA-CORE-2026-009",
+                "cve": "CVE-2026-55808",
+                "link": "https://www.drupal.org/sa-core-2026-009",
+                "reportedAt": "2026-06-17T18:58:02+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Improper validation - SA-CORE-2026-009",
+                        "remoteId": "SA-CORE-2026-009"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-005",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.5.12 || >=10.6.0 <10.6.11 || >=11.2.0 <11.2.14 || >=11.3.0 <11.3.12 || 11.0.* || 11.1.*",
+                "title": "Drupal core - Critical - PHP object injection - SA-CORE-2026-005",
+                "cve": "CVE-2026-55803",
+                "link": "https://www.drupal.org/sa-core-2026-005",
+                "reportedAt": "2026-06-17T18:56:50+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Critical - PHP object injection - SA-CORE-2026-005",
+                        "remoteId": "SA-CORE-2026-005"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-006",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.5.12 || >=10.6.0 <10.6.11 || >=11.2.0 <11.2.14 || >=11.3.0 <11.3.12 || 11.0.* || 11.1.*",
+                "title": "Drupal core - Moderately critical - Gadget chain - SA-CORE-2026-006",
+                "cve": "CVE-2026-55804",
+                "link": "https://www.drupal.org/sa-core-2026-006",
+                "reportedAt": "2026-06-17T18:57:02+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Gadget chain - SA-CORE-2026-006",
+                        "remoteId": "SA-CORE-2026-006"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-011",
+                "packageName": "drupal/core",
+                "affectedVersions": ">=11.3.0 <11.3.14 || >=11.4.0 <11.4.4 || 11.2.*",
+                "title": "Drupal core - Moderately critical - Cross-site scripting - SA-CORE-2026-011",
+                "cve": "CVE-2026-15917",
+                "link": "https://www.drupal.org/sa-core-2026-011",
+                "reportedAt": "2026-07-15T19:51:57+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Cross-site scripting - SA-CORE-2026-011",
+                        "remoteId": "SA-CORE-2026-011"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-010",
+                "packageName": "drupal/core",
+                "affectedVersions": "<10.6.13 || >=11.3.0 <11.3.14 || >=11.4.0 <11.4.4 || 11.0.* || 11.1.* || 11.2.*",
+                "title": "Drupal core - Moderately critical - Information disclosure - SA-CORE-2026-010",
+                "cve": "CVE-2026-15916",
+                "link": "https://www.drupal.org/sa-core-2026-010",
+                "reportedAt": "2026-07-15T19:50:24+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Information disclosure - SA-CORE-2026-010",
+                        "remoteId": "SA-CORE-2026-010"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-016",
+                "packageName": "drupal/core",
+                "affectedVersions": ">= 10.3.0 < 10.6.19 || >= 11.0.0 < 11.3.19 || >= 11.4.0 < 11.4.10 || >= 12.0.0-alpha1 < 12.0.0-beta2",
+                "title": "Drupal core - Moderately critical - Cross-site scripting - SA-CORE-2026-016",
+                "cve": "CVE-2026-108514",
+                "link": "https://www.drupal.org/sa-core-2026-016",
+                "reportedAt": "2026-10-14T17:25:38+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Cross-site scripting - SA-CORE-2026-016",
+                        "remoteId": "SA-CORE-2026-016"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-013",
+                "packageName": "drupal/core",
+                "affectedVersions": ">=10.5.0 <10.6.17 || >=11.0.0 <11.3.17 || >=11.4.0 <11.4.7",
+                "title": "Drupal core - Moderately critical - Third-party libraries - SA-CORE-2026-013",
+                "cve": null,
+                "link": "https://www.drupal.org/sa-core-2026-na0isdadth",
+                "reportedAt": "2026-09-16T16:21:04+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Third-party libraries - SA-CORE-2026-013",
+                        "remoteId": "SA-CORE-2026-013"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-015",
+                "packageName": "drupal/core",
+                "affectedVersions": ">= 8.9.0 < 10.6.19 || >= 11.0.0 < 11.3.19 || >= 11.4.0 < 11.4.10 || >= 12.0.0-alpha1 < 12.0.0-beta2",
+                "title": "Drupal core - Moderately critical - Cross-site scripting - SA-CORE-2026-015",
+                "cve": "CVE-2026-108515",
+                "link": "https://www.drupal.org/sa-core-2026-015",
+                "reportedAt": "2026-10-14T17:25:19+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Moderately critical - Cross-site scripting - SA-CORE-2026-015",
+                        "remoteId": "SA-CORE-2026-015"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CORE-2026-014",
+                "packageName": "drupal/core",
+                "affectedVersions": ">= 8.9.0 < 10.6.19 || >= 11.0.0 < 11.3.19 || >= 11.4.0 < 11.4.10 || >= 12.0.0-alpha1 < 12.0.0-beta2",
+                "title": "Drupal core - Critical - Remote code execution - SA-CORE-2026-014",
+                "cve": "CVE-2026-108097",
+                "link": "https://www.drupal.org/sa-core-2026-014",
+                "reportedAt": "2026-10-14T16:10:00+00:00",
+                "sources": [
+                    {
+                        "name": "Drupal core - Critical - Remote code execution - SA-CORE-2026-014",
+                        "remoteId": "SA-CORE-2026-014"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "drupal/entity": [
+            {
+                "advisoryId": "SA-CONTRIB-2026-113",
+                "packageName": "drupal/entity",
+                "affectedVersions": "<1.8.0",
+                "title": "Entity API - Moderately critical - Information disclosure - SA-CONTRIB-2026-113",
+                "cve": "CVE-2026-81158",
+                "link": "https://www.drupal.org/sa-contrib-2026-113",
+                "reportedAt": "2026-08-26T17:41:31+00:00",
+                "sources": [
+                    {
+                        "name": "Entity API - Moderately critical - Information disclosure - SA-CONTRIB-2026-113",
+                        "remoteId": "SA-CONTRIB-2026-113"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "drupal/simple_oauth": [
+            {
+                "advisoryId": "SA-CONTRIB-2026-242",
+                "packageName": "drupal/simple_oauth",
+                "affectedVersions": ">=6.1.0 <6.1.3",
+                "title": "Simple OAuth (OAuth2) & OpenID Connect - Moderately critical - Access bypass - SA-CONTRIB-2026-242",
+                "cve": "CVE-2026-114542",
+                "link": "https://www.drupal.org/sa-contrib-2026-242",
+                "reportedAt": "2026-10-21T17:54:41+00:00",
+                "sources": [
+                    {
+                        "name": "Simple OAuth (OAuth2) & OpenID Connect - Moderately critical - Access bypass - SA-CONTRIB-2026-242",
+                        "remoteId": "SA-CONTRIB-2026-242"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CONTRIB-2026-296",
+                "packageName": "drupal/simple_oauth",
+                "affectedVersions": "<5.2.6 || >=6.0.0 <6.0.10 || >=6.1.0 <6.1.4",
+                "title": "Simple OAuth (OAuth2) & OpenID Connect - Critical - Access bypass - SA-CONTRIB-2026-296",
+                "cve": "CVE-2026-122058",
+                "link": "https://www.drupal.org/sa-contrib-2026-296",
+                "reportedAt": "2026-11-04T17:31:20+00:00",
+                "sources": [
+                    {
+                        "name": "Simple OAuth (OAuth2) & OpenID Connect - Critical - Access bypass - SA-CONTRIB-2026-296",
+                        "remoteId": "SA-CONTRIB-2026-296"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "drupal/ui_icons": [
+            {
+                "advisoryId": "SA-CONTRIB-2026-221",
+                "packageName": "drupal/ui_icons",
+                "affectedVersions": "<1.1.3 || >=2.0.0 <2.0.2",
+                "title": "UI Icons - Critical - Cross site scripting - SA-CONTRIB-2026-221",
+                "cve": "CVE-2026-114527",
+                "link": "https://www.drupal.org/sa-contrib-2026-lassifekml",
+                "reportedAt": "2026-10-21T17:36:30+00:00",
+                "sources": [
+                    {
+                        "name": "UI Icons - Critical - Cross site scripting - SA-CONTRIB-2026-221",
+                        "remoteId": "SA-CONTRIB-2026-221"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "SA-CONTRIB-2026-230",
+                "packageName": "drupal/ui_icons",
+                "affectedVersions": "<1.1.3 || >=2.0.0 <2.0.2",
+                "title": "UI Icons - Moderately critical - Cross-site scripting - SA-CONTRIB-2026-230",
+                "cve": "CVE-2026-114532",
+                "link": "https://www.drupal.org/sa-contrib-2026-45riifbj-c",
+                "reportedAt": "2026-10-21T17:44:58+00:00",
+                "sources": [
+                    {
+                        "name": "UI Icons - Moderately critical - Cross-site scripting - SA-CONTRIB-2026-230",
+                        "remoteId": "SA-CONTRIB-2026-230"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "drupal/ui_patterns": [
+            {
+                "advisoryId": "SA-CONTRIB-2026-075",
+                "packageName": "drupal/ui_patterns",
+                "affectedVersions": ">=2.0.0 <2.0.17",
+                "title": "UI Patterns (SDC in Drupal UI) - Moderately critical - Cross site scripting - SA-CONTRIB-2026-075",
+                "cve": "CVE-2026-15084",
+                "link": "https://www.drupal.org/sa-contrib-2026-075",
+                "reportedAt": "2026-07-08T17:17:41+00:00",
+                "sources": [
+                    {
+                        "name": "UI Patterns (SDC in Drupal UI) - Moderately critical - Cross site scripting - SA-CONTRIB-2026-075",
+                        "remoteId": "SA-CONTRIB-2026-075"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "guzzlehttp/guzzle": [
+            {
+                "advisoryId": "PKSA-gcrk-3vtt-1r14",
+                "packageName": "guzzlehttp/guzzle",
+                "affectedVersions": ">=8.0.0,<8.0.1|<7.15.2",
+                "title": "Guzzle: Noncanonical host can bypass host-based checks",
+                "cve": "CVE-2026-69246",
+                "link": "https://github.com/advisories/GHSA-v5mv-p594-2x33",
+                "reportedAt": "2026-08-03T21:07:26+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-v5mv-p594-2x33"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-cnw1-2ytm-cgr8",
+                "packageName": "guzzlehttp/guzzle",
+                "affectedVersions": ">=8.0.0,<8.0.1|<7.15.2",
+                "title": "Guzzle: Noncanonical cookie domain keeps subdomain scope",
+                "cve": "CVE-2026-69245",
+                "link": "https://github.com/advisories/GHSA-f7vp-7xgx-4w4r",
+                "reportedAt": "2026-08-03T21:05:26+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-f7vp-7xgx-4w4r"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-fy2t-3c5f-827y",
+                "packageName": "guzzlehttp/guzzle",
+                "affectedVersions": "<7.15.1",
+                "title": "Guzzle: URI fragments disclosed in redirect Referer headers",
+                "cve": "CVE-2026-67354",
+                "link": "https://github.com/advisories/GHSA-h95v-h523-3mw8",
+                "reportedAt": "2026-07-20T23:28:36+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-h95v-h523-3mw8"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-qxvb-2bpp-dnk6",
+                "packageName": "guzzlehttp/guzzle",
+                "affectedVersions": "<7.15.1",
+                "title": "Guzzle: Host-only cookie scope is not preserved",
+                "cve": "CVE-2026-67355",
+                "link": "https://github.com/advisories/GHSA-wm3w-8rrp-j577",
+                "reportedAt": "2026-07-20T23:27:49+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-wm3w-8rrp-j577"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-bbs6-q5q9-f3t4",
+                "packageName": "guzzlehttp/guzzle",
+                "affectedVersions": "<7.15.1",
+                "title": "Guzzle: Unbounded response cookies risk denial of service",
+                "cve": "CVE-2026-67353",
+                "link": "https://github.com/advisories/GHSA-f283-ghqc-fg79",
+                "reportedAt": "2026-07-20T23:27:02+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-f283-ghqc-fg79"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-bcdd-5xc7-gwfb",
+                "packageName": "guzzlehttp/guzzle",
+                "affectedVersions": "<7.12.3",
+                "title": "Guzzle: Cookie Disclosure and Injection via IP-Address Domains",
+                "cve": "CVE-2026-59883",
+                "link": "https://github.com/advisories/GHSA-g446-98w2-8p5w",
+                "reportedAt": "2026-07-20T22:00:09+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-g446-98w2-8p5w"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-pwsk-hy21-4gby",
+                "packageName": "guzzlehttp/guzzle",
+                "affectedVersions": "<7.14.2",
+                "title": "Guzzle: Proxy-Authorization headers can be sent to origin servers",
+                "cve": "CVE-2026-67339",
+                "link": "https://github.com/advisories/GHSA-94pj-82f3-465w",
+                "reportedAt": "2026-07-20T21:46:02+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-94pj-82f3-465w"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-93qv-9n9h-6k6p",
+                "packageName": "guzzlehttp/guzzle",
+                "affectedVersions": "<7.12.1",
+                "title": "Dot-only cookie domains match all hosts",
+                "cve": "CVE-2026-55767",
+                "link": "https://github.com/guzzle/guzzle/security/advisories/GHSA-cwxw-98qj-8qjx",
+                "reportedAt": "2026-06-18T14:12:49+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-cwxw-98qj-8qjx"
+                    },
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "guzzlehttp/guzzle/CVE-2026-55767.yaml"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-k22t-f949-t9g6",
+                "packageName": "guzzlehttp/guzzle",
+                "affectedVersions": "<7.12.1",
+                "title": "Silent HTTPS proxy downgrade to cleartext",
+                "cve": "CVE-2026-55568",
+                "link": "https://github.com/guzzle/guzzle/security/advisories/GHSA-wpwq-4j6v-78m3",
+                "reportedAt": "2026-06-18T14:12:49+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-wpwq-4j6v-78m3"
+                    },
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "guzzlehttp/guzzle/CVE-2026-55568.yaml"
+                    }
+                ],
+                "severity": "medium"
+            }
+        ],
+        "guzzlehttp/psr7": [
+            {
+                "advisoryId": "PKSA-vznr-tgp9-fd7d",
+                "packageName": "guzzlehttp/psr7",
+                "affectedVersions": "<2.12.3",
+                "title": "guzzlehttp/psr7: Host Confusion via Weak URI Host Validation",
+                "cve": "CVE-2026-59882",
+                "link": "https://github.com/advisories/GHSA-c2w2-prh8-qm98",
+                "reportedAt": "2026-07-21T18:35:25+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-c2w2-prh8-qm98"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-7qs6-zvnz-h66r",
+                "packageName": "guzzlehttp/psr7",
+                "affectedVersions": "<2.12.1",
+                "title": "CRLF injection in HTTP start-line serialization",
+                "cve": "CVE-2026-55766",
+                "link": "https://github.com/guzzle/psr7/security/advisories/GHSA-vm85-hxw5-5432",
+                "reportedAt": "2026-06-18T09:49:37+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-vm85-hxw5-5432"
+                    },
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "guzzlehttp/psr7/CVE-2026-55766.yaml"
+                    }
+                ],
+                "severity": "medium"
+            }
+        ],
+        "league/commonmark": [
+            {
+                "advisoryId": "PKSA-m2dq-1fhr-29b1",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=1.3.0,<=2.10.1",
+                "title": "league/commonmark: DisallowedRawHtml bypassed when a disallowed tag name ends the raw-HTML literal",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-97jj-33gv-5xf9",
+                "reportedAt": "2026-09-30T15:36:33+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-97jj-33gv-5xf9"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-m4t9-vsgq-8khn",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=2.0.0,<=2.10.1",
+                "title": "league/commonmark: Quadratic-time denial of service in the GitHub Flavored Markdown Table extension block-start scan",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-3q6v-r5mr-hxv8",
+                "reportedAt": "2026-09-30T15:36:13+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-3q6v-r5mr-hxv8"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-zyf5-hrxv-hrd7",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=1.5.0,<2.10.0",
+                "title": "league/commonmark: Denial of service via distinctly-named attributes in the Attributes extension",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-8rr7-cvq3-gmfh",
+                "reportedAt": "2026-09-01T20:28:40+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-8rr7-cvq3-gmfh"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-nv44-1b4d-6gjg",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=1.5.0,<2.9.1",
+                "title": "league/commonmark: Denial of service in the SmartPunct and Attributes extensions",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-jjv6-8j6v-6j52",
+                "reportedAt": "2026-09-01T20:21:45+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-jjv6-8j6v-6j52"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-kr3s-894t-g5w2",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=2.7.0,<2.9.1",
+                "title": "league/commonmark XSS: `on*` event-handler filter in `AttributesExtension` bypassed with a U+000C form feed",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-f8fg-pg57-v4j8",
+                "reportedAt": "2026-09-01T20:18:29+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-f8fg-pg57-v4j8"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-9q1p-3s19-bp1q",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=0.6.0,<2.9.1",
+                "title": "league/commonmark: Denial of service via crafted code fences, reference links, and emphasis delimiters",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-j8pm-gj4c-rq4x",
+                "reportedAt": "2026-09-01T20:17:59+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-j8pm-gj4c-rq4x"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-5mzr-szzf-z6cn",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=2.0.0,<2.9.0",
+                "title": "league/commonmark: Denial of service via deeply nested XML output",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-mj63-m3rc-8ppr",
+                "reportedAt": "2026-08-06T20:42:54+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-mj63-m3rc-8ppr"
+                    }
+                ],
+                "severity": "medium"
+            },
+            {
+                "advisoryId": "PKSA-cqd6-fg4n-nxpf",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=2.0.0,<2.9.0",
+                "title": "league/commonmark: Denial of service via colliding heading slugs",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-mh25-x5hq-wrqp",
+                "reportedAt": "2026-08-06T20:41:45+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-mh25-x5hq-wrqp"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-1q6p-sqkj-8mmj",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=1.5.0,<2.9.0",
+                "title": "league/commonmark:  Denial of service via duplicate footnote definitions",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-jfm3-95jq-q3rf",
+                "reportedAt": "2026-08-06T20:40:53+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-jfm3-95jq-q3rf"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-mc58-w91n-f5gv",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=1.5.0,<2.9.0",
+                "title": "league/commonmark: Denial of service via adjacent inline attribute blocks",
+                "cve": null,
+                "link": "https://github.com/advisories/GHSA-g2gp-3wwq-f4ph",
+                "reportedAt": "2026-08-06T20:39:52+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-g2gp-3wwq-f4ph"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-t21r-vtr5-3mdz",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=0.6.0,<2.9.0",
+                "title": "league/commonmark: Quadratic-time denial of service when parsing crafted Markdown",
+                "cve": "CVE-2026-71488",
+                "link": "https://github.com/advisories/GHSA-2q4p-g7hv-5rgv",
+                "reportedAt": "2026-08-06T20:37:20+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-2q4p-g7hv-5rgv"
+                    }
+                ],
+                "severity": "high"
+            },
+            {
+                "advisoryId": "PKSA-scnn-p8mm-jbft",
+                "packageName": "league/commonmark",
+                "affectedVersions": ">=1.5.0,<=2.8.3",
+                "title": "league/commonmark: AttributesExtension href/src unsafe-link filter bypass via embedded control bytes",
+                "cve": "CVE-2026-71478",
+                "link": "https://github.com/advisories/GHSA-29pj-957v-52mc",
+                "reportedAt": "2026-08-06T20:30:39+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-29pj-957v-52mc"
+                    }
+                ],
+                "severity": "medium"
+            }
+        ],
+        "mcp/sdk": [
+            {
+                "advisoryId": "PKSA-s52d-n7sx-trsg",
+                "packageName": "mcp/sdk",
+                "affectedVersions": ">=0.8.0,<0.9.0",
+                "title": "OAuth middleware endpoints bypass request body limits and allow unauthenticated memory exhaustion",
+                "cve": null,
+                "link": "https://github.com/modelcontextprotocol/php-sdk/security/advisories/GHSA-f4rf-6ghj-mhr6",
+                "reportedAt": "2026-10-18T14:45:00+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "mcp/sdk/GHSA-f4rf-6ghj-mhr6.yaml"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "squizlabs/php_codesniffer": [
+            {
+                "advisoryId": "PKSA-rdkp-vv9z-mjkg",
+                "packageName": "squizlabs/php_codesniffer",
+                "affectedVersions": "<3.13.6|>=4.0.0,<4.0.2",
+                "title": "OS Command injection",
+                "cve": "CVE-2026-67434",
+                "link": "https://github.com/PHPCSStandards/PHP_CodeSniffer/security/advisories/GHSA-hmqg-cxww-wqhq",
+                "reportedAt": "2026-08-05T23:53:11+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-hmqg-cxww-wqhq"
+                    },
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "squizlabs/php_codesniffer/CVE-2026-67434.yaml"
+                    }
+                ],
+                "severity": "high"
+            }
+        ],
+        "symfony/config": [
+            {
+                "advisoryId": "PKSA-9myg-zzdn-22rg",
+                "packageName": "symfony/config",
+                "affectedVersions": ">=2.0.0,<3.0.0|>=3.0.0,<4.0.0|>=4.0.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "XXE (Local File Read) in Config XmlUtils::parse() via validateOnParse = true",
+                "cve": "CVE-2026-123824",
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-5jff-8h8q-r5qx",
+                "reportedAt": "2026-11-04T10:45:07+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/config/CVE-2026-123824.yaml"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "symfony/filesystem": [
+            {
+                "advisoryId": "PKSA-g499-cm4q-v35y",
+                "packageName": "symfony/filesystem",
+                "affectedVersions": ">=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "Filesystem Path Treats Any Prefix Before \"://\" as a Root, Letting Paths Escape Their Base Directory",
+                "cve": null,
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-6prc-h956-hxjq",
+                "reportedAt": "2026-11-04T00:00:00+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/filesystem/2026-11-04-18.yaml"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "symfony/http-foundation": [
+            {
+                "advisoryId": "PKSA-24ph-xkrh-y79j",
+                "packageName": "symfony/http-foundation",
+                "affectedVersions": ">=2.0.0,<3.0.0|>=3.0.0,<4.0.0|>=4.0.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "CVE-2026-118514: HEAD Requests Bypass the methods Option of security.access_control Rules and Firewalls: Incomplete Fix for CVE-2026-45075",
+                "cve": "CVE-2026-118514",
+                "link": "https://symfony.com/cve-2026-118514",
+                "reportedAt": "2026-11-04T10:45:07+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/http-foundation/CVE-2026-118514.yaml"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "PKSA-pr6q-2w5s-kzzf",
+                "packageName": "symfony/http-foundation",
+                "affectedVersions": ">=5.4.50,<5.4.56|>=6.4.29,<6.4.50|>=7.3.7,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "Path Rules Enforced in Front of PHP Can Be Bypassed by Appending the Path to the Script Name",
+                "cve": null,
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-3h27-hjv7-fqjx",
+                "reportedAt": "2026-11-04T00:00:00+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/http-foundation/2026-11-04-21.yaml"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "PKSA-nxjs-s6hn-vb6m",
+                "packageName": "symfony/http-foundation",
+                "affectedVersions": ">=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "The \"private_ranges\" Trusted Proxies Shortcut Trusts Clients Presenting an IPv4-Mapped, 6to4, Teredo or NAT64 Address as Reverse Proxies",
+                "cve": null,
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-xg2q-4rrq-657q",
+                "reportedAt": "2026-11-04T00:00:00+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/http-foundation/2026-11-04-9.yaml"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "PKSA-b2gg-vk1g-6d5q",
+                "packageName": "symfony/http-foundation",
+                "affectedVersions": ">=2.0.0,<2.1.0|>=2.1.0,<2.2.0|>=2.2.0,<2.3.0|>=2.3.0,<2.4.0|>=2.4.0,<2.5.0|>=2.5.0,<2.6.0|>=2.6.0,<2.7.0|>=2.7.0,<2.8.0|>=2.8.0,<3.0.0|>=3.0.0,<3.1.0|>=3.1.0,<3.2.0|>=3.2.0,<3.3.0|>=3.3.0,<3.4.0|>=3.4.0,<4.0.0|>=4.0.0,<4.1.0|>=4.1.0,<4.2.0|>=4.2.0,<4.3.0|>=4.3.0,<4.4.0|>=4.4.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "Generated URLs Can Point to a Host Chosen by the Client",
+                "cve": null,
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-5mx8-mwrp-5693",
+                "reportedAt": "2026-11-04T00:00:00+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/http-foundation/2026-11-04-22.yaml"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "PKSA-xmwy-rmx5-m7h4",
+                "packageName": "symfony/http-foundation",
+                "affectedVersions": ">=5.4.1,<5.4.54|>=6.0.1,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.46|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.19|>=8.0.0,<8.1.0|>=8.1.0,<8.1.7",
+                "title": "CVE-2026-108082: ReDoS in HeaderUtils::split() Reachable Through the Cache-Control Request Header",
+                "cve": "CVE-2026-108082",
+                "link": "https://symfony.com/cve-2026-108082",
+                "reportedAt": "2026-09-15T08:00:00+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-r925-mgvr-h9cc"
+                    },
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/http-foundation/CVE-2026-108082.yaml"
+                    }
+                ],
+                "severity": "high"
+            }
+        ],
+        "symfony/http-kernel": [
+            {
+                "advisoryId": "PKSA-3gxv-7xhq-mgmz",
+                "packageName": "symfony/http-kernel",
+                "affectedVersions": ">=2.8.44,<3.0.0|>=3.4.14,<4.0.0|>=4.0.14,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "Inline Fragments Let Untrusted Forwarded Headers Set the Host, Scheme and Port of the URLs Generated for the Main Request",
+                "cve": "CVE-2026-123339",
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-wg5q-m2ww-f3c9",
+                "reportedAt": "2026-11-04T10:45:07+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/http-kernel/CVE-2026-123339.yaml"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "symfony/mime": [
+            {
+                "advisoryId": "PKSA-wtxr-p26d-nn42",
+                "packageName": "symfony/mime",
+                "affectedVersions": ">=2.0.0,<3.0.0|>=3.0.0,<4.0.0|>=4.0.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.55|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.49|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.22|>=8.0.0,<8.1.0|>=8.1.0,<8.1.10",
+                "title": "CVE-2026-45070: Email Header Injection via Non-Token Characters in Mime Parameter Names",
+                "cve": "CVE-2026-45070",
+                "link": "https://symfony.com/cve-2026-45070",
+                "reportedAt": "2026-10-28T18:08:54+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-vqc8-7275-q272"
+                    },
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/mime/CVE-2026-45070.yaml"
+                    }
+                ],
+                "severity": "medium"
+            }
+        ],
+        "symfony/routing": [
+            {
+                "advisoryId": "PKSA-y8c5-1b7f-r1gj",
+                "packageName": "symfony/routing",
+                "affectedVersions": ">=4.1.0,<4.2.0|>=4.2.0,<4.3.0|>=4.3.0,<4.4.0|>=4.4.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "CVE-2026-118516: Host Placeholders Can Match the Start of the Path in Compiled URL Matchers, Bypassing Path-Based Access Control",
+                "cve": "CVE-2026-118516",
+                "link": "https://symfony.com/cve-2026-118516",
+                "reportedAt": "2026-11-04T10:45:07+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/routing/CVE-2026-118516.yaml"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "symfony/serializer": [
+            {
+                "advisoryId": "PKSA-nyd8-k74r-fsf2",
+                "packageName": "symfony/serializer",
+                "affectedVersions": ">=2.0.0,<3.0.0|>=3.0.0,<4.0.0|>=4.0.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "DataUriNormalizer Opens Data URIs With a Non-Lowercase Scheme as Local Files, Letting a Client Read Any Server File",
+                "cve": "CVE-2026-121623",
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-pxj9-jh84-vhm5",
+                "reportedAt": "2026-11-04T10:45:07+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/serializer/CVE-2026-121623.yaml"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "PKSA-y18k-qjc6-knrv",
+                "packageName": "symfony/serializer",
+                "affectedVersions": ">=5.4.41,<5.4.56|>=6.4.9,<6.4.50|>=7.0.9,<7.1.0|>=7.1.2,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "ObjectNormalizer Dotted-Key Property-Path Traversal Bypasses #[Ignore] on Nested Objects",
+                "cve": "CVE-2026-122053",
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-hqp2-7rr8-hf26",
+                "reportedAt": "2026-11-04T10:45:07+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/serializer/CVE-2026-122053.yaml"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "PKSA-grh8-hvfp-h9pf",
+                "packageName": "symfony/serializer",
+                "affectedVersions": ">=2.0.0,<3.0.0|>=3.0.0,<4.0.0|>=4.0.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "CVE-2026-118515: The Serializer Builds UploadedFile Objects From Request Data, Letting a Client Point an Upload at Any Server File",
+                "cve": "CVE-2026-118515",
+                "link": "https://symfony.com/cve-2026-118515",
+                "reportedAt": "2026-11-04T10:45:07+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/serializer/CVE-2026-118515.yaml"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "symfony/validator": [
+            {
+                "advisoryId": "PKSA-68kf-8d6f-hdsy",
+                "packageName": "symfony/validator",
+                "affectedVersions": ">=2.0.0,<3.0.0|>=3.0.0,<4.0.0|>=4.0.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "Ip Constraint public/private Modes Accept IPv4-Mapped and IPv4-Compatible IPv6 Addresses: SSRF Filter Bypass",
+                "cve": "CVE-2026-123125",
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-4qpf-57w4-m3wc",
+                "reportedAt": "2026-11-04T10:45:07+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/validator/CVE-2026-123125.yaml"
+                    }
+                ],
+                "severity": null
+            }
+        ],
+        "symfony/yaml": [
+            {
+                "advisoryId": "PKSA-nktx-f1n1-b4yd",
+                "packageName": "symfony/yaml",
+                "affectedVersions": ">=2.0.0,<3.0.0|>=3.0.0,<4.0.0|>=4.0.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.56|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.50|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.23|>=8.0.0,<8.1.0|>=8.1.0,<8.1.11",
+                "title": "Exponential and Quadratic Parse Times in the YAML Parser Let a Single Document Hold a Process",
+                "cve": "CVE-2026-123792",
+                "link": "https://github.com/symfony/symfony/security/advisories/GHSA-hwfg-qwvh-2wfx",
+                "reportedAt": "2026-11-04T10:45:07+00:00",
+                "sources": [
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/yaml/CVE-2026-123792.yaml"
+                    }
+                ],
+                "severity": null
+            },
+            {
+                "advisoryId": "PKSA-xz3r-9gp4-4m1z",
+                "packageName": "symfony/yaml",
+                "affectedVersions": ">=2.0.0,<3.0.0|>=3.0.0,<4.0.0|>=4.0.0,<5.0.0|>=5.0.0,<5.1.0|>=5.1.0,<5.2.0|>=5.2.0,<5.3.0|>=5.3.0,<5.4.0|>=5.4.0,<5.4.54|>=6.0.0,<6.1.0|>=6.1.0,<6.2.0|>=6.2.0,<6.3.0|>=6.3.0,<6.4.0|>=6.4.0,<6.4.45|>=7.0.0,<7.1.0|>=7.1.0,<7.2.0|>=7.2.0,<7.3.0|>=7.3.0,<7.4.0|>=7.4.0,<7.4.18|>=8.0.0,<8.1.0|>=8.1.0,<8.1.6",
+                "title": "CVE-2026-109413: Unbounded Recursion in the YAML Inline Lexer Lets a Single Document Crash the Process",
+                "cve": "CVE-2026-109413",
+                "link": "https://symfony.com/cve-2026-109413",
+                "reportedAt": "2026-08-30T08:00:00+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-2v3c-qxhr-7vpv"
+                    },
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "symfony/yaml/CVE-2026-109413.yaml"
+                    }
+                ],
+                "severity": "high"
+            }
+        ]
+    },
+    "ignored-advisories": {
+        "guzzlehttp/psr7": [
+            {
+                "advisoryId": "PKSA-gm5x-j3mz-71n9",
+                "packageName": "guzzlehttp/psr7",
+                "affectedVersions": "<2.10.2",
+                "title": "CRLF injection via URI host component",
+                "cve": "CVE-2026-49214",
+                "link": "https://github.com/guzzle/psr7/security/advisories/GHSA-hq7v-mx3g-29hw",
+                "reportedAt": "2026-05-25T22:58:15+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-hq7v-mx3g-29hw"
+                    },
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "guzzlehttp/psr7/CVE-2026-49214.yaml"
+                    }
+                ],
+                "severity": "medium",
+                "ignoreReason": "guzzlehttp/psr7 advisory; psr7 pinned by drupal/core-recommended ~2.8.0, no fixed release available within the core constraint yet"
+            },
+            {
+                "advisoryId": "PKSA-jj5t-2zs1-dcfm",
+                "packageName": "guzzlehttp/psr7",
+                "affectedVersions": "<2.10.2",
+                "title": "Host confusion via authority reinterpretation",
+                "cve": "CVE-2026-48998",
+                "link": "https://github.com/guzzle/psr7/security/advisories/GHSA-34xg-wgjx-8xph",
+                "reportedAt": "2026-05-25T22:58:15+00:00",
+                "sources": [
+                    {
+                        "name": "GitHub",
+                        "remoteId": "GHSA-34xg-wgjx-8xph"
+                    },
+                    {
+                        "name": "FriendsOfPHP/security-advisories",
+                        "remoteId": "guzzlehttp/psr7/CVE-2026-48998.yaml"
+                    }
+                ],
+                "severity": "medium",
+                "ignoreReason": "guzzlehttp/psr7 advisory; psr7 pinned by drupal/core-recommended ~2.8.0, no fixed release available within the core constraint yet"
+            }
+        ]
+    },
+    "abandoned": [],
+    "filter": [],
+    "cooldown": []
+}
