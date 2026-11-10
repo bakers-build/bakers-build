@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Ticket;
 
 use Drupal\Component\Utility\Html;
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Url;
+use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
@@ -159,12 +161,47 @@ final class TicketInterventions {
   }
 
   /**
+   * The ticket's stall reason a failed run shows in place of Retry, or empty.
+   *
+   * Only the ticket's newest failed run speaks for the ticket; an older one,
+   * or one the reader may retry, shows none.
+   */
+  public static function retryStall(BbRunInterface $run, BbTicketInterface $ticket): string {
+    if ($run->getRunState() !== 'failed' || !self::isNewestRun($run) || self::mayRetryRun($run, $ticket)) {
+      return '';
+    }
+    return (string) $ticket->get('stall_reason')->value;
+  }
+
+  /**
+   * Cacheability of what a run says and offers on its row and its page.
+   *
+   * Retry, Re-dispatch and the stall follow the ticket, its newer runs, its
+   * blockers and the project's conductors; a claim's words change in time.
+   */
+  public static function runCacheability(BbRunInterface $run): CacheableMetadata {
+    $ticket = $run->getTicket();
+    $cache = $ticket instanceof BbTicketInterface
+      ? TicketStallReason::cacheability($ticket)->addCacheTags(['bb_conductor_list'])
+      : new CacheableMetadata();
+    if ($run->getRunState() === 'claimed') {
+      // "The claim lapses in …" turns into "The claim lapsed … ago".
+      $cache->mergeCacheMaxAge(60);
+    }
+    return $cache;
+  }
+
+  /**
    * Whether no run of the ticket is newer than this one.
+   *
+   * Newer in the ticket's Run history order (`RunsItemList`), so the run that
+   * offers Retry is the top row.
    */
   private static function isNewestRun(BbRunInterface $run): bool {
     $newest = \Drupal::entityTypeManager()->getStorage('bb_run')->getQuery()
       ->accessCheck(FALSE)
       ->condition('ticket_id', $run->getTicketId())
+      ->sort('created', 'DESC')
       ->sort('id', 'DESC')
       ->range(0, 1)
       ->execute();

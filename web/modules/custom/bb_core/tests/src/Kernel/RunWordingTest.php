@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRun;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Run\RunExplanation;
@@ -183,6 +184,20 @@ final class RunWordingTest extends KernelTestBase {
         $date->label($now + 600),
       ),
       $this->container->get(RunExplanation::class)->forRun($run),
+    );
+  }
+
+  /**
+   * The explanation is plain text, so a renderer escapes it exactly once.
+   */
+  public function testExplanationIsPlainText(): void {
+    $run = $this->claimRun('claimed', 120, 600);
+    $conductor = $run->get('conductor_id')->entity;
+    self::assertInstanceOf(BbConductorInterface::class, $conductor);
+    $conductor->set('label', "O'Brien & Co")->save();
+    self::assertStringStartsWith(
+      "Claimed by O'Brien & Co ",
+      (string) $this->container->get(RunExplanation::class)->forRun($this->reload($run)),
     );
   }
 

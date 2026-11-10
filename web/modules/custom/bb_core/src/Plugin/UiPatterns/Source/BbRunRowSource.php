@@ -9,8 +9,11 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
+use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbRun;
 use Drupal\bb_core\Entity\BbRunInterface;
+use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Run\RunExplanation;
 use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\bb_core\Time\BbDate;
 use Drupal\ui_patterns\Attribute\Source;
@@ -68,11 +71,17 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
   private BbDate $date;
 
   /**
+   * Words for a claimed or expired run; injected in `create()` like `$date`.
+   */
+  private RunExplanation $explanation;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->date = $container->get(BbDate::class);
+    $instance->explanation = $container->get(RunExplanation::class);
     return $instance;
   }
 
@@ -98,6 +107,7 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
       // reach a cached row. The run's own tag does not carry that.
       $cache->addCacheableDependency($conductor);
     }
+    $cache->addCacheableDependency(TicketInterventions::runCacheability($run));
     $cache->applyTo($element);
     return $element;
   }
@@ -164,11 +174,11 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
       $cells['took'] = ['kind' => 'text', 'value' => $this->date->duration((int) $duration)];
     }
 
-    $cells += array_filter(['log' => $this->logCell($run), 'cancel' => $this->cancelCell($run)]);
+    $cells += $this->actionCells($run);
     $item = [
       'accent' => in_array($tone, self::RESTING_TONES, TRUE) ? 'idle' : $tone,
       'cells' => $cells,
-    ];
+    ] + $this->detail($run);
     if ($url !== NULL) {
       $item['cells']['state']['url'] = $url;
       $item['url'] = $url;
@@ -189,30 +199,78 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
   }
 
   /**
-   * The row's Cancel run action, while the reader may cancel this run.
+   * The line beneath the cells: why the run failed, or what its claim means.
    *
-   * The intervention on a run lives on its row and opens its confirmation in
-   * the overlay; without JavaScript the link opens the same page.
+   * A failure reason cut short carries its full line for the hover.
    *
-   * @return array<string, mixed>|null
-   *   The `action` cell, or NULL.
+   * @return array<string, string>
+   *   The item's `detail` and `detail_title`, or nothing.
    */
-  private function cancelCell(BbRunInterface $run): ?array {
-    $ticket = $run->getTicket();
-    if ($ticket === NULL || !TicketInterventions::mayCancelRun($run, $ticket)) {
-      return NULL;
+  private function detail(BbRunInterface $run): array {
+    $detail = $run->failureReason() ?? $this->explanation->forRun($run);
+    if ($detail === NULL) {
+      return [];
     }
+    $full = $run->failureLine();
+    return ['detail' => $detail] + ($full !== NULL && $full !== $detail ? ['detail_title' => $full] : []);
+  }
+
+  /**
+   * The row's trailing cells: the stall or Retry and Re-dispatch, Cancel, Log.
+   *
+   * The interventions on a run live on its row and open their confirmation
+   * in the overlay; without JavaScript the link opens the same page. A
+   * failed run that may not be retried names the ticket's stall instead.
+   *
+   * @return array<string, array<string, mixed>>
+   *   The cells keyed `stall`, `retry`, `redispatch`, `cancel` and `log`.
+   */
+  private function actionCells(BbRunInterface $run): array {
+    $ticket = $run->getTicket();
+    $cells = [];
+    if ($ticket instanceof BbTicketInterface) {
+      $stall = TicketInterventions::retryStall($run, $ticket);
+      if ($stall !== '') {
+        $cells['stall'] = ['kind' => 'badge'] + TicketStallReason::badge($stall, $ticket->getFrozenAt());
+      }
+      if (TicketInterventions::mayRetryRun($run, $ticket)) {
+        $cells['retry'] = $this->runAction($ticket, $run, TicketInterventions::RETRY, (string) $this->t('Retry'), 'neutral', 'play');
+      }
+      if (TicketInterventions::mayRedispatchRun($run, $ticket)) {
+        $cells['redispatch'] = $this->runAction($ticket, $run, TicketInterventions::REDISPATCH, (string) $this->t('Re-dispatch'), 'ghost', '');
+      }
+      if (TicketInterventions::mayCancelRun($run, $ticket)) {
+        $cells['cancel'] = [
+          'kind' => 'action',
+          'label' => (string) $this->t('Cancel run'),
+          'variant' => 'danger',
+          'href' => TicketInterventions::confirmationUrl($ticket, $run, FALSE)->toString(),
+          'hx' => TicketInterventions::dialogHx($ticket, $run),
+        ];
+      }
+    }
+    return $cells + array_filter(['log' => $this->logCell($run)]);
+  }
+
+  /**
+   * A Retry or Re-dispatch action that opens its confirmation in the overlay.
+   *
+   * @return array<string, mixed>
+   *   The `action` cell.
+   */
+  private function runAction(BbTicketInterface $ticket, BbRunInterface $run, string $action, string $label, string $variant, string $icon): array {
     return [
       'kind' => 'action',
-      'label' => (string) $this->t('Cancel run'),
-      'variant' => 'danger',
-      'href' => TicketInterventions::confirmationUrl($ticket, $run, FALSE)->toString(),
-      'hx' => TicketInterventions::dialogHx($ticket, $run),
+      'label' => $label,
+      'variant' => $variant,
+      'icon' => $icon,
+      'href' => TicketInterventions::runActionUrl($ticket, $run, $action, FALSE)->toString(),
+      'hx' => TicketInterventions::runActionHx($ticket, $run, $action),
     ];
   }
 
   /**
-   * The row's own link to its captured log, or NULL off neither.
+   * The row's Log action, which downloads its captured log, or NULL.
    *
    * 'log' is preferred over 'error_log' when both are captured, because a
    * transcript is what an operator scanning the ticket's run history reaches
@@ -222,7 +280,7 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
    * log` on the run's own full view mode.
    *
    * @return array<string, mixed>|null
-   *   A `link` cell, or NULL.
+   *   An `action` cell, or NULL.
    */
   private function logCell(BbRunInterface $run): ?array {
     $logBytes = $run->get('log_bytes')->value;
@@ -236,9 +294,12 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
     // hand, only the run entity, and the API route's gate — `bb_run.view`
     // — is identical.
     return [
-      'kind' => 'link',
-      'value' => $kind === 'log' ? 'log' : 'error log',
-      'url' => Url::fromRoute('bb_core.run_log_download_api', [
+      'kind' => 'action',
+      'label' => (string) $this->t('Log'),
+      'icon' => 'report',
+      // A download: a boosted request would swap the file into the island.
+      'full_load' => TRUE,
+      'href' => Url::fromRoute('bb_core.run_log_download_api', [
         'bb_run' => $run->uuid(),
         'kind' => $kind,
       ])->toString(),

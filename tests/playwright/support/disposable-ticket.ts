@@ -1,5 +1,5 @@
-// Disposable ticket (+ optional running run) shared by intervention and
-// canonical-run scenarios so a second WeakMap cannot drift from the first.
+// Disposable ticket (+ optional running or failed runs) shared by intervention
+// and canonical-run scenarios so a second WeakMap cannot drift from the first.
 import type { Page } from '@playwright/test';
 import { php } from './drush';
 
@@ -11,6 +11,11 @@ export type DisposableTicket = {
   run?: string;
   runId?: string;
 };
+
+/** The runs a disposable ticket starts with: one running run, or failed runs. */
+export type DisposableRuns =
+  | { state: 'running' }
+  | { state: 'failed'; count: number; reason: string };
 
 const disposable = new WeakMap<Page, DisposableTicket>();
 
@@ -31,7 +36,7 @@ export function createDisposableTicket(
   page: Page,
   workflow: string,
   state: string,
-  withRun: boolean,
+  runs: DisposableRuns | null,
 ): DisposableTicket {
   const title = `Intervention ${workflow} ${state} ${Date.now()}`;
   const output = lastLine([
@@ -41,8 +46,14 @@ export function createDisposableTicket(
     `$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "${title}", "workflow" => "${workflow}", "state" => "${state}"]);`,
     '$t->save();',
     '$runUuid = ""; $runId = "";',
-    withRun
+    runs?.state === 'running'
       ? '$c = current($etm->getStorage("bb_conductor")->loadMultiple()); if (!$c) { print "NO_CONDUCTOR"; return; } $r = $etm->getStorage("bb_run")->create(["ticket_id" => $t->id(), "conductor_id" => $c->id(), "state" => "running", "state_at_start" => "working", "started_at" => time()]); $r->save(); $runUuid = $r->uuid(); $runId = $r->id();'
+      : '',
+    // The ticket's conductor is the seeded srv02-bakers-busy: active in BB, on
+    // a machine with free capacity, so it can claim again after a retry; its
+    // owner's other conductor, srv01-bakers, is the re-dispatch target.
+    runs?.state === 'failed'
+      ? `$c = current($etm->getStorage("bb_conductor")->loadByProperties(["conductor_id" => "srv02-bakers-busy"])); if (!$c) { print "NO_CONDUCTOR"; return; } $t->set("conductor_id", $c->id())->save(); for ($i = 0; $i < ${runs.count}; $i++) { $r = $etm->getStorage("bb_run")->create(["ticket_id" => $t->id(), "conductor_id" => $c->id(), "state" => "failed", "state_at_start" => "working", "started_at" => time(), "error_log" => "Error: ${runs.reason}\\nstack trace"]); $r->save(); } $runUuid = $r->uuid(); $runId = $r->id();`
       : '',
     'print $t->uuid() . "|" . $t->toUrl()->toString() . "|" . $runUuid . "|" . $runId . "|" . $t->getIdentifier() . "|" . $t->label();',
   ].join(' '));

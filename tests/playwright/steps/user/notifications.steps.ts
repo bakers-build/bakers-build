@@ -127,7 +127,7 @@ After({ tags: '@feature:activity-mails' }, async ({ page }) => {
  * drush call; the mailbox is emptied before the scenario acts.
  */
 async function ticketOwnedBy(page: Page, baseURL: string, state: string, account: string) {
-  const ticket = createDisposableTicket(page, 'bb_work', state, false);
+  const ticket = createDisposableTicket(page, 'bb_work', state, null);
   const uid = uidOf(account);
   const address = lastLine(
     `$t = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_ticket", "${ticket.ticket}");` +

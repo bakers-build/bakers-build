@@ -464,7 +464,7 @@ services:
   # Read-only formatting for the canonical run inspector.
   bb_core.run_inspector_rows:
     class: Drupal\bb_core\Run\BbRunInspectorRows
-    arguments: ['@bb_core.date']
+    arguments: ['@bb_core.date', '@Drupal\bb_core\Run\RunExplanation']
   Drupal\bb_core\Run\BbRunInspectorRows:
     alias: bb_core.run_inspector_rows
 

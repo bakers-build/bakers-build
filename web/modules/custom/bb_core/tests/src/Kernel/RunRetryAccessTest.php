@@ -84,6 +84,34 @@ final class RunRetryAccessTest extends ClaimKernelTestBase {
   }
 
   /**
+   * The newest run is the top row of Run history, which sorts by creation.
+   */
+  public function testRetryFollowsTheRunHistoryOrder(): void {
+    [$ticket, $top] = $this->failedRun();
+    $now = $this->container->get('datetime.time')->getRequestTime();
+    $created_earlier = $this->seedRun($ticket, 'working', 'failed');
+    $created_earlier->set('created', $now - 3600)->save();
+
+    $history = $this->reloadTicket($ticket)->get('runs')->getValue();
+    self::assertSame((int) $top->id(), (int) $history[0]['target_id'], 'The run history lists the newest-created run first.');
+    self::assertTrue(TicketInterventions::mayRetryRun($top, $ticket));
+    self::assertFalse(TicketInterventions::mayRetryRun($created_earlier, $ticket));
+  }
+
+  /**
+   * What a run offers follows its ticket, newer runs and the conductors.
+   */
+  public function testRunActionsFollowNewerRunsAndConductors(): void {
+    [$ticket, $run] = $this->failedRun();
+    $tags = TicketInterventions::runCacheability($run)->getCacheTags();
+    foreach (['bb_ticket:' . $ticket->id(), 'bb_run_list', 'bb_ticket_list', 'bb_conductor_list'] as $tag) {
+      self::assertContains($tag, $tags);
+    }
+    $claimed = $this->seedRun($ticket, 'working', 'claimed');
+    self::assertSame(60, TicketInterventions::runCacheability($claimed)->getCacheMaxAge(), 'A claim explanation ages.');
+  }
+
+  /**
    * A failed run of another ticket cannot be retried through this ticket.
    */
   public function testForeignRunCannotBeRetried(): void {

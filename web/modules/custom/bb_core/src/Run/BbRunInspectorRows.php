@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Run;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Template\Attribute;
 use Drupal\Core\Url;
+use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbRun;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -55,13 +56,19 @@ final class BbRunInspectorRows extends InspectorRows {
    *
    * @param \Drupal\bb_core\Time\BbDate $date
    *   Formats inspector timestamps in the product `normal` format.
+   * @param \Drupal\bb_core\Run\RunExplanation $explanation
+   *   Words for a claimed or expired run.
    */
   public function __construct(
     private readonly BbDate $date,
+    private readonly RunExplanation $explanation,
   ) {}
 
   /**
-   * Status zone: state badge and Cancel run while the reader may cancel.
+   * Status zone: state, why, and the actions the reader may take on the run.
+   *
+   * A failed run says why and offers Retry, Re-dispatch and Log; a claimed or
+   * expired one explains its claim; Cancel run while the reader may cancel.
    *
    * @return array<string, mixed>
    *   The zone render array, always present.
@@ -69,20 +76,41 @@ final class BbRunInspectorRows extends InspectorRows {
   public function status(BbRunInterface $run): array {
     $state = $run->getRunState();
     [$glyph, $tone] = BbRun::STATE_MARKS[$state] ?? ['info-circle', 'neutral'];
-    $content = [
-      'state' => $this->list([
-        $this->row('State', [
-          'kind' => 'badge',
-          'label' => $state,
-          'tone' => $tone,
-          'icon' => $glyph,
-          'dot' => TRUE,
-        ]),
+    $rows = [
+      $this->row('State', [
+        'kind' => 'badge',
+        'label' => $state,
+        'tone' => $tone,
+        'icon' => $glyph,
+        'dot' => TRUE,
       ]),
     ];
+    $reason = $run->failureReason();
+    if ($reason !== NULL) {
+      $full = $run->failureLine();
+      $rows[] = $this->row('Reason', $this->text($reason) + ($full !== $reason ? ['exact' => $full] : []));
+    }
+    $explanation = $this->explanation->forRun($run);
+    if ($explanation !== NULL) {
+      $rows[] = $this->row('Claim', $this->text($explanation));
+    }
     $ticket = $run->getTicket();
-    if ($ticket instanceof BbTicketInterface && TicketInterventions::mayCancelRun($run, $ticket)) {
-      $content['cancel'] = $this->cancelButton($run, $ticket);
+    $buttons = [];
+    if ($ticket instanceof BbTicketInterface) {
+      $stall = TicketInterventions::retryStall($run, $ticket);
+      if ($stall !== '') {
+        $rows[] = $this->row('Stall', ['kind' => 'badge'] + TicketStallReason::badge($stall, $ticket->getFrozenAt()));
+      }
+      $buttons = $this->buttons($run, $ticket);
+    }
+    $content = ['state' => $this->list($rows)];
+    if ($buttons !== []) {
+      $content['actions'] = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:zone',
+        '#props' => ['inset' => 'none', 'gap' => 'sm', 'direction' => 'row'],
+        '#slots' => ['content' => $buttons],
+      ];
     }
     return $this->zone('Status', $content);
   }
@@ -254,14 +282,57 @@ final class BbRunInspectorRows extends InspectorRows {
   }
 
   /**
-   * Cancel run, reusing the ticket intervention confirmation.
+   * The run's actions the reader may take now, as buttons.
+   *
+   * Retry, Re-dispatch and Log on a failed run the reader may retry (the Log
+   * stays in Downloads for everyone else); Cancel run on a claimed or running
+   * one. Each confirmation reuses the ticket intervention dialog.
+   *
+   * @return array<string, array<string, mixed>>
+   *   Button render arrays keyed by action.
+   */
+  private function buttons(BbRunInterface $run, BbTicketInterface $ticket): array {
+    $buttons = [];
+    if (TicketInterventions::mayRetryRun($run, $ticket)) {
+      $buttons['retry'] = $this->button((string) $this->t('Retry'), 'primary', TicketInterventions::runActionUrl($ticket, $run, TicketInterventions::RETRY, FALSE), TicketInterventions::runActionHx($ticket, $run, TicketInterventions::RETRY));
+      if (TicketInterventions::mayRedispatchRun($run, $ticket)) {
+        $buttons['redispatch'] = $this->button((string) $this->t('Re-dispatch'), 'neutral', TicketInterventions::runActionUrl($ticket, $run, TicketInterventions::REDISPATCH, FALSE), TicketInterventions::runActionHx($ticket, $run, TicketInterventions::REDISPATCH));
+      }
+      foreach (['log', 'error_log'] as $kind) {
+        if ((string) ($run->get($kind . '_bytes')->value ?? '') !== '') {
+          // A download: a boosted request would swap the file into the island.
+          $buttons['log'] = $this->button((string) $this->t('Log'), 'ghost', Url::fromRoute('bb_core.run_log_download_api', [
+            'bb_run' => $run->uuid(),
+            'kind' => $kind,
+          ]), ['boost' => 'false']);
+          break;
+        }
+      }
+    }
+    if (TicketInterventions::mayCancelRun($run, $ticket)) {
+      $buttons['cancel'] = $this->button((string) $this->t('Cancel run'), 'danger', TicketInterventions::confirmationUrl($ticket, $run, FALSE), TicketInterventions::dialogHx($ticket, $run));
+    }
+    return $buttons;
+  }
+
+  /**
+   * One link button; `hx` opens its address in the shell's overlay.
+   *
+   * @param string $label
+   *   The visible label.
+   * @param string $variant
+   *   The `bb_theme:button` variant.
+   * @param \Drupal\Core\Url $url
+   *   Where the button leads without JavaScript.
+   * @param array<string, string> $hx
+   *   The htmx attributes (`data-hx-<key>`), or none for a plain link.
    *
    * @return array<string, mixed>
    *   The button render array.
    */
-  private function cancelButton(BbRunInterface $run, BbTicketInterface $ticket): array {
+  private function button(string $label, string $variant, Url $url, array $hx): array {
     $attributes = [];
-    foreach (TicketInterventions::dialogHx($ticket, $run) as $key => $value) {
+    foreach ($hx as $key => $value) {
       $attributes['data-hx-' . $key] = $value;
     }
     return [
@@ -269,9 +340,9 @@ final class BbRunInspectorRows extends InspectorRows {
       '#component' => 'bb_theme:button',
       '#attached' => ['library' => ['core/drupal.htmx']],
       '#props' => [
-        'label' => (string) $this->t('Cancel run'),
-        'href' => TicketInterventions::confirmationUrl($ticket, $run, FALSE)->toString(),
-        'variant' => 'danger',
+        'label' => $label,
+        'href' => $url->toString(),
+        'variant' => $variant,
         'attributes' => new Attribute($attributes),
       ],
     ];

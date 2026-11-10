@@ -12,9 +12,12 @@ use Drupal\Core\Routing\RouteObjectInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Controller\BbTicketDetailController;
+use Drupal\bb_core\Entity\BbConductorInterface;
+use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\Field\FieldWidget\PickerWidgetInterface;
+use Drupal\bb_core\Plugin\UiPatterns\Source\BbRunRowSource;
 use Drupal\bb_core\Plugin\UiPatterns\Source\EntityFormSource;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
@@ -1201,6 +1204,86 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
+   * The newest failed run is danger, says why and offers its three actions.
+   */
+  public function testFailedRunRowShowsReasonAndActions(): void {
+    $this->assignTheConductors();
+    $older = $this->createRun('failed', 'working', 1770000000);
+    $newest = $this->createRun('failed', 'working', 1770003600);
+    foreach ([$older, $newest] as $run) {
+      self::assertInstanceOf(BbRunInterface::class, $run);
+      $run->set('error_log_bytes', 42)->save();
+    }
+
+    $item = $this->rowItem($newest);
+    self::assertSame('critical', $item['accent']);
+    self::assertSame('critical', $item['cells']['state']['tone']);
+    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
+    self::assertSame(['Retry', 'Re-dispatch', 'Log'], $this->actionLabels($item));
+    self::assertStringContainsString('run_action=retry', $item['cells']['retry']['href']);
+    self::assertStringContainsString('run_action=redispatch', $item['cells']['redispatch']['hx']['get']);
+    self::assertTrue($item['cells']['log']['full_load'], 'The Log downloads as a whole document, outside the boost.');
+
+    $item = $this->rowItem($older);
+    self::assertSame('critical', $item['accent']);
+    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
+    self::assertSame(['Log'], $this->actionLabels($item), 'An older failed run offers its log only.');
+
+    $guest = $this->createUser(['view bb_ticket']);
+    self::assertInstanceOf(UserInterface::class, $guest);
+    $this->setCurrentUser($guest);
+    $item = $this->rowItem($newest);
+    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
+    self::assertSame(['Log'], $this->actionLabels($item), 'A guest sees the reason and no intervention.');
+  }
+
+  /**
+   * A failed run that cannot be retried names the ticket's stall instead.
+   */
+  public function testFrozenTicketsFailedRunNamesTheStall(): void {
+    $this->assignTheConductors();
+    $failed = $this->createRun('failed', 'working', 1770000000);
+    $this->ticket->setFrozen(TRUE)->save();
+
+    $item = $this->rowItem($failed);
+    self::assertSame([], $this->actionLabels($item));
+    self::assertSame('frozen', $item['cells']['stall']['label'] ?? NULL);
+  }
+
+  /**
+   * A claimed run explains its claim and an expired run its lapse.
+   */
+  public function testClaimedRunRowExplainsTheClaim(): void {
+    $now = $this->container->get('datetime.time')->getRequestTime();
+    $claimed = $this->createRun('claimed', 'working', $now - 120);
+    self::assertInstanceOf(BbRunInterface::class, $claimed);
+    $claimed->set('created', $now - 120)->set('claim_expires_at', $now + 600)->save();
+    // A label that HTML-escapes: the sentence must reach the page escaped once.
+    $conductor = $claimed->get('conductor_id')->entity;
+    self::assertInstanceOf(BbConductorInterface::class, $conductor);
+    $conductor->set('label', "O'Brien & Co")->save();
+
+    $item = $this->rowItem($claimed);
+    self::assertSame('attention', $item['accent']);
+    self::assertSame('attention', $item['cells']['state']['tone']);
+    self::assertStringStartsWith("Claimed by O'Brien & Co ", $item['detail']);
+    self::assertMatchesRegularExpression('/, not started yet\. The claim lapses in \d+ minutes; after that the run expires and the ticket can be claimed again\.$/', $item['detail']);
+    self::assertSame(['Cancel run'], $this->actionLabels($item));
+
+    $row = $this->runRow($claimed);
+    $html = (string) $this->container->get('renderer')->renderInIsolation($row);
+    self::assertStringContainsString('Claimed by O&#039;Brien &amp; Co ', $html);
+    self::assertStringNotContainsString('&amp;#039;', $html);
+    self::assertStringNotContainsString('&amp;amp;', $html);
+
+    $expired = $this->createRun('expired', 'working', $now - 3600);
+    self::assertSame(
+      'The claim lapsed before the run started. The ticket can be claimed again.',
+      $this->rowItem($expired)['detail'],
+    );
+  }
+
+  /**
    * EVERY STATE CARRIES ITS OWN GLYPH — six states, six distinct sprites.
    *
    * This is C2 rather than decoration, and the entity mapping says why: tone is
@@ -1665,6 +1748,65 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $this->container->get('theme_installer')->install(['bb_theme']);
     return $this->container->get('entity_type.manager')
       ->getViewBuilder('bb_run')->view($run, 'teaser');
+  }
+
+  /**
+   * The one `list` item the run row source builds for a run.
+   *
+   * @return array<string, mixed>
+   *   The item: accent, cells and detail.
+   */
+  private function rowItem(EntityInterface $run): array {
+    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
+      ->getDefinition('unknown')['schema'] ?? ['type' => 'array'];
+    $source = $this->container->get('plugin.manager.ui_patterns_source')
+      ->createInstance('bb_run_row', SourcePluginBase::buildConfiguration('items', $definition, ['source' => []], []));
+    self::assertInstanceOf(BbRunRowSource::class, $source);
+    $source->setContextValue('entity', $run);
+    $items = $source->getPropValue();
+    self::assertIsArray($items);
+    self::assertCount(1, $items);
+    return $items[0];
+  }
+
+  /**
+   * The labels of a row item's action cells, in order.
+   *
+   * @param array<string, mixed> $item
+   *   A run row item.
+   *
+   * @return array<int, string>
+   *   The action labels.
+   */
+  private function actionLabels(array $item): array {
+    $actions = array_filter($item['cells'], static fn (array $cell): bool => ($cell['kind'] ?? '') === 'action');
+    return array_values(array_map(static fn (array $cell): string => (string) $cell['label'], $actions));
+  }
+
+  /**
+   * Gives the ticket its conductor and a second one it may move to.
+   *
+   * Both belong to one owner who may take the work, so the second is a
+   * re-dispatch target. `createRun()` reuses the first by its conductor id.
+   */
+  private function assignTheConductors(): void {
+    $owner = $this->createUser(['administer bakers'], 'run-owner');
+    self::assertInstanceOf(UserInterface::class, $owner);
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
+    $ids = [];
+    foreach (['srv01-bakers', 'srv02-bakers'] as $name) {
+      $conductor = $storage->create([
+        'conductor_id' => $name,
+        'label' => $name,
+        'owner_user_id' => $owner->id(),
+        'status' => 'online',
+        'project_id' => $this->ticket->get('project_id')->target_id,
+        'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
+      ]);
+      $conductor->save();
+      $ids[] = $conductor->id();
+    }
+    $this->ticket->set('conductor_id', $ids[0])->save();
   }
 
   /**

@@ -453,6 +453,14 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
    * {@inheritdoc}
    */
   public function failureReason(): ?string {
+    $line = $this->failureLine();
+    return $line === NULL ? NULL : Unicode::truncate($line, 140, FALSE, TRUE);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function failureLine(): ?string {
     if ($this->getRunState() !== 'failed') {
       return NULL;
     }
@@ -473,7 +481,7 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
     $line = preg_replace('/^Error: /', '', $line);
     return $line === '' || $line === NULL
       ? (string) new TranslatableMarkup('No reason was recorded. Open the log for details.')
-      : Unicode::truncate($line, 140, FALSE, TRUE);
+      : $line;
   }
 
   /**
