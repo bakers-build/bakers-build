@@ -2,7 +2,7 @@ services:
   # Board-card records for one column's tickets.
   bb_board.project_board:
     class: Drupal\bb_board\ProjectBoard
-    arguments: ['@bb_core.ticket_run_deriver', '@bb_core.date']
+    arguments: ['@bb_core.ticket_run_deriver', '@bb_core.date', '@bb_core.reference_counter', '@entity_type.manager']
   Drupal\bb_board\ProjectBoard:
     alias: bb_board.project_board
   # A board parent's visible descendants, resolved once per request.
