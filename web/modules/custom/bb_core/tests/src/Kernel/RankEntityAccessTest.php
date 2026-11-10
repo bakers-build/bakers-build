@@ -457,13 +457,14 @@ final class RankEntityAccessTest extends KernelTestBase {
   }
 
   /**
-   * The group owner keeps full access without holding a rank for it.
+   * The group owner's rights come from their rank, as the members list shows.
    *
-   * `group_manager_full_access: true` answers before any role is read, and the
-   * fence consults OgAccess rather than a role list precisely so that it does
-   * not have to restate this.
+   * With `group_manager_full_access` off, as shipped, ownership grants nothing
+   * of its own: the owner reaches content through the lead seat placed on
+   * creation, and loses it with that seat.
    */
-  public function testTheGroupOwnerIsNotFencedOut(): void {
+  public function testTheGroupOwnerHoldsRightsThroughTheRankOnly(): void {
+    $this->config('og.settings')->set('group_manager_full_access', FALSE)->save();
     $bob = $this->createAccount('bob');
     $workspace = $this->createEntity('bb_workspace', [
       'name' => 'bob-workspace',
@@ -492,6 +493,12 @@ final class RankEntityAccessTest extends KernelTestBase {
       $this->fixture('a', 'bb_ticket')->access('update', $bob),
       'and owning one workspace grants nothing in another',
     );
+
+    $membership = Og::getMembership($workspace, $bob);
+    self::assertNotNull($membership);
+    $membership->revokeRoleById('bb_workspace-bb_workspace-lead')->save();
+    $this->container->get('entity_type.manager')->getAccessControlHandler('bb_ticket')->resetCache();
+    self::assertFalse($ticket->access('update', $bob), 'a demoted owner keeps no rights');
   }
 
   /**

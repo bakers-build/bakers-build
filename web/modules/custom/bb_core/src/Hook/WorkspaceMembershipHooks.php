@@ -95,9 +95,9 @@ final class WorkspaceMembershipHooks {
   /**
    * Places a group's owner in the group's `lead` rank.
    *
-   * OG's automatic owner membership is bare (`member` only), which would
-   * project member capability for the owner in every list while
-   * `group_manager_full_access` lets them through on single entities. Insert
+   * OG's automatic owner membership is bare (`member` only); with
+   * `group_manager_full_access` off, the lead seat is where the owner's rights
+   * come from. Insert
    * only; re-owning is out of scope. Failures are logged, not raised: a
    * deployed site passes through a missing rank config between `updatedb` and
    * `config:import`.
