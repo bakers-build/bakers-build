@@ -5,6 +5,7 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -386,6 +387,113 @@ describe('GitHub migration checks', () => {
     expect(step.run).toContain('--secret-env BB_CI_CLIENT_SECRET');
     expect(step.run).not.toContain('$BB_CI_CLIENT_SECRET');
   });
+
+  describe('a release overtaken by a newer push', () => {
+    const HEAD = 'd7cd4407e607021c45f125966109a83f386afebf';
+    const NEWER = '274e1b11465985b58c356e17c45dea9a0ea6101a';
+    const root = new URL('../../../../', import.meta.url).pathname;
+
+    // Stub gh prints STUB_SHA or exits STUB_GH_STATUS; stub docker records its calls.
+    const run = (script: string, stub: { sha?: string; ghStatus?: number }) => {
+      const dir = mkdtempSync(join(tmpdir(), 'release-head-'));
+      try {
+        const bin = join(dir, 'bin');
+        execFileSync('mkdir', [bin]);
+        writeFileSync(
+          join(bin, 'gh'),
+          '#!/bin/sh\n[ "${STUB_GH_STATUS:-0}" = 0 ] || exit "$STUB_GH_STATUS"\nprintf "%s\\n" "$STUB_SHA"\n',
+          { mode: 0o755 },
+        );
+        writeFileSync(
+          join(bin, 'docker'),
+          `#!/bin/sh\necho "$*" >> ${join(dir, 'docker.log')}\n`,
+          { mode: 0o755 },
+        );
+        const githubEnv = join(dir, 'github_env');
+        writeFileSync(githubEnv, '');
+        const result = spawnSync(
+          'bash',
+          ['-e', '-o', 'pipefail', '-c', script],
+          {
+            cwd: root,
+            encoding: 'utf8',
+            env: {
+              ...process.env,
+              PATH: `${bin}:${process.env.PATH}`,
+              GITHUB_ENV: githubEnv,
+              GITHUB_REPOSITORY: 'bakers-build/bakers-build',
+              RELEASE_BRANCH: 'next',
+              RELEASE_HEAD: HEAD,
+              GH_TOKEN: 'token',
+              GITHUB_ACTOR: 'ci',
+              STUB_SHA: stub.sha ?? '',
+              STUB_GH_STATUS: String(stub.ghStatus ?? 0),
+            },
+          },
+        );
+        const dockerLog = join(dir, 'docker.log');
+        return {
+          ...result,
+          githubEnv: readFileSync(githubEnv, 'utf8'),
+          docker: existsSync(dockerLog) ? readFileSync(dockerLog, 'utf8') : '',
+        };
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    };
+    const headCheck = 'bash scripts/ci/github-release-head.sh';
+
+    it('lets the current head proceed', () => {
+      const result = run(headCheck, { sha: HEAD });
+      expect(result.status).toBe(0);
+      expect(result.stdout.trim()).toBe('current');
+      expect(result.githubEnv).toBe('');
+    });
+
+    it('stops a superseded head without failing and marks the rest of the job skipped', () => {
+      const result = run(headCheck, { sha: NEWER });
+      expect(result.status).toBe(0);
+      expect(result.stdout.trim()).toBe('superseded');
+      expect(result.githubEnv).toContain('RELEASE_SUPERSEDED=1');
+    });
+
+    it.each([
+      ['the branch ref cannot be read', { ghStatus: 1 }],
+      ['the branch ref is empty', { sha: '' }],
+    ])('fails when %s', (_case, stub) => {
+      const result = run(headCheck, stub);
+      expect(result.status).not.toBe(0);
+      expect(result.githubEnv).not.toContain('RELEASE_SUPERSEDED');
+    });
+
+    it('checks the head only through the script and skips every later step once superseded', () => {
+      const raw = read('.github/workflows/release.yml');
+      expect(raw).not.toContain('git/ref/heads');
+      const steps: { name?: string; if?: string }[] =
+        parse(raw).jobs.release.steps;
+      const first = steps.findIndex(
+        (s) => s.name === 'Check branch and candidate',
+      );
+      expect(first).toBeGreaterThan(-1);
+      for (const step of steps.slice(first + 1)) {
+        if (step.if === 'always()') continue;
+        expect(step.if, step.name).toContain("env.RELEASE_SUPERSEDED != '1'");
+      }
+    });
+
+    it('promotes no image digest when the branch moved on during the release', () => {
+      const promote = parse(
+        read('.github/workflows/release.yml'),
+      ).jobs.release.steps.find(
+        (s: { name?: string }) => s.name === 'Promote verified image digests',
+      );
+      const result = run(promote.run, { sha: NEWER });
+      expect(result.status).toBe(0);
+      expect(result.docker).toBe('');
+      expect(result.githubEnv).toContain('RELEASE_SUPERSEDED=1');
+    });
+  });
+
   it('retains the existing validation commands', () => {
     const old = parse(read('.gitlab-ci.yml'));
     const workflow = parse(read('.github/workflows/checks.yml'));

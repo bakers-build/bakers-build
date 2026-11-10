@@ -38,7 +38,7 @@ addons: [
 
 `bakers oven start` runs the conductor as a detached process; it needs no herdr process host. Use `bakers oven start --foreground` to keep it attached to the current terminal.
 
-The executor calls `hc` from the conductor, outside any agent sandbox. A sandboxed agent that calls `hc` from its own shell needs it among the trusted commands, for example `trusted_commands: ['$inherit', 'hc']` in a [shared `security` block](/provision/security/shared-settings). A trusted `hc run` starts any program outside the sandbox, so grant it only on a machine where that is acceptable.
+The executor calls `hc` from the conductor, outside any agent sandbox. A sandboxed agent that calls `hc` from its own shell needs it among the trusted commands, for example `trusted_commands: ['$inherit', 'hc']` in a [shared `permissions` block](/provision/security/shared-settings). A trusted `hc run` starts any program outside the sandbox, so grant it only on a machine where that is acceptable.
 
 To use it on your machine only, while the project keeps its own executor, set it in `~/.bakers/machine.config.js`:
 

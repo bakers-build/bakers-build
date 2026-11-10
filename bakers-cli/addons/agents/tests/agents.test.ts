@@ -35,7 +35,7 @@ describe('agent catalog report', () => {
           description: 'Implementation',
           harness: 'test-harness',
           model: 'model-test',
-          security: null,
+          permissions: null,
         },
       ],
       enabled_agents: ['fast'],
@@ -82,12 +82,17 @@ describe('agent catalog report', () => {
     } as const;
     const withSecurity = candidate('fast');
     const report = agentReport({
-      agents: [{ ...withSecurity, agent: { ...withSecurity.agent, security } }],
+      agents: [
+        {
+          ...withSecurity,
+          agent: { ...withSecurity.agent, permissions: security },
+        },
+      ],
       enabled_agents: ['fast'],
       disabled_agents: [],
       default_agent: 'fast',
       routes: { default: { '*': 'fast' } },
     });
-    expect(report.agents[0]?.security).toEqual(security);
+    expect(report.agents[0]?.permissions).toEqual(security);
   });
 });

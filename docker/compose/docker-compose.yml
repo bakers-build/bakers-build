@@ -1,0 +1,121 @@
+# bakers.build server. Fill in .env next to this file, then `docker compose up -d`:
+# the first start installs the site, every later start runs the database updates.
+# nginx listens on 127.0.0.1:${HTTP_PORT}; put your HTTPS reverse proxy in front of it.
+x-app: &app
+  image: ghcr.io/bakers-build/bakers-build/php:${BAKERS_VERSION:?Set BAKERS_VERSION, e.g. 0.7.0}
+  restart: unless-stopped
+  depends_on:
+    init-perms:
+      condition: service_completed_successfully
+    db:
+      condition: service_healthy
+  volumes:
+    - public_files:/var/www/html/web/sites/default/files
+    - private_files:/var/www/html/private-files
+    - tmp_files:/tmp
+    - oauth_keys:/var/www/oauth-keys
+  networks: [internal]
+
+x-env: &env
+  DB_HOST: db
+  DB_NAME: bakers
+  DB_USER: bakers
+  DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+  DB_DRIVER: mysql
+  DB_PORT: "3306"
+  DOMAIN: ${DOMAIN:?Set DOMAIN to the public hostname}
+  DRUPAL_HASH_SALT: ${HASH_SALT:?Set HASH_SALT}
+  # Your reverse proxy reaches nginx from this network (or its gateway), so it is trusted.
+  TRUSTED_PROXY_SUBNET: ${INTERNAL_SUBNET:-172.30.42.0/24}
+  MAIL_SMTP_DSN: ${MAIL_SMTP_DSN:?Set MAIL_SMTP_DSN; sign-in works by email}
+  MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:?Set MAIL_FROM_ADDRESS}
+  BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
+  BB_OAUTH_GOOGLE_CLIENT_SECRET: ${BB_OAUTH_GOOGLE_CLIENT_SECRET:-}
+  FEATURE_FLAG_RUN_LOG_STORAGE: ${FEATURE_FLAG_RUN_LOG_STORAGE:-0}
+  # The first administrator; signs in by email link.
+  ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL}
+
+services:
+  init-perms:
+    image: alpine:3.22.2
+    command: sh -c "chown -R 1000:1000 /pf /privf /oauthkeys && chown 1000:1000 /tmpdir && chmod 1777 /tmpdir"
+    volumes:
+      - public_files:/pf
+      - private_files:/privf
+      - tmp_files:/tmpdir
+      - oauth_keys:/oauthkeys
+    restart: "no"
+
+  db:
+    image: wodby/mariadb:10.11-3.30.1
+    restart: unless-stopped
+    stop_grace_period: 30s
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: bakers
+      MYSQL_USER: bakers
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    networks: [internal]
+
+  # Installs an empty database, else runs the updates; php waits for it.
+  deploy:
+    <<: *app
+    restart: "no"
+    environment: *env
+    command: /var/www/html/scripts/deploy/site-deploy.sh
+
+  php:
+    <<: *app
+    depends_on:
+      deploy:
+        condition: service_completed_successfully
+    environment:
+      <<: *env
+      PHP_FPM_USER: wodby
+      PHP_FPM_GROUP: wodby
+      PHP_FPM_CLEAR_ENV: "no"
+
+  cron:
+    <<: *app
+    depends_on:
+      deploy:
+        condition: service_completed_successfully
+    environment: *env
+    command: /var/www/html/scripts/deploy/site-cron.sh
+
+  nginx:
+    image: ghcr.io/bakers-build/bakers-build/nginx:${BAKERS_VERSION}
+    restart: unless-stopped
+    depends_on: [php]
+    environment:
+      NGINX_BACKEND_HOST: php
+      NGINX_SERVER_ROOT: /var/www/html/web
+      NGINX_VHOST_PRESET: drupal10
+      NGINX_STATIC_OPEN_FILE_CACHE: "off"
+      NGINX_SERVER_EXTRA_CONF_FILEPATH: /etc/nginx/oauth-discovery.conf
+    volumes:
+      - public_files:/var/www/html/web/sites/default/files
+    ports:
+      - 127.0.0.1:${HTTP_PORT:-8080}:80
+    networks: [internal]
+
+volumes:
+  db:
+  public_files:
+  private_files:
+  tmp_files:
+  oauth_keys:
+
+networks:
+  internal:
+    ipam:
+      config:
+        - subnet: ${INTERNAL_SUBNET:-172.30.42.0/24}

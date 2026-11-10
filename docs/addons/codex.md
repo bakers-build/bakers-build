@@ -26,21 +26,21 @@ Without a `model` it publishes `codex` (your locally configured Codex model) plu
 |---|---|---|---|
 | `model` | string | Codex's own default | Passed as `--model`. Drops the four named variants. |
 | `effort` | string | none | Passed as `-c model_reasoning_effort=…`. |
-| `security` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'sandbox'` | How strictly a run starts; see [Security](#security). |
-| `sandbox` | object | see below | Only with `security: 'sandbox'`. Each key set replaces its default; lists are not merged. |
-| `config` | object | none | Required with, and only valid with, `security: 'custom'`. |
+| `permissions` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'system'` | How strictly a run starts; see [Security](#security). |
+| `sandbox` | object | see below | Only with `permissions: 'sandbox'`. Each key set replaces its default; lists are not merged. |
+| `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
 
-Runs default to the OS sandbox. [Execution security](/provision/security/execution) owns boundaries, environment filtering and isolation risks.
+Runs default to `system`; `permissions: 'sandbox'` starts the OS sandbox. [Execution security](/provision/security/execution) owns boundaries, environment filtering and isolation risks.
 
-| `security` | Launch flags |
+| `permissions` | Launch flags |
 |---|---|
 | `sandbox` | `-a never` with a generated `bakers` permission profile extending `:workspace`; MCP servers not in `mcp_servers` are disabled |
 | `system` | none: your own `~/.codex/config.toml` applies unchanged |
-| `yolo` | `--sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust`, the launch before `security` existed |
+| `yolo` | `--sandbox danger-full-access --dangerously-bypass-approvals-and-sandbox --dangerously-bypass-hook-trust`, the launch before `permissions` existed |
 | `custom` | one `-c key=value` per `config` entry (non-string values as JSON), nothing else; an object value fails loading, so write one dotted key per value (`'a.b': 1`) |
 
 `sandbox` keys and their defaults:
