@@ -447,6 +447,7 @@ export class DrupalBbRemote implements BbRemote {
           conductor_id: reg.id,
           host_key: reg.host_key,
           ...(reg.machine_label ? { machine_label: reg.machine_label } : {}),
+          ...(reg.connection_url !== undefined ? { connection_url: reg.connection_url } : {}),
           ...(reg.adopt ? { adopt: reg.adopt } : {}),
           ...(reg.create_new ? { create_new: true } : {}),
           project: reg.project,

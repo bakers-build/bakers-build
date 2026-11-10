@@ -98,6 +98,11 @@ final class BbMachine extends BbContentEntityBase implements BbMachineInterface,
       ->setDisplayOptions('form', ['type' => 'number', 'weight' => 3])
       ->setDisplayConfigurable('view', TRUE);
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition();
+    $fields['connection_url'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Connection URL'))
+      ->setSetting('max_length', 2048)
+      ->addPropertyConstraints('value', ['MachineConnectionUrl' => []])
+      ->setDisplayConfigurable('view', TRUE);
 
     return $fields;
   }

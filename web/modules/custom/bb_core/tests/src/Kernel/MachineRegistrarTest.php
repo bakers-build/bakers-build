@@ -76,6 +76,32 @@ final class MachineRegistrarTest extends KernelTestBase {
   /**
    * Capacity is never stored on the conductor entity.
    */
+  public function testConnectionUrlRegistration(): void {
+    $this->seedProjectChain('connection-project');
+    $owner = $this->createUser('connection-owner');
+    $attrs = ['conductor_id' => 'connection-conductor', 'host_key' => 'connection-host', 'project' => 'connection-project'];
+    $registrar = $this->registrar();
+    $machine = $registrar->heartbeat($owner, $attrs + ['connection_url' => 'ssh://user@host:22'])->getMachine();
+    $this->assertSame('ssh://user@host:22', $machine->get('connection_url')->value);
+    $machine = $registrar->heartbeat($owner, $attrs)->getMachine();
+    $this->assertSame('ssh://user@host:22', $machine->get('connection_url')->value);
+    $machine = $registrar->heartbeat($owner, $attrs + ['connection_url' => 'https://host/path'])->getMachine();
+    $this->assertSame('https://host/path', $machine->get('connection_url')->value);
+    try {
+      $registrar->heartbeat($owner, $attrs + ['connection_url' => 'javascript:alert(1)']);
+      $this->fail('Unsafe URL accepted.');
+    }
+    catch (UnprocessableEntityHttpException $exception) {
+      $this->assertSame(422, $exception->getStatusCode());
+    }
+    $this->assertSame('https://host/path', $registrar->heartbeat($owner, $attrs)->getMachine()->get('connection_url')->value);
+    $this->assertNull($registrar->heartbeat($owner, $attrs + ['connection_url' => NULL])->getMachine()->get('connection_url')->value);
+    $this->assertNull($registrar->heartbeat($owner, $attrs)->getMachine()->get('connection_url')->value);
+  }
+
+  /**
+   * Capacity is never stored on the conductor entity.
+   */
   public function testCapacityNotWrittenOnConductor(): void {
     $this->seedProjectChain('proj-cap');
     $owner = $this->createUser('owner-cap');
