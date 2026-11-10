@@ -14,6 +14,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\views\EntityViewsData;
 use Drupal\bb_core\Access\BbProjectAccessControlHandler;
 use Drupal\bb_core\Field\EnvironmentsItemList;
+use Drupal\bb_core\Field\OriginSourcesItemList;
 use Drupal\entity\EntityPermissionProvider;
 use Drupal\bb_core\Routing\BbProjectRouteProvider;
 use Drupal\bb_core\Form\BbProjectCreateForm;
@@ -180,6 +181,13 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->setComputed(TRUE)
       ->setClass(EnvironmentsItemList::class)
+      ->setDisplayConfigurable('view', TRUE);
+    $fields['origin_sources'] = BaseFieldDefinition::create('link')
+      ->setLabel(new TranslatableMarkup('Origin'))
+      ->setDescription(new TranslatableMarkup('The distinct sources of the Origin URLs of the tickets the current user may view.'))
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setComputed(TRUE)
+      ->setClass(OriginSourcesItemList::class)
       ->setDisplayConfigurable('view', TRUE);
     // The owning account, declared as the `owner` entity key so query access
     // and JSON:API filter access can reason about it; access-inert otherwise.
