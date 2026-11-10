@@ -25,7 +25,7 @@ scenes:
       - scene: design-system:onboarding
         with:
           title: What should we call you?
-          explanation: A name and a picture let your team recognize you. You can change both at any time.
+          explanation: Your team recognizes you by them. You can change both at any time.
           description: >-
             A name and a picture — and bakers.build feels less like software and
             more like your team.

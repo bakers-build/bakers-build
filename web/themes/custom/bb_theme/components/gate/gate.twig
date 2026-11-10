@@ -27,7 +27,9 @@
    NOT A SCROLL CONTAINER. `min-h-screen` and the frame's `min-h` let a long
    list grow the page rather than clip itself, which keeps a chooser with
    twenty workspaces readable. #}
-<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'lg:items-center', 'lg:justify-center', 'lg:p-section', 'bg-app', 'text-text']) }}>
+<div{{ (attributes ?: create_attribute()).addClass(['gate', 'relative', 'min-h-screen', 'flex', 'lg:items-center', 'lg:justify-center', 'lg:p-section', 'bg-app', 'text-text']) }}>
+  {# The appearance choice stands in the page corner on every gate, before any session exists. #}
+  <div class="gate__mode absolute top-2 right-2 z-10">{{ include('bb_theme:mode_toggle', { align: 'end' }, with_context = false) }}</div>
   <div class="gate__frame w-full flex flex-col lg:flex-row lg:max-w-[1100px] lg:min-h-[640px] lg:overflow-hidden lg:rounded-md lg:border lg:border-border">
     <aside class="gate__band scheme-light flex flex-col justify-center gap-section p-gutter lg:p-section min-h-[220px] lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
       <div class="min-w-0">{% block mark %}{% if mark %}{{ mark }}{% endif %}{% endblock %}</div>

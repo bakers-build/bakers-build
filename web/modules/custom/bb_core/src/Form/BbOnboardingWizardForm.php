@@ -451,7 +451,7 @@ final class BbOnboardingWizardForm extends FormBase {
       default => [
         'title' => (string) $this->t('What should we call you?'),
         'description' => (string) $this->t('A name and a picture — and bakers.build feels less like software and more like your team.'),
-        'explanation' => (string) $this->t('A name and a picture let your team recognize you. You can change both at any time.'),
+        'explanation' => (string) $this->t('Your team recognizes you by them. You can change both at any time.'),
       ],
     };
   }
