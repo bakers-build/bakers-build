@@ -70,4 +70,14 @@ describe('redact', () => {
     expect(out).not.toContain('eDp0b2s=');
     expect(out).toContain('[redacted]');
   });
+
+  it('removes quoted Authorization header values', () => {
+    const out = redact(
+      `{"authorization":"Bearer eyJ.jwt.sig","x":1} {'Authorization': 'token ghs_Q'}`,
+      [],
+    );
+    expect(out).not.toContain('eyJ.jwt.sig');
+    expect(out).not.toContain('ghs_Q');
+    expect(out).toContain('"x":1');
+  });
 });

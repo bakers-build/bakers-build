@@ -104,22 +104,27 @@ const factory: ForgeBackendFactory = async (raw, context) => {
   const [owner] = s.repository.split('/');
   const repo = `${API}/repos/${s.repository}`;
   let token: { value: string; until: number } | undefined;
+  // Every JWT and token ever minted: a value replaced by a refresh may still be echoed.
+  const minted: string[] = [];
 
   const installationToken = async (): Promise<string> => {
     if (token && Date.now() < token.until) return token.value;
+    const jwt = appJwt(s.appId, s.privateKey);
+    minted.push(jwt);
     const out = (await requestJson(
       doFetch,
       `${API}/app/installations/${s.installationId}/access_tokens`,
       {
         method: 'POST',
         headers: {
-          authorization: `Bearer ${appJwt(s.appId, s.privateKey)}`,
+          authorization: `Bearer ${jwt}`,
           accept: 'application/vnd.github+json',
           'content-type': 'application/json',
         },
         body: JSON.stringify({ repositories: [s.repository.split('/')[1]] }),
       },
     )) as { token: string; expires_at: string };
+    minted.push(out.token, basic(out.token));
     token = {
       value: out.token,
       until: Date.parse(out.expires_at) - REFRESH_MS,
@@ -146,10 +151,7 @@ const factory: ForgeBackendFactory = async (raw, context) => {
 
   const backend: ForgeBackend = {
     id: 'github',
-    secrets: () => [
-      s.privateKey,
-      ...(token ? [token.value, basic(token.value)] : []),
-    ],
+    secrets: () => [s.privateKey, ...minted],
     gitAuth: async () => ({
       url: `https://github.com/${s.repository}.git`,
       header: `Authorization: Basic ${basic(await installationToken())}`,

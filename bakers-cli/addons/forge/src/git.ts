@@ -6,7 +6,7 @@
 // `for-each-ref` and `update-ref` run, with hooks and fsmonitor disabled.
 
 import { execFile } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -103,6 +103,15 @@ async function withScratch<T>(
   try {
     const env = baseEnv(home);
     const common = await commonDir(worktree, env);
+    // The conductor's git would read any object store the run lists here.
+    const alternates = await readFile(
+      join(common, 'objects', 'info', 'alternates'),
+      'utf8',
+    ).catch(() => '');
+    if (alternates.trim())
+      throw new Error(
+        'the clone lists object alternates (objects/info/alternates); forge tools refuse a borrowed object store',
+      );
     const scratch = join(home, 'scratch.git');
     await run(['init', '--bare', '-q', scratch], env);
     const scheme = new URL(auth.url).protocol.slice(0, -1);

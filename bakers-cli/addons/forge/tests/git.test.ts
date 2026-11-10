@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { fetchBranches, localSha, pushBranch } from '../src/git.js';
@@ -47,6 +47,22 @@ describe('isolated git', () => {
     expect(readFileSync(join(f.clone, '.git', 'config'), 'utf8')).not.toContain(
       'dG9rLVNFQ1JFVC0xMjM',
     );
+  });
+
+  it('refuses a clone with a non-empty alternates file; an empty one passes', async () => {
+    const f = gitFixture();
+    const alternates = join(f.clone, '.git', 'objects', 'info', 'alternates');
+    writeFileSync(alternates, '');
+    await expect(
+      fetchBranches(f.clone, authOf(f.remote), ['next']),
+    ).resolves.toHaveLength(1);
+    writeFileSync(alternates, `${join(f.remote, 'objects')}\n`);
+    await expect(
+      fetchBranches(f.clone, authOf(f.remote), ['next']),
+    ).rejects.toThrow(/alternates/);
+    await expect(
+      pushBranch(f.clone, authOf(f.remote), 'feat/bb-7-work', {}),
+    ).rejects.toThrow(/alternates/);
   });
 
   it('pushes from a linked worktree into the shared object store', async () => {

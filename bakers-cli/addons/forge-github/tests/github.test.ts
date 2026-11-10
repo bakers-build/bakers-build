@@ -116,6 +116,22 @@ describe('forge-github', () => {
     expect(soon.mints()).toBe(2);
   });
 
+  it('keeps every token and app JWT it minted in secrets after a refresh', async () => {
+    const f = fakeFetch({}, 30_000);
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    const first = await b.gitAuth();
+    await b.gitAuth();
+    expect(f.mints()).toBe(2);
+    const secrets = b.secrets();
+    expect(secrets).toContain('ghs_TOKEN1');
+    expect(secrets).toContain('ghs_TOKEN2');
+    expect(secrets).toContain(
+      first.header.replace('Authorization: Basic ', ''),
+    );
+    for (const mint of f.calls.filter((c) => c.path.startsWith('/app/')))
+      expect(secrets).toContain(mint.auth!.replace('Bearer ', ''));
+  });
+
   it('finds, creates and updates PRs', async () => {
     const f = fakeFetch({
       'GET /repos/acme/shop/pulls': (url) =>

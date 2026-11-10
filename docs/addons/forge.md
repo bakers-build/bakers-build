@@ -54,7 +54,7 @@ Tools take the ticket, `branch_name` and `base_branch` from the calling run, nev
 
 ## Isolation
 
-Network git runs in a throwaway repository on the clone's object store, without config or hooks, against the backend's configured URL. Hooks, `pushurl`, `insteadOf` or `core.sshCommand` planted in the clone have no effect. The token travels as an environment header and is redacted from every result.
+Network git runs in a throwaway repository on the clone's object store, without config or hooks, against the backend's configured URL. Hooks, `pushurl`, `insteadOf` or `core.sshCommand` planted in the clone have no effect, and a clone whose `objects/info/alternates` lists another object store is refused. The token travels as an environment header and is redacted from every result.
 
 ## Good to know
 

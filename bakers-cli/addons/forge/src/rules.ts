@@ -46,7 +46,10 @@ export function derivedBase(
 
 /** Remove every secret and any Authorization header value. */
 export function redact(text: string, secrets: readonly string[]): string {
-  let out = text.replace(/(authorization:\s*)(?:\w+\s+)?\S+/gi, '$1[redacted]');
+  let out = text.replace(
+    /(authorization["']?:\s*["']?)(?:\w+\s+)?[^\s"',]+/gi,
+    '$1[redacted]',
+  );
   for (const secret of secrets)
     if (secret.length >= 4) out = out.split(secret).join('[redacted]');
   return out;
