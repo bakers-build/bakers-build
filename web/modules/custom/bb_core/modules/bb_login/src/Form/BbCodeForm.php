@@ -47,7 +47,8 @@ final class BbCodeForm extends FormBase {
    * @param \Drupal\bb_login\LoginCode $loginCode
    *   Verifies and consumes the code.
    * @param \Drupal\Core\Flood\FloodInterface $flood
-   *   Counts wrong codes per address, which is what makes six digits safe.
+   *   Counts wrong codes per address and per client, which is what makes
+   *   six digits safe.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   Loads the account the code names.
    * @param \Drupal\bb_login\EmailLogin $emailLogin
@@ -153,7 +154,8 @@ final class BbCodeForm extends FormBase {
       $form_state->setErrorByName('code', $this->t('Please request a login link first.'));
       return;
     }
-    if (!$this->flood->isAllowed(LoginCode::FLOOD_EVENT, LoginCode::MAX_ATTEMPTS, LoginCode::TTL, $mail)) {
+    if (!$this->flood->isAllowed(LoginCode::FLOOD_EVENT, LoginCode::MAX_ATTEMPTS, LoginCode::TTL, $mail)
+      || !$this->flood->isAllowed(LoginCode::CLIENT_FLOOD_EVENT, LoginCode::MAX_CLIENT_ATTEMPTS, LoginCode::CLIENT_WINDOW)) {
       $this->logger('bb_login')->notice('Login code attempts blocked for %mail.', ['%mail' => $mail]);
       $form_state->setErrorByName('code', $this->t('Too many attempts. Please request a new login link.'));
       return;
@@ -164,6 +166,9 @@ final class BbCodeForm extends FormBase {
       // COUNTED ONLY ON A WRONG CODE, so a customer who types it correctly the
       // first time never approaches the limit.
       $this->flood->register(LoginCode::FLOOD_EVENT, LoginCode::TTL, $mail);
+      // Never cleared on success, so signing in to one account does not
+      // reset a client's budget against the others.
+      $this->flood->register(LoginCode::CLIENT_FLOOD_EVENT, LoginCode::CLIENT_WINDOW);
       $this->logger('bb_login')->notice('Wrong login code for %mail.', ['%mail' => $mail]);
       $form_state->setErrorByName('code', $this->t('This code is wrong or has expired.'));
       return;

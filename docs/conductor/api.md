@@ -1,6 +1,6 @@
 # Conductor JSON:API Contract (Phase 3)
 
-Auth: `simple_oauth` in production, with one Drupal user per conductor node. The node role needs `register bakers conductor`, `claim bakers tickets`, and read access to bakers.build tickets/runs. Functional tests use `basic_auth`; the server-side access and guard logic is auth-transport independent.
+Auth: `simple_oauth` in production, with one Drupal user per conductor node. The node role needs `register bakers conductor`, `claim bakers tickets`, and read access to bakers.build tickets/runs. Functional tests use `basic_auth`, which only test instances install; the server-side access and guard logic is auth-transport independent.
 
 | Logical operation (`03-control-plane.md` §1) | HTTP |
 |---|---|
