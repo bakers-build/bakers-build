@@ -121,10 +121,10 @@ final class BbConductor extends BbContentEntityBase implements BbConductorInterf
       ->setDefaultValue('offline')
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'options_select', 'weight' => 4]);
-    // Registration always sets it; a deleted project leaves it empty.
     $fields['project_id'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Project'))
       ->setSetting('target_type', 'bb_project')
+      ->setRequired(TRUE)
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'entity_reference_autocomplete', 'weight' => 5]);
     $fields['states'] = BaseFieldDefinition::create('list_string')

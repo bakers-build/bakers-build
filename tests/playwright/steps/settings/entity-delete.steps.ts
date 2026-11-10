@@ -105,9 +105,9 @@ Then('the disposable entity still exists', async ({ page }) => {
   expect(exists(subject(page).created[0])).toBe(true);
 });
 
-Then('the entities the disposable entity needed still exist', async ({ page }) => {
+Then('the entities the disposable entity needed no longer exist', async ({ page }) => {
   for (const reference of subject(page).created.slice(1)) {
-    expect(exists(reference), reference).toBe(true);
+    expect(exists(reference), reference).toBe(false);
   }
 });
 

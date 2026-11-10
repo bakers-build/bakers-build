@@ -141,24 +141,21 @@ final class EntityDeleteRulesTest extends KernelTestBase {
   }
 
   /**
-   * A project's conductor stays, without the project, and still validates.
+   * A project's conductor is deleted with it.
    */
-  public function testProjectDetachesItsConductor(): void {
+  public function testProjectDeletesItsConductor(): void {
     $group = $this->make('bb_group', ['name' => 'G']);
     $project = $this->make('bb_project', ['name' => 'P', 'group_id' => $group->id()]);
     $conductor = $this->make('bb_conductor', ['label' => 'C', 'project_id' => $project->id()]);
 
     $references = $this->container->get('bb_core.entity_delete_rules')->references($project);
     $this->assertSame([], $references['block']);
-    $this->assertSame([$conductor->id()], array_map(fn ($entity) => $entity->id(), $references['detach']));
+    $this->assertSame([$conductor->id()], array_map(fn ($entity) => $entity->id(), $references['cascade']));
 
     $project->delete();
 
     $this->assertNull($this->reload($project));
-    $conductor = $this->reload($conductor);
-    $this->assertNotNull($conductor);
-    $this->assertTrue($conductor->get('project_id')->isEmpty());
-    $this->assertCount(0, $conductor->get('project_id')->validate());
+    $this->assertNull($this->reload($conductor));
   }
 
   /**

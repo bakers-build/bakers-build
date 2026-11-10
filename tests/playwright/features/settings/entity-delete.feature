@@ -38,15 +38,15 @@ Feature: Deleting an entity where it is managed
     Then the delete page names "can't be deleted"
     And the delete page offers no confirm button
 
-  Scenario: A project's conductor is detached, not deleted, with the project
+  Scenario: A project's conductor is deleted with the project
     Given a disposable "conductor project" exists in the Northside workspace
     And I am logged in as the account "north-lead"
     When I open the Delete action of the disposable entity
-    Then the delete page names "will be detached from it"
+    Then the delete page names "This also deletes"
     When I confirm the deletion
     Then the page confirms the disposable entity was deleted
     And the disposable entity no longer exists
-    And the entities the disposable entity needed still exist
+    And the entities the disposable entity needed no longer exist
 
   Scenario Outline: <account> is refused the delete page of a <kind>
     Given a disposable "<kind>" exists in the Northside workspace

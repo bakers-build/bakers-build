@@ -605,26 +605,6 @@ final class ConductorRegistrarTest extends KernelTestBase {
   }
 
   /**
-   * A conductor whose project was deleted takes the heartbeat's project.
-   */
-  public function testHeartbeatBindsConductorWithoutProject(): void {
-    $owner = $this->createUser('owner-detached');
-    $attrs = [
-      'conductor_id' => 'detached',
-      'host_key' => '7c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f',
-      'project' => 'default-project',
-    ];
-    $conductor = $this->registrar()->heartbeat($owner, $attrs);
-    $project_id = $conductor->get('project_id')->target_id;
-    $conductor->set('project_id', NULL)->save();
-
-    $again = $this->registrar()->heartbeat($owner, $attrs);
-
-    $this->assertSame($conductor->id(), $again->id());
-    $this->assertSame($project_id, $again->get('project_id')->target_id);
-  }
-
-  /**
    * A heartbeat brings an offline conductor back online.
    */
   public function testHeartbeatRevivesOffline(): void {
