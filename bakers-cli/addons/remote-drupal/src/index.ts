@@ -185,7 +185,7 @@ export class DrupalBbRemote implements BbRemote {
       .collection('bb_run')
       .where('conductor_id.conductor_id', '=', id)
       .whereIn('state', ACTIVE)
-      .fields(['state', 'state_at_start', 'worktree_path'])
+      .fields(['state', 'state_at_start', 'worktree_path', 'agent'])
       .page(100)
       .list();
     return Promise.all(
@@ -197,6 +197,7 @@ export class DrupalBbRemote implements BbRemote {
         state: r.attr<string>('state') ?? '',
         stateAtStart: r.attr<string>('state_at_start') ?? '',
         worktreePath: r.attr<string>('worktree_path') ?? '',
+        agent: r.attr<string>('agent') ?? '',
       })),
     );
   }
@@ -700,6 +701,12 @@ export class DrupalBbRemote implements BbRemote {
         closed: true,
         closed_date: t,
       },
+    });
+  }
+
+  async cancelRun(uuid: string): Promise<void> {
+    await this.api.update('bb_run', uuid, {
+      attributes: { state: 'cancelled' },
     });
   }
 

@@ -85,6 +85,10 @@ else
   rm -rf "$tmp"
 fi
 
+# The box names its agents' permissions mode (README › Agent permissions), so a CLI upgrade that
+# changes the default does not change it; a hand-written permissions key wins.
+node /usr/local/bin/bakers-preview-config --mode sandbox || true
+
 # The preview transport parameter (README › Optional previews) picks the tunnel client and writes
 # machine.config.js; at none nothing is installed or started. The edit never fails the start.
 preview="${PREVIEW_TRANSPORT:-none}"

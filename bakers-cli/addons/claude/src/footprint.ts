@@ -9,6 +9,8 @@ interface TranscriptEntry {
   /** ISO-8601 wall-clock time the entry was written (BB-151 duration). */
   timestamp?: string;
   message?: {
+    /** API message id, shared by every entry Claude Code writes for one response. */
+    id?: string;
     role?: string;
     model?: string;
     content?: unknown;
@@ -182,4 +184,73 @@ export function parseClaudeTranscript(jsonl: string): AgentFootprint {
     }
     return wait;
   }
+}
+
+/** Claude Code's tool_result text when `--permission-mode dontAsk` refuses a call. */
+const DONT_ASK_DENIAL =
+  /^Permission to use \S+ has been denied because Claude Code is running in don't ask mode\./;
+
+/** The input field that names what a tool call acts on. */
+const ACTION_KEYS = ['file_path', 'command', 'url', 'path', 'pattern', 'skill'];
+
+/**
+ * Every tool call `dontAsk` denied in a Claude-Code transcript, as `Tool(argument)`,
+ * but only when the run stopped on one: a denial is among the last batch of tool
+ * results, no call is outstanding and the agent has replied with text, no new call.
+ * A run that worked on, waits on a sub-agent or on the model gives `[]`.
+ */
+export function parseClaudePermissionDenials(jsonl: string): string[] {
+  const calls = new Map<string, string>();
+  const pending = new Set<string>();
+  const denied: string[] = [];
+  let batchDenied = false;
+  let batchMessage: string | undefined;
+  let replied = false;
+  for (const raw of jsonl.split('\n')) {
+    let entry: TranscriptEntry;
+    try {
+      entry = JSON.parse(raw) as TranscriptEntry;
+    } catch {
+      continue;
+    }
+    const content = entry?.message?.content;
+    if (!Array.isArray(content)) continue;
+    const blocks = content as Array<Record<string, unknown>>;
+    // Claude Code writes each block of a response as its own entry, sometimes with a
+    // call's result before the response's next call: a call from a new response
+    // opens a new batch, a reply without one ends the turn.
+    if (entry?.type === 'assistant') {
+      if (blocks.some((b) => b?.type === 'tool_use')) {
+        const message = entry.message?.id;
+        const sameResponse = message !== undefined && message === batchMessage;
+        if (pending.size === 0 && !sameResponse) batchDenied = false;
+        batchMessage = message;
+        replied = false;
+      } else if (blocks.some((b) => b?.type === 'text')) {
+        // A thinking-only entry precedes the rest of its response, so it is no reply.
+        replied = true;
+      }
+    }
+    for (const block of blocks) {
+      if (block?.type === 'tool_use' && typeof block.id === 'string') {
+        const input = (block.input ?? {}) as Record<string, unknown>;
+        const key = ACTION_KEYS.find((k) => typeof input[k] === 'string');
+        const name = String(block.name);
+        calls.set(block.id, key ? `${name}(${input[key]})` : name);
+        pending.add(block.id);
+      } else if (block?.type === 'tool_result') {
+        pending.delete(String(block.tool_use_id));
+        replied = false;
+        if (
+          block.is_error === true &&
+          typeof block.content === 'string' &&
+          DONT_ASK_DENIAL.test(block.content)
+        ) {
+          batchDenied = true;
+          denied.push(calls.get(String(block.tool_use_id)) ?? 'unknown tool');
+        }
+      }
+    }
+  }
+  return batchDenied && replied && pending.size === 0 ? denied : [];
 }
