@@ -46,7 +46,10 @@ export interface ForgeBackend {
     title: string;
     body: string;
   }): Promise<ForgePr>;
-  updatePr(pr: ForgePr, input: { title: string; body: string }): Promise<ForgePr>;
+  updatePr(
+    pr: ForgePr,
+    input: { title: string; body: string },
+  ): Promise<ForgePr>;
   openPrsWithBase(base: string): Promise<ForgePr[]>;
   /** Checks on `ref` (a SHA or branch), `required` as `base`'s rules say. */
   checks(ref: string, base: string): Promise<ForgeCheck[]>;

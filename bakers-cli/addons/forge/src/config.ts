@@ -32,14 +32,21 @@ export function checkWith(
   value: unknown,
   scope: AddonScope = 'machine',
 ): { key: string; message: string }[] {
-  if (!isObject(value)) return [{ key: 'backend.use', message: 'must name a forge backend package' }];
+  if (!isObject(value))
+    return [
+      { key: 'backend.use', message: 'must name a forge backend package' },
+    ];
   const out: { key: string; message: string }[] = [];
   for (const k of Object.keys(value))
     if (k !== 'merge' && k !== 'backend')
       out.push({ key: k, message: 'is not a forge setting (merge, backend)' });
   const { merge, backend } = value;
   if (merge !== undefined) {
-    if (!isObject(merge)) out.push({ key: 'merge', message: 'must be an object of base branch → rule' });
+    if (!isObject(merge))
+      out.push({
+        key: 'merge',
+        message: 'must be an object of base branch → rule',
+      });
     else
       for (const [base, rule] of Object.entries(merge))
         if (
@@ -49,11 +56,19 @@ export function checkWith(
         )
           out.push({
             key: `merge.${base}`,
-            message: "must be { method: 'squash' | 'merge', delete_source: true | false }",
+            message:
+              "must be { method: 'squash' | 'merge', delete_source: true | false }",
           });
   }
-  if (!isObject(backend) || typeof backend.use !== 'string' || backend.use === '')
-    out.push({ key: 'backend.use', message: 'must name a forge backend package' });
+  if (
+    !isObject(backend) ||
+    typeof backend.use !== 'string' ||
+    backend.use === ''
+  )
+    out.push({
+      key: 'backend.use',
+      message: 'must name a forge backend package',
+    });
   else if (scope === 'project' && isObject(backend.with))
     for (const k of SECRET_KEYS)
       if (backend.with[k] !== undefined)
@@ -73,7 +88,8 @@ export function mergeWith(project: unknown, machine: unknown): unknown {
 
 /** The rule for merging into `base`: `merge[base]`, else `merge['*']`, else squash and delete. */
 export function mergeRule(settings: unknown, base: string): MergeRule {
-  const merge = isObject(settings) && isObject(settings.merge) ? settings.merge : {};
+  const merge =
+    isObject(settings) && isObject(settings.merge) ? settings.merge : {};
   return (merge[base] ?? merge['*'] ?? DEFAULT_RULE) as MergeRule;
 }
 
@@ -97,7 +113,11 @@ export async function loadForgeBackend(
   home: string,
 ): Promise<ForgeBackend> {
   const backend = isObject(settings) ? settings.backend : undefined;
-  if (!isObject(backend) || typeof backend.use !== 'string' || backend.use === '')
+  if (
+    !isObject(backend) ||
+    typeof backend.use !== 'string' ||
+    backend.use === ''
+  )
     throw new Error(FORGE_NEEDS_BACKEND);
   const spec = backend.use;
   const resolved = resolveModuleEslintStyle(spec, [
@@ -107,7 +127,9 @@ export async function loadForgeBackend(
   ]);
   if (resolved === undefined)
     throw new Error(`forge cannot resolve backend package '${spec}'`);
-  const factory = ((await import(pathToFileURL(resolved).href)) as { default?: unknown }).default;
+  const factory = (
+    (await import(pathToFileURL(resolved).href)) as { default?: unknown }
+  ).default;
   if (typeof factory !== 'function')
     throw new Error(`forge backend '${spec}' has no default export factory`);
   let made: unknown;

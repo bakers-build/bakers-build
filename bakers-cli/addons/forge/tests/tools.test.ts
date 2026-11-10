@@ -33,7 +33,14 @@ function fakeBackend(options: {
     },
     createPr: async ({ head, base, title }) => {
       calls.push(`create:${head}->${base}:${title}`);
-      const pr = { number: prs.length + 1, url: `https://forge/pr/${prs.length + 1}`, head, base, title, headSha: 'h' };
+      const pr = {
+        number: prs.length + 1,
+        url: `https://forge/pr/${prs.length + 1}`,
+        head,
+        base,
+        title,
+        headSha: 'h',
+      };
       prs.push(pr);
       return pr;
     },
@@ -48,14 +55,20 @@ function fakeBackend(options: {
     },
     mergeBlocker: async () => options.blocker,
     merge: async (pr, o) => {
-      calls.push(`merge:${pr.number}:${o.method}:${o.deleteSource}:${o.subject}\n${o.body}`);
+      calls.push(
+        `merge:${pr.number}:${o.method}:${o.deleteSource}:${o.subject}\n${o.body}`,
+      );
     },
     isMerged: async () => true,
   };
   return { backend, calls };
 }
 
-const RUN = { identifier: 'BB-7', branchName: 'feat/bb-7-work', baseBranch: 'next' };
+const RUN = {
+  identifier: 'BB-7',
+  branchName: 'feat/bb-7-work',
+  baseBranch: 'next',
+};
 
 function request(
   args: Record<string, unknown>,
@@ -99,7 +112,9 @@ describe('forge tools', () => {
   });
 
   it('fails closed without a backend', () => {
-    expect(() => toolsFor({})).toThrow(/with\.backend\.use must name a forge backend/);
+    expect(() => toolsFor({})).toThrow(
+      /with\.backend\.use must name a forge backend/,
+    );
     expect(() => toolsFor(undefined)).toThrow(/backend\.use/);
   });
 
@@ -108,10 +123,15 @@ describe('forge tools', () => {
     const tools = forgeTools({ backend: async () => backend, settings: {} });
     for (const name of Object.keys(FORGE_TOOL_DEFINITIONS)) {
       await expect(
-        tools[name]!(request({ title: 'feat: x' }, '/nonexistent', { identifier: 'BB-7' })),
+        tools[name]!(
+          request({ title: 'feat: x' }, '/nonexistent', { identifier: 'BB-7' }),
+        ),
       ).rejects.toThrow(FORGE_NEEDS_RUN);
       for (const arg of ['base', 'target', 'ticket', 'base_branch'])
-        expect(validateArgs(FORGE_TOOL_DEFINITIONS[name]!.input, { [arg]: 'main' }).ok).toBe(false);
+        expect(
+          validateArgs(FORGE_TOOL_DEFINITIONS[name]!.input, { [arg]: 'main' })
+            .ok,
+        ).toBe(false);
     }
     expect(calls).toEqual([]);
   });
@@ -119,7 +139,13 @@ describe('forge tools', () => {
   it('forge_push refuses branches the run does not own, naming the pattern', async () => {
     const { backend } = fakeBackend({});
     const tools = forgeTools({ backend: async () => backend, settings: {} });
-    for (const branch of ['main', 'next', 'feat/other', 'feat/bb-7-workx', 'feat/bb-7-work-'])
+    for (const branch of [
+      'main',
+      'next',
+      'feat/other',
+      'feat/bb-7-workx',
+      'feat/bb-7-work-',
+    ])
       await expect(tools.forge_push!(request({ branch }))).rejects.toThrow(
         "only 'feat/bb-7-work' and 'feat/bb-7-work-<suffix>' may be used",
       );
@@ -130,10 +156,19 @@ describe('forge tools', () => {
     const { backend } = fakeBackend({ remote: f.remote });
     const tools = forgeTools({ backend: async () => backend, settings: {} });
     const fetched = JSON.parse(
-      (await tools.forge_fetch!(request({ branches: 'feat/bb-1-parent' }, f.clone))).text,
+      (
+        await tools.forge_fetch!(
+          request({ branches: 'feat/bb-1-parent' }, f.clone),
+        )
+      ).text,
     );
-    expect(fetched.fetched.map((r: { name: string }) => r.name)).toEqual(['next', 'feat/bb-1-parent']);
-    const pushed = JSON.parse((await tools.forge_push!(request({}, f.clone))).text);
+    expect(fetched.fetched.map((r: { name: string }) => r.name)).toEqual([
+      'next',
+      'feat/bb-1-parent',
+    ]);
+    const pushed = JSON.parse(
+      (await tools.forge_push!(request({}, f.clone))).text,
+    );
     expect(f.remoteSha('feat/bb-7-work')).toBe(pushed.sha);
     expect(git(f.clone, 'rev-parse', 'feat/bb-7-work')).toBe(pushed.sha);
   });
@@ -141,9 +176,17 @@ describe('forge tools', () => {
   it('forge_pr_upsert refuses a bad title before any backend call', async () => {
     const { backend, calls } = fakeBackend({});
     let loads = 0;
-    const tools = forgeTools({ backend: async () => (loads++, backend), settings: {} });
+    const tools = forgeTools({
+      backend: async () => {
+        loads++;
+        return backend;
+      },
+      settings: {},
+    });
     for (const title of ['Add stuff', 'Draft: feat: x'])
-      await expect(tools.forge_pr_upsert!(request({ title }))).rejects.toThrow(/Conventional Commits/);
+      await expect(tools.forge_pr_upsert!(request({ title }))).rejects.toThrow(
+        /Conventional Commits/,
+      );
     expect(calls).toEqual([]);
     expect(loads).toBe(0);
   });
@@ -152,11 +195,19 @@ describe('forge tools', () => {
     const { backend, calls } = fakeBackend({});
     const tools = forgeTools({ backend: async () => backend, settings: {} });
     const first = JSON.parse(
-      (await tools.forge_pr_upsert!(request({ title: 'feat: x', branch: 'feat/bb-7-work-2' }))).text,
+      (
+        await tools.forge_pr_upsert!(
+          request({ title: 'feat: x', branch: 'feat/bb-7-work-2' }),
+        )
+      ).text,
     );
     expect(first).toMatchObject({ target: 'feat/bb-7-work', created: true });
     const second = JSON.parse(
-      (await tools.forge_pr_upsert!(request({ title: 'feat(cli)!: y', branch: 'feat/bb-7-work-2' }))).text,
+      (
+        await tools.forge_pr_upsert!(
+          request({ title: 'feat(cli)!: y', branch: 'feat/bb-7-work-2' }),
+        )
+      ).text,
     );
     expect(second.created).toBe(false);
     expect(calls.filter((c) => c.startsWith('create'))).toEqual([
@@ -175,20 +226,51 @@ describe('forge tools', () => {
     expect(out).toMatchObject({ ref: 'abc', base: 'next', overall: 'pending' });
     expect(out.checks).toHaveLength(3);
     expect(calls).toContain('checks:abc:next');
-    const any = JSON.parse((await tools.forge_checks!(request({ ref: 'main' }))).text);
+    const any = JSON.parse(
+      (await tools.forge_checks!(request({ ref: 'main' }))).text,
+    );
     expect(any.ref).toBe('main');
   });
 
   it('forge_merge refuses: not owned, no PR, wrong target, bad title, conflict, required check not green', async () => {
-    const cases: [Parameters<typeof fakeBackend>[0], Record<string, unknown>, RegExp][] = [
+    const cases: [
+      Parameters<typeof fakeBackend>[0],
+      Record<string, unknown>,
+      RegExp,
+    ][] = [
       [{ prs: [pr()] }, { branch: 'next' }, /not owned/],
       [{ prs: [] }, {}, /no open PR\/MR/],
-      [{ prs: [pr({ base: 'main' })] }, {}, /targets 'main', but .* merges into 'next'/],
+      [
+        { prs: [pr({ base: 'main' })] },
+        {},
+        /targets 'main', but .* merges into 'next'/,
+      ],
       [{ prs: [pr({ title: 'Add stuff' })] }, {}, /Conventional Commits/],
       [{ prs: [pr()], blocker: 'merge conflict' }, {}, /merge conflict/],
-      [{ prs: [pr()], checks: [{ name: 'required', status: 'pending', required: true }] }, {}, /required \(pending\)/],
-      [{ prs: [pr()], checks: [{ name: 'required', status: 'failure', required: true }] }, {}, /required \(failure\)/],
-      [{ prs: [pr()], checks: [{ name: 'required', status: 'missing', required: true }] }, {}, /required \(missing\)/],
+      [
+        {
+          prs: [pr()],
+          checks: [{ name: 'required', status: 'pending', required: true }],
+        },
+        {},
+        /required \(pending\)/,
+      ],
+      [
+        {
+          prs: [pr()],
+          checks: [{ name: 'required', status: 'failure', required: true }],
+        },
+        {},
+        /required \(failure\)/,
+      ],
+      [
+        {
+          prs: [pr()],
+          checks: [{ name: 'required', status: 'missing', required: true }],
+        },
+        {},
+        /required \(missing\)/,
+      ],
     ];
     for (const [options, args, error] of cases) {
       const { backend, calls } = fakeBackend(options);
@@ -200,32 +282,65 @@ describe('forge tools', () => {
 
   it('forge_merge sends the rule explicitly with Merged-by and the final ref: line, and keeps a source others target', async () => {
     const settings = {
-      merge: { main: { method: 'merge', delete_source: false }, '*': { method: 'squash', delete_source: true } },
+      merge: {
+        main: { method: 'merge', delete_source: false },
+        '*': { method: 'squash', delete_source: true },
+      },
     };
     const one = fakeBackend({ prs: [pr()], checks: green });
     const out = JSON.parse(
-      (await forgeTools({ backend: async () => one.backend, settings }).forge_merge!(request({}))).text,
+      (
+        await forgeTools({ backend: async () => one.backend, settings })
+          .forge_merge!(request({}))
+      ).text,
     );
-    expect(out).toMatchObject({ merged: true, into: 'next', method: 'squash', source_deleted: true });
+    expect(out).toMatchObject({
+      merged: true,
+      into: 'next',
+      method: 'squash',
+      source_deleted: true,
+    });
     expect(one.calls).toContain(
       'merge:1:squash:true:feat(cli): forge tools\nMerged-by: bakers.build\nref:BB-7',
     );
 
-    const variant = pr({ number: 2, url: 'https://forge/pr/2', head: 'feat/bb-7-work-2', base: 'feat/bb-7-work' });
+    const variant = pr({
+      number: 2,
+      url: 'https://forge/pr/2',
+      head: 'feat/bb-7-work-2',
+      base: 'feat/bb-7-work',
+    });
     const kept = fakeBackend({ prs: [pr(), variant], checks: green });
     const keptOut = JSON.parse(
-      (await forgeTools({ backend: async () => kept.backend, settings }).forge_merge!(request({}))).text,
+      (
+        await forgeTools({ backend: async () => kept.backend, settings })
+          .forge_merge!(request({}))
+      ).text,
     );
-    expect(keptOut).toMatchObject({ source_deleted: false, source_kept_for: ['https://forge/pr/2'] });
+    expect(keptOut).toMatchObject({
+      source_deleted: false,
+      source_kept_for: ['https://forge/pr/2'],
+    });
 
-    expect(mergeRule(settings, 'main')).toEqual({ method: 'merge', delete_source: false });
-    expect(mergeRule({}, 'next')).toEqual({ method: 'squash', delete_source: true });
+    expect(mergeRule(settings, 'main')).toEqual({
+      method: 'merge',
+      delete_source: false,
+    });
+    expect(mergeRule({}, 'next')).toEqual({
+      method: 'squash',
+      delete_source: true,
+    });
   });
 
   it('never returns the token in a result or an error', async () => {
     const failing = fakeBackend({ failWith: `401 for token ${SECRET}` });
-    const tools = forgeTools({ backend: async () => failing.backend, settings: {} });
-    const err = await tools.forge_checks!(request({})).catch((e: Error) => e.message);
+    const tools = forgeTools({
+      backend: async () => failing.backend,
+      settings: {},
+    });
+    const err = await tools.forge_checks!(request({})).catch(
+      (e: Error) => e.message,
+    );
     expect(err).toContain('[redacted]');
     expect(err).not.toContain(SECRET);
 
@@ -235,7 +350,9 @@ describe('forge tools', () => {
     const results = [
       (await live.forge_fetch!(request({}, f.clone))).text,
       (await live.forge_push!(request({}, f.clone))).text,
-      await live.forge_push!(request({ branch: 'feat/bb-7-work-9' }, f.clone)).catch((e: Error) => e.message),
+      await live.forge_push!(
+        request({ branch: 'feat/bb-7-work-9' }, f.clone),
+      ).catch((e: Error) => e.message),
     ];
     for (const text of results) expect(text).not.toContain(SECRET);
   });
@@ -243,14 +360,27 @@ describe('forge tools', () => {
 
 describe('forge config', () => {
   it('names a missing backend and flags literal credentials only in the project file', () => {
-    expect(checkWith({})).toEqual([{ key: 'backend.use', message: 'must name a forge backend package' }]);
-    const literal = { backend: { use: '@bakers-build/addon-forge-gitlab', with: { token: SECRET } } };
+    expect(checkWith({})).toEqual([
+      { key: 'backend.use', message: 'must name a forge backend package' },
+    ]);
+    const literal = {
+      backend: {
+        use: '@bakers-build/addon-forge-gitlab',
+        with: { token: SECRET },
+      },
+    };
     expect(checkWith(literal, 'machine')).toEqual([]);
     expect(checkWith(literal, 'project')).toEqual([
       expect.objectContaining({ key: 'backend.with.token' }),
     ]);
     expect(
-      checkWith({ backend: { use: 'x', with: { token_env: 'T' } }, merge: { main: { method: 'rebase' } } }, 'project'),
+      checkWith(
+        {
+          backend: { use: 'x', with: { token_env: 'T' } },
+          merge: { main: { method: 'rebase' } },
+        },
+        'project',
+      ),
     ).toEqual([expect.objectContaining({ key: 'merge.main' })]);
   });
 });

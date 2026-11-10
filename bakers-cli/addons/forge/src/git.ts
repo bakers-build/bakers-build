@@ -59,7 +59,14 @@ function run(
 /** The clone's common git dir (shared by all its worktrees). */
 async function commonDir(worktree: string, env: NodeJS.ProcessEnv) {
   return run(
-    ['-C', worktree, ...HARDEN, 'rev-parse', '--path-format=absolute', '--git-common-dir'],
+    [
+      '-C',
+      worktree,
+      ...HARDEN,
+      'rev-parse',
+      '--path-format=absolute',
+      '--git-common-dir',
+    ],
     env,
   );
 }
@@ -69,7 +76,14 @@ const inClone = (common: string, env: NodeJS.ProcessEnv, ...args: string[]) =>
 
 async function readRef(common: string, env: NodeJS.ProcessEnv, ref: string) {
   try {
-    return await inClone(common, env, 'rev-parse', '--verify', '-q', `${ref}^{commit}`);
+    return await inClone(
+      common,
+      env,
+      'rev-parse',
+      '--verify',
+      '-q',
+      `${ref}^{commit}`,
+    );
   } catch {
     return undefined;
   }
@@ -129,7 +143,11 @@ export async function localSha(
   const home = await mkdtemp(join(tmpdir(), 'bakers-forge-'));
   try {
     const env = baseEnv(home);
-    return await readRef(await commonDir(worktree, env), env, `refs/heads/${branch}`);
+    return await readRef(
+      await commonDir(worktree, env),
+      env,
+      `refs/heads/${branch}`,
+    );
   } finally {
     await rm(home, { recursive: true, force: true });
   }
@@ -157,9 +175,16 @@ export async function fetchBranches(
 ): Promise<{ name: string; sha: string }[]> {
   return withScratch(worktree, auth, async ({ common, env, remote }) => {
     const heads = parseLsRemote(
-      await remote(['ls-remote', '--heads', auth.url, ...branches.map((b) => `refs/heads/${b}`)]),
+      await remote([
+        'ls-remote',
+        '--heads',
+        auth.url,
+        ...branches.map((b) => `refs/heads/${b}`),
+      ]),
     );
-    const wanted = branches.filter((b, i) => heads.has(b) && branches.indexOf(b) === i);
+    const wanted = branches.filter(
+      (b, i) => heads.has(b) && branches.indexOf(b) === i,
+    );
     if (wanted.length === 0) return [];
     // The clone's remote-tracking refs seed negotiation, so only new objects travel.
     const known = await inClone(
@@ -170,7 +195,8 @@ export async function fetchBranches(
       'refs/remotes/origin/',
     );
     // A ref to an object the store lacks only costs negotiation; ignore it.
-    if (known) await remote(['update-ref', '--stdin'], `${known}\n`).catch(() => '');
+    if (known)
+      await remote(['update-ref', '--stdin'], `${known}\n`).catch(() => '');
     await remote([
       'fetch',
       '--no-tags',
@@ -181,8 +207,15 @@ export async function fetchBranches(
     ]);
     const out: { name: string; sha: string }[] = [];
     for (const name of wanted) {
-      const sha = heads.get(name)!;
-      await inClone(common, env, 'update-ref', `refs/remotes/origin/${name}`, sha);
+      // What the fetch wrote, not ls-remote's answer: the remote may have moved since.
+      const sha = await remote(['rev-parse', `refs/remotes/origin/${name}`]);
+      await inClone(
+        common,
+        env,
+        'update-ref',
+        `refs/remotes/origin/${name}`,
+        sha,
+      );
       out.push({ name, sha });
     }
     return out;
@@ -213,7 +246,13 @@ export async function pushBranch(
       args.push(`--force-with-lease=refs/heads/${branch}:${expected}`);
     }
     await remote([...args, auth.url, `${sha}:refs/heads/${branch}`]);
-    await inClone(common, env, 'update-ref', `refs/remotes/origin/${branch}`, sha);
+    await inClone(
+      common,
+      env,
+      'update-ref',
+      `refs/remotes/origin/${branch}`,
+      sha,
+    );
     return sha;
   });
 }

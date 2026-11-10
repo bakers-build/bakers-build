@@ -32,7 +32,12 @@ describe('isolated git', () => {
 
   it('pushes to the configured remote only; planted hooks, pushurl, insteadOf and sshCommand never act', async () => {
     const f = gitFixture();
-    const sha = await pushBranch(f.clone, authOf(f.remote), 'feat/bb-7-work', {});
+    const sha = await pushBranch(
+      f.clone,
+      authOf(f.remote),
+      'feat/bb-7-work',
+      {},
+    );
     expect(sha).toBe(await localSha(f.clone, 'feat/bb-7-work'));
     expect(f.remoteSha('feat/bb-7-work')).toBe(sha);
     expect(git(f.root, '--git-dir', f.evil, 'for-each-ref')).toBe('');
@@ -57,7 +62,9 @@ describe('isolated git', () => {
     const auth = authOf(f.remote);
     const first = await pushBranch(f.clone, auth, 'feat/bb-7-work', {});
     git(f.clone, 'commit', '-q', '--amend', '-m', 'rewritten');
-    await expect(pushBranch(f.clone, auth, 'feat/bb-7-work', {})).rejects.toThrow();
+    await expect(
+      pushBranch(f.clone, auth, 'feat/bb-7-work', {}),
+    ).rejects.toThrow();
     await expect(
       pushBranch(f.clone, auth, 'feat/bb-7-work', {
         forceWithLease: true,
@@ -73,16 +80,25 @@ describe('isolated git', () => {
 
   it('a lease without a remote-tracking ref requires the branch to be absent remotely', async () => {
     const f = gitFixture();
-    git(f.root, '--git-dir', f.remote, 'update-ref', 'refs/heads/feat/bb-7-work', f.remoteSha('next')!);
+    git(
+      f.root,
+      '--git-dir',
+      f.remote,
+      'update-ref',
+      'refs/heads/feat/bb-7-work',
+      f.remoteSha('next')!,
+    );
     await expect(
-      pushBranch(f.clone, authOf(f.remote), 'feat/bb-7-work', { forceWithLease: true }),
+      pushBranch(f.clone, authOf(f.remote), 'feat/bb-7-work', {
+        forceWithLease: true,
+      }),
     ).rejects.toThrow();
   });
 
   it('fails for a branch the clone does not have', async () => {
     const f = gitFixture();
-    await expect(pushBranch(f.clone, authOf(f.remote), 'feat/bb-7-work-9', {})).rejects.toThrow(
-      /no local branch 'feat\/bb-7-work-9'/,
-    );
+    await expect(
+      pushBranch(f.clone, authOf(f.remote), 'feat/bb-7-work-9', {}),
+    ).rejects.toThrow(/no local branch 'feat\/bb-7-work-9'/);
   });
 });

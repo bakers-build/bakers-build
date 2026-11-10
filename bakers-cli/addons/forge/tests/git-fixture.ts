@@ -2,7 +2,13 @@
 // a linked worktree. Tests reach the remote over file:// only.
 
 import { execFileSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -20,11 +26,15 @@ export function git(cwd: string, ...args: string[]): string {
   // The fixture's own calls ignore the planted hook and fsmonitor, so the
   // marker proves only what the code under test ran.
   const safe = ['-c', 'core.hooksPath=/dev/null', '-c', 'core.fsmonitor=false'];
-  return execFileSync('git', ['-c', 'protocol.file.allow=always', ...safe, ...args], {
-    cwd,
-    env: ENV,
-    encoding: 'utf8',
-  }).trim();
+  return execFileSync(
+    'git',
+    ['-c', 'protocol.file.allow=always', ...safe, ...args],
+    {
+      cwd,
+      env: ENV,
+      encoding: 'utf8',
+    },
+  ).trim();
 }
 
 export interface GitFixture {
@@ -59,7 +69,15 @@ export function gitFixture(): GitFixture {
   git(seed, 'checkout', '-q', '-b', 'feat/bb-1-parent');
   commit(seed, 'parent');
   git(seed, 'tag', 'v1');
-  git(seed, 'push', '-q', `file://${remote}`, 'main', 'next', 'feat/bb-1-parent');
+  git(
+    seed,
+    'push',
+    '-q',
+    `file://${remote}`,
+    'main',
+    'next',
+    'feat/bb-1-parent',
+  );
   git(root, 'clone', '-q', `file://${remote}`, clone);
   // A tag the clone does not have yet: forge_fetch must not bring it.
   git(seed, 'push', '-q', `file://${remote}`, 'v1');
@@ -85,7 +103,16 @@ export function gitFixture(): GitFixture {
   git(clone, 'config', `url.file://${evil}.insteadOf`, `file://${remote}`);
 
   const worktree = join(root, 'wt');
-  git(clone, 'worktree', 'add', '-q', '-b', 'feat/bb-7-work-2', worktree, 'feat/bb-7-work');
+  git(
+    clone,
+    'worktree',
+    'add',
+    '-q',
+    '-b',
+    'feat/bb-7-work-2',
+    worktree,
+    'feat/bb-7-work',
+  );
 
   return {
     root,
@@ -97,7 +124,15 @@ export function gitFixture(): GitFixture {
     commit,
     remoteSha: (branch) => {
       try {
-        return git(root, '--git-dir', remote, 'rev-parse', '--verify', '-q', `refs/heads/${branch}`);
+        return git(
+          root,
+          '--git-dir',
+          remote,
+          'rev-parse',
+          '--verify',
+          '-q',
+          `refs/heads/${branch}`,
+        );
       } catch {
         return undefined;
       }

@@ -12,7 +12,11 @@ const run = { branchName: 'feat/bb-7-work', baseBranch: 'next' };
 
 describe('ownership', () => {
   it('owns the ticket branch and its variants only', () => {
-    for (const b of ['feat/bb-7-work', 'feat/bb-7-work-2', 'feat/bb-7-work-ui.v2'])
+    for (const b of [
+      'feat/bb-7-work',
+      'feat/bb-7-work-2',
+      'feat/bb-7-work-ui.v2',
+    ])
       expect(isOwned(b, run.branchName), b).toBe(true);
     for (const b of [
       'main',
@@ -37,7 +41,13 @@ describe('title rule', () => {
   it('accepts Conventional Commits subjects only', () => {
     for (const t of ['feat: x', 'feat(cli)!: x', 'fix(a.b/c-d): y'])
       expect(isConventionalTitle(t), t).toBe(true);
-    for (const t of ['Add stuff', 'Draft: feat: x', 'feature: x', 'feat:  x', 'feat(CLI): x'])
+    for (const t of [
+      'Add stuff',
+      'Draft: feat: x',
+      'feature: x',
+      'feat:  x',
+      'feat(CLI): x',
+    ])
       expect(isConventionalTitle(t), t).toBe(false);
   });
 

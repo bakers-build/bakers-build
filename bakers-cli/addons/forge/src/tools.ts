@@ -21,7 +21,7 @@ import {
 } from './rules.js';
 
 export const FORGE_NEEDS_RUN =
-  "forge tools act only for an agent run: the call carries no ticket branch_name and base_branch (an operator delivers by hand)";
+  'forge tools act only for an agent run: the call carries no ticket branch_name and base_branch (an operator delivers by hand)';
 
 export interface ForgeToolDeps {
   backend(): Promise<ForgeBackend>;
@@ -38,7 +38,11 @@ interface Run {
 function runOf(req: ToolRequest): Run {
   const t = req.ticket;
   if (!t?.branchName || !t.baseBranch) throw new Error(FORGE_NEEDS_RUN);
-  return { identifier: t.identifier, branchName: t.branchName, baseBranch: t.baseBranch };
+  return {
+    identifier: t.identifier,
+    branchName: t.branchName,
+    baseBranch: t.baseBranch,
+  };
 }
 
 function ownedBranch(req: ToolRequest, run: Run): string {
@@ -48,7 +52,9 @@ function ownedBranch(req: ToolRequest, run: Run): string {
   return branch;
 }
 
-const json = (value: unknown): ToolResult => ({ text: JSON.stringify(value, null, 2) });
+const json = (value: unknown): ToolResult => ({
+  text: JSON.stringify(value, null, 2),
+});
 
 /** Failure first, then pending, over the required checks. */
 export function overall(checks: readonly ForgeCheck[]): ForgeCheck['status'] {
@@ -73,14 +79,18 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         const result = await handler(req);
         return { text: redact(result.text, secrets) };
       } catch (err) {
-        throw new Error(redact(err instanceof Error ? err.message : String(err), secrets));
+        throw new Error(
+          redact(err instanceof Error ? err.message : String(err), secrets),
+        );
       }
     };
 
   const tools: Record<string, ToolHandler> = {
     forge_fetch: async (req) => {
       const run = runOf(req);
-      const extra = String(req.args.branches ?? '').split(/\s+/).filter(Boolean);
+      const extra = String(req.args.branches ?? '')
+        .split(/\s+/)
+        .filter(Boolean);
       const b = await backend();
       const refs = await fetchBranches(req.worktreePath, await b.gitAuth(), [
         run.baseBranch,
@@ -94,12 +104,17 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const run = runOf(req);
       const branch = ownedBranch(req, run);
       const b = await backend();
-      const sha = await pushBranch(req.worktreePath, await b.gitAuth(), branch, {
-        forceWithLease: req.args.force_with_lease === true,
-        ...(typeof req.args.expected_sha === 'string'
-          ? { expectedSha: req.args.expected_sha }
-          : {}),
-      });
+      const sha = await pushBranch(
+        req.worktreePath,
+        await b.gitAuth(),
+        branch,
+        {
+          forceWithLease: req.args.force_with_lease === true,
+          ...(typeof req.args.expected_sha === 'string'
+            ? { expectedSha: req.args.expected_sha }
+            : {}),
+        },
+      );
       return json({ branch, sha });
     },
 
@@ -114,8 +129,18 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const open = await b.findOpenPr(branch);
       const pr = open
         ? await b.updatePr(open, { title, body })
-        : await b.createPr({ head: branch, base: derivedBase(branch, run), title, body });
-      return json({ url: pr.url, number: pr.number, target: pr.base, created: !open });
+        : await b.createPr({
+            head: branch,
+            base: derivedBase(branch, run),
+            title,
+            body,
+          });
+      return json({
+        url: pr.url,
+        number: pr.number,
+        target: pr.base,
+        created: !open,
+      });
     },
 
     forge_checks: async (req) => {
@@ -141,23 +166,32 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const base = derivedBase(branch, run);
       const b = await backend();
       const pr = await b.findOpenPr(branch);
-      if (!pr) throw new Error(`no open PR/MR from '${branch}'; open it with forge_pr_upsert`);
+      if (!pr)
+        throw new Error(
+          `no open PR/MR from '${branch}'; open it with forge_pr_upsert`,
+        );
       if (pr.base !== base)
         throw new Error(
           `PR/MR ${pr.url} targets '${pr.base}', but '${branch}' merges into '${base}'; close it and open one into '${base}'`,
         );
       if (!isConventionalTitle(pr.title))
-        throw new Error(`PR/MR ${pr.url}: ${TITLE_REFUSAL}; retitle it with forge_pr_upsert`);
+        throw new Error(
+          `PR/MR ${pr.url}: ${TITLE_REFUSAL}; retitle it with forge_pr_upsert`,
+        );
       const blocker = await b.mergeBlocker(pr);
       if (blocker) throw new Error(`PR/MR ${pr.url} cannot merge: ${blocker}`);
       const checks = await b.checks(pr.headSha, pr.base);
-      const notGreen = checks.filter((c) => c.required && c.status !== 'success');
+      const notGreen = checks.filter(
+        (c) => c.required && c.status !== 'success',
+      );
       if (notGreen.length > 0)
         throw new Error(
           `PR/MR ${pr.url} has required checks that are not green: ${notGreen.map((c) => `${c.name} (${c.status})`).join(', ')}`,
         );
       const rule = mergeRule(deps.settings, base);
-      const dependents = (await b.openPrsWithBase(branch)).filter((p) => p.number !== pr.number);
+      const dependents = (await b.openPrsWithBase(branch)).filter(
+        (p) => p.number !== pr.number,
+      );
       const deleteSource = rule.delete_source && dependents.length === 0;
       await b.merge(pr, {
         method: rule.method,
@@ -166,7 +200,9 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         body: `Merged-by: bakers.build\nref:${run.identifier}`,
       });
       if (!(await b.isMerged(pr)))
-        throw new Error(`PR/MR ${pr.url} does not report merged after the merge call`);
+        throw new Error(
+          `PR/MR ${pr.url} does not report merged after the merge call`,
+        );
       return json({
         url: pr.url,
         merged: true,
@@ -179,12 +215,15 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       });
     },
   };
-  return Object.fromEntries(Object.entries(tools).map(([n, h]) => [n, guarded(h)]));
+  return Object.fromEntries(
+    Object.entries(tools).map(([n, h]) => [n, guarded(h)]),
+  );
 }
 
 /** The live tools for the conductor's effective forge entry `with`. */
 export function toolsFor(options: unknown): Record<string, ToolHandler> {
-  const backend = (options as { backend?: { use?: unknown } } | undefined)?.backend;
+  const backend = (options as { backend?: { use?: unknown } } | undefined)
+    ?.backend;
   // Fail closed: a forge entry without a backend stops the conductor's start.
   if (typeof backend?.use !== 'string' || backend.use === '')
     throw new Error(FORGE_NEEDS_BACKEND);
