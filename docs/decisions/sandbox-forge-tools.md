@@ -38,6 +38,10 @@ or machine layer, for example `trusted_commands: ['bakers', 'git', 'gh']` (or `g
 repository pins `bakers` and `git` in `.bakers/conductor.config.js`. Every such entry runs outside
 the sandbox with the operator's full rights; see [Run security](/provision/security/execution).
 
+The addons now exist: [Forge](/addons/forge) with [Forge for GitHub](/addons/forge-github) or
+[Forge for GitLab](/addons/forge-gitlab). With them configured, no trusted `git`, `gh` or `glab` is
+needed for delivery; this section stays the fallback for a project without them.
+
 ## The key is `permissions`, not `security`
 
 The mode key (`sandbox`, `system`, `yolo`, `custom`) chooses the rights a harness starts with. It
