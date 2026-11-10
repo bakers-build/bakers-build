@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Form;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\bb_core\Controller\BbHomeController;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Onboarding\FirstProjectCreator;
 use Drupal\user\UserInterface;
@@ -16,7 +17,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * The first project, asked on a page of its own right after a workspace.
  *
  * Create makes a group and a project on the account's teams of the workspace
- * and lands on the project; Skip leaves for the overview and creates nothing.
+ * and lands on the project; Skip leaves for the workspace and creates nothing.
  * The route's workspace-scoped create check decides who sees the page.
  */
 final class BbFirstProjectForm extends FormBase {
@@ -125,12 +126,15 @@ final class BbFirstProjectForm extends FormBase {
   }
 
   /**
-   * Leaves for the overview without creating a project.
+   * Leaves for the workspace without creating a project.
    *
    * @SuppressWarnings("PHPMD.UnusedFormalParameter")
    */
   public function skip(array &$form, FormStateInterface $form_state): void {
-    $form_state->setRedirect('bb_core.home');
+    $workspace = $this->getRouteMatch()->getParameter('bb_workspace');
+    $workspace instanceof BbWorkspaceInterface
+      ? $form_state->setRedirect(BbHomeController::MY_WORK_ROUTE, ['bb_workspace' => $workspace->getSlug()])
+      : $form_state->setRedirect('bb_core.home');
   }
 
 }

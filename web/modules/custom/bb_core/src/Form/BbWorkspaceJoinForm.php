@@ -13,6 +13,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
+use Drupal\bb_core\Controller\BbHomeController;
 use Drupal\bb_core\Entity\BbInvite;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Members\InviteAcceptance;
@@ -236,10 +237,10 @@ final class BbWorkspaceJoinForm extends FormBase {
       '@workspace' => $workspace->label(),
     ]));
 
-    // Completed accounts joining a workspace stay on the overview. Incomplete
-    // accounts never reach this form: the entry guard sends them to the wizard
-    // first.
-    $form_state->setRedirect('bb_core.home');
+    // Joining lands in the workspace just joined, on its My work list; the
+    // parameter is the slug, as everywhere. Incomplete accounts never reach
+    // this form: the entry guard sends them to the wizard first.
+    $form_state->setRedirect(BbHomeController::MY_WORK_ROUTE, ['bb_workspace' => $workspace->getSlug()]);
   }
 
   /**

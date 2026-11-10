@@ -133,7 +133,7 @@ When(
     await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
     // The first project is asked on the next page; Skip leaves it for later.
     await page.waitForURL('**/home/first-project/**', { waitUntil: 'load' });
-    const navigation = page.waitForURL('**/home', { waitUntil: 'load' });
+    const navigation = page.waitForURL('**/tickets', { waitUntil: 'load' });
     await page.getByRole('button', { name: 'Skip', exact: true }).click();
     await navigation;
     const found = JSON.parse(php(

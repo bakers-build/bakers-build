@@ -33,7 +33,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * The template composes `bb_theme:onboarding` from `#bb_copy` and the
  * fields, so heading, copy and inputs swap as one HTMX fragment. The step
  * lives in Form API state, with one resumable integer in core user.data.
- * Finish, Create a workspace, and Set up later are the only writes of
+ * Finish, Create your first workspace, and Set up later are the only writes of
  * field_onboarding_completed. The picture is the `user_picture` widget of the
  * account form display — the same square-crop widget the account form uses —
  * and its file travels with the step's multipart POST.
@@ -631,10 +631,11 @@ final class BbOnboardingWizardForm extends FormBase {
 
     if ($step === $this->setupStep()) {
       // ONE PREFERRED WAY OUT. An account with no workspace and no invitation
-      // is best served by creating one; anyone else just finishes. Finish and
-      // Set up later both end on Home, so they are never offered together.
+      // is best served by creating its first; anyone else just finishes.
+      // Finish and Set up later both end on Home, so they are never offered
+      // together.
       if ($this->prefersWorkspaceCreate()) {
-        $form['actions']['finish_create'] = $this->primarySubmit($this->t('Create a workspace'), 'finish_create');
+        $form['actions']['finish_create'] = $this->primarySubmit($this->t('Create your first workspace'), 'finish_create');
         $form['actions']['set_up_later'] = $this->ghostSubmit($this->t('Set up later'), 'set_up_later');
         return;
       }

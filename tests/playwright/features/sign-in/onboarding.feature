@@ -188,10 +188,8 @@ Feature: The onboarding wizard before the workspace overview
     Then the address is "/home/new-workspace"
     And the page has exactly one h1
     When I create the workspace "Setup Create GmbH"
-    Then the address is "/home"
-    And the workspace "setup-create-gmbh" is owned by "onboarding-create@example.com" as lead
-    When I choose the workspace "/setup-create-gmbh/tickets"
     Then the address is "/setup-create-gmbh/tickets"
+    And the workspace "setup-create-gmbh" is owned by "onboarding-create@example.com" as lead
 
   Scenario: Progress resumes, Set up later dismisses, and Setup guide reopens twice
     Given no account exists for "onboarding-resume@example.com"

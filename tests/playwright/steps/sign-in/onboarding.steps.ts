@@ -16,7 +16,7 @@ const expect = baseExpect.configure({ timeout: 15_000 });
 
 /** The create-workspace finish control; `&` in the label must not be required as an entity. */
 function finishAndCreateButton(page: Page) {
-    return page.getByRole('button', { name: 'Create a workspace', exact: true });
+    return page.getByRole('button', { name: 'Create your first workspace', exact: true });
 }
 
 /**
