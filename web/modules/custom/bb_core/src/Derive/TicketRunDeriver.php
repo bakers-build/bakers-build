@@ -19,6 +19,8 @@ use Drupal\user\UserInterface;
  * All values are read live (computed fields use these). Results are cached
  * per ticket id for the duration of the request to avoid repeated run queries
  * across the computed fields of one rendered row.
+ *
+ * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 final class TicketRunDeriver {
 
@@ -92,6 +94,77 @@ final class TicketRunDeriver {
     }
     $this->runCache[(int) $id] = $run ?? FALSE;
     return $run;
+  }
+
+  /**
+   * Whether the ticket currently carries a live run.
+   *
+   * Matches TicketClaimService::countLiveRunsOnMachine: running is always
+   * live; claimed is live only with claim_expires_at 0 or still unexpired.
+   */
+  public function hasLiveRun(BbTicketInterface $ticket): bool {
+    $id = $ticket->id();
+    return $id !== NULL && $this->liveRunTicketIds([(int) $id]) !== [];
+  }
+
+  /**
+   * The given tickets that carry a live run, in one query.
+   *
+   * @param list<int> $ticketIds
+   *   Ticket entity ids.
+   *
+   * @return list<int>
+   *   The ids with a live run; empty input answers without a query.
+   *
+   * @see self::hasLiveRun()
+   */
+  public function liveRunTicketIds(array $ticketIds): array {
+    if ($ticketIds === []) {
+      return [];
+    }
+    $query = $this->entityTypeManager->getStorage('bb_run')->getAggregateQuery()
+      ->accessCheck(FALSE)
+      ->condition('ticket_id', $ticketIds, 'IN');
+    $live = $query->orConditionGroup()
+      ->condition('state', 'running')
+      ->condition($query->andConditionGroup()
+        ->condition('state', 'claimed')
+        ->condition($query->orConditionGroup()
+          ->condition('claim_expires_at', 0)
+          ->condition('claim_expires_at', $this->time->getRequestTime(), '>=')));
+    /** @var array<int, array<string, int|string>> $rows */
+    $rows = $query->condition($live)->groupBy('ticket_id')->execute();
+    return array_values(array_map(static fn (array $row): int => (int) $row['ticket_id'], $rows));
+  }
+
+  /**
+   * The state of each ticket's newest run (highest id).
+   *
+   * @param list<int> $ticketIds
+   *   Ticket entity ids.
+   *
+   * @return array<int, string>
+   *   State per ticket that has a run; empty input answers without a query.
+   */
+  public function latestRunStates(array $ticketIds): array {
+    if ($ticketIds === []) {
+      return [];
+    }
+    $storage = $this->entityTypeManager->getStorage('bb_run');
+    /** @var array<int, array<string, int|string>> $rows */
+    $rows = $storage->getAggregateQuery()
+      ->accessCheck(FALSE)
+      ->condition('ticket_id', $ticketIds, 'IN')
+      ->groupBy('ticket_id')
+      ->aggregate('id', 'MAX')
+      ->execute();
+    $states = [];
+    foreach ($storage->loadMultiple(array_map(static fn (array $row): int => (int) $row['id_max'], $rows)) as $run) {
+      if ($run instanceof BbRunInterface) {
+        $states[(int) $run->get('ticket_id')->target_id] = $run->getRunState();
+      }
+    }
+    return $states;
   }
 
   /**
