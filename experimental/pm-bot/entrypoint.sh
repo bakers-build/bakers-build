@@ -7,8 +7,8 @@
 #      skills, with the bundle files they link to) and the bot-channels plugin into the data
 #      directory, replacing them, and removes the retired project-manager skill; sessions,
 #      memories, learned skills, the poller state and the bot's channel list stay;
-#   4. runs the poller and the Hermes gateway. When either exits, the container exits and
-#      its restart policy starts it again.
+#   4. checks that Slack accepts SLACK_APP_TOKEN, then runs the poller and the Hermes
+#      gateway. When either exits, the container exits and its restart policy starts it again.
 #
 #   entrypoint.sh [run]   start the bot (the image's default)
 #   entrypoint.sh check   steps 1-3, then print the versions, shipped skills and plugins, assert the
@@ -119,6 +119,13 @@ PY
   exit 0
 fi
 [ "$mode" = run ] || { echo "usage: entrypoint.sh [run|check]" >&2; exit 2; }
+
+# A rejected app token is named once, then waits like the poller's back-off: the restart
+# policy would otherwise start the gateway again at once.
+if ! node "$BOT/lib/slack-app-token.mjs"; then
+  sleep 300
+  exit 1
+fi
 
 pids=()
 stop() { kill -TERM "${pids[@]}" 2>/dev/null || true; }

@@ -50,7 +50,7 @@ BOT=experimental/pm-bot
 TEMPLATE="$BOT/config.template.yaml"
 for f in "$TEMPLATE" "$BOT/SOUL.template.md" "$BOT/.env.example" \
          "$BOT/README.md" "$BOT/Dockerfile" "$BOT/entrypoint.sh" "$BOT/render.mjs" "$BOT/poller/poller.mjs" "$BOT/poller/diff.mjs" \
-         "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/poller/channels.mjs" "$BOT/lib/bakers-client.mjs" \
+         "$BOT/poller/questions.mjs" "$BOT/poller/tickets.mjs" "$BOT/poller/channels.mjs" "$BOT/lib/bakers-client.mjs" "$BOT/lib/slack-app-token.mjs" \
          "$BOT/plugins/bot-channels/plugin.yaml" "$BOT/plugins/bot-channels/__init__.py" "$BOT/plugins/bot-channels/channels.py" \
          "$BOT/plugins/bot-channels/language.py" "$BOT/plugins/bot-channels/messages.json" \
          "$BOT/slack-app-manifest.yaml"; do
@@ -196,6 +196,8 @@ pass "every user in the allowed channels unless SLACK_ALLOWED_USERS is set"
 # make its first pass speak that language while the plugin speaks German.
 awk '/rm -f "\$DATA\/bot-language.json"/ { cleared = 1 } /poller\.mjs" &/ { started = 1; exit !cleared } END { if (!started) exit 1 }' "$BOT/entrypoint.sh" \
   || fail "entrypoint.sh does not remove bot-language.json before it starts the poller"
+awk '/lib\/slack-app-token\.mjs"/ { checked = 1 } /hermes gateway run &/ { exit !checked }' "$BOT/entrypoint.sh" \
+  || fail "entrypoint.sh does not check SLACK_APP_TOKEN before it starts the gateway"
 pass "the poller starts without the last run's language"
 
 # The poller and the plugin relay; they never call a model. One exception: the plugin's

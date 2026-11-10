@@ -87,6 +87,7 @@ The bot keeps no memory and writes no skill without you. Review its proposals in
 |---|---|
 | `bakers.build rejected BAKERS_API_KEY (/mcp answered 401)` in the container log | The API key is wrong or revoked, or its account is blocked: create a new key and update the `pm_bot_bakers_api_key` parameter. The poller waits 5 minutes between passes until it is accepted |
 | `Slack rejected SLACK_BOT_TOKEN (…)` in the container log | The Slack app was uninstalled or its token revoked: reinstall it and update `pm_bot_slack_bot_token`. The poller waits 5 minutes between passes |
+| `pm-bot: Slack rejected SLACK_APP_TOKEN (…)` in the container log | The app-level token was revoked or the app uninstalled: generate a new one and update `pm_bot_slack_app_token`. The container waits 5 minutes before it restarts |
 | The bot answers "My model credential is not working; ask the box operator to renew it." | The model provider rejects `pm_bot_anthropic_api_key` or `pm_bot_claude_oauth_token`: renew it and update the parameter |
 | `pass failed: … 503` or `ECONNREFUSED` in the container log | bakers.build is down or redeploying; the poller retries every pass on its own |
 | The bot says the labels could not be added or the channel could not be linked | The service account lacks update rights in the project: fix its rank, then add the label or link by hand |

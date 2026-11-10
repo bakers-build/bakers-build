@@ -24,6 +24,7 @@ import { spawn } from 'node:child_process';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createBakersClient } from '../lib/bakers-client.mjs';
+import { SLACK_REJECTED } from '../lib/slack-app-token.mjs';
 import { channelSteps, CLOSED, ticketChannelName, WEEK } from './channels.mjs';
 import { credentialPosts } from './credentials.mjs';
 import { diff, reachedDone } from './diff.mjs';
@@ -35,8 +36,6 @@ import { forget, updates } from './updates.mjs';
 const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
 // The wait after a pass that met a rejected credential: a renewal takes a human.
 export const REJECTED_BACKOFF = 5 * 60 * 1000;
-// Slack's answers for a bot token it no longer accepts.
-const SLACK_REJECTED = ['invalid_auth', 'not_authed', 'token_revoked', 'token_expired', 'account_inactive'];
 
 /** The Slack Web API calls the poller makes. */
 export function createSlack({ url = 'https://slack.com/api', token }) {
