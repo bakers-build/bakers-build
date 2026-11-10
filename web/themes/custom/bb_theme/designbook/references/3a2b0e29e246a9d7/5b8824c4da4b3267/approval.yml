@@ -1,5 +1,6 @@
+decided_at: '2026-11-10T12:44:06.445Z'
 fingerprint: e730bf1ef3e6caf0c2c8c19ee0b4377d647a96cc2e73e5601db86b75e8903ebb
-note: 'BAKERS-56: captured read-only from Figma; screenshot approval awaits the user''s decision'
+note: Approved by the user on 2026-11-10 after reviewing the captured screenshots.
 scope:
   states:
     - default
@@ -25,4 +26,4 @@ scope:
     - label-board
   views:
     - desktop
-status: pending
+status: approved
