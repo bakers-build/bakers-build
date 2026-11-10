@@ -79,3 +79,9 @@ The [DDEV addon](/addons/ddev) and [Compose discovery](/addons/docker-compose) f
 Generated connection support needs no separate selection; see [connection defaults](/addons/configure#connection-defaults).
 
 [Configure addons](/addons/configure) · [Build your own](/addons/build/first-addon)
+
+## Machine connections
+
+| Addon | What it adds |
+|---|---|
+| [Tailscale](/addons/tailscale) | Detects a private SSH address once at conductor start |
