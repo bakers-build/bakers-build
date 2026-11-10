@@ -215,19 +215,6 @@ final class WorkspaceMembershipHooks {
   }
 
   /**
-   * Drops every read-scope memo once a project is written.
-   *
-   * A new project or a change of its teams or group changes who reaches it;
-   * entity access reads the same memo, so the rest of the request must not
-   * see the old set.
-   */
-  #[Hook('bb_project_insert')]
-  #[Hook('bb_project_update')]
-  public function projectWrite(): void {
-    $this->readScope->reset();
-  }
-
-  /**
    * Implements hook_ENTITY_TYPE_insert() for og_membership.
    */
   #[Hook('og_membership_insert')]
