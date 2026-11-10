@@ -84,6 +84,41 @@ final class RunRetryAccessTest extends ClaimKernelTestBase {
   }
 
   /**
+   * A failed run of another ticket cannot be retried through this ticket.
+   */
+  public function testForeignRunCannotBeRetried(): void {
+    [$ticket] = $this->failedRun();
+    [, $foreign] = $this->failedRun();
+    self::assertFalse(TicketInterventions::mayRetryRun($foreign, $ticket));
+  }
+
+  /**
+   * A re-dispatch naming a conductor of another project is refused.
+   */
+  public function testRedispatchRefusesConductorOfAnotherProject(): void {
+    [$ticket, $run] = $this->failedRun();
+    $this->otherConductor();
+    $etm = $this->container->get('entity_type.manager');
+    $project = $etm->getStorage('bb_project')->create(['name' => 'Elsewhere']);
+    $project->save();
+    $owner = $this->conductor->get('owner_user_id')->entity;
+    $foreign = $etm->getStorage('bb_conductor')->create([
+      'conductor_id' => 'node-elsewhere',
+      'label' => 'node-elsewhere',
+      'owner_user_id' => $owner->id(),
+      'status' => 'online',
+      'project_id' => $project->id(),
+    ]);
+    $foreign->save();
+
+    $this->ask($run, TicketInterventions::REDISPATCH);
+    $this->submit($ticket, $this->posted(['conductor' => (string) $foreign->id()]));
+
+    self::assertSame((int) $this->conductor->id(), (int) $this->reloadTicket($ticket)->get('conductor_id')->target_id);
+    self::assertNull($this->container->get('bb_core.ticket_retry')->requestedAt($ticket));
+  }
+
+  /**
    * A frozen ticket, a blocked ticket and a ticket without conductor refuse.
    */
   public function testNoRetryOnFrozenBlockedOrUnassignedTicket(): void {

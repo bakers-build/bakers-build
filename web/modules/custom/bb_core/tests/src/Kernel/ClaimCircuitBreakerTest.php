@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\bb_core\Claim\ClaimConflictException;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -132,6 +133,22 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
     $this->assertFalse($breaker->isTripped($this->reloadTicket($ticket)));
     $this->seedFailedRun($ticket, $this->now() + 3);
     $this->assertTrue($breaker->isTripped($this->reloadTicket($ticket)));
+  }
+
+  /**
+   * A retry invalidates the ticket's cache tag, so a cached stall reason goes.
+   */
+  public function testRetryInvalidatesTheTicketCacheTags(): void {
+    $ticket = $this->seedAssignedTicket('plan');
+    $tags = $ticket->getCacheTagsToInvalidate();
+    $this->assertNotEmpty($tags);
+    $cache = $this->container->get('cache.default');
+    $cache->set('stall-reason-render', 'failing', Cache::PERMANENT, $tags);
+    $this->assertNotFalse($cache->get('stall-reason-render'));
+
+    $this->container->get('bb_core.ticket_retry')->request($ticket);
+
+    $this->assertFalse($cache->get('stall-reason-render'));
   }
 
 }

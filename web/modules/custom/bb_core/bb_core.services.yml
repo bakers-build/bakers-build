@@ -119,7 +119,7 @@ services:
     arguments: ['bb_core']
   bb_core.ticket_retry:
     class: Drupal\bb_core\Run\TicketRetry
-    arguments: ['@keyvalue', '@datetime.time']
+    arguments: ['@keyvalue', '@datetime.time', '@cache_tags.invalidator']
   bb_core.failed_run_circuit_breaker:
     class: Drupal\bb_core\Claim\FailedRunCircuitBreaker
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_retry']

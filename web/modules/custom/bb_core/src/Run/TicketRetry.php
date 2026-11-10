@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Run;
 
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\Cache\CacheTagsInvalidatorInterface;
 use Drupal\Core\KeyValueStore\KeyValueFactoryInterface;
 use Drupal\Core\KeyValueStore\KeyValueStoreInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -26,15 +27,20 @@ final class TicketRetry {
   public function __construct(
     KeyValueFactoryInterface $keyValueFactory,
     private readonly TimeInterface $time,
+    private readonly CacheTagsInvalidatorInterface $cacheTagsInvalidator,
   ) {
     $this->store = $keyValueFactory->get('bb_core.run_retry');
   }
 
   /**
    * Records the retry request of the ticket, now.
+   *
+   * Invalidates the ticket's cache tags: the failing stall reason it lifts is
+   * cached with them.
    */
   public function request(BbTicketInterface $ticket): void {
     $this->store->set((string) $ticket->id(), $this->time->getRequestTime());
+    $this->cacheTagsInvalidator->invalidateTags($ticket->getCacheTagsToInvalidate());
   }
 
   /**
