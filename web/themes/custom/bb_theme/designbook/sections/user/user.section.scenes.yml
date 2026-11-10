@@ -2417,7 +2417,7 @@ scenes:
                     props:
                       text: >-
                         Store the secret in GitLab's masked CI/CD variable
-                        BB_CONSUMER_SECRET, then use the client ID in your
+                        BAKERS_CONSUMER_SECRET, then use the client ID in your
                         pipeline's before_script.
                   - component: bb_theme:form_label
                     props:
@@ -2429,5 +2429,5 @@ scenes:
                       command: >-
                         before_script: - bakers config init --scope connection
                         --auth-type client_credentials --client-id
-                        bakers-key-7f3a9c2e --secret-env BB_CONSUMER_SECRET
+                        bakers-key-7f3a9c2e --secret-env BAKERS_CONSUMER_SECRET
                       label: Copy GitLab CI snippet

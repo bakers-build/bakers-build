@@ -8,9 +8,9 @@ import herdrCoreExecutor, {
   HerdrCoreExecutor,
   terminalName,
 } from '../src/index.js';
-import { executors, scopes, workspaces } from '../src/preset.js';
+import { executors, scopes, worktrees } from '../src/preset.js';
 
-const INSTANT_WATCH = { timeoutMs: 0, pollMs: 1 } as const;
+const INSTANT_WATCH = { timeout_ms: 0, poll_ms: 1 } as const;
 
 /**
  * A scripted `hc`: records every call and answers by the command word. `run`
@@ -96,7 +96,7 @@ describe('HerdrCoreExecutor', () => {
 describe('HerdrCoreExecutor.startRun', () => {
   it('starts the agent as a detached, labelled hc terminal in the worktree', async () => {
     const { hc, calls } = fakeHc();
-    const ex = new HerdrCoreExecutor({ launchWatch: INSTANT_WATCH }, hc);
+    const ex = new HerdrCoreExecutor({ launch_watch: INSTANT_WATCH }, hc);
     await expect(ex.startRun(input())).resolves.toEqual({
       sessionRef: 'bakers-109-4711',
     });
@@ -129,7 +129,7 @@ describe('HerdrCoreExecutor.startRun', () => {
   it('fails fast with an install message when hc is missing', async () => {
     const { hc, calls } = fakeHc({ missing: true });
     await expect(
-      new HerdrCoreExecutor({ launchWatch: INSTANT_WATCH }, hc).startRun(
+      new HerdrCoreExecutor({ launch_watch: INSTANT_WATCH }, hc).startRun(
         input(),
       ),
     ).rejects.toThrow(/hc not found.*install herdr-core/);
@@ -139,7 +139,7 @@ describe('HerdrCoreExecutor.startRun', () => {
   it('fails fast with an upgrade message for hc older than 0.1.18', async () => {
     const { hc, calls } = fakeHc({ version: '0.1.17' });
     await expect(
-      new HerdrCoreExecutor({ launchWatch: INSTANT_WATCH }, hc).startRun(
+      new HerdrCoreExecutor({ launch_watch: INSTANT_WATCH }, hc).startRun(
         input(),
       ),
     ).rejects.toThrow(/hc 0\.1\.17 is too old.*0\.1\.18/);
@@ -149,7 +149,7 @@ describe('HerdrCoreExecutor.startRun', () => {
   it('accepts a newer hc', async () => {
     const { hc } = fakeHc({ version: '0.2.0' });
     await expect(
-      new HerdrCoreExecutor({ launchWatch: INSTANT_WATCH }, hc).startRun(
+      new HerdrCoreExecutor({ launch_watch: INSTANT_WATCH }, hc).startRun(
         input(),
       ),
     ).resolves.toBeDefined();
@@ -157,7 +157,7 @@ describe('HerdrCoreExecutor.startRun', () => {
 
   it('a launch that exits at once fails the run, reports the screen and drops the terminal', async () => {
     const { hc, calls } = fakeHc({ exitAtOnce: true });
-    const ex = new HerdrCoreExecutor({ launchWatch: INSTANT_WATCH }, hc);
+    const ex = new HerdrCoreExecutor({ launch_watch: INSTANT_WATCH }, hc);
     await expect(ex.startRun(input())).rejects.toThrow(/exit 1/);
     expect(calls).toContainEqual(['read', 'bakers-109-4711', '--lines', '40']);
     expect(calls).toContainEqual(['kill', 'bakers-109-4711', '--json']);
@@ -252,7 +252,7 @@ describe('herdrCoreExecutor factory and preset', () => {
 
   it('contributes an executor only, listable on the machine and the project', () => {
     expect(executors?.([], {}).map((p) => p.id)).toEqual(['herdr-core']);
-    expect(workspaces).toBeUndefined();
+    expect(worktrees).toBeUndefined();
     expect(scopes).toEqual(['machine', 'project']);
   });
 });

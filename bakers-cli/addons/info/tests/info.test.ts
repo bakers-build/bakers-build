@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const loadReadyBbConnection = vi.fn();
 const createBbConnectionClient = vi.fn();
 const discoverBbWorkspaces = vi.fn();
-const resolveConfigPath = vi.fn(() => '/fake/.bakers/conductor.config.js');
+const resolveConfigPath = vi.fn(() => '/fake/.bakers/project.config.js');
 const readBbProjectSelection = vi.fn();
 const resolveBbProjectContext = vi.fn();
 
@@ -50,7 +50,7 @@ beforeEach(() => {
   discoverBbWorkspaces.mockReset();
   resolveConfigPath
     .mockReset()
-    .mockReturnValue('/fake/.bakers/conductor.config.js');
+    .mockReturnValue('/fake/.bakers/project.config.js');
   readBbProjectSelection.mockReset();
   resolveBbProjectContext.mockReset();
 });
@@ -69,11 +69,11 @@ function fakeResource(id: string, attrs: Record<string, unknown> = {}) {
 describe('resolveBbInfo (BB-495)', () => {
   it('prints the five context values as JSON and writes nothing — reads env first', async () => {
     const env = {
-      BB_PROJECT: 'demo',
-      BB_PROJECT_ID: 'proj-uuid',
-      BB_WORKSPACE: 'Acme',
-      BB_WORKSPACE_ID: 'ws-uuid',
-      BB_WORKSPACE_IDS: 'ws-uuid,ws-2',
+      BAKERS_PROJECT: 'demo',
+      BAKERS_PROJECT_ID: 'proj-uuid',
+      BAKERS_WORKSPACE: 'Acme',
+      BAKERS_WORKSPACE_ID: 'ws-uuid',
+      BAKERS_WORKSPACE_IDS: 'ws-uuid,ws-2',
     };
     const result = await resolveBbInfo({ host, env });
     expect(Object.keys(result).sort()).toEqual(
@@ -219,7 +219,7 @@ describe('resolveBbInfo (BB-495)', () => {
   it('reports workspaces outside a checkout, where no conductor config exists', async () => {
     resolveConfigPath.mockImplementation(() => {
       throw Object.assign(
-        new Error('no .bakers/conductor.config.js found from /tmp/x upward'),
+        new Error('no .bakers/project.config.js found from /tmp/x upward'),
         { code: 'ENOENT' },
       );
     });

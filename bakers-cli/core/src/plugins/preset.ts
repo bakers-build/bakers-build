@@ -8,7 +8,7 @@
 //
 // The three bakers.build surfaces (each named for its config home):
 //   - command    → the `@bakers-build/bakers` host registry (CommandDescriptor[]).
-//   - conductor  → the run engine (remote / executor / workspace / agent /
+//   - conductor  → the run engine (server / executor / worktree / agent /
 //                  lifecycle hook listeners).
 //   - connection → dropsh (auth + renderer plugins).
 //
@@ -30,7 +30,7 @@ import type { DropSHPlugin } from 'dropsh/plugin';
 import type { ConfigScope } from '../cli/config-report.js';
 
 /** The config files an addon may be listed in: `~/.bakers/machine.config.js`
- *  (`machine`) and the project's `.bakers/conductor.config.js` (`project`). */
+ *  (`machine`) and the project's `.bakers/project.config.js` (`project`). */
 export type AddonScope = Extract<ConfigScope, 'machine' | 'project'>;
 
 /**
@@ -50,6 +50,8 @@ export interface CommandDescriptor {
   export?: string;
   /** Keep dispatch available while omitting the command from help. */
   hidden?: boolean;
+  /** Hidden alternative names that run this command (`oven` → `conductor`). */
+  aliases?: string[];
   /** `bakers help <name>` runs `bakers <name> --help`, for plugins that render their own help. */
   forwardHelp?: boolean;
 }
@@ -67,16 +69,12 @@ export type BbSurface = 'command' | 'conductor' | 'connection';
 export type AddonEntry =
   | string
   | {
-      /** The addon package (bakers.build term). */
-      use?: string;
-      /** Storybook's term for the same field; accepted as an alias. */
-      name?: string;
+      /** The addon package. */
+      use: string;
       /** Options handed to the addon's accumulators as `opts`. */
       with?: unknown;
       /** Select a named agent variant, or name a single custom contribution. */
       alias?: string;
-      /** Alias for `with`. */
-      options?: unknown;
       /**
        * Agent-surface only: the static per-ticket priority (see the conductor
        * surface's `selectAgent`). The ticket type belongs to the conductor
@@ -97,11 +95,11 @@ export type AddonEntry =
 export interface DiscoveredContributions {
   commands: CommandDescriptor[];
   /** Opaque: `RemotePlugin[]` on the conductor surface. */
-  remotes: unknown[];
+  servers: unknown[];
   /** Opaque: `ExecutorPlugin[]` on the conductor surface. */
   executors: unknown[];
   /** Opaque: `WorkspacePlugin[]` on the conductor surface. */
-  workspaces: unknown[];
+  worktrees: unknown[];
   /** Opaque: `AgentCandidate[]` on the conductor surface. */
   agents: unknown[];
   /** Opaque: `HookListener[]` on the conductor surface (BB-599). */
@@ -163,7 +161,7 @@ export const SURFACE_KEYS: Record<
   Array<keyof DiscoveredContributions>
 > = {
   command: ['commands'],
-  conductor: ['remotes', 'executors', 'workspaces', 'agents', 'hooks'],
+  conductor: ['servers', 'executors', 'worktrees', 'agents', 'hooks'],
   connection: ['connectionPlugins', 'uiEntries'],
 };
 
@@ -185,12 +183,6 @@ export interface BbPreset<O = unknown> {
    * `with`, when given, replaces the project `with` whole.
    */
   mergeWith?: (project: unknown, machine: unknown) => unknown;
-  /**
-   * Check one entry's own `with` (`undefined` when it has none); each problem
-   * names its key relative to `with`. `bakers config check --online` reports
-   * them as `addon_with_invalid`.
-   */
-  checkWith?: (value: unknown) => { key: string; message: string }[];
 
   // ── command surface (host) — descriptors only, never constructed plugins ──
   commands?: (
@@ -200,9 +192,9 @@ export interface BbPreset<O = unknown> {
 
   // ── conductor surface (engine) — OPAQUE here; concretely typed by
   //    `@bakers-build/conductor`'s `Preset`, which an addon should use instead. ──
-  remotes?: OpaqueAccumulator<O>;
+  servers?: OpaqueAccumulator<O>;
   executors?: OpaqueAccumulator<O>;
-  workspaces?: OpaqueAccumulator<O>;
+  worktrees?: OpaqueAccumulator<O>;
   agents?: OpaqueAccumulator<O>;
   hooks?: OpaqueAccumulator<O>;
 
@@ -229,9 +221,9 @@ export interface BbPreset<O = unknown> {
 /** The preset function keys, for shape-detection during discovery. */
 export const PRESET_FUNCTION_KEYS: Array<keyof DiscoveredContributions> = [
   'commands',
-  'remotes',
+  'servers',
   'executors',
-  'workspaces',
+  'worktrees',
   'agents',
   'hooks',
   'connectionPlugins',
@@ -242,9 +234,9 @@ export const PRESET_FUNCTION_KEYS: Array<keyof DiscoveredContributions> = [
 export function emptyContributions(): DiscoveredContributions {
   return {
     commands: [],
-    remotes: [],
+    servers: [],
     executors: [],
-    workspaces: [],
+    worktrees: [],
     agents: [],
     hooks: [],
     connectionPlugins: [],

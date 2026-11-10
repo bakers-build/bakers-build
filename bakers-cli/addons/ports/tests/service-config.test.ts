@@ -1,79 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import {
-  checkWith,
   DEFAULT_STORYBOOK,
+  duplicateServiceKey,
   mergeWith,
   serviceRules,
 } from '../src/service-config.js';
 
-const keys = (value: unknown) => checkWith(value).map((f) => f.key);
-
-describe('checkWith', () => {
-  it('accepts a valid with', () => {
+describe('duplicateServiceKey', () => {
+  it('accepts distinct keys and an absent with', () => {
     expect(
-      checkWith({
-        transport: { use: '@bakers-build/addon-ports-cloudflare-quick' },
-        services: [{ key: 'docs', match: 'vitepress' }],
-        all_node: true,
+      duplicateServiceKey({
+        services: [
+          { key: 'docs', match: 'vitepress' },
+          { key: 'api', match: 'express' },
+        ],
       }),
-    ).toEqual([]);
+    ).toBeUndefined();
+    expect(duplicateServiceKey(undefined)).toBeUndefined();
   });
 
-  it('accepts an absent with', () => {
-    expect(checkWith(undefined)).toEqual([]);
-  });
-
-  it('rejects services that is not an array', () => {
-    expect(keys({ services: { key: 'docs' } })).toEqual(['services']);
-  });
-
-  it('rejects an invalid key at services[0].key', () => {
-    expect(keys({ services: [{ key: 'Docs!', match: 'vitepress' }] })).toEqual([
-      'services[0].key',
-    ]);
-  });
-
-  it('rejects an empty match', () => {
-    expect(keys({ services: [{ key: 'docs', match: '' }] })).toEqual([
-      'services[0].match',
-    ]);
-  });
-
-  it('rejects an unknown entry field at services[0].port', () => {
+  it('names the second entry of a duplicate key', () => {
     expect(
-      keys({ services: [{ key: 'docs', match: 'vitepress', port: 1 }] }),
-    ).toEqual(['services[0].port']);
-  });
-
-  it('rejects an entry that is not an object', () => {
-    expect(keys({ services: ['docs'] })).toEqual(['services[0]']);
-  });
-
-  it('rejects a duplicate key', () => {
-    expect(
-      keys({
+      duplicateServiceKey({
         services: [
           { key: 'docs', match: 'vitepress' },
           { key: 'docs', match: 'other' },
         ],
       }),
-    ).toEqual(['services[1].key']);
-  });
-
-  it('rejects a non-boolean all_node', () => {
-    expect(keys({ all_node: 'yes' })).toEqual(['all_node']);
-  });
-
-  it('rejects transport without use', () => {
-    expect(keys({ transport: { with: {} } })).toEqual(['transport.use']);
-  });
-
-  it('rejects an unknown with key', () => {
-    expect(keys({ foo: 1 })).toEqual(['foo']);
-  });
-
-  it('rejects a with that is not an object', () => {
-    expect(keys('ports')).toEqual(['']);
+    ).toBe("services[1].key duplicates 'docs'");
   });
 });
 

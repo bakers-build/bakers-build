@@ -21,9 +21,9 @@ function quietProgram() {
   return program;
 }
 
-it('mounts the oven group with start, once, check, clean, stop, ls, status and tools', () => {
+it('mounts the conductor group with start, once, check, clean, stop, ls, status and tools', () => {
   const oven = buildConductorProgram().commands.find(
-    (c) => c.name() === 'oven',
+    (c) => c.name() === 'conductor',
   );
   expect(oven?.commands.map((c) => c.name()).sort()).toEqual([
     'check',
@@ -41,23 +41,22 @@ it('mounts the oven group with start, once, check, clean, stop, ls, status and t
   ]);
 });
 
-it.each([
-  ['conductor'],
-  ['bake'],
-])('`%s` is an unknown command', async (name) => {
+// `oven` is only a host-level alias (rewritten by the host); a program built
+// from createConductorCommand knows `conductor` alone.
+it.each([['oven'], ['bake']])('`%s` is an unknown command', async (name) => {
   await expect(
     quietProgram().parseAsync([name, 'start'], { from: 'user' }),
   ).rejects.toMatchObject({ code: 'commander.unknownCommand' });
 });
 
-it('removed oven init, poll and reap are ordinary unknown subcommands before configuration loading', async () => {
+it('removed conductor init, poll and reap are ordinary unknown subcommands before configuration loading', async () => {
   for (const sub of ['init', 'poll', 'reap'])
     await expect(
-      quietProgram().parseAsync(['oven', sub], { from: 'user' }),
+      quietProgram().parseAsync(['conductor', sub], { from: 'user' }),
     ).rejects.toMatchObject({ code: 'commander.unknownCommand' });
 });
 
-describe('oven start --dry-run', () => {
+describe('conductor start --dry-run', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     process.exitCode = undefined;
@@ -71,7 +70,7 @@ describe('oven start --dry-run', () => {
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       await buildConductorProgram(deps).parseAsync(
-        ['oven', 'start', '--dry-run'],
+        ['conductor', 'start', '--dry-run'],
         {
           from: 'user',
         },
@@ -85,14 +84,14 @@ describe('oven start --dry-run', () => {
 
   it('exits 0 on a config that loads, without registering a conductor', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'bakers-dry-run-'));
-    vi.stubEnv('BB_CONDUCTOR_LOG', 'file');
+    vi.stubEnv('BAKERS_CONDUCTOR_LOG', 'file');
     const remote = new FakeBbRemote();
     const register = vi.spyOn(remote, 'registerConductor');
 
     await dryRun({
       remote,
       config: {
-        config_path: join(dir, 'conductor.config.js'),
+        config_path: join(dir, 'project.config.js'),
       } as ConductorFileConfig,
       executor: new FakeExecutor({ outcome: 'exited' }),
       workspace: new FakeWorkspace(),
@@ -106,19 +105,19 @@ describe('oven start --dry-run', () => {
   it.each([
     [
       'a syntax error',
-      "export default { bakers: { project: 'bakers' }, oops: };",
-      /bakers\.project/,
+      "export default { project: { name: 'bakers' }, oops: };",
+      /project: \{ name/,
     ],
     [
       'a throwing import',
-      "const t = typo.value;\nexport default { bakers: { project: 'bakers' } };",
+      "const t = typo.value;\nexport default { project: { name: 'bakers' } };",
       /typo is not defined/,
     ],
   ])('exits 1 naming the error on a config with %s', async (_name, body, error) => {
     const dir = mkdtempSync(join(tmpdir(), 'bakers-dry-run-'));
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(file, body);
-    vi.stubEnv('BB_CONDUCTOR_CONFIG', file);
+    vi.stubEnv('BAKERS_CONDUCTOR_CONFIG', file);
 
     const errors = await dryRun({});
 

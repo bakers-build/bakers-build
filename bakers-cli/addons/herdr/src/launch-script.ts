@@ -71,17 +71,17 @@ const DEFAULT_POLL_MS = 50;
 
 export interface LaunchWatchOptions {
   /** Window after `started` in which an immediate agent exit fails the launch. */
-  timeoutMs?: number;
+  timeout_ms?: number;
   /** How long to wait for the wrapper to write `started`. Default 60s. */
-  startTimeoutMs?: number;
-  pollMs?: number;
+  start_timeout_ms?: number;
+  poll_ms?: number;
   sleep?: (ms: number) => Promise<void>;
   readPane?: () => Promise<string>;
 }
 
 /**
- * Poll the launch markers in two phases. Wait up to `startTimeoutMs` for
- * `started` (shell start-up), then apply a short `timeoutMs` exit window from
+ * Poll the launch markers in two phases. Wait up to `start_timeout_ms` for
+ * `started` (shell start-up), then apply a short `timeout_ms` exit window from
  * that moment. An immediate exit or a script that never starts fails the
  * launch; an agent still running at the exit deadline is treated as started.
  */
@@ -89,9 +89,9 @@ export async function watchLaunch(
   script: LaunchScript,
   opts: LaunchWatchOptions = {},
 ): Promise<void> {
-  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const startTimeoutMs = opts.startTimeoutMs ?? DEFAULT_START_TIMEOUT_MS;
-  const pollMs = opts.pollMs ?? DEFAULT_POLL_MS;
+  const timeoutMs = opts.timeout_ms ?? DEFAULT_TIMEOUT_MS;
+  const startTimeoutMs = opts.start_timeout_ms ?? DEFAULT_START_TIMEOUT_MS;
+  const pollMs = opts.poll_ms ?? DEFAULT_POLL_MS;
   const sleep =
     opts.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
   const startDeadline = Date.now() + startTimeoutMs;

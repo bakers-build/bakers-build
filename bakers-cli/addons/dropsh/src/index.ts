@@ -14,7 +14,7 @@ import { registerTemplateCommand } from './template.js';
 import { hideUnpublishedComments } from './unpublished-comments.js';
 
 export function dropshConfigHint(resolvedPath?: string): string {
-  return `bakers dropsh: no connection config at ${resolvedPath ?? '~/.bakers/bakers.config.js'}. Use --config <path> or run bakers config init --scope connection.`;
+  return `bakers dropsh: no connection config at ${resolvedPath ?? '~/.bakers/connections/default.js'}. Use --config <path> or run bakers config init --scope connection.`;
 }
 export interface DropshDispatchOptions extends WorkspaceRecoveryOptions {
   publicCommand?: 'tools' | 'auth';
@@ -98,8 +98,8 @@ export async function dispatchBbDropsh(
   const args = invocation(argv);
   // Inside a conductor run, tools go to the run's own `bakers` server with the
   // run token, never to the site with the operator's credentials.
-  const runUrl = process.env.BB_CONDUCTOR_URL;
-  const runToken = process.env.BB_CONDUCTOR_TOKEN;
+  const runUrl = process.env.BAKERS_CONDUCTOR_URL;
+  const runToken = process.env.BAKERS_CONDUCTOR_TOKEN;
   const run =
     args.positional[0] === 'tool' && runUrl && runToken
       ? { url: runUrl, token: runToken }

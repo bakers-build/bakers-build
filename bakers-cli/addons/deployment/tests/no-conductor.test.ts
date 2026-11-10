@@ -63,9 +63,9 @@ function git(...args: string[]): void {
 
 beforeEach(() => {
   repo = mkdtempSync(join(tmpdir(), 'deployment-'));
-  process.env.BB_HOME = mkdtempSync(join(tmpdir(), 'bb-home-'));
-  delete process.env.BB_CONDUCTOR_CONFIG;
-  delete process.env.BB_CONDUCTOR;
+  process.env.BAKERS_HOME = mkdtempSync(join(tmpdir(), 'bb-home-'));
+  delete process.env.BAKERS_CONDUCTOR_CONFIG;
+  delete process.env.BAKERS_CONDUCTOR;
   git('init', '-q');
   for (const message of ['init', 'BAKERS-88: fix']) {
     git(
@@ -88,13 +88,13 @@ beforeEach(() => {
 afterEach(() => {
   process.chdir(cwd);
   rmSync(repo, { recursive: true, force: true });
-  rmSync(process.env.BB_HOME as string, { recursive: true, force: true });
+  rmSync(process.env.BAKERS_HOME as string, { recursive: true, force: true });
   process.env = { ...env };
 });
 
 function conductorConfig(source: string): void {
   mkdirSync(join(repo, '.bakers'));
-  writeFileSync(join(repo, '.bakers', 'conductor.config.js'), source);
+  writeFileSync(join(repo, '.bakers', 'project.config.js'), source);
 }
 
 async function tickets(...extra: string[]): Promise<unknown> {
@@ -156,7 +156,7 @@ describe('bakers deployment tickets without a working conductor', () => {
 
   it('reads the project from a pre-UUID config that carries machine_id', async () => {
     conductorConfig(
-      "export default { bakers: { project: 'bakers' }, machine_id: 'old', conductor_id: 'u-old-bakers' };\n",
+      "export default { project: { name: 'bakers' }, machine_id: 'old', conductor_id: 'u-old-bakers' };\n",
     );
     expect(await tickets()).toEqual(BATCH);
     expect(seen.projects).toEqual(['bakers']);
@@ -164,7 +164,7 @@ describe('bakers deployment tickets without a working conductor', () => {
 
   it('reads the project from a current config on a machine with no machine_id', async () => {
     conductorConfig(
-      "export default { bakers: { project: 'bakers' }, addons: ['@bakers-build/addon-claude'] };\n",
+      "export default { project: { name: 'bakers' }, addons: ['@bakers-build/addon-claude'] };\n",
     );
     expect(await tickets()).toEqual(BATCH);
     expect(seen.projects).toEqual(['bakers']);

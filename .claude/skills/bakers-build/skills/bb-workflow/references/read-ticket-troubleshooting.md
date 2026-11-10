@@ -11,7 +11,7 @@ Then inspect the effective checkout and connection context before retrying:
 ```bash
 git rev-parse --show-toplevel
 git worktree list --porcelain
-find . .. -path '*/.bakers/bakers.config.js' -type f -print 2>/dev/null
+find . .. -path '*/.bakers/connection.config.js' -type f -print 2>/dev/null
 bakers auth status
 ```
 

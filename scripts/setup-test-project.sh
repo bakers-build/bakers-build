@@ -61,7 +61,8 @@
 #     The fixture now commits a real BB-204 loader AND a real engine config, so both
 #     are hand-maintained there and this script leaves them alone. What remains
 #     generated is machine-local and untracked: the CONNECTION config (secrets, this
-#     run's control plane) and `.bakers/conductor.config.local.js` (the project).
+#     run's control plane, `.bakers/connection.config.js`). The project name is the
+#     committed literal of the fixture's `.bakers/project.config.js`.
 #     The old arrangement cost a run: two authors for one path, `--skip-worktree`
 #     hiding the difference, and a correct committed fix silently overwritten on the
 #     next setup. A generated file that shadows a tracked one hides its own damage.
@@ -141,7 +142,7 @@ FIXTURE_BRANCH='develop'
 CLIENT_ID='bakers-agent-e2e'
 CLIENT_SECRET='skill-eval-secret'
 # BB-495: the workspace the generated connection config focuses `bakers ui` on —
-# OPTIONAL at the top level of a bakers.config.js since BB-495, but still written
+# OPTIONAL at the top level of a connection config since BB-495, but still written
 # here, so it has to be a known value before step 7 writes that file. `bakers tools`
 # reads nothing from it; the caller names its workspace on each call.
 # A constant, because it IS one: it is
@@ -480,7 +481,7 @@ if [ "${CP_STATUS}" != 'running' ]; then
 fi
 
 # THE GUARD, here and before anything is created or written. This checkout's own
-# .bakers/bakers.config.js hardcodes a dev2 base URL, so the wrong-control-plane
+# connection hardcodes a dev2 base URL, so the wrong-control-plane
 # hazard applies to this script's own commands and not only to the config it
 # generates. A skill test that creates real tickets on dev2 or prod is worse than
 # no test. The host check is what does the work: an equality check against a value
@@ -571,7 +572,7 @@ select_workspace_branch "$WORKSPACE" "$SOURCE_BRANCH" "$PARENT_BRANCH"
 #
 #   - `WORKFLOW.md` — committed and hand-maintained; hiding it would make every edit
 #     to the project's skill selection invisible to git.
-#   - `.bakers/conductor.config.js` — likewise, since this script stopped generating it
+#   - `.bakers/project.config.js` — likewise, since this script stopped generating it
 #     (see step 7). It used to be generated AND hidden, and the pair cost a real run:
 #     the fixture's committed hook was fixed, the fix was correct, and the next setup
 #     run silently overwrote it — `skip-worktree` suppressing exactly the `git status`
@@ -594,8 +595,7 @@ hide_from_git() {
   done
 }
 hide_from_git \
-  '.bakers/bakers.config.js' \
-  '.bakers/conductor.config.local.js' \
+  '.bakers/connection.config.js' \
   '.bakers/log.txt' \
   '.bakers-worktrees/' \
   '.ddev/config.worktree.yaml' \
@@ -620,7 +620,7 @@ unhide_from_git() {
     esac
   done
 }
-unhide_from_git '.bakers/conductor.config.js' 'WORKFLOW.md' '.claude/settings.json'
+unhide_from_git '.bakers/project.config.js' 'WORKFLOW.md' '.claude/settings.json'
 
 # -----------------------------------------------------------------------------
 step "4. the workspace's own DDEV"
@@ -874,7 +874,7 @@ printf '%s\n' "${ROOT}" >"${WORKSPACE}/.bakers-testbuild"
 say "wrote .bakers-testbuild → ${ROOT} (a bare 'bakers' in the workspace is now THIS build)"
 
 # -----------------------------------------------------------------------------
-step "7. generate the two machine-local files — neither of them committed"
+step "7. generate the machine-local connection file — never committed"
 # -----------------------------------------------------------------------------
 # The conductor is this machine + the project + the variant: no id is composed or
 # written. The machine is `~/.bakers/machine.config.js`, which `bakers init` owns;
@@ -882,7 +882,7 @@ step "7. generate the two machine-local files — neither of them committed"
 # so the run has a machine to register under. The context is IMPORTED rather than
 # pattern-matched, because that is what the CLI itself does. An old machine file
 # (a `user_id`) is refused, exactly as the CLI refuses it.
-MACHINE_FILE="${BB_HOME:-${HOME}/.bakers}/machine.config.js"
+MACHINE_FILE="${BAKERS_HOME:-${HOME}/.bakers}/machine.config.js"
 machine_identity="$(MC="${MACHINE_FILE}" LABEL="$(hostname -s 2>/dev/null || echo "${CP_NAME}")" node -e '
   const fs = require("node:fs");
   const path = require("node:path");
@@ -891,7 +891,7 @@ machine_identity="$(MC="${MACHINE_FILE}" LABEL="$(hostname -s 2>/dev/null || ech
     if (!fs.existsSync(p)) {
       fs.mkdirSync(path.dirname(p), { recursive: true });
       const id = require("node:crypto").randomUUID();
-      fs.writeFileSync(p, `// @bakers-schema-version 1\nexport default {\n  schema_version: 1,\n  machine_id: ${JSON.stringify(id)},\n  label: ${JSON.stringify(process.env.LABEL)},\n  max_parallel: 1,\n};\n`, { mode: 0o600 });
+      fs.writeFileSync(p, `// @bakers-schema-version 1\nexport default {\n  schema_version: 1,\n  machine_id: ${JSON.stringify(id)},\n  label: ${JSON.stringify(process.env.LABEL)},\n};\n`, { mode: 0o600 });
     }
     const d = (await import("file://" + p)).default ?? {};
     const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -905,7 +905,8 @@ MACHINE_LABEL="$(printf '%s' "${machine_identity}" | cut -f2)"
 
 mkdir -p "${WORKSPACE}/.bakers"
 
-# The CONNECTION config. Modelled on the checkout's own but with LITERAL values:
+# The CONNECTION config, as the project's own `.bakers/connection.config.js`, which
+# wins over the home default connection inside this clone. LITERAL values:
 # generated per run, so it inherits nothing from the machine context and pins the
 # control plane it was generated for.
 #
@@ -917,9 +918,9 @@ mkdir -p "${WORKSPACE}/.bakers"
 # permissions with EXACTLY the scope's, so `bb:session` IS this identity's
 # capability. Requesting none would mint no token at all against a consumer with
 # no default scopes, and silently inherit that default when there is one.
-cat >"${WORKSPACE}/.bakers/bakers.config.js" <<JS
-// GENERATED by scripts/setup-test-project.sh — do not commit
+cat >"${WORKSPACE}/.bakers/connection.config.js" <<JS
 // @bakers-schema-version 1
+// GENERATED by scripts/setup-test-project.sh — do not commit
 // The CONNECTION surface (BB-201): a dropsh-shaped { site, plugins } read by
 // 'bakers ui', 'bakers tools', 'bakers auth', and the conductor's auth.
 //
@@ -955,7 +956,7 @@ export default {
 };
 JS
 
-# The ENGINE config is NOT generated. `.bakers/conductor.config.js` is a COMMITTED,
+# The ENGINE config is NOT generated. `.bakers/project.config.js` is a COMMITTED,
 # hand-maintained file of the fixture repo — the same decision already taken for
 # `WORKFLOW.md`, for the same reason and after the same failure.
 #
@@ -967,20 +968,9 @@ JS
 # state slice — now lives in the fixture repo alone, is reviewable in its own history,
 # and survives every run of this script.
 #
-# WHAT IS STILL GENERATED IS THE LOCAL OVERRIDE, and it carries no identity: the
-# conductor is this machine + the project + the variant, its id derived at
-# runtime. It names only the project this run provisioned. Everything structural
-# stays in the fixture repo. The file is untracked and already listed in
-# `hide_from_git`.
-cat >"${WORKSPACE}/.bakers/conductor.config.local.js" <<JS
-// GENERATED by scripts/setup-test-project.sh — do not commit
-// The local override the committed .bakers/conductor.config.js reads. It carries no
-// identity; addons, hooks and the state slice belong to the committed config and are
-// deliberately absent here.
-export default {
-  project: '${PROJECT}',
-};
-JS
+# The project name is NOT generated either: it is the committed literal
+# `project: { name }` of that file (a run against another `--project` sets
+# BAKERS_PROJECT for its conductor). The retired local override file is gone.
 
 # The project skill loader is NOT generated here. `WORKFLOW.md` is a COMMITTED,
 # hand-maintained file of the fixture repo: which skills the project loads is a
@@ -994,9 +984,9 @@ JS
 # writes still has to satisfy it: a hint section is read only under its exact phase
 # name (`provision`, `work`, `validate`, `deliver`). A `## Checks` table is never read,
 # so a run reports no project check at all.
-say "generated .bakers/bakers.config.js and .bakers/conductor.config.local.js"
+say "generated .bakers/connection.config.js"
 say "machine: ${MACHINE_LABEL} (${MACHINE_ID})"
-say ".bakers/conductor.config.js is COMMITTED in the fixture repo — not written here"
+say ".bakers/project.config.js is COMMITTED in the fixture repo — not written here"
 say "  → its addons, after_create hook and state slice are reviewed in that repo"
 
 # -----------------------------------------------------------------------------
@@ -1136,7 +1126,7 @@ The ticket is yours. Three steps, and the last one spends real agent money.
   1. Register the conductor, because it has no record and therefore no uuid until
      it has run one cycle — so there is nothing to write in step 2 before this:
 
-       cd ${WORKSPACE} && bakers oven once
+       cd ${WORKSPACE} && bakers conductor once
 
   2. Create a chore ticket (recipe matt) in project '${PROJECT}' and assign it to
      this machine's conductor of that project (label '${MACHINE_LABEL} · …',
@@ -1165,7 +1155,7 @@ The ticket is yours. Three steps, and the last one spends real agent money.
 
   3. Drive the run and WATCH it:
 
-       cd ${WORKSPACE} && bakers oven start
+       cd ${WORKSPACE} && bakers conductor start
 
      The agent works in ${WORKSPACE}/.bakers-worktrees/<branch>; the conductor's own
      log is at ${WORKSPACE}/.bakers/log.txt, which is a DIFFERENT log from

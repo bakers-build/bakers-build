@@ -68,12 +68,16 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 
 /**
  * A run-env key is reserved when it names a conductor-provided core variable:
- * any `BB_*`, `WORKSPACE_ROOT`, or `TICKET_URL`. User `env_vars` may not
- * clobber these — the core vars always win (BB-99).
+ * any `BAKERS_*`, `WORKSPACE_ROOT`, or `TICKET_URL`. User `env_vars` may not
+ * clobber these — the core vars always win (BB-99). `BB_*` stays reserved: a
+ * retired name in the run env would make the agent's `bakers` refuse to start.
  */
 function isReservedEnvKey(key: string): boolean {
   return (
-    key.startsWith('BB_') || key === 'WORKSPACE_ROOT' || key === 'TICKET_URL'
+    key.startsWith('BAKERS_') ||
+    key.startsWith('BB_') ||
+    key === 'WORKSPACE_ROOT' ||
+    key === 'TICKET_URL'
   );
 }
 
@@ -220,8 +224,8 @@ function renderPrompt(
   return template
     .replaceAll('{identifier}', values.identifier)
     .replaceAll('{state}', values.state)
-    .replaceAll('{runUuid}', values.runUuid)
-    .replaceAll('{ticketUuid}', values.ticketUuid);
+    .replaceAll('{run_uuid}', values.runUuid)
+    .replaceAll('{ticket_uuid}', values.ticketUuid);
 }
 
 /**
@@ -341,7 +345,7 @@ export class Conductor {
    *
    * Only `cmdStartForeground` calls this. `cmdPoll` and `cmdReap` also build a
    * Conductor and call start() + tick(), then exit; if they reported a pid,
-   * every `bakers oven once` would overwrite the running conductor's pid
+   * every `bakers conductor once` would overwrite the running conductor's pid
    * with its own short-lived one and the next stop would signal a dead — or
    * recycled — process. Making the report opt-in means those two commands
    * cannot do so even by accident.
@@ -455,7 +459,7 @@ export class Conductor {
     }
   }
 
-  /** One tick that also waits for its actions: `bakers oven once`, tests. */
+  /** One tick that also waits for its actions: `bakers conductor once`, tests. */
   async tick(): Promise<void> {
     await this.produce();
     await this.queue.drain();
@@ -1053,7 +1057,7 @@ export class Conductor {
    * whose workspace still lingers (BB-89). Driven by the durable `cleaned_up`
    * flag via {@link BbRemote.fetchUncleanedTickets}: every ticket the server
    * has already closed but not yet cleaned. The SAME reconciliation runs on
-   * every tick AND standalone as `bakers oven clean`, and the query is
+   * every tick AND standalone as `bakers conductor clean`, and the query is
    * scoped to THIS conductor (BB-121) — so it catches the orphans a
    * live-tick-only path structurally cannot (the conductor was down when the
    * ticket closed, or crashed mid-cleanup) for its OWN tickets. A foreign
@@ -1336,25 +1340,25 @@ export class Conductor {
     } catch (err) {
       this.logger.warn(
         { ticket: t.identifier, err: String(err) },
-        'could not resolve reachable workspaces for BB_WORKSPACE_IDS',
+        'could not resolve reachable workspaces for BAKERS_WORKSPACE_IDS',
       );
     }
     const core: Record<string, string> = {
-      BB_URL: this.config.site.base_url,
-      BB_ID: t.uuid,
+      BAKERS_URL: this.config.site.base_url,
+      BAKERS_ID: t.uuid,
       // BB-569: lets a launch wrapper key off the ticket and the run's
       // start state without parsing the prompt (addon-claude `measure`).
-      ...(t.identifier ? { BB_TICKET_IDENTIFIER: t.identifier } : {}),
-      ...(state ? { BB_STATE: state } : {}),
-      ...(runUuid ? { BB_RUN_UUID: runUuid } : {}),
-      BB_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
+      ...(t.identifier ? { BAKERS_TICKET_IDENTIFIER: t.identifier } : {}),
+      ...(state ? { BAKERS_STATE: state } : {}),
+      ...(runUuid ? { BAKERS_RUN_UUID: runUuid } : {}),
+      BAKERS_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
       WORKSPACE_ROOT: this.checkoutRoot,
       ...(t.issueUrl ? { TICKET_URL: t.issueUrl } : {}),
-      ...(t.projectName ? { BB_PROJECT: t.projectName } : {}),
-      ...(t.projectId ? { BB_PROJECT_ID: t.projectId } : {}),
-      ...(t.workspaceName ? { BB_WORKSPACE: t.workspaceName } : {}),
-      ...(t.workspaceId ? { BB_WORKSPACE_ID: t.workspaceId } : {}),
-      ...(workspaceIds ? { BB_WORKSPACE_IDS: workspaceIds } : {}),
+      ...(t.projectName ? { BAKERS_PROJECT: t.projectName } : {}),
+      ...(t.projectId ? { BAKERS_PROJECT_ID: t.projectId } : {}),
+      ...(t.workspaceName ? { BAKERS_WORKSPACE: t.workspaceName } : {}),
+      ...(t.workspaceId ? { BAKERS_WORKSPACE_ID: t.workspaceId } : {}),
+      ...(workspaceIds ? { BAKERS_WORKSPACE_IDS: workspaceIds } : {}),
     };
     return resolveRunEnv(t.effectiveEnvVars, core, this.logger, {
       ticket: t.identifier,
@@ -1502,7 +1506,7 @@ export class Conductor {
     const [unavailable] = await sandboxFailures([chosen]);
     if (unavailable) throw new Error(unavailable);
     const baseRef = t.baseBranch ? `origin/${t.baseBranch}` : undefined;
-    // Resolve the run env once (per-ticket env_vars + core BB_* vars) and
+    // Resolve the run env once (per-ticket env_vars + core BAKERS_* vars) and
     // inject it into BOTH the lifecycle hooks AND the agent run
     // env (BB-99). Reserved core keys always win; values may be sensitive so
     // only key names are ever logged.
@@ -1850,7 +1854,7 @@ export class Conductor {
     }
     await this.queue.drain();
     // NB: the poll loop never writes status=offline itself. A graceful stop
-    // (`bakers oven stop`) writes offline directly server-side; a crash or
+    // (`bakers conductor stop`) writes offline directly server-side; a crash or
     // hard-kill leaves a stale lease that the Drupal cron reaper flips to
     // offline (bb_core cron → ConductorReaper). Liveness is thus always
     // derived from status + last_seen/lease_expires_at, never from the loop.

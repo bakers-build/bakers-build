@@ -16,7 +16,7 @@ const names = DEFAULT_COMMANDS.map((c) => c.name);
 
 describe('scanTarget — value-aware lazy pre-scan (AC-2)', () => {
   it('picks the first positional command name', () => {
-    expect(scanTarget(['oven', 'once'], names)).toBe('oven');
+    expect(scanTarget(['conductor', 'once'], names)).toBe('conductor');
     expect(scanTarget(['dropsh', 'read', 'x'], names)).toBe('dropsh');
     expect(scanTarget(['ui'], names)).toBe('ui');
   });
@@ -26,7 +26,7 @@ describe('scanTarget — value-aware lazy pre-scan (AC-2)', () => {
     );
   });
   it('maps `help <name>` to that command', () => {
-    expect(scanTarget(['help', 'oven'], names)).toBe('oven');
+    expect(scanTarget(['help', 'conductor'], names)).toBe('conductor');
   });
   it('returns undefined for --help, an unknown first positional, or bare', () => {
     expect(scanTarget(['--help'], names)).toBeUndefined();
@@ -36,16 +36,16 @@ describe('scanTarget — value-aware lazy pre-scan (AC-2)', () => {
   });
 });
 
-describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
-  const saved = process.env.BB_COMMANDS;
+describe('resolveCommands (registry + $BAKERS_COMMANDS override, AC-2)', () => {
+  const saved = process.env.BAKERS_COMMANDS;
   afterEach(() => {
-    if (saved === undefined) delete process.env.BB_COMMANDS;
-    else process.env.BB_COMMANDS = saved;
+    if (saved === undefined) delete process.env.BAKERS_COMMANDS;
+    else process.env.BAKERS_COMMANDS = saved;
   });
   it('includes official aliases and the compatibility command', () => {
-    delete process.env.BB_COMMANDS;
+    delete process.env.BAKERS_COMMANDS;
     expect(resolveCommands().map((c) => c.name)).toEqual([
-      'oven',
+      'conductor',
       'ui',
       'dropsh',
       'tools',
@@ -57,8 +57,8 @@ describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
       'track',
     ]);
   });
-  it('honours a $BB_COMMANDS JSON override', () => {
-    process.env.BB_COMMANDS = JSON.stringify([
+  it('honours a $BAKERS_COMMANDS JSON override', () => {
+    process.env.BAKERS_COMMANDS = JSON.stringify([
       { name: 'x', plugin: '/tmp/x.mjs' },
     ]);
     expect(resolveCommands().map((c) => c.name)).toEqual(['x']);
@@ -66,18 +66,18 @@ describe('resolveCommands (registry + $BB_COMMANDS override, AC-2)', () => {
 });
 
 describe('buildHostProgram — help completeness + version (AC-1/AC-2)', () => {
-  const saved = process.env.BB_COMMANDS;
+  const saved = process.env.BAKERS_COMMANDS;
   afterEach(() => {
-    if (saved === undefined) delete process.env.BB_COMMANDS;
-    else process.env.BB_COMMANDS = saved;
+    if (saved === undefined) delete process.env.BAKERS_COMMANDS;
+    else process.env.BAKERS_COMMANDS = saved;
   });
 
   it('lists all command plugins in --help (describe-only stubs)', async () => {
-    delete process.env.BB_COMMANDS;
+    delete process.env.BAKERS_COMMANDS;
     const program = await buildHostProgram(['--help']);
     const cmds = program.commands.map((c) => c.name());
-    expect(cmds).toContain('oven');
-    expect(cmds).not.toContain('conductor');
+    expect(cmds).toContain('conductor');
+    expect(cmds).not.toContain('oven');
     expect(cmds).not.toContain('bake');
     expect(cmds).toContain('ui');
     expect(cmds).toContain('dropsh');
@@ -105,9 +105,9 @@ describe('buildHostProgram — help completeness + version (AC-1/AC-2)', () => {
     ['tools', ['--conductor', 'help']],
     ['auth', ['--conductor', 'help']],
   ])('help %s exposes its options after %j', async (alias, leading) => {
-    delete process.env.BB_COMMANDS;
+    delete process.env.BAKERS_COMMANDS;
     const savedCode = process.exitCode;
-    const savedConductor = process.env.BB_CONDUCTOR;
+    const savedConductor = process.env.BAKERS_CONDUCTOR;
     process.exitCode = 0;
     let output = '';
     const stdout = vi
@@ -129,28 +129,28 @@ describe('buildHostProgram — help completeness + version (AC-1/AC-2)', () => {
       }
       expect(output).not.toContain('dropsh');
       if (leading.length) {
-        expect(process.env.BB_CONDUCTOR).toBe(
+        expect(process.env.BAKERS_CONDUCTOR).toBe(
           leading.length === 2 ? leading[1] : 'default',
         );
       }
     } finally {
       stdout.mockRestore();
       process.exitCode = savedCode;
-      if (savedConductor === undefined) delete process.env.BB_CONDUCTOR;
-      else process.env.BB_CONDUCTOR = savedConductor;
+      if (savedConductor === undefined) delete process.env.BAKERS_CONDUCTOR;
+      else process.env.BAKERS_CONDUCTOR = savedConductor;
     }
   });
 });
 
 describe('lazy mount — only the matched command module is imported (AC-2)', () => {
   let tmp: string;
-  const saved = process.env.BB_COMMANDS;
+  const saved = process.env.BAKERS_COMMANDS;
   beforeEach(() => {
     tmp = mkdtempSync(join(tmpdir(), 'bakers-host-'));
   });
   afterEach(() => {
-    if (saved === undefined) delete process.env.BB_COMMANDS;
-    else process.env.BB_COMMANDS = saved;
+    if (saved === undefined) delete process.env.BAKERS_COMMANDS;
+    else process.env.BAKERS_COMMANDS = saved;
     rmSync(tmp, { recursive: true, force: true });
   });
 
@@ -170,7 +170,7 @@ describe('lazy mount — only the matched command module is imported (AC-2)', ()
     };
     const aPath = mk('alpha');
     const bPath = mk('beta');
-    process.env.BB_COMMANDS = JSON.stringify([
+    process.env.BAKERS_COMMANDS = JSON.stringify([
       { name: 'alpha', plugin: aPath },
       { name: 'beta', plugin: bPath },
     ]);
@@ -183,16 +183,56 @@ describe('lazy mount — only the matched command module is imported (AC-2)', ()
   });
 });
 
-describe('runHost — unknown command surfaces an error (AC-2)', () => {
+describe('runHost — `oven` stays a hidden alias of `conductor`', () => {
   const savedCode = process.exitCode;
-  const saved = process.env.BB_COMMANDS;
+  const saved = process.env.BAKERS_COMMANDS;
   afterEach(() => {
     process.exitCode = savedCode;
-    if (saved === undefined) delete process.env.BB_COMMANDS;
-    else process.env.BB_COMMANDS = saved;
+    if (saved === undefined) delete process.env.BAKERS_COMMANDS;
+    else process.env.BAKERS_COMMANDS = saved;
+    vi.restoreAllMocks();
+  });
+  let exited: unknown;
+  async function output(argv: string[]): Promise<string> {
+    exited = undefined;
+    let text = '';
+    vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
+      text += chunk;
+      return true;
+    });
+    // The conductor's own subcommand help exits through commander.
+    const exit = vi.spyOn(process, 'exit').mockImplementation((code) => {
+      exited = code ?? 0;
+      throw new Error('process.exit');
+    });
+    await runHost(argv);
+    exit.mockRestore();
+    return text;
+  }
+  it('dispatches bakers oven <subcommand> to conductor, and bakers --help lists conductor, not oven', async () => {
+    delete process.env.BAKERS_COMMANDS;
+    process.exitCode = 0;
+    const sub = await output(['oven', 'start', '--help']);
+    expect(exited).toBe(0);
+    expect(sub).toContain('bakers conductor start');
+    expect(sub).toContain('--foreground');
+
+    const help = await output(['--help']);
+    expect(help).toMatch(/^\s+conductor\b/m);
+    expect(help).not.toMatch(/\boven\b/);
+  });
+});
+
+describe('runHost — unknown command surfaces an error (AC-2)', () => {
+  const savedCode = process.exitCode;
+  const saved = process.env.BAKERS_COMMANDS;
+  afterEach(() => {
+    process.exitCode = savedCode;
+    if (saved === undefined) delete process.env.BAKERS_COMMANDS;
+    else process.env.BAKERS_COMMANDS = saved;
   });
   it('sets a non-zero exit code for an unknown command', async () => {
-    delete process.env.BB_COMMANDS;
+    delete process.env.BAKERS_COMMANDS;
     process.exitCode = 0;
     await runHost(['definitely-not-a-command']);
     expect(process.exitCode).not.toBe(0);

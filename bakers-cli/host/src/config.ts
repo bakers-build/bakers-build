@@ -79,7 +79,7 @@ async function promptInput(label: string, secret = false): Promise<string> {
 
 const SCOPE_FILE = {
   machine: '~/.bakers/machine.config.js',
-  project: '.bakers/conductor.config.js',
+  project: '.bakers/project.config.js',
 } as const;
 
 /**
@@ -96,7 +96,7 @@ async function checkAddonScopes(
     (f) =>
       f.selected &&
       f.state !== 'absent' &&
-      (f.kind === 'machine' || f.kind === 'conductor'),
+      (f.kind === 'machine' || f.kind === 'project'),
   );
   if (files.length === 0) return;
   const base = {
@@ -138,20 +138,6 @@ async function checkAddonScopes(
     { unresolved: 'skip', logger: { warn: () => {} } as never },
   );
   for (const finding of findings) {
-    if (finding.code === 'addon_with_invalid') {
-      report.findings.push({
-        ...base,
-        code: 'addon_with_invalid',
-        severity: 'error',
-        path: finding.path,
-        key: `addons[${finding.index}].with${finding.key ? `.${finding.key}` : ''}`,
-        expected: `'${finding.spec}' setting ${finding.key || 'with'} ${finding.message}.`,
-        observed: finding.spec,
-        owner: finding.scope,
-        remediation: `Fix addons[${finding.index}].with${finding.key ? `.${finding.key}` : ''} of ${finding.path}; see the addon's documentation.`,
-      });
-      continue;
-    }
     const allowed = finding.allowed.map((s) => SCOPE_FILE[s]).join(' or ');
     report.findings.push({
       ...base,
@@ -168,12 +154,20 @@ async function checkAddonScopes(
     report.result = 'blocked';
 }
 
+/** `, N values not checked`: a passing result never hides what it skipped. */
+function notCheckedSummary(report: ConfigReport): string {
+  const count = report.findings.filter(
+    (f) => f.code === 'not_checked' || f.code === 'options_not_checked',
+  ).length;
+  return count ? `, ${count} value${count === 1 ? '' : 's'} not checked` : '';
+}
+
 export function renderConfigReport(
   report: ConfigReport,
   dryRun = false,
 ): string {
   const lines = [
-    `bakers config ${report.operation}: ${report.result}${dryRun ? ' (dry run; no files written)' : ''}`,
+    `bakers config ${report.operation}: ${report.result}${notCheckedSummary(report)}${dryRun ? ' (dry run; no files written)' : ''}`,
     `Scope: ${report.resolved_scopes.join(', ')}`,
     `Machine root: ${report.roots.machine}`,
     `Connection root: ${report.roots.connection}`,
@@ -324,7 +318,7 @@ function buildConfigCommand(
       );
       if (options.projectConnection !== undefined)
         throw new Error(
-          '--project-connection is retired; use --connection <id> and .bakers/connection.config.local.js.',
+          '--project-connection is retired; use --connection <id> or BAKERS_CONNECTION.',
         );
       const cwd = deps.cwd ?? process.cwd();
       const env = deps.env ?? process.env;
@@ -376,9 +370,11 @@ function buildConfigCommand(
         operation,
         cwd,
         // Only forward an explicitly injected home; absent, core resolves the
-        // `.bakers` root itself and honours BB_HOME.
+        // `.bakers` root itself and honours BAKERS_HOME.
         ...(deps.home !== undefined ? { home: deps.home } : {}),
         inputs,
+        // Addon option schemas resolve from this CLI install, as the loader's do.
+        addonBases: [import.meta.url],
         // `bakers init` (hiddenScope !== undefined) never pulls the project
         // layer in, even inside a project checkout (BB-496 finding 1).
         ...(hiddenScope !== undefined ? { excludeProjectLayer: true } : {}),
@@ -409,7 +405,7 @@ function buildConfigCommand(
         selectedConnection = await resolveBbConnectionSelection({
           cwd,
           // Only forward an explicitly injected home; absent, core resolves
-          // the `.bakers` root itself and honours BB_HOME (same rule as the
+          // the `.bakers` root itself and honours BAKERS_HOME (same rule as the
           // `planning` object above — a stray `?? homedir()` here would
           // resolve this command's connection selection under `~/.bakers` while
           // the rest of it honours the override).
@@ -470,7 +466,7 @@ function buildConfigCommand(
             ['clientId', 'client_id', 'OAuth client identifier'],
             ['secret', 'client_secret', 'OAuth client secret'],
             ['workspaceId', 'workspace_id', 'Workspace UUID'],
-            ['workspace', 'bakers.workspace', 'Workspace name'],
+            ['workspace', 'project.workspace', 'Workspace name'],
           ] as const
         ).filter(([input]) => !(deviceCode && input === 'secret'));
         for (const [input, key, label] of fields) {

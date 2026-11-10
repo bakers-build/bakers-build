@@ -353,7 +353,7 @@ final class ServiceAccountCreateForm extends WrappedDialogFormBase {
       '#type' => 'component',
       '#component' => 'bb_theme:text',
       '#props' => [
-        'text' => (string) $this->t('Store the secret as a masked/protected CI variable, e.g. BB_CONSUMER_SECRET. Keep the client ID separately; it is not secret.'),
+        'text' => (string) $this->t('Store the secret as a masked/protected CI variable, e.g. BAKERS_CONSUMER_SECRET. Keep the client ID separately; it is not secret.'),
         'size' => 'meta',
         'tone' => 'light',
       ],

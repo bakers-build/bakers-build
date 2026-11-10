@@ -5,14 +5,14 @@ Optional `with` values for the [Orca addon](/addons/orca). Setup and its minimal
 | Option under `with` | Meaning and default |
 |---|---|
 | `root` | Main clone path; derived from Git's common directory when omitted. |
-| `worktreeDir` | Worktree directory relative to the root, default `.bakers-worktrees`. |
-| `baseBranch` | Base ref for new branches; default the remote-tracking branch of the checked-out branch. |
-| `autoSetupMerge` | Default `false`: run branches, including ones checked out from `origin`, have no upstream and push with `push.default=current`; see [`autoSetupMerge`](/addons/workspace-git#options). `true` leaves Git alone. |
+| `worktree_dir` | Worktree directory relative to the root, default `.bakers-worktrees`. |
+| `base_branch` | Base ref for new branches; default the remote-tracking branch of the checked-out branch. |
+| `auto_setup_merge` | Default `false`: run branches, including ones checked out from `origin`, have no upstream and push with `push.default=current`; see [`auto_setup_merge`](/addons/workspace-git#options). `true` leaves Git alone. |
 | `command` | Fallback agent command when the agent addons supply none, default `claude`. |
-| `default`, `states.<state>` | `tabLabel`, the agent terminal's title, default `{identifier} · {state}`; it must contain `{identifier}` and also accepts `{state}` (the state the run was started for), `{title}`, `{titleSlug}`, `{runUuid}` and `{workspacePath}`. ` #<run id>` is always appended, and the title is set as the terminal's manual name (`orca terminal rename`). The agent can still change the title shown for the terminal itself; the run's terminal is found again by the renamed tab title in the Orca app, or by the terminal title with `orca serve`. |
+| `default`, `states.<state>` | `tab_label`, the agent terminal's title, default `{identifier} · {state}`; it must contain `{identifier}` and also accepts `{state}` (the state the run was started for), `{title}`, `{title_slug}`, `{run_uuid}` and `{workspace_path}`. ` #<run id>` is always appended, and the title is set as the terminal's manual name (`orca terminal rename`). The agent can still change the title shown for the terminal itself; the run's terminal is found again by the renamed tab title in the Orca app, or by the terminal title with `orca serve`. |
 | `open` | Overview terminal of a fresh worktree. Omitted runs `bakers ui --ticket {identifier}` titled `{identifier} · {title}`; `{}` opens none. Keys: `command`, `title`. |
-| `launchWatch` | As for herdr: `startTimeoutMs` (default 60000) and `timeoutMs` (default 4000). |
-| `adoptTimeoutMs` | How long to wait for Orca to pick up a new worktree, default 35000. |
+| `launch_watch` | As for herdr: `start_timeout_ms` (default 60000) and `timeout_ms` (default 4000). |
+| `adopt_timeout_ms` | How long to wait for Orca to pick up a new worktree, default 35000. |
 
 ## Worktree lifecycle
 

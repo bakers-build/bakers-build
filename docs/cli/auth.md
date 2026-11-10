@@ -20,7 +20,7 @@ bakers auth [<global options>] status [--json] [--profile <id>]
 
 ## Select the connection
 
-`bakers auth` takes the same global options as [bakers tools](/configuration/clients/tools#global-options): `--config <path>`, `--connection <id>`, `--connections-dir <path>` and `--auth-profile <id>`, after the subcommand. Without them the connection is chosen by the same rule as in `bakers ui`: [Connection selection](/configuration/connector/connections#which-connection-is-used).
+`bakers auth` takes the same global options as [bakers tools](/cli/tools#global-options): `--config <path>`, `--connection <id>`, `--connections-dir <path>` and `--auth-profile <id>`, after the subcommand. Without them the connection is chosen by the same rule as in `bakers ui`: [Connection selection](/configuration/connection#which-connection-is-used).
 
 ```sh
 bakers auth login --connection staging
@@ -31,7 +31,7 @@ Sign-in needs no workspace. A fresh connection can sign in before any workspace 
 
 ## Profiles
 
-A generated connection has one default profile, `bakers`. What the signed-in identity may do is decided by its membership and rank on the server, not by the profile. A connection that declares several profiles, such as `bakers` for a person and `machine` for a conductor, switches with `bakers auth use <id>`; `--auth-profile <id>` overrides the active profile for one command. Profile fields and examples: [Connections](/configuration/connector/connections#sign-in-profiles).
+A generated connection has one default profile, `bakers`. What the signed-in identity may do is decided by its membership and rank on the server, not by the profile. A connection that declares several profiles, such as `bakers` for a person and `machine` for a conductor, switches with `bakers auth use <id>`; `--auth-profile <id>` overrides the active profile for one command. Profile fields and examples: [Connections](/configuration/connection#sign-in-profiles).
 
 ## Sign in
 
@@ -42,7 +42,7 @@ bakers auth status
 
 The default sign-in is a device code: `auth login` prints a URL and a short code, you confirm on any device, and it waits until you are signed in. A browser-redirect profile opens the browser and listens on its callback port. Connections set up for unattended use sign in with client credentials instead.
 
-Tokens renew automatically. [Connection storage](/configuration/connector/connections#files) owns their location and private-file requirements.
+Tokens renew automatically. [Connection storage](/configuration/connection#files) owns their location and private-file requirements.
 
 ## Diagnose
 

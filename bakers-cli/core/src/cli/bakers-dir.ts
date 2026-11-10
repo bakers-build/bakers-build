@@ -5,19 +5,19 @@ import { dirname, join, resolve } from 'node:path';
 /** A repo's config files live in this dir, one conductor config per conductor. */
 const BB_DIR = '.bakers';
 
-/** The default conductor's file name; its stem is `conductor`. */
-const DEFAULT_CONFIG = 'conductor.config.js';
-/** Variant files are `<stem>.conductor.config.js`. */
-const VARIANT_SUFFIX = '.conductor.config.js';
-/** The connection config file name (project + home). */
-const BB_CONFIG = 'bakers.config.js';
+/** The project file; its conductor variant is `conductor`, the conductor id's default. */
+const DEFAULT_CONFIG = 'project.config.js';
+/** Variant files are `project.<variant>.config.js`. */
+const VARIANT = /^project\.(.+)\.config\.js$/;
+/** A project's own connection file. */
+const PROJECT_CONNECTION = 'connection.config.js';
+/** The home default connection, beside the named ones. */
+const DEFAULT_CONNECTION = join('connections', 'default.js');
 
 /**
- * List the conductor-config stems in a `.bakers/` dir. A file is a conductor
- * config iff it is exactly `conductor.config.js` (stem `conductor`, the
- * default) or ends with `.conductor.config.js` (stem = the leading part).
- * Every other file (`vite.config.js`, the near-miss `myconductor.config.js`,
- * and `bakers.config.js` itself) is ignored.
+ * List the conductor variants in a `.bakers/` dir: `project.config.js` is the
+ * default variant `conductor`, `project.<name>.config.js` is variant `<name>`.
+ * Every other file (`vite.config.js`, `connection.config.js`) is ignored.
  */
 function configStems(bakersDir: string): string[] {
   return readdirSync(bakersDir)
@@ -40,16 +40,13 @@ function configStems(bakersDir: string): string[] {
  */
 export function stemForConfigFile(fileName: string): string | undefined {
   if (fileName === DEFAULT_CONFIG) return 'conductor';
-  if (fileName.endsWith(VARIANT_SUFFIX)) {
-    const stem = fileName.slice(0, -VARIANT_SUFFIX.length);
-    return stem === '' ? undefined : stem;
-  }
-  return undefined;
+  const variant = VARIANT.exec(fileName)?.[1];
+  return variant === 'conductor' ? undefined : variant;
 }
 
 /** Map a conductor stem back to its file name. */
 function fileForStem(stem: string): string {
-  return stem === 'conductor' ? DEFAULT_CONFIG : `${stem}${VARIANT_SUFFIX}`;
+  return stem === 'conductor' ? DEFAULT_CONFIG : `project.${stem}.config.js`;
 }
 
 /**
@@ -57,7 +54,7 @@ function fileForStem(stem: string): string {
  * so a consumer that must recognise the home dir (e.g. to exclude it from a
  * project walk-up, BB-219 AC-9) asks for it rather than joining it itself.
  *
- * This is the ONE place that decides where `.bakers` lives. `BB_HOME` names
+ * This is the ONE place that decides where `.bakers` lives. `BAKERS_HOME` names
  * that directory itself — not a home containing one — so an isolated test, a
  * second identity on one machine, or a container can relocate it without
  * redirecting HOME. A relative value is resolved against the cwd, because the
@@ -68,7 +65,7 @@ function fileForStem(stem: string): string {
  */
 export function homeBbDir(home?: string): string {
   if (home !== undefined) return join(home, BB_DIR);
-  const override = process.env.BB_HOME;
+  const override = process.env.BAKERS_HOME;
   return override ? resolve(override) : join(homedir(), BB_DIR);
 }
 
@@ -93,14 +90,14 @@ export function findBbDir(cwd: string): string | undefined {
 }
 
 /**
- * Resolve the ENGINE (`conductor.config.js`) config path from `cwd`.
+ * Resolve the project config (`project.config.js`) path from `cwd`.
  *
- * 1. An explicit `--config` / `$BB_CONDUCTOR_CONFIG` wins verbatim (no walk).
+ * 1. An explicit `--config` / `$BAKERS_CONDUCTOR_CONFIG` wins verbatim (no walk).
  * 2. Otherwise walk root-ward to the nearest `.bakers/` dir holding a conductor
  *    config — so any subdirectory of a project/worktree resolves the same dir.
- *    - A `--conductor <name>` / `$BB_CONDUCTOR` selector resolves the stem's
- *      file (`conductor` → `conductor.config.js`, else `<name>.conductor.config.js`).
- *    - No selector: `conductor.config.js` present → the default; else exactly
+ *    - A `--conductor <name>` / `$BAKERS_CONDUCTOR` selector resolves the stem's
+ *      file (`conductor` → `project.config.js`, else `project.<name>.config.js`).
+ *    - No selector: `project.config.js` present → the default; else exactly
  *      one config → use it (back-compat); else → error naming the stems.
  * 3. No `.bakers/` config anywhere up the tree → an `ENOENT` error naming
  *    `bakers config init --scope project`.
@@ -110,7 +107,7 @@ export function resolveConfigPath(
   cwd: string = process.cwd(),
   conductorName?: string,
 ): string {
-  const explicit = override ?? process.env.BB_CONDUCTOR_CONFIG;
+  const explicit = override ?? process.env.BAKERS_CONDUCTOR_CONFIG;
   if (explicit) {
     return explicit;
   }
@@ -127,14 +124,14 @@ export function resolveConfigPath(
     // they have already run.
     throw Object.assign(
       new Error(
-        `no .bakers/conductor.config.js found from ${cwd} upward; ` +
+        `no .bakers/project.config.js found from ${cwd} upward; ` +
           'run `bakers config init --scope project` in a project checkout',
       ),
       { code: 'ENOENT' },
     );
   }
   const stems = configStems(bakersDir);
-  const name = conductorName ?? process.env.BB_CONDUCTOR;
+  const name = conductorName ?? process.env.BAKERS_CONDUCTOR;
   if (name !== undefined && name !== '') {
     const candidate = join(bakersDir, fileForStem(name));
     if (!existsSync(candidate)) {
@@ -152,7 +149,7 @@ export function resolveConfigPath(
   }
   throw new Error(
     `${stems.length} conductors in ${bakersDir} (${stems.join(', ')}); ` +
-      'select one with --conductor <name> or $BB_CONDUCTOR',
+      'select one with --conductor <name> or $BAKERS_CONDUCTOR',
   );
 }
 
@@ -183,7 +180,7 @@ export function findBbConfig(
   for (;;) {
     const bakersDir = join(dir, BB_DIR);
     if (existsSync(bakersDir)) {
-      const bakersCfg = join(bakersDir, BB_CONFIG);
+      const bakersCfg = join(bakersDir, PROJECT_CONNECTION);
       if (existsSync(bakersCfg)) return { path: bakersCfg, legacy: false };
     }
     const parent = dirname(dir);
@@ -194,8 +191,8 @@ export function findBbConfig(
 
 /**
  * Walk root-ward for the nearest `.bakers/` dir that marks a **project** — one
- * holding any bakers config at all, a `bakers.config.js` or at least one conductor
- * config. Returns that `.bakers/` dir, or `undefined` up to the filesystem root.
+ * holding any bakers config at all, a `connection.config.js` or at least one
+ * project config. Returns that `.bakers/` dir, or `undefined` up to the filesystem root.
  *
  * Deliberately a different question from `findBbConfig` (BB-219 AC-9):
  * "which project am I standing in" is not "where does my connection come from".
@@ -215,7 +212,7 @@ export function findProjectBbDir(cwd: string): string | undefined {
     const bakersDir = join(dir, BB_DIR);
     if (
       existsSync(bakersDir) &&
-      (existsSync(join(bakersDir, BB_CONFIG)) ||
+      (existsSync(join(bakersDir, PROJECT_CONNECTION)) ||
         configStems(bakersDir).length > 0)
     ) {
       return bakersDir;
@@ -249,7 +246,7 @@ export function findConfigProjectBbDir(
 export function resolveBbConfigPath(
   opts: { cwd?: string; explicit?: string | undefined; home?: string } = {},
 ): BbConfigResolution {
-  const homeCfg = join(homeBbDir(opts.home), BB_CONFIG);
+  const homeCfg = join(homeBbDir(opts.home), DEFAULT_CONNECTION);
 
   const explicit = opts.explicit;
   if (explicit !== undefined && explicit.trim() !== '') {

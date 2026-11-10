@@ -13,7 +13,7 @@ Add the package to the top-level `addons` in `~/.bakers/machine.config.js`. Keep
 '@bakers-build/addon-bakers-ui-artifacts',
 ```
 
-The addon may also be listed in a project's `.bakers/conductor.config.js` or a connection's `addons`; listed in both the machine and the project file, it renders one tab from the machine entry. See [Which file takes `addons`](/addons/configure#which-file-takes-addons).
+The addon may also be listed in a project's `.bakers/project.config.js` or a connection's `addons`; listed in both the machine and the project file, it renders one tab from the machine entry. See [Which file takes `addons`](/addons/configure#which-file-takes-addons).
 
 ## Options
 

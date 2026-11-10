@@ -90,7 +90,7 @@ The install log is `/tmp/coder-startup-script.log`. The PM bot logs to its conta
 
 ## Conductor autostart
 
-Conductors are yours to start, and a restart, rebuild or template update stops them. Switch on the workspace parameter **Start conductors on workspace start** (`conductor_autostart`, default off) and every start runs `bakers oven start` in each `~/projects/*` checkout that has `.bakers/conductor.config.js`. Each conductor runs as a detached background process, as when you start it by hand.
+Conductors are yours to start, and a restart, rebuild or template update stops them. Switch on the workspace parameter **Start conductors on workspace start** (`conductor_autostart`, default off) and every start runs `bakers oven start` in each `~/projects/*` checkout that has `.bakers/project.config.js`, or `.bakers/conductor.config.js` on the older pinned releases. `oven` works on every release; newer ones also name it `bakers conductor`. Each conductor runs as a detached background process, as when you start it by hand.
 
 ```sh
 coder update <workspace> --parameter conductor_autostart=true

@@ -13,7 +13,7 @@ export interface EnsuredWorkspace {
   created: boolean;
   /**
    * Variables the run needs from its workspace backend (e.g. Git config via
-   * `GIT_CONFIG_COUNT`). The conductor adds them to the run env; core `BB_*`
+   * `GIT_CONFIG_COUNT`). The conductor adds them to the run env; core `BAKERS_*`
    * keys still win.
    */
   env?: Record<string, string>;

@@ -80,12 +80,12 @@ python3 -m http.server 8756 --bind 127.0.0.1 --directory "$eval_dir/public"
 The server stays in that terminal. Only the selected report directory is served. Model text is escaped and displayed verbatim; the report loads no external resources. In another terminal, from the same worktree, resolve the sharing policy:
 
 ```sh
-printenv BB_TUNNEL
+printenv BAKERS_TUNNEL
 # If unset:
 bakers config check --scope machine --format json
 ```
 
-`BB_TUNNEL=1` or `true` enables sharing; `0` or `false` disables it. If unset, use `machine_policy.tunnel`. When enabled:
+`BAKERS_TUNNEL=1` or `true` enables sharing; `0` or `false` disables it. If unset, use `machine_policy.tunnel`. When enabled:
 
 ```sh
 bakers ports list

@@ -58,8 +58,9 @@ under `tests/contract/` runs in CI, and a script nothing in CI runs is not commi
 
 ## `bakers ui` for a human: playground, herdr tab, always
 
-The committed `.bakers/bakers.config.js` hits remote develop. Run `scripts/setup-test-project.sh`, then
-`./bakers-cli/bin/bakers ui --config workspaces/bakers-playground/.bakers/bakers.config.js` inside a tab
+The repository checkout commits no connection, so `bakers ui` there uses your default connection
+(`~/.bakers/connections/default.js`), a live tenant. Run `scripts/setup-test-project.sh`, then
+`./bakers-cli/bin/bakers ui --config workspaces/bakers-playground/.bakers/connection.config.js` inside a tab
 from `herdr tab create`. Never piped, never captured frames, never a live tenant.
 
 ## bakers CLI

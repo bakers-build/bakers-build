@@ -97,12 +97,12 @@ async function factoryPair(
   execHerdr: (args: string[]) => Promise<string>,
   logger: ConductorLogger = quiet,
 ): Promise<Pair> {
-  const config = { config_path: '/repo/.bakers/conductor.config.js' } as never;
+  const config = { config_path: '/repo/.bakers/project.config.js' } as never;
   const ws = await herdrWorkspace({
     root: '/repo',
     execHerdr,
     execGit: async () => '/repo/.git\n',
-    autoSetupMerge: true,
+    auto_setup_merge: true,
   }).createWorkspace(config, { logger });
   const executor = await herdrExecutor({ root: '/repo' }).createExecutor(
     config,
@@ -219,7 +219,7 @@ describe('HerdrExecutor.openWorkspace layout (BB-139/BB-234)', () => {
 
   // BB-64 guard: the open-layout panes are the HUMAN's — they are where you
   // land when a worktree opens. Only the executor's per-run agent panes carry
-  // `BB_AGENT_SHELL`, whose opt-in unsets HISTFILE; marking these too would
+  // `BAKERS_AGENT_SHELL`, whose opt-in unsets HISTFILE; marking these too would
   // silently drop the history of a pane the user types in. `applyPaneLayout` is
   // shared between both callers, so this pins the asymmetry.
   it('never marks the open-layout panes as agent shells', async () => {
@@ -236,7 +236,7 @@ describe('HerdrExecutor.openWorkspace layout (BB-139/BB-234)', () => {
 
     await ensureAndOpen(ws, 'GL-9', 'bakers/GL-9');
 
-    expect(calls.flat().join(' ')).not.toContain('BB_AGENT_SHELL');
+    expect(calls.flat().join(' ')).not.toContain('BAKERS_AGENT_SHELL');
   });
 
   // BB-234 AC-1, AC-8: the shipped default renders the ticket deep link.
@@ -552,7 +552,7 @@ describe('HerdrExecutor.openWorkspace layout (BB-139/BB-234)', () => {
   });
 
   it('the factory falls back to DEFAULT_OPEN_LAYOUT when the slot configures no open key', async () => {
-    // BB-237: bakers's own `.bakers/conductor.config.js` used to override `open`
+    // BB-237: bakers's own `.bakers/project.config.js` used to override `open`
     // with a sentinel wait loop; once the ordering was fixed the override became
     // byte-identical to the shipped default and was DELETED. This pins that
     // deleting it is not a silent behaviour change — the factory path with no
@@ -731,8 +731,8 @@ describe('HerdrExecutor.openWorkspace overview labels (BB-374)', () => {
       root: '/repo',
       open: {
         command: 'bakers ui --ticket {identifier}',
-        tabLabel: 'Overview · {identifier}',
-        panelLabel: '{title} ({identifier})',
+        tab_label: 'Overview · {identifier}',
+        panel_label: '{title} ({identifier})',
       },
       execHerdr: freshCreateHerdr(calls, { createdPath: CHECKOUT }),
       execGit: async () => '',

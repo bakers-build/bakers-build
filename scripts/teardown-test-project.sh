@@ -40,13 +40,13 @@
 #   -> workspace `ddev delete` -> `git worktree prune` -> rm -rf
 #
 # The conductor is stopped BEFORE the clone is deleted because its config lives in
-# that clone: `bakers oven stop` reads `<clone>/.bakers/conductor.config.js` to
+# that clone: `bakers conductor stop` reads `<clone>/.bakers/project.config.js` to
 # learn which conductor to signal, so a clone removed first leaves a running
 # process nothing can address. It is best-effort — teardown must not fail because
 # the conductor was already gone.
 #
 # WHAT `stop` NO LONGER DOES — corrected here rather than inherited from the
-# predecessor script: `bakers oven start` opens a herdr workspace
+# predecessor script: `bakers conductor start` opens a herdr workspace
 # `bakers-conductor:<id>`, and BB-232 deliberately removed the tab-killing from
 # `stop` and `stop --now` (a signal reaches the process wherever it lives, and a
 # conductor started under systemd has no tab at all). That workspace therefore
@@ -129,8 +129,8 @@ WS_DDEV="bakers-pg-$(printf '%s' "${WORKSPACE}" | sha1sum | cut -c1-8)"
 # -----------------------------------------------------------------------------
 step "1. stop the conductor before reclaiming its data or environment"
 # Its config and control-plane connection must still exist when stop runs.
-if [ -f "${WORKSPACE}/.bakers/conductor.config.js" ] && [ -x "${BB_BIN}" ]; then
-  ( cd "${WORKSPACE}" && "${BB_BIN}" oven stop --now ) || true
+if [ -f "${WORKSPACE}/.bakers/project.config.js" ] && [ -x "${BB_BIN}" ]; then
+  ( cd "${WORKSPACE}" && "${BB_BIN}" conductor stop --now ) || true
   say "conductor stopped (best-effort)"
 fi
 

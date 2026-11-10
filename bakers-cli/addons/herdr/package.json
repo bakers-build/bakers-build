@@ -7,10 +7,12 @@
   "exports": {
     ".": "./dist/src/index.js",
     "./preset": "./dist/src/preset.js",
-    "./shared": "./dist/src/shared.js"
+    "./shared": "./dist/src/shared.js",
+    "./options.schema.json": "./options.schema.json"
   },
   "files": [
-    "dist/src"
+    "dist/src",
+    "options.schema.json"
   ],
   "scripts": {
     "build": "tsc",

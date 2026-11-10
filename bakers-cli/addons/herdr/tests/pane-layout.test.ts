@@ -95,7 +95,7 @@ describe('applyPaneLayout', () => {
       { panes: [{ direction: 'right', command: 'ls' }] },
       '/wt',
       NO_VARS,
-      { env: { BB_AGENT_SHELL: '1' } },
+      { env: { BAKERS_AGENT_SHELL: '1' } },
     );
     const split = calls.find((c) => c.args[1] === 'split');
     expect(split?.args).toEqual([
@@ -108,7 +108,7 @@ describe('applyPaneLayout', () => {
       '/wt',
       '--no-focus',
       '--env',
-      'BB_AGENT_SHELL=1',
+      'BAKERS_AGENT_SHELL=1',
     ]);
   });
 
