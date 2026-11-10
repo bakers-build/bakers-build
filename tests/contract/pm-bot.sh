@@ -177,7 +177,8 @@ grep -qF "the requester's e-mail address exactly as the channel's trusted line g
   || fail "$SOUL does not take the assignee's address from the trusted line alone"
 pass "the assignee's address comes from the trusted line only"
 
-python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qx OK || fail "the bot-channels plugin fails its unit tests"
+# The one skip is test_recovery.py, which needs Hermes; pm-bot-image.sh runs it in the image.
+python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qxE 'OK( \(skipped=1\))?' || fail "the bot-channels plugin fails its unit tests"
 pass "bot-channels plugin passes its unit tests"
 
 # Questions are ticket comments under the Question label; the old question entity is gone.

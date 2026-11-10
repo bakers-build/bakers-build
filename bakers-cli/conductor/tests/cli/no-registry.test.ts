@@ -39,13 +39,13 @@ vi.mock('dropsh', async (orig) => {
 describe('the local conductor registry is gone', () => {
   let home: string;
   let out: string[];
-  const originalHome = process.env.BB_HOME;
-  const originalLog = process.env.BB_CONDUCTOR_LOG;
+  const originalHome = process.env.BAKERS_HOME;
+  const originalLog = process.env.BAKERS_CONDUCTOR_LOG;
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'bakers-no-registry-'));
-    process.env.BB_HOME = join(home, '.bakers');
-    process.env.BB_CONDUCTOR_LOG = 'silent';
+    process.env.BAKERS_HOME = join(home, '.bakers');
+    process.env.BAKERS_CONDUCTOR_LOG = 'silent';
     out = [];
     vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
       out.push(args.map(String).join(' '));
@@ -55,10 +55,10 @@ describe('the local conductor registry is gone', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     rmSync(home, { recursive: true, force: true });
-    if (originalHome === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = originalHome;
-    if (originalLog === undefined) delete process.env.BB_CONDUCTOR_LOG;
-    else process.env.BB_CONDUCTOR_LOG = originalLog;
+    if (originalHome === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = originalHome;
+    if (originalLog === undefined) delete process.env.BAKERS_CONDUCTOR_LOG;
+    else process.env.BAKERS_CONDUCTOR_LOG = originalLog;
   });
 
   it('start writes no registry file', async () => {
@@ -152,12 +152,12 @@ describe('the local conductor registry is gone', () => {
     expect(text).not.toContain('stopped');
   });
 
-  it('no longer offers `bakers oven rm`', async () => {
+  it('no longer offers `bakers conductor rm`', async () => {
     const program = buildConductorProgram({
       remote: new ListRemote([]),
       config: makeConfig(),
     });
-    const conductor = program.commands.find((c) => c.name() === 'oven');
+    const conductor = program.commands.find((c) => c.name() === 'conductor');
     const names = (conductor?.commands ?? []).map((c) => c.name());
 
     expect(names).not.toContain('rm');
@@ -196,7 +196,7 @@ describe('the local conductor registry is gone', () => {
       startPollIntervalMs: 0,
       startPollAttempts: 1,
     };
-    await buildConductorProgram(deps).parseAsync(['oven', ...argv], {
+    await buildConductorProgram(deps).parseAsync(['conductor', ...argv], {
       from: 'user',
     });
   }
@@ -216,7 +216,7 @@ describe('the local conductor registry is gone', () => {
       poll_interval_ms: 5000,
       lease_seconds: 300,
       conductor_id: 'mid-registry',
-      config_path: join(home, '.bakers', 'conductor.config.js'),
+      config_path: join(home, '.bakers', 'project.config.js'),
     } as ConductorFileConfig;
   }
 });

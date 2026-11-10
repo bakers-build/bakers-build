@@ -28,7 +28,7 @@ Both must succeed without `sudo`. Install missing tools through your project's p
 
 ## Per-ticket setup
 
-Merge these hooks into `.bakers/conductor.config.js`:
+Merge these hooks into `.bakers/project.config.js`:
 
 ```js
 hooks: {
@@ -41,9 +41,9 @@ Create `scripts/prepare-compose.sh`:
 
 ```sh
 set -eu
-: "${BB_ID:?ticket UUID required}"
-printf '%s\n' "$BB_ID" | grep -Eq '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$'
-printf 'bakers-%s\n' "$BB_ID" > .bakers/compose-project.local
+: "${BAKERS_ID:?ticket UUID required}"
+printf '%s\n' "$BAKERS_ID" | grep -Eq '^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$'
+printf 'bakers-%s\n' "$BAKERS_ID" > .bakers/compose-project.local
 project=$(cat .bakers/compose-project.local)
 docker compose --project-name "$project" up -d
 docker compose --project-name "$project" ps

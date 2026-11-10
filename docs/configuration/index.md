@@ -1,30 +1,55 @@
 # Configuration
 
-Find the file that owns a setting before changing it. Start with the [file map and precedence](/configuration/files); it separates shared project configuration from private machine and connection values and includes one compact example.
+Choose the file by who owns the value. All are JavaScript modules at schema version 1; review imported code before running a conductor.
 
-| Reference | Owns |
-|---|---|
-| [Connections](/configuration/connector/connections) | Server selection, sign-in profiles and private connection files |
-| [Machine](/configuration/machine) | Host identity, agent catalog and machine policy |
-| [Project](/configuration/project) | Committed engine wiring, hooks and named conductor variants |
-| [CLI reference](/configuration/clients/cli) | Commands, tools and authentication |
+| File | Owner, Git | Reference |
+|---|---|---|
+| `~/.bakers/connections/default.js`, `connections/<id>.js` | You; private | [Connection](/configuration/connection) |
+| `.bakers/connection.config.js` | Project; optional | [Connection](/configuration/connection) |
+| `~/.bakers/machine.config.js` | Worker owner; private | [Machine](/configuration/machine) |
+| `.bakers/project.config.js`, `project.<name>.config.js` | Maintainers; committed | [Project](/configuration/project) |
+| `WORKFLOW.md` | Maintainers; committed | [Workflows](/skills-and-workflows/workflow-file) |
 
-Keep credentials and `.bakers/*.local.js` out of Git. JavaScript composition is explicit: a local conductor file changes the committed configuration only where that configuration imports it.
+`BAKERS_HOME` relocates `~/.bakers`. Commands: [CLI reference](/cli/).
 
-For client choice and everyday use, see [Use your client](/get-started/use-your-client). [Conductor slots](/addons/slots) owns executor and workspace selection.
+## How files interact
+
+No file overlays another.
+
+- **Connection:** `--config`, `--connection`, `BAKERS_CONFIG`, `BAKERS_CONNECTION`, then defaults; the first match wins ([selection](/configuration/connection#which-connection-is-used)).
+- **Project:** one file is evaluated; a variant is complete, never an overlay.
+- **Addons:** machine entries precede project entries. Same package and alias combine; machine `with` wins. The machine `executor` beats the project's; explicit slots beat addons ([contracts](/addons/build/contracts#how-discovery-works)).
+- **Permissions:** harness default, project, machine, harness entry, key by key ([shared settings](/provision/security/shared-settings)).
+- **Agents:** machine catalog and routes; labels can override ([precedence](/agents/reference#which-agent-runs-a-state)).
+
+## Example
+
+```js
+// @bakers-schema-version 1
+// ~/.bakers/machine.config.js
+export default {
+  schema_version: 1,
+  machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
+  label: 'worker-one',
+  addons: ['@bakers-build/addon-codex'],
+};
+```
+
+```js
+// @bakers-schema-version 1
+// .bakers/project.config.js
+export default {
+  schema_version: 1,
+  project: { name: 'demo', workspace: 'Engineering' },
+  addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
+};
+```
+
+## Validate and upgrade
 
 ```sh
 bakers config check --scope all --online
+bakers config upgrade --scope all --dry-run
 ```
 
-The report validates files and resolvable addons; it does not prove that a harness is installed/authenticated or that an application is ready. See [Agents](/agents/), [Security](/provision/security/) and [Provision](/provision/) for behavior and runtime checks.
-
-## Installation and updates
-
-Choose the guide for the part you need to set up or update.
-
-<DocQuickLinks aria-label="Installation and updates" :items="[
-  { label: 'Update bakers.build', text: 'Update an existing CLI installation, skills and configuration.', link: '/configuration/machine/updates' },
-  { label: 'Self-hosting', text: 'Install or update an application server you operate.', link: '/self-hosting/' },
-  { label: 'Get started', text: 'Prepare a new project or begin working with tickets.', link: '/get-started/' }
-]" />
+An old key name fails as an unknown key, and an old file name is not read; rename them by hand. See [Update bakers.build](/configuration/guides/updates).

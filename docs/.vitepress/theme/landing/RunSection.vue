@@ -14,7 +14,7 @@ const log: { mark: string; color: string; msg: string; tail?: string; tailColor?
   { mark: '✓', color: ok, msg: ' playwright · 12 passed, 0 failed' },
   { mark: '✓', color: ok, msg: ' state written: review' },
   { mark: 'you  ', color: you, msg: `  ${props.t.run.sendBack}` },
-  { mark: '←', color: rose, msg: ' state written: coding · changes requested' },
+  { mark: '←', color: rose, msg: ' state written: working · changes requested' },
   { mark: 'agent', color: muted, msg: '  Keeping the return URL; regression scenario added.' },
   { mark: '✓', color: ok, msg: ' playwright · 13 passed, 0 failed' },
   { mark: '✓', color: ok, msg: ' state written: review · ', tail: 'verdict: looks good', tailColor: rose },

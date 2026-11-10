@@ -124,13 +124,18 @@ final class ParentSameProjectConstraintTest extends KernelTestBase {
   }
 
   /**
-   * Blocked by may still reference another project.
+   * A new blocker in another project violates; a stored one is kept.
    */
-  public function testForeignBlockerPasses(): void {
+  public function testForeignBlockerIsCheckedWhenNew(): void {
     $child = $this->ticket('Child', 'A');
-    $child->set('blocked_by', [$this->ticket('Blocker', 'B')->id()]);
+    $foreign = $this->ticket('Blocker', 'B');
+    $child->set('blocked_by', [$this->ticket('Sibling', 'A')->id(), $foreign->id()]);
 
-    self::assertCount(0, $child->validate());
+    self::assertSame(["Choose open blocking tickets from this ticket's project."], $this->messages($child, 'blocked_by'));
+
+    $child->save();
+    $child->set('title', 'Renamed');
+    self::assertSame([], $this->messages($child, 'blocked_by'));
   }
 
   /**
@@ -140,8 +145,18 @@ final class ParentSameProjectConstraintTest extends KernelTestBase {
    *   The messages.
    */
   private function parentMessages(BbTicketInterface $ticket): array {
+    return $this->messages($ticket, 'parent_id');
+  }
+
+  /**
+   * The violation messages of one field of a ticket.
+   *
+   * @return list<string>
+   *   The messages.
+   */
+  private function messages(BbTicketInterface $ticket, string $field): array {
     $messages = [];
-    foreach ($ticket->validate()->getByField('parent_id') as $violation) {
+    foreach ($ticket->validate()->getByField($field) as $violation) {
       $messages[] = (string) $violation->getMessage();
     }
     return $messages;

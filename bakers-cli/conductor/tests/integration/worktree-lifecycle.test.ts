@@ -329,7 +329,7 @@ function terminalWorktreeLifecycle(terminalState: 'done' | 'cancelled'): void {
         const logger = createLogger({
           checkoutRoot: root,
           isTTY: false,
-          env: { BB_CONDUCTOR_LOG: 'stdout' },
+          env: { BAKERS_CONDUCTOR_LOG: 'stdout' },
         });
         // `herdrRoot`, not `root`: herdr's worktree base must be the main clone
         // (see mainCloneRoot) — this is the same anchor production derives.

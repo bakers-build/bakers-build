@@ -90,7 +90,9 @@ describe('BB-326 runtime packaging', () => {
     // joined the published set; it sets no `engines`.
     // 33 since `@bakers-build/addon-herdr-core` (the herdr-core executor); it
     // sets no `engines`.
-    expect(dirs).toHaveLength(33);
+    // 36 since the forge addon and its GitHub and GitLab backends; none sets
+    // `engines`.
+    expect(dirs).toHaveLength(36);
     for (const dir of dirs) {
       const engines = manifestOf(dir).engines?.node;
       if (engines !== undefined)

@@ -107,7 +107,7 @@ describe('DrupalBbRemote', () => {
     const rows = [
       fakeResource(
         'run-1',
-        { state: 'running', state_at_start: 'working' },
+        { state: 'running', state_at_start: 'working', agent: 'claude' },
         { ticket_id: 'tic-1' },
       ),
       fakeResource(
@@ -165,6 +165,7 @@ describe('DrupalBbRemote', () => {
         state: 'running',
         stateAtStart: 'working',
         worktreePath: '',
+        agent: 'claude',
       },
       {
         runUuid: 'run-2',
@@ -174,6 +175,7 @@ describe('DrupalBbRemote', () => {
         state: 'claimed',
         stateAtStart: 'review',
         worktreePath: '',
+        agent: '',
       },
     ]);
   });
@@ -539,7 +541,7 @@ describe('DrupalBbRemote', () => {
     // labels + environments for agent selection (BB-144), and BB-495's
     // project_id.group_id.workspace_id chain for the dispatch env.
     expect(get).toHaveBeenCalledWith(
-      'bb_ticket/bb_ticket/tic-1?include=labels,environments,project_id.group_id.workspace_id',
+      'bb_ticket/bb_ticket/tic-1?include=labels,environments,ticket_type,recipe,project_id.group_id.workspace_id',
     );
     expect(ticket).toEqual({
       uuid: 'tic-1',
@@ -593,6 +595,27 @@ describe('DrupalBbRemote', () => {
     const ticket = await remote.getTicket('tic-7');
     expect(ticket.labels).toEqual(['infra', 'urgent']);
     expect(ticket.environments).toEqual([{ name: 'dev2', tier: 'dev' }]);
+  });
+
+  it('getTicket sideloads the ticket type and recipe names, for the required-skills check', async () => {
+    const get = vi.fn(async () => ({
+      data: {
+        id: 'tic-8',
+        attributes: { identifier: 'GL-8', title: 'Typed', state: 'working' },
+        relationships: {
+          ticket_type: { data: { type: 'bb_term--type', id: 'typ-1' } },
+          recipe: { data: { type: 'bb_term--recipe', id: 'rec-1' } },
+        },
+      },
+      included: [
+        { type: 'bb_term--type', id: 'typ-1', attributes: { name: 'feature' } },
+        { type: 'bb_term--recipe', id: 'rec-1', attributes: { name: 'matt' } },
+      ],
+    }));
+    const ticket = await new DrupalBbRemote(fakeClient({ get })).getTicket(
+      'tic-8',
+    );
+    expect(ticket).toMatchObject({ type: 'feature', recipe: 'matt' });
   });
 
   // BB-495: the dotted include resolves project AND workspace in one request
@@ -1087,6 +1110,15 @@ describe('DrupalBbRemote', () => {
     expect(body.attributes).toHaveProperty('error_log', 'startRun boom');
     expect(body.attributes).toHaveProperty('closed', true);
     expect(body.attributes).toHaveProperty('closed_date');
+  });
+
+  it('cancelRun patches state=cancelled alone, leaving the close to finalisation', async () => {
+    const update = vi.fn(async () => fakeResource('x'));
+    const remote = new DrupalBbRemote(fakeClient({ update }));
+    await remote.cancelRun('run-1');
+    expect(update.mock.calls).toEqual([
+      ['bb_run', 'run-1', { attributes: { state: 'cancelled' } }],
+    ]);
   });
 
   const CLOSE_METRICS = {

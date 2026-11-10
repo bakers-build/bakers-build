@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"require('fs').appendFileSync(process.env.PROBE_MARKER || require('os').tmpdir() + '/probe-plugin-session-start', new Date().toISOString() + ' ' + process.cwd() + '\\n')\""
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -38,15 +38,10 @@ services:
     networks:
       - internal
 
-  # One-shot deploy hook: drush deploy (updatedb + config:import + deploy:hook) against
-  # the freshly-pulled image, then exits. php waits on it completing successfully so a
-  # failed migration fails `compose up` -> the CI DeployStack poll goes red.
-  #
-  # UPDATE ONLY. This service NEVER installs. site:install DROPS the database, so it must
-  # never be reachable from a routine `up`/deploy — a bootstrap false-negative on an
-  # already-installed site could otherwise wipe prod data. On a not-yet-installed site
-  # `drush deploy` fails loudly (non-zero) and touches no data; the first install of a new
-  # environment is the explicit, profile-gated `install` service below.
+  # One-shot deploy hook (scripts/deploy/site-deploy.sh) against the freshly-pulled image,
+  # then exits. php waits on it completing successfully so a failed migration fails
+  # `compose up` -> the CI DeployStack poll goes red. It installs only when the database is
+  # reachable and has no table at all; any other non-Drupal state fails without touching data.
   deploy:
     image: "${REGISTRY_IMAGE_PHP}"
     restart: "no"
@@ -64,38 +59,16 @@ services:
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
-      # SaaS: run-log storage stays off; only docker/self-host.yml may enable it.
+      # SaaS: run-log storage stays off; only docker/compose/docker-compose.yml may enable it.
       FEATURE_FLAG_RUN_LOG_STORAGE: "0"
     volumes:
       - public_files:/var/www/html/web/sites/default/files
       - private_files:/var/www/html/private-files
       - tmp_files:/tmp
       - oauth_keys:/var/www/oauth-keys
-    # One-shot UPDATE hook — no install branch, no bootstrap heuristic.
-    #  UPDATE: drush deploy (updatedb → config:import → cache:rebuild → deploy:hook),
-    #          then the entity-schema tail, then the OAuth keys.
-    #  On a not-yet-installed site `drush deploy` exits non-zero and no data is touched.
-    # All of it runs here, in the one-shot container — Komodo offers no deploy lifecycle hook.
-    command: |
-      sh -c '
-        set -e
-        DRUSH=/var/www/html/vendor/bin/drush
-        echo "[deploy] UPDATE — drush deploy (fails loudly if the site is not installed)"
-        $$DRUSH -y deploy
-        # Code-defined entity definition changes (e.g. new base-field columns
-        # like bb_ticket/bb_run closed + closed_date) are not created by
-        # CIM. devel_entity_updates is NOT enabled in config/sync — enable it
-        # just-in-time, apply the schema, then re-import config so it (and its
-        # devel dependency) is uninstalled again. The dev tooling never stays
-        # enabled on the server.
-        echo "[deploy] entity schema: enable tool, apply, re-import config to disable"
-        $$DRUSH -y pm:install devel_entity_updates
-        $$DRUSH -y devel-entity-updates
-        $$DRUSH -y config:import
-        echo "[deploy] OAuth keys"
-        mkdir -p /var/www/oauth-keys
-        [ -f /var/www/oauth-keys/private.key ] || $$DRUSH simple-oauth:generate-keys /var/www/oauth-keys
-      '
+    # Same script as the standalone stack: updates an installed site and installs only a
+    # reachable, empty database; anything else fails. Komodo dumps the database beforehand.
+    command: /var/www/html/scripts/deploy/site-deploy.sh
     networks:
       - internal
 
@@ -126,7 +99,7 @@ services:
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
-      # SaaS: run-log storage stays off; only docker/self-host.yml may enable it.
+      # SaaS: run-log storage stays off; only docker/compose/docker-compose.yml may enable it.
       FEATURE_FLAG_RUN_LOG_STORAGE: "0"
       BB_OAUTH_GOOGLE_CLIENT_ID: ${BB_OAUTH_GOOGLE_CLIENT_ID:-}
       BB_OAUTH_GOOGLE_CLIENT_SECRET: ${BB_OAUTH_GOOGLE_CLIENT_SECRET:-}
@@ -175,9 +148,9 @@ services:
       DRUPAL_VERSION: "11"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
-      # SaaS: run-log storage stays off; only docker/self-host.yml may enable it.
+      # SaaS: run-log storage stays off; only docker/compose/docker-compose.yml may enable it.
       FEATURE_FLAG_RUN_LOG_STORAGE: "0"
-      # Outbound SMTP: settings.komodo.php reads these at runtime (getenv). The
+      # Outbound SMTP: settings.container.php reads these at runtime (getenv). The
       # values are per-stack Komodo variables declared in komodo/bakers.toml; the
       # stack .env carries them, but Drupal only sees them if the runtime
       # service forwards them explicitly here.
@@ -243,7 +216,7 @@ services:
       DB_PORT: "3306"
       DRUSH_OPTIONS_URI: "https://${DOMAIN}"
       DRUPAL_HASH_SALT: ${DRUPAL_HASH_SALT}
-      # SaaS: run-log storage stays off; only docker/self-host.yml may enable it.
+      # SaaS: run-log storage stays off; only docker/compose/docker-compose.yml may enable it.
       FEATURE_FLAG_RUN_LOG_STORAGE: "0"
       # Cron sends scheduled mail too, so it needs the same SMTP passthrough.
       MAIL_SMTP_DSN: ${MAIL_SMTP_DSN:-}

@@ -13,7 +13,7 @@ export const executors: Preset['executors'] = (acc, opts) => [
   herdrExecutor(opts as Parameters<typeof herdrExecutor>[0]),
 ];
 
-export const workspaces: Preset['workspaces'] = (acc, opts) => [
+export const worktrees: Preset['worktrees'] = (acc, opts) => [
   ...acc,
   herdrWorkspace(opts as Parameters<typeof herdrWorkspace>[0]),
 ];

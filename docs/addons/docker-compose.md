@@ -6,7 +6,7 @@ It is a support library. You do not enable it on its own; a runtime addon uses i
 
 ## Enable it
 
-Nothing to enable — used by a runtime addon.
+Nothing to enable directly. Configure a runtime claimer such as [DDEV](/addons/ddev#enable-it), then run `bakers ports list` in the worktree.
 
 ## Options
 
@@ -20,6 +20,6 @@ Running Compose services of a worktree, claimed by a runtime addon, appear in th
 
 - It matches containers by their Compose working directory and checks which sockets listen inside each running container.
 - A failed check is reported as unknown, never as "nothing running".
-- Linux only. It needs the Docker CLI, and `ss` and `supervisorctl` inside the containers. It does not need root.
+- Needs Docker access and Linux containers. It probes `ss`, falling back to `/proc/net/tcp*`; missing `supervisorctl` is allowed. Failed probes remain unknown, so an empty result is not proof that a service stopped.
 
 Package source in a checkout: `bakers-cli/addons/docker-compose`.

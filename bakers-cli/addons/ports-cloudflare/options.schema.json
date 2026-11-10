@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-ports-cloudflare/options.schema.json",
+  "title": "@bakers-build/addon-ports-cloudflare options",
+  "description": "The ports entry's with.transport.with for the named Cloudflare tunnel.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["account_id", "tunnel_id", "zone_id", "zone", "api_token"],
+  "properties": {
+    "account_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "tunnel_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "zone_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "zone": {
+      "type": "string",
+      "minLength": 1
+    },
+    "api_token": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

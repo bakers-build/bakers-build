@@ -358,7 +358,7 @@ export const CONDUCTOR_TABLE = {
        * A conductor that is not MINE is MARKED rather than hidden. The control
        * plane is user-scoped, not machine-scoped, so a user's other machines'
        * conductors are legitimately in this list — and silently dropping them
-       * would make the cockpit disagree with `bakers oven ls` for no visible
+       * would make the cockpit disagree with `bakers conductor ls` for no visible
        * reason. The mark says why their actions are inert here: an identity
        * that is not this machine's own (BB-450 B10 — `mine`, not `isLocal`'s
        * path check, since two records can share one `workspace_root` under

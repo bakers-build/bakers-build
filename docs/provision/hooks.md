@@ -4,7 +4,7 @@ Use hooks to prepare a ticket worktree, refresh it before a run or release its r
 
 **You need:** a working conductor, its committed project configuration, and a project setup command that is safe to repeat. Choose that command from your repository's existing scripts.
 
-1. Merge one hook into `.bakers/conductor.config.js`, keeping the other settings:
+1. Merge one hook into `.bakers/project.config.js`, keeping the other settings:
 
    ```js
    hooks: { after_create: 'sh scripts/prepare.sh' },

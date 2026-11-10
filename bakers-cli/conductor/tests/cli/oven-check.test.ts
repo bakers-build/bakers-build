@@ -45,14 +45,14 @@ const MISSING: SandboxPreflight = {
 const LINE =
   'sandbox unavailable: claude: socat not found — install it with sudo apt-get install -y socat (see https://bakers.build/docs/advanced/run-security#sandbox-prerequisites)';
 
-describe('bakers oven check / start sandbox report', () => {
+describe('bakers conductor check / start sandbox report', () => {
   let home: string;
   let out: string[];
-  const originalLog = process.env.BB_CONDUCTOR_LOG;
+  const originalLog = process.env.BAKERS_CONDUCTOR_LOG;
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'bakers-oven-check-'));
-    process.env.BB_CONDUCTOR_LOG = 'silent';
+    process.env.BAKERS_CONDUCTOR_LOG = 'silent';
     process.exitCode = undefined;
     out = [];
     const record = (...args: unknown[]) => {
@@ -66,8 +66,8 @@ describe('bakers oven check / start sandbox report', () => {
     vi.restoreAllMocks();
     rmSync(home, { recursive: true, force: true });
     process.exitCode = undefined;
-    if (originalLog === undefined) delete process.env.BB_CONDUCTOR_LOG;
-    else process.env.BB_CONDUCTOR_LOG = originalLog;
+    if (originalLog === undefined) delete process.env.BAKERS_CONDUCTOR_LOG;
+    else process.env.BAKERS_CONDUCTOR_LOG = originalLog;
   });
 
   it('check prints one line per agent and exits 1 on a failure', async () => {
@@ -123,7 +123,7 @@ describe('bakers oven check / start sandbox report', () => {
       sleep: async () => {},
       startPollIntervalMs: 0,
       startPollAttempts: 1,
-    }).parseAsync(['oven', ...argv], { from: 'user' });
+    }).parseAsync(['conductor', ...argv], { from: 'user' });
   }
 
   function makeConfig(): ConductorFileConfig {
@@ -141,7 +141,7 @@ describe('bakers oven check / start sandbox report', () => {
       poll_interval_ms: 5000,
       lease_seconds: 300,
       conductor_id: 'mid-check',
-      config_path: join(home, '.bakers', 'conductor.config.js'),
+      config_path: join(home, '.bakers', 'project.config.js'),
     };
   }
 });

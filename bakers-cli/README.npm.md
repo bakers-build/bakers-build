@@ -23,8 +23,8 @@ bakers --help
 `bakers` is the conductor node and client for a bakers.build network: it registers with a
 Drupal control plane, claims tickets over JSON:API, and runs agents through
 spawn plugins (Claude, Codex, herdr, and a deterministic fake for tests). Point
-it at a control plane with a `conductor.config.js` (scaffold one with
-`bakers init`).
+it at a control plane with a `.bakers/project.config.js` (scaffold one with
+`bakers config init`).
 
 ## `bakers ui` deep links
 
@@ -46,7 +46,7 @@ claimants open a picker. `bakers ui --help` lists every form.
 ## Plugins
 
 The four spawn plugins ship **inside** this package — nothing extra to install.
-Import them from the `@bakers-build/bakers/plugins` entry in your `conductor.config.js`:
+Import them from the `@bakers-build/bakers/plugins` entry in your `.bakers/project.config.js`:
 
 ```js
 import {

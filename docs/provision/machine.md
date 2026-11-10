@@ -69,7 +69,7 @@ change before applying it. Leave project tooling for project setup.
 
 The skill checks Git, host [Node.js ≥20.19 and npm](/provision/node), the agent and its [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites). Container Node does not supply the host CLI.
 
-It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connector/connections) explains storage. Correct existing settings are reused. Add the installed harness to the machine's `addons` using [Agents](/agents/guide); initialization alone does not supply an agent catalog.
+It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connection) explains storage. Correct existing settings are reused. Add the installed harness to the machine's `addons` using [Agents](/agents/guide); initialization alone does not supply an agent catalog.
 :::
 
 <span id="install-and-sign-in"></span>
@@ -94,6 +94,6 @@ Accept your workspace invitation at the server's `/user/login`. `Online: pending
 
 ### 3. Verify
 
-**Done when:** Git, Node/npm and the agent answer their checks, `bb-init` is available, authentication passes, and `bakers info` lists your workspace. Ask the AI to report each result. [Troubleshooting](/configuration/clients/troubleshooting) covers failures.
+**Done when:** Git, Node/npm and the agent answer their checks, `bb-init` is available, authentication passes, and `bakers info` lists your workspace. Ask the AI to report each result. [Troubleshooting](/cli/troubleshooting) covers failures.
 
 **Next:** [Prepare your project](/get-started/connect-a-project) in the chosen environment. Apply the local guide's commands there. You can reuse the same execution setup for more repositories.

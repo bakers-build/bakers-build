@@ -1,6 +1,7 @@
-import { spawnSync } from 'node:child_process';
+import { execFile, spawnSync } from 'node:child_process';
 import { basename, dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
+import { promisify } from 'node:util';
 import {
   type BbCommandHost,
   type BbCommandPlugin,
@@ -33,6 +34,7 @@ import { authStatus } from 'dropsh';
 import { resolveBbProjectContext } from '../bakers-project-context.js';
 import { composeConductorConfig, loadConductorConfig } from '../config.js';
 import { Conductor, registrationOf } from '../core/conductor.js';
+import { watchForRestart } from '../core/self-restart.js';
 import type { BbExecutor } from '../plugins/executor.js';
 import {
   type ResolvedAgent,
@@ -59,12 +61,12 @@ import { ovenTools } from './oven-tools.js';
 
 // BB-201: the `conductor` command PLUGIN. `bakers` is now a thin host
 // (`@bakers-build/bakers`) that dynamically mounts this package's command plugin under
-// `bakers oven …`. This module owns the conductor lifecycle only; the UI
+// `bakers conductor …`. This module owns the conductor lifecycle only; the UI
 // (`@bakers-build/ui`), dropsh (`@bakers-build/addon-dropsh`) and — since BB-224
 // (Finding 7) — deployment (`@bakers-build/addon-deployment`, `bakers deployment …`)
 // are their own command packages. The connection
-// (`site` + auth `plugins`) is composed in from `bakers.config.js`
-// (`loadBbConfig`); this package's engine config (`conductor.config.js`) no
+// (`site` + auth `plugins`) is composed in from connection file
+// (`loadBbConfig`); this package's engine config (`project.config.js`) no
 // longer carries it.
 
 /** Test seam: inject any subset of dependencies. */
@@ -123,6 +125,58 @@ export interface BbCliDeps {
   askUpdate?: (question: string) => Promise<string>;
   /** Invoke `bakers` with an argv array (no binary name). */
   runBb?: (args: string[]) => Promise<void>;
+  /** The self-restart file watcher behind `start --foreground`. */
+  watchForRestart?: typeof watchForRestart;
+  /** Checks the changed config; resolves an error message, or undefined when it loads. */
+  checkConfig?: () => Promise<string | undefined>;
+  /** Replaces this process (`process.execve`). A test MUST inject a fake. */
+  execve?: Execve;
+}
+
+type Execve = (file: string, args: string[], env: NodeJS.ProcessEnv) => void;
+
+/**
+ * `oven start --dry-run` in a child with this process's own runtime and argv:
+ * the changed files are imported fresh there, never into this process.
+ */
+async function defaultCheckConfig(): Promise<string | undefined> {
+  const args = [
+    ...process.execArgv,
+    ...process.argv
+      .slice(1)
+      .map((a) => (a === '--foreground' ? '--dry-run' : a)),
+  ];
+  try {
+    await promisify(execFile)(process.execPath, args, {
+      cwd: process.cwd(),
+      env: process.env,
+      // A hung check would block every later restart; a timeout fails it.
+      timeout: 60_000,
+    });
+    return undefined;
+  } catch (err) {
+    const { stderr, message } = err as { stderr?: string; message: string };
+    return stderr?.trim().split('\n').slice(-20).join('\n') || message;
+  }
+}
+
+/**
+ * `oven start --dry-run`: load what a start would load — config with project
+ * resolution, executor, workspace and agents — then stop before registering.
+ */
+async function cmdDryRun(deps: BbCliDeps): Promise<number> {
+  try {
+    const config = await resolveConfig(deps, undefined, true);
+    const logger = loggerFor(await checkoutRootOf(config));
+    if (!deps.executor) await selectExecutor(config, logger);
+    if (!deps.workspace) await selectWorkspace(config, logger);
+    if (!deps.agents) await selectAgents(config);
+    console.log(`config ok: ${config.config_path}`);
+    return 0;
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    return 1;
+  }
 }
 
 /** Default host bases for connection/plugin resolution when none is injected. */
@@ -132,9 +186,9 @@ function defaultHost(): BbCommandHost {
 
 /**
  * Resolve + compose the full conductor config: the engine half
- * (`conductor.config.js` via `loadConductorConfig`) plus the connection half
- * (`bakers.config.js` via `loadBbConfig`, walk-up → home → shipped fallback).
- * `--config` / `$BB_CONDUCTOR_CONFIG` selects the engine file; the connection
+ * (`project.config.js` via `loadConductorConfig`) plus the connection half
+ * (connection file via `loadBbConfig`, walk-up → home → shipped fallback).
+ * `--config` / `$BAKERS_CONDUCTOR_CONFIG` selects the engine file; the connection
  * is resolved from cwd.
  */
 async function resolveConfig(
@@ -249,7 +303,7 @@ type StatusLabel = ConductorLiveness;
 /**
  * The liveness words this CLI prints.
  *
- * Delegated to core so `bakers oven ls`, the cockpit and the server-side
+ * Delegated to core so `bakers conductor ls`, the cockpit and the server-side
  * deriver describe one conductor identically. The previous CLI-only vocabulary
  * (`wedged`, `stopped`, `host-missing`, `registry-only`) went with the registry
  * that made those distinctions expressible.
@@ -392,7 +446,7 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
   await conductor.tick();
 }
 
-/** `bakers oven check`: whether each enabled agent can start its sandbox. */
+/** `bakers conductor check`: whether each enabled agent can start its sandbox. */
 async function cmdCheck(deps: BbCliDeps): Promise<void> {
   const config = await resolveConfig(deps);
   for (const agent of deps.agents ?? (await selectAgents(config))) {
@@ -443,6 +497,9 @@ async function refuseIfAlreadyRunning(
 ): Promise<boolean> {
   const existing = (await remote.listConductors('me')).find((c) => c.id === id);
   if (!existing) return false;
+  // A self-restart keeps the pid: the live record is this very process.
+  if (existing.lastPid === process.pid && existing.hostKey === thisHostKey)
+    return false;
 
   const probe = deps.procProbe ?? defaultProcProbe();
   const verified = verifyConductorProcess({
@@ -550,30 +607,83 @@ async function cmdStartForeground(
     join(homeBbDir(), 'conductors', `${conductor.id}.json`),
   );
   const controller = new AbortController();
-  const onSignal = () => controller.abort();
+  let restart = false;
+  // A stop wins over a restart already decided: `oven stop` must stay a stop.
+  const onSignal = () => {
+    restart = false;
+    controller.abort();
+  };
   process.once('SIGINT', onSignal);
   process.once('SIGTERM', onSignal);
+  const execve =
+    deps.execve ?? (process as { execve?: Execve }).execve?.bind(process);
+  let watcher: { close(): void } | undefined;
+  if (config.restart_on_change !== false && config.watch_paths) {
+    if (!execve) {
+      logger.warn(
+        { node: process.version },
+        'restart_on_change needs process.execve (Node >= 22.15); the conductor does not restart itself on config changes',
+      );
+    } else {
+      const check = deps.checkConfig ?? defaultCheckConfig;
+      watcher = (deps.watchForRestart ?? watchForRestart)(
+        config.watch_paths,
+        async (path) => {
+          if (controller.signal.aborted) return;
+          logger.info(
+            { path },
+            `restart_on_change: ${path} changed; checking config`,
+          );
+          const error = await check();
+          // A stop requested while the check ran stays a stop.
+          if (controller.signal.aborted) return;
+          if (error !== undefined) {
+            logger.error(
+              { path, err: error },
+              `config check failed; keeping the running conductor: ${error}`,
+            );
+            return;
+          }
+          logger.info({ path }, 'config check passed; restarting conductor');
+          restart = true;
+          watcher?.close();
+          controller.abort();
+        },
+      );
+    }
+  }
   try {
     await conductor.serve(controller.signal);
   } finally {
+    watcher?.close();
+    await conductor.stopTools();
     process.removeListener('SIGINT', onSignal);
     process.removeListener('SIGTERM', onSignal);
-    await conductor.stopTools();
     // The exiting process writes its own `offline`. It has to be this process:
     // a heartbeat sets `online` unconditionally (ConductorRegistrar), so an
     // offline written by anyone else is erased by the next tick — the status
     // is only trustworthy when written after the heartbeats have stopped.
     // Best-effort: a conductor that cannot reach the control plane on the way
     // out must still exit, and the reaper flips it on lease expiry anyway.
-    try {
-      await remote.setConductorStatus(conductor.id, 'offline');
-    } catch (err) {
-      logger.warn(
-        { conductorId: conductor.id, err: String(err) },
-        'could not write offline status on shutdown; the lease reaper will',
-      );
+    // A self-restart skips it: the same conductor id comes straight back.
+    if (!restart) {
+      try {
+        await remote.setConductorStatus(conductor.id, 'offline');
+      } catch (err) {
+        logger.warn(
+          { conductorId: conductor.id, err: String(err) },
+          'could not write offline status on shutdown; the lease reaper will',
+        );
+      }
     }
   }
+  // Same pid and log.
+  if (restart && execve)
+    execve(
+      process.execPath,
+      [process.execPath, ...process.execArgv, ...process.argv.slice(1)],
+      process.env,
+    );
 }
 
 async function defaultAskUpdate(question: string): Promise<string> {
@@ -750,10 +860,10 @@ async function cmdStart(
             throw new Error(`bakers ${args[0]} terminated by ${signal}`);
           if (status) throw new Error(`bakers ${args[0]} exited ${status}`);
         });
-      const prefix = env.BB_CONDUCTOR
-        ? `bakers --conductor ${env.BB_CONDUCTOR}`
+      const prefix = env.BAKERS_CONDUCTOR
+        ? `bakers --conductor ${env.BAKERS_CONDUCTOR}`
         : 'bakers';
-      const rerun = `${prefix} oven start${force ? ' --force' : ''}`;
+      const rerun = `${prefix} conductor start${force ? ' --force' : ''}`;
       if (accepted) {
         try {
           await runBb(['update']);
@@ -909,7 +1019,7 @@ async function waitForNotRunning(
 }
 
 /**
- * `bakers oven start` reports exactly one of three outcomes (BB-450
+ * `bakers conductor start` reports exactly one of three outcomes (BB-450
  * AC-12): **started**, naming the pid and `host_key`; **already running**,
  * naming the live pid and its heartbeat age; **failed**, naming the reason.
  * `failed` sets a non-zero exit status so a script can tell the three apart.
@@ -1029,9 +1139,9 @@ async function cmdStartBody(
     process.execPath,
     process.argv[1] as string, // the running bakers entry script
     ...(stem && stem !== 'conductor' ? ['--conductor', stem] : []),
-    'oven',
+    'conductor',
     ...(log.level ? ['--log-level', log.level] : []),
-    // No --log-sink: the child's stdout is the log file, pinned by BB_CONDUCTOR_LOG=file.
+    // No --log-sink: the child's stdout is the log file, pinned by BAKERS_CONDUCTOR_LOG=file.
     'start',
     '--foreground',
     '--no-update-check',
@@ -1042,7 +1152,7 @@ async function cmdStartBody(
     child = await (deps.spawnConductor ?? spawnDetachedConductor)({
       argv,
       cwd: checkoutRoot,
-      env: { ...process.env, BB_CONDUCTOR_LOG: 'file' },
+      env: { ...process.env, BAKERS_CONDUCTOR_LOG: 'file' },
       logPath,
     });
     logger.info({ id, pid: child.pid }, 'started conductor detached');
@@ -1205,15 +1315,15 @@ async function tryConfig(
 
 /** Build the `oven` subcommand tree (lifecycle + registry). */
 export function createConductorCommand(deps: BbCliDeps): Command {
-  const conductor = new Command('oven')
+  const conductor = new Command('conductor')
     .description('node-agent lifecycle + local registry')
     .option(
       '--log-level <level>',
-      'log verbosity: debug | info | warn | error (overrides BB_LOG_LEVEL)',
+      'log verbosity: debug | info | warn | error (overrides BAKERS_LOG_LEVEL)',
     )
     .option(
       '--log-sink <sink>',
-      'log sink: stdout | file | both (overrides BB_CONDUCTOR_LOG)',
+      'log sink: stdout | file | both (overrides BAKERS_CONDUCTOR_LOG)',
     )
     .addHelpText(
       'after',
@@ -1224,13 +1334,13 @@ Logging (precedence: CLI flag > env var > default):
   --log-sink <sink>    stdout | file | both (file/both write <checkoutRoot>/.bakers/log.txt).
                        Default: both on a TTY, file otherwise (BB-237 — a run in a
                        herdr pane is on a TTY, and its diagnostics must outlive the pane).
-  BB_LOG_LEVEL       env fallback for --log-level.
-  BB_CONDUCTOR_LOG   env fallback for --log-sink.
+  BAKERS_LOG_LEVEL       env fallback for --log-level.
+  BAKERS_CONDUCTOR_LOG   env fallback for --log-sink.
 
 Examples:
-  bakers oven --log-level debug start --foreground
-  bakers oven --log-level debug once
-  BB_LOG_LEVEL=debug bakers oven once`,
+  bakers conductor --log-level debug start --foreground
+  bakers conductor --log-level debug once
+  BAKERS_LOG_LEVEL=debug bakers conductor once`,
     );
 
   conductor
@@ -1252,6 +1362,11 @@ Examples:
       'take over the conductor this machine, project and variant already have',
     )
     .option('--new', 'register a new conductor instead of taking one over')
+    .option(
+      '--dry-run',
+      'load the config, executor, workspace and agents, then exit (0 when they load, 1 with the error)',
+      false,
+    )
     .action(async function (
       this: Command,
       opts: {
@@ -1260,8 +1375,13 @@ Examples:
         force: boolean;
         adopt?: string;
         new?: boolean;
+        dryRun: boolean;
       },
     ) {
+      if (opts.dryRun) {
+        process.exitCode = await cmdDryRun(deps);
+        return;
+      }
       if (opts.adopt && opts.new) {
         console.error('Choose either --adopt <uuid> or --new, not both.');
         process.exitCode = 1;
@@ -1360,13 +1480,13 @@ Examples:
   return conductor;
 }
 
-/** The `oven` command plugin the host mounts (BB-201). BB-224
+/** The `conductor` command plugin the host mounts (BB-201). BB-224
  *  (Finding 7): the `bakers deployment` batch helper is no longer registered here —
  *  it is its own command addon, `@bakers-build/addon-deployment`. */
 const conductorCommandPlugin: BbCommandPlugin = {
   kind: 'command',
-  name: 'oven',
-  describe: 'node-agent lifecycle + local registry',
+  name: 'conductor',
+  describe: 'conductor lifecycle + local registry',
   register(program: Command, host: BbCommandHost): void {
     program.addCommand(createConductorCommand({ host }));
   },
@@ -1376,7 +1496,7 @@ export default conductorCommandPlugin;
 
 /**
  * Build a standalone program with the conductor command mounted — the test entry
- * (mirrors what the host does for `bakers oven …`). `deps` inject fakes.
+ * (mirrors what the host does for `bakers conductor …`). `deps` inject fakes.
  */
 export function buildConductorProgram(deps: BbCliDeps = {}): Command {
   const program = new Command();

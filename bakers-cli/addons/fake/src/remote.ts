@@ -63,6 +63,8 @@ export interface FakeSeedTicket {
   workspaceId?: string;
   workspaceName?: string;
   /** Label term names sideloaded for agent selection (BB-144). */
+  type?: string;
+  recipe?: string;
   labels?: string[];
   /** Environments sideloaded for agent selection (BB-144). */
   environments?: { name: string; tier: string }[];
@@ -145,7 +147,9 @@ export class FakeBbRemote implements BbRemote {
     finalizeRun: FinalizeRunCall[];
     markCleanedUp: string[];
     appendRunNote: AppendRunNoteCall[];
+    cancelRun: string[];
   } = {
+    cancelRun: [],
     markRunning: [],
     markFailed: [],
     finalizeRun: [],
@@ -349,6 +353,7 @@ export class FakeBbRemote implements BbRemote {
         state: r.state,
         stateAtStart: r.stateAtStart,
         worktreePath: r.worktreePath ?? '',
+        agent: r.agent ?? '',
       };
     });
   }
@@ -376,6 +381,8 @@ export class FakeBbRemote implements BbRemote {
       ...(t.projectName ? { projectName: t.projectName } : {}),
       ...(t.workspaceId ? { workspaceId: t.workspaceId } : {}),
       ...(t.workspaceName ? { workspaceName: t.workspaceName } : {}),
+      ...(t.type ? { type: t.type } : {}),
+      ...(t.recipe ? { recipe: t.recipe } : {}),
       labels: t.labels ?? [],
       environments: t.environments ?? [],
     };
@@ -452,6 +459,12 @@ export class FakeBbRemote implements BbRemote {
             : attrs.startedAt;
       }
     }
+  }
+
+  async cancelRun(runUuid: string): Promise<void> {
+    this.calls.cancelRun.push(runUuid);
+    const run = this.runs.get(runUuid);
+    if (run) run.state = 'cancelled';
   }
 
   async markFailed(runUuid: string, errorLog: string): Promise<void> {
@@ -669,7 +682,7 @@ export class FakeBbRemote implements BbRemote {
 export function fakeRemote(seed: FakeRemoteSeed = {}): RemotePlugin {
   const remote = new FakeBbRemote(seed);
   return {
-    kind: 'remote',
+    kind: 'server',
     id: 'fake',
     requiredModules: [],
     async createRemote(_config: ConductorFileConfig) {

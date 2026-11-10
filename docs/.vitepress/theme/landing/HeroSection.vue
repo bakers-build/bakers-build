@@ -1,10 +1,9 @@
 <script setup lang="ts">
-// Hero: headline, the sign-up / install group and the line illustration: four stations
+// Hero: headline, the sign-up button and the line illustration: four stations
 // on a counter, a person's cursor on each decision. Each station keeps the design's
 // 192 x 330 cell; desktop sets the four in a row on one counter, phones (frame 675:553)
 // two rows of two, each on its own counter, scaled to 0.82.
-import InstallCommand from './InstallCommand.vue'
-import { SIGN_UP_URL, type Copy } from './copy'
+import { DOCS_URL, SIGN_UP_URL, type Copy } from './copy'
 
 const props = defineProps<{ t: Copy }>()
 const art = [
@@ -28,7 +27,7 @@ const rows = [stations.slice(0, 2), stations.slice(2)]
       </p>
       <div data-cta-group class="mt-[34px] flex flex-col items-start gap-[18px] sm:flex-row sm:items-end sm:gap-5">
         <a :href="SIGN_UP_URL" class="lp-btn">{{ t.signUp }}</a>
-        <InstallCommand :t="t.copy" :label="t.hero.install" tall small />
+        <a :href="DOCS_URL" class="lp-btn lp-btn--paper">{{ t.docs }}</a>
       </div>
       <p class="lp-mono m-0 mt-[22px] flex items-center gap-2 text-[13px] font-medium text-[color:var(--lp-ink-2)]">
         <img src="/landing/spark.svg" alt="" width="14" height="14" />

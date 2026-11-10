@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-herdr-core/options.schema.json",
+  "title": "herdr-core executor options",
+  "type": "object",
+  "properties": {
+    "command": {
+      "type": "string",
+      "description": "Fallback agent command when the conductor supplies none. Default `claude`."
+    },
+    "launch_watch": {
+      "type": "object",
+      "description": "Launch-watch windows: wait start_timeout_ms (default 60000) for the wrapper to start, then timeout_ms (default 4000) in which an immediate agent exit fails the launch.",
+      "properties": {
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "start_timeout_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "poll_ms": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

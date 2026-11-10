@@ -47,8 +47,8 @@ vi.mock('dropsh', async (orig) => {
 });
 
 let home: string;
-const originalHome = process.env.BB_HOME;
-const originalLog = process.env.BB_CONDUCTOR_LOG;
+const originalHome = process.env.BAKERS_HOME;
+const originalLog = process.env.BAKERS_CONDUCTOR_LOG;
 
 // BB-450 D2: checkoutRootOf() now asks real git (`--git-common-dir`) rather
 // than taking a bare dirname, so the checkout root must be a REAL, ISOLATED
@@ -71,7 +71,9 @@ function makeConfig(
     remote: fakeRemote(),
     executor: fakeExecutor(),
     // `system`: nothing launches here, so the machine's sandbox must not gate claims.
-    agents: [{ agent: claudeAgent({ security: 'system' }), alias: 'claude' }],
+    agents: [
+      { agent: claudeAgent({ permissions: 'system' }), alias: 'claude' },
+    ],
     enabled_agents: ['claude'],
     disabled_agents: [],
     default_agent: 'claude',
@@ -86,7 +88,7 @@ function makeConfig(
     max_parallel: 2,
     poll_interval_ms: 5000,
     lease_seconds: 300,
-    config_path: join(CHECKOUT, 'conductor.config.js'),
+    config_path: join(CHECKOUT, 'project.config.js'),
     ...overrides,
   };
 }
@@ -144,31 +146,31 @@ function makeDeps(
 
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), 'bakers-cli-'));
-  process.env.BB_HOME = join(home, '.bakers');
+  process.env.BAKERS_HOME = join(home, '.bakers');
   // `start`'s failed outcome sets a process-global exit code; never let one
   // test's outcome leak into the next.
   process.exitCode = undefined;
   // Conductor-run handlers build a real file logger when stdout is not a TTY
   // (which it isn't under vitest); force the stdout sink so tests don't write
   // a stray log.txt into the checkout.
-  process.env.BB_CONDUCTOR_LOG = 'stdout';
+  process.env.BAKERS_CONDUCTOR_LOG = 'stdout';
 });
 
 afterEach(() => {
   rmSync(home, { recursive: true, force: true });
   if (originalHome === undefined) {
-    delete process.env.BB_HOME;
+    delete process.env.BAKERS_HOME;
   } else {
-    process.env.BB_HOME = originalHome;
+    process.env.BAKERS_HOME = originalHome;
   }
   if (originalLog === undefined) {
-    delete process.env.BB_CONDUCTOR_LOG;
+    delete process.env.BAKERS_CONDUCTOR_LOG;
   } else {
-    process.env.BB_CONDUCTOR_LOG = originalLog;
+    process.env.BAKERS_CONDUCTOR_LOG = originalLog;
   }
 });
 
-describe('bakers oven once', () => {
+describe('bakers conductor once', () => {
   it('runs one cycle: claims + dispatches the seeded run', async () => {
     const deps = makeDeps({
       runs: [
@@ -183,7 +185,7 @@ describe('bakers oven once', () => {
         'tkt-1': { identifier: 'BB-1', title: 'T', state: 'working' },
       },
     });
-    await runConductorCli(['oven', 'once'], deps);
+    await runConductorCli(['conductor', 'once'], deps);
     const remote = deps.remote as FakeBbRemote;
     // dispatch records markRunning for the claimed run
     expect(remote.calls.markRunning.some((c) => c.runUuid === 'run-1')).toBe(
@@ -193,7 +195,7 @@ describe('bakers oven once', () => {
   });
 });
 
-describe('bakers oven start (detached path)', () => {
+describe('bakers conductor start (detached path)', () => {
   // BB-450 AC-12/AC-13: `start` reports exactly one of three outcomes on
   // stdout — started / already running / failed — rather than the bare
   // `conductor already running for <project>` this superseded, and `failed`
@@ -203,7 +205,7 @@ describe('bakers oven start (detached path)', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
     try {
-      await runConductorCli(['oven', 'start'], makeDeps());
+      await runConductorCli(['conductor', 'start'], makeDeps());
     } finally {
       // `mockRestore()` also resets `.mock.calls` — read them first.
       lines = logSpy.mock.calls.map((c) => String(c[0]));
@@ -226,7 +228,7 @@ describe('bakers oven start (detached path)', () => {
     let lines: string[] = [];
     try {
       await runConductorCli(
-        ['oven', 'start'],
+        ['conductor', 'start'],
         makeDeps({}, { remote, startPollAttempts: 3 }),
       );
     } finally {
@@ -254,7 +256,7 @@ describe('bakers oven start (detached path)', () => {
     let lines: string[] = [];
     try {
       await runConductorCli(
-        ['oven', 'start'],
+        ['conductor', 'start'],
         makeDeps({}, { remote, spawnConductor }),
       );
     } finally {
@@ -274,7 +276,7 @@ describe('bakers oven start (detached path)', () => {
   });
 });
 
-describe('bakers oven start --force (BB-450 D10)', () => {
+describe('bakers conductor start --force (BB-450 D10)', () => {
   // Must match makeConfig's host_key.
   const HOST = 'test-machine';
   const CONDUCTOR_CMDLINE =
@@ -366,7 +368,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
     let lines: string[] = [];
     try {
       await runConductorCli(
-        ['oven', 'start', '--force'],
+        ['conductor', 'start', '--force'],
         makeDeps(
           {},
           {
@@ -424,7 +426,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
     let lines: string[] = [];
     try {
       await runConductorCli(
-        ['oven', 'start', '--force'],
+        ['conductor', 'start', '--force'],
         makeDeps(
           {},
           {
@@ -477,7 +479,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
     let lines: string[] = [];
     try {
       await runConductorCli(
-        ['oven', 'start', '--force'],
+        ['conductor', 'start', '--force'],
         makeDeps(
           {},
           {
@@ -505,7 +507,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
     let lines: string[] = [];
     try {
       await runConductorCli(
-        ['oven', 'start', '--force'],
+        ['conductor', 'start', '--force'],
         makeDeps({}, { remote, spawnConductor }),
       );
     } finally {
@@ -524,7 +526,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
     let lines: string[] = [];
     try {
       await runConductorCli(
-        ['oven', 'start', '--force'],
+        ['conductor', 'start', '--force'],
         makeDeps({}, { remote, spawnConductor, startPollAttempts: 3 }),
       );
     } finally {
@@ -563,7 +565,7 @@ describe('bakers oven start --force (BB-450 D10)', () => {
         const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
         try {
           await runConductorCli(
-            ['oven', 'start'],
+            ['conductor', 'start'],
             makeDeps({}, { remote, spawnConductor }),
           );
         } finally {
@@ -618,8 +620,11 @@ class HeartbeatAfterSpawnRemote extends FakeBbRemote {
   }
 }
 
-describe('bakers oven start — detached spawn seam', () => {
-  const start = async (deps: BbCliDeps, args: string[] = ['oven', 'start']) => {
+describe('bakers conductor start — detached spawn seam', () => {
+  const start = async (
+    deps: BbCliDeps,
+    args: string[] = ['conductor', 'start'],
+  ) => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       await runConductorCli(args, deps);
@@ -640,11 +645,11 @@ describe('bakers oven start — detached spawn seam', () => {
     expect(req.argv).toEqual([
       process.execPath,
       process.argv[1],
-      'oven',
+      'conductor',
       ...FOREGROUND,
     ]);
     expect(req.cwd).toBe(CHECKOUT);
-    expect(req.env.BB_CONDUCTOR_LOG).toBe('file');
+    expect(req.env.BAKERS_CONDUCTOR_LOG).toBe('file');
     expect(req.logPath).toBe(LOG_PATH);
   });
 
@@ -659,7 +664,7 @@ describe('bakers oven start — detached spawn seam', () => {
   it('forwards --log-level but not --log-sink: the detached child logs to its file only', async () => {
     const deps = makeDeps();
     await start(deps, [
-      'oven',
+      'conductor',
       '--log-level',
       'debug',
       '--log-sink',
@@ -667,7 +672,7 @@ describe('bakers oven start — detached spawn seam', () => {
       'start',
     ]);
     expect(spawnedOf(deps)[0].argv.slice(2)).toEqual([
-      'oven',
+      'conductor',
       '--log-level',
       'debug',
       ...FOREGROUND,
@@ -682,7 +687,7 @@ describe('bakers oven start — detached spawn seam', () => {
           config_path: join(
             CHECKOUT,
             '.bakers',
-            'anerkennungsportal.conductor.config.js',
+            'project.anerkennungsportal.config.js',
           ),
         }),
       },
@@ -691,19 +696,22 @@ describe('bakers oven start — detached spawn seam', () => {
     expect(spawnedOf(deps)[0].argv.slice(2)).toEqual([
       '--conductor',
       'anerkennungsportal',
-      'oven',
+      'conductor',
       ...FOREGROUND,
     ]);
   });
 
   it('BB-477: a default or non-conductor config file name selects nothing', async () => {
-    for (const name of ['conductor.config.js', 'bakers.config.js']) {
+    for (const name of ['project.config.js', 'connection.config.js']) {
       const deps = makeDeps(
         {},
         { config: makeConfig({ config_path: join(CHECKOUT, name) }) },
       );
       await start(deps);
-      expect(spawnedOf(deps)[0].argv.slice(2)).toEqual(['oven', ...FOREGROUND]);
+      expect(spawnedOf(deps)[0].argv.slice(2)).toEqual([
+        'conductor',
+        ...FOREGROUND,
+      ]);
     }
   });
 
@@ -817,7 +825,7 @@ class TakeoverRemote extends FakeBbRemote {
   }
 }
 
-describe('bakers oven start — taking over an existing conductor', () => {
+describe('bakers conductor start — taking over an existing conductor', () => {
   const start = async (
     remote: TakeoverRemote,
     extra: Partial<BbCliDeps> = {},
@@ -828,7 +836,7 @@ describe('bakers oven start — taking over an existing conductor', () => {
     const err = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {
       await runConductorCli(
-        ['oven', 'start', '--no-update-check', ...args],
+        ['conductor', 'start', '--no-update-check', ...args],
         deps,
       );
       return {
@@ -927,11 +935,11 @@ describe('bakers oven start — taking over an existing conductor', () => {
   });
 });
 
-describe('bakers oven start banner (BB-145)', () => {
+describe('bakers conductor start banner (BB-145)', () => {
   it('prints the installed bakers version banner on start (AC-2)', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
-      await runConductorCli(['oven', 'start'], makeDeps());
+      await runConductorCli(['conductor', 'start'], makeDeps());
     } catch {
       // ignore any unhandled throw — we only care about console output
     }
@@ -949,7 +957,7 @@ describe('bakers oven start banner (BB-145)', () => {
       new Response(JSON.stringify({ version: '999.0.0' }))) as typeof fetch;
     const deps = makeDeps({}, { fetch: fetchImpl });
     deps.onStartLoop = () => logs.push('LOOP_STARTED');
-    await runConductorCli(['oven', 'start'], deps).catch(() => {});
+    await runConductorCli(['conductor', 'start'], deps).catch(() => {});
     const notice = logs.findIndex((l) => l.includes('bakers update'));
     const loop = logs.indexOf('LOOP_STARTED');
     expect(notice).toBeGreaterThanOrEqual(0);
@@ -963,7 +971,7 @@ describe('bakers oven start banner (BB-145)', () => {
     ) as typeof fetch;
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     await runConductorCli(
-      ['oven', 'start', '--no-update-check'],
+      ['conductor', 'start', '--no-update-check'],
       makeDeps({}, { fetch: fetchImpl }),
     ).catch(() => {});
     const printed = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
@@ -990,7 +998,7 @@ describe('bakers oven start banner (BB-145)', () => {
       },
     );
     await expect(
-      runConductorCli(['oven', 'start', '--foreground'], deps),
+      runConductorCli(['conductor', 'start', '--foreground'], deps),
     ).rejects.toThrow('stop before long-running loop');
     const notice = logs.findIndex((line) => line.includes('bakers update'));
     expect(notice).toBeGreaterThanOrEqual(0);
@@ -1008,7 +1016,7 @@ describe('bakers oven start banner (BB-145)', () => {
         status: 200,
       })) as unknown as typeof fetch;
     await runConductorCli(
-      ['oven', 'start'],
+      ['conductor', 'start'],
       makeDeps({}, { fetch: newer }),
     ).catch(() => {});
     expect(logs.join('\n')).toContain('bakers update');
@@ -1024,7 +1032,7 @@ describe('bakers oven start banner (BB-145)', () => {
       throw new Error('offline');
     }) as unknown as typeof fetch;
     await runConductorCli(
-      ['oven', 'start'],
+      ['conductor', 'start'],
       makeDeps({}, { fetch: offline }),
     ).catch(() => {});
     const printed = logs.join('\n');
@@ -1034,7 +1042,7 @@ describe('bakers oven start banner (BB-145)', () => {
   });
 });
 
-describe('bakers oven start update prompt', () => {
+describe('bakers conductor start update prompt', () => {
   const now = new Date('2026-08-03T12:00:00.000Z');
   const newer = (async () =>
     new Response(JSON.stringify({ version: '999.0.0' }))) as typeof fetch;
@@ -1074,7 +1082,7 @@ describe('bakers oven start update prompt', () => {
       logs.push(String(m));
     });
     const { deps, spawnConductor } = promptDeps({
-      env: { ...process.env, CI: '', BB_CONDUCTOR: 'portal' },
+      env: { ...process.env, CI: '', BAKERS_CONDUCTOR: 'portal' },
       askUpdate: async (question) => {
         asked.push(question);
         return '';
@@ -1086,7 +1094,7 @@ describe('bakers oven start update prompt', () => {
         logs.push('LOOP_STARTED');
       },
     });
-    await runConductorCli(['oven', 'start', '--force'], deps);
+    await runConductorCli(['conductor', 'start', '--force'], deps);
     logSpy.mockRestore();
     expect(asked).toHaveLength(1);
     expect(asked[0]).toContain('A new bakers version is available (');
@@ -1100,7 +1108,7 @@ describe('bakers oven start update prompt', () => {
       'bakers update and configuration migration completed.',
     );
     expect(logs.join('\n')).toContain(
-      'bakers --conductor portal oven start --force',
+      'bakers --conductor portal conductor start --force',
     );
     expect(logs).not.toContain('LOOP_STARTED');
     expect(spawnConductor.spawned).toHaveLength(0);
@@ -1131,7 +1139,7 @@ describe('bakers oven start update prompt', () => {
       updateCheckOptions: { cachePath: shared, now: () => now },
     });
     first.deps.updateCheckOptions = { cachePath: shared, now: () => now };
-    await runConductorCli(['oven', 'start'], first.deps);
+    await runConductorCli(['conductor', 'start'], first.deps);
     expect(JSON.parse(readFileSync(shared, 'utf8'))).toMatchObject({
       latestVersion: '999.0.0',
       declined: true,
@@ -1155,7 +1163,7 @@ describe('bakers oven start update prompt', () => {
         },
       },
     );
-    await runConductorCli(['oven', 'start'], second);
+    await runConductorCli(['conductor', 'start'], second);
     logSpy.mockRestore();
     expect(prompts).toBe(1);
     expect(secondAsk).not.toHaveBeenCalled();
@@ -1178,7 +1186,7 @@ describe('bakers oven start update prompt', () => {
         throw new Error('runBb should not run');
       },
     });
-    await runConductorCli(['oven', 'start'], deps);
+    await runConductorCli(['conductor', 'start'], deps);
     expect(asked).toHaveLength(2);
     expect(spawnConductor.spawned).toHaveLength(1);
   });
@@ -1195,7 +1203,7 @@ describe('bakers oven start update prompt', () => {
         throw new Error('onStartLoop should not run');
       },
     });
-    await runConductorCli(['oven', 'start'], deps);
+    await runConductorCli(['conductor', 'start'], deps);
     expect(spawnConductor.spawned).toHaveLength(0);
     expect(process.exitCode).toBe(1);
     const record = JSON.parse(readFileSync(cachePath, 'utf8')) as {
@@ -1229,8 +1237,8 @@ describe('bakers oven start update prompt', () => {
     const { deps, spawnConductor } = promptDeps(extra);
     const argv =
       'foregroundArg' in variant
-        ? (['oven', 'start', '--foreground'] as string[])
-        : (['oven', 'start'] as string[]);
+        ? (['conductor', 'start', '--foreground'] as string[])
+        : (['conductor', 'start'] as string[]);
     if ('foregroundArg' in variant) {
       deps.onStartLoop = () => {
         logs.push('LOOP_STARTED');
@@ -1265,7 +1273,7 @@ describe('bakers oven start update prompt', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation((m) => {
       logs.push(String(m));
     });
-    await runConductorCli(['oven', 'start', '--no-update-check'], deps);
+    await runConductorCli(['conductor', 'start', '--no-update-check'], deps);
     logSpy.mockRestore();
     expect(fetchImpl).not.toHaveBeenCalled();
     expect(askUpdate).not.toHaveBeenCalled();
@@ -1283,7 +1291,7 @@ describe('bakers oven start update prompt', () => {
         throw new Error('runBb should not run');
       },
     });
-    await runConductorCli(['oven', 'start'], deps);
+    await runConductorCli(['conductor', 'start'], deps);
     expect(askUpdate).not.toHaveBeenCalled();
     expect(spawnConductor.spawned).toHaveLength(1);
   });
@@ -1302,7 +1310,7 @@ describe('bakers oven start update prompt', () => {
         latestVersion: '999.0.0',
       }),
     );
-    await runConductorCli(['oven', 'start'], deps);
+    await runConductorCli(['conductor', 'start'], deps);
     expect(spawnConductor.spawned).toHaveLength(1);
     expect(JSON.parse(readFileSync(cachePath, 'utf8')).declined).toBe(true);
   });
@@ -1333,7 +1341,7 @@ describe('bakers oven start update prompt', () => {
         askUpdate,
       },
     );
-    await runConductorCli(['oven', 'start'], deps);
+    await runConductorCli(['conductor', 'start'], deps);
     expect(askUpdate).toHaveBeenCalledOnce();
   });
 
@@ -1351,7 +1359,7 @@ describe('bakers oven start update prompt', () => {
         throw new Error('onStartLoop should not run');
       },
     });
-    await runConductorCli(['oven', 'start', '--force'], deps);
+    await runConductorCli(['conductor', 'start', '--force'], deps);
     errSpy.mockRestore();
     expect(spawnConductor.spawned).toHaveLength(0);
     expect(process.exitCode).toBe(1);
@@ -1365,7 +1373,7 @@ describe('bakers oven start update prompt', () => {
       errors.push(String(m));
     });
     const { deps, spawnConductor } = promptDeps({
-      env: { ...process.env, CI: '', BB_CONDUCTOR: 'portal' },
+      env: { ...process.env, CI: '', BAKERS_CONDUCTOR: 'portal' },
       askUpdate: async () => 'yes',
       runBb: async (args) => {
         commands.push(args);
@@ -1375,7 +1383,7 @@ describe('bakers oven start update prompt', () => {
         throw new Error('onStartLoop should not run');
       },
     });
-    await runConductorCli(['oven', 'start'], deps);
+    await runConductorCli(['conductor', 'start'], deps);
     errSpy.mockRestore();
     expect(commands).toEqual([
       ['update'],
@@ -1386,7 +1394,9 @@ describe('bakers oven start update prompt', () => {
     expect(errors.join('\n')).toContain(
       'Retry with: bakers --conductor portal config upgrade --scope all --yes',
     );
-    expect(errors.join('\n')).toContain('bakers --conductor portal oven start');
+    expect(errors.join('\n')).toContain(
+      'bakers --conductor portal conductor start',
+    );
   });
 
   it('warns when a decline cannot be remembered and still starts', async () => {
@@ -1411,7 +1421,7 @@ describe('bakers oven start update prompt', () => {
       ...deps.updateCheckOptions,
       writeFileImpl,
     };
-    await runConductorCli(['oven', 'start'], deps);
+    await runConductorCli(['conductor', 'start'], deps);
     errSpy.mockRestore();
     expect(spawnConductor.spawned).toHaveLength(1);
     expect(errors.join('\n')).toMatch(/remember/i);

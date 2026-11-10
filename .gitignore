@@ -80,15 +80,15 @@ node_modules/
 # pi agent transcripts (BB-220 --session-dir pin) — a pi run must not dirty the worktree
 /.bakers/pi-sessions/
 
-# per-developer conductor overrides (Kürzel consumer + secret) — never commit
+# A project's private connection (credentials) — never commit. The retired
+# *.config.local.js overrides stay ignored so a leftover one is never committed.
+/.bakers/connection.config.js
 *.config.local.js
 # The operator's own audience declaration (`@bakers-build/bb-workflow` › boundaries › Audience and register).
 # Written by the person the handoffs address, never committed: a preference about how someone
 # wants to be spoken to is theirs, not the repository's. `*.config.local.js` above does not
 # match a `.md`, so this rule is stated rather than inherited.
 /.bakers/audience.local.md
-# …but the committed scaffold TEMPLATE (secret-from-env, no literal secret) must be tracked
-!bakers-cli/templates/conductor.config.local.js
 # BB-256: a hand-written connection config pointing at the local DDEV site,
 # for trying the Dashboard before the endpoint is deployed. Carries inline
 # credentials for a throwaway install — never committed.

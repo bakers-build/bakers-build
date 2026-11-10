@@ -1,74 +1,71 @@
-# Write an addon with agent tools
+# Tools
 
-An addon gives agents tools by exporting `tools` from its preset. This page is the contract; the shipped example is [Ports](/addons/ports); a runtime addon's page lists its own tools.
+<span id="write-an-addon-with-agent-tools"></span>
+
+Give an agent a named operation with declared inputs and a text result. The [Is dirty? example](/addons/build/control-panel) provides a complete local package and a ticket button calling the same tool. This page defines the tool API; [Messages](/addons/build/actions) explains ticket requests.
 
 ## The contract
 
-An addon gives agents tools by exporting `tools` from its preset. The conductor collects every addon's tools and serves them through its own MCP server, `bakers`, on `127.0.0.1`. Every claude and codex run gets that server in its MCP config at launch, with a bearer token in `BB_CONDUCTOR_TOKEN`; the token binds each call to the run's worktree and ticket.
+Export a `tools` value from the preset. Its type is `Preset['tools']` from `@bakers-build/conductor/contract`. The [dirty-check tutorial](/addons/build/control-panel#create-two-files) contains a complete declaration and working handler:
 
-```ts
-import type { Preset } from '@bakers-build/conductor/contract';
+| Field | Meaning |
+|---|---|
+| `contract` | Required literal `1`. |
+| `tools` | Map of tool names to their definitions, such as `git_is_dirty`. |
+| `tools.<name>.description` | Explains the operation to the agent. |
+| `tools.<name>.input` | Optional input schema; the dirty check omits it and accepts no arguments. |
+| `handlers(options)` | Async factory returning one implementation per declared tool name. |
 
-export const tools: Preset['tools'] = {
-  contract: 1,
-  tools: {
-    hello_where: {
-      description: 'The worktree this run works in.',
-      // Optional; a flat input like an inbox message's. Unknown keys are refused.
-      input: { type: 'object', properties: { note: { type: 'string' } } },
-    },
-  },
-  handlers: async (options) => ({
-    hello_where: async (req) => ({ text: req.worktreePath }),
-  }),
-};
-```
+Use the [flat input schema](/addons/build/actions#contract-2). With no `input`, the tool accepts no arguments. Unknown keys and invalid values are refused before the handler runs; defaults do not fill in missing required arguments.
 
-- A handler gets `{ worktreePath, ticket, args, signal, logger, callTool }` and returns `{ text }`; a thrown error reaches the agent as a tool error.
-- The worktree always comes from the caller's binding, never from an argument. Do not declare a worktree, path or URL input that widens what a tool can reach.
-- `callTool(name, args)` calls another addon's tool on the same worktree. Inbox handlers get `callTool` too.
-- A tool name declared by two addons stops the conductor at start. `handlers` gets the entry's `with`.
-- Only `bakers oven start` (the serve process) runs the server, and only when some addon declares tools or the site serves [site tools](#site-tools). It writes `<BB_HOME>/conductors/<conductor_id>.json` (mode 0600) with the URL and an operator token; a CLI command, such as `bakers ports up`, uses it to call a tool for a worktree under the conductor's checkout.
+`handlers(options)` is an async factory receiving the entry's `with`. Each declared tool needs one handler, and every handler must be declared. Duplicate tool names across addons fail conductor startup. Prefix names to avoid collisions.
+
+Types `AddonTools`, `ToolDefinition`, `ToolHandler`, `ToolRequest`, `ToolBinding` and `ToolResult` are exported from `@bakers-build/conductor/contract`.
+
+| Handler request | Meaning |
+|---|---|
+| `args` | Validated input object; empty when no arguments were supplied. |
+| `worktreePath` | Absolute path from the caller's binding. |
+| `ticket?` | Optional ticket; an operator call may know only its identifier. |
+| `signal`, `logger` | Cancellation signal and conductor logger. |
+| `callTool(name, args?)` | Calls another tool with the same ticket/worktree and signal. |
+
+Return `{ text: string }`; throw an error to report failure to the caller. Honour cancellation in any child process or network operation.
+
+**The binding is a security boundary.** Never accept a caller-supplied path, URL or ticket that expands the operation beyond its authorized target. Tool handlers run in the conductor's environment, outside the agent's shell sandbox. Validate arguments and target allowlists even when the agent's MCP client approves the call.
 
 ## How runs get the server
 
-- **claude**: `bakers` (type `http`, header `Authorization: Bearer ${BB_CONDUCTOR_TOKEN}`) is merged into `--mcp-config`, beside `sandbox.mcp_servers` in the sandbox mode and on its own in `system`, `yolo` and `custom`. The sandbox allows its tools without a prompt (`mcp__bakers`). A `sandbox.mcp_servers` entry named `bakers` is replaced, with a launch warning. A measured run gets neither the MCP server nor the run variables below, so it has no conductor tools.
-- **codex**: `-c mcp_servers.bakers={url=…,bearer_token_env_var="BB_CONDUCTOR_TOKEN",default_tools_approval_mode="approve"}`. The whole table replaces a `[mcp_servers.bakers]` of your Codex config, with a launch warning; without a tool server that entry is switched off like any other. This approves current and future tools from this server without per-call prompts; other servers keep their existing policy. The generated shell sandbox and `-a never` remain in place.
-- **grok, opencode, pi and kimi** load no MCP server for it. Their runs call the tools through the shell with [`bakers tools`](/configuration/clients/tools), which works in grok's sandbox mode too (`Bash(*)` is allowed; `MCPTool(*)` stays denied).
+The conductor's serve process exposes a loopback MCP server named `bakers`. A run token binds calls to its ticket/worktree. Tokens are passed through the environment, not command arguments, and are revoked when the run finishes.
 
-Every other run with a tool server has `BB_CONDUCTOR_URL` and `BB_CONDUCTOR_TOKEN` in its environment. The token is never in argv or the launch log, and it is revoked when the run is finalised.
+- **Claude and Codex:** their launch configuration adds the conductor's MCP server. Claude measured runs omit this server and its run variables.
+- **Grok, Kimi, OpenCode and Pi:** use `bakers tools` from the running agent's shell.
+- **Operator CLI:** addon commands such as `bakers ports up` use the conductor's private endpoint file and bind the selected worktree. An ordinary `bakers tools` invocation without run variables reaches the site's server instead.
 
-The URL and the token survive a conductor restart. The server keeps its port and each run's grant, the token's access to that run's worktree, in `<BB_HOME>/conductors/<conductor_id>.tools.json` (mode 0600). The file holds a hash of each token, never the token. On start, the server drops the grants of runs that are no longer active, so a token stays revoked even when its run ended while the server was down.
+See [Tools and integrations](/provision/tools) for user access and [run security](/provision/security/execution) for harness policy. In particular, stripping `BAKERS_CONDUCTOR_TOKEN` from the shell environment prevents the run-bound CLI route; do not treat an operator-credential fallback as equivalent access.
 
-If another process holds the port at start, the server takes a new port and logs a warning. Runs launched before the restart then lose their tools until they are dispatched again.
-
-Tool handlers execute in the conductor's environment, outside the agent's shell sandbox, and
-server approval does not change that. `ddev_exec` bounds only the target: it runs any shell
-command in the run worktree's DDEV web container, with that container's network, files and
-environment, so whatever runs there, such as test code or browser navigation, gets that
-access. What this project removes from the container: `docs/bakers/testing.md` › Setup.
-
-A grok `shell_environment_policy` with `ignore_default_excludes = false` drops `*TOKEN*` variables from grok's shell; `bakers tools` then calls the site with the operator's credentials, without the project limit.
+A conductor restart normally preserves the port and active grants. If that port is occupied, the conductor chooses another and warns; already-running agents need a new dispatch to receive the new endpoint. Endpoint and grant files under `<BAKERS_HOME>/conductors/` are private (0600); do not copy their contents into tickets.
 
 ## Shipped tools
 
-| Tool | Addon | Does |
-|---|---|---|
-| `ports_up(service?)` | Ports | Shares a service the worktree claims and returns its URL; every eligible one without `service`. Any other key, URL or IP is refused with the claimed keys. |
-| `ports_down(service?)` | Ports | Takes a tunnel down; every tunnel of the worktree without `service`. |
-| `ports_status()` | Ports | The worktree's tunnels as JSON rows: `service`, `status`, `local`, `url`. |
-| `ports_reap()` | Ports | Drops routes whose worktree or service is gone. |
-| `provision_up(profile?)` | Conductor | Brings the worktree's environment up: runs the [`provision_up` hook](/provision/hooks#provision-on-an-agent-s-request), or its `profile` command, in the worktree, up to 30 minutes. `profile` must be one of the configured keys. The project's command reuses a ready environment, starts a stopped one, reinstalls a missing or different one, and prints the base URL. Offered only when the hook is set. |
+| Tool | Purpose |
+|---|---|
+| `ports_up(service?)` | Share a claimed service, or every eligible service when omitted. |
+| `ports_down(service?)` | Remove one service's tunnel, or every tunnel for the worktree. |
+| `ports_status()` | Return tunnel rows with service, status, local origin and URL. |
+| `ports_reap()` | Remove routes for vanished worktrees or services. |
+| `provision_up(profile?)` | Run the project's configured provisioning hook/profile, when present. |
 
-A runtime addon may add tools of its own; its page lists them.
+[Ports](/addons/ports) owns transport prerequisites and public-exposure limits. [Provisioning hooks](/provision/hooks#provision-on-an-agent-s-request) own profile configuration. A runtime addon can add its own tools.
 
-`provision_up` answers with the exit code and the last 64 KB of output; a non-zero exit is a tool error. `bakers ports up`, `down`, `status` and `reap` call the ports tools through the endpoint file, so the conductor stays the only writer of the tunnel routes.
+`provision_up` runs for up to 30 minutes and returns the exit code plus the last 64 KB of output; nonzero exit is an error. The command outlives the caller; another call for the same running worktree/profile joins it.
 
 ## Site tools
 
-The `bakers` server also serves the site's ticket tools to every run, under their plain name and with the site's input schema: `bakers_ticket_read`, `bakers_ticket_search`, `bakers_ticket_create`, `bakers_ticket_update`, `bakers_ticket_classify`, `bakers_ticket_transition`, `bakers_comment_publish`, `bakers_metric_write`, `bakers_ticket_list`, `bakers_ticket_runs_list`, `bakers_label_list`, `bakers_project_read` and `bakers_user_read`. The agent addons need no option and no `settings.json` entry for them.
+The conductor also proxies the site's allowed ticket tools through the same server, using its own connection. The run holds no site credential. Calls are restricted to the run ticket's project; a foreign ticket, parent, project or workspace is refused.
 
-- The conductor calls the site's `/mcp` with its own connection, so the run holds no site credential and `bakers` need not be a trusted command for ticket work ([run security](/provision/security/execution)).
-- Every call stays inside the run ticket's project. A `ticket`, `parent`, `referenced_tickets_add` entry or `project` of another project, or a `workspace` other than the project's, is refused with a tool error naming the argument and both projects, and nothing reaches the site. A run whose ticket has no project gets every site tool refused. A missing `project` on `bakers_ticket_search`, `bakers_ticket_list` and `bakers_ticket_create`, and a missing `workspace` on `bakers_label_list`, mean the run's.
-- While the site is unreachable the server lists the addon tools alone and logs a warning; the next listing tries again.
-- The operator `POST /call` serves no site tools.
+Missing project arguments on supported search/list/create calls mean the run's project. Missing workspace on label listing means that project's workspace. If the site cannot be reached, addon tools remain available and the next listing retries the site.
+
+The operator endpoint does not expose these site tools. Use the available tool listing and schema for exact arguments; see [the CLI reference](/cli/tools).
+
+Source: `bakers-cli/conductor/src/plugins/tools.ts`, `src/core/tool-server.ts` and the agent addons' launch implementations.

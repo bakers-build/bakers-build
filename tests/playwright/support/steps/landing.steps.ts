@@ -90,6 +90,11 @@ Then('the gate chrome is present', async ({ page }) => {
   await expect(page.locator(GATE).first()).toBeVisible();
 });
 
+/** The appearance switch stands in the gate's corner, before any session exists. */
+Then('the gate shows the appearance switch', async ({ page }) => {
+  await expect(page.locator(`${GATE} .gate__mode [data-mode-toggle]`)).toBeVisible();
+});
+
 /** The gate's brand band: the product mark, and the slogan as plain text, never a heading. */
 Then(
   'the gate band shows the product mark and the slogan {string}',

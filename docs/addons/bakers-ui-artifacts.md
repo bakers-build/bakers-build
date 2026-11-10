@@ -9,16 +9,11 @@ For anyone who reviews screenshots, logs and notes that agents leave in `assets-
 Add the package to the top-level `addons` in `~/.bakers/machine.config.js`. Keep the other fields there.
 
 ```js
-// @bakers-schema-version 1
-export default {
-  schema_version: 1,
-  machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',
-  label: 'alex-laptop',
-  addons: ['@bakers-build/addon-claude', '@bakers-build/addon-bakers-ui-artifacts'],
-};
+// Append to the existing addons array:
+'@bakers-build/addon-bakers-ui-artifacts',
 ```
 
-The addon may also be listed in a project's `.bakers/conductor.config.js` or a connection's `addons`; listed in both the machine and the project file, it renders one tab from the machine entry. See [Which file takes `addons`](/addons/configure#which-file-takes-addons).
+The addon may also be listed in a project's `.bakers/project.config.js` or a connection's `addons`; listed in both the machine and the project file, it renders one tab from the machine entry. See [Which file takes `addons`](/addons/configure#which-file-takes-addons).
 
 ## Options
 

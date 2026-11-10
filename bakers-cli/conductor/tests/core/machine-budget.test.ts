@@ -77,7 +77,7 @@ function makeConfig(
     prompt: DEFAULT_AGENT_PROMPT,
     poll_interval_ms: 5000,
     lease_seconds: 300,
-    config_path: `${CHECKOUT}/conductor.config.js`,
+    config_path: `${CHECKOUT}/project.config.js`,
     ...overrides,
   };
 }

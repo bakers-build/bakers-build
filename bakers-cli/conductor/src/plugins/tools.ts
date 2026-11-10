@@ -169,7 +169,7 @@ export function provisionTools(
         handlers: async () => ({
           provision_up: async (req) => {
             const command = commandFor(req.args.profile);
-            // shortcut: inherits the conductor's env, not the run's BB_* env; pass it through the binding once a hook needs it.
+            // shortcut: inherits the conductor's env, not the run's BAKERS_* env; pass it through the binding once a hook needs it.
             const { exitCode, output } = await runs.run(
               req.worktreePath,
               command,

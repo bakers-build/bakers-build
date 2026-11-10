@@ -2,7 +2,7 @@
 
 Read before sharing the URL of a local service.
 
-1. Read `printenv BB_TUNNEL`: `1`/`true` enables, `0`/`false` disables. If absent, read
+1. Read `printenv BAKERS_TUNNEL`: `1`/`true` enables, `0`/`false` disables. If absent, read
    `machine_policy.tunnel` using `bakers config check --scope machine --format json`.
 2. Enabled: share an addon-claimed key (e.g. `web`, `mailpit` — never a raw port); a dimmed
    "no addon" row of `bakers ports list` cannot be shared. With the conductor's ports tools

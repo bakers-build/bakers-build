@@ -1188,6 +1188,34 @@ Then('the filters read {string} in order', async ({ page }, names: string) => {
   await expect.poll(() => exposedFilterNames(page)).toEqual(expected);
 });
 
+// A project only its own scenario writes to: parallel workers change the shared
+// "bakers.build Platform" between two reads. Same group, teams and owner as that
+// project; open tickets stay in `qualification` so workspace-wide "Working"
+// facet counts are untouched. Idempotent on a reused site.
+Given('a dedicated project {string} has {int} open tickets', ({}, name: string, count: number) => {
+  php(
+    [
+      '$etm = \\Drupal::entityTypeManager();',
+      '$ps = $etm->getStorage("bb_project");',
+      `$project = current($ps->loadByProperties(["name" => "${safe(name)}"]));`,
+      'if (!$project) {',
+      '$src = current($ps->loadByProperties(["name" => "bakers.build Platform"]));',
+      'if (!$src) { throw new \\RuntimeException("Need bakers.build Platform"); }',
+      '$teams = [];',
+      'foreach ($src->get("teams") as $item) { $teams[] = $item->target_id; }',
+      `$project = $ps->create(["name" => "${safe(name)}", "group_id" => $src->get("group_id")->target_id, "teams" => $teams, "owner_user_id" => $src->get("owner_user_id")->target_id]);`,
+      '$project->save();',
+      '}',
+      '$ts = $etm->getStorage("bb_ticket");',
+      '$open = count($ts->loadByProperties(["project_id" => $project->id(), "closed" => 0]));',
+      `for ($i = $open; $i < ${count}; $i++) {`,
+      '$ts->create(["project_id" => $project->id(), "title" => "Contextual fixture " . ($i + 1), "workflow" => "bb_work", "state" => "qualification", "team" => $project->get("teams")->target_id])->save();',
+      '}',
+    ].join(' '),
+  );
+  Drush.exec('search-api:index bb_tickets');
+});
+
 let listedBefore: string[] = [];
 
 async function listedIdentifiers(page: Page): Promise<string[]> {

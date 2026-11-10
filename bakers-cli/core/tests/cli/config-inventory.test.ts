@@ -56,7 +56,7 @@ describe('offline configuration inventory', () => {
 
   it('reports no finding for a connection without a workspace', () => {
     put(
-      join(home, '.bakers/bakers.config.js'),
+      join(home, '.bakers/connections/default.js'),
       "export default {site:{base_url:'https://fixture.test'},plugins:[]};",
     );
     const { report } = core.inventoryConfig({
@@ -67,14 +67,10 @@ describe('offline configuration inventory', () => {
     expect(report.findings.map((f) => f.key)).not.toContain('workspace_id');
   });
 
-  it('discovers a partial project and includes variants and local provenance', () => {
+  it('discovers a partial project and includes variants', () => {
     mkdirSync(join(project, '.bakers'));
-    const local = put(
-      join(project, '.bakers/conductor.config.local.js'),
-      'export default {};',
-    );
     const variant = put(
-      join(project, '.bakers/worker.conductor.config.js'),
+      join(project, '.bakers/project.worker.config.js'),
       'export default {};',
     );
     const { report } = core.inventoryConfig({
@@ -86,24 +82,33 @@ describe('offline configuration inventory', () => {
     expect(report.files).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          path: local,
-          kind: 'local',
-          role: 'supplementary',
-          selected: true,
-        }),
-        expect.objectContaining({
           path: variant,
-          kind: 'conductor',
+          kind: 'project',
           role: 'primary',
           selected: true,
         }),
         expect.objectContaining({
-          path: join(project, '.bakers/bakers.config.js'),
+          path: join(project, '.bakers/connection.config.js'),
           required: false,
           state: 'absent',
         }),
       ]),
     );
+  });
+
+  // An old file name is simply not found: never read, never reported.
+  it.each([
+    'conductor.config.js',
+    'conductor.config.local.js',
+  ])('does not read the old project file %s', (name) => {
+    const old = put(join(project, '.bakers', name), 'export default {};');
+    const { report } = core.inventoryConfig({
+      scope: 'all',
+      home,
+      cwd: project,
+    });
+    expect(report.files.some((f) => f.path === old)).toBe(false);
+    expect(report.findings.some((f) => f.path === old)).toBe(false);
   });
 
   it('recognizes an empty .bakers for configuration work without changing runtime conductor discovery', () => {
@@ -139,13 +144,13 @@ describe('offline configuration inventory', () => {
     const sentinel = join(root, 'executed');
     const machine = put(
       join(home, '.bakers/machine.config.js'),
-      `import { writeFileSync } from 'node:fs'; writeFileSync(${JSON.stringify(sentinel)}, 'oops'); export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 1 };`,
+      `import { writeFileSync } from 'node:fs'; writeFileSync(${JSON.stringify(sentinel)}, 'oops'); export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw' };`,
     );
     put(
-      join(home, '.bakers/bakers.config.js'),
+      join(home, '.bakers/connections/default.js'),
       'export default { site: { base_url: ; } };',
     );
-    mkdirSync(join(project, '.bakers/conductor.config.js'), {
+    mkdirSync(join(project, '.bakers/project.config.js'), {
       recursive: true,
     });
     const { report } = core.inventoryConfig({
@@ -183,10 +188,12 @@ describe('offline configuration inventory', () => {
     expect(report.findings.map((finding) => finding.key)).toEqual(
       expect.arrayContaining(['machine_id', 'label', 'client_secret']),
     );
-    // The run budget is a backend setting: no check reads it.
+    // max_parallel is no key of the machine schema.
     expect(
-      report.findings.some((finding) => finding.key === 'max_parallel'),
-    ).toBe(false);
+      report.findings.filter((finding) => finding.key === 'max_parallel'),
+    ).toEqual([
+      expect.objectContaining({ code: 'unknown_key', severity: 'error' }),
+    ]);
     expect(
       report.findings.find((finding) => finding.key === 'client_secret'),
     ).toMatchObject({
@@ -203,7 +210,7 @@ describe('offline configuration inventory', () => {
   it('reports agents.addons as retired with the addons fragment', () => {
     put(
       join(home, '.bakers/machine.config.js'),
-      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 1, agents: { addons: ['@bakers-build/addon-claude'] } };`,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw',agents: { addons: ['@bakers-build/addon-claude'] } };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
@@ -217,31 +224,24 @@ describe('offline configuration inventory', () => {
     );
   });
 
-  it.each([
-    [
-      'a retired user_id',
-      `machine_id: '%s', label: 'cw', user_id: 'cw'`,
-      'user_id',
-    ],
-  ])('rejects %s naming bakers init', (_, body, key) => {
+  it('rejects the old user_id as an unknown key', () => {
     put(
       join(home, '.bakers/machine.config.js'),
-      `export default { ${body.replace('%s', '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30')}, max_parallel: 1 };`,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', user_id: 'cw' };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
       home,
       cwd: project,
     });
-    const finding = report.findings.find((f) => f.key === key);
-    expect(finding?.severity).toBe('error');
-    expect(finding?.remediation).toContain('bakers init');
+    const finding = report.findings.find((f) => f.key === 'user_id');
+    expect(finding).toMatchObject({ code: 'unknown_key', severity: 'error' });
   });
 
   it('requires a machine label', () => {
     put(
       join(home, '.bakers/machine.config.js'),
-      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', max_parallel: 1 };`,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30' };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
@@ -256,13 +256,13 @@ describe('offline configuration inventory', () => {
   it('refuses a schema version other than the current one, naming bakers init', () => {
     put(
       join(home, '.bakers/machine.config.js'),
-      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 1 };`,
+      `// @bakers-schema-version 3\nexport default { schema_version: 3, machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw' };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
       home,
       cwd: project,
-      currentVersions: { machine: 1 },
+      currentVersions: { machine: 2 },
     });
     const finding = report.findings.find((f) => f.key === 'schema_version');
     expect(finding).toMatchObject({
@@ -275,7 +275,7 @@ describe('offline configuration inventory', () => {
   it('reports ports as retired with the ports addon fragment', () => {
     put(
       join(home, '.bakers/machine.config.js'),
-      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 1, ports: { transport: { use: '@bakers-build/ports-cloudflare-quick' } } };`,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw',ports: { transport: { use: '@bakers-build/ports-cloudflare-quick' } } };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
@@ -292,7 +292,7 @@ describe('offline configuration inventory', () => {
   it('never echoes a secret from a retired ports block', () => {
     put(
       join(home, '.bakers/machine.config.js'),
-      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 1, ports: { transport: { use: '@bakers-build/addon-ports-cloudflare', with: { accountId: 'acc-1', apiToken: 'super-secret-token' } } } };`,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw',ports: { transport: { use: '@bakers-build/addon-ports-cloudflare', with: { accountId: 'acc-1', apiToken: 'super-secret-token' } } } };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
@@ -308,7 +308,7 @@ describe('offline configuration inventory', () => {
   it('leaves `ports` optional: its absence reports no finding', () => {
     put(
       join(home, '.bakers/machine.config.js'),
-      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 1 };`,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw' };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
@@ -320,20 +320,23 @@ describe('offline configuration inventory', () => {
     );
   });
 
-  it('reports computed critical values as incomplete with truthful source locations', () => {
+  // A computed value is a `not_checked` warning (the loader checks
+  // it at start); the result stays `ok`.
+  it('reports computed critical values as not checked with truthful source locations', () => {
     put(
       join(home, '.bakers/machine.config.js'),
-      `export default {\n machine_id: process.env.HOST,\n label: 'cw', max_parallel: 1 };`,
+      `export default {\n machine_id: process.env.HOST,\n label: 'cw' };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
       home,
       cwd: project,
     });
-    expect(report.result).toBe('incomplete');
+    expect(report.result).toBe('ok');
     expect(report.findings).toEqual([
       expect.objectContaining({
-        code: 'unknown_value',
+        code: 'not_checked',
+        severity: 'warning',
         key: 'machine_id',
         line: 2,
         column: 2,
@@ -345,7 +348,7 @@ describe('offline configuration inventory', () => {
 
   it('diagnoses version marker disagreement and unsupported versions even in partial files', () => {
     put(
-      join(home, '.bakers/bakers.config.js'),
+      join(home, '.bakers/connections/default.js'),
       '// @bakers-schema-version 99\nexport default { schema_version: 1 };',
     );
     const { report } = core.inventoryConfig({
@@ -393,7 +396,7 @@ describe('offline configuration inventory', () => {
 
   it('validates literal connection structure and keeps offline success distinct from online readiness', () => {
     put(
-      join(home, '.bakers/bakers.config.js'),
+      join(home, '.bakers/connections/default.js'),
       `export default { site: { base_url: 'https://example.test' }, workspace_id: 'a1e559a4-2fb8-4f2f-8d69-1c194f913bd1', plugins: [{ plugin: '@dropsh/plugin-oauth2', export: 'oauth2Plugin', with: { id: 'bakers', client_id: 'client', client_secret: 'secret', scope: 'bb:session' } }] };`,
     );
     const { report } = core.inventoryConfig({
@@ -410,7 +413,7 @@ describe('offline configuration inventory', () => {
 
   it('validates URL and plugin descriptors independently', () => {
     put(
-      join(home, '.bakers/bakers.config.js'),
+      join(home, '.bakers/connections/default.js'),
       `export default { site: { base_url: 'ftp://example.test' }, plugins: [{ plugin: 23 }] };`,
     );
     const { report } = core.inventoryConfig({
@@ -423,9 +426,11 @@ describe('offline configuration inventory', () => {
     );
   });
 
-  it('reports an existing project connection as supported but superseded', () => {
+  // `.bakers/connection.config.js` is the project's own supported
+  // connection file, no longer a superseded legacy override.
+  it('reports an existing project connection as a supported file without leaking secrets', () => {
     const path = put(
-      join(project, '.bakers/bakers.config.js'),
+      join(project, '.bakers/connection.config.js'),
       `export default { site: { base_url: 'https://example.test' }, workspace_id: 'a1e559a4-2fb8-4f2f-8d69-1c194f913bd1', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { client_id: 'client', client_secret: 'DO_NOT_LEAK' } }] };`,
     );
     const { report } = core.inventoryConfig({
@@ -433,14 +438,12 @@ describe('offline configuration inventory', () => {
       home,
       cwd: project,
     });
-    expect(report.findings).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: 'superseded_file',
-          path,
-          severity: 'info',
-        }),
-      ]),
+    expect(report.files).toContainEqual(
+      expect.objectContaining({
+        path,
+        kind: 'project-connection',
+        required: false,
+      }),
     );
     expect(JSON.stringify(report)).not.toContain('DO_NOT_LEAK');
   });
@@ -467,7 +470,7 @@ describe('offline configuration inventory', () => {
   it('detects syntax defects beyond delimiters and records fresh content fingerprints', () => {
     const path = put(
       join(home, '.bakers/machine.config.js'),
-      "const broken = ; export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 1 };",
+      "const broken = ; export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw' };",
     );
     const before = core.inventoryConfig({
       scope: 'machine',
@@ -477,7 +480,7 @@ describe('offline configuration inventory', () => {
     expect(before.findings[0]?.code).toBe('syntax_error');
     put(
       path,
-      "const matcher = /}/; export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 1 };",
+      "const matcher = /}/; export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw' };",
     );
     const after = core.inventoryConfig({
       scope: 'machine',
@@ -520,31 +523,10 @@ describe('offline configuration inventory', () => {
         .report.files.some((f) => f.path === legacy),
     ).toBe(false);
   });
-  // A historical global connection imports this sibling; migrating past it unseen switches server or account.
-  it('refuses a retired conductor.config.local.js beside the global connection', () => {
-    const retired = put(
-      join(home, '.bakers/conductor.config.local.js'),
-      "export default {base_url:'https://other.test'};",
-    );
-    const { report } = core.inventoryConfig({
-      scope: 'connection',
-      home,
-      cwd: project,
-    });
-    expect(report.files.some((f) => f.path === retired)).toBe(false);
-    expect(report.findings).toContainEqual(
-      expect.objectContaining({
-        code: 'superseded_file',
-        severity: 'error',
-        path: retired,
-      }),
-    );
-  });
-
   it('requires no client_secret from a device-code descriptor, and still requires the client_id', () => {
     put(
-      join(home, '.bakers/bakers.config.js'),
-      `export default { schema_version: 4, site: { base_url: 'https://example.test' }, workspace_id: 'a1e559a4-2fb8-4f2f-8d69-1c194f913bd1', plugins: [{ plugin: '@dropsh/plugin-oauth2', export: 'oauth2Plugin', with: { id: 'bakers', default: true, type: 'oauth2_device_code', scope: 'bb:session', client_id: 'bakers-cli' } }] };`,
+      join(home, '.bakers/connections/default.js'),
+      `export default { schema_version: 1, site: { base_url: 'https://example.test' }, workspace_id: 'a1e559a4-2fb8-4f2f-8d69-1c194f913bd1', plugins: [{ plugin: '@dropsh/plugin-oauth2', export: 'oauth2Plugin', with: { id: 'bakers', default: true, type: 'oauth2_device_code', scope: 'bb:session', client_id: 'bakers-cli' } }] };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'connection',
@@ -560,8 +542,8 @@ describe('offline configuration inventory', () => {
 
   it('still requires a client_secret when the descriptor states no grant type', () => {
     put(
-      join(home, '.bakers/bakers.config.js'),
-      `export default { schema_version: 4, site: { base_url: 'https://example.test' }, workspace_id: 'a1e559a4-2fb8-4f2f-8d69-1c194f913bd1', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { client_id: 'client' } }] };`,
+      join(home, '.bakers/connections/default.js'),
+      `export default { schema_version: 1, site: { base_url: 'https://example.test' }, workspace_id: 'a1e559a4-2fb8-4f2f-8d69-1c194f913bd1', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { client_id: 'client' } }] };`,
     );
     const { report } = core.inventoryConfig({
       scope: 'connection',
@@ -584,7 +566,7 @@ describe('offline configuration inventory', () => {
   ])('reports machine tunnel policy for %s', (field, expected) => {
     const path = put(
       join(home, '.bakers/machine.config.js'),
-      `export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:1,${field}};`,
+      `export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',${field}};`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
@@ -602,7 +584,7 @@ describe('offline configuration inventory', () => {
   ])('rejects a non-boolean machine tunnel literal %s', (field, observed) => {
     const path = put(
       join(home, '.bakers/machine.config.js'),
-      `export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:1,${field}};`,
+      `export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',${field}};`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
@@ -626,7 +608,7 @@ describe('offline configuration inventory', () => {
     const sentinel = join(root, 'executed');
     const path = put(
       join(home, '.bakers/machine.config.js'),
-      `import { writeFileSync } from 'node:fs'; writeFileSync(${JSON.stringify(sentinel)}, 'oops'); export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:1,tunnel: process.env.TUNNEL === '1'};`,
+      `import { writeFileSync } from 'node:fs'; writeFileSync(${JSON.stringify(sentinel)}, 'oops'); export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',tunnel: process.env.TUNNEL === '1'};`,
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
@@ -636,15 +618,19 @@ describe('offline configuration inventory', () => {
     expect(existsSync(sentinel)).toBe(false);
     expect(report.machine_policy).toEqual({ tunnel: null, source: path });
     expect(report.findings).toEqual([
-      expect.objectContaining({ code: 'unknown_value', key: 'tunnel' }),
+      expect.objectContaining({
+        code: 'not_checked',
+        severity: 'warning',
+        key: 'tunnel',
+      }),
     ]);
-    expect(report.result).toBe('incomplete');
+    expect(report.result).toBe('ok');
   });
 
   it('does not treat a spread as a proven absent tunnel field', () => {
     const path = put(
       join(home, '.bakers/machine.config.js'),
-      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:1,...process.env.OVERRIDE};",
+      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',...process.env.OVERRIDE};",
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',
@@ -693,7 +679,7 @@ describe('offline configuration inventory', () => {
 
     put(
       join(home, '.bakers/machine.config.js'),
-      "const broken = ; export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw', max_parallel: 1 };",
+      "const broken = ; export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'cw' };",
     );
     const syntax = core.inventoryConfig({
       scope: 'machine',
@@ -709,15 +695,15 @@ describe('offline configuration inventory', () => {
   it('diagnoses a connection or project tunnel field as misplaced and never uses it as policy', () => {
     put(
       join(home, '.bakers/machine.config.js'),
-      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',max_parallel:1};",
+      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator'};",
     );
     put(
-      join(home, '.bakers/bakers.config.js'),
-      "export default {schema_version:4,site:{base_url:'https://example.test'},plugins:[],tunnel:true};",
+      join(home, '.bakers/connections/default.js'),
+      "export default {schema_version:1,site:{base_url:'https://example.test'},plugins:[],tunnel:true};",
     );
     mkdirSync(join(project, '.bakers'));
     put(
-      join(project, '.bakers/conductor.config.js'),
+      join(project, '.bakers/project.config.js'),
       "export default {conductor_id:'cw-host-project',tunnel:true};",
     );
     const connection = core.inventoryConfig({
@@ -753,25 +739,36 @@ describe('offline configuration inventory', () => {
     );
   });
 
-  it('neither requires max_parallel on the machine nor reports it elsewhere', () => {
+  // max_parallel is no key of any schema: never required, an unknown key where met.
+  it('never requires max_parallel and reports it as an unknown key where met', () => {
     put(
       join(home, '.bakers/machine.config.js'),
       "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator'};",
     );
     put(
-      join(home, '.bakers/bakers.config.js'),
+      join(home, '.bakers/connections/default.js'),
       "export default {schema_version:1,site:{base_url:'https://example.test'},plugins:[],max_parallel:3};",
     );
     mkdirSync(join(project, '.bakers'));
     put(
-      join(project, '.bakers/conductor.config.js'),
-      'export default {max_parallel:3,conductor:{max_parallel:3}};',
+      join(project, '.bakers/project.config.js'),
+      "export default {project:{name:'p'},max_parallel:3};",
     );
-    for (const scope of ['machine', 'connection', 'project'] as const) {
+    const machine = core.inventoryConfig({
+      scope: 'machine',
+      home,
+      cwd: project,
+    });
+    expect(
+      machine.report.findings.filter((f) => f.key?.includes('max_parallel')),
+    ).toEqual([]);
+    for (const scope of ['connection', 'project'] as const) {
       const { report } = core.inventoryConfig({ scope, home, cwd: project });
       expect(
         report.findings.filter((f) => f.key?.includes('max_parallel')),
-      ).toEqual([]);
+      ).toEqual([
+        expect.objectContaining({ code: 'unknown_key', severity: 'error' }),
+      ]);
     }
   });
 
@@ -781,7 +778,7 @@ describe('offline configuration inventory', () => {
       "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',executor:{plugin:'@bakers-build/addon-herdr-core'}};",
     );
     const conductor = put(
-      join(project, '.bakers/conductor.config.js'),
+      join(project, '.bakers/project.config.js'),
       "export default {bakers:{project:'bakers'},executor:{plugin:'@bakers-build/addon-herdr'}};",
     );
     const all = core.inventoryConfig({ scope: 'all', home, cwd: project });
@@ -803,7 +800,7 @@ describe('offline configuration inventory', () => {
   it('reports tunnel policy from an explicit machine path', () => {
     const path = put(
       join(root, 'isolated-machine.js'),
-      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'fixture',max_parallel:1,tunnel:true};",
+      "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'fixture',tunnel:true};",
     );
     const { report } = core.inventoryConfig({
       scope: 'machine',

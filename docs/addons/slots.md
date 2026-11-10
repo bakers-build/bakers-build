@@ -18,32 +18,26 @@ Each slot holds exactly one addon. To write your own, read [Write an executor or
 
 ## Set both in the project
 
-`.bakers/conductor.config.js` names one addon per slot. Listing an addon in `addons` fills the slots it contributes; an explicit slot wins over that.
+`.bakers/project.config.js` names one addon per slot. Listing an addon in `addons` fills the slots it contributes; an explicit slot wins over that.
 
 ```js
-executor: { plugin: '@bakers-build/addon-herdr-core' },
-workspace: { plugin: '@bakers-build/addon-workspace-git' },
+executor: { use: '@bakers-build/addon-herdr-core' },
+worktree: { use: '@bakers-build/addon-workspace-git' },
 ```
 
 When several listed addons contribute the same slot, the last one wins, with a warning.
 
 ## Choose the executor per machine
 
-`~/.bakers/machine.config.js` may set its own `executor` slot, which wins for every project on that machine. The workspace and the remote stay with the project.
+`~/.bakers/machine.config.js` may set its own `executor` slot, which wins for every project on that machine. There is no equivalent explicit machine `worktree` or `server` override; addon contributions still follow the scope and selection rules.
 
 ```js
-// ~/.bakers/machine.config.js
-export default {
-  schema_version: 1,
-  machine_id: '…',
-  label: 'my-laptop',
-  addons: ['@bakers-build/addon-claude'],
-  executor: { plugin: '@bakers-build/addon-herdr-core' },
-};
+// Add to the existing ~/.bakers/machine.config.js:
+executor: { use: '@bakers-build/addon-herdr-core' },
 ```
 
 The executor resolves in this order: the machine's `executor`, the project's `executor`, then the last executor discovered from `addons`. `bakers config check` prints `Executor: from <file>` for an explicit slot. Choosing an executor per ticket or run is not supported.
 
 ## Migrating an addon
 
-`BbExecutor.runHook`, `BbExecutor.removeWorktree` and `BbWorkspace.applyOpenLayout` are gone: the conductor runs the config's top-level `hooks`, and `addon-herdr` now rejects `with.hooks` at startup; move removal to `BbWorkspace.remove` and the open layout to `BbExecutor.openWorkspace`. herdr's `open` option is now read by its executor; an explicit `herdrWorkspace` slot carrying `with.open` must move it to the executor.
+For custom implementations, follow the [executor/workspace migration notes](/addons/build/executor-workspace#migrating-an-addon). For configuration changes, keep lifecycle `hooks` at project level and move a legacy workspace `open` layout to the executor.

@@ -1,9 +1,10 @@
 import { readdirSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import {
   type AddonEntry,
-  assertSchemaVersion1,
+  assertSchemaVersion,
+  assertValidConfig,
   type BbConnectionConfig,
   discoverAddons,
   discoverScoped,
@@ -16,7 +17,6 @@ import {
   scanTopLevelProperties,
   scopeAddons,
   stemForConfigFile,
-  warnIgnoredMaxParallel,
 } from '@bakers-build/core';
 import { readBbProjectSelection } from './cli/project-context.js';
 import {
@@ -25,6 +25,7 @@ import {
   type SharedSecurity,
   validateSharedSecurity,
 } from './plugins/agent-args.js';
+import { validateMarketplaces } from './plugins/agent-home.js';
 import type { HookListener, HookName } from './plugins/executor.js';
 import { type LoadedInbox, loadInbox } from './plugins/message.js';
 import type {
@@ -77,7 +78,7 @@ export {
  * that a short `sh '<file>'` line runs (BB-635), so its length is not bound
  * by the tty canonical cap (macOS 1024 B, Linux 4096 B). The prompt is still
  * kept single-line (BB-128 test).
- * Placeholders: `{identifier}`, `{state}`, `{runUuid}`, `{ticketUuid}` ({state} falls back to
+ * Placeholders: `{identifier}`, `{state}`, `{run_uuid}`, `{ticket_uuid}` ({state} falls back to
  * `qualification` for unclassified tickets).
  *
  * WHERE THE PROMPT SENDS THE AGENT, and why it no longer names a WORKFLOW.md
@@ -98,9 +99,9 @@ export {
  */
 export const DEFAULT_AGENT_PROMPT =
   `You are working ticket {identifier}, current state: {state}. Read the ticket and all comments ` +
-  `with the bakers tool bakers_ticket_read, arguments {"ticket":"{ticketUuid}"}: ` +
+  `with the bakers tool bakers_ticket_read, arguments {"ticket":"{ticket_uuid}"}: ` +
   `the MCP tool bakers_ticket_read when it is listed, ` +
-  `else bakers tools bakers_ticket_read --data '{"ticket":"{ticketUuid}"}' as a Bash call of its own, ` +
+  `else bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}' as a Bash call of its own, ` +
   `then read ./WORKFLOW.md, load the bakers.build skill its loader names for this ticket's work type ` +
   `and state, and execute only that skill's {state} section. ` +
   `Do not start or prepare a later state. ` +
@@ -108,14 +109,14 @@ export const DEFAULT_AGENT_PROMPT =
   `that goes beyond this state's step, such as fetching or running external resources, installing software ` +
   `or touching files outside the worktree.`;
 
-/** A config file's top-level `security`, validated; the error names the file. */
+/** A config file's top-level `permissions`, validated; the error names the file. */
 function sharedSecurityOf(
-  value: unknown,
+  config: { permissions?: unknown },
   layer: SharedLayer,
   path: string,
 ): SharedSecurity | undefined {
   try {
-    return validateSharedSecurity(value, layer);
+    return validateSharedSecurity(config.permissions, layer);
   } catch (error) {
     throw new Error(`${path}: ${(error as Error).message}`);
   }
@@ -143,7 +144,7 @@ function warnProjectLoosening(
     );
   for (const grant of grants)
     console.warn(
-      `warning: ${path} security ${grant} — the committed project config loosens the agent sandbox on every machine that runs it; see bakers agents`,
+      `warning: ${path} permissions ${grant} — the committed project config loosens the agent sandbox on every machine that runs it; see bakers agents`,
     );
 }
 
@@ -151,8 +152,9 @@ function warnProjectLoosening(
 function warnNotApplied(candidates: AgentCandidate[]): void {
   const seen = new Set<string>();
   for (const { agent } of candidates)
-    for (const { key, source, reason } of agent.security?.not_applied ?? []) {
-      const line = `warning: ${agent.id}: ${source} security.sandbox.${key} is not applied — the harness cannot express it`;
+    for (const { key, source, reason } of agent.permissions?.not_applied ??
+      []) {
+      const line = `warning: ${agent.id}: ${source} permissions.sandbox.${key} is not applied — the harness cannot express it`;
       if (reason === 'unsupported' && !seen.has(line)) {
         seen.add(line);
         console.warn(line);
@@ -160,28 +162,21 @@ function warnNotApplied(candidates: AgentCandidate[]): void {
     }
 }
 
+/** The project file, already checked against `project.schema.json`. */
 type RawConfig = {
-  agents?: unknown;
-  default_agent?: unknown;
-  agent_routes?: unknown;
-  selectAgent?: unknown;
-  // BB-218: `site`/`plugins` are CONNECTION concerns (bakers.config.js) — they are
-  // no longer accepted engine keys. A legacy config still carrying them is
-  // detected at load time and rejected with an ownership repair command.
-  /** BB-215: the Storybook-style conductor addon list (discovered surface). */
+  select_agent?: unknown;
   addons?: unknown;
-  /** Shared run security for every agent (`docs/provision/security/execution.md`). */
-  security?: unknown;
-  remote?: unknown;
+  permissions?: unknown;
+  server?: unknown;
   executor?: unknown;
-  agent?: unknown;
-  bb_workspace?: unknown;
-  workspace?: unknown;
-  project?: unknown;
-  states?: unknown;
-  prompt?: unknown;
-  poll_interval_ms?: unknown;
-  lease_seconds?: unknown;
+  worktree?: unknown;
+  states?: string[];
+  prompt?: string;
+  poll_interval_ms?: number;
+  lease_seconds?: number;
+  restart_on_change?: boolean;
+  capture_logs?: boolean;
+  marketplaces?: unknown;
   hooks?: ConductorFileConfig['hooks'];
 };
 
@@ -246,28 +241,26 @@ function requirePlugin<T>(value: unknown, kind: string): T {
 }
 
 /**
- * A named-plugin descriptor `{ plugin, export?, with?/options? }` — the
- * import-free form. `config.ts` resolves it into a constructed plugin, so a
- * committed conductor.config.js need not `import` its plugin packages (which
+ * A slot descriptor `{ use, export?, with? }` — the import-free form. `config.ts` resolves it into a constructed plugin, so a
+ * committed project.config.js need not `import` its plugin packages (which
  * would resolve relative to the config file, not the CLI — the source of the
  * "unknown command dropsh" breakage after the @bakers → @bakers-ai scope rename).
  * Mirror of dropsh 0.4.1 `loadNamedPlugin` / `resolveSlot`.
  */
 function isPluginDescriptor(
   entry: unknown,
-): entry is Record<string, unknown> & { plugin: string } {
-  return isRecord(entry) && typeof entry.plugin === 'string';
+): entry is Record<string, unknown> & { use: string } {
+  return isRecord(entry) && typeof entry.use === 'string';
 }
 
 /**
  * Resolve + construct a descriptor. Resolution base order, ESLint-style:
  * config dir → cwd → conductor install (`import.meta.url`) — the first
  * `createRequire(base).resolve(name)` that succeeds wins. Then `import` the
- * module, pick `export` (default 'default'), and call the factory with
- * `with` (falling back to `options`).
+ * module, pick `export` (default 'default'), and call the factory with `with`.
  */
 async function loadNamedPlugin(
-  entry: Record<string, unknown> & { plugin: string },
+  entry: Record<string, unknown> & { use: string },
   configPath: string,
 ): Promise<unknown> {
   const bases = [
@@ -275,9 +268,9 @@ async function loadNamedPlugin(
     pathToFileURL(`${process.cwd()}/`).href,
     import.meta.url,
   ];
-  const resolved = resolveModuleEslintStyle(entry.plugin, bases);
+  const resolved = resolveModuleEslintStyle(entry.use, bases);
   if (resolved === undefined) {
-    throw new Error(`conductor config cannot resolve plugin '${entry.plugin}'`);
+    throw new Error(`project config cannot resolve '${entry.use}'`);
   }
   const mod = (await import(pathToFileURL(resolved).href)) as Record<
     string,
@@ -288,7 +281,7 @@ async function loadNamedPlugin(
     factory = mod[entry.export];
     if (typeof factory !== 'function') {
       throw new Error(
-        `plugin '${entry.plugin}' has no callable export '${entry.export}'`,
+        `'${entry.use}' has no callable export '${entry.export}'`,
       );
     }
   } else if (typeof mod.default === 'function') {
@@ -299,13 +292,11 @@ async function loadNamedPlugin(
       factory = mod[fns[0] as string];
     } else {
       throw new Error(
-        `plugin '${entry.plugin}' has no default export and ${fns.length} function exports (${fns.join(', ')}); specify "export"`,
+        `'${entry.use}' has no default export and ${fns.length} function exports (${fns.join(', ')}); specify "export"`,
       );
     }
   }
-  return (factory as (options?: unknown) => unknown)(
-    entry.with ?? entry.options,
-  );
+  return (factory as (options?: unknown) => unknown)(entry.with);
 }
 
 /**
@@ -341,7 +332,7 @@ export async function resolveAgents(
       isRecord(entry) &&
       'agent' in entry &&
       !('kind' in entry) &&
-      !('plugin' in entry);
+      !('use' in entry);
     const agentValue = hasWrapper ? (entry as { agent: unknown }).agent : entry;
     const priority = hasWrapper
       ? (entry as { priority?: (ticket: Ticket) => number }).priority
@@ -377,27 +368,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function requireNonEmptyString(value: unknown, key: string): string {
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new Error(`conductor config requires non-empty ${key}`);
-  }
-  return value;
-}
-
-function optionalPositiveInteger(
-  value: unknown,
-  fallback: number,
-  key: string,
-): number {
-  if (value === undefined) {
-    return fallback;
-  }
-  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
-    throw new Error(`conductor config requires positive integer ${key}`);
-  }
-  return value;
-}
-
 /**
  * A conductor is machine + project + variant: its registration key and label
  * are derived here and never written to a config.
@@ -428,8 +398,8 @@ function identityOf(
  * Load the ENGINE half of a conductor config (BB-201 split model). Reads
  * remote/executor/agent/workspace + project/states/prompt/
  * scheduler/hooks — and deliberately NOT `site` or the auth `plugins`, which now
- * live in a `bakers.config.js` connection config. The conductor command composes
- * the two via `composeConductorConfig`. A legacy `conductor.config.js` still
+ * live in a connection file connection config. The conductor command composes
+ * the two via `composeConductorConfig`. A legacy `project.config.js` still
  * carrying `site`/`plugins` loads fine — those two keys are simply ignored here
  * (the connection loader reads them, back-compat).
  */
@@ -443,55 +413,26 @@ export async function loadConductorConfig(
   };
   const raw = module.default;
   if (!isRecord(raw)) {
-    throw new Error('conductor config default export must be an object');
+    throw new Error(`${configPath}: default export must be an object`);
   }
-
-  // BB-218 (AC-6): the engine config must not carry connection/auth material.
-  // A legacy config still declaring `site`/`plugins` gets exactly ONE actionable
-  // warning naming the file + the offending key(s); the values are never merged
-  // (`ConductorEngineConfig` omits both structurally).
-  const leftover = (['site', 'plugins'] as const).filter((k) => k in raw);
-  if (leftover.length > 0) {
-    console.warn(
-      `warning: ${configPath} declares ${leftover.join('/')} — ignored; ` +
-        'auth/connection belong in the sibling bakers.config.js (BB-218)',
-    );
-  }
-
-  assertSchemaVersion1(configPath, raw);
-  // A conductor is machine + project + variant: the project config names no id.
-  const identity = ['conductor_id', 'machine_id', 'label'].filter(
-    (key) => key in raw,
-  );
-  if (identity.length > 0)
-    throw new Error(
-      `${configPath}: ${identity.join(', ')} no longer belong in a project config (a conductor is machine + project + variant); remove them and run bakers init`,
-    );
-
+  assertSchemaVersion(configPath, raw);
+  // The same schema config check applies.
+  assertValidConfig('project', raw, configPath);
   const config = raw as RawConfig;
 
-  const retiredAgentKeys = [
-    'agent',
-    'agents',
-    'default_agent',
-    'agent_routes',
-  ].filter((key) => key in raw);
-  if (retiredAgentKeys.length > 0) {
-    throw new Error(
-      `${configPath}: retired conductor agent policy ${retiredAgentKeys.join(', ')}; run bakers config upgrade --scope all`,
-    );
-  }
-
   const project = bakers.project;
-  // `states` is optional. An empty (or absent) list means the conductor serves
-  // every claimable state in its project; a non-empty list narrows it to those
-  // states (BB-207). When present it must be an array of non-empty strings.
-  const states = Array.isArray(config.states)
-    ? config.states.map((state) => requireNonEmptyString(state, 'states'))
-    : [];
-  warnIgnoredMaxParallel(configPath, config);
+  // An empty (or absent) states list serves every claimable state (BB-207).
+  const states = config.states ?? [];
+  const restartOnChange = config.restart_on_change ?? true;
+  // The schema checks the shape; the Git URL rule is the marketplace loader's.
+  const marketplaces = (() => {
+    try {
+      return validateMarketplaces(config.marketplaces);
+    } catch (error) {
+      throw new Error(`${configPath}: ${(error as Error).message}`);
+    }
+  })();
   const machineCtx = await readMachineContext();
-  warnIgnoredMaxParallel(machineContextPath(), machineCtx);
   const tunnel = machineCtx.tunnel === true;
   const variant = stemForConfigFile(basename(configPath)) ?? 'conductor';
 
@@ -506,16 +447,9 @@ export async function loadConductorConfig(
   // The machine and this project config each carry one `addons[]`, read the
   // same way: each addon declares the scopes it may be listed in, and the
   // machine entry wins (`scopeAddons`). Agents come from this list too.
+  // readMachineContext checked the machine file against machine.schema.json.
   const policy = machineCtx.agents;
-  if (policy !== undefined && !isRecord(policy))
-    throw new Error('machine agents must be an object');
-  if ((policy as Record<string, unknown> | undefined)?.addons !== undefined)
-    throw new Error(
-      'machine agents.addons is retired: move its entries into machine.config.js addons[]',
-    );
   const machineAddons = machineCtx.addons ?? [];
-  if (!Array.isArray(machineAddons))
-    throw new Error('machine addons must be an array');
   const addonEntries = Array.isArray(config.addons)
     ? (config.addons as AddonEntry[])
     : [];
@@ -530,12 +464,8 @@ export async function loadConductorConfig(
     import.meta.url,
   ];
   const sharedSecurity = {
-    project: sharedSecurityOf(config.security, 'project', configPath),
-    machine: sharedSecurityOf(
-      machineCtx.security,
-      'machine',
-      machineContextPath(),
-    ),
+    project: sharedSecurityOf(config, 'project', configPath),
+    machine: sharedSecurityOf(machineCtx, 'machine', machineContextPath()),
   };
   warnProjectLoosening(configPath, sharedSecurity.project);
   const agentGlobals = { [SHARED_SECURITY_KEY]: sharedSecurity };
@@ -572,12 +502,12 @@ export async function loadConductorConfig(
   );
 
   const remote =
-    config.remote !== undefined
-      ? await resolveSlot<RemotePlugin>(config.remote, 'remote', configPath)
+    config.server !== undefined
+      ? await resolveSlot<RemotePlugin>(config.server, 'server', configPath)
       : wired.remote;
   if (!remote) {
     throw new Error(
-      'conductor config resolves no remote — name a remote addon in addons[] or set the remote slot',
+      'project config resolves no server — name a server addon in addons[] or set the server slot',
     );
   }
   // The machine may run its own installed tool: its explicit executor wins
@@ -598,27 +528,27 @@ export async function loadConductorConfig(
         : wired.executor;
   if (!executor) {
     throw new Error(
-      'conductor config resolves no executor — name an executor addon in addons[] or set the executor slot',
+      'project config resolves no executor — name an executor addon in addons[] or set the executor slot',
     );
   }
   const workspace =
-    config.workspace !== undefined
+    config.worktree !== undefined
       ? await resolveSlot<WorkspacePlugin>(
-          config.workspace,
-          'workspace',
+          config.worktree,
+          'worktree',
           configPath,
         )
       : wired.workspace;
   if (!workspace) {
     throw new Error(
-      'conductor config resolves no workspace — name a workspace addon in addons[] or set the workspace slot',
+      'project config resolves no worktree — name a worktree addon in addons[] or set the worktree slot',
     );
   }
   const installedHarnesses = new Set(
     machineAddons.flatMap((entry) => {
       if (typeof entry === 'string') return [entry];
       if (!isRecord(entry)) return [];
-      const packageName = entry.use ?? entry.name;
+      const packageName = entry.use;
       return typeof packageName === 'string' ? [packageName] : [];
     }),
   );
@@ -729,20 +659,6 @@ export async function loadConductorConfig(
   const enabledAgents = [
     ...new Set(candidates.map((candidate) => candidate.alias as string)),
   ];
-  const configuredDefault = policy?.default_agent;
-  if (
-    configuredDefault !== undefined &&
-    (typeof configuredDefault !== 'string' || !configuredDefault.trim())
-  )
-    throw new Error('agents.default_agent must be a non-empty alias');
-  const defaultAgent =
-    typeof configuredDefault === 'string'
-      ? configuredDefault.trim()
-      : (enabledAgents[0] as string);
-  if (!enabledAgents.includes(defaultAgent))
-    throw new Error(
-      `agents.default_agent names unavailable alias '${defaultAgent}'`,
-    );
   const rawRoutes = policy?.routes;
   if (rawRoutes !== undefined && !isRecord(rawRoutes))
     throw new Error('agents.routes must be an object of named routes');
@@ -762,13 +678,14 @@ export async function loadConductorConfig(
       );
     routes[name] = { ...(route as Record<string, string>) };
   }
+  // The default agent is set in one place: agents.routes.default.
+  const defaultAgent =
+    routes.default?.['*']?.trim() ?? (enabledAgents[0] as string);
+  if (!enabledAgents.includes(defaultAgent))
+    throw new Error(
+      `agents.routes.default names unavailable alias '${defaultAgent}'`,
+    );
   if (!routes.default) routes.default = { '*': defaultAgent };
-  if (
-    config.selectAgent !== undefined &&
-    typeof config.selectAgent !== 'function'
-  ) {
-    throw new Error('selectAgent must be a function');
-  }
   return {
     remote,
     executor,
@@ -777,14 +694,15 @@ export async function loadConductorConfig(
     disabled_agents: disabled,
     default_agent: defaultAgent,
     routes,
-    ...(typeof config.selectAgent === 'function'
+    ...(typeof config.select_agent === 'function'
       ? {
-          selectAgent: config.selectAgent as NonNullable<
+          selectAgent: config.select_agent as NonNullable<
             ConductorFileConfig['selectAgent']
           >,
         }
       : {}),
     workspace,
+    marketplaces,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),
     ...(tools !== undefined ? { tools } : {}),
@@ -799,18 +717,25 @@ export async function loadConductorConfig(
         ? config.prompt
         : DEFAULT_AGENT_PROMPT,
     tunnel,
-    poll_interval_ms: optionalPositiveInteger(
-      config.poll_interval_ms,
-      5000,
-      'poll_interval_ms',
-    ),
-    lease_seconds: optionalPositiveInteger(
-      config.lease_seconds,
-      300,
-      'lease_seconds',
-    ),
+    poll_interval_ms: config.poll_interval_ms ?? 5000,
+    lease_seconds: config.lease_seconds ?? 300,
+    ...(config.capture_logs !== undefined
+      ? { capture_logs: config.capture_logs }
+      : {}),
     ...(config.hooks !== undefined ? { hooks: config.hooks } : {}),
     config_path: configPath,
+    restart_on_change: restartOnChange,
+    watch_paths: {
+      files: [configPath, machineContextPath()],
+      // A retired entry keeps its spec as key; only resolved modules have a dir.
+      dirs: [
+        ...new Set(
+          effectiveAddons
+            .filter((a) => isAbsolute(a.key))
+            .map((a) => dirname(a.key)),
+        ),
+      ],
+    },
   };
 }
 
@@ -819,7 +744,7 @@ export async function loadConductorConfig(
  * half (`loadConductorConfig`) and the connection half (`loadBbConfig`). The
  * connection supplies `site` + the auth `plugins`; `ensureAuthenticated` /
  * `selectRemote` read them exactly as before — the fields just arrive from
- * `bakers.config.js` now.
+ * connection file now.
  */
 export function composeConductorConfig(
   engine: ConductorEngineConfig,
@@ -832,41 +757,25 @@ export function composeConductorConfig(
   };
 }
 
-const DEFAULT_CONFIG = 'conductor.config.js';
-const VARIANT_SUFFIX = '.conductor.config.js';
-
 /**
- * The conductor **stems** in a `.bakers/` dir — the file naming predicate of
- * BB-137: exactly `conductor.config.js` (stem `conductor`) or
- * `<variant>.conductor.config.js` (stem `<variant>`). The resolution itself
- * lives in `@bakers-build/core` (re-exported above); this is the enumeration.
+ * The conductor variants in a `.bakers/` dir (`conductor` for
+ * `project.config.js`), by the loader's own naming rule.
  */
 export function configStems(bakersDir: string): string[] {
   return readdirSync(bakersDir)
-    .map((f) =>
-      f === DEFAULT_CONFIG
-        ? 'conductor'
-        : f.endsWith(VARIANT_SUFFIX)
-          ? f.slice(0, -VARIANT_SUFFIX.length)
-          : undefined,
-    )
+    .map(stemForConfigFile)
     .filter((s): s is string => s !== undefined)
     .sort();
 }
 
-/** Map a conductor stem back to its file name. */
+/** Map a conductor variant back to its file name. */
 export function fileForStem(stem: string): string {
-  return stem === 'conductor' ? DEFAULT_CONFIG : `${stem}${VARIANT_SUFFIX}`;
+  return stem === 'conductor'
+    ? 'project.config.js'
+    : `project.${stem}.config.js`;
 }
 
-/**
- * List the conductor-config **file names** in a `.bakers/` dir, using the same
- * naming predicate the loader uses (`configStems`). This is the only supported
- * enumeration for the `@bakers-build/bb-upgrade-project` states-strip: it visits the
- * default `conductor.config.js` + every `<variant>.conductor.config.js`, and
- * never an unrelated JS config (`vite.config.js`, the near-miss
- * `myconductor.config.js`).
- */
+/** The project config file names in a `.bakers/` dir, default and variants. */
 export function listConductorConfigFiles(bakersDir: string): string[] {
   return configStems(bakersDir).map(fileForStem);
 }

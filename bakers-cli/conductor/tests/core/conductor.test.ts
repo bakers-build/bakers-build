@@ -199,7 +199,7 @@ function makeConfig(
     host_key: 'test-host',
     poll_interval_ms: 5000,
     lease_seconds: 300,
-    config_path: `${CHECKOUT}/conductor.config.js`,
+    config_path: `${CHECKOUT}/project.config.js`,
     ...overrides,
   };
 }
@@ -334,7 +334,7 @@ describe('Conductor', () => {
   // path (e.g. `/fake/BB-1`, reused across many tests) cannot leak into
   // another's "no record yet" assumption.
   beforeEach(() => {
-    rmSync(`${CHECKOUT}/conductor.config.bootstrapped.json`, {
+    rmSync(`${CHECKOUT}/project.config.bootstrapped.json`, {
       force: true,
     });
   });
@@ -878,7 +878,7 @@ describe('Conductor', () => {
     const cwd = '/fake/BB-1';
     const dir = join(home, '.claude', 'projects', encodeClaudeProjectDir(cwd));
     // `system`: nothing launches here, so the machine's sandbox must not gate claims.
-    const agent = new ClaudeAgent({ security: 'system' }, home);
+    const agent = new ClaudeAgent({ permissions: 'system' }, home);
 
     class ClaudeLikeExecutor extends RecordingExecutor {
       async startRun(input: SpawnRunInput) {
@@ -1018,12 +1018,12 @@ describe('Conductor', () => {
     // FakeWorkspace has no WORKFLOW.md (instructions === null) → bare command.
     expect(input?.command).toBe('claude');
     expect(input?.env).toEqual({
-      BB_URL: 'http://web',
-      BB_ID: 't-1',
-      BB_TICKET_IDENTIFIER: 'BB-1',
-      BB_STATE: 'todo',
-      BB_RUN_UUID: 'r-1',
-      BB_TUNNEL: '0',
+      BAKERS_URL: 'http://web',
+      BAKERS_ID: 't-1',
+      BAKERS_TICKET_IDENTIFIER: 'BB-1',
+      BAKERS_STATE: 'todo',
+      BAKERS_RUN_UUID: 'r-1',
+      BAKERS_TUNNEL: '0',
       WORKSPACE_ROOT: CHECKOUT,
       TICKET_URL: 'https://issues/1',
     });
@@ -1306,7 +1306,7 @@ describe('Conductor', () => {
     });
     const conductor = await startedConductor(
       makeConfig({
-        prompt: 'Custom {identifier} {state} {runUuid}',
+        prompt: 'Custom {identifier} {state} {run_uuid}',
       }),
       remote,
       executor,
@@ -1990,7 +1990,7 @@ describe('Conductor', () => {
         const child = spawn('sleep', ['60'], {
           detached: true,
           stdio: 'ignore',
-          env: { ...process.env, BB_RUN_UUID: uuid },
+          env: { ...process.env, BAKERS_RUN_UUID: uuid },
         });
         child.unref();
         return child.pid as number;
@@ -4109,7 +4109,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
       run: { uuid: 'r-1', id: 1 },
       ticket: { uuid: 't-1', identifier: 'BB-1' },
     });
-    expect(bBefore?.ctx.env.BB_RUN_UUID).toBe('r-1');
+    expect(bBefore?.ctx.env.BAKERS_RUN_UUID).toBe('r-1');
   });
 
   it('keeps conductor-owned env keys and drops invalid mutations, logging key names only', async () => {
@@ -4118,7 +4118,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
     const vandal: HookListener = {
       id: 'vandal',
       before_run: (ctx) => {
-        ctx.env.BB_ID = 'hijacked';
+        ctx.env.BAKERS_ID = 'hijacked';
         ctx.env.BB_EXTRA = 'reserved';
         delete ctx.env.WORKSPACE_ROOT;
         ctx.env['bad-key'] = 'x';
@@ -4136,7 +4136,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
     await conductor.tick();
 
     const env = executor.started[0]?.env ?? {};
-    expect(env.BB_ID).toBe('t-1');
+    expect(env.BAKERS_ID).toBe('t-1');
     expect(env.WORKSPACE_ROOT).toBe(CHECKOUT);
     expect(env.OK_KEY).toBe('fine');
     expect(env.DB_PASSWORD).toBe(SECRET);
@@ -4154,7 +4154,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
         ...((rejected?.obj as { keys?: string[] } | undefined)?.keys ?? []),
       ].sort(),
     ).toEqual(
-      ['BB_EXTRA', 'BB_ID', 'NUMERIC', 'WORKSPACE_ROOT', 'bad-key'].sort(),
+      ['BB_EXTRA', 'BAKERS_ID', 'NUMERIC', 'WORKSPACE_ROOT', 'bad-key'].sort(),
     );
     expect(JSON.stringify(calls)).not.toContain(SECRET);
   });
@@ -4444,7 +4444,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
         run: s.ctx.run,
         state: s.ctx.state,
         ticket: s.ctx.ticket.identifier,
-        envRun: s.ctx.env.BB_RUN_UUID,
+        envRun: s.ctx.env.BAKERS_RUN_UUID,
       })),
     ).toEqual([
       {
@@ -4460,7 +4460,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
         envRun: 'r-2',
       },
     ]);
-    expect(executor.shellEnv.after_run?.BB_RUN_UUID).toBe('r-2');
+    expect(executor.shellEnv.after_run?.BAKERS_RUN_UUID).toBe('r-2');
   });
 
   it('gives a shell-only after_run the rebuilt run env and the ticket identifier at run end', async () => {
@@ -4469,7 +4469,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
 
     await conductor.tick();
 
-    expect(executor.shellEnv.after_run?.BB_RUN_UUID).toBe('r-2');
+    expect(executor.shellEnv.after_run?.BAKERS_RUN_UUID).toBe('r-2');
     expect(executor.shellTicket.after_run).toBe('BB-2');
   });
 
@@ -5480,11 +5480,14 @@ describe('Conductor — bakers ui refresh signal', () => {
     const env = executor.started[0]?.env ?? {};
     const client = new Client({ name: 'test', version: '1.0.0' });
     await client.connect(
-      new StreamableHTTPClientTransport(new URL(env.BB_CONDUCTOR_URL ?? ''), {
-        requestInit: {
-          headers: { authorization: `Bearer ${env.BB_CONDUCTOR_TOKEN}` },
+      new StreamableHTTPClientTransport(
+        new URL(env.BAKERS_CONDUCTOR_URL ?? ''),
+        {
+          requestInit: {
+            headers: { authorization: `Bearer ${env.BAKERS_CONDUCTOR_TOKEN}` },
+          },
         },
-      }),
+      ),
     );
     const result = await client.callTool({
       name: 'bakers_ticket_update',
@@ -5563,5 +5566,147 @@ describe('Conductor — bakers ui refresh signal', () => {
         encoding: 'utf8',
       }),
     ).not.toContain('ui-refresh');
+  });
+});
+
+describe('Conductor — a run blocked on a permission denial', () => {
+  const MIN = 60_000;
+  const DENIED = 'Read(/home/coder/.claude/plugins/x.md)';
+
+  function blockedSeed(): FakeRemoteSeed {
+    return {
+      tickets: {
+        't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
+      },
+      runs: [
+        {
+          runUuid: 'r-1',
+          ticketUuid: 't-1',
+          stateAtStart: 'working',
+          state: 'running',
+          worktreePath: PRESENT_WORKTREE,
+          agent: 'claude',
+        },
+      ],
+    };
+  }
+
+  /** An agent whose transcript was last written `quietMs` ago. */
+  function stalledAgent(quietMs: number, denials: string[] = [DENIED]) {
+    const getRunLog = vi.fn(async () => 'transcript');
+    const mtime = Date.now() - quietMs;
+    const agent: BbAgent = {
+      ...fakeAgent,
+      getRunLog,
+      runLogModified: async () => mtime,
+      permissionDenials: () => denials,
+    };
+    return { agent, getRunLog };
+  }
+
+  async function blockedConductor(agent: BbAgent) {
+    const remote = new FakeBbRemote(blockedSeed());
+    remote.queue.length = 0;
+    const call = vi.fn(async () => ({ content: [] }));
+    remote.siteTools = { list: async () => [], call, close: async () => {} };
+    const conductor = new TestConductor(
+      makeConfig(),
+      remote,
+      new RecordingExecutor(),
+      new FakeWorkspace(),
+      resolved(agent),
+      spyLogger().log,
+      CHECKOUT,
+    );
+    await conductor.start();
+    return { conductor, remote, call };
+  }
+
+  it('reports the denied action, labels and freezes the ticket and cancels the run, once', async () => {
+    const { conductor, remote, call } = await blockedConductor(
+      stalledAgent(6 * MIN).agent,
+    );
+    await conductor.tick();
+    await conductor.tick();
+
+    expect(call.mock.calls).toEqual([
+      [
+        'tool_api__bakers_comment_publish',
+        {
+          ticket: 't-1',
+          type: 'comment',
+          body: '# Technical problem\n\nPlease contact the developers.\n',
+        },
+      ],
+      [
+        'tool_api__bakers_comment_publish',
+        {
+          ticket: 't-1',
+          type: 'comment',
+          body: expect.stringMatching(
+            new RegExp(
+              `^# Error\\n[\\s\\S]*allow rule[\\s\\S]*- \`${DENIED.replace(/[()./]/g, '\\$&')}\``,
+            ),
+          ),
+        },
+      ],
+      [
+        'tool_api__bakers_ticket_update',
+        { ticket: 't-1', labels_add: ['technical problem'], frozen: true },
+      ],
+    ]);
+    expect(remote.calls.cancelRun).toEqual(['r-1']);
+  });
+
+  it('waits while the transcript changed within the last 5 minutes', async () => {
+    const { agent, getRunLog } = stalledAgent(4 * MIN);
+    const { conductor, remote, call } = await blockedConductor(agent);
+    await conductor.tick();
+    expect(getRunLog).not.toHaveBeenCalled();
+    expect(call).not.toHaveBeenCalled();
+    expect(remote.calls.cancelRun).toEqual([]);
+  });
+
+  it('reads a quiet transcript without denials once per modification and reports nothing', async () => {
+    const { agent, getRunLog } = stalledAgent(6 * MIN, []);
+    const { conductor, remote, call } = await blockedConductor(agent);
+    await conductor.tick();
+    await conductor.tick();
+    expect(getRunLog).toHaveBeenCalledTimes(1);
+    expect(call).not.toHaveBeenCalled();
+    expect(remote.calls.cancelRun).toEqual([]);
+  });
+
+  it('reports on the next tick when reading the transcript failed', async () => {
+    const { agent, getRunLog } = stalledAgent(6 * MIN);
+    getRunLog.mockRejectedValueOnce(new Error('EIO'));
+    const { conductor, remote } = await blockedConductor(agent);
+    await conductor.tick();
+    expect(remote.calls.cancelRun).toEqual([]);
+    await conductor.tick();
+    expect(remote.calls.cancelRun).toEqual(['r-1']);
+  });
+
+  it('does not cancel a run silently when the site tools are missing, and reports once they are back', async () => {
+    const { conductor, remote, call } = await blockedConductor(
+      stalledAgent(6 * MIN).agent,
+    );
+    const tools = remote.siteTools;
+    remote.siteTools = undefined;
+    await conductor.tick();
+    expect(remote.calls.cancelRun).toEqual([]);
+    remote.siteTools = tools;
+    await conductor.tick();
+    expect(call).toHaveBeenCalledTimes(3);
+    expect(remote.calls.cancelRun).toEqual(['r-1']);
+  });
+
+  it('never reads the transcript of an agent that cannot name denials', async () => {
+    const { agent, getRunLog } = stalledAgent(6 * MIN);
+    delete agent.permissionDenials;
+    const { conductor, call } = await blockedConductor(agent);
+    await conductor.tick();
+    expect(getRunLog).not.toHaveBeenCalled();
+    expect(call).not.toHaveBeenCalled();
   });
 });

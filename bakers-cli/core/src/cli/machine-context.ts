@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { homeBbDir } from './bakers-dir.js';
+import { assertValidConfig } from './config-validate.js';
 
 /** One machine-local agent variant constructed by an installed addon preset. */
 export interface MachineAgentEntry {
@@ -10,7 +11,7 @@ export interface MachineAgentEntry {
   with?: unknown;
 }
 
-/** Normalized named state-to-agent routes. `default` is the automatic route. */
+/** Named state-to-agent routes. `default` is the automatic route; `'*'` matches any state. */
 export type AgentRoutes = Record<string, Record<string, string>>;
 
 /** Optional host-local overlays and selection policy for addon-derived agents. */
@@ -18,7 +19,6 @@ export interface MachineAgentPolicy {
   catalog?: MachineAgentEntry[];
   enabled?: string[];
   disabled?: string[];
-  default_agent?: string;
   routes?: AgentRoutes;
 }
 
@@ -42,7 +42,9 @@ export interface MachineContext {
    * Omitted or false keeps the original local URL.
    */
   tunnel?: boolean;
-  /** Shared run security for every agent; the conductor validates it. */
+  /** Shared run permissions for every agent; the conductor validates it. */
+  permissions?: unknown;
+  /** Renamed to `permissions`; the conductor rejects it on load. */
   security?: unknown;
   /**
    * This machine's executor, an `executor` slot value as in a conductor
@@ -52,18 +54,7 @@ export interface MachineContext {
   executor?: unknown;
 }
 
-/**
- * Warn once that a leftover `max_parallel` in a config file is ignored: the
- * run budget is set on the machine in the backend.
- */
-export function warnIgnoredMaxParallel(path: string, raw: object): void {
-  if ('max_parallel' in raw)
-    console.warn(
-      `warning: max_parallel in ${path} is ignored; the run budget is set on the machine in the backend.`,
-    );
-}
-
-/** Canonical machine-context path: `<BB_HOME or ~/.bakers>/machine.config.js`. */
+/** Canonical machine-context path: `<BAKERS_HOME or ~/.bakers>/machine.config.js`. */
 export function machineContextPath(): string {
   return join(homeBbDir(), 'machine.config.js');
 }
@@ -81,15 +72,17 @@ function isUuid(value: unknown): value is string {
   return typeof value === 'string' && UUID.test(value);
 }
 
+/** The configuration schema version every file kind is at. */
+export const CONFIG_SCHEMA_VERSION = 1;
+
 /**
  * Every config file (machine, connection, project) is at schema version 1.
  * Any other version, in the `schema_version` field or the
- * `@bakers-schema-version` header, predates the fresh start and is refused.
+ * `@bakers-schema-version` header, is refused.
  */
-export function assertSchemaVersion1(
+export function assertSchemaVersion(
   path: string,
   raw: Record<string, unknown>,
-  remedy = 'remove the file and run bakers init',
 ): void {
   let text = '';
   try {
@@ -101,17 +94,17 @@ export function assertSchemaVersion1(
       Number(m[1]),
     ),
   ];
-  const other = versions.find((version) => version !== 1);
+  const other = versions.find((version) => version !== CONFIG_SCHEMA_VERSION);
   if (other !== undefined)
     throw new Error(
-      `${path}: schema version ${String(other)} is not supported; ${remedy}`,
+      `${path}: schema version ${String(other)} is not supported; remove the file and run bakers init`,
     );
 }
 
 /**
  * Import an existing context module's default export, or `{}` if absent/broken.
- * An old file (`user_id`, a schema version other than 1) throws, naming
- * `bakers init`, which rewrites it in place. An existing machine keeps its
+ * A file at another schema version, or one the machine schema rejects,
+ * throws naming the file and every problem. An existing machine keeps its
  * `machine_id` as it is; only a UUID is normalised to lowercase.
  */
 export async function readMachineContext(
@@ -129,11 +122,8 @@ export async function readMachineContext(
   }
   if (!raw || typeof raw !== 'object') return {};
   const ctx = raw as Record<string, unknown>;
-  assertSchemaVersion1(resolved, ctx, 'run bakers init to rewrite it');
-  if ('user_id' in ctx)
-    throw new Error(
-      `${resolved}: user_id is retired (the server takes the owner from sign-in); run bakers init to rewrite the file`,
-    );
+  assertSchemaVersion(resolved, ctx);
+  assertValidConfig('machine', ctx, resolved);
   return {
     ...(ctx as Partial<MachineContext>),
     ...(isUuid(ctx.machine_id)

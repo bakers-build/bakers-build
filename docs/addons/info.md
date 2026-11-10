@@ -10,7 +10,7 @@ Nothing to enable. The command ships with the bakers.build CLI as `bakers info`.
 
 ## Options
 
-No options. The command accepts `--config` and `--connection` to pick a connection.
+No addon settings. The command accepts `--config` and `--connection` to pick a connection.
 
 ## Check it works
 
@@ -24,7 +24,7 @@ bakers info
 
 ## Good to know
 
-- It reads `BB_PROJECT`, `BB_PROJECT_ID`, `BB_WORKSPACE`, `BB_WORKSPACE_ID` and `BB_WORKSPACE_IDS` first, and asks the server only for what is missing.
+- It reads `BAKERS_PROJECT`, `BAKERS_PROJECT_ID`, `BAKERS_WORKSPACE`, `BAKERS_WORKSPACE_ID` and `BAKERS_WORKSPACE_IDS` first, and asks the server only for what is missing.
 - A value it cannot resolve is `null` (or `[]`), never left out.
 - It never prompts and never writes to disk.
 

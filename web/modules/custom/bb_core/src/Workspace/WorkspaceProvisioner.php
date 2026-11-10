@@ -55,15 +55,6 @@ final class WorkspaceProvisioner {
   public const TEAM_LEAD_ROLE = 'bb_team-bb_team-lead';
 
   /**
-   * The name the first team is created with.
-   *
-   * NOT ASKED OF THE CUSTOMER: naming a team is a
-   * workspace-settings act, and asking for it at sign-up would be a second
-   * field on the highest-friction screen in the product.
-   */
-  public const FIRST_TEAM_NAME = 'My Team';
-
-  /**
    * Constructs the provisioner.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
@@ -89,6 +80,8 @@ final class WorkspaceProvisioner {
    *   The workspace name as typed. The slug is derived from it.
    * @param \Drupal\user\UserInterface $owner
    *   The account that becomes `owner_user_id` and `lead`.
+   * @param string $teamName
+   *   The first team's name, asked of the customer at workspace creation.
    * @param array<string, mixed> $values
    *   Further optional field values, such as `description` and `image`. They
    *   cannot override the name, the derived slug or the owner.
@@ -101,7 +94,7 @@ final class WorkspaceProvisioner {
    *   provisioning for a successful one. Returning NULL would let a caller
    *   redirect a customer into a workspace that does not exist.
    */
-  public function provision(string $name, UserInterface $owner, array $values = []): BbWorkspaceInterface {
+  public function provision(string $name, UserInterface $owner, string $teamName, array $values = []): BbWorkspaceInterface {
     $transaction = $this->database->startTransaction();
     try {
       $workspace = $this->entityTypeManager->getStorage('bb_workspace')->create([
@@ -115,7 +108,7 @@ final class WorkspaceProvisioner {
       }
 
       $team = $this->entityTypeManager->getStorage('bb_team')->create([
-        'name' => self::FIRST_TEAM_NAME,
+        'name' => $teamName,
         'workspace_id' => $workspace->id(),
         'owner_user_id' => $owner->id(),
       ]);

@@ -86,7 +86,7 @@ export default async function createTransport(
     // paths probed) this client has no business repeating into CLI/inbox
     // output. The configured path alone is enough for the operator to fix.
     throw new Error(
-      `frp transport cannot read or parse clientConfigPath '${cfg.clientConfigPath}' as JSON`,
+      `frp transport cannot read or parse client_config_path '${cfg.clientConfigPath}' as JSON`,
     );
   }
   const clientIdentity = validateClientConfig(rawConfig, routesPath);

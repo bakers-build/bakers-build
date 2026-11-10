@@ -13,13 +13,13 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the scre
 
    The cockpit opens on **My work**, your open assigned tickets.
 
-2. **Move between levels.** Every screen shows the tab bar of its level. `Tab` and `Shift-Tab` cycle tabs (a left click works too), `Enter` opens the selected row, `Esc` goes back, `q` quits.
+2. **Move between levels.** Tabbed screens show the bar for their level; forms and compact views do not. `Tab` and `Shift-Tab` cycle tabs (a left click works too), `Enter` opens the selected row, `Esc` goes back, `q` quits.
 
    | Level | Tabs |
    |---|---|
    | Root | My work, Projects, Members (workspace leads only), Conductors |
    | Project | Overview, Tickets, Runs, Conductors |
-   | Ticket | Overview, Planning, History, Runs, then addon tabs such as Artifacts and Ports |
+   | Ticket | Overview, Planning, History, Runs, then addon tabs such as Artifacts; Ports is an Overview message card |
 
 3. **Jump straight to something.** One target at most:
 

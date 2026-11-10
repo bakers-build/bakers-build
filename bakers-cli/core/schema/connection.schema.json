@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/connection.schema.json",
+  "title": "ConnectionConfig",
+  "description": "A connection to a bakers.build server: ~/.bakers/connections/<id>.js, or a project's .bakers/connection.config.js. dropsh reads the same file.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Configuration schema version."
+    },
+    "site": {
+      "type": "object",
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "pattern": "^https?://[^\\s/]+",
+          "description": "The server's absolute HTTP(S) URL."
+        },
+        "jsonapi_prefix": {
+          "type": "string",
+          "description": "JSON:API path prefix. Default /jsonapi."
+        }
+      },
+      "required": ["base_url"],
+      "additionalProperties": false
+    },
+    "workspace_id": {
+      "type": "string",
+      "description": "Workspace bakers ui starts focused on."
+    },
+    "plugins": {
+      "type": "array",
+      "description": "dropsh plugins: { plugin, export?, with?, options? }, or constructed plugins.",
+      "items": {
+        "if": { "type": "object", "required": ["plugin"] },
+        "then": {
+          "properties": {
+            "plugin": { "$ref": "project.schema.json#/$defs/nonempty" },
+            "export": { "$ref": "project.schema.json#/$defs/nonempty" },
+            "with": {},
+            "options": {}
+          },
+          "additionalProperties": false
+        },
+        "else": { "type": "object" }
+      }
+    },
+    "addons": {
+      "type": "array",
+      "description": "Connection addons, such as auth providers.",
+      "items": { "$ref": "project.schema.json#/$defs/addon" }
+    }
+  },
+  "required": ["site"],
+  "additionalProperties": false
+}

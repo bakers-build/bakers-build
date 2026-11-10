@@ -49,7 +49,7 @@ Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `ddev_ex
 | PHP implementation | `ddev phpcs && ddev phpstan` |
 ```
 
-A sandboxed agent that calls `ddev` from its shell needs it among the trusted commands, for example `trusted_commands: ['$inherit', 'ddev']` in a [shared `security` block](/provision/security/shared-settings).
+A sandboxed agent that calls `ddev` from its shell needs it among the trusted commands, for example `trusted_commands: ['$inherit', 'ddev']` in a [shared `permissions` block](/provision/security/shared-settings).
 
 ## Options
 

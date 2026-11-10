@@ -1,4 +1,5 @@
-For GitHub, substitute [GitHub client operations](github-delivery.md); shared gates and handoff still apply.
+The merge runs through [forge operations](forge.md). For GitHub, [GitHub delivery](github-delivery.md)
+adds its specifics; shared gates and handoff still apply.
 
 # Merge the MR (gated)
 
@@ -38,25 +39,16 @@ Check the source. Delete only the merged ticket's own short-lived work branch. R
 shared and environment branches, release branches a later promote reuses, and branches that other
 open MRs target as their base. Forge protection is not a substitute for this check.
 
-For an eligible source, either client form satisfies these properties:
+For retained sources, send the deletion negative explicitly. A stored
+`force_remove_source_branch: true` overrides this negative: block until the branch owner decides
+to clear it before merge. Keep squash enabled.
 
-```bash
-glab mr merge <mr> --squash --remove-source-branch \
-  --squash-message "$(printf '%s\n\n%s\n%s' '<subject>' 'Merged-by: bakers.build' 'ref:<identifier>')"
-```
+The subject comes from the MR title, which carries no bakers.build reference: the validated title,
+verbatim. Squash discards individual commit trailers, so put `Merged-by: bakers.build` and
+final-line `ref:<identifier>` in the squash body; otherwise release measurement silently loses the
+ticket. The message goes on the squash commit, the one that represents the change.
 
-GitLab API: `PUT /projects/:id/merge_requests/:iid/merge` with `squash: true`,
-`should_remove_source_branch: true`, and `squash_commit_message` containing the same lines.
-
-For retained sources, use the API to send `should_remove_source_branch: false`; a false glab flag
-can omit the field. A stored `force_remove_source_branch: true` overrides this negative: block
-until the branch owner decides to clear it before merge. Keep squash enabled.
-
-`<subject>` comes from the MR title, which carries no bakers.build reference: the validated title,
-verbatim. Squash discards individual
-commit trailers, so put `Merged-by: bakers.build` and final-line `ref:<identifier>` in the squash body;
-otherwise release measurement silently loses the ticket. Use `--squash-message`:
-`-m`/`--message` sets the merge commit, not the squash commit representing the change.
+`forge_merge` guarantees every property in this section; its refusal names the failed one.
 
 Verify that the MR reports merged and its target advanced.
 

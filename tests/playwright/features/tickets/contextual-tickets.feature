@@ -14,7 +14,8 @@ Feature: Contextual tickets keep route and filter state
   # The project is the route context, and Group and Team are indexed from
   # that same project, so none of the three can tell its tickets apart.
   Scenario: Project tickets offer only filters that distinguish the project's tickets
-    When I visit the contextual tickets for the project "bakers.build Platform"
+    Given a dedicated project "Contextual filters" has 3 open tickets
+    When I visit the contextual tickets for the project "Contextual filters"
     Then the filters read "Closed, State, Workflow, Assignee, Created by, Priority, Labels" in order
     When I note the listed tickets
     And I reopen the address with the removed keys "group[]=999999&team[]=999999&project[]=999999"

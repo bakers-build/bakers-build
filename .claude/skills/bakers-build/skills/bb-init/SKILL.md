@@ -36,7 +36,7 @@ ones `not determined`; a custom environment calls for its project's documented s
 Follow the selected documentation path: tooling first, then identity and sign-in. Run the
 applicable read-only checks and explain failures with the documentation's next action.
 The person installs tools; give the documentation link and recheck after they act.
-On a worker, check the documented agent sandbox prerequisites (`bakers oven check` once a
+On a worker, check the documented agent sandbox prerequisites (`bakers conductor check` once a
 project is connected). Report present tools and leave them alone. Run a missing one's documented
 install command only with explicit consent, or hand it over when it needs `sudo` this session lacks.
 

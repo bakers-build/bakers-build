@@ -27,19 +27,50 @@
    NOT A SCROLL CONTAINER. `min-h-screen` and the frame's `min-h` let a long
    list grow the page rather than clip itself, which keeps a chooser with
    twenty workspaces readable. #}
-<div{{ (attributes ?: create_attribute()).addClass(['gate', 'min-h-screen', 'flex', 'lg:items-center', 'lg:justify-center', 'lg:p-section', 'bg-app', 'text-text']) }}>
+<div{{ (attributes ?: create_attribute()).addClass(['gate', 'relative', 'min-h-screen', 'flex', 'lg:items-center', 'lg:justify-center', 'lg:p-section', 'bg-app', 'text-text']) }}>
+  {# The appearance choice stands in the page corner on every gate, before any session exists. #}
+  <div class="gate__mode absolute top-2 right-2 z-10">{{ include('bb_theme:mode_toggle', { align: 'end' }, with_context = false) }}</div>
   <div class="gate__frame w-full flex flex-col lg:flex-row lg:max-w-[1100px] lg:min-h-[640px] lg:overflow-hidden lg:rounded-md lg:border lg:border-border">
     <aside class="gate__band scheme-light flex flex-col justify-center gap-section p-gutter lg:p-section min-h-[220px] lg:basis-[46%] lg:shrink-0 bg-gate-band text-gate-band-ink">
       <div class="min-w-0">{% block mark %}{% if mark %}{{ mark }}{% endif %}{% endblock %}</div>
-      {# SDC does not apply schema defaults at render time. #}
-      <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("Knead it. Ship it."|t) }}</p>
+      {% if title_in_band %}
+        {# A form-only page: the heading and its sentence stand in the band and the right side
+           holds nothing but the fields, the way the onboarding wizard reads. #}
+        <div class="flex flex-col gap-inline min-w-0">
+          {% if title %}
+            <h1 class="gate__title m-0 font-display text-gate-headline text-balance{{ focus_title ? ' outline-none' : '' }}"{% if focus_title %} tabindex="-1" x-init="$el.focus({preventScroll: true})"{% endif %}>{{ title }}</h1>
+          {% endif %}
+          {% if description %}<p class="gate__description m-0 text-section-title font-normal max-w-[40ch]">{{ description }}</p>{% endif %}
+          {% if explanation %}<p class="gate__explanation m-0 text-section-title font-normal max-w-[40ch]">{{ explanation }}</p>{% endif %}
+        </div>
+      {% else %}
+        {# SDC does not apply schema defaults at render time. #}
+        <p class="m-0 font-display text-gate-headline text-balance">{{ claim|default("Knead it. Ship it."|t) }}</p>
+      {% endif %}
+      {# Beside the slogan, an explanation is its own line; with the title in the band it joins the
+         text above (see there), in the same type and with no frame. #}
+      {% if explanation and not title_in_band %}
+        <p class="gate__explanation m-0 text-section-title font-normal max-w-[40ch]">{{ explanation }}</p>
+      {% endif %}
     </aside>
-    <main class="gate__main flex-1 flex items-start lg:items-center justify-center p-gutter lg:p-section bg-app lg:bg-surface">
+    <main class="gate__main relative flex-1 flex items-start lg:items-center justify-center p-gutter lg:p-section bg-app lg:bg-surface">
       <div class="w-full max-w-[420px] flex flex-col gap-group">
-        {% if title %}
-          <h1 class="gate__title m-0 text-section-title">{{ title }}</h1>
+        {# A multi-step flow shows where the reader is, in the corner of the form area: one segment per step, and the position as text
+           (`aria-current` so a screen reader hears it once; the segments are decoration). #}
+        {% if progress or steps %}
+          <div class="gate__progress self-end lg:absolute lg:top-section lg:right-section flex items-center gap-inline">
+            {% if steps %}
+              <ol aria-hidden="true" class="flex gap-inline-xs m-0 p-0 list-none">
+                {% for step in steps %}<li class="h-1 w-6 rounded-full {{ step.state == 'upcoming' ? 'bg-border' : 'bg-text' }}"></li>{% endfor %}
+              </ol>
+            {% endif %}
+            {% if progress %}<p class="m-0 text-meta text-text-faint" aria-current="step">{{ progress }}</p>{% endif %}
+          </div>
         {% endif %}
-        {% if description %}
+        {% if title and not title_in_band %}
+          <h1 class="gate__title m-0 text-section-title{{ focus_title ? ' outline-none' : '' }}"{% if focus_title %} tabindex="-1" x-init="$el.focus({preventScroll: true})"{% endif %}>{{ title }}</h1>
+        {% endif %}
+        {% if description and not title_in_band %}
           <p class="gate__description m-0 text-meta text-text-faint max-w-[40ch]">{{ description }}</p>
         {% endif %}
         <div class="gate__content min-w-0">{% block content %}{% if content %}{{ content }}{% endif %}{% endblock %}</div>

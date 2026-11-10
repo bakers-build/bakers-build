@@ -26,8 +26,8 @@ It publishes one alias, `pi`, which uses your locally configured pi model.
 
 | Option | Type | Default | Effect |
 |---|---|---|---|
-| `security` | `'system'` \| `'custom'` | `'system'` | How a run starts; see [Security](#security). |
-| `config` | object | none | Required with, and only valid with, `security: 'custom'`. |
+| `permissions` | `'system'` \| `'custom'` | `'system'` | How a run starts; see [Security](#security). |
+| `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `model` | string | pi's own default | Passed as `--model`. |
 | `provider` | string | none | Passed as `--provider`. |
@@ -40,7 +40,7 @@ It publishes one alias, `pi`, which uses your locally configured pi model.
 
 pi has no OS sandbox and no tool-permission gate: its tools run with the conductor user's own permissions. bakers.build therefore offers no `sandbox` or `yolo` for pi; both fail loading before pi starts.
 
-| `security` | Launch flags |
+| `permissions` | Launch flags |
 |---|---|
 | `system` (default) | none |
 | `custom` | `--no-extensions`, then `-e '<extension>'` for each entry of `config.extensions` |
@@ -49,7 +49,7 @@ pi has no OS sandbox and no tool-permission gate: its tools run with the conduct
 `custom` takes `config: { extensions: ['<path or builtin:name>', ...] }`, at least one entry and no other key. Only these extensions load, for example one that sandboxes pi's tools; whether they protect anything is up to the extension, not bakers.build.
 
 ```js
-{ harness: '@bakers-build/addon-pi', with: { security: 'custom', config: { extensions: ['./pi-sandbox.ts'] } } }
+{ use: '@bakers-build/addon-pi', with: { permissions: 'custom', config: { extensions: ['./pi-sandbox.ts'] } } }
 ```
 
 ## Check it works
@@ -67,7 +67,7 @@ bakers agents
 - pi has no tool-permission gate, so leave `approve` off unless a run needs project-local pi files.
 - `--session-dir`, `--approve`, `-a`, `--no-approve` and `-na` are reserved; putting them in `args` fails loading.
 - The addon starts `pi`; it does not install it or sign it in. The binary must be on `PATH`.
-- Listed in a conductor config, an agent addon is ignored with a warning.
+- Listed in a project config, an agent addon is ignored with a warning.
 - Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).

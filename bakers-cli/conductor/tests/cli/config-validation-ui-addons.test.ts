@@ -8,7 +8,7 @@ const roots: string[] = [];
 const workspace = '11111111-1111-4111-8111-111111111111';
 
 function connectionText() {
-  return `// @bakers-schema-version 3\nexport default { schema_version: 3, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: 'private-value' } }] };\n`;
+  return `// @bakers-schema-version 1\nexport default { schema_version: 1, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: 'private-value' } }] };\n`;
 }
 
 function world() {
@@ -16,14 +16,14 @@ function world() {
   roots.push(root);
   const home = join(root, 'home');
   const cwd = join(root, 'project');
-  mkdirSync(join(home, '.bakers'), { recursive: true });
+  mkdirSync(join(home, '.bakers/connections'), { recursive: true });
   mkdirSync(join(cwd, '.bakers'), { recursive: true });
   const machine = join(home, '.bakers/machine.config.js');
-  const connection = join(home, '.bakers/bakers.config.js');
-  const engine = join(cwd, '.bakers/conductor.config.js');
+  const connection = join(home, '.bakers/connections/default.js');
+  const engine = join(cwd, '.bakers/project.config.js');
   writeFileSync(
     machine,
-    "export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'operator', max_parallel: 2 };\n",
+    "export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'operator' };\n",
   );
   writeFileSync(connection, connectionText());
   return { home, cwd, machine, connection, engine, scope: 'all' as const };
@@ -35,16 +35,16 @@ afterEach(() => {
 });
 
 it('a UI-only addon does not make a conductor config opaque', () => {
-  // A conductor config that names a UI addon and NO remote must still report
-  // the missing remote as missing_required_key, not downgrade it to
+  // A project config that names a UI addon and NO server must still report
+  // the missing server as missing_required_key, not downgrade it to
   // unknown_value — the whitelist is what keeps that diagnosis sharp.
   const w = world();
   writeFileSync(
     w.engine,
     `export default {
-  bakers: { project: 'demo' },
-  executor: { plugin: '@bakers-build/addon-herdr' },
-  workspace: { plugin: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
+  project: { name: 'demo' },
+  executor: { use: '@bakers-build/addon-herdr' },
+  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
   addons: ['@bakers-build/addon-bakers-ui-artifacts', '@bakers-build/addon-herdr'],
 };\n`,
   );
@@ -55,8 +55,8 @@ it('a UI-only addon does not make a conductor config opaque', () => {
     scope: 'project',
   });
 
-  const remote = plan.report.findings.find((f) => f.key === 'remote');
-  expect(remote?.code).toBe('missing_required_key');
+  const server = plan.report.findings.find((f) => f.key === 'server');
+  expect(server?.code).toBe('missing_required_key');
 });
 
 it('one Orca addon entry fills both the executor and the workspace slot', () => {
@@ -64,7 +64,7 @@ it('one Orca addon entry fills both the executor and the workspace slot', () => 
   writeFileSync(
     w.engine,
     `export default {
-  bakers: { project: 'demo' },
+  project: { name: 'demo' },
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-orca'],
 };\n`,
   );
@@ -76,7 +76,7 @@ it('one Orca addon entry fills both the executor and the workspace slot', () => 
   });
 
   const slots = plan.report.findings.filter((f) =>
-    ['remote', 'executor', 'workspace'].includes(f.key ?? ''),
+    ['server', 'executor', 'worktree'].includes(f.key ?? ''),
   );
   expect(slots).toEqual([]);
 });

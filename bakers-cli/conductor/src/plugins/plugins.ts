@@ -8,7 +8,7 @@ import type { AgentRoutes, ConductorLogger } from '@bakers-build/core';
 import type { DropSHPlugin } from 'dropsh/plugin';
 import type { ConductorFileConfig } from '../types.js';
 import type { BbAgent } from './agent.js';
-import type { SecurityReport } from './agent-args.js';
+import type { SecurityMode, SecurityReport } from './agent-args.js';
 import type { BbExecutor } from './executor.js';
 import type { BbRemote, Ticket } from './remote.js';
 import type { BbWorkspace } from './workspace.js';
@@ -20,7 +20,7 @@ export interface ExecutorDeps {
 }
 
 export interface RemotePlugin extends DropSHPlugin {
-  readonly kind: 'remote';
+  readonly kind: 'server';
   readonly id: string;
   readonly requiredModules: string[];
   createRemote(config: ConductorFileConfig): Promise<BbRemote>;
@@ -37,7 +37,7 @@ export interface ExecutorPlugin extends DropSHPlugin {
 }
 
 export interface WorkspacePlugin extends DropSHPlugin {
-  readonly kind: 'workspace';
+  readonly kind: 'worktree';
   readonly id: string;
   readonly requiredModules: string[];
   /**
@@ -58,8 +58,8 @@ export interface AgentPlugin extends DropSHPlugin {
   readonly kind: 'agent';
   readonly id: string;
   readonly requiredModules: string[];
-  /** The effective run security and its source layers (`bakers agents`). */
-  readonly security?: SecurityReport;
+  /** The effective run permissions and their source layers (`bakers agents`). */
+  readonly permissions?: SecurityReport;
   createAgent(config: ConductorFileConfig): Promise<BbAgent>;
 }
 
@@ -119,6 +119,8 @@ export interface ResolvedAgent {
    * used instead. */
   modelVersion?: string;
   id: string;
+  /** The candidate's effective permissions mode, for the run's `plugins` log entry. */
+  permissions?: SecurityMode;
   agent: BbAgent;
   priority?: (ticket: Ticket) => number;
 }
@@ -159,6 +161,9 @@ export async function selectAgents(
       ...(c.description !== undefined ? { description: c.description } : {}),
       ...(c.model !== undefined ? { model: c.model } : {}),
       ...(c.modelVersion !== undefined ? { modelVersion: c.modelVersion } : {}),
+      ...(c.agent.permissions
+        ? { permissions: c.agent.permissions.mode.value }
+        : {}),
       agent: await c.agent.createAgent(config),
       ...(c.priority ? { priority: c.priority } : {}),
     })),

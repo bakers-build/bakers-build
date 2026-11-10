@@ -10,24 +10,35 @@ import { loadConductorConfig } from '../src/config.js';
 const projectConfig = (addons = '') => `
 const slot = (kind) => ({ kind, id: kind, requiredModules: [] });
 export default {
-  remote: slot('remote'),
+  server: slot('server'),
   executor: slot('executor'),
-  workspace: slot('workspace'),${addons ? `\n  addons: [${addons}],` : ''}
-  bakers: { project: 'bakers' },
+  worktree: slot('worktree'),${addons ? `\n  addons: [${addons}],` : ''}
+  project: { name: 'bakers' },
 };
 `;
 
 function writeMachine(body: string): string {
   const home = mkdtempSync(join(tmpdir(), 'bakers-scope-home-'));
   mkdirSync(join(home, '.bakers'));
-  writeFileSync(join(home, '.bakers/machine.config.js'), body);
+  // Every machine file names itself; the schema requires both keys.
+  writeFileSync(
+    join(home, '.bakers/machine.config.js'),
+    body.replace(
+      'export default {',
+      "export default { machine_id: 'm1', label: 'M1',",
+    ),
+  );
   vi.stubEnv('HOME', home);
   return join(home, '.bakers/machine.config.js');
 }
 
 function writeProject(content: string): string {
-  const dir = mkdtempSync(join(tmpdir(), 'bakers-scope-project-'));
-  const file = join(dir, 'conductor.config.js');
+  const dir = join(
+    mkdtempSync(join(tmpdir(), 'bakers-scope-project-')),
+    '.bakers',
+  );
+  mkdirSync(dir);
+  const file = join(dir, 'project.config.js');
   writeFileSync(file, content);
   return file;
 }
@@ -83,7 +94,7 @@ describe('conductor addons per scope', () => {
     );
     expect(scopeWarn).toHaveLength(1);
     expect(scopeWarn[0]).toContain(machine);
-    expect(scopeWarn[0]).toContain('.bakers/conductor.config.js');
+    expect(scopeWarn[0]).toContain('.bakers/project.config.js');
   });
 
   it('the machine executor overrides the project executor', async () => {
@@ -93,8 +104,8 @@ describe('conductor addons per scope', () => {
     const cfg = await loadConductorConfig(writeProject(projectConfig()));
     expect(cfg.executor.id).toBe('herdr-core');
     // Workspace and remote stay project-owned.
-    expect(cfg.workspace.id).toBe('workspace');
-    expect(cfg.remote.id).toBe('remote');
+    expect(cfg.workspace.id).toBe('worktree');
+    expect(cfg.remote.id).toBe('server');
   });
 
   it('without a machine executor the project executor stays', async () => {
@@ -105,7 +116,7 @@ describe('conductor addons per scope', () => {
 
   it('a machine executor descriptor resolves the named addon', async () => {
     writeMachine(
-      `export default { addons: ['@bakers-build/addon-codex'], executor: { plugin: '@bakers-build/addon-orca' } };`,
+      `export default { addons: ['@bakers-build/addon-codex'], executor: { use: '@bakers-build/addon-orca' } };`,
     );
     const cfg = await loadConductorConfig(writeProject(projectConfig()));
     expect(cfg.executor.id).toBe('orca');
@@ -113,27 +124,25 @@ describe('conductor addons per scope', () => {
 
   it('a project on herdr runs herdr-core on a machine that sets it', async () => {
     writeMachine(
-      `export default { addons: ['@bakers-build/addon-codex'], executor: { plugin: '@bakers-build/addon-herdr-core' } };`,
+      `export default { addons: ['@bakers-build/addon-codex'], executor: { use: '@bakers-build/addon-herdr-core' } };`,
     );
     const project = writeProject(
       projectConfig().replace(
         "executor: slot('executor'),",
-        "executor: { plugin: '@bakers-build/addon-herdr' },",
+        "executor: { use: '@bakers-build/addon-herdr' },",
       ),
     );
     const cfg = await loadConductorConfig(project);
     expect(cfg.executor.id).toBe('herdr-core');
   });
 
-  it('agents.addons throws the retired-key remediation', async () => {
+  it('agents.addons is an unknown key', async () => {
     writeMachine(
       `export default { agents: { addons: ['@bakers-build/addon-codex'] } };`,
     );
     await expect(
       loadConductorConfig(writeProject(projectConfig())),
-    ).rejects.toThrow(
-      'machine agents.addons is retired: move its entries into machine.config.js addons[]',
-    );
+    ).rejects.toThrow('agents.addons unknown key');
   });
 
   it('catalog harness must be in machine addons[]', async () => {
@@ -149,36 +158,38 @@ describe('conductor addons per scope', () => {
   });
 });
 
-describe('shared run security from the machine and project config', () => {
-  const projectWithSecurity = (security: string) =>
+describe('shared run permissions from the machine and project config', () => {
+  const projectWithPermissions = (permissions: string) =>
     projectConfig().replace(
-      "bakers: { project: 'bakers' },",
-      `bakers: { project: 'bakers' },\n  security: ${security},`,
+      "project: { name: 'bakers' },",
+      `project: { name: 'bakers' },\n  permissions: ${permissions},`,
     );
 
   it('every harness gets both layers, with sources and warnings', async () => {
     writeMachine(`export default {
       addons: ['@bakers-build/addon-claude', '@bakers-build/addon-codex'],
-      security: { sandbox: { allow_write: ['$inherit', '/srv/cache'] } },
+      permissions: { mode: 'sandbox', sandbox: { allow_write: ['$inherit', '/srv/cache'] } },
     };`);
     const project = writeProject(
-      projectWithSecurity(
+      projectWithPermissions(
         "{ sandbox: { trusted_commands: ['$inherit', 'make'], deny_read: ['$inherit', '~/.aws'] } }",
       ),
     );
     const { warnings, result } = await captureWarnings(() =>
       loadConductorConfig(project),
     );
-    const security = (alias: string) =>
-      result.agents.find((c) => c.alias === alias)?.agent.security;
-    expect(security('opus')?.sandbox.trusted_commands.entries).toContainEqual({
+    const permissions = (alias: string) =>
+      result.agents.find((c) => c.alias === alias)?.agent.permissions;
+    expect(
+      permissions('opus')?.sandbox.trusted_commands.entries,
+    ).toContainEqual({
       value: 'make',
       source: 'project',
     });
-    expect(security('opus')?.sandbox.allow_write.entries).toEqual([
+    expect(permissions('opus')?.sandbox.allow_write.entries).toEqual([
       { value: '/srv/cache', source: 'machine' },
     ]);
-    expect(security('codex')?.not_applied).toContainEqual({
+    expect(permissions('codex')?.not_applied).toContainEqual({
       key: 'trusted_commands',
       source: 'project',
       reason: 'unsupported',
@@ -190,9 +201,9 @@ describe('shared run security from the machine and project config', () => {
     expect(loosening[0]).toContain(project);
     const skipped = warnings.filter((w) => w.includes('not applied'));
     expect(skipped).toEqual([
-      expect.stringContaining('codex: project security.sandbox.deny_read'),
+      expect.stringContaining('codex: project permissions.sandbox.deny_read'),
       expect.stringContaining(
-        'codex: project security.sandbox.trusted_commands',
+        'codex: project permissions.sandbox.trusted_commands',
       ),
     ]);
   });
@@ -202,7 +213,7 @@ describe('shared run security from the machine and project config', () => {
     const { warnings } = await captureWarnings(() =>
       loadConductorConfig(
         writeProject(
-          projectWithSecurity(
+          projectWithPermissions(
             "{ mode: 'yolo', sandbox: { allow_write: ['/x'], deny_read: [] } }",
           ),
         ),
@@ -220,7 +231,7 @@ describe('shared run security from the machine and project config', () => {
     const { warnings } = await captureWarnings(() =>
       loadConductorConfig(
         writeProject(
-          projectWithSecurity(
+          projectWithPermissions(
             "{ sandbox: { deny_read: ['$inherit', '~/.aws'] } }",
           ),
         ),
@@ -232,12 +243,74 @@ describe('shared run security from the machine and project config', () => {
   it('a malformed shared block fails loading and names its file', async () => {
     const machine = writeMachine(`export default {
       addons: ['@bakers-build/addon-codex'],
-      security: { sandbox: { network: [] } },
+      permissions: { sandbox: { network: [] } },
     };`);
     await expect(
       loadConductorConfig(writeProject(projectConfig())),
-    ).rejects.toThrow(
-      `${machine}: machine security.sandbox: unknown key network`,
+    ).rejects.toThrow(`${machine}: permissions.sandbox.network unknown key`);
+  });
+
+  it('the old key security fails loading in the project and machine config', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    const project = writeProject(
+      projectConfig().replace(
+        "project: { name: 'bakers' },",
+        "project: { name: 'bakers' },\n  security: { mode: 'sandbox' },",
+      ),
     );
+    await expect(loadConductorConfig(project)).rejects.toThrow(
+      `${project}: security unknown key`,
+    );
+    const machine = writeMachine(`export default {
+      addons: ['@bakers-build/addon-codex'],
+      security: { mode: 'sandbox' },
+    };`);
+    await expect(
+      loadConductorConfig(writeProject(projectConfig())),
+    ).rejects.toThrow(`${machine}: security unknown key`);
+  });
+});
+
+describe('restart_on_change and the watched files', () => {
+  it('defaults restart_on_change to true and watches what was loaded', async () => {
+    const machine = writeMachine(
+      `export default { addons: ['@bakers-build/addon-codex'] };`,
+    );
+    const project = writeProject(projectConfig());
+    const cfg = await loadConductorConfig(project);
+    const dir = join(project, '..');
+
+    expect(cfg.restart_on_change).toBe(true);
+    expect(cfg.watch_paths?.files).toEqual([project, machine]);
+    // The directory of the resolved addon module, not the package name.
+    expect(cfg.watch_paths?.dirs).toHaveLength(1);
+    expect(cfg.watch_paths?.dirs[0]).toMatch(/codex.*[/\\](dist|src)$/);
+  });
+
+  it('honours restart_on_change: false', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    const cfg = await loadConductorConfig(
+      writeProject(
+        projectConfig().replace(
+          'project:',
+          'restart_on_change: false,\n  project:',
+        ),
+      ),
+    );
+    expect(cfg.restart_on_change).toBe(false);
+  });
+
+  it('rejects a restart_on_change that is not a boolean', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    await expect(
+      loadConductorConfig(
+        writeProject(
+          projectConfig().replace(
+            'project:',
+            "restart_on_change: 'no',\n  project:",
+          ),
+        ),
+      ),
+    ).rejects.toThrow(/restart_on_change must be boolean/);
   });
 });

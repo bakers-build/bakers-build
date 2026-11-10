@@ -7,6 +7,7 @@ import {
   shellQuote,
   stemForConfigFile,
 } from '@bakers-build/core';
+import type { PluginLaunch } from '../plugins/agent.js';
 import {
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
@@ -15,6 +16,7 @@ import {
   matchesEnvDeny,
   type RunEnvPolicy,
 } from '../plugins/agent.js';
+import { homeKey, homePath } from '../plugins/agent-home.js';
 import type {
   BbExecutor,
   HookListenerContext,
@@ -24,6 +26,7 @@ import type {
 } from '../plugins/executor.js';
 import { type ResolvedAgent, resolveAgent } from '../plugins/plugins.js';
 import type {
+  ActiveRun,
   BbRemote,
   ClaimedRun,
   ConductorRegistration,
@@ -42,6 +45,7 @@ import { attemptFamily } from './attempt.js';
 import { type HookRunner, shellHookRunner } from './hook-runner.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
+import { checkRequiredSkills } from './required-skills.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
 import { signalUi } from './ui-signal.js';
 
@@ -65,17 +69,24 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 
 /**
  * A run-env key is reserved when it names a conductor-provided core variable:
- * any `BB_*`, `WORKSPACE_ROOT`, or `TICKET_URL`. User `env_vars` may not
- * clobber these — the core vars always win (BB-99).
+ * any `BAKERS_*`, `WORKSPACE_ROOT`, or `TICKET_URL`. User `env_vars` may not
+ * clobber these — the core vars always win (BB-99). `BB_*` stays reserved: a
+ * retired name in the run env would make the agent's `bakers` refuse to start.
  */
 function isReservedEnvKey(key: string): boolean {
   return (
-    key.startsWith('BB_') || key === 'WORKSPACE_ROOT' || key === 'TICKET_URL'
+    key.startsWith('BAKERS_') ||
+    key.startsWith('BB_') ||
+    key === 'WORKSPACE_ROOT' ||
+    key === 'TICKET_URL'
   );
 }
 
 /** A portable environment variable name. */
 const ENV_KEY = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** How long a run's transcript stays unchanged before its permission denials are reported. */
+const STALL_QUIET_MS = 5 * 60_000;
 
 /**
  * What a failed listener is logged as: the error's class name, never its
@@ -153,7 +164,7 @@ export function resolveRunEnv(
       { ticket: scope.ticket, keys: denied },
       policy.drop
         ? 'dropped denied keys from ticket env_vars (agent run-env policy)'
-        : 'passed denied keys from ticket env_vars (agent security: yolo)',
+        : 'passed denied keys from ticket env_vars (agent permissions: yolo)',
     );
   }
   // Core vars overlay last — they can never be overridden.
@@ -217,8 +228,8 @@ function renderPrompt(
   return template
     .replaceAll('{identifier}', values.identifier)
     .replaceAll('{state}', values.state)
-    .replaceAll('{runUuid}', values.runUuid)
-    .replaceAll('{ticketUuid}', values.ticketUuid);
+    .replaceAll('{run_uuid}', values.runUuid)
+    .replaceAll('{ticket_uuid}', values.ticketUuid);
 }
 
 /**
@@ -258,6 +269,12 @@ export class Conductor {
     string,
     { identifier: string; worktreePath: string }
   > | null = null;
+
+  /** Transcript mtime each active run was last checked for denials at. */
+  private readonly stallChecked = new Map<string, number>();
+
+  /** Active runs already reported as blocked; never reported twice. */
+  private readonly stallReported = new Set<string>();
 
   /** The addons with contract-2 inbox messages this conductor runs. */
   private readonly inboxAddons: InboxRuntime;
@@ -338,7 +355,7 @@ export class Conductor {
    *
    * Only `cmdStartForeground` calls this. `cmdPoll` and `cmdReap` also build a
    * Conductor and call start() + tick(), then exit; if they reported a pid,
-   * every `bakers oven once` would overwrite the running conductor's pid
+   * every `bakers conductor once` would overwrite the running conductor's pid
    * with its own short-lived one and the next stop would signal a dead — or
    * recycled — process. Making the report opt-in means those two commands
    * cannot do so even by accident.
@@ -452,7 +469,7 @@ export class Conductor {
     }
   }
 
-  /** One tick that also waits for its actions: `bakers oven once`, tests. */
+  /** One tick that also waits for its actions: `bakers conductor once`, tests. */
   async tick(): Promise<void> {
     await this.produce();
     await this.queue.drain();
@@ -525,6 +542,7 @@ export class Conductor {
     await this.step('finalize', () => this.enqueueFinalize());
     await this.step('reap', () => this.enqueueReap());
     await this.step('freeze', () => this.observeFreezes());
+    await this.step('stalls', () => this.observeStalls());
     await runInbox(
       this.remote,
       this.inboxAddons,
@@ -614,6 +632,114 @@ export class Conductor {
     }
   }
 
+  /**
+   * A run a permission rule denied cannot ask anyone on an unattended box,
+   * so it stops. Once its transcript has been quiet for {@link STALL_QUIET_MS}
+   * and holds a denial, report it once. One stat per running run per tick;
+   * the transcript is read once per modification.
+   */
+  private async observeStalls(): Promise<void> {
+    const runs = await this.remote.fetchActiveRuns(this.id);
+    const live = new Set(runs.map((r) => r.runUuid));
+    for (const seen of [this.stallChecked, this.stallReported])
+      for (const id of seen.keys()) if (!live.has(id)) seen.delete(id);
+    for (const r of runs) {
+      if (r.state !== 'running' || !r.worktreePath) continue;
+      if (this.stallReported.has(r.runUuid)) continue;
+      const agent = this.agentFor(r)?.agent;
+      if (!agent?.permissionDenials || !agent.runLogModified) continue;
+      const identity = {
+        sessionId: r.runUuid,
+        attemptFamily: attemptFamily(r.runUuid),
+      };
+      let denied: string[];
+      try {
+        const modified = await agent.runLogModified(r.worktreePath, identity);
+        if (
+          modified === undefined ||
+          Date.now() - modified < STALL_QUIET_MS ||
+          this.stallChecked.get(r.runUuid) === modified
+        )
+          continue;
+        denied = agent.permissionDenials(
+          await agent.getRunLog(r.worktreePath, identity),
+        );
+        // Only a successful read counts: a stuck transcript never changes again.
+        this.stallChecked.set(r.runUuid, modified);
+      } catch (err) {
+        this.logger.warn(
+          { conductorId: this.id, run: r.runUuid, err },
+          'could not read the run transcript for permission denials',
+        );
+        continue;
+      }
+      if (denied.length === 0) continue;
+      this.stallReported.add(r.runUuid);
+      this.queue.enqueue({
+        key: `stall:${r.runUuid}`,
+        lane: r.ticketUuid || r.runUuid,
+        run: () => this.reportBlocked(r, denied),
+      });
+    }
+  }
+
+  /**
+   * The technical-problem note, then the error: the PM bot relays the newest
+   * comment of a frozen, labelled ticket. Cancelling lets finalisation stop
+   * the agent and keep its transcript.
+   */
+  private async reportBlocked(r: ActiveRun, denied: string[]): Promise<void> {
+    const site = this.remote.siteTools;
+    // Without site tools nothing reaches the ticket; a silent cancel would hide the run.
+    // Unmarked, the next tick with site tools reports it.
+    if (!site) {
+      this.stallReported.delete(r.runUuid);
+      this.stallChecked.delete(r.runUuid);
+      throw new Error('no site tools to report the blocked run');
+    }
+    this.logger.warn(
+      { conductorId: this.id, run: r.runUuid, denied },
+      'run blocked on a permission denial; reporting and cancelling it',
+    );
+    const call = async (name: string, args: Record<string, unknown>) => {
+      const result = await site.call(`tool_api__${name}`, args);
+      if ((result as { isError?: boolean } | undefined)?.isError)
+        throw new Error(`${name}: ${JSON.stringify(result?.content)}`);
+    };
+    const comment = (body: string) =>
+      call('bakers_comment_publish', {
+        ticket: r.ticketUuid,
+        type: 'comment',
+        body,
+      });
+    try {
+      await comment('# Technical problem\n\nPlease contact the developers.\n');
+      await comment(
+        [
+          '# Error',
+          '',
+          `The sandboxed run stopped: a permission rule denied an action it needed, and its transcript has not changed for ${STALL_QUIET_MS / 60_000} minutes. An allow rule for the action is missing from the agent's \`permissions\` settings. Add it, then unfreeze the ticket.`,
+          '',
+          'Denied actions:',
+          '',
+          ...denied.map((action) => `- \`${action}\``),
+          '',
+        ].join('\n'),
+      );
+      await call('bakers_ticket_update', {
+        ticket: r.ticketUuid,
+        labels_add: ['technical problem'],
+        frozen: true,
+      });
+    } finally {
+      // A stuck run is cancelled even when the report fails; the warning names the actions.
+      // shortcut: the reported mark lives in memory, so if this cancel fails a restarted
+      // conductor reports the run again; persist the mark if duplicates show up.
+      await this.remote.cancelRun(r.runUuid);
+    }
+    this.signalUi();
+  }
+
   /** Finalises one run; a failure is logged and retried next tick. */
   private async finalizeOne(r: FinalizableRun): Promise<void> {
     try {
@@ -676,15 +802,19 @@ export class Conductor {
     }
   }
 
+  /**
+   * The agent that actually ran: the persisted run.agent id, falling back to
+   * the first candidate for a run written before the field existed (empty id).
+   */
+  private agentFor(r: { agent?: string }) {
+    return this.agents.find((a) => a.id === r.agent) ?? this.agents[0];
+  }
+
   /** Read the run's transcript and parse its footprint for the close write. */
   private async captureRun(
     r: FinalizableRun,
   ): Promise<{ log: string; metrics: RunMetrics }> {
-    // Route to the agent that actually ran (BB-144): the persisted
-    // run.agent id, falling back to the first candidate for a run written
-    // before the field existed (empty id).
-    const resolved =
-      this.agents.find((a) => a.id === r.agent) ?? this.agents[0];
+    const resolved = this.agentFor(r);
     if (!resolved) {
       throw new Error('no agent candidates configured for finalize');
     }
@@ -1050,7 +1180,7 @@ export class Conductor {
    * whose workspace still lingers (BB-89). Driven by the durable `cleaned_up`
    * flag via {@link BbRemote.fetchUncleanedTickets}: every ticket the server
    * has already closed but not yet cleaned. The SAME reconciliation runs on
-   * every tick AND standalone as `bakers oven clean`, and the query is
+   * every tick AND standalone as `bakers conductor clean`, and the query is
    * scoped to THIS conductor (BB-121) — so it catches the orphans a
    * live-tick-only path structurally cannot (the conductor was down when the
    * ticket closed, or crashed mid-cleanup) for its OWN tickets. A foreign
@@ -1333,25 +1463,25 @@ export class Conductor {
     } catch (err) {
       this.logger.warn(
         { ticket: t.identifier, err: String(err) },
-        'could not resolve reachable workspaces for BB_WORKSPACE_IDS',
+        'could not resolve reachable workspaces for BAKERS_WORKSPACE_IDS',
       );
     }
     const core: Record<string, string> = {
-      BB_URL: this.config.site.base_url,
-      BB_ID: t.uuid,
+      BAKERS_URL: this.config.site.base_url,
+      BAKERS_ID: t.uuid,
       // BB-569: lets a launch wrapper key off the ticket and the run's
       // start state without parsing the prompt (addon-claude `measure`).
-      ...(t.identifier ? { BB_TICKET_IDENTIFIER: t.identifier } : {}),
-      ...(state ? { BB_STATE: state } : {}),
-      ...(runUuid ? { BB_RUN_UUID: runUuid } : {}),
-      BB_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
+      ...(t.identifier ? { BAKERS_TICKET_IDENTIFIER: t.identifier } : {}),
+      ...(state ? { BAKERS_STATE: state } : {}),
+      ...(runUuid ? { BAKERS_RUN_UUID: runUuid } : {}),
+      BAKERS_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
       WORKSPACE_ROOT: this.checkoutRoot,
       ...(t.issueUrl ? { TICKET_URL: t.issueUrl } : {}),
-      ...(t.projectName ? { BB_PROJECT: t.projectName } : {}),
-      ...(t.projectId ? { BB_PROJECT_ID: t.projectId } : {}),
-      ...(t.workspaceName ? { BB_WORKSPACE: t.workspaceName } : {}),
-      ...(t.workspaceId ? { BB_WORKSPACE_ID: t.workspaceId } : {}),
-      ...(workspaceIds ? { BB_WORKSPACE_IDS: workspaceIds } : {}),
+      ...(t.projectName ? { BAKERS_PROJECT: t.projectName } : {}),
+      ...(t.projectId ? { BAKERS_PROJECT_ID: t.projectId } : {}),
+      ...(t.workspaceName ? { BAKERS_WORKSPACE: t.workspaceName } : {}),
+      ...(t.workspaceId ? { BAKERS_WORKSPACE_ID: t.workspaceId } : {}),
+      ...(workspaceIds ? { BAKERS_WORKSPACE_IDS: workspaceIds } : {}),
     };
     return resolveRunEnv(t.effectiveEnvVars, core, this.logger, {
       ticket: t.identifier,
@@ -1418,6 +1548,72 @@ export class Conductor {
     }
   }
 
+  /**
+   * Install the project's `marketplaces` into the run's agent home and log
+   * one `plugins` entry. A failed install throws, failing the run start.
+   */
+  private async installPlugins(
+    chosen: ResolvedAgent,
+    t: Ticket,
+    run: ClaimedRun,
+    worktree: string,
+  ): Promise<{ env: Record<string, string>; args: string[] }> {
+    const marketplaces = this.config.marketplaces ?? [];
+    const harness = chosen.agent.id;
+    const entry: Record<string, unknown> = {
+      harness,
+      alias: chosen.alias ?? chosen.id,
+      mode: chosen.permissions,
+    };
+    const log = () =>
+      this.logger.info(
+        { ticket: t.identifier, run: run.runUuid, plugins: entry },
+        'plugins',
+      );
+    const off =
+      marketplaces.length === 0
+        ? 'none declared'
+        : chosen.agent.pluginsDisabled
+          ? 'disabled'
+          : !chosen.agent.installPlugins
+            ? 'unsupported'
+            : undefined;
+    if (off || !chosen.agent.installPlugins) {
+      entry.state = `off (${off})`;
+      // Without the agent home, which skills the run gets is the user's own setup.
+      entry.required_skills = 'skipped (plugins off)';
+      log();
+      return { env: {}, args: [] };
+    }
+    const hash = homeKey(marketplaces);
+    const home = homePath(harness, hash);
+    Object.assign(entry, { state: 'on', hash, home, marketplaces });
+    let launch: PluginLaunch;
+    try {
+      launch = await chosen.agent.installPlugins(marketplaces, home);
+      Object.assign(entry, {
+        outcome: launch.home,
+        ...(launch.trust_bypass?.length
+          ? { trust_bypass: launch.trust_bypass }
+          : {}),
+        ...(launch.gaps?.length ? { gaps: launch.gaps } : {}),
+      });
+    } catch (err) {
+      entry.failure = err instanceof Error ? err.message : String(err);
+      log();
+      throw new Error(`plugins: ${harness} install failed: ${entry.failure}`);
+    }
+    const skills = checkRequiredSkills(worktree, home, t);
+    entry.required_skills = skills;
+    if (skills.missing.length > 0) {
+      entry.failure = `missing required skills: ${skills.missing.join(', ')}`;
+      log();
+      throw new Error(`plugins: ${harness}: ${entry.failure}`);
+    }
+    log();
+    return { env: launch.env, args: launch.args };
+  }
+
   /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
   private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
     const t = await this.remote.getTicket(run.ticketUuid);
@@ -1433,7 +1629,7 @@ export class Conductor {
     const [unavailable] = await sandboxFailures([chosen]);
     if (unavailable) throw new Error(unavailable);
     const baseRef = t.baseBranch ? `origin/${t.baseBranch}` : undefined;
-    // Resolve the run env once (per-ticket env_vars + core BB_* vars) and
+    // Resolve the run env once (per-ticket env_vars + core BAKERS_* vars) and
     // inject it into BOTH the lifecycle hooks AND the agent run
     // env (BB-99). Reserved core keys always win; values may be sensitive so
     // only key names are ever logged.
@@ -1619,12 +1815,15 @@ export class Conductor {
     const tools = chosen.agent.withoutConductorTools
       ? undefined
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
+    const plugins = await this.installPlugins(chosen, t, run, ws.path);
+    Object.assign(env, plugins.env);
     const command = chosen.agent.launchCommand(
       prompt,
       identity,
       ws.path,
       tools ? { url: tools.url } : undefined,
       env,
+      plugins.args,
     );
     // Read after launchCommand: a warning may depend on what this launch got.
     const warnings = chosen.agent.launchWarnings;
@@ -1778,7 +1977,7 @@ export class Conductor {
     }
     await this.queue.drain();
     // NB: the poll loop never writes status=offline itself. A graceful stop
-    // (`bakers oven stop`) writes offline directly server-side; a crash or
+    // (`bakers conductor stop`) writes offline directly server-side; a crash or
     // hard-kill leaves a stale lease that the Drupal cron reaper flips to
     // offline (bb_core cron → ConductorReaper). Liveness is thus always
     // derived from status + last_seen/lease_expires_at, never from the loop.

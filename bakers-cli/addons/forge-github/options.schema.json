@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-forge-github/options.schema.json",
+  "title": "@bakers-build/addon-forge-github options",
+  "description": "The forge entry's with.backend.with: a GitHub App, or the conductor's gh login with auth 'gh'.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "repository"
+  ],
+  "properties": {
+    "repository": {
+      "type": "string",
+      "pattern": "^[\\w.-]+/[\\w.-]+$",
+      "description": "owner/repo."
+    },
+    "auth": {
+      "const": "gh",
+      "description": "Use the conductor's own gh login instead of a GitHub App."
+    },
+    "app_id": {
+      "type": [
+        "integer",
+        "string"
+      ],
+      "minLength": 1
+    },
+    "installation_id": {
+      "type": [
+        "integer",
+        "string"
+      ],
+      "minLength": 1
+    },
+    "private_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The App private key (PEM); machine config only."
+    },
+    "private_key_env": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Names the conductor environment variable that holds the credential."
+    }
+  },
+  "if": {
+    "required": [
+      "auth"
+    ]
+  },
+  "else": {
+    "required": [
+      "app_id",
+      "installation_id"
+    ]
+  }
+}

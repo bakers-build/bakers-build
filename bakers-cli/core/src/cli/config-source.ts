@@ -4,7 +4,7 @@
 // introduced it) so both users share one source of truth for "which top-level
 // properties does this config source declare?":
 //
-//   - `@bakers-build/core` — `findBbConfig` gates the LEGACY `conductor.config.js`
+//   - `@bakers-build/core` — `findBbConfig` gates the LEGACY `project.config.js`
 //     connection read on CONTENT: a config declaring no `site` is not a
 //     connection source (root cause 2). Core is layer 0 with zero `@bakers-build/*`
 //     edges, so it cannot import the conductor's copy — hence the hoist.

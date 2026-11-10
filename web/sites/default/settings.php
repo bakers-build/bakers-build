@@ -1,5 +1,15 @@
 <?php
 
+// DDEV's generated settings come first, so the committed values below win over
+// them (the fixed salt, the config sync directory). Among other things they
+// keep sites/default and settings.php writable (skip_permissions_hardening);
+// Drupal's own hardening makes both read-only after an install, which makes git
+// fail when a merge or checkout rewrites a settings file. The file exists only
+// under DDEV, which writes it.
+if (getenv('IS_DDEV_PROJECT') === 'true' && file_exists(__DIR__ . '/settings.ddev.php')) {
+  include __DIR__ . '/settings.ddev.php';
+}
+
 // bakers.build `playground` (default) site. Committed settings: ddev-local DB creds and
 // the site salt are not real secrets and live here. Only genuine secrets (the
 // GitLab API token) are read from the environment via getenv().
@@ -72,6 +82,6 @@ $settings['feature_flags']['run_log_storage'] = in_array(
 // Komodo deployment (hosted container): override the ddev-local DB creds + salt above
 // with the per-stack env vars when running in a deployed container (DB_HOST is set there,
 // absent under DDEV). Keeps ONE settings.php for local + every deploy environment.
-if (getenv('DB_HOST') && file_exists(__DIR__ . '/settings.komodo.php')) {
-  include __DIR__ . '/settings.komodo.php';
+if (getenv('DB_HOST') && file_exists(__DIR__ . '/settings.container.php')) {
+  include __DIR__ . '/settings.container.php';
 }

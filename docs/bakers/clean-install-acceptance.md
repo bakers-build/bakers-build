@@ -36,7 +36,7 @@ Pin the full package integrity set and these runtime digests in the results:
 - `ghcr.io/bakers-build/bakers-build/docs@sha256:6eefaedaecb8e7f61dea1a7e9d777c6808a33eeafc8f40df270cca903927a805`
 
 Publication is available; it does not resolve the asset-provenance limitations recorded in
-[licensing](licensing.md). The standalone `docker/self-host.yml` path is not yet integrated into
+[licensing](licensing.md). The standalone `docker/compose/docker-compose.yml` path is not yet integrated into
 this candidate. Complete that upstream dependency before executing the corresponding install
 path; do not silently test an unpublished sibling branch instead.
 
@@ -128,19 +128,19 @@ SMTP accounts or provider DNS records.
 
 | Input | Path to consumer and current limit |
 |---|---|
-| `DOMAIN` | Root Compose substitutes it into `DRUSH_OPTIONS_URI=https://…` for install/deploy/PHP/cron. It does **not** explicitly forward `DOMAIN` to those processes. `settings.komodo.php` reads `DOMAIN` for trusted hosts, but the base settings already contain `.*`; appending a pattern does not restrict that wildcard. |
+| `DOMAIN` | Root Compose substitutes it into `DRUSH_OPTIONS_URI=https://…` for install/deploy/PHP/cron. It does **not** explicitly forward `DOMAIN` to those processes. `settings.container.php` restricts trusted hosts to `DOMAIN` only when the variable reaches PHP, which the standalone `docker/compose/docker-compose.yml` does and root Compose does not. |
 | Public URL and proxy/TLS | Drush consumes `DRUSH_OPTIONS_URI`; browser URL generation depends on the request/proxy. `settings.php` enables reverse proxy and trusts private IPv4 ranges in source, not an environment switch. Check HTTPS host/scheme in login, invitation and OAuth callbacks through the actual ingress. |
-| `MAIL_SMTP_DSN` | Forwarded to PHP/cron; `settings.komodo.php` parses scheme, host, port, decoded credentials and query options into `system.mail.mailer_dsn`. Empty or malformed DSN leaves fallback configuration, rather than failing closed. Test invalid/missing inputs and encryption with an owned sink; never count fallback as successful SMTP. |
+| `MAIL_SMTP_DSN` | Forwarded to PHP/cron; `settings.container.php` parses scheme, host, port, decoded credentials and query options into `system.mail.mailer_dsn`. Empty or malformed DSN leaves fallback configuration, rather than failing closed. Test invalid/missing inputs and encryption with an owned sink; never count fallback as successful SMTP. |
 | `MAIL_FROM_ADDRESS` | PHP/cron environment overrides `system.site.mail` when nonempty; otherwise exported configuration remains. |
 | `MAIL_FROM_NAME` | Forwarded to PHP/cron, but no consumer was found in current application source. Do not claim a working sender-name environment override. |
-| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_ROOT_PASSWORD` | Compose passes values to MariaDB and applicable app services. App `DB_HOST=db`, `DB_PORT=3306`, `DB_DRIVER=mysql` are literal Compose values; `settings.komodo.php` consumes DB settings when `DB_HOST` exists. Root password is for MariaDB only. |
+| `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_ROOT_PASSWORD` | Compose passes values to MariaDB and applicable app services. App `DB_HOST=db`, `DB_PORT=3306`, `DB_DRIVER=mysql` are literal Compose values; `settings.container.php` consumes DB settings when `DB_HOST` exists. Root password is for MariaDB only. |
 | `DRUPAL_HASH_SALT` | Passed to install/deploy/PHP/cron; nonempty value overrides `$settings.hash_salt`. Preserve it across restarts and keep it private. |
 | `BB_OAUTH_GOOGLE_CLIENT_ID`, `BB_OAUTH_GOOGLE_CLIENT_SECRET` | Optional, default empty; passed to install/PHP and consumed by settings when `DB_HOST` is set. Provider registration and a correct callback remain external requirements. Check other service contexts if OAuth-dependent jobs require them. |
 | `CRON_INTERVAL` | Compose cron loop interval, default 300 seconds. Mail delivery from cron still needs its own observation. |
 | Conductor endpoint/authentication | `bakers init --base-url https://<owned-host>` creates the selected private connection; `site.base_url` is the consumer. Sign in through `bakers auth login`, verify `bakers auth status` and `bakers config check --scope connection --online`. No universal server-URL environment override is assumed. |
-| Connection selection | Explicit config/connection selectors feed `resolveBbConnectionSelection`; `BB_CONFIG` maps to the dropsh config selector, `BB_CONNECTION` takes precedence over `DROPSH_CONNECTION`, then the project connection file and default discovery apply. Record the effective selection with `bakers info`, without exposing credentials. |
-| Machine/config roots | `BB_HOME` relocates Bakers' private configuration root; it does not isolate the separate dropsh credential store or all agent homes. Machine identity and execution/security settings belong to `machine.config.js` and supported addon configuration. Do not invent identity/security environment switches. |
-| Conductor selection | Explicit config overrides `BB_CONDUCTOR_CONFIG`; explicit conductor name overrides `BB_CONDUCTOR`. Settings come from the selected project conductor and its local overrides. Persist config and ordinary authentication as documented, restart, and verify it reconnects to the intended service. |
+| Connection selection | Explicit config/connection selectors feed `resolveBbConnectionSelection`; `BAKERS_CONFIG` maps to the dropsh config selector, `BAKERS_CONNECTION` takes precedence over `DROPSH_CONNECTION`, then the project connection file and default discovery apply. Record the effective selection with `bakers info`, without exposing credentials. |
+| Machine/config roots | `BAKERS_HOME` relocates Bakers' private configuration root; it does not isolate the separate dropsh credential store or all agent homes. Machine identity and execution/security settings belong to `machine.config.js` and supported addon configuration. Do not invent identity/security environment switches. |
+| Conductor selection | Explicit config overrides `BAKERS_CONDUCTOR_CONFIG`; explicit conductor name overrides `BAKERS_CONDUCTOR`. Settings come from the selected project config (`.bakers/project.config.js` or a variant); `BAKERS_PROJECT` overrides its project name. Persist config and ordinary authentication as documented, restart, and verify it reconnects to the intended service. |
 
 F11 must record settings that require CLI/configuration rather than environment values and obtain
 explicit review of their sufficiency. Coordinate runtime fixes with the standalone deployment work;

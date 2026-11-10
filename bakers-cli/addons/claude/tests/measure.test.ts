@@ -74,9 +74,9 @@ async function measured(
         env: {
           ...process.env,
           ANTHROPIC_BASE_URL: '',
-          BB_STATE: state,
-          BB_TICKET_IDENTIFIER: 'BB-569',
-          BB_RUN_UUID: '',
+          BAKERS_STATE: state,
+          BAKERS_TICKET_IDENTIFIER: 'BB-569',
+          BAKERS_RUN_UUID: '',
           ...extraEnv,
         },
       },
@@ -163,7 +163,7 @@ describe('claude-measure launch wrapper', () => {
   it('logs each run into a subdirectory named by its run uuid', async () => {
     const cwd = await worktree(true);
     const runUuid = '123d5bbe-6c90-4d17-98ef-e0bb448c5066';
-    const out = await measured(cwd, 'coding', { BB_RUN_UUID: runUuid });
+    const out = await measured(cwd, 'coding', { BAKERS_RUN_UUID: runUuid });
     expect(out.logDir).toBe(
       join(await realpath(cwd), 'assets-ai', 'BB-569', 'node', runUuid),
     );
@@ -242,7 +242,7 @@ describe('claude-measure launch wrapper', () => {
       {
         cwd: await worktree(false),
         timeout: 10_000,
-        env: { ...process.env, TMPDIR: tmp, BB_STATE: 'coding' },
+        env: { ...process.env, TMPDIR: tmp, BAKERS_STATE: 'coding' },
       },
     ).catch((e: { code?: number }) => e);
     expect((err as { code?: number }).code).toBe(127);
@@ -265,8 +265,8 @@ describe('claude-measure launch wrapper', () => {
         timeout: 10_000,
         env: {
           ...process.env,
-          BB_STATE: 'coding',
-          BB_TICKET_IDENTIFIER: 'BB-569',
+          BAKERS_STATE: 'coding',
+          BAKERS_TICKET_IDENTIFIER: 'BB-569',
           FAKE_CLAUDE_SIGNAL: 'SIGTERM',
         },
       },
@@ -280,7 +280,7 @@ describe('ClaudeAgent measure', () => {
     const cmd = new ClaudeAgent({
       model: 'opus',
       measure: true,
-      security: 'yolo',
+      permissions: 'yolo',
       args: ['--verbose'],
     }).launchCommand('go');
     expect(cmd).toBe(
@@ -293,7 +293,7 @@ describe('ClaudeAgent measure', () => {
       'bash',
       [
         '-c',
-        `node() { printf '%s\\0' "$@"; }; ${new ClaudeAgent({ measure: true }).launchCommand('go')}`,
+        `node() { printf '%s\\0' "$@"; }; ${new ClaudeAgent({ permissions: 'sandbox', measure: true }).launchCommand('go')}`,
       ],
       { encoding: 'utf8' },
     )
@@ -313,7 +313,9 @@ describe('ClaudeAgent measure', () => {
 
   it('leaves the launch untouched without measure', () => {
     expect(
-      new ClaudeAgent({ model: 'opus', security: 'yolo' }).launchCommand('go'),
+      new ClaudeAgent({ model: 'opus', permissions: 'yolo' }).launchCommand(
+        'go',
+      ),
     ).toBe(
       "CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1 claude 'go' --model 'opus' --dangerously-skip-permissions",
     );

@@ -3,7 +3,7 @@ prev:
   text: Provision
   link: /provision/
 next:
-  text: Connect your project
+  text: Prepare your project
   link: /get-started/connect-a-project
 ---
 
@@ -36,7 +36,7 @@ Your project must support:
 
 ## Connect the project's setup
 
-Repository scripts prepare the application. Identify the commands to put in `.bakers/conductor.config.js`. The next step, [connecting the checkout](/get-started/connect-a-project), applies these choices and verifies the configuration.
+Repository scripts prepare the application. Identify the commands to put in `.bakers/project.config.js`. The next step, [connecting the checkout](/get-started/connect-a-project), applies these choices and verifies the configuration.
 
 [Lifecycle hooks](/provision/hooks) connect setup and cleanup commands to ticket work. The [Node.js](/provision/node-project) and [Compose](/provision/docker-compose) examples show stack-specific commands. The [Configuration reference](/configuration/project/hooks) owns timing, environment and failure rules.
 

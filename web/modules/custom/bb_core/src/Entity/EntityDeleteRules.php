@@ -58,10 +58,11 @@ final class EntityDeleteRules {
     'bb_project' => [
       [self::BLOCK, 'bb_ticket', 'project_id'],
       [self::BLOCK, 'bb_track_worklog', 'project_id'],
-      [self::BLOCK, 'bb_conductor', 'project_id'],
       // Worklogs block above, so no logged time goes with its account.
       [self::CASCADE, 'bb_track_account', 'project_id'],
       [self::CASCADE, 'bb_environment', 'project_id'],
+      // A conductor serves one project; its own rules detach the rest.
+      [self::CASCADE, 'bb_conductor', 'project_id'],
       // Their triggers follow through TicketTriggerHooks::entityDelete().
       [self::CASCADE, 'bb_ticket_template', 'project_id'],
     ],

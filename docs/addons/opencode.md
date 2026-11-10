@@ -28,22 +28,22 @@ It publishes one alias, `opencode`, which uses your locally configured OpenCode 
 |---|---|---|---|
 | `model` | string | OpenCode's own default | Passed as `--model`. |
 | `effort` | string | none | Not supported; ignored with a log line. |
-| `security` | `'system'` \| `'yolo'` | `'system'` | How strictly a run starts; see [Security](#security). `'sandbox'` and `'custom'` fail loading. |
+| `permissions` | `'system'` \| `'yolo'` | `'system'` | How strictly a run starts; see [Security](#security). `'sandbox'` and `'custom'` fail loading. |
 | `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
 | `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
 
 ## Security
 
-OpenCode has no OS sandbox, and its permission policies do not sandbox plugin code, so bakers.build cannot protect an OpenCode run. Its default is therefore `system`, not `sandbox` as for Claude, Codex and Grok:
+OpenCode has no OS sandbox, and its permission policies do not sandbox plugin code, so bakers.build cannot protect an OpenCode run. It therefore runs in `system`, the default for every harness, and rejects `sandbox`:
 
-| `security` | Launch flags |
+| `permissions` | Launch flags |
 |---|---|
 | `system` (default) | none; your own OpenCode configuration decides |
 | `yolo` | `--auto` (permission auto-approval) |
-| `sandbox` | fails loading: `OpenCode has no OS sandbox, so security: 'sandbox' cannot be enforced; leave security unset or set 'system' (your own OpenCode configuration) or 'yolo'` |
-| `custom` | fails loading: `OpenCode has no config hand-off for security: 'custom'; use security: 'system' with your own OpenCode configuration` |
+| `sandbox` | fails loading: `OpenCode has no OS sandbox, so permissions: 'sandbox' cannot be enforced; leave permissions unset or set 'system' (your own OpenCode configuration) or 'yolo'` |
+| `custom` | fails loading: `OpenCode has no config hand-off for permissions: 'custom'; use permissions: 'system' with your own OpenCode configuration` |
 
-A `sandbox` block therefore always fails loading too. `bakers oven check` reports OpenCode as `sandbox ok`, as for every agent outside `sandbox` mode, which it does not check.
+A `sandbox` block therefore always fails loading too. `bakers conductor check` reports OpenCode as `sandbox ok`, as for every agent outside `sandbox` mode, which it does not check.
 
 What `system` and `yolo` expose: [Run security › Risk of loosening](/provision/security/execution#risk-of-loosening).
 
@@ -61,7 +61,7 @@ bakers agents
 
 - Only `yolo` runs with `--auto`; the default `system` does not. `--prompt` and `--auto` are reserved in every mode; putting them in `args` fails loading.
 - The addon starts `opencode`; it does not install it or sign it in. The binary must be on `PATH`.
-- Listed in a conductor config, an agent addon is ignored with a warning.
+- Listed in a project config, an agent addon is ignored with a warning.
 - Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).

@@ -28,7 +28,7 @@ export type GrokReasoningEffort = 'high' | 'medium' | 'low';
 
 export interface GrokAgentOptions extends SecurityOptions {
   model?: string;
-  reasoningEffort?: GrokReasoningEffort | string;
+  reasoning_effort?: GrokReasoningEffort | string;
   effort?: string;
   args?: string[];
 }
@@ -139,7 +139,7 @@ function rejectUnsupportedSandbox(sandbox: Required<SandboxOptions>): void {
   }
   if (sandbox.trusted_commands.length > 0) {
     throw new Error(
-      "Grok has no command exception narrowed to executable, arguments and directory for sandbox.trusted_commands; use security: 'system' with your own sandbox.toml profile",
+      "Grok has no command exception narrowed to executable, arguments and directory for sandbox.trusted_commands; use permissions: 'system' with your own sandbox.toml profile",
     );
   }
   if (sandbox.deny_read.length > 0) {
@@ -197,7 +197,7 @@ export class GrokAgent implements BbAgent {
     this.runEnvPolicy = this.security.runEnvPolicy;
     if (this.security.mode === 'custom') {
       throw new Error(
-        "Grok has no config flags for security: 'custom'; use security: 'system' with args: ['--sandbox', '<profile>'] for your own sandbox.toml profile",
+        "Grok has no config flags for permissions: 'custom'; use permissions: 'system' with args: ['--sandbox', '<profile>'] for your own sandbox.toml profile",
       );
     }
     rejectUnsupportedSandbox(this.security.sandbox);
@@ -234,7 +234,7 @@ export class GrokAgent implements BbAgent {
     this.model = cli.model;
     this.effort =
       cli.effort ??
-      validateOptionalString(options.reasoningEffort, 'reasoningEffort');
+      validateOptionalString(options.reasoning_effort, 'reasoning_effort');
     this.overrides = cli.overrides;
   }
 
@@ -309,7 +309,7 @@ export class GrokAgent implements BbAgent {
     if (this.security.mode !== 'sandbox' || host.platform === 'darwin') {
       return { ok: true };
     }
-    const fallback = "set security: 'system' or 'yolo' for Grok";
+    const fallback = "set permissions: 'system' or 'yolo' for Grok";
     if (host.platform !== 'linux') {
       return {
         ok: false,
@@ -321,7 +321,7 @@ export class GrokAgent implements BbAgent {
       return {
         ok: false,
         cause: 'Managed Grok profiles need bubblewrap to protect sandbox.toml',
-        fix: 'install bubblewrap and keep security: sandbox',
+        fix: 'install bubblewrap and keep permissions: sandbox',
       };
     }
     const probe = await host.run('grep', [
@@ -511,7 +511,7 @@ export function grokAgent(options: GrokAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'grok',
     requiredModules: [],
-    security: agent.security.report,
+    permissions: agent.security.report,
     async createAgent() {
       return agent;
     },

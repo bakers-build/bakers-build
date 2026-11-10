@@ -2,7 +2,7 @@
 
 **Shares a running service of a ticket's worktree under a public URL.**
 
-Show a site, Mailpit or Storybook to someone outside the machine.
+Share a site, Mailpit or Storybook.
 
 The `bakers ports` commands ship with the CLI. The addon entry adds the **Share tunnels** message to tickets.
 
@@ -19,7 +19,7 @@ The `bakers ports` commands ship with the CLI. The addon entry adds the **Share 
    ],
    ```
 
-   It may also go in the project's `.bakers/conductor.config.js`; with both, the machine `with` wins. Restart the conductor after a change.
+   It may also go in the project's `.bakers/project.config.js`; with both, machine settings take precedence and `services` merge by key ([merge rules](/addons/ports-services#options)). Restart the conductor after a change.
 
 The conductor registers the addon; a **Share tunnels** message then appears in the message card of every ticket it works, in the web UI and in `bakers ui`. Anyone who may read the ticket may send it.
 
@@ -32,11 +32,11 @@ The conductor registers the addon; a **Share tunnels** message then appears in t
 | `claimers` | Runtime claimer packages; see [Shared processes](/addons/ports-services). |
 | `services`, `all_node` | Which host processes are shared; see [Shared processes](/addons/ports-services). |
 
-Without a ports entry with `transport.use`, tunnel commands refuse with `bakers ports needs '@bakers-build/addon-ports' in addons[] …`; `bakers ports list` still works. Projects naming different transports are refused at runtime. A top-level `ports` key in the machine file is retired; `bakers config upgrade --scope machine` moves it into the entry.
+Without a ports entry with `transport.use`, tunnel commands refuse with `bakers ports needs '@bakers-build/addon-ports' in addons[] …`; `bakers ports list` still works. Projects naming different transports are refused at runtime. A top-level `ports` key in the machine file fails as an unknown key; move it into the entry by hand.
 
 ## Check it works
 
-The ticket's message card offers **Share tunnels**. Sending it shares every eligible service through `ports_up` and lists their URLs.
+Start the intended service in the ticket worktree first. **Share tunnels** invokes the same `ports_up` tool an agent can call and returns URLs or an error. It does not start the service.
 
 ::: details Per CLI
 ```sh
@@ -54,7 +54,7 @@ bakers ports reap                         # machine-wide reconciliation
 ## Good to know
 
 - Only claimed services get a tunnel: host processes by [`services`](/addons/ports-services), runtime services by `claimers`. A service key comes from `list`, never a raw port; `up` alone shares every eligible one.
-- In `bakers ui`, open the message card from Overview (`↓`/`j`, `Enter`). `←`/`→` switch addon, `Enter` sends Share tunnels, and `l` copies a link out of the answer.
+- In `bakers ui`, select the Overview message card to send **Share tunnels**.
 - Reap is no message: run `bakers ports reap` or wire the [`after_done` hook](/provision/hooks#clean-up-a-preview), so a finished ticket leaves no tunnel behind.
 - A public URL is reachable from the internet while the tunnel lives.
 

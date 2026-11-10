@@ -136,7 +136,7 @@ describe('Conductor integration — claim → dispatch → running', () => {
     const executor = new FakeExecutor({ outcome: 'exited' });
     const workspace = new FakeWorkspace();
     // `system`: nothing launches here, so the machine's sandbox must not gate claims.
-    const agent = new ClaudeAgent({ security: 'system' });
+    const agent = new ClaudeAgent({ permissions: 'system' });
     conductor = new Conductor(
       config,
       remote,
@@ -146,7 +146,7 @@ describe('Conductor integration — claim → dispatch → running', () => {
       createLogger({
         checkoutRoot: process.cwd(),
         isTTY: false,
-        env: { BB_CONDUCTOR_LOG: 'stdout' },
+        env: { BAKERS_CONDUCTOR_LOG: 'stdout' },
       }),
     );
   });
@@ -327,7 +327,7 @@ print $run->uuid();
       createLogger({
         checkoutRoot: process.cwd(),
         isTTY: false,
-        env: { BB_CONDUCTOR_LOG: 'stdout' },
+        env: { BAKERS_CONDUCTOR_LOG: 'stdout' },
       }),
     );
     await gzipConductor.start();

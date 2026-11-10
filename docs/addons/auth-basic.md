@@ -2,11 +2,11 @@
 
 **Signs requests to the bakers.build server in with a fixed HTTP Basic token.**
 
-For servers that are set up for HTTP Basic, such as test instances. Most users sign in with a sign-in profile instead.
+For servers that are set up for HTTP Basic, such as test instances. Most users use an [OAuth sign-in profile](/configuration/connection#sign-in-profiles) instead.
 
 ## Enable it
 
-Add the package to `addons` in your connection config (`bakers.config.js` or `connections/<id>.js`).
+Add the package to `addons` in your connection config (`~/.bakers/connections/default.js`, `connections/<id>.js` or `.bakers/connection.config.js`).
 
 ```js
 addons: [
@@ -22,13 +22,13 @@ addons: [
 
 ## Check it works
 
-A read through the connection succeeds instead of answering 401.
+Run `bakers config check --scope connection --online`. A server read succeeds instead of answering 401; the local auth status alone does not test the credentials.
 
 ## Good to know
 
-- The token is a secret. Keep it out of committed files.
+- The token is a secret, not encryption. Use HTTPS and keep the private connection file out of Git.
 - Sign-in and sign-out are not supported; the token is always treated as signed in.
 
-More: [Connections](/configuration/connector/connections).
+More: [Connections](/configuration/connection).
 
 Package source in a checkout: `bakers-cli/addons/auth-basic`.

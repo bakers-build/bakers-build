@@ -40,6 +40,7 @@ describe('workspace package structure', () => {
     expect(pkg.exports).toEqual({
       '.': './dist/src/index.js',
       './preset': './dist/src/preset.js',
+      './options.schema.json': './options.schema.json',
     });
     expect(pkg.scripts).toMatchObject({
       build: 'tsc',
@@ -78,7 +79,7 @@ describe('OpencodeAgent.launchCommand', () => {
   it('starts the interactive TUI with the initial prompt and auto-approve in yolo', async () => {
     const { OpencodeAgent } = await loadOpencodeModule();
     expect(
-      new OpencodeAgent({ security: 'yolo' }).launchCommand('do the thing'),
+      new OpencodeAgent({ permissions: 'yolo' }).launchCommand('do the thing'),
     ).toBe("opencode --prompt 'do the thing' --auto");
   });
 
@@ -86,7 +87,7 @@ describe('OpencodeAgent.launchCommand', () => {
     const { OpencodeAgent } = await loadOpencodeModule();
     expect(
       new OpencodeAgent({
-        security: 'yolo',
+        permissions: 'yolo',
         model: 'anthropic/claude-sonnet-4-20250514',
       }).launchCommand('do it'),
     ).toBe(
@@ -102,7 +103,7 @@ describe('OpencodeAgent.launchCommand', () => {
   it('POSIX-quotes a multi-line prompt for the sh-evaluated launch file', async () => {
     const { OpencodeAgent } = await loadOpencodeModule();
     const prompt = 'one\n\ntwo';
-    const command = new OpencodeAgent({ security: 'yolo' }).launchCommand(
+    const command = new OpencodeAgent({ permissions: 'yolo' }).launchCommand(
       prompt,
     );
 
@@ -112,7 +113,7 @@ describe('OpencodeAgent.launchCommand', () => {
 
 describe('OpencodeAgent security', () => {
   const NO_SANDBOX =
-    "OpenCode has no OS sandbox, so security: 'sandbox' cannot be enforced; leave security unset or set 'system' (your own OpenCode configuration) or 'yolo'";
+    "OpenCode has no OS sandbox, so permissions: 'sandbox' cannot be enforced; leave permissions unset or set 'system' (your own OpenCode configuration) or 'yolo'";
 
   it('defaults to system: no auto-approval, no warning and no sandbox claim', async () => {
     const { OpencodeAgent } = await loadOpencodeModule();
@@ -125,13 +126,13 @@ describe('OpencodeAgent security', () => {
 
   it('fails loading when sandbox mode is set explicitly', async () => {
     const { OpencodeAgent } = await loadOpencodeModule();
-    expect(() => new OpencodeAgent({ security: 'sandbox' })).toThrow(
+    expect(() => new OpencodeAgent({ permissions: 'sandbox' })).toThrow(
       NO_SANDBOX,
     );
     expect(
       () =>
         new OpencodeAgent({
-          security: 'sandbox',
+          permissions: 'sandbox',
           sandbox: { network: ['*'] },
         }),
     ).toThrow(NO_SANDBOX);
@@ -139,20 +140,20 @@ describe('OpencodeAgent security', () => {
 
   it('yolo auto-approves and system adds no security flag', async () => {
     const { OpencodeAgent } = await loadOpencodeModule();
-    expect(new OpencodeAgent({ security: 'yolo' }).launchCommand('x')).toBe(
+    expect(new OpencodeAgent({ permissions: 'yolo' }).launchCommand('x')).toBe(
       "opencode --prompt 'x' --auto",
     );
-    expect(new OpencodeAgent({ security: 'system' }).launchCommand('x')).toBe(
-      "opencode --prompt 'x'",
-    );
+    expect(
+      new OpencodeAgent({ permissions: 'system' }).launchCommand('x'),
+    ).toBe("opencode --prompt 'x'");
   });
 
   it('drops ticket env vars except in yolo', async () => {
     const { OpencodeAgent } = await loadOpencodeModule();
-    expect(new OpencodeAgent({ security: 'system' }).runEnvPolicy.drop).toBe(
+    expect(new OpencodeAgent({ permissions: 'system' }).runEnvPolicy.drop).toBe(
       true,
     );
-    expect(new OpencodeAgent({ security: 'yolo' }).runEnvPolicy.drop).toBe(
+    expect(new OpencodeAgent({ permissions: 'yolo' }).runEnvPolicy.drop).toBe(
       false,
     );
   });
@@ -161,19 +162,19 @@ describe('OpencodeAgent security', () => {
     const { OpencodeAgent } = await loadOpencodeModule();
     const cases: [Record<string, unknown>, RegExp][] = [
       [{ skip_permissions: true }, /skip_permissions was removed/],
-      [{ security: 'nope' }, /security must be one of/],
-      [{ config: { a: 1 } }, /config is only valid with security: 'custom'/],
+      [{ permissions: 'nope' }, /permissions must be one of/],
+      [{ config: { a: 1 } }, /config is only valid with permissions: 'custom'/],
       [
         { sandbox: { network: ['*'] } },
-        /sandbox is only valid with security: 'sandbox'/,
+        /sandbox is only valid with permissions: 'sandbox'/,
       ],
       [
-        { security: 'sandbox', sandbox: { nope: [] } },
+        { permissions: 'sandbox', sandbox: { nope: [] } },
         /unknown sandbox key nope/,
       ],
       [
-        { security: 'custom', config: { a: 1 } },
-        /OpenCode has no config hand-off for security: 'custom'; use security: 'system'/,
+        { permissions: 'custom', config: { a: 1 } },
+        /OpenCode has no config hand-off for permissions: 'custom'; use permissions: 'system'/,
       ],
     ];
     for (const [options, error] of cases) {
@@ -195,7 +196,7 @@ describe('OpencodeAgent args and unsupported effort', () => {
   it('appends args after --auto and ignores effort with a launch warning', async () => {
     const { OpencodeAgent } = await loadOpencodeModule();
     const agent = new OpencodeAgent({
-      security: 'yolo',
+      permissions: 'yolo',
       model: 'anthropic/claude-sonnet-4-20250514',
       effort: 'high',
       args: ['--foo', 'a b'],
@@ -216,12 +217,12 @@ describe('OpencodeAgent args and unsupported effort', () => {
   it('rejects reserved --prompt and --auto flags in every mode', async () => {
     const { OpencodeAgent } = await loadOpencodeModule();
     for (const security of [undefined, 'system', 'yolo'] as const) {
-      expect(() => new OpencodeAgent({ security, args: ['--prompt'] })).toThrow(
-        /reserved flag/,
-      );
-      expect(() => new OpencodeAgent({ security, args: ['--auto'] })).toThrow(
-        /reserved flag/,
-      );
+      expect(
+        () => new OpencodeAgent({ permissions: security, args: ['--prompt'] }),
+      ).toThrow(/reserved flag/);
+      expect(
+        () => new OpencodeAgent({ permissions: security, args: ['--auto'] }),
+      ).toThrow(/reserved flag/);
     }
   });
 });
@@ -348,12 +349,15 @@ describe('OpencodeAgent shared run security', () => {
   it('ignores a shared mode and shows shared lists as not applied', async () => {
     const { opencodeAgent } = await loadOpencodeModule();
     const plugin = opencodeAgent({
-      shared_security: {
+      shared_permissions: {
         project: { mode: 'sandbox', sandbox: { allow_write: ['/x'] } },
       },
     } as never);
-    expect(plugin.security?.mode).toEqual({ value: 'system', source: 'agent' });
-    expect(plugin.security?.not_applied).toEqual([
+    expect(plugin.permissions?.mode).toEqual({
+      value: 'system',
+      source: 'agent',
+    });
+    expect(plugin.permissions?.not_applied).toEqual([
       { key: 'allow_write', source: 'project', reason: 'mode' },
     ]);
   });

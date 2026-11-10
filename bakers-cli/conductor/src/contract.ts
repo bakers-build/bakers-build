@@ -27,6 +27,7 @@ export {
   DEFAULT_ENV_DENY,
   emptyAgentFootprint,
   matchesEnvDeny,
+  type PluginLaunch,
   type RunEnvPolicy,
 } from './plugins/agent.js';
 export {
@@ -50,6 +51,13 @@ export {
   validateOptionalString,
   validateSharedSecurity,
 } from './plugins/agent-args.js';
+export {
+  ensureHome,
+  homeKey,
+  homePath,
+  type MarketplaceDeclaration,
+  validateMarketplaces,
+} from './plugins/agent-home.js';
 export type {
   BbExecutor,
   ExecutorCapabilities,

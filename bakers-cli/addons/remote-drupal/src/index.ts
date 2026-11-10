@@ -185,7 +185,7 @@ export class DrupalBbRemote implements BbRemote {
       .collection('bb_run')
       .where('conductor_id.conductor_id', '=', id)
       .whereIn('state', ACTIVE)
-      .fields(['state', 'state_at_start', 'worktree_path'])
+      .fields(['state', 'state_at_start', 'worktree_path', 'agent'])
       .page(100)
       .list();
     return Promise.all(
@@ -197,6 +197,7 @@ export class DrupalBbRemote implements BbRemote {
         state: r.attr<string>('state') ?? '',
         stateAtStart: r.attr<string>('state_at_start') ?? '',
         worktreePath: r.attr<string>('worktree_path') ?? '',
+        agent: r.attr<string>('agent') ?? '',
       })),
     );
   }
@@ -305,7 +306,7 @@ export class DrupalBbRemote implements BbRemote {
     // in the SAME request — a `bb_project` belongs to a `bb_group` (the
     // OG group), and a `bb_group` belongs to a `bb_workspace`.
     const doc = (await this.api.get(
-      `bb_ticket/bb_ticket/${uuid}?include=labels,environments,project_id.group_id.workspace_id`,
+      `bb_ticket/bb_ticket/${uuid}?include=labels,environments,ticket_type,recipe,project_id.group_id.workspace_id`,
     )) as JsonApiTicketDoc;
     const attrs = doc.data?.attributes ?? {};
     const issueUrl =
@@ -337,6 +338,15 @@ export class DrupalBbRemote implements BbRemote {
         };
       })
       .filter((e) => e.name !== '');
+    const termName = (name: string): string | undefined => {
+      const r = ref(doc.data, name);
+      const value = r
+        ? byId.get(`${r.type}:${r.id}`)?.attributes?.name
+        : undefined;
+      return typeof value === 'string' ? value : undefined;
+    };
+    const type = termName('ticket_type');
+    const recipe = termName('recipe');
     const projectRef = ref(doc.data, 'project_id');
     const project = projectRef
       ? byId.get(`${projectRef.type}:${projectRef.id}`)
@@ -377,6 +387,8 @@ export class DrupalBbRemote implements BbRemote {
       ...(projectName ? { projectName } : {}),
       ...(workspaceRef ? { workspaceId: workspaceRef.id } : {}),
       ...(workspaceName ? { workspaceName } : {}),
+      ...(type ? { type } : {}),
+      ...(recipe ? { recipe } : {}),
       labels,
       environments,
     };
@@ -689,6 +701,12 @@ export class DrupalBbRemote implements BbRemote {
         closed: true,
         closed_date: t,
       },
+    });
+  }
+
+  async cancelRun(uuid: string): Promise<void> {
+    await this.api.update('bb_run', uuid, {
+      attributes: { state: 'cancelled' },
     });
   }
 
@@ -1072,7 +1090,7 @@ export class DrupalBbRemote implements BbRemote {
 
 export function drupalRemote(): RemotePlugin {
   return {
-    kind: 'remote',
+    kind: 'server',
     id: 'drupal',
     requiredModules: [],
     async createRemote(config: ConductorFileConfig) {

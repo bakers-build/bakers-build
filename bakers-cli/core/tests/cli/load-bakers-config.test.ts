@@ -36,7 +36,7 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
   };
 
   it('reports a computed effective prefix and empty plugin list', async () => {
-    const path = join(bakersDir(), 'bakers.config.js');
+    const path = join(bakersDir(), 'connection.config.js');
     writeFileSync(
       path,
       `const prefix = '/custom'; export default { site: { base_url: 'https://x.test', jsonapi_prefix: prefix }, plugins: [] };`,
@@ -53,7 +53,7 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     );
   });
   it('reports computed plugin options and redacts credential fields', async () => {
-    const path = join(bakersDir(), 'bakers.config.js');
+    const path = join(bakersDir(), 'connection.config.js');
     writeFileSync(
       path,
       `const option = 'chosen'; export default { site: { base_url: 'https://x.test' }, plugins: [{ plugin: 'example', with: { option, client_id: 'private-id', client_secret: 'private-secret' } }] };`,
@@ -78,9 +78,9 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     expect(JSON.stringify(fields)).not.toContain('private-id');
   });
 
-  it('refuses a connection whose schema version is not 1, naming bakers init', async () => {
+  it('refuses a connection at an unknown schema version, naming bakers init', async () => {
     writeFileSync(
-      join(bakersDir(), 'bakers.config.js'),
+      join(bakersDir(), 'connection.config.js'),
       `// @bakers-schema-version 4\nexport default { schema_version: 4, site: { base_url: 'https://x.test' }, plugins: [] };`,
     );
     await expect(loadBbConfig(host, { cwd: tmp })).rejects.toThrow(
@@ -88,10 +88,10 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     );
   });
 
-  it('reads site + already-constructed plugins from a project bakers.config.js', async () => {
+  it('reads site + already-constructed plugins from a project connection.config.js', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default {
         site: { base_url: 'https://x.test' }, workspace_id: '00000000-0000-4000-8000-000000000000',
         plugins: [{ id: 'session' }],
@@ -102,13 +102,13 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     expect(cfg.site.jsonapi_prefix).toBe('/jsonapi');
     expect(cfg.plugins).toHaveLength(1);
     expect(cfg.fallback).toBe(false);
-    expect(cfg.config_path).toBe(join(d, 'bakers.config.js'));
+    expect(cfg.config_path).toBe(join(d, 'connection.config.js'));
   });
 
   it('lets a caller clear a legacy global workspace for accessible project lookup', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default { site: { base_url: 'https://x.test' }, workspace_id: 'legacy-workspace', plugins: [] };`,
     );
     const cfg = await loadBbConnectionBootstrap(host, {
@@ -125,7 +125,7 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
       `export default (opts) => ({ id: opts?.id ?? 'md' });\n`,
     );
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default {
         site: { base_url: 'https://x.test' }, workspace_id: '00000000-0000-4000-8000-000000000000',
         plugins: [{ plugin: './myplugin.js', with: { id: 'markdown' } }],
@@ -135,10 +135,10 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     expect(cfg.plugins).toEqual([{ id: 'markdown' }]);
   });
 
-  it('does not load legacy engine credentials when the canonical connection is absent', async () => {
+  it('does not load project-file credentials when the canonical connection is absent', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'conductor.config.js'),
+      join(d, 'project.config.js'),
       "export default {site:{base_url:'https://legacy.test'},workspace_id:'old'};",
     );
     await expect(
@@ -146,40 +146,39 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     ).rejects.toThrow('bakers config init --scope connection');
   });
 
-  it('AC-5: prefers bakers.config.js over a co-located legacy conductor.config.js (resolution not legacy)', async () => {
+  it('AC-5: prefers connection.config.js over a co-located project.config.js (resolution not legacy)', async () => {
     const d = bakersDir();
-    // A legacy engine config that WOULD serve as a connection source (carries
-    // site + plugins) — but the sibling bakers.config.js must win.
+    // A project file that carries site + plugins — the sibling
+    // connection.config.js must win.
     writeFileSync(
-      join(d, 'conductor.config.js'),
+      join(d, 'project.config.js'),
       `export default {
         site: { base_url: 'https://legacy.test' }, workspace_id: '00000000-0000-4000-8000-000000000000',
-        project: 'demo',
-        machine_id: 'm',
+        project: { name: 'demo' },
         states: ['working'],
         plugins: [{ id: 'legacy-session' }],
       };\n`,
     );
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default {
         site: { base_url: 'https://connection.test' }, workspace_id: '00000000-0000-4000-8000-000000000000',
         plugins: [{ id: 'session' }],
       };\n`,
     );
     const cfg = await loadBbConfig(host, { cwd: tmp });
-    expect(cfg.config_path.endsWith('bakers.config.js')).toBe(true);
+    expect(cfg.config_path.endsWith('connection.config.js')).toBe(true);
     expect(cfg.site.base_url).toBe('https://connection.test');
-    // The path resolver reports a non-legacy resolution once bakers.config.js exists.
+    // The path resolver reports a non-legacy resolution once connection.config.js exists.
     const resolution = resolveBbConfigPath({ cwd: tmp });
     expect(resolution.legacy).toBe(false);
-    expect(resolution.path.endsWith('bakers.config.js')).toBe(true);
+    expect(resolution.path.endsWith('connection.config.js')).toBe(true);
   });
 
   it('an explicit path wins over walk-up', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default { site: { base_url: 'https://project.test' }, workspace_id: '00000000-0000-4000-8000-000000000000', plugins: [] };\n`,
     );
     const explicitDir = join(tmp, 'custom');
@@ -199,7 +198,7 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     const connections = join(homeBb, 'connections');
     mkdirSync(connections, { recursive: true });
     writeFileSync(
-      join(homeBb, 'bakers.config.js'),
+      join(homeBb, 'connections', 'default.js'),
       `export default { site: { base_url: 'https://default.test' }, plugins: [] };\n`,
     );
     writeFileSync(
@@ -240,34 +239,11 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     expect(cfg.selection_source).toBe('flag-config');
   });
 
-  it('an explicit selector does not inspect a lower-precedence checkout file', async () => {
-    const projectBb = bakersDir();
-    writeFileSync(
-      join(projectBb, 'connection.config.local.js'),
-      `export default { connection: missingIdentifier };\n`,
-    );
-    const explicit = join(tmp, 'explicit.js');
-    writeFileSync(
-      explicit,
-      `export default { site: { base_url: 'https://explicit.test' }, plugins: [] };\n`,
-    );
-
-    const cfg = await loadBbConfig(host, { cwd: tmp, explicit, env: {} });
-
-    expect(cfg.site.base_url).toBe('https://explicit.test');
-    expect(cfg.selection_source).toBe('flag-config');
-  });
-
-  it('--connection beats BB_CONNECTION and BB_CONNECTION beats the checkout file', async () => {
-    const projectBb = bakersDir();
-    writeFileSync(
-      join(projectBb, 'connection.config.local.js'),
-      `export default { connection: 'checkout' };\n`,
-    );
+  it('--connection beats BAKERS_CONNECTION', async () => {
     const home = join(tmp, 'home');
     const connections = join(home, '.bakers/connections');
     mkdirSync(connections, { recursive: true });
-    for (const id of ['flag', 'environment', 'checkout'])
+    for (const id of ['flag', 'environment'])
       writeFileSync(
         join(connections, `${id}.js`),
         `export default { site: { base_url: 'https://${id}.test' }, plugins: [] };\n`,
@@ -276,13 +252,13 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
       cwd: tmp,
       home,
       connection: 'flag',
-      env: { BB_CONNECTION: 'environment' },
+      env: { BAKERS_CONNECTION: 'environment' },
     });
     expect(byFlag.site.base_url).toBe('https://flag.test');
     const byEnv = await loadBbConfig(host, {
       cwd: tmp,
       home,
-      env: { BB_CONNECTION: 'environment' },
+      env: { BAKERS_CONNECTION: 'environment' },
     });
     expect(byEnv.site.base_url).toBe('https://environment.test');
   });
@@ -290,12 +266,11 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
   it('uses the implicit default global connection when no selector exists', async () => {
     const home = join(tmp, 'home');
     const homeBb = join(home, '.bakers');
-    mkdirSync(homeBb, { recursive: true });
+    mkdirSync(join(homeBb, 'connections'), { recursive: true });
     writeFileSync(
-      join(homeBb, 'bakers.config.js'),
+      join(homeBb, 'connections', 'default.js'),
       `export default { site: { base_url: 'https://default.test' }, plugins: [] };\n`,
     );
-    mkdirSync(join(homeBb, 'connections'));
     writeFileSync(
       join(homeBb, 'connections/only.js'),
       `export default { site: { base_url: 'https://only.test' }, plugins: [] };\n`,
@@ -336,13 +311,13 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     ).rejects.toThrow(/missing.*available.*connections/is);
   });
 
-  it('loads the connection selected by BB_CONNECTION', async () => {
+  it('loads the connection selected by BAKERS_CONNECTION', async () => {
     const home = join(tmp, 'home');
     const homeBb = join(home, '.bakers');
     const connections = join(homeBb, 'connections');
     mkdirSync(connections, { recursive: true });
     writeFileSync(
-      join(homeBb, 'bakers.config.js'),
+      join(homeBb, 'connections', 'default.js'),
       `export default { site: { base_url: 'https://default.test' }, plugins: [] };\n`,
     );
     writeFileSync(
@@ -353,57 +328,12 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     const options = {
       cwd: tmp,
       home,
-      env: { BB_CONNECTION: 'staging' },
+      env: { BAKERS_CONNECTION: 'staging' },
     };
     const cfg = await loadBbConfig(host, options);
 
     expect(cfg.site.base_url).toBe('https://staging.test');
     expect(cfg.selection_source).toBe('env-connection');
-  });
-
-  it('loads the connection named by the checkout selection file', async () => {
-    const projectBb = bakersDir();
-    writeFileSync(
-      join(projectBb, 'connection.config.local.js'),
-      `export default { connection: 'staging' };\n`,
-    );
-    const home = join(tmp, 'home');
-    const homeBb = join(home, '.bakers');
-    const connections = join(homeBb, 'connections');
-    mkdirSync(connections, { recursive: true });
-    writeFileSync(
-      join(homeBb, 'bakers.config.js'),
-      `export default { site: { base_url: 'https://default.test' }, plugins: [] };\n`,
-    );
-    writeFileSync(
-      join(connections, 'staging.js'),
-      `export default { site: { base_url: 'https://staging.test' }, plugins: [] };\n`,
-    );
-
-    const cfg = await loadBbConfig(host, { cwd: tmp, home, env: {} });
-
-    expect(cfg.site.base_url).toBe('https://staging.test');
-    expect(cfg.selection_source).toBe('project-file');
-  });
-
-  it('rejects unknown keys in the checkout selection file', async () => {
-    const projectBb = bakersDir();
-    writeFileSync(
-      join(projectBb, 'conductor.config.js'),
-      `export default { project: 'demo' };\n`,
-    );
-    writeFileSync(
-      join(projectBb, 'connection.config.local.js'),
-      `export default { connection: 'staging', extra: true };\n`,
-    );
-
-    await expect(
-      loadBbConfig(host, {
-        cwd: tmp,
-        home: join(tmp, 'home'),
-        env: {},
-      }),
-    ).rejects.toThrow("Unknown key 'extra'");
   });
 
   it('flattens a plugins[] descriptor whose factory returns an array (BB-129)', async () => {
@@ -414,7 +344,7 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
 export const mkComposite = () => ([{ id: 'child-a' }, { id: 'child-b' }]);\n`,
     );
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default {
         site: { base_url: 'https://x.test' }, workspace_id: '00000000-0000-4000-8000-000000000000',
         plugins: [
@@ -441,7 +371,7 @@ export const mkComposite = () => ([{ id: 'child-a' }, { id: 'child-b' }]);\n`,
     it('forwards source `project` for a config found by walk-up', async () => {
       const d = bakersDir();
       writeFileSync(
-        join(d, 'bakers.config.js'),
+        join(d, 'connection.config.js'),
         `export default { site: { base_url: 'https://x.test' }, workspace_id: '00000000-0000-4000-8000-000000000000', plugins: [] };\n`,
       );
       const sub = join(tmp, 'a', 'b');
@@ -449,7 +379,7 @@ export const mkComposite = () => ([{ id: 'child-a' }, { id: 'child-b' }]);\n`,
       const cfg = await loadBbConfig(host, { cwd: sub });
       expect(cfg.source).toBe('project');
       expect(cfg.legacy).toBe(false);
-      expect(cfg.config_path).toBe(join(d, 'bakers.config.js'));
+      expect(cfg.config_path).toBe(join(d, 'connection.config.js'));
     });
 
     it('forwards source `explicit` for an explicitly named config', async () => {
@@ -466,7 +396,7 @@ export const mkComposite = () => ([{ id: 'child-a' }, { id: 'child-b' }]);\n`,
   it('throws when site.base_url is missing', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default { site: {}, plugins: [] };\n`,
     );
     await expect(loadBbConfig(host, { cwd: tmp })).rejects.toThrow(
@@ -480,7 +410,7 @@ export const mkComposite = () => ([{ id: 'child-a' }, { id: 'child-b' }]);\n`,
   // config, so no plugin construction runs before the base_url check).
   it('AC-9: names the resolved connection path + expected file, not a plugin error', async () => {
     const d = bakersDir();
-    const cfg = join(d, 'bakers.config.js');
+    const cfg = join(d, 'connection.config.js');
     // Empty base_url AND a plugin descriptor that WOULD throw a plugin error if
     // resolution ran before the base_url guard.
     writeFileSync(
@@ -496,7 +426,7 @@ export const mkComposite = () => ([{ id: 'child-a' }, { id: 'child-b' }]);\n`,
     const message = (caught as Error).message;
     expect(message).toContain('site.base_url');
     expect(message).toContain(cfg);
-    expect(message).toMatch(/bakers\.config\.js/);
+    expect(message).toMatch(/connection\.config\.js/);
     // NOT the plugin-resolution error.
     expect(message).not.toMatch(/cannot resolve plugin/);
     expect(message).not.toContain('@does-not-exist/nope');
@@ -504,42 +434,42 @@ export const mkComposite = () => ([{ id: 'child-a' }, { id: 'child-b' }]);\n`,
 
   it('surfaces the original importConfig failure instead of discarding it (BB-470)', async () => {
     const d = bakersDir();
-    writeFileSync(join(d, 'bakers.config.js'), 'export default = {;\n');
+    writeFileSync(join(d, 'connection.config.js'), 'export default = {;\n');
     const err = await loadBbConfig(host, { cwd: tmp }).catch((e) => e);
     expect(err).toBeInstanceOf(BbConnectionConfigError);
     expect((err as Error).message).toMatch(/check its syntax/);
     expect((err as Error).message).not.toBe(
-      `Could not import connection ${join(d, 'bakers.config.js')}; check its syntax and imported files with bakers config check --scope connection --config ${join(d, 'bakers.config.js')}.`,
+      `Could not import connection ${join(d, 'connection.config.js')}; check its syntax and imported files with bakers config check --scope connection --config ${join(d, 'connection.config.js')}.`,
     );
     expect((err as { cause?: unknown }).cause).toBeDefined();
   });
 
   // BB-230 (RED, root cause 2) end to end: the exact second hard failure from
   // the ticket's reproducible condition. A repo whose `.bakers/` holds only the
-  // engine-only `conductor.config.js` that `bakers upgrade` step 0 leaves behind
-  // must LOAD its connection from the home `~/.bakers/bakers.config.js`, not die on
-  // `bakers connection config requires site.base_url — resolved …/conductor.config.js`.
-  it('AC-6/AC-12: an engine-only conductor.config.js loads the HOME connection', async () => {
+  // engine-only `project.config.js` must LOAD its connection from the home
+  // `~/.bakers/connections/default.js`, not die on
+  // `bakers connection config requires site.base_url — resolved …/project.config.js`.
+  it('AC-6/AC-12: an engine-only project.config.js loads the HOME connection', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'conductor.config.js'),
+      join(d, 'project.config.js'),
       `export default {
-        project: 'p',
-        machine_id: 'm',
-        remote: { plugin: '@bakers-build/addon-remote-drupal' },
+        schema_version: 1,
+        project: { name: 'p' },
+        server: { use: '@bakers-build/addon-remote-drupal' },
       };\n`,
     );
     const fakeHome = mkdtempSync(join(tmpdir(), 'bb-230-home-'));
     const homeBb = join(fakeHome, '.bakers');
-    mkdirSync(homeBb, { recursive: true });
+    mkdirSync(join(homeBb, 'connections'), { recursive: true });
     writeFileSync(
-      join(homeBb, 'bakers.config.js'),
+      join(homeBb, 'connections', 'default.js'),
       `export default { site: { base_url: 'https://home.test' }, workspace_id: '00000000-0000-4000-8000-000000000000', plugins: [] };\n`,
     );
     try {
       const cfg = await loadBbConfig(host, { cwd: tmp, home: fakeHome });
       expect(cfg.site.base_url).toBe('https://home.test');
-      expect(cfg.config_path).toBe(join(homeBb, 'bakers.config.js'));
+      expect(cfg.config_path).toBe(join(homeBb, 'connections', 'default.js'));
     } finally {
       rmSync(fakeHome, { recursive: true, force: true });
     }
@@ -566,7 +496,7 @@ describe('loadBbConfig — workspace_id is optional (BB-495)', () => {
   it('loads a connection that names no workspace', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default { site: { base_url: 'https://x.test' }, plugins: [] };\n`,
     );
     const cfg = await loadBbConfig(host, { cwd: tmp });
@@ -576,19 +506,32 @@ describe('loadBbConfig — workspace_id is optional (BB-495)', () => {
 
   it('treats a blank workspace_id the same as none, rather than a half-configured connection', async () => {
     const d = bakersDir();
-    for (const bad of ["'   '", 'null', '42']) {
+    writeFileSync(
+      join(d, 'connection.config.js'),
+      `export default { site: { base_url: 'https://x.test' }, workspace_id: '   ', plugins: [] };\n`,
+    );
+    const cfg = await loadBbConfig(host, { cwd: tmp });
+    expect(cfg.workspace_id).toBeUndefined();
+  });
+
+  // The connection schema types workspace_id as a string, so a
+  // non-string is refused naming the key instead of being read as none.
+  it('refuses a non-string workspace_id, naming the key', async () => {
+    const d = bakersDir();
+    for (const bad of ['null', '42']) {
       writeFileSync(
-        join(d, 'bakers.config.js'),
+        join(d, 'connection.config.js'),
         `export default { site: { base_url: 'https://x.test' }, workspace_id: ${bad}, plugins: [] };\n`,
       );
-      const cfg = await loadBbConfig(host, { cwd: tmp });
-      expect(cfg.workspace_id).toBeUndefined();
+      await expect(loadBbConfig(host, { cwd: tmp })).rejects.toThrow(
+        /workspace_id/,
+      );
     }
   });
   it('forwards the trimmed uuid onto the resolved connection', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default { site: { base_url: 'https://x.test' }, workspace_id: '  ${WS}  ', plugins: [] };\n`,
     );
     const cfg = await loadBbConfig(host, { cwd: tmp });
@@ -604,7 +547,7 @@ describe('loadBbConfig — workspace_id is optional (BB-495)', () => {
       `export default (opts) => ({ id: 'agg', seen: opts?.workspace_id });\n`,
     );
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default {
         site: { base_url: 'https://x.test' },
         workspace_id: '${WS}',
@@ -626,7 +569,7 @@ describe('loadBbConfig — workspace_id is optional (BB-495)', () => {
       join(d, 'aggregator.js'),
       `export default (opts) => ({ id: 'agg', seen: opts?.workspace_id });\n`,
     );
-    const configPath = join(d, 'bakers.config.js');
+    const configPath = join(d, 'connection.config.js');
     writeFileSync(
       configPath,
       `export default {
@@ -653,7 +596,7 @@ describe('loadBbConfig — workspace_id is optional (BB-495)', () => {
       `export const connectionPlugins = (acc, opts) => [...acc, { id: 'p', seen: opts?.workspace_id }];\n`,
     );
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default {
         site: { base_url: 'https://x.test' },
         workspace_id: '${WS}',
@@ -671,7 +614,7 @@ describe('loadBbConfig — workspace_id is optional (BB-495)', () => {
       `export default (opts) => ({ id: 'p', seen: opts?.workspace_id, extra: opts?.extra });\n`,
     );
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default {
         site: { base_url: 'https://x.test' },
         workspace_id: '${WS}',
@@ -689,7 +632,7 @@ describe('loadBbConfig — workspace_id is optional (BB-495)', () => {
       `export default (opts) => ({ id: opts?.id ?? 'none' });\n`,
     );
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default {
         site: { base_url: 'https://x.test' },
         workspace_id: '${WS}',
@@ -736,7 +679,7 @@ describe('loadBbConfig — a workspace with no plugin that applies it (BB-495 F1
   it('never warns, whether or not a bakers-workspace plugin is present', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default {
         site: { base_url: 'https://x.test' },
         workspace_id: '${WS}',
@@ -750,7 +693,7 @@ describe('loadBbConfig — a workspace with no plugin that applies it (BB-495 F1
   it('does not warn when no workspace is configured', async () => {
     const d = bakersDir();
     writeFileSync(
-      join(d, 'bakers.config.js'),
+      join(d, 'connection.config.js'),
       `export default { site: { base_url: 'https://x.test' }, workspace_id: '', plugins: [] };\n`,
     );
     await loadBbConnectionBootstrap(host, { cwd: tmp });
@@ -781,7 +724,7 @@ describe('loadBbConnectionBootstrap — layered UI entries', () => {
 
   const connection = (addons: string) =>
     writeFileSync(
-      join(tmp, '.bakers', 'bakers.config.js'),
+      join(tmp, '.bakers', 'connection.config.js'),
       `export default { site: { base_url: 'https://x.test' }, addons: ${addons} };`,
     );
 
@@ -791,11 +734,11 @@ describe('loadBbConnectionBootstrap — layered UI entries', () => {
     tabAddon(join(tmp, '.bakers'), 'p', 'p-tab.js');
     writeFileSync(
       join(home, '.bakers', 'machine.config.js'),
-      `export default { machine_id: 'h', user_id: 'u', addons: ['./m.js'] };`,
+      `export default { machine_id: 'h', label: 'h', addons: ['./m.js'] };`,
     );
     connection(`['./c.js']`);
     writeFileSync(
-      join(tmp, '.bakers', 'conductor.config.js'),
+      join(tmp, '.bakers', 'project.config.js'),
       `export default { addons: ['./p.js'] };`,
     );
     const cfg = await loadBbConnectionBootstrap(host, { cwd: tmp, home });
@@ -831,11 +774,11 @@ describe('loadBbConnectionBootstrap — layered UI entries', () => {
     tabAddon(join(tmp, '.bakers'), 'c', 'c-tab.js');
     writeFileSync(
       join(home, '.bakers', 'machine.config.js'),
-      `export default { machine_id: 'h', user_id: 'u', addons: ['./m.js'] };`,
+      `export default { machine_id: 'h', label: 'h', addons: ['./m.js'] };`,
     );
     connection(`['./c.js']`);
     writeFileSync(
-      join(tmp, '.bakers', 'conductor.config.js'),
+      join(tmp, '.bakers', 'project.config.js'),
       `export default { addons: ['./p.js'] };`,
     );
     const cfg = await loadBbConnectionBootstrap(sharedHost, {
@@ -859,14 +802,14 @@ describe('loadBbConnectionBootstrap — layered UI entries', () => {
     tabAddon(join(tmp, '.bakers'), 'tab', 'p-tab.js');
     writeFileSync(
       join(home, '.bakers', 'machine.config.js'),
-      `export default { machine_id: 'h', user_id: 'u', addons: ['./tab.js'] };`,
+      `export default { machine_id: 'h', label: 'h', addons: ['./tab.js'] };`,
     );
     writeFileSync(
-      join(tmp, '.bakers', 'bakers.config.js'),
+      join(tmp, '.bakers', 'connection.config.js'),
       `export default { site: { base_url: 'https://x.test' } };`,
     );
     writeFileSync(
-      join(tmp, '.bakers', 'conductor.config.js'),
+      join(tmp, '.bakers', 'project.config.js'),
       `export default { addons: ['./tab.js'] };`,
     );
     const cfg = await loadBbConnectionBootstrap(host, { cwd: tmp, home });
@@ -885,22 +828,22 @@ describe('loadBbConnectionBootstrap — layered UI entries', () => {
     mkdirSync(join(otherProject, '.bakers'), { recursive: true });
     tabAddon(join(otherProject, '.bakers'), 'right', 'right-tab.js');
     writeFileSync(
-      join(otherProject, '.bakers', 'bakers.config.js'),
+      join(otherProject, '.bakers', 'connection.config.js'),
       `export default { site: { base_url: 'https://x.test' } };`,
     );
     writeFileSync(
-      join(otherProject, '.bakers', 'conductor.config.js'),
+      join(otherProject, '.bakers', 'project.config.js'),
       `export default { addons: ['./right.js'] };`,
     );
     tabAddon(join(tmp, '.bakers'), 'wrong', 'wrong-tab.js');
     writeFileSync(
-      join(tmp, '.bakers', 'conductor.config.js'),
+      join(tmp, '.bakers', 'project.config.js'),
       `export default { addons: ['./wrong.js'] };`,
     );
     const cfg = await loadBbConnectionBootstrap(host, {
       cwd: tmp,
       home,
-      explicit: join(otherProject, '.bakers', 'bakers.config.js'),
+      explicit: join(otherProject, '.bakers', 'connection.config.js'),
     });
     expect(cfg.ui_entries.map((u) => u.split('/').pop())).toEqual([
       'right-tab.js',
@@ -908,17 +851,18 @@ describe('loadBbConnectionBootstrap — layered UI entries', () => {
   });
 
   it('falls back to cwd for the project layer when the connection is the canonical engine-only shape (home fallback)', async () => {
-    // No project `bakers.config.js` anywhere: the connection resolves to
-    // `<home>/.bakers/bakers.config.js` (`resolution.source === 'home'`), which is
+    // No project `connection.config.js` anywhere: the connection resolves to
+    // `<home>/.bakers/connections/default.js` (`resolution.source === 'home'`),
     // BB-218's canonical repo shape — a project carries only its own
-    // `conductor.config.js`. The project layer must still come from `cwd`.
+    // `project.config.js`. The project layer must still come from `cwd`.
+    mkdirSync(join(home, '.bakers', 'connections'), { recursive: true });
     writeFileSync(
-      join(home, '.bakers', 'bakers.config.js'),
+      join(home, '.bakers', 'connections', 'default.js'),
       `export default { site: { base_url: 'https://x.test' } };`,
     );
     tabAddon(join(tmp, '.bakers'), 'p', 'p-tab.js');
     writeFileSync(
-      join(tmp, '.bakers', 'conductor.config.js'),
+      join(tmp, '.bakers', 'project.config.js'),
       `export default { addons: ['./p.js'] };`,
     );
     const cfg = await loadBbConnectionBootstrap(host, { cwd: tmp, home });
@@ -934,7 +878,7 @@ describe('loadBbConnectionBootstrap — layered UI entries', () => {
     );
     tabAddon(join(tmp, '.bakers'), 'p', 'p-tab.js');
     writeFileSync(
-      join(tmp, '.bakers', 'conductor.config.js'),
+      join(tmp, '.bakers', 'project.config.js'),
       `export default { addons: ['./p.js'] };`,
     );
     const cfg = await loadBbConnectionBootstrap(host, {
@@ -963,7 +907,7 @@ describe('loadBbConnectionBootstrap — layered UI entries', () => {
   it('skips an unresolvable addon in the machine layer and still loads', async () => {
     writeFileSync(
       join(home, '.bakers', 'machine.config.js'),
-      `export default { machine_id: 'h', user_id: 'u', addons: ['./absent.js'] };`,
+      `export default { machine_id: 'h', label: 'h', addons: ['./absent.js'] };`,
     );
     connection(`[]`);
     const cfg = await loadBbConnectionBootstrap(host, { cwd: tmp, home });

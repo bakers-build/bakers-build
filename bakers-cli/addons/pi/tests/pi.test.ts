@@ -37,6 +37,7 @@ describe('workspace package structure', () => {
     expect(pkg.exports).toEqual({
       '.': './dist/src/index.js',
       './preset': './dist/src/preset.js',
+      './options.schema.json': './options.schema.json',
     });
     expect(pkg.peerDependencies).toEqual({
       '@bakers-build/conductor': 'workspace:^',
@@ -127,7 +128,7 @@ describe('PiAgent.launchCommand', () => {
 describe('Pi security', () => {
   it.each([
     {},
-    { security: 'system' },
+    { permissions: 'system' },
   ] as const)('uses the ordinary launch for %j', async (options) => {
     const { PiAgent } = await loadPiModule();
     const agent = new PiAgent(options);
@@ -149,7 +150,7 @@ describe('Pi security', () => {
   it('loads only the configured extensions in custom mode', async () => {
     const { PiAgent } = await loadPiModule();
     const agent = new PiAgent({
-      security: 'custom',
+      permissions: 'custom',
       config: { extensions: ['./sandbox.ts', 'builtin:gondolin'] },
       args: ['--verbose'],
     });
@@ -166,31 +167,35 @@ describe('Pi security', () => {
     'yolo',
   ])('rejects security %s while loading the addon', async (security) => {
     const { piAgent } = await loadPiModule();
-    expect(() => piAgent({ security })).toThrow(
-      `Pi does not support security: '${security}'`,
+    expect(() => piAgent({ permissions: security })).toThrow(
+      `Pi does not support permissions: '${security}'`,
     );
   });
 
   it.each([
-    ['an unknown mode', { security: 'sandbbox' }, /security must be one of/],
-    ['null', { security: null }, /security must be a string/],
-    ['custom without config', { security: 'custom' }, /requires config/],
+    [
+      'an unknown mode',
+      { permissions: 'sandbbox' },
+      /permissions must be one of/,
+    ],
+    ['null', { permissions: null }, /permissions must be a string/],
+    ['custom without config', { permissions: 'custom' }, /requires config/],
     ['config outside custom', { config: { extensions: ['x'] } }, /only valid/],
-    ['a sandbox block', { security: 'system', sandbox: {} }, /only valid/],
-    ['no extensions', { security: 'custom', config: {} }, /extensions/],
+    ['a sandbox block', { permissions: 'system', sandbox: {} }, /only valid/],
+    ['no extensions', { permissions: 'custom', config: {} }, /extensions/],
     [
       'empty extensions',
-      { security: 'custom', config: { extensions: [] } },
+      { permissions: 'custom', config: { extensions: [] } },
       /extensions/,
     ],
     [
       'a non-string extension',
-      { security: 'custom', config: { extensions: [1] } },
+      { permissions: 'custom', config: { extensions: [1] } },
       /extensions/,
     ],
     [
       'an unknown config key',
-      { security: 'custom', config: { extensions: ['x'], tools: [] } },
+      { permissions: 'custom', config: { extensions: ['x'], tools: [] } },
       /nothing else/,
     ],
   ])('rejects %s', async (_name, options, error) => {

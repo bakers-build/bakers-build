@@ -1,5 +1,5 @@
 // BB-215: the bakers-ui addon self-declares its connection contribution (the
-// dropsh `tui` renderer) via `./preset`. Listed in a `bakers.config.js` addons[],
+// dropsh `tui` renderer) via `./preset`. Listed in a connection file addons[],
 // it wires the TUI renderer with no `export:`; the entry `with` becomes the
 // renderer options.
 import type { BbPreset } from '@bakers-build/core';

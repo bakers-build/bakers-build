@@ -1,0 +1,18 @@
+{#
+/**
+ * @file
+ * First project presenter: the form stands inside the gate, as the workspace
+ * form's does, with its title and explanation in the band.
+ *
+ * @see web/themes/custom/bb_theme/templates/form--bb-workspace-create-form.html.twig
+ */
+#}
+{% set parts %}{{ include('bb_theme:gate_form', {tag: 'div', pills: true, content: children}, with_context = false) }}{% endset %}
+{% set page %}{{ include('bb_theme:gate', {
+  title: 'Create your first project'|t,
+  title_in_band: true,
+  explanation: 'A project connects a repository to your team. Skip this and add one later from your overview.'|t,
+  mark: include('bb_theme:brand', {size: 'compact'}, with_context = false),
+  content: parts,
+}, with_context = false) }}{% endset %}
+{{ include('bb_theme:gate_form', {attributes: attributes, content: page}, with_context = false) }}

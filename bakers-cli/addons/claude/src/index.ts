@@ -1,7 +1,10 @@
+import { execFile } from 'node:child_process';
+import { existsSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import {
   type AgentFootprint,
   type AgentPlugin,
@@ -9,9 +12,14 @@ import {
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,
+  ensureHome,
+  homeKey,
+  homePath,
   installCommand,
   type KnownOptionSpec,
   lastLine,
+  type MarketplaceDeclaration,
+  type PluginLaunch,
   type ResolvedSecurity,
   type RunEnvPolicy,
   resolveAgentCliOptions,
@@ -29,7 +37,10 @@ import {
   shellQuote,
   withoutGitDirs,
 } from '@bakers-build/core';
-import { parseClaudeTranscript } from './footprint.js';
+import {
+  parseClaudePermissionDenials,
+  parseClaudeTranscript,
+} from './footprint.js';
 
 export { parseClaudeTranscript } from './footprint.js';
 
@@ -61,7 +72,8 @@ const MEASURE_FLAGS: readonly (readonly string[])[] = [
 ];
 
 const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
-  trusted_commands: ['bakers', 'git'],
+  // No global tools: whatever a sandboxed run needs beyond its worktree comes through addon tools.
+  trusted_commands: [],
   deny_read: ['~/.ssh', '~/.bakers'],
   allow_write: [],
   network: ['*'],
@@ -72,6 +84,8 @@ const SANDBOX_DEFAULTS: Required<SandboxOptions> = {
 function securityFlags(
   { mode, sandbox, config }: ResolvedSecurity,
   workspacePath: string | undefined,
+  configDir: string,
+  pluginsOn = false,
 ): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
@@ -99,18 +113,23 @@ function securityFlags(
       network: { allowedDomains: sandbox.network },
     },
     disableClaudeAiConnectors: true,
-    // What is allowed here runs without a prompt; anything else, such as a
-    // write to the protected `.claude/`, asks the human watching the run's
-    // terminal (dontAsk would deny it, and no allow rule lifts that). Every
-    // Bash command is either sandboxed or a trusted command, and the Read
-    // deny covers the Read tool, which the OS sandbox does not confine.
+    // What is allowed here runs without a prompt; under dontAsk anything
+    // else, such as a write outside the worktree or to the protected
+    // `.claude/`, is denied at once, since nobody answers a prompt on a box.
+    // Every Bash command is either sandboxed or a trusted command, and the
+    // Read deny covers the Read tool, which the OS sandbox does not confine.
     permissions: {
       // The conductor's server binds every call to this run's worktree and project.
+      // The run's own plugins and skills live in its config dir, outside the worktree;
+      // Claude applies Read rules to Glob and Grep as well.
       allow: [
         'Bash',
         'Edit(./**)',
         'AskUserQuestion',
         `mcp__${CONDUCTOR_TOOLS_SERVER}`,
+        'Skill',
+        `Read(/${join(configDir, 'plugins')}/**)`,
+        `Read(/${join(configDir, 'skills')}/**)`,
       ],
       // Claude reads a single leading `/` as relative to the settings file;
       // the plain rule covers a file entry, `/**` a directory's contents.
@@ -122,9 +141,10 @@ function securityFlags(
   };
   return [
     '--permission-mode',
-    'default',
+    'dontAsk',
+    // The agent home's user settings enable its plugins; the person's own stay out.
     '--setting-sources',
-    'project,local',
+    pluginsOn ? 'user,project,local' : 'project,local',
     '--settings',
     JSON.stringify(settings),
   ];
@@ -148,6 +168,33 @@ export interface ClaudeAgentOptions extends SecurityOptions {
    * applies the state-group settings shipped with the addon.
    */
   measure?: boolean;
+  /** False runs this agent in the user's own `~/.claude`, without the project's plugins. */
+  plugins?: boolean;
+}
+
+const run = promisify(execFile);
+
+/** Run `claude <args> --json` in `configDir`; a failure names `what` and the CLI's output. */
+async function claudeJson(
+  configDir: string,
+  what: string,
+  args: string[],
+): Promise<Record<string, unknown>> {
+  try {
+    const { stdout } = await run('claude', [...args, '--json'], {
+      env: { ...process.env, CLAUDE_CONFIG_DIR: configDir },
+    });
+    return JSON.parse(lastLine(stdout) || '{}');
+  } catch (error) {
+    const { stderr, stdout, message } = error as {
+      stderr?: string;
+      stdout?: string;
+      message: string;
+    };
+    throw new Error(
+      `${what}: claude ${args.join(' ')} failed: ${(stderr || stdout || message).trim()}`,
+    );
+  }
 }
 
 const CLAUDE_RESERVED = [
@@ -180,6 +227,10 @@ export class ClaudeAgent implements BbAgent {
   private replacedBakersServer = false;
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
+  readonly pluginsDisabled: boolean;
+  /** The Claude config dir runs read and write: the agent home while plugins are on. */
+  configDir: string;
+  private pluginsOn = false;
 
   constructor(
     options: ClaudeAgentOptions = {},
@@ -203,6 +254,55 @@ export class ClaudeAgent implements BbAgent {
     this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
+    this.pluginsDisabled =
+      validateOptionalBoolean(options.plugins, 'plugins') === false;
+    this.configDir = join(home, '.claude');
+  }
+
+  /** Point this agent at the agent home of the project's declared marketplaces. */
+  useMarketplaces(marketplaces: readonly MarketplaceDeclaration[]): void {
+    if (this.pluginsDisabled || marketplaces.length === 0) return;
+    this.pluginsOn = true;
+    this.configDir = homePath(this.id, homeKey([...marketplaces]));
+  }
+
+  async installPlugins(
+    marketplaces: readonly MarketplaceDeclaration[],
+    home: string,
+  ): Promise<PluginLaunch> {
+    const outcome = await ensureHome(home, async (dir) => {
+      const credentials = join(this.home, '.claude', '.credentials.json');
+      if (!existsSync(credentials))
+        throw new Error(
+          `claude: no credential file at ${credentials} (a keychain login cannot be shared with an agent home); log in with a file-based credential`,
+        );
+      symlinkSync(credentials, join(dir, '.credentials.json'));
+      for (const { url, ref, plugins } of marketplaces) {
+        const added = await claudeJson(dir, url, [
+          'plugin',
+          'marketplace',
+          'add',
+          `${url}#${ref}`,
+        ]);
+        for (const plugin of plugins)
+          await claudeJson(dir, plugin, [
+            'plugin',
+            'install',
+            `${plugin}@${String(added.marketplace)}`,
+          ]);
+      }
+      // Skip the first-run onboarding; the CLI wrote the rest of this file.
+      const state = join(dir, '.claude.json');
+      const seeded = existsSync(state)
+        ? JSON.parse(readFileSync(state, 'utf8'))
+        : {};
+      writeFileSync(
+        state,
+        `${JSON.stringify({ ...seeded, hasCompletedOnboarding: true }, null, 2)}\n`,
+        { mode: 0o600 },
+      );
+    });
+    return { env: { CLAUDE_CONFIG_DIR: home }, args: [], home: outcome };
   }
 
   get launchWarnings(): readonly string[] {
@@ -223,6 +323,8 @@ export class ClaudeAgent implements BbAgent {
     run?: AgentRunIdentity,
     workspacePath?: string,
     tools?: { url: string },
+    _env?: Readonly<Record<string, string>>,
+    pluginArgs: readonly string[] = [],
   ): string {
     if (prompt === '') {
       return 'claude';
@@ -230,8 +332,9 @@ export class ClaudeAgent implements BbAgent {
     // Wait for project-declared plugins (extraKnownMarketplaces) to install
     // before the first turn; a fresh worktree otherwise starts without them.
     // A new worktree path would stop the run at Claude Code's trust dialog.
+    // With plugins on, the agent home already holds the installed plugins.
     const parts = [
-      'CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1',
+      ...(this.pluginsOn ? [] : ['CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1']),
       ...(workspacePath
         ? ['node', shellQuote(TRUST_WRAPPER), shellQuote(workspacePath)]
         : []),
@@ -248,7 +351,12 @@ export class ClaudeAgent implements BbAgent {
     // The flags are constants; only their generated values need quoting.
     parts.push(
       ...[
-        ...securityFlags(this.security, workspacePath),
+        ...securityFlags(
+          this.security,
+          workspacePath,
+          this.configDir,
+          this.pluginsOn,
+        ),
         ...this.mcpFlags(tools),
       ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );
@@ -259,7 +367,7 @@ export class ClaudeAgent implements BbAgent {
     if (run?.sessionId) {
       parts.push('--session-id', run.sessionId);
     }
-    parts.push(...this.args.map(shellQuote));
+    parts.push(...pluginArgs.map(shellQuote), ...this.args.map(shellQuote));
     if (this.measure) {
       // The wrapper folds an inline --settings JSON into its profile file.
       for (const pair of MEASURE_FLAGS) {
@@ -315,8 +423,7 @@ export class ClaudeAgent implements BbAgent {
     sessionId: string,
   ): Promise<boolean> {
     const dir = join(
-      this.home,
-      '.claude',
+      this.configDir,
       'projects',
       encodeClaudeProjectDir(worktreePath),
     );
@@ -328,13 +435,35 @@ export class ClaudeAgent implements BbAgent {
     }
   }
 
+  /** The run's pinned transcript only: the newest existing attempt, as {@link getRunLog} prefers it. */
+  async runLogModified(
+    worktreePath: string,
+    run: AgentRunIdentity,
+  ): Promise<number | undefined> {
+    const dir = join(
+      this.configDir,
+      'projects',
+      encodeClaudeProjectDir(worktreePath),
+    );
+    const names = run.attemptFamily?.length
+      ? [...run.attemptFamily].reverse()
+      : [run.sessionId];
+    for (const name of names) {
+      try {
+        return (await stat(join(dir, `${name}.jsonl`))).mtimeMs;
+      } catch {
+        // try the next, lower-numbered attempt.
+      }
+    }
+    return undefined;
+  }
+
   async getRunLog(
     worktreePath: string,
     run?: AgentRunIdentity,
   ): Promise<string> {
     const dir = join(
-      this.home,
-      '.claude',
+      this.configDir,
       'projects',
       encodeClaudeProjectDir(worktreePath),
     );
@@ -433,6 +562,12 @@ export class ClaudeAgent implements BbAgent {
     return parseClaudeTranscript(log);
   }
 
+  /** Only the sandbox launches in `dontAsk`; other modes are never reported. */
+  permissionDenials(log: string): string[] {
+    if (this.securityMode !== 'sandbox') return [];
+    return parseClaudePermissionDenials(log);
+  }
+
   /** Linux needs bwrap, socat and a user namespace; macOS ships Seatbelt. */
   async sandboxPreflight(
     host: SandboxHost = systemSandboxHost(),
@@ -481,8 +616,9 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'claude',
     requiredModules: [],
-    security: agent.security.report,
-    async createAgent() {
+    permissions: agent.security.report,
+    async createAgent(config) {
+      agent.useMarketplaces(config.marketplaces ?? []);
       return agent;
     },
   };

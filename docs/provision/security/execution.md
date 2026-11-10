@@ -1,29 +1,29 @@
 ---
 title: Run security
-description: How strictly Claude, Codex and Grok runs start on a machine - the security modes, what each harness sandbox blocks and what it does not, the ticket env var filter, the risk of loosening and operator-side isolation.
+description: How strictly Claude, Codex and Grok runs start on a machine - the permission modes, what each harness sandbox blocks and what it does not, the ticket env var filter, the risk of loosening and operator-side isolation.
 ---
 
 # Run security
 
-A run executes untrusted ticket content on your machine. Review its limits before dispatch. Claude, Codex and Grok default to their configured sandbox mode. Each harness entry's `with` takes `security`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
+A run executes untrusted ticket content on your machine. Review its limits before dispatch. The default mode is `system`; choose `sandbox` for untrusted tickets. Each harness entry's `with` takes `permissions`; a `catalog` entry uses its own `with` instead, so a key it does not set takes the default, not the harness entry's value. Where to set it: [Agent policy](/agents/reference#run-security).
 
 ## Modes
 
-| `security` | Meaning | MCP servers | Denied ticket env vars |
+| `permissions` | Meaning | MCP servers | Denied ticket env vars |
 |---|---|---|---|
-| `sandbox` (default) | No permission bypass; the harness's own OS sandbox, tuned by the `sandbox` keys | only `sandbox.mcp_servers` (default none) | dropped |
-| `system` | bakers.build adds no security flag; your own harness configuration decides | yours | dropped |
+| `sandbox` | No permission bypass; the harness's own OS sandbox, tuned by the `sandbox` keys | only `sandbox.mcp_servers` (default none) | dropped |
+| `system` (default) | bakers.build adds no security flag; your own harness configuration decides | yours | dropped |
 | `yolo` | Full access, permissions and sandbox bypassed | yours | passed |
 | `custom` | Only your `config`, handed to the harness unchanged | as `config` says | dropped |
 
-The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security), [OpenCode](/addons/opencode#security) and [Pi](/addons/pi#security) pages; Grok and OpenCode reject `custom`. OpenCode and Pi have no OS sandbox, so their default is `system` and an explicit `security: 'sandbox'` fails loading; Pi also rejects `yolo`. Loading fails for an unknown mode, `skip_permissions` (use `security: 'yolo'`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
+The launch flags per mode, the `sandbox` keys and their defaults are on the [Claude](/addons/claude#security), [Codex](/addons/codex#security), [Grok](/addons/grok#security), [OpenCode](/addons/opencode#security) and [Pi](/addons/pi#security) pages; Grok and OpenCode reject `custom`. OpenCode and Pi have no OS sandbox, so an explicit `permissions: 'sandbox'` fails loading for them; Pi also rejects `yolo`. Loading fails for an unknown mode, `skip_permissions`, `security` (renamed `permissions`), `config` outside `custom`, `custom` without `config`, a `sandbox` block outside `sandbox` mode or an unknown `sandbox` key, so a typo never starts a run with rights you did not choose.
 
 ## Sandbox prerequisites
 
 `sandbox` mode needs the harness's OS sandbox on the machine that runs the conductor. Check every enabled agent with:
 
 ```sh
-bakers oven check
+bakers conductor check
 ```
 
 It prints `<agent>: sandbox ok`, or `sandbox unavailable: <agent>: <cause> — <fix>`, and exits 1 when one agent cannot start its sandbox. `system`, `yolo` and `custom` agents are not checked.
@@ -43,15 +43,17 @@ Install the Linux packages with your package manager:
 
 Other distributions need `bubblewrap` and `socat`.
 
-OpenCode has no OS sandbox on any platform; it defaults to `system` and rejects `sandbox` when loading, so `bakers oven check` never checks it.
+OpenCode has no OS sandbox on any platform; it runs in `system` and rejects `sandbox` when loading, so `bakers conductor check` never checks it.
 
 A host or container that forbids unprivileged user namespaces shows `bwrap cannot set up its sandbox: …` (Claude) or `codex sandbox cannot start: …` (Codex). Allow them on the host (on Ubuntu 24.04 and later, AppArmor restricts them), or run the conductor where they are allowed.
 
-While an enabled agent cannot start its sandbox, the conductor claims nothing and logs `claims withheld: sandbox unavailable: …` on every cycle; `bakers oven start` prints the same line as a warning. No run is created, so no ticket is parked by the failed-run limit. After the fix the next cycle claims, without a restart. A run whose sandbox becomes unavailable between the cycle and its start fails with the same message in its error log, and no agent starts.
+While an enabled agent cannot start its sandbox, the conductor claims nothing and logs `claims withheld: sandbox unavailable: …` on every cycle; `bakers conductor start` prints the same line as a warning. No run is created, so no ticket is parked by the failed-run limit. After the fix the next cycle claims, without a restart. A run whose sandbox becomes unavailable between the cycle and its start fails with the same message in its error log, and no agent starts.
 
 ## Claude in `sandbox` mode
 
-The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)` and `AskUserQuestion`. They run without a prompt. Anything else asks you in the run's terminal, because Claude starts in `default` permission mode: `dontAsk` would deny it outright, and no allow rule can permit a write to a protected path such as `.claude/` or `.git`. A run nobody watches therefore waits at such a prompt.
+The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)`, `AskUserQuestion`, `Skill`, `bakers` tools and reading the agent's `plugins/` and `skills/`. In `dontAsk` mode, anything else, such as editing outside the worktree, is denied unprompted and named in the transcript.
+
+When the agent ends its turn on a denial and idles 5 minutes, the conductor cancels it, comments the denials, labels and freezes the ticket.
 
 What the default blocks:
 
@@ -63,7 +65,7 @@ What the default blocks:
 
 What it does not block:
 
-- `trusted_commands` run with your full rights: an injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox. Drop unneeded ones: with the [`bakers` server](/addons/build/tools#site-tools), only `bakers deployment tickets` and `bakers ui` need `bakers`.
+- Commands you list in `trusted_commands` (default [none](/provision/security/shared-settings#no-global-tools)) run with your full rights: an injected `git -c core.sshCommand=…` or `bakers …` call leaves the sandbox. With the [`bakers` server](/addons/build/tools#site-tools), only `bakers deployment tickets` and `bakers ui` need `bakers`.
 - With `network: ['*']`, a sandboxed command can still reach any host.
 - Unconfirmed: whether `--strict-mcp-config` hides plugin MCP servers.
 
@@ -87,7 +89,7 @@ A linked worktree's run writes its Git dir and the shared `objects`, `refs`, `lo
 
 Known limit (upstream report pending): in a linked worktree, Claude Code creates empty `config.lock`, `config.worktree`, `remotes/`, `branches/` in the shared `.git`; all but `config.lock` persist.
 
-At run end the conductor ends processes carrying the run's `BB_RUN_UUID` (Linux).
+At run end the conductor ends processes carrying the run's `BAKERS_RUN_UUID` (Linux).
 
 ## Grok in `sandbox` mode
 
@@ -109,7 +111,7 @@ What it does not block:
 
 ## Ticket env vars
 
-Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `security` (Kimi) always drop with the default list:
+Before a run, the conductor removes ticket and project `env_vars` whose names match the harness's deny list. They never reach the agent or any workspace hook, and a warning names the keys and the ticket, never the values. In `yolo` they are passed, and the warning still appears. `env_deny` replaces the list per harness; `[]` passes everything. Harnesses without `permissions` (Kimi) always drop with the default list:
 
 `ANTHROPIC_*`, `OPENAI_*`, `CLAUDE_*`, `CODEX_*`, `NODE_OPTIONS`, `LD_*`, `DYLD_*`, `PATH`, `BASH_ENV`, `ENV`, `GIT_*`, `SSH_*`, `*_PROXY`, `*_proxy`
 
@@ -119,7 +121,7 @@ The inbox and addon listener contexts for `after_done`, `on_freeze` and `on_resu
 
 ## Risk of loosening
 
-Every step away from `sandbox` gives ticket authors more of your rights: `system` gives them whatever your own harness configuration allows, `yolo` gives them everything your user can do (files, keys, network, every MCP server, your GitLab token), and an env var you take off the deny list can redirect the model API or run code in every process. Loosen per agent, not for the whole harness, and only for projects whose ticket authors you trust; a committed project [`security` block](/provision/security/shared-settings) loosens for everyone with push access.
+Every step away from `sandbox` gives ticket authors more of your rights: `system` gives them whatever your own harness configuration allows, `yolo` gives them everything your user can do (files, keys, network, every MCP server, your GitLab token), and an env var you take off the deny list can redirect the model API or run code in every process. Loosen per agent, not for the whole harness, and only for projects whose ticket authors you trust; a committed project [`permissions` block](/provision/security/shared-settings) loosens for everyone with push access.
 
 The harness sandboxes do not isolate a machine. Where runs handle untrusted tickets, also run the conductor in a container or VM, give it credentials scoped to the project (a project-only Git token, no personal SSH key), and restrict outbound traffic with a host firewall.
 
@@ -127,13 +129,13 @@ The harness sandboxes do not isolate a machine. Where runs handle untrusted tick
 
 For the provided Coder workspace template:
 
-Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)). Start with their sandbox defaults and run `bakers oven check`. If the host blocks the user namespaces required by a nested sandbox, fix host policy or explicitly choose the container boundary below. This example switches Claude and Codex to `custom`: the container becomes the boundary, and a run can read everything in its home, including sign-ins and SSH keys.
+Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([machines](/configuration/machine)). Start with their sandbox defaults and run `bakers conductor check`. If the host blocks the user namespaces required by a nested sandbox, fix host policy or explicitly choose the container boundary below. This example switches Claude and Codex to `custom`: the container becomes the boundary, and a run can read everything in its home, including sign-ins and SSH keys.
 
 ```js
 {
   use: '@bakers-build/addon-claude',
   with: {
-    security: 'custom',
+    permissions: 'custom',
     config: {
       permissions: { defaultMode: 'dontAsk', allow: ['Bash', 'Edit(./**)'], deny: ['Read(~/.ssh/**)', 'Read(~/.bakers/**)'] },
       disableClaudeAiConnectors: true,
@@ -142,7 +144,7 @@ Keep only installed harnesses in `addons` of `~/.bakers/machine.config.js` ([mac
 },
 {
   use: '@bakers-build/addon-codex',
-  with: { security: 'custom', config: { sandbox_mode: 'danger-full-access', approval_policy: 'never' } },
+  with: { permissions: 'custom', config: { sandbox_mode: 'danger-full-access', approval_policy: 'never' } },
 },
 ```
 

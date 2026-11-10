@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-kimi/options.schema.json",
+  "title": "@bakers-build/addon-kimi options",
+  "description": "Kimi takes no permission options: only the shared args, model and effort.",
+  "type": "object",
+  "properties": {
+    "args": {
+      "$ref": "https://bakers.build/schema/harness-options.schema.json#/properties/args"
+    },
+    "model": {
+      "$ref": "https://bakers.build/schema/harness-options.schema.json#/properties/model"
+    },
+    "effort": {
+      "$ref": "https://bakers.build/schema/harness-options.schema.json#/properties/effort"
+    }
+  },
+  "additionalProperties": false
+}

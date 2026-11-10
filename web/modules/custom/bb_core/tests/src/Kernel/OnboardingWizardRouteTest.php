@@ -153,13 +153,14 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $form_state = new FormState();
     $form_state->set('bb_onboarding_step', 3);
     $form = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
-    self::assertArrayHasKey('finish', $form['actions']);
+    // No workspace, no invitation: creating one leads; Finish is not offered.
     self::assertArrayHasKey('finish_create', $form['actions']);
     self::assertArrayHasKey('set_up_later', $form['actions']);
+    self::assertArrayNotHasKey('finish', $form['actions']);
     self::assertArrayHasKey('back', $form['actions']);
     self::assertArrayNotHasKey('next', $form['actions']);
     self::assertSame('Get started with bakers.build', $form['#bb_copy']['title']);
-    self::assertSame('Step 3 of 3', (string) $form['progress']['#props']['text']);
+    self::assertSame('Step 3 of 3', (string) $form['#bb_copy']['progress']);
 
     // A stale Next POST from an open step-3 page stays on step 3.
     $form_state->setTriggeringElement(['#name' => 'next']);
@@ -180,7 +181,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
 
     $form = BbOnboardingWizardForm::create($this->container)->buildForm([], new FormState());
     self::assertSame('3', $form['#attributes']['data-bakers-onboarding-step']);
-    self::assertSame('Step 3 of 3', (string) $form['progress']['#props']['text']);
+    self::assertSame('Step 3 of 3', (string) $form['#bb_copy']['progress']);
   }
 
   /**
@@ -223,7 +224,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $form = BbOnboardingWizardForm::create($this->container)->buildForm([], new FormState());
     self::assertSame('3', $form['#attributes']['data-bakers-onboarding-step']);
     self::assertArrayNotHasKey('back', $form['actions']);
-    self::assertSame('Setup', (string) $form['progress']['#props']['text']);
+    self::assertSame('Setup', (string) $form['#bb_copy']['progress']);
   }
 
   /**
@@ -291,6 +292,7 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $form_state->set('bb_onboarding_step', 3);
     $form = $form_object->buildForm([], $form_state);
     self::assertArrayNotHasKey('finish_create', $form['actions']);
+    self::assertArrayHasKey('finish', $form['actions']);
 
     $form_state->setTriggeringElement(['#name' => 'finish_create']);
     $form_object->submitForm($form, $form_state);
@@ -361,9 +363,9 @@ final class OnboardingWizardRouteTest extends KernelTestBase {
     $form_state = new FormState();
     $form_state->set('bb_onboarding_step', 3);
     $form = BbOnboardingWizardForm::create($this->container)->buildForm([], $form_state);
-    self::assertArrayHasKey('finish', $form['actions']);
     self::assertArrayHasKey('finish_create', $form['actions']);
     self::assertArrayHasKey('set_up_later', $form['actions']);
+    self::assertArrayNotHasKey('finish', $form['actions']);
   }
 
   /**

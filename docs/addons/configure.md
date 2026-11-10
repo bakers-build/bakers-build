@@ -1,59 +1,53 @@
 # Configure addons
 
-Enable an addon in its supported configuration file.
-
-Find available packages and their requirements in the [catalog](/addons/catalog).
+Enable an existing addon without writing one. Choose it in the [catalog](/addons/catalog), check its prerequisites, then append its entry to the correct file. Configuration does not install packages or their underlying tools.
 
 ## AI first
 
-```text
-Read https://bakers.build/addons/configure.
-Read this addon’s canonical bakers.build documentation and my current
-configuration. Explain its role and owning config file, propose the smallest
-change, then verify it. Keep client/workspace pairs together and environment
-hooks separate.
-```
-
+Ask your agent to read the selected addon's guide and existing configuration, explain the owning file, apply the smallest change and run its documented checks.
 
 ## Which file takes `addons`
 
-The machine file `~/.bakers/machine.config.js` and the project file `.bakers/conductor.config.js` each carry one `addons` list, read the same way. **The addon decides where it may be listed**; its catalog page says which files it allows.
+| Contributions | Configuration |
+|---|---|
+| Agent harnesses | Machine only: `~/.bakers/machine.config.js`. |
+| herdr, server remote, Git workspace | Project only: `.bakers/project.config.js`. |
+| Ports, DDEV, herdr-core, Orca, Artifacts | Machine or project; follow the integration's guide. |
+| Authentication and connection plugins | Your private [connection file](/configuration/connection). |
 
-| Addons | Machine | Project | Why |
-|---|---|---|---|
-| Agent harnesses: claude, codex, grok, kimi, opencode, pi | yes | no | Agents are per machine. |
-| herdr, remote-drupal, workspace-git | no | yes | The engine wiring of one project; hook listeners never run for every project. |
-| ports, bakers-ui-artifacts | yes | yes | Usable on either level. |
-| An addon that declares nothing (third-party) | yes | yes | Allowed in both. |
-
-An entry in a file its addon does not allow is not loaded and warns with the allowed file; `bakers config check --online` reports it as an error.
-
-**Both files, the machine wins.** The same addon (same package and `alias`) listed in both becomes one entry. If the machine entry has a `with`, it replaces the project `with` as a whole; otherwise the project `with` is used. An addon may merge differently; its page says so. Settings live only in the entry's `with`: no configured addon, no addon behaviour.
-
-A connection file (`bakers.config.js` or `connections/<id>.js`) has its own `addons` for connection plugins and UI addons; an unresolvable entry there is an error. An unresolvable machine entry is skipped with a warning naming the package and file; an unresolvable conductor entry fails the conductor load.
-
-Tabs appear in the order machine, connection, conductor. The conductor level is read from the project whose `.bakers/` holds the selected connection, else from the project you run `bakers ui` in. Addons are not installed by configuration: a package must already resolve where the CLI runs. The entry forms (`use`, `with`) and the `scopes` declaration are in [Addon contracts](/addons/build/contracts).
-
-Machine files written before this rule carry `agents.addons` or a top-level `ports`. Both are retired: loading fails with the exact replacement to paste into `addons`.
-
-Fragment for a connection or conductor `addons` list; append to what is there:
+Append entries; keep existing identity and engine settings. Use a package name for defaults, or `{ use, with }` for options:
 
 ```js
 addons: [
   '@bakers-build/addon-bakers-ui-artifacts',
+  {
+    use: '@bakers-build/addon-ports',
+    with: {
+      transport: { use: '@bakers-build/addon-ports-cloudflare-quick' },
+    },
+  },
 ],
 ```
 
+The package must resolve from the configuration directory, working directory or CLI installation. Local paths resolve relative to the configuration file.
+
+**Machine/project precedence:** the same package and alias become one entry. A machine `with` replaces the project `with` as a whole; absent machine options preserve project options. [Ports](/addons/ports-services#options) merges service rules by key. Wrong-scope entries warn and do not load; online checks report an error. Missing machine packages warn and are skipped; missing project or connection packages fail loading.
+
+UI entries layer in machine, connection, project order and deduplicate resolved modules. See the [API reference](/addons/build/contracts#addon-entry-fields) for aliases and author declarations.
+
+## Connection defaults
+
+Keep generated Essentials configuration: it supplies rendering, schema and name resolution. Do not enable its constituent packages separately.
+
+Type, recipe and label names are resolved or created in the ticket's workspace through the [named tools](/cli/tools#tools). Environment names must already exist in the ticket's project; an unknown name stops the write.
+
+For UI workspace selection, use the [connection's `workspace_id`](/configuration/connection#fields) or `bakers ui --workspace`. It does not scope ordinary CLI calls or replace the conductor's project/workspace configuration.
+
 ## Check
 
-::: details Per CLI
 ```sh
 bakers config check --scope machine --online
+bakers config check --scope project --online
 ```
-:::
 
-::: tip Ask your AI
-"Add the Artifacts addon to my machine config's `addons`, add the ports addon with a transport there too, then run the checks."
-:::
-
-**Next:** run the checks on the addon's own page. If you are preparing an environment, return to [project preparation](/provision/guide#check-tools-and-access).
+Check the scope you changed, restart the conductor or UI, then follow the addon's success check. Old `agents.addons` and top-level `ports` settings require [configuration migration](/configuration/guides/updates).

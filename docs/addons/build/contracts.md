@@ -1,14 +1,18 @@
-# Addon contracts
+# Addon API reference
 
-An addon is an npm package that declares what it contributes to the bakers.build CLI through a fixed `./preset` export; this page lists the kinds of contribution, the entry fields a config uses, and how to write an addon. Packages under `bakers-cli/addons/` without a `./preset` (`docker-compose`, `name-refs`, the `ports-*` transports) are libraries another addon or the host loads; they never appear in an `addons` list. The shipped reference for a complete addon is [Ports](/addons/ports): preset, lazy `commands`, an `inbox` message and tests, in `bakers-cli/addons/ports` in a source checkout.
+An addon is a JavaScript package whose preset declares contributions to bakers.build. The **preset** is a module with named exports that bakers.build recognizes, such as `tools` or `inbox`. Start with [Build your first addon](/addons/build/first-addon#how-bakers-loads-an-addon) for the package/module basics and a complete local example; this page defines the API.
+
+Expose a `./preset` entry in the package's `exports` so the loader can find your contributions. Packages under `bakers-cli/addons/` without a `./preset` (`docker-compose`, `name-refs`, the `ports-*` transports) are libraries another addon or the host loads; they never appear in an `addons` list. The shipped reference for a complete addon is [Ports](/addons/ports): preset, lazy `commands`, an `inbox` message and tests, in `bakers-cli/addons/ports` in a source checkout.
 
 To enable an addon, use [Addons](/addons/configure); this page is for people who change or add addons.
+
+<span id="addon-contracts"></span>
 
 ## Addons and plugins
 
 The two words name two levels.
 
-- An **addon** is a package under `bakers-cli/addons/`. It is what you list in an `addons` array, and one addon may contribute several things. `@bakers-build/addon-herdr` contributes an executor and a workspace.
+- An **addon** is a package you make resolvable to the CLI, either locally or through its package installation. It is what you list in an `addons` array, and one addon may contribute several things. `@bakers-build/addon-herdr` contributes an executor and a workspace.
 - A **plugin** is one typed contribution: `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` or `AgentPlugin` on the conductor surface, `BbCommandPlugin` on the command surface, and dropsh's `DropSHPlugin` on the connection surface.
 
 ## Surfaces and extension points
@@ -18,28 +22,18 @@ A preset declares contributions through named accumulator functions of the form 
 | Surface | Accumulators | Configured in | Element |
 |---|---|---|---|
 | command | `commands` | The registry of the `bakers` host | A descriptor: `name`, `plugin` module, `describe` text, optional `export` |
-| conductor | `remotes`, `executors`, `workspaces` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` |
+| conductor | `servers`, `executors`, `worktrees` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin` |
 | conductor | `hooks` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `HookListener`, see [Hooks](/provision/hooks#add-a-listener-from-an-addon) |
 | conductor | `agents` | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `AgentCandidate` |
 | conductor | `inbox`, `tools` (values, not accumulators) | `addons` per [`scopes`](#where-an-addon-may-be-configured) | `InboxMessages`: message definitions and lazy `InboxMessageHandler`s, contract 2, see [Write an addon with inbox messages](/addons/build/actions); `AddonTools`: [agent tools](/addons/build/tools) |
 | connection | `connectionPlugins` | `addons` of a connection config | A dropsh plugin: authentication, renderers, schema, request hooks |
-| connection | `uiEntries` | `addons` of the machine, connection or conductor config | A module specifier, a string |
+| connection | `uiEntries` | `addons` of the machine, connection or project config | A module specifier, a string |
 
 Contract 1 (`actions`: a contract definition and lazy handlers rendering tables/views/row actions) is retired; it is not a current surface and no addon may still export it (see [Migrating a contract-1 addon](/addons/build/actions#migrating-a-contract-1-addon)).
 
 A conductor-surface plugin has a `kind`, an `id`, `requiredModules` and one factory: `createRemote(config)`, `createExecutor(config, deps)`, `createWorkspace(config, deps?)` or `createAgent(config)`. An agent candidate adds an optional `alias`, `description`, `model`, `modelVersion` and `priority`. The interfaces they return are `BbRemote`, `BbExecutor`, `BbWorkspace` and `BbAgent`, all exported from `@bakers-build/conductor/contract`.
 
-What ships today:
-
-| Surface | Addons |
-|---|---|
-| command | `conductor` and `ui` (inside their own packages), `addon-dropsh`, `addon-deployment`, `addon-agents`, `addon-info`, `addon-ports`, `addon-track` |
-| conductor | `addon-remote-drupal` (remote), `addon-herdr` (executor and workspace), `addon-herdr-core` (executor), `addon-workspace-git` (workspace), the agents `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi`, and the inbox of `addon-ports` |
-| connection | `addon-auth-basic`, `addon-essentials`, `addon-bakers-ui` (the terminal renderer), `addon-workspace`, and the cockpit tab `addon-bakers-ui-artifacts` |
-
-`addon-fake` is a workspace-only test fixture that contributes a remote, an executor, a workspace and an inbox. `addon-essentials` is a meta-addon that brings the Markdown renderer, the JSON:API schema plugin and the name resolver `addon-name-refs`, which has no preset of its own.
-
-Two packages have similar names. `@bakers-build/ui` is the `bakers ui` command, an application. `@bakers-build/addon-bakers-ui` is the renderer it loads, a connection addon.
+Use the [catalog](/addons/catalog) to choose an integration. The `@bakers-build/ui` package supplies the command; `@bakers-build/addon-bakers-ui` supplies its renderer.
 
 ## Addon entry fields
 
@@ -55,8 +49,8 @@ addons: [
 
 | Field | Meaning |
 |---|---|
-| `use` | The package name. `name` is accepted as an alias. One of the two is required, or loading fails. |
-| `with` | Options handed to the addon's accumulators as `opts`. `options` is accepted as an alias. |
+| `use` | The package name. Required, or loading fails; the old name `name` fails as an unknown key. |
+| `with` | Options handed to the addon's accumulators as `opts`. In the machine and project files, `bakers config check` checks it against the addon's `options.schema.json` when the addon ships one. The old name `options` fails as an unknown key. |
 | `alias` | For agents only. Selects one named variant of the addon, or names a single custom contribution. Fails when the alias does not pick exactly one variant. |
 | `priority` | For agents only. A function `(ticket) => number` for priority selection. Normally use named routes instead. |
 
@@ -71,15 +65,15 @@ One function, `discoverAddons`, in `bakers-cli/core/src/plugins/discover-addons.
 3. An exact repeat, meaning the same resolved module, options and alias, is skipped with a warning. The same package with different options loads again as a second instance.
 4. Discovery does not install packages. An unresolvable addon is an error, except in the machine file and the `uiEntries` layers, where it is skipped with a warning naming the package and file.
 
-Singleton slots (remote, executor, workspace) resolve last-wins, warning about the competitors. A wrong `kind` for its slot is an error. An explicit `remote`, `executor` or `workspace` descriptor in the config takes precedence over anything discovered; a machine `executor` wins ([slots](/addons/slots)). A conductor config with no remote, executor or workspace fails to load.
+Singleton slots (server, executor, worktree) resolve last-wins, warning about the competitors. A wrong `kind` for its slot is an error. An explicit `server`, `executor` or `worktree` descriptor in the config takes precedence over anything discovered; a machine `executor` wins ([slots](/addons/slots)). A project config with no server, executor or worktree fails to load.
 
-The machine file `~/.bakers/machine.config.js` and the project file `.bakers/conductor.config.js` each carry one `addons` list, merged into one effective list by `scopeAddons` (`bakers-cli/core/src/plugins/scoped-addons.ts`). The addon's `scopes` export (next section) decides where it may be listed; an entry elsewhere is not loaded and warns, and `bakers config check --online` reports `addon_scope_not_allowed`. The same resolved package and `alias` in both files becomes one entry at the machine position, machine entries first. An unresolvable machine entry is skipped with a warning; an unresolvable project entry fails the conductor load.
+The machine file `~/.bakers/machine.config.js` and the project file `.bakers/project.config.js` each carry one `addons` list, merged into one effective list by `scopeAddons` (`bakers-cli/core/src/plugins/scoped-addons.ts`). The addon's `scopes` export (next section) decides where it may be listed; an entry elsewhere is not loaded and warns, and `bakers config check --online` reports `addon_scope_not_allowed`. The same resolved package and `alias` in both files becomes one entry at the machine position, machine entries first. An unresolvable machine entry is skipped with a warning; an unresolvable project entry fails the conductor load.
 
 Agent harnesses are machine-scoped. The machine `agents.catalog` entries select and name variants; each `harness` must also appear in the machine `addons`. [Machines](/configuration/machine) lists the fields.
 
 ### Where an addon may be configured
 
-A preset may export `scopes`, `mergeWith` and `checkWith`:
+A preset may export `scopes` and `mergeWith`:
 
 ```ts
 import type { BbPreset } from '@bakers-build/core';
@@ -90,56 +84,28 @@ export const mergeWith: BbPreset['mergeWith'] = (project, machine) => ({
   ...(project as object),
   ...(machine as object),
 });
-// Optional. Each problem in one entry's own `with` (per file, before the
-// merge; `undefined` for none), keyed relative to it. `bakers config check
-// --online` reports each as `addon_with_invalid` at `addons[<i>].with.<key>`;
-// a throwing check becomes one finding.
-export const checkWith: BbPreset['checkWith'] = (value) =>
-  value === undefined ||
-  (value !== null && typeof value === 'object' && !Array.isArray(value))
-    ? []
-    : [{ key: '', message: 'must be an object' }];
 ```
 
 | Export | Meaning |
 |---|---|
-| `scopes` | Any non-empty subset of `'machine'` (`~/.bakers/machine.config.js`) and `'project'` (`.bakers/conductor.config.js`). Absent means both. |
+| `scopes` | Any non-empty subset of `'machine'` (`~/.bakers/machine.config.js`) and `'project'` (`.bakers/project.config.js`). Absent means both. |
 | `mergeWith(project, machine)` | Called when the addon is listed in both files, `undefined` for a missing `with`; returns the entry's `with`. Absent: a given machine `with` replaces the project `with` whole, else the project `with` is used. |
 
 [Configure addons](/addons/configure#which-file-takes-addons) lists the shipped declarations. An addon with hook listeners declares `['project']`, so no machine runs hooks for every project. Settings live only in the entry's `with`.
 
-Cockpit tabs are layered. The three lists concatenate in the order machine, connection, project, and the same module resolved from two layers renders one tab.
+Terminal UI tabs are layered. The three lists concatenate in the order machine, connection, project, and the same module resolved from two layers renders one tab.
 
 ## Write an addon
 
-1. Create `bakers-cli/addons/<name>/` with a `package.json` whose `exports` include `"./preset": "./dist/src/preset.js"`, and a `tsconfig.json` like a sibling's.
-2. Declare the contract packages as peer dependencies, never as plain dependencies: `@bakers-build/core`, and `@bakers-build/conductor` if you contribute to the conductor surface. Import conductor-surface types from the light subpath.
+1. Create a JavaScript package with `"type": "module"` and an export such as `"./preset": "./preset.js"`. The [harness tutorial](/addons/build/agent#create-the-package) includes a complete manifest. A local package can live in `.bakers/addons/`; it does not need to be added to the bakers.build source repository.
+2. Export only the contributions you need. Accumulators preserve previous contributions, for example `(acc, opts) => [...acc, myWorkspace(opts)]`. `tools` and `inbox` are values with their own contract versions.
+3. For TypeScript, import `BbPreset` from `@bakers-build/core`, or the typed conductor `Preset` from `@bakers-build/conductor/contract`. That subpath also exports `RemotePlugin`, `ExecutorPlugin`, `WorkspacePlugin`, `AgentPlugin` and their interfaces. Use `import type` for types and compile before loading the package; export the compiled JavaScript path.
+4. Declare the contract packages you use as peer dependencies with compatible published versions. You can also use them as development dependencies for local type checking. Keep preset imports light: commands return lazy module descriptors, UI entries return module specifiers, and tool/message handler factories load their implementation only when needed.
+5. Make the package resolvable from the configuration directory, working directory or CLI installation. Add it to the correct `addons` list, validate configuration and restart the conductor. Listing a package never installs it.
 
-   ```ts
-   import type { ExecutorPlugin } from '@bakers-build/conductor/contract';
-   ```
+Do not export project identity, scheduler settings or shell-hook configuration from a preset; those belong to the project's configuration. For hooks, use the listener accumulator and its [lifecycle contract](/provision/hooks#add-a-listener-from-an-addon).
 
-   It carries only types and helpers, so importing it costs nothing at boot.
-3. Export the accumulators from `src/preset.ts`. Type a conductor preset as `Preset` from the contract, and a command, connection or UI preset as `BbPreset` from `@bakers-build/core`.
-
-   ```ts
-   import type { Preset } from '@bakers-build/conductor/contract';
-
-   export const workspaces: Preset['workspaces'] = (acc, opts) => [...acc, myWorkspace(opts)];
-   ```
-
-4. Keep presets light. A `commands` accumulator returns descriptors, never a constructed plugin, so the host can list every command without importing any of them. A `uiEntries` accumulator returns module specifiers, never objects, because discovery runs on every connection load and the terminal toolkit is large. A UI addon's preset must import no UI code. Its entry module, exported as `./ui`, imports `register` from `@bakers-build/addon-bakers-ui/ui`, and the addon peer-depends on `@bakers-build/addon-bakers-ui`. [The tab guide](/addons/bakers-ui/tabs) documents `register`.
-5. To make the addon part of the stock CLI, add it to the dependencies of `bakers-cli/host/package.json`. A new command addon also needs its `commands` accumulator added to the list in `bakers-cli/host/src/host.ts`.
-6. Check the boundaries and the package set.
-
-   ```sh
-   cd bakers-cli && pnpm install && pnpm -r run build
-   node scripts/assert-acyclic.mjs
-   ```
-
-Executors and workspaces: [their guide](/addons/build/executor-workspace).
-
-The guard rejects an addon that depends on a sink, names a dependency outside its allowance, lists a contract as a plain dependency, or contributes to the conductor or UI surface without the matching peer dependency. A new non-private package under `addons/` is published without a list to edit.
+Validate the actual example through its loader and input/result validators, then exercise it on a disposable ticket. A successful type check or config report does not prove runtime behavior. Specialized [executor/workspace contracts](/addons/build/executor-workspace) also require lifecycle and cleanup tests.
 
 ## Addon inbox messages
 

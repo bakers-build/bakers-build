@@ -1,8 +1,23 @@
 {#
 /**
  * @file
- * Gate form presenter: spacing and the action row come from
- * `bb_theme:gate_form`, since core's form elements carry none.
+ * Workspace create presenter: the form stands inside the gate, as the
+ * onboarding wizard's does.
+ *
+ * The form element is the outermost frame (`bb_theme:gate_form`, which carries
+ * the form's attributes), the gate sits inside it with its title in the band,
+ * and the parts of the form stand in a second `gate_form` frame that spaces
+ * them. Its page has its own island profile, `bb_onboarding`, so no second
+ * gate is drawn around it.
+ *
+ * @see web/themes/custom/bb_theme/templates/bb-onboarding-wizard-form.html.twig
  */
 #}
-{{ include('bb_theme:gate_form', {attributes: attributes, content: children}, with_context = false) }}
+{% set parts %}{{ include('bb_theme:gate_form', {tag: 'div', pills: true, content: children}, with_context = false) }}{% endset %}
+{% set page %}{{ include('bb_theme:gate', {
+  title: 'Create a workspace'|t,
+  title_in_band: true,
+  mark: include('bb_theme:brand', {size: 'compact'}, with_context = false),
+  content: parts,
+}, with_context = false) }}{% endset %}
+{{ include('bb_theme:gate_form', {attributes: attributes, content: page}, with_context = false) }}

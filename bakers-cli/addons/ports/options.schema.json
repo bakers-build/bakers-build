@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-ports/options.schema.json",
+  "title": "@bakers-build/addon-ports options",
+  "description": "The ports addon entry's with. A duplicate services key is rejected at load by the addon itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["use"],
+      "properties": {
+        "use": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The transport package."
+        },
+        "with": {
+          "description": "The transport package's own settings, checked by that package's options.schema.json."
+        }
+      }
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "match"],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+            "description": "A DNS-safe label."
+          },
+          "match": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A command-line substring of the process."
+          }
+        }
+      }
+    },
+    "all_node": {
+      "type": "boolean"
+    },
+    "claimers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}

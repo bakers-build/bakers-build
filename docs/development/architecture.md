@@ -34,7 +34,7 @@ Cancelled runs never count toward the failed-run circuit breaker.
 
 ## Conductor
 
-The conductor is the claim-and-dispatch loop that `bakers oven start` runs, in `@bakers-build/conductor`. One conductor serves one project checkout, and the control plane coordinates them; there is no central daemon. Each tick does the following.
+The conductor is the claim-and-dispatch loop that `bakers conductor start` runs, in `@bakers-build/conductor`. One conductor serves one project checkout, and the control plane coordinates them; there is no central daemon. Each tick does the following.
 
 1. Send a heartbeat, which refreshes the registration and recomputes the machine's load.
 2. Read the machine's shared capacity.
@@ -44,16 +44,16 @@ The conductor is the claim-and-dispatch loop that `bakers oven start` runs, in `
 
 The conductor does not decide implementation, does not write a ticket's state and does not create tickets. The agent does those through the API.
 
-Four typed slots connect the loop to the outside world. The loop depends on the interfaces, never on an implementation, and each slot is filled by an addon. The conductor itself runs the lifecycle hooks; [Conductor slots](../addons/slots.md) states what the executor and the workspace each own.
+Four typed slots connect the loop to the outside world. The loop depends on the interfaces, never on an implementation, and each slot is filled by an addon. The conductor itself runs the lifecycle hooks; [Conductor slots](../addons/slots.md) states what the executor and the worktree each own.
 
 | Slot | Interface | What it does | Shipped addon |
 |---|---|---|---|
-| remote | `BbRemote` | Register, heartbeat, claim, read tickets, update runs, finalise | `addon-remote-drupal` |
+| server | `BbRemote` | Register, heartbeat, claim, read tickets, update runs, finalise | `addon-remote-drupal` |
 | executor | `BbExecutor` | Start, stop and clean up a run's terminal; show a fresh worktree | `addon-herdr`, `addon-herdr-core`, `addon-orca` |
-| workspace | `BbWorkspace` | Ensure and remove the ticket's git worktree | `addon-herdr`, `addon-orca` or `addon-workspace-git` |
+| worktree | `BbWorkspace` | Ensure and remove the ticket's git worktree | `addon-herdr`, `addon-orca` or `addon-workspace-git` |
 | agent | `BbAgent` | Launch command, read the transcript, parse the footprint | `addon-claude`, `addon-codex`, `addon-grok`, `addon-kimi`, `addon-opencode`, `addon-pi` |
 
-The agent for a ticket comes from its `agent:` labels first, then the machine's `default` route and default agent. The conductor composes three inputs: the machine file, which owns identity, capacity and the agent catalog; the project's `.bakers/conductor.config.js`, which owns the wiring; and a connection, which is loaded separately and names the server and the sign-in. [Which file owns what](../configuration/index.md) and [conductor configuration](../configuration/project.md) describe each.
+The agent for a ticket comes from its `agent:` labels first, then the machine's `default` route, else its first enabled agent. The conductor composes three inputs: the machine file, which owns identity, capacity and the agent catalog; the project's `.bakers/project.config.js`, which owns the wiring; and a connection, which is loaded separately and names the server and the sign-in. [Which file owns what](../configuration/index.md) and [project configuration](../configuration/project.md) describe each.
 
 ## Skills and `WORKFLOW.md`
 
@@ -87,7 +87,7 @@ What each package owns:
 - **`conductor`** holds the run engine, the `conductor` command and the conductor contract, exposed to addons as `@bakers-build/conductor/contract`. The contract lives here, not in `core`, so the kernel stays free of engine types.
 - **`addons/*`** hold every mountable capability, one package each. [Addon contracts](../addons/build/contracts.md) describes them.
 - **`ui`** is the `bakers ui` command. It is an application, not an addon, so it may depend on addons.
-- **`host`**, published as `@bakers-build/bakers`, is the `bakers` binary. It registers `version`, `config`, `init` and `update` itself, and builds the rest of its command list from the light presets of the command addons. A command's module is imported only when that command runs, so `bakers --help` imports none of them. The environment variable `BB_COMMANDS`, a JSON array of command descriptors, replaces the whole list.
+- **`host`**, published as `@bakers-build/bakers`, is the `bakers` binary. It registers `version`, `config`, `init` and `update` itself, and builds the rest of its command list from the light presets of the command addons. A command's module is imported only when that command runs, so `bakers --help` imports none of them. The environment variable `BAKERS_COMMANDS`, a JSON array of command descriptors, replaces the whole list.
 
 The guard `bakers-cli/scripts/assert-acyclic.mjs` enforces this and fails with the offending edge. It checks that:
 
