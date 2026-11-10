@@ -121,6 +121,23 @@ describe('credential evaluator', () => {
       },
     ]);
   });
+
+  it('reports year 0 as unreadable, since bakers.build refuses it', async () => {
+    expect(
+      await checkCredentials({
+        recorded: { claude: '0000-01-01' },
+        probes: [],
+        now: NOW,
+      }),
+    ).toEqual([
+      {
+        name: 'claude',
+        status: 'error',
+        reason:
+          'unreadable expiry date "0000-01-01" in ~/.bakers/credential-expiry.yml',
+      },
+    ]);
+  });
 });
 
 describe('heartbeat credential report', () => {

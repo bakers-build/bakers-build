@@ -58,7 +58,8 @@ function byExpiry(
   now: Date,
   source: string,
 ): CredentialHealth {
-  const expiry = /^\d{4}-\d{2}-\d{2}$/.test(date)
+  // Year 0 parses in JavaScript but fails PHP's checkdate, which would refuse the heartbeat.
+  const expiry = /^(?!0000)\d{4}-\d{2}-\d{2}$/.test(date)
     ? Date.parse(`${date}T00:00:00Z`)
     : Number.NaN;
   // Date.parse rolls 2027-02-30 over to March; only a round trip proves a real day.
