@@ -379,6 +379,20 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     if (!$this->crewAccess($group)->isAllowed()) {
       throw new AccessDeniedHttpException();
     }
+    $change = $this->pressedPrefixed($form_state, [MemberItemBuilder::REMOVE_PREFIX, MemberItemBuilder::ROLE_PREFIX]);
+    if ($group !== NULL && $change !== NULL) {
+      [$prefix, $uid_key] = $change;
+      $value = $form_state->getUserInput()[$prefix . $uid_key] ?? '';
+      $reason = $this->membershipWriter->refusal(
+        $group,
+        (int) $uid_key,
+        $prefix === MemberItemBuilder::ROLE_PREFIX && is_scalar($value) ? (string) $value : NULL,
+      );
+      if ($reason !== NULL) {
+        $form_state->setErrorByName($prefix . $uid_key, $reason);
+        return;
+      }
+    }
     if ($group === NULL || $this->tenancyInvite->isTenancy($group) || $this->pressedPrefixed($form_state, [self::ADD]) === NULL) {
       // Only the add carries a field to validate. A removal or a role pick
       // must not be refused because the person control happens to be empty.

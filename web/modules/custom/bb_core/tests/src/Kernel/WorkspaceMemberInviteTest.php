@@ -609,6 +609,64 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
   }
 
   /**
+   * The owner and the last admin can be neither removed nor demoted.
+   *
+   * A second admin can, so a workspace never loses its last person in charge.
+   */
+  public function testOwnerAndLastAdminStayInCharge(): void {
+    OgRole::create([
+      'id' => 'bb_workspace-bb_workspace-lead',
+      'label' => 'Admin',
+      'group_type' => 'bb_workspace',
+      'group_bundle' => 'bb_workspace',
+      'role_type' => OgRoleInterface::ROLE_TYPE_STANDARD,
+      'permissions' => [],
+    ])->save();
+    $owner = $this->actAs(['view bb_workspace', 'update any bb_workspace']);
+    $this->setWorkspaceOwner((int) $owner->id());
+    $owner_seat = OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+      ->setOwner($owner)->setGroup($this->workspace)
+      ->setState(OgMembershipInterface::STATE_ACTIVE);
+    $owner_seat->save();
+    $admin = $this->createUser([], NULL, FALSE, ['mail' => 'admin@example.com']);
+    self::assertInstanceOf(UserInterface::class, $admin);
+    OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
+      ->setOwner($admin)->setGroup($this->workspace)
+      ->setState(OgMembershipInterface::STATE_ACTIVE)
+      ->setRoles([OgRole::load('bb_workspace-bb_workspace-lead')])->save();
+    $admin_id = (int) $admin->id();
+    $owner_id = (int) $owner->id();
+
+    self::assertNotSame([], $this->submitRole($admin_id, 'member'), 'the last admin is not demoted');
+    self::assertContains('lead', $this->roleNamesOf($admin_id));
+    self::assertNotSame([], $this->submitRemove($admin_id), 'the last admin is not removed');
+    self::assertNotNull($this->membershipFor($admin_id));
+
+    $owner_seat->setRoles([OgRole::load('bb_workspace-bb_workspace-lead')])->save();
+    self::assertSame([], $this->submitRole($admin_id, 'member'), 'a second admin can be demoted');
+    self::assertNotContains('lead', $this->roleNamesOf($admin_id));
+
+    self::assertNotSame([], $this->submitRole($owner_id, 'member'), 'the owner is not demoted');
+    self::assertContains('lead', $this->roleNamesOf($owner_id));
+    self::assertNotSame([], $this->submitRemove($owner_id), 'the owner is not removed');
+    self::assertNotNull($this->membershipFor($owner_id));
+  }
+
+  /**
+   * The role names one account holds in the workspace.
+   *
+   * @return array<string>
+   *   The names.
+   */
+  private function roleNamesOf(int $uid): array {
+    $this->container->get('entity_type.manager')->getStorage('og_membership')->resetCache();
+    return array_map(
+      static fn ($role): string => (string) $role->getName(),
+      $this->membershipFor($uid)?->getRoles() ?? [],
+    );
+  }
+
+  /**
    * A transfer naming a uid with no active membership writes nothing.
    *
    * Covers the non-member guard `OwnershipTransfer::transfer()` carries,
@@ -1392,8 +1450,11 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
 
   /**
    * Submits a role-change trigger, the way the island POST does.
+   *
+   * @return array<string, string>
+   *   The validation errors.
    */
-  private function submitRole(int $target_uid, string $value): void {
+  private function submitRole(int $target_uid, string $value): array {
     $form_state = new FormState();
     $form_state->setValues([
       'member_role_' . $target_uid => $value,
@@ -1403,12 +1464,16 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
       $form_state,
       ['island_id' => 'members', 'host_id' => 'workspace'],
     );
+    return array_map('strval', $form_state->getErrors());
   }
 
   /**
    * Submits a remove trigger, the way the island POST does.
+   *
+   * @return array<string, string>
+   *   The validation errors.
    */
-  private function submitRemove(int $target_uid): void {
+  private function submitRemove(int $target_uid): array {
     $form_state = new FormState();
     $form_state->setValues([
       'remove_member_' . $target_uid => (string) $target_uid,
@@ -1418,6 +1483,7 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
       $form_state,
       ['island_id' => 'members', 'host_id' => 'workspace'],
     );
+    return array_map('strval', $form_state->getErrors());
   }
 
   /**
