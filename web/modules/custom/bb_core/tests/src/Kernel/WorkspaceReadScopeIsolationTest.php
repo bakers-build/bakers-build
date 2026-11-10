@@ -51,7 +51,7 @@ final class WorkspaceReadScopeIsolationTest extends KernelTestBase {
     'view bb_project',
     'view bb_ticket', 'view bb_ticket_template', 'view bb_environment', 'view bb_conductor',
     'view bb_machine',
-    'view bb_run', 'view bb_comment', 'view bb_term',
+    'view bb_run', 'view bb_comment', 'view bb_term', 'view bb_invite',
     'access user profiles',
     // BB-391: `og_membership` joined the narrowed set, and its rows are
     // invisible by permission without this — which would make the isolation

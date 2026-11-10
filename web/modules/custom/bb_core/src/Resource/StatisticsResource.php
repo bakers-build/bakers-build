@@ -8,6 +8,8 @@ use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Cache\CacheableResponseInterface;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\bb_core\Access\FigureDisclosure;
 use Drupal\bb_core\BbFigureInterface;
 use Drupal\bb_core\Statistics\Context\FigureRequestContextResolver;
 use Drupal\bb_core\Statistics\Figure\FigureEvaluator;
@@ -32,6 +34,8 @@ final class StatisticsResource extends ResourceBase implements ContainerInjectio
     private readonly FigureRequestContextResolver $contextResolver,
     private readonly FigureEvaluator $evaluator,
     private readonly TimeInterface $time,
+    private readonly FigureDisclosure $disclosure,
+    private readonly AccountInterface $currentUser,
   ) {}
 
   /**
@@ -42,6 +46,8 @@ final class StatisticsResource extends ResourceBase implements ContainerInjectio
       $container->get('bb_core.figure_request_context_resolver'),
       $container->get('bb_core.figure_evaluator'),
       $container->get('datetime.time'),
+      $container->get('bb_core.figure_disclosure'),
+      $container->get('current_user'),
     );
   }
 
@@ -56,6 +62,7 @@ final class StatisticsResource extends ResourceBase implements ContainerInjectio
         $contexts,
         $this->contextResolver->filtersFromRequest($request),
         $this->time->getRequestTime(),
+        $this->disclosure->projectBound($this->currentUser, $bb_figure, $contexts),
       )->toArray();
       // JSON:API reserves `id` at resource-object level. The grouped contract
       // retains it inside each nested figure; the direct document carries the
@@ -67,7 +74,7 @@ final class StatisticsResource extends ResourceBase implements ContainerInjectio
     }
     $cacheability = (new CacheableMetadata())
       ->setCacheMaxAge(0)
-      ->addCacheContexts(['user.permissions', 'url.query_args'])
+      ->addCacheContexts(['user', 'url.query_args'])
       ->addCacheTags(['og_membership_list'])
       ->addCacheableDependency($bb_figure);
     foreach ($contexts as $context) {

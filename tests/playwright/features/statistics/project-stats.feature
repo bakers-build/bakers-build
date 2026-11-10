@@ -2,8 +2,8 @@
 Feature: Project viewers read the Stats of a project
   A project's Stats tab is the Insights page for that project: the period
   range, four tiles, New vs. done and People, filtered by epic and person.
-  Every viewer of the project reaches it; an account of another workspace is
-  refused.
+  Every viewer of the project reaches it; a guest outside the project's teams
+  and an account of another workspace are refused.
 
   These scenarios check function and visibility only. Exact figures, the
   epic subtree and the filter boundary are kernel-tested.
@@ -40,10 +40,10 @@ Feature: Project viewers read the Stats of a project
     Then the filter "Epic" reads "All epics"
     And the filter "Person" reads "All"
 
-  Scenario: A guest of the workspace reads the project's figures
+  Scenario: A guest outside the project's teams is refused
     Given I am logged in as the account "north-guest"
-    When I open the Stats of project "Statistics demo"
-    Then the page shows "Throughput"
+    When I request the Stats of project "Statistics demo"
+    Then the request is answered with 403
 
   Scenario: An account of the other bakery is refused
     Given I am logged in as the account "south-contributor"

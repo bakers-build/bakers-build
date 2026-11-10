@@ -1,6 +1,6 @@
 _core:
   default_config_hash: 3r2emFI83HVYv-o5sOIr3nycGMAXflzJR_3-8myD--k
-group_manager_full_access: true
+group_manager_full_access: false
 groups:
   bb_workspace:
     - bb_workspace

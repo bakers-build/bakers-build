@@ -20,7 +20,7 @@ Never put credentials in tickets, README files or committed project configuratio
 | **Contributor** | Work: create and edit tickets, assign, freeze and cancel them, create projects, register your own conductor, record your own time. |
 | **Guest** | Read tickets, comments, projects and teams. Change nothing. |
 
-The person who created the workspace has every right in it. Creating or deleting a workspace itself is reserved for the instance administrator.
+The person who created the workspace owns it and holds the Admin rank; their rights come from that rank alone. Nobody can remove or demote the owner or the last Admin. Creating or deleting a workspace itself is reserved for the instance administrator.
 
 ### Teams
 
@@ -39,7 +39,7 @@ A team makes its projects visible to its members. You see **every ticket of ever
 |---|---|
 | See a project and its tickets | Membership in one of its teams, or Admin |
 | Create, assign, freeze or cancel a ticket | Contributor with project access; Reporter grants creation only |
-| Review a ticket | To be listed under **Reviewers** on that ticket |
+| Review a ticket | Access to its project (a team seat or Admin), and to be listed under **Reviewers** on that ticket |
 | Record your time | Contributor; only you can edit your entries |
 | See a teammate's hours | Team Lead, for active members of your team |
 | Manage billing accounts | Team Lead, Team Owner or Admin |
