@@ -1,0 +1,33 @@
+{
+  "name": "@bakers-build/addon-forge",
+  "version": "0.1.0",
+  "description": "bakers.build forge tools: a sandboxed run fetches, pushes its own branches, opens its PR/MR, reads checks and merges through the conductor, which holds the token. Backends implement the ForgeBackend contract (./backend).",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    "./preset": "./dist/src/preset.js",
+    "./backend": "./dist/src/backend.js"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/forge/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/message": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}
