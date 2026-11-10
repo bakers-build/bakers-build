@@ -173,6 +173,9 @@ final class ConductorRegistrar {
       $conductor->set('reported_load', 0);
     }
     $conductor->set('machine', $machine->id());
+    if ($conductor->get('project_id')->isEmpty()) {
+      $conductor->set('project_id', $projectId);
+    }
     foreach ($this->refreshableValues($attrs) as $field => $value) {
       $conductor->set($field, $value);
     }
@@ -203,8 +206,9 @@ final class ConductorRegistrar {
   private function refuseRebinding(AccountInterface $owner, BbConductorInterface $existing, string $hostKey, int $projectId, string $project): void {
     // Access was checked for the named project only; a conductor moved to
     // another project keeps heartbeating only while its owner may use that one.
+    // A conductor whose project was deleted (0) is bound anew in upsert().
     $stored = (int) $existing->get('project_id')->target_id;
-    if ($stored !== $projectId && !$this->registration->mayRegister($owner, $stored)) {
+    if ($stored !== 0 && $stored !== $projectId &&!$this->registration->mayRegister($owner, $stored)) {
       throw $this->registration->notFound($project);
     }
     // Another machine means another conductor.

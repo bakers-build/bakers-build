@@ -23,7 +23,8 @@ export const KINDS: Record<string, string> = {
   comment: '$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => $l, "workflow" => "bb_work"]); $t->save(); $e = $etm->getStorage("bb_comment")->create(["ticket_id" => $t->id(), "body" => ["value" => $l, "format" => "bb_rich"]]); $e->save(); $extra[] = $t; $manage = $t->toUrl()->toString();',
   invite: '$e = $etm->getStorage("bb_invite")->create(["email" => "delete-" . $n . "@example.com", "workspace_id" => $w->id()]); $e->save(); $manage = "/$slug/settings/members"; $delete = "/$slug/invite/" . $e->id() . "/delete";',
   machine: '$admin = current($etm->getStorage("user")->loadByProperties(["name" => "site-admin"])); $e = $etm->getStorage("bb_machine")->create(["name" => $l, "host_key" => "delete-" . $n, "owner_user_id" => $admin->id()]); $e->save(); $manage = $e->toUrl()->toString();',
-  conductor: '$e = $etm->getStorage("bb_conductor")->create(["label" => $l, "conductor_id" => "delete-" . $n, "project_id" => $p->id()]); $e->save(); $manage = $e->toUrl()->toString();',
+  'conductor project': '$e = $etm->getStorage("bb_project")->create(["name" => $l, "key" => "D" . substr($n, -7), "group_id" => $p->get("group_id")->target_id, "teams" => $p->get("teams")->getValue()]); $e->save(); $c = $etm->getStorage("bb_conductor")->create(["label" => $l, "conductor_id" => "delete-" . $n, "project_id" => $e->id()]); $c->save(); $extra[] = $c; $manage = $e->toUrl()->toString() . "/settings";',
+  conductor: '$e =$etm->getStorage("bb_conductor")->create(["label" => $l, "conductor_id" => "delete-" . $n, "project_id" => $p->id()]); $e->save(); $manage = $e->toUrl()->toString();',
   workspace: '$e = $etm->getStorage("bb_workspace")->create(["name" => $l, "slug" => "delete-" . $n]); $e->save(); $manage = "/delete-$n/settings";',
 };
 

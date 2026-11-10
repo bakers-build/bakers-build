@@ -58,7 +58,9 @@ final class EntityDeleteRules {
     'bb_project' => [
       [self::BLOCK, 'bb_ticket', 'project_id'],
       [self::BLOCK, 'bb_track_worklog', 'project_id'],
-      [self::BLOCK, 'bb_conductor', 'project_id'],
+      // The conductor stays its owner's and claims nothing until it
+      // registers for another project.
+      [self::DETACH, 'bb_conductor', 'project_id'],
       // Worklogs block above, so no logged time goes with its account.
       [self::CASCADE, 'bb_track_account', 'project_id'],
       [self::CASCADE, 'bb_environment', 'project_id'],
