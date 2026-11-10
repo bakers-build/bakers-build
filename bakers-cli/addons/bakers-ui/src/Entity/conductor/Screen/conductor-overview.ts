@@ -32,6 +32,9 @@ export function conductorOverviewRows(
     // Stated explicitly as the machine's own budget, not the conductor's:
     // several conductors can share one host's capacity.
     `Load: ${detail.currentLoad}/${detail.maxParallel} (machine budget)`,
+    ...detail.credentials
+      .filter((c) => c.status !== 'ok')
+      .map((c) => `Credential ${c.status}: ${c.name} — ${c.reason}`),
   ];
 }
 

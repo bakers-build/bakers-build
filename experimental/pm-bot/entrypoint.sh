@@ -84,6 +84,10 @@ assert inspect.iscoroutinefunction(SlackAdapter._handle_slack_message), "SlackAd
 for helper in ("_track_reacting_message", "_event_team_id"):
     assert callable(getattr(SlackAdapter, helper, None)), f"SlackAdapter.{helper} is gone"
 assert inspect.iscoroutinefunction(SlackAdapter.on_processing_complete), "SlackAdapter.on_processing_complete is gone"
+assert inspect.iscoroutinefunction(SlackAdapter.send), "SlackAdapter.send is gone"
+from agent.i18n import t
+for key in ("gateway.errors.auth_failed", "gateway.errors.no_credentials"):
+    assert t(key) != key, f"Hermes' text {key} is gone"
 from gateway.platforms.event import ProcessingOutcome
 assert "CANCELLED" in ProcessingOutcome.__members__, "ProcessingOutcome.CANCELLED is gone"
 for getter in ("_slack_allowed_channels", "_slack_free_response_channels"):

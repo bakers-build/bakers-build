@@ -11,7 +11,7 @@ export const PROJECT = '11111111-1111-4111-8111-111111111111';
  *   per page, whatever limit is asked for (to exercise paging with few tickets).
  */
 export async function site({ pageSize = 50 } = {}) {
-  const s = { tickets: [], comments: [], runs: [], log: [] };
+  const s = { tickets: [], comments: [], runs: [], conductors: [], log: [] };
   let next = 0;
   const uuid = (prefix) => `${prefix}-${++next}`;
 
@@ -75,6 +75,11 @@ export async function site({ pageSize = 50 } = {}) {
       const runs = s.runs.filter((r) => r.ticket === t.id).reverse();
       return { runs: runs.map(({ ticket, ...r }) => ({ ...r, closed: !['claimed', 'running'].includes(r.state) })), next_offset: null };
     }),
+    // One page; credential_health as the site stores it, a JSON string.
+    bakers_conductor_list: guard('bakers_conductor_list', (a) => {
+      if (a.project !== PROJECT) throw new Error(`Project ${a.project} does not exist or is not readable.`);
+      return { conductors: s.conductors.map((c) => ({ ...c, credential_health: JSON.stringify(c.credential_health ?? []) })), next_offset: null };
+    }),
     bakers_ticket_transition: guard('bakers_ticket_transition', (a) => {
       const t = find(a.ticket);
       for (const l of a.links ?? []) if (!t.links.some((x) => x.uri === l.uri)) t.links.push({ uri: l.uri, title: l.title });
@@ -100,6 +105,12 @@ export async function site({ pageSize = 50 } = {}) {
     return r;
   }
 
+  function addConductor({ label = 'acme-box', credential_health = [] } = {}) {
+    const c = { uuid: uuid('conductor'), conductor_id: `conductor-${s.conductors.length + 1}`, label, active: true, status: 'online', credential_health };
+    s.conductors.push(c);
+    return c;
+  }
+
   const stub = await bakersStub({ tools });
   // failOnce(tool, n): the next n calls of that tool are refused.
   const failOnce = (name, n = 1) => {
@@ -109,7 +120,7 @@ export async function site({ pageSize = 50 } = {}) {
   const loseReplyOnce = (name) => {
     lost[name] = 1;
   };
-  return { ...s, state: s, stub, addTicket, addComment, addRun, failOnce, loseReplyOnce, close: stub.close };
+  return { ...s, state: s, stub, addTicket, addComment, addRun, addConductor, failOnce, loseReplyOnce, close: stub.close };
 }
 
 export const thread = (channel = 'C0000000001', ts = '1700000000.000100') => ({

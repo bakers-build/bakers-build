@@ -141,6 +141,8 @@ interface FakeMachineState {
 export class FakeBbRemote implements BbRemote {
   /** Set by a test to serve site tools on the `bakers` MCP server. */
   siteTools?: SiteToolClient;
+  /** The credentials of the last registration or heartbeat that carried them. */
+  lastCredentials?: ConductorRegistration['credentials'];
   readonly calls: {
     markRunning: MarkRunningCall[];
     markFailed: MarkFailedCall[];
@@ -224,6 +226,7 @@ export class FakeBbRemote implements BbRemote {
 
   async registerConductor(reg: ConductorRegistration): Promise<string> {
     this.conductorStatus = 'online';
+    if (reg.credentials) this.lastCredentials = reg.credentials;
     // Ensure the host machine exists so machineCapacity is readable after
     // registration even before the first heartbeat with a non-zero load.
     this.touchMachine(reg.host_key ?? reg.id, reg.id, 0);
@@ -238,6 +241,7 @@ export class FakeBbRemote implements BbRemote {
     // Mirrors the server: a heartbeat always brings the conductor online and
     // replaces this conductor's contribution to machine.current_load (D5).
     this.conductorStatus = 'online';
+    if (reg.credentials) this.lastCredentials = reg.credentials;
     this.touchMachine(reg.host_key ?? reg.id, reg.id, currentLoad);
     return this.conductorStatus;
   }

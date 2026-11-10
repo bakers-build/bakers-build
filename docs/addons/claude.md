@@ -85,6 +85,7 @@ bakers agents
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
 - Listed in a project config, an agent addon is ignored with a warning.
+- Sign-in renewal: [Box credentials](/provision/security/credentials#box-credentials).
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 

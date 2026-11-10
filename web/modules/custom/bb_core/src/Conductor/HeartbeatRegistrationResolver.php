@@ -55,6 +55,70 @@ final class HeartbeatRegistrationResolver {
   }
 
   /**
+   * Validates the credential report and returns it as JSON.
+   *
+   * Each entry keeps name, status, reason and expires_at (when given); other
+   * keys are dropped. Registration pings from `poll`/`reap` send no report.
+   *
+   * @param array<string, mixed> $attrs
+   *   Registration attributes.
+   *
+   * @return string|null
+   *   The JSON list to store, or NULL when the attribute is absent.
+   */
+  public function credentialHealth(array $attrs): ?string {
+    if (!array_key_exists('credentials', $attrs)) {
+      return NULL;
+    }
+    $report = $attrs['credentials'];
+    if (!is_array($report) || !array_is_list($report) || count($report) > 50) {
+      throw new UnprocessableEntityHttpException('credentials must be a list of at most 50 entries.');
+    }
+    return json_encode(
+      array_map($this->credentialEntry(...), $report, array_keys($report)),
+      JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+    );
+  }
+
+  /**
+   * Validates one credential report entry and keeps its known keys.
+   *
+   * @param mixed $entry
+   *   The reported entry.
+   * @param int $index
+   *   Its position, for the error message.
+   *
+   * @return array<string, string>
+   *   name, status, expires_at (when given) and reason.
+   */
+  private function credentialEntry(mixed $entry, int $index): array {
+    $name = $entry['name'] ?? NULL;
+    $status = $entry['status'] ?? NULL;
+    $reason = $entry['reason'] ?? NULL;
+    $expires = $entry['expires_at'] ?? NULL;
+    $valid = is_string($name) && mb_strlen($name) <= 200
+      && is_string($reason) && mb_strlen($reason) <= 200
+      && in_array($status, ['ok', 'warning', 'error'], TRUE)
+      && ($expires === NULL || $this->isIsoDate($expires));
+    if (!$valid) {
+      throw new UnprocessableEntityHttpException(sprintf('credentials[%d] needs name and reason (at most 200 characters), status ok, warning or error, and expires_at as YYYY-MM-DD when given.', $index));
+    }
+    return ['name' => $name, 'status' => $status]
+      + ($expires !== NULL ? ['expires_at' => $expires] : [])
+      + ['reason' => $reason];
+  }
+
+  /**
+   * Whether a value is a real calendar date written as YYYY-MM-DD.
+   */
+  private function isIsoDate(mixed $value): bool {
+    if (!is_string($value) || preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $m) !== 1) {
+      return FALSE;
+    }
+    return checkdate((int) $m[2], (int) $m[3], (int) $m[1]);
+  }
+
+  /**
    * Resolves the project the owner may register a conductor for.
    *
    * The name is looked up among the projects the owner can see, inside the

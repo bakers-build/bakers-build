@@ -1,4 +1,5 @@
 import type { MessageDefinition, MessageResult } from '@bakers-build/message';
+import type { CredentialHealth } from '../core/credentials.js';
 
 /** A contract-2 addon's wire registration shape (BB-661). */
 export interface AddonDefinitionV2 {
@@ -44,6 +45,11 @@ export interface ConductorRegistration {
    */
   adopt?: string;
   create_new?: boolean;
+  /**
+   * The box's credential checks, replacing the stored list. Absent from a
+   * conductor that has not checked yet, which leaves the stored list alone.
+   */
+  credentials?: CredentialHealth[];
 }
 
 /**

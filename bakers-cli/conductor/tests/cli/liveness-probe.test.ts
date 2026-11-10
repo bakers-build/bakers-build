@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { claudeAgent } from '@bakers-build/addon-claude';
@@ -244,6 +244,35 @@ describe('bakers conductor ls/status: local pid probe (BB-473)', () => {
       const word = KNOWN.find((w) => text.includes(w));
       expect(word).toBeDefined();
     }
+  });
+
+  it('status names a credential bakers.build rejected, and a list it could not read', async () => {
+    mkdirSync(join(home, '.bakers'), { recursive: true });
+    writeFileSync(
+      join(home, '.bakers', 'conductor.config.auth.json'),
+      JSON.stringify({
+        reason:
+          "bakers.build rejected the conductor's client credential (invalid_client) — run bakers auth login",
+      }),
+    );
+    const errors: string[] = [];
+    vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      errors.push(args.map(String).join(' '));
+    });
+    const remote = new ListRemote([]);
+    remote.listConductors = async () => {
+      throw new Error('HTTP 401 Unauthorized');
+    };
+    await buildConductorProgram({ remote, config: makeConfig() }).parseAsync(
+      ['oven', 'status'],
+      { from: 'user' },
+    );
+    expect(out[0]).toBe(
+      "credential rejected: bakers.build rejected the conductor's client credential (invalid_client) — run bakers auth login",
+    );
+    expect(errors).toContainEqual(
+      'could not list conductors from bakers.build: Error: HTTP 401 Unauthorized',
+    );
   });
 });
 

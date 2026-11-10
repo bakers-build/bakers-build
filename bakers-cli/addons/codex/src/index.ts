@@ -5,9 +5,11 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import {
+  type AgentCredentialCheck,
   type AgentFootprint,
   type AgentPlugin,
   type AgentRunIdentity,
+  type AuthFailurePattern,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,
@@ -467,6 +469,42 @@ export class CodexAgent implements BbAgent {
       }
     }
     return latest?.log ?? '';
+  }
+
+  /** Screens and errors that mean the launched agent cannot work. */
+  readonly authFailurePatterns = [
+    {
+      pattern: /Sign in with ChatGPT|Provide your own API key/,
+      reason:
+        'codex: not logged in (stopped at its login screen) — run codex login',
+    },
+    {
+      pattern: /401 Unauthorized|access token could not be refreshed/i,
+      reason: 'codex: credential rejected (401) — run codex login',
+    },
+  ] satisfies readonly AuthFailurePattern[];
+
+  /** `codex login status` in the user's Codex home, which agent homes link `auth.json` from. */
+  async credentialCheck(): Promise<AgentCredentialCheck> {
+    try {
+      await run('codex', ['login', 'status'], {
+        env: { ...process.env, CODEX_HOME: this.userCodexHome() },
+      });
+      return { ok: true };
+    } catch (error) {
+      const { stderr, stdout, code } = error as {
+        stderr?: string;
+        stdout?: string;
+        code?: unknown;
+      };
+      // shortcut: a missing CLI fails at launch with its own error; only a login answer counts here.
+      if (code === 'ENOENT') return { ok: true };
+      const said = (stderr || stdout || '').trim();
+      return {
+        ok: false,
+        reason: `codex: not logged in${said ? ` (${said})` : ''} — run codex login`,
+      };
+    }
   }
 
   parseFootprint(log: string): AgentFootprint {

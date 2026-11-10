@@ -455,6 +455,7 @@ export class DrupalBbRemote implements BbRemote {
           workspace_root: reg.workspace,
           label: reg.label,
           ...processIdentity(reg),
+          ...(reg.credentials ? { credentials: reg.credentials } : {}),
           ...(extras.current_load !== undefined
             ? { current_load: extras.current_load }
             : {}),

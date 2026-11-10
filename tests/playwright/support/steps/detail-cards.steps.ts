@@ -74,6 +74,16 @@ Then('the {string} card has no row {string}', async ({ page }, heading: string, 
   await expect(cardRow(page, heading, label)).toHaveCount(0);
 });
 
+Then('the {string} card lists {int} table rows', async ({ page }, heading: string, count: number) => {
+  await expect(card(page, heading).locator('tbody tr')).toHaveCount(count, { timeout: 10000 });
+});
+
+Then('the {string} card lists {string} marked {string}', async ({ page }, heading: string, name: string, badge: string) => {
+  const row = card(page, heading).locator('tbody tr').filter({ hasText: name });
+  await expect(row).toHaveCount(1, { timeout: 10000 });
+  await expect(row.locator('[data-component-id="bb_theme:badge"]')).toHaveText(badge);
+});
+
 /** Clicks a card's own Refresh and waits until its fresh form is swapped in. */
 async function refreshCard(page: Page, heading: string): Promise<void> {
   const refreshed = page.waitForResponse((r) => r.request().method() === 'GET' && r.request().headers()['hx-request'] === 'true');

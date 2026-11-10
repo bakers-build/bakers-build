@@ -879,6 +879,8 @@ describe('Conductor', () => {
     const dir = join(home, '.claude', 'projects', encodeClaudeProjectDir(cwd));
     // `system`: nothing launches here, so the machine's sandbox must not gate claims.
     const agent = new ClaudeAgent({ permissions: 'system' }, home);
+    // The temp home has no login; this test is about transcripts, not the credential gate.
+    agent.credentialCheck = async () => ({ ok: true });
 
     class ClaudeLikeExecutor extends RecordingExecutor {
       async startRun(input: SpawnRunInput) {

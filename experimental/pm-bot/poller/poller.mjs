@@ -7,7 +7,9 @@
 // moving the ticket on, a new summary's outcome and a new preview link, and a heartbeat while a
 // run works and the conversation has been quiet for PM_BOT_HEARTBEAT_INTERVAL. For the channels the bot created it renames a request channel after its
 // ticket, archives it after the final post, opens a fresh one when the ticket is reopened, and
-// closes a request channel that stayed silent for a week without a ticket. It posts in the bot's
+// closes a request channel that stayed silent for a week without a ticket. It relays each box
+// credential warning or error of the project's conductors to the bot's channel when it first
+// appears and once a day while it lasts. It posts in the bot's
 // language, which the bot-channels plugin writes to bot-language.json. No LLM, no dependencies.
 //
 //   node experimental/pm-bot/poller/poller.mjs          # loop
@@ -15,13 +17,15 @@
 //
 // Configuration comes from the environment (experimental/pm-bot/.env, see .env.example).
 // While bakers.build is unreachable a pass fails, is logged and keeps the state
-// file as it was; the next pass catches up, so nothing is lost or posted twice.
+// file as it was; the next pass catches up, so nothing is lost or posted twice. A rejected
+// BAKERS_API_KEY or SLACK_BOT_TOKEN is named in the log and the next pass waits REJECTED_BACKOFF.
 
 import { spawn } from 'node:child_process';
 import { readFile, rename, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createBakersClient } from '../lib/bakers-client.mjs';
 import { channelSteps, CLOSED, ticketChannelName, WEEK } from './channels.mjs';
+import { credentialPosts } from './credentials.mjs';
 import { diff, reachedDone } from './diff.mjs';
 import { heartbeatInterval, pollInterval } from './interval.mjs';
 import { openNote, QUESTION_LABEL, relay, TECHNICAL_PROBLEM_LABEL } from './questions.mjs';
@@ -29,9 +33,14 @@ import { conversation, conversations } from './tickets.mjs';
 import { forget, updates } from './updates.mjs';
 
 const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
+// The wait after a pass that met a rejected credential: a renewal takes a human.
+export const REJECTED_BACKOFF = 5 * 60 * 1000;
+// Slack's answers for a bot token it no longer accepts.
+const SLACK_REJECTED = ['invalid_auth', 'not_authed', 'token_revoked', 'token_expired', 'account_inactive'];
 
 /** The Slack Web API calls the poller makes. */
 export function createSlack({ url = 'https://slack.com/api', token }) {
+  let rejected = null;
   async function call(method, body) {
     const res = await fetch(`${url}/${method}`, {
       method: 'POST',
@@ -39,6 +48,11 @@ export function createSlack({ url = 'https://slack.com/api', token }) {
       body: JSON.stringify(body),
     });
     const answer = await res.json();
+    if (SLACK_REJECTED.includes(answer.error)) {
+      rejected = 'SLACK_BOT_TOKEN';
+      throw Object.assign(new Error(`${method} failed: Slack rejected SLACK_BOT_TOKEN (${answer.error})`), { code: answer.error });
+    }
+    rejected = null;
     if (!answer.ok) throw Object.assign(new Error(`${method} failed: ${answer.error}`), { code: answer.error });
     return answer;
   }
@@ -47,6 +61,8 @@ export function createSlack({ url = 'https://slack.com/api', token }) {
     if (!codes.includes(error.code)) throw error;
   };
   return {
+    // The credential Slack rejected on the latest call, or null.
+    rejected: () => rejected,
     // A message, in a thread when thread_ts is given; returns its ts.
     post: async ({ channel, thread_ts, text }) => (await call('chat.postMessage', { channel, thread_ts, text })).ts,
     // A public channel; returns its ID.
@@ -78,14 +94,15 @@ export function hermesSend({ channel, thread_ts, text }) {
 /**
  * @param {{client: ReturnType<typeof createBakersClient>, slack: ReturnType<typeof createSlack>,
  *   send: (message: {comment: string, kind: 'question' | 'technical_problem', identifier: string, channel: string, thread_ts?: string, text: string}) => Promise<void>,
- *   stateFile: string, botChannelsFile: string, languageFile: string, workspaceUrl: string, now?: () => number,
+ *   stateFile: string, botChannelsFile: string, languageFile: string, workspaceUrl: string, channel: string, now?: () => number,
  *   project: string, messages: {de: any, en: any}, heartbeat?: number, log?: {log: Function, error: Function}}} options
+ *   channel: the bot's channel, where box credential warnings go
  *   heartbeat: the quiet time in ms after which a working ticket's conversation gets a heartbeat
  *   botChannelsFile: the request channels the bot's plugin opened, which only the plugin writes
  *   languageFile: the bot's language as the plugin read it, {"language": "<ISO 639-1 code>"}; only the plugin writes it
  *   messages: the fixed texts per language
  */
-export function createPoller({ client, slack, send, stateFile, botChannelsFile, languageFile, workspaceUrl, now = Date.now, project, messages: texts, heartbeat = heartbeatInterval(), log = console }) {
+export function createPoller({ client, slack, send, stateFile, botChannelsFile, languageFile, workspaceUrl, channel, now = Date.now, project, messages: texts, heartbeat = heartbeatInterval(), log = console }) {
   const stamp = () => new Date().toISOString();
   // The texts of the current pass: the plugin's language, German without texts for it.
   let messages = texts.de;
@@ -129,7 +146,8 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
   // The state file: {tickets: identifier → posted state, relayed: comment UUIDs,
   // channels: channel ID → {ticket, requester, name, generation, renamed, final, archived,
   // seen, closing, successor, reopened, previous}, updates: identifier → {runs: run UUID → state,
-  // summaries, links, lastStart}, posted: conversation → last post in ms}. The plugin reads
+  // summaries, links, lastStart}, posted: conversation → last post in ms, credentials:
+  // conductor:credential:status → UTC date last posted}. The plugin reads
   // `channels` for the open channels.
   async function readJson(file, empty) {
     try {
@@ -154,7 +172,7 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
 
   async function readState() {
     const state = await readJson(stateFile, {});
-    return { tickets: state.tickets ?? null, relayed: state.relayed ?? [], channels: state.channels ?? {}, updates: state.updates ?? {}, posted: state.posted ?? {} };
+    return { tickets: state.tickets ?? null, relayed: state.relayed ?? [], channels: state.channels ?? {}, updates: state.updates ?? {}, posted: state.posted ?? {}, credentials: state.credentials ?? {} };
   }
 
   async function writeState(state) {
@@ -264,6 +282,31 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
     }
   }
 
+  // Box credential warnings and errors of the project's conductors, in the bot's channel.
+  async function postCredentials(state) {
+    const conductors = [];
+    for (let offset = 0; offset !== null && offset !== undefined; ) {
+      const page = await client.tool('bakers_conductor_list', { project, limit: 50, offset });
+      conductors.push(...(page.conductors ?? []));
+      offset = page.next_offset;
+    }
+    const today = new Date(now()).toISOString().slice(0, 10);
+    const { due, next } = credentialPosts(state.credentials, conductors, today);
+    state.credentials = next;
+    for (const c of due) {
+      const expiry = c.expires_at ? fill(messages.credentialExpiry, { date: c.expires_at }) : '';
+      const text = fill(messages.credential, { status: messages.credentialStatus[c.status], name: c.name, box: c.box, expiry, reason: c.reason ?? '' }).trim();
+      try {
+        await slack.post({ channel, text });
+        state.credentials[c.key] = today;
+        log.log(`${stamp()} posted credential ${c.status} ${c.name} on ${c.box}`);
+      } catch (error) {
+        // Not recorded, so the next pass retries it.
+        log.error(`${stamp()} credential ${c.name} on ${c.box}: ${error.message}`);
+      }
+    }
+  }
+
   // The first free name from generation n on: Slack answers name_taken for a name in use.
   async function freeName(ticket, n, use) {
     for (let tries = 0; ; tries += 1, n += 1) {
@@ -360,11 +403,18 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
       await relayNotes(state, current);
       // Last, so a heartbeat sees every other post of the pass.
       await postUpdates(state, current);
+      try {
+        await postCredentials(state);
+      } catch (error) {
+        log.error(`${stamp()} credentials: ${error.message}`);
+      }
       await writeState(state);
     } catch (error) {
       // bakers.build unreachable: the state file stays as it was, the next pass catches up.
       log.error(`${stamp()} pass failed: ${error.message}`);
+      if (error.credential) return { rejected: error.credential };
     }
+    return { rejected: slack.rejected?.() ?? null };
   }
 
   return { pass };
@@ -386,6 +436,7 @@ if (isMain) {
     botChannelsFile: join(env('HERMES_HOME'), 'bot-channels.json'),
     languageFile: join(env('HERMES_HOME'), 'bot-language.json'),
     workspaceUrl: env('SLACK_WORKSPACE_URL'),
+    channel: env('SLACK_ALLOWED_CHANNELS'),
     project: env('PM_BOT_PROJECT'),
     messages: JSON.parse(await readFile(new URL('./messages.json', import.meta.url), 'utf8')),
     heartbeat: heartbeatInterval(process.env.PM_BOT_HEARTBEAT_INTERVAL),
@@ -395,8 +446,8 @@ if (isMain) {
   } else {
     const interval = pollInterval(process.env.PM_BOT_POLL_INTERVAL);
     for (;;) {
-      await poller.pass();
-      await new Promise((resolve) => setTimeout(resolve, interval));
+      const { rejected } = await poller.pass();
+      await new Promise((resolve) => setTimeout(resolve, rejected ? Math.max(interval, REJECTED_BACKOFF) : interval));
     }
   }
 }

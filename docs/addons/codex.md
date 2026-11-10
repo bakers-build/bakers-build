@@ -68,6 +68,7 @@ bakers agents
 
 - `--sandbox`, `-s`, `-a`, `--ask-for-approval`, `--dangerously-bypass-approvals-and-sandbox` and `--dangerously-bypass-hook-trust` are reserved; putting them in `args` fails loading.
 - Listed in a project config, an agent addon is ignored with a warning.
+- Sign-in renewal: [Box credentials](/provision/security/credentials#box-credentials).
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 

@@ -21,8 +21,14 @@ _bolt = types.ModuleType("slack_bolt.response")
 _bolt.BoltResponse = lambda status, body: ("BoltResponse", status)
 _errors = types.ModuleType("slack_sdk.errors")
 _errors.SlackApiError = type("SlackApiError", (Exception,), {})
+# Hermes' own texts for a model credential the provider rejects (locales/en.yaml).
+HERMES_TEXTS = {"gateway.errors.auth_failed": "⚠️ Sign-in to the AI model service failed. Use /login to sign in again.",
+                "gateway.errors.no_credentials": "⚠️ I couldn't connect to the AI model service, so this message wasn't processed."}
+_i18n = types.ModuleType("agent.i18n")
+_i18n.t = lambda key: HERMES_TEXTS.get(key, key)
 sys.modules.update({"slack_bolt": types.ModuleType("slack_bolt"), "slack_bolt.response": _bolt,
-                    "slack_sdk": types.ModuleType("slack_sdk"), "slack_sdk.errors": _errors})
+                    "slack_sdk": types.ModuleType("slack_sdk"), "slack_sdk.errors": _errors,
+                    "agent": types.ModuleType("agent"), "agent.i18n": _i18n})
 
 DATA = tempfile.mkdtemp()
 os.environ["HERMES_HOME"] = DATA
@@ -77,6 +83,9 @@ class Adapter:
 
     async def on_processing_complete(self, event, outcome):
         self.calls.append(("complete", {"outcome": outcome}))
+
+    async def send(self, chat_id, content, reply_to=None, metadata=None):
+        self.calls.append(("send", {"chat_id": chat_id, "content": content, "reply_to": reply_to, "metadata": metadata}))
 
 
 class App:
@@ -212,6 +221,22 @@ class Middleware(unittest.IsolatedAsyncioTestCase):
         for outcome in (Outcome.SUCCESS, Outcome.FAILURE, Outcome.CANCELLED):
             await self.adapter.on_processing_complete(object(), outcome)
         self.assertEqual(self.calls, [("complete", {"outcome": Outcome.CANCELLED})] * 3)
+
+    async def test_a_rejected_model_credential_is_answered_with_who_can_renew_it(self):
+        self.start()
+        for key in HERMES_TEXTS:
+            self.calls.clear()
+            with self.assertLogs("pm_bot.bot_channels", "ERROR") as logs:
+                await self.adapter.send(OPEN, HERMES_TEXTS[key], reply_to="2.1", metadata={"thread_id": "2.1"})
+            self.assertEqual(self.calls, [("send", {"chat_id": OPEN, "content": plugin.text("de", "model_credential"),
+                                                    "reply_to": "2.1", "metadata": {"thread_id": "2.1"}})])
+            self.assertIn("model credential", logs.output[0])
+        self.assertEqual(plugin.text("en", "model_credential"), "My model credential is not working; ask the box operator to renew it.")
+
+    async def test_every_other_reply_is_sent_as_written(self):
+        self.start()
+        await self.adapter.send(OPEN, "Here is the plan.")
+        self.assertEqual(self.calls, [("send", {"chat_id": OPEN, "content": "Here is the plan.", "reply_to": None, "metadata": None})])
 
 
 if __name__ == "__main__":

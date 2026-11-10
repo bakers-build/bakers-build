@@ -33,7 +33,11 @@ import { Command } from 'commander';
 import { authStatus } from 'dropsh';
 import { resolveBbProjectContext } from '../bakers-project-context.js';
 import { composeConductorConfig, loadConductorConfig } from '../config.js';
-import { Conductor, registrationOf } from '../core/conductor.js';
+import {
+  Conductor,
+  readAuthRejection,
+  registrationOf,
+} from '../core/conductor.js';
 import { watchForRestart } from '../core/self-restart.js';
 import type { BbExecutor } from '../plugins/executor.js';
 import {
@@ -266,6 +270,12 @@ function frozenStateFileOf(config: ConductorFileConfig): string {
   return join(dirname(file), `${basename(file, '.js')}.frozen.json`);
 }
 
+/** Where the serve process records that bakers.build rejected its credential. */
+function authStatusFileOf(config: ConductorFileConfig): string {
+  const file = config.config_path;
+  return join(dirname(file), `${basename(file, '.js')}.auth.json`);
+}
+
 /** CLI-supplied logging overrides; beat env vars in createLogger. */
 interface LogOpts {
   level?: string;
@@ -366,7 +376,11 @@ async function buildLsRows(
   let hub: ConductorStatus[] = [];
   try {
     hub = await remote.listConductors('me');
-  } catch {
+  } catch (err) {
+    // An empty list would read as "no conductors"; say why it is empty.
+    console.error(
+      `could not list conductors from bakers.build: ${String(err)}`,
+    );
     hub = [];
   }
   // BB-473: the local-pid probe in `classify` needs to know THIS machine's
@@ -601,6 +615,7 @@ async function cmdStartForeground(
   // name — the two values a cockpit needs to stop it later. poll/reap build a
   // Conductor too but never claim, so they cannot overwrite this pid.
   conductor.claimServeProcess();
+  conductor.authStatusFile = authStatusFileOf(config);
   await conductor.start();
   // The endpoint file is how `bakers ports` and other CLI calls reach the tools.
   await conductor.startTools(
@@ -1290,6 +1305,9 @@ async function cmdLs(deps: BbCliDeps): Promise<void> {
 
 async function cmdStatus(deps: BbCliDeps): Promise<void> {
   const config = await resolveConfig(deps);
+  // First: resolving the remote fails on the very credential it names.
+  const rejected = readAuthRejection(authStatusFileOf(config));
+  if (rejected) console.log(`credential rejected: ${rejected}`);
   const remote = await resolveRemote(deps, config);
   const id = conductorIdOf(config);
   const rows = await buildLsRows(remote, config, id, deps.procProbe);

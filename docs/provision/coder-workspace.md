@@ -81,6 +81,8 @@ The image supplies tools; your private home stores identity, credentials and che
 
    Without the OAuth application, `glab auth login --hostname <host>` with a personal access token works too.
 
+   Each of these sign-ins expires or can be revoked. [Box credentials](/provision/security/credentials#box-credentials) lists their lifetimes, how the conductor warns 14 days ahead and how to renew each.
+
 7. Create an SSH key, add its public key to your Git host and record the host's key. Project repositories with SSH URLs, and an `after_create` that clones over SSH, need both: an unattended clone cannot accept an unknown host key.
 
    ```sh

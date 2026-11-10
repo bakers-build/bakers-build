@@ -58,7 +58,7 @@ final class ConductorRegistrar {
    * @param array<string, mixed> $attrs
    *   Registration attributes: conductor_id, host_key (the machine_id),
    *   machine_label, project, states, label, workspace_root, current_load,
-   *   lease_seconds, last_pid, conductor_name.
+   *   lease_seconds, last_pid, conductor_name, credentials.
    *
    * @return \Drupal\bb_core\Entity\BbConductorInterface
    *   The upserted conductor.
@@ -69,6 +69,8 @@ final class ConductorRegistrar {
     // Resolved on every heartbeat, so an owner who lost access is refused
     // before any write.
     $projectId = $this->registration->projectId($attrs, $owner);
+    // A malformed credential report is refused before any write.
+    $this->registration->credentialHealth($attrs);
     return $this->locked($conductorId, fn () => $this->register($owner, $conductorId, $hostKey, $projectId, $attrs));
   }
 
@@ -387,6 +389,10 @@ final class ConductorRegistrar {
     }
     if (isset($attrs['conductor_name']) && is_string($attrs['conductor_name'])) {
       $values['conductor_name'] = $attrs['conductor_name'];
+    }
+    $credentialHealth = $this->registration->credentialHealth($attrs);
+    if ($credentialHealth !== NULL) {
+      $values['credential_health'] = $credentialHealth;
     }
     return $values;
   }

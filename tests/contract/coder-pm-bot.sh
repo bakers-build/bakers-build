@@ -25,6 +25,8 @@
 #   - a hand-edited env file is rewritten, and a planted link is replaced, not
 #     followed
 #   - no secret value appears in the output or any recorded argument list
+#   - the expiry dates of the bot's credentials go into ~/.bakers/credential-expiry.yml under
+#     their recorded names; other lines stay, an empty date writes nothing, a malformed one is named
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -96,7 +98,8 @@ CLONE() { echo "$R/.pm-bot/clone"; }
 PARAMS=(SLACK_BOT_TOKEN SLACK_APP_TOKEN SLACK_ALLOWED_CHANNELS SLACK_ALLOWED_USERS SLACK_ADMIN_USERS
   SLACK_WORKSPACE_URL SLACK_HOME_CHANNEL BAKERS_URL BAKERS_API_KEY PROJECT
   TICKET_WORKFLOW CONDUCTOR ANTHROPIC_API_KEY CLAUDE_OAUTH_TOKEN MODEL REPO_URL REPO_USER REPO_TOKEN
-  IMAGE REGISTRY_USER REGISTRY_TOKEN)
+  IMAGE REGISTRY_USER REGISTRY_TOKEN CLAUDE_OAUTH_TOKEN_EXPIRES_AT REGISTRY_TOKEN_EXPIRES_AT
+  BAKERS_API_KEY_EXPIRES_AT)
 
 # run VAR=value…: the script with only the given PM_BOT_* values set.
 run() {
@@ -311,3 +314,18 @@ grep -qF "pm-bot: skipped: docker compose up failed" <<<"$OUT" || fail "upfail: 
 grep -q '^docker compose -p pm-bot down' "$CALLS" || fail "upfail: the bot was not taken down"
 no_leak upfail
 pass "a failing clone, login or up takes the bot down and exits 0"
+
+# --- 10. Credential expiry dates -----------------------------------------------
+fresh expiry
+mkdir -p "$R/.bakers"
+printf 'claude: 2027-01-31\npm-bot-registry-token: 2026-01-01\n' > "$R/.bakers/credential-expiry.yml"
+run "${FULL[@]}" PM_BOT_REGISTRY_TOKEN_EXPIRES_AT=2027-03-01 PM_BOT_BAKERS_API_KEY_EXPIRES_AT=2027-04-02
+expect_up expiry
+[ "$(sort "$R/.bakers/credential-expiry.yml")" = "$(printf 'claude: 2027-01-31\npm-bot-bakers-api-key: 2027-04-02\npm-bot-registry-token: 2027-03-01')" ] \
+  || fail "expiry: wrong file: $(cat "$R/.bakers/credential-expiry.yml")"
+run "${FULL[@]}" PM_BOT_CLAUDE_OAUTH_TOKEN_EXPIRES_AT=31.12.2027
+expect_up badexpiry
+grep -qF "pm_bot_claude_oauth_token_expires_at must be a YYYY-MM-DD date" <<<"$OUT" || fail "badexpiry: no line naming the parameter: $OUT"
+! grep -q '^pm-bot-claude-oauth-token:' "$R/.bakers/credential-expiry.yml" || fail "badexpiry: the malformed date was written"
+grep -qx 'pm-bot-registry-token: 2027-03-01' "$R/.bakers/credential-expiry.yml" || fail "badexpiry: an empty parameter removed a date"
+pass "credential expiry dates are recorded under their names, other lines kept"

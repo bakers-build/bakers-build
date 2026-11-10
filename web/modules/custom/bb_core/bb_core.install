@@ -7,6 +7,7 @@
 
 declare(strict_types=1);
 
+use Drupal\bb_core\Entity\BbConductor;
 use Drupal\bb_core\Install\CliConsumer;
 use Drupal\bb_core\Install\DefaultWorkspace;
 
@@ -19,4 +20,16 @@ use Drupal\bb_core\Install\DefaultWorkspace;
 function bb_core_install(): void {
   DefaultWorkspace::ensure();
   CliConsumer::ensure();
+}
+
+/**
+ * Adds the conductor's credential_health field.
+ */
+function bb_core_update_11001(): void {
+  \Drupal::entityDefinitionUpdateManager()->installFieldStorageDefinition(
+    'credential_health',
+    'bb_conductor',
+    'bb_core',
+    BbConductor::credentialHealthFieldDefinition(),
+  );
 }

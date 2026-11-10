@@ -26,6 +26,34 @@ export interface ConductorDetail {
   maxParallel: number;
   /** THIS record's machine host_key, for the `mine` derivation. */
   hostKey: string | undefined;
+  /** The box's credential checks from its last heartbeat. */
+  credentials: ConductorCredential[];
+}
+
+export interface ConductorCredential {
+  name: string;
+  status: 'ok' | 'warning' | 'error';
+  expires_at?: string;
+  reason: string;
+}
+
+/** `credential_health` is a JSON list; anything else reads as none. */
+function credentialsOf(value: unknown): ConductorCredential[] {
+  let list: unknown = value;
+  if (typeof value === 'string') {
+    try {
+      list = JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+  if (!Array.isArray(list)) return [];
+  return list.filter(
+    (c): c is ConductorCredential =>
+      typeof c?.name === 'string' &&
+      typeof c?.reason === 'string' &&
+      ['ok', 'warning', 'error'].includes(c?.status),
+  );
 }
 
 const str = (v: unknown): string | undefined =>
@@ -84,6 +112,7 @@ export async function loadConductorDetail(
     currentLoad: num(machineAttrs.current_load) ?? num(attrs.current_load) ?? 0,
     maxParallel: num(machineAttrs.max_parallel) ?? num(attrs.max_parallel) ?? 0,
     hostKey,
+    credentials: credentialsOf(attrs.credential_health),
   };
 }
 

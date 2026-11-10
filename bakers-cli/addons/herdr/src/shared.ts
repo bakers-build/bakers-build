@@ -6,6 +6,7 @@ export { restoreWritable } from './fs.js';
 export {
   type LaunchScript,
   type LaunchWatchOptions,
+  watchAuth,
   watchLaunch,
   writeLaunchScript,
 } from './launch-script.js';

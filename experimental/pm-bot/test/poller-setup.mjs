@@ -36,6 +36,7 @@ export async function setup(t, { slackAnswers, ...siteOptions } = {}) {
     botChannelsFile,
     languageFile,
     workspaceUrl: 'https://acme.slack.com',
+    channel: 'CHOME',
     now: () => clock.now,
     project: PROJECT,
     messages,

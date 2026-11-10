@@ -131,3 +131,33 @@ async function launchFailure(
     ? `Launch failed: ${reason}\n${trimmed}`
     : `Launch failed: ${reason}`;
 }
+
+/** How long after the launch a login or credential screen still fails the run. */
+export const AUTH_WATCH_MS = 180_000;
+
+/**
+ * Read the pane until one of `patterns` shows (its reason) or `windowMs`
+ * passes (undefined). An unreadable pane is retried, never a failure.
+ */
+export async function watchAuth(
+  readPane: () => Promise<string>,
+  patterns: readonly { pattern: RegExp; reason: string }[],
+  opts: {
+    windowMs?: number;
+    pollMs?: number;
+    sleep?: (ms: number) => Promise<void>;
+    now?: () => number;
+  } = {},
+): Promise<string | undefined> {
+  const now = opts.now ?? Date.now;
+  const sleep =
+    opts.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
+  const deadline = now() + (opts.windowMs ?? AUTH_WATCH_MS);
+  while (now() < deadline) {
+    const text = await readPane().catch(() => '');
+    const hit = patterns.find(({ pattern }) => pattern.test(text));
+    if (hit) return hit.reason;
+    await sleep(opts.pollMs ?? 2000);
+  }
+  return undefined;
+}
