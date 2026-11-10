@@ -69,13 +69,13 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
+const execFileAsync = promisify(execFile);
+
 /**
  * A run-env key is reserved when it names a conductor-provided core variable:
  * any `BB_*`, `WORKSPACE_ROOT`, or `TICKET_URL`. User `env_vars` may not
  * clobber these — the core vars always win (BB-99).
  */
-const execFileAsync = promisify(execFile);
-
 function isReservedEnvKey(key: string): boolean {
   return (
     key.startsWith('BB_') || key === 'WORKSPACE_ROOT' || key === 'TICKET_URL'
@@ -688,7 +688,8 @@ export class Conductor {
 
   /**
    * One run note per command the run guard refused, and one ticket comment
-   * when the run ends without its branch on the remote. Best effort.
+   * when the run ends without delivery: cancelled, or its branch not on the
+   * remote. Best effort.
    */
   private async reportGuardRefusals(r: FinalizableRun): Promise<void> {
     const refusals = readGuardLog(r.runUuid);
@@ -702,7 +703,10 @@ export class Conductor {
           `run guard refused ${line(e)}`,
         );
       const branch = await this.remote.getRunTicketBranchName(r.runUuid);
-      if (!r.ticketUuid || (await this.branchOnRemote(r.worktreePath, branch)))
+      if (
+        !r.ticketUuid ||
+        (r.state === 'done' && (await this.branchOnRemote(branch)))
+      )
         return;
       if (!this.remote.siteTools) {
         this.logger.warn(
@@ -726,17 +730,17 @@ export class Conductor {
     }
   }
 
-  /** Whether origin has `branch`; an unreadable remote counts as no. */
-  private async branchOnRemote(
-    worktreePath: string,
-    branch: string,
-  ): Promise<boolean> {
-    if (!worktreePath || !branch) return false;
+  /**
+   * Whether origin has `branch`, asked from the checkout: the run's worktree
+   * may already be removed. An unreadable remote counts as no.
+   */
+  private async branchOnRemote(branch: string): Promise<boolean> {
+    if (!branch) return false;
     try {
       await execFileAsync(
         'git',
         ['ls-remote', '--exit-code', '--heads', 'origin', branch],
-        { cwd: worktreePath, timeout: 30_000 },
+        { cwd: this.checkoutRoot, timeout: 30_000 },
       );
       return true;
     } catch {

@@ -1,4 +1,5 @@
 // The PreToolUse hook both harnesses call before a shell command (AC-6).
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -62,6 +63,37 @@ describe('guard hook', () => {
     );
     expect(out.exitCode).toBe(2);
     expect(out.stderr).toMatch(/delete-outside/);
+  });
+
+  it('reads a shell call whose argv comes as cmd', () => {
+    const out = runHook(
+      JSON.stringify({
+        tool_name: 'exec_command',
+        tool_input: { cmd: ['rm', '-rf', '/etc'] },
+        cwd: worktree,
+      }),
+      env(),
+    );
+    expect(out.exitCode).toBe(2);
+  });
+
+  it('pushes HEAD only while the worktree is on an owned branch', () => {
+    const repo = join(root, 'repo');
+    mkdirSync(repo);
+    execFileSync('git', ['init', '-q', '-b', 'main', repo]);
+    const push = (on: string) => {
+      execFileSync('git', ['-C', repo, 'checkout', '-q', '-B', on]);
+      return runHook(
+        JSON.stringify({
+          tool_name: 'Bash',
+          tool_input: { command: 'git push -u origin HEAD' },
+          cwd: repo,
+        }),
+        env({ BB_WORKTREE: repo }),
+      ).exitCode;
+    };
+    expect(push('feat/x-1')).toBe(0);
+    expect(push('main')).toBe(2);
   });
 
   it('ignores a tool that is not a shell', () => {

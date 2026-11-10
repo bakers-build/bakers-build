@@ -13,6 +13,8 @@ export interface GuardContext {
   home: string;
   /** The ticket's `branch_name`; a run owns it and `<branch>-<suffix>`. */
   branch: string;
+  /** The branch checked out in the worktree when the command starts; unknown when absent. */
+  head?: string;
   /** The `name` in the worktree's `.ddev/config.yaml`, if any. */
   ddevProject?: string;
 }
@@ -34,7 +36,40 @@ const ALLOW: GuardDecision = { allow: true };
 const PWD = '\0PWD\0';
 const DELETERS = new Set(['rm', 'rmdir', 'unlink', 'shred']);
 const SHELLS = new Set(['bash', 'sh', 'zsh', 'dash']);
-const WRAPPERS = new Set(['sudo', 'env', 'command', 'nohup', 'time', 'exec']);
+/** Command wrappers: the options that take a value, and the positionals before the command. */
+const WRAPPERS: Record<string, { values: string[]; positionals?: number }> = {
+  sudo: {
+    values: ['-u', '-g', '-C', '-h', '-p', '-U', '-D', '-r', '-t', '-T'],
+  },
+  doas: { values: ['-u', '-C'] },
+  env: { values: ['-u', '--unset', '-C', '--chdir'] },
+  command: { values: [] },
+  exec: { values: ['-a'] },
+  nohup: { values: [] },
+  time: { values: ['-f', '-o'] },
+  nice: { values: ['-n', '--adjustment'] },
+  ionice: { values: ['-c', '-n', '-p'] },
+  stdbuf: { values: ['-i', '-o', '-e'] },
+  timeout: { values: ['-s', '--signal', '-k', '--kill-after'], positionals: 1 },
+};
+/** Shell grammar words before a simple command. */
+const GRAMMAR = new Set([
+  '!',
+  '{',
+  '}',
+  'if',
+  'then',
+  'elif',
+  'else',
+  'while',
+  'until',
+  'do',
+]);
+const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
+/** Environment that points git at another repository or configuration. */
+const GIT_ENV = /^GIT_(CONFIG|DIR|WORK_TREE|COMMON_DIR|NAMESPACE)/;
+/** Config keys that change what `git push` sends or where. */
+const PUSH_KEYS = /^(alias|remote|push|url)\./i;
 
 /** Split a command into segments of words, one per simple command. */
 function tokenize(command: string, ctx: GuardContext): Word[][] {
@@ -63,6 +98,11 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
   // Reads `$…` at i; returns the expansion or null for an unknown one.
   const dollar = (): string | null => {
     const next = command[i + 1];
+    if (next === "'") {
+      // `$'…'` decodes escapes the guard does not follow.
+      i++;
+      return null;
+    }
     if (next === '(') {
       let depth = 0;
       for (i += 1; i < command.length; i++) {
@@ -93,7 +133,7 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
     if (c === ' ' || c === '\t') {
       endWord();
       i++;
-    } else if (c === '\n' || c === ';') {
+    } else if (c === '\n' || c === ';' || c === '(' || c === ')') {
       endSegment();
       i++;
     } else if (c === '&' || c === '|') {
@@ -147,13 +187,14 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
     } else if (c === '`') {
       cur().dynamic = true;
       backtick();
-    } else if (
-      c === '~' &&
-      !word &&
-      (i + 1 === command.length ||
-        ' \t\n;&|/'.includes(command[i + 1] as string))
-    ) {
-      cur().text += ctx.home;
+    } else if (c === '~' && !word) {
+      // `~user`, `~+` and `~-` are directories the guard does not know.
+      if (
+        i + 1 === command.length ||
+        ' \t\n;&|/'.includes(command[i + 1] as string)
+      )
+        cur().text += ctx.home;
+      else cur().dynamic = true;
       i++;
     } else {
       const w = cur();
@@ -178,6 +219,15 @@ function canonical(p: string): string {
     return join(realpathSync(dir), ...rest);
   } catch {
     return p;
+  }
+}
+
+/** The real path of `p` itself, through a final symlink. */
+function followed(p: string): string {
+  try {
+    return realpathSync(p);
+  } catch {
+    return canonical(p);
   }
 }
 
@@ -206,12 +256,23 @@ const unresolvable = (what: string) =>
   );
 
 class Checker {
-  constructor(private readonly ctx: GuardContext) {}
+  /** The checked-out branch as the command goes on; null when unknown. */
+  private head: string | null;
+  /** A segment so far set git's repository or configuration through the environment. */
+  private gitEnv = false;
 
-  /** A word as an absolute path, or null when it depends on the shell. */
-  path(word: Word, cwd: string | null): string | null {
+  constructor(private readonly ctx: GuardContext) {
+    this.head = ctx.head ?? null;
+  }
+
+  /**
+   * A word as an absolute path, or null when it depends on the shell. With
+   * `follow`, a trailing `/` or a glob, a final symlink is resolved too.
+   */
+  path(word: Word, cwd: string | null, follow = false): string | null {
     if (word.dynamic) return null;
     let text = word.text;
+    const through = follow || word.glob || /\/\.?$/.test(text);
     if (text.includes(PWD)) {
       if (cwd === null) return null;
       text = text.replaceAll(PWD, cwd);
@@ -225,7 +286,7 @@ class Checker {
       if (cwd === null) return null;
       text = resolve(cwd, text);
     }
-    return canonical(resolve(text));
+    return through ? followed(resolve(text)) : canonical(resolve(text));
   }
 
   deletable(p: string): boolean {
@@ -241,21 +302,62 @@ class Checker {
   run(command: string, cwd: string | null): GuardDecision {
     for (const segment of tokenize(command, this.ctx)) {
       const words = segment.filter((w, i) => !w.op && !segment[i - 1]?.op);
-      while (words[0] && /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[0].text))
-        words.shift();
-      while (words[0] && WRAPPERS.has(words[0].text)) {
-        words.shift();
-        while (
-          words[0] &&
-          (words[0].text.startsWith('-') ||
-            /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[0].text))
-        )
+      const assigned: Word[] = [];
+      // Strip grammar words, assignments and wrappers down to the command.
+      for (let changed = true; changed && words[0]; ) {
+        changed = false;
+        const first = words[0] as Word;
+        if (GRAMMAR.has(first.text) || first.text === 'time') {
           words.shift();
+          changed = true;
+        } else if (ASSIGNMENT.test(first.text)) {
+          assigned.push(first);
+          words.shift();
+          changed = true;
+        } else if (basename(first.text) in WRAPPERS) {
+          const spec = WRAPPERS[basename(first.text)] as {
+            values: string[];
+            positionals?: number;
+          };
+          words.shift();
+          let positionals = spec.positionals ?? 0;
+          while (words[0]) {
+            const t = words[0].text;
+            if (t === '-S' || t === '--split-string') {
+              // `env -S 'cmd …'` runs the string as a command line.
+              const rest = words.slice(1);
+              if (rest.some((w) => w.dynamic))
+                return unresolvable('the command env -S runs');
+              const d = this.run(rest.map((w) => w.text).join(' '), cwd);
+              if (!d.allow) return d;
+              words.length = 0;
+              break;
+            }
+            if (spec.values.includes(t)) words.splice(0, 2);
+            else if (t.startsWith('-') || ASSIGNMENT.test(t)) {
+              if (ASSIGNMENT.test(t)) assigned.push(words[0]);
+              words.shift();
+            } else if (positionals > 0) {
+              positionals--;
+              words.shift();
+            } else break;
+          }
+          changed = true;
+        }
       }
       const verb = words[0];
+      const setsGit = (w: Word) => GIT_ENV.test(w.text);
+      // An assignment alone or an export holds for the rest of the command.
+      const sticky = verb
+        ? ['export', 'declare', 'typeset'].includes(verb.text) &&
+          words.slice(1).some(setsGit)
+        : assigned.some(setsGit);
+      if (sticky) this.gitEnv = true;
       if (!verb) continue;
       const name = basename(verb.text);
       const args = words.slice(1);
+      const gitEnv = this.gitEnv;
+      if (assigned.some(setsGit)) this.gitEnv = true;
       if (name === 'cd' || name === 'pushd') {
         const target = args.find((w) => !w.text.startsWith('-'));
         cwd = target
@@ -264,6 +366,7 @@ class Checker {
         continue;
       }
       const d = this.simple(name, args, cwd);
+      this.gitEnv = gitEnv;
       if (!d.allow) return d;
     }
     return ALLOW;
@@ -278,19 +381,37 @@ class Checker {
     }
     if (DELETERS.has(name)) return this.deleting(name, args, cwd);
     if (name === 'find') return this.find(args, cwd);
-    if (name === 'xargs')
-      return args.some((w) => DELETERS.has(basename(w.text)))
-        ? unresolvable('the targets xargs passes to a delete')
-        : ALLOW;
+    if (name === 'xargs') return this.xargs(args, cwd);
     if (name === 'git') return this.git(args, cwd);
     if (name === 'ddev') return this.ddev(args, cwd);
     if (name === 'gh' || name === 'glab') return this.forge(name, args);
     return ALLOW;
   }
 
-  targets(name: string, paths: Word[], cwd: string | null): GuardDecision {
+  /** The command xargs runs, with arguments the guard cannot know. */
+  xargs(args: Word[], cwd: string | null): GuardDecision {
+    const values = ['-I', '-n', '-P', '-L', '-d', '-E', '-s', '-a'];
+    let i = 0;
+    while (i < args.length && (args[i] as Word).text.startsWith('-'))
+      i += values.includes((args[i] as Word).text) ? 2 : 1;
+    const verb = args[i];
+    if (!verb) return ALLOW;
+    const unknown: Word = { text: '', dynamic: true, glob: false };
+    return this.simple(
+      basename(verb.text),
+      [...args.slice(i + 1), unknown],
+      cwd,
+    );
+  }
+
+  targets(
+    name: string,
+    paths: Word[],
+    cwd: string | null,
+    follow = false,
+  ): GuardDecision {
     for (const w of paths) {
-      const p = this.path(w, cwd);
+      const p = this.path(w, cwd, follow);
       if (p === null) return unresolvable(`the target of ${name} ${w.text}`);
       if (!this.deletable(p))
         return deny(
@@ -321,6 +442,7 @@ class Checker {
           DELETERS.has(basename(args[i + 1]?.text ?? ''))),
     );
     if (!destructive) return ALLOW;
+    const follow = args.some((w) => w.text === '-L' || w.text === '-H');
     const rest = args.filter((w) => !['-H', '-L', '-P'].includes(w.text));
     const end = rest.findIndex((w) => /^[-(!]/.test(w.text));
     const starts = rest.slice(0, end === -1 ? undefined : end);
@@ -328,6 +450,7 @@ class Checker {
       'find',
       starts.length ? starts : [{ text: '.', dynamic: false, glob: false }],
       cwd,
+      follow,
     );
   }
 
@@ -341,8 +464,16 @@ class Checker {
       if (t === '-C') {
         const w = args[++i];
         dir = w ? this.path({ ...w, glob: false }, dir) : null;
-      } else if (t === '-c') i++;
-      else if (t === '--work-tree' || t.startsWith('--work-tree=')) {
+      } else if (t === '-c' || t.startsWith('--config-env')) {
+        const w = t === '-c' || t === '--config-env' ? args[++i] : args[i];
+        const key = (w?.text ?? '').replace(/^--config-env=/, '');
+        if (!w || w.dynamic || PUSH_KEYS.test(key))
+          return deny(
+            'git-config',
+            `git ${t} ${w?.text ?? ''} could change what git push sends or where`,
+            'run git without -c for alias, remote, push or url keys',
+          );
+      } else if (t === '--work-tree' || t.startsWith('--work-tree=')) {
         const w =
           t === '--work-tree'
             ? args[++i]
@@ -358,7 +489,8 @@ class Checker {
     const flags = rest.map((w) => w.text);
     const own = this.ctx.branch;
     // The tree a destructive subcommand acts on.
-    const tree = workTree !== undefined ? workTree : gitDir ? null : dir;
+    const tree =
+      workTree !== undefined ? workTree : gitDir || this.gitEnv ? null : dir;
     const inTree = () => {
       if (tree === null) return unresolvable('the repository git acts on');
       return inside(realDir(tree), this.ctx.worktree)
@@ -370,9 +502,32 @@ class Checker {
           );
     };
     const positional = rest.filter((w) => !w.text.startsWith('-'));
+    const named = (opts: string[]) => {
+      const at = rest.findIndex((w) => opts.includes(w.text));
+      return at === -1 ? undefined : rest[at + 1];
+    };
     switch (sub) {
       case 'push':
         return this.push(rest, tree);
+      case 'config':
+        return this.config(rest);
+      case 'remote':
+        return ['set-url', 'rename'].includes(positional[0]?.text ?? '')
+          ? deny(
+              'git-config',
+              `git remote ${positional[0]?.text} would change where git push sends`,
+              'push to origin as it is configured',
+            )
+          : ALLOW;
+      case 'switch': {
+        const to =
+          named(['-c', '-C', '--create', '--force-create']) ??
+          (flags.includes('-d') || flags.includes('--detach')
+            ? undefined
+            : positional[0]);
+        this.head = to && !to.dynamic ? to.text : null;
+        return ALLOW;
+      }
       case 'branch': {
         const destructive = flags.some(
           (f) =>
@@ -381,7 +536,7 @@ class Checker {
             /^-[a-zA-Z]*[dDfMC]/.test(f) ||
             f === '-m',
         );
-        const other = positional.find((w) => w.dynamic || w.text !== own);
+        const other = positional.find((w) => w.dynamic || !this.owned(w.text));
         return destructive && other
           ? deny(
               'git-branch-delete',
@@ -423,6 +578,11 @@ class Checker {
       case 'checkout':
       case 'restore': {
         const end = rest.findIndex((w) => w.text === '--');
+        if (sub === 'checkout' && end === -1) {
+          // A branch switch, or a path the guard reads as one: unknown either way.
+          const to = named(['-b', '-B', '--orphan']) ?? positional[0];
+          if (to) this.head = to.dynamic ? null : to.text;
+        }
         if (sub === 'checkout' && end === -1 && !flags.includes('-f'))
           return ALLOW;
         const d = inTree();
@@ -456,13 +616,54 @@ class Checker {
     }
   }
 
+  config(args: Word[]): GuardDecision {
+    const flags = args.map((w) => w.text);
+    const positional = args.filter((w) => !w.text.startsWith('-'));
+    const reads = ['--get', '--get-all', '--get-regexp', '--get-urlmatch'];
+    const sub = [
+      'get',
+      'list',
+      'set',
+      'unset',
+      'rename-section',
+      'remove-section',
+      'edit',
+    ].includes(positional[0]?.text ?? '')
+      ? positional.shift()?.text
+      : undefined;
+    if (
+      sub === 'get' ||
+      sub === 'list' ||
+      flags.some((f) => reads.includes(f) || f === '--list' || f === '-l')
+    )
+      return ALLOW;
+    const edits =
+      sub === 'edit' || flags.includes('--edit') || flags.includes('-e');
+    const writes =
+      edits ||
+      sub !== undefined ||
+      positional.length > 1 ||
+      flags.some((f) =>
+        /^--(unset|add|replace-all|rename-section|remove-section)/.test(f),
+      );
+    if (!writes) return ALLOW;
+    const key = positional[0];
+    return edits || !key || key.dynamic || PUSH_KEYS.test(key.text)
+      ? deny(
+          'git-config',
+          `git config would change ${key?.text ?? 'the configuration'}, which decides what git push sends or where`,
+          'leave alias, remote, push and url settings as they are',
+        )
+      : ALLOW;
+  }
+
   push(args: Word[], tree: string | null): GuardDecision {
     const own = this.ctx.branch;
     const refuse = (reason: string) =>
       deny(
         'git-push',
         reason,
-        `push only this run's branch without force: git push origin HEAD:${own} (or a new ${own}-<suffix> branch)`,
+        `push only this run's branch without force: git push -u origin HEAD (on ${own}) or git push origin HEAD:${own} (or a new ${own}-<suffix> branch)`,
       );
     if (tree === null) return unresolvable('the repository git push runs in');
     if (!inside(realDir(tree), this.ctx.worktree))
@@ -470,21 +671,16 @@ class Checker {
         `git push would run in ${tree}, outside the run's worktree`,
       );
     const positional: Word[] = [];
+    let deleting = false;
     for (let i = 0; i < args.length; i++) {
       const w = args[i] as Word;
       const t = w.text;
       if (t.startsWith('--')) {
         if (/^--(force|force-with-lease|force-if-includes)(=|$)/.test(t))
           return refuse(`git push ${t} would force-push`);
-        if (
-          [
-            '--delete',
-            '--mirror',
-            '--all',
-            '--branches',
-            '--tags',
-            '--prune',
-          ].includes(t)
+        if (t === '--delete') deleting = true;
+        else if (
+          ['--mirror', '--all', '--branches', '--tags', '--prune'].includes(t)
         )
           return refuse(
             `git push ${t} would change or delete remote refs beyond this run's branch`,
@@ -497,10 +693,9 @@ class Checker {
         if (t === '--push-option' || t === '--receive-pack' || t === '--exec')
           i++;
       } else if (t.startsWith('-') && t.length > 1) {
-        if (/[fd]/.test(t.slice(1)))
-          return refuse(
-            `git push ${t} would force-push or delete a remote ref`,
-          );
+        if (t.slice(1).includes('f'))
+          return refuse(`git push ${t} would force-push`);
+        if (t.slice(1).includes('d')) deleting = true;
         if (t === '-o') i++;
       } else positional.push(w);
     }
@@ -509,16 +704,28 @@ class Checker {
       return refuse(
         `git push to ${remote.text || 'a computed remote'}; only origin is allowed`,
       );
+    // Without a refspec, push.default and remote.*.push from the user's config decide.
+    if (refspecs.length === 0)
+      return refuse(
+        'git push without a refspec pushes what the git configuration says, which the guard does not read',
+      );
     for (const spec of refspecs) {
       if (spec.dynamic) return unresolvable('the refspec git push sends');
       const t = spec.text;
       if (t.startsWith('+')) return refuse(`git push ${t} would force-push`);
-      if (t.startsWith(':'))
-        return refuse(`git push ${t} would delete a remote ref`);
+      // An own branch may be deleted, for example after its merge.
       const dst = t.slice(t.lastIndexOf(':') + 1);
-      if (!((dst === 'HEAD' && !t.includes(':')) || this.owned(dst)))
+      if (dst === 'HEAD' || (!t.includes(':') && t === 'HEAD')) {
+        if (deleting) return refuse('git push --delete HEAD names no branch');
+        if (this.head === null)
+          return unresolvable('the branch HEAD points at');
+        if (!this.owned(this.head))
+          return refuse(
+            `git push HEAD would update ${this.head}, which this run does not own`,
+          );
+      } else if (!this.owned(dst))
         return refuse(
-          `git push would update ${dst}, which this run does not own`,
+          `git push would ${deleting || t.startsWith(':') ? 'delete' : 'update'} ${dst}, which this run does not own`,
         );
     }
     return ALLOW;
@@ -549,39 +756,87 @@ class Checker {
   }
 
   forge(name: string, args: Word[]): GuardDecision {
-    const words = args
-      .filter((w) => !w.text.startsWith('-'))
-      .map((w) => w.text);
+    // Options whose value would otherwise read as the group, action or endpoint.
+    const values = new Set([
+      '-R',
+      '--repo',
+      '-X',
+      '--method',
+      '-f',
+      '-F',
+      '--field',
+      '--raw-field',
+      '-H',
+      '--header',
+      '-q',
+      '--jq',
+      '-t',
+      '--template',
+      '--input',
+      '--hostname',
+      '-p',
+      '--preview',
+    ]);
+    const words: string[] = [];
+    let method: string | undefined;
+    let fields = false;
+    for (let i = 0; i < args.length; i++) {
+      const t = (args[i] as Word).text;
+      const value = args[i + 1]?.text ?? '';
+      if (t === '-X' || t === '--method') method = value;
+      else if (t.startsWith('--method=')) method = t.slice(9);
+      else if (/^-X./.test(t)) method = t.slice(2);
+      if (/^(-f|-F|--field|--raw-field|--input)(=|$)/.test(t)) fields = true;
+      if (values.has(t)) i++;
+      else if (!t.startsWith('-')) words.push(t);
+    }
     const [group, action] = words;
     const refuse = (what: string) =>
       deny(
         'forge-delete',
-        `${name} ${what} would close, merge or delete remote work`,
-        'leave closing, merging and deleting to a human or the review state',
+        `${name} ${what} would close or delete remote work`,
+        "leave closing and deleting other work to a human; merging and deleting this run's own branch stay allowed",
       );
     const closes: Record<string, string[]> = {
-      pr: ['close', 'merge', 'delete'],
-      mr: ['close', 'merge', 'delete'],
+      pr: ['close', 'delete'],
+      mr: ['close', 'delete'],
       release: ['delete', 'delete-asset'],
       repo: ['delete', 'archive'],
       label: ['delete'],
     };
+    if ((group === 'pr' || group === 'mr') && action === 'checkout')
+      this.head = null;
     if (group && action && closes[group]?.includes(action))
       return refuse(`${group} ${action}`);
     if (group !== 'api') return ALLOW;
-    const flags = args.map((w) => w.text);
-    let method = 'GET';
-    flags.forEach((f, i) => {
-      if (f === '-X' || f === '--method') method = flags[i + 1] ?? method;
-      else if (f.startsWith('--method=')) method = f.slice(9);
-      else if (f.startsWith('-X') && f.length > 2) method = f.slice(2);
-    });
-    method = method.toUpperCase();
-    if (method === 'DELETE') return refuse('api -X DELETE');
-    const ref = words[1] ? /\/git\/refs\/heads\/(.+)$/.exec(words[1]) : null;
-    if (method !== 'GET' && ref && !this.owned(ref[1] as string))
-      return refuse(`api -X ${method} on another branch`);
-    return ALLOW;
+    // gh and glab send a request with fields as a POST.
+    const verb = (method ?? (fields ? 'POST' : 'GET')).toUpperCase();
+    if (verb === 'GET') return ALLOW;
+    const texts = args.map((w) => w.text);
+    if (texts.includes('--input') || args.some((w) => w.dynamic))
+      return unresolvable(`the body ${name} api sends`);
+    if (action === 'graphql')
+      return texts.some((t) =>
+        /\b(close[A-Z]\w*|delete[A-Z]\w*|\w+(Delete|Destroy)|CLOSED?)\b/.test(
+          t,
+        ),
+      )
+        ? refuse('api graphql mutation')
+        : ALLOW;
+    if (texts.some((t) => /(^|=)state(_event)?=clos/.test(t)))
+      return refuse(`api -X ${verb} closing a pull or merge request`);
+    const ref =
+      /\/git\/refs\/(heads|tags)\/(.+)$/.exec(action ?? '') ??
+      /\/repository\/(branches|tags)\/(.+)$/.exec(action ?? '');
+    if (ref) {
+      const branch = ref[1] === 'heads' || ref[1] === 'branches';
+      if (!branch || !this.owned(decodeURIComponent(ref[2] as string)))
+        return refuse(
+          `api -X ${verb} on ${ref[2]}, which this run does not own`,
+        );
+      return ALLOW;
+    }
+    return verb === 'DELETE' ? refuse(`api -X ${verb}`) : ALLOW;
   }
 }
 

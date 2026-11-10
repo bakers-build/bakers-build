@@ -6,6 +6,7 @@
 // `@bakers-build/conductor/contract` (runtime-light: no engine, no commander).
 import type { AgentRoutes, ConductorLogger } from '@bakers-build/core';
 import type { DropSHPlugin } from 'dropsh/plugin';
+import type { GuardState } from '../guard/command.js';
 import type { ConductorFileConfig } from '../types.js';
 import type { BbAgent } from './agent.js';
 import type { SecurityMode, SecurityReport } from './agent-args.js';
@@ -61,7 +62,7 @@ export interface AgentPlugin extends DropSHPlugin {
   /** The effective run permissions and their source layers (`bakers agents`). */
   readonly permissions?: SecurityReport;
   /** Whether the run guard hooks this agent's shell calls; absent: `not_applied`. */
-  readonly guard?: 'active' | 'off';
+  readonly guard?: Exclude<GuardState, 'not_applied'>;
   createAgent(config: ConductorFileConfig): Promise<BbAgent>;
 }
 

@@ -17,11 +17,7 @@ export {
   type ResolvedBbProjectContext,
   resolveBbProjectContext,
 } from './bakers-project-context.js';
-export {
-  GUARD_HOOK_SCRIPT,
-  type GuardState,
-  guardHookCommand,
-} from './guard/command.js';
+export { type GuardState, guardHookCommand } from './guard/command.js';
 export {
   type AgentFootprint,
   type AgentRunIdentity,

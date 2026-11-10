@@ -13,6 +13,7 @@ import {
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOLS_SERVER,
   ensureHome,
+  type GuardState,
   guardHookCommand,
   homeKey,
   homePath,
@@ -252,7 +253,7 @@ export class ClaudeAgent implements BbAgent {
   private readonly measure: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
   readonly pluginsDisabled: boolean;
-  readonly guard: 'active' | 'off';
+  readonly guard: Exclude<GuardState, 'not_applied'>;
   /** The Claude config dir runs read and write: the agent home while plugins are on. */
   configDir: string;
   private pluginsOn = false;

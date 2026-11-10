@@ -561,7 +561,8 @@ describe('CodexAgent run guard', () => {
       agent.launchCommand('x', undefined, tmpdir()),
     );
     expect(argv[argv.indexOf(hookFlag) - 1]).toBe('-c');
-    expect(agent.guard).toBe('active');
+    // Partial until a real Codex run proves the hook blocks a shell call.
+    expect(agent.guard).toBe('partial');
   });
 
   it('is off only through guard: false', () => {
@@ -571,7 +572,7 @@ describe('CodexAgent run guard', () => {
     );
     expect(agent.guard).toBe('off');
     expect(codexAgent({ guard: false }).guard).toBe('off');
-    expect(codexAgent().guard).toBe('active');
+    expect(codexAgent().guard).toBe('partial');
   });
 });
 

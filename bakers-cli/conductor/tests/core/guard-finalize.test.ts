@@ -69,8 +69,18 @@ afterEach(() => {
   else process.env.BB_HOME = previousHome;
 });
 
-async function finalize(pushed: boolean, refusals: number) {
-  const wt = worktree(root, pushed);
+async function finalize(
+  pushed: boolean,
+  refusals: number,
+  { state = 'done', removed = false } = {} as {
+    state?: 'done' | 'cancelled';
+    removed?: boolean;
+  },
+) {
+  const checkout = worktree(root, pushed);
+  // The run's own worktree beside the checkout; finalize may find it removed.
+  const wt = join(root, 'run-wt');
+  if (!removed) git(checkout, 'worktree', 'add', '-q', wt, 'HEAD');
   mkdirSync(join(root, 'bakers', 'runs'), { recursive: true });
   const line = (i: number) =>
     JSON.stringify({
@@ -95,9 +105,7 @@ async function finalize(pushed: boolean, refusals: number) {
         branchName: BRANCH,
       },
     },
-    runs: [
-      { runUuid: 'r-1', ticketUuid: 't-1', state: 'done', worktreePath: wt },
-    ],
+    runs: [{ runUuid: 'r-1', ticketUuid: 't-1', state, worktreePath: wt }],
   });
   const published: Record<string, unknown>[] = [];
   remote.siteTools = {
@@ -131,7 +139,7 @@ async function finalize(pushed: boolean, refusals: number) {
     new FakeWorkspace(),
     [{ id: agent.id, agent }],
     quiet,
-    root,
+    checkout,
   );
   await conductor.start();
   await conductor.tick();
@@ -165,6 +173,16 @@ describe('guard refusals at finalize', () => {
   it('leaves the ticket alone when the run delivered its branch', async () => {
     const { published } = await finalize(true, 1);
     expect(published).toHaveLength(0);
+  });
+
+  it('reads delivery from the checkout when the run worktree is gone', async () => {
+    const { published } = await finalize(true, 1, { removed: true });
+    expect(published).toHaveLength(0);
+  });
+
+  it('comments on a cancelled run even when its branch is on origin', async () => {
+    const { published } = await finalize(true, 1, { state: 'cancelled' });
+    expect(published).toHaveLength(1);
   });
 
   it('writes nothing for a run without refusals', async () => {

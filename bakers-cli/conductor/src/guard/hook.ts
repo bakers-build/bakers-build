@@ -1,10 +1,12 @@
 // The run guard's PreToolUse hook for Claude Code and Codex: reads the hook
 // JSON on stdin, and blocks a refused shell command with exit 2 and the
 // reason on stderr, which both harnesses hand back to the agent.
+import { execFileSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { shellQuote } from '@bakers-build/core';
 import {
   checkCommand,
   DESTRUCTIVE_VERBS,
@@ -35,17 +37,31 @@ function ddevProject(worktree: string): string | undefined {
   }
 }
 
+/** The branch checked out in the worktree; unknown on a detached HEAD or an error. */
+function headOf(worktree: string): string | undefined {
+  try {
+    return (
+      execFileSync('git', ['symbolic-ref', '--short', '-q', 'HEAD'], {
+        cwd: worktree,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+        timeout: 5_000,
+      }).trim() || undefined
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 function commandOf(input: unknown): string | null {
   const { tool_name, tool_input } = (input ?? {}) as {
     tool_name?: string;
-    tool_input?: { command?: unknown };
+    tool_input?: { command?: unknown; cmd?: unknown };
   };
   if (!SHELL_TOOLS.has(tool_name ?? '')) return null;
-  const command = tool_input?.command;
+  const command = tool_input?.command ?? tool_input?.cmd;
   if (Array.isArray(command))
-    return command
-      .map((a) => `'${String(a).replaceAll("'", `'\\''`)}'`)
-      .join(' ');
+    return command.map((a) => shellQuote(String(a))).join(' ');
   return typeof command === 'string' ? command : null;
 }
 
@@ -64,6 +80,7 @@ export function runHook(
     if (!worktree) throw new Error('BB_WORKTREE is not set');
     cwd = typeof input.cwd === 'string' && input.cwd ? input.cwd : worktree;
     const project = ddevProject(worktree);
+    const head = headOf(worktree);
     decision = checkCommand(command, {
       cwd,
       worktree,
@@ -71,6 +88,7 @@ export function runHook(
       home: env.HOME || '/',
       branch: env.BB_BRANCH ?? '',
       ...(project ? { ddevProject: project } : {}),
+      ...(head ? { head } : {}),
     });
   } catch (err) {
     // The guard never wedges a normal run: only a destructive verb is held.
