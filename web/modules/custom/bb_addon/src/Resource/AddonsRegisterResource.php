@@ -7,7 +7,6 @@ namespace Drupal\bb_addon\Resource;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\bb_core\Conductor\ConductorRegistrar;
 use Drupal\Core\Entity\EntityStorageException;
-use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -167,7 +166,7 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
       throw new \RuntimeException("Could not acquire the registration lock for {$name}@{$version}.");
     }
     try {
-      $existing = $this->existing($storage, $workspace_id, $name, $version, $fingerprint);
+      $existing = $this->existing($workspace_id, $name, $version, $fingerprint);
       if ($existing instanceof BbAddonInterface) {
         return $existing;
       }
@@ -187,7 +186,7 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
       catch (EntityStorageException) {
         // The unique key rejected a concurrent duplicate; the winner is
         // already stored under this same lock name's prior holder.
-        $reloaded = $this->existing($storage, $workspace_id, $name, $version, $fingerprint);
+        $reloaded = $this->existing($workspace_id, $name, $version, $fingerprint);
         if ($reloaded instanceof BbAddonInterface) {
           return $reloaded;
         }
@@ -202,8 +201,8 @@ final class AddonsRegisterResource extends ResourceBase implements ContainerInje
   /**
    * The existing row for this identity, or NULL.
    */
-  private function existing(EntityStorageInterface $storage, int $workspace_id, string $name, string $version, string $fingerprint): ?BbAddonInterface {
-    $addons = $storage->loadByProperties([
+  private function existing(int $workspace_id, string $name, string $version, string $fingerprint): ?BbAddonInterface {
+    $addons = $this->entityTypeManager->getStorage('bb_addon')->loadByProperties([
       'workspace_id' => $workspace_id,
       'name' => $name,
       'version' => $version,
