@@ -642,9 +642,7 @@ export class Conductor {
     for (const r of runs) {
       if (r.state !== 'running' || !r.worktreePath) continue;
       if (this.stallReported.has(r.runUuid)) continue;
-      const agent = (
-        this.agents.find((a) => a.id === r.agent) ?? this.agents[0]
-      )?.agent;
+      const agent = this.agentFor(r)?.agent;
       if (!agent?.permissionDenials || !agent.runLogModified) continue;
       const identity = {
         sessionId: r.runUuid,
@@ -693,7 +691,12 @@ export class Conductor {
     );
     const site = this.remote.siteTools;
     // Without site tools nothing reaches the ticket; a silent cancel would hide the run.
-    if (!site) throw new Error('no site tools to report the blocked run');
+    // Unmarked, the next tick with site tools reports it.
+    if (!site) {
+      this.stallReported.delete(r.runUuid);
+      this.stallChecked.delete(r.runUuid);
+      throw new Error('no site tools to report the blocked run');
+    }
     const call = async (name: string, args: Record<string, unknown>) => {
       const result = await site.call(`tool_api__${name}`, args);
       if ((result as { isError?: boolean } | undefined)?.isError)
@@ -795,15 +798,19 @@ export class Conductor {
     }
   }
 
+  /**
+   * The agent that actually ran: the persisted run.agent id, falling back to
+   * the first candidate for a run written before the field existed (empty id).
+   */
+  private agentFor(r: { agent?: string }) {
+    return this.agents.find((a) => a.id === r.agent) ?? this.agents[0];
+  }
+
   /** Read the run's transcript and parse its footprint for the close write. */
   private async captureRun(
     r: FinalizableRun,
   ): Promise<{ log: string; metrics: RunMetrics }> {
-    // Route to the agent that actually ran (BB-144): the persisted
-    // run.agent id, falling back to the first candidate for a run written
-    // before the field existed (empty id).
-    const resolved =
-      this.agents.find((a) => a.id === r.agent) ?? this.agents[0];
+    const resolved = this.agentFor(r);
     if (!resolved) {
       throw new Error('no agent candidates configured for finalize');
     }

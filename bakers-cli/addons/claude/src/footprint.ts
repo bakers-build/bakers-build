@@ -193,14 +193,16 @@ const ACTION_KEYS = ['file_path', 'command', 'url', 'path', 'pattern', 'skill'];
 
 /**
  * Every tool call `dontAsk` denied in a Claude-Code transcript, as `Tool(argument)`,
- * but only when the run stopped on one: its last tool result is a denial and no
- * call is outstanding. A run that worked on, or waits on a sub-agent, gives `[]`.
+ * but only when the run stopped on one: a denial is among the last batch of tool
+ * results, no call is outstanding and the agent has replied without a new call.
+ * A run that worked on, waits on a sub-agent or on the model gives `[]`.
  */
 export function parseClaudePermissionDenials(jsonl: string): string[] {
   const calls = new Map<string, string>();
   const pending = new Set<string>();
   const denied: string[] = [];
-  let endsOnDenial = false;
+  let batchDenied = false;
+  let replied = false;
   for (const raw of jsonl.split('\n')) {
     let entry: TranscriptEntry;
     try {
@@ -210,7 +212,18 @@ export function parseClaudePermissionDenials(jsonl: string): string[] {
     }
     const content = entry?.message?.content;
     if (!Array.isArray(content)) continue;
-    for (const block of content as Array<Record<string, unknown>>) {
+    const blocks = content as Array<Record<string, unknown>>;
+    // Claude Code writes each block of a response as its own entry: a call opens a
+    // new batch, a reply without one ends the turn.
+    if (entry?.type === 'assistant') {
+      if (blocks.some((b) => b?.type === 'tool_use')) {
+        if (pending.size === 0) batchDenied = false;
+        replied = false;
+      } else {
+        replied = true;
+      }
+    }
+    for (const block of blocks) {
       if (block?.type === 'tool_use' && typeof block.id === 'string') {
         const input = (block.input ?? {}) as Record<string, unknown>;
         const key = ACTION_KEYS.find((k) => typeof input[k] === 'string');
@@ -219,14 +232,17 @@ export function parseClaudePermissionDenials(jsonl: string): string[] {
         pending.add(block.id);
       } else if (block?.type === 'tool_result') {
         pending.delete(String(block.tool_use_id));
-        endsOnDenial =
+        replied = false;
+        if (
           block.is_error === true &&
           typeof block.content === 'string' &&
-          DONT_ASK_DENIAL.test(block.content);
-        if (endsOnDenial)
+          DONT_ASK_DENIAL.test(block.content)
+        ) {
+          batchDenied = true;
           denied.push(calls.get(String(block.tool_use_id)) ?? 'unknown tool');
+        }
       }
     }
   }
-  return endsOnDenial && pending.size === 0 ? denied : [];
+  return batchDenied && replied && pending.size === 0 ? denied : [];
 }

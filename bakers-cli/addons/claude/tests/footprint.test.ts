@@ -360,8 +360,11 @@ describe('ClaudeAgent.permissionDenials', () => {
     'utf8',
   );
 
+  // The recording ends on the denial result; the agent's closing reply ends its turn.
+  const stopped = `${recorded.trimEnd()}\n${said('I am blocked.')}`;
+
   it('names every action the dontAsk mode denied, tool and argument, in order', () => {
-    expect(agent.permissionDenials(recorded)).toEqual([
+    expect(agent.permissionDenials(stopped)).toEqual([
       'Read(/home/coder/.claude/plugins/cache/bakers/bakers/0.64.0/skills/bb-workflow/references/read-ticket.md)',
       'Write(/home/coder/outside.txt)',
     ]);
@@ -377,12 +380,29 @@ describe('ClaudeAgent.permissionDenials', () => {
     expect(agent.permissionDenials('not json\n')).toEqual([]);
   });
 
-  it('still reports when the agent ended its turn with text after the denial', () => {
-    expect(
-      agent.permissionDenials(
-        `${recorded.trimEnd()}\n${said('I am blocked.')}`,
-      ),
-    ).toHaveLength(2);
+  it('reports nothing while the model has not replied to the denial yet', () => {
+    expect(agent.permissionDenials(recorded)).toEqual([]);
+  });
+
+  it('judges parallel results as one batch, whatever their order', () => {
+    const deny = toolResult(
+      'toolu_a',
+      "Permission to use Read has been denied because Claude Code is running in don't ask mode.",
+      true,
+    );
+    const ok = toolResult('toolu_b', '1\t# readme');
+    for (const results of [
+      [deny, ok],
+      [ok, deny],
+    ]) {
+      const log = [
+        toolUse('toolu_a', 'Read', { file_path: '/x' }),
+        toolUse('toolu_b', 'Read', { file_path: 'README.md' }),
+        ...results,
+        said('I am blocked.'),
+      ].join('\n');
+      expect(agent.permissionDenials(log)).toEqual(['Read(/x)']);
+    }
   });
 
   it('reports nothing once the agent worked on after an earlier denial', () => {
@@ -413,6 +433,7 @@ describe('ClaudeAgent.permissionDenials', () => {
         "Permission to use Glob has been denied because Claude Code is running in don't ask mode.",
         true,
       ),
+      said('I am blocked.'),
     ].join('\n');
     expect(agent.permissionDenials(glob)).toEqual(['Glob(/home/coder/x)']);
   });
@@ -420,7 +441,7 @@ describe('ClaudeAgent.permissionDenials', () => {
   it('reports nothing for a run outside the sandbox', () => {
     for (const permissions of ['system', 'yolo'] as const) {
       expect(
-        new ClaudeAgent({ permissions }).permissionDenials(recorded),
+        new ClaudeAgent({ permissions }).permissionDenials(stopped),
       ).toEqual([]);
     }
   });

@@ -5684,13 +5684,18 @@ describe('Conductor — a run blocked on a permission denial', () => {
     expect(remote.calls.cancelRun).toEqual(['r-1']);
   });
 
-  it('does not cancel a run silently when the site tools are missing', async () => {
-    const { conductor, remote } = await blockedConductor(
+  it('does not cancel a run silently when the site tools are missing, and reports once they are back', async () => {
+    const { conductor, remote, call } = await blockedConductor(
       stalledAgent(6 * MIN).agent,
     );
+    const tools = remote.siteTools;
     remote.siteTools = undefined;
     await conductor.tick();
     expect(remote.calls.cancelRun).toEqual([]);
+    remote.siteTools = tools;
+    await conductor.tick();
+    expect(call).toHaveBeenCalledTimes(3);
+    expect(remote.calls.cancelRun).toEqual(['r-1']);
   });
 
   it('never reads the transcript of an agent that cannot name denials', async () => {
