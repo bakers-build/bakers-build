@@ -1,0 +1,36 @@
+# `north-guest`'s TEAM membership: member of Platform Crew.
+#
+# Teams decide which projects a guest or contributor reaches, so the guest
+# needs a seat to read the tickets of the projects it reviews (bakers.build
+# Platform and the billing projects). The guest rank still changes nothing.
+#
+# No `roles` key: `member` is OG's REQUIRED role and naming it is rejected.
+# See …0006 for the full reasoning.
+_meta:
+  version: '1.0'
+  entity_type: og_membership
+  uuid: dbd10000-0000-4000-8000-000000000652
+  bundle: default
+  default_langcode: en
+  depends:
+    dbc70000-0000-4000-8000-000000000001: bb_team
+    dbe50000-0000-4000-8000-000000000647: user
+default:
+  type:
+    -
+      target_id: default
+  entity_type:
+    -
+      value: bb_team
+  entity_bundle:
+    -
+      value: bb_team
+  entity_id:
+    -
+      value: dbc70000-0000-4000-8000-000000000001
+  uid:
+    -
+      entity: "dbe50000-0000-4000-8000-000000000647"
+  state:
+    -
+      value: active
