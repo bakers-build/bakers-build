@@ -67,8 +67,9 @@ included in core tests. Ticket-specific functional checks apply separately.
 
 PHPUnit, browser E2E and config import run against the built Docker images in CI.
 
-For GitHub, update the branch from its target, push and wait for the complete `GitHub checks`
-workflow and its aggregate `required`. PRs into `next` skip `image_gate`; it runs on the push to `next`
+Fetch, push, open the PR, read checks and merge through the forge tools
+(`bb-workflow` › `references/forge.md`). For GitHub, update the branch from its target, push and wait
+for the complete `GitHub checks` workflow and its aggregate `required`. PRs into `next` skip `image_gate`; it runs on the push to `next`
 after the merge, before the develop deployment. PRs into `main` run it, and `required` fails without it. A failed check blocks
 the PR; fix it on the branch and require green checks on the new revision. Protected `next` accepts
 squashed feature PRs. Stable `main` accepts merge commits only from this repository's `next`,

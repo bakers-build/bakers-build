@@ -12,9 +12,9 @@ set -euo pipefail
 # and the MR is targeted at the ticket's computed `base_branch` rather than a hardcoded `develop`.
 #
 # Why a file contract is the honest gate here. Nothing in this repository executes the convention.
-# The commit message is written by an agent following prose, and the squash merge is a `glab` call
-# made on that agent's machine with that machine's credentials — there is no code path to unit-test,
-# and a mocked substitute would assert nothing about the real one. What CAN drift is the prose, and
+# The commit message is written by an agent following prose, and the squash merge runs through the
+# forge tools (or, without them, the agent's own client); the tools' body is bound below. What CAN
+# drift is the prose, and
 # it can drift silently: the rule lives in THREE sources that must agree (`docs/bakers/git-and-delivery.md`,
 # the `bb-workflow` state flows and its `references/merge.md`), and the failure it guards against produces no error
 # anywhere — `bakers deployment tickets` reports only identifiers it found but could not resolve, so a
@@ -83,13 +83,11 @@ agree() {
 no_standards() { ! grep -qi 'standards' "$1"; }
 no_has() { ! grep -qF -- "$2" "$1"; }
 
-# `glab mr merge` accepts BOTH `-m/--message` and `--squash-message`, and they write different
-# commits: with a merge method that produces a merge commit, `--message` sets that one and leaves
-# the squash commit — the commit that represents the change — with GitLab's default template, the MR
-# title, which by this convention carries no reference at all. The positive check below pins
-# `--squash-message`; this one pins the absence of the flag that silently does the wrong thing, so a
-# revert to `--message` cannot pass by also happening to mention the right flag in prose.
-squash_flag_not_message() { ! printf '%s' "$MERGE_COMMAND" | grep -E -- '(^| )(-m|--message)( |$)' >/dev/null; }
+# The forge tools write the merge: `addon-forge` composes the squash body and the GitLab backend puts
+# it on the SQUASH commit (`squash_commit_message`), never the merge commit, whose message would leave
+# the commit that represents the change with GitLab's default template, the MR title.
+FORGE_TOOLS="$ROOT/bakers-cli/addons/forge/src/tools.ts"
+FORGE_GITLAB="$ROOT/bakers-cli/addons/forge-gitlab/src/index.ts"
 
 check 'WORKFLOW.md exists' test -f "$WF"
 check 'the merge reference exists' test -f "$MERGE"
@@ -98,7 +96,6 @@ check 'the deployment addon source exists' test -f "$DEPLOY"
 
 WF_FLAT="$(flatten "$WF")"
 MERGE_FLAT="$(flatten "$MERGE")"
-MERGE_COMMAND="$({ awk '/^glab mr merge / { f = 1 } f && /^```/ { exit } f { print }' "$MERGE" | tr '\n' ' ' | tr -s ' '; } 2>/dev/null || true)"
 for reference in coding-gate delivery; do
   check "the working state discloses $reference" grep -qF "($reference.md)" "$IMPL"
 done
@@ -164,13 +161,11 @@ check 'AC-3 merge-mr declares the ticket identifier FIELD as an input' \
 check 'AC-3 that input is marked Required' \
   hasre "$MERGE_INPUT_PLAIN" 'Required: the calling ticket.s `identifier` field'
 check 'AC-3 the squash message writes the trailer LAST, after the signature' \
-  grep -qF "printf '%s\n\n%s\n%s' '<subject>' 'Merged-by: bakers.build' 'ref:<identifier>'" "$MERGE"
-check 'AC-3 the merge sets the SQUASH commit message (--squash-message)' \
-  hasre "$MERGE_COMMAND" '--squash-message "\$\(printf'
-check 'AC-3 the merge does NOT set the merge-commit message (-m/--message) instead' \
-  squash_flag_not_message
-check 'AC-3 merge-mr explains that --message would write the wrong commit' \
-  has "$MERGE_FLAT" '`-m`/`--message` sets the merge commit, not the squash commit representing the change.'
+  grep -qF 'body: `Merged-by: bakers.build\nref:${run.identifier}`' "$FORGE_TOOLS"
+check 'AC-3 the merge sets the SQUASH commit message on a squash' \
+  grep -qF "o.method === 'squash' ? 'squash_commit_message' : 'merge_commit_message'" "$FORGE_GITLAB"
+check 'AC-3 merge-mr says the message goes on the squash commit' \
+  has "$MERGE_FLAT" 'The message goes on the squash commit, the one that represents the change.'
 check 'AC-3 merge-mr sources the trailer from the ticket identifier FIELD, verbatim' \
   hasre "$MERGE_INPUT_PLAIN" 'ticket.s `identifier` field, verbatim in canonical casing'
 check 'AC-3 merge-mr forbids constructing the trailer project prefix' \
@@ -211,7 +206,7 @@ check 'AC-3 the Review flow merge-mr call names the ticket `identifier` field' \
 check 'AC-4 coding context points at project commit and MR conventions' \
   has "$IMPL_FLAT" 'Follow project commit and MR conventions'
 check 'AC-4 coding context requires an explicit base_branch MR target' \
-  has "$IMPL_FLAT" '--target-branch <base_branch>'
+  hasre "$IMPL_FLAT" '\*\*target\*\* = the ticket.{0,3}s `base_branch`'
 
 # --- D6 — the convention is compatible with the release-batch parser -----------------------------
 #
