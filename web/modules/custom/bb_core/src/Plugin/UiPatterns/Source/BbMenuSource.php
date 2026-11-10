@@ -95,7 +95,8 @@ final class BbMenuSource extends MenuSource {
    */
   public function alterComponent(array $element): array {
     $element = parent::alterComponent($element);
-    if ($menu_id = $this->getSetting('menu')) {
+    $menu_id = $this->getSetting('menu');
+    if ($menu_id) {
       $element = $this->addMenuCacheTags($element, [$menu_id]);
     }
     $action = $this->teamCreateAction();
