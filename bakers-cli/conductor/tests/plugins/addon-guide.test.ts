@@ -320,7 +320,7 @@ it('starts runs through the new client CLI and cleans up one session after recon
     { kind: 'executor', id: 'my-client' },
   ]);
   expect(found.executors).toHaveLength(1);
-  expect(found.workspaces).toEqual([]);
+  expect(found.worktrees).toEqual([]);
   expect(found.agents).toEqual([]);
   const [plugin] = found.executors as ExecutorPlugin[];
   const logger = {
