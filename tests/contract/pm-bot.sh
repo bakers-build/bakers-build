@@ -261,7 +261,7 @@ for f in scripts/ci/github-image-gate.sh tests/contract/pm-bot-image.sh "$BOT/RE
 done
 pass "every image build line passes the bundle and the pinned upstream skill contexts"
 
-COMPOSE=coder/bakers-ddev/pm-bot.compose.yaml
+COMPOSE=experimental/pm-bot/compose.yaml
 [ -f "$COMPOSE" ] || fail "$COMPOSE is missing"
 python3 - "$COMPOSE" <<'PY' || fail "$COMPOSE breaks the container's lock-down (see above)"
 import sys, yaml

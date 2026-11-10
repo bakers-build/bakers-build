@@ -117,7 +117,6 @@ describe('GitHub migration checks', () => {
     'tui',
     'web_ui',
     'pm_bot',
-    'coder_pm_bot',
     'release_rehearsal',
   ])('%s prepares the mounted checkout for container Git and path consumers', (name) => {
     const workflow = parse(read('.github/workflows/checks.yml'));
@@ -191,7 +190,6 @@ describe('GitHub migration checks', () => {
       'config_sync',
       'compose_render',
       'pm_bot',
-      'coder_pm_bot',
       'conductor',
       'tui',
       'tui_musl',
@@ -505,7 +503,6 @@ describe('GitHub migration checks', () => {
       'config_sync',
       'compose_render',
       'pm_bot',
-      'coder_pm_bot',
       'conductor',
       'tui',
       'tui_musl',
