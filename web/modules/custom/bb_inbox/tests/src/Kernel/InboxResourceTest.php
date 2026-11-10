@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_inbox\Kernel;
 
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_inbox\Entity\BbInboxMessageInterface;
+use Drupal\bb_inbox\InboxRejected;
 use Drupal\bb_inbox\Resource\InboxPendingResource;
 use Drupal\bb_inbox\Resource\InboxResultResource;
 use Drupal\bb_inbox\Resource\InboxSendResource;
@@ -212,6 +213,37 @@ final class InboxResourceTest extends KernelTestBase {
     $this->expectException(AccessDeniedHttpException::class);
     $this->resource(InboxPendingResource::class)
       ->process(Request::create('/', 'GET'), (string) $this->conductor->get('conductor_id')->value);
+  }
+
+  /**
+   * A removed owner reaches no message of that workspace by any route.
+   *
+   * The generic JSON:API collection and the result resource rely on entity
+   * and query access, and the sender stops queueing for that conductor.
+   */
+  public function testRemovedOwnerGetsNoMessageByAnyRoute(): void {
+    $message = $this->send($this->guest, 'test.echo', ['text' => 'before removal']);
+    $this->workspaceMember('b', $this->conductorOwner, 'contributor');
+    $this->container->get('bb_core.membership_writer')
+      ->remove($this->fixture('a', 'bb_workspace'), (int) $this->conductorOwner->id());
+
+    $message = $this->reloadMessage($message);
+    self::assertFalse($message->access('view', $this->conductorOwner), 'single GET');
+    $this->container->get('current_user')->setAccount($this->conductorOwner);
+    $listed = $this->container->get('entity_type.manager')->getStorage('bb_inbox_message')
+      ->getQuery()->accessCheck(TRUE)->count()->execute();
+    self::assertSame(0, (int) $listed, 'collection');
+    self::assertSame(403, $this->resultRequest($this->conductorOwner, $message->uuid(), 'done', ['markdown' => 'x']), 'result POST');
+
+    try {
+      $this->send($this->guest, 'test.echo', ['text' => 'after removal']);
+      self::fail('Sending must refuse a conductor whose owner no longer serves the workspace.');
+    }
+    catch (InboxRejected) {
+    }
+    $queued = $this->container->get('entity_type.manager')->getStorage('bb_inbox_message')
+      ->getQuery()->accessCheck(FALSE)->count()->execute();
+    self::assertSame(1, (int) $queued, 'nothing queued');
   }
 
   /**

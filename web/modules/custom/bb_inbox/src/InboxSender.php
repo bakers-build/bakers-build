@@ -7,6 +7,7 @@ namespace Drupal\bb_inbox;
 use Drupal\Core\Access\AccessException;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\bb_core\Conductor\ConductorRegistrar;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_inbox\Entity\BbInboxMessageInterface;
 use Drupal\bb_inbox\Event\InboxMessageEvent;
@@ -20,6 +21,7 @@ final class InboxSender {
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly EventDispatcherInterface $dispatcher,
+    private readonly ConductorRegistrar $registrar,
   ) {}
 
   /**
@@ -38,13 +40,19 @@ final class InboxSender {
    *   The saved, pending message.
    *
    * @throws \Drupal\bb_inbox\InboxRejected
-   *   No conductor, no handler, a veto or an invalid message (422).
+   *   No conductor or one its owner may no longer run, no handler, a veto
+   *   or an invalid message (422).
    * @throws \Drupal\Core\Access\AccessException
    *   The responsible handler denied the sender (403).
    */
   public function send(BbTicketInterface $ticket, string $message_id, array $payload, AccountInterface $account): BbInboxMessageInterface {
-    if ($ticket->getConductor() === NULL) {
+    $conductor = $ticket->getConductor();
+    if ($conductor === NULL) {
       throw new InboxRejected(sprintf('Ticket %s has no conductor.', $ticket->getIdentifier()));
+    }
+    $owner = $conductor->get('owner_user_id')->entity;
+    if (!$owner instanceof AccountInterface || !$this->registrar->serves($conductor, $owner)) {
+      throw new InboxRejected(sprintf('The conductor of ticket %s no longer serves its workspace.', $ticket->getIdentifier()));
     }
     $message = $this->entityTypeManager->getStorage('bb_inbox_message')->create([
       'ticket_id' => $ticket->id(),
