@@ -450,6 +450,23 @@ final class AccountJsonApiTest extends WorkTimeTestBase {
   }
 
   /**
+   * A reader cannot infer the terms by filtering or sorting on them.
+   */
+  public function testReaderCannotFilterOrSortOnTerms(): void {
+    $this->createAccount('Priced', 'HARV-7');
+    $collection = '/jsonapi/bb_track_account/bb_track_account';
+    foreach (['?filter[external_id]=HARV-7', '?filter[hourly_rate]=0', '?sort=hourly_rate'] as $query) {
+      [$status, $document] = $this->jsonApi('GET', $collection . $query, $this->peer);
+      self::assertContains($status, [400, 403], $query . ' ' . json_encode($document));
+    }
+    [$status, $document] = $this->jsonApi('GET', $collection . '?filter[name]=Priced', $this->peer);
+    self::assertSame(200, $status, 'other fields stay filterable');
+    [$status, $document] = $this->jsonApi('GET', $collection, $this->peer);
+    self::assertSame(200, $status);
+    self::assertContains('Priced', array_column(array_column($document['data'], 'attributes'), 'name'), 'the reader lists the account itself');
+  }
+
+  /**
    * Terms are written with the per-type rules; a violation is 422, unstored.
    */
   public function testTermsReadableAndWritableWithValidation(): void {

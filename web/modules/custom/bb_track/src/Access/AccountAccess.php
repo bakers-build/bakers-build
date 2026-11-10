@@ -104,8 +104,15 @@ final class AccountAccess extends EntityAccessControlHandler {
   private function fieldViewAccess(string $operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items): AccessResultInterface {
     $entity = $items?->getEntity();
     $priced = ['external_id', ...AccountValidation::TERMS];
-    if ($operation === 'view' && $entity instanceof Account && in_array($field_definition->getName(), $priced, TRUE)) {
+    if ($operation !== 'view' || !in_array($field_definition->getName(), $priced, TRUE)) {
+      return parent::checkFieldAccess($operation, $field_definition, $account, $items);
+    }
+    if ($entity instanceof Account) {
       return $this->projectEditorAccess($entity, $account);
+    }
+    // No entity: a JSON:API filter or sort, which spans every project.
+    if (!$account->hasPermission('administer bakers')) {
+      return AccessResult::forbidden('Billing terms cannot be filtered or sorted on.')->cachePerPermissions();
     }
     return parent::checkFieldAccess($operation, $field_definition, $account, $items);
   }
