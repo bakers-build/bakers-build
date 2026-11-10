@@ -50,7 +50,8 @@
   "conditions": {
     "paths": [
       "/home/onboarding",
-      "/home/new-workspace"
+      "/home/new-workspace",
+      "/home/first-project/*"
     ]
   }
 }

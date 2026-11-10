@@ -8,7 +8,6 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityLastInstalledSchemaRepositoryInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
-use Drupal\bb_core\Access\BbRankCapabilityInterface;
 use Drupal\bb_core\Access\BbWorkspaceReadScopeInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
@@ -43,8 +42,6 @@ final class WorkspaceMembershipHooks {
     private readonly EntityTypeManagerInterface $entityTypeManager,
     #[Autowire(service: 'entity.last_installed_schema.repository')]
     private readonly EntityLastInstalledSchemaRepositoryInterface $installedSchema,
-    #[Autowire(service: 'bb_core.rank_capability')]
-    private readonly BbRankCapabilityInterface $rankCapability,
   ) {
   }
 
@@ -242,13 +239,11 @@ final class WorkspaceMembershipHooks {
   }
 
   /**
-   * Drops the read-scope and rank memos of a changed membership's account.
+   * Drops the read-scope memo of the account whose membership just changed.
    *
    * OG's own upsert resolves the read scope before writing, so without this
-   * the rest of the request reads a stale, empty scope; the rank permissions
-   * are memoised the same way, so a workspace created and used in one request
-   * (its first group, say) would be refused. Scoped to the one account whose
-   * memberships changed.
+   * the rest of the request reads a stale, empty scope. Scoped to the one
+   * account whose memberships changed.
    *
    * @param \Drupal\Core\Entity\EntityInterface $membership
    *   The membership that was written or removed.
@@ -258,7 +253,6 @@ final class WorkspaceMembershipHooks {
       return;
     }
     $this->readScope->reset((int) $membership->getOwnerId());
-    $this->rankCapability->reset((int) $membership->getOwnerId());
   }
 
   /**

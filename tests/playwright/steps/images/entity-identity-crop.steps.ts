@@ -118,11 +118,17 @@ async function submit(page: Page): Promise<void> {
   }
   const navigation = page.waitForEvent('load');
   if (creating) {
-    // A workspace asks for its first team; Skip makes it without a first project.
+    // A workspace asks for its first team.
     await form(page).getByLabel('Team name', { exact: true }).fill('Core Team');
   }
-  await form(page).getByRole('button', { name: creating ? 'Skip' : 'Save', exact: true }).click();
+  await form(page).getByRole('button', { name: creating ? 'Create workspace' : 'Save', exact: true }).click();
   await navigation;
+  if (creating) {
+    // The first project is asked on the next page; Skip leaves it for later.
+    const home = page.waitForEvent('load');
+    await page.getByRole('button', { name: 'Skip', exact: true }).click();
+    await home;
+  }
   if (creating) {
     remember();
   }

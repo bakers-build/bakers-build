@@ -380,7 +380,9 @@ When('I create the workspace {string}', async ({ page }, name: string) => {
     }
     await page.getByLabel('Workspace name', { exact: true }).fill(name);
     await page.getByLabel('Team name', { exact: true }).fill('Core Team');
-    // Skip makes the workspace without a first project.
+    await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+    // The first project is asked on its own page; Skip leaves it for later.
+    await expect(page.getByRole('heading', { name: 'Create your first project' })).toBeVisible();
     const navigation = page.waitForNavigation({ waitUntil: 'load' });
     await page.getByRole('button', { name: 'Skip', exact: true }).click();
     lastResponse = await navigation;
@@ -394,7 +396,7 @@ When('I try to create the workspace {string} without a team name', async ({ page
         await openNav;
     }
     await page.getByLabel('Workspace name', { exact: true }).fill(name);
-    await page.getByRole('button', { name: 'Skip', exact: true }).click();
+    await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
     await expect(page.getByLabel('Team name', { exact: true })).toBeVisible();
 });
 
@@ -586,11 +588,14 @@ When(
         }
         await page.getByLabel('Workspace name', { exact: true }).fill(name);
         await page.getByLabel('Team name', { exact: true }).fill('Core Team');
+        await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+        // The project is the next page, not part of the workspace form.
+        await expect(page.getByRole('heading', { name: 'Create your first project' })).toBeVisible();
         await page.getByLabel('Project name', { exact: true }).fill(project);
         await page.getByLabel('Repository URL', { exact: true }).fill(repository);
         await page.getByLabel('Group name', { exact: true }).fill(group);
         const navigation = page.waitForNavigation({ waitUntil: 'load' });
-        await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+        await page.getByRole('button', { name: 'Create project', exact: true }).click();
         lastResponse = await navigation;
     },
 );

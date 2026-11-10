@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Config\FileStorage;
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\file\Entity\File;
@@ -357,7 +356,7 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
       'team_name' => 'Core Team',
       'description' => [['value' => 'A workspace, described on creation.']],
       'image' => [['fids' => (string) $upload->id()]],
-      'skip_project' => 'Skip',
+      'op' => 'Create workspace',
     ]);
     $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
     self::assertSame([], array_map('strval', $form_state->getErrors()));
@@ -371,83 +370,6 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
     $saved = File::load($upload->id());
     self::assertNotNull($saved);
     self::assertTrue($saved->isPermanent(), 'The attached upload must become a permanent file.');
-  }
-
-  /**
-   * Yes creates the group and project with the workspace and lands on it.
-   */
-  public function testCreateFormCanCreateTheFirstProject(): void {
-    $this->prepareCreateForm();
-    $form_state = (new FormState())->setValues([
-      'name' => [['value' => 'Project Co']],
-      'team_name' => 'Core Team',
-      'project_name' => 'Bakery App',
-      'repository_url' => 'https://example.com/acme/bakery.git',
-      'group_name' => 'Platform',
-      'op' => 'Create workspace',
-    ]);
-    $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
-    self::assertSame([], array_map('strval', $form_state->getErrors()));
-    self::assertSame([], array_map('strval', $this->container->get('messenger')->messagesByType('error')));
-
-    $projects = $this->container->get('entity_type.manager')->getStorage('bb_project')->loadByProperties(['name' => 'Bakery App']);
-    self::assertCount(1, $projects);
-    $project = reset($projects);
-    self::assertInstanceOf(ContentEntityInterface::class, $project);
-    self::assertSame('Platform', $project->get('group_id')->entity->label());
-    self::assertSame(['Core Team'], array_map(static fn ($team) => $team->label(), $project->get('teams')->referencedEntities()));
-  }
-
-  /**
-   * An invalid first project keeps the workspace from being created at all.
-   */
-  public function testInvalidFirstProjectCreatesNoWorkspace(): void {
-    $this->prepareCreateForm();
-    $before = $this->counts();
-    $form_state = (new FormState())->setValues([
-      'name' => [['value' => 'Doomed Co']],
-      'team_name' => 'Core Team',
-      'project_name' => 'Bakery App',
-      'repository_url' => 'not a url',
-      'group_name' => 'Platform',
-      'op' => 'Create workspace',
-    ]);
-    $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
-
-    self::assertSame($before, $this->counts(), 'Nothing is created when the project is invalid.');
-    self::assertNotEmpty($this->container->get('messenger')->messagesByType('error'));
-  }
-
-  /**
-   * Skip makes the workspace alone, without asking for the project's fields.
-   */
-  public function testSkipCreatesTheWorkspaceWithoutProject(): void {
-    $this->prepareCreateForm();
-    $form_state = (new FormState())->setValues([
-      'name' => [['value' => 'Plain Co']],
-      'team_name' => 'Core Team',
-      'skip_project' => 'Skip',
-    ]);
-    $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
-
-    self::assertSame([], array_map('strval', $form_state->getErrors()));
-    self::assertCount(1, $this->container->get('entity_type.manager')->getStorage('bb_workspace')->loadByProperties(['name' => 'Plain Co']));
-    self::assertSame(0, $this->counts()['bb_project']);
-  }
-
-  /**
-   * Create without the project's fields is refused on those fields.
-   */
-  public function testCreateNeedsTheProjectFields(): void {
-    $this->prepareCreateForm();
-    $form_state = (new FormState())->setValues([
-      'name' => [['value' => 'Empty Co']],
-      'team_name' => 'Core Team',
-      'op' => 'Create workspace',
-    ]);
-    $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
-
-    self::assertEqualsCanonicalizing(['project_name', 'repository_url', 'group_name'], array_keys($form_state->getErrors()));
   }
 
   /**

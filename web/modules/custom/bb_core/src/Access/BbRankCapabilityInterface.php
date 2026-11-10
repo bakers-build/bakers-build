@@ -36,17 +36,6 @@ interface BbRankCapabilityInterface {
   public function rankPermissions(AccountInterface $account): array;
 
   /**
-   * Drops the memoised permission union of one account, or of every account.
-   *
-   * Called when memberships change, so the rest of the request does not read
-   * the ranks the account held before.
-   *
-   * @param int|null $uid
-   *   The account whose memo to drop, or NULL for all of them.
-   */
-  public function reset(?int $uid = NULL): void;
-
-  /**
    * Whether a site-wide user_role grants the account the permission.
    *
    * Deliberately NOT `$account->hasPermission()`: that routes through

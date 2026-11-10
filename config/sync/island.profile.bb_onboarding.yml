@@ -43,3 +43,4 @@ conditions:
     pages: |-
       /home/onboarding
       /home/new-workspace
+      /home/first-project/*

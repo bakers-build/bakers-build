@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Form\FormState;
+use Drupal\Core\Routing\RouteObjectInterface;
 use Drupal\KernelTests\KernelTestBase;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Route;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Form\BbFirstProjectForm;
 use Drupal\bb_core\Onboarding\FirstProjectCreator;
 use Drupal\og\Entity\OgRole;
 use Drupal\og\Og;
@@ -113,6 +118,69 @@ final class FirstProjectCreatorTest extends KernelTestBase {
     }
 
     self::assertSame($before, $this->counts());
+  }
+
+  /**
+   * The page's Create makes group and project on the owner's team.
+   */
+  public function testFirstProjectFormCreatesTheProject(): void {
+    $this->joinTeam();
+    $this->enterTheFirstProjectPage();
+    $form_state = (new FormState())->setValues([
+      'project_name' => 'Bakery App',
+      'repository_url' => 'https://example.com/acme/bakery.git',
+      'group_name' => 'Platform',
+      'create_project' => 'Create project',
+    ]);
+    $this->container->get('form_builder')->submitForm(BbFirstProjectForm::class, $form_state);
+
+    self::assertSame([], array_map('strval', $form_state->getErrors()));
+    $projects = $this->container->get('entity_type.manager')->getStorage('bb_project')->loadByProperties(['name' => 'Bakery App']);
+    self::assertCount(1, $projects);
+  }
+
+  /**
+   * An invalid repository shows the error on the page and creates nothing.
+   */
+  public function testFirstProjectFormKeepsTheInputOnAnError(): void {
+    $this->joinTeam();
+    $this->enterTheFirstProjectPage();
+    $before = $this->counts();
+    $form_state = (new FormState())->setValues([
+      'project_name' => 'Bakery App',
+      'repository_url' => 'not a url',
+      'group_name' => 'Platform',
+      'create_project' => 'Create project',
+    ]);
+    $this->container->get('form_builder')->submitForm(BbFirstProjectForm::class, $form_state);
+
+    self::assertSame($before, $this->counts());
+    self::assertNotEmpty($this->container->get('messenger')->messagesByType('error'));
+  }
+
+  /**
+   * Skip asks for nothing and creates nothing.
+   */
+  public function testSkipCreatesNothingAndAsksForNothing(): void {
+    $this->joinTeam();
+    $this->enterTheFirstProjectPage();
+    $before = $this->counts();
+    $form_state = (new FormState())->setValues(['skip_project' => 'Skip']);
+    $this->container->get('form_builder')->submitForm(BbFirstProjectForm::class, $form_state);
+
+    self::assertSame([], array_map('strval', $form_state->getErrors()));
+    self::assertSame($before, $this->counts());
+  }
+
+  /**
+   * Makes the request stand on the first-project page of workspace B.
+   */
+  private function enterTheFirstProjectPage(): void {
+    $request = $this->container->get('request_stack')->getCurrentRequest();
+    self::assertInstanceOf(Request::class, $request);
+    $request->attributes->set(RouteObjectInterface::ROUTE_NAME, 'bb_core.first_project');
+    $request->attributes->set(RouteObjectInterface::ROUTE_OBJECT, new Route('/home/first-project/{bb_workspace}'));
+    $request->attributes->set('bb_workspace', $this->workspace());
   }
 
   /**

@@ -5,16 +5,13 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Form;
 
 use Drupal\Component\Datetime\TimeInterface;
-use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\Entity\EntityFormDisplay;
 use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\Core\Entity\EntityTypeBundleInfoInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
-use Drupal\bb_core\Onboarding\FirstProjectCreator;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\bb_core\Workspace\WorkspaceSlugDeriver;
 use Drupal\user\UserInterface;
@@ -46,10 +43,6 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
    * @param \Drupal\bb_core\Workspace\WorkspaceSlugDeriver $slugDeriver
    *   Derives the slug for ::buildEntity()'s validation pass; the same
    *   stateless class the provisioner uses for the actual save.
-   * @param \Drupal\Core\Database\Connection $database
-   *   Carries the one transaction around the workspace and its first project.
-   * @param \Drupal\bb_core\Onboarding\FirstProjectCreator $firstProject
-   *   Creates the optional first group and project.
    */
   public function __construct(
     EntityRepositoryInterface $entityRepository,
@@ -60,8 +53,6 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // properties visible to its own scope.
     protected WorkspaceProvisioner $provisioner,
     protected WorkspaceSlugDeriver $slugDeriver,
-    protected Connection $database,
-    protected FirstProjectCreator $firstProject,
   ) {
     parent::__construct($entityRepository, $entityTypeBundleInfo, $time);
   }
@@ -77,8 +68,6 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
       $container->get('datetime.time'),
       $container->get('bb_core.workspace_provisioner'),
       $container->get('bb_core.workspace_slug_deriver'),
-      $container->get('database'),
-      $container->get('bb_core.onboarding_first_project'),
     );
     // A PLAIN `_form` ROUTE, NOT `_entity_form`: nothing else wires the
     // services `EntityForm` needs or hands this form an entity to work on, so
@@ -139,37 +128,14 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
       '#required_error' => $this->t('Enter a team name.'),
       '#maxlength' => 255,
     ];
-    // THE FIRST PROJECT IS ASKED HERE because a new account has no workspace
-    // while it is in the onboarding wizard, so this is where it can be asked.
-    // Its fields are always shown; Skip creates the workspace without it.
-    $form['project_name'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Project name'),
-      '#description' => $this->t('Your first project. Skip it to add one later.'),
-      '#maxlength' => 255,
-      '#weight' => 50,
-    ];
-    $form['repository_url'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Repository URL'),
-      '#maxlength' => 2048,
-      '#weight' => 51,
-    ];
-    $form['group_name'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Group name'),
-      '#description' => $this->t('A group bundles related projects.'),
-      '#maxlength' => 255,
-      '#weight' => 52,
-    ];
     // Nothing else on the entity is asked about, so nothing else needs a
     // presenter position — nulling `#group`/`#weight` scaffolding a display
     // that shipped no `core.entity_form_display` config might otherwise add.
     unset($form['langcode']);
 
     // INSIDE THE FORM: the page's messages block stands outside the gate, so
-    // an error about the project is printed here, beside the fields. The
-    // page's one h1 is the gate's own title, set by the presenter.
+    // an error is printed here, beside the fields. The page's one h1 is the
+    // gate's own title, set by the presenter.
     $form['messages'] = ['#type' => 'status_messages', '#weight' => -20];
 
     return $form;
@@ -182,14 +148,6 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     $actions = parent::actions($form, $form_state);
     $actions['submit']['#value'] = $this->t('Create workspace');
     $actions['submit']['#theme_wrappers'] = ['input__submit__bb_button'];
-    // Skip makes the workspace alone: the same handlers, and the project fields
-    // are not asked for.
-    $actions['skip'] = [
-      '#value' => $this->t('Skip'),
-      '#name' => 'skip_project',
-      '#bb_variant' => 'ghost',
-      '#weight' => 10,
-    ] + $actions['submit'];
     unset($actions['delete']);
     return $actions;
   }
@@ -205,34 +163,6 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     $entity->setSlug($this->slugDeriver->derive($entity->getName()));
     if ($entity->get('owner_user_id')->isEmpty()) {
       $entity->set('owner_user_id', $this->currentUser()->id());
-    }
-    return $entity;
-  }
-
-  /**
-   * Whether the Skip button made this submission.
-   */
-  private function skipsProject(FormStateInterface $form_state): bool {
-    return ($form_state->getTriggeringElement()['#name'] ?? '') === 'skip_project';
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function validateForm(array &$form, FormStateInterface $form_state): ContentEntityInterface {
-    $entity = parent::validateForm($form, $form_state);
-    if ($this->skipsProject($form_state)) {
-      return $entity;
-    }
-    $messages = [
-      'project_name' => $this->t('Enter a project name.'),
-      'repository_url' => $this->t('Enter the repository URL.'),
-      'group_name' => $this->t('Enter a group name.'),
-    ];
-    foreach ($messages as $field => $message) {
-      if (trim((string) $form_state->getValue($field, '')) === '') {
-        $form_state->setErrorByName($field, $message);
-      }
     }
     return $entity;
   }
@@ -258,48 +188,20 @@ final class BbWorkspaceCreateForm extends ContentEntityForm {
     // An unexpected failure becomes a 500 with the rollback already done, which
     // is honest; a caught throwable rendered as "something went wrong" beside a
     // half-provisioned workspace would not be.
-    // ONE TRANSACTION AROUND BOTH: the provisioner's own is nested in it, so a
-    // first project that fails validation takes the workspace back with it.
-    $transaction = $this->database->startTransaction();
-    $project = NULL;
-    try {
-      $workspace = $this->provisioner->provision($entity->getName(), $account, trim((string) $form_state->getValue('team_name')), [
-        'description' => $entity->get('description')->getValue(),
-        'image' => $entity->get('image')->getValue(),
-      ]);
-      if (!$this->skipsProject($form_state)) {
-        $project = $this->firstProject->create(
-          $workspace,
-          $account,
-          trim((string) $form_state->getValue('project_name', '')),
-          trim((string) $form_state->getValue('repository_url', '')),
-          trim((string) $form_state->getValue('group_name', '')),
-        );
-      }
-    }
-    catch (\Throwable $error) {
-      $transaction->rollBack();
-      if (!$error instanceof \InvalidArgumentException) {
-        throw $error;
-      }
-      // Nothing was saved; the typed values stay and the message says why.
-      $this->messenger()->addError($error->getMessage());
-      $form_state->setRebuild();
-      return SAVED_NEW;
-    }
+    $workspace = $this->provisioner->provision($entity->getName(), $account, trim((string) $form_state->getValue('team_name')), [
+      'description' => $entity->get('description')->getValue(),
+      'image' => $entity->get('image')->getValue(),
+    ]);
     // The form's own entity now stands for the SAVED one, so a caller reading
     // `$this->getEntity()` after submission sees the real, persisted row
     // rather than the discarded draft `buildEntity()` produced.
     $this->entity = $workspace;
 
-    // Completed accounts creating a workspace stay on the overview. Incomplete
-    // accounts never reach this form: the entry guard sends them to the wizard
-    // first.
-    if ($project instanceof BbProjectInterface) {
-      $form_state->setRedirectUrl($project->toUrl());
-      return SAVED_NEW;
-    }
-    $form_state->setRedirect('bb_core.home');
+    // The first project is asked on its own page, which can be skipped. It is
+    // never reached by an account that may not create one: its route says no.
+    // Incomplete accounts never reach this form: the entry guard sends them to
+    // the wizard first.
+    $form_state->setRedirect('bb_core.first_project', ['bb_workspace' => $workspace->getSlug()]);
 
     return SAVED_NEW;
   }

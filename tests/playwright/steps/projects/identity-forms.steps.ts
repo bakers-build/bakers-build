@@ -130,6 +130,9 @@ When(
     await page.getByLabel('Team name', { exact: true }).fill('Core Team');
     await descriptionField(form(page)).fill(WORKSPACE_DESCRIPTION);
     await upload(page, file);
+    await page.getByRole('button', { name: 'Create workspace', exact: true }).click();
+    // The first project is asked on the next page; Skip leaves it for later.
+    await page.waitForURL('**/home/first-project/**', { waitUntil: 'load' });
     const navigation = page.waitForURL('**/home', { waitUntil: 'load' });
     await page.getByRole('button', { name: 'Skip', exact: true }).click();
     await navigation;
