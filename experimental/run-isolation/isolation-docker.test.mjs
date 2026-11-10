@@ -1,4 +1,4 @@
-// Throwaway self-check of the spike's launch rewrite: node --test experimental/run-isolation/
+// Throwaway self-check of the spike's launch rewrite: node --test experimental/run-isolation/isolation-docker.test.mjs
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { test } from 'node:test';

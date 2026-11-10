@@ -6,4 +6,5 @@ results are in [docs/decisions/run-isolation.md](../../docs/decisions/run-isolat
 
 - `isolation-docker.mjs` — the decorator; wraps the inner executor's launch command in `docker run`.
 - `Dockerfile` — `node:22-slim`, `git`, Claude Code.
-- Self-check: `node --test experimental/run-isolation/`.
+- Self-check: `node --test experimental/run-isolation/isolation-docker.test.mjs`.
+- `probe.sh` — runs a container from the decorator's launch rewrite and reports what the run sees. Run it outside any agent sandbox.

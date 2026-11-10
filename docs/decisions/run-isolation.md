@@ -14,9 +14,11 @@ from the harness permission mode. A micro-VM is a later backend behind the same 
 with the Kata runtime already gives one through `--runtime`.
 
 The throwaway prototype in [`experimental/run-isolation/`](../../experimental/run-isolation/README.md)
-shows the launch rewrite as an executor decorator. Its self-check passes. The live run with Claude in
-a container is recorded below as steps for a maintainer. The spike run that wrote this page could not
-reach the Docker socket from its sandbox and has no model credential of its own.
+shows the launch rewrite as an executor decorator. Its self-check passes. A maintainer probe started a
+container from that rewrite on Linux. The worktree's Git, the host's loopback and the per-run home
+worked, and no SSH key, `~/.bakers` or Docker socket was visible. A full conductor run with Claude on
+a ticket state is still outstanding; its steps are recorded below. Docker Sandboxes (`sbx`) came up
+after the first draft and is assessed in writing only.
 
 ## 1. Where the wrapper hooks in
 
@@ -83,7 +85,7 @@ Known risks to watch in that run:
 
 | Item | Finding |
 |---|---|
-| Start time per run | Not measured by the spike run (blocked). Steps 2 and 9 below record cold and warm `docker run` times. Plugin sync into a fresh home is the larger expected cost. |
+| Start time per run | Measured on Debian 13 x86_64 (`probe.sh`): `docker run --rm <image> true` took 1181 ms cold and 396 ms warm. Plugin sync into a fresh home is the larger expected cost and is not measured yet. |
 | Image maintenance | One image per harness version. Claude Code is pinned at build, so its own auto-update stops inside the run and an image rebuild replaces it. Podman takes the same image. |
 | Worktree and Git metadata | The worktree and the main repository's Git common directory are mounted read/write at their host paths, so `.git` files and `git worktree` links resolve. **Risk:** the run can write `.git/hooks` and `.git/config`, which the host's Git executes later. The backend must mount `hooks` read-only and pin `core.hooksPath`, or give the run its own clone. |
 | Transcript | One extra mount per run at Claude's transcript path, under the same uid, so the host can read it. |
@@ -97,6 +99,7 @@ Known risks to watch in that run:
 | Dedicated Unix user | none | user per host, file permissions on shared paths | none, shared file system | separate home | host-wide firewall only | Linux, macOS | Rejected: one user for every run, so runs see each other and anything world-readable. |
 | Box as boundary (one VM per operator) | none per run | the box template | none | in the box | box firewall | any | Keep as the outer boundary. Runs on one box still share everything inside it. |
 | **Container per run** | sub-second plus plugin sync (to measure) | one image per harness | worktree, `.git`, transcript | per run, by name | allowlist with bridge network and proxy | Linux native, macOS through a VM | **Recommended first backend.** |
+| Docker Sandboxes (`sbx`), a microVM per sandbox with its own Docker engine | not measured | Docker's product and agent kits, Claude Code included | the project directory read/write; extra paths not documented | Claude login stays on the host; an API key goes in through `sbx secret` | preset policies (`balanced`: deny by default) and per-host rules | needs KVM; Linux support not confirmed (install docs unreachable) | **Candidate backend, untested.** It would replace the micro-VM and the egress allowlist. Still open: whether the Git common directory outside the worktree can be mounted, whether the host's `127.0.0.1` tool server is reachable, and whether runs can start headless with our flags. Not installed on the probe host. |
 | Micro-VM per run (Firecracker, Kata) | about a second | kernel and rootfs images, KVM on the host | virtio-fs shares | per run | per-VM network | Linux with KVM only | Later backend. Kata as a Docker runtime reuses `isolation-docker`. |
 | Hosted sandbox per run | seconds, remote | provider image | the worktree is synced or cloned remotely, no local DDEV | sent to the provider | provider policy | any, needs network | Rejected for now. DDEV and the tool server are local, so every tool call crosses the network. |
 
@@ -135,10 +138,11 @@ is found.
 
 | Check | Status | Observed |
 |---|---|---|
-| Launch rewrite self-check, `node --test experimental/run-isolation/` | passed | 4 tests pass: the argv a shell makes of the command is `docker run --rm -it --name bb-run-7 --network host …`; mounts are only the worktree, the Git common directory, the read-only CLI build, the run home and the transcript directory; secrets appear only as `-e KEY`; other methods delegate and `cleanupRun` removes `bb-run-<id>`. |
-| F2 container listed, conductor tool reachable from inside | blocked | The spike run's sandbox is denied `/var/run/docker.sock` (`permission denied while trying to connect to the docker API`) and has no model credential. Steps 1–9 are for the maintainer. |
-| F3 no SSH key, no `~/.bakers`, no socket, push fails | blocked | Same cause; step 8. |
-| F4 start time and transcript read | blocked | Same cause; steps 2 and 10. |
+| Launch rewrite self-check, `node --test experimental/run-isolation/isolation-docker.test.mjs` | passed | 4 tests pass: the argv a shell makes of the command is `docker run --rm -it --name bb-run-7 --network host …`; mounts are only the worktree, the Git common directory, the read-only CLI build, the run home and the transcript directory; secrets appear only as `-e KEY`; other methods delegate and `cleanupRun` removes `bb-run-<id>`. |
+| Container probe, `bash experimental/run-isolation/probe.sh` (maintainer, Debian 13 x86_64, Docker; `-it` dropped for lack of a TTY) | passed | The container started from the decorator's own `wrapRun` output. Inside it: `user: 1000 home: /home/run`; `git status` returned `## feat/bakers-155-spike-attach-r`, so the Git common directory resolves; `/home/run/.ssh`, `/home/run/.bakers`, `/home/*/.ssh` and `/root/.ssh` absent; `docker socket: absent`; a stand-in service on the host's `127.0.0.1` answered 200 (`host.docker.internal` gave `ENOTFOUND`, so `--network host` is what carries it); `git push --dry-run` failed; `claude: 2.1.321 (Claude Code)`. |
+| F2 Claude run of a ticket state, `bakers_ticket_read` from inside | not_run | The host-loopback path the tool server uses is proven by the probe. A real conductor run (steps 3–9) is still outstanding: the spike run's sandbox cannot reach the Docker socket and has no model credential. |
+| F3 no SSH key, no `~/.bakers`, no socket, push fails | passed | Container probe above. |
+| F4 start time and transcript read | passed (start time), not_run (transcript) | 1181 ms cold, 396 ms warm. The transcript read needs the conductor run (step 10). |
 
 ## Follow-up work
 
@@ -147,7 +151,8 @@ Tickets to create once this recommendation is approved:
 1. **`isolation` addon kind.** Core holds one backend and applies `wrap` and `cleanup` around
    `executor.startRun` and `cleanupRun`. It adds an operator setting separate from the harness
    permission mode, and the harness sandbox is off when a backend is set.
-2. **`isolation-docker` backend.** It ports the prototype, makes the `docker` command configurable
+2. **`isolation-docker` backend.** First, try `sbx` on a KVM host against the three open points in the
+   alternatives table. If it meets them, it becomes the backend instead. Otherwise the backend ports the prototype, makes the `docker` command configurable
    so Podman works, ships the image, and protects `.git/hooks` and `.git/config`. It also measures
    start time and plugin sync.
 3. **Egress allowlist.** A bridge network, the tool server reachable from it, and a proxy sidecar
