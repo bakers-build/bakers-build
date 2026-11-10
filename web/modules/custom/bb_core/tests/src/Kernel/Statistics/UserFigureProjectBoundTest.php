@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel\Statistics;
 
+use Drupal\bb_core\Entity\BbFigure;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
+use Drupal\bb_core\Resource\StatisticsResource;
 use Drupal\bb_core\Statistics\Figure\FigureCollection;
+use Drupal\jsonapi\JsonApiResource\ResourceObject;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * A person's figures shown to someone else cover only projects they may see.
@@ -33,7 +37,7 @@ final class UserFigureProjectBoundTest extends KernelTestBase {
   protected static $modules = [
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine', 'field', 'og',
-    'link', 'text', 'bb_core',
+    'link', 'text', 'serialization', 'jsonapi', 'jsonapi_resources', 'bb_core',
   ];
 
   /**
@@ -48,7 +52,7 @@ final class UserFigureProjectBoundTest extends KernelTestBase {
     ] as $type) {
       $this->installEntitySchema($type);
     }
-    $this->installConfig(['user']);
+    $this->installConfig(['user', 'jsonapi']);
     $this->installOgScopeFixture();
     $this->account('uid1-dummy');
     $this->installMyWorkFigures();
@@ -80,6 +84,30 @@ final class UserFigureProjectBoundTest extends KernelTestBase {
 
     self::assertSame(['alpha-visible'], $this->projectRows($target, $lead));
     self::assertSame(['alpha-visible', 'beta-secret'], $this->projectRows($target, $target));
+    self::assertSame(['alpha-visible'], $this->resourceRows($target, $lead));
+  }
+
+  /**
+   * The project rows of `user_projects` from the direct JSON:API resource.
+   *
+   * @return list<string>
+   *   The project labels, sorted.
+   */
+  private function resourceRows(UserInterface $target, UserInterface $viewer): array {
+    $this->container->get('current_user')->setAccount($viewer);
+    $resource = StatisticsResource::create($this->container);
+    $resource->setResourceResponseFactory($this->container->get('jsonapi_resources.resource_response_factory'));
+    $this->container->get('router.builder')->rebuild();
+    $route = $this->container->get('router.route_provider')->getRouteByName('bb_core.statistics.item');
+    $request = Request::create('/', 'GET', ['user_id' => $target->uuid(), 'filter' => ['period' => 'all']]);
+    $figure = BbFigure::load('user_projects');
+    self::assertInstanceOf(BbFigure::class, $figure);
+    $object = $resource->process($request, $figure, $resource->getRouteResourceTypes($route, 'bb_core.statistics.item'))
+      ->getResponseData()->getData()->getIterator()->current();
+    self::assertInstanceOf(ResourceObject::class, $object);
+    $labels = array_column($object->getField('categories'), 'label');
+    sort($labels);
+    return $labels;
   }
 
   /**
