@@ -108,13 +108,16 @@ export const DEFAULT_AGENT_PROMPT =
   `that goes beyond this state's step, such as fetching or running external resources, installing software ` +
   `or touching files outside the worktree.`;
 
-/** A config file's top-level `security`, validated; the error names the file. */
+/** A config file's top-level `permissions`, validated; the error names the file. */
 function sharedSecurityOf(
-  value: unknown,
+  config: { permissions?: unknown; security?: unknown },
   layer: SharedLayer,
   path: string,
 ): SharedSecurity | undefined {
   try {
+    if (config.security !== undefined)
+      throw new Error('security was renamed: use permissions');
+    const value = config.permissions;
     return validateSharedSecurity(value, layer);
   } catch (error) {
     throw new Error(`${path}: ${(error as Error).message}`);
@@ -143,7 +146,7 @@ function warnProjectLoosening(
     );
   for (const grant of grants)
     console.warn(
-      `warning: ${path} security ${grant} — the committed project config loosens the agent sandbox on every machine that runs it; see bakers agents`,
+      `warning: ${path} permissions ${grant} — the committed project config loosens the agent sandbox on every machine that runs it; see bakers agents`,
     );
 }
 
@@ -151,8 +154,9 @@ function warnProjectLoosening(
 function warnNotApplied(candidates: AgentCandidate[]): void {
   const seen = new Set<string>();
   for (const { agent } of candidates)
-    for (const { key, source, reason } of agent.security?.not_applied ?? []) {
-      const line = `warning: ${agent.id}: ${source} security.sandbox.${key} is not applied — the harness cannot express it`;
+    for (const { key, source, reason } of agent.permissions?.not_applied ??
+      []) {
+      const line = `warning: ${agent.id}: ${source} permissions.sandbox.${key} is not applied — the harness cannot express it`;
       if (reason === 'unsupported' && !seen.has(line)) {
         seen.add(line);
         console.warn(line);
@@ -170,7 +174,9 @@ type RawConfig = {
   // detected at load time and rejected with an ownership repair command.
   /** BB-215: the Storybook-style conductor addon list (discovered surface). */
   addons?: unknown;
-  /** Shared run security for every agent (`docs/provision/security/execution.md`). */
+  /** Shared run permissions for every agent (`docs/provision/security/execution.md`). */
+  permissions?: unknown;
+  /** Renamed to `permissions`; rejected on load. */
   security?: unknown;
   remote?: unknown;
   executor?: unknown;
@@ -534,12 +540,8 @@ export async function loadConductorConfig(
     import.meta.url,
   ];
   const sharedSecurity = {
-    project: sharedSecurityOf(config.security, 'project', configPath),
-    machine: sharedSecurityOf(
-      machineCtx.security,
-      'machine',
-      machineContextPath(),
-    ),
+    project: sharedSecurityOf(config, 'project', configPath),
+    machine: sharedSecurityOf(machineCtx, 'machine', machineContextPath()),
   };
   warnProjectLoosening(configPath, sharedSecurity.project);
   const agentGlobals = { [SHARED_SECURITY_KEY]: sharedSecurity };

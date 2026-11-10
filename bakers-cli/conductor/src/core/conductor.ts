@@ -153,7 +153,7 @@ export function resolveRunEnv(
       { ticket: scope.ticket, keys: denied },
       policy.drop
         ? 'dropped denied keys from ticket env_vars (agent run-env policy)'
-        : 'passed denied keys from ticket env_vars (agent security: yolo)',
+        : 'passed denied keys from ticket env_vars (agent permissions: yolo)',
     );
   }
   // Core vars overlay last — they can never be overridden.

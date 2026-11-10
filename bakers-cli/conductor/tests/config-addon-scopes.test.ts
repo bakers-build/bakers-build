@@ -149,36 +149,38 @@ describe('conductor addons per scope', () => {
   });
 });
 
-describe('shared run security from the machine and project config', () => {
-  const projectWithSecurity = (security: string) =>
+describe('shared run permissions from the machine and project config', () => {
+  const projectWithPermissions = (permissions: string) =>
     projectConfig().replace(
       "bakers: { project: 'bakers' },",
-      `bakers: { project: 'bakers' },\n  security: ${security},`,
+      `bakers: { project: 'bakers' },\n  permissions: ${permissions},`,
     );
 
   it('every harness gets both layers, with sources and warnings', async () => {
     writeMachine(`export default {
       addons: ['@bakers-build/addon-claude', '@bakers-build/addon-codex'],
-      security: { sandbox: { allow_write: ['$inherit', '/srv/cache'] } },
+      permissions: { mode: 'sandbox', sandbox: { allow_write: ['$inherit', '/srv/cache'] } },
     };`);
     const project = writeProject(
-      projectWithSecurity(
+      projectWithPermissions(
         "{ sandbox: { trusted_commands: ['$inherit', 'make'], deny_read: ['$inherit', '~/.aws'] } }",
       ),
     );
     const { warnings, result } = await captureWarnings(() =>
       loadConductorConfig(project),
     );
-    const security = (alias: string) =>
-      result.agents.find((c) => c.alias === alias)?.agent.security;
-    expect(security('opus')?.sandbox.trusted_commands.entries).toContainEqual({
+    const permissions = (alias: string) =>
+      result.agents.find((c) => c.alias === alias)?.agent.permissions;
+    expect(
+      permissions('opus')?.sandbox.trusted_commands.entries,
+    ).toContainEqual({
       value: 'make',
       source: 'project',
     });
-    expect(security('opus')?.sandbox.allow_write.entries).toEqual([
+    expect(permissions('opus')?.sandbox.allow_write.entries).toEqual([
       { value: '/srv/cache', source: 'machine' },
     ]);
-    expect(security('codex')?.not_applied).toContainEqual({
+    expect(permissions('codex')?.not_applied).toContainEqual({
       key: 'trusted_commands',
       source: 'project',
       reason: 'unsupported',
@@ -190,9 +192,9 @@ describe('shared run security from the machine and project config', () => {
     expect(loosening[0]).toContain(project);
     const skipped = warnings.filter((w) => w.includes('not applied'));
     expect(skipped).toEqual([
-      expect.stringContaining('codex: project security.sandbox.deny_read'),
+      expect.stringContaining('codex: project permissions.sandbox.deny_read'),
       expect.stringContaining(
-        'codex: project security.sandbox.trusted_commands',
+        'codex: project permissions.sandbox.trusted_commands',
       ),
     ]);
   });
@@ -202,7 +204,7 @@ describe('shared run security from the machine and project config', () => {
     const { warnings } = await captureWarnings(() =>
       loadConductorConfig(
         writeProject(
-          projectWithSecurity(
+          projectWithPermissions(
             "{ mode: 'yolo', sandbox: { allow_write: ['/x'], deny_read: [] } }",
           ),
         ),
@@ -220,7 +222,7 @@ describe('shared run security from the machine and project config', () => {
     const { warnings } = await captureWarnings(() =>
       loadConductorConfig(
         writeProject(
-          projectWithSecurity(
+          projectWithPermissions(
             "{ sandbox: { deny_read: ['$inherit', '~/.aws'] } }",
           ),
         ),
@@ -232,13 +234,33 @@ describe('shared run security from the machine and project config', () => {
   it('a malformed shared block fails loading and names its file', async () => {
     const machine = writeMachine(`export default {
       addons: ['@bakers-build/addon-codex'],
-      security: { sandbox: { network: [] } },
+      permissions: { sandbox: { network: [] } },
     };`);
     await expect(
       loadConductorConfig(writeProject(projectConfig())),
     ).rejects.toThrow(
-      `${machine}: machine security.sandbox: unknown key network`,
+      `${machine}: machine permissions.sandbox: unknown key network`,
     );
+  });
+
+  it('the renamed key security fails loading in the project and machine config', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
+    const project = writeProject(
+      projectConfig().replace(
+        "bakers: { project: 'bakers' },",
+        "bakers: { project: 'bakers' },\n  security: { mode: 'sandbox' },",
+      ),
+    );
+    await expect(loadConductorConfig(project)).rejects.toThrow(
+      `${project}: security was renamed: use permissions`,
+    );
+    const machine = writeMachine(`export default {
+      addons: ['@bakers-build/addon-codex'],
+      security: { mode: 'sandbox' },
+    };`);
+    await expect(
+      loadConductorConfig(writeProject(projectConfig())),
+    ).rejects.toThrow(`${machine}: security was renamed: use permissions`);
   });
 });
 

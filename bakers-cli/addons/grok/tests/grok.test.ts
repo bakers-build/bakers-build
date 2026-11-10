@@ -69,7 +69,8 @@ const SANDBOXED_ARGV = [
 describe('GrokAgent security: shared project and machine layers', () => {
   it('applies a shared allow_write and reports the keys it cannot express', () => {
     const plugin = grokAgent({
-      shared_security: {
+      permissions: 'sandbox',
+      shared_permissions: {
         machine: {
           sandbox: {
             allow_write: ['/data/cache'],
@@ -79,10 +80,10 @@ describe('GrokAgent security: shared project and machine layers', () => {
         },
       },
     } as never);
-    expect(plugin.security?.sandbox.allow_write.entries).toEqual([
+    expect(plugin.permissions?.sandbox.allow_write.entries).toEqual([
       { value: '/data/cache', source: 'machine' },
     ]);
-    expect(plugin.security?.not_applied).toEqual([
+    expect(plugin.permissions?.not_applied).toEqual([
       { key: 'deny_read', source: 'machine', reason: 'unsupported' },
       { key: 'trusted_commands', source: 'machine', reason: 'unsupported' },
     ]);
@@ -90,7 +91,10 @@ describe('GrokAgent security: shared project and machine layers', () => {
 
   it('starts a shared allow_write through the managed profile', () => {
     const agent = new GrokAgent({
-      shared_security: { project: { sandbox: { allow_write: ['/data/x'] } } },
+      permissions: 'sandbox',
+      shared_permissions: {
+        project: { sandbox: { allow_write: ['/data/x'] } },
+      },
     } as never);
     expect(agent.launchCommand('work')).toContain('managed-launch');
   });
@@ -98,7 +102,10 @@ describe('GrokAgent security: shared project and machine layers', () => {
 
 describe('GrokAgent security', () => {
   it('starts writable-path runs through a managed native profile', () => {
-    const agent = new GrokAgent({ sandbox: { allow_write: ['/data/cache'] } });
+    const agent = new GrokAgent({
+      permissions: 'sandbox',
+      sandbox: { allow_write: ['/data/cache'] },
+    });
     const command = agent.launchCommand('work');
     expect(command).toContain('managed-launch');
     expect(command).toContain('--sandbox bakers-managed');
@@ -114,9 +121,13 @@ describe('GrokAgent security', () => {
       ' /tmp',
       '/tmp\n',
     ]) {
-      expect(() => new GrokAgent({ sandbox: { allow_write: [path] } })).toThrow(
-        /literal/,
-      );
+      expect(
+        () =>
+          new GrokAgent({
+            permissions: 'sandbox',
+            sandbox: { allow_write: [path] },
+          }),
+      ).toThrow(/literal/);
     }
     for (const args of [
       ['--resume=x'],
@@ -127,26 +138,30 @@ describe('GrokAgent security', () => {
       ['--leader-socket', '/tmp/leader'],
     ]) {
       expect(
-        () => new GrokAgent({ sandbox: { allow_write: ['/tmp/cache'] }, args }),
+        () =>
+          new GrokAgent({
+            permissions: 'sandbox',
+            sandbox: { allow_write: ['/tmp/cache'] },
+            args,
+          }),
       ).toThrow(/reserved flag/);
     }
   });
 
-  it('regression: sandbox mode, explicit or default, launches the native sandbox with a preflight', () => {
-    for (const options of [{ security: 'sandbox' as const }, {}]) {
-      const agent = new GrokAgent(options);
-      expect(agent.launchCommand('BAKERS-32 inspection only')).toBe(
-        `grok 'BAKERS-32 inspection only' ${SANDBOXED}`,
-      );
-      expect(typeof agent.sandboxPreflight).toBe('function');
-    }
+  it('regression: sandbox mode launches the native sandbox with a preflight; the default is system', () => {
+    const agent = new GrokAgent({ permissions: 'sandbox' });
+    expect(agent.launchCommand('BAKERS-32 inspection only')).toBe(
+      `grok 'BAKERS-32 inspection only' ${SANDBOXED}`,
+    );
+    expect(typeof agent.sandboxPreflight).toBe('function');
+    expect(new GrokAgent({}).launchCommand('x')).toBe("grok 'x'");
   });
 
   it('yolo keeps the permission bypass and system adds no security flag', () => {
-    expect(new GrokAgent({ security: 'yolo' }).launchCommand('x')).toBe(
+    expect(new GrokAgent({ permissions: 'yolo' }).launchCommand('x')).toBe(
       "grok 'x' --permission-mode bypassPermissions",
     );
-    expect(new GrokAgent({ security: 'system' }).launchCommand('x')).toBe(
+    expect(new GrokAgent({ permissions: 'system' }).launchCommand('x')).toBe(
       "grok 'x'",
     );
   });
@@ -154,16 +169,19 @@ describe('GrokAgent security', () => {
   it('applies the shared security validation and rejects custom', () => {
     const cases: [Record<string, unknown>, RegExp][] = [
       [{ skip_permissions: true }, /skip_permissions was removed/],
-      [{ security: 'nope' }, /security must be one of/],
-      [{ config: { a: 1 } }, /config is only valid with security: 'custom'/],
+      [{ permissions: 'nope' }, /permissions must be one of/],
+      [{ config: { a: 1 } }, /config is only valid with permissions: 'custom'/],
       [
-        { security: 'yolo', sandbox: { network: ['*'] } },
-        /sandbox is only valid with security: 'sandbox'/,
+        { permissions: 'yolo', sandbox: { network: ['*'] } },
+        /sandbox is only valid with permissions: 'sandbox'/,
       ],
-      [{ sandbox: { nope: [] } }, /unknown sandbox key nope/],
       [
-        { security: 'custom', config: { a: 1 } },
-        /Grok has no config flags for security: 'custom'/,
+        { permissions: 'sandbox', sandbox: { nope: [] } },
+        /unknown sandbox key nope/,
+      ],
+      [
+        { permissions: 'custom', config: { a: 1 } },
+        /Grok has no config flags for permissions: 'custom'/,
       ],
     ];
     for (const [options, error] of cases) {
@@ -174,6 +192,7 @@ describe('GrokAgent security', () => {
   it('accepts the sandbox keys it enforces and rejects the rest by name', () => {
     expect(
       new GrokAgent({
+        permissions: 'sandbox',
         sandbox: { network: ['*'], mcp_servers: {} },
       }).launchCommand('x'),
     ).toBe(`grok 'x' ${SANDBOXED}`);
@@ -188,7 +207,9 @@ describe('GrokAgent security', () => {
       [{ deny_read: ['~/.ssh'] }, /sandbox\.deny_read is unsupported/],
     ];
     for (const [sandbox, error] of rejected) {
-      expect(() => new GrokAgent({ sandbox })).toThrow(error);
+      expect(() => new GrokAgent({ permissions: 'sandbox', sandbox })).toThrow(
+        error,
+      );
     }
   });
 
@@ -215,11 +236,13 @@ describe('GrokAgent security', () => {
       ['--worktree', 'n'],
       ['--permission-mode', 'x'],
     ]) {
-      expect(() => new GrokAgent({ args })).toThrow(/reserved flag/);
+      expect(() => new GrokAgent({ permissions: 'sandbox', args })).toThrow(
+        /reserved flag/,
+      );
     }
     expect(
       new GrokAgent({
-        security: 'system',
+        permissions: 'system',
         args: ['--sandbox', 'p'],
       }).launchCommand('x'),
     ).toBe("grok 'x' '--sandbox' 'p'");
@@ -236,7 +259,9 @@ describe('GrokAgent security', () => {
       ['-mm', 'agent'],
       ['-mbar', 'agent'],
     ]) {
-      expect(() => new GrokAgent({ args })).toThrow(/args contains/);
+      expect(() => new GrokAgent({ permissions: 'sandbox', args })).toThrow(
+        /args contains/,
+      );
     }
     for (const args of [
       ['-m', 'grok-4'],
@@ -246,11 +271,13 @@ describe('GrokAgent security', () => {
       ['--deny', 'X'],
       ['--max-turns=3'],
     ]) {
-      expect(() => new GrokAgent({ args })).not.toThrow();
+      expect(
+        () => new GrokAgent({ permissions: 'sandbox', args }),
+      ).not.toThrow();
     }
     expect(
       new GrokAgent({
-        security: 'yolo',
+        permissions: 'yolo',
         args: ['agent', 'stdio'],
       }).launchCommand('x'),
     ).toBe("grok 'x' --permission-mode bypassPermissions 'agent' 'stdio'");
@@ -273,31 +300,37 @@ describe('GrokAgent.sandboxPreflight', () => {
 
   it('passes on Linux when Landlock is active and on macOS', async () => {
     const linux = host('linux');
-    await expect(new GrokAgent().sandboxPreflight(linux)).resolves.toEqual({
+    await expect(
+      new GrokAgent({ permissions: 'sandbox' }).sandboxPreflight(linux),
+    ).resolves.toEqual({
       ok: true,
     });
     expect(linux.calls).toEqual([
       ['grep', '-qw', 'landlock', '/sys/kernel/security/lsm'],
     ]);
     await expect(
-      new GrokAgent().sandboxPreflight(host('darwin')),
+      new GrokAgent({ permissions: 'sandbox' }).sandboxPreflight(
+        host('darwin'),
+      ),
     ).resolves.toEqual({ ok: true });
   });
 
   it('fails with a cause and fix without Landlock or on an unsupported platform', async () => {
     await expect(
-      new GrokAgent().sandboxPreflight(host('linux', false)),
+      new GrokAgent({ permissions: 'sandbox' }).sandboxPreflight(
+        host('linux', false),
+      ),
     ).resolves.toEqual({
       ok: false,
       cause: 'Landlock is not active in this kernel',
-      fix: "boot a kernel with landlock in its lsm= list, or set security: 'system' or 'yolo' for Grok",
+      fix: "boot a kernel with landlock in its lsm= list, or set permissions: 'system' or 'yolo' for Grok",
     });
     await expect(
-      new GrokAgent().sandboxPreflight(host('win32')),
+      new GrokAgent({ permissions: 'sandbox' }).sandboxPreflight(host('win32')),
     ).resolves.toEqual({
       ok: false,
       cause: "Grok's sandbox does not support win32",
-      fix: "set security: 'system' or 'yolo' for Grok",
+      fix: "set permissions: 'system' or 'yolo' for Grok",
     });
   });
 
@@ -305,6 +338,7 @@ describe('GrokAgent.sandboxPreflight', () => {
     const linux = { ...host('linux'), onPath: () => false };
     await expect(
       new GrokAgent({
+        permissions: 'sandbox',
         sandbox: { allow_write: ['/tmp/cache'] },
       }).sandboxPreflight(linux),
     ).resolves.toMatchObject({
@@ -312,7 +346,9 @@ describe('GrokAgent.sandboxPreflight', () => {
       cause: expect.stringContaining('bubblewrap'),
     });
     expect(linux.calls).toEqual([]);
-    await expect(new GrokAgent().sandboxPreflight(linux)).resolves.toEqual({
+    await expect(
+      new GrokAgent({ permissions: 'sandbox' }).sandboxPreflight(linux),
+    ).resolves.toEqual({
       ok: true,
     });
   });
@@ -321,7 +357,7 @@ describe('GrokAgent.sandboxPreflight', () => {
     for (const security of ['yolo', 'system'] as const) {
       const linux = host('linux', false);
       await expect(
-        new GrokAgent({ security }).sandboxPreflight(linux),
+        new GrokAgent({ permissions: security }).sandboxPreflight(linux),
       ).resolves.toEqual({ ok: true });
       expect(linux.calls).toEqual([]);
     }
@@ -331,17 +367,15 @@ describe('GrokAgent.sandboxPreflight', () => {
 describe('GrokAgent.launchCommand', () => {
   it('uses the CLI default when no model is configured', async () => {
     for (const options of [undefined, {}, { model: undefined }]) {
-      expect(new GrokAgent(options).launchCommand('x')).toBe(
-        `grok 'x' ${SANDBOXED}`,
-      );
+      expect(new GrokAgent(options).launchCommand('x')).toBe(`grok 'x'`);
       const agent = await grokAgent(options).createAgent({} as never);
-      expect(agent.launchCommand('x')).toBe(`grok 'x' ${SANDBOXED}`);
+      expect(agent.launchCommand('x')).toBe(`grok 'x'`);
     }
   });
 
   it('preserves an explicitly empty model', () => {
     expect(new GrokAgent({ model: '' }).launchCommand('x')).toBe(
-      `grok 'x' ${SANDBOXED} -m ''`,
+      `grok 'x' -m ''`,
     );
   });
 
@@ -355,14 +389,14 @@ describe('GrokAgent.launchCommand', () => {
           'grok',
           new GrokAgent({ model: 'grok-4.5', args }).launchCommand('x'),
         ),
-      ).toEqual(['grok', 'x', ...SANDBOXED_ARGV, ...args]);
+      ).toEqual(['grok', 'x', ...args]);
     }
   });
 
   it('starts the interactive session with a positional prompt and the pinned model', () => {
     expect(
       new GrokAgent({ model: 'grok-4.5' }).launchCommand('do the thing'),
-    ).toBe(`grok 'do the thing' ${SANDBOXED} -m 'grok-4.5'`);
+    ).toBe(`grok 'do the thing' -m 'grok-4.5'`);
   });
 
   it('never falls back to the single-turn headless mode', () => {
@@ -384,19 +418,19 @@ describe('GrokAgent.launchCommand', () => {
       reasoningEffort: 'medium',
     }).launchCommand('do it');
     expect(command).toBe(
-      `grok 'do it' ${SANDBOXED} -m 'grok-4.5' --reasoning-effort 'medium'`,
+      `grok 'do it' -m 'grok-4.5' --reasoning-effort 'medium'`,
     );
     expect(command).not.toContain('--worktree');
   });
 
   it('uses the CLI default and omits the prompt argument for an empty prompt', () => {
-    expect(new GrokAgent().launchCommand('')).toBe(`grok ${SANDBOXED}`);
+    expect(new GrokAgent().launchCommand('')).toBe(`grok`);
   });
 
   it('POSIX-quotes a multi-line prompt for the sh-evaluated launch file, without a shell wrapper', () => {
     const prompt = 'para one\n\npara two';
     const command = new GrokAgent().launchCommand(prompt);
-    expect(command).toBe(`grok 'para one\n\npara two' ${SANDBOXED}`);
+    expect(command).toBe(`grok 'para one\n\npara two'`);
     expect(command.startsWith('bash -c')).toBe(false);
     expect(command).not.toContain('base64');
   });
@@ -407,13 +441,13 @@ describe('GrokAgent.launchCommand', () => {
       { sessionId: '00000000-0000-4000-8000-0000000000aa' },
     );
     expect(command).toBe(
-      `grok 'do the thing' ${SANDBOXED} -m 'grok-4.5' --session-id 00000000-0000-4000-8000-0000000000aa`,
+      `grok 'do the thing' -m 'grok-4.5' --session-id 00000000-0000-4000-8000-0000000000aa`,
     );
   });
 
   it('omits --session-id when no run is given (unchanged behaviour)', () => {
     expect(new GrokAgent({ model: 'grok-4.5' }).launchCommand('x')).toBe(
-      `grok 'x' ${SANDBOXED} -m 'grok-4.5'`,
+      `grok 'x' -m 'grok-4.5'`,
     );
   });
 });
@@ -438,7 +472,6 @@ describe('GrokAgent args and effort', () => {
     expect(captureArgv('grok', command)).toEqual([
       'grok',
       'task',
-      ...SANDBOXED_ARGV,
       '-m',
       'grok-4.5',
       '--reasoning-effort',
@@ -457,7 +490,6 @@ describe('GrokAgent args and effort', () => {
     expect(captureArgv('grok', command)).toEqual([
       'grok',
       'x',
-      ...SANDBOXED_ARGV,
       '-m',
       'grok-4.6',
       '--reasoning-effort',
@@ -474,7 +506,6 @@ describe('GrokAgent args and effort', () => {
     expect(captureArgv('grok', command)).toEqual([
       'grok',
       'x',
-      ...SANDBOXED_ARGV,
       '-mgrok-4.6',
       '--effort=high',
     ]);
@@ -489,11 +520,13 @@ describe('GrokAgent args and effort', () => {
     );
     expect(() => new GrokAgent({ args: ['-s', 'x'] })).toThrow(/reserved flag/);
     expect(
-      () => new GrokAgent({ security: 'yolo', args: ['-cs', 'x'] }),
+      () => new GrokAgent({ permissions: 'yolo', args: ['-cs', 'x'] }),
     ).toThrow(/reserved flag -s/);
     // letters after a value-taking -m are its value, not flags
     expect(
-      new GrokAgent({ security: 'system', args: ['-mws'] }).launchCommand('x'),
+      new GrokAgent({ permissions: 'system', args: ['-mws'] }).launchCommand(
+        'x',
+      ),
     ).toBe("grok 'x' '-mws'");
   });
 });

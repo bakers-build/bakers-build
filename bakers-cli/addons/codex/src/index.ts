@@ -401,7 +401,7 @@ export function codexAgent(options: CodexAgentOptions = {}): AgentPlugin {
     kind: 'agent',
     id: 'codex',
     requiredModules: [],
-    security: agent.security.report,
+    permissions: agent.security.report,
     async createAgent() {
       return agent;
     },
