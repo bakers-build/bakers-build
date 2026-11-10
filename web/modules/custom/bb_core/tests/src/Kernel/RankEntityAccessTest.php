@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Cache\CacheableDependencyInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\KernelTests\KernelTestBase;
@@ -116,6 +117,35 @@ final class RankEntityAccessTest extends KernelTestBase {
       'outside lead' => [TRUE, TRUE, TRUE],
       'inside contributor' => [TRUE, TRUE, TRUE],
     ], $facts);
+  }
+
+  /**
+   * A change of the project's teams reaches a cached ticket decision.
+   *
+   * The denial depends on the project, so saving its teams invalidates it,
+   * and the next check in the same request lets the new team's member in.
+   */
+  public function testProjectTeamsChangeReachesTicketAccess(): void {
+    $ticket = $this->fixture('a', 'bb_ticket');
+    $project = $this->fixture('a', 'bb_project');
+    $guest = $this->createAccount('later-team-guest');
+    $this->addMembership($this->fixture('a', 'bb_workspace'), $guest, ['guest']);
+    $team = $this->createEntity('bb_team', [
+      'name' => 'later-team',
+      'workspace_id' => $this->fixture('a', 'bb_workspace')->id(),
+      'owner_user_id' => $project->get('owner_user_id')->target_id,
+    ]);
+    $this->addMembership($team, $guest, []);
+
+    $denied = $ticket->access('view', $guest, TRUE);
+    self::assertFalse($denied->isAllowed());
+    self::assertInstanceOf(CacheableDependencyInterface::class, $denied);
+    self::assertSame([], array_diff($project->getCacheTags(), $denied->getCacheTags()), 'the decision depends on the project');
+
+    $project->get('teams')->appendItem($team->id());
+    $project->save();
+    $this->container->get('entity_type.manager')->getAccessControlHandler('bb_ticket')->resetCache();
+    self::assertTrue($ticket->access('view', $guest), 'the new team lets its member in');
   }
 
   /**

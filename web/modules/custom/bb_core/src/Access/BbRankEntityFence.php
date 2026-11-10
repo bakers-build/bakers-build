@@ -190,6 +190,12 @@ final class BbRankEntityFence {
     // only the denial would leave an ALLOW cached past the moment the
     // membership that justified it was revoked.
     $result = $allowed->isAllowed() ? AccessResult::neutral() : AccessResult::forbidden();
+    // The team fence reads each chain project's teams.
+    foreach ($groups as $group) {
+      if ($group->getEntityTypeId() === 'bb_project') {
+        $result->addCacheableDependency($group);
+      }
+    }
 
     return $result
       ->addCacheableDependency($allowed)
