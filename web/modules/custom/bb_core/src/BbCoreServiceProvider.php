@@ -23,8 +23,9 @@ final class BbCoreServiceProvider extends ServiceProviderBase {
    * {@inheritdoc}
    */
   public function alter(ContainerBuilder $container): void {
-    if ($container->hasDefinition('ui_patterns.sample_entity_generator')) {
-      $container->getDefinition('ui_patterns.sample_entity_generator')
+    // has()/findDefinition() follow the alias ui_patterns 2.0.23 made of it.
+    if ($container->has('ui_patterns.sample_entity_generator')) {
+      $container->findDefinition('ui_patterns.sample_entity_generator')
         ->setClass(PreviewSampleEntityGenerator::class);
     }
     if (!$container->hasDefinition('jsonapi.resource_type.repository')) {

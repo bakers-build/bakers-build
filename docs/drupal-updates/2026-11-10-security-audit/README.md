@@ -49,6 +49,12 @@ ui_patterns 2.0.23 drops `MenuSource::$menuId` and its `alterComponent()` cache 
 
 The existing test `BbMenuSourceTest::testAlterComponentAloneDeclaresTheCacheability` failed after the update and passes with the fix.
 
+The full `bb_core` Kernel suite after the update found three more consequences.
+
+- **ui_patterns 2.0.23 escapes string props itself.** `BbWorkspaceJoinForm` and `WorklogFormLayout` still escaped them first, so the invitation page showed `&lt;b&gt;` literally. Both now pass the plain string. Evidence: `WorkspaceMemberInviteTest::testInvitationShowsTheWorkspaceMarkAndDescription` failed, then passed.
+- **ui_patterns 2.0.23 makes `ui_patterns.sample_entity_generator` an alias.** `hasDefinition()` no longer saw it, so `bb_core`'s `PreviewSampleEntityGenerator` was not installed. A ticket preview then ran out of memory, as the deploy import would. `BbCoreServiceProvider` now resolves the alias with `has()` and `findDefinition()`. Evidence: `DisplayBuilderTicketSampleTest::testAnonymousTicketPreviewFitsDeployMemoryLimit` hit the memory limit, then passed.
+- **entity 1.8 no longer grants `AMONG_ALL` over an empty condition group.** `bb_core`'s own `jsonapi_entity_filter_access` hook already grants it for every narrowed type, so filtered reads are unchanged. The characterisation test `WorkspaceReadScopeFilterAccessTest` now pins the new contrib behaviour and the `bb_core` grant for the admin.
+
 ## Patch ledger
 
 | Package | Version before → after | Patch | Decision | Result |
