@@ -1,6 +1,6 @@
 # Get started
 
-bakers.build is a ticket-driven AI software factory. Coding agents work every ticket on your development machine or on remote workers, and a person decides at every station. Open source, self-hosted or hosted, both free.
+bakers.build is a ticket-driven AI software factory. Coding agents work every ticket on your development machine or on remote workers, and a person decides at [every station](#how-it-works). Open source, self-hosted or hosted, both free.
 
 **You need:** a bakers.build account (hosted at [app.bakers.build](https://app.bakers.build/) or [self-hosted](/self-hosting/)), [Claude Code](/addons/claude#setup) or [Codex](/addons/codex#setup) signed in, and a local Git checkout.
 
@@ -9,7 +9,7 @@ bakers.build is a ticket-driven AI software factory. Coding agents work every ti
 ## Choose where to start
 
 <DocTiles :tiles="[
-  { title: 'Your team already runs tickets', text: 'The project is prepared and a conductor serves it. Run a small ticket and read its result.', link: '/get-started/first-ticket', icon: 'ticket', meta: 'Run the first ticket →' },
+  { title: 'Your team already runs tickets', text: 'The project is prepared and agents already work its tickets. Run a small ticket and read its result.', link: '/get-started/first-ticket', icon: 'ticket', meta: 'Run the first ticket →' },
   { title: 'Try it on your own repository', text: 'You are evaluating bakers.build alone, or setting it up for your team. Connect a repository on your computer, check its tools and workflow, then run the first ticket.', link: '/get-started/connect-a-project', icon: 'code', meta: 'Prepare your project →' }
 ]" />
 
