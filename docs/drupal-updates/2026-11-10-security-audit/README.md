@@ -55,6 +55,15 @@ The full `bb_core` Kernel suite after the update found three more consequences.
 - **ui_patterns 2.0.23 makes `ui_patterns.sample_entity_generator` an alias.** `hasDefinition()` no longer saw it, so `bb_core`'s `PreviewSampleEntityGenerator` was not installed. A ticket preview then ran out of memory, as the deploy import would. `BbCoreServiceProvider` now resolves the alias with `has()` and `findDefinition()`. Evidence: `DisplayBuilderTicketSampleTest::testAnonymousTicketPreviewFitsDeployMemoryLimit` hit the memory limit, then passed.
 - **entity 1.8 no longer grants `AMONG_ALL` over an empty condition group.** `bb_core`'s own `jsonapi_entity_filter_access` hook already grants it for every narrowed type, so filtered reads are unchanged. The characterisation test `WorkspaceReadScopeFilterAccessTest` now pins the new contrib behaviour and the `bb_core` grant for the admin.
 
+The Kernel suites of the other custom modules found three more.
+
+- **simple_oauth 6.1.4 restricts privileged consumer fields.** Only an account with `administer consumer access settings` may set grant types, scopes or a user other than itself (`Oauth2PrivilegedConsumerField`, part of SA-CONTRIB-2026-296). That broke the creation of every API key and service account.
+  - `ApiKeyManager::create()` fixes all three values itself, and its callers check who may create a key. It now ignores only that constraint's violations and keeps every other one.
+  - Evidence: 43 errors in `bb_api_key` and 27 in `bb_ticket_trigger`, then both green.
+- **simple_oauth 6.1.4 refuses an orphaned token itself** with `invalid_client`, before `bb_api_key`'s TypeError translation runs. The caller still gets a typed 401. `ApiKeyOAuthTest::testOrphanTokenRejectsWithTypedUnauthorized` now expects `invalid_client`.
+- **ui_patterns 2.0.23 trusts only Drupal markup for a string prop.** The `event` template built its body from Twig markup, so `rich-text` escaped the links and `<code>` of every activity row. The template now hands the body over as a `#markup` render array, which Drupal filters and trusts. Evidence: 4 failures in `bb_activity`, then green.
+- **ui_patterns 2.0.23 shows a closed source row.** The source select appears only when the row is opened. `IslandUiPatternsProfileTest` now asserts the resolved source, which resolves only among the offered candidates.
+
 ## Patch ledger
 
 | Package | Version before → after | Patch | Decision | Result |
