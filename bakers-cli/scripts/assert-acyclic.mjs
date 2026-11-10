@@ -134,6 +134,10 @@ const PERMITTED_SIBLINGS = {
   '@bakers-build/addon-ports-cloudflare': ['@bakers-build/addon-ports'],
   '@bakers-build/addon-ports-cloudflare-quick': ['@bakers-build/addon-ports'],
   '@bakers-build/addon-ports-frp': ['@bakers-build/addon-ports'],
+  // The forge backends implement `@bakers-build/addon-forge`'s ForgeBackend
+  // contract (its `./backend` export); the host depends on them, never forge.
+  '@bakers-build/addon-forge-github': ['@bakers-build/addon-forge'],
+  '@bakers-build/addon-forge-gitlab': ['@bakers-build/addon-forge'],
   // `bakers deployment tickets` resolves identifiers through the Drupal remote
   // built from the connection alone, so it runs on a machine with no conductor.
   '@bakers-build/addon-deployment': ['@bakers-build/addon-remote-drupal'],

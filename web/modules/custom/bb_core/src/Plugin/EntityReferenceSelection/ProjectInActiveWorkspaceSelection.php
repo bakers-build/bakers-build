@@ -15,7 +15,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
  * single-level `IN` rather than traversing `group_id.entity.workspace_id`.
  *
  * Without an active workspace the query is left as DefaultSelection built it;
- * see GroupInActiveWorkspaceSelection for why that fall-open is safe, for why
+ * see InEntityWorkspaceSelection for why that fall-open is safe, for why
  * the `administer bakers` bypass below is a write gate rather than merely an
  * offer, and for why the membership and ambient-match rules are deliberately
  * not here.

@@ -24,6 +24,33 @@ const cases: [addon: string, good: Record<string, unknown>][] = [
   ],
   ['codex', { model: 'gpt-5.6-sol', permissions: 'custom', config: { a: 1 } }],
   ['fake', { outcome: 'failed', marker_file: 'bakers-run.json' }],
+  [
+    'forge',
+    {
+      backend: { use: '@bakers-build/addon-forge-github', with: {} },
+      merge: {
+        main: { method: 'merge', delete_source: false },
+        '*': { method: 'squash', delete_source: true },
+      },
+    },
+  ],
+  [
+    'forge-github',
+    {
+      repository: 'acme/app',
+      app_id: 12345,
+      installation_id: '67890',
+      private_key_env: 'FORGE_GITHUB_KEY',
+    },
+  ],
+  [
+    'forge-gitlab',
+    {
+      url: 'https://gitlab.example.org',
+      project: 'group/app',
+      token_env: 'FORGE_GITLAB_TOKEN',
+    },
+  ],
   ['grok', { model: 'grok-4.5', reasoning_effort: 'low', permissions: 'yolo' }],
   [
     'herdr',
@@ -123,5 +150,16 @@ describe('addon options schemas', () => {
     const validate = ajv.compile(schema);
     expect(validate(good), JSON.stringify(validate.errors)).toBe(true);
     expect(validate({ ...good, modle: 'x' })).toBe(false);
+  });
+
+  it('forge backends take the conductor CLI login; a GitHub App still needs its ids', () => {
+    const v = (addon: string) =>
+      ajv.getSchema(
+        `https://bakers.build/schema/addon-${addon}/options.schema.json`,
+      ) ?? ajv.compile(load(`addons/${addon}/options.schema.json`));
+    expect(v('forge-github')({ repository: 'a/b', auth: 'gh' })).toBe(true);
+    expect(v('forge-github')({ repository: 'a/b' })).toBe(false);
+    expect(v('forge-github')({ repository: 'a/b', auth: 'glab' })).toBe(false);
+    expect(v('forge-gitlab')({ project: 'g/r', auth: 'glab' })).toBe(true);
   });
 });

@@ -123,6 +123,8 @@ The optional `tools` argument is an object with a `url` field: `tools.url` is th
 
 An agent that refuses reused session IDs also implements `sessionExists(worktreePath, sessionId)`. bakers.build can then choose a new attempt identity. Transcript lookup must respect `run.attemptFamily`; selecting the newest file in a directory can attach another run's transcript.
 
+An agent that can continue a session also implements `resumeCommand(sessionId, workspacePath?, tools?, env?, args?)`, together with `sessionExists`. After a conductor restart, bakers.build calls it for a run whose terminal is gone, with the newest session of that run, and starts the command in the same worktree. Return the launch's own flags with your program's resume option, or `undefined` when this configuration cannot resume; the run is then failed and the ticket gets a fresh run.
+
 Remove the addon/catalog entry and restart the conductor before deleting this package.
 
 Continue with [Add a new client](/addons/build/client) or the [preset API](/addons/build/contracts).

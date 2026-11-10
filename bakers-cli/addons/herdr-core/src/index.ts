@@ -188,17 +188,7 @@ export class HerdrCoreExecutor implements BbExecutor {
    */
   async cleanupRun(branch: string, runId: number): Promise<void> {
     try {
-      const terminals = parseTerminals(
-        await this.hc([
-          'ls',
-          '--all',
-          '--label',
-          `bakers.branch=${branch}`,
-          '--label',
-          `bakers.run=${runId}`,
-          '--json',
-        ]),
-      );
+      const terminals = await this.runTerminals(branch, runId);
       if (terminals.length === 0) {
         this.logger.warn(
           { branch, runId },
@@ -213,6 +203,29 @@ export class HerdrCoreExecutor implements BbExecutor {
         'herdr-core cleanup failed (best-effort)',
       );
     }
+  }
+
+  /** Whether a terminal of the run still lives; an `hc` failure throws. */
+  async runAlive(branch: string, runId: number): Promise<boolean> {
+    return (await this.runTerminals(branch, runId)).some((t) => t.live);
+  }
+
+  /** The run's terminals, found by its branch and run labels, finished ones included. */
+  private async runTerminals(
+    branch: string,
+    runId: number,
+  ): Promise<HcTerminal[]> {
+    return parseTerminals(
+      await this.hc([
+        'ls',
+        '--all',
+        '--label',
+        `bakers.branch=${branch}`,
+        '--label',
+        `bakers.run=${runId}`,
+        '--json',
+      ]),
+    );
   }
 
   /** `hc kill` (when live) then `hc rm`; each step best-effort. */

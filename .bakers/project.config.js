@@ -113,6 +113,22 @@ export default {
         claimers: ['@bakers-build/addon-ddev'],
       },
     },
+    // Runs fetch, push, open PRs, read checks and merge only through the forge
+    // tools; the conductor's own `gh` login supplies the token, which no run sees.
+    // `next` takes squashed feature PRs, `main` only merge commits from `next`.
+    {
+      use: '@bakers-build/addon-forge',
+      with: {
+        merge: {
+          next: { method: 'squash', delete_source: true },
+          main: { method: 'merge', delete_source: false },
+        },
+        backend: {
+          use: '@bakers-build/addon-forge-github',
+          with: { repository: 'bakers-build/bakers-build', auth: 'gh' },
+        },
+      },
+    },
   ],
   // Layout per workflow state: project = workspace, run = tab.
   // No hard-wired diff pane for `review`: the review diff surface is hunk

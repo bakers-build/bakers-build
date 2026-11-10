@@ -221,6 +221,7 @@ final class BbTicketTemplate extends BbContentEntityBase implements BbTicketTemp
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'bb_picker', 'weight' => 8]);
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition(9, new TranslatableMarkup('Owner'))
+      ->setSetting('handler', 'bb_assignee_in_ticket_workspace')
       ->setRequired(TRUE);
     return $fields;
   }

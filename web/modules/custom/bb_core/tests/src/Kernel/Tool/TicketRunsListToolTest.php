@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_core\Kernel\Tool;
 
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\Core\DependencyInjection\ContainerBuilder;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -20,9 +21,25 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
 
   /**
    * {@inheritdoc}
+   *
+   * A run's `error_log` is always stored as a private file; core registers the
+   * `private` stream wrapper only when `file_private_path` is set at
+   * container-build time, before setUp() can set it.
+   */
+  public function register(ContainerBuilder $container): void {
+    parent::register($container);
+    $container->register('stream_wrapper.private', 'Drupal\Core\StreamWrapper\PrivateStream')
+      ->addTag('stream_wrapper', ['scheme' => 'private']);
+  }
+
+  /**
+   * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
+    $this->setSetting('file_private_path', $this->siteDirectory . '/private');
+    $this->installEntitySchema('file');
+    $this->installSchema('file', ['file_usage']);
     user_role_grant_permissions('skill_user', ['view bb_run']);
   }
 
@@ -35,7 +52,7 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
   }
 
   /**
-   * Runs of the ticket only, newest first, without logs; paged.
+   * Runs of the ticket only, newest first, with the failure reason; paged.
    */
   public function testListsTheTicketsRunsNewestFirst(): void {
     $ticket = $this->ticket('RL-1');
@@ -46,12 +63,16 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
       'agent' => 'claude',
       'state_at_start' => 'implementation',
     ]);
-    $second = $this->seedRun($ticket, ['state' => 'failed']);
+    $second = $this->seedRun($ticket, [
+      'state' => 'failed',
+      'error_log' => 'conductor restart: agent codex has no session resume',
+    ]);
     $third = $this->seedRun($ticket, ['state' => 'running']);
     $this->seedRun($this->ticket('RL-2'), ['state' => 'running']);
 
     $out = $this->outputs($this->runTool('bakers_ticket_runs_list', ['ticket' => $ticket->getIdentifier(), 'limit' => 2]));
     self::assertSame([$third->uuid(), $second->uuid()], array_column($out['runs'], 'uuid'));
+    self::assertSame([NULL, 'conductor restart: agent codex has no session resume'], array_column($out['runs'], 'error_log'));
     self::assertSame(2, $out['next_offset']);
 
     $out = $this->outputs($this->runTool('bakers_ticket_runs_list', ['ticket' => $ticket->uuid(), 'offset' => 2]));
@@ -65,6 +86,7 @@ final class TicketRunsListToolTest extends BakersToolTestBase {
         'conductor' => $first->get('conductor_id')->entity->uuid(),
         'started_at' => 1700000000,
         'closed' => TRUE,
+        'error_log' => NULL,
       ],
     ], $out['runs']);
   }
