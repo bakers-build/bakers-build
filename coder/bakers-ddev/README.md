@@ -61,6 +61,10 @@ coder templates push bakers-ddev -d coder/bakers-ddev \
 
 Coder gives a new template to everyone by default. Restrict it in the Coder UI if needed. Create a workspace with `coder create <name> --template bakers-ddev`, then continue with the [guide](../../docs/provision/coder-workspace.md).
 
+## Agent permissions
+
+On every start, the template writes `permissions: { mode: 'sandbox' }` into `~/.bakers/machine.config.js`, marked `// bakers-ddev mode`, and creates the file when it is missing. Every agent addon on the box then runs [sandboxed](../../docs/provision/security/execution.md#claude-in-sandbox-mode), and a CLI upgrade that changes the default mode does not change the box. A `permissions` key you wrote yourself wins, and the start log says so; a file that does not load stays untouched. Delete the marked line and add your own `permissions` key to choose another mode.
+
 ## Optional previews
 
 The workspace parameter `preview_transport` (*Preview transport*) chooses how runs share preview links. Set it in the workspace form, or with `--parameter preview_transport=<value>` on `coder create` and `coder update`. A changed value applies on the next start.

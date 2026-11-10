@@ -48,7 +48,7 @@ Default: `system`. See [Execution security](/provision/security/execution) for b
 
 | `permissions` | Launch flags |
 |---|---|
-| `sandbox` | `--permission-mode default --setting-sources project,local --settings '<generated, with the guard hook>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
+| `sandbox` | `--permission-mode dontAsk --setting-sources project,local --settings '<generated, with the guard hook>' --strict-mcp-config --mcp-config '<sandbox.mcp_servers>'` |
 | `system` | `--settings '<guard hook>'` over your own settings |
 | `yolo` | `--dangerously-skip-permissions --settings '<guard hook>'` |
 | `custom` | `--settings '<config as JSON, plus the guard hook>'` |
@@ -66,6 +66,8 @@ Default: `system`. See [Execution security](/provision/security/execution) for b
 ```js
 { use: '@bakers-build/addon-claude', with: { permissions: 'sandbox', sandbox: { trusted_commands: ['git', 'docker'] } } }
 ```
+
+Unlisted actions are denied without a prompt; see [Execution security](/provision/security/execution#claude-in-sandbox-mode).
 
 ## Check it works
 
