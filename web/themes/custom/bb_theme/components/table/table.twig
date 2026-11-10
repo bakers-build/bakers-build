@@ -335,6 +335,10 @@
         {%- set action_attributes = action_attributes.setAttribute('data-hx-' ~ key, c.hx[key]) -%}
       {%- endif -%}
     {%- endfor -%}
+    {#- `full_load`: a download or a form page, reached outside the island's boost. -#}
+    {%- if c.full_load -%}
+      {%- set action_attributes = action_attributes.setAttribute('data-hx-boost', 'false') -%}
+    {%- endif -%}
     {{ include('bb_theme:button', {
       variant: c.variant|default('ghost'),
       type: 'button',
@@ -459,14 +463,15 @@
 {% else %}
   {#- THE ROW ACCENT, and the two things it does. The leading rail is drawn on the
       FIRST cell of the row with a pseudo-element, so it costs no `<td>` no column
-      asked for. `wait` additionally tints the whole row: a listing nobody is
-      acting on is the one state the deleted row components made loud, and the tint
+      asked for. `wait` and `critical` additionally tint the whole row: a listing
+      that needs a person is the one state the deleted row components made loud, and the tint
       is what a `wait` badge's `-ink` colour is legible against — the raw hue
       measures 2.76:1 there against the 4.5:1 the contrast criterion asks for. #}
   {% set accent_map = {
     'running': 'bg-state-running',
     'attention': 'bg-state-attention-mark',
     'wait': 'bg-state-unassigned',
+    'critical': 'bg-state-unassigned',
     'idle': 'bg-transparent'
   } %}
   {% set rail_classes = ['absolute', 'left-0', 'top-2', 'bottom-2', 'w-1', 'rounded-xs'] %}
@@ -527,7 +532,7 @@
           that is absent, and it is the whole reason the cells are keyed. #}
       {% for row in rows %}
         {% set row_classes = ['group', 'transition-colors', 'duration-fast', 'hover:bg-app'] %}
-        {% if row.accent == 'wait' %}{% set row_classes = row_classes|merge(['bg-state-unassigned-tint']) %}{% endif %}
+        {% if row.accent in ['wait', 'critical'] %}{% set row_classes = row_classes|merge(['bg-state-unassigned-tint']) %}{% endif %}
         <tr data-table-row class="{{ row_classes|join(' ') }}"{% if row.url %} data-row-url="{{ row.url }}"{% endif %}>
           {% for column in columns %}
             {%- set c = row.cells[column.key]|default(null) -%}

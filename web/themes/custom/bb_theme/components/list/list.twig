@@ -46,14 +46,22 @@
 {#- THE LEADING STATUS RAIL, drawn with a pseudo-element so it costs no cell. On a
     card it runs the full height and picks up the left radius, exactly as the
     board's card does; on a line it is inset top and bottom, exactly as the run
-    line was. `wait` additionally tints the whole item — the one state the absorbed
-    entries made loud — and on a card it tints the border too, because a card has
-    one to tint. #}
+    line was. `wait` and `critical` additionally tint the whole item — the states
+    that need a person — and on a card the tint covers the border too, because a
+    card has one to tint. #}
 {% set accent_map = {
   'running': 'bg-state-running',
   'attention': 'bg-state-attention-mark',
   'wait': 'bg-state-unassigned',
+  'critical': 'bg-state-unassigned',
   'idle': 'bg-transparent'
+} %}
+{#- The detail line takes the ink of its item's accent, so a failure reads red
+    and a waiting claim amber; any other item keeps the light text colour. #}
+{% set detail_map = {
+  'wait': 'text-state-unassigned-ink',
+  'critical': 'text-state-unassigned-ink',
+  'attention': 'text-state-attention-ink'
 } %}
 {% set rail_classes = cards
   ? ['absolute', 'left-0', 'top-0', 'bottom-0', 'w-1', 'rounded-l-xs']
@@ -71,8 +79,13 @@
   <ul{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'list-none', 'p-0', 'm-0', cards ? (roomy ? 'gap-stack' : 'gap-inline') : 'gap-0']) }} role="list">
     {% for item in items %}
       {% set item_classes = item_base %}
-      {% if item.accent == 'wait' %}
+      {% if item.accent in ['wait', 'critical'] %}
         {% set item_classes = item_classes|merge(['bg-state-unassigned-tint']) %}
+      {% endif %}
+      {#- A detail line sits close under its cells: the line gap shrinks, the
+          gap between cells stays. -#}
+      {% if item.detail and not cards and not plain and not pattern %}
+        {% set item_classes = item_classes|filter(c => c != 'gap-stack')|merge(['gap-x-stack', 'gap-y-inline-xs']) %}
       {% endif %}
       {#- THE WHOLE PATTERNED ROW IS A CLICK TARGET FOR ITS IDENTITY LINK. A click on
           the row's own surface forwards to the first link in the headline, so htmx
@@ -172,10 +185,25 @@
         {#- ONE CELL PER ENTRY OF THE MAP, in the order the mapping wrote them.
             There are no columns here, so the key names the value instead of
             addressing a column, and the item's own order is the only order there
-            is — which is the difference this component exists to state. #}
+            is — which is the difference this component exists to state.
+            In `lines` the `action` cells form one group at the right edge, in
+            their own order: the group wraps as a whole when the line is full,
+            so no action is left behind at the start of the next line. #}
+        {% set actions = not cards and not plain ? item.cells|filter(c => c and c.kind|default('') == 'action') : {} %}
         {% for key, c in item.cells %}
-          {% if c %}<span class="min-w-0 {{ not plain ? 'whitespace-nowrap' : (loop.first ? 'whitespace-nowrap w-28 shrink-0' : 'wrap-anywhere') }}" data-cell="{{ key }}">{{ cells.cell(c) }}</span>{% endif %}
+          {% if c and actions[key] is not defined %}<span class="min-w-0 {{ not plain ? 'whitespace-nowrap' : (loop.first ? 'whitespace-nowrap w-28 shrink-0' : 'wrap-anywhere') }}" data-cell="{{ key }}">{{ cells.cell(c) }}</span>{% endif %}
         {% endfor %}
+        {% if actions is not empty %}
+          <span data-list-actions class="ml-auto flex shrink-0 items-center gap-inline">
+            {%- for key, c in actions %}<span class="whitespace-nowrap" data-cell="{{ key }}">{{ cells.cell(c) }}</span>{% endfor -%}
+          </span>
+        {% endif %}
+        {#- THE DETAIL LINE: one sentence beneath the cells, on a line of its own,
+            such as why a run failed or what its claim waits for. `detail_title`
+            is the full text on hover when `detail` is a shortened form. #}
+        {% if item.detail %}
+          <span data-list-detail class="basis-full min-w-0 wrap-anywhere text-meta {{ detail_map[item.accent]|default('text-text-light') }}"{% if item.detail_title %} title="{{ item.detail_title }}"{% endif %}>{{ item.detail }}</span>
+        {% endif %}
         {%- endif %}
       </li>
     {% endfor %}
