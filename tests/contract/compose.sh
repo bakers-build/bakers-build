@@ -32,7 +32,7 @@ render() {
   COMPOSE_PROJECT_NAME=bakers-contract DOMAIN=dummy.example.test \
   STACK_NAME=dummy-stack \
   DB_NAME=dummy DB_USER=dummy DB_PASSWORD=dummy-pw DB_ROOT_PASSWORD=dummy-root-pw \
-  DRUPAL_HASH_SALT=dummy-salt INTERNAL_SUBNET=172.30.99.0/24 \
+  DRUPAL_HASH_SALT=dummy-salt \
   REGISTRY_IMAGE_PHP=dummy/php:dummy REGISTRY_IMAGE_NGINX=dummy/nginx:dummy \
   REGISTRY_IMAGE_E2E=dummy/e2e:dummy REGISTRY_IMAGE_DOCS=dummy/docs:dummy \
   DOCS_DOMAIN=docs.example.test DOCS_ALIAS_DOMAIN=www.docs.example.test \
@@ -91,7 +91,8 @@ subnet = c["networks"]["internal"]["ipam"]["config"][0]["subnet"]
 assert subnet == "172.30.42.0/24", subnet
 for name in ("deploy", "php", "cron"):
     e = s[name]["environment"]
-    assert e["TRUSTED_PROXY_SUBNET"] == subnet, name
+    # Empty by default: settings.container.php then trusts any private-network proxy.
+    assert e["TRUSTED_PROXY_SUBNET"] == "", name
     assert e["DRUPAL_HASH_SALT"] == "dummy-salt", name
     assert e["DOMAIN"] == "app.example.test", name
     assert e["FEATURE_FLAG_RUN_LOG_STORAGE"] == "0", name
@@ -110,6 +111,10 @@ assert s["cron"]["command"] == ["/var/www/html/scripts/deploy/site-cron.sh"], s[
 # Operators read and fill these files; they speak of bakers, not of the framework underneath.
 assert "drupal" not in example.lower() and "drush" not in example.lower(), ".env.example names Drupal or Drush"
 assert "drush" not in open(f"{src}/docker-compose.yml").read().lower(), "the operator compose file runs drush itself"
+
+r = run({**required, "TRUSTED_PROXY_SUBNET": "172.18.0.0/16"}, "config", "--format", "json")
+assert r.returncode == 0, r.stderr
+assert {json.loads(r.stdout)["services"][n]["environment"]["TRUSTED_PROXY_SUBNET"] for n in ("php", "cron", "deploy")} == {"172.18.0.0/16"}
 
 r = run({**required, "FEATURE_FLAG_RUN_LOG_STORAGE": "1"}, "config", "--format", "json")
 assert r.returncode == 0, r.stderr
@@ -132,31 +137,31 @@ for doc, file in (("docs/self-hosting/server.md", "docker-compose.yml"), ("docs/
     assert open(f"{src}/{file}").read() in open(doc).read(), f"{doc} does not show {src}/{file} verbatim"
 shutil.rmtree(work)
 PYTEST
-pass "operator compose file is standalone, trusts its subnet, requires its inputs and matches the docs"
+pass "operator compose file is standalone, trusts a private proxy, requires its inputs and matches the docs"
 
-# The hosted stack, like the operator one: its own host, its own proxy network, its own salt.
+# The hosted stack, like the operator one: its own host and its own salt. The proxy sits on
+# a shared host network, so settings.container.php trusts private peers, not a pinned subnet.
 BASE_JSON="${TMPDIR:-/tmp}/bakers-base.json" python3 <<'PYTEST'
 import json, os, subprocess
 c = json.load(open(os.environ["BASE_JSON"]))
 s = c["services"]
-subnet = c["networks"]["internal"]["ipam"]["config"][0]["subnet"]
-assert subnet == "172.30.99.0/24", subnet
+assert not c["networks"]["internal"].get("ipam", {}).get("config"), "the hosted stack pins a subnet that may clash on a shared host"
 for name in ("deploy", "install", "php", "cron"):
     e = s[name]["environment"]
     assert e.get("DOMAIN") == "dummy.example.test", name
-    assert e.get("TRUSTED_PROXY_SUBNET") == subnet, name
+    assert "TRUSTED_PROXY_SUBNET" not in e, name
 assert all("NGINX_ERROR_LOG_LEVEL" not in v.get("environment", {}) for v in s.values()), "a service sets the nginx error log level"
 env = {**os.environ, "COMPOSE_PROJECT_NAME": "bakers-contract", "DOMAIN": "dummy.example.test", "STACK_NAME": "dummy-stack",
        "DB_NAME": "dummy", "DB_USER": "dummy", "DB_PASSWORD": "dummy-pw", "DB_ROOT_PASSWORD": "dummy-root-pw",
-       "DRUPAL_HASH_SALT": "dummy-salt", "INTERNAL_SUBNET": "172.30.99.0/24",
+       "DRUPAL_HASH_SALT": "dummy-salt",
        "REGISTRY_IMAGE_PHP": "dummy/php:dummy", "REGISTRY_IMAGE_NGINX": "dummy/nginx:dummy"}
-for name in ("DOMAIN", "DRUPAL_HASH_SALT", "INTERNAL_SUBNET"):
+for name in ("DOMAIN", "DRUPAL_HASH_SALT"):
     r = subprocess.run(["docker", "compose", "-f", "docker-compose.yml", "-f", "docker-compose.traefik.yml", "--profile", "install", "config", "-q"],
                        env={**env, name: ""}, capture_output=True, text=True)
     assert r.returncode != 0, f"the hosted stack renders without {name}"
     assert name in r.stderr, r.stderr
 PYTEST
-pass "hosted stack requires DOMAIN, DRUPAL_HASH_SALT and INTERNAL_SUBNET, trusts only its network and logs no debug"
+pass "hosted stack requires DOMAIN and DRUPAL_HASH_SALT, pins no subnet and logs no debug"
 
 # site-deploy.sh installs only a reachable, empty database and updates only an installed one.
 python3 <<'PYTEST'
@@ -277,11 +282,6 @@ done
   || fail "komodo/bakers.toml: a stack other than develop and prod enables the docs profile"
 pass "komodo/bakers.toml enables the docs host on develop and prod only"
 
-# Every stack pins its own proxy network: one shared subnet stops the second stack from starting.
-stacks="$(grep -c '^\[\[stack\]\]$' komodo/bakers.toml)"
-[ "$(grep -E '^INTERNAL_SUBNET=172\.30\.[0-9]+\.0/24$' komodo/bakers.toml | sort -u | wc -l)" = "$stacks" ] \
-  || fail "komodo/bakers.toml: not every stack sets its own INTERNAL_SUBNET"
-pass "komodo/bakers.toml gives every stack its own INTERNAL_SUBNET"
 
 # The merge gate's e2e overlay: no host port anywhere, the recipe world never runs
 # `drush deploy` (it imports config/sync), and the runner is opt-in by profile.

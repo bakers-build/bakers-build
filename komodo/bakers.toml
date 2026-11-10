@@ -27,8 +27,6 @@ ignore_services  = ["init-perms", "deploy"]
 environment = """
 DOMAIN=develop.dev.bakers.build
 STACK_NAME=bakers-develop
-# This stack's own network; settings trust forwarded headers only from it.
-INTERNAL_SUBNET=172.30.43.0/24
 DB_NAME=bakers
 DB_USER=bakers
 DB_PASSWORD=[[BB_DEVELOP_DB_PASSWORD]]
@@ -82,8 +80,6 @@ ignore_services  = ["init-perms", "deploy"]
 environment = """
 DOMAIN=bl1.dev.bakers.build
 STACK_NAME=bakers-bl1
-# This stack's own network; settings trust forwarded headers only from it.
-INTERNAL_SUBNET=172.30.44.0/24
 DB_NAME=bakers
 DB_USER=bakers
 DB_PASSWORD=[[BB_BL1_DB_PASSWORD]]
@@ -123,8 +119,6 @@ ignore_services  = ["init-perms", "deploy"]
 environment = """
 DOMAIN=app.bakers.build
 STACK_NAME=bakers-prod
-# This stack's own network; settings trust forwarded headers only from it.
-INTERNAL_SUBNET=172.30.45.0/24
 DB_NAME=bakers
 DB_USER=bakers
 DB_PASSWORD=[[BB_PROD_DB_PASSWORD]]

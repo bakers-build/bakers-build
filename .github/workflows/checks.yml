@@ -479,7 +479,6 @@ jobs:
       DB_PASSWORD: db
       DB_ROOT_PASSWORD: root
       DRUPAL_HASH_SALT: gate-stack-hash-salt-not-a-secret-0123
-      INTERNAL_SUBNET: 10.250.0.0/24
       REGISTRY_IMAGE_PHP: bakers-gate/php:local
       REGISTRY_IMAGE_NGINX: bakers-gate/nginx:local
       REGISTRY_IMAGE_E2E: bakers-gate/e2e:local
