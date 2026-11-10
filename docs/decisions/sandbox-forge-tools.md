@@ -36,13 +36,14 @@ sandbox, and only its token is used. The tokens live only with the conductor.
 ## Until the forge addon exists
 
 A sandboxed run that has to push or open a PR/MR needs explicit trusted commands on the project
-or machine layer, for example `trusted_commands: ['bakers', 'git', 'gh']` (or `glab`). This
-repository pins `bakers` and `git` in `.bakers/project.config.js`. Every such entry runs outside
-the sandbox with the operator's full rights; see [Run security](/provision/security/execution).
+or machine layer, for example `trusted_commands: ['bakers', 'git', 'gh']` (or `glab`). Every
+such entry runs outside the sandbox with the operator's full rights; see
+[Run security](/provision/security/execution).
 
 The addons now exist: [Forge](/addons/forge) with [Forge for GitHub](/addons/forge-github) or
 [Forge for GitLab](/addons/forge-gitlab). With them configured, no trusted `git`, `gh` or `glab` is
-needed for delivery; this section stays the fallback for a project without them.
+needed for delivery; this section stays the fallback for a project without them. This repository
+configures the forge addon in `.bakers/project.config.js` and trusts no command.
 
 ## The key is `permissions`, not `security`
 
