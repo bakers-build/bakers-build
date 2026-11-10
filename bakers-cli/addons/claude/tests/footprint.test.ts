@@ -337,10 +337,13 @@ describe('parseClaudeTranscript', () => {
 
 describe('ClaudeAgent.permissionDenials', () => {
   const agent = new ClaudeAgent({ permissions: 'sandbox' });
-  const toolUse = (id: string, name: string, input: object) =>
+  const toolUse = (id: string, name: string, input: object, message?: string) =>
     JSON.stringify({
       type: 'assistant',
-      message: { content: [{ type: 'tool_use', id, name, input }] },
+      message: {
+        id: message,
+        content: [{ type: 'tool_use', id, name, input }],
+      },
     });
   const toolResult = (id: string, content: string, is_error = false) =>
     JSON.stringify({
@@ -384,6 +387,17 @@ describe('ClaudeAgent.permissionDenials', () => {
     expect(agent.permissionDenials(recorded)).toEqual([]);
   });
 
+  it('counts only text as a reply, not a thinking entry before it', () => {
+    const thought = `${recorded.trimEnd()}\n${JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'thinking', thinking: 'Blocked.' }] },
+    })}`;
+    expect(agent.permissionDenials(thought)).toEqual([]);
+    expect(
+      agent.permissionDenials(`${thought}\n${said('I am blocked.')}`),
+    ).toHaveLength(2);
+  });
+
   it('judges parallel results as one batch, whatever their order', () => {
     const deny = toolResult(
       'toolu_a',
@@ -403,6 +417,21 @@ describe('ClaudeAgent.permissionDenials', () => {
       ].join('\n');
       expect(agent.permissionDenials(log)).toEqual(['Read(/x)']);
     }
+  });
+
+  it('keeps a denial when the same response calls on after its result', () => {
+    const log = [
+      toolUse('toolu_a', 'Read', { file_path: '/x' }, 'msg_1'),
+      toolResult(
+        'toolu_a',
+        "Permission to use Read has been denied because Claude Code is running in don't ask mode.",
+        true,
+      ),
+      toolUse('toolu_b', 'Read', { file_path: 'README.md' }, 'msg_1'),
+      toolResult('toolu_b', '1\t# readme'),
+      said('I am blocked.'),
+    ].join('\n');
+    expect(agent.permissionDenials(log)).toEqual(['Read(/x)']);
   });
 
   it('reports nothing once the agent worked on after an earlier denial', () => {

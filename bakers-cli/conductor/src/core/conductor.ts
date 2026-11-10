@@ -685,10 +685,6 @@ export class Conductor {
    * the agent and keep its transcript.
    */
   private async reportBlocked(r: ActiveRun, denied: string[]): Promise<void> {
-    this.logger.warn(
-      { conductorId: this.id, run: r.runUuid, denied },
-      'run blocked on a permission denial; reporting and cancelling it',
-    );
     const site = this.remote.siteTools;
     // Without site tools nothing reaches the ticket; a silent cancel would hide the run.
     // Unmarked, the next tick with site tools reports it.
@@ -697,6 +693,10 @@ export class Conductor {
       this.stallChecked.delete(r.runUuid);
       throw new Error('no site tools to report the blocked run');
     }
+    this.logger.warn(
+      { conductorId: this.id, run: r.runUuid, denied },
+      'run blocked on a permission denial; reporting and cancelling it',
+    );
     const call = async (name: string, args: Record<string, unknown>) => {
       const result = await site.call(`tool_api__${name}`, args);
       if ((result as { isError?: boolean } | undefined)?.isError)
