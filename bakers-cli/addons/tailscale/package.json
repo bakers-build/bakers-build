@@ -4,10 +4,29 @@
   "description": "Discover a machine SSH connection address from local Tailscale at conductor start.",
   "type": "module",
   "license": "MIT",
-  "exports": { ".": "./dist/src/index.js", "./preset": "./dist/src/preset.js", "./options.schema.json": "./options.schema.json" },
-  "files": ["dist/src", "options.schema.json"],
-  "scripts": { "build": "tsc", "typecheck": "tsc --noEmit" },
-  "publishConfig": { "access": "public" },
-  "peerDependencies": { "@bakers-build/conductor": "workspace:^", "@bakers-build/core": "workspace:^" },
-  "devDependencies": { "@bakers-build/conductor": "workspace:^", "@bakers-build/core": "workspace:^", "typescript": "^5.9.0" }
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./preset": "./dist/src/preset.js",
+    "./options.schema.json": "./options.schema.json"
+  },
+  "files": [
+    "dist/src",
+    "options.schema.json"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/conductor": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0"
+  }
 }

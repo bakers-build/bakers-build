@@ -41,6 +41,7 @@ export default {
 | `agents.routes` | Named routes from workflow states (or `'*'`) to aliases. |
 | `agents.routes.default` | The automatic route, applied without a route label. `agents.routes.default['*']` is the default agent; without it the first enabled alias is. |
 | `tunnel` | Optional literal boolean, default `false`. See [below](#preview-link-tunnels). |
+| `connection_url` | Optional SSH or HTTPS address of this host, or `null` to clear the saved one. See [below](#connection-address). |
 | `permissions` | Optional. Run permissions for every agent on this host: `mode` (`sandbox`, `system` or `yolo`) and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. It replaces the project's block key by key, and a harness entry's `with` replaces both; `'$inherit'` keeps the layer below. See [Shared run security](/provision/security/shared-settings). |
 | `permissions.mode` | `sandbox`, `system` or `yolo`. |
 | `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists; see [Shared run security](/provision/security/shared-settings). |
