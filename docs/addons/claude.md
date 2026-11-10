@@ -44,7 +44,7 @@ One custom candidate:
 
 ## Security
 
-Default: `system`. See [Execution security](/provision/security/execution) for boundaries, environment filtering and isolation risks. Every mode adds the [run guard](/provision/security/run-guard) hook.
+Default: `system`. See [Execution security](/provision/security/execution) for boundaries, environment filtering and isolation risks.
 
 | `permissions` | Launch flags |
 |---|---|
