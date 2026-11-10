@@ -16,6 +16,7 @@ use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 /**
  * A person's figures shown to someone else cover only projects they may see.
@@ -85,21 +86,51 @@ final class UserFigureProjectBoundTest extends KernelTestBase {
     self::assertSame(['alpha-visible'], $this->projectRows($target, $lead));
     self::assertSame(['alpha-visible', 'beta-secret'], $this->projectRows($target, $target));
     self::assertSame(['alpha-visible'], $this->resourceRows($target, $lead));
+
+    // The project filter must not tell whether the person works in a project
+    // the lead cannot see: both answer as out of scope.
+    $idle = $this->project($b, 'beta-idle');
+    foreach (['beta-secret' => $this->loadProject('beta-secret'), 'beta-idle' => $idle] as $label => $project) {
+      try {
+        $this->resourceRows($target, $lead, ['project' => [$project->uuid()]]);
+        self::fail("The lead's filter on $label must be refused.");
+      }
+      catch (BadRequestHttpException) {
+      }
+    }
+    self::assertSame(['alpha-visible'], $this->resourceRows($target, $lead, ['project' => [$alpha->uuid()]]));
+  }
+
+  /**
+   * Loads a project by name.
+   */
+  private function loadProject(string $name): BbProjectInterface {
+    $projects = $this->container->get('entity_type.manager')->getStorage('bb_project')->loadByProperties(['name' => $name]);
+    $project = reset($projects);
+    self::assertInstanceOf(BbProjectInterface::class, $project);
+    return $project;
   }
 
   /**
    * The project rows of `user_projects` from the direct JSON:API resource.
    *
+   * @param \Drupal\user\UserInterface $target
+   *   The person whose figures are read.
+   * @param \Drupal\user\UserInterface $viewer
+   *   The requesting account.
+   * @param array<string, list<string>> $filters
+   *   Extra entity filters, by key.
+   *
    * @return list<string>
    *   The project labels, sorted.
    */
-  private function resourceRows(UserInterface $target, UserInterface $viewer): array {
+  private function resourceRows(UserInterface $target, UserInterface $viewer, array $filters = []): array {
     $this->container->get('current_user')->setAccount($viewer);
     $resource = StatisticsResource::create($this->container);
     $resource->setResourceResponseFactory($this->container->get('jsonapi_resources.resource_response_factory'));
     $this->container->get('router.builder')->rebuild();
     $route = $this->container->get('router.route_provider')->getRouteByName('bb_core.statistics.item');
-    $request = Request::create('/', 'GET', ['user_id' => $target->uuid(), 'filter' => ['period' => 'all']]);
+    $request = Request::create('/', 'GET', ['user_id' => $target->uuid(), 'filter' => ['period' => 'all'] + $filters]);
     $figure = BbFigure::load('user_projects');
     self::assertInstanceOf(BbFigure::class, $figure);
     $object = $resource->process($request, $figure, $resource->getRouteResourceTypes($route, 'bb_core.statistics.item'))

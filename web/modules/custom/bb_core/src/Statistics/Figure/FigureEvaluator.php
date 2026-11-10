@@ -150,6 +150,8 @@ final class FigureEvaluator {
   /**
    * The project context narrowed to the bound; empty matches nothing.
    *
+   * A selected project outside the bound is refused.
+   *
    * @param \Drupal\Core\Entity\EntityInterface|array<\Drupal\Core\Entity\EntityInterface|null>|null $current
    *   The project context or restriction, if any.
    * @param list<int> $bound
@@ -159,15 +161,15 @@ final class FigureEvaluator {
    *   The allowed projects.
    */
   private function bounded(EntityInterface|array|null $current, array $bound): array {
-    $projects = match (TRUE) {
-      $current === NULL => $this->entityTypeManager->getStorage('bb_project')->loadMultiple($bound),
-      is_array($current) => $current,
-      default => [$current],
-    };
-    return array_values(array_filter(
-      $projects,
-      static fn (?EntityInterface $project): bool => $project !== NULL && in_array((int) $project->id(), $bound, TRUE),
-    ));
+    $projects = $current ?? $this->entityTypeManager->getStorage('bb_project')->loadMultiple($bound);
+    $projects = array_values(array_filter(is_array($projects) ? $projects : [$projects]));
+    // Refused like an out-of-scope project, so the answer never tells whether
+    // the person works in a project the viewer cannot see.
+    $outside = array_diff(array_map(static fn (EntityInterface $project): int => (int) $project->id(), $projects), $bound);
+    if ($outside !== []) {
+      throw new \InvalidArgumentException(sprintf('Filter "project" does not accept project %d in this scope.', reset($outside)));
+    }
+    return $projects;
   }
 
   /**
