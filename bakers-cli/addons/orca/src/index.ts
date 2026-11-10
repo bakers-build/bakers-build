@@ -99,9 +99,9 @@ export class OrcaExecutor implements BbExecutor {
       identifier: input.ticket.identifier,
       state: input.ticket.state,
       title: input.ticket.title,
-      titleSlug: slugify(input.ticket.title),
-      runUuid: input.run.uuid,
-      workspacePath: input.workspacePath,
+      title_slug: slugify(input.ticket.title),
+      run_uuid: input.run.uuid,
+      workspace_path: input.workspacePath,
     })} #${input.run.id}`;
 
     let launch: LaunchScript | undefined;
@@ -141,7 +141,7 @@ export class OrcaExecutor implements BbExecutor {
       ]);
       const readHandle = handle;
       await watchLaunch(launch, {
-        ...(this.options.launchWatch ?? {}),
+        ...(this.options.launch_watch ?? {}),
         readPane: () => this.readTail(readHandle),
       });
       return { sessionRef: input.ticket.branchName };
@@ -256,7 +256,7 @@ export class OrcaExecutor implements BbExecutor {
       identifier: ctx.identifier,
       branch: ctx.branch,
       title: ctx.title,
-      worktreePath: path,
+      worktree_path: path,
     };
     try {
       await this.adopt(path);
@@ -294,7 +294,7 @@ export class OrcaExecutor implements BbExecutor {
     await waitForAdoption(
       this.execOrca,
       path,
-      this.options.adoptTimeoutMs ?? DEFAULT_ADOPT_TIMEOUT_MS,
+      this.options.adopt_timeout_ms ?? DEFAULT_ADOPT_TIMEOUT_MS,
       this.sleep,
     );
   }

@@ -223,7 +223,7 @@ describe('orcaWorkspace factory', () => {
     const plugin = orcaWorkspace({ execGit: async () => '/parent/.git\n' });
     expect(plugin.id).toBe('orca');
     const ws = await plugin.createWorkspace({
-      config_path: '/parent/.bakers-worktrees/x/.bakers/conductor.config.js',
+      config_path: '/parent/.bakers-worktrees/x/.bakers/project.config.js',
     } as never);
     expect((ws as unknown as { root: string }).root).toBe('/parent');
   });

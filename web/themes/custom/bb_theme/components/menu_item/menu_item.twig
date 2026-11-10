@@ -12,7 +12,8 @@
     current ? 'font-bold' : '',
   ]|filter(c => c)) }}{% if current %} aria-current="true"{% endif %}>
   {%- if mark or description -%}
-    <span class="flex min-w-0 items-start gap-inline">
+    {#- A lone label centres beside its mark; with a description beneath, the mark aligns to the first line. #}
+    <span class="flex min-w-0 {{ description ? 'items-start' : 'items-center' }} gap-inline">
       {%- if mark %}<span class="flex shrink-0">{{ include('bb_theme:person', { variant: 'compact', size: 'sm', initials: mark.initials|default(''), color: mark.color|default('running'), picture: mark.picture|default(''), image_fit: 'contain' }, with_context = false) }}</span>{% endif -%}
       <span class="flex min-w-0 flex-col">
         <span>{{ label }}</span>

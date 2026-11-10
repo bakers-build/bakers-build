@@ -61,8 +61,8 @@ async function fakeConductor() {
 
 it("calls the run's conductor with the run token and no connection config, even with the site's tool name", async () => {
   const conductor = await fakeConductor();
-  vi.stubEnv('BB_CONDUCTOR_URL', conductor.url);
-  vi.stubEnv('BB_CONDUCTOR_TOKEN', 'run-token');
+  vi.stubEnv('BAKERS_CONDUCTOR_URL', conductor.url);
+  vi.stubEnv('BAKERS_CONDUCTOR_TOKEN', 'run-token');
   let out = '';
   let err = '';
   await dispatchBbDropsh(

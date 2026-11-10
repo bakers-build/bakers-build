@@ -8,7 +8,7 @@ Run each ticket's agent in a visible herdr terminal and its own Git worktree. Fo
 Read https://bakers.build/addons/herdr.
 Use herdr as this project’s client. Check its installation and default
 session, propose its paired executor/workspace addon entry, and verify it
-with bakers oven check. Preserve the project’s environment hooks.
+with bakers conductor check. Preserve the project’s environment hooks.
 ```
 
 The reference below explains the commands and configuration changes.
@@ -32,7 +32,7 @@ The default session must answer; a named session uses a separate socket. A headl
 
 ## Configuration
 
-List the package once in `.bakers/conductor.config.js`; one entry supplies both executor and workspace:
+List the package once in `.bakers/project.config.js`; one entry supplies both executor and workspace:
 
 ```js
 addons: [
@@ -40,8 +40,8 @@ addons: [
   {
     use: '@bakers-build/addon-herdr',
     with: {
-      worktreeDir: '.bakers-worktrees',
-      default: { panelLabel: '{title}' },
+      worktree_dir: '.bakers-worktrees',
+      default: { panel_label: '{title}' },
     },
   },
 ],
@@ -51,7 +51,7 @@ No `with` options are required. [Options and layouts](/addons/herdr/options) own
 
 ## Verify
 
-Run `bakers oven check`, then [a first ticket](/get-started/first-ticket). Its agent must open in a herdr tab named after its identifier, within the ticket worktree. A frozen ticket shows a `bb_frozen` sidebar token; resuming clears it.
+Run `bakers conductor check`, then [a first ticket](/get-started/first-ticket). Its agent must open in a herdr tab named after its identifier, within the ticket worktree. A frozen ticket shows a `bb_frozen` sidebar token; resuming clears it.
 
 Harness commands run through non-interactive `/bin/sh`, so binaries must resolve through `PATH`; shell aliases are not loaded.
 

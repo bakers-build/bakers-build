@@ -14,7 +14,7 @@ import {
   resolveModuleEslintStyle,
 } from '@bakers-build/core';
 import type { Claimer } from './claims.js';
-import { checkWith } from './service-config.js';
+import { duplicateServiceKey } from './service-config.js';
 import {
   assertPortsTransport,
   InvalidTransportModuleError,
@@ -70,7 +70,7 @@ export interface PortsMachineConfig {
 
 /** No ports addon entry (or one without a transport) in either scope. */
 export const PORTS_NEEDS_ENTRY =
-  "bakers ports needs '@bakers-build/addon-ports' in addons[] of ~/.bakers/machine.config.js or .bakers/conductor.config.js, with with.transport.use naming a transport package; see docs/addons/ports";
+  "bakers ports needs '@bakers-build/addon-ports' in addons[] of ~/.bakers/machine.config.js or .bakers/project.config.js, with with.transport.use naming a transport package; see docs/addons/ports";
 
 /** The retired top-level machine `ports` key. */
 export const PORTS_RETIRED =
@@ -85,11 +85,11 @@ export async function assertNoMachinePorts(): Promise<void> {
 
 const PORTS_SPEC = '@bakers-build/addon-ports';
 
-/** `addons[@bakers-build/addon-ports].with.<key> <message>` per finding. */
+/** `addons[@bakers-build/addon-ports].with.<key> <message>` for the rule the
+ *  options schema cannot express (a duplicate service key). */
 export function withProblems(value: unknown): string[] {
-  return checkWith(value).map(
-    (f) => `addons[${PORTS_SPEC}].with${f.key ? `.${f.key}` : ''} ${f.message}`,
-  );
+  const problem = duplicateServiceKey(value);
+  return problem ? [`addons[${PORTS_SPEC}].with.${problem}`] : [];
 }
 
 /** Throw the first malformed ports `with` in the machine or project config,
@@ -99,12 +99,8 @@ async function assertValidScopes(worktree: string): Promise<void> {
   for (const path of [machineUiConfigPath(), project]) {
     if (path === undefined) continue;
     for (const entry of await readConfigAddons(path)) {
-      if (
-        typeof entry === 'string' ||
-        (entry?.use ?? entry?.name) !== PORTS_SPEC
-      )
-        continue;
-      const [problem] = withProblems(entry.with ?? entry.options);
+      if (typeof entry === 'string' || entry?.use !== PORTS_SPEC) continue;
+      const [problem] = withProblems(entry.with);
       if (problem) throw new Error(`${path}: ${problem}`);
     }
   }
@@ -129,7 +125,7 @@ export async function readPortsSettings(worktree: string): Promise<unknown> {
     bases: [...hostInstallBases(), import.meta.url],
   });
   if (found === undefined || typeof found.entry === 'string') return undefined;
-  return found.entry.with ?? found.entry.options;
+  return found.entry.with;
 }
 
 /** `home`, the running `bakers` host install, then `process.cwd()` — see

@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { OrcaWorkspace } from '../src/index.js';
-import { executors, workspaces } from '../src/preset.js';
+import { executors, worktrees } from '../src/preset.js';
 import { fakeOrca, notFound } from './fakes.js';
 
 const roots: string[] = [];
@@ -157,6 +157,6 @@ describe('OrcaWorkspace.remove', () => {
 describe('preset', () => {
   it('contributes one orca executor and one orca workspace', () => {
     expect(executors?.([], {}).map((p) => p.id)).toEqual(['orca']);
-    expect(workspaces?.([], {}).map((p) => p.id)).toEqual(['orca']);
+    expect(worktrees?.([], {}).map((p) => p.id)).toEqual(['orca']);
   });
 });

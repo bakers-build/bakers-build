@@ -129,7 +129,7 @@ export async function processStartTime(pid: number): Promise<number | null> {
 /**
  * BB-681 Task 4 — a process whose cmdline carries ANY pluggable-transport
  * package's own ownership marker: `addon-ports-cloudflare-quick`'s private
- * per-route `--config <BB_HOME>/ports/quick/<hash>/gen-<n>/config.yaml`,
+ * per-route `--config <BAKERS_HOME>/ports/quick/<hash>/gen-<n>/config.yaml`,
  * or a Named Cloudflare connector's `tunnel run` invocation. This generic
  * legacy-reap scan predates per-route managed processes (BB-676) and its
  * only signal for "legacy" is `cmdline.includes('--url')` (see

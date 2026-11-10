@@ -388,13 +388,13 @@ await runBbUi({
 
 The `bakers ui` command is a **thin, home-rooted entry** (AC-1): it resolves the
 connection and the `.bakers` dir of the project it was started in — NOT a
-project `conductor.config.js` — and delegates to `runBbUi`; the renderer reads
+project `project.config.js` — and delegates to `runBbUi`; the renderer reads
 the default project from the conductor record matching that dir. That one composition
 point is the only wiring left in the command.
 
 **Which dropsh config it reads** (`connection.configPath` → `$DROPSH_CONFIG`):
 
-1. A user-authored **`~/.bakers/conductor.config.js`** wins, if present — a real
+1. A user-authored **`.bakers/project.config.js`** wins, if present — a real
    home-level cockpit config (own plugins / scope / project).
 2. Otherwise the **shipped fallback** `@bakers-build/conductor/home.dropsh.config.js`
    is used. It carries no connection data: it `import`s `@dropsh/plugin-oauth2`

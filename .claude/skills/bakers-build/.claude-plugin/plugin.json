@@ -1,7 +1,7 @@
 {
   "name": "bakers",
   "description": "Composable bakers.build capabilities for ticket work, deployment, setup, upgrades, origin updates, and entity creation.",
-  "version": "0.64.0",
+  "version": "0.65.0",
   "author": {
     "name": "keytec",
     "url": "https://bakers.build"

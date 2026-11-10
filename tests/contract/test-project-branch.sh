@@ -50,7 +50,7 @@ FIXTURE_BRANCH=develop
 seed_fixture_origin "$ROOT/tests/fixtures/bakers-playground" "$TMP/fixture.git"
 seeded="$(git --git-dir="$TMP/fixture.git" rev-parse develop)"
 [ "$(git --git-dir="$TMP/fixture.git" symbolic-ref HEAD)" = refs/heads/develop ] || fail 'fixture origin HEAD is not develop'
-git --git-dir="$TMP/fixture.git" cat-file -e develop:.bakers/conductor.config.js || fail 'fixture origin lacks the conductor config'
+git --git-dir="$TMP/fixture.git" cat-file -e develop:.bakers/project.config.js || fail 'fixture origin lacks the project config'
 seed_fixture_origin "$ROOT/tests/fixtures/bakers-playground" "$TMP/fixture.git"
 [ "$(git --git-dir="$TMP/fixture.git" rev-parse develop)" = "$seeded" ] || fail 'reseeding moved develop'
 git clone -q -b develop "$TMP/fixture.git" "$TMP/playground"

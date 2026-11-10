@@ -1113,11 +1113,11 @@ describe('skill CLI contract: real repository CLI vs simulator', () => {
       const saved = { ...process.env };
       Object.assign(process.env, {
         DROPSH_CONFIG: '/sentinel/dropsh.config.js',
-        BB_CONFIG: '/sentinel/bakers.config.js',
-        BB_CONNECTION: 'sentinel',
+        BAKERS_CONFIG: '/sentinel/connection.config.js',
+        BAKERS_CONNECTION: 'sentinel',
         DROPSH_AUTH_PROFILE: 'sentinel',
         NODE_OPTIONS: '--require /sentinel/inject.cjs',
-        BB_CONSUMER_SECRET_CW: 'sentinel-secret',
+        BAKERS_CONSUMER_SECRET_CW: 'sentinel-secret',
       });
       try {
         const simulation = (await loadFixture('transition-ticket-calls'))

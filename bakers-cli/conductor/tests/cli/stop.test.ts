@@ -39,11 +39,11 @@ vi.mock('dropsh', async (orig) => {
  * never the process's working directory, which only ever coincided with
  * `workspace_root` over a herdr spawn.
  */
-describe('bakers oven stop', () => {
+describe('bakers conductor stop', () => {
   let home: string;
   let out: string[];
-  const originalHome = process.env.BB_HOME;
-  const originalLog = process.env.BB_CONDUCTOR_LOG;
+  const originalHome = process.env.BAKERS_HOME;
+  const originalLog = process.env.BAKERS_CONDUCTOR_LOG;
   const WORKSPACE = '/home/dev/project';
   const HOST = '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30';
   const CONDUCTOR_CMDLINE =
@@ -51,9 +51,9 @@ describe('bakers oven stop', () => {
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'bakers-stop-'));
-    // BB_HOME names the `.bakers` root itself, not a home containing one.
-    process.env.BB_HOME = join(home, '.bakers');
-    process.env.BB_CONDUCTOR_LOG = 'silent';
+    // BAKERS_HOME names the `.bakers` root itself, not a home containing one.
+    process.env.BAKERS_HOME = join(home, '.bakers');
+    process.env.BAKERS_CONDUCTOR_LOG = 'silent';
     out = [];
     vi.spyOn(console, 'log').mockImplementation((...args: unknown[]) => {
       out.push(args.map(String).join(' '));
@@ -63,10 +63,10 @@ describe('bakers oven stop', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     rmSync(home, { recursive: true, force: true });
-    if (originalHome === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = originalHome;
-    if (originalLog === undefined) delete process.env.BB_CONDUCTOR_LOG;
-    else process.env.BB_CONDUCTOR_LOG = originalLog;
+    if (originalHome === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = originalHome;
+    if (originalLog === undefined) delete process.env.BAKERS_CONDUCTOR_LOG;
+    else process.env.BAKERS_CONDUCTOR_LOG = originalLog;
   });
 
   it('sends a verified SIGTERM to the conductor of this checkout', async () => {
@@ -228,7 +228,7 @@ describe('bakers oven stop', () => {
   });
 
   // BB-450 review B14 — the actual AC-3 regression: three REAL directories,
-  // each holding its own `.bakers/conductor.config.js` + `.bakers/bakers.config.js`
+  // each holding its own `.bakers/project.config.js` + `.bakers/connection.config.js`
   // (as a git worktree checkout would — the files are tracked, so every
   // worktree of one commit carries identical content), resolved through the
   // genuine walk-up (`resolveConfigPath`/`loadConductorConfig`/
@@ -246,10 +246,10 @@ describe('bakers oven stop', () => {
     const engineConfig = `
 const slot = (kind) => ({ kind, id: kind, requiredModules: [] });
 export default {
-  remote: slot('remote'),
+  server: slot('server'),
   executor: slot('executor'),
-  workspace: slot('workspace'),
-  bakers: { project: 'bakers' },
+  worktree: slot('worktree'),
+  project: { name: 'bakers' },
   states: ['working'],
 };
 `;
@@ -264,9 +264,6 @@ export default {
 export default {
   machine_id: '${HOST}',
   label: 'cw-laptop',
-  base_url: 'http://web',
-  client_id: 'c',
-  client_secret: 's',
   addons: [{ use: '@bakers-build/addon-claude' }],
 };
 `;
@@ -285,8 +282,8 @@ export default {
       const worktreeBbDir = join(linkedWorktree, '.bakers');
       for (const dir of [repoBbDir, worktreeBbDir]) {
         mkdirSync(dir, { recursive: true });
-        writeFileSync(join(dir, 'conductor.config.js'), engineConfig);
-        writeFileSync(join(dir, 'bakers.config.js'), connectionConfig);
+        writeFileSync(join(dir, 'project.config.js'), engineConfig);
+        writeFileSync(join(dir, 'connection.config.js'), connectionConfig);
       }
 
       // The id is derived: machine UUID + project + variant.
@@ -298,7 +295,7 @@ export default {
         for (const dir of [repoRoot, repoBbDir, linkedWorktree]) {
           process.chdir(dir);
           const deps: BbCliDeps = { remote, procProbe: probe };
-          await buildConductorProgram(deps).parseAsync(['oven', 'stop'], {
+          await buildConductorProgram(deps).parseAsync(['conductor', 'stop'], {
             from: 'user',
           });
         }
@@ -344,7 +341,7 @@ export default {
       config: makeConfig(),
       procProbe: probe,
     };
-    await buildConductorProgram(deps).parseAsync(['oven', ...argv], {
+    await buildConductorProgram(deps).parseAsync(['conductor', ...argv], {
       from: 'user',
     });
   }
@@ -365,7 +362,7 @@ export default {
       lease_seconds: 300,
       conductor_id: 'mid-stop',
       host_key: HOST,
-      config_path: join(home, 'conductor.config.js'),
+      config_path: join(home, 'project.config.js'),
     } as ConductorFileConfig;
   }
 });

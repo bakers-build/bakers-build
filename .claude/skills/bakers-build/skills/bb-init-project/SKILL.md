@@ -17,8 +17,8 @@ requires shared-setup authorization. Obtain missing scope authorization before s
 | Scope | Ownership |
 |---|---|
 | `machine` | `~/.bakers/machine.config.js`: generated UUID `machine_id`, display `label`; local validation, no authentication. |
-| `connection` | `~/.bakers/bakers.config.js`: URL, OAuth credentials/plugins, optional `workspace_id` consumed only by `bakers ui`. Authenticate identity; no workspace-access check or machine prerequisite. |
-| `project` | `.bakers/conductor.config.js`, local overrides, optional `.bakers/bakers.config.js`; independently requires machine/effective-connection readiness, leaves shared files unchanged. |
+| `connection` | `~/.bakers/connections/default.js`: URL, OAuth credentials/plugins, optional `workspace_id` consumed only by `bakers ui`. Authenticate identity; no workspace-access check or machine prerequisite. |
+| `project` | `.bakers/project.config.js`, optional `.bakers/connection.config.js`; independently requires machine/effective-connection readiness, leaves shared files unchanged. |
 | `all` | Selected shared/project layers; project requires its name. |
 
 1. Read `bakers config init --help` and `bakers config check --help`; run

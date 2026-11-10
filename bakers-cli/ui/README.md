@@ -209,11 +209,11 @@ of one repo on one machine differ by their variant. The workspace path is shorte
 
 **Rows from your other machines appear, marked `elsewhere`, and do not act.** The control
 plane is scoped to *you*, not to this machine, so hiding them would make the cockpit
-disagree with `bakers oven ls` for no visible reason — while acting on them is
+disagree with `bakers conductor ls` for no visible reason — while acting on them is
 meaningless, since a pid only identifies a process on the machine that reported it.
 
 **A conductor that has never run on this machine does not appear**, because it has no record
-to appear from. Its first start is still `bakers oven start` inside the checkout; after
+to appear from. Its first start is still `bakers conductor start` inside the checkout; after
 that it is on the list like any other.
 
 **Each repo reaches its own control plane**, so this tab shows the conductors of whichever
@@ -223,8 +223,8 @@ section below for which config wins.
 ## Which control plane answers
 
 `bakers ui` resolves its connection through the same single rule `bakers tools` and `bakers auth` use:
-explicit `--config` / `$BB_CONFIG` / `$DROPSH_CONFIG` → the project's
-`./.bakers/bakers.config.js` (walk-up) → `~/.bakers/bakers.config.js` → the shipped fallback. So
+explicit `--config` / `--connection <id>` / `$BAKERS_CONFIG` / `$BAKERS_CONNECTION` (`~/.bakers/connections/<id>.js`) → the project's
+`./.bakers/connection.config.js` (walk-up) → `~/.bakers/connections/default.js` → the shipped fallback. So
 running it inside a repo that declares its own connection reaches **that** repo's control
 plane. `bakers ui --print-config` reports which file won, its source and its `base_url`,
 without launching the UI.

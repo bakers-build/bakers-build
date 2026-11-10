@@ -75,15 +75,15 @@ export function normalizeEntry(entry: AddonEntry): {
   alias?: string;
 } {
   if (typeof entry === 'string') return { spec: entry, opts: undefined };
-  const spec = entry.use ?? entry.name;
+  const spec = entry.use;
   if (typeof spec !== 'string' || spec.trim() === '') {
     throw new Error(
-      `addons[] entry must name a package via a string or { use } / { name }; got ${JSON.stringify(entry)}`,
+      `addons[] entry must name a package via a string or { use }; got ${JSON.stringify(entry)}`,
     );
   }
   return {
     spec,
-    opts: entry.with ?? entry.options,
+    opts: entry.with,
     ...(entry.alias !== undefined ? { alias: entry.alias } : {}),
     ...(entry.priority ? { priority: entry.priority } : {}),
   };
@@ -146,9 +146,9 @@ function adaptDefaultExport(
         ...(conn as DiscoveredContributions['connectionPlugins']),
       ];
     },
-    remotes: (acc, opts) => routeByKind(factory, opts, 'remote', acc),
+    servers: (acc, opts) => routeByKind(factory, opts, 'server', acc),
     executors: (acc, opts) => routeByKind(factory, opts, 'executor', acc),
-    workspaces: (acc, opts) => routeByKind(factory, opts, 'workspace', acc),
+    worktrees: (acc, opts) => routeByKind(factory, opts, 'worktree', acc),
     agents: (acc, opts) => {
       const built = factory(opts);
       const list = Array.isArray(built) ? built : [built];
@@ -162,9 +162,9 @@ function adaptDefaultExport(
 
 function isEngineKind(kind: unknown): boolean {
   return (
-    kind === 'remote' ||
+    kind === 'server' ||
     kind === 'executor' ||
-    kind === 'workspace' ||
+    kind === 'worktree' ||
     kind === 'agent'
   );
 }
@@ -514,22 +514,22 @@ function resolveSingleton<T>(
 /** Resolve discovered conductor contributions into the four engine slots. */
 export function resolveConductorSlots<R, E, W, A>(
   contributions: {
-    remotes: R[];
+    servers: R[];
     executors: E[];
-    workspaces: W[];
+    worktrees: W[];
     agents: A[];
   },
   logger?: ConductorLogger,
 ): ResolvedConductorSlots<R, E, W, A> {
-  const remote = resolveSingleton(contributions.remotes, 'remote', logger);
+  const remote = resolveSingleton(contributions.servers, 'server', logger);
   const executor = resolveSingleton(
     contributions.executors,
     'executor',
     logger,
   );
   const workspace = resolveSingleton(
-    contributions.workspaces,
-    'workspace',
+    contributions.worktrees,
+    'worktree',
     logger,
   );
   return {

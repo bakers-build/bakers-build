@@ -20,12 +20,12 @@ quick` implement.
 
 1. A **dedicated Cloudflare zone** for tunnels, so tokens and wildcards never
    touch production DNS.
-2. A **remotely managed named tunnel** (`tunnelId`) in that account, plus a
+2. A **remotely managed named tunnel** (`tunnel_id`) in that account, plus a
    running `cloudflared` connector authenticated to it.
-3. A **restricted API token** (`apiToken`) scoped to that zone/account, with
+3. A **restricted API token** (`api_token`) scoped to that zone/account, with
    *Cloudflare Tunnel: Edit* and *DNS: Edit* — nothing broader.
 4. One operator account owns one tunnel: a second machine/user must not
-   reconcile the same `tunnelId` independently — the machine-wide lock only
+   reconcile the same `tunnel_id` independently — the machine-wide lock only
    serializes operations from the owning account.
 
 ## Config shape (the `@bakers-build/addon-ports` entry's `with.transport`)
@@ -39,10 +39,10 @@ addons: [
         use: '@bakers-build/addon-ports-cloudflare',
         with: {
           zone: 'preview.example.org',
-          accountId: 'YOUR_ACCOUNT_ID',
-          tunnelId: 'YOUR_TUNNEL_ID',
-          zoneId: 'YOUR_ZONE_ID',
-          apiToken: process.env.CF_API_TOKEN,
+          account_id: 'YOUR_ACCOUNT_ID',
+          tunnel_id: 'YOUR_TUNNEL_ID',
+          zone_id: 'YOUR_ZONE_ID',
+          api_token: process.env.CF_API_TOKEN,
         },
       },
     },
@@ -53,7 +53,7 @@ addons: [
 All five fields are required strings; a missing one is rejected before any
 network call, naming the missing field(s). `identity` (used to detect a
 transport/zone/remote change while records exist) is
-`<accountId>/<tunnelId>/<zoneId>` — deliberately excluding `apiToken`, so
+`<account_id>/<tunnel_id>/<zone_id>` — deliberately excluding `api_token`, so
 rotating the token alone is never treated as an identity change. The token is
 redacted wherever it would otherwise leak into a thrown error, log line or CLI
 argument.

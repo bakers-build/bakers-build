@@ -1,13 +1,13 @@
 # Lifecycle hook configuration
 
-Configure project preparation and cleanup in the top-level `hooks` object of the selected `.bakers/conductor.config.js` or named conductor variant. This reference is for maintainers who already have a working conductor; [Add lifecycle hooks](/provision/hooks) explains the practical setup.
+Configure project preparation and cleanup in the top-level `hooks` object of the selected `.bakers/project.config.js` or a named variant `project.<name>.config.js`. This reference is for maintainers who already have a working conductor; [Add lifecycle hooks](/provision/hooks) explains the practical setup.
 
 ## Configuration
 
 All six lifecycle keys are optional shell command strings. An omitted or empty command does nothing. Keep existing engine settings and merge only the needed keys:
 
 ```js
-// Fragment inside the exported conductor configuration.
+// Fragment inside the exported project configuration.
 hooks: {
   after_create: 'sh scripts/prepare.sh',
   before_run: 'sh scripts/refresh.sh',
@@ -20,7 +20,7 @@ hooks: {
 
 These scripts are examples you must supply. Commands run through `sh -c` in the ticket worktree with the conductor user's permissions. Tools must be on that process's `PATH`. Keep long-running servers out of blocking hooks. Hooks execute worktree code outside the agent sandbox: review that code before giving it credentials or host access.
 
-A selected conductor variant is a complete file, not an overlay. Local values apply only through explicit JavaScript imports. The herdr addon's former `with.hooks` option is rejected; move commands to the top level. Addon listeners run before the project command, awaited in addon discovery order (children first). Listener failures do not skip later listeners or the command.
+A selected variant is a complete file, not an overlay. Local values apply only through explicit JavaScript imports. The herdr addon's former `with.hooks` option is rejected; move commands to the top level. Addon listeners run before the project command, awaited in addon discovery order (children first). Listener failures do not skip later listeners or the command.
 
 ## When each hook runs
 
@@ -41,17 +41,17 @@ The successful preparation record survives conductor restarts and is cleared dur
 
 | Variable | Value |
 |---|---|
-| `BB_URL` | Server URL of the selected connection |
-| `BB_ID` | Ticket UUID |
-| `BB_TICKET_IDENTIFIER` | Ticket identifier |
-| `BB_STATE` | Run's start state; current state for freeze hooks |
-| `BB_RUN_UUID` | Current run UUID; unset for freeze hooks |
-| `BB_TUNNEL` | `1` if the machine allows preview tunnels, else `0` |
+| `BAKERS_URL` | Server URL of the selected connection |
+| `BAKERS_ID` | Ticket UUID |
+| `BAKERS_TICKET_IDENTIFIER` | Ticket identifier |
+| `BAKERS_STATE` | Run's start state; current state for freeze hooks |
+| `BAKERS_RUN_UUID` | Current run UUID; unset for freeze hooks |
+| `BAKERS_TUNNEL` | `1` if the machine allows preview tunnels, else `0` |
 | `WORKSPACE_ROOT` | Checkout root; the working directory is the ticket worktree |
 | `TICKET_URL` | Origin issue URL, when there is one |
-| `BB_PROJECT`, `BB_PROJECT_ID` | Project name and UUID, when known |
-| `BB_WORKSPACE`, `BB_WORKSPACE_ID` | Ticket workspace name and UUID, when known |
-| `BB_WORKSPACE_IDS` | Comma-separated reachable workspace UUIDs |
+| `BAKERS_PROJECT`, `BAKERS_PROJECT_ID` | Project name and UUID, when known |
+| `BAKERS_WORKSPACE`, `BAKERS_WORKSPACE_ID` | Ticket workspace name and UUID, when known |
+| `BAKERS_WORKSPACE_IDS` | Comma-separated reachable workspace UUIDs |
 
 Optional values are omitted rather than empty. `after_run` rebuilds its context from the current ticket while keeping the run start state; if that read fails, listeners are skipped and the shell hook runs without the rebuilt variables. The `after_done` shell command receives only the inherited conductor environment, with no ticket/run variables injected. Store and validate a worktree-local resource identity for cleanup. Never log environment secrets.
 
@@ -83,7 +83,7 @@ Agents call it whenever a check needs the environment, so make the command cheap
 
 The base URL *answers* when it returns an HTTP status below 500, so a site that fails with 500 is not ready. A profile that must start from a clean install every time, such as a disposable import check, gets its own key whose command always reinstalls (`test-fresh` above). The conductor runs the command as configured and checks nothing itself; a command that always reinstalls still works, it is only slower. A runtime addon's page may show one implementation.
 
-It runs through `sh -c` in the run's worktree with the inherited conductor environment, without injecting the run's `BB_*` or ticket variables. It outlives cancellation of the calling agent. Overlapping calls for the same worktree and command share the running process, even when different profile names select that command. A call after completion starts it again; different commands can run concurrently, so scripts must protect shared resources.
+It runs through `sh -c` in the run's worktree with the inherited conductor environment, without injecting the run's `BAKERS_*` or ticket variables. It outlives cancellation of the calling agent. Overlapping calls for the same worktree and command share the running process, even when different profile names select that command. A call after completion starts it again; different commands can run concurrently, so scripts must protect shared resources.
 
 At 30 minutes, ticket teardown or conductor shutdown, the conductor sends `SIGTERM` to the process group. It does not escalate to `SIGKILL`; commands must handle termination. The result retains the tail of combined stdout/stderr, capped at 65,536 string characters. A non-zero exit is a tool error. Unlike lifecycle hooks, the caller sees this failure directly. No profile runs automatically, and the conductor neither checks application health nor validates the printed URL.
 

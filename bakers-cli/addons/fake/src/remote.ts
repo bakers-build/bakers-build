@@ -682,7 +682,7 @@ export class FakeBbRemote implements BbRemote {
 export function fakeRemote(seed: FakeRemoteSeed = {}): RemotePlugin {
   const remote = new FakeBbRemote(seed);
   return {
-    kind: 'remote',
+    kind: 'server',
     id: 'fake',
     requiredModules: [],
     async createRemote(_config: ConductorFileConfig) {

@@ -222,11 +222,11 @@ function ensureMode(path) {
 
 function main() {
   if (process.argv[2] === '--mode') {
-    const [, mode, path = join(process.env.BB_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
+    const [, mode, path = join(process.env.BAKERS_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
       process.argv.slice(2);
     return mode === 'sandbox' ? ensureMode(path) : log(`unknown mode "${mode}"; machine.config.js unchanged`);
   }
-  const [transport, path = join(process.env.BB_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
+  const [transport, path = join(process.env.BAKERS_HOME || join(homedir(), '.bakers'), 'machine.config.js')] =
     process.argv.slice(2);
   if (!TRANSPORTS.includes(transport)) return log(`unknown transport "${transport}"; machine.config.js unchanged`);
   const exists = existsSync(path);

@@ -37,27 +37,27 @@ vi.mock('dropsh', async (orig) => {
  * refused, verified by an actual process probe of the recorded `last_pid`,
  * not by the entity's derived liveness alone.
  */
-describe('bakers oven start --foreground duplicate guard (BB-474)', () => {
+describe('bakers conductor start --foreground duplicate guard (BB-474)', () => {
   const HOST = 'mid-fg';
   const CONDUCTOR_CMDLINE =
     'node /usr/local/bin/bakers oven start --foreground --no-update-check';
 
   let home: string;
-  const originalHome = process.env.BB_HOME;
-  const originalLog = process.env.BB_CONDUCTOR_LOG;
+  const originalHome = process.env.BAKERS_HOME;
+  const originalLog = process.env.BAKERS_CONDUCTOR_LOG;
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'bakers-fg-duplicate-'));
-    process.env.BB_HOME = join(home, '.bakers');
-    process.env.BB_CONDUCTOR_LOG = 'silent';
+    process.env.BAKERS_HOME = join(home, '.bakers');
+    process.env.BAKERS_CONDUCTOR_LOG = 'silent';
   });
 
   afterEach(() => {
     rmSync(home, { recursive: true, force: true });
-    if (originalHome === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = originalHome;
-    if (originalLog === undefined) delete process.env.BB_CONDUCTOR_LOG;
-    else process.env.BB_CONDUCTOR_LOG = originalLog;
+    if (originalHome === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = originalHome;
+    if (originalLog === undefined) delete process.env.BAKERS_CONDUCTOR_LOG;
+    else process.env.BAKERS_CONDUCTOR_LOG = originalLog;
   });
 
   function runningRow(over: Partial<ConductorStatus> = {}): ConductorStatus {
@@ -120,7 +120,7 @@ describe('bakers oven start --foreground duplicate guard (BB-474)', () => {
       lease_seconds: 300,
       conductor_id: 'mid-fg',
       host_key: HOST,
-      config_path: join(home, 'conductor.config.js'),
+      config_path: join(home, 'project.config.js'),
     } as ConductorFileConfig;
   }
 
@@ -139,7 +139,7 @@ describe('bakers oven start --foreground duplicate guard (BB-474)', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     let lines: string[] = [];
     try {
-      await program.parseAsync(['oven', 'start', '--foreground'], {
+      await program.parseAsync(['conductor', 'start', '--foreground'], {
         from: 'user',
       });
     } finally {
@@ -181,7 +181,7 @@ describe('bakers oven start --foreground duplicate guard (BB-474)', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
     try {
       await buildConductorProgram(deps).parseAsync(
-        ['oven', 'start', '--foreground', '--force', '--no-update-check'],
+        ['conductor', 'start', '--foreground', '--force', '--no-update-check'],
         { from: 'user' },
       );
     } finally {

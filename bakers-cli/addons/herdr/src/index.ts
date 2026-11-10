@@ -325,9 +325,9 @@ export class HerdrExecutor implements BbExecutor {
     const vars: Record<string, string> = {
       identifier: input.ticket.identifier,
       title: input.ticket.title,
-      titleSlug: slugify(input.ticket.title),
-      runUuid: input.run.uuid,
-      workspacePath: input.workspacePath,
+      title_slug: slugify(input.ticket.title),
+      run_uuid: input.run.uuid,
+      workspace_path: input.workspacePath,
     };
 
     // 3. Create tab — NO --json flag; label includes the run-id token. The tab's
@@ -351,7 +351,7 @@ export class HerdrExecutor implements BbExecutor {
 
     // BB-374: panel label on the state root pane (best-effort). Tab --label
     // above stays the stop/state matching string and is intentionally not the
-    // resolved StateConfig.tabLabel path.
+    // resolved StateConfig.tab_label path.
     await this.execHerdr([
       'pane',
       'rename',
@@ -383,7 +383,7 @@ export class HerdrExecutor implements BbExecutor {
         { env: AGENT_SHELL_ENV },
       );
       await watchLaunch(launch, {
-        ...(this.options.launchWatch ?? {}),
+        ...(this.options.launch_watch ?? {}),
         readPane: () =>
           this.execHerdr(['pane', 'read', rootPaneId, '--lines', '40']),
       });
@@ -489,7 +489,9 @@ export function herdrExecutor(
           ...(options.open ? { open: options.open } : {}),
           ...(options.default ? { default: options.default } : {}),
           ...(options.states ? { states: options.states } : {}),
-          ...(options.launchWatch ? { launchWatch: options.launchWatch } : {}),
+          ...(options.launch_watch
+            ? { launch_watch: options.launch_watch }
+            : {}),
         },
         defaultExec,
         deps.logger,

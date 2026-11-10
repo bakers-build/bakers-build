@@ -1,14 +1,15 @@
+import type { LaunchWatchOptions } from '@bakers-build/addon-herdr/shared';
 import type { RootGitExec } from '@bakers-build/core';
 import type { OrcaOpenLayout } from './workspace.js';
 
 export interface OrcaStateConfig {
   /**
    * Terminal title template; must contain `{identifier}`. Other vars:
-   * `{state}` (the state the run was started for), `{title}`, `{titleSlug}`,
-   * `{runUuid}`, `{workspacePath}`. `startRun`
+   * `{state}` (the state the run was started for), `{title}`, `{title_slug}`,
+   * `{run_uuid}`, `{workspace_path}`. `startRun`
    * appends ` #<run.id>`, the token `cleanupRun` finds the run's terminal by.
    */
-  tabLabel?: string;
+  tab_label?: string;
 }
 
 export interface OrcaExecutorOptions {
@@ -23,14 +24,9 @@ export interface OrcaExecutorOptions {
   default?: OrcaStateConfig;
   states?: Record<string, OrcaStateConfig>;
   /** Same windows as herdr: wait for `started` (60 s), then an exit window (4 s). */
-  launchWatch?: {
-    timeoutMs?: number;
-    startTimeoutMs?: number;
-    pollMs?: number;
-    sleep?: (ms: number) => Promise<void>;
-  };
+  launch_watch?: Omit<LaunchWatchOptions, 'readPane'>;
   /** How long `startRun` waits for Orca to adopt the worktree. Default 35 s. */
-  adoptTimeoutMs?: number;
+  adopt_timeout_ms?: number;
 }
 
 export const DEFAULT_TAB_LABEL = '{identifier} · {state}';
@@ -40,11 +36,11 @@ export function resolveTabLabel(
   state: string,
 ): string {
   const tabLabel =
-    options.states?.[state]?.tabLabel ??
-    options.default?.tabLabel ??
+    options.states?.[state]?.tab_label ??
+    options.default?.tab_label ??
     DEFAULT_TAB_LABEL;
   if (!tabLabel.includes('{identifier}')) {
-    throw new Error(`orca tabLabel must contain {identifier}: ${tabLabel}`);
+    throw new Error(`orca tab_label must contain {identifier}: ${tabLabel}`);
   }
   return tabLabel;
 }

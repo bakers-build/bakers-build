@@ -15,9 +15,9 @@ bakers.build is driven by the `bakers` command from `@bakers-build/bakers`. The 
 |---|---|
 | `npm install -g @gaia-ai/gaia` | `npm install -g @bakers-build/bakers` |
 | `gaia …` | `bakers …` |
-| `gaia conductor start`, `stop`, `status`, `ls` | `bakers oven start`, `stop`, `status`, `ls` |
-| `gaia conductor poll` | `bakers oven once` |
-| `gaia conductor reap` | `bakers oven clean` |
+| `gaia conductor start`, `stop`, `status`, `ls` | `bakers conductor start`, `stop`, `status`, `ls` |
+| `gaia conductor poll` | `bakers conductor once` |
+| `gaia conductor reap` | `bakers conductor clean` |
 | `~/.gaia`, `.gaia`, `.gaia-worktrees` | `~/.bakers`, `.bakers`, `.bakers-worktrees` |
 
 There is no `conductor` alias and no `gaia` binary in the new package. Old configuration and sign-ins are not migrated: you configure and sign in once more.
@@ -42,14 +42,14 @@ There is no `conductor` alias and no `gaia` binary in the new package. Old confi
 
 3. **Configure the machine and sign in.** Follow [machine setup](/provision/machine) using your bakers.build server URL. It owns the current initialization prompts and verification. The machine UUID is generated; your account identity comes from sign-in.
 
-4. **Connect each project and register its oven.** In the project checkout:
+4. **Connect each project and register its conductor.** In the project checkout:
 
    ```sh
    bakers config init --scope project --project <project>
-   bakers oven once
+   bakers conductor once
    ```
 
-   `bakers oven once` registers the oven for this checkout and runs one cycle. Start it for good with `bakers oven start`. See [Connect a project by hand](/get-started/connect-a-project) and [bakers oven](/configuration/project/conductors).
+   `bakers conductor once` registers the conductor for this checkout and runs one cycle. Start it for good with `bakers conductor start`. See [Connect a project by hand](/get-started/connect-a-project) and [bakers conductor](/configuration/project/conductors).
 
 5. **Clean up.** After a test ticket succeeds, inspect and back up the old `~/.gaia`, `.gaia` and `.gaia-worktrees` directories. Preserve uncommitted work and data before removing obsolete files; the new CLI does not read them.
 
@@ -95,4 +95,4 @@ The minimum version lives in the `min_client_version` key of `bb_core.settings` 
 drush config:set bb_core.settings min_client_version 0.2.0
 ```
 
-Raise it only once the matching `@bakers-build/bakers` release is published, or every oven stops claiming.
+Raise it only once the matching `@bakers-build/bakers` release is published, or every conductor stops claiming.

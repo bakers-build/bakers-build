@@ -23,7 +23,7 @@ export type DropshBuildProgram = (opts: {
  * plugin descriptors/instances (ONE oauth2 client-credentials entry on ONE
  * scope, marked `default: true` — BB-391); `configPath` points dropsh's own
  * in-process context factory at a home dropsh config (base_url + the same auth)
- * so it can build its client WITHOUT a project `conductor.config.js` — the
+ * so it can build its client WITHOUT a project `project.config.js` — the
  * conductor entry synthesizes it.
  *
  * BB-391 removed the two read/write auth-profile members this interface used

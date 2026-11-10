@@ -42,9 +42,9 @@ The conductor's serve process exposes a loopback MCP server named `bakers`. A ru
 - **Grok, Kimi, OpenCode and Pi:** use `bakers tools` from the running agent's shell.
 - **Operator CLI:** addon commands such as `bakers ports up` use the conductor's private endpoint file and bind the selected worktree. An ordinary `bakers tools` invocation without run variables reaches the site's server instead.
 
-See [Tools and integrations](/provision/tools) for user access and [run security](/provision/security/execution) for harness policy. In particular, stripping `BB_CONDUCTOR_TOKEN` from the shell environment prevents the run-bound CLI route; do not treat an operator-credential fallback as equivalent access.
+See [Tools and integrations](/provision/tools) for user access and [run security](/provision/security/execution) for harness policy. In particular, stripping `BAKERS_CONDUCTOR_TOKEN` from the shell environment prevents the run-bound CLI route; do not treat an operator-credential fallback as equivalent access.
 
-A conductor restart normally preserves the port and active grants. If that port is occupied, the conductor chooses another and warns; already-running agents need a new dispatch to receive the new endpoint. Endpoint and grant files under `<BB_HOME>/conductors/` are private (0600); do not copy their contents into tickets.
+A conductor restart normally preserves the port and active grants. If that port is occupied, the conductor chooses another and warns; already-running agents need a new dispatch to receive the new endpoint. Endpoint and grant files under `<BAKERS_HOME>/conductors/` are private (0600); do not copy their contents into tickets.
 
 ## Shipped tools
 
@@ -66,6 +66,6 @@ The conductor also proxies the site's allowed ticket tools through the same serv
 
 Missing project arguments on supported search/list/create calls mean the run's project. Missing workspace on label listing means that project's workspace. If the site cannot be reached, addon tools remain available and the next listing retries the site.
 
-The operator endpoint does not expose these site tools. Use the available tool listing and schema for exact arguments; see [the CLI reference](/configuration/clients/tools).
+The operator endpoint does not expose these site tools. Use the available tool listing and schema for exact arguments; see [the CLI reference](/cli/tools).
 
 Source: `bakers-cli/conductor/src/plugins/tools.ts`, `src/core/tool-server.ts` and the agent addons' launch implementations.

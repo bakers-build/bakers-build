@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 /** Skip the post-`started` exit window when a test plants `started`. */
-export const INSTANT_WATCH = { timeoutMs: 0, pollMs: 1 } as const;
+export const INSTANT_WATCH = { timeout_ms: 0, poll_ms: 1 } as const;
 
 /**
  * Test fake: pretend the launch wrapper started (agent still running).

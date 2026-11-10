@@ -78,10 +78,10 @@ export default {
  schema_version: 1,
  machine_id: "4b0c5f0e-1d7a-4f39-9a51-6b2d1f3e8c11",
  label: "box",
- agents: { addons: [] },
+ agents: { enabled: [] },
  addons: [
   // my own addon
-  { use: '@bakers-build/addon-ddev', with: { apiToken: process.env.X } },
+  { use: '@bakers-build/addon-ddev', with: { api_token: process.env.X } },
  ],
 };
 EOF

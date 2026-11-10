@@ -27,31 +27,32 @@ beforeEach(() => {
   bases = [pathToFileURL(`${dir}/`).href];
 });
 
-// A herdr-style addon: ONE entry contributing BOTH executor + workspace.
+// A herdr-style addon: ONE entry contributing BOTH executor + worktree.
 const HERDR_PRESET = `
 export const executors  = (acc, opts) => [...acc, { kind: 'executor',  id: opts?.id ?? 'herdr', requiredModules: [] }];
-export const workspaces  = (acc, opts) => [...acc, { kind: 'workspace', id: opts?.id ?? 'herdr', requiredModules: [] }];
+export const worktrees  = (acc, opts) => [...acc, { kind: 'worktree', id: opts?.id ?? 'herdr', requiredModules: [] }];
 `;
 const AGENT_PRESET = (id: string) => `
 export const agents = (acc) => [...acc, { agent: { kind: 'agent', id: '${id}', requiredModules: [] } }];
 `;
 const REMOTE_PRESET = (id: string) => `
-export const remotes = (acc) => [...acc, { kind: 'remote', id: '${id}', requiredModules: [] }];
+export const servers = (acc) => [...acc, { kind: 'server', id: '${id}', requiredModules: [] }];
 `;
 const CONNECTION_PRESET = `
 export const connectionPlugins = (acc) => [...acc, { kind: 'auth', id: 'oauth2', requiredModules: [] }];
 `;
 
 describe('discoverAddons — surface routing', () => {
-  it('AC-1: reads executor + workspace from ONE preset entry (no kind wiring)', async () => {
+  it('AC-1: reads executor + worktree from ONE preset entry (no kind wiring)', async () => {
     fixture('herdr.js', HERDR_PRESET);
     const out = await discoverAddons(['./herdr.js'], 'conductor', bases);
     expect(out.executors.map((p) => p.id)).toEqual(['herdr']);
-    expect(out.workspaces.map((p) => p.id)).toEqual(['herdr']);
-    // resolveConductorSlots wires both slots from the single entry.
+    expect(out.worktrees.map((p) => p.id)).toEqual(['herdr']);
+    // resolveConductorSlots wires both slots from the single entry (the
+    // engine-internal slot name stays `workspace`).
     const slots = resolveConductorSlots(out);
     expect(slots.executor?.kind).toBe('executor');
-    expect(slots.workspace?.kind).toBe('workspace');
+    expect(slots.workspace?.kind).toBe('worktree');
   });
 
   it('runs ONLY the requested surface accumulators', async () => {
@@ -84,16 +85,16 @@ describe('discoverAddons — singleton resolution (last wins + warn + guard)', (
     fixture('a.js', REMOTE_PRESET('first'));
     fixture('b.js', REMOTE_PRESET('second'));
     const out = await discoverAddons(['./a.js', './b.js'], 'conductor', bases);
-    expect(out.remotes.map((r) => r.id)).toEqual(['first', 'second']);
+    expect(out.servers.map((r) => r.id)).toEqual(['first', 'second']);
     const slots = resolveConductorSlots(out);
     expect(slots.remote?.id).toBe('second');
   });
 
   it('the runtime .kind guard rejects a mis-declared singleton', async () => {
-    // A preset that pushes a workspace-kinded plugin into the executors list.
+    // A preset that pushes a worktree-kinded plugin into the executors list.
     fixture(
       'bad.js',
-      `export const executors = (acc) => [...acc, { kind: 'workspace', id: 'oops', requiredModules: [] }];`,
+      `export const executors = (acc) => [...acc, { kind: 'worktree', id: 'oops', requiredModules: [] }];`,
     );
     const out = await discoverAddons(['./bad.js'], 'conductor', bases);
     expect(() => resolveConductorSlots(out)).toThrow(/executor/);
@@ -122,11 +123,11 @@ describe('discoverAddons — meta-addon composition', () => {
     // The parent declares the child in its own `addons` and also contributes.
     fixture(
       'parent.js',
-      `export const addons = ['./child.js'];\nexport const remotes = (acc) => [...acc, { kind: 'remote', id: 'parent', requiredModules: [] }];`,
+      `export const addons = ['./child.js'];\nexport const servers = (acc) => [...acc, { kind: 'server', id: 'parent', requiredModules: [] }];`,
     );
     const out = await discoverAddons(['./parent.js'], 'conductor', bases);
     // child before parent → parent (listed last) wins the singleton.
-    expect(out.remotes.map((r) => r.id)).toEqual(['child', 'parent']);
+    expect(out.servers.map((r) => r.id)).toEqual(['child', 'parent']);
     expect(resolveConductorSlots(out).remote?.id).toBe('parent');
   });
 
@@ -137,7 +138,7 @@ describe('discoverAddons — meta-addon composition', () => {
       'conductor',
       bases,
     );
-    expect(out.remotes.map((r) => r.id)).toEqual(['dup']);
+    expect(out.servers.map((r) => r.id)).toEqual(['dup']);
   });
 
   it('keeps the SAME package with DIFFERENT opts (multi-instance, e.g. oauth profiles)', async () => {
@@ -312,6 +313,6 @@ describe('discoverAddons — scopes and per-entry bases', () => {
     expect(
       out.agents.map((c) => (c as { agent: { id: string } }).agent.id),
     ).toEqual(['m']);
-    expect(out.remotes.map((r) => (r as { id: string }).id)).toEqual(['p']);
+    expect(out.servers.map((r) => (r as { id: string }).id)).toEqual(['p']);
   });
 });

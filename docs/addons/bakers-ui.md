@@ -6,7 +6,7 @@ For anyone who works with bakers.build from a terminal. Other UI addons, such as
 
 ## Enable it
 
-Nothing to enable. `bakers ui` loads it on its own. You need a signed-in [connection](/configuration/connector/connections); select a workspace if prompted.
+Nothing to enable. `bakers ui` loads it on its own. You need a signed-in [connection](/configuration/connection); select a workspace if prompted.
 
 ## Options
 
@@ -24,7 +24,7 @@ bakers ui
 
 ## Good to know
 
-- It runs on the Bun runtime that the package installs; `bakers ui` restarts itself under Bun. `BB_UI_NO_BUN=1` uses Node 26.1 or later with `--experimental-ffi` instead.
+- It runs on the Bun runtime that the package installs; `bakers ui` restarts itself under Bun. `BAKERS_UI_NO_BUN=1` uses Node 26.1 or later with `--experimental-ffi` instead.
 - `@bakers-build/ui` is the `bakers ui` command; `@bakers-build/addon-bakers-ui` is this renderer.
 
 More: [Usage](/addons/bakers-ui/usage), [command reference](/addons/bakers-ui/reference), [tickets and runs](/addons/bakers-ui/tickets), [UI keys](/addons/bakers-ui-keys).

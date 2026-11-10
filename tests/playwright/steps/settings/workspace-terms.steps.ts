@@ -63,6 +63,14 @@ When('I rename the term {string} to {string}', async ({ page }, from: string, to
   await saveTermForm(page, to);
 });
 
+When('I rename the term {string} to {string} and cancel', async ({ page }, from: string, to: string) => {
+  remember(page, to);
+  await (await editOperation(page, from)).click();
+  await page.getByLabel('Name', { exact: true }).fill(to);
+  await page.getByRole('link', { name: 'Cancel', exact: true }).click();
+  await expect(page.getByLabel('Name', { exact: true })).toHaveCount(0);
+});
+
 Then('the term {string} is listed', async ({ page }, name: string) => {
   await expect(termRow(page, name)).toHaveCount(1);
 });
