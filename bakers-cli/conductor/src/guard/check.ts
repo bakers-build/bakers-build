@@ -44,6 +44,7 @@ const WRAPPERS: Record<string, { values: string[]; positionals?: number }> = {
   doas: { values: ['-u', '-C'] },
   env: { values: ['-u', '--unset', '-C', '--chdir'] },
   command: { values: [] },
+  builtin: { values: [] },
   exec: { values: ['-a'] },
   nohup: { values: [] },
   time: { values: ['-f', '-o'] },
@@ -117,6 +118,12 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
         command.slice(i),
       );
     if (!m) {
+      if (next === '{') {
+        // `${R:-rm}` and other parameter operators: a value the guard does not compute.
+        const end = command.indexOf('}', i);
+        i = end === -1 ? command.length : end + 1;
+        return null;
+      }
       i++;
       return '$';
     }
@@ -199,6 +206,9 @@ function tokenize(command: string, ctx: GuardContext): Word[][] {
     } else {
       const w = cur();
       if ('*?['.includes(c)) w.glob = true;
+      // Brace expansion (`{a,../x}`, `{1..3}`) yields words the guard does not expand.
+      if (c === '{' && /^\{[^\s{}]*(,|\.\.)[^\s{}]*\}/.test(command.slice(i)))
+        w.dynamic = true;
       w.text += c;
       i++;
     }
@@ -314,7 +324,7 @@ class Checker {
           assigned.push(first);
           words.shift();
           changed = true;
-        } else if (basename(first.text) in WRAPPERS) {
+        } else if (Object.hasOwn(WRAPPERS, basename(first.text))) {
           const spec = WRAPPERS[basename(first.text)] as {
             values: string[];
             positionals?: number;
@@ -354,6 +364,9 @@ class Checker {
         : assigned.some(setsGit);
       if (sticky) this.gitEnv = true;
       if (!verb) continue;
+      // A computed command name could be any verb, a destructive one included.
+      if (verb.dynamic && words.length > 1)
+        return unresolvable('the command a computed name runs');
       const name = basename(verb.text);
       const args = words.slice(1);
       const gitEnv = this.gitEnv;
@@ -378,6 +391,11 @@ class Checker {
       const script = flag === -1 ? undefined : args[flag + 1];
       // A script the guard cannot read is out of its reach, like a file.
       return script && !script.dynamic ? this.run(script.text, cwd) : ALLOW;
+    }
+    if (name === 'eval') {
+      if (args.some((w) => w.dynamic))
+        return unresolvable('the command eval runs');
+      return this.run(args.map((w) => w.text).join(' '), cwd);
     }
     if (DELETERS.has(name)) return this.deleting(name, args, cwd);
     if (name === 'find') return this.find(args, cwd);
@@ -509,6 +527,13 @@ class Checker {
     switch (sub) {
       case 'push':
         return this.push(rest, tree);
+      case 'send-pack':
+      case 'http-push':
+        return deny(
+          'git-push',
+          `git ${sub} updates remote refs past the push rules`,
+          `push only this run's branch without force: git push -u origin HEAD (on ${own})`,
+        );
       case 'config':
         return this.config(rest);
       case 'remote':
@@ -558,8 +583,24 @@ class Checker {
             );
       }
       case 'update-ref': {
-        if (!flags.includes('-d')) return ALLOW;
+        if (flags.includes('--stdin'))
+          return unresolvable('the refs git update-ref --stdin changes');
         const ref = positional[0];
+        if (!flags.includes('-d')) {
+          const mine =
+            ref &&
+            !ref.dynamic &&
+            (ref.text === 'HEAD'
+              ? this.head !== null && this.owned(this.head)
+              : ref.text.startsWith('refs/heads/') && this.owned(ref.text));
+          return mine
+            ? ALLOW
+            : deny(
+                'git-update-ref',
+                `git update-ref would move ${ref?.text ?? 'a ref'}, which this run does not own`,
+                `move only refs/heads/${own}`,
+              );
+        }
         return ref &&
           !ref.dynamic &&
           this.ctx.branch &&
@@ -713,10 +754,11 @@ class Checker {
       if (spec.dynamic) return unresolvable('the refspec git push sends');
       const t = spec.text;
       if (t.startsWith('+')) return refuse(`git push ${t} would force-push`);
-      // An own branch may be deleted, for example after its merge.
       const dst = t.slice(t.lastIndexOf(':') + 1);
+      // A run deletes no remote branch or tag, its own included.
+      if (deleting || t.startsWith(':'))
+        return refuse(`git push would delete ${dst} on the remote`);
       if (dst === 'HEAD' || (!t.includes(':') && t === 'HEAD')) {
-        if (deleting) return refuse('git push --delete HEAD names no branch');
         if (this.head === null)
           return unresolvable('the branch HEAD points at');
         if (!this.owned(this.head))
@@ -725,7 +767,7 @@ class Checker {
           );
       } else if (!this.owned(dst))
         return refuse(
-          `git push would ${deleting || t.startsWith(':') ? 'delete' : 'update'} ${dst}, which this run does not own`,
+          `git push would update ${dst}, which this run does not own`,
         );
     }
     return ALLOW;
@@ -734,7 +776,14 @@ class Checker {
   ddev(args: Word[], cwd: string | null): GuardDecision {
     const sub = args.find((w) => !w.text.startsWith('-'));
     const flags = args.map((w) => w.text);
-    if (sub?.text !== 'delete' && !flags.includes('--remove-data'))
+    // Short options bundle (`-aR`): `-R` is --remove-data, `-a` is --all.
+    const short = (c: string) =>
+      flags.some((f) => new RegExp(`^-[a-zA-Z]*${c}`).test(f));
+    if (
+      sub?.text !== 'delete' &&
+      !flags.includes('--remove-data') &&
+      !short('R')
+    )
       return ALLOW;
     const refuse = (what: string) =>
       deny(
@@ -742,7 +791,7 @@ class Checker {
         `ddev ${sub?.text} would remove ${what}`,
         `remove data only of this run's own project${this.ctx.ddevProject ? ` (${this.ctx.ddevProject})` : ''}, from its worktree`,
       );
-    if (flags.includes('--all') || flags.includes('-a'))
+    if (flags.includes('--all') || short('a'))
       return refuse('every DDEV project');
     const projects = args.filter((w) => w !== sub && !w.text.startsWith('-'));
     for (const p of projects)
@@ -795,7 +844,7 @@ class Checker {
       deny(
         'forge-delete',
         `${name} ${what} would close or delete remote work`,
-        "leave closing and deleting other work to a human; merging and deleting this run's own branch stay allowed",
+        'leave closing and deleting to a human; merging the pull or merge request stays allowed',
       );
     const closes: Record<string, string[]> = {
       pr: ['close', 'delete'],
@@ -825,6 +874,20 @@ class Checker {
         : ALLOW;
     if (texts.some((t) => /(^|=)state(_event)?=clos/.test(t)))
       return refuse(`api -X ${verb} closing a pull or merge request`);
+    // A write that commits to, merges into or renames a branch names it in a field or the path.
+    const field = (key: string) =>
+      texts.find((t) => t.startsWith(`${key}=`))?.slice(key.length + 1);
+    const written = [
+      field('branch'),
+      /\/merges$/.test(action ?? '') ? field('base') : undefined,
+      /\/branches\/([^/]+)\//.exec(action ?? '')?.[1],
+    ].find((b) => b !== undefined && !this.owned(decodeURIComponent(b)));
+    if (written !== undefined)
+      return deny(
+        'forge-branch',
+        `${name} api -X ${verb} would change ${written}, which this run does not own`,
+        "write only to this run's branch; open a pull or merge request for the rest",
+      );
     const ref =
       /\/git\/refs\/(heads|tags)\/(.+)$/.exec(action ?? '') ??
       /\/repository\/(branches|tags)\/(.+)$/.exec(action ?? '');
@@ -834,7 +897,9 @@ class Checker {
         return refuse(
           `api -X ${verb} on ${ref[2]}, which this run does not own`,
         );
-      return ALLOW;
+      return verb === 'DELETE'
+        ? refuse(`api -X DELETE on ${ref[2]}: a run deletes no remote branch`)
+        : ALLOW;
     }
     return verb === 'DELETE' ? refuse(`api -X ${verb}`) : ALLOW;
   }
