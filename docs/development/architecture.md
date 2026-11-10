@@ -27,7 +27,7 @@ A run ends on the server. When the ticket moves to its next state, the server cl
 A run is cancelled in three ways, each setting the existing state `cancelled`; the tool and a conductor change also append the cause to the run's error log:
 
 - *Cancel run* on the ticket page or in the terminal UI;
-- the `bakers_run_cancel` tool (`ticket`, `reason`), which cancels all of the ticket's `claimed` and `running` runs under the same rule as *Cancel run* (ticket edit access), all or none, and logs `cancelled by <account>: <reason>`; an agent passes its own ticket to stop its run;
+- the `bakers_run_cancel` tool (`ticket` or `machine_id`, `reason`), which cancels all of the ticket's `claimed` and `running` runs under the same rule as *Cancel run* (ticket edit access), all or none, and logs `cancelled by <account>: <reason>`; an agent passes its own ticket to stop its run. With `machine_id` it cancels the active runs of every conductor on the caller's own machine across projects, skips runs the caller may not cancel, comments once on each affected ticket and returns an empty list when nothing was cancelled, the same for an unknown or foreign machine;
 - a change of the ticket's conductor, including clearing it: every run still `claimed` or `running` on another conductor is cancelled with `conductor reassigned`, and the new conductor claims the ticket on its next tick. A save that keeps the conductor cancels nothing.
 
 Cancelled runs never count toward the failed-run circuit breaker.

@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Ticket;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Url;
+use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
@@ -123,6 +124,31 @@ final class TicketInterventions {
     }
     /** @var array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs */
     $runs = $storage->loadMultiple($query->execute());
+    return $runs;
+  }
+
+  /**
+   * The claimed or running runs of the machine's conductors, across projects.
+   *
+   * Loaded without access checks; callers decide who may cancel them.
+   *
+   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
+   *   The active runs keyed by id.
+   */
+  public static function activeMachineRuns(BbMachineInterface $machine, EntityTypeManagerInterface $entity_type_manager): array {
+    $conductor_ids = $entity_type_manager->getStorage('bb_conductor')->getQuery()->accessCheck(FALSE)
+      ->condition('machine', $machine->id())
+      ->execute();
+    if ($conductor_ids === []) {
+      return [];
+    }
+    $storage = $entity_type_manager->getStorage('bb_run');
+    $ids = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('conductor_id', $conductor_ids, 'IN')
+      ->condition('state', self::ACTIVE_RUN_STATES, 'IN')
+      ->execute();
+    /** @var array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs */
+    $runs = $storage->loadMultiple($ids);
     return $runs;
   }
 

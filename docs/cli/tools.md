@@ -75,7 +75,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_ticket_activity_list` | `ticket` or `project` | The activity feed of a ticket or a project |
 | `bakers_comment_publish` | `ticket`, `type`, `body` | Publish a comment |
 | `bakers_metric_write` | `ticket`, `name`, `rows`; optional `label` | Record a measurement ([Ticket metrics](/skills-and-workflows/metrics)) |
-| `bakers_run_cancel` | `ticket`, `reason` | Cancel a ticket's active runs |
+| `bakers_run_cancel` | `ticket` or `machine_id`, `reason` | Cancel a ticket's active runs, or every active run of your machine |
 | `bakers_inbox_send` | `ticket`, `message` (e.g. `ports.tunnel`); optional `payload` | Send an addon message to the ticket's conductor, under the same access and payload rules as the web UI, and wait up to 30 s. Returns `id`, `status` (`pending`, `running`, `done` or `failed`) and the Markdown answer `markdown`; `failed` is the addon's answer, a refusal is a tool error |
 | `bakers_inbox_read` | `message` (the UUID `bakers_inbox_send` returned) | The message's current `status` and `markdown`, without waiting |
 
