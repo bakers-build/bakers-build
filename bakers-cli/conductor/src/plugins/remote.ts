@@ -112,6 +112,8 @@ export interface Ticket {
 
 export interface ActiveRun {
   runUuid: string;
+  /** Numeric run id (drupal_internal__id); names the run's terminal. */
+  runId: number;
   ticketUuid: string;
   ticketIdentifier: string;
   branchName: string;
@@ -413,6 +415,8 @@ export interface BbRemote {
    * failure is visible immediately and its cause is recorded.
    */
   markFailed(runUuid: string, errorLog: string): Promise<void>;
+  /** Publishes one Markdown comment (type `comment`) on the ticket. */
+  publishTicketComment(ticketUuid: string, body: string): Promise<void>;
   /**
    * Cancel a live run (`cancel`: claimed/running → cancelled). Finalisation
    * then captures its transcript and stops its agent, as for an operator's cancel.

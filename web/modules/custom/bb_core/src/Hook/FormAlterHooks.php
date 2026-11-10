@@ -124,9 +124,17 @@ final class FormAlterHooks {
     if (!$items instanceof FieldItemListInterface) {
       return;
     }
+    // A ticket's relation autocomplete offers what its pickers offer; core
+    // hands the saved ticket to the endpoint as the handler's entity.
+    if ($items->getEntity()->getEntityTypeId() === 'bb_ticket'
+      && in_array($items->getName(), ['parent_id', 'blocked_by'], TRUE)
+      && isset($element['target_id']['#selection_handler'])) {
+      $element['target_id']['#selection_handler'] = 'bb_ticket_in_ticket_project';
+      return;
+    }
     $handler = $items->getFieldDefinition()->getSetting('handler');
     if (!in_array($handler, [
-      'bb_group_in_active_workspace',
+      'bb_in_entity_workspace',
       'bb_project_in_active_workspace',
       // On an add form the ticket has no project yet, so the route's
       // workspace is the assignee plugin's only source.

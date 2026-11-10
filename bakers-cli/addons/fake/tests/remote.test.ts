@@ -34,6 +34,7 @@ describe('FakeBbRemote', () => {
     expect(active).toEqual([
       {
         runUuid: 'r-1',
+        runId: 1,
         ticketUuid: 't-1',
         ticketIdentifier: '',
         branchName: '',
@@ -44,6 +45,7 @@ describe('FakeBbRemote', () => {
       },
       {
         runUuid: 'r-2',
+        runId: 2,
         ticketUuid: 't-2',
         ticketIdentifier: '',
         branchName: '',
@@ -71,6 +73,7 @@ describe('FakeBbRemote', () => {
     expect(active).toEqual([
       {
         runUuid: 'r-3',
+        runId: 1,
         ticketUuid: 't-3',
         ticketIdentifier: 'GL-3',
         branchName: 'bakers/gl-3',

@@ -52,9 +52,10 @@ The Identity card edits the label and the served states with its own **Save** an
 The loop repeats every `poll_interval_ms` (default 5000). Each cycle:
 
 1. Heartbeats its registration with its active-run count and reads the host budget.
-2. Finalises runs the control plane has closed: records the footprint, uploads the transcript only when [run-log storage policy](/self-hosting/server#run-log-storage) allows it, and closes the hosted tab.
-3. Reaps worktrees of closed tickets that were not cleaned up.
-4. Claims tickets one at a time while the machine is below its run budget, and dispatches each: it ensures the worktree under `.bakers-worktrees/`, prepares it through [`after_create`](/configuration/project/hooks#when-each-hook-runs) when needed, lays out a fresh worktree's overview tab, runs `before_run` and starts the agent session detached.
+2. Fails every `running` run whose hosted terminal is gone, and reports it once on the ticket as a comment. Only the `herdr` and `herdr-core` executors can tell; a failed lookup changes nothing and is checked again next cycle. On the first cycle after the conductor starts whose lookup answers, a lost run is resumed instead when its agent can resume a session (Claude): the same run continues its newest session in its worktree, and the ticket gets a comment. A run that cannot be resumed, or was resumed once already, is failed with `conductor restart: <reason>` and the ticket gets a fresh run. See [After a workspace restart](/provision/coder-workspace#after-a-workspace-restart).
+3. Finalises runs the control plane has closed: records the footprint, uploads the transcript only when [run-log storage policy](/self-hosting/server#run-log-storage) allows it, and closes the hosted tab.
+4. Reaps worktrees of closed tickets that were not cleaned up.
+5. Claims tickets one at a time while the machine is below its run budget, and dispatches each: it ensures the worktree under `.bakers-worktrees/`, prepares it through [`after_create`](/configuration/project/hooks#when-each-hook-runs) when needed, lays out a fresh worktree's overview tab, runs `before_run` and starts the agent session detached.
 
 A cycle never writes ticket state; the agent does that. A dispatch error marks that run `failed` with the error; after repeated failures the server parks the ticket behind a circuit breaker.
 

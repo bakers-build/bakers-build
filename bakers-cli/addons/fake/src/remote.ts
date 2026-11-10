@@ -132,6 +132,11 @@ export interface MarkFailedCall {
   errorLog: string;
 }
 
+export interface PublishTicketCommentCall {
+  ticketUuid: string;
+  body: string;
+}
+
 interface FakeMachineState {
   maxParallel: number;
   /** Per-conductor load contributions; machine current_load is their sum. */
@@ -147,6 +152,7 @@ export class FakeBbRemote implements BbRemote {
     finalizeRun: FinalizeRunCall[];
     markCleanedUp: string[];
     appendRunNote: AppendRunNoteCall[];
+    publishTicketComment: PublishTicketCommentCall[];
     cancelRun: string[];
   } = {
     cancelRun: [],
@@ -155,6 +161,7 @@ export class FakeBbRemote implements BbRemote {
     finalizeRun: [],
     markCleanedUp: [],
     appendRunNote: [],
+    publishTicketComment: [],
   };
 
   /**
@@ -347,6 +354,7 @@ export class FakeBbRemote implements BbRemote {
         (identifier ? `bakers/${identifier.toLowerCase()}` : '');
       return {
         runUuid: r.runUuid,
+        runId: r.runId,
         ticketUuid: r.ticketUuid,
         ticketIdentifier: identifier,
         branchName,
@@ -474,6 +482,10 @@ export class FakeBbRemote implements BbRemote {
       run.state = 'failed';
       run.closed = true;
     }
+  }
+
+  async publishTicketComment(ticketUuid: string, body: string): Promise<void> {
+    this.calls.publishTicketComment.push({ ticketUuid, body });
   }
 
   async fetchFinalizableRuns(_conductorId: string): Promise<FinalizableRun[]> {
