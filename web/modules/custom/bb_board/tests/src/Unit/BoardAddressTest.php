@@ -163,4 +163,46 @@ final class BoardAddressTest extends UnitTestCase {
     self::assertSame('/board?parent_id=abc', $with_state->clear());
   }
 
+  /**
+   * The Details toggle sets details, drops pagers and keeps the rest.
+   */
+  public function testWithDetailsSetsTheParameterAndDropsPage(): void {
+    $address = new BoardAddress('/board', ['parent_id' => 'abc', 'page' => '1,0,0,0']);
+    self::assertSame('/board?parent_id=abc&details=states', $address->withDetails(TRUE));
+    self::assertSame('/board?parent_id=abc&details=phases', $address->withDetails(FALSE));
+  }
+
+  /**
+   * The Done toggle sets done and drops the pager and the older window.
+   */
+  public function testWithDoneSetsTheParameterAndDropsPageAndOlder(): void {
+    $address = new BoardAddress('/board', ['page' => '0,0,0,1', 'done_older' => '1']);
+    self::assertSame('/board?done=hide', $address->withDone(FALSE));
+    self::assertSame('/board?done=show', $address->withDone(TRUE));
+  }
+
+  /**
+   * Show older asks for the whole Done column and drops pagers.
+   */
+  public function testWithOlderSetsDoneOlder(): void {
+    $address = new BoardAddress('/board', ['parent_id' => 'abc', 'page' => '0,0,0,1']);
+    self::assertSame('/board?parent_id=abc&done_older=1', $address->withOlder());
+  }
+
+  /**
+   * Clear filters removes search and health and keeps the parent.
+   */
+  public function testClearRemovesSearchAndHealthAndKeepsParent(): void {
+    $query = ['parent_id' => 'abc', 'search' => 'login', 'health' => 'unhealthy', 'details' => 'states'];
+    self::assertSame('/board?parent_id=abc', (new BoardAddress('/board', $query))->clear());
+    self::assertSame('/board', (new BoardAddress('/board', ['health' => 'unhealthy']))->clear());
+  }
+
+  /**
+   * Title and work state are no longer clearable filters.
+   */
+  public function testTitleAndWorkStateAreNotClearable(): void {
+    self::assertNull((new BoardAddress('/board', ['title' => 'x', 'work_state' => ['done']]))->clear());
+  }
+
 }

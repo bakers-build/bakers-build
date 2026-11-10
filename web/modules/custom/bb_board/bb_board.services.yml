@@ -17,3 +17,9 @@ services:
     arguments: ['@entity_type.manager']
   Drupal\bb_board\ProjectBoardSummary:
     alias: bb_board.project_board_summary
+  # Details and Done open/closed, remembered per account in user.data.
+  bb_board.preferences:
+    class: Drupal\bb_board\BoardPreferences
+    arguments: ['@user.data', '@current_user', '@request_stack']
+  Drupal\bb_board\BoardPreferences:
+    alias: bb_board.preferences

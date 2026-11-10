@@ -23,7 +23,7 @@ final class BoardAddress {
   /**
    * The exposed identifiers "Clear filters" removes; parent stays.
    */
-  private const CLEARABLE = ['state', 'assignee', 'priority', 'title', 'work_state'];
+  private const CLEARABLE = ['state', 'assignee', 'priority', 'search', 'health'];
 
   /**
    * Builds the address of one board request.
@@ -115,16 +115,13 @@ final class BoardAddress {
    * The address with every filter but the parent cleared.
    *
    * NULL when nothing clearable is chosen, so the link never points at the
-   * current address. Dropping work_state restores the three open chips.
+   * current address.
    */
   public function clear(): ?string {
     $active = array_filter(
       array_intersect_key($this->query, array_flip(self::CLEARABLE)),
       static fn (mixed $value): bool => $value !== '' && $value !== 'All' && $value !== [],
     );
-    if (isset($active['work_state']) && $this->isOpenWorkStateDefault($this->active('work_state'))) {
-      unset($active['work_state']);
-    }
     if ($active === []) {
       return NULL;
     }
@@ -133,6 +130,45 @@ final class BoardAddress {
     if (is_string($parent) && $parent !== '') {
       $query['parent_id'] = $parent;
     }
+    return $this->with($query);
+  }
+
+  /**
+   * The address with the Details toggle set to States (TRUE) or Phases.
+   */
+  public function withDetails(bool $on): string {
+    return $this->withParameter('details', $on ? 'states' : 'phases');
+  }
+
+  /**
+   * The address with the Done column open (TRUE) or closed.
+   *
+   * The older window belongs to an open column, so it is dropped.
+   */
+  public function withDone(bool $open): string {
+    return $this->withParameter('done', $open ? 'show' : 'hide', ['done_older']);
+  }
+
+  /**
+   * The address asking Done for tickets older than the 7-day window.
+   */
+  public function withOlder(): string {
+    return $this->withParameter('done_older', '1');
+  }
+
+  /**
+   * This request with one parameter set and the pager dropped.
+   *
+   * @param string $name
+   *   The parameter to set.
+   * @param string $value
+   *   Its value.
+   * @param list<string> $drop
+   *   Further parameters to remove.
+   */
+  private function withParameter(string $name, string $value, array $drop = []): string {
+    $query = array_diff_key($this->query, array_flip(['page', $name, ...$drop]));
+    $query[$name] = $value;
     return $this->with($query);
   }
 
