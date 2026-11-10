@@ -292,7 +292,7 @@ final class DeleteDialogTest extends KernelTestBase {
 
     $markup = (string) $this->get($project->toUrl('delete-form')->toString() . '?_wrapper_format=island_dialog')->getContent();
 
-    self::assertMatchesRegularExpression('/data-component-id="bb_theme:message"[^>]*>.*project-a<\/em> can\'t be deleted: [^<]*\b1 bakers\.build ticket\b[^<]* and [^<]*still use it\. Remove or reassign them first\./s', $markup, 'the counts per type');
+    self::assertMatchesRegularExpression('/data-component-id="bb_theme:message"[^>]*>.*project-a<\/em> can\'t be deleted: 1 bakers\.build ticket still uses it\. Remove or reassign it first\./s', $markup, 'the count of the one blocking type');
     self::assertMatchesRegularExpression('/<h3>bakers\.build ticket \(1\)<\/h3>\s*<ul><li><a href="[^"]*' . preg_quote((string) $ticket->toUrl()->toString(), '/') . '"[^>]*>ticket-a<\/a>/', $markup, 'blockers are grouped and linked');
     self::assertStringNotContainsString('This action cannot be undone', $markup);
   }
