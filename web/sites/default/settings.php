@@ -1,5 +1,15 @@
 <?php
 
+// DDEV's generated settings come first, so the committed values below win over
+// them (the fixed salt, the config sync directory). Among other things they
+// keep sites/default and settings.php writable (skip_permissions_hardening);
+// Drupal's own hardening makes both read-only after an install, which makes git
+// fail when a merge or checkout rewrites a settings file. The file exists only
+// under DDEV, which writes it.
+if (getenv('IS_DDEV_PROJECT') === 'true' && file_exists(__DIR__ . '/settings.ddev.php')) {
+  include __DIR__ . '/settings.ddev.php';
+}
+
 // bakers.build `playground` (default) site. Committed settings: ddev-local DB creds and
 // the site salt are not real secrets and live here. Only genuine secrets (the
 // GitLab API token) are read from the environment via getenv().
@@ -41,11 +51,6 @@ $settings['reverse_proxy_addresses'] = ['10.0.0.0/8', '172.16.0.0/12', '192.168.
 // IS_DDEV_PROJECT so it can live in the tracked settings.php and take effect on
 // every `ddev init` without touching production.
 if (getenv('IS_DDEV_PROJECT') === 'true') {
-  // Keep sites/default and settings.php writable. Drupal makes both read-only
-  // after an install (permissions hardening); under DDEV that blocks git from
-  // rewriting settings files on a merge or checkout. The generated
-  // settings.ddev.php sets this too, but this file does not include it.
-  $settings['skip_permissions_hardening'] = TRUE;
   // Own services file (not the Composer-scaffolded development.services.yml,
   // which gets overwritten on `composer require`) — carries twig.config debug.
   $settings['container_yamls'][] = dirname(__DIR__) . '/bakers.dev.services.yml';
