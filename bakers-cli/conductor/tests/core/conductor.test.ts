@@ -5579,7 +5579,7 @@ describe('Conductor lost runs (pane gone)', () => {
     }
   }
 
-  function runningRemote(): FakeBbRemote {
+  function runningRemote(worktreePath = '/wt/bb-1'): FakeBbRemote {
     const remote = new FakeBbRemote({
       tickets: {
         't-1': {
@@ -5596,7 +5596,7 @@ describe('Conductor lost runs (pane gone)', () => {
           ticketUuid: 't-1',
           stateAtStart: 'working',
           state: 'running',
-          worktreePath: '/wt/bb-1',
+          worktreePath,
         },
       ],
     });
@@ -5711,6 +5711,189 @@ describe('Conductor lost runs (pane gone)', () => {
         l.level === 'warn' && l.msg === 'pane lookup failed; run left active',
     );
     expect(warns).toHaveLength(2);
+  });
+
+  describe('after a restart', () => {
+    /** An agent that resumes sessions; `sessions` are the transcripts on disk. */
+    function resumableAgent(sessions: string[]) {
+      const resumed: string[] = [];
+      const agent: BbAgent = {
+        ...fakeAgent,
+        sessionExists: async (_path, id) => sessions.includes(id),
+        resumeCommand: (id) => {
+          resumed.push(id);
+          return `claude --resume ${id}`;
+        },
+      };
+      return { agent, resumed };
+    }
+
+    /** A running run whose worktree exists, under a conductor with its own state dir. */
+    async function restarted(
+      agent: BbAgent,
+      executor: PaneExecutor,
+      state = mkdtempSync(join(tmpdir(), 'restart-')),
+    ) {
+      const worktree = join(state, 'wt');
+      mkdirSync(worktree, { recursive: true });
+      const remote = runningRemote(worktree);
+      const spy = spyLogger();
+      const conductor = new TestConductor(
+        makeConfig({ config_path: join(state, 'conductor.config.js') }),
+        remote,
+        executor,
+        new FakeWorkspace(),
+        resolved(agent),
+        spy.log,
+        CHECKOUT,
+      );
+      await conductor.start();
+      return { conductor, remote, state, worktree };
+    }
+
+    it('resumes the newest session of a lost run in place on the first tick and says so on the ticket', async () => {
+      const { agent, resumed } = resumableAgent([
+        'r-1',
+        attemptSessionId('r-1', 1),
+      ]);
+      const executor = new PaneExecutor();
+      executor.alive = false;
+      const { conductor, remote } = await restarted(agent, executor);
+
+      await conductor.tick();
+
+      expect(resumed).toEqual([attemptSessionId('r-1', 1)]);
+      expect(executor.started).toHaveLength(1);
+      expect(executor.started[0]?.command).toBe(
+        `claude --resume ${attemptSessionId('r-1', 1)}`,
+      );
+      expect(executor.started[0]?.run.uuid).toBe('r-1');
+      expect(remote.calls.markFailed).toEqual([]);
+      expect((await remote.fetchActiveRuns('x')).map((r) => r.state)).toEqual([
+        'running',
+      ]);
+      expect(remote.calls.publishTicketComment).toHaveLength(1);
+      expect(remote.calls.publishTicketComment[0]?.body).toMatch(
+        /resumed.*conductor restart/,
+      );
+    });
+
+    it('clears the run tab before relaunching it once, and leaves the run alone while its pane lives', async () => {
+      const { agent } = resumableAgent(['r-1']);
+      const executor = new PaneExecutor();
+      executor.alive = false;
+      const { conductor, remote } = await restarted(agent, executor);
+
+      await conductor.tick();
+      executor.alive = true;
+      await conductor.tick();
+
+      const order = executor.calls.map((c) => c.kind);
+      expect(order.indexOf('cleanupRun')).toBeLessThan(
+        order.indexOf('startRun'),
+      );
+      expect(executor.calls).toContainEqual({
+        kind: 'cleanupRun',
+        branch: 'feat/bb-1',
+        runId: 7,
+      });
+      expect(executor.started.map((s) => s.run.uuid)).toEqual(['r-1']);
+      expect(remote.calls.publishTicketComment).toHaveLength(1);
+    });
+
+    it.each([
+      ['an agent without session resume', fakeAgent, /has no session resume/],
+      [
+        'a run without a session on disk',
+        resumableAgent([]).agent,
+        /no agent session/,
+      ],
+      [
+        'a resume launch that fails',
+        {
+          ...resumableAgent(['r-1']).agent,
+          resumeCommand: () => undefined,
+        },
+        /cannot resume/,
+      ],
+    ])('fails the run, naming the restart and the reason, for %s', async (_, agent, reason) => {
+      const executor = new PaneExecutor();
+      executor.alive = false;
+      const { conductor, remote } = await restarted(agent, executor);
+
+      await conductor.tick();
+
+      expect(executor.started).toEqual([]);
+      expect(remote.calls.markFailed).toHaveLength(1);
+      const cause = remote.calls.markFailed[0]?.errorLog ?? '';
+      expect(cause).toMatch(/^conductor restart: /);
+      expect(cause).toMatch(reason);
+      expect(remote.calls.publishTicketComment[0]?.body).toMatch(
+        /could not be resumed after the conductor restart/,
+      );
+    });
+
+    it('fails a run whose worktree is gone', async () => {
+      const { agent } = resumableAgent(['r-1']);
+      const executor = new PaneExecutor();
+      executor.alive = false;
+      const { conductor, remote, worktree } = await restarted(agent, executor);
+      rmSync(worktree, { recursive: true });
+
+      await conductor.tick();
+
+      expect(executor.started).toEqual([]);
+      expect(remote.calls.markFailed[0]?.errorLog).toMatch(
+        /^conductor restart: its worktree .* is gone/,
+      );
+    });
+
+    it('fails instead of resuming a run that was already resumed once', async () => {
+      const { agent } = resumableAgent(['r-1']);
+      const first = new PaneExecutor();
+      first.alive = false;
+      const { conductor, remote, state } = await restarted(agent, first);
+      await conductor.tick();
+      expect(first.started).toHaveLength(1);
+
+      const second = new PaneExecutor();
+      second.alive = false;
+      const again = new TestConductor(
+        makeConfig({ config_path: join(state, 'conductor.config.js') }),
+        remote,
+        second,
+        new FakeWorkspace(),
+        resolved(agent),
+        spyLogger().log,
+        CHECKOUT,
+      );
+      await again.start();
+      await again.tick();
+
+      expect(second.started).toEqual([]);
+      expect(remote.calls.markFailed[0]?.errorLog).toMatch(
+        /^conductor restart: the run was already resumed once/,
+      );
+    });
+
+    it('waits while the pane lookup fails, and fails without resuming a pane lost after recovery', async () => {
+      const { agent } = resumableAgent(['r-1']);
+      const executor = new PaneExecutor();
+      executor.alive = new Error('herdr: no server');
+      const { conductor, remote } = await restarted(agent, executor);
+
+      await conductor.tick();
+      expect(executor.started).toEqual([]);
+      expect(remote.calls.markFailed).toEqual([]);
+
+      executor.alive = true;
+      await conductor.tick();
+      executor.alive = false;
+      await conductor.tick();
+
+      expect(executor.started).toEqual([]);
+      expect(remote.calls.markFailed[0]?.errorLog).toMatch(/^herdr pane gone/);
+    });
   });
 
   it('posts no comment while the failed mark cannot be written, then reports once', async () => {

@@ -320,6 +320,46 @@ export class ClaudeAgent implements BbAgent {
     if (prompt === '') {
       return 'claude';
     }
+    return this.command(
+      this.measure
+        ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
+        : ['claude', shellQuote(prompt)],
+      run,
+      workspacePath,
+      tools,
+      pluginArgs,
+    );
+  }
+
+  /**
+   * `claude --resume <id>` with the launch's own flags, so a run whose pane
+   * died continues its conversation. Not for a measured run: its wrapper
+   * profiles one fresh session.
+   */
+  resumeCommand(
+    sessionId: string,
+    workspacePath?: string,
+    tools?: { url: string },
+    _env?: Readonly<Record<string, string>>,
+    pluginArgs: readonly string[] = [],
+  ): string | undefined {
+    if (this.measure) return undefined;
+    return this.command(
+      ['claude', '--resume', shellQuote(sessionId)],
+      undefined,
+      workspacePath,
+      tools,
+      pluginArgs,
+    );
+  }
+
+  private command(
+    head: string[],
+    run: AgentRunIdentity | undefined,
+    workspacePath: string | undefined,
+    tools: { url: string } | undefined,
+    pluginArgs: readonly string[],
+  ): string {
     // Wait for project-declared plugins (extraKnownMarketplaces) to install
     // before the first turn; a fresh worktree otherwise starts without them.
     // A new worktree path would stop the run at Claude Code's trust dialog.
@@ -329,9 +369,7 @@ export class ClaudeAgent implements BbAgent {
       ...(workspacePath
         ? ['node', shellQuote(TRUST_WRAPPER), shellQuote(workspacePath)]
         : []),
-      ...(this.measure
-        ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
-        : ['claude', shellQuote(prompt)]),
+      ...head,
     ];
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('--model', shellQuote(this.model));

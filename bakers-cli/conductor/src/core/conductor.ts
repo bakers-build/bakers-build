@@ -209,6 +209,27 @@ function recordAfterCreateOutcome(
   }
 }
 
+/**
+ * Run UUIDs this conductor resumed after a restart, beside its config file so
+ * a second restart fails a run instead of resuming it again.
+ * shortcut: entries are never pruned (a UUID per resumed run); prune on finalize if it ever grows.
+ */
+function resumedStateFileOf(config: ConductorFileConfig): string {
+  const file = config.config_path;
+  return join(dirname(file), `${basename(file, '.js')}.resumed.json`);
+}
+
+function loadResumed(file: string): string[] {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+/** A lost run the restart recovery fails instead of resuming; the message is the reason. */
+class ResumeRefused extends Error {}
+
 function renderPrompt(
   template: string,
   values: {
@@ -252,6 +273,8 @@ export function registrationOf(
 
 export class Conductor {
   private uuid: string | null = null;
+  /** Until this process's first answering pane lookup: lost runs are resumed, not failed. */
+  private recovering = true;
   /**
    * Frozen tickets seen on the last poll, by uuid, with the worktree their
    * hook ran in. Mirrored to `frozenStateFile` when one is given, so an
@@ -608,19 +631,27 @@ export class Conductor {
    */
   private async enqueueLostRuns(): Promise<void> {
     if (!this.executor.runAlive) return;
-    const runs = await this.remote.fetchActiveRuns(this.id);
+    const runs = (await this.remote.fetchActiveRuns(this.id)).filter(
+      (r) => r.state === 'running',
+    );
+    // Restart recovery is this process's first answering tick; with nothing running, it is over.
+    if (runs.length === 0) this.recovering = false;
+    const recovery = this.recovering;
     for (const r of runs) {
-      if (r.state !== 'running') continue;
       this.queue.enqueue({
         key: `lost:${r.runUuid}`,
         lane: r.ticketUuid || r.runUuid,
-        run: () => this.lostOne(r),
+        run: () => this.lostOne(r, recovery),
       });
     }
   }
 
-  /** Fails and reports one run when its terminal is gone; a failed lookup changes nothing. */
-  private async lostOne(r: ActiveRun): Promise<void> {
+  /**
+   * Fails and reports one run when its terminal is gone; a failed lookup
+   * changes nothing. During restart `recovery` it resumes the run instead,
+   * when its agent and session allow.
+   */
+  private async lostOne(r: ActiveRun, recovery: boolean): Promise<void> {
     let alive: boolean;
     try {
       alive = (await this.executor.runAlive?.(r.branchName, r.runId)) ?? true;
@@ -631,14 +662,21 @@ export class Conductor {
       );
       return;
     }
+    this.recovering = false;
     if (alive) return;
+    let refused: string | undefined;
     try {
       // The run may have ended normally since the snapshot.
       const still = (await this.remote.fetchActiveRuns(this.id)).find(
         (a) => a.runUuid === r.runUuid,
       );
       if (still?.state !== 'running') return;
-      const cause = `herdr pane gone: ${this.executor.id} found no live terminal for run #${r.runId} (branch ${r.branchName})`;
+      if (recovery) {
+        refused = await this.resumeLost(r);
+        if (refused === undefined) return;
+      }
+      const gone = `herdr pane gone: ${this.executor.id} found no live terminal for run #${r.runId} (branch ${r.branchName})`;
+      const cause = refused ? `conductor restart: ${refused}; ${gone}` : gone;
       await this.remote.markFailed(r.runUuid, cause);
       this.revokeRunTools(r.runUuid);
       this.signalUi(r.worktreePath);
@@ -651,11 +689,18 @@ export class Conductor {
       return;
     }
     // Not retried: the run is no longer active, so a retry could only duplicate.
+    await this.lostComment(
+      r,
+      `was marked \`failed\`: its terminal pane is gone (\`${this.executor.id}\` found no live terminal on branch \`${r.branchName}\`), so nobody was executing it any more.${refused ? ` It could not be resumed after the conductor restart: ${refused}. The ticket gets a fresh run.` : ''}`,
+    );
+  }
+
+  private async lostComment(r: ActiveRun, what: string): Promise<void> {
     await this.remote
       .publishTicketComment(
         r.ticketUuid,
         'comment',
-        `Run #${r.runId} (\`${r.runUuid}\`) in state \`${r.stateAtStart}\` was marked \`failed\`: its terminal pane is gone (\`${this.executor.id}\` found no live terminal on branch \`${r.branchName}\`), so nobody was executing it any more.\n`,
+        `Run #${r.runId} (\`${r.runUuid}\`) in state \`${r.stateAtStart}\` ${what}\n`,
       )
       .catch((err: unknown) => {
         this.logger.warn(
@@ -663,6 +708,44 @@ export class Conductor {
           'lost run comment failed',
         );
       });
+  }
+
+  /**
+   * Relaunches a lost run in its worktree with its agent's session resume.
+   * Returns undefined when resumed, else why it was not: the caller fails it.
+   */
+  private async resumeLost(r: ActiveRun): Promise<string | undefined> {
+    const file = resumedStateFileOf(this.config);
+    const resumed = loadResumed(file);
+    if (resumed.includes(r.runUuid)) return 'the run was already resumed once';
+    if (!r.worktreePath || !existsSync(r.worktreePath))
+      return `its worktree ${r.worktreePath || '(unrecorded)'} is gone`;
+    try {
+      // Recorded first: a resume that dies half-way must not be tried again.
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, `${JSON.stringify([...resumed, r.runUuid])}\n`);
+      await this.dispatch(
+        {
+          runUuid: r.runUuid,
+          runId: r.runId,
+          ticketUuid: r.ticketUuid,
+          stateAtStart: r.stateAtStart,
+          handler: r.stateAtStart,
+        },
+        {},
+        true,
+      );
+    } catch (err) {
+      return err instanceof ResumeRefused
+        ? err.message
+        : `the resume launch failed: ${err instanceof Error ? err.message : String(err)}`;
+    }
+    this.logger.info({ run: r.runUuid }, 'lost run resumed after restart');
+    await this.lostComment(
+      r,
+      `was resumed after a conductor restart: its terminal pane was gone, so the agent continues its session in \`${r.worktreePath}\`.`,
+    );
+    return undefined;
   }
 
   /**
@@ -1554,7 +1637,12 @@ export class Conductor {
   }
 
   /** `at.worktree` is set once the workspace exists, so a failure can signal it. */
-  private async dispatch(run: ClaimedRun, at: { worktree?: string } = {}) {
+  /** `resume`: continue the run's newest agent session instead of prompting afresh. */
+  private async dispatch(
+    run: ClaimedRun,
+    at: { worktree?: string } = {},
+    resume = false,
+  ) {
     const t = await this.remote.getTicket(run.ticketUuid);
     // Resolve the ticket alias and machine defaults, or the project selection hook.
     // Persist the package id below so finalize can choose its transcript parser.
@@ -1608,7 +1696,7 @@ export class Conductor {
     };
     const launch = { started: false };
     try {
-      await this.launch(run, t, chosen, ws, ctx, launch);
+      await this.launch(run, t, chosen, ws, ctx, launch, resume);
     } catch (err) {
       await this.unwindDispatch(ctx, launch.started);
       throw err;
@@ -1626,8 +1714,12 @@ export class Conductor {
     ws: EnsuredWorkspace,
     ctx: HookListenerContext,
     launch: { started: boolean },
+    resume = false,
   ): Promise<void> {
     const env = ctx.env;
+    const resumeSession = resume
+      ? await this.resumableSession(chosen, ws.path, run.runUuid)
+      : undefined;
     // Lifecycle hooks are conductor-owned + best-effort (BB-84): runHook never
     // throws, so neither call can abort dispatch or wedge a run in `claimed`.
     // `runSlot` runs the addon listeners first under the same rule (BB-599).
@@ -1756,14 +1848,27 @@ export class Conductor {
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
     const plugins = await this.installPlugins(chosen, t, run, ws.path);
     Object.assign(env, plugins.env);
-    const command = chosen.agent.launchCommand(
-      prompt,
-      identity,
-      ws.path,
-      tools ? { url: tools.url } : undefined,
-      env,
-      plugins.args,
-    );
+    const command =
+      resumeSession === undefined
+        ? chosen.agent.launchCommand(
+            prompt,
+            identity,
+            ws.path,
+            tools ? { url: tools.url } : undefined,
+            env,
+            plugins.args,
+          )
+        : chosen.agent.resumeCommand?.(
+            resumeSession,
+            ws.path,
+            tools ? { url: tools.url } : undefined,
+            env,
+            plugins.args,
+          );
+    if (command === undefined)
+      throw new ResumeRefused(
+        `agent ${chosen.id} cannot resume a session in this configuration`,
+      );
     // Read after launchCommand: a warning may depend on what this launch got.
     const warnings = chosen.agent.launchWarnings;
     if (warnings?.length) {
@@ -1828,6 +1933,24 @@ export class Conductor {
       startedAt: dispatchedAt,
     });
     this.signalUi(ws.path);
+  }
+
+  /** The run's newest agent session, or why it cannot be resumed. */
+  private async resumableSession(
+    chosen: ResolvedAgent,
+    worktree: string,
+    runUuid: string,
+  ): Promise<string> {
+    if (!chosen.agent.resumeCommand || !chosen.agent.sessionExists)
+      throw new ResumeRefused(`agent ${chosen.id} has no session resume`);
+    let newest: string | undefined;
+    for (const id of attemptFamily(runUuid)) {
+      if (!(await chosen.agent.sessionExists(worktree, id))) break;
+      newest = id;
+    }
+    if (newest === undefined)
+      throw new ResumeRefused(`no agent session of the run in ${worktree}`);
+    return newest;
   }
 
   /**

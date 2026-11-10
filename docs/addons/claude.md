@@ -83,6 +83,7 @@ bakers agents
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
 - Listed in a conductor config, an agent addon is ignored with a warning.
+- After a restart, a lost run resumes with `claude --resume`.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 
