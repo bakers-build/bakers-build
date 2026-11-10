@@ -174,7 +174,11 @@ export class HerdrCoreExecutor implements BbExecutor {
       return input.authFailurePatterns?.length
         ? {
             sessionRef: name,
-            authFailure: watchAuth(readPane, input.authFailurePatterns),
+            authFailure: watchAuth(
+              readPane,
+              input.authFailurePatterns,
+              input.claimedAt ? { since: input.claimedAt } : {},
+            ),
           }
         : { sessionRef: name };
     } catch (err) {
