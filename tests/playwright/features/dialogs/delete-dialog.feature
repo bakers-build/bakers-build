@@ -37,6 +37,22 @@ Feature: Delete opens its confirmation as a dialog over the page
     Then the page confirms the disposable entity was deleted
     And the disposable entity no longer exists
 
+  Scenario Outline: A workspace lead deletes a <kind> from its list in the dialog
+    Given a disposable "<kind>" exists in the Northside workspace
+    And I am logged in as the account "north-lead"
+    When I open the page where the disposable entity is managed
+    And I open the Delete dialog of the disposable entity
+    Then the delete dialog is titled after the disposable entity
+    And the address is still the page the dialog was opened over
+    When I confirm the deletion in the dialog
+    Then the page confirms the disposable entity was deleted
+    And the disposable entity no longer exists
+
+    Examples:
+      | kind   |
+      | label  |
+      | recipe |
+
   Scenario: A project that still has tickets names them and offers only Close
     Given a disposable "busy project" exists in the Northside workspace
     And I am logged in as the account "north-lead"

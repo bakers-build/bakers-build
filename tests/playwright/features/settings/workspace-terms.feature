@@ -17,9 +17,11 @@ Feature: Workspace settings manage types, recipes and labels
     When I add the term "Added term <noun>" with the action "Add <noun>"
     Then the tab "<tab>" is current
     And the term "Added term <noun>" is listed
+    And the page loaded its own assets without htmx transport keys
     When I rename the term "Added term <noun>" to "Renamed term <noun>"
     Then the tab "<tab>" is current
     And the term "Renamed term <noun>" is listed
+    And the page loaded its own assets without htmx transport keys
     And the term "Added term <noun>" is not listed
     And the term "Renamed term <noun>" has no page of its own
 
@@ -28,6 +30,20 @@ Feature: Workspace settings manage types, recipes and labels
       | Types   | type   |
       | Recipes | recipe |
       | Labels  | label  |
+
+  Scenario Outline: A lead leaves a term's edit form on the <tab> tab by Cancel
+    Given I am logged in as the account "north-lead"
+    When I visit "/bakers/settings/<path>"
+    And I add the term "Kept term <noun>" with the action "Add <noun>"
+    And I rename the term "Kept term <noun>" to "Discarded term <noun>" and cancel
+    Then the tab "<tab>" is current
+    And the term "Kept term <noun>" is listed
+    And the term "Discarded term <noun>" is not listed
+
+    Examples:
+      | tab     | path    | noun   |
+      | Recipes | recipes | recipe |
+      | Labels  | labels  | label  |
 
   Scenario Outline: The <tab> tab lists the workspace's seeded terms
     Given I am logged in as the account "north-lead"

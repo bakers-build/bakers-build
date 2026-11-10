@@ -25,6 +25,8 @@ Feature: Create dialogs share dismissal and submission behavior
       | surface |
       | ticket  |
       | project |
+      | label   |
+      | recipe  |
 
   Scenario Outline: A create dialog opens with focus in its first field
     When I open the "<surface>" create dialog

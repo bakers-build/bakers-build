@@ -110,6 +110,16 @@ const SURFACES: Record<string, Surface> = {
     trigger: 'New team',
     form: 'form#bb-team-create-form',
   },
+  label: {
+    screen: () => `/${workspaceSlug()}/settings/labels`,
+    trigger: 'Add label',
+    form: 'form#bb-term-label-add-form',
+  },
+  recipe: {
+    screen: () => `/${workspaceSlug()}/settings/recipes`,
+    trigger: 'Add recipe',
+    form: 'form#bb-term-recipe-add-form',
+  },
 };
 
 /**
