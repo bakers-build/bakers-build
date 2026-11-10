@@ -57,9 +57,17 @@ describe('machine-context (BB-201: ~/.bakers/machine.config.js)', () => {
     expect(ctx.tunnel).toBe(true);
   });
 
-  it.each([undefined, null, 'ssh://user@host:22'])('preserves connection_url %s distinctly', async (value) => {
+  it.each([
+    undefined,
+    null,
+    'ssh://user@host:22',
+  ])('preserves connection_url %s distinctly', async (value) => {
     const p = join(tmp, 'connection.config.js');
-    const data = { machine_id: UUID, label: 'host', ...(value !== undefined ? { connection_url: value } : {}) };
+    const data = {
+      machine_id: UUID,
+      label: 'host',
+      ...(value !== undefined ? { connection_url: value } : {}),
+    };
     writeFileSync(p, `export default ${JSON.stringify(data)};`);
     expect(await readMachineContext(p)).toEqual(data);
   });

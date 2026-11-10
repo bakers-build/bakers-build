@@ -62,13 +62,26 @@ afterEach(() => vi.unstubAllEnvs());
 describe('conductor addons per scope', () => {
   it('loads Tailscale only from the machine scope', async () => {
     const entry = `{ use: '@bakers-build/addon-tailscale', with: { ssh_user: 'christian' } }`;
-    writeMachine(`export default { addons: ['@bakers-build/addon-codex', ${entry}] };`);
+    writeMachine(
+      `export default { addons: ['@bakers-build/addon-codex', ${entry}] };`,
+    );
     const config = await loadConductorConfig(writeProject(projectConfig()));
-    expect(config.hookListeners?.some((hook) => typeof hook.before_conductor_start === 'function')).toBe(true);
+    expect(
+      config.hookListeners?.some(
+        (hook) => typeof hook.before_conductor_start === 'function',
+      ),
+    ).toBe(true);
     writeMachine(`export default { addons: ['@bakers-build/addon-codex'] };`);
-    const { warnings, result } = await captureWarnings(() => loadConductorConfig(writeProject(projectConfig(entry))));
+    const { warnings, result } = await captureWarnings(() =>
+      loadConductorConfig(writeProject(projectConfig(entry))),
+    );
     expect(result.hookListeners ?? []).toEqual([]);
-    expect(warnings.some((warning) => warning.includes('addon-tailscale') && warning.includes('not loaded'))).toBe(true);
+    expect(
+      warnings.some(
+        (warning) =>
+          warning.includes('addon-tailscale') && warning.includes('not loaded'),
+      ),
+    ).toBe(true);
   });
 
   it('agent harness from machine addons[] becomes a candidate', async () => {

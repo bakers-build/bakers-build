@@ -98,6 +98,7 @@ export {
   reportLoadedBbConfigFields,
   resolveBbConnectionSelection,
 } from './cli/load-bakers-config.js';
+export { isValidMachineConnectionUrl } from './cli/machine-connection.js';
 export {
   type AgentRoutes,
   assertSchemaVersion,
@@ -221,4 +222,3 @@ export {
   readEffectiveAddon,
   scopeAddons,
 } from './plugins/scoped-addons.js';
-export { isValidMachineConnectionUrl } from './cli/machine-connection.js';

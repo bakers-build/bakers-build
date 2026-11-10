@@ -62,6 +62,7 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
   ],
   admin_permission: 'administer bakers',
   base_table: 'bb_machine',
+  constraints: ['MachineConnectionUrl' => []],
 )]
 final class BbMachine extends BbContentEntityBase implements BbMachineInterface, EntityOwnerInterface {
 
@@ -101,7 +102,6 @@ final class BbMachine extends BbContentEntityBase implements BbMachineInterface,
     $fields['connection_url'] = BaseFieldDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Connection URL'))
       ->setSetting('max_length', 2048)
-      ->addPropertyConstraints('value', ['MachineConnectionUrl' => []])
       ->setDisplayConfigurable('view', TRUE);
 
     return $fields;

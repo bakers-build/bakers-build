@@ -89,6 +89,24 @@ final class EntityDetailCardFormTest extends KernelTestBase {
   }
 
   /**
+   * Connection addresses use the existing copyable link cell, never an input.
+   */
+  public function testMachineConnectionLink(): void {
+    foreach (['ssh://user@[::1]:2222', 'https://host/path?q=value', NULL] as $url) {
+      $this->machine->set('connection_url', $url)->save();
+      [$form] = $this->open('identity');
+      self::assertArrayNotHasKey('connection_url', $form);
+      $rows = $form['readonly']['#props']['items'];
+      $matches = array_values(array_filter($rows, static fn (array $row): bool => $row['cells']['label']['value'] === 'Connection URL'));
+      self::assertCount(1, $matches);
+      $expected = $url === NULL
+        ? ['kind' => 'text', 'value' => '—', 'emphasis' => 'faint']
+        : ['kind' => 'link', 'value' => $url, 'url' => $url];
+      self::assertSame($expected, $matches[0]['cells']['value']);
+    }
+  }
+
+  /**
    * A save applies only the card's changed fields onto the stored entity.
    */
   public function testSaveKeepsChangesMadeElsewhereSinceOpening(): void {

@@ -14,9 +14,10 @@ final class MachineConnectionUrl {
    */
   public static function isValid(mixed $value): bool {
     if (!is_string($value) || mb_strlen($value) > 2048
-      || preg_match('/[\s\x00-\x1f\x7f\\\\]/u', $value)
+      || preg_match('/[\s\p{Cc}\\\\]/u', $value)
       || preg_match('/%(?![0-9a-f]{2})/i', $value)
-      || preg_match('/[\s\x00-\x1f\x7f]/u', rawurldecode($value))) {
+      || !mb_check_encoding(rawurldecode($value), 'UTF-8')
+      || preg_match('/[\s\p{Cc}]/u', rawurldecode($value))) {
       return FALSE;
     }
     if (!preg_match('~^(ssh|https)://([^/?#]+)(.*)\z~i', $value, $parts)) {
@@ -43,7 +44,8 @@ final class MachineConnectionUrl {
     if (!preg_match('/^(\[[^\]]+\]|[^:]+)(?::([0-9]+))?\z/', end($parts), $match)) {
       return FALSE;
     }
-    if (isset($match[2]) && ((int) $match[2] < 1 || (int) $match[2] > 65535)) {
+    $port_options = ['options' => ['min_range' => 1, 'max_range' => 65535]];
+    if (isset($match[2]) && !filter_var((int) $match[2], FILTER_VALIDATE_INT, $port_options)) {
       return FALSE;
     }
     return self::validHost($match[1]);

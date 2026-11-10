@@ -709,7 +709,9 @@ export async function loadConductorConfig(
     ...(config.hooks?.provision_up !== undefined ? { provisioning } : {}),
     bakers,
     ...identityOf(machineCtx, project, variant),
-    ...(machineCtx.connection_url !== undefined ? { connection_url: machineCtx.connection_url } : {}),
+    ...(machineCtx.connection_url !== undefined
+      ? { connection_url: machineCtx.connection_url }
+      : {}),
     variant,
     project,
     states,

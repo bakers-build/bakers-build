@@ -77,7 +77,10 @@ export interface ConductorStartContext {
  * accumulator order, each before the slot's project shell hook.
  */
 export type HookListener = { [K in HookName]?: HookListenerFn } & {
-  before_conductor_start?: (machine: MachineRegistrationData, conductor: Readonly<ConductorStartContext>) => void | Promise<void>;
+  before_conductor_start?: (
+    machine: MachineRegistrationData,
+    conductor: Readonly<ConductorStartContext>,
+  ) => void | Promise<void>;
   /** Names the listener in conductor logs. */
   id?: string;
 };

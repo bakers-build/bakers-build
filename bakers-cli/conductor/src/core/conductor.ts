@@ -438,17 +438,32 @@ export class Conductor {
 
   async start() {
     const registration = this.registration();
-    const machine = this.ownsServeProcess ? await runStartHooks(
-      this.config.hookListeners ?? [],
-      {
-        ...(registration.host_key !== undefined ? { host_key: registration.host_key } : {}),
-        ...(registration.machine_label !== undefined ? { machine_label: registration.machine_label } : {}),
-        ...(this.config.connection_url !== undefined ? { connection_url: this.config.connection_url } : {}),
-      },
-      { id: registration.id, project: registration.project, variant: registration.conductor_name ?? this.config.variant },
-      (reason) => this.logger.warn({ conductorId: this.id }, reason),
-    ) : {};
-    this.uuid = await this.remote.registerConductor({ ...registration, ...machine });
+    const machine = this.ownsServeProcess
+      ? await runStartHooks(
+          this.config.hookListeners ?? [],
+          {
+            ...(registration.host_key !== undefined
+              ? { host_key: registration.host_key }
+              : {}),
+            ...(registration.machine_label !== undefined
+              ? { machine_label: registration.machine_label }
+              : {}),
+            ...(this.config.connection_url !== undefined
+              ? { connection_url: this.config.connection_url }
+              : {}),
+          },
+          {
+            id: registration.id,
+            project: registration.project,
+            variant: registration.conductor_name ?? this.config.variant,
+          },
+          (reason) => this.logger.warn({ conductorId: this.id }, reason),
+        )
+      : {};
+    this.uuid = await this.remote.registerConductor({
+      ...registration,
+      ...machine,
+    });
     this.logger.info(
       { conductorId: this.id, uuid: this.uuid, project: this.config.project },
       'conductor started',
@@ -1871,4 +1886,5 @@ export class Conductor {
     // derived from status + last_seen/lease_expires_at, never from the loop.
   }
 }
+
 import { runStartHooks } from './start-hooks.js';

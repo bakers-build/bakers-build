@@ -92,7 +92,8 @@ describe('BB-326 runtime packaging', () => {
     // sets no `engines`.
     // 36 since the forge addon and its GitHub and GitLab backends; none sets
     // `engines`.
-    expect(dirs).toHaveLength(36);
+    // Tailscale adds one optional machine addon with the same Node floor.
+    expect(dirs).toHaveLength(37);
     for (const dir of dirs) {
       const engines = manifestOf(dir).engines?.node;
       if (engines !== undefined)

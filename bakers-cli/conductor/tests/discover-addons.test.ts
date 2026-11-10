@@ -239,7 +239,11 @@ export const hooks = (acc, opts) => { if (opts?.probe) throw new Error('catalog 
   });
 
   it.each([
-    ['a non-callable start hook', `export const hooks = (acc) => [...acc, { before_conductor_start: 'echo' }];`, /before_conductor_start/],
+    [
+      'a non-callable start hook',
+      `export const hooks = (acc) => [...acc, { before_conductor_start: 'echo' }];`,
+      /before_conductor_start/,
+    ],
     [
       'a non-array accumulator result',
       `export const hooks = () => ({});`,

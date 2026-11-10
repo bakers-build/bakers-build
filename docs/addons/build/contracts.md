@@ -113,15 +113,10 @@ An addon can offer messages that run on the conductor's machine and are triggere
 
 ### Before conductor start
 
-The existing `hooks` accumulator also accepts
-`before_conductor_start(machine, conductor): void | Promise<void>`. Its exported
-`MachineRegistrationData` contains only `host_key`, `machine_label` and optional
-`connection_url` (string or null). `ConductorStartContext` supplies readonly `id`,
-`project` and `variant`. Callbacks mutate the same machine object in order; they
-return no patch. No private configuration or run/ticket data is supplied.
+`hooks` accepts `before_conductor_start(machine, conductor)`. Callbacks mutate `MachineRegistrationData`: `host_key`, `machine_label`,
+`connection_url?: string | null`. Readonly `ConductorStartContext` contains
+`id`, `project`, `variant`.
 
-Only the actual serve process dispatches this hook, once before registration.
-Preflight, poll and reap do not dispatch it. Identity and manual connection values
-cannot change. Unknown fields, invalid data, errors or a five-second total deadline
-roll back the entire dispatch. Later completion cannot change the sent payload or
-start another callback. Diagnostics omit raw errors and URL values.
+Serve-only dispatch preserves identity and manual URLs.
+Invalid changes, errors or the five-second deadline discard all changes.
+Late callbacks cannot affect registration. Diagnostics omit values.

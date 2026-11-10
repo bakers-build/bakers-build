@@ -79,7 +79,11 @@ final class MachineRegistrarTest extends KernelTestBase {
   public function testConnectionUrlRegistration(): void {
     $this->seedProjectChain('connection-project');
     $owner = $this->createUser('connection-owner');
-    $attrs = ['conductor_id' => 'connection-conductor', 'host_key' => 'connection-host', 'project' => 'connection-project'];
+    $attrs = [
+      'conductor_id' => 'connection-conductor',
+      'host_key' => 'connection-host',
+      'project' => 'connection-project',
+    ];
     $registrar = $this->registrar();
     $machine = $registrar->heartbeat($owner, $attrs + ['connection_url' => 'ssh://user@host:22'])->getMachine();
     $this->assertSame('ssh://user@host:22', $machine->get('connection_url')->value);

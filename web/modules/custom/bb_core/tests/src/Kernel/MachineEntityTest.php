@@ -88,6 +88,7 @@ final class MachineEntityTest extends KernelTestBase {
     bb_core_post_update_machine_connection_url();
     bb_core_post_update_machine_connection_url();
     $loaded = $storage->loadUnchanged($machine->id());
+    $this->assertInstanceOf(BbMachineInterface::class, $loaded);
     $this->assertSame('existing', $loaded->label());
     $this->assertNull($loaded->get('connection_url')->value);
     $this->assertNotNull($manager->getFieldStorageDefinition('connection_url', 'bb_machine'));
@@ -99,13 +100,46 @@ final class MachineEntityTest extends KernelTestBase {
   public function testConnectionUrlValidationAndPersistence(): void {
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_machine');
     $machine = $storage->create(['name' => 'connection', 'host_key' => 'connection']);
-    foreach ([NULL, 'ssh://christian@192.168.1.20:22', 'ssh://user%2Dname@[::1]:2222/', 'ssh://host', 'https://example.com/path?q=value#section'] as $value) {
+    $this->assertInstanceOf(BbMachineInterface::class, $machine);
+    foreach ([
+      NULL,
+      'ssh://christian@192.168.1.20:22',
+      'ssh://user%2Dname@[::1]:2222/',
+      'ssh://host',
+      'https://example.com/path?q=value#section',
+    ] as $value) {
       $machine->set('connection_url', $value);
       $this->assertCount(0, $machine->validate()->getByField('connection_url'));
       $machine->save();
-      $this->assertSame($value, $storage->loadUnchanged($machine->id())->get('connection_url')->value);
+      $loaded = $storage->loadUnchanged($machine->id());
+      $this->assertInstanceOf(BbMachineInterface::class, $loaded);
+      $this->assertSame($value, $loaded->get('connection_url')->value);
     }
-    foreach (['http://host', '/relative', 'ssh://user:password@host', 'https://user@host', 'ssh://host/path', 'ssh://host?x', 'ssh://host#x', 'ssh://host:0', 'ssh://host:65536', 'ssh://host:', 'ssh://bad_host', 'ssh://-bad.host', 'ssh://999.1.1.1', 'ssh://[bad]', 'ssh://user%zz@host', 'ssh://user%00@host', 'ssh://user%20name@host', "ssh://host\n", 'https://host/%zz', 'https://host/' . str_repeat('a', 2048)] as $value) {
+    foreach ([
+      '',
+      'https://host/%FF',
+      'http://host',
+      '/relative',
+      'ssh://user:password@host',
+      'https://user@host',
+      'ssh://host/path',
+      'ssh://host?x',
+      'ssh://host#x',
+      'ssh://host:0',
+      'ssh://host:65536',
+      'ssh://host:',
+      'ssh://bad_host',
+      'ssh://-bad.host',
+      'ssh://999.1.1.1',
+      'ssh://[bad]',
+      'ssh://user%zz@host',
+      'ssh://user%00@host',
+      'ssh://user%20name@host',
+      "ssh://host\n",
+      'https://host/%zz',
+      'https://host/' . str_repeat('a',
+      2048),
+    ] as $value) {
       $machine->set('connection_url', $value);
       $this->assertGreaterThan(0, count($machine->validate()->getByField('connection_url')), $value);
     }

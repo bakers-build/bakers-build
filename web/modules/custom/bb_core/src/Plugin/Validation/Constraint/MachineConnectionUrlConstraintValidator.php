@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\Validation\Constraint;
 
-use Drupal\Core\TypedData\TypedDataInterface;
+use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\bb_core\Conductor\MachineConnectionUrl;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
@@ -19,11 +19,14 @@ final class MachineConnectionUrlConstraintValidator extends ConstraintValidator 
    */
   public function validate(mixed $value, Constraint $constraint): void {
     assert($constraint instanceof MachineConnectionUrlConstraint);
-    if ($value instanceof TypedDataInterface) {
-      $value = $value->getValue();
-    }
-    if ($value !== NULL && !MachineConnectionUrl::isValid($value)) {
-      $this->context->addViolation($constraint->message);
+    assert($value instanceof BbMachineInterface);
+    foreach ($value->get('connection_url') as $delta => $item) {
+      $url = $item->get('value')->getValue();
+      if ($url !== NULL && !MachineConnectionUrl::isValid($url)) {
+        $this->context->buildViolation($constraint->message)
+          ->atPath('connection_url.' . $delta . '.value')
+          ->addViolation();
+      }
     }
   }
 
