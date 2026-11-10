@@ -53,7 +53,7 @@ While an enabled agent cannot start its sandbox, the conductor claims nothing an
 
 The generated settings set `sandbox.enabled`, `sandbox.failIfUnavailable: true`, `sandbox.allowUnsandboxedCommands: false`, `disableClaudeAiConnectors: true` and allow `Bash`, `Edit(./**)`, `AskUserQuestion`, `Skill`, `bakers` tools and reading the agent's `plugins/` and `skills/`. In `dontAsk` mode, anything else, such as editing outside the worktree, is denied unprompted and named in the transcript.
 
-After a denial and 5 quiet minutes, the conductor cancels the run, comments the denied actions, labels the ticket `technical problem` and freezes it.
+When a run stops on a denial for 5 minutes, no call pending, the conductor cancels it, comments the denials, labels and freezes the ticket.
 
 What the default blocks:
 

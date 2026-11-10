@@ -562,7 +562,9 @@ export class ClaudeAgent implements BbAgent {
     return parseClaudeTranscript(log);
   }
 
+  /** Only the sandbox launches in `dontAsk`; other modes are never reported. */
   permissionDenials(log: string): string[] {
+    if (this.securityMode !== 'sandbox') return [];
     return parseClaudePermissionDenials(log);
   }
 

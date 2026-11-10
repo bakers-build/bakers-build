@@ -189,12 +189,18 @@ const DONT_ASK_DENIAL =
   /^Permission to use \S+ has been denied because Claude Code is running in don't ask mode\./;
 
 /** The input field that names what a tool call acts on. */
-const ACTION_KEYS = ['file_path', 'command', 'url', 'pattern', 'path', 'skill'];
+const ACTION_KEYS = ['file_path', 'command', 'url', 'path', 'pattern', 'skill'];
 
-/** Every tool call `dontAsk` denied in a Claude-Code transcript, as `Tool(argument)`. */
+/**
+ * Every tool call `dontAsk` denied in a Claude-Code transcript, as `Tool(argument)`,
+ * but only when the run stopped on one: its last tool result is a denial and no
+ * call is outstanding. A run that worked on, or waits on a sub-agent, gives `[]`.
+ */
 export function parseClaudePermissionDenials(jsonl: string): string[] {
   const calls = new Map<string, string>();
+  const pending = new Set<string>();
   const denied: string[] = [];
+  let endsOnDenial = false;
   for (const raw of jsonl.split('\n')) {
     let entry: TranscriptEntry;
     try {
@@ -210,15 +216,17 @@ export function parseClaudePermissionDenials(jsonl: string): string[] {
         const key = ACTION_KEYS.find((k) => typeof input[k] === 'string');
         const name = String(block.name);
         calls.set(block.id, key ? `${name}(${input[key]})` : name);
-      } else if (
-        block?.type === 'tool_result' &&
-        block.is_error === true &&
-        typeof block.content === 'string' &&
-        DONT_ASK_DENIAL.test(block.content)
-      ) {
-        denied.push(calls.get(String(block.tool_use_id)) ?? 'unknown tool');
+        pending.add(block.id);
+      } else if (block?.type === 'tool_result') {
+        pending.delete(String(block.tool_use_id));
+        endsOnDenial =
+          block.is_error === true &&
+          typeof block.content === 'string' &&
+          DONT_ASK_DENIAL.test(block.content);
+        if (endsOnDenial)
+          denied.push(calls.get(String(block.tool_use_id)) ?? 'unknown tool');
       }
     }
   }
-  return denied;
+  return endsOnDenial && pending.size === 0 ? denied : [];
 }

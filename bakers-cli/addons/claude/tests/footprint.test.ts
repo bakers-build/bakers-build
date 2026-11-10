@@ -336,7 +336,24 @@ describe('parseClaudeTranscript', () => {
 });
 
 describe('ClaudeAgent.permissionDenials', () => {
-  const agent = new ClaudeAgent();
+  const agent = new ClaudeAgent({ permissions: 'sandbox' });
+  const toolUse = (id: string, name: string, input: object) =>
+    JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'tool_use', id, name, input }] },
+    });
+  const toolResult = (id: string, content: string, is_error = false) =>
+    JSON.stringify({
+      type: 'user',
+      message: {
+        content: [{ type: 'tool_result', tool_use_id: id, content, is_error }],
+      },
+    });
+  const said = (text: string) =>
+    JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'text', text }] },
+    });
   // Recorded from `claude --permission-mode dontAsk`, with paths moved to a box home.
   const recorded = readFileSync(
     fileURLToPath(new URL('./fixtures/dontask-denial.jsonl', import.meta.url)),
@@ -358,5 +375,53 @@ describe('ClaudeAgent.permissionDenials', () => {
     expect(agent.permissionDenials(errorsOnly)).toEqual([]);
     expect(agent.permissionDenials('')).toEqual([]);
     expect(agent.permissionDenials('not json\n')).toEqual([]);
+  });
+
+  it('still reports when the agent ended its turn with text after the denial', () => {
+    expect(
+      agent.permissionDenials(
+        `${recorded.trimEnd()}\n${said('I am blocked.')}`,
+      ),
+    ).toHaveLength(2);
+  });
+
+  it('reports nothing once the agent worked on after an earlier denial', () => {
+    const later = [
+      toolUse('toolu_ok', 'Read', { file_path: 'README.md' }),
+      toolResult('toolu_ok', '1\t# readme'),
+    ].join('\n');
+    expect(agent.permissionDenials(`${recorded.trimEnd()}\n${later}`)).toEqual(
+      [],
+    );
+  });
+
+  it('reports nothing while a tool call is outstanding, such as a sub-agent', () => {
+    const waiting = toolUse('toolu_task', 'Task', { prompt: 'run the suite' });
+    expect(
+      agent.permissionDenials(`${recorded.trimEnd()}\n${waiting}`),
+    ).toEqual([]);
+  });
+
+  it('names the path a Glob or Grep call searched, not its pattern', () => {
+    const glob = [
+      toolUse('toolu_glob', 'Glob', {
+        pattern: '**/*.md',
+        path: '/home/coder/x',
+      }),
+      toolResult(
+        'toolu_glob',
+        "Permission to use Glob has been denied because Claude Code is running in don't ask mode.",
+        true,
+      ),
+    ].join('\n');
+    expect(agent.permissionDenials(glob)).toEqual(['Glob(/home/coder/x)']);
+  });
+
+  it('reports nothing for a run outside the sandbox', () => {
+    for (const permissions of ['system', 'yolo'] as const) {
+      expect(
+        new ClaudeAgent({ permissions }).permissionDenials(recorded),
+      ).toEqual([]);
+    }
   });
 });

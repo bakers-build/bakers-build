@@ -650,17 +650,27 @@ export class Conductor {
         sessionId: r.runUuid,
         attemptFamily: attemptFamily(r.runUuid),
       };
-      const modified = await agent.runLogModified(r.worktreePath, identity);
-      if (
-        modified === undefined ||
-        Date.now() - modified < STALL_QUIET_MS ||
-        this.stallChecked.get(r.runUuid) === modified
-      )
+      let denied: string[];
+      try {
+        const modified = await agent.runLogModified(r.worktreePath, identity);
+        if (
+          modified === undefined ||
+          Date.now() - modified < STALL_QUIET_MS ||
+          this.stallChecked.get(r.runUuid) === modified
+        )
+          continue;
+        denied = agent.permissionDenials(
+          await agent.getRunLog(r.worktreePath, identity),
+        );
+        // Only a successful read counts: a stuck transcript never changes again.
+        this.stallChecked.set(r.runUuid, modified);
+      } catch (err) {
+        this.logger.warn(
+          { conductorId: this.id, run: r.runUuid, err },
+          'could not read the run transcript for permission denials',
+        );
         continue;
-      this.stallChecked.set(r.runUuid, modified);
-      const denied = agent.permissionDenials(
-        await agent.getRunLog(r.worktreePath, identity),
-      );
+      }
       if (denied.length === 0) continue;
       this.stallReported.add(r.runUuid);
       this.queue.enqueue({
@@ -682,8 +692,10 @@ export class Conductor {
       'run blocked on a permission denial; reporting and cancelling it',
     );
     const site = this.remote.siteTools;
+    // Without site tools nothing reaches the ticket; a silent cancel would hide the run.
+    if (!site) throw new Error('no site tools to report the blocked run');
     const call = async (name: string, args: Record<string, unknown>) => {
-      const result = await site?.call(`tool_api__${name}`, args);
+      const result = await site.call(`tool_api__${name}`, args);
       if ((result as { isError?: boolean } | undefined)?.isError)
         throw new Error(`${name}: ${JSON.stringify(result?.content)}`);
     };
@@ -714,6 +726,8 @@ export class Conductor {
       });
     } finally {
       // A stuck run is cancelled even when the report fails; the warning names the actions.
+      // shortcut: the reported mark lives in memory, so if this cancel fails a restarted
+      // conductor reports the run again; persist the mark if duplicates show up.
       await this.remote.cancelRun(r.runUuid);
     }
     this.signalUi();
