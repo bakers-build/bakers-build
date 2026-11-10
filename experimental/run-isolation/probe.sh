@@ -8,24 +8,23 @@ root="$(git rev-parse --show-toplevel)"
 here="$root/experimental/run-isolation"
 img=bakers-run-isolation:spike
 
-# A stand-in for the conductor tool server: something listening on the host's 127.0.0.1.
+# A stand-in for the conductor tool server: an MCP server on the host's 127.0.0.1 that wants a
+# bearer token, built on the same SDK and transport.
 port=$(( 20000 + RANDOM % 10000 ))
-python3 -m http.server "$port" --bind 127.0.0.1 --directory "$(mktemp -d)" >/dev/null 2>&1 &
+token="probe-$RANDOM$RANDOM"
+node "$here/mcp-standin.mjs" "$port" "$token" >/dev/null 2>&1 &
 srv=$!
 trap 'kill $srv 2>/dev/null' EXIT
-sleep 1
+sleep 2
 
-# What the run reports from inside; the same for both backends.
+# What the run reports from inside; the same for both backends. The token comes from the run's env,
+# as the claude addon's --mcp-config references ${BB_CONDUCTOR_TOKEN}.
 inside="echo \"user: \$(id -u) home: \$HOME\"
 echo -n 'git status: '; git status --short --branch | head -1
 for p in ~/.ssh ~/.bakers /home/*/.ssh /root/.ssh; do [ -e \"\$p\" ] && echo \"VISIBLE \$p\" || echo \"absent \$p\"; done
 test -S /var/run/docker.sock && echo 'docker socket: VISIBLE' || echo 'docker socket: absent'
 for h in 127.0.0.1 host.docker.internal; do
-  if command -v node >/dev/null; then
-    node -e \"fetch('http://'+process.argv[1]+':$port/').then(r=>console.log('host service via',process.argv[1],r.status)).catch(e=>console.log('host service via',process.argv[1],'FAILED',e.cause?.code||e.message))\" \"\$h\"
-  else
-    echo \"host service via \$h: \$(curl -s -o /dev/null -m 5 -w '%{http_code}' http://\$h:$port/ || echo FAILED)\"
-  fi
+  echo \"conductor MCP via \$h:\"; sh '$here/mcp-call.sh' \"http://\$h:$port/\" \"\$BB_CONDUCTOR_TOKEN\"
 done
 echo -n 'git push --dry-run: '; git push --dry-run origin HEAD >/dev/null 2>&1 && echo 'SUCCEEDED' || echo 'failed'
 command -v claude >/dev/null && echo \"claude: \$(claude --version)\" || echo 'claude: missing'"
@@ -49,36 +48,43 @@ const runHome = homedir() + '/.cache/bakers-isolation/probe';
 mkdirSync(runHome, { recursive: true });
 const gitCommonDir = execSync('git -C ' + JSON.stringify(ws) + ' rev-parse --path-format=absolute --git-common-dir').toString().trim();
 const out = wrapRun(
-  { workspacePath: ws, run: { id: 'probe', uuid: 'probe' }, command: process.env.INSIDE, env: { BB_CONDUCTOR_TOKEN: 'probe-token' } },
+  { workspacePath: ws, run: { id: 'probe', uuid: 'probe' }, command: process.env.INSIDE, env: { BB_CONDUCTOR_TOKEN: '$token' } },
   { image: '$img', mounts: [] },
   { gitCommonDir, runHome, hostHome: homedir() },
 );
 console.log(out.command);
 ")
 # No TTY under a plain shell: drop -it for the probe only.
-BB_CONDUCTOR_TOKEN=probe-token sh -c "${cmd/ -it/}"
+BB_CONDUCTOR_TOKEN="$token" sh -c "${cmd/ -it/}"
 fi
 
 echo "== sbx"
 command -v sbx >/dev/null || { echo "sbx missing: skipped"; exit 0; }
 sbx version
 gitdir="$(git -C "$root" rev-parse --path-format=absolute --git-common-dir)"
-sbx rm -f bb-probe >/dev/null 2>&1
-# The `shell` agent needs no model login; worktree and Git common dir at their host paths.
-s=$(date +%s%N)
-sbx create --no-input --no-progress --name bb-probe -e BB_CONDUCTOR_TOKEN=probe-token shell "$root" "$gitdir" \
-  || { echo "sbx create failed (a headless create needs a policy preset: sbx policy init balanced)"; exit 1; }
-echo "create: $(( ($(date +%s%N) - s) / 1000000 )) ms"
-s=$(date +%s%N); sbx exec bb-probe true; echo "exec (warm): $(( ($(date +%s%N) - s) / 1000000 )) ms"
+mcp=bb-probe-mcp
+cleanup() {
+  sbx rm -f bb-probe >/dev/null 2>&1
+  sbx mcp rm -f "$mcp" >/dev/null 2>&1
+  sbx secret rm -f "mcp:$mcp:token" >/dev/null 2>&1
+  kill $srv 2>/dev/null
+}
+trap cleanup EXIT
+cleanup; node "$here/mcp-standin.mjs" "$port" "$token" >/dev/null 2>&1 & srv=$!; sleep 2
+# Route 1: the sbx MCP gateway. The token stays in the host secret store, never in the sandbox.
+# The secret first: `mcp add` probes the endpoint, and a 401 reads to it as "needs OAuth".
+echo -n "$token" | sbx secret set -f "mcp:$mcp:token" \
+  && sbx mcp add "$mcp" --url "http://127.0.0.1:$port/" --skip-ssrf-check --skip-auth \
+       --header 'Authorization: Bearer ${token}' \
+  && sbx mcp inspect "$mcp" || { echo "sbx mcp add failed"; exit 1; }
+# The claude agent kit, so sbx's agent integration writes the gateway into the agent's config.
+sbx create --no-input --no-progress --name bb-probe --static-mcp "$mcp" -e BB_CONDUCTOR_TOKEN="$token" \
+  claude "$root" "$gitdir" || { echo "sbx create failed"; exit 1; }
+echo "-- route 2: direct to the host, token in the run env"
 sbx exec -w "$root" bb-probe sh -c "$inside"
-echo -n "BB_CONDUCTOR_TOKEN inside: "; sbx exec bb-probe sh -c 'test -n "$BB_CONDUCTOR_TOKEN" && echo set || echo unset'
-echo "policy:"; sbx policy ls 2>&1 | head -15
-# Is the socket inside the sandbox's own engine? Host containers must not show up there.
-echo "containers on host: $(docker ps -aq | wc -l), inside: $(sbx exec bb-probe sh -c 'docker ps -aq 2>/dev/null | wc -l || echo n/a')"
-# The conductor tool server path: allow the host port for this sandbox only, then retry.
-sbx policy allow network --sandbox bb-probe "host.docker.internal:$port" && \
-  sbx exec bb-probe sh -c "echo \"host service via host.docker.internal after allow: \$(curl -s -o /dev/null -m 5 -w '%{http_code}' http://host.docker.internal:$port/ || echo FAILED)\""
-sbx rm -f bb-probe >/dev/null 2>&1 && echo "removed bb-probe"
-s=$(date +%s%N)
-sbx create --no-input --no-progress --name bb-probe shell "$root" "$gitdir" >/dev/null && echo "create again (image cached): $(( ($(date +%s%N) - s) / 1000000 )) ms"
-sbx rm -f bb-probe >/dev/null 2>&1 && echo "removed bb-probe"
+echo "-- route 1: where the gateway shows up inside"
+sbx exec bb-probe sh -c 'env | grep -iE "mcp|gateway" | sed "s/=.*token.*/=<redacted>/I"; for f in ~/.claude.json ~/.claude/settings.json ~/.mcp.json /etc/claude-code/*.json; do [ -f "$f" ] && { echo "$f:"; grep -o "\"mcpServers\".\{0,400\}" "$f"; }; done'
+echo "-- route 1: call every MCP URL found in the agent config, without a token"
+for u in $(sbx exec bb-probe sh -c 'cat ~/.claude.json ~/.claude/settings.json ~/.mcp.json 2>/dev/null' | grep -o 'https\?://[^"]*' | sort -u); do
+  echo "gateway $u:"; sbx exec bb-probe sh "$here/mcp-call.sh" "$u"
+done

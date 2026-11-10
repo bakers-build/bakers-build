@@ -16,11 +16,13 @@ with the Kata runtime already gives one through `--runtime`.
 The throwaway prototype in [`experimental/run-isolation/`](../../experimental/run-isolation/README.md)
 shows the launch rewrite as an executor decorator. Its self-check passes. A maintainer probe started a
 container from that rewrite on Linux. The worktree's Git, the host's loopback and the per-run home
-worked, and no SSH key, `~/.bakers` or Docker socket was visible. A full conductor run with Claude on
-a ticket state is still outstanding; its steps are recorded below. A second probe tested Docker Sandboxes
-(`sbx`) on the same host. It isolates well, but starts in about 6 s, does not reach the host's
-loopback through its proxy, and needs a Docker account and a running daemon. It is a later backend,
-not the first one.
+worked, and no SSH key, `~/.bakers` or Docker socket was visible. Through the real herdr executor,
+the isolated run passed herdr's launch watch and called a conductor-style MCP tool with its bearer
+token. A full conductor run with Claude on a ticket state is still outstanding; its steps are
+recorded below. A second probe tested Docker Sandboxes (`sbx`) on the same host. It isolates well
+and reaches the conductor tools through its own MCP gateway, without the run token inside the
+sandbox. But it starts in about 6 s, cannot reach the host's loopback directly, and needs a Docker
+account and a running daemon. It is a later backend, not the first one.
 
 ## 1. Where the wrapper hooks in
 
@@ -55,12 +57,17 @@ Design, as the prototype implements it:
   not stack.
 
 Prototype status, from [the recorded run](#recorded-prototype-run): the launch rewrite is verified
-by its self-check. The container run itself is **blocked** for the spike run and waits for the
-maintainer steps below.
+by its self-check, a container probe, and a run through the real herdr executor
+(`herdr-probe.mjs`). The Claude run on a ticket state waits for the maintainer steps below.
 
-Known risks to watch in that run:
+- **herdr:** the decorated `docker run -it` ran in herdr's PTY. `startRun` returned after herdr's
+  launch watch passed (4.35 s), and `cleanupRun` closed the tab. `-it` would have refused to start
+  without a terminal.
+- **orca:** not run. It starts runs through the same `writeLaunchScript` launch file and a terminal
+  created with `sh '<launch file>'`, so the decorator's rewritten command reaches it the same way.
 
-- herdr's launch watch reads the pane. `docker run -it` in herdr's PTY has not been tried.
+Known risks to watch in the Claude run:
+
 - The agent command names the CLI's wrapper scripts by their host path (`node <cli>/…/trust-wrapper`),
   so the CLI build is mounted read-only at that same path.
 - `CLAUDE_CODE_SYNC_PLUGIN_INSTALL=1` installs project plugins into the fresh run home on every run.
@@ -82,6 +89,10 @@ Known risks to watch in that run:
 - **Residual exposure:** the model credential is readable inside the run, and a compromised run can
   use it until it is revoked. A proxy that adds the credential on egress keeps it out of the run.
   That is part of the egress follow-up.
+- **`sbx` variant:** its MCP gateway adds the `Authorization` header from the host secret store
+  (`sbx secret set mcp:<server>:token`), so the run token never enters the sandbox (measured).
+  Header secrets are global per host, not per sandbox. Per-run tokens therefore need one gateway
+  server name per run, registered at start and removed at cleanup.
 
 ## 4. Cost
 
@@ -101,7 +112,7 @@ Known risks to watch in that run:
 | Dedicated Unix user | none | user per host, file permissions on shared paths | none, shared file system | separate home | host-wide firewall only | Linux, macOS | Rejected: one user for every run, so runs see each other and anything world-readable. |
 | Box as boundary (one VM per operator) | none per run | the box template | none | in the box | box firewall | any | Keep as the outer boundary. Runs on one box still share everything inside it. |
 | **Container per run** | 1.2 s cold, 0.4 s warm (measured), plus plugin sync | one image per harness | worktree, `.git`, transcript | per run, by name | allowlist with bridge network and proxy | Linux native, macOS through a VM | **Recommended first backend.** |
-| Docker Sandboxes (`sbx` 0.51), a microVM per sandbox with its own Docker engine | 6.1–6.4 s create with the image cached, 45 s with the first pull (measured) | Docker's agent kits; a daemon (`sbx daemon start`), a Docker account login and a global policy preset per host | extra workspaces at their host paths (`PATH[:TARGET][:ro]`), so the Git common directory works (measured) | Claude login stays on the host. Its MCP gateway can add a header from the host secret store, which would keep the run token out of the run (untested) | preset policies (`balanced`: deny by default, 195 allow rules) and per-sandbox rules; the run's own Docker engine is isolated (0 of the host's 11 containers visible) | needs KVM. Packaged for Ubuntu 24.04+ and Rocky only; on Debian 13 the Ubuntu `.deb` works but gets no updates | **Later backend.** The host's `127.0.0.1` is not reachable: `host.docker.internal` answered 403 from its proxy even with a per-sandbox allow rule. The conductor tools would have to go through `sbx mcp add --url http://127.0.0.1:<port>/ --skip-ssrf-check` (untested). |
+| Docker Sandboxes (`sbx` 0.51), a microVM per sandbox with its own Docker engine | 6.1–6.4 s create with the image cached, 45 s with the first pull (measured) | Docker's agent kits; a daemon (`sbx daemon start`), a Docker account login and a global policy preset per host | extra workspaces at their host paths (`PATH[:TARGET][:ro]`), so the Git common directory works (measured) | Claude login stays on the host. Its MCP gateway adds the bearer header from the host secret store, so the run token stays out of the run (measured); header secrets are global per host | preset policies (`balanced`: deny by default, 195 allow rules) and per-sandbox rules; the run's own Docker engine is isolated (0 of the host's 11 containers visible) | needs KVM. Packaged for Ubuntu 24.04+ and Rocky only; on Debian 13 the Ubuntu `.deb` works but gets no updates | **Later backend.** The host's `127.0.0.1` is not reachable: `host.docker.internal` answered 403 from its proxy even with a per-sandbox allow rule. The conductor tools work through `sbx mcp add --url http://127.0.0.1:<port>/ --skip-ssrf-check --skip-auth` and `--static-mcp` (measured). The agent's `--mcp-config` would then point at `$MCP_GATEWAY_URL` instead of the tool server. |
 | Micro-VM per run (Firecracker, Kata) | about a second | kernel and rootfs images, KVM on the host | virtio-fs shares | per run | per-VM network | Linux with KVM only | Later backend. Kata as a Docker runtime reuses `isolation-docker`. |
 | Hosted sandbox per run | seconds, remote | provider image | the worktree is synced or cloned remotely, no local DDEV | sent to the provider | provider policy | any, needs network | Rejected for now. DDEV and the tool server are local, so every tool call crosses the network. |
 
@@ -143,7 +154,11 @@ is found.
 | Launch rewrite self-check, `node --test experimental/run-isolation/isolation-docker.test.mjs` | passed | 4 tests pass: the argv a shell makes of the command is `docker run --rm -it --name bb-run-7 --network host …`; mounts are only the worktree, the Git common directory, the read-only CLI build, the run home and the transcript directory; secrets appear only as `-e KEY`; other methods delegate and `cleanupRun` removes `bb-run-<id>`. |
 | Container probe, `bash experimental/run-isolation/probe.sh` (maintainer, Debian 13 x86_64, Docker; `-it` dropped for lack of a TTY) | passed | The container started from the decorator's own `wrapRun` output. Inside it: `user: 1000 home: /home/run`; `git status` returned `## feat/bakers-155-spike-attach-r`, so the Git common directory resolves; `/home/run/.ssh`, `/home/run/.bakers`, `/home/*/.ssh` and `/root/.ssh` absent; `docker socket: absent`; a stand-in service on the host's `127.0.0.1` answered 200 (`host.docker.internal` gave `ENOTFOUND`, so `--network host` is what carries it); `git push --dry-run` failed; `claude: 2.1.321 (Claude Code)`. |
 | `sbx` probe, `sg kvm -c 'bash experimental/run-isolation/probe.sh --sbx-only'` (maintainer, same host, `sbx` 0.51.0 from the Ubuntu 24.04 `.deb`, policy `balanced`) | passed (as a probe) | `sbx create … shell <worktree> <git common dir>` took 44813 ms with the first kit pull and 6380 / 6145 ms after it; `sbx exec` took 465–1081 ms. Inside: `user: 1000 home: /home/agent`; `git status` worked; `.ssh` and `.bakers` absent; a Docker socket is present, but it is the sandbox's own engine (`containers on host: 11, inside: 0`); `127.0.0.1` failed; `host.docker.internal` returned 403, also after `sbx policy allow network --sandbox bb-probe host.docker.internal:<port>`; `git push --dry-run` failed; `BB_CONDUCTOR_TOKEN` set by `-e`. Setup needed `sbx daemon start`, `sbx login` and `sbx policy init balanced`. |
-| F2 Claude run of a ticket state, `bakers_ticket_read` from inside | not_run | The host-loopback path the tool server uses is proven by the probe. A real conductor run (steps 3–9) is still outstanding: the spike run's sandbox cannot reach the Docker socket and has no model credential. |
+| Conductor tool from inside, Docker (`probe.sh`; stand-in MCP server `mcp-standin.mjs` on the host's `127.0.0.1`, same SDK and Streamable HTTP transport, 401 without the bearer token) | passed | `initialize`, `tools/list` → `bakers_ticket_read`, `tools/call` → `standin-ok`, all 200, with `BB_CONDUCTOR_TOKEN` from the run env. |
+| Conductor tool from inside, `sbx` gateway (`probe.sh --sbx-only`; the same stand-in registered with `sbx mcp add … --header 'Authorization: Bearer ${token}'`, secret in the host store, sandbox created with `--static-mcp`) | passed | Inside, `MCP_GATEWAY_URL=http://mcp-gateway.docker.internal/mcp`. Called without a token: `initialize` 200 (`mcp-gateway-bb-probe`), `tools/list` → `bakers_ticket_read code-mode mcp-exec`, `tools/call bakers_ticket_read` → `standin-ok`. The direct route still fails: `127.0.0.1` no answer, `host.docker.internal` 403 "Approval required". |
+| Through the real herdr executor, Docker (`node experimental/run-isolation/herdr-probe.mjs docker`) | passed | `startRun` returned after the launch watch, 4.35 s; inside: `home: /home/run`, `git status` worked, `.ssh` and `.bakers` absent, `bakers_ticket_read` → `standin-ok`; `cleanupRun` closed the tab. The report's `tty: NO` came from a probe bug (it tested stdout, which went to the report file). |
+| Through the real herdr executor, `sbx` (`herdr-probe.mjs sbx`, launch command `sbx exec -it … bb-herdr sh in-run.sh`) | passed | Launch watch passed; inside: `tty: yes (/dev/pts/0)`, `home: /home/agent`, `git status` worked, `.ssh` and `.bakers` absent; the gateway answered (no server registered in this run, so only its built-in tools). |
+| F2 Claude run of a ticket state, `bakers_ticket_read` from inside | not_run | The tool call from inside is proven against a stand-in on the same SDK and transport, in a container started by the real herdr executor. A real conductor run (steps 3–9) is still outstanding: the spike run's sandbox cannot reach the Docker socket and has no model credential. |
 | F3 no SSH key, no `~/.bakers`, no socket, push fails | passed | Container probe above. |
 | F4 start time and transcript read | passed (start time), not_run (transcript) | 1181 ms cold, 396 ms warm. The transcript read needs the conductor run (step 10). |
 
@@ -161,6 +176,7 @@ Tickets to create once this recommendation is approved:
    that also adds the model credential, so the credential leaves the run. macOS depends on this.
 4. **Push from the host.** Delivery pushes the branch outside the run, after it or through a
    conductor tool.
-5. **`isolation-sbx` backend, evaluation.** Register the conductor tool server through `sbx mcp add`
-   with the run token taken from the host secret store, and run one real Claude ticket state. Adopt
-   the backend if that works and about 6 s per run start is acceptable.
+5. **`isolation-sbx` backend, evaluation.** The gateway route is proven. Remaining work: one gateway
+   server name per run (header secrets are global), the agent's `--mcp-config` pointed at
+   `$MCP_GATEWAY_URL`, and one real Claude ticket state. Adopt the backend if about 6 s per run
+   start and the Docker account requirement are acceptable.
