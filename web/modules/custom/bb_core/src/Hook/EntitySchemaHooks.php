@@ -154,8 +154,8 @@ final class EntitySchemaHooks {
       'area' => ['id' => 'bb_contextual_empty'],
     ];
 
-    // Counts of what references a project or a group, for their listings:
-    // a small icon badge each, with a tooltip saying what is counted.
+    // Counts of what references a project, a group or a conductor, for their
+    // listings: a small icon badge each, with a tooltip saying what is counted.
     $open = ['closed' => 0];
     foreach ([
       [
@@ -166,6 +166,10 @@ final class EntitySchemaHooks {
         'bb_project', 'conductor_tickets', 'Open tickets with a conductor', 'bb_ticket', 'project_id',
         $open + ['conductor_id' => ['operator' => 'IS NOT NULL']], 'conductor', 'lease',
         '1 open ticket with a conductor', '@count open tickets with a conductor',
+      ],
+      [
+        'bb_conductor', 'open_tickets', 'Open tickets', 'bb_ticket', 'conductor_id', $open,
+        'ticket', 'neutral', '1 open ticket', '@count open tickets',
       ],
       [
         'bb_project', 'closed_tickets', 'Closed tickets', 'bb_ticket', 'project_id', ['closed' => 1],

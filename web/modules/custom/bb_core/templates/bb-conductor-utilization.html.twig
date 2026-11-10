@@ -4,8 +4,12 @@
  * A conductor's load against its capacity, with its machine-readable level.
  *
  * Available variables:
- * - label: Load text, e.g. "2/4".
- * - level: idle, partial or full.
+ * - label: Load text, e.g. "2 / 4 parallel runs" or "Unknown capacity".
+ * - level: unknown, idle, partial or full.
+ * - capacity: [current, max] of the linked machine, or NULL without one.
  */
 #}
 <span data-utilization="{{ level }}">{{ label }}</span>
+{%- if capacity %}
+  <meter min="0" max="{{ capacity[1] }}" value="{{ capacity[0] }}" aria-hidden="true"></meter>
+{%- endif %}
