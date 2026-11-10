@@ -39,7 +39,7 @@ A team makes its projects visible to its members. You see **every ticket of ever
 |---|---|
 | See a project and its tickets | Membership in one of its teams, or Admin |
 | Create, assign, freeze or cancel a ticket | Contributor with project access; Reporter grants creation only |
-| Review a ticket | To be listed under **Reviewers** on that ticket |
+| Review a ticket | Access to its project (a team seat or Admin), and to be listed under **Reviewers** on that ticket |
 | Record your time | Contributor; only you can edit your entries |
 | See a teammate's hours | Team Lead, for active members of your team |
 | Manage billing accounts | Team Lead, Team Owner or Admin |
