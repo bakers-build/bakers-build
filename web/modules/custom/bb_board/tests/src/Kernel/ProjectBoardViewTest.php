@@ -416,15 +416,15 @@ final class ProjectBoardViewTest extends KernelTestBase {
   }
 
   /**
-   * An open Done column closes again: Show older, then Hide done.
-   *
-   * The column has one toggle; the 7-day view offers Show older, the older
-   * view Hide done.
+   * An open Done column closes again, also while it shows older tickets.
    */
   public function testOpenDoneCanCloseAgain(): void {
     $this->closedTwoAndNineDaysAgo();
 
-    self::assertStringContainsString('Show older', $this->text($this->board(['done' => 'show'])));
+    $open = $this->board(['done' => 'show']);
+    self::assertMatchesRegularExpression('/last 7 days .* Show older Hide done$/', $this->text($open));
+    self::assertMatchesRegularExpression('#href="[^"?]*\?done=show&(?:amp;)?done_older=1"#', $open);
+    self::assertMatchesRegularExpression('#href="[^"?]*\?done=hide"#', $open);
 
     $older = $this->board(['done' => 'show', 'done_older' => '1']);
     self::assertStringContainsString('Hide done', $this->text($older));

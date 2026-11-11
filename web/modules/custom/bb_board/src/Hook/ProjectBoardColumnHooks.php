@@ -15,8 +15,8 @@ use Drupal\views\ViewExecutable;
  * Hands the Project Board columns to the board's column header.
  *
  * Each column display gets its header data: label, count, tone, and for Done
- * the caption and the Show done or Show older link. With Details on, the
- * state sub-columns become one Working panel.
+ * the caption and the Show done, Show older and Hide done links. With Details
+ * on, the state sub-columns become one Working panel.
  *
  * Views wraps every attached display in a plain `container`, which sits
  * between the board's column row and the column, so the column cannot share
@@ -135,18 +135,17 @@ final class ProjectBoardColumnHooks {
    */
   private function done(ViewExecutable $view): array {
     $address = BoardAddress::fromView($view);
+    $hide = ['label' => $this->t('Hide done'), 'url' => $address->withDone(FALSE)];
     return match (TRUE) {
       !$this->preferences->doneOpen() => [
         'collapsed' => TRUE,
         'pager' => [],
-        'toggle' => ['label' => $this->t('Show done'), 'url' => $address->withDone(TRUE)],
+        'toggles' => [['label' => $this->t('Show done'), 'url' => $address->withDone(TRUE)]],
       ],
-      $this->preferences->doneOlder() => [
-        'toggle' => ['label' => $this->t('Hide done'), 'url' => $address->withDone(FALSE)],
-      ],
+      $this->preferences->doneOlder() => ['toggles' => [$hide]],
       default => [
         'caption' => $this->t('last 7 days'),
-        'toggle' => ['label' => $this->t('Show older'), 'url' => $address->withOlder()],
+        'toggles' => [['label' => $this->t('Show older'), 'url' => $address->withOlder()], $hide],
       ],
     };
   }
