@@ -78,16 +78,16 @@ stay silent while you wait. Waiting is cut out later.
 
 On screen: the landing page hero; scroll slowly to the line with its four stations.
 
-> Hi! This is bakers.build. The idea is simple: every developer is a baker, with a bakery of their own and several ovens.
+> Hi! This is bakers.build. Every developer is a baker with their own bakery: they knead the dough, and they decide when the bread is ready.
 > The product manager places the orders. We call them tickets.
-> And in the ovens, AI agents do the work: they plan, build, check and deliver, always along the same line.
+> The ovens are AI agents. They plan, build, check and deliver, always along the same line. But the baker stays the baker.
 > How that line works is your recipe: a simple text file, right next to your code.
 
 ### 2. A ticket system for AI (about 18 s)
 
 On screen: the project's ticket board, then the machines list with both conductors.
 
-> It's not one more ticket system for people. It's one made for AI.
+> It's a ticket system where people and AI work together.
 > Everything an agent does stays on the ticket, so the next ticket can build on it.
 > And the work runs on your own computer, a colleague's, or a machine in the background.
 
@@ -164,7 +164,7 @@ On screen: the landing page, the section "Bake it yourself or let us run the ove
 
 > Your code never leaves your machines.
 > bakers.build is open source and free, whether you host it yourself or let us do it.
-> So give it a real ticket, and see what comes out of the oven.
+> Give it a real ticket, and see what comes out of the oven.
 
 ## Handover
 
