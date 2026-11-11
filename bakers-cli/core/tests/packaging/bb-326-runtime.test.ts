@@ -93,7 +93,9 @@ describe('BB-326 runtime packaging', () => {
     // 36 since the forge addon and its GitHub and GitLab backends; none sets
     // `engines`.
     // Tailscale adds one optional machine addon with the same Node floor.
-    expect(dirs).toHaveLength(37);
+    // 38 since `@bakers-build/addon-runtime-docker` (the Docker runtime); it
+    // sets no `engines`.
+    expect(dirs).toHaveLength(38);
     for (const dir of dirs) {
       const engines = manifestOf(dir).engines?.node;
       if (engines !== undefined)
