@@ -128,7 +128,7 @@ final class ProjectBoardColumnHooks {
   }
 
   /**
-   * Done's header: closed with Show done, or open with its window.
+   * Done's header: closed with Show done, open with its window, or older.
    *
    * @return array<string, mixed>
    *   Header properties that win over the column's own.
@@ -141,11 +141,13 @@ final class ProjectBoardColumnHooks {
         'pager' => [],
         'toggle' => ['label' => $this->t('Show done'), 'url' => $address->withDone(TRUE)],
       ],
-      !$this->preferences->doneOlder() => [
+      $this->preferences->doneOlder() => [
+        'toggle' => ['label' => $this->t('Hide done'), 'url' => $address->withDone(FALSE)],
+      ],
+      default => [
         'caption' => $this->t('last 7 days'),
         'toggle' => ['label' => $this->t('Show older'), 'url' => $address->withOlder()],
       ],
-      default => [],
     };
   }
 

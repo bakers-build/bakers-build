@@ -372,6 +372,9 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     self::assertSame([$working->getIdentifier()], $this->identifiers($this->execute('working', $words)));
     self::assertSame(0, (int) $this->execute('intake', $words)->total_rows);
     self::assertSame(2, $this->summary($words)['total']);
+    // States: the review sub-column searches too.
+    self::assertSame(4, (int) $this->execute('working_review', [])->total_rows);
+    self::assertSame([$this->parent->getIdentifier()], $this->identifiers($this->execute('working_review', ['search' => 'retry'])));
 
     $identifier = ['search' => $this->critical->getIdentifier()];
     self::assertSame([$this->critical->getIdentifier()], $this->identifiers($this->execute('working', $identifier)));
@@ -398,7 +401,9 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     $working = $this->identifiers($this->execute('working', $input));
     sort($working);
     self::assertSame($expected, $working);
-    foreach (['backlog', 'intake', 'done'] as $display) {
+    // States: the review sub-column keeps the one unhealthy review ticket.
+    self::assertSame([$this->parent->getIdentifier()], $this->identifiers($this->execute('working_review', $input)));
+    foreach (['backlog', 'intake', 'done', 'working_plan', 'working_working'] as $display) {
       self::assertSame(0, (int) $this->execute($display, $input)->total_rows, $display);
     }
     $this->request($input);
@@ -427,7 +432,7 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     self::assertSame([], $this->unhealthyIds());
 
     $input = ['health' => 'unhealthy'];
-    foreach (['backlog', 'intake', 'working', 'done'] as $display) {
+    foreach (['backlog', 'intake', 'working', 'done', 'working_plan', 'working_working', 'working_review'] as $display) {
       $view = $this->execute($display, $input);
       self::assertSame([], $this->identifiers($view), $display);
       self::assertSame(0, (int) $view->total_rows, $display);

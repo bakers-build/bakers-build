@@ -416,6 +416,30 @@ final class ProjectBoardViewTest extends KernelTestBase {
   }
 
   /**
+   * An open Done column closes again: Show older, then Hide done.
+   *
+   * The column has one toggle; the 7-day view offers Show older, the older
+   * view Hide done.
+   */
+  public function testOpenDoneCanCloseAgain(): void {
+    $this->closedTwoAndNineDaysAgo();
+
+    self::assertStringContainsString('Show older', $this->text($this->board(['done' => 'show'])));
+
+    $older = $this->board(['done' => 'show', 'done_older' => '1']);
+    self::assertStringContainsString('Hide done', $this->text($older));
+    self::assertMatchesRegularExpression('#href="[^"?]*\?done=hide"#', $older, 'Hiding drops the older window.');
+
+    $this->board(['done' => 'hide']);
+    $stored = $this->container->get('user.data')->get('bb_board', (int) $this->reader->id(), 'done_open');
+    self::assertNotNull($stored, 'Hide done is remembered.');
+    self::assertFalse((bool) $stored);
+    $next = $this->text($this->board([]));
+    self::assertStringContainsString('Show done', $next);
+    self::assertStringNotContainsString('Hide done', $next);
+  }
+
+  /**
    * Below the columns, the Board lists its project's active conductors.
    *
    * The block finds the project in the Board's own address; the Board's
