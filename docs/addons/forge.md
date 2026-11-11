@@ -27,12 +27,7 @@ Without a `forge` entry no tool is served. An entry without `backend.use` stops 
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `backend.use` | string | required | The backend package. |
-| `backend.with` | object | — | The backend's options. |
-| `merge.<base>` | `{ method, delete_source }` | — | Merging into `<base>`: `squash` or `merge`. |
-| `merge['*']` | same | squash, delete | Every other base. |
+<!-- @options @bakers-build/addon-forge -->
 
 `bakers config check` validates these options; the backend checks its own at conductor start. It cannot tell which file holds a credential: keep `token` and `private_key` in `~/.bakers/machine.config.js`, or use the `*_env` keys. The committed `.bakers/project.config.js` reaches every clone, run worktrees included.
 

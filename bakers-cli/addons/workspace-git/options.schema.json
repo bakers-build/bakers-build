@@ -6,15 +6,18 @@
   "properties": {
     "branch_prefix": {
       "type": "string",
-      "description": "Branch name prefix per ticket. Default: 'bakers/'."
+      "description": "Prefix of every ticket branch.",
+      "default": "bakers/"
     },
     "branch_template": {
       "type": "string",
-      "description": "Branch name template. Placeholders: {branch_prefix}, {key}, {identifier}, {title_slug}. Default: '{branch_prefix}{key}-{title_slug}'."
+      "description": "Branch name template. Placeholders: {branch_prefix}, {key}, {identifier}, {title_slug}.",
+      "default": "{branch_prefix}{key}-{title_slug}"
     },
     "auto_setup_merge": {
       "type": "boolean",
-      "description": "true leaves Git's branch.autoSetupMerge alone; default false sets it to false before creating a worktree."
+      "description": "`false` sets `branch.autoSetupMerge=false` in the root repository before creating a worktree, so run branches have no upstream and push with `push.default=current`; `true` leaves Git alone but does not revert an earlier change.",
+      "default": false
     }
   },
   "additionalProperties": false

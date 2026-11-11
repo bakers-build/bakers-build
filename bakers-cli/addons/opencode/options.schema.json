@@ -4,9 +4,20 @@
   "title": "@bakers-build/addon-opencode options",
   "$ref": "https://bakers.build/schema/harness-options.schema.json",
   "properties": {
-    "permissions": { "enum": ["system", "yolo"] },
+    "permissions": {
+      "enum": [
+        "system",
+        "yolo"
+      ]
+    },
     "sandbox": false,
-    "config": false
+    "config": false,
+    "model": {
+      "description": "Passed as `--model`, else OpenCode's own default."
+    },
+    "effort": {
+      "description": "Not supported; ignored with a log line."
+    }
   },
   "unevaluatedProperties": false
 }

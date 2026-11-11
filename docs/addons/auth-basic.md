@@ -16,9 +16,7 @@ addons: [
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `basic` | string | none | Base64 of `user:password`, sent as `Authorization: Basic …` on every request. Without it the addon adds nothing. |
+<!-- @options @bakers-build/addon-auth-basic -->
 
 ## Check it works
 

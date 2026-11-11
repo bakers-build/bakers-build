@@ -24,13 +24,9 @@ It publishes one alias, `opencode`, which uses your locally configured OpenCode 
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `model` | string | OpenCode's own default | Passed as `--model`. |
-| `effort` | string | none | Not supported; ignored with a log line. |
-| `permissions` | `'system'` \| `'yolo'` | `'system'` | How strictly a run starts; see [Security](#security). `'sandbox'` and `'custom'` fail loading. |
-| `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
-| `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
+<!-- @options @bakers-build/addon-opencode -->
+
+Without `env_deny`, the [default list](/provision/security/execution#ticket-env-vars) of ticket env vars is kept from the run.
 
 ## Security
 
