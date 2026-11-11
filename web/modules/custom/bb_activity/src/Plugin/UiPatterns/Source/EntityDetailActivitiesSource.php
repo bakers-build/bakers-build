@@ -114,7 +114,8 @@ final class EntityDetailActivitiesSource extends SourcePluginBase implements Con
       '#attached' => ['library' => ['core/drupal.htmx']],
       '#props' => [
         'inset' => 'none',
-        'gap' => 'sm',
+        // Compact rows carry their own hairline and sit edge to edge.
+        'gap' => $project ? 'none' : 'sm',
         'attributes' => new Attribute(['id' => self::ZONE_ID]),
       ],
       '#slots' => [

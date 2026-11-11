@@ -10,6 +10,8 @@ use Drupal\bb_core\Entity\BbVocabulary;
 use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
 use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
@@ -149,6 +151,18 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     self::assertStringNotContainsString('data-tag=', $row);
     self::assertStringNotContainsString('>human<', $row);
     self::assertStringContainsString('data-tag="status"', $this->row($this->fullRows(), 'qualification → plan'));
+  }
+
+  /**
+   * The Overview's compact rows sit edge to edge; full rows keep the gap.
+   */
+  public function testZoneGapFollowsTheRowKind(): void {
+    $this->workTicket('Gap work');
+    $team = $this->project->get('teams')->entity;
+    self::assertInstanceOf(EntityInterface::class, $team);
+
+    self::assertSame('none', $this->activitiesZone($this->project)['#props']['gap'] ?? NULL);
+    self::assertSame('sm', $this->activitiesZone($team)['#props']['gap'] ?? NULL);
   }
 
   /**
@@ -383,6 +397,23 @@ final class ProjectActivityFeedTest extends KernelTestBase {
       ->getViewBuilder('bb_project')
       ->view($this->project, $mode);
     return (string) $this->container->get('renderer')->renderInIsolation($build);
+  }
+
+  /**
+   * The Activities zone the detail-page source builds for an entity.
+   *
+   * @return array<string, mixed>
+   *   The `bb_theme:zone` render array.
+   */
+  private function activitiesZone(EntityInterface $entity): array {
+    $schema = $this->container->get('plugin.manager.ui_patterns_prop_type')->getDefinition('slot')['schema'];
+    $source = $this->container->get('plugin.manager.ui_patterns_source')
+      ->createInstance('bb_entity_detail_activities', SourcePluginBase::buildConfiguration('content', $schema, ['source' => []], []));
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    $source->setContextValue('entity', $entity);
+    $zone = $source->getPropValue();
+    self::assertIsArray($zone);
+    return $zone;
   }
 
   /**
