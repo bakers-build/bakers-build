@@ -287,6 +287,20 @@ describe('runtime-docker allowlist mode', () => {
     return out;
   }
 
+  it('approves the placeholder API key so Claude does not ask about it', async () => {
+    await wrapped({ networks: new Set() });
+    const state = JSON.parse(
+      readFileSync(
+        join(cache, 'bakers/runtime/r-uuid/.claude/.claude.json'),
+        'utf8',
+      ),
+    );
+    expect(state.customApiKeyResponses).toEqual({
+      approved: ['bb-runtime-placeholder'.slice(-20)],
+      rejected: [],
+    });
+  });
+
   it('starts its sidecar with the credential by name and keeps it out of the run', async () => {
     const out = await wrapped({ networks: new Set() });
     const runCall = calls.find(([, a]) => a[0] === 'run' && a.includes('-d'));

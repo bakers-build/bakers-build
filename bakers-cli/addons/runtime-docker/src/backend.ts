@@ -17,6 +17,7 @@ import type {
 } from '@bakers-build/conductor/contract';
 import { type ConductorLogger, shellQuote } from '@bakers-build/core';
 import {
+  API_KEY_PLACEHOLDER,
   type DockerOptions,
   dockerArgs,
   MODEL_CREDENTIALS,
@@ -235,7 +236,19 @@ export function dockerRuntime(
         : {};
       writeFileSync(
         stateFile,
-        JSON.stringify({ ...state, hasCompletedOnboarding: true }),
+        JSON.stringify({
+          ...state,
+          hasCompletedOnboarding: true,
+          // Claude asks before using a custom API key; the run's placeholder is pre-approved.
+          ...(allowlist
+            ? {
+                customApiKeyResponses: {
+                  approved: [API_KEY_PLACEHOLDER.slice(-20)],
+                  rejected: [],
+                },
+              }
+            : {}),
+        }),
         { mode: 0o600 },
       );
       // shortcut: only Claude's transcript layout is mapped; map another harness's when it is supported.
