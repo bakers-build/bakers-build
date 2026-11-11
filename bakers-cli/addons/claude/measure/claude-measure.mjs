@@ -18,6 +18,12 @@
  * command as `BB_PROXY_LOG_DIR`. When the
  * proxy cannot start (no identifier, log directory not gitignored) the command
  * still runs, unmeasured, with a warning on stderr.
+ *
+ *   node claude-measure.mjs --capture claude <claude args…>
+ *
+ * The `with.proxy` mode: only the proxy, its log directory and
+ * `ANTHROPIC_BASE_URL`; argv and settings pass through unchanged and no
+ * settings file is written, so the log shows what a normal run sends.
  */
 
 import { spawn, spawnSync } from 'node:child_process';
@@ -39,9 +45,12 @@ const GROUPS = {
   review: 'review',
 };
 
-const [command, ...args] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+// `--capture` only logs: argv and the caller's settings stay untouched.
+const capture = argv[0] === '--capture';
+const [command, ...args] = capture ? argv.slice(1) : argv;
 if (!command) {
-  console.error('usage: node claude-measure.mjs <command> [args…]');
+  console.error('usage: node claude-measure.mjs [--capture] <command> [args…]');
   process.exit(2);
 }
 
@@ -62,43 +71,48 @@ function projectPlugins() {
   return merged;
 }
 
-// `--settings` outranks project settings, so fold the project's enabledPlugins
-// into the copy: the profile is a default, the project has the last word.
-const group = GROUPS[process.env.BAKERS_STATE] ?? 'ops';
-let profile = JSON.parse(
-  fs.readFileSync(path.join(HERE, `keytec-${group}.json`), 'utf8'),
-);
-// The last one: an alias's own `--settings` precedes the measure flags.
-const settingsAt = args.lastIndexOf('--settings');
-// A security mode's inline settings (sandbox, custom) win over the profile;
-// permission lists are joined so neither side's rules are lost.
-const inline = settingsAt === -1 ? undefined : args[settingsAt + 1];
-if (inline?.trimStart().startsWith('{')) {
-  const own = JSON.parse(inline);
-  const join = (key) => [
-    ...(profile.permissions?.[key] ?? []),
-    ...(own.permissions?.[key] ?? []),
-  ];
-  profile = {
-    ...profile,
-    ...own,
-    permissions: {
-      ...profile.permissions,
-      ...own.permissions,
-      allow: join('allow'),
-      deny: join('deny'),
-    },
-  };
+/** Write the measure settings file; returns the temporary file to remove, if any. */
+function writeMeasureSettings() {
+  // `--settings` outranks project settings, so fold the project's enabledPlugins
+  // into the copy: the profile is a default, the project has the last word.
+  const group = GROUPS[process.env.BAKERS_STATE] ?? 'ops';
+  let profile = JSON.parse(
+    fs.readFileSync(path.join(HERE, `keytec-${group}.json`), 'utf8'),
+  );
+  // The last one: an alias's own `--settings` precedes the measure flags.
+  const settingsAt = args.lastIndexOf('--settings');
+  // A security mode's inline settings (sandbox, custom) win over the profile;
+  // permission lists are joined so neither side's rules are lost.
+  const inline = settingsAt === -1 ? undefined : args[settingsAt + 1];
+  if (inline?.trimStart().startsWith('{')) {
+    const own = JSON.parse(inline);
+    const join = (key) => [
+      ...(profile.permissions?.[key] ?? []),
+      ...(own.permissions?.[key] ?? []),
+    ];
+    profile = {
+      ...profile,
+      ...own,
+      permissions: {
+        ...profile.permissions,
+        ...own.permissions,
+        allow: join('allow'),
+        deny: join('deny'),
+      },
+    };
+  }
+  profile.enabledPlugins = { ...profile.enabledPlugins, ...projectPlugins() };
+  const ignored =
+    spawnSync('git', ['check-ignore', '-q', SETTINGS_REL]).status === 0;
+  const settingsFile = ignored
+    ? SETTINGS_REL
+    : path.join(os.tmpdir(), `claude-measure-${randomUUID()}.settings.json`);
+  if (settingsAt !== -1) args[settingsAt + 1] = settingsFile;
+  fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
+  fs.writeFileSync(settingsFile, `${JSON.stringify(profile, null, 2)}\n`);
+  return ignored ? undefined : settingsFile;
 }
-profile.enabledPlugins = { ...profile.enabledPlugins, ...projectPlugins() };
-const ignored =
-  spawnSync('git', ['check-ignore', '-q', SETTINGS_REL]).status === 0;
-const settingsFile = ignored
-  ? SETTINGS_REL
-  : path.join(os.tmpdir(), `claude-measure-${randomUUID()}.settings.json`);
-if (settingsAt !== -1) args[settingsAt + 1] = settingsFile;
-fs.mkdirSync(path.dirname(settingsFile), { recursive: true });
-fs.writeFileSync(settingsFile, `${JSON.stringify(profile, null, 2)}\n`);
+const tempSettings = capture ? undefined : writeMeasureSettings();
 
 const env = { ...process.env };
 let proxy;
@@ -124,11 +138,11 @@ for (const signal of ['SIGTERM', 'SIGHUP']) {
 }
 child.on('error', (err) => {
   console.error(`claude-measure: ${err.message}`);
-  if (!ignored) fs.rmSync(settingsFile, { force: true });
+  if (tempSettings) fs.rmSync(tempSettings, { force: true });
   process.exit(127);
 });
 child.on('exit', async (code, signal) => {
   await proxy?.close();
-  if (!ignored) fs.rmSync(settingsFile, { force: true });
+  if (tempSettings) fs.rmSync(tempSettings, { force: true });
   process.exit(code ?? (signal ? 128 + os.constants.signals[signal] : 1));
 });

@@ -18,7 +18,7 @@ Enable only in `~/.bakers/machine.config.js`:
 addons: ['@bakers-build/addon-claude'],
 ```
 
-Aliases: `opus` for reasoning, `sonnet` for well-specified changes, `fable` for demanding, long-running work. Select `agent:fable`, or `agent:fable@working` for working only.
+Aliases: `opus` for reasoning, `sonnet` for well-specified changes, `fable` for demanding, long-running work, `opus-proxy` for Opus with every model request logged. Select `agent:fable`, or `agent:fable@working` for working only; `agent:opus-proxy` logs a run to `assets-ai/<ticket>/node/<run uuid>/` when the repository ignores `/assets-ai/`.
 
 Fable uses `--model fable`; supported baseline: Claude Code **2.1.257+**. This version-free selector honors `ANTHROPIC_DEFAULT_FABLE_MODEL`; account/provider access still applies. See [Claude's Fable documentation](https://code.claude.com/docs/en/model-config#work-with-fable).
 
@@ -75,6 +75,7 @@ bakers agents
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
+- `proxy: true` keeps settings, conductor tools and MCP servers unchanged and only logs the requests; `measure` wins when both are set.
 - Listed in a project config, an agent addon is ignored with a warning.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
