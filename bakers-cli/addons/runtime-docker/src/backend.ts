@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -12,8 +13,12 @@ import {
   type DockerOptions,
   dockerArgs,
   MODEL_CREDENTIALS,
+  PROXY_PORTS,
+  RUN_NETWORK,
   transcriptKey,
 } from './args.js';
+
+const EGRESS_NETWORK = 'bb-runtime-egress';
 
 /** The addon's `with` options. */
 export interface RuntimeDockerOptions {
@@ -38,7 +43,13 @@ export interface BackendDeps {
   /** This package's directory; its `image/` holds the Dockerfile. */
   packageDir: string;
   version: string;
+  /** Names this conductor's proxy sidecar, so conductors on one host never share one. */
+  conductorKey?: string;
 }
+
+/** The first 12 hex chars of the sha256 of `text`. */
+export const shortHash = (text: string) =>
+  createHash('sha256').update(text).digest('hex').slice(0, 12);
 
 const run = promisify(execFile);
 export const realExec: BackendDeps['exec'] = (file, args) => run(file, args);
@@ -54,8 +65,14 @@ export function dockerRuntime(
     docker,
     image,
     mounts: options.mounts ?? [],
-    network: 'host',
+    network: options.network ?? 'host',
   };
+  const allowlist = opts.network === 'allowlist';
+  const proxyName = `bb-runtime-proxy-${deps.conductorKey ?? 'default'}`;
+  if (allowlist) opts.proxy = proxyName;
+  let gateway: string | undefined;
+  let toolsPort: string | undefined;
+  let proxyReady: { hash: string; ready: Promise<void> } | undefined;
   const cacheHome = deps.env.XDG_CACHE_HOME || join(homedir(), '.cache');
   const runHomeOf = (uuid: string) => join(cacheHome, 'bakers/runtime', uuid);
   let imageReady: Promise<void> | undefined;
@@ -78,6 +95,57 @@ export function dockerRuntime(
     }
   };
 
+  const ensureNetwork = async (name: string, internal: boolean) => {
+    try {
+      await deps.exec(docker, ['network', 'inspect', name]);
+    } catch {
+      await deps.exec(docker, [
+        'network',
+        'create',
+        ...(internal ? ['--internal'] : []),
+        name,
+      ]);
+    }
+  };
+
+  // One sidecar per conductor; recreated only when what it relays changed.
+  const startProxy = async (hash: string, credentials: string[]) => {
+    const current = await deps
+      .exec(docker, [
+        'inspect',
+        '-f',
+        '{{index .Config.Labels "build.bakers.proxy"}}',
+        proxyName,
+      ])
+      .then(
+        (r) => r.stdout.trim(),
+        () => undefined,
+      );
+    if (current === hash) return;
+    if (current !== undefined) await deps.exec(docker, ['rm', '-f', proxyName]);
+    await deps.exec(docker, [
+      'run',
+      '-d',
+      '--restart',
+      'unless-stopped',
+      '--name',
+      proxyName,
+      '--label',
+      `build.bakers.proxy=${hash}`,
+      '--network',
+      EGRESS_NETWORK,
+      ...credentials.flatMap((k) => ['-e', k]),
+      '-e',
+      `BB_ALLOW=${(options.allow ?? []).join(',')}`,
+      '-e',
+      `BB_TOOLS=${gateway}:${toolsPort}`,
+      image,
+      'node',
+      '/opt/bb-runtime/proxy.mjs',
+    ]);
+    await deps.exec(docker, ['network', 'connect', RUN_NETWORK, proxyName]);
+  };
+
   const git = async (ws: string, flag: string) =>
     (
       await deps.exec('git', [
@@ -89,7 +157,7 @@ export function dockerRuntime(
       ])
     ).stdout.trim();
 
-  return {
+  const runtime: BbRuntime = {
     id: 'docker',
     async wrap(launch: RuntimeLaunch) {
       if (launch.harness !== 'claude' && options.image === undefined)
@@ -106,6 +174,24 @@ export function dockerRuntime(
         throw err;
       });
       await imageReady;
+      if (allowlist) {
+        if (!gateway || !toolsPort)
+          throw new Error(
+            'runtime-docker: allowlist mode needs the conductor tool server; it was not started',
+          );
+        const hash = shortHash(
+          JSON.stringify([gateway, toolsPort, options.allow ?? [], image]),
+        );
+        if (proxyReady?.hash !== hash)
+          proxyReady = {
+            hash,
+            ready: startProxy(hash, credentials).catch((err) => {
+              proxyReady = undefined;
+              throw err;
+            }),
+          };
+        await proxyReady.ready;
+      }
       const ws = launch.workspacePath;
       const gitCommonDir = await git(ws, '--git-common-dir');
       const worktreeConfig = join(
@@ -127,7 +213,9 @@ export function dockerRuntime(
         recursive: true,
       });
       const env = { ...launch.env };
-      for (const k of credentials) env[k] = deps.env[k] as string;
+      // Allowlist mode: the credential stays with the proxy sidecar.
+      if (!allowlist)
+        for (const k of credentials) env[k] = deps.env[k] as string;
       const { argv, env: runEnv } = dockerArgs({ ...launch, env }, opts, {
         gitCommonDir,
         ...(existsSync(worktreeConfig) ? { worktreeConfig } : {}),
@@ -161,4 +249,26 @@ export function dockerRuntime(
       rmSync(runHomeOf(r.uuid), { recursive: true, force: true });
     },
   };
+  if (allowlist) {
+    runtime.toolsUrl = (hostUrl) => {
+      const u = new URL(hostUrl);
+      toolsPort = u.port;
+      const path = u.pathname === '/' ? '' : u.pathname;
+      return `http://${proxyName}:${PROXY_PORTS.tools}${path}${u.search}`;
+    };
+    runtime.toolServerHosts = async () => {
+      await ensureNetwork(RUN_NETWORK, true);
+      await ensureNetwork(EGRESS_NETWORK, false);
+      const { stdout } = await deps.exec(docker, [
+        'network',
+        'inspect',
+        '-f',
+        '{{range .IPAM.Config}}{{.Gateway}}{{end}}',
+        EGRESS_NETWORK,
+      ]);
+      gateway = stdout.trim();
+      return [gateway];
+    };
+  }
+  return runtime;
 }

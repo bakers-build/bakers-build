@@ -134,3 +134,33 @@ describe('dockerArgs', () => {
     expect(v).toContain('/srv/data:/srv/data:ro');
   });
 });
+
+describe('dockerArgs in allowlist mode', () => {
+  const allow: DockerOptions = {
+    ...opts,
+    network: 'allowlist',
+    proxy: 'bb-runtime-proxy-abc',
+  };
+  const withCred = {
+    ...launch,
+    env: { ...launch.env, CLAUDE_CODE_OAUTH_TOKEN: 'oauth' },
+  };
+
+  it('joins the internal network and routes through the proxy', () => {
+    const { argv } = dockerArgs(withCred, allow, where);
+    expect(argv.join(' ')).toContain('--network bb-runtime ');
+    const flags = envFlags(argv);
+    expect(flags).toContain('HTTPS_PROXY=http://bb-runtime-proxy-abc:3128');
+    expect(flags).toContain('NO_PROXY=bb-runtime-proxy-abc');
+    expect(flags).toContain(
+      'ANTHROPIC_BASE_URL=http://bb-runtime-proxy-abc:8081',
+    );
+    expect(flags).toContain('ANTHROPIC_API_KEY=bb-runtime-placeholder');
+  });
+
+  it('keeps the model credential out of the run', () => {
+    const { argv } = dockerArgs(withCred, allow, where);
+    expect(envFlags(argv)).not.toContain('CLAUDE_CODE_OAUTH_TOKEN');
+    expect(argv.join(' ')).not.toContain('oauth');
+  });
+});

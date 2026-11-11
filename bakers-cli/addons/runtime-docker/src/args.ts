@@ -72,9 +72,24 @@ export function dockerArgs(
   const computed: string[] = [`HOME=${RUN_HOME}`];
   if (env.CLAUDE_CONFIG_DIR !== undefined)
     computed.push(`CLAUDE_CONFIG_DIR=${runClaudeDir}`);
+  const allowlist = opts.network === 'allowlist';
+  if (allowlist) {
+    const proxy = `http://${opts.proxy}:${PROXY_PORTS.egress}`;
+    computed.push(
+      `HTTPS_PROXY=${proxy}`,
+      `HTTP_PROXY=${proxy}`,
+      `NO_PROXY=${opts.proxy}`,
+      `ANTHROPIC_BASE_URL=http://${opts.proxy}:${PROXY_PORTS.api}`,
+      `ANTHROPIC_API_KEY=${API_KEY_PLACEHOLDER}`,
+    );
+  }
   const overridden = new Set(computed.map((c) => c.slice(0, c.indexOf('='))));
   const forwarded = Object.keys(env).filter(
-    (k) => !HOST_ONLY(k) && !overridden.has(k),
+    (k) =>
+      !HOST_ONLY(k) &&
+      !overridden.has(k) &&
+      // Allowlist mode keeps the model credential in the proxy only.
+      !(allowlist && (MODEL_CREDENTIALS as readonly string[]).includes(k)),
   );
   const plugins = where.agentHome ? join(where.agentHome, 'plugins') : '';
   const argv = [
@@ -87,7 +102,7 @@ export function dockerArgs(
     '--label',
     `build.bakers.run=${input.run.uuid}`,
     '--network',
-    'host',
+    allowlist ? RUN_NETWORK : 'host',
     '--user',
     `${where.uid}:${where.gid}`,
     ...(opts.docker.endsWith('podman') ? ['--userns=keep-id'] : []),

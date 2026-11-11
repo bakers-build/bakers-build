@@ -8,4 +8,5 @@ RUN apt-get update \
  && rm -rf /var/lib/apt/lists/* \
  && npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
  && mkdir -m 0777 /home/run
+COPY proxy.mjs /opt/bb-runtime/proxy.mjs
 ENV HOME=/home/run

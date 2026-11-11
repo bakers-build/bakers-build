@@ -107,11 +107,11 @@ describe('runtime-docker wrap', () => {
   it('builds the default image once when missing', async () => {
     const d = deps({
       exec: async (file, args) => {
-        calls.push([file, args]);
-        if (args[0] === 'image') throw new Error('No such image');
-        return deps()
-          .exec(file, args)
-          .then((r) => (calls.pop(), r));
+        if (args[0] === 'image') {
+          calls.push([file, args]);
+          throw new Error('No such image');
+        }
+        return deps().exec(file, args);
       },
     });
     const rt = dockerRuntime({}, d);
@@ -181,5 +181,112 @@ describe('runtime-docker cleanup', () => {
       dockerRuntime({}, d).cleanup({ uuid: 'r-uuid', id: 7 }),
     ).resolves.toBeUndefined();
     expect(warnings).toContain('runtime container cleanup failed');
+  });
+});
+
+describe('runtime-docker allowlist mode', () => {
+  const allowOpts = {
+    network: 'allowlist' as const,
+    allow: ['registry.npmjs.org'],
+  };
+
+  function fakeDocker(state: { networks: Set<string>; label?: string }) {
+    return deps({
+      conductorKey: 'aaa',
+      exec: async (file, args) => {
+        calls.push([file, args]);
+        if (file === 'git') return deps().exec(file, args);
+        if (args[0] === 'network' && args[1] === 'inspect') {
+          const name = args[args.length - 1] as string;
+          if (!state.networks.has(name)) throw new Error('no such network');
+          return { stdout: args.includes('-f') ? '172.30.0.1\n' : '[]' };
+        }
+        if (args[0] === 'network' && args[1] === 'create')
+          state.networks.add(args[args.length - 1] as string);
+        if (args[0] === 'inspect') {
+          if (state.label === undefined) throw new Error('no such object');
+          return { stdout: `${state.label}\n` };
+        }
+        return { stdout: '' };
+      },
+    });
+  }
+
+  it('points the run at the proxy tool relay', () => {
+    const rt = dockerRuntime(allowOpts, deps({ conductorKey: 'aaa' }));
+    expect(rt.toolsUrl?.('http://127.0.0.1:4242/mcp')).toBe(
+      'http://bb-runtime-proxy-aaa:8082/mcp',
+    );
+    expect(rt.toolsUrl?.('http://127.0.0.1:4242')).toBe(
+      'http://bb-runtime-proxy-aaa:8082',
+    );
+  });
+
+  it('has no tool relay in host mode', () => {
+    const rt = dockerRuntime({}, deps());
+    expect(rt.toolsUrl).toBeUndefined();
+    expect(rt.toolServerHosts).toBeUndefined();
+  });
+
+  it('creates both networks when missing and returns the egress gateway', async () => {
+    const state = { networks: new Set<string>() };
+    const rt = dockerRuntime(allowOpts, fakeDocker(state));
+    expect(await rt.toolServerHosts?.()).toEqual(['172.30.0.1']);
+    expect(calls).toContainEqual([
+      'docker',
+      ['network', 'create', '--internal', 'bb-runtime'],
+    ]);
+    expect(calls).toContainEqual([
+      'docker',
+      ['network', 'create', 'bb-runtime-egress'],
+    ]);
+  });
+
+  async function wrapped(state: { networks: Set<string>; label?: string }) {
+    const rt = dockerRuntime(allowOpts, fakeDocker(state));
+    await rt.toolServerHosts?.();
+    rt.toolsUrl?.('http://127.0.0.1:4242');
+    const out = await rt.wrap(launch());
+    return out;
+  }
+
+  it('starts its sidecar with the credential by name and keeps it out of the run', async () => {
+    const out = await wrapped({ networks: new Set() });
+    const runCall = calls.find(([, a]) => a[0] === 'run' && a.includes('-d'));
+    const args = runCall?.[1] ?? [];
+    expect(args).toContain('bb-runtime-proxy-aaa');
+    expect(args).toContain('CLAUDE_CODE_OAUTH_TOKEN');
+    expect(args).toContain('BB_ALLOW=registry.npmjs.org');
+    expect(args).toContain('BB_TOOLS=172.30.0.1:4242');
+    expect(args.join(' ')).not.toContain('oauth');
+    expect(calls).toContainEqual([
+      'docker',
+      ['network', 'connect', 'bb-runtime', 'bb-runtime-proxy-aaa'],
+    ]);
+    expect(out.env.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();
+    expect(out.command).toContain("'bb-runtime'");
+  });
+
+  it('recreates the sidecar only when its config changed', async () => {
+    await wrapped({ networks: new Set(), label: 'stale' });
+    expect(calls).toContainEqual([
+      'docker',
+      ['rm', '-f', 'bb-runtime-proxy-aaa'],
+    ]);
+    const hash = calls
+      .find(([, a]) => a[0] === 'run' && a.includes('-d'))?.[1]
+      .find((a) => a.startsWith('build.bakers.proxy='))
+      ?.split('=')[1];
+    calls = [];
+    await wrapped({ networks: new Set(), label: hash });
+    expect(calls.some(([, a]) => a[0] === 'rm' || a[0] === 'run')).toBe(false);
+  });
+
+  it("never touches another conductor's sidecar", async () => {
+    await wrapped({ networks: new Set(), label: 'stale' });
+    const names = calls
+      .flatMap(([, a]) => a)
+      .filter((a) => a.includes('bb-runtime-proxy-'));
+    expect(names.every((n) => n.includes('bb-runtime-proxy-aaa'))).toBe(true);
   });
 });

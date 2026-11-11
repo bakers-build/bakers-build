@@ -6,6 +6,7 @@ import {
   dockerRuntime,
   type RuntimeDockerOptions,
   realExec,
+  shortHash,
 } from './backend.js';
 
 export * from './args.js';
@@ -51,7 +52,7 @@ export function runtimeDocker(
     id: 'docker',
     isolates: true,
     requiredModules: [],
-    createRuntime: async (_config, { logger }) => {
+    createRuntime: async (config, { logger }) => {
       const { cliRoot, packageDir } = pluginPaths();
       const { version } = JSON.parse(
         readFileSync(join(packageDir, 'package.json'), 'utf8'),
@@ -63,6 +64,7 @@ export function runtimeDocker(
         cliRoot,
         packageDir,
         version,
+        conductorKey: shortHash(config.config_path),
       });
     },
   };
