@@ -15,10 +15,10 @@ One small feature in a GitLab demo project, `northside/shop`:
 - GitLab issue: **Show opening hours on the contact page**
 - Text: "Customers call to ask when we are open. Show the opening hours on the contact page."
 
-The story: the ticket starts with the label `auto` and runs alone through qualification and
-plan. The plan finds that opening hours need a new field, a change to the data model. An `auto`
-ticket reports such a change to the developers instead of deciding it. You move the ticket to a
-developer's conductor, and the developer confirms the result and the review there.
+The story: you create the ticket from the issue and approve its acceptance criteria and its
+plan yourself. The plan finds that opening hours need a new field, a change to the data model.
+That is a developer's call, so you move the ticket to a developer's conductor, and the developer
+confirms the result and the review there.
 
 You may swap the task. Keep it small, and keep one reason why it turns out harder than expected.
 
@@ -49,9 +49,9 @@ Everything on screen must be demo data: no real customer, colleague, address or 
 Two steps of the story were not tried when this script was written. Run the whole story once
 without recording and check them:
 
-1. **The move.** After the `auto` ticket reports its technical problem, set **Properties →
-   Conductor** to `dev-workstation` and remove the label `auto`. The developer's conductor must
-   pick the ticket up in `working`, and the run must ask for confirmation there.
+1. **The move.** After you approved the plan, set **Properties → Conductor** to
+   `dev-workstation`. The developer's conductor must pick the ticket up in `working`, and the
+   run must ask the developer for confirmation there.
 2. **The issue label.** The ticket must show the GitLab issue as its origin, and the issue must
    get `doing` at the first transition and `review` at `done`.
 
@@ -93,21 +93,19 @@ On screen: the project's ticket board, then the machines list with both conducto
 
 ### 3. From an issue to a ticket (about 16 s)
 
-On screen: the GitLab issue, without labels. Then create the ticket from it in bakers.build and
-add the label `auto`.
+On screen: the GitLab issue, without labels. Then create the ticket from it in bakers.build.
 
 > Let's follow one ticket. Our little shop wants its opening hours on the contact page.
 > It starts as a normal issue in GitLab. That stays.
-> We turn it into a ticket and add one label: auto.
+> We turn it into a ticket, and the agent starts.
 
-### 4. Labels (about 16 s)
+### 4. People decide (about 14 s)
 
-On screen: the ticket's Properties panel with the labels; rest the pointer on `auto`.
+On screen: the agent's question on the ticket, then your approval.
 
-> Labels decide how much you want to be involved.
-> With auto, a simple ticket just runs, and only asks you what is yours to decide.
-> Without it, a person says yes at every step.
-> So not everything needs a developer.
+> From here on, the agent does the work, and a person decides at every step.
+> You choose who that is: you, a developer, or your customer.
+> Nothing moves on without a yes.
 
 ### 5. Qualification and plan (about 18 s)
 
@@ -115,7 +113,7 @@ On screen: the ticket in `qualification`, its acceptance comment; then in `plan`
 plan comments. Switch once to the GitLab issue: the label `doing` is there.
 
 > First comes qualification. The agent makes sure it understood us: what do we want, and how will we know it's done?
-> Then it writes a plan. You can read all of it on the ticket.
+> Then it writes a plan. We read it on the ticket and approve it.
 > And in GitLab, the issue now says: doing.
 
 ### 6. Stepping in (about 13 s)
@@ -128,8 +126,8 @@ to the agent, for example "Use the 24-hour format."
 
 ### 7. The ticket moves (about 20 s)
 
-On screen: the agent's report of the technical problem on the ticket. Then Properties: change
-**Conductor** to `dev-workstation`, remove `auto`.
+On screen: the plan's note that the data model must change. Then Properties: change
+**Conductor** to `dev-workstation`.
 
 > Our ticket turns out to be trickier than it looked.
 > The agent doesn't guess. It says so.
