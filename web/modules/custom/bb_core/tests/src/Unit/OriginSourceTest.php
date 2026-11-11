@@ -37,12 +37,12 @@ final class OriginSourceTest extends UnitTestCase {
   public static function urls(): array {
     return [
       'gitlab' => [
-        'https://gitlab.example.com/keytec/gaia/-/issues/12',
-        ['label' => 'GitLab - keytec/gaia', 'url' => 'https://gitlab.example.com/keytec/gaia'],
+        'https://gitlab.example.com/keytec/bakers/-/issues/12',
+        ['label' => 'GitLab - keytec/bakers', 'url' => 'https://gitlab.example.com/keytec/bakers'],
       ],
       'gitlab without separator' => [
-        'https://gitlab.example.com/keytec/gaia/issues/12',
-        ['label' => 'GitLab - keytec/gaia', 'url' => 'https://gitlab.example.com/keytec/gaia'],
+        'https://gitlab.example.com/keytec/bakers/issues/12',
+        ['label' => 'GitLab - keytec/bakers', 'url' => 'https://gitlab.example.com/keytec/bakers'],
       ],
       'github' => [
         'https://github.com/acme/app/issues/3',

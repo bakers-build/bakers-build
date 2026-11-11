@@ -22,8 +22,8 @@ final class ProjectOriginSourcesTest extends ClaimKernelTestBase {
     $project = $this->project();
     $other = $this->otherProject();
     foreach ([
-      [$project, 'https://gitlab.example.com/keytec/gaia/-/issues/12'],
-      [$project, 'https://gitlab.example.com/keytec/gaia/-/issues/13'],
+      [$project, 'https://gitlab.example.com/keytec/bakers/-/issues/12'],
+      [$project, 'https://gitlab.example.com/keytec/bakers/-/issues/13'],
       [$project, 'https://acme.atlassian.net/browse/BIBB-7'],
       [$project, 'not a url'],
       [$project, ''],
@@ -40,7 +40,7 @@ final class ProjectOriginSourcesTest extends ClaimKernelTestBase {
       iterator_to_array($project->get('origin_sources')),
     );
     self::assertSame([
-      ['title' => 'GitLab - keytec/gaia', 'uri' => 'https://gitlab.example.com/keytec/gaia'],
+      ['title' => 'GitLab - keytec/bakers', 'uri' => 'https://gitlab.example.com/keytec/bakers'],
       ['title' => 'Jira - BIBB', 'uri' => 'https://acme.atlassian.net/browse/BIBB'],
     ], $links);
   }

@@ -308,7 +308,7 @@ final class ProjectOverviewTest extends KernelTestBase {
    * The inspector shows About and the properties, Origin as links.
    */
   public function testInspectorShowsAboutAndOrigin(): void {
-    $this->workTicket('From GitLab', ['origin' => 'https://gitlab.example.com/keytec/gaia/-/issues/12']);
+    $this->workTicket('From GitLab', ['origin' => 'https://gitlab.example.com/keytec/bakers/-/issues/12']);
 
     $html = $this->renderMode('full');
     self::assertStringContainsString('About', $html);
@@ -316,7 +316,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     foreach (['Key', 'Origin', 'Repository', 'Teams', 'Group', 'Environments'] as $label) {
       self::assertStringContainsString('>' . $label . '<', $html);
     }
-    self::assertMatchesRegularExpression('#<a[^>]*href="https://gitlab.example.com/keytec/gaia"[^>]*>GitLab - keytec/gaia</a>#', $html);
+    self::assertMatchesRegularExpression('#<a[^>]*href="https://gitlab.example.com/keytec/bakers"[^>]*>GitLab - keytec/bakers</a>#', $html);
     self::assertStringContainsString('https://git.example/bakers.git', $html);
     self::assertStringContainsString('Platform Crew', $html);
     self::assertStringContainsString('production', $html);
