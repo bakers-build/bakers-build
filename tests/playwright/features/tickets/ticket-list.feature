@@ -645,6 +645,26 @@ Feature: The ticket list is the nav home
     When I remove the "Parent" chip
     Then the address does not carry "parent="
 
+  # BAKERS-56 AC-7/D15: search and sort share one 36 px row, measured at
+  # compact density on a 1440 px wide screen, and keep their accessible names.
+  Scenario: Search and sort share one 36 px row
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 1440 pixels wide
+    When I visit the ticket list of the "bakers" workspace
+    Then search and sort share one row 36 px high
+    When I visit the tickets tab of project "bakers.build Platform"
+    Then search and sort share one row 36 px high
+    When I visit the tickets tab of team "Design Crew"
+    Then search and sort share one row 36 px high
+
+  Scenario: On a narrow screen the bar wraps without horizontal scroll
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 390 pixels wide
+    And the rail has no remembered state
+    When I visit the ticket list of the "bakers" workspace
+    Then search and sort sit inside the screen
+    And the document does not scroll horizontally
+
   Scenario: Has sub-tickets
     Given I am signed in as a member of the "bakers" workspace
     And the ticket family "Brood" is assigned to me

@@ -100,6 +100,37 @@
           {%- if c and (c.kind|default('') == 'link' or (c.kind|default('') == 'rendered' and '<a' in (c.markup ~ ''))) -%}{%- set row_link = true -%}{%- endif -%}
         {%- endfor -%}
       {%- endif -%}
+      {#- The regions a patterned row fills, read before the item opens: a row
+          with a meta or description line under its headline is a two-line row. -#}
+      {% set left = [] %}
+      {% if pattern %}
+        {% set captions = pattern.captions|default({}) %}
+        {% set right = [] %}
+        {% set right_meta = [] %}
+        {% set avatar = [] %}
+        {% for region in ['avatar', 'headline', 'meta', 'description', 'right', 'right_meta'] %}
+          {% set present = [] %}
+          {% for key in pattern[region]|default([]) %}
+            {% if item.cells[key]|default(null) %}{% set present = present|merge([key]) %}{% endif %}
+          {% endfor %}
+          {% if region == 'right' %}
+            {% set right = present %}
+          {% elseif region == 'right_meta' %}
+            {% set right_meta = present %}
+          {% elseif region == 'avatar' %}
+            {% set avatar = present %}
+          {% elseif present is not empty %}
+            {% set left = left|merge([{ 'region': region, 'keys': present }]) %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      {#- A TWO-LINE ROW IN `lines` IS 56PX for a one-line title (`min-h-14`): the
+          lines sit without a gap and the inset shrinks to `inline-xs`, so a meta
+          line with an avatar or badge still fits; a wrapping title grows the row. -#}
+      {% set two_line = pattern and not cards and not plain and left|length > 1 %}
+      {% if two_line %}
+        {% set item_classes = item_classes|filter(c => c != 'py-inline')|merge(['py-inline-xs', 'min-h-14']) %}
+      {% endif %}
       {%- if row_link %}{% set item_classes = item_classes|merge(['cursor-pointer']) %}{% endif %}
       <li data-list-item class="{{ item_classes|join(' ') }}"{% if item.url %} data-item-url="{{ item.url }}"{% endif %}{% if row_link %} x-data @click="$event.target.closest('a, button, input, select, textarea, label, summary, [role=button]') || String(window.getSelection()) || $el.querySelector('[data-list-region=headline] a')?.click()"{% endif %}>
         <span class="{{ (rail_classes|merge([accent_map[item.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>
@@ -116,26 +147,6 @@
           {#- `avatar` leads the row as its own non-shrinking block, before the text
               column; `description` is the text column's last line, beneath meta,
               and wraps inside the row. Both are optional regions like the rest. #}
-          {% set captions = pattern.captions|default({}) %}
-          {% set left = [] %}
-          {% set right = [] %}
-          {% set right_meta = [] %}
-          {% set avatar = [] %}
-          {% for region in ['avatar', 'headline', 'meta', 'description', 'right', 'right_meta'] %}
-            {% set present = [] %}
-            {% for key in pattern[region]|default([]) %}
-              {% if item.cells[key]|default(null) %}{% set present = present|merge([key]) %}{% endif %}
-            {% endfor %}
-            {% if region == 'right' %}
-              {% set right = present %}
-            {% elseif region == 'right_meta' %}
-              {% set right_meta = present %}
-            {% elseif region == 'avatar' %}
-              {% set avatar = present %}
-            {% elseif present is not empty %}
-              {% set left = left|merge([{ 'region': region, 'keys': present }]) %}
-            {% endif %}
-          {% endfor %}
           {#- With an avatar, avatar and text share one non-wrapping block that takes
               the left basis, so the avatar stays beside the headline on a phone
               and only the right block flows beneath. A headline alone centres on the
@@ -149,7 +160,7 @@
             </div>
           {% endif %}
           {% if left is not empty %}
-            <div class="flex min-w-0 flex-1 {{ avatar is empty ? 'basis-80' : 'basis-0' }} flex-col gap-inline-xs">
+            <div class="flex min-w-0 flex-1 {{ avatar is empty ? 'basis-80' : 'basis-0' }} flex-col {{ two_line ? 'gap-0' : 'gap-inline-xs' }}">
               {% for line in left %}
                 <div data-list-region="{{ line.region }}" class="{{ (line.region == 'headline' ? ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-inline', 'gap-y-inline-xs', 'text-item-title', 'text-text'] : (line.region == 'description' ? ['flex', 'min-w-0', 'flex-wrap', 'gap-x-stack', 'gap-y-inline-xs', 'text-body', 'text-text-light'] : ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-stack', 'gap-y-inline-xs', 'text-meta', 'text-text-faint']))|join(' ') }}">
                   {% for key in line.keys %}

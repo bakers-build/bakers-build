@@ -136,6 +136,14 @@ Feature: The workspace listings are list rows ordered by one sort dropdown
     And every ticket row reads its identifier and "Created … ago" beneath the title
     And every ticket row ends with the assignee's mark, named by its tooltip
 
+  # BAKERS-56 AC-6/D15, measured at compact density on a 1440 px wide screen:
+  # a title that fits one line keeps the row at 56 px, a longer one may grow it.
+  Scenario: A one-line ticket row is 56 px and its title 14 px / 600
+    Given the viewport is 1440 pixels wide
+    When I open the "Tickets" row listing
+    Then every ticket row with a one-line title is 56 px high
+    And every ticket title is 14 px with weight 600
+
   Scenario Outline: The <listing> avatar and description stay inside the row at <width>px
     Given the viewport is <width> pixels wide
     And the rail has no remembered state

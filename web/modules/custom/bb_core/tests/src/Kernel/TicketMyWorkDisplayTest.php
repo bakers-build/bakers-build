@@ -12,6 +12,7 @@ use Drupal\search_api\Entity\Index;
 use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
 use Drupal\views\Views;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Yaml\Yaml;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -354,6 +355,46 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
     self::assertStringContainsString(
       'All tickets',
       $this->screen('page_1'),
+    );
+  }
+
+  /**
+   * My work rows show the conductor in its own column and no assignee.
+   *
+   * Every row on My work is the reader's own, so the assignee says nothing;
+   * the conductor takes the right-hand column instead of a place in the meta
+   * line, and a ticket without one keeps that column as an empty cell. The
+   * other ticket lists still show whose a ticket is.
+   */
+  public function testMyWorkShowsConductorInsteadOfAssignee(): void {
+    $my_work = $this->options('my_work');
+    self::assertArrayNotHasKey('assignee', $my_work['fields'], 'My work renders no assignee field.');
+    self::assertSame(['conductor'], $my_work['style']['options']['pattern']['right']);
+    self::assertNotContains('conductor', $my_work['style']['options']['pattern']['meta']);
+
+    $html = $this->screen('my_work');
+    $row = (new Crawler($html))->filter('li[data-list-item]');
+    self::assertCount(1, $row);
+    self::assertSame(
+      ['conductor'],
+      $row->filter('[data-list-region="right"] > [data-cell]')->each(
+        static fn (Crawler $cell): string => (string) $cell->attr('data-cell'),
+      ),
+      'The conductor column holds its place on a ticket without a conductor.',
+    );
+    self::assertCount(0, $row->filter('[data-cell="assignee"]'), 'My work shows no assignee.');
+    self::assertCount(0, $row->filter('[data-list-region="meta"] [data-cell="conductor"]'));
+
+    foreach (['page_1', 'project_tickets', 'team_tickets'] as $display_id) {
+      $options = $this->options($display_id);
+      self::assertArrayHasKey('assignee', $options['fields'], $display_id . ' keeps the assignee field.');
+      self::assertSame(['assignee'], $options['style']['options']['pattern']['right'], $display_id . ' keeps the assignee column.');
+    }
+    self::assertCount(
+      4,
+      (new Crawler($this->screen('page_1', ['closed' => 'all'])))
+        ->filter('[data-list-region="right"] > [data-cell="assignee"]'),
+      'All tickets still shows whose each ticket is.',
     );
   }
 

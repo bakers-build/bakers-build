@@ -511,6 +511,30 @@ final class TicketsViewConfigTest extends KernelTestBase {
   }
 
   /**
+   * My work's own fields and style are the default's, minus the assignee.
+   *
+   * The override copies the default display's fields, so a field changed on
+   * `default` and not here would drift silently. Only two differences are
+   * allowed: no assignee, and the conductor in the right-hand column.
+   */
+  public function testMyWorkCopiesTheDefaultRowWithoutTheAssignee(): void {
+    $view = View::load('tickets');
+    $default = $view->getDisplay('default')['display_options'];
+    $my_work = $view->getDisplay('my_work')['display_options'];
+
+    self::assertFalse($my_work['defaults']['fields'] ?? NULL, 'My work overrides the fields.');
+    self::assertFalse($my_work['defaults']['style'] ?? NULL, 'My work overrides the style.');
+    $expected_fields = $default['fields'];
+    unset($expected_fields['assignee']);
+    self::assertSame($expected_fields, $my_work['fields']);
+
+    $expected_style = $default['style'];
+    $expected_style['options']['pattern']['meta'] = array_values(array_diff($expected_style['options']['pattern']['meta'], ['conductor']));
+    $expected_style['options']['pattern']['right'] = ['conductor'];
+    self::assertSame($expected_style, $my_work['style']);
+  }
+
+  /**
    * The workspace scopes the screen; it is not a filter on it.
    */
   public function testThereIsNoWorkspaceFacet(): void {

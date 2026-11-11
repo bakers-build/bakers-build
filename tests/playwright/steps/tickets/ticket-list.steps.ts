@@ -18,7 +18,7 @@ import type { Page } from '@playwright/test';
 import { test } from '../../bdd.fixtures';
 import { markDocument } from '../../support/shell';
 import { php } from '../../support/drush';
-import { active, closedControl, facetRow, facetTrigger, listing, safe } from '../../support/listing';
+import { active, closedControl, facetRow, facetTrigger, listing, safe, SEARCH_TOOLBAR } from '../../support/listing';
 
 const { After } = createBdd(test);
 
@@ -1523,4 +1523,38 @@ Then('the ticket list shows the origin tickets {string}', async ({ page }, names
 
 Then('the ticket list does not show the origin ticket {string}', async ({ page }, name: string) => {
   await expect(originRow(page, name)).toHaveCount(0);
+});
+
+/** The search-and-sort bar above the rows, its search field and its sort select. */
+function searchAndSort(page: Page) {
+  const bar = active(page).locator(`${CONTENT_ISLAND} ${SEARCH_TOOLBAR}`);
+  return {
+    bar,
+    search: bar.locator('input[name="title"]'),
+    sort: bar.getByRole('combobox', { name: 'Sort by' }),
+  };
+}
+
+Then('search and sort share one row {int} px high', async ({ page }, height: number) => {
+  const { bar, search, sort } = searchAndSort(page);
+  await expect(search).toHaveAccessibleName('Search');
+  await expect(sort).toBeVisible();
+  const [barBox, searchBox, sortBox] = [await bar.boundingBox(), await search.boundingBox(), await sort.boundingBox()];
+  expect(barBox!.height, 'The search-and-sort row').toBeCloseTo(height, 0);
+  expect(Math.abs(searchBox!.y - sortBox!.y), 'Search and sort do not share one row').toBeLessThan(1);
+  for (const box of [searchBox!, sortBox!]) {
+    expect(box.y).toBeGreaterThanOrEqual(barBox!.y);
+    expect(box.y + box.height).toBeLessThanOrEqual(barBox!.y + barBox!.height + 0.5);
+  }
+});
+
+Then('search and sort sit inside the screen', async ({ page }) => {
+  const { bar, search, sort } = searchAndSort(page);
+  const width = active(page).viewportSize()?.width ?? 0;
+  for (const control of [bar, search, sort]) {
+    await expect(control).toBeVisible();
+    const box = await control.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width, 'A control runs past the screen').toBeLessThanOrEqual(width + 0.5);
+  }
 });
