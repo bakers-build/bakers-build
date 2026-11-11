@@ -16,6 +16,8 @@ use Drupal\tool\ExecutableResult;
 use Drupal\tool\Tool\ToolBase;
 use Drupal\tool\Tool\ToolOperation;
 use Drupal\tool\TypedData\InputDefinition;
+use Drupal\tool\TypedData\ListInputDefinition;
+use Drupal\tool\TypedData\ListOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
 
 /**
@@ -24,7 +26,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_create',
   label: new TranslatableMarkup('Create a ticket'),
-  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. An assignee e-mail address assigns that account when it may be assigned in the project’s workspace; otherwise the ticket is created unassigned and the message says so. Returns the new ticket’s UUID, identifier, state, assignee and URL.'),
+  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. An assignee e-mail address assigns that account when it may be assigned in the project’s workspace; otherwise the ticket is created unassigned and the message says so. Each reviewer e-mail address adds that account as a reviewer when it may review in the project’s workspace; otherwise it adds no one and the message says so. Returns the new ticket’s UUID, identifier, state, assignee, reviewers and URL.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -85,6 +87,17 @@ use Drupal\tool\TypedData\OutputDefinition;
       required: FALSE,
       constraints: ['Email' => []],
     ),
+    'reviewer_emails' => new ListInputDefinition(
+      label: new TranslatableMarkup('Reviewer e-mail addresses'),
+      description: new TranslatableMarkup('E-mail addresses of the accounts to add as reviewers, each when it may review in the project’s workspace.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Reviewer e-mail address'),
+        description: new TranslatableMarkup('One e-mail address.'),
+        constraints: ['Email' => []],
+      ),
+    ),
   ],
   output_definitions: [
     'id' => new OutputDefinition(
@@ -114,6 +127,15 @@ use Drupal\tool\TypedData\OutputDefinition;
       label: new TranslatableMarkup('Assignee'),
       description: new TranslatableMarkup('The assignee’s display name, or none.'),
       nullable: TRUE,
+    ),
+    'reviewers' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Reviewers'),
+      description: new TranslatableMarkup('The display names of the reviewers added.'),
+      item_definition: new OutputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Reviewer'),
+        description: new TranslatableMarkup('One reviewer’s display name.'),
+      ),
     ),
     'url' => new OutputDefinition(
       data_type: 'string',
@@ -153,21 +175,28 @@ final class TicketCreate extends ToolBase {
       throw new \InvalidArgumentException('You may not set branch_name.');
     }
     $unassigned = !empty($values['assignee_email']) && !$this->assign($ticket, $values['assignee_email']);
+    $unreviewed = FALSE;
+    foreach ($values['reviewer_emails'] ?? [] as $email) {
+      $unreviewed = !$this->addReviewer($ticket, $email) || $unreviewed;
+    }
     $this->assertValid($ticket);
     $ticket->save();
-    return $this->created($ticket, $unassigned);
+    return $this->created($ticket, $unassigned, $unreviewed);
   }
 
   /**
    * The result for a created ticket.
    *
-   * One message for an unknown and an unassignable address, so the response
+   * One message for an unknown and an unacceptable address, so the response
    * reveals no account.
    */
-  private function created(BbTicketInterface $ticket, bool $unassigned): ExecutableResult {
+  private function created(BbTicketInterface $ticket, bool $unassigned, bool $unreviewed): ExecutableResult {
     $message = $unassigned
       ? new TranslatableMarkup('Ticket created without an assignee: no account with this e-mail address can be assigned in this workspace.')
       : new TranslatableMarkup('Ticket created.');
+    if ($unreviewed) {
+      $message = new TranslatableMarkup('@created Not every reviewer was added: no account with this e-mail address can be a reviewer in this workspace.', ['@created' => $message]);
+    }
     $assignee = $ticket->get('assignee_user_id')->entity;
     return ExecutableResult::success($message, [
       'id' => $ticket->uuid(),
@@ -175,6 +204,7 @@ final class TicketCreate extends ToolBase {
       'state' => $ticket->get('state')->value,
       'branch_name' => $ticket->get('branch_name')->value,
       'assignee' => $assignee instanceof AccountInterface ? $assignee->getDisplayName() : NULL,
+      'reviewers' => array_map(static fn (AccountInterface $account) => $account->getDisplayName(), $ticket->get('reviewers')->referencedEntities()),
       'url' => $ticket->toUrl()->setAbsolute()->toString(),
     ]);
   }
@@ -186,15 +216,8 @@ final class TicketCreate extends ToolBase {
    * handler) decides, as in the web form. Returns whether it was assigned.
    */
   private function assign(BbTicketInterface $ticket, string $email): bool {
-    $storage = $this->entities()->getStorage('user');
-    // Case-insensitive, like core's unique-mail check; escaped as escapeLike().
-    $ids = $storage->getQuery()->accessCheck(FALSE)
-      ->condition('mail', addcslashes($email, '\\%_'), 'LIKE')
-      ->condition('status', 1)
-      ->range(0, 1)
-      ->execute();
-    $account = $ids ? $storage->load(reset($ids)) : NULL;
-    if (!$account instanceof AccountInterface) {
+    $account = $this->activeAccount($email);
+    if (!$account) {
       return FALSE;
     }
     $ticket->set('assignee_user_id', $account->id());
@@ -203,6 +226,41 @@ final class TicketCreate extends ToolBase {
     }
     $ticket->set('assignee_user_id', NULL);
     return FALSE;
+  }
+
+  /**
+   * Adds the active account of this address as a reviewer when allowed.
+   *
+   * The reviewers field's own validation decides, as for the assignee.
+   * Returns whether it was added.
+   */
+  private function addReviewer(BbTicketInterface $ticket, string $email): bool {
+    $account = $this->activeAccount($email);
+    if (!$account) {
+      return FALSE;
+    }
+    $reviewers = $ticket->get('reviewers')->getValue();
+    $ticket->get('reviewers')->appendItem($account->id());
+    if ($ticket->get('reviewers')->validate()->count() === 0) {
+      return TRUE;
+    }
+    $ticket->set('reviewers', $reviewers);
+    return FALSE;
+  }
+
+  /**
+   * The active account with this e-mail address, if any.
+   */
+  private function activeAccount(string $email): ?AccountInterface {
+    $storage = $this->entities()->getStorage('user');
+    // Case-insensitive, like core's unique-mail check; escaped as escapeLike().
+    $ids = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('mail', addcslashes($email, '\\%_'), 'LIKE')
+      ->condition('status', 1)
+      ->range(0, 1)
+      ->execute();
+    $account = $ids ? $storage->load(reset($ids)) : NULL;
+    return $account instanceof AccountInterface ? $account : NULL;
   }
 
   /**

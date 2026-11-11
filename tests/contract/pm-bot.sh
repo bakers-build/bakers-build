@@ -25,7 +25,7 @@
 #     back a validated language code; the persona answers in the language the trusted line names
 #   - the Slack app neither reads nor opens direct messages, may manage public channels,
 #     may react to messages and may read the requester's e-mail address
-#   - the assignee comes only from the trusted line's e-mail address
+#   - the reviewer comes only from the trusted line's e-mail address; no assignee is passed
 #   - persona, skill and scripts name no customer; only .env.example may
 #   - the bot passes answers on without a "Correct?" confirmation round
 #   - customer wording says what happens, not what a team does
@@ -165,7 +165,7 @@ for event in sorted(events & {"message.im", "message.mpim"}): errors.append(f"bo
 if home.get("messages_tab_enabled") is not False: errors.append("app_home.messages_tab_enabled is not false")
 if "channels:manage" not in scopes: errors.append("bot scopes lack channels:manage (create, invite, rename, archive)")
 if "reactions:write" not in scopes: errors.append("bot scopes lack reactions:write (the eyes marker on a message in work)")
-if "users:read.email" not in scopes: errors.append("bot scopes lack users:read.email (the requester's address for the assignee)")
+if "users:read.email" not in scopes: errors.append("bot scopes lack users:read.email (the requester's address for the reviewer)")
 if not (manifest.get("settings") or {}).get("socket_mode_enabled"): errors.append("socket mode is off")
 for e in errors:
     print("FAIL:", e, file=sys.stderr)
@@ -173,9 +173,10 @@ sys.exit(1 if errors else 0)
 PY
 pass "Slack app talks in channels only, over Socket Mode, manages public channels, reacts and reads e-mail addresses"
 
-grep -qF "the requester's e-mail address exactly as the channel's trusted line gives it" "$SOUL" && grep -qF 'assignee_email' "$SOUL" \
-  || fail "$SOUL does not take the assignee's address from the trusted line alone"
-pass "the assignee's address comes from the trusted line only"
+grep -qF "the requester's e-mail address exactly as the channel's trusted line gives it" "$SOUL" && grep -qF 'reviewer_emails' "$SOUL" \
+  && grep -qF 'Never pass `assignee_email`' "$SOUL" \
+  || fail "$SOUL does not take the reviewer's address from the trusted line alone, or may pass assignee_email"
+pass "the reviewer's address comes from the trusted line only, and no assignee is passed"
 
 # The one skip is test_recovery.py, which needs Hermes; pm-bot-image.sh runs it in the image.
 python3 -m unittest discover -s "$BOT/plugins/bot-channels" -q 2>&1 | tail -1 | grep -qxE 'OK( \(skipped=1\))?' || fail "the bot-channels plugin fails its unit tests"
