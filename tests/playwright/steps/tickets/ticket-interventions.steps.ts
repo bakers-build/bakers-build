@@ -124,10 +124,6 @@ Then('the ticket page does not offer {string}', async ({ page }, name: string) =
   await expect(page.getByRole('link', { name, exact: true })).toHaveCount(0);
 });
 
-Then('the inspector shows {string}', async ({ page }, text: string) => {
-  await expect(page.locator('[data-canvas-region="inspector"]')).toContainText(text);
-});
-
 Then('the inspector names the stall {string}', async ({ page }, reason: string) => {
   const inspector = page.locator('[data-canvas-region="inspector"]');
   await expect(inspector).toContainText('Stall');

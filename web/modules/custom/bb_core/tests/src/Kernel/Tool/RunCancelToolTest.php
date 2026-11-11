@@ -98,9 +98,12 @@ final class RunCancelToolTest extends BakersToolTestBase {
   public function testParkedTicketCancelsNewestFailedRun(): void {
     $ticket = $this->ticket('RUN-6');
     $runs = $this->seedFailedRuns($ticket, 3);
-    $newest = end($runs);
+    $newest = $runs[2];
 
-    $outputs = $this->outputs($this->runTool('bakers_run_cancel', ['ticket' => $ticket->getIdentifier(), 'reason' => 'ddev fixed']));
+    $outputs = $this->outputs($this->runTool('bakers_run_cancel', [
+      'ticket' => $ticket->getIdentifier(),
+      'reason' => 'ddev fixed',
+    ]));
 
     self::assertSame([$newest->uuid()], $outputs['runs']);
     foreach ($runs as $run) {

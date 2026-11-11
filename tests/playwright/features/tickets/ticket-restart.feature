@@ -2,8 +2,8 @@
 Feature: A person restarts a ticket parked after repeated failed runs
   When three runs in a row fail, the ticket is parked and conductors skip it.
   Once the cause is fixed, a person who may update the ticket restarts it from
-  the Properties footer: the ticket can be claimed again, its failed runs stay
-  in its history, and the inspector shows who restarted it. A guest who may
+  the Properties footer: its newest failed run becomes cancelled, so the ticket
+  can be claimed again, and every run stays in its history. A guest who may
   only view the ticket gets no Restart. Every scenario works on its own
   disposable ticket so the seeded fixtures stay untouched.
 
@@ -18,8 +18,7 @@ Feature: A person restarts a ticket parked after repeated failed runs
     When I choose "Restart ticket" in the dialog
     Then the page says "was restarted"
     When I visit the disposable ticket
-    Then the inspector shows "Restarted"
-    And the ticket page does not offer "Restart ticket"
+    Then the ticket page does not offer "Restart ticket"
 
   Scenario: A guest sees no Restart on a parked ticket
     Given I am signed in as "north-guest"

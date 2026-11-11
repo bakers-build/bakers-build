@@ -15,8 +15,9 @@ use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
  * Who may intervene in a ticket or run, and how an intervention is opened.
  *
  * AI agents drive the workflow; a human on the ticket detail intervenes. The
- * detail offers Freeze, Unfreeze, Cancel ticket and Cancel run, each through a
- * confirmation. Settings carry no transition; Delete is their one action.
+ * detail offers Restart (cancel a parked ticket's newest failed run), Freeze,
+ * Unfreeze, Cancel ticket and Cancel run, each through a confirmation.
+ * Settings carry no transition; Delete is their one action.
  *
  * One home for every intervention rule, so the UI and the tools share it.
  *
@@ -124,7 +125,7 @@ final class TicketInterventions {
   /**
    * The transition that cancels this run: `cancel_failed` for a failed run.
    */
-  private static function cancelTransition(BbRunInterface $run): string {
+  public static function cancelTransition(BbRunInterface $run): string {
     return $run->getRunState() === 'failed' ? self::CANCEL_FAILED : self::CANCEL;
   }
 
