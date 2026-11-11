@@ -194,6 +194,11 @@ final class BbOptionPickerWidgetTest extends KernelTestBase {
 
     $plain = $this->alter($this->selectElement(TRUE, []));
     self::assertArrayNotHasKey('quick_choices', $plain['state']['#slots']['options']['#props']);
+
+    // Under the Closed position only terminal states are offered; a choice
+    // that matches no row would act as Clear, so it is not offered either.
+    $closed = $this->alter($this->selectElement(TRUE, [], $terminal), ['open_states' => TRUE]);
+    self::assertArrayNotHasKey('quick_choices', $closed['state']['#slots']['options']['#props']);
   }
 
   /**
@@ -242,16 +247,18 @@ final class BbOptionPickerWidgetTest extends KernelTestBase {
    *   Whether the field holds several values at once.
    * @param array<int, string>|string $value
    *   The current exposed input.
+   * @param array<int, string> $options
+   *   The values the filter offers.
    *
    * @return array<string, mixed>
    *   The form element.
    */
-  private function selectElement(bool $multiple, array|string $value): array {
+  private function selectElement(bool $multiple, array|string $value, array $options = self::OPTIONS): array {
     return [
       '#type' => 'select',
       '#multiple' => $multiple,
       '#title' => 'State',
-      '#options' => array_combine(self::OPTIONS, self::OPTIONS),
+      '#options' => array_combine($options, $options),
       '#value' => $value,
     ];
   }

@@ -201,6 +201,11 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
     $multiple = !empty($element['#multiple']) || ($element['#type'] ?? '') === 'checkboxes';
     $values = $this->pickedValues($element, $form_state, $key);
     $options = $this->withChosenRows($options, $values);
+    if ($counts !== NULL) {
+      // A chosen value the facet did not count yields no ticket here, and
+      // every row of a counting facet shows a number.
+      $counts += array_fill_keys($values, '0');
+    }
 
     $form[$key] = [
       '#type' => 'component',
@@ -246,7 +251,7 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
               array_map(strval(...), array_keys($options)),
               $options,
             ),
-          ] + $this->quickChoices(),
+          ] + $this->quickChoices($options),
         ],
       ],
     ];
@@ -263,12 +268,13 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
    * @param array<array-key, string> $options
    *   The option set, keyed by submitted value; labels are replaced in place.
    *
-   * @return array<string, string>
-   *   Submitted value => its count, for the values the facet counted.
+   * @return array<string, string>|null
+   *   Submitted value => its count, for the values the facet counted; NULL
+   *   when the facet shows no numbers.
    */
-  private function resultCounts(array &$options): array {
+  private function resultCounts(array &$options): ?array {
     if (!$this->handler instanceof FacetsFilter || empty($this->handler->options['facet']['show_numbers'])) {
-      return [];
+      return NULL;
     }
     $counts = [];
     // shortcut: top-level results only; a hierarchical facet's children keep
@@ -277,7 +283,10 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
       $value = (string) $result->getRawValue();
       if (isset($options[$value])) {
         $options[$value] = (string) $result->getDisplayValue();
-        $counts[$value] = (string) $result->getCount();
+        // As contrib's own `show_numbers` label: a result may carry no count.
+        if ($result->getCount() !== FALSE) {
+          $counts[$value] = (string) $result->getCount();
+        }
       }
     }
     return $counts;
@@ -287,16 +296,24 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
    * The `quick_choices` prop, when this facet offers "Only open states".
    *
    * The values are the union of every ticket workflow's non-terminal states,
-   * derived from the workflows rather than listed here.
+   * derived from the workflows rather than listed here. A choice none of whose
+   * values has a row would uncheck everything, which is Clear, so it is left
+   * out — as under the Closed position, which offers only terminal states.
+   *
+   * @param array<array-key, string> $options
+   *   The rows the list offers, keyed by submitted value.
    *
    * @return array<string, array<int, array{label: string, values: array<int, string>}>>
    *   The prop keyed by name, or nothing.
    */
-  private function quickChoices(): array {
+  private function quickChoices(array $options): array {
     if (empty($this->configuration['open_states'])) {
       return [];
     }
     $open = array_merge(...array_values(TypeWorkflows::nonTerminalTicketStates()));
+    if (array_intersect($open, array_map(strval(...), array_keys($options))) === []) {
+      return [];
+    }
     return [
       'quick_choices' => [
         [

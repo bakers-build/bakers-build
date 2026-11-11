@@ -167,9 +167,9 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
       $this->create('bb_ticket', $values + [
         'title' => 'Ticket ' . $values['state'],
         'project_id' => $project->id(),
-        // Only the priority-1 ticket is assigned, so `?priority[]=2` leaves the
-        // assignee facet with no results AT ALL — which is the corner contrib
-        // does not carry an active value through.
+        // Only the first priority-1 ticket is assigned, so `?priority[]=2`
+        // leaves the assignee facet with no results AT ALL — which is the
+        // corner contrib does not carry an active value through.
         'assignee_user_id' => $i === 0 ? $this->assignee->id() : NULL,
       ]);
     }
@@ -328,6 +328,24 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
   }
 
   /**
+   * A chosen state the other filters leave without hits still shows a count.
+   *
+   * The assignee's one ticket has priority 1, so adding priority 2 leaves the
+   * state facet with no results at all; the chosen row is the widget's own
+   * (`withChosenRows()`), and every state row shows a number, so it reads 0.
+   */
+  public function testChosenStateWithoutHitsCountsZero(): void {
+    self::assertSame(
+      ['review' => ['review', '0']],
+      $this->offeredRows('state', [
+        'assignee' => [(string) $this->assignee->id()],
+        'priority' => ['2'],
+        'state' => ['review'],
+      ])['options'],
+    );
+  }
+
+  /**
    * One facet's offered rows as value => [label, count], and its value labels.
    *
    * Read from the props the widget hands `option_list`, sorted by value: the
@@ -362,7 +380,7 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
     self::assertSame(
       ['working'],
       $this->renderedValues('state', ['priority' => ['1']]),
-      'Only the priority-1 ticket is left, and it is the only state with a hit.',
+      'Only the two priority-1 tickets are left, and working is their only state.',
     );
     self::assertSame(
       ['bb_work'],
@@ -402,8 +420,8 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
   /**
    * A chosen value survives even a facet with no results at all.
    *
-   * Only the priority-1 ticket is assigned, so `?priority[]=2` leaves the
-   * assignee facet with an empty result set. Contrib re-adds a chosen value
+   * Only the first priority-1 ticket is assigned, so `?priority[]=2` leaves
+   * the assignee facet with an empty result set. Contrib re-adds a chosen value
    * only while it has some result to re-add it to, so this corner is the
    * widget's to hold — and if it drops it, the next pick of any other facet
    * silently loses the assignee filter, because an unrendered checkbox is not

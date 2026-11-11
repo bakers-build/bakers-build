@@ -1132,6 +1132,9 @@ Then('I see the open ticket', async ({ page }) => {
   ).toHaveCount(1);
 });
 
+/** The tally fixture this scenario assigned to the reader, for the `After` handback. */
+let tallyFixture: { name: string; count: number } | null = null;
+
 /**
  * Tickets "<title> 1", "<title> 2", … assigned to the reader in project BB, one
  * per listed state. Create-if-absent by title and re-set on every run, like the
@@ -1159,6 +1162,7 @@ Given(
       ].join(' ')),
       'print "OK";',
     ].join(' ');
+    tallyFixture = { name, count: states.split(',').length };
     const result = php(snippet);
     if (!result.includes('OK')) {
       throw new Error(`The "${title}" tickets did not settle: "${result}".`);
@@ -1166,6 +1170,24 @@ Given(
     Drush.exec('search-api:index bb_tickets');
   },
 );
+
+/**
+ * Hands the tally tickets back, unassigned, after success or failure. Left
+ * assigned they would push the reader's open work past one page, and "My work
+ * is the nav home" compares every open ticket of the reader with the first page.
+ */
+After(async () => {
+  if (tallyFixture === null) {
+    return;
+  }
+  const { name, count } = tallyFixture;
+  tallyFixture = null;
+  php([
+    '$ts = \\Drupal::entityTypeManager()->getStorage("bb_ticket");',
+    ...Array.from({ length: count }, (_, i) => `foreach ($ts->loadByProperties(["title" => "${name} ${i + 1}"]) as $t) { $t->set("assignee_user_id", NULL)->save(); }`),
+  ].join(' '));
+  Drush.exec('search-api:index bb_tickets');
+});
 
 /**
  * The listing holds exactly the named tickets: one row each, and no other row.
