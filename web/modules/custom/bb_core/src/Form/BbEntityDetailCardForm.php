@@ -52,7 +52,10 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
       'identity' => ['edit' => [], 'show' => ['description']],
     ],
     'bb_machine' => [
-      'identity' => ['edit' => ['name', 'max_parallel'], 'show' => ['host_key', 'owner_user_id', 'current_load']],
+      'identity' => [
+        'edit' => ['name', 'max_parallel'],
+        'show' => ['host_key', 'owner_user_id', 'current_load', 'connection_url'],
+      ],
     ],
     // The heartbeat writes status and load; the served states are set at
     // registration and edited here.
@@ -335,6 +338,9 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
       return ['kind' => 'text', 'value' => (string) ($list->value ? $this->t('Yes') : $this->t('No'))];
     }
     $value = trim($list->getString());
+    if ($list->getName() === 'connection_url' && $value !== '') {
+      return ['kind' => 'link', 'value' => $value, 'url' => $value, 'external' => TRUE];
+    }
     return $value === '' ? $empty : ['kind' => 'text', 'value' => $value];
   }
 

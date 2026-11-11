@@ -178,6 +178,84 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * The workspace member with a reviewer e-mail address becomes a reviewer.
+   */
+  public function testReviewerEmailOfWorkspaceMemberIsAdded(): void {
+    $member = $this->account('member');
+    $member->set('mail', 'member@example.test')->save();
+    $this->addMembership($this->workspace, $member, ['contributor']);
+    $this->container->get('bb_core.workspace_read_scope')->reset();
+    $result = $this->runTool('bakers_ticket_create', [
+      'title' => 'Review mine',
+      'workflow' => 'bb_work',
+      'project' => $this->project->uuid(),
+      'reviewer_emails' => ['Member@Example.TEST'],
+    ]);
+    $out = $this->outputs($result);
+    self::assertSame('Ticket created.', (string) $result->getMessage());
+    self::assertSame(['member'], $out['reviewers']);
+    self::assertNull($out['assignee']);
+    $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $stored);
+    self::assertSame([$member->id()], array_column($stored->get('reviewers')->getValue(), 'target_id'));
+  }
+
+  /**
+   * An unknown reviewer address and one outside the workspace add no one.
+   *
+   * The ticket is created either way, no account is created, and the response
+   * does not tell the two apart.
+   */
+  public function testUnacceptableReviewerEmailAddsNoOne(): void {
+    $etm = $this->container->get('entity_type.manager');
+    $elsewhere = $etm->getStorage('bb_workspace')->create(['name' => 'elsewhere', 'slug' => 'elsewhere']);
+    assert($elsewhere instanceof ContentEntityInterface);
+    $elsewhere->save();
+    $outsider = $this->account('outsider');
+    $outsider->set('mail', 'outsider@example.test')->save();
+    $this->addMembership($elsewhere, $outsider, ['contributor']);
+    $this->container->get('bb_core.workspace_read_scope')->reset();
+    $users = $etm->getStorage('user')->getQuery()->accessCheck(FALSE)->count()->execute();
+    $answers = [];
+    foreach (['nobody@example.test', 'outsider@example.test'] as $email) {
+      $result = $this->runTool('bakers_ticket_create', [
+        'title' => 'No reviewer',
+        'workflow' => 'bb_work',
+        'project' => $this->project->uuid(),
+        'reviewer_emails' => [$email],
+      ]);
+      $out = $this->outputs($result);
+      $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+      self::assertInstanceOf(BbTicketInterface::class, $stored);
+      self::assertTrue($stored->get('reviewers')->isEmpty(), $email);
+      $answers[$email] = [(string) $result->getMessage(), $out['reviewers'], array_keys($out)];
+    }
+    self::assertSame('Ticket created. Not every reviewer was added: no account with this e-mail address can be a reviewer in this workspace.', $answers['nobody@example.test'][0]);
+    self::assertSame([], $answers['nobody@example.test'][1]);
+    self::assertSame($answers['nobody@example.test'], $answers['outsider@example.test']);
+    self::assertSame($users, $etm->getStorage('user')->getQuery()->accessCheck(FALSE)->count()->execute());
+  }
+
+  /**
+   * A list with a member and an unknown address adds only the member.
+   */
+  public function testMixedReviewerEmailsAddOnlyAcceptedAccounts(): void {
+    $member = $this->account('member');
+    $member->set('mail', 'member@example.test')->save();
+    $this->addMembership($this->workspace, $member, ['contributor']);
+    $this->container->get('bb_core.workspace_read_scope')->reset();
+    $result = $this->runTool('bakers_ticket_create', [
+      'title' => 'Mixed',
+      'workflow' => 'bb_work',
+      'project' => $this->project->uuid(),
+      'reviewer_emails' => ['nobody@example.test', 'member@example.test'],
+    ]);
+    $out = $this->outputs($result);
+    self::assertSame('Ticket created. Not every reviewer was added: no account with this e-mail address can be a reviewer in this workspace.', (string) $result->getMessage());
+    self::assertSame(['member'], $out['reviewers']);
+  }
+
+  /**
    * A caller without create access is refused.
    */
   public function testCallerWithoutCreateAccessFails(): void {

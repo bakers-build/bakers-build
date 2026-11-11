@@ -121,7 +121,7 @@ describe('loadConductorConfig — lifecycle hook listeners', () => {
       `export const addons = ['./child.mjs'];
 export const hooks = (acc) => [...acc, {
   id: 'parent',
-  after_create() {}, before_run() {}, async after_run() {}, after_done() {},
+  after_create() {}, before_run() {}, async after_run() {}, after_done() {}, before_conductor_start() {},
 }];`,
     );
     writeFileSync(
@@ -145,6 +145,7 @@ export const hooks = (acc) => [...acc, {
       'before_run',
       'after_run',
       'after_done',
+      'before_conductor_start',
     ] as const) {
       expect(typeof parent?.[slot]).toBe('function');
     }
@@ -238,6 +239,11 @@ export const hooks = (acc, opts) => { if (opts?.probe) throw new Error('catalog 
   });
 
   it.each([
+    [
+      'a non-callable start hook',
+      `export const hooks = (acc) => [...acc, { before_conductor_start: 'echo' }];`,
+      /before_conductor_start/,
+    ],
     [
       'a non-array accumulator result',
       `export const hooks = () => ({});`,

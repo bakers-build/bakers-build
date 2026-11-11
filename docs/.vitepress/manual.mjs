@@ -132,6 +132,7 @@ export const SIDEBAR = {
       ["Git workspace", "/addons/workspace-git"],
       ["Conductor slots", "/addons/slots"],
       ["bakers.build server remote", "/addons/remote-drupal"],
+      ["Tailscale", "/addons/tailscale"],
     ]),
     group("Runtimes", [
       ["DDEV", "/addons/ddev"],

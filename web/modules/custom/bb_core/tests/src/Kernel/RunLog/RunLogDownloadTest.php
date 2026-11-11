@@ -75,8 +75,8 @@ final class RunLogDownloadTest extends KernelTestBase {
     $this->allowRunLogStorage();
     $this->setSetting('file_private_path', $this->siteDirectory . '/private');
     foreach ([
-      'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_project',
-      'bb_ticket', 'bb_run', 'file',
+      'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_team',
+      'bb_project', 'bb_ticket', 'bb_run', 'file',
     ] as $type) {
       $this->installEntitySchema($type);
     }
@@ -534,7 +534,7 @@ final class RunLogDownloadTest extends KernelTestBase {
   }
 
   /**
-   * Creates an account holding `contributor` in the run's own workspace.
+   * Creates a `contributor` of the run's workspace on its project's team.
    *
    * @return array{workspace: \Drupal\bb_core\Entity\BbWorkspaceInterface, member: \Drupal\user\UserInterface}
    *   The workspace and the saved account.
@@ -544,6 +544,7 @@ final class RunLogDownloadTest extends KernelTestBase {
     self::assertInstanceOf(BbWorkspaceInterface::class, $workspace);
     $member = $this->createAccount('member', []);
     $this->addMembership($workspace, $member, ['contributor']);
+    $this->seatOnProjectTeam($run->getTicket()?->getProject(), $member);
     return ['workspace' => $workspace, 'member' => $member];
   }
 

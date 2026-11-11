@@ -83,6 +83,7 @@ bundle: bb_machine
 mode: full
 content: {  }
 hidden:
+  connection_url: true
   current_load: true
   host_key: true
   max_parallel: true

@@ -277,6 +277,7 @@ final class WorkspaceRouteAccessTest extends KernelTestBase {
   public function testRightWorkspaceWithoutPermissionIs403(): void {
     $member = $this->createAccount('powerless', []);
     $this->addMembership($this->home, $member, ['contributor']);
+    $this->seatOnProjectTeam($this->project, $member);
     $this->actAs($member);
 
     // The rank it does hold reaches the ticket.

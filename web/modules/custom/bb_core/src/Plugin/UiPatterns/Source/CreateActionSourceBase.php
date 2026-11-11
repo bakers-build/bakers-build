@@ -299,10 +299,7 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
   private function dialogUrl(bool $through_the_format): Url {
     $query = [];
     if ($this->forwardsScreenQuery()) {
-      $query = $this->requestStack->getCurrentRequest()?->query->all() ?? [];
-      // Never forwarded: this screen's own `destination` is not the dialog's,
-      // and the format is written below rather than inherited.
-      unset($query[static::RETURN_PARAMETER], $query[static::WRAPPER_FORMAT_PARAMETER]);
+      $query = $this->screenQuery();
     }
 
     $query = $this->prefill() + $query;
@@ -348,11 +345,36 @@ abstract class CreateActionSourceBase extends SourcePluginBase {
   private function currentAddress(): string {
     $request = $this->requestStack->getCurrentRequest();
     $path = $request?->getPathInfo() ?? '/';
-    $query = $request?->query->all() ?? [];
-    unset($query[static::RETURN_PARAMETER], $query[static::WRAPPER_FORMAT_PARAMETER]);
+    $query = $this->screenQuery();
     $suffix = $query === [] ? '' : '?' . UrlHelper::buildQuery($query);
 
     return ($path === '' ? '/' : $path) . $suffix;
+  }
+
+  /**
+   * The query the reader chose for this screen, without the transport keys.
+   *
+   * A nested `destination` is an address the reader never chose and the
+   * format belongs to the dialog's request. `ajax_page_state` is added to
+   * every htmx GET by `htmx-assets.js`, and core's asset resolver reads it as
+   * "already loaded": an address carrying it lands on a page without its
+   * libraries. The other keys are core's AJAX request markers.
+   *
+   * @return array<string, mixed>
+   *   The current request's query, minus the transport keys.
+   */
+  private function screenQuery(): array {
+    $query = $this->requestStack->getCurrentRequest()?->query->all() ?? [];
+    unset(
+      $query[static::RETURN_PARAMETER],
+      $query[static::WRAPPER_FORMAT_PARAMETER],
+      $query['ajax_page_state'],
+      $query['_drupal_ajax'],
+      $query['_triggering_element_name'],
+      $query['_triggering_element_value'],
+    );
+
+    return $query;
   }
 
 }

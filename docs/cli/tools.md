@@ -61,12 +61,13 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_project_list` | optional `workspace`, `group`, `query` | Projects you can reach, with `key` and `uuid` |
 | `bakers_project_read` | `project` (key or UUID) | One project with its group, teams, repository and coder configuration |
 | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository`, `coder_config` | Create a project |
-| `bakers_conductor_list` | `project` | A project's conductors and their status |
+| `bakers_conductor_list` | `project` | A project's conductors and their status, with each conductor's `machine` (machine_id) |
+| `bakers_machine_list` | optional `workspace` (UUID), `conductor_uuid` | Machines you may view, with `machine_id`, `label`, `connection_url`, `max_parallel` and `current_load` |
 | `bakers_label_list` | `workspace`; optional `query` | A workspace's labels |
 | `bakers_ticket_read` | `ticket` (identifier or UUID) | A ticket with its comments, oldest first, as an agent run reads it first, and `deployments`: each deployment ticket that carries it, with its `identifier` and `environments` |
 | `bakers_ticket_search` | `query` or `branch_name`; optional `project` | Tickets matching a text or a branch |
 | `bakers_ticket_list` | `project` (UUID); `limit`, `offset` | Every ticket of the project you can read, closed ones included, oldest first. Each row has `id` (UUID), `identifier`, `title`, `state`, `links` (`uri`, `title`), `labels` (names), `frozen`, `frozen_at` (ISO 8601 or `null`), `parent` (the parent's UUID, `null` when absent or unreadable) and `closed` |
-| `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee_email` | Create a ticket; an `assignee_email` that may not be assigned in the workspace leaves it unassigned |
+| `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee_email`, `reviewer_emails` | Create a ticket; an `assignee_email` that may not be assigned in the workspace leaves it unassigned, and each address in `reviewer_emails` adds its account as a reviewer when it may review there; `reviewers` lists the ones added |
 | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `labels_add`, `labels_remove`, `frozen`, `environments_add`, `referenced_tickets_add` | Edit a ticket; values not given are kept, `labels_remove` drops only the named labels, `environments_add` and `referenced_tickets_add` only add; a closed ticket refuses every edit |
 | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | Set recipe and type by name |
 | `bakers_ticket_transition` | `ticket`; `state`, `links` or both | Change the state or add links |

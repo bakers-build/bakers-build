@@ -17,6 +17,10 @@
       "$ref": "project.schema.json#/$defs/nonempty",
       "description": "Display name for people."
     },
+    "connection_url": {
+      "anyOf": [{ "type": "string" }, { "type": "null" }],
+      "description": "Public SSH or HTTPS connection address; null clears it at the next conductor start."
+    },
     "agents": {
       "type": "object",
       "description": "Selection policy for the agents the addons contribute.",

@@ -132,3 +132,17 @@ Then('the Activities say {string}', async ({ page }, text: string) => {
   await expect(activities(page)).toContainText(text, { timeout: 10000 });
   await expect(activityRows(page)).toHaveCount(0);
 });
+
+Then('the {string} card lets me select the link {string} for {string}', async ({ page }, heading: string, url: string, label: string) => {
+  const link = cardRow(page, heading, label).getByRole('link', { name: url, exact: true });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', url);
+  const before = page.url();
+  const selected = await link.evaluate((element) => {
+    const range = document.createRange(); range.selectNodeContents(element);
+    const selection = window.getSelection(); selection?.removeAllRanges(); selection?.addRange(range);
+    return selection?.toString();
+  });
+  expect(selected).toBe(url);
+  expect(page.url()).toBe(before);
+});

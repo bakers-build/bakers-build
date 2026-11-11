@@ -415,6 +415,10 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     foreach (['lead', 'contributor', 'guest'] as $rank) {
       $account = $this->createAccount($rank, []);
       $this->addMembership($this->workspace, $account, [$rank]);
+      // Below lead, a workspace rank reaches a project only through its team.
+      if ($rank !== 'lead') {
+        $this->addMembership($this->team, $account);
+      }
       $this->accounts[$rank] = $account;
     }
     $this->accounts['non-member'] = $this->createAccount('non-member', []);

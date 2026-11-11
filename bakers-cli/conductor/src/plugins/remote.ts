@@ -17,6 +17,7 @@ export interface ConductorRegistration {
   host_key?: string;
   /** This machine's display label; names a newly created bb_machine. */
   machine_label?: string;
+  connection_url?: string | null;
   project: string;
   /** Empty = serve all claimable states in the project (BB-207). */
   states: string[];
@@ -82,6 +83,8 @@ export interface Ticket {
   branchName: string;
   /** Branch the ticket's work is based on (computed server-side): parent branch, project default, or 'main'. */
   baseBranch?: string;
+  /** Branch the ticket's work merges into (computed server-side): a deployment's environment branch, else baseBranch. */
+  targetBranch?: string;
   /**
    * Effective environment variables (BB-99), resolved server-side along the
    * parent_id chain (child wins) as canonical `.env`-style `KEY=value` lines.
@@ -100,9 +103,9 @@ export interface Ticket {
    */
   workspaceId?: string;
   workspaceName?: string;
-  /** The ticket type term name (`feature`, `bug`, …), sideloaded for the required-skills check. */
+  /** The ticket type term name (`feature`, `bug`, …), sideloaded for agent selection. */
   type?: string;
-  /** The recipe term name (`matt`, …): the run requires the skill `bb-recipe-<recipe>`. */
+  /** The recipe term name (`matt`, …), sideloaded for agent selection. */
   recipe?: string;
   /** Ticket label term names (`label` bundle), sideloaded for agent selection. Empty when none. */
   labels: string[];

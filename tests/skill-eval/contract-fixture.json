@@ -146,6 +146,18 @@
                   "type": "string",
                   "description": "online or offline.",
                   "title": "Status"
+                },
+                "machine": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The machine_id (host key) of the conductor's machine, or null when it has none; details via bakers_machine_list.",
+                  "title": "Machine"
                 }
               },
               "required": [
@@ -153,7 +165,8 @@
                 "conductor_id",
                 "label",
                 "active",
-                "status"
+                "status",
+                "machine"
               ],
               "description": "One conductor.",
               "title": "Conductor"
