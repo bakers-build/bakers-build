@@ -59,6 +59,8 @@ function type(node, file, depth) {
     case 'integer':
     case 'number':
       return 'number';
+    case 'null':
+      return 'null';
     case 'boolean':
       return 'boolean';
     case 'array':

@@ -77,3 +77,14 @@ function bb_core_post_update_valid_branch_names(): string {
   \Drupal::entityTypeManager()->getStorage('bb_project')->resetCache();
   return sprintf('Repaired %d branch names git would refuse.', $repaired);
 }
+
+/**
+ * Installs the optional connection address without changing existing machines.
+ */
+function bb_core_post_update_machine_connection_url(): void {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+  if ($manager->getFieldStorageDefinition('connection_url', 'bb_machine') === NULL) {
+    $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('bb_machine')['connection_url'];
+    $manager->installFieldStorageDefinition('connection_url', 'bb_machine', 'bb_core', $definition);
+  }
+}

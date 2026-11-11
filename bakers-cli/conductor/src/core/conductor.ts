@@ -44,7 +44,7 @@ import { attemptFamily } from './attempt.js';
 import { type HookRunner, shellHookRunner } from './hook-runner.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
-import { checkRequiredSkills } from './required-skills.js';
+import { runStartHooks } from './start-hooks.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
 import { signalUi } from './ui-signal.js';
 
@@ -437,7 +437,50 @@ export class Conductor {
   }
 
   async start() {
-    this.uuid = await this.remote.registerConductor(this.registration());
+    const registration = this.registration();
+    const machine = this.ownsServeProcess
+      ? await runStartHooks(
+          this.config.hookListeners ?? [],
+          {
+            ...(registration.host_key !== undefined
+              ? { host_key: registration.host_key }
+              : {}),
+            ...(registration.machine_label !== undefined
+              ? { machine_label: registration.machine_label }
+              : {}),
+            ...(this.config.connection_url !== undefined
+              ? { connection_url: this.config.connection_url }
+              : {}),
+          },
+          {
+            id: registration.id,
+            project: registration.project,
+            variant: registration.conductor_name ?? this.config.variant,
+          },
+          (reason) => this.logger.warn({ conductorId: this.id }, reason),
+        )
+      : {};
+    try {
+      this.uuid = await this.remote.registerConductor({
+        ...registration,
+        ...machine,
+      });
+    } catch (err) {
+      if (typeof machine.connection_url !== 'string') throw err;
+      // A server that refuses the address must not stop the start; without
+      // the field the stored address stays unchanged.
+      // Value-free: the error may quote the address.
+      this.logger.warn(
+        { conductorId: this.id },
+        'registration failed with the connection URL; retrying without it',
+      );
+      const rest = { ...machine };
+      delete rest.connection_url;
+      this.uuid = await this.remote.registerConductor({
+        ...registration,
+        ...rest,
+      });
+    }
     this.logger.info(
       { conductorId: this.id, uuid: this.uuid, project: this.config.project },
       'conductor started',
@@ -1433,7 +1476,6 @@ export class Conductor {
     chosen: ResolvedAgent,
     t: Ticket,
     run: ClaimedRun,
-    worktree: string,
   ): Promise<{ env: Record<string, string>; args: string[] }> {
     const marketplaces = this.config.marketplaces ?? [];
     const harness = chosen.agent.id;
@@ -1457,8 +1499,6 @@ export class Conductor {
             : undefined;
     if (off || !chosen.agent.installPlugins) {
       entry.state = `off (${off})`;
-      // Without the agent home, which skills the run gets is the user's own setup.
-      entry.required_skills = 'skipped (plugins off)';
       log();
       return { env: {}, args: [] };
     }
@@ -1479,13 +1519,6 @@ export class Conductor {
       entry.failure = err instanceof Error ? err.message : String(err);
       log();
       throw new Error(`plugins: ${harness} install failed: ${entry.failure}`);
-    }
-    const skills = checkRequiredSkills(worktree, home, t);
-    entry.required_skills = skills;
-    if (skills.missing.length > 0) {
-      entry.failure = `missing required skills: ${skills.missing.join(', ')}`;
-      log();
-      throw new Error(`plugins: ${harness}: ${entry.failure}`);
     }
     log();
     return { env: launch.env, args: launch.args };
@@ -1692,7 +1725,7 @@ export class Conductor {
     const tools = chosen.agent.withoutConductorTools
       ? undefined
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
-    const plugins = await this.installPlugins(chosen, t, run, ws.path);
+    const plugins = await this.installPlugins(chosen, t, run);
     Object.assign(env, plugins.env);
     const command = chosen.agent.launchCommand(
       prompt,
