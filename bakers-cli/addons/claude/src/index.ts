@@ -11,6 +11,7 @@ import {
   type AgentRunIdentity,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_TOOL_TIMEOUT_MS,
   CONDUCTOR_TOOLS_SERVER,
   ensureHome,
   homeKey,
@@ -378,6 +379,7 @@ export class ClaudeAgent implements BbAgent {
               type: 'http',
               url: tools.url,
               headers: { Authorization: `Bearer \${${CONDUCTOR_TOKEN_ENV}}` },
+              timeout: CONDUCTOR_TOOL_TIMEOUT_MS,
             },
           }
         : {};
