@@ -30,6 +30,8 @@ export interface HostPaths {
 }
 
 export const RUN_HOME = '/home/run';
+/** The image's PATH, behind the run home's `bin` (the `bakers` shim lives there). */
+export const RUN_PATH = `${RUN_HOME}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`;
 export const PROXY_PORTS = { egress: 3128, api: 8081, tools: 8082 } as const;
 /** What the run sends as its API key in allowlist mode; the proxy swaps in the real one. */
 export const API_KEY_PLACEHOLDER = 'bb-runtime-placeholder';
@@ -69,7 +71,7 @@ export function dockerArgs(
   ];
   const env = { ...input.env };
   const runClaudeDir = `${RUN_HOME}/.claude`;
-  const computed: string[] = [`HOME=${RUN_HOME}`];
+  const computed: string[] = [`HOME=${RUN_HOME}`, `PATH=${RUN_PATH}`];
   if (env.CLAUDE_CONFIG_DIR !== undefined)
     computed.push(`CLAUDE_CONFIG_DIR=${runClaudeDir}`);
   const allowlist = opts.network === 'allowlist';

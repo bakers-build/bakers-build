@@ -106,6 +106,16 @@ describe('runtime-docker wrap', () => {
     ).toEqual({ hasCompletedOnboarding: true });
   });
 
+  it('puts the conductor own bakers CLI into the run home bin', async () => {
+    const home = join(cache, 'bakers/runtime/r-uuid');
+    await dockerRuntime({}, deps({ bakersEntry: '/opt/cli/bin/bakers' })).wrap(
+      launch(),
+    );
+    expect(readFileSync(join(home, 'bin/bakers'), 'utf8')).toBe(
+      '#!/bin/sh\nexec node \'/opt/cli/bin/bakers\' "$@"\n',
+    );
+  });
+
   it('creates every mount point in the run home before docker does', async () => {
     const home = join(cache, 'bakers/runtime/r-uuid');
     await dockerRuntime({}, deps()).wrap(launch());

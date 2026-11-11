@@ -50,6 +50,8 @@ export interface BackendDeps {
   /** This package's directory; its `image/` holds the Dockerfile. */
   packageDir: string;
   version: string;
+  /** The running bakers entry script; the run calls it as `bakers`. Absent: no shim. */
+  bakersEntry?: string;
   /** Names this conductor's proxy sidecar, so conductors on one host never share one. */
   conductorKey?: string;
 }
@@ -215,6 +217,15 @@ export function dockerRuntime(
       for (const file of ['settings.json', '.claude.json'])
         if (agentHome && existsSync(join(agentHome, file)))
           copyFileSync(join(agentHome, file), join(runHome, '.claude', file));
+      // The CLI build is mounted read-only; this puts the conductor's own CLI on PATH.
+      if (deps.bakersEntry) {
+        mkdirSync(join(runHome, 'bin'), { recursive: true });
+        writeFileSync(
+          join(runHome, 'bin/bakers'),
+          `#!/bin/sh\nexec node ${shellQuote(deps.bakersEntry)} "$@"\n`,
+          { mode: 0o755 },
+        );
+      }
       // A fresh home would stop Claude at its first-run setup screen.
       const stateFile = agentHome
         ? join(runHome, '.claude', '.claude.json')

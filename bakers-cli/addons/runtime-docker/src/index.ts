@@ -65,6 +65,9 @@ export function runtimeDocker(
         packageDir,
         version,
         conductorKey: shortHash(config.config_path),
+        ...(process.argv[1]
+          ? { bakersEntry: realpathSync(process.argv[1]) }
+          : {}),
       });
     },
   };

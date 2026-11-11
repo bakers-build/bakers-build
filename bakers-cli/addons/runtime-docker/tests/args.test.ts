@@ -119,6 +119,12 @@ describe('dockerArgs', () => {
     );
   });
 
+  it('puts the run home bin first on PATH', () => {
+    expect(envFlags(dockerArgs(launch, opts, where).argv)).toContain(
+      'PATH=/home/run/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+    );
+  });
+
   it('runs podman with its user namespace kept', () => {
     const { argv } = dockerArgs(launch, { ...opts, docker: 'podman' }, where);
     expect(argv[0]).toBe('podman');
