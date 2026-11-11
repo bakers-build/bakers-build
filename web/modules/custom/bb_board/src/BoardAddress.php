@@ -8,16 +8,15 @@ use Drupal\Component\Utility\UrlHelper;
 use Drupal\views\ViewExecutable;
 
 /**
- * The Project Board address: chosen facets, parent focus and work states.
+ * The Project Board address: chosen facets and the board toggles.
  *
- * Every link drops `page`, which holds all four column pagers, so a changed
- * selection never lands on a page that no longer exists. Work state chips
- * default to the three open columns; Done joins them only when chosen.
+ * Every link drops `page`, which holds every column pager, so a changed
+ * selection never lands on a page that no longer exists.
  */
 final class BoardAddress {
 
   /**
-   * Open work states: active on an address that does not name work_state.
+   * The work states of open tickets: every column but Done.
    */
   public const OPEN_WORK_STATES = ['not_assigned', 'intake', 'working'];
 
@@ -51,25 +50,12 @@ final class BoardAddress {
   }
 
   /**
-   * Whether this address currently shows the Done column.
-   */
-  public function showsDone(): bool {
-    return in_array('done', $this->active('work_state'), TRUE);
-  }
-
-  /**
    * The values of one exposed facet in the request.
-   *
-   * Work state with no query key is the three open columns, so those chips
-   * render active without writing work_state into a first visit.
    *
    * @return list<string>
    *   The active values, without the "nothing chosen" sentinels.
    */
   public function active(string $identifier): array {
-    if ($identifier === 'work_state' && !array_key_exists('work_state', $this->query)) {
-      return self::OPEN_WORK_STATES;
-    }
     $raw = $this->input[$identifier] ?? $this->query[$identifier] ?? [];
     $values = is_array($raw) ? $raw : [$raw];
     return array_values(array_filter(
@@ -79,45 +65,19 @@ final class BoardAddress {
   }
 
   /**
-   * The address with one facet value toggled.
-   *
-   * Parent is exclusive: picking another parent replaces the current one,
-   * picking the active parent clears it. Other identifiers accumulate.
+   * The address with one facet value toggled; chosen values accumulate.
    */
   public function toggle(string $identifier, string $value): string {
     $query = $this->query;
     unset($query['page'], $query[$identifier]);
-    if ($identifier === 'parent_id') {
-      if (!in_array($value, $this->active($identifier), TRUE)) {
-        $query[$identifier] = $value;
-      }
-      return $this->with($query);
-    }
     $values = $this->active($identifier);
     $values = in_array($value, $values, TRUE)
       ? array_values(array_diff($values, [$value]))
       : [...$values, $value];
-    if ($identifier === 'work_state' && $this->isOpenWorkStateDefault($values)) {
-      return $this->with($query);
-    }
     if ($values !== []) {
       $query[$identifier] = $values;
     }
     return $this->with($query);
-  }
-
-  /**
-   * Whether these work states are the three open columns, in any order.
-   *
-   * @param list<string> $values
-   *   The work_state values after a toggle.
-   */
-  private function isOpenWorkStateDefault(array $values): bool {
-    $expected = self::OPEN_WORK_STATES;
-    sort($expected);
-    $actual = $values;
-    sort($actual);
-    return $actual === $expected;
   }
 
   /**

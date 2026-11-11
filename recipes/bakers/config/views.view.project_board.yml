@@ -13,7 +13,7 @@ id: project_board
 label: 'Project board'
 module: views
 description: |-
-  Four-column project board of bb_ticket on the tickets Search API
+  Project board of bb_ticket on the tickets Search API
   index. The page display owns the route. Each lifecycle column is a
   bb_board_column attachment with its own mini pager. Column membership is the indexed work_state value.
   Details splits Working into the state attachments working_plan, working_working and working_review.
