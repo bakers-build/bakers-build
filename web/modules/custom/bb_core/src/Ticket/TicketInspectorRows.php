@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Ticket;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\FieldableEntityInterface;
 use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\EnvVars;
 use Drupal\bb_core\Inspector\InspectorRows;
+use Drupal\bb_core\Run\RunSummary;
 use Drupal\bb_core\Run\TicketRunSummary;
 use Drupal\bb_core\Time\BbDate;
 
@@ -83,6 +85,9 @@ final class TicketInspectorRows extends InspectorRows {
     if ($field === 'deployments') {
       return $this->deploymentsRow($label, $entity);
     }
+    if ($field === 'runs') {
+      return $this->runsRow($label, $entity);
+    }
     if (in_array($field, self::RELATIONS, TRUE)) {
       return $this->relationRow($label, $entity, $field);
     }
@@ -91,7 +96,6 @@ final class TicketInspectorRows extends InspectorRows {
       'time_estimate', 'time_spent' => $this->duration($entity, $field),
       'branch_name', 'base_branch' => $this->mono((string) $entity->get($field)->value),
       'stall_reason' => $this->stall($entity),
-      'runs' => ['kind' => 'badge'] + $this->runSummary->forTickets([$entity->id()])[(int) $entity->id()]->badge(),
       default => $this->text($this->labelsOf($entity, $field)),
     };
     return $this->row($label, $value);
@@ -120,7 +124,7 @@ final class TicketInspectorRows extends InspectorRows {
    *   The zone heading.
    *
    * @return array<string, mixed>
-   *   The `zone` render array.
+   *   The `zone` render array, carrying the runs summary's cacheability.
    */
   public function propertiesBlock(array $rows, string $heading = 'Properties'): array {
     $fields = [
@@ -142,12 +146,15 @@ final class TicketInspectorRows extends InspectorRows {
       if (!isset($rows[$field])) {
         continue;
       }
-      if ($field === 'stall_reason' && $this->isEmpty($rows[$field])) {
+      if (in_array($field, ['stall_reason', 'runs'], TRUE) && $this->isEmpty($rows[$field])) {
         continue;
       }
       $items[$field] = $rows[$field];
     }
-    return parent::propertiesBlock($items, $heading);
+    unset($items['runs']['#cache']);
+    $block = parent::propertiesBlock($items, $heading);
+    CacheableMetadata::createFromRenderArray($rows['runs'] ?? [])->applyTo($block);
+    return $block;
   }
 
   /**
@@ -314,6 +321,23 @@ final class TicketInspectorRows extends InspectorRows {
       }
     }
     return $this->chipsRow($label, $chips);
+  }
+
+  /**
+   * The runs summary row, carrying the summary's own cacheability.
+   *
+   * A dash, which the Properties block leaves out, when the reader would be
+   * told "No runs yet" about runs they cannot see.
+   *
+   * @return array<string, mixed>
+   *   The `list` item, with the summary's `#cache`.
+   */
+  private function runsRow(string $label, BbTicketInterface $ticket): array {
+    $summary = $this->runSummary->forTicket($ticket->id());
+    if ($summary === NULL) {
+      return $this->row($label, $this->dash()) + ['#cache' => RunSummary::CACHE];
+    }
+    return $this->row($label, ['kind' => 'badge'] + $summary->badge()) + ['#cache' => $summary->build()['#cache']];
   }
 
   /**

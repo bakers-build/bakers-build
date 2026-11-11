@@ -8,6 +8,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Run\RunSummary;
 use Drupal\bb_core\Run\TicketRunSummary;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
@@ -16,7 +17,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * The ticket's runs summary, for the Run history heading row.
  *
- * "No runs yet" without runs, so the heading row states the empty history.
+ * "No runs yet" without runs for a reader who may view every run. Any other
+ * reader who sees no run gets nothing, so the zone stays hidden (BB-414); the
+ * empty result still varies by reader.
  */
 #[Source(
   id: 'bb_ticket_runs_summary',
@@ -56,7 +59,7 @@ final class BbTicketRunsSummarySource extends SourcePluginBase implements Contai
     if (!$ticket instanceof BbTicketInterface || $ticket->isNew()) {
       return [];
     }
-    return $this->runSummary->forTickets([$ticket->id()])[(int) $ticket->id()]->build();
+    return $this->runSummary->forTicket($ticket->id())?->build() ?? ['#cache' => RunSummary::CACHE];
   }
 
 }

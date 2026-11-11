@@ -122,7 +122,7 @@ services:
     arguments: ['@keyvalue', '@datetime.time', '@cache_tags.invalidator']
   bb_core.ticket_run_summary:
     class: Drupal\bb_core\Run\TicketRunSummary
-    arguments: ['@entity_type.manager', '@bb_core.date']
+    arguments: ['@entity_type.manager', '@bb_core.date', '@current_user']
   bb_core.failed_run_circuit_breaker:
     class: Drupal\bb_core\Claim\FailedRunCircuitBreaker
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_retry']

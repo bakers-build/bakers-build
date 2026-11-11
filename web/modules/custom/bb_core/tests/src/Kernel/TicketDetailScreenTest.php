@@ -678,7 +678,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $source->setContextValue('entity', $this->ticket);
     $form = $source->getPropValue();
     self::assertSame('bb_theme:zone', $form['readonly']['#component']);
-    self::assertCount(12, $form['readonly']['#slots']['content']['#props']['items']);
+    self::assertCount(11, $form['readonly']['#slots']['content']['#props']['items']);
     self::assertFalse($form['actions']['submit']['#access']);
     $ordinary = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('entity_form', [
       'settings' => ['operation' => 'default'],
@@ -1105,7 +1105,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * A reader who may see no run gets no run rows (BB-414).
+   * A reader who may see no run gets NO Run history zone (BB-414).
    *
    * MEASURED CAUSE, and it is a permission rather than a display defect: run
    * rows are rendered by `EntityReferenceEntityFormatter`, which filters its
@@ -1122,12 +1122,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
    * `administer bakers` now sees no trace of run history at all rather than an
    * empty box. That is an accepted trade by human decision; the permission
    * model is deliberately unchanged by this ticket and belongs to its own.
-   *
-   * The heading row's runs summary counts the runs the reader may view, so it
-   * keeps the zone and says "No runs yet" (BAKERS-56 D10) instead of leaving a
-   * heading over an empty box.
    */
-  public function testReaderWhoMaySeeNoRunGetsNoRunRows(): void {
+  public function testTheRunHistoryZoneIsAbsentWhenNoRunIsVisible(): void {
     $this->giveTheTicketItsRuns();
     $privileged = $this->renderScreen();
     self::assertStringContainsString(
@@ -1150,19 +1146,36 @@ final class TicketDetailScreenTest extends KernelTestBase {
       $html,
       'No run is visible to this reader.',
     );
-    self::assertSame(
-      ['No runs yet', 'No runs yet'],
-      $this->runsSummaries($html),
-      'The heading row and the Details state what this reader may see.',
+    self::assertStringNotContainsString(
+      'Run history',
+      $html,
+      'And no heading is left standing over the zone they cannot see into.',
     );
+    self::assertCount(
+      0,
+      (new Crawler($html))->filterXPath('//li[.//*[@data-cell="label"][normalize-space(.)="Runs"]]'),
+      'Nor a Runs row saying "No runs yet" about runs this reader cannot see.',
+    );
+  }
+
+  /**
+   * A run administrator sees "No runs yet" on a ticket without runs.
+   *
+   * Only a reader who may view every run is told there are none: for anyone
+   * else a count of 0 visible runs is not that statement.
+   */
+  public function testRunAdministratorSeesNoRunsYetInBothPlaces(): void {
+    $administrator = $this->createUser(['administer bakers']);
+    self::assertInstanceOf(UserInterface::class, $administrator);
+    $this->setCurrentUser($administrator);
+
+    self::assertSame(['No runs yet', 'No runs yet'], $this->runsSummaries($this->renderScreen()));
   }
 
   /**
    * The runs summary sits on the Run history heading row and in the Details.
    */
   public function testRunsSummaryAboveRunHistoryAndInDetails(): void {
-    self::assertSame(['No runs yet', 'No runs yet'], $this->runsSummaries($this->renderScreen()));
-
     $this->giveTheTicketItsRuns();
     $this->container->get('cache.render')->deleteAll();
     [$heading, $details] = $this->runsSummaries($this->renderScreen());

@@ -17,6 +17,13 @@ use Drupal\bb_core\Entity\BbRun;
 final readonly class RunSummary {
 
   /**
+   * What a summary, or its absence, depends on: every run, and the reader.
+   *
+   * The count is access-checked, so it varies by user.
+   */
+  public const array CACHE = ['tags' => ['bb_run_list'], 'contexts' => ['user']];
+
+  /**
    * Constructs the summary.
    *
    * @param int $count
@@ -60,7 +67,7 @@ final readonly class RunSummary {
    *   The badge props.
    */
   public function badge(): array {
-    if ($this->latestState === NULL || $this->time === []) {
+    if ($this->count === 0) {
       return [
         'label' => (string) new TranslatableMarkup('No runs yet'),
         'tone' => 'neutral',
@@ -69,12 +76,12 @@ final readonly class RunSummary {
       ];
     }
     return [
-      'label' => (string) new PluralTranslatableMarkup($this->count, '1 run · last @state', '@count runs · last @state', ['@state' => $this->latestState]),
+      'label' => (string) new PluralTranslatableMarkup($this->count, '1 run · last @state', '@count runs · last @state', ['@state' => (string) $this->latestState]),
       'tone' => $this->tone() ?? 'neutral',
       'icon' => 'run',
-      'suffix' => $this->time['#props']['label'],
-      'suffix_datetime' => $this->time['#props']['datetime'],
-      'suffix_title' => $this->time['#props']['title'],
+      'suffix' => $this->time['#props']['label'] ?? '',
+      'suffix_datetime' => $this->time['#props']['datetime'] ?? '',
+      'suffix_title' => $this->time['#props']['title'] ?? '',
     ];
   }
 
@@ -92,11 +99,7 @@ final readonly class RunSummary {
       '#type' => 'component',
       '#component' => 'bb_theme:badge',
       '#props' => $this->badge(),
-      '#cache' => [
-        'tags' => ['bb_run_list'],
-        'contexts' => ['user'],
-        'max-age' => $this->time['#cache']['max-age'] ?? Cache::PERMANENT,
-      ],
+      '#cache' => self::CACHE + ['max-age' => $this->time['#cache']['max-age'] ?? Cache::PERMANENT],
     ];
   }
 

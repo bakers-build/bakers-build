@@ -105,11 +105,41 @@ final class TicketRunSummaryTest extends KernelTestBase {
 
   /**
    * A reader counts only the runs they may view.
+   *
+   * "No runs yet" is true only for a reader who may view every run, so any
+   * other reader with no visible run gets no ticket summary at all.
    */
   public function testCountsOnlyRunsTheReaderMayView(): void {
     $ticket = $this->ticketWithRun('failed', $this->now());
+    $empty = $this->ticketWithRun('done', $this->now());
+    $this->container->get('entity_type.manager')->getStorage('bb_run')
+      ->delete($empty->get('runs')->referencedEntities());
+    self::assertSame('No runs yet', $this->service()->forTicket($empty->id())?->text(), 'A run administrator is told there are none.');
+
     $this->setUpCurrentUser(['name' => 'no-runs']);
-    self::assertSame('No runs yet', $this->summaryOf($ticket)->text());
+    self::assertSame(0, $this->summaryOf($ticket)->count);
+    self::assertNull($this->service()->forTicket($ticket->id()), 'Runs this reader cannot see are not "No runs yet".');
+    self::assertNull($this->service()->forTicket($empty->id()));
+  }
+
+  /**
+   * One ticket is summed up once per request, per reader.
+   */
+  public function testOneTicketIsSummedUpOncePerRequestAndReader(): void {
+    $ticket = $this->ticketWithRun('failed', $this->now());
+
+    Database::startLog('run-summary-ticket');
+    $first = $this->service()->forTicket($ticket->id());
+    $second = $this->service()->forTicket($ticket->id());
+    $queries = array_filter(
+      Database::getLog('run-summary-ticket'),
+      static fn(array $query): bool => str_contains((string) $query['query'], 'bb_run'),
+    );
+    self::assertCount(1, $queries);
+    self::assertSame($first, $second);
+
+    $this->setUpCurrentUser(['name' => 'no-runs']);
+    self::assertNull($this->service()->forTicket($ticket->id()), 'Another reader is not served the first reader\'s summary.');
   }
 
   /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Run;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\bb_core\Time\BbDate;
 
 /**
@@ -15,9 +16,17 @@ use Drupal\bb_core\Time\BbDate;
  */
 final class TicketRunSummary {
 
+  /**
+   * One ticket's summaries, cached for the request by account and ticket id.
+   *
+   * @var array<string, \Drupal\bb_core\Run\RunSummary|null>
+   */
+  private array $memo = [];
+
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly BbDate $date,
+    private readonly AccountProxyInterface $currentUser,
   ) {}
 
   /**
@@ -64,6 +73,26 @@ final class TicketRunSummary {
       $summaries[$id] = new RunSummary($count, (string) $newest[$id]['state'], $at, $this->date->time($at));
     }
     return $summaries;
+  }
+
+  /**
+   * One ticket's runs summary for the reader, once per request.
+   *
+   * "No runs yet" is true only for a reader who may view every run (the run
+   * admin permission). Any other reader who sees no run gets no summary.
+   *
+   * @return \Drupal\bb_core\Run\RunSummary|null
+   *   The summary, or NULL when it would claim runs the reader cannot see
+   *   do not exist.
+   */
+  public function forTicket(int|string $ticket_id): ?RunSummary {
+    $key = $this->currentUser->id() . ':' . $ticket_id;
+    if (!array_key_exists($key, $this->memo)) {
+      $summary = $this->forTickets([$ticket_id])[(int) $ticket_id];
+      $admin = (string) $this->entityTypeManager->getDefinition('bb_run')->getAdminPermission();
+      $this->memo[$key] = $summary->count > 0 || $this->currentUser->hasPermission($admin) ? $summary : NULL;
+    }
+    return $this->memo[$key];
   }
 
 }
