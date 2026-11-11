@@ -158,7 +158,8 @@ export class TicketTab {
   }
 
   header(d, section, card, t) {
-    const row = h_flex().h(32).gap(8).items_center().child(div().font_family(mono()).font_semibold().text_size(13).child(d.identifier));
+    // Wraps in a narrow pane (the run's terminal beside it) instead of cutting off Save or Edit.
+    const row = h_flex().min_h(32).flex_wrap().gap(8).items_center().child(div().font_family(mono()).font_semibold().text_size(13).child(d.identifier));
     if (this.mode === "edit") {
       return row.child(div().text_size(12.5).text_color(t.muted).child("Editing")).child(div().flex_1())
         .child(button("bakers-edit-cancel", "Cancel", t, (cx) => { this.mode = "read"; this.handle.focus(); cx.notify(); }))
@@ -198,7 +199,7 @@ export class TicketTab {
         .when(this.write === id, (e) => e.bg(t.selected).text_color(t.foreground)).when(this.write !== id, (e) => e.text_color(t.muted))
         .on_click((_e, cx) => { this.write = id; cx.notify(); }).child(text);
       return v_flex().gap(8)
-        .child(h_flex().gap(8).items_center().child(div().text_size(12).text_color(t.muted).child("Description, Markdown")).child(div().flex_1())
+        .child(h_flex().gap(8).items_center().child(div().min_w(0).truncate().text_size(12).text_color(t.muted).child("Description, Markdown")).child(div().flex_1())
           .child(tab("write", "Write")).child(tab("preview", "Preview")))
         .child(this.write === "write"
           ? field(t, true).child(Textarea.new(this.body).w_full().text_size(13))
@@ -237,7 +238,7 @@ export class TicketTab {
     return v_flex().w_full().max_w(760).gap(8)
       .child(div().text_size(12).font_semibold().text_color(this.composing === "comment" ? t.muted : blue).child(mode.label))
       .child(field(t, this.composing !== "comment").child(Textarea.new(this.composer).w_full().text_size(13)))
-      .child(h_flex().gap(8).items_center()
+      .child(h_flex().flex_wrap().gap(8).items_center()
         .when(answering, (e) => e.child(check))
         .when(this.composing === "changes", (e) => e.child(chip("needs API: re-plan protocol", t)))
         .child(div().flex_1())
@@ -247,7 +248,7 @@ export class TicketTab {
   }
 
   saveBar(t) {
-    return h_flex().w_full().max_w(760).gap(8).items_center().child(div().flex_1()).child(hint("Esc cancels, cmd-Enter saves", t))
+    return h_flex().w_full().max_w(760).flex_wrap().gap(8).items_center().child(div().flex_1()).child(hint("Esc cancels, cmd-Enter saves", t))
       .child(button("bakers-edit-cancel-2", "Cancel", t, (cx) => { this.mode = "read"; this.handle.focus(); cx.notify(); }))
       .child(button("bakers-edit-save-2", this.busy ? "Saving…" : "Save", t, (cx) => this.send("save", cx), "primary", this.busy));
   }

@@ -119,7 +119,7 @@ export class NewTicket {
           .child(h_flex().gap(6).items_center().child(div().text_size(12).text_color(t.muted).child("Assignee")).child(chip("needs API: change later", t)))
           .child(h_flex().h(30).px(10).items_center().rounded(6).border_1().border_dashed().border_color(t.input).text_color(t.muted).child("Me"))))
       .child(v_flex().gap(6)
-        .child(h_flex().gap(8).items_center().child(div().text_size(12).text_color(t.muted).child("Description, Markdown")).child(div().flex_1())
+        .child(h_flex().gap(8).items_center().child(div().min_w(0).truncate().text_size(12).text_color(t.muted).child("Description, Markdown")).child(div().flex_1())
           .child(tab("write", "Write")).child(tab("preview", "Preview")))
         .child(this.write === "write"
           ? field(t, false).child(Textarea.new(this.body).w_full().text_size(13))
