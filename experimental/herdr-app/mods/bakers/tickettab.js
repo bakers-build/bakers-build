@@ -27,10 +27,10 @@ export class TicketTab {
     this.unfolded = new Set();
     this.at = 0;
     this.scroll = ScrollHandle.new();
-    this.composer = this.state(TextareaState.new({ placeholder: "Write a comment, Markdown", rows: 3 }), cx);
+    this.composer = this.state(TextareaState.new({ placeholder: "Write a comment, Markdown", rows: 3 }));
     this.composer.set_auto_grow(2, 10);
-    this.title = this.state(InputState.new({}), cx);
-    this.body = this.state(TextareaState.new({ rows: 14 }), cx);
+    this.title = this.state(InputState.new({}));
+    this.body = this.state(TextareaState.new({ rows: 14 }));
     this.body.set_auto_grow(8, 30);
     this.handle.focus();
     cx.spawn(async (cx) => {
@@ -56,7 +56,8 @@ export class TicketTab {
   follow(key) {
     if (key === this.key) return;
     Object.assign(this, { key, mode: "read", composing: "comment", error: null, unfolded: new Set() });
-    this.composer.set_value("");
+    // Clearing an empty composer would count as typing and pin the tab.
+    if (this.composer.value()) this.composer.set_value("");
   }
 
   edit() {

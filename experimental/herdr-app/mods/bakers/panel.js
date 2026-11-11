@@ -1,6 +1,6 @@
 import { div, svg } from "gpui-kit";
 import { v_flex, h_flex } from "gpui-base";
-import { theme, shared } from "herdr";
+import { theme, shared, setShared } from "herdr";
 import { store, loadTicket, stale, ticketOf, agentOf } from "./store.js";
 import { ago, isClosed, stateLabel, toUnix } from "./derive.js";
 import { openLink, popup } from "./open.js";
@@ -93,6 +93,8 @@ export class Panel {
 
   render(cx) {
     const t = theme(), key = focused() ?? this.key;
+    // Kept in shared state, so the panel shows the same ticket after a reload.
+    if (key && key !== shared("bakers.ticket")) setShared("bakers.ticket", key);
     this.key = key;
     if (stale(key)) loadTicket(key, cx);
     const detail = store.details[key], d = ticketOf(key), section = agentOf(key, Date.now());

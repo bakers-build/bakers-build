@@ -43,7 +43,7 @@ export class Picker {
       .child(div().font_semibold().child(`Conductors of ${store.projectName ?? "this project"}`))
       .children(pickerRows(store.conductors, store.machines, store.local, "").map((r) => h_flex().gap(10).items_start()
         .child(div().flex_1().min_w(0).child([r.label, r.machine].filter(Boolean).join(", ")))
-        .child(div().text_size(12).text_color(r.online ? t.muted : t.dim)
+        .child(div().w(150).flex_none().text_size(12).text_color(r.online ? t.muted : t.dim)
           .child([r.status, r.load !== "-" && r.load.replace(" busy", ""), ...runsOn(r.uuid)].filter(Boolean).join(", ")))));
   }
 

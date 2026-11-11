@@ -107,7 +107,7 @@ export class Menu {
         ? div().h(1).my(4).mx(4).bg(t.border)
         : menuRow(`bakers-menu-${i}`, t, item === selected, (cx) => !item.disabled && this.choose(item, cx))
           .when(Boolean(item.indent), (e) => e.pl(22))
-          .child(div().flex_1().min_w(0).truncate().text_color(item.disabled ? t.dim : item.muted ? t.muted : t.foreground)
+          .child(div().flex_1().min_w(0).truncate().text_color(item.current ? t.foreground : item.disabled ? t.dim : item.muted ? t.muted : t.foreground)
             .when(Boolean(item.current), (e) => e.font_semibold()).child(item.label))
           .when(Boolean(item.chip), (e) => e.child(chip(item.chip, t)))
           .when(Boolean(item.checked), (e) => e.child(svg("mods/workspace-chrome/check.svg").size(13).text_color(t.foreground)))
