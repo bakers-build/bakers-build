@@ -198,7 +198,7 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
    */
   public function testMovementFallsBackToRunThenCreated(): void {
     $with_run = $this->seedAssignedTicket('working');
-    $run = $this->seedRun($with_run, 'working', 'changed');
+    $run = $this->seedRun($with_run, 'working', 'done');
     $this->setRunChanged($run->id(), 5 * self::DAY);
     $this->setMovement($with_run, NULL);
 

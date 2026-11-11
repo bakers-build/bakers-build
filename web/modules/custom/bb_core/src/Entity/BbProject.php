@@ -187,6 +187,8 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->setComputed(TRUE)
       ->setClass(OriginSourcesItemList::class)
+      // Per viewer, so not in JSON:API, which caches a project per entity.
+      ->setInternal(TRUE)
       ->setDisplayConfigurable('view', TRUE);
     // The owning account, declared as the `owner` entity key so query access
     // and JSON:API filter access can reason about it; access-inert otherwise.

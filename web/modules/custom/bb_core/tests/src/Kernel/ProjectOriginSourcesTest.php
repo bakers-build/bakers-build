@@ -6,6 +6,8 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\jsonapi\JsonApiResource\ResourceObject;
+use Drupal\jsonapi\ResourceType\ResourceType;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 
@@ -14,6 +16,17 @@ use PHPUnit\Framework\Attributes\Group;
  */
 #[Group('bb_core')]
 final class ProjectOriginSourcesTest extends ClaimKernelTestBase {
+
+  /**
+   * {@inheritdoc}
+   *
+   * @var array<string>
+   */
+  protected static $modules = [
+    'system', 'user', 'options', 'entity', 'state_machine',
+    'field', 'og', 'file', 'image',
+    'link', 'text', 'serialization', 'jsonapi', 'bb_core',
+  ];
 
   /**
    * Two tickets of one GitLab repository and one Jira ticket give two links.
@@ -58,6 +71,20 @@ final class ProjectOriginSourcesTest extends ClaimKernelTestBase {
     $this->container->get('current_user')->setAccount($stranger);
 
     self::assertTrue($project->get('origin_sources')->isEmpty());
+  }
+
+  /**
+   * JSON:API caches a project per entity, so the per-viewer sources stay out.
+   */
+  public function testSourcesStayOutOfJsonApi(): void {
+    $this->container->get('router.builder')->rebuild();
+    $resource_type = $this->container->get('jsonapi.resource_type.repository')->get('bb_project', 'bb_project');
+    self::assertInstanceOf(ResourceType::class, $resource_type);
+
+    $resource = ResourceObject::createFromEntity($resource_type, $this->project());
+
+    self::assertTrue($resource->hasField('name'));
+    self::assertFalse($resource->hasField('origin_sources'));
   }
 
   /**

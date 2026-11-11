@@ -64,9 +64,18 @@ final class WorkStateIndexHooks {
 
   /**
    * Implements hook_ENTITY_TYPE_update() for bb_run.
+   *
+   * Only a new state or lease can change the live-run answer; a heartbeat
+   * cannot.
    */
   #[Hook('bb_run_update')]
   public function runUpdate(EntityInterface $run): void {
+    $original = $run instanceof BbRunInterface ? $run->getOriginal() : NULL;
+    if ($original instanceof BbRunInterface
+      && $run->get('state')->equals($original->get('state'))
+      && $run->get('claim_expires_at')->equals($original->get('claim_expires_at'))) {
+      return;
+    }
     $this->trackRunTicket($run);
   }
 

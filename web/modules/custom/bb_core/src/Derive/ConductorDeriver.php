@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Derive;
 
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Time\BbDate;
 
@@ -88,7 +89,9 @@ final class ConductorDeriver {
    */
   public function nodeLoadLabel(BbConductorInterface $conductor): string {
     $capacity = $this->nodeCapacity($conductor);
-    return $capacity === NULL ? 'Unknown capacity' : $capacity[0] . ' / ' . $capacity[1] . ' parallel runs';
+    return (string) ($capacity === NULL
+      ? new TranslatableMarkup('Unknown capacity')
+      : new TranslatableMarkup('@current / @max parallel runs', ['@current' => $capacity[0], '@max' => $capacity[1]]));
   }
 
   /**

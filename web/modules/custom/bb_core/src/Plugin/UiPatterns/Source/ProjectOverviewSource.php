@@ -151,7 +151,8 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
     $project = $this->project();
     if ($project !== NULL) {
       $metadata->addCacheableDependency($project);
-      $metadata->addCacheTags(['bb_ticket_list']);
+      // Memberships decide which tickets the viewer sees, so the empty state.
+      $metadata->addCacheTags(['bb_ticket_list', 'og_membership_list']);
     }
     $metadata->addCacheContexts(['user']);
     $metadata->applyTo($element);
@@ -339,18 +340,21 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
    * Edit, to the project's Settings, for `update` access only.
    *
    * @return array<string, mixed>
-   *   A ghost `button` link, or empty.
+   *   A ghost `button` link, or nothing; either varies with the access.
    */
   private function editLink(BbProjectInterface $project): array {
-    if (!$project->access('update')) {
-      return [];
+    $access = $project->access('update', NULL, TRUE);
+    $build = [];
+    if ($access->isAllowed()) {
+      $url = Url::fromRoute('bb_core.bb_project.settings', $project->toUrl()->getRouteParameters());
+      $build = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:button',
+        '#props' => ['label' => (string) $this->t('Edit'), 'href' => $url->toString(), 'variant' => 'ghost'],
+      ];
     }
-    $url = Url::fromRoute('bb_core.bb_project.settings', $project->toUrl()->getRouteParameters());
-    return [
-      '#type' => 'component',
-      '#component' => 'bb_theme:button',
-      '#props' => ['label' => (string) $this->t('Edit'), 'href' => $url->toString(), 'variant' => 'ghost'],
-    ];
+    CacheableMetadata::createFromObject($access)->applyTo($build);
+    return $build;
   }
 
   /**

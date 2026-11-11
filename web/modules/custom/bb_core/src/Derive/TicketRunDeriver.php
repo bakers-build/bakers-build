@@ -14,11 +14,11 @@ use Drupal\bb_core\Time\BbDate;
 use Drupal\user\UserInterface;
 
 /**
- * Derives dashboard display values for a ticket from its latest active run.
+ * Derives a ticket's run facts: its latest active run, live and newest runs.
  *
- * All values are read live (computed fields use these). Results are cached
- * per ticket id for the duration of the request to avoid repeated run queries
- * across the computed fields of one rendered row.
+ * Computed fields, project health and the claim queries read these live. The
+ * latest active run is cached per ticket id for the request, so the computed
+ * fields of one rendered row share one run query.
  *
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */

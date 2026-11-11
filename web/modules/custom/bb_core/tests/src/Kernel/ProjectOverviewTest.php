@@ -7,6 +7,7 @@ namespace Drupal\Tests\bb_core\Kernel;
 use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbVocabulary;
 use Drupal\Component\Serialization\Yaml;
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Database\Database;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
@@ -301,6 +302,27 @@ final class ProjectOverviewTest extends KernelTestBase {
       self::assertStringContainsString('Properties', $html, $rank);
       $link = (bool) preg_match('#<a[^>]*href="' . preg_quote($settings, '#') . '"[^>]*>(?:(?!</a>).)*\bEdit\b(?:(?!</a>).)*</a>#s', $html);
       self::assertSame($edits, $link, $rank . ($edits ? ' sees Edit.' : ' sees no Edit.'));
+    }
+  }
+
+  /**
+   * Memberships decide the empty state; the update access decides Edit.
+   */
+  public function testCacheabilityFollowsMembershipsAndUpdateAccess(): void {
+    $this->installOgScopeFixture();
+    $empty = $this->overviewSource('empty')->alterComponent([]);
+    self::assertContains('og_membership_list', $empty['#cache']['tags'] ?? []);
+
+    $contributor = $this->createUser([], 'overview-cache');
+    self::assertInstanceOf(UserInterface::class, $contributor);
+    $this->addMembership($this->workspace(), $contributor, ['contributor']);
+    foreach ([$this->container->get('current_user')->getAccount(), $contributor] as $account) {
+      $this->setCurrentUser($account);
+      $access = CacheableMetadata::createFromObject($this->project->access('update', NULL, TRUE));
+      $edit = $this->overviewSource('edit')->getPropValue();
+      self::assertNotSame([], $access->getCacheContexts());
+      self::assertSame([], array_diff($access->getCacheContexts(), $edit['#cache']['contexts'] ?? []), 'Edit varies as its access.');
+      self::assertSame([], array_diff($access->getCacheTags(), $edit['#cache']['tags'] ?? []), 'Edit invalidates with its access.');
     }
   }
 

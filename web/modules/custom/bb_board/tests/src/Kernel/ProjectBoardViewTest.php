@@ -301,6 +301,23 @@ final class ProjectBoardViewTest extends KernelTestBase {
   }
 
   /**
+   * Only a run's state or lease re-indexes its ticket, not a heartbeat.
+   */
+  public function testRunHeartbeatLeavesTheTicketIndexed(): void {
+    $ticket = $this->createTicket($this->projectA, 'WS-BEAT', 'coding', FALSE, $this->fixture('a', 'bb_conductor')->id());
+    $run = $this->createRun($ticket, 'running');
+    $this->assertIndexedWorkState($ticket, 'working');
+    $tracker = Index::load('bb_tickets')?->getTrackerInstance();
+    self::assertNotNull($tracker);
+
+    $run->set('heartbeat', time())->save();
+    self::assertSame(0, $tracker->getRemainingItemsCount(), 'A heartbeat queues nothing.');
+
+    $run->set('claim_expires_at', time() - 1)->save();
+    self::assertSame(1, $tracker->getRemainingItemsCount(), 'An expired lease queues the ticket.');
+  }
+
+  /**
    * Parent focus lists closed descendants in Done; active columns stay open.
    */
   public function testParentScopedDoneIncludesClosedDescendants(): void {

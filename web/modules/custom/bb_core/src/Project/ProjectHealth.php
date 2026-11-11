@@ -17,7 +17,7 @@ use Drupal\bb_core\Entity\BbTicketInterface;
  * Names the open tickets of a project where a person has to act now.
  *
  * Each ticket carries at most one reason, the first that matches in the order
- * of the methods below. Everything is read per call, never cached: it depends
+ * of reason(). Everything is read per call, never cached: it depends
  * on runs, labels, memberships and the clock. The queries do not grow with the
  * ticket count.
  */
@@ -161,7 +161,9 @@ final class ProjectHealth {
    */
   private function movement(array $ids): array {
     $movement = [];
-    foreach ([['bb_activity', 'created'], ['bb_run', 'changed']] as [$type, $field]) {
+    // bb_core does not depend on bb_activity: without it, runs alone move.
+    $sources = array_filter(['bb_activity' => 'created', 'bb_run' => 'changed'], $this->entityTypeManager->hasDefinition(...), ARRAY_FILTER_USE_KEY);
+    foreach ($sources as $type => $field) {
       /** @var array<int, array<string, int|string>> $rows */
       $rows = $this->entityTypeManager->getStorage($type)->getAggregateQuery()
         ->accessCheck(FALSE)
