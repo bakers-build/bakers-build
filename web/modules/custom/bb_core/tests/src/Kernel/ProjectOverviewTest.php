@@ -227,6 +227,23 @@ final class ProjectOverviewTest extends KernelTestBase {
   }
 
   /**
+   * A red reason draws the critical rail, a yellow one the attention rail.
+   */
+  public function testAttentionRowsShowTheirSeverity(): void {
+    $this->labelled('Broken', 'technical problem');
+    $this->labelled('Asks', 'question');
+
+    $attention = $this->overviewSource('attention')->getPropValue();
+    $items = $attention['#slots']['content'][0]['#props']['items'] ?? [];
+    $accents = array_combine(
+      array_map(static fn (array $row): string => $row['cells']['reason']['label'], $items),
+      array_column($items, 'accent'),
+    );
+
+    self::assertSame(['Technical problem' => 'critical', 'Needs info' => 'attention'], $accents);
+  }
+
+  /**
    * A project where nobody has to act reads as flowing.
    */
   public function testEverythingIsFlowing(): void {

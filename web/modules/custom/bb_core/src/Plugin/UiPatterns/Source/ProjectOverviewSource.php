@@ -441,14 +441,15 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
   }
 
   /**
-   * One Needs attention row: the ticket, its state and its reason.
+   * One Needs attention row: ticket, state, reason and severity rail.
    *
    * @return array<string, mixed>
    *   A `list` item.
    */
   private function attentionItem(AttentionItem $item): array {
+    $tone = $item->severity === 'red' ? 'critical' : 'attention';
     $row = $this->ticketItem($item->ticket);
-    $row['accent'] = 'attention';
+    $row['accent'] = $tone;
     $row['cells']['workflow'] = [
       'kind' => 'badge',
       'label' => $row['cells']['state']['label'],
@@ -458,7 +459,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
     $row['cells']['reason'] = [
       'kind' => 'badge',
       'label' => $item->reason,
-      'tone' => $item->severity === 'red' ? 'critical' : 'attention',
+      'tone' => $tone,
       'dot' => TRUE,
     ];
     return $row;
