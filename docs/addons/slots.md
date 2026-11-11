@@ -38,6 +38,13 @@ executor: { use: '@bakers-build/addon-herdr-core' },
 
 The executor resolves in this order: the machine's `executor`, the project's `executor`, then the last executor discovered from `addons`. `bakers config check` prints `Executor: from <file>` for an explicit slot. Choosing an executor per ticket or run is not supported.
 
+## Runtime: where a run starts
+
+The optional machine slot `runtime` decides where the agent runs: on the host by default, or in a
+container per run with [Docker runtime](/addons/runtime-docker). It rewrites the launch before the
+executor starts it; a failure fails the run. An isolating runtime turns the harness `sandbox` into
+`system`.
+
 ## Start hook
 
 The conductor's `hooks` listeners may define `before_conductor_start(machine,

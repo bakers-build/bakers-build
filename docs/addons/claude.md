@@ -43,7 +43,7 @@ One custom candidate:
 
 ## Security
 
-Default: `system`. See [Execution security](/provision/security/execution) for boundaries, environment filtering and isolation risks.
+Default: `system`. An isolating [runtime](/addons/runtime-docker) turns `sandbox` into `system`. See [Execution security](/provision/security/execution) for boundaries, environment filtering and isolation risks.
 
 | `permissions` | Launch flags |
 |---|---|

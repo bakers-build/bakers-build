@@ -133,6 +133,7 @@ export const SIDEBAR = {
       ["Conductor slots", "/addons/slots"],
       ["bakers.build server remote", "/addons/remote-drupal"],
       ["Tailscale", "/addons/tailscale"],
+      ["Docker runtime", "/addons/runtime-docker"],
     ]),
     group("Runtimes", [
       ["DDEV", "/addons/ddev"],
