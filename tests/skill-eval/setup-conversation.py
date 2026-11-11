@@ -68,7 +68,7 @@ def main():
     simulation = server.Simulation(fixture.get('server', {'simulation': {}}))
     (destination / 'fixture.json').write_text(encode(fixture))
     (destination / 'sources.json').write_text(encode(sources))
-    history = fixture.get('initial_history', [{'role': 'user', 'content': fixture['request']}])
+    history = [{'role': 'user', 'content': fixture['request']}]
     tools = []
     config_written = False
     result = {'status': 'incomplete', 'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),

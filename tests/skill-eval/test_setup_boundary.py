@@ -29,6 +29,11 @@ class SetupBoundaryTest(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(ValueError):
                 parse_action(text)
 
+    def test_action_with_wrongly_typed_field_is_refused_not_a_crash(self):
+        for text in ['{"type":"command","argv":5}', '{"type":"command","argv":["git",3]}', '{"type":"read","path":["a"]}']:
+            with self.assertRaises(ValueError):
+                parse_action(text)
+
     def test_real_cli_preserves_identity_on_repeat_and_honors_custom_path(self):
         repo = Path(__file__).resolve().parents[2]
         with tempfile.TemporaryDirectory() as temporary:

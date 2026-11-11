@@ -32,7 +32,7 @@ Make sure the [bakers skills](/skills-and-workflows/skills) are available in you
 
 ```text
 Use `bakers:bb-init-project` to connect this checkout as a bakers.build project.
-Check local tools and sign-in, and guide me through anything missing.
+Check sign-in, use `bakers:bb-init` for missing local tools, and guide me through anything missing.
 Reuse this environment, connection and any existing server project. Ask which
 client I want to use unless I already chose one or the project has one configured.
 Check the project’s setup commands.

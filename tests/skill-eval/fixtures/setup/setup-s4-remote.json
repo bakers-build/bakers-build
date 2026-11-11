@@ -55,7 +55,13 @@
   },
   "expected_files": {
     "machine/machine.config.js": [
-      "audit-worker"
+      "audit-worker",
+      "@bakers-build/addon-claude"
+    ],
+    "project/.gitignore": [
+      "assets-ai",
+      ".bakers/log.txt",
+      ".bakers/connection.config.js"
     ]
   }
 }

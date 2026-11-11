@@ -25,6 +25,9 @@ def parse_action(text):
               'read': {'path'}, 'write': {'path', 'content'}}
     if not isinstance(action, dict) or action.get('type') not in fields or set(action) != fields[action['type']] | {'type'}:
         raise ValueError('Expected one supported action')
+    for key, value in action.items():
+        if not (isinstance(value, list) and all(isinstance(item, str) for item in value) if key == 'argv' else isinstance(value, str)):
+            raise ValueError('Action field has the wrong type: ' + key)
     return action
 
 

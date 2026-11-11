@@ -4,7 +4,8 @@ For `project` or `all`, read [Prepare your project](https://bakers.build/get-sta
 for the overall setup and verification steps.
 Read these guides from the bakers.build website, including the applicable linked guides before
 recommending or configuring an integration. The project being configured is an external repository;
-it does not need a bakers.build checkout or a local copy of its documentation.
+it does not need a bakers.build checkout or a local copy of its documentation. Only inside a
+bakers.build source checkout, read the same pages under its `docs/` to match the revision.
 If a required guide cannot be retrieved, report its URL and leave the affected choice unresolved
 instead of substituting a template.
 
@@ -12,13 +13,7 @@ instead of substituting a template.
 
 Before configuration checks, server-project lookup or client/integration choices, read the
 [worktree requirements](https://bakers.build/provision/guide#make-the-project-worktree-compatible).
-Inspect the repository's README, scripts and application configuration for:
-
-- Fresh-checkout setup: dependencies, generated configuration, checkout paths and `.git` file support.
-- Parallel instances: independent ports, service names, databases and writable data.
-- Repeatable preparation: a second setup preserves an existing environment.
-- Scoped cleanup: stopping one worktree leaves the others and their data intact.
-
+Assess each requirement there against the repository's README, scripts and application configuration.
 Reuse existing evidence and ask only about gaps, one at a time. Report concrete file/command
 evidence for each finding. Git worktree support alone does not establish application compatibility.
 For known blockers, report the required application changes and stop setup until resolved;
@@ -74,7 +69,8 @@ the authorized scope, preserving existing code and values. Explain the change fi
 machine change needs shared-scope authorization; reuse authorization already given. If safe editing
 is unavailable, report the exact choice and owning field as unpersisted. Never substitute another
 choice or call the setup complete.
-**Done when each answer matches its saved field, or a concrete blocker is recorded.**
+**Done when the configuration read back after the last write matches every answer, or a concrete
+blocker is recorded.**
 
 ## Workflow and verification
 
@@ -85,9 +81,10 @@ Fill hints from the chosen setup and repository requirements. Show the origin-la
 ask for missing vocabulary; remove it if the operator chooses no origin labels. Remove empty hints.
 Verify named skills and report installed recipes through the agent's discovery facilities.
 
-Follow the project guide's verification commands, including applicable ignore paths. Record
-the final saved configuration after all edits, then reconcile it against every tracked decision.
-Run the configuration checks after the last configuration write. Record actual command results;
+Ensure the project's `.gitignore` carries every ignore rule the project guide lists, adding the
+missing ones as part of project setup, then prove each path with `git check-ignore -v`.
+Run the guide's verification commands and the configuration checks, offline and online, after the
+last configuration write. Record actual command results;
 report an unavailable command only after checking the available tools.
 Distinguish local validity, sign-in, project access and runtime readiness. A local config check
 is not proof that addons, provisioning or tunnels work.

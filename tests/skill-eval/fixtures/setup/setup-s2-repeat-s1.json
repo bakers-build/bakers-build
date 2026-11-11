@@ -8,6 +8,5 @@
   "preserved_files": {
     "machine/machine.config.js": "// @bakers-schema-version 1\n// Local host identity. The run budget is set on the machine in the backend;\n// server credentials belong to the connection (connections/default.js). An\n// `executor` slot here (e.g. `{ use: '@bakers-build/addon-herdr-core' }`)\n// overrides every project's executor on this machine.\n/** @type {import('@bakers-build/core').MachineConfig} */\nexport default {\n  schema_version: 1,\n  machine_id: 'a8c8cf65-e3f7-4cf7-9509-0a9875ace9f6',\n  label: 'audit-worker',\n};\n",
     "machine/connections/default.js": "// @bakers-schema-version 1\n// A bakers.build connection: credentials and optional workspace. Keep this file private.\n/** @type {import('@bakers-build/core').ConnectionConfig} */\nexport default {\n  schema_version: 1,\n  site: { base_url: 'https://setup.example.test', jsonapi_prefix: '/jsonapi' },\n\n  plugins: [\n    { plugin: '@bakers-build/addon-essentials' },\n    {\n      plugin: '@dropsh/plugin-oauth2',\n      export: 'oauth2Plugin',\n      with: {\n        id: 'bakers',\n        default: true,\n        type: 'oauth2_device_code',\n        scope: 'bb:session',\n        client_id: 'bakers-cli',\n        device_authorization_url:\n          'https://setup.example.test/oauth/device_authorization',\n        token_url: 'https://setup.example.test/oauth/token',\n      },\n    },\n  ],\n};\n"
-  },
-  "seed_provenance": "s1-attempt-3/result.json"
+  }
 }

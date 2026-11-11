@@ -22,6 +22,7 @@ export function checkOutput(fixture, output) {
     checks.push({ id: `scope-${path}`, met: fragments.every(value => !(saved.files[path] ?? '').includes(value)), reason: `${path} must not contain settings owned by another scope` });
   }
   // The bounded writer accepts JSON data only; parse it without executing config code.
+  // A file the CLI wrote as non-JSON JavaScript parses to undefined here, so each of its field checks fails.
   for (const [path, fields] of Object.entries(fixture.input.expected_config ?? {})) {
     let config;
     try { config = JSON.parse(saved.files[path]?.match(/^\s*export default\s+(\{[\s\S]*\})\s*;?\s*$/)?.[1]); }

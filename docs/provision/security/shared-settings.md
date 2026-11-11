@@ -34,7 +34,7 @@ Shared lists apply only while an agent's effective mode is `sandbox`. Codex and 
 
 ## No global tools
 
-When no layer sets `mode`, runs use `system`. A `sandbox` run trusts no command by default: no harness exempts `bakers`, `git` or any other command from its sandbox. Whatever a run needs beyond its worktree comes through tools the conductor serves for an addon, such as `provision_up`, `ddev_exec` and `ports_up`. Configure [Forge](../../addons/forge.md) and its backend for repository delivery through conductor tools; sandbox mode does not enable them automatically.
+When no layer sets `mode`, runs use `system`. A `sandbox` run trusts no command by default: no harness exempts `bakers`, `git` or any other command from its sandbox. Whatever a run needs beyond its worktree comes through tools the conductor serves for an addon, such as `provision_up`, `ddev_exec` and `ports_up`. Configure [Forge](/addons/forge) and its backend for repository delivery through conductor tools; sandbox mode does not enable them automatically.
 
 Without Forge, shell-based delivery needs an explicitly supported permission path for the selected harness. Where supported, trusted commands run with your full rights; do not add broad command exemptions merely to work around missing Forge configuration. Keep the Forge credentials with the conductor.
 
