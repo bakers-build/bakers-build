@@ -20,6 +20,8 @@ does not resolve its recipe/marketplace choice. Do not silently skip a row.
 Name the source of a reused choice. Link the applicable documentation whenever explaining a choice.
 Ask for **one field or decision per turn** and wait. Request related follow-up values in later turns:
 profile commands and readiness checks are separate decisions, as are marketplace and workflow hints.
+Before sending, count requested inputs and keep only the first unanswered field. A service key and
+its match text are separate fields. “Answer the first question first” does not permit appending another.
 Ask each lifecycle command separately. An installed
 client is not a selected client. Unattended, keep unknown choices unresolved and report them.
 **Done when every applicable choice has a source, an answer, or an explicit unresolved status.**
@@ -48,8 +50,7 @@ Verify named skills and report installed recipes through the agent's discovery f
 
 Follow the project guide's verification commands, including applicable ignore paths. Record
 the final saved configuration after all edits, then reconcile it against every tracked decision.
-Run the configuration checks after the last configuration write.
-Record
-actual command results; report an unavailable command only after checking the available tools.
+Run the configuration checks after the last configuration write. Record actual command results;
+report an unavailable command only after checking the available tools.
 Distinguish local validity, sign-in, project access and runtime readiness. A local config check
 is not proof that addons, provisioning or tunnels work.
