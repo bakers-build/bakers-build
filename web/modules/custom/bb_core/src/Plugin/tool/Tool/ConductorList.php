@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\tool\Attribute\Tool;
@@ -81,6 +81,12 @@ use Drupal\tool\TypedData\OutputDefinition;
             label: new TranslatableMarkup('Status'),
             description: new TranslatableMarkup('online or offline.'),
           ),
+          'machine' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Machine'),
+            description: new TranslatableMarkup("The machine_id (host key) of the conductor's machine, or null when it has none; details via bakers_machine_list."),
+            nullable: TRUE,
+          ),
         ],
       ),
     ),
@@ -111,7 +117,7 @@ final class ConductorList extends ToolBase {
     [$ids, $next] = $this->page($query, $values);
     $conductors = [];
     foreach ($storage->loadMultiple($ids) as $conductor) {
-      assert($conductor instanceof ContentEntityInterface);
+      assert($conductor instanceof BbConductorInterface);
       if (!$conductor->access('view', $this->currentUser)) {
         continue;
       }
@@ -121,6 +127,7 @@ final class ConductorList extends ToolBase {
         'label' => $conductor->get('label')->value,
         'active' => (bool) $conductor->get('active')->value,
         'status' => (string) $conductor->get('status')->value,
+        'machine' => $conductor->getMachine()?->getHostKey(),
       ];
     }
     return ExecutableResult::success(new TranslatableMarkup('@count conductors found.', ['@count' => count($conductors)]), [
