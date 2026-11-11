@@ -35,6 +35,7 @@ import type {
   Ticket,
   UncleanTicket,
 } from '../plugins/remote.js';
+import { type BbRuntime, hostRuntime } from '../plugins/runtime.js';
 import { sandboxFailures } from '../plugins/sandbox-preflight.js';
 import { loadTools, type ToolBinding } from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
@@ -275,6 +276,9 @@ export class Conductor {
   /** The local MCP server for addon tools; only the serve process runs one. */
   private toolServer: ToolServer | undefined;
 
+  /** Where runs execute; created once, on first use. */
+  private runtimeOnce: Promise<BbRuntime> | undefined;
+
   /** Serializes git worktree add/remove: parallel ones fight over git locks. */
   private gitLock: Promise<unknown> = Promise.resolve();
 
@@ -374,6 +378,7 @@ export class Conductor {
   async startTools(endpointFile?: string): Promise<void> {
     const { siteTools } = this.remote;
     if ((!this.config.tools && !siteTools) || this.toolServer) return;
+    const hosts = (await (await this.runtime()).toolServerHosts?.()) ?? [];
     // Runs closed while no server ran (`oven once`, a crash) lose their grant here.
     const openRuns = await this.remote.fetchActiveRuns(this.id).then(
       (runs) => runs.map((r) => r.runUuid),
@@ -392,12 +397,33 @@ export class Conductor {
       ...(endpointFile ? { endpointFile } : {}),
       ...(openRuns ? { openRuns } : {}),
       ...(siteTools ? { siteTools } : {}),
+      ...(hosts.length > 0 ? { hosts } : {}),
       onSiteWrite: (b) => this.signalUi(b.worktreePath),
     });
     this.logger.info(
       { conductorId: this.config.conductor_id, url: this.toolServer.url },
       'tool server started',
     );
+  }
+
+  private runtime(): Promise<BbRuntime> {
+    this.runtimeOnce ??= (this.config.runtime ?? hostRuntime).createRuntime(
+      this.config,
+      { logger: this.logger },
+    );
+    return this.runtimeOnce;
+  }
+
+  /** Best-effort, like the tab close: logged, never thrown. */
+  private async cleanupRuntime(runUuid: string, runId: number): Promise<void> {
+    try {
+      await (await this.runtime()).cleanup({ uuid: runUuid, id: runId });
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, err: String(err) },
+        'runtime cleanup failed',
+      );
+    }
   }
 
   /** Tell an open `bakers ui` in the checkout (and the run's worktree) to reload. */
@@ -817,6 +843,7 @@ export class Conductor {
         'run tab cleanup failed',
       );
     }
+    await this.cleanupRuntime(runUuid, runId);
     // Background commands and their sandboxes outlive the closed PTY.
     try {
       const { pids } = await killRunProcesses(runUuid);
@@ -1674,6 +1701,8 @@ export class Conductor {
     // a re-dispatch of the same run drops its stale duplicate before startRun
     // re-creates it. Sibling prior-state run tabs are left to the worktree reap.
     await this.executor.cleanupRun(t.branchName, run.runId);
+    await this.cleanupRuntime(run.runUuid, run.runId);
+    const runtime = await this.runtime();
     const prompt = ws.instructions
       ? renderPrompt(this.config.prompt, {
           identifier: t.identifier,
@@ -1725,13 +1754,16 @@ export class Conductor {
     const tools = chosen.agent.withoutConductorTools
       ? undefined
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
+    const toolsUrl = tools
+      ? (runtime.toolsUrl?.(tools.url) ?? tools.url)
+      : undefined;
     const plugins = await this.installPlugins(chosen, t, run);
     Object.assign(env, plugins.env);
     const command = chosen.agent.launchCommand(
       prompt,
       identity,
       ws.path,
-      tools ? { url: tools.url } : undefined,
+      toolsUrl ? { url: toolsUrl } : undefined,
       env,
       plugins.args,
     );
@@ -1751,6 +1783,22 @@ export class Conductor {
         );
       }
     }
+    // The token travels in the env, never in argv or the launch log.
+    const runEnv = tools
+      ? {
+          ...env,
+          [CONDUCTOR_URL_ENV]: toolsUrl as string,
+          [CONDUCTOR_TOKEN_ENV]: tools.token,
+        }
+      : env;
+    // A wrap failure fails the dispatch: an isolated run never falls back to the host.
+    const wrapped = await runtime.wrap({
+      command,
+      env: runEnv,
+      workspacePath: ws.path,
+      run: { uuid: run.runUuid, id: run.runId },
+      harness: chosen.agent.id,
+    });
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,
@@ -1763,15 +1811,8 @@ export class Conductor {
       run: { uuid: run.runUuid, id: run.runId, handler: run.handler },
       workspacePath: ws.path,
       instructions: ws.instructions,
-      command,
-      // The token travels in the env, never in argv or the launch log.
-      env: tools
-        ? {
-            ...env,
-            [CONDUCTOR_URL_ENV]: tools.url,
-            [CONDUCTOR_TOKEN_ENV]: tools.token,
-          }
-        : env,
+      command: wrapped.command,
+      env: wrapped.env,
     });
     launch.started = true;
     this.logger.info(
@@ -1784,6 +1825,7 @@ export class Conductor {
         envKeys: Object.keys(env),
         harness: chosen.agent.id,
         alias: chosen.alias ?? chosen.id,
+        runtime: runtime.id,
         // The launch with its options; the prompt is long and in the ticket.
         launch: command.replace(shellQuote(prompt), "'<prompt>'"),
       },

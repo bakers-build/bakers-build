@@ -133,6 +133,13 @@ export type {
 } from './plugins/remote.js';
 export { ConductorTakeoverRequired } from './plugins/remote.js';
 export {
+  type BbRuntime,
+  hostRuntime,
+  type RuntimeLaunch,
+  type RuntimePlugin,
+  type RuntimeRun,
+} from './plugins/runtime.js';
+export {
   installCommand,
   lastLine,
   type SandboxHost,

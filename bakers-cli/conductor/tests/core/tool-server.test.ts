@@ -62,6 +62,21 @@ async function connect(url: string, token: string): Promise<Client> {
 }
 
 describe('conductor tool server', () => {
+  it('also listens on the extra hosts, on the same port', async () => {
+    server = await startToolServer({
+      registry: await registry(),
+      hosts: ['127.0.0.2'],
+    });
+    const token = server.issueRunToken('run-1', { worktreePath: '/work/bb-1' });
+    const client = await connect(
+      server.url.replace('127.0.0.1', '127.0.0.2'),
+      token,
+    );
+    const result = await client.callTool({ name: 'where', arguments: {} });
+    expect(result.content).toEqual([{ type: 'text', text: '/work/bb-1' }]);
+    await client.close();
+  });
+
   it("serves the addon tools bound to the run token's worktree", async () => {
     server = await startToolServer({ registry: await registry() });
     const token = server.issueRunToken('run-1', { worktreePath: '/work/bb-1' });
