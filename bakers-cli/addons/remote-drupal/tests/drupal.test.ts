@@ -595,7 +595,7 @@ describe('DrupalBbRemote', () => {
     expect(ticket.environments).toEqual([{ name: 'dev2', tier: 'dev' }]);
   });
 
-  it('getTicket sideloads the ticket type and recipe names, for the required-skills check', async () => {
+  it('getTicket sideloads the ticket type and recipe names, for agent selection', async () => {
     const get = vi.fn(async () => ({
       data: {
         id: 'tic-8',
