@@ -101,7 +101,6 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     }
     $items = $this->health->attention($this->project);
     self::assertCount(1, $items);
-    self::assertInstanceOf(AttentionItem::class, $items[0]);
     self::assertSame((int) $ticket->id(), (int) $items[0]->ticket->id());
     self::assertSame([$severity, $reason], [$items[0]->severity, $items[0]->reason]);
     self::assertSame($case === 'idle' ? 4 : NULL, $items[0]->idleDays);
@@ -145,7 +144,8 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     $blocked = $this->seedBlocked($this->seedAssignedTicket('working'), 'open');
     $this->label($blocked, 'technical problem');
 
-    self::assertSame([], $this->health->unhealthyIds($this->project));
+    $ids = $this->health->unhealthyIds($this->project);
+    self::assertSame([], $ids);
 
     $done_blocker = $this->seedBlocked($this->seedAssignedTicket('working'), 'done');
     $this->seedRun($done_blocker, 'working', 'failed');
@@ -376,7 +376,7 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
       $term = $this->container->get('entity_type.manager')->getStorage('bb_term')->create([
         'vid' => 'label',
         'name' => $name,
-        'workspace_id' => $this->project->get('group_id')->entity->get('workspace_id')->target_id,
+        'workspace_id' => $this->project->getGroup()?->getWorkspace()?->id(),
       ]);
       $term->save();
       $this->labels[$name] = (int) $term->id();
@@ -433,6 +433,7 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
    */
   private function revokeConductorOwner(): void {
     $owner = $this->conductor->get('owner_user_id')->entity;
+    self::assertInstanceOf(UserInterface::class, $owner);
     foreach (Og::getMemberships($owner) as $membership) {
       $membership->delete();
     }
@@ -445,10 +446,11 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
    */
   private function createProject(string $name): BbProjectInterface {
     $etm = $this->container->get('entity_type.manager');
-    $group = $this->project->get('group_id')->entity;
+    $group = $this->project->getGroup();
+    self::assertNotNull($group);
     $team = $etm->getStorage('bb_team')->create([
       'name' => $name . ' team',
-      'workspace_id' => $group->get('workspace_id')->target_id,
+      'workspace_id' => $group->getWorkspace()?->id(),
     ]);
     $team->save();
     $project = $etm->getStorage('bb_project')->create([
@@ -476,7 +478,8 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     $account = $etm->getStorage('user')->create(['name' => $name, 'status' => 1, 'roles' => ['r_' . $name]]);
     $account->save();
     self::assertInstanceOf(UserInterface::class, $account);
-    $workspace = $projects[0]->get('group_id')->entity->get('workspace_id')->entity;
+    $workspace = $projects[0]->getGroup()?->getWorkspace();
+    self::assertNotNull($workspace);
     $this->addMembership($workspace, $account, ['member']);
     foreach ($projects as $project) {
       foreach ($project->get('teams')->referencedEntities() as $team) {

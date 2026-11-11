@@ -131,7 +131,7 @@ final class BoardConductorsDisplayTest extends KernelTestBase {
     $this->container->get('request_stack')->getCurrentRequest()?->query->set('priority', [1]);
     $view = Views::getView('conductors');
     $view->setDisplay('board');
-    $view->setExposedInput(['priority' => [1], 'state' => ['working']]);
+    $view->setExposedInput(['priority' => '1', 'state' => 'working']);
     $view->setArguments([(string) $this->project->id()]);
     $view->preExecute();
     $view->execute();
