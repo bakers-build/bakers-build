@@ -125,11 +125,6 @@ services:
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker', '@bb_core.conductor_owner_access']
   Drupal\bb_core\Claim\TicketStallReason:
     alias: bb_core.ticket_stall_reason
-  bb_core.parked_ticket_release:
-    class: Drupal\bb_core\Ticket\ParkedTicketRelease
-    arguments: ['@bb_core.failed_run_circuit_breaker', '@datetime.time', '@current_user']
-  Drupal\bb_core\Ticket\ParkedTicketRelease:
-    alias: bb_core.parked_ticket_release
   bb_core.ticket_claim:
     class: Drupal\bb_core\Claim\TicketClaimService
     arguments: ['@entity_type.manager', '@datetime.time', '@lock', '@database', '@bb_core.failed_run_circuit_breaker', '@event_dispatcher', '@bb_core.conductor_owner_access']

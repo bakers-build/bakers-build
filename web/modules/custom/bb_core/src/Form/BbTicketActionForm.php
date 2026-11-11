@@ -13,7 +13,7 @@ use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\island\Form\WrappedDialogFormTrait;
 
 /**
- * Confirms an intervention: restart, freeze, unfreeze, cancel a ticket or run.
+ * Confirms an intervention: freeze, unfreeze, cancel a ticket or a run.
  *
  * Opened from the detail page's Properties footer or a run row, as a dialog
  * over the ticket with JavaScript and as a plain page without it. The page
@@ -81,9 +81,6 @@ final class BbTicketActionForm extends EntityForm {
     if ($this->getRequest()->query->has(TicketInterventions::FREEZE_PARAMETER)) {
       return $this->freezeConfirmation($ticket);
     }
-    if ($this->getRequest()->query->has(TicketInterventions::RESTART_PARAMETER)) {
-      return $this->restartConfirmation($ticket);
-    }
     if ($run !== NULL && TicketInterventions::mayCancelRun($run, $ticket)) {
       return [
         $this->t('Run #@run stops. The ticket stays in its current state, and the conductor may start another run.', [
@@ -138,24 +135,6 @@ final class BbTicketActionForm extends EntityForm {
         ]),
         $this->actionButton('bb_confirm', (string) $this->t('Unfreeze ticket'), $action, 'neutral'),
       ];
-  }
-
-  /**
-   * The restart question and button, while the account may restart it.
-   *
-   * @return array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: array<string, mixed>|null}
-   *   The question, and the button or NULL.
-   */
-  private function restartConfirmation(BbTicketInterface $ticket): array {
-    if (!TicketInterventions::mayRestart($ticket)) {
-      return [$this->t('This action is no longer available. The ticket shows its current state.'), NULL];
-    }
-    return [
-      $this->t('@ticket can be claimed again on the next cycle. Its failed runs stay in its history.', [
-        '@ticket' => $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label(),
-      ]),
-      $this->actionButton('bb_confirm', (string) $this->t('Restart ticket'), ['kind' => 'restart'], 'neutral'),
-    ];
   }
 
   /**
@@ -225,7 +204,6 @@ final class BbTicketActionForm extends EntityForm {
     $target = match ($action['kind']) {
       'run' => $this->cancellableRun($action['run'], $ticket),
       'freeze' => $this->freezeTarget($action, $ticket),
-      'restart' => $this->restartTarget($ticket),
       default => $this->transitionTarget($action, $ticket),
     };
     if ($target === NULL || count($target->validate()) > 0) {
@@ -254,17 +232,6 @@ final class BbTicketActionForm extends EntityForm {
   }
 
   /**
-   * The ticket with the restart stamped, or NULL when it is not parked now.
-   */
-  private function restartTarget(BbTicketInterface $ticket): ?BbTicketInterface {
-    if (!TicketInterventions::mayRestart($ticket)) {
-      return NULL;
-    }
-    TicketInterventions::restart($ticket);
-    return $ticket;
-  }
-
-  /**
    * The success message for the action that just wrote.
    *
    * @param array<string, string> $action
@@ -276,7 +243,6 @@ final class BbTicketActionForm extends EntityForm {
     $label = $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label();
     return match ($action['kind']) {
       'run' => (string) $this->t('The run was cancelled.'),
-      'restart' => (string) $this->t('@ticket was restarted.', ['@ticket' => $label]),
       'freeze' => $action['frozen'] === '1'
         ? (string) $this->t('@ticket is frozen.', ['@ticket' => $label])
         : (string) $this->t('@ticket is no longer frozen.', ['@ticket' => $label]),

@@ -18,7 +18,6 @@ needs every page. A conductor run is served only the lookups [conductor](tools-c
 | List labels | `bakers_label_list` | `workspace`; optional `query` | `labels` (`uuid`, `name`) |
 | Run a template | `bakers_ticket_template_run` | `template`; optional `title`, `description`, `workflow`, `project`, `conductor`, `labels`, `target_state` | `uuid`, `identifier` |
 | Cancel runs | `bakers_run_cancel` | `ticket`/`machine_id`, `reason` | `runs`; by machine maybe none |
-| Restart a parked ticket | `bakers_ticket_restart` | `ticket` | `ticket`, `restarted_at`, `restarted_by`; conflict when not parked |
 | List runs | `bakers_ticket_runs_list` | `ticket` | `runs` (`uuid`, `state`, `state_at_start`, `agent`, `conductor`, `started_at`, `closed`); newest first |
 | List activity | `bakers_ticket_activity_list` | `ticket` or `project`, not both | `events` (`uuid`, `kind`, `created`, `actor`, `ticket`, `message`); newest first |
 | Propose time | `bakers_time_propose` | `entries`; optional `project`, `account` | `submission`, `worklogs` in entry order; a failing entry stores nothing |

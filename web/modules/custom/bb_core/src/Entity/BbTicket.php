@@ -29,7 +29,6 @@ use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\user\EntityOwnerTrait;
-use Drupal\user\UserInterface;
 
 /**
  * Represents a bakers.build ticket — a unit of work dispatched to a conductor.
@@ -743,22 +742,6 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
   public function getFrozenAt(): ?int {
     $value = $this->get('frozen_at')->value;
     return $value === NULL ? NULL : (int) $value;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getRestartedAt(): ?int {
-    $value = $this->get('restarted_at')->value;
-    return $value === NULL ? NULL : (int) $value;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getRestartedBy(): ?UserInterface {
-    $user = $this->get('restarted_by')->entity;
-    return $user instanceof UserInterface ? $user : NULL;
   }
 
   /**

@@ -18,6 +18,6 @@ in this run: take the step's path without it.
 
 Start it in a subagent whose only task is that call, returning its output verbatim; keep working
 and take the printed base URL from its result once a check needs it. Without subagents, call it
-directly. The command runs to completion whatever happens to
+directly. The first call on a new worktree can take minutes. The command runs to completion whatever happens to
 its caller, and a call while the same profile runs in this worktree joins that run: after a cancel
 or a client timeout, call again to receive the result.

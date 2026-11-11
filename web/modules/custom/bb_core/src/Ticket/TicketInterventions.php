@@ -15,9 +15,8 @@ use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
  * Who may intervene in a ticket or run, and how an intervention is opened.
  *
  * AI agents drive the workflow; a human on the ticket detail intervenes. The
- * detail offers Restart, Freeze, Unfreeze, Cancel ticket and Cancel run,
- * each through a confirmation. Settings carry no transition; Delete is their
- * one action.
+ * detail offers Freeze, Unfreeze, Cancel ticket and Cancel run, each through a
+ * confirmation. Settings carry no transition; Delete is their one action.
  *
  * One home for every intervention rule, so the UI and the tools share it.
  *
@@ -44,11 +43,6 @@ final class TicketInterventions {
    * The query key that names the freeze target (`1` freeze, `0` unfreeze).
    */
   public const string FREEZE_PARAMETER = 'frozen';
-
-  /**
-   * The query key that asks to restart a ticket parked by failed runs.
-   */
-  public const string RESTART_PARAMETER = 'restart';
 
   /**
    * Whether the current account may write the ticket's workflow state.
@@ -85,20 +79,6 @@ final class TicketInterventions {
    */
   public static function mayUnfreeze(BbTicketInterface $ticket): bool {
     return self::maySetFrozen($ticket) && $ticket->isFrozen();
-  }
-
-  /**
-   * Whether the current account may restart the parked ticket now.
-   */
-  public static function mayRestart(BbTicketInterface $ticket): bool {
-    return \Drupal::service(ParkedTicketRelease::class)->mayRestart($ticket);
-  }
-
-  /**
-   * Stamps the restart on the ticket; the caller validates and saves.
-   */
-  public static function restart(BbTicketInterface $ticket): void {
-    \Drupal::service(ParkedTicketRelease::class)->release($ticket);
   }
 
   /**
@@ -226,25 +206,6 @@ final class TicketInterventions {
     $query = [
       'destination' => $ticket->toUrl()->toString(),
       self::FREEZE_PARAMETER => $frozen ? '1' : '0',
-    ];
-    if ($dialog) {
-      $query['_wrapper_format'] = 'island_dialog';
-    }
-    return Url::fromRoute('entity.bb_ticket.action_form', $ticket->toUrl()->getRouteParameters(), ['query' => $query]);
-  }
-
-  /**
-   * The confirmation address for restarting a parked ticket.
-   *
-   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
-   *   The ticket the confirmation belongs to.
-   * @param bool $dialog
-   *   TRUE for the dialog wrapper format, FALSE for the plain page.
-   */
-  public static function restartUrl(BbTicketInterface $ticket, bool $dialog): Url {
-    $query = [
-      'destination' => $ticket->toUrl()->toString(),
-      self::RESTART_PARAMETER => '1',
     ];
     if ($dialog) {
       $query['_wrapper_format'] = 'island_dialog';

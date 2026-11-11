@@ -21,14 +21,14 @@ use PHPUnit\Framework\Attributes\Group;
 final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
 
   /**
-   * Seeds a failed run whose `changed` (and `created`) is set to $changed.
+   * Seeds a failed run whose `changed` timestamp is set to $changed.
    */
-  private function seedFailedRun(BbTicketInterface $ticket, int $changed, ?int $created = NULL): BbRunInterface {
+  private function seedFailedRun(BbTicketInterface $ticket, int $changed): BbRunInterface {
     $run = $this->seedRun($ticket, 'plan', 'failed');
     // `changed` is set to request-time on save; override it directly so the
     // test controls the circuit-breaker window without touching the clock.
     $this->container->get('database')->update('bb_run')
-      ->fields(['changed' => $changed, 'created' => $created ?? $changed])
+      ->fields(['changed' => $changed])
       ->condition('id', $run->id())
       ->execute();
     return $this->reloadRun($run);
@@ -93,76 +93,6 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
     $this->seedFailedRun($ticket, $this->now() - 50);
     $run = $this->claimService->claim($this->reloadTicket($ticket), $this->conductor);
     $this->assertSame('claimed', $run->getRunState());
-  }
-
-  /**
-   * Restarts the ticket at $at, as the restart service would.
-   */
-  private function restart(BbTicketInterface $ticket, int $at): BbTicketInterface {
-    $ticket = $this->reloadTicket($ticket);
-    $ticket->set('restarted_at', $at)->save();
-    return $this->reloadTicket($ticket);
-  }
-
-  /**
-   * A restart releases a parked ticket and keeps its failed runs untouched.
-   */
-  public function testRestartReleasesParkedTicket(): void {
-    $ticket = $this->seedAssignedTicket('plan');
-    $runs = [];
-    for ($i = 0; $i < 3; $i++) {
-      $run = $this->seedFailedRun($ticket, $this->now() - 100);
-      $run->setErrorLog('boom ' . $i)->save();
-      $runs[] = $run->id();
-    }
-    $breaker = $this->container->get('bb_core.failed_run_circuit_breaker');
-    $this->assertTrue($breaker->isTripped($this->reloadTicket($ticket)));
-
-    $ticket = $this->restart($ticket, $this->now());
-    $this->assertFalse($breaker->isTripped($ticket));
-    $run = $this->claimService->claim($ticket, $this->conductor);
-    $this->assertSame('claimed', $run->getRunState());
-
-    $storage = $this->container->get('entity_type.manager')->getStorage('bb_run');
-    $storage->resetCache();
-    foreach ($runs as $i => $id) {
-      $old = $storage->load($id);
-      $this->assertInstanceOf(BbRunInterface::class, $old);
-      $this->assertSame('failed', $old->getRunState());
-      $this->assertStringContainsString('boom ' . $i, (string) $old->getErrorLog());
-    }
-  }
-
-  /**
-   * Three new failures after a restart park the ticket again.
-   */
-  public function testThreeNewFailuresAfterRestartParkAgain(): void {
-    $ticket = $this->seedAssignedTicket('plan');
-    for ($i = 0; $i < 3; $i++) {
-      $this->seedFailedRun($ticket, $this->now() - 100);
-    }
-    $ticket = $this->restart($ticket, $this->now() - 50);
-    for ($i = 0; $i < 3; $i++) {
-      $this->seedFailedRun($ticket, $this->now() - 10);
-    }
-    $this->expectException(ClaimConflictException::class);
-    $this->expectExceptionMessage('claim_conflict: ticket parked after repeated failed runs.');
-    $this->claimService->claim($this->reloadTicket($ticket), $this->conductor);
-  }
-
-  /**
-   * Fewer than cap failures after a restart do not park, old ones aside.
-   */
-  public function testTwoNewFailuresAfterRestartDoNotPark(): void {
-    $ticket = $this->seedAssignedTicket('plan');
-    for ($i = 0; $i < 3; $i++) {
-      $this->seedFailedRun($ticket, $this->now() - 100);
-    }
-    $ticket = $this->restart($ticket, $this->now() - 50);
-    $this->seedFailedRun($ticket, $this->now() - 10);
-    $this->seedFailedRun($ticket, $this->now() - 10);
-    $breaker = $this->container->get('bb_core.failed_run_circuit_breaker');
-    $this->assertFalse($breaker->isTripped($this->reloadTicket($ticket)));
   }
 
 }

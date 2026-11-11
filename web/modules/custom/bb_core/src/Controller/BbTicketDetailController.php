@@ -32,10 +32,6 @@ final class BbTicketDetailController extends ControllerBase {
         ? (string) $this->t('Freeze @ticket?', ['@ticket' => $label])
         : (string) $this->t('Unfreeze @ticket?', ['@ticket' => $label]);
     }
-    if ($request->query->has(TicketInterventions::RESTART_PARAMETER)) {
-      $label = $bb_ticket->getIdentifier() !== '' ? $bb_ticket->getIdentifier() : (string) $bb_ticket->label();
-      return (string) $this->t('Restart @ticket?', ['@ticket' => $label]);
-    }
     if ($request->query->has(TicketInterventions::RUN_PARAMETER)) {
       $run = TicketInterventions::runByUuid($request->query->get(TicketInterventions::RUN_PARAMETER), $this->entityTypeManager());
       // Name only a run the reader may cancel; any other gets no number.

@@ -358,78 +358,6 @@ final class TicketActionFormTest extends KernelTestBase {
   }
 
   /**
-   * Restart is offered only while the breaker parks the ticket.
-   */
-  public function testRestartOfferedOnlyWhileParked(): void {
-    $ticket = $this->ticket('bb_work', 'working');
-    $this->createRun($ticket, 'failed');
-    $this->createRun($ticket, 'failed');
-    self::assertFalse(TicketInterventions::mayRestart($this->reload($ticket)));
-    $this->createRun($ticket, 'failed');
-    self::assertTrue(TicketInterventions::mayRestart($this->reload($ticket)));
-  }
-
-  /**
-   * Confirming restart stamps who and when, releases the ticket, keeps runs.
-   */
-  public function testRestartConfirmReleasesTicket(): void {
-    $ticket = $this->parkedTicket();
-    $this->askRestart();
-    $form = $this->actionForm($ticket);
-    self::assertStringContainsString('can be claimed again on the next cycle. Its failed runs stay in its history.', (string) $form['question']['#slots']['body']['#plain_text']);
-    self::assertNull($this->reload($ticket)->getRestartedAt(), 'The confirmation page writes nothing.');
-
-    $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
-
-    $stored = $this->reload($ticket);
-    self::assertSame($this->container->get('datetime.time')->getRequestTime(), $stored->getRestartedAt());
-    self::assertSame((int) $this->container->get('current_user')->id(), (int) $stored->getRestartedBy()?->id());
-    self::assertFalse(TicketInterventions::mayRestart($stored));
-    self::assertStringContainsString('was restarted', implode(' ', array_map('strval', $this->container->get('messenger')->messagesByType('status'))));
-    $runs = $this->container->get('entity_type.manager')->getStorage('bb_run')->loadByProperties(['ticket_id' => $ticket->id()]);
-    self::assertCount(3, $runs);
-    foreach ($runs as $run) {
-      self::assertInstanceOf(BbRunInterface::class, $run);
-      self::assertSame('failed', $run->getRunState());
-    }
-  }
-
-  /**
-   * A second confirm of a restart that already happened writes nothing.
-   */
-  public function testRestartConfirmIsRejectedWhenNoLongerParked(): void {
-    $ticket = $this->parkedTicket();
-    $this->askRestart();
-    $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
-    $first = $this->reload($ticket)->getRestartedAt();
-    $this->reload($ticket)->set('restarted_at', $first - 10)->save();
-    $this->createRun($ticket, 'running');
-
-    $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
-
-    self::assertSame($first - 10, $this->reload($ticket)->getRestartedAt());
-    $form = $this->actionForm($ticket);
-    self::assertStringContainsString('no longer available', (string) $form['question']['#slots']['body']['#plain_text']);
-    self::assertArrayNotHasKey('bb_confirm', $form['actions']);
-  }
-
-  /**
-   * An account without update access sees no restart and restarts nothing.
-   */
-  public function testRestartHiddenForViewer(): void {
-    $ticket = $this->parkedTicket();
-    $viewer = $this->createUser();
-    self::assertNotFalse($viewer);
-    $this->setCurrentUser($viewer);
-
-    self::assertFalse(TicketInterventions::mayRestart($this->reload($ticket)));
-    $this->askRestart();
-    self::assertArrayNotHasKey('bb_confirm', $this->actionForm($ticket)['actions']);
-    $this->submit('action', $ticket, $this->postedState('bb_confirm', NULL));
-    self::assertNull($this->reload($ticket)->getRestartedAt());
-  }
-
-  /**
    * Settings carry title, description, env vars and the two relation fields.
    *
    * BB-664 added `parent_id` and `blocked_by`: editable relations an
@@ -585,24 +513,6 @@ final class TicketActionFormTest extends KernelTestBase {
       TicketInterventions::FREEZE_PARAMETER,
       $frozen ? '1' : '0',
     );
-  }
-
-  /**
-   * Puts the restart key on the request, as the Restart ticket link does.
-   */
-  private function askRestart(): void {
-    $this->container->get('request_stack')->getCurrentRequest()->query->set(TicketInterventions::RESTART_PARAMETER, '1');
-  }
-
-  /**
-   * A working ticket whose three runs just failed, so the breaker parks it.
-   */
-  private function parkedTicket(): BbTicketInterface {
-    $ticket = $this->ticket('bb_work', 'working');
-    for ($i = 0; $i < 3; $i++) {
-      $this->createRun($ticket, 'failed');
-    }
-    return $this->reload($ticket);
   }
 
   /**

@@ -21,7 +21,6 @@ final class TicketInspectorRows extends InspectorRows {
    */
   public const array FIELDS = [
     'stall_reason' => 'Stall',
-    'restarted_at' => 'Restarted',
     'assignee_user_id' => 'Assignee',
     'reviewers' => 'Reviewers',
     'conductor_id' => 'Conductor',
@@ -61,7 +60,7 @@ final class TicketInspectorRows extends InspectorRows {
    * Builds the rail's `items` array.
    *
    * @return array<string, array<string, mixed>>
-   *   Twenty-one `list` items, in the order the scene fixes.
+   *   Twenty `list` items, in the order the scene fixes.
    */
   public function build(BbTicketInterface $ticket): array {
     return $this->buildRows($ticket, self::FIELDS);
@@ -89,7 +88,6 @@ final class TicketInspectorRows extends InspectorRows {
       'time_estimate', 'time_spent' => $this->duration($entity, $field),
       'branch_name', 'base_branch' => $this->mono((string) $entity->get($field)->value),
       'stall_reason' => $this->stall($entity),
-      'restarted_at' => $this->restarted($entity),
       default => $this->text($this->labelsOf($entity, $field)),
     };
     return $this->row($label, $value);
@@ -123,7 +121,6 @@ final class TicketInspectorRows extends InspectorRows {
   public function propertiesBlock(array $rows, string $heading = 'Properties'): array {
     $fields = [
       'stall_reason',
-      'restarted_at',
       'assignee_user_id',
       'reviewers',
       'conductor_id',
@@ -140,7 +137,7 @@ final class TicketInspectorRows extends InspectorRows {
       if (!isset($rows[$field])) {
         continue;
       }
-      if (in_array($field, ['stall_reason', 'restarted_at'], TRUE) && $this->isEmpty($rows[$field])) {
+      if ($field === 'stall_reason' && $this->isEmpty($rows[$field])) {
         continue;
       }
       $items[$field] = $rows[$field];
@@ -331,22 +328,6 @@ final class TicketInspectorRows extends InspectorRows {
       $reason,
       $ticket->getFrozenAt(),
     );
-  }
-
-  /**
-   * Who last restarted the ticket and when, or the faint dash if never.
-   *
-   * @return array<string, mixed>
-   *   The value cell.
-   */
-  private function restarted(BbTicketInterface $ticket): array {
-    $at = $ticket->getRestartedAt();
-    if ($at === NULL) {
-      return $this->dash();
-    }
-    $by = $ticket->getRestartedBy();
-    $when = $this->date->label($at);
-    return $this->text($by === NULL || $by->isAnonymous() ? $when : $by->getDisplayName() . ' · ' . $when);
   }
 
 }
