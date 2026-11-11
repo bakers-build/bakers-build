@@ -320,7 +320,8 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
       // my_work has no Team filter (the list is not team-scoped, and Team is
       // on the full listing) and no Assignee filter (the current-user
       // predicate fixes it). page_1 exposes both through the same picker.
-      $pickers = $display_id === 'page_1' ? 10 : 8;
+      // Both offer the Parent picker.
+      $pickers = $display_id === 'page_1' ? 11 : 9;
       self::assertSame(
         $pickers,
         substr_count($html, 'data-option-picker-trigger'),

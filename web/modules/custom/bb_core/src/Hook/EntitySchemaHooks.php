@@ -341,6 +341,15 @@ final class EntitySchemaHooks {
         'filter' => ['id' => 'bb_closed_rows'],
       ];
     }
+    if (isset($table['ticket_id'])) {
+      $table['bb_has_children'] = [
+        'title' => new TranslatableMarkup('Has sub-tickets'),
+        'help' => new TranslatableMarkup('Narrows the list to the tickets
+          with at least one sub-ticket.'),
+        'real field' => 'ticket_id',
+        'filter' => ['id' => 'bb_has_children'],
+      ];
+    }
     if (isset($table['search_api_fulltext'], $table['origin_ref'])) {
       $table['bb_ticket_search'] = [
         'title' => new TranslatableMarkup('Ticket search'),

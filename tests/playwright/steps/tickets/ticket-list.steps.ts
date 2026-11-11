@@ -508,24 +508,31 @@ When('I click the {string} action', async ({ page }, label: string) => {
 /**
  * Types into a searchable facet's filter box, opening the panel first.
  */
+async function typeInFacetSearch(page: Page, query: string, facet: string): Promise<void> {
+  const target = active(page);
+  await target.waitForFunction(
+    () => !document.querySelector('.htmx-request'),
+    null,
+    { timeout: 20000 },
+  );
+  const trigger = facetTrigger(target, facet);
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true') {
+    await trigger.click();
+  }
+  const panelId = await trigger.getAttribute('aria-controls');
+  const search = target.locator(`#${panelId} [data-option-picker-search]`);
+  await search.waitFor({ state: 'visible' });
+  await search.fill(query);
+}
+
 When(
   'I type {string} in the {string} facet search',
-  async ({ page }, query: string, facet: string) => {
-    const target = active(page);
-    await target.waitForFunction(
-      () => !document.querySelector('.htmx-request'),
-      null,
-      { timeout: 20000 },
-    );
-    const trigger = facetTrigger(target, facet);
-    if ((await trigger.getAttribute('aria-expanded')) !== 'true') {
-      await trigger.click();
-    }
-    const panelId = await trigger.getAttribute('aria-controls');
-    const search = target.locator(`#${panelId} [data-option-picker-search]`);
-    await search.waitFor({ state: 'visible' });
-    await search.fill(query);
-  },
+  async ({ page }, query: string, facet: string) => typeInFacetSearch(page, query, facet),
+);
+
+When(
+  'I type the key of {string} in the {string} facet search',
+  async ({ page }, title: string, facet: string) => typeInFacetSearch(page, familyKey(title), facet),
 );
 
 /**
@@ -1187,6 +1194,119 @@ After(async () => {
     ...Array.from({ length: count }, (_, i) => `foreach ($ts->loadByProperties(["title" => "${name} ${i + 1}"]) as $t) { $t->set("assignee_user_id", NULL)->save(); }`),
   ].join(' '));
   Drush.exec('search-api:index bb_tickets');
+});
+
+/** The ticket family this scenario assigned to the reader: title => identifier. */
+let familyFixture: Record<string, string> | null = null;
+
+/** The identifier of one ticket of the family fixture. */
+function familyKey(title: string): string {
+  const key = familyFixture?.[title];
+  if (!key) {
+    throw new Error(`"${title}" is not a ticket of the family fixture.`);
+  }
+  return key;
+}
+
+/**
+ * "<name> parent" with the sub-tickets "<name> child 1" and "<name> child 2",
+ * and "<name> grandchild" under child 1: open and assigned to the reader in
+ * project BB, so My work, the project tab and team "Design Crew" list them.
+ * Create-if-absent by title and re-set on every run, like the tally fixture.
+ */
+Given('the ticket family {string} is assigned to me', async ({}, name: string) => {
+  if (listing.uid === null) {
+    throw new Error('No account was signed in, so there is nobody to assign these tickets to.');
+  }
+  const n = safe(name);
+  // Parents first, so every child points at an id that already exists.
+  const tree: Array<[string, string | null]> = [
+    [`${n} parent`, null],
+    [`${n} child 1`, `${n} parent`],
+    [`${n} child 2`, `${n} parent`],
+    [`${n} grandchild`, `${n} child 1`],
+  ];
+  const result = php([
+    '$etm = \\Drupal::entityTypeManager();',
+    '$ts = $etm->getStorage("bb_ticket");',
+    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
+    'if (!$p) { print "NO_PROJECT"; return; }',
+    '$ids = []; $keys = [];',
+    ...tree.map(([title, parent]) => [
+      `$t = current($ts->loadByProperties(["title" => "${title}"]))`,
+      `?: $ts->create(["project_id" => $p->id(), "title" => "${title}", "workflow" => "bb_work"]);`,
+      `$t->set("state", "working")->set("assignee_user_id", ${listing.uid})`,
+      `->set("parent_id", ${parent === null ? 'NULL' : `$ids["${parent}"]`})->save();`,
+      `$ids["${title}"] = $t->id(); $keys["${title}"] = $t->getIdentifier();`,
+    ].join(' ')),
+    'print json_encode($keys);',
+  ].join(' '));
+  if (!result.startsWith('{')) {
+    throw new Error(`The "${name}" family did not settle: "${result}".`);
+  }
+  familyFixture = JSON.parse(result) as Record<string, string>;
+  Drush.exec('search-api:index bb_tickets');
+});
+
+/**
+ * Deletes the family after success or failure. Left behind, four fresh open
+ * tickets in project BB would push other scenarios' fixtures off the first
+ * page and into the State counts they measure.
+ */
+After(async () => {
+  if (familyFixture === null) {
+    return;
+  }
+  const titles = Object.keys(familyFixture).map((title) => `"${title}"`).join(', ');
+  familyFixture = null;
+  php([
+    '$ts = \\Drupal::entityTypeManager()->getStorage("bb_ticket");',
+    `$ids = $ts->getQuery()->accessCheck(FALSE)->condition("title", [${titles}], "IN")->execute();`,
+    '$ts->delete($ts->loadMultiple($ids));',
+  ].join(' '));
+  Drush.exec('search-api:index bb_tickets');
+});
+
+/** Reopens the current list with `parent=<the family ticket's key>`. */
+When('I open this list for the parent {string}', async ({ page }, title: string) => {
+  const target = active(page);
+  const url = new URL(target.url());
+  url.searchParams.set('parent', familyKey(title));
+  const response = await target.goto(url.toString());
+  expect(response?.status() ?? 0, `${url} did not render`).toBeLessThan(400);
+});
+
+Then(
+  'the address carries the key of {string} as {string}',
+  async ({ page }, title: string, parameter: string) => {
+    const key = familyKey(title);
+    await expect.poll(() => new URL(active(page).url()).searchParams.get(parameter)).toBe(key);
+  },
+);
+
+Then('the address does not carry the key of {string}', async ({ page }, title: string) => {
+  const key = familyKey(title);
+  expect([...new URL(active(page).url()).searchParams.values()]).not.toContain(key);
+});
+
+/**
+ * One chip reads "<field> is <KEY> · <title>". Read off the chip itself: the
+ * project and team tabs render the chips without the outer strip wrapper.
+ */
+Then(
+  'the active filters read the key and title of {string} as {string}',
+  async ({ page }, title: string, field: string) => {
+    const chips = active(page).locator(`${CONTENT_ISLAND} [data-facet]`);
+    await expect(chips.filter({ hasText: `${field} is ${familyKey(title)} · ${title}` })).toHaveCount(1);
+  },
+);
+
+/** Ticks one checkbox of the filters aside; auto-submit applies it. */
+When('I switch on {string}', async ({ page }, label: string) => {
+  const target = active(page);
+  const before = await target.evaluate(() => window.location.search);
+  await target.locator(`${CONTENT_ISLAND} aside`).getByRole('checkbox', { name: label }).check();
+  await target.waitForFunction((previous) => window.location.search !== previous, before, { timeout: 20000 });
 });
 
 /**

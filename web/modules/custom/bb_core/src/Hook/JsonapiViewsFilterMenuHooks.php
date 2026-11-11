@@ -12,6 +12,7 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\entity\QueryAccess\QueryAccessHandlerInterface;
 use Drupal\bb_core\EventSubscriber\WorkspaceReadScopeSubscriber;
 use Drupal\bb_core\Plugin\views\filter\BbClosedRows;
+use Drupal\bb_core\Plugin\views\filter\BbHasChildren;
 use Drupal\jsonapi\JsonApiFilter;
 use Drupal\views\Plugin\views\filter\FilterPluginBase;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -72,7 +73,9 @@ final class JsonapiViewsFilterMenuHooks {
    * its own segmented control in place of the default widget and must never
    * show as a removable chip beside the other facets — the control is its own
    * object, not one of the chips it stands beside. Blanking the value keeps
-   * `views_filters_summary` from building a chip for it at all.
+   * `views_filters_summary` from building a chip for it at all. The
+   * "Has sub-tickets" checkbox states itself the same way, and as a chip it
+   * would read "Has sub-tickets is 1".
    *
    * @param array<string, mixed> $info
    *   The summary info to alter.
@@ -83,7 +86,7 @@ final class JsonapiViewsFilterMenuHooks {
   public function viewsFiltersSummaryInfoAlter(array &$info, FilterPluginBase $filter): void {
     $is_closed_rows = $filter->getPluginId() === 'bb_closed_rows'
       || $filter instanceof BbClosedRows;
-    if ($is_closed_rows) {
+    if ($is_closed_rows || $filter instanceof BbHasChildren) {
       $info['value'] = [];
     }
   }

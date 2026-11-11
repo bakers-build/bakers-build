@@ -61,6 +61,12 @@ plugin.plugin_configuration.facets_processor.bb_run_state_label:
   type: mapping
   label: 'bakers.build run state label'
 
+# The parent label processor of the `parent` facet; same reason, same empty
+# mapping.
+plugin.plugin_configuration.facets_processor.bb_ticket_parent_label:
+  type: mapping
+  label: 'bakers.build ticket parent label'
+
 views.argument_validator.bb_project_reference:
   type: views.argument_validator_entity
   label: 'bakers.build project reference validation'

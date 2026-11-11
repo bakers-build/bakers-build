@@ -768,6 +768,28 @@ display:
                 icon: ''
                 searchable: false
                 open_states: true
+              facets_parent:
+                plugin_id: bb_option_picker
+                clear_label: 'Any parent'
+                icon: ''
+                searchable: true
+              bb_has_children:
+                plugin_id: bef_single
+                advanced:
+                  collapsible: false
+                  collapsible_disable_automatic_open: false
+                  open_by_default: false
+                  is_secondary: false
+                  placeholder_text: ''
+                  rewrite:
+                    filter_rewrite_values: ''
+                    filter_rewrite_values_key: false
+                  sort_options: false
+                  sort_options_method: alphabetical_asc
+                  sort_options_natural: true
+                  hide_label: false
+                  field_classes: ''
+                treat_as_false: false
               facets_workflow:
                 plugin_id: bb_option_picker
                 clear_label: 'Any workflow'
@@ -1441,6 +1463,99 @@ display:
                 weights:
                   build: 5
                 settings: {  }
+        facets_parent:
+          id: facets_parent
+          table: search_api_index_bb_tickets
+          field: facets_parent_identifier
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Parent
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: parent
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: true
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_ticket_parent_label:
+                processor_id: bb_ticket_parent_label
+                weights:
+                  build: 5
+                settings: {  }
+        bb_has_children:
+          id: bb_has_children
+          table: search_api_index_bb_tickets
+          field: bb_has_children
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_has_children
+          operator: '='
+          value: '0'
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: 'Has sub-tickets'
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: has_children
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
         facets_workflow:
           id: facets_workflow
           table: search_api_index_bb_tickets
@@ -1907,6 +2022,99 @@ display:
                 weights:
                   build: 5
                 settings: {  }
+        facets_parent:
+          id: facets_parent
+          table: search_api_index_bb_tickets
+          field: facets_parent_identifier
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Parent
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: parent
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: true
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_ticket_parent_label:
+                processor_id: bb_ticket_parent_label
+                weights:
+                  build: 5
+                settings: {  }
+        bb_has_children:
+          id: bb_has_children
+          table: search_api_index_bb_tickets
+          field: bb_has_children
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_has_children
+          operator: '='
+          value: '0'
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: 'Has sub-tickets'
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: has_children
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
         facets_workflow:
           id: facets_workflow
           table: search_api_index_bb_tickets
@@ -2634,6 +2842,99 @@ display:
                 weights:
                   build: 5
                 settings: {  }
+        facets_parent:
+          id: facets_parent
+          table: search_api_index_bb_tickets
+          field: facets_parent_identifier
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Parent
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: parent
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: true
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_ticket_parent_label:
+                processor_id: bb_ticket_parent_label
+                weights:
+                  build: 5
+                settings: {  }
+        bb_has_children:
+          id: bb_has_children
+          table: search_api_index_bb_tickets
+          field: bb_has_children
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_has_children
+          operator: '='
+          value: '0'
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: 'Has sub-tickets'
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: has_children
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
         facets_workflow:
           id: facets_workflow
           table: search_api_index_bb_tickets
@@ -3508,6 +3809,99 @@ display:
                 weights:
                   build: 5
                 settings: {  }
+        facets_parent:
+          id: facets_parent
+          table: search_api_index_bb_tickets
+          field: facets_parent_identifier
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Parent
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: parent
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: true
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_ticket_parent_label:
+                processor_id: bb_ticket_parent_label
+                weights:
+                  build: 5
+                settings: {  }
+        bb_has_children:
+          id: bb_has_children
+          table: search_api_index_bb_tickets
+          field: bb_has_children
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_has_children
+          operator: '='
+          value: '0'
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: 'Has sub-tickets'
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: has_children
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
         facets_workflow:
           id: facets_workflow
           table: search_api_index_bb_tickets
