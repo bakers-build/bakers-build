@@ -7,18 +7,22 @@ namespace Drupal\bb_board;
 use Drupal\bb_core\Derive\TicketRunDeriver;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Link\LinkKind;
+use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
 use Drupal\bb_core\Reference\ReferenceCounter;
 use Drupal\bb_core\Time\BbDate;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Session\AccountInterface;
 
 /**
  * Maps ticket entities to board-card props.
  *
  * Column placement is each column display's filters on general index
- * fields. Card status, assignee mark and lease come from
- * {@see TicketRunDeriver}.
+ * fields. Card status and lease come from {@see TicketRunDeriver}; the
+ * assignee mark is the house person mark ({@see PersonIdentityTrait}).
  */
 final class ProjectBoard {
+
+  use PersonIdentityTrait;
 
   public function __construct(
     private readonly TicketRunDeriver $deriver,
@@ -115,7 +119,7 @@ final class ProjectBoard {
    */
   private function card(BbTicketInterface $ticket, string $state, string $display, array $batch): array {
     $id = (int) $ticket->id();
-    $assignee = $this->deriver->assignee($ticket);
+    $assignee = $this->assignee($ticket);
     $priority = $ticket->getPriority();
     $running = $display === 'working' && $this->deriver->derivedStatus($ticket) === 'running';
     try {
@@ -134,7 +138,7 @@ final class ProjectBoard {
       'blocked_hidden' => $batch['blockers'][$id]['hidden'] ?? FALSE,
       'assignee_name' => $assignee['name'],
       'assignee_initials' => $assignee['initials'],
-      'assignee_color' => $this->assigneeTone($assignee['color']),
+      'assignee_color' => $assignee['color'],
       'type' => $ticket->getWorkflow(),
     ];
     $lease = $this->deriver->claimMachine($ticket);
@@ -186,23 +190,25 @@ final class ProjectBoard {
   }
 
   /**
-   * Maps a deriver avatar key onto a `person` colour token.
+   * The assignee's mark, drawn as every person mark in the UI draws it.
    *
-   * TicketRunDeriver uses a–e; `bb_theme:person` and board-card accept the
-   * five semantic tones. Unknown keys fall back to running so SDC validation
-   * does not reject the card.
+   * The filter bar's avatars use the same initials and colour, so one person
+   * has one mark on the Board. Without an assignee the card shows none.
+   *
+   * @return array{name: string, initials: string, color: string}
+   *   Display name, initials and `person` colour key.
    */
-  private function assigneeTone(string $color): string {
-    $mapped = [
-      'a' => 'running',
-      'b' => 'attention',
-      'c' => 'lease',
-      'd' => 'offline',
-      'e' => 'unassigned',
-    ][$color] ?? $color;
-    return in_array($mapped, ['running', 'attention', 'unassigned', 'lease', 'offline'], TRUE)
-      ? $mapped
-      : 'running';
+  private function assignee(BbTicketInterface $ticket): array {
+    $account = $ticket->get('assignee_user_id')->entity;
+    if (!$account instanceof AccountInterface) {
+      return ['name' => '', 'initials' => '', 'color' => 'running'];
+    }
+    $name = (string) $account->getDisplayName();
+    return [
+      'name' => $name,
+      'initials' => $this->personInitials($name),
+      'color' => $this->personColor((int) $account->id()),
+    ];
   }
 
 }
