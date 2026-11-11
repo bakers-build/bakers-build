@@ -222,6 +222,26 @@ final class ProjectCreateActionTest extends KernelTestBase {
   }
 
   /**
+   * A screen reached through htmx hands the trigger none of its transport keys.
+   *
+   * An htmx navigation adds `ajax_page_state[…]` to its GET, and core's asset
+   * resolver reads it as "already loaded": a `destination` carrying it lands
+   * on a page without its libraries. The screen's own query still rides along.
+   */
+  public function testTheTriggerDropsTheTransportKeysOfAnHtmxRequest(): void {
+    $this->asAccountWith(['administer bakers', 'view bb_project', 'create bb_project']);
+
+    $anchor = $this->anchorOf($this->actionMarkup(
+      'keep=me&ajax_page_state[theme]=bb_theme&ajax_page_state[libraries]=system/base&_drupal_ajax=1',
+    ));
+
+    self::assertStringContainsString('data-hx-get="', $anchor);
+    self::assertStringContainsString('%3Fkeep%3Dme', $anchor, 'The screen keeps its own query, encoded.');
+    self::assertStringNotContainsString('ajax_page_state', $anchor);
+    self::assertStringNotContainsString('_drupal_ajax', $anchor);
+  }
+
+  /**
    * The trigger fetches the dialog into the one overlay, declaring no peer.
    *
    * ONE TARGET, NO PEER. Two settled elements is precisely the shape core's
