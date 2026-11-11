@@ -35,7 +35,7 @@ requires shared-setup authorization. Obtain missing scope authorization before s
    out of prompts, arguments and reports; CLI owns private storage. Supply workspace only if
    caller-named; otherwise `bakers ui` uses its picker.
 4. For project/all, follow [project setup](references/project-setup.md) before applying:
-   resolve/create the real project, collect operator hooks, write the phase hints, preserve workflow policy and verify ignores.
+   resolve/create the real project, follow its decision matrix and linked documentation, preserve workflow policy and verify ignores.
 
 ## Apply and verify
 

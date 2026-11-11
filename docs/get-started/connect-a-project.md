@@ -54,8 +54,6 @@ Start with the client, application environment and workflow. Keep existing setti
   { title: 'Configure your workflow', text: 'WORKFLOW.md supplies project rules and checks. Keep the existing recipe, or start with the shipped Matt recipe.', link: '/skills-and-workflows/guide', icon: 'book', meta: 'Understand workflows →' }
 ]" />
 
-Follow [Choose the missing settings](../provision/guide.md#choose-the-missing-settings) for provisioning, plugins, permissions, repository delivery and preview sharing. The agent asks only for missing choices and verifies their saved values.
-
 Return here after any changes. Before starting agents, install every skill the workflow names and review [tools and security](/provision/guide#check-tools-and-access).
 
 <span id="what-changes"></span>

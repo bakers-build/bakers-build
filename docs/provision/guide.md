@@ -34,24 +34,6 @@ Your project must support:
 
 <span id="ownership-and-values"></span>
 
-## Choose the missing settings
-
-The setup follows the guides below. Reuse explicit answers and existing configuration; ask one missing decision at a time and wait for the answer. Installed tooling alone does not select a client or authorize a shared configuration change.
-
-| When | Decision and guide | Where the result belongs |
-|---|---|---|
-| No client has been selected | Ask which [client](../get-started/use-your-client.md) to use; follow its guide for the [executor and worktree](../addons/slots.md). | Project configuration, respecting any machine executor override. |
-| The application needs preparation or cleanup | Ask separately for exact [lifecycle commands](../provision/hooks.md), including whether work is needed before each run. Reuse repository scripts and explain their effects. | The project's `hooks`; an explicitly empty answer means no hook. |
-| Tests or previews need a running environment | Ask for [provisioning profiles](../configuration/project/hooks.md#provision-on-an-agent-s-request), commands and readiness checks. Distinguish on-demand preparation from lifecycle hooks. | `hooks.provision_up` and the corresponding `WORKFLOW.md` phase hints. |
-| Workflow skills or recipes are needed | Check what is installed, then select the required plugins and pinned sources using [project marketplaces](../configuration/project.md#agent-plugins) and [skill installation](../skills-and-workflows/skills.md). | Project `marketplaces`; preserve unrelated registrations. |
-| Permissions are not decided | Explain [execution security](../provision/security/execution.md) and [shared settings](../provision/security/shared-settings.md); ask for the mode and necessary access. | Authorized project/machine settings; verify the effective mode and its source with `bakers agents`. |
-| Agents need repository delivery | Resolve [Forge](../addons/forge.md), its hosting backend, repository, authentication method and merge policy. Sandbox mode alone does not provide delivery tools. | Forge addon in its supported scope; credentials stay private on the conductor's machine. |
-| A preview is needed | Ask whether URLs stay local or are shared publicly. If public, select a [Ports transport](../addons/ports.md) and [services](../addons/ports-services.md), and explain cleanup. | Project service declarations; reuse or authorize machine [tunnel policy and transport](../configuration/machine.md#preview-link-tunnels). `tunnel: true` alone does not configure a transport. |
-
-Use [addon ownership](../addons/configure.md) when writing these settings: harnesses belong to the machine, Essentials and authentication to the connection, and project integrations to the project. Add only the selected integrations and their documented dependencies. Essentials already supplies its constituent plugins. A server adapter such as `remote-drupal` currently belongs to the project and uses the connection's authentication.
-
-`bakers config init` creates or repairs the supported base configuration. Its defaults are not answers to these questions. Read back the result, preserve custom values and reconcile it with the selected client and current documentation. For settings without CLI flags, edit the documented fields directly in the authorized files. If a choice cannot be saved safely, name the field and remaining action; do not report complete setup. Do not copy another repository's commands or addons wholesale.
-
 ## Connect the project's setup
 
 Repository scripts prepare the application. Identify the commands to put in `.bakers/project.config.js`. The next step, [connecting the checkout](/get-started/connect-a-project), applies these choices and verifies the configuration.
