@@ -173,7 +173,7 @@ describe('conductor: a run starts with the project plugins installed', () => {
     });
   });
 
-  it('fails the run start, naming each missing required skill', async () => {
+  it('fails the run start, naming each missing required skill with its source', async () => {
     const worktree = mkdtempSync(join(tmpdir(), 'bakers-plugins-launch-'));
     writeFileSync(
       join(worktree, 'WORKFLOW.md'),
@@ -192,10 +192,14 @@ describe('conductor: a run starts with the project plugins installed', () => {
     });
     expect(executor.started).toHaveLength(0);
     expect(remote.calls.markFailed[0]?.errorLog).toMatch(
-      /missing required skills: testing, bb-recipe-matt/,
+      /missing required skills: bb-recipe-matt \(ticket recipe\)/,
     );
+    // WORKFLOW.md is read by the agent only; its `testing` row is never required.
     expect(entry).toMatchObject({
-      required_skills: { missing: ['testing', 'bb-recipe-matt'] },
+      required_skills: {
+        required: ['bb-recipe-matt'],
+        missing: ['bb-recipe-matt'],
+      },
     });
   });
 

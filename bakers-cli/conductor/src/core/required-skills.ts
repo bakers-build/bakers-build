@@ -1,9 +1,9 @@
 /**
- * The skills a run must be able to load: every skill named in the worktree's
- * `WORKFLOW.md` › `## bb-phase-work`, the ticket's recipe skill
- * `bb-recipe-<recipe>`, and the recipe's `metadata.requires` for the ticket's
- * type. Available are the worktree's own skills and the plugins installed in
- * the run's agent home; the user's own agent home never counts.
+ * The skills a run must be able to load: the ticket's recipe skill
+ * `bb-recipe-<recipe>` and the recipe's `metadata.requires` for the ticket's
+ * type. `WORKFLOW.md` is never read here: only the agent reads it, as prose.
+ * Available are the worktree's own skills and the plugins installed in the
+ * run's agent home; the user's own agent home never counts.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
@@ -116,38 +116,22 @@ function availableSkills(worktree: string, home: string): Map<string, string> {
   return found;
 }
 
-/** The backticked names in the last column of the `## bb-phase-work` table. */
-function workflowSkills(worktree: string): string[] {
-  const section =
-    /^## bb-phase-work\s*$([\s\S]*?)(?=^## |(?![\s\S]))/m.exec(
-      read(join(worktree, 'WORKFLOW.md')),
-    )?.[1] ?? '';
-  return section
-    .split('\n')
-    .filter((line) => line.trim().startsWith('|'))
-    .flatMap((line) => {
-      const cells = line
-        .trim()
-        .replace(/^\||\|$/g, '')
-        .split('|');
-      return [...(cells.at(-1) ?? '').matchAll(/`([^`]+)`/g)].map(
-        (m) => m[1] as string,
-      );
-    });
-}
-
 /**
  * A recipe's `metadata.requires` (space-separated skill names), replaced by
  * `requires-<type>` when the recipe declares one for the ticket's type.
  */
-function recipeRequires(skillFile: string, type: string | undefined): string[] {
+function recipeRequires(
+  skillFile: string,
+  type: string | undefined,
+): { key: string; names: string[] } {
   const lists = new Map<string, string>();
   for (const m of frontmatter(read(skillFile)).matchAll(
     /^\s+requires(?:-([\w-]+))?:\s*"?([^"\n]*)"?\s*$/gm,
   ))
-    lists.set(m[1] ?? 'default', m[2] as string);
-  const list = (type && lists.get(type)) ?? lists.get('default') ?? '';
-  return list.split(/\s+/).filter(Boolean);
+    lists.set(m[1] ? `requires-${m[1]}` : 'requires', m[2] as string);
+  const key =
+    type && lists.has(`requires-${type}`) ? `requires-${type}` : 'requires';
+  return { key, names: (lists.get(key) ?? '').split(/\s+/).filter(Boolean) };
 }
 
 function lookup(found: Map<string, string>, name: string): string | undefined {
@@ -161,18 +145,23 @@ export function checkRequiredSkills(
   worktree: string,
   home: string,
   ticket: { type?: string; recipe?: string },
-): { required: string[]; missing: string[] } {
+): { required: string[]; missing: string[]; sources: Record<string, string> } {
   const found = availableSkills(worktree, home);
-  const required = workflowSkills(worktree);
+  // Where each name was required, for the failure message; the first source wins.
+  const sources: Record<string, string> = {};
   if (ticket.recipe) {
     const recipe = `bb-recipe-${ticket.recipe}`;
-    required.push(recipe);
+    sources[recipe] = 'ticket recipe';
     const path = lookup(found, recipe);
-    if (path) required.push(...recipeRequires(path, ticket.type));
+    if (path) {
+      const { key, names } = recipeRequires(path, ticket.type);
+      for (const name of names) sources[name] ??= `${recipe} metadata.${key}`;
+    }
   }
-  const unique = [...new Set(required)];
+  const required = Object.keys(sources);
   return {
-    required: unique,
-    missing: unique.filter((name) => !lookup(found, name)),
+    required,
+    missing: required.filter((name) => !lookup(found, name)),
+    sources,
   };
 }

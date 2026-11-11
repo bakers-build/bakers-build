@@ -1527,7 +1527,9 @@ export class Conductor {
     const skills = checkRequiredSkills(worktree, home, t);
     entry.required_skills = skills;
     if (skills.missing.length > 0) {
-      entry.failure = `missing required skills: ${skills.missing.join(', ')}`;
+      entry.failure = `missing required skills: ${skills.missing
+        .map((name) => `${name} (${skills.sources[name]})`)
+        .join(', ')}`;
       log();
       throw new Error(`plugins: ${harness}: ${entry.failure}`);
     }
