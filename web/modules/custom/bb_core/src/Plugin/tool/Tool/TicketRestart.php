@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
-use Drupal\bb_core\Ticket\ParkedTicketRelease;
+use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -65,11 +65,11 @@ final class TicketRestart extends ToolBase {
     if (!$ticket->access('update', $this->currentUser)) {
       throw new \InvalidArgumentException(sprintf('You may not restart ticket %s.', $input));
     }
-    $release = \Drupal::service(ParkedTicketRelease::class);
-    if (!$release->isParked($ticket)) {
+    // Update access holds here, so only parking can still refuse.
+    if (!TicketInterventions::mayRestart($ticket)) {
       throw new \InvalidArgumentException(sprintf('Conflict: ticket %s is not parked after repeated failed runs; nothing was restarted.', $input));
     }
-    $release->release($ticket);
+    TicketInterventions::restart($ticket);
     $this->assertValid($ticket);
     $ticket->save();
     return ExecutableResult::success(new TranslatableMarkup('Ticket restarted.'), [

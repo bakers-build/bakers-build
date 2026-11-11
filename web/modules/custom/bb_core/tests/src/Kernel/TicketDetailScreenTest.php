@@ -279,6 +279,49 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
+   * The Properties footer offers Restart ticket only while it is parked.
+   */
+  public function testInterventionsOfferRestartOnlyWhileParked(): void {
+    self::assertArrayNotHasKey('restart', $this->interventions());
+    $etm = $this->container->get('entity_type.manager');
+    $owner = $etm->getStorage('user')->create(['name' => 'conductor-owner']);
+    $owner->save();
+    $conductor = $etm->getStorage('bb_conductor')->create([
+      'conductor_id' => 'srv-restart',
+      'label' => 'srv',
+      'owner_user_id' => $owner->id(),
+      'status' => 'online',
+      'project_id' => $this->ticket->get('project_id')->target_id,
+    ]);
+    $conductor->save();
+    for ($i = 0; $i < 3; $i++) {
+      $etm->getStorage('bb_run')->create([
+        'ticket_id' => $this->ticket->id(),
+        'conductor_id' => $conductor->id(),
+        'state' => 'failed',
+      ])->save();
+    }
+
+    $build = $this->interventions();
+    self::assertSame('Restart ticket', $build['restart']['#props']['label']);
+    self::assertSame('restart', array_key_first($build));
+    self::assertContains('bb_run_list', $build['#cache']['tags']);
+  }
+
+  /**
+   * The Properties footer's build for the ticket.
+   *
+   * @return array<string, mixed>
+   *   The interventions source's render array.
+   */
+  private function interventions(): array {
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_ticket_interventions', []);
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    $source->setContextValue('entity', $this->container->get('entity_type.manager')->getStorage('bb_ticket')->loadUnchanged($this->ticket->id()));
+    return $source->getPropValue();
+  }
+
+  /**
    * A ticket that is not frozen keeps the header cacheable.
    */
   public function testUnfrozenHeaderStaysCacheable(): void {
@@ -729,6 +772,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     self::assertSame(
       [
         'Stall' => 'badge',
+        'Restarted' => 'text',
         'Created by' => 'text',
         'Estimate' => 'text',
         'Spent' => 'text',

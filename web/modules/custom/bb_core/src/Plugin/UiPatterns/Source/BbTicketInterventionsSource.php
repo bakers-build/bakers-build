@@ -15,14 +15,14 @@ use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 
 /**
- * The Properties footer: Freeze, Unfreeze, Cancel ticket, More settings.
+ * The Properties footer: Restart, Freeze, Unfreeze, Cancel ticket, Settings.
  *
  * AI agents drive the workflow; this footer offers only interventions.
  */
 #[Source(
   id: 'bb_ticket_interventions',
   label: new TranslatableMarkup('[bakers.build] Ticket interventions'),
-  description: new TranslatableMarkup('Freeze, unfreeze, cancel ticket and the Settings entry of a ticket.'),
+  description: new TranslatableMarkup('Restart, freeze, unfreeze, cancel ticket and the Settings entry of a ticket.'),
   prop_types: ['slot'],
   context_definitions: [
     'entity' => new EntityContextDefinition('entity:bb_ticket', label: new TranslatableMarkup('Ticket'), required: TRUE),
@@ -38,6 +38,14 @@ final class BbTicketInterventionsSource extends SourcePluginBase {
     $ticket = $this->ticket();
     if ($ticket === NULL) {
       return $build;
+    }
+    if (TicketInterventions::mayRestart($ticket)) {
+      $build['restart'] = $this->dialogButton(
+        (string) $this->t('Restart ticket'),
+        TicketInterventions::restartUrl($ticket, FALSE),
+        TicketInterventions::restartUrl($ticket, TRUE),
+        'neutral',
+      );
     }
     if (TicketInterventions::mayUnfreeze($ticket)) {
       $build['unfreeze'] = $this->dialogButton(
@@ -77,7 +85,8 @@ final class BbTicketInterventionsSource extends SourcePluginBase {
     }
     CacheableMetadata::createFromObject($ticket)
       ->addCacheContexts(['user', 'url.path'])
-      ->addCacheTags(['og_membership_list'])
+      // Parked depends on the ticket's runs.
+      ->addCacheTags(['og_membership_list', 'bb_run_list'])
       ->applyTo($build);
     return $build;
   }
