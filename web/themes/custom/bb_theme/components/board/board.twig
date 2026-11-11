@@ -115,9 +115,13 @@
           {% endif %}
         {% endfor %}
       {% endif %}
-      {#- The cover reaches back over the gap and past the shadow of the hairline. -#}
-      <span class="sticky right-0 z-20 w-px shrink-0 self-stretch pointer-events-none bg-border after:absolute after:inset-y-0 after:left-full after:w-4 after:shadow-shadow-2 after:shadow-text-faint/40" aria-hidden="true"></span>
-      <span class="relative z-30 w-12 -ml-8 shrink-0 self-stretch pointer-events-none bg-surface" aria-hidden="true"></span>
+      {#- The row ends 16 px after the last column, in the gutter the region
+          reaches into, so the last column ends where the toolbar does. The
+          hairline sits 4 px inside that gap and its 4 px pseudo element ends on
+          the row's edge, so neither widens the scroll range; the cover spans
+          the gap and hides both at the end. -#}
+      <span class="sticky right-0 z-20 w-px -ml-1 -mr-px shrink-0 self-stretch pointer-events-none bg-border after:absolute after:inset-y-0 after:left-full after:-ml-px after:w-1 after:shadow-shadow-2 after:shadow-text-faint/80" aria-hidden="true"></span>
+      <span class="relative z-30 w-group -ml-7 shrink-0 self-stretch pointer-events-none bg-surface" aria-hidden="true"></span>
     </div>
   </div>
   {% if conductors is not empty %}<div class="min-w-0">{{ conductors }}</div>{% endif %}
