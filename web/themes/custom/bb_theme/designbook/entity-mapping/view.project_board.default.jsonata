@@ -21,21 +21,21 @@
     "sg": { "name": "Sven Gruber", "initials": "SG", "color": "running" }
   };
   $tickets := [
-    { "id": "BB-281", "title": "Runs dispatch to the wrong agent: three conductors with divergent agent configs", "phase": "na", "state": "plan", "prio": "p1" },
-    { "id": "BB-307", "title": "Expired runs are never closed: 1333 stand open because no path closes them", "phase": "na", "state": "plan", "prio": "p1", "runs": 4, "last": "failed", "reason": "Last run failed" },
-    { "id": "BB-312", "title": "Billing account picker shows archived accounts", "phase": "na", "state": "qualification", "prio": "p2", "reason": "Needs info" },
-    { "id": "BB-402", "title": "Board: persist the Details toggle per user", "phase": "intake", "state": "qualification", "prio": "p1", "who": "cw", "blocked": ["BB-348"] },
-    { "id": "BB-405", "title": "Retire the Gin-era ticket components", "phase": "intake", "state": "qualification", "prio": "p2", "who": "cw", "hidden": true },
-    { "id": "BB-398", "title": "Conductor cannot reach the repository after the team move", "phase": "intake", "state": "qualification", "prio": "p1", "runs": 1, "last": "cancelled", "reason": "Conductor has no access" },
-    { "id": "BB-393", "title": "Conductor reap leaks worktree DDEV environments", "phase": "working", "state": "working", "prio": "p1", "who": "cw", "runs": 6, "last": "running", "live": true },
-    { "id": "BB-365", "title": "Deployment tickets ignore every project whose key is not bakers.build", "phase": "working", "state": "working", "prio": "p1", "who": "sg", "runs": 2, "last": "running", "live": true },
-    { "id": "BB-348", "title": "Ticket detail drops the handoff stream on reload", "phase": "working", "state": "plan", "prio": "p2", "who": "cw", "runs": 1, "last": "expired", "reason": "Last run expired" },
-    { "id": "BB-390", "title": "Import connector stalls on the staging data", "phase": "working", "state": "working", "prio": "p2", "who": "sg", "runs": 3, "last": "failed", "reason": "Technical problem" },
-    { "id": "BB-344", "title": "Settings form loses the repository branch", "phase": "working", "state": "working", "prio": "p3", "who": "sg", "runs": 2, "last": "done", "reason": "Idle 4 days" },
-    { "id": "BB-371", "title": "Show the source ticket in the Related pane", "phase": "done", "state": "done", "prio": "p1", "who": "cw", "closed": 2 },
-    { "id": "BB-366", "title": "Close expired runs from the reaper", "phase": "done", "state": "cancelled", "prio": "p1", "closed": 3 },
-    { "id": "BB-350", "title": "Seed the onboarding wizard with a first project", "phase": "done", "state": "done", "prio": "p2", "who": "sg", "closed": 5 },
-    { "id": "BB-301", "title": "Move the board summary into the page header", "phase": "done", "state": "done", "prio": "p3", "who": "cw", "closed": 20 }
+    { "id": "BB-281", "type": "bug", "title": "Runs dispatch to the wrong agent: three conductors with divergent agent configs", "phase": "na", "state": "plan", "prio": "p1" },
+    { "id": "BB-307", "type": "bug", "title": "Expired runs are never closed: 1333 stand open because no path closes them", "phase": "na", "state": "plan", "prio": "p1", "runs": 4, "last": "failed", "reason": "Last run failed" },
+    { "id": "BB-312", "type": "bug", "title": "Billing account picker shows archived accounts", "phase": "na", "state": "qualification", "prio": "p2", "reason": "Needs info" },
+    { "id": "BB-402", "type": "feature", "title": "Board: persist the Details toggle per user", "phase": "intake", "state": "qualification", "prio": "p1", "who": "cw", "blocked": ["BB-348"] },
+    { "id": "BB-405", "type": "chore", "title": "Retire the Gin-era ticket components", "phase": "intake", "state": "qualification", "prio": "p2", "who": "cw", "hidden": true },
+    { "id": "BB-398", "type": "bug", "title": "Conductor cannot reach the repository after the team move", "phase": "intake", "state": "qualification", "prio": "p1", "runs": 1, "last": "cancelled", "reason": "Conductor has no access" },
+    { "id": "BB-393", "type": "bug", "title": "Conductor reap leaks worktree DDEV environments", "phase": "working", "state": "working", "prio": "p1", "who": "cw", "runs": 6, "last": "running", "live": true },
+    { "id": "BB-365", "type": "bug", "title": "Deployment tickets ignore every project whose key is not bakers.build", "phase": "working", "state": "working", "prio": "p1", "who": "sg", "runs": 2, "last": "running", "live": true },
+    { "id": "BB-348", "type": "bug", "title": "Ticket detail drops the handoff stream on reload", "phase": "working", "state": "plan", "prio": "p2", "who": "cw", "runs": 1, "last": "expired", "reason": "Last run expired" },
+    { "id": "BB-390", "type": "bug", "title": "Import connector stalls on the staging data", "phase": "working", "state": "working", "prio": "p2", "who": "sg", "runs": 3, "last": "failed", "reason": "Technical problem" },
+    { "id": "BB-344", "type": "bug", "title": "Settings form loses the repository branch", "phase": "working", "state": "working", "prio": "p3", "who": "sg", "runs": 2, "last": "done", "reason": "Idle 4 days" },
+    { "id": "BB-371", "type": "feature", "title": "Show the source ticket in the Related pane", "phase": "done", "state": "done", "prio": "p1", "who": "cw", "closed": 2 },
+    { "id": "BB-366", "type": "chore", "title": "Close expired runs from the reaper", "phase": "done", "state": "cancelled", "prio": "p1", "closed": 3 },
+    { "id": "BB-350", "type": "feature", "title": "Seed the onboarding wizard with a first project", "phase": "done", "state": "done", "prio": "p2", "who": "sg", "closed": 5 },
+    { "id": "BB-301", "type": "feature", "title": "Move the board summary into the page header", "phase": "done", "state": "done", "prio": "p3", "who": "cw", "closed": 20 }
   ];
   $url := "/?path=/story/designbook-sections-tickets-scenes--ticket-detail";
   $card := function ($t) {(
@@ -43,6 +43,7 @@
     {
       "identifier": $t.id,
       "title": $t.title,
+      "type": "bb_" & $t.type,
       "url": $url,
       "state": $t.state,
       "status": $t.live ? "running" : "idle",

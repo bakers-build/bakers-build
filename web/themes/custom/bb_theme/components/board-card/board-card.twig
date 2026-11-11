@@ -51,13 +51,14 @@
     <div class="relative z-20 flex items-center gap-inline-xs mt-inline">
       {% if mr_url %}{{ include('bb_theme:text', {text: mr_label|default('MR'), href: mr_url, as: 'span', size: 'meta'}, with_context = false) }}{% endif %}
       {% if done_label %}<span class="text-meta text-text-light">{{ 'Done'|t }} {{ include('bb_theme:time', {label: done_label, datetime: done_datetime|default(''), title: done_title|default('')}, with_context = false) }}</span>{% endif %}
+      <span class="flex-1"></span>
       {% if assignee_initials %}{{ include('bb_theme:person', {variant: 'compact', display_name: '', initials: assignee_initials, color: assignee_color|default('running'), attributes: create_attribute({role: 'img', 'aria-label': assignee_name|default(assignee_initials), title: assignee_name|default(assignee_initials)})}, with_context = false) }}{% endif %}
     </div>
   {% elseif lease or state or assignee_initials %}
     <div class="relative z-20 flex items-center gap-inline-xs mt-inline">
       {% if lease %}{{ include('bb_theme:badge', {label: lease, tone: 'lease', mono: true, icon: 'lock'}, with_context = false) }}{% endif %}
-      <span class="flex-1"></span>
       {% if state %}{{ include('bb_theme:badge', {label: state, tone: status_tone[status]|default('neutral'), dot: true}, with_context = false) }}{% endif %}
+      <span class="flex-1"></span>
       {% if assignee_initials %}{{ include('bb_theme:person', {variant: 'compact', display_name: '', initials: assignee_initials, color: assignee_color|default('running'), attributes: create_attribute({role: 'img', 'aria-label': assignee_name|default(assignee_initials), title: assignee_name|default(assignee_initials)})}, with_context = false) }}{% endif %}
     </div>
   {% endif %}
