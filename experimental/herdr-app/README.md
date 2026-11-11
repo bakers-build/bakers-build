@@ -4,8 +4,8 @@ A proof of concept: a project's tickets and one ticket at a time inside the [Her
 
 The PoC is one Herdr mod, `bakers`, a layout of its own and a copy of Herdr's tab bar with **Ticket** and **Tickets** next to Files and Changes. The mod has four views:
 
-- **Tickets** (`view: "board"`): a board in its own tab. "Needs you" comes first: frozen tickets labelled **Question** or **technical problem**, the label protocol the PM bot uses. Then one column per open workflow state (qualification, plan, working, review, then any other open state). Each card shows the ticket's identifier, title, a reason (the label, "Frozen", or the newest activity message such as `working → review`) and its age, plus "Running here" when one of this machine's herdr-core terminals runs it. A filter box, the project's conductors with their status, and a refresh every 60 s.
-- **Ticket** (`view: "ticket"`): Herdr's right panel, beside Files and Changes, with the ticket last opened; **Ticket** in the tab bar shows or hides it. Title, state, type, recipe, the machine its run is on, branch, what needs a person (the question, or the newest comment), tabs Summary, Plan, Runs and Activity, and its links. **Cancel run** (while a run is claimed or running) and **Freeze**/**Unfreeze** open the confirm view.
+- **Tickets** (`view: "board"`): a board in its own tab. "Needs you" comes first: frozen tickets labelled **Question** or **technical problem**, the label protocol the PM bot uses. Then one column per open workflow state (qualification, plan, working, review, then any other open state). Each card shows the ticket's identifier, title, a reason (the label, "Frozen", or the newest activity message such as `working → review`) and its age, and in the same place on every card the agent of its active run (for example `Claude Code · working`, `needs you` or `idle`, in Claude Code's own colors for the theme's brightness) or `No active run`. The status is Herdr's live one when Herdr shows the run's terminal, else the run's state from bakers; no tool lists a project's runs, so each refresh asks every open ticket for its own. A filter box, the project's conductors with their status, and a refresh every 60 s.
+- **Ticket** (`view: "ticket"`): Herdr's right panel, beside Files and Changes, with the ticket last opened; **Ticket** in the tab bar shows or hides it. Title, state, type, recipe, branch, the agent working on it (its status, machine and since when, and **Show agent** when Herdr shows its terminal), what needs a person (the question, or the newest comment), tabs Summary, Plan, Runs and Activity, and its links. **Cancel run** (while a run is claimed or running) and **Freeze**/**Unfreeze** open the confirm view.
 - **Confirm** (`view: "confirm"`): a dialog that says what the action does, takes an optional reason for a cancel, and runs it. **Keep running** is the default; Esc keeps too.
 
 - **Rail** (`view: "rail"`): the narrow left rail of the `bakers` layout. Herdr's logo, **Spaces** (shows or hides Herdr's own sidebar, which keeps its updates), and **bakers**, with a dot while a ticket of the chosen project needs you; a click shows the board tab.
@@ -58,7 +58,7 @@ executor: { plugin: '@bakers-build/addon-herdr-core' },
 
 Such a run is a terminal labelled `bakers.ticket=<identifier>` and `bakers.run=<number>`, without a tab. Opening its ticket moves the run's terminal into a tab of its own (`terminal.keep`) and shows the ticket in the right panel beside it. That is for good: **closing that terminal's pane ends the run.** To put it away, use the pane menu's "Send back" (park), never close. The next open selects that tab again.
 
-The board and plain ticket tabs work with any executor.
+The board and the ticket panel work with any executor. With another executor the ticket's Agent section takes the run's state from bakers and says that its terminal runs outside Herdr.
 
 ## What bakers.build would have to add
 
@@ -70,7 +70,7 @@ The first draft's board had more; today's tools do not carry it, so the PoC leav
 - **Run number** (`#412`) for runs that are not a terminal here: `ticket_runs_list` has only the run's UUID.
 - **Slots, load and last heartbeat** of a conductor: not in `conductor_list`.
 - **The ticket's web URL**: no tool returns it, so the PoC has no "Open on web".
-- **Live agent status** (working, blocked) on cards and in Herdr's agents list: the Claude agent's status hook does not run inside bakers runs that use sandbox permissions.
+- **Live agent status** (working, blocked) for every run: Herdr reports it only when the agent's status hook runs, and the Claude agent's hook does not run inside bakers runs that use sandbox permissions. Without it, cards and the Agent section fall back to the run's state (`working` while it runs).
 
 ## Tests
 

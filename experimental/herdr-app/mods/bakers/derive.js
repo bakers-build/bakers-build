@@ -22,7 +22,7 @@ export function terminalLabel(terminal, key) {
 
 export function runTerminal(terminals, identifier) {
   const hit = (terminals ?? []).find((t) => (t.state ?? "live") === "live" && terminalLabel(t, "bakers.ticket") === identifier);
-  return hit ? { address: hit.address, run: terminalLabel(hit, "bakers.run") } : null;
+  return hit ? { address: hit.address, run: terminalLabel(hit, "bakers.run"), status: hit.status, name: hit.program?.name } : null;
 }
 
 export function needsYou(ticket) {
@@ -44,7 +44,7 @@ export function ago(unixSeconds, nowMs) {
 
 export const toUnix = (value) => (typeof value === "number" ? value : Date.parse(value) / 1000);
 
-export function boardColumns(tickets, events, terminals, filter, nowMs) {
+export function boardColumns(tickets, events, terminals, filter, nowMs, runs) {
   const newest = new Map();
   for (const e of events ?? []) {
     if (!newest.has(e.ticket) || e.created > newest.get(e.ticket).created) newest.set(e.ticket, e);
@@ -61,7 +61,7 @@ export function boardColumns(tickets, events, terminals, filter, nowMs) {
       id: t.id, identifier: t.identifier, title: t.title,
       reason: asks ?? (t.frozen ? "Frozen" : event?.message ?? null),
       age: when == null || Number.isNaN(when) ? null : ago(when, nowMs),
-      runningHere: runTerminal(terminals, t.identifier) !== null,
+      agent: agentOf(runTerminal(terminals, t.identifier), runs?.[t.identifier] ?? null, [], nowMs),
     };
     const id = asks ? "needs-you" : t.state;
     if (!columns.has(id)) columns.set(id, { id, label: stateLabel(id), cards: [] });
@@ -127,6 +127,31 @@ export function machineOf(run, conductors, local) {
   if (local) return "This computer";
   const conductor = (conductors ?? []).find((c) => c.uuid === run?.conductor);
   return conductor ? conductorLabel(conductor) : null;
+}
+
+// Who works on the ticket: its terminal in Herdr with the live status, else its active run in bakers.
+// Terminals on this computer have bare ids (t3); others carry their machine's name.
+export function agentOf(terminal, run, conductors, nowMs) {
+  if (!terminal && !run) return null;
+  return {
+    name: terminal?.name ?? run?.agent ?? "Agent",
+    status: terminal?.status ?? (run?.state === "claimed" ? "starting" : "working"),
+    where: machineOf(run, conductors, /^t\d+$/.test(terminal?.address ?? "")),
+    since: run?.started_at ? ago(toUnix(run.started_at), nowMs) : null,
+  };
+}
+
+export const statusLabel = (status) => (status === "blocked" ? "needs you" : status);
+
+// Claude Code's own colors: claude while working, permission when it needs you, inactive when idle, success when done.
+const CLAUDE_COLORS = {
+  dark: { working: "#d77757", blocked: "#b1b9f9", idle: "#999999", done: "#4eba65" },
+  light: { working: "#d77757", blocked: "#5769f7", idle: "#666666", done: "#2c7a39" },
+};
+
+export function claudeColor(status, background) {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(background.slice(i, i + 2), 16));
+  return CLAUDE_COLORS[r + g + b < 384 ? "dark" : "light"][status] ?? null;
 }
 
 // What the confirm dialog says and does for each action on a ticket.

@@ -2,9 +2,9 @@ import { div } from "gpui-kit";
 import { v_flex, h_flex, TextView } from "gpui-base";
 import { exec, theme, terminals, shared, openOverlay } from "herdr";
 import { makeClient } from "./bakers.js";
-import { activeRun, ago, attention, machineOf, newestComment, runTerminal, stateLabel, toUnix } from "./derive.js";
+import { activeRun, agentOf, ago, attention, newestComment, runTerminal, stateLabel, statusLabel, toUnix } from "./derive.js";
 import { openLink, openTicket } from "./open.js";
-import { button, label, mark, mono, pill, tint } from "./ui.js";
+import { button, dot, label, mark, mono, pill, statusColor, tint } from "./ui.js";
 
 const client = makeClient(exec);
 const TABS = ["Summary", "Plan", "Runs", "Activity"];
@@ -57,6 +57,19 @@ export class Ticket {
         .child(button("bakers-read-plan", "Read the plan", t, (cx) => { this.tab = "Plan"; cx.notify(); })));
   }
 
+  agentBlock(agent, local, t) {
+    const block = v_flex().gap(6).child(label("Agent", t));
+    if (!agent) return block.child(div().text_size(12).text_color(t.dim).child("No active run"));
+    return block
+      .child(h_flex().gap(8).items_center()
+        .child(dot(statusColor(agent.status, t)))
+        .child(div().font_semibold().child(agent.name))
+        .child(div().text_size(12).text_color(statusColor(agent.status, t)).child(statusLabel(agent.status)))
+        .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.muted).child([agent.where, agent.since].filter(Boolean).join(" · ")))
+        .when(local, (e) => e.child(button("bakers-show-agent", "Show agent", t, () => openTicket(this.key)))))
+      .when(!local, (e) => e.child(div().text_size(12).text_color(t.dim).child("Its terminal runs outside Herdr.")));
+  }
+
   tabStrip(t) {
     return h_flex().gap(4).border_b(1).border_color(t.border).children(TABS.map((name) => {
       const active = this.tab === name;
@@ -76,7 +89,7 @@ export class Ticket {
     const now = Date.now();
     if (!this.runs.length) return div().text_color(t.dim).child("No runs yet");
     return v_flex().gap(2).children(this.runs.map((r) => h_flex().py(6).gap(10).items_center()
-      .child(div().w(8).h(8).flex_none().rounded(4).bg(RUN_DOT[r.state]?.(t) ?? t.dim))
+      .child(dot(RUN_DOT[r.state]?.(t) ?? t.dim))
       .child(div().flex_1().min_w(0).truncate().child(stateLabel(r.state_at_start ?? r.state)))
       .child(div().text_size(12).text_color(t.muted).child(`${r.agent ?? ""} · ${r.state}`))
       .child(div().w(36).flex_none().text_size(12).text_color(t.dim).child(r.started_at ? ago(toUnix(r.started_at), now) : ""))));
@@ -108,10 +121,10 @@ export class Ticket {
         .on_click(() => openLink(l.uri)).child(l.title || l.uri)));
   }
 
-  footer(t) {
-    const run = activeRun(this.runs), number = runTerminal(terminals(), this.key)?.run, frozen = Boolean(this.data.frozen);
+  footer(run, terminal, t) {
+    const frozen = Boolean(this.data.frozen);
     return h_flex().h(52).flex_none().px(14).gap(8).items_center().border_t(1).border_color(t.border)
-      .when(Boolean(run), (e) => e.child(button("bakers-cancel", number ? `Cancel run #${number}` : "Cancel run", t, () => this.confirm("cancel"), "danger")))
+      .when(Boolean(run), (e) => e.child(button("bakers-cancel", terminal?.run ? `Cancel run #${terminal.run}` : "Cancel run", t, () => this.confirm("cancel"), "danger")))
       .child(button("bakers-freeze", frozen ? "Unfreeze" : "Freeze", t, () => this.confirm(frozen ? "unfreeze" : "freeze")));
   }
 
@@ -130,20 +143,21 @@ export class Ticket {
       .bg(t.background).text_color(t.foreground).text_size(13).child(header);
     const note = this.key ? this.error ?? "Loading…" : "Open a ticket on the board to see it here.";
     if (!d) return root.child(div().p(14).text_color(this.error ? t.ansi1 : t.dim).child(note));
-    const local = Boolean(runTerminal(terminals(), this.key)), card = attention(d, d.comments, Date.now());
-    const tags = [d.type, d.recipe, machineOf(activeRun(this.runs), this.conductors, local), d.frozen && "Frozen"].filter(Boolean);
+    const terminal = runTerminal(terminals(), this.key), local = Boolean(terminal), run = activeRun(this.runs);
+    const card = attention(d, d.comments, Date.now()), tags = [d.type, d.recipe, d.frozen && "Frozen"].filter(Boolean);
     return root
       .child(v_flex().id("bakers-ticket-body").flex_1().min_h(0).overflow_y_scrollbar().p(14).gap(14)
         .child(v_flex().gap(8)
           .child(div().text_size(18).font_semibold().child(d.title ?? ""))
           .child(h_flex().flex_wrap().gap(6).child(pill(d.state ?? "", t, true)).children(tags.map((tag) => pill(tag, t, false))))
           .child(div().font_family(mono()).text_size(12).text_color(t.dim).child(d.branch_name ?? "")))
+        .child(this.agentBlock(agentOf(terminal, run, this.conductors, Date.now()), local, t))
         .when(card.kind === "question", (e) => e.child(this.attentionCard(card, local, t)))
         .when(card.kind === "newest", (e) => e.child(div().text_size(12).text_color(t.muted).child(card.title)))
         .when(Boolean(this.error), (e) => e.child(div().text_size(12).text_color(t.ansi1).child(this.error)))
         .child(this.tabStrip(t))
         .child(this.tabContent(d, t))
         .child(this.links(d.links ?? [], t)))
-      .child(this.footer(t));
+      .child(this.footer(run, terminal, t));
   }
 }

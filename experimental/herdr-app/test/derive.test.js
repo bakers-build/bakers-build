@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   STATE_ORDER, stateLabel, terminalLabel, runTerminal, needsYou, toUnix, ago, boardColumns,
   activeRun, newestComment, attention, openPlan, friendlyError, safeUrl, resolveProject, conductorLabel,
-  needsYouCount, boardSteps, machineOf, CONFIRM,
+  needsYouCount, boardSteps, machineOf, agentOf, statusLabel, claudeColor, CONFIRM,
 } from "../mods/bakers/derive.js";
 
 const NOW = 1_700_000_000_000;
@@ -25,9 +25,9 @@ test("runTerminal finds the live run", () => {
   const terminals = [
     { address: "t1", labels: { "bakers.ticket": "SHOP-55" } },
     { address: "t2", state: "exited", labels: { "bakers.ticket": "SHOP-56" } },
-    { address: "t3", labels: ["bakers.ticket=SHOP-56", "bakers.run=412"] },
+    { address: "t3", status: "working", program: { name: "Claude Code" }, labels: ["bakers.ticket=SHOP-56", "bakers.run=412"] },
   ];
-  assert.deepEqual(runTerminal(terminals, "SHOP-56"), { address: "t3", run: "412" });
+  assert.deepEqual(runTerminal(terminals, "SHOP-56"), { address: "t3", run: "412", status: "working", name: "Claude Code" });
   assert.equal(runTerminal(terminals, "SHOP-60"), null);
 });
 
@@ -65,8 +65,9 @@ test("boardColumns orders, hides and explains", () => {
     ticket("SHOP-53", "done", { closed: true }),
   ];
   const events = [{ ticket: "SHOP-60", message: "created", created: secondsAgo(3600) }];
-  const terminals = [{ address: "t1", labels: { "bakers.ticket": "SHOP-49" } }];
-  const columns = boardColumns(tickets, events, terminals, "", NOW);
+  const terminals = [{ address: "t1", status: "blocked", program: { name: "Claude Code" }, labels: { "bakers.ticket": "SHOP-49" } }];
+  const runs = { "SHOP-60": { state: "running", agent: "codex" } };
+  const columns = boardColumns(tickets, events, terminals, "", NOW, runs);
   assert.deepEqual(columns.map((c) => c.id), ["needs-you", "qualification", "working", "review", "pre_deployment"]);
   assert.deepEqual(columns.map((c) => c.label), ["Needs you", "Qualification", "Working", "Review", "Pre deployment"]);
   const card = (id) => columns.flatMap((c) => c.cards).find((c) => c.identifier === id);
@@ -74,8 +75,9 @@ test("boardColumns orders, hides and explains", () => {
   assert.equal(columns[0].cards[0].identifier, "SHOP-56");
   assert.equal(card("SHOP-60").reason, "created");
   assert.equal(card("SHOP-60").age, "1h");
-  assert.equal(card("SHOP-49").runningHere, true);
-  assert.equal(card("SHOP-60").runningHere, false);
+  assert.deepEqual(card("SHOP-49").agent, { name: "Claude Code", status: "blocked", where: "This computer", since: null });
+  assert.deepEqual(card("SHOP-60").agent, { name: "codex", status: "working", where: null, since: null }, "a run outside Herdr still shows");
+  assert.equal(card("SHOP-61").agent, null);
   assert.equal(card("SHOP-62").reason, "Frozen");
   assert.equal(columns.find((c) => c.id === "working").cards[0].identifier, "SHOP-62");
   assert.equal(card("SHOP-53"), undefined);
@@ -168,6 +170,32 @@ test("machineOf names where the ticket's run is", () => {
   assert.equal(machineOf({ conductor: "c1" }, conductors, false), "rk-mac");
   assert.equal(machineOf({ conductor: "c2" }, conductors, false), "vps");
   assert.equal(machineOf(null, conductors, false), null);
+});
+
+test("agentOf takes the live status from Herdr, else the run's state from bakers", () => {
+  const conductors = [{ uuid: "c1", conductor_id: "mac-bakers", label: "rk-mac" }];
+  const run = { state: "running", agent: "claude", conductor: "c1", started_at: secondsAgo(240) };
+  const terminal = { address: "t3", status: "blocked", name: "Claude Code" };
+  assert.deepEqual(agentOf(terminal, run, conductors, NOW), { name: "Claude Code", status: "blocked", where: "This computer", since: "4m" });
+  assert.deepEqual(agentOf(null, run, conductors, NOW), { name: "claude", status: "working", where: "rk-mac", since: "4m" });
+  assert.equal(agentOf(null, { ...run, state: "claimed" }, conductors, NOW).status, "starting");
+  assert.equal(agentOf({ address: "vps/t3", status: "working" }, run, conductors, NOW).where, "rk-mac", "a terminal on another machine is not this computer");
+  assert.equal(agentOf({ address: "t3", name: "Claude Code" }, null, conductors, NOW).status, "working", "a live run terminal without a reported status is working");
+  assert.equal(agentOf(null, null, conductors, NOW), null);
+});
+
+test("statusLabel says blocked as needs you", () => {
+  assert.equal(statusLabel("blocked"), "needs you");
+  assert.equal(statusLabel("working"), "working");
+});
+
+test("claudeColor takes Claude Code's colors for the theme's brightness", () => {
+  assert.equal(claudeColor("working", "#1e1e1e"), "#d77757");
+  assert.equal(claudeColor("blocked", "#1e1e1e"), "#b1b9f9");
+  assert.equal(claudeColor("idle", "#1e1e1e"), "#999999");
+  assert.equal(claudeColor("done", "#1e1e1e"), "#4eba65");
+  assert.equal(claudeColor("blocked", "#ffffff"), "#5769f7");
+  assert.equal(claudeColor("starting", "#1e1e1e"), null);
 });
 
 test("CONFIRM runs the confirmed action on the ticket", async () => {

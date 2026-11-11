@@ -1,6 +1,7 @@
 import { div } from "gpui-kit";
 import { h_flex } from "gpui-base";
 import { settings } from "herdr";
+import { claudeColor } from "./derive.js";
 
 const BRAND = { bg: "#e9a13b", ink: "#1b1206" };
 const BUTTON = {
@@ -18,6 +19,10 @@ export const mono = () => settings().font_family ?? "JetBrains Mono";
 export const tint = (color, alpha) => (color.length === 7 ? color + alpha : color);
 
 export const label = (text, t) => div().text_size(11).text_color(t.dim).child(text.toUpperCase());
+
+export const dot = (color) => div().w(8).h(8).flex_none().rounded(4).bg(color);
+
+export const statusColor = (status, t) => claudeColor(status, t.background) ?? t.dim;
 
 export const pill = (text, t, filled) => div().px(7).h(20).flex().items_center().rounded(5).text_size(12)
   .when(filled, (e) => e.bg(t.accent).text_color(t.background))

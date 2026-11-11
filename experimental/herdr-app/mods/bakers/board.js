@@ -2,8 +2,9 @@ import { div } from "gpui-kit";
 import { v_flex, h_flex, InputState, Input } from "gpui-base";
 import { exec, theme, shared, setShared, terminals } from "herdr";
 import { makeClient } from "./bakers.js";
-import { ago, boardColumns, conductorLabel, resolveProject } from "./derive.js";
+import { activeRun, ago, boardColumns, conductorLabel, resolveProject, statusLabel } from "./derive.js";
 import { openTicket } from "./open.js";
+import { dot, statusColor } from "./ui.js";
 
 const REFRESH_MS = 60000;
 const client = makeClient(exec);
@@ -13,7 +14,7 @@ export class Board {
   init(p, cx) {
     this.project = p.project ?? shared("bakers.project") ?? null;
     this.projectName = null;
-    this.tickets = []; this.conductors = []; this.events = []; this.projects = [];
+    this.tickets = []; this.conductors = []; this.events = []; this.runs = {}; this.projects = [];
     this.generation = 0; this.error = null; this.loading = false; this.updated = null;
     this.changed = shared("bakers.changed") ?? null;
     this.filter = InputState.new({ placeholder: "Filter tickets" });
@@ -41,7 +42,10 @@ export class Board {
         }
         if (uuid) {
           const [tickets, conductors, events] = await Promise.all([client.allTickets(uuid), client.conductors(uuid), client.activity({ project: uuid })]);
-          if (generation === this.generation) Object.assign(this, { tickets, conductors, events, updated: Date.now() });
+          // No tool lists a project's runs, so each open ticket asks for its own.
+          const open = tickets.filter((t) => !t.closed);
+          const runs = Object.fromEntries(await Promise.all(open.map(async (t) => [t.identifier, activeRun(await client.runs(t.identifier))])));
+          if (generation === this.generation) Object.assign(this, { tickets, conductors, events, runs, updated: Date.now() });
         }
         if (generation === this.generation) this.error = null;
       } catch (e) {
@@ -56,7 +60,7 @@ export class Board {
 
   pick(project, cx) {
     setShared("bakers.project", project.uuid);
-    Object.assign(this, { project: project.uuid, projectName: project.name, tickets: [], conductors: [], events: [] });
+    Object.assign(this, { project: project.uuid, projectName: project.name, tickets: [], conductors: [], events: [], runs: {} });
     this.refresh(cx);
   }
 
@@ -70,7 +74,7 @@ export class Board {
   chip(c, t) {
     const online = c.status === "online";
     return h_flex().id(`bakers-chip-${c.uuid}`).h(30).px(10).gap(8).flex_none().items_center().rounded(8).border_1().border_color(t.border)
-      .child(div().w(8).h(8).rounded(4).bg(online ? t.ansi2 : t.dim))
+      .child(dot(online ? t.ansi2 : t.dim))
       .child(div().child(conductorLabel(c)))
       .child(div().text_size(12).text_color(t.muted).child(c.status ?? "offline"));
   }
@@ -86,6 +90,14 @@ export class Board {
         .hover((s) => s.bg(t.hover)).on_click((_e, cx) => this.refresh(cx)).child(this.loading ? "…" : "Refresh"));
   }
 
+  // The agent's place on every card, so it is clear where it shows up once a run starts.
+  agentTag(agent, t) {
+    const color = agent ? statusColor(agent.status, t) : t.dim;
+    return h_flex().gap(6).items_center().text_size(11).text_color(color)
+      .child(dot(agent ? color : t.border))
+      .child(agent ? `${agent.name} · ${statusLabel(agent.status)}` : "No active run");
+  }
+
   card(card, urgent, t) {
     return v_flex().id(`bakers-card-${card.identifier}`).flex_none().p(12).gap(8).rounded(10).border_1()
       .border_color(urgent ? t.blocked : t.border).bg(t.raised).cursor_pointer().hover((s) => s.bg(t.hover))
@@ -93,8 +105,7 @@ export class Board {
       .child(h_flex().gap(8).items_center()
         .child(div().text_size(12).text_color(t.muted).child(card.identifier))
         .child(div().flex_1())
-        .when(card.runningHere, (e) => e.child(div().px(6).h(18).flex().items_center().rounded(5).border_1().border_color(t.border)
-          .text_size(11).text_color(t.muted).child("Running here"))))
+        .child(this.agentTag(card.agent, t)))
       .child(div().child(card.title))
       .when(Boolean(card.reason || card.age), (e) => e.child(h_flex().gap(8).items_center()
         .child(div().flex_1().min_w(0).truncate().text_size(12).text_color(t.muted).child(card.reason ?? ""))
@@ -129,7 +140,7 @@ export class Board {
     const t = theme();
     const root = v_flex().id("bakers-board").size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13);
     if (!this.project) return root.child(this.projectPicker(t));
-    const columns = boardColumns(this.tickets, this.events, terminals(), this.filter.value(), Date.now());
+    const columns = boardColumns(this.tickets, this.events, terminals(), this.filter.value(), Date.now(), this.runs);
     const empty = this.error ?? (this.loading ? "Loading…" : "No open tickets");
     return root.child(this.toolbar(t)).child(
       h_flex().id("bakers-columns").flex_1().min_h(0).overflow_x_scrollbar().p(16).gap(12)
