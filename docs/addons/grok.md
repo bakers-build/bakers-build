@@ -18,6 +18,8 @@ The alias is `grok`; `bakers agents` lists it.
 
 <!-- @options @bakers-build/addon-grok -->
 
+Without `env_deny`, the [default list](/provision/security/execution#ticket-env-vars) of ticket env vars is kept from the run.
+
 ## Security
 
 | Mode | Flags |

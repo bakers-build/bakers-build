@@ -20,6 +20,8 @@ addons: [
 
 <!-- @options @bakers-build/addon-workspace-git -->
 
+With `auto_setup_merge: false`, the setting applies to everyone who uses that repository: `git switch <remote branch>` no longer sets an upstream either. If the first write meets a `config.lock` held by a sandbox, the conductor logs a warning with the repair command. To undo it after switching to `true`, run `git config --unset branch.autoSetupMerge`.
+
 ## Check it works
 
 A dispatched ticket gets a worktree in `<checkout>-worktrees/` on a branch that matches your template.

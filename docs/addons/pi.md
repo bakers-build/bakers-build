@@ -26,6 +26,8 @@ It publishes one alias, `pi`, which uses your locally configured pi model.
 
 <!-- @options @bakers-build/addon-pi -->
 
+Without `env_deny`, the [default list](/provision/security/execution#ticket-env-vars) of ticket env vars is kept from the run.
+
 ## Security
 
 pi has no OS sandbox and no tool-permission gate: its tools run with the conductor user's own permissions. bakers.build therefore offers no `sandbox` or `yolo` for pi; both fail loading before pi starts.

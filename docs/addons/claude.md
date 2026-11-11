@@ -32,6 +32,8 @@ One custom candidate:
 
 <!-- @options @bakers-build/addon-claude -->
 
+Without `env_deny`, the [default list](/provision/security/execution#ticket-env-vars) of ticket env vars is kept from the run.
+
 ## Security
 
 Default: `system`. See [Execution security](/provision/security/execution) for boundaries, environment filtering and isolation risks.

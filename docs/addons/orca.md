@@ -40,6 +40,8 @@ No `with` options are required. [Options](#options) owns defaults, terminal labe
 
 <!-- @options @bakers-build/addon-orca -->
 
+`auto_setup_merge` behaves as in [workspace-git](/addons/workspace-git#options).
+
 The agent terminal title is set as the terminal's manual name (`orca terminal rename`). The agent can still change the title shown for the terminal itself; the run's terminal is found again by the renamed tab title in the Orca app, or by the terminal title with `orca serve`.
 
 ## Worktree lifecycle

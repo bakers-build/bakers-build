@@ -24,6 +24,8 @@ Without a `model` it publishes `codex` (your locally configured Codex model) plu
 
 <!-- @options @bakers-build/addon-codex -->
 
+Without `env_deny`, the [default list](/provision/security/execution#ticket-env-vars) of ticket env vars is kept from the run.
+
 ## Security
 
 Runs default to `system`; `permissions: 'sandbox'` starts the OS sandbox. [Execution security](/provision/security/execution) owns boundaries, environment filtering and isolation risks.

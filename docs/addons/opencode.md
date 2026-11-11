@@ -26,6 +26,8 @@ It publishes one alias, `opencode`, which uses your locally configured OpenCode 
 
 <!-- @options @bakers-build/addon-opencode -->
 
+Without `env_deny`, the [default list](/provision/security/execution#ticket-env-vars) of ticket env vars is kept from the run.
+
 ## Security
 
 OpenCode has no OS sandbox, and its permission policies do not sandbox plugin code, so bakers.build cannot protect an OpenCode run. It therefore runs in `system`, the default for every harness, and rejects `sandbox`:
