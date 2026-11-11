@@ -86,6 +86,21 @@ final class ProjectBoardFilterBarTest extends KernelTestBase {
   }
 
   /**
+   * The bar's search is the compact field and the chips sit on one line.
+   */
+  public function testSearchIsCompactAndChipsAreInline(): void {
+    $build = $this->summary()->render();
+    $html = (string) $this->container->get('renderer')->renderInIsolation($build);
+    self::assertMatchesRegularExpression('#<input(?=[^>]*name="search")(?=[^>]*class="[^"]*\bh-8\b)[^>]*>#', $html, 'The search is the 32 px field.');
+    self::assertDoesNotMatchRegularExpression('#<input(?=[^>]*name="search")[^>]*h-\[38px\]#', $html);
+    self::assertMatchesRegularExpression(
+      '#<div(?=[^>]*data-component-id="bb_theme:active-filters")(?=[^>]*class="[^"]*\bflex-row\b[^"]*\bitems-center\b)[^>]*>#',
+      $html,
+      'The active filters and the total share one row.',
+    );
+  }
+
+  /**
    * A person has one mark on the Board: the bar's avatar is the card's.
    */
   public function testFilterBarAvatarMatchesTheCardAvatar(): void {

@@ -420,6 +420,7 @@ final class BbBoardSummary extends AreaPluginBase {
       return [];
     }
     $form[self::SEARCH]['#title_display'] = 'invisible';
+    $form[self::SEARCH]['#compact'] = TRUE;
     $form[self::STATE] = $bar->pill($form[self::STATE] ?? [], $summary['states']);
     $form[self::PRIORITY] = $bar->pill($form[self::PRIORITY] ?? [], $summary['priorities']);
     $form['board_assignees'] = $bar->assignees($summary['employees']);

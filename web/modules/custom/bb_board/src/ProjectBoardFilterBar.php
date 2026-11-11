@@ -142,7 +142,7 @@ final class ProjectBoardFilterBar {
   }
 
   /**
-   * The active filter chips with their counts, then "N of M open tickets".
+   * The active filter chips with counts and "N of M open tickets", one row.
    *
    * @param list<array<string, mixed>> $chips
    *   The active filters as `active-filters` facets.
@@ -158,6 +158,7 @@ final class ProjectBoardFilterBar {
     $build = [
       '#type' => 'component',
       '#component' => 'bb_theme:active-filters',
+      '#variant' => 'inline',
       '#props' => [
         'label' => (string) $this->t('Active filters'),
         'empty_label' => (string) $this->t('No filters'),
