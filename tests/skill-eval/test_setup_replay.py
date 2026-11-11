@@ -36,6 +36,10 @@ const typedResult = value => checkOutput(typed, JSON.stringify({...saved,files:{
 assert.ok(typedResult({tunnel:true,permissions:{mode:'sandbox'}}).every(row=>row.met));
 assert.equal(typedResult({tunnel:false,permissions:{mode:'sandbox'},note:'tunnel true'}).find(row=>row.id==='config-machine/machine.config.js:tunnel')?.met,false);
 assert.equal(typedResult({tunnel:'true',permissions:{mode:'sandbox'}}).find(row=>row.id==='config-machine/machine.config.js:tunnel')?.met,false);
+const untouched = {input:{expected_files:{},preserved_files:{a:'first',b:'second'},no_writes:true}};
+const noWrites = files => checkOutput(untouched, JSON.stringify({...saved,files})).find(row=>row.id==='no-writes').met;
+assert.equal(noWrites({b:'second',a:'first'}),true);
+for (const files of [{a:'first'}, {a:'changed',b:'second'}, {a:'first',b:'second',c:'new'}]) assert.equal(noWrites(files),false);
 '''
         result = subprocess.run(['node', '--input-type=module', '-e', script],
                                 cwd=Path(__file__).resolve().parents[2], capture_output=True, text=True)

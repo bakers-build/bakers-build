@@ -31,7 +31,8 @@ export function checkOutput(fixture, output) {
       checks.push({ id: `config-${path}:${field}`, met: JSON.stringify(actual) === JSON.stringify(expected), reason: `${path}: ${field} must equal ${JSON.stringify(expected)} in saved data` });
     }
   }
-  if (fixture.input.no_writes) checks.push({ id: 'no-writes', met: JSON.stringify(saved.files) === JSON.stringify(fixture.input.preserved_files), reason: 'Cancelled or unresolved setup must not create or change files' });
+  if (fixture.input.no_writes) checks.push({ id: 'no-writes', met: Object.keys(saved.files).length === Object.keys(fixture.input.preserved_files).length &&
+    Object.entries(saved.files).every(([path, content]) => fixture.input.preserved_files[path] === content), reason: 'Cancelled or unresolved setup must not create or change files' });
   if (fixture.input.no_questions) checks.push({ id: 'known-answers-reused', met: !saved.turns.some(turn => turn.role === 'assistant' && turn.content?.type === 'question'), reason: 'Explicit supplied scope, path and label must not be asked again' });
   return checks;
 }

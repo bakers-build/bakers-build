@@ -9,6 +9,8 @@ Follow the setup documentation for choices and file ownership. Use the CLI inven
 planner for supported changes; generated defaults and existing files alone do not establish readiness.
 For requested migration use `@bakers-build/bb-upgrade-project`.
 Read [setup checks](references/setup-checks.md) before checking/applying.
+For project/all, first [assess worktree compatibility](references/project-setup.md#check-worktree-compatibility-first)
+before configuration checks or setup changes. Resolve known application blockers before continuing.
 
 ## Select and check the scope
 
@@ -35,7 +37,7 @@ requires shared-setup authorization. Obtain missing scope authorization before s
    out of prompts, arguments and reports; CLI owns private storage. Supply workspace only if
    caller-named; otherwise `bakers ui` uses its picker.
 4. For project/all, follow [project setup](references/project-setup.md) before applying:
-   resolve/create the real project, follow its decision matrix and linked documentation, preserve workflow policy and verify ignores.
+   after the compatibility assessment, resolve/create the real project, follow its decision matrix, preserve workflow policy and verify ignores.
 
 ## Apply and verify
 

@@ -8,6 +8,27 @@ it does not need a bakers.build checkout or a local copy of its documentation.
 If a required guide cannot be retrieved, report its URL and leave the affected choice unresolved
 instead of substituting a template.
 
+## Check worktree compatibility first
+
+Before configuration checks, server-project lookup or client/integration choices, read the
+[worktree requirements](https://bakers.build/provision/guide#make-the-project-worktree-compatible).
+Inspect the repository's README, scripts and application configuration for:
+
+- Fresh-checkout setup: dependencies, generated configuration, checkout paths and `.git` file support.
+- Parallel instances: independent ports, service names, databases and writable data.
+- Repeatable preparation: a second setup preserves an existing environment.
+- Scoped cleanup: stopping one worktree leaves the others and their data intact.
+
+Reuse existing evidence and ask only about gaps, one at a time. Report concrete file/command
+evidence for each finding. Git worktree support alone does not establish application compatibility.
+For known blockers, report the required application changes and stop setup until resolved;
+perform repairs only within the authorized scope. Keep unknowns explicitly unverified.
+**Done when each requirement has an evidence-based assessment and no known blocker remains.**
+
+When the environment is available, verify the
+[two-worktree isolation check](https://bakers.build/provision/guide#verify-independent-operation).
+Until then, report runtime compatibility as unverified; source inspection is not a runtime pass.
+
 ## Resolve and ask
 
 Search the control plane for the requested project. Reuse an unambiguous hit and report its UUID;
