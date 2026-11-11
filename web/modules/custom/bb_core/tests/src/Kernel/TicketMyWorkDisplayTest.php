@@ -96,7 +96,7 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
     parent::setUp();
     foreach ([
       'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_project',
-      'bb_ticket', 'bb_run', 'bb_term', 'search_api_task',
+      'bb_ticket', 'bb_run', 'bb_term', 'bb_conductor', 'search_api_task',
     ] as $entity_type_id) {
       $this->installEntitySchema($entity_type_id);
     }
@@ -396,6 +396,29 @@ final class TicketMyWorkDisplayTest extends KernelTestBase {
         ->filter('[data-list-region="right"] > [data-cell="assignee"]'),
       'All tickets still shows whose each ticket is.',
     );
+  }
+
+  /**
+   * A My work row names its conductor in the right-hand column.
+   */
+  public function testMyWorkNamesTheConductorInItsColumn(): void {
+    $conductor = $this->create('bb_conductor', [
+      'label' => 'cw-framework',
+      'owner_user_id' => $this->me->id(),
+    ]);
+    $tickets = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
+      ->loadByProperties(['title' => 'Mine and open']);
+    $ticket = reset($tickets);
+    self::assertInstanceOf(ContentEntityInterface::class, $ticket);
+    $ticket->set('conductor_id', $conductor->id())->save();
+    Index::load('bb_tickets')?->indexItems();
+
+    $row = (new Crawler($this->screen('my_work')))->filter('li[data-list-item]');
+    self::assertCount(1, $row);
+    $cell = $row->filter('[data-list-region="right"] > [data-cell="conductor"]');
+    self::assertCount(1, $cell);
+    self::assertSame('cw-framework', trim($cell->text()));
+    self::assertCount(0, $row->filter('[data-list-region="meta"] [data-cell="conductor"]'));
   }
 
   /**

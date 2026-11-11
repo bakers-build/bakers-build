@@ -17,7 +17,8 @@
     "  --spacing-shell-offset: " & $$.component.shell.offset."$value" & ";",
     "  --spacing-shell-height: " & $$.component.shell.height."$value" & ";",
     "  --spacing-row: " & $normalizeCssValue($base."row-h"."$value") & ";",
-    "  --spacing-control: " & $normalizeCssValue($base."control-h"."$value") & ";"
+    "  --spacing-control: " & $normalizeCssValue($base."control-h"."$value") & ";",
+    "  --spacing-list-row: " & $normalizeCssValue($base."line-row-h"."$value") & ";"
   ];
   /* Compact brand geometry: fixed component values, so no cozy override. */
   $brandLines := $each($$.component.brand.compact, function($v, $k) {
@@ -33,7 +34,8 @@
   $baseLines := $append($append($append($baseLines, $brandLines), $zoneLines), $stateLines);
   $cozyLines := [
     "    --spacing-row: " & $normalizeCssValue($cozy."row-h"."$value") & ";",
-    "    --spacing-control: " & $normalizeCssValue($cozy."control-h"."$value") & ";"
+    "    --spacing-control: " & $normalizeCssValue($cozy."control-h"."$value") & ";",
+    "    --spacing-list-row: " & $normalizeCssValue($cozy."line-row-h"."$value") & ";"
   ];
   "@theme static {\n" & $join($baseLines, "\n") & "\n}\n[data-layout=\"cozy\"] {\n" & $join($cozyLines, "\n") & "\n}\n"
 )

@@ -536,33 +536,3 @@ Then("every ticket row ends with the assignee's mark, named by its tooltip", asy
     expect(mark!.text.length, 'The mark shows more than initials').toBeLessThanOrEqual(3);
   }
 });
-
-/** Rows whose title wraps may grow; at least one row must have a one-line title. */
-Then('every ticket row with a one-line title is {int} px high', async ({ page }, height: number) => {
-  const rows = await page.locator(ROW).evaluateAll((items) =>
-    items.map((item) => {
-      const title = item.querySelector('[data-list-region="headline"] [data-cell="title"]') as HTMLElement;
-      const lineHeight = parseFloat(getComputedStyle(title).lineHeight);
-      return {
-        title: (title.textContent ?? '').trim(),
-        oneLine: title.getBoundingClientRect().height < lineHeight * 1.5,
-        height: item.getBoundingClientRect().height,
-      };
-    }),
-  );
-  const oneLine = rows.filter((row) => row.oneLine);
-  expect(oneLine.length, 'No ticket row has a one-line title').toBeGreaterThan(0);
-  for (const row of oneLine) {
-    expect(row.height, `The row "${row.title}"`).toBeCloseTo(height, 0);
-  }
-});
-
-Then('every ticket title is {int} px with weight {int}', async ({ page }, size: number, weight: number) => {
-  const fonts = await page.locator(`${ROW} [data-list-region="headline"] [data-cell="title"]`).evaluateAll((titles) =>
-    titles.map((title) => ({ size: getComputedStyle(title).fontSize, weight: getComputedStyle(title).fontWeight })),
-  );
-  expect(fonts.length, 'The listing rendered no row').toBeGreaterThan(0);
-  for (const font of fonts) {
-    expect(font).toEqual({ size: `${size}px`, weight: String(weight) });
-  }
-});

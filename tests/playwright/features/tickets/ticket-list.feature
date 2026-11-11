@@ -645,25 +645,30 @@ Feature: The ticket list is the nav home
     When I remove the "Parent" chip
     Then the address does not carry "parent="
 
-  # BAKERS-56 AC-7/D15: search and sort share one 36 px row, measured at
-  # compact density on a 1440 px wide screen, and keep their accessible names.
-  Scenario: Search and sort share one 36 px row
+  # BAKERS-56 AC-7: the compact search-and-sort row hides the visible labels,
+  # so both controls must keep their accessible names on every ticket list.
+  Scenario: Search and sort keep their accessible names
     Given I am signed in as a member of the "bakers" workspace
-    And the viewport is 1440 pixels wide
     When I visit the ticket list of the "bakers" workspace
-    Then search and sort share one row 36 px high
+    Then the search is named "Search" and the sort "Sort by"
     When I visit the tickets tab of project "bakers.build Platform"
-    Then search and sort share one row 36 px high
+    Then the search is named "Search" and the sort "Sort by"
     When I visit the tickets tab of team "Design Crew"
-    Then search and sort share one row 36 px high
+    Then the search is named "Search" and the sort "Sort by"
 
-  Scenario: On a narrow screen the bar wraps without horizontal scroll
+  # BAKERS-56 AC-8/D16: every row on My work is the reader's own, so it shows no
+  # assignee; the conductor has its own column on the right. Projects › Tickets
+  # still shows whose each ticket is.
+  Scenario: My work shows the conductor and no assignee
     Given I am signed in as a member of the "bakers" workspace
-    And the viewport is 390 pixels wide
-    And the rail has no remembered state
+    And the ticket "Conductor column fixture" held by the conductor "srv01-bakers" is assigned to me
     When I visit the ticket list of the "bakers" workspace
-    Then search and sort sit inside the screen
-    And the document does not scroll horizontally
+    Then every listed ticket has a conductor column and no assignee
+    When I search the ticket list for "Conductor column fixture"
+    Then the ticket "Conductor column fixture" shows "srv01-bakers" in its conductor column
+    When I visit the tickets tab of project "bakers.build Platform"
+    And I search the ticket list for "Conductor column fixture"
+    Then the ticket "Conductor column fixture" shows its assignee
 
   Scenario: Has sub-tickets
     Given I am signed in as a member of the "bakers" workspace

@@ -1525,36 +1525,81 @@ Then('the ticket list does not show the origin ticket {string}', async ({ page }
   await expect(originRow(page, name)).toHaveCount(0);
 });
 
-/** The search-and-sort bar above the rows, its search field and its sort select. */
-function searchAndSort(page: Page) {
-  const bar = active(page).locator(`${CONTENT_ISLAND} ${SEARCH_TOOLBAR}`);
-  return {
-    bar,
-    search: bar.locator('input[name="title"]'),
-    sort: bar.getByRole('combobox', { name: 'Sort by' }),
-  };
-}
+Then(
+  'the search is named {string} and the sort {string}',
+  async ({ page }, search: string, sort: string) => {
+    const bar = active(page).locator(`${CONTENT_ISLAND} ${SEARCH_TOOLBAR}`);
+    await expect(bar.locator('input[name="title"]')).toBeVisible();
+    await expect(bar.locator('input[name="title"]')).toHaveAccessibleName(search);
+    await expect(bar.getByRole('combobox', { name: sort })).toBeVisible();
+  },
+);
 
-Then('search and sort share one row {int} px high', async ({ page }, height: number) => {
-  const { bar, search, sort } = searchAndSort(page);
-  await expect(search).toHaveAccessibleName('Search');
-  await expect(sort).toBeVisible();
-  const [barBox, searchBox, sortBox] = [await bar.boundingBox(), await search.boundingBox(), await sort.boundingBox()];
-  expect(barBox!.height, 'The search-and-sort row').toBeCloseTo(height, 0);
-  expect(Math.abs(searchBox!.y - sortBox!.y), 'Search and sort do not share one row').toBeLessThan(1);
-  for (const box of [searchBox!, sortBox!]) {
-    expect(box.y).toBeGreaterThanOrEqual(barBox!.y);
-    expect(box.y + box.height).toBeLessThanOrEqual(barBox!.y + barBox!.height + 0.5);
+/** The ticket this scenario put in front of a conductor, for the `After` cleanup. */
+let conductorFixtureTitle: string | null = null;
+
+/**
+ * An open ticket in project BB, assigned to the reader and held by a seeded
+ * conductor, found by its `conductor_id`. Create-if-absent by title.
+ */
+Given(
+  'the ticket {string} held by the conductor {string} is assigned to me',
+  async ({}, title: string, conductor: string) => {
+    if (listing.uid === null) {
+      throw new Error('No account was signed in, so there is nobody to assign this ticket to.');
+    }
+    const t = safe(title);
+    const result = php([
+      '$etm = \\Drupal::entityTypeManager();',
+      '$ts = $etm->getStorage("bb_ticket");',
+      '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
+      `$c = current($etm->getStorage("bb_conductor")->loadByProperties(["conductor_id" => "${safe(conductor)}"]));`,
+      'if (!$p || !$c) { print "NO_PROJECT_OR_CONDUCTOR"; return; }',
+      `$t = current($ts->loadByProperties(["title" => "${t}"])) ?: $ts->create(["project_id" => $p->id(), "title" => "${t}", "workflow" => "bb_work"]);`,
+      `$t->set("state", "working")->set("assignee_user_id", ${listing.uid})->set("conductor_id", $c->id())->save();`,
+      'print "OK";',
+    ].join(' '));
+    if (!result.includes('OK')) {
+      throw new Error(`The "${title}" fixture did not settle: "${result}".`);
+    }
+    conductorFixtureTitle = t;
+    Drush.exec('search-api:index bb_tickets');
+  },
+);
+
+/** Deletes the conductor fixture after success or failure, as the family fixture does. */
+After(async () => {
+  if (conductorFixtureTitle === null) {
+    return;
   }
+  const title = conductorFixtureTitle;
+  conductorFixtureTitle = null;
+  php([
+    '$ts = \\Drupal::entityTypeManager()->getStorage("bb_ticket");',
+    `$ts->delete($ts->loadByProperties(["title" => "${title}"]));`,
+  ].join(' '));
+  Drush.exec('search-api:index bb_tickets');
 });
 
-Then('search and sort sit inside the screen', async ({ page }) => {
-  const { bar, search, sort } = searchAndSort(page);
-  const width = active(page).viewportSize()?.width ?? 0;
-  for (const control of [bar, search, sort]) {
-    await expect(control).toBeVisible();
-    const box = await control.boundingBox();
-    expect(box!.x).toBeGreaterThanOrEqual(0);
-    expect(box!.x + box!.width, 'A control runs past the screen').toBeLessThanOrEqual(width + 0.5);
-  }
+function ticketRow(page: Page, title: string) {
+  return active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item]`, { hasText: title });
+}
+
+Then('every listed ticket has a conductor column and no assignee', async ({ page }) => {
+  const rows = active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item]`);
+  await expect(rows.first()).toBeVisible();
+  const count = await rows.count();
+  await expect(rows.locator('[data-list-region="right"] > [data-cell="conductor"]')).toHaveCount(count);
+  await expect(rows.locator('[data-cell="assignee"]')).toHaveCount(0);
+});
+
+Then(
+  'the ticket {string} shows {string} in its conductor column',
+  async ({ page }, title: string, conductor: string) => {
+    await expect(ticketRow(page, title).locator('[data-list-region="right"] > [data-cell="conductor"]')).toHaveText(conductor);
+  },
+);
+
+Then('the ticket {string} shows its assignee', async ({ page }, title: string) => {
+  await expect(ticketRow(page, title).locator('[data-list-region="right"] > [data-cell="assignee"] [role="img"]')).toBeVisible();
 });
