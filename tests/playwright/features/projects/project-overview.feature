@@ -54,16 +54,20 @@ Feature: Project Overview shows whether the project is running
     When I open the world project Overview
     Then the Overview shows only the empty state "No tickets yet"
 
+  # Project visibility follows team membership: each persona sits on the team
+  # of the world's project, at the rank the scenario names.
   Scenario Outline: Only a lead sees Edit (<persona>)
-    Given I am signed in as "<persona>"
-    When I visit the project "bakers.build Platform"
+    Given a project world without tickets
+    And the account "<persona>" is seated in the world as a <rank>
+    And I am signed in as "<persona>"
+    When I open the world project Overview
     Then the Properties card <edit> Edit
 
     Examples:
-      | persona           | edit           |
-      | north-lead        | offers         |
-      | north-contributor | does not offer |
-      | north-guest       | does not offer |
+      | persona           | rank        | edit           |
+      | north-lead        | lead        | offers         |
+      | north-contributor | contributor | does not offer |
+      | north-guest       | guest       | does not offer |
 
   Scenario: Projects is current in the sidebar
     Given I am signed in as a member of the "bakers" workspace
