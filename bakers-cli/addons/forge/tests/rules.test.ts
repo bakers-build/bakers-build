@@ -35,6 +35,12 @@ describe('ownership', () => {
     expect(derivedBase('feat/bb-7-work', run)).toBe('next');
     expect(derivedBase('feat/bb-7-work-2', run)).toBe('feat/bb-7-work');
   });
+
+  it('merges the ticket branch into target_branch when the run names one', () => {
+    const deploy = { ...run, branchName: 'release/bb-9', targetBranch: 'main' };
+    expect(derivedBase('release/bb-9', deploy)).toBe('main');
+    expect(derivedBase('release/bb-9-2', deploy)).toBe('release/bb-9');
+  });
 });
 
 describe('title rule', () => {

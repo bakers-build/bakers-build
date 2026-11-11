@@ -695,6 +695,25 @@ describe('DrupalBbRemote', () => {
     expect(ticket.environments).toEqual([]);
   });
 
+  it('getTicket maps target_branch → targetBranch', async () => {
+    const get = vi.fn(async () => ({
+      data: {
+        id: 'tic-5',
+        attributes: {
+          identifier: 'P-5',
+          title: 'Release',
+          state: 'working',
+          branch_name: 'release/p-5',
+          base_branch: 'next',
+          target_branch: 'main',
+        },
+      },
+    }));
+    const remote = new DrupalBbRemote(fakeClient({ get }));
+    const ticket = await remote.getTicket('tic-5');
+    expect(ticket.targetBranch).toBe('main');
+  });
+
   it('getTicket maps base_branch → baseBranch', async () => {
     const get = vi.fn(async () => ({
       data: {
@@ -757,6 +776,7 @@ describe('DrupalBbRemote', () => {
     const remote = new DrupalBbRemote(fakeClient({ get }));
     const ticket = await remote.getTicket('tic-4');
     expect(ticket.baseBranch).toBeUndefined();
+    expect(ticket.targetBranch).toBeUndefined();
   });
 
   it('getTicket returns empty branchName when unset', async () => {

@@ -216,6 +216,43 @@ describe('forge tools', () => {
     expect(calls).toContain('update:1:feat(cli)!: y');
   });
 
+  it("a deployment run opens and merges its branch into target_branch by that target's rule", async () => {
+    const deploy = {
+      identifier: 'BB-9',
+      branchName: 'release/bb-9',
+      baseBranch: 'next',
+      targetBranch: 'main',
+    };
+    const settings = {
+      merge: {
+        main: { method: 'merge', delete_source: false },
+        '*': { method: 'squash', delete_source: true },
+      },
+    };
+    const { backend, calls } = fakeBackend({ checks: green });
+    const tools = forgeTools({ backend: async () => backend, settings });
+    const opened = JSON.parse(
+      (
+        await tools.forge_pr_upsert!(
+          request({ title: 'chore(release): 1.2.3' }, '/nonexistent', deploy),
+        )
+      ).text,
+    );
+    expect(opened).toMatchObject({ target: 'main', created: true });
+    const merged = JSON.parse(
+      (await tools.forge_merge!(request({}, '/nonexistent', deploy))).text,
+    );
+    expect(merged).toMatchObject({
+      into: 'main',
+      method: 'merge',
+      source_deleted: false,
+    });
+    expect(calls).toContain('create:release/bb-9->main:chore(release): 1.2.3');
+    expect(calls).toContain(
+      'merge:1:merge:false:chore(release): 1.2.3\nMerged-by: bakers.build\nref:BB-9',
+    );
+  });
+
   it('forge_checks reports rows, required flags and the overall status of the PR head', async () => {
     const { backend, calls } = fakeBackend({
       prs: [pr()],

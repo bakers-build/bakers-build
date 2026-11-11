@@ -377,6 +377,9 @@ export class DrupalBbRemote implements BbRemote {
       ...(typeof attrs.base_branch === 'string' && attrs.base_branch !== ''
         ? { baseBranch: attrs.base_branch }
         : {}),
+      ...(typeof attrs.target_branch === 'string' && attrs.target_branch !== ''
+        ? { targetBranch: attrs.target_branch }
+        : {}),
       ...(typeof attrs.effective_env_vars === 'string' &&
       attrs.effective_env_vars !== ''
         ? { effectiveEnvVars: attrs.effective_env_vars }

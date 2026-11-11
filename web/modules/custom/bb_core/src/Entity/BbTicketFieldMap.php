@@ -14,6 +14,7 @@ use Drupal\bb_core\Field\PendingReviewsItemList;
 use Drupal\bb_core\Field\RunsItemList;
 use Drupal\bb_core\Field\SubTicketsItemList;
 use Drupal\bb_core\Field\SummaryCommentItemList;
+use Drupal\bb_core\Field\TargetBranchItemList;
 use Drupal\bb_core\Ticket\BranchName;
 
 /**
@@ -109,6 +110,12 @@ final class BbTicketFieldMap {
       ->setDescription(new TranslatableMarkup('Branch the ticket\'s work is based on (computed; never writable): the direct parent\'s branch_name when the ticket has a parent — so a child inherits its parent\'s release or integration branch — else the first project repo default_branch, else "main". Consumed by the conductor (worktree base) and the coding skill (MR target).'))
       ->setComputed(TRUE)
       ->setClass(BaseBranchItemList::class)
+      ->setDisplayConfigurable('view', TRUE);
+    $fields['target_branch'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Target branch'))
+      ->setDescription(new TranslatableMarkup("Branch the ticket's work merges into (computed; never writable): a deployment ticket with exactly one environment merges into that environment's branch, every other ticket into base_branch. Consumed by the forge tools (PR/MR target)."))
+      ->setComputed(TRUE)
+      ->setClass(TargetBranchItemList::class)
       ->setDisplayConfigurable('view', TRUE);
     $fields['frozen'] = BaseFieldDefinition::create('boolean')
       ->setLabel(new TranslatableMarkup('Frozen'))
