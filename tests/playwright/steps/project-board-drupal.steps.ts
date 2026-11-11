@@ -1,16 +1,27 @@
 // The Project Board: its filter bar, columns, Done window, Details, cards and
 // active conductors. The disposable project world and the shared Board
 // observations come from support/steps/project-health-world.steps.ts.
-import { When, Then } from '../bdd.fixtures';
+import { When, Then, test } from '../bdd.fixtures';
 import { Drush } from '../support/drush';
-import { expect, type Locator, type Page } from '@playwright/test';
-import type { DataTable } from 'playwright-bdd';
+import { expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import { createBdd, type DataTable } from 'playwright-bdd';
 import { php } from '../support/drush';
 import { card, expectCards } from '../support/board';
-import { active, listing, safe } from '../support/listing';
+import { active, listing, resetOverridePage, safe } from '../support/listing';
 import { requireWorld } from '../support/project-world';
 
+const { After } = createBdd(test);
+
 let boardStatus = 0;
+
+// The other browser session of a scenario, closed when the scenario ends.
+let otherSession: BrowserContext | null = null;
+
+After({ tags: '@project-board' }, async () => {
+  await otherSession?.close();
+  otherSession = null;
+  resetOverridePage();
+});
 
 function projectId(name: string): string {
   const id = php(
@@ -141,8 +152,8 @@ Then('the card {string} is blocked by {string}', async ({ page }, title: string,
 When('I open the world project Board in another browser session', async ({ page }) => {
   const world = requireWorld();
   const origin = new URL(page.url()).origin;
-  const context = await page.context().browser()!.newContext({ ignoreHTTPSErrors: true });
-  const other = await context.newPage();
+  otherSession = await page.context().browser()!.newContext({ ignoreHTTPSErrors: true });
+  const other = await otherSession.newPage();
   await other.goto(Drush.exec(`uli --uid=${world.ids.lead} --no-browser --uri=${origin}`).trim());
   const response = await other.goto(`${origin}${world.board}`);
   expect(response?.status()).toBe(200);
