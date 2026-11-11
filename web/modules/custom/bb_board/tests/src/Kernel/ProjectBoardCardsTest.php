@@ -86,6 +86,16 @@ final class ProjectBoardCardsTest extends ClaimKernelTestBase {
   }
 
   /**
+   * A running ticket stays running in a Details column of Working.
+   */
+  public function testRunningCardInDetailsColumn(): void {
+    $ticket = $this->seedAssignedTicket('working');
+    $this->seedRun($ticket, 'working', 'running');
+
+    self::assertSame('running', $this->cards([$ticket], 'working_working')[0]['status']);
+  }
+
+  /**
    * Only open blockers are listed; closed ones do not make a card blocked.
    */
   public function testBlockedByListsOnlyOpenBlockers(): void {
@@ -142,11 +152,13 @@ final class ProjectBoardCardsTest extends ClaimKernelTestBase {
    *
    * @param list<\Drupal\bb_core\Entity\BbTicketInterface> $tickets
    *   The tickets.
+   * @param string $display
+   *   The column display id.
    *
    * @return list<array<string, mixed>>
    *   The cards.
    */
-  private function cards(array $tickets): array {
+  private function cards(array $tickets, string $display = 'working'): array {
     $board = new ProjectBoard(
       $this->container->get('bb_core.ticket_run_deriver'),
       $this->container->get('bb_core.date'),
@@ -157,7 +169,7 @@ final class ProjectBoardCardsTest extends ClaimKernelTestBase {
     foreach ($tickets as $ticket) {
       $reloaded[] = $this->reloadTicket($ticket);
     }
-    return $board->cards($reloaded, 'working');
+    return $board->cards($reloaded, $display);
   }
 
   /**

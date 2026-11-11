@@ -48,7 +48,9 @@ final class BbBoardColumn extends Attachment {
   ];
 
   /**
-   * Whether a display attaches with Details on; the rest always attach.
+   * The Working displays: whether each attaches with Details on.
+   *
+   * The other displays always attach.
    */
   public const DETAILS = [
     'working' => FALSE,

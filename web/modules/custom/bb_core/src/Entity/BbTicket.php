@@ -677,16 +677,18 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
     $storage = $this->entityTypeManager()->getStorage('bb_ticket');
     foreach ($this->getBlockedByIds() as $blocker_id) {
       $blocker = $storage->load($blocker_id);
-      if (!$blocker instanceof BbTicketInterface) {
-        continue;
-      }
-      $state = (string) $blocker->get('state')->value;
-      // A blocker is open unless it reached a terminal state.
-      if (!in_array($state, ['done', 'cancelled'], TRUE)) {
+      if ($blocker instanceof BbTicketInterface && $blocker->isBlocking()) {
         return TRUE;
       }
     }
     return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isBlocking(): bool {
+    return !in_array((string) $this->get('state')->value, ['done', 'cancelled'], TRUE);
   }
 
   /**

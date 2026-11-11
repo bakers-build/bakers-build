@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_board;
 
+use Drupal\bb_board\Plugin\views\display\BbBoardColumn;
 use Drupal\bb_core\Derive\TicketRunDeriver;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Link\LinkKind;
@@ -37,7 +38,8 @@ final class ProjectBoard {
    * @param array<int|string, \Drupal\bb_core\Entity\BbTicketInterface> $tickets
    *   Tickets already limited to this column. Empty is a legal column.
    * @param string $display
-   *   The Views display id. Running status is painted only on `working`.
+   *   The Views display id. Running status is painted only on the Working
+   *   column and its Details columns.
    *
    * @return list<array<string, mixed>>
    *   Props for `bb_theme:board-card`.
@@ -60,8 +62,8 @@ final class ProjectBoard {
   /**
    * Identifiers of each ticket's open blockers, and whether any is unseen.
    *
-   * One load and one access query for every blocker of the column. Open means
-   * not done or cancelled, as {@see BbTicketInterface::hasOpenBlockers()}.
+   * One load and one access query for every blocker of the column. Open is
+   * {@see BbTicketInterface::isBlocking()}.
    *
    * @param array<int|string, \Drupal\bb_core\Entity\BbTicketInterface> $tickets
    *   The column's tickets.
@@ -78,26 +80,20 @@ final class ProjectBoard {
       return [];
     }
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
-    $blockers = $storage->loadMultiple(array_keys($blocker_ids));
+    $open = [];
+    foreach ($storage->loadMultiple(array_keys($blocker_ids)) as $id => $blocker) {
+      if ($blocker instanceof BbTicketInterface && $blocker->isBlocking()) {
+        $open[$id] = $blocker->getIdentifier();
+      }
+    }
     // View access of a ticket is the read scope, which a query applies.
     $viewable = $storage->getQuery()->accessCheck(TRUE)->condition('id', array_keys($blocker_ids), 'IN')->execute();
     $result = [];
     foreach ($tickets as $ticket) {
-      $entry = ['visible' => [], 'hidden' => FALSE];
-      $open = FALSE;
-      foreach ($ticket->getBlockedByIds() as $id) {
-        $blocker = $blockers[$id] ?? NULL;
-        if (!$blocker instanceof BbTicketInterface || in_array($blocker->getState()->getId(), ['done', 'cancelled'], TRUE)) {
-          continue;
-        }
-        $open = TRUE;
-        if (isset($viewable[$id])) {
-          $entry['visible'][] = $blocker->getIdentifier();
-        }
-      }
+      $blocking = array_intersect_key(array_flip($ticket->getBlockedByIds()), $open);
+      $visible = array_map(static fn (int|string $id): string => $open[$id], array_keys(array_intersect_key($blocking, $viewable)));
       // Hidden means blocked by something, but nothing the viewer may name.
-      $entry['hidden'] = $open && $entry['visible'] === [];
-      $result[(int) $ticket->id()] = $entry;
+      $result[(int) $ticket->id()] = ['visible' => $visible, 'hidden' => $blocking !== [] && $visible === []];
     }
     return $result;
   }
@@ -110,7 +106,8 @@ final class ProjectBoard {
    * @param string $state
    *   The ticket's exact workflow state.
    * @param string $display
-   *   The Views display id. Running status is painted only on `working`.
+   *   The Views display id. Running status is painted only on the Working
+   *   column and its Details columns.
    * @param array{runs: array<int|string, int>, states: array<int, string>, blockers: array<int, array{visible: list<string>, hidden: bool}>} $batch
    *   Run counts, newest run states and blockers of the whole column.
    *
@@ -121,7 +118,7 @@ final class ProjectBoard {
     $id = (int) $ticket->id();
     $assignee = $this->assignee($ticket);
     $priority = $ticket->getPriority();
-    $running = $display === 'working' && $this->deriver->derivedStatus($ticket) === 'running';
+    $running = isset(BbBoardColumn::DETAILS[$display]) && $this->deriver->derivedStatus($ticket) === 'running';
     try {
       $url = $ticket->toUrl('canonical')->toString();
     }
@@ -146,6 +143,7 @@ final class ProjectBoard {
       $card['lease'] = $lease;
     }
     // No runs, no line: the theme draws "N runs - last <state>" only when set.
+    // The access-checked count gates the unchecked newest-run state on purpose.
     if (($batch['runs'][$id] ?? 0) > 0 && isset($batch['states'][$id])) {
       $card['run_count'] = $batch['runs'][$id];
       $card['last_run_state'] = $batch['states'][$id];
