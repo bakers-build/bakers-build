@@ -131,3 +131,6 @@ node_modules/
 
 # The PM bot env file: secrets.
 /experimental/pm-bot/.env
+
+# Introduction video: the raw recording is handed over here and never committed.
+/docs/video/raw/
