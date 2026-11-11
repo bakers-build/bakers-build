@@ -59,6 +59,6 @@ Network git runs in a throwaway repository on the clone's object store, without 
 ## Good to know
 
 - Skills use these tools whenever they are served; otherwise a run falls back to `git` and the service's client, which `sandbox` permissions allow only as trusted commands.
-- A deployment's merge into an environment branch is outside `forge_merge`.
+- Only a [promotion](/addons/forge-promotion) merges a deployment through `forge_merge`.
 
 Package source in a checkout: `bakers-cli/addons/forge`.

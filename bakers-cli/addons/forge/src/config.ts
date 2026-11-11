@@ -32,11 +32,21 @@ export function mergeWith(project: unknown, machine: unknown): unknown {
   return { ...project, ...machine };
 }
 
+const mergeRules = (settings: unknown): Record<string, unknown> =>
+  isObject(settings) && isObject(settings.merge) ? settings.merge : {};
+
 /** The rule for merging into `base`: `merge[base]`, else `merge['*']`, else squash and delete. */
 export function mergeRule(settings: unknown, base: string): MergeRule {
-  const merge =
-    isObject(settings) && isObject(settings.merge) ? settings.merge : {};
+  const merge = mergeRules(settings);
   return (merge[base] ?? merge['*'] ?? DEFAULT_RULE) as MergeRule;
+}
+
+/** Only the rule the project names for `base`: no `*`, no default. */
+export function namedMergeRule(
+  settings: unknown,
+  base: string,
+): MergeRule | undefined {
+  return mergeRules(settings)[base] as MergeRule | undefined;
 }
 
 /** Resolution bases rooted at the running `bakers` host install (see addon-ports' config). */

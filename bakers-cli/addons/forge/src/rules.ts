@@ -44,6 +44,22 @@ export function derivedBase(
   return branch === run.branchName ? run.baseBranch : run.branchName;
 }
 
+/**
+ * A promotion (base_branch into `target`, pinned to a frozen SHA) is for a
+ * deployment ticket, into a target the project merges by merge commit.
+ */
+export function promotionRefusal(p: {
+  type: string | undefined;
+  rule: { method: string } | undefined;
+  target: string;
+}): string | undefined {
+  if (p.type !== 'deployment')
+    return `only a deployment ticket may promote; this run's ticket type is '${p.type ?? 'unknown'}'`;
+  if (p.rule?.method !== 'merge')
+    return `'${p.target}' has no merge rule with method 'merge' (merge['${p.target}'] in the forge entry); a promotion merges only by merge commit`;
+  return undefined;
+}
+
 /** Remove every secret and any Authorization header value. */
 export function redact(text: string, secrets: readonly string[]): string {
   let out = text.replace(

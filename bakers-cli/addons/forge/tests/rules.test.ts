@@ -5,6 +5,7 @@ import {
   derivedBase,
   isConventionalTitle,
   isOwned,
+  promotionRefusal,
   redact,
 } from '../src/rules.js';
 
@@ -79,5 +80,33 @@ describe('redact', () => {
     expect(out).not.toContain('eyJ.jwt.sig');
     expect(out).not.toContain('ghs_Q');
     expect(out).toContain('"x":1');
+  });
+});
+
+describe('promotion rule', () => {
+  const merge = { method: 'merge', delete_source: false } as const;
+
+  it('allows a deployment into a target whose rule merges by merge commit', () => {
+    expect(
+      promotionRefusal({ type: 'deployment', rule: merge, target: 'main' }),
+    ).toBeUndefined();
+  });
+
+  it('refuses any other ticket type, and a missing one', () => {
+    for (const type of ['feature', undefined])
+      expect(
+        promotionRefusal({ type, rule: merge, target: 'main' }),
+        String(type),
+      ).toMatch(/only a deployment ticket may promote/);
+  });
+
+  it('refuses a target without a merge-method rule', () => {
+    for (const rule of [
+      undefined,
+      { method: 'squash', delete_source: true } as const,
+    ])
+      expect(
+        promotionRefusal({ type: 'deployment', rule, target: 'main' }),
+      ).toMatch(/'main' has no merge rule with method 'merge'/);
   });
 });

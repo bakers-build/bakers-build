@@ -9,13 +9,19 @@ import type {
 } from '@bakers-build/conductor/contract';
 import { homeBbDir } from '@bakers-build/core';
 import type { ForgeBackend, ForgeCheck } from './backend.js';
-import { FORGE_NEEDS_BACKEND, loadForgeBackend, mergeRule } from './config.js';
-import { fetchBranches, pushBranch } from './git.js';
+import {
+  FORGE_NEEDS_BACKEND,
+  loadForgeBackend,
+  mergeRule,
+  namedMergeRule,
+} from './config.js';
+import { fetchBranches, fetchedSecondParent, pushBranch } from './git.js';
 import {
   derivedBase,
   isConventionalTitle,
   isOwned,
   ownershipRefusal,
+  promotionRefusal,
   redact,
   TITLE_REFUSAL,
 } from './rules.js';
@@ -29,10 +35,20 @@ export interface ForgeToolDeps {
   settings: unknown;
 }
 
+export const PROMOTION_ARGS =
+  'promote_to needs expected_sha (40 hex, the frozen release candidate) and takes no branch or ref: a promotion always merges base_branch';
+
 interface Run {
   identifier: string;
   branchName: string;
   baseBranch: string;
+  type: string | undefined;
+}
+
+/** base_branch into `target`, pinned to the frozen `expectedSha`. */
+interface Promotion {
+  target: string;
+  expectedSha: string;
 }
 
 function runOf(req: ToolRequest): Run {
@@ -42,6 +58,7 @@ function runOf(req: ToolRequest): Run {
     identifier: t.identifier,
     branchName: t.branchName,
     baseBranch: t.baseBranch,
+    type: t.type,
   };
 }
 
@@ -83,6 +100,43 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       }
     };
 
+  /**
+   * The call's promotion, if `promote_to` is set. Every rule holds before it
+   * returns, and before any forge write: a deployment ticket, a merge-method
+   * rule for the target, and origin/<base_branch> still at expected_sha.
+   */
+  const promotion = async (
+    req: ToolRequest,
+    run: Run,
+  ): Promise<Promotion | undefined> => {
+    const { promote_to: target, expected_sha: expectedSha } = req.args;
+    if (target === undefined) return undefined;
+    if (
+      typeof target !== 'string' ||
+      typeof expectedSha !== 'string' ||
+      !/^[0-9a-f]{40}$/.test(expectedSha) ||
+      req.args.branch !== undefined ||
+      req.args.ref !== undefined
+    )
+      throw new Error(PROMOTION_ARGS);
+    const refusal = promotionRefusal({
+      type: run.type,
+      rule: namedMergeRule(deps.settings, target),
+      target,
+    });
+    if (refusal) throw new Error(refusal);
+    const b = await backend();
+    const fetched = await fetchBranches(req.worktreePath, await b.gitAuth(), [
+      run.baseBranch,
+    ]);
+    const at = fetched.find((r) => r.name === run.baseBranch)?.sha;
+    if (at !== expectedSha)
+      throw new Error(
+        `origin/${run.baseBranch} is at ${at ?? 'nothing'}, not the expected_sha ${expectedSha}: ${run.baseBranch} moved since the freeze`,
+      );
+    return { target, expectedSha };
+  };
+
   const tools: Record<string, ToolHandler> = {
     forge_fetch: async (req) => {
       const run = runOf(req);
@@ -121,18 +175,20 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       // Refused before any request reaches the forge.
       if (!isConventionalTitle(title)) throw new Error(TITLE_REFUSAL);
       const run = runOf(req);
-      const branch = ownedBranch(req, run);
+      const promo = await promotion(req, run);
+      const branch = promo ? run.baseBranch : ownedBranch(req, run);
+      const base = promo ? promo.target : derivedBase(branch, run);
       const body = (req.args.body as string | undefined) ?? '';
       const b = await backend();
       const open = await b.findOpenPr(branch);
+      // Never retarget or rewrite another PR from base_branch.
+      if (promo && open && open.base !== base)
+        throw new Error(
+          `PR/MR ${open.url} from '${branch}' targets '${open.base}', not '${base}'; close it first`,
+        );
       const pr = open
         ? await b.updatePr(open, { title, body })
-        : await b.createPr({
-            head: branch,
-            base: derivedBase(branch, run),
-            title,
-            body,
-          });
+        : await b.createPr({ head: branch, base, title, body });
       return json({
         url: pr.url,
         number: pr.number,
@@ -143,10 +199,18 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
 
     forge_checks: async (req) => {
       const run = runOf(req);
+      const promo = await promotion(req, run);
       const b = await backend();
       let ref: string;
       let base = run.baseBranch;
-      if (typeof req.args.ref === 'string' && req.args.branch === undefined) {
+      if (promo) {
+        const pr = await b.findOpenPr(run.baseBranch);
+        ref = pr?.headSha ?? promo.expectedSha;
+        base = promo.target;
+      } else if (
+        typeof req.args.ref === 'string' &&
+        req.args.branch === undefined
+      ) {
         ref = req.args.ref;
       } else {
         const branch = ownedBranch(req, run);
@@ -160,8 +224,9 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
 
     forge_merge: async (req) => {
       const run = runOf(req);
-      const branch = ownedBranch(req, run);
-      const base = derivedBase(branch, run);
+      const promo = await promotion(req, run);
+      const branch = promo ? run.baseBranch : ownedBranch(req, run);
+      const base = promo ? promo.target : derivedBase(branch, run);
       const b = await backend();
       const pr = await b.findOpenPr(branch);
       if (!pr)
@@ -176,6 +241,10 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         throw new Error(
           `PR/MR ${pr.url}: ${TITLE_REFUSAL}; retitle it with forge_pr_upsert`,
         );
+      if (promo && pr.headSha !== promo.expectedSha)
+        throw new Error(
+          `PR/MR ${pr.url} head is ${pr.headSha}, not the expected_sha ${promo.expectedSha}`,
+        );
       const blocker = await b.mergeBlocker(pr);
       if (blocker) throw new Error(`PR/MR ${pr.url} cannot merge: ${blocker}`);
       const checks = await b.checks(pr.headSha, pr.base);
@@ -187,10 +256,14 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
           `PR/MR ${pr.url} has required checks that are not green: ${notGreen.map((c) => `${c.name} (${c.status})`).join(', ')}`,
         );
       const rule = mergeRule(deps.settings, base);
-      const dependents = (await b.openPrsWithBase(branch)).filter(
-        (p) => p.number !== pr.number,
-      );
-      const deleteSource = rule.delete_source && dependents.length === 0;
+      // A promotion never deletes base_branch.
+      const dependents = promo
+        ? []
+        : (await b.openPrsWithBase(branch)).filter(
+            (p) => p.number !== pr.number,
+          );
+      const deleteSource =
+        !promo && rule.delete_source && dependents.length === 0;
       await b.merge(pr, {
         method: rule.method,
         deleteSource,
@@ -201,6 +274,15 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         throw new Error(
           `PR/MR ${pr.url} does not report merged after the merge call`,
         );
+      let secondParent: string | undefined;
+      if (promo) {
+        await fetchBranches(req.worktreePath, await b.gitAuth(), [base]);
+        secondParent = await fetchedSecondParent(req.worktreePath, base);
+        if (secondParent !== promo.expectedSha)
+          throw new Error(
+            `PR/MR ${pr.url} merged, but ${base}^2 is ${secondParent ?? 'missing'}, not the expected_sha ${promo.expectedSha}; check ${base} by hand`,
+          );
+      }
       return json({
         url: pr.url,
         merged: true,
@@ -210,6 +292,7 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         ...(dependents.length > 0
           ? { source_kept_for: dependents.map((p) => p.url) }
           : {}),
+        ...(promo ? { promoted: true, second_parent: secondParent } : {}),
       });
     },
   };
