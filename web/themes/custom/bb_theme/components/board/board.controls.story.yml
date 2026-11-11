@@ -53,10 +53,10 @@ props:
     - name: Done
       dot: idle
       count: 12
-      toggle:
-        label: Show done
-        url: '?done=show'
       cards: []
+      toggles:
+        - label: Show done
+          url: '?done=show'
 slots:
   empty:
     - type: element

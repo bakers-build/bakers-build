@@ -62,9 +62,6 @@ props:
     - name: Done
       dot: idle
       caption: last 7 days
-      toggle:
-        label: Show older
-        url: '?done=show&done_older=1'
       cards:
         - identifier: GAIA-371
           title: Show the source ticket in the Related pane
@@ -78,3 +75,8 @@ props:
           status: idle
           priority: p1
           state: cancelled
+      toggles:
+        - label: Show older
+          url: '?done=show&done_older=1'
+        - label: Hide done
+          url: '?done=hide'

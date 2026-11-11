@@ -17,16 +17,16 @@ description: >-
   }}` draws one column from a hash `c`: `label` (column name, or the exact state
   key when nested), `count`, `tone` (running | attention | wait | idle |
   neutral: the header dot), `caption` ("last 7 days"), `hints` (list of strings
-  such as "empty: review"), `toggle` ({label, url}: "Show done", "Show older"),
-  `collapsed` (header, caption and toggle only), `group` (a panel whose content
-  is a row of nested columns; its count is the sum), `nested` (a state
-  sub-column inside a group: mono label, count, no dot), `terminal` (the Done
-  column: dashed outline, no fill), `content` (rendered cards, or nested columns
-  for a group), `empty` (what an empty column says, such as "No ticket matches
-  these filters."), `pager` and `attributes`. The header sticks to the top of
-  the scroll region; an empty column keeps its header and count. This is the
-  same address `list` uses for `table`'s `cell()`: a component id resolves in
-  Drupal and in Storybook alike.
+  such as "empty: review"), `toggles` (a list of {label, url}: "Show done";
+  "Show older" and "Hide done"), `collapsed` (header, caption and toggles only),
+  `group` (a panel whose content is a row of nested columns; its count is the
+  sum), `nested` (a state sub-column inside a group: mono label, count, no dot),
+  `terminal` (the Done column: dashed outline, no fill), `content` (rendered
+  cards, or nested columns for a group), `empty` (what an empty column says,
+  such as "No ticket matches these filters."), `pager` and `attributes`. The
+  header sticks to the top of the scroll region; an empty column keeps its
+  header and count. This is the same address `list` uses for `table`'s `cell()`:
+  a component id resolves in Drupal and in Storybook alike.
 
 
   THE COLUMN AREA IS THE ONLY SIDEWAYS SCROLL REGION. It is bounded to the
@@ -198,20 +198,23 @@ props:
             type: string
             title: Caption
             description: Meta line under the header, such as "last 7 days".
-          toggle:
-            type: object
-            title: Toggle link
+          toggles:
+            type: array
+            title: Toggle links
             description: >-
-              "Show done" or "Show older" for the Done column; a link, so it
-              works without JavaScript.
-            properties:
-              label:
-                type: string
-              url:
-                type: string
-            required:
-              - label
-              - url
+              Links that change what the column shows: "Show done" when Done is
+              closed, "Show older" and "Hide done" when it is open, "Hide done"
+              once older tickets show. Links, so they work without JavaScript.
+            items:
+              type: object
+              properties:
+                label:
+                  type: string
+                url:
+                  type: string
+              required:
+                - label
+                - url
     details:
       type: boolean
       default: false
@@ -227,7 +230,7 @@ props:
       title: Done open
       description: >-
         Shows the cards of the data column named Done; closed, that column keeps
-        only its header, caption and toggle.
+        only its header, caption and toggles.
 slots:
   empty:
     title: Empty

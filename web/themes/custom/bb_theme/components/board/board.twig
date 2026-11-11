@@ -61,8 +61,12 @@
       {% endif %}
     {% endif %}
     {% if c.pager is defined and c.pager is not empty %}{{ c.pager }}{% endif %}
-    {% if c.toggle.url|default('') is not empty %}
-      {{ include('bb_theme:button', { label: c.toggle.label, href: c.toggle.url, variant: 'neutral', attributes: create_attribute().addClass(['self-start']) }, with_context = false) }}
+    {% if c.toggles|default([]) is not empty %}
+      <div class="flex flex-wrap gap-inline">
+        {% for toggle in c.toggles %}
+          {{ include('bb_theme:button', { label: toggle.label, href: toggle.url, variant: 'neutral' }, with_context = false) }}
+        {% endfor %}
+      </div>
     {% endif %}
   </section>
 {% endmacro %}
@@ -99,7 +103,7 @@
           {% else %}
             {% set done = column.name == 'Done' %}
             {% set column_content %}{% for card in cards %}{{ include('bb_theme:board-card', card, with_context = false) }}{% endfor %}{% endset %}
-            {{ board.column({ label: column.name, count: column.count|default(cards|length), tone: column.dot|default('neutral'), caption: column.caption|default(''), toggle: column.toggle|default({}), terminal: done, collapsed: done and not done_open|default(false), content: column_content, empty: empty_markup }) }}
+            {{ board.column({ label: column.name, count: column.count|default(cards|length), tone: column.dot|default('neutral'), caption: column.caption|default(''), toggles: column.toggles|default([]), terminal: done, collapsed: done and not done_open|default(false), content: column_content, empty: empty_markup }) }}
           {% endif %}
         {% endfor %}
       {% endif %}
