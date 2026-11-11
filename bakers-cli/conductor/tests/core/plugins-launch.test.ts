@@ -169,15 +169,15 @@ describe('conductor: a run starts with the project plugins installed', () => {
       outcome: 'built',
       marketplaces: [probe],
       trust_bypass: ['hooks'],
-      required_skills: { required: [], missing: [] },
     });
   });
 
-  it('fails the run start, naming each missing required skill with its source', async () => {
+  it('starts the run without a skill check once the plugins are installed', async () => {
+    // Neither the recipe skill nor a checks table in WORKFLOW.md can block the start.
     const worktree = mkdtempSync(join(tmpdir(), 'bakers-plugins-launch-'));
     writeFileSync(
       join(worktree, 'WORKFLOW.md'),
-      '## bb-phase-work\n\n| When | Skill |\n|---|---|\n| a | `testing` |\n',
+      '## bb-phase-work\n\n### Checks\n\n| Check | `command` for `ddev_exec` |\n|---|---|\n| PHPCS | `.ddev/commands/web/phpcs` |\n',
     );
     const agent = baseAgent([], {
       installPlugins: async (_m, _home) => ({
@@ -190,17 +190,11 @@ describe('conductor: a run starts with the project plugins installed', () => {
       recipe: 'matt',
       worktree,
     });
-    expect(executor.started).toHaveLength(0);
-    expect(remote.calls.markFailed[0]?.errorLog).toMatch(
-      /missing required skills: bb-recipe-matt \(ticket recipe\)/,
-    );
-    // WORKFLOW.md is read by the agent only; its `testing` row is never required.
-    expect(entry).toMatchObject({
-      required_skills: {
-        required: ['bb-recipe-matt'],
-        missing: ['bb-recipe-matt'],
-      },
-    });
+    expect(executor.started).toHaveLength(1);
+    expect(remote.calls.markFailed).toHaveLength(0);
+    expect(entry).toMatchObject({ state: 'on', outcome: 'reused' });
+    expect(entry).not.toHaveProperty('required_skills');
+    expect(entry).not.toHaveProperty('failure');
   });
 
   it.each([
@@ -220,7 +214,6 @@ describe('conductor: a run starts with the project plugins installed', () => {
     expect(entry).toMatchObject({
       harness: 'claude',
       state: `off (${reason})`,
-      required_skills: 'skipped (plugins off)',
     });
   });
 

@@ -44,7 +44,6 @@ import { attemptFamily } from './attempt.js';
 import { type HookRunner, shellHookRunner } from './hook-runner.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
-import { checkRequiredSkills } from './required-skills.js';
 import { runStartHooks } from './start-hooks.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
 import { signalUi } from './ui-signal.js';
@@ -1477,7 +1476,6 @@ export class Conductor {
     chosen: ResolvedAgent,
     t: Ticket,
     run: ClaimedRun,
-    worktree: string,
   ): Promise<{ env: Record<string, string>; args: string[] }> {
     const marketplaces = this.config.marketplaces ?? [];
     const harness = chosen.agent.id;
@@ -1501,8 +1499,6 @@ export class Conductor {
             : undefined;
     if (off || !chosen.agent.installPlugins) {
       entry.state = `off (${off})`;
-      // Without the agent home, which skills the run gets is the user's own setup.
-      entry.required_skills = 'skipped (plugins off)';
       log();
       return { env: {}, args: [] };
     }
@@ -1523,15 +1519,6 @@ export class Conductor {
       entry.failure = err instanceof Error ? err.message : String(err);
       log();
       throw new Error(`plugins: ${harness} install failed: ${entry.failure}`);
-    }
-    const skills = checkRequiredSkills(worktree, home, t);
-    entry.required_skills = skills;
-    if (skills.missing.length > 0) {
-      entry.failure = `missing required skills: ${skills.missing
-        .map((name) => `${name} (${skills.sources[name]})`)
-        .join(', ')}`;
-      log();
-      throw new Error(`plugins: ${harness}: ${entry.failure}`);
     }
     log();
     return { env: launch.env, args: launch.args };
@@ -1738,7 +1725,7 @@ export class Conductor {
     const tools = chosen.agent.withoutConductorTools
       ? undefined
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
-    const plugins = await this.installPlugins(chosen, t, run, ws.path);
+    const plugins = await this.installPlugins(chosen, t, run);
     Object.assign(env, plugins.env);
     const command = chosen.agent.launchCommand(
       prompt,
