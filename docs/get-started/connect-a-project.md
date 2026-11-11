@@ -20,31 +20,22 @@ Connect a repository on your computer so agents can work on its tickets. A serve
 Run the [verification below](#verify). If it passes, continue with [your first ticket](/get-started/first-ticket); do not create another project.
 :::
 
-## 1. Check the local setup
-
-Make sure the [bakers skills](/skills-and-workflows/skills) are available in your agent. In the checkout, ask:
-
-```text
-Use `bakers:bb-init` to check my local tools and bakers.build sign-in.
-Reuse working installations and guide me through anything missing.
-```
-
-If setup needs more detail, follow [Provision](/provision/machine#complete-missing-setup), then return here.
-
 <span id="skill-wizard-—-recommended"></span>
 <span id="connect-or-reuse"></span>
 
 <span id="ai-first-connect-this-checkout"></span>
 <span id="1-connect-this-checkout"></span>
 
-## 2. Connect this checkout
+## 1. Connect this checkout
 
-Ask your agent to connect the repository. It checks existing settings before making changes.
+Make sure the [bakers skills](/skills-and-workflows/skills) are available in your agent. In the checkout, ask it to set up the project. It checks existing settings and guides you through missing prerequisites before making changes.
 
 ```text
 Use `bakers:bb-init-project` to connect this checkout as a bakers.build project.
-Reuse this environment, connection and any existing server project. Check
-the project’s setup commands and keep the existing client when one is configured.
+Check local tools and sign-in, and guide me through anything missing.
+Reuse this environment, connection and any existing server project. Ask which
+client I want to use unless I already chose one or the project has one configured.
+Check the project’s setup commands.
 Confirm the permission group and exact hook commands with me.
 Prepare WORKFLOW.md, check required skills, and show what changed.
 ```
@@ -55,13 +46,15 @@ Prepare WORKFLOW.md, check required skills, and show what changed.
 
 ### Review the project setup
 
-Your agent checks three parts of the project. Keep existing settings and use these guides when you need to change them.
+Start with the client, application environment and workflow. Keep existing settings and use these guides when you need to change them.
 
 <DocTiles :tiles="[
   { title: 'Use your client', text: 'Choose how you observe, discuss and act on ticket work with herdr-cli, herdr-app, Orca or Hermes. Keep working project settings.', link: '/get-started/use-your-client', icon: 'terminal', meta: 'Explore clients →' },
   { title: 'Prepare your environment', text: 'The environment runs your application and dependencies. Reuse your project scripts and make them work independently in each ticket worktree.', link: '/provision/guide', icon: 'layers', meta: 'Prepare the environment →' },
   { title: 'Configure your workflow', text: 'WORKFLOW.md supplies project rules and checks. Keep the existing recipe, or start with the shipped Matt recipe.', link: '/skills-and-workflows/guide', icon: 'book', meta: 'Understand workflows →' }
 ]" />
+
+Follow [Choose the missing settings](../provision/guide.md#choose-the-missing-settings) for provisioning, plugins, permissions, repository delivery and preview sharing. The agent asks only for missing choices and verifies their saved values.
 
 Return here after any changes. Before starting agents, install every skill the workflow names and review [tools and security](/provision/guide#check-tools-and-access).
 
@@ -87,7 +80,7 @@ Ignore `/assets-ai/`, `/.bakers/log.txt` and `/.bakers/connection.config.js`. Co
 <span id="verify"></span>
 <span id="2-verify-the-connection-and-environment"></span>
 
-## 3. Verify the connection and environment
+## 2. Verify the connection and environment
 
 Confirm that this checkout points to the intended project and is ready for a ticket.
 

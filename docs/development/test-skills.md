@@ -123,8 +123,11 @@ Directories and replay files must be unused. The driver keeps private answers ou
 role, retains per-role raw streams, and passes literal actions through a closed boundary. Local
 config commands use the real registered CLI implementation with `BAKERS_HOME` and auth state
 inside the case; external authentication and tracker responses are labelled fixture doubles.
-Only inert documentation and ignore files can be written directly; arbitrary config JavaScript,
-installation, cloning, hooks and conductor startup are unavailable. These restrictions can block
+Direct machine/project config writes accept only `export default` followed by a strict JSON
+object; imports, expressions, extra statements and connection writes are rejected. After such a
+write, real CLI operations are limited to offline checks and dry runs. Exact field assertions
+parse this data without executing it. Arbitrary config JavaScript, installation, cloning, hooks
+and conductor startup are unavailable. These restrictions can block
 a scenario and must not be reported as skill defects. `completed` means the conversation reached
 a final report, not that setup succeeded. Read the final report and file assertions separately.
 

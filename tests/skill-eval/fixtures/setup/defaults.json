@@ -18,7 +18,19 @@
     "docs/addons/slots.md",
     "docs/agents/guide.md",
     "docs/cli/tools.md",
-    "docs/provision/worker-server.md"
+    "docs/provision/worker-server.md",
+    "docs/provision/guide.md",
+    "docs/provision/tools.md",
+    "docs/provision/security/execution.md",
+    "docs/configuration/project/hooks.md",
+    "docs/addons/configure.md",
+    "docs/addons/forge.md",
+    "docs/addons/forge-github.md",
+    "docs/addons/ports.md",
+    "docs/addons/ports-services.md",
+    "docs/addons/ports-cloudflare-quick.md",
+    "docs/skills-and-workflows/workflow-file.md",
+    "docs/skills-and-workflows/skills.md"
   ],
   "answers": {
     "machine_role": "Run tickets on my own local computer.",

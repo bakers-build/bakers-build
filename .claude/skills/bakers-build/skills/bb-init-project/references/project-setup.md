@@ -1,34 +1,55 @@
 # Project setup
 
-Apply only for `project` or `all` initialization, before writing configuration that names a project.
+For `project` or `all`, read [Prepare your project](https://bakers.build/get-started/connect-a-project)
+and its linked [setup decisions](https://bakers.build/provision/guide#choose-the-missing-settings).
+In a source checkout, use
+`docs/get-started/connect-a-project.md` and the corresponding local `docs/` pages for every link.
+Load each applicable guide before recommending or configuring its integration. Missing documentation
+blocks that choice; report the missing source instead of substituting a template.
 
-Read [Set up a project](https://bakers.build/get-started/connect-a-project), using
-`docs/get-started/connect-a-project.md` in a bakers.build source checkout. Resolve the client’s
-executor/workspace pair separately from the application environment; preserve explicit repository
-choices. Explain proposed setup/readiness/cleanup commands, then obtain the operator’s exact hook
-choices below. **Done when both choices and their owning files are understood.**
+## Resolve and ask
 
-1. Search the control plane for the requested project name. Reuse a hit and report its UUID;
-   otherwise invoke `@bakers-build/bb-create-project`. Use the returned entity's own name for `--project`:
-   `bakers config init` records a name without verifying it.
-2. Ask the operator for each lifecycle hook; an empty answer means none. Pass their exact commands
-   with `--after-create <command>` / `--after-done <command>`. Never infer/probe a provisioning tool
-   or command. Omitting both writes no `hooks` key. Unattended: write no hooks and report this.
-   When agents need the running application, explain `hooks.provision_up`
-   ([hooks](https://bakers.build/provision/hooks#provision-on-an-agent-s-request)):
-   one command per profile that reuses a ready environment. No flag writes it; the operator adds
-   it to `.bakers/project.config.js`.
-3. Preserve existing `WORKFLOW.md` and additions; create an absent file from
-   [WORKFLOW.template.md](WORKFLOW.template.md). Keep its entry line verbatim.
-4. Fill the `## bb-phase-provision`, `## bb-phase-work`, `## bb-phase-validate`, `## bb-phase-deliver`
-   and `## bb-phase-outtake` hints from repository
-   requirements; delete a section that stays empty. `## bb-phase-transition` carries the default
-   origin-label table; show it to the operator, apply their vocabulary, or delete it when the
-   project writes no origin labels. Verify named skills and commands through the
-   agent environment's installation/discovery facilities; report missing skills by name. Report
-   the installed `bb-recipe-*` skills; recipe guidance for qualification, if the project wants any,
-   goes in the `## bb-phase-work` hint.
-5. Ensure `.gitignore` contains `/assets-ai/` with a short explanatory comment
-   ([transient root](../../bb-workflow/references/evidence.md)); prove it with `git check-ignore -v assets-ai/probe`.
-   Ignore a project `.bakers/connection.config.js` that holds credentials; verify every
-   applicable path with `git check-ignore -v`.
+Search the control plane for the requested project. Reuse an unambiguous hit and report its UUID;
+otherwise invoke `@bakers-build/bb-create-project`. Use the returned entity's name for `--project`.
+A denied lookup is not proof that the project is absent.
+
+For each applicable decision in the guide, inspect existing settings and caller answers first.
+Track every row of the linked setup-decision table, with its source, answer or unresolved status.
+Finish the missing decisions before treating the configuration as complete; creating a WORKFLOW
+does not resolve its recipe/marketplace choice. Do not silently skip a row.
+Name the source of a reused choice. Link the applicable documentation whenever explaining a choice.
+Ask for **one field or decision per turn** and wait. Request related follow-up values in later turns:
+profile commands and readiness checks are separate decisions, as are marketplace and workflow hints.
+Ask each lifecycle command separately. An installed
+client is not a selected client. Unattended, keep unknown choices unresolved and report them.
+**Done when every applicable choice has a source, an answer, or an explicit unresolved status.**
+
+## Persist the choices
+
+Use the documentation's owning files and current CLI help. Initialization supplies a starting
+configuration, not the user's choices. Read back every generated setting; reconcile defaults with
+the selected client and documented addon scopes. Preserve unrelated custom values and identities.
+
+For documented settings without CLI flags, edit the selected configuration file directly within
+the authorized scope, preserving existing code and values. Explain the change first. A requested
+machine change needs shared-scope authorization; reuse authorization already given. If safe editing
+is unavailable, report the exact choice and owning field as unpersisted. Never substitute another
+choice or call the setup complete.
+**Done when each answer matches its saved field, or a concrete blocker is recorded.**
+
+## Workflow and verification
+
+Follow the project's [workflow guide](https://bakers.build/skills-and-workflows/workflow-file).
+Preserve existing `WORKFLOW.md`; for an absent file, the
+[small skeleton](WORKFLOW.template.md) supplies the entry line and phase headings only.
+Fill hints from the chosen setup and repository requirements. Show the origin-label table and
+ask for missing vocabulary; remove it if the operator chooses no origin labels. Remove empty hints.
+Verify named skills and report installed recipes through the agent's discovery facilities.
+
+Follow the project guide's verification commands, including applicable ignore paths. Record
+the final saved configuration after all edits, then reconcile it against every tracked decision.
+Run the configuration checks after the last configuration write.
+Record
+actual command results; report an unavailable command only after checking the available tools.
+Distinguish local validity, sign-in, project access and runtime readiness. A local config check
+is not proof that addons, provisioning or tunnels work.

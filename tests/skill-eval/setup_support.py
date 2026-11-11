@@ -36,6 +36,19 @@ def safe_path(root, value):
     return path
 
 
+def validate_config_write(root, path, content):
+    relative = safe_path(root, path).relative_to(Path(root).resolve()).as_posix()
+    if relative not in {'project/.bakers/project.config.js', 'machine/machine.config.js'}:
+        raise ValueError('Only the case project and machine config may be written directly')
+    match = re.fullmatch(r'\s*export default\s+(\{.*\})\s*;?\s*', content, re.DOTALL)
+    if not match:
+        raise ValueError('Config must be export default followed by a strict JSON object; no executable code')
+    def reject_constant(value):
+        raise ValueError('Invalid JSON constant: ' + value)
+    if not isinstance(json.loads(match[1], parse_constant=reject_constant), dict):
+        raise ValueError('Expected a JSON object')
+
+
 def config_args(root, argv):
     if not isinstance(argv, list) or not all(isinstance(value, str) for value in argv):
         raise ValueError('Expected literal argv')

@@ -5,7 +5,8 @@ description: Use when initializing or completing bakers.build machine, connectio
 
 # Initialize bakers.build configuration
 
-Use the CLI inventory/repair planner; existing files alone do not establish readiness.
+Follow the setup documentation for choices and file ownership. Use the CLI inventory/repair
+planner for supported changes; generated defaults and existing files alone do not establish readiness.
 For requested migration use `@bakers-build/bb-upgrade-project`.
 Read [setup checks](references/setup-checks.md) before checking/applying.
 
@@ -40,8 +41,9 @@ requires shared-setup authorization. Obtain missing scope authorization before s
 
 Run `bakers config init --scope <scope>` with selected inputs/paths; project/all includes
 `--project <resolved-name>` and `--path`. CLI fills/migrates supported partial layers while
-preserving custom values. Keep `--project-connection keep`; use `create` only for an explicitly
-requested override.
+preserving custom values. Select a named connection using the current help and
+[connection guide](https://bakers.build/configuration/connection). Reconcile generated files with
+the documented choices from project setup, including settings without CLI flags.
 
 If authentication fails after preparation, report written paths and incomplete setup; follow the
 selected connection's exact `bakers` provider login remedy and rerun initialization.

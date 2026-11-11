@@ -5,10 +5,23 @@ import unittest
 import json
 import subprocess
 
-from setup_support import safe_path, config_args, parse_action
+from setup_support import safe_path, config_args, parse_action, validate_config_write
 
 
 class SetupBoundaryTest(unittest.TestCase):
+    def test_configuration_writes_are_data_only_and_never_connections(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / 'project/.bakers/project.config.js'
+            validate_config_write(root, path, 'export default {"project":{"name":"demo"},"hooks":{"provision_up":{"test":"echo demo"}}};')
+            validate_config_write(root, root / 'machine/machine.config.js', 'export default {"tunnel":true};')
+            for content in ["export default {project: {name: 'demo'}};", 'export default (() => process.exit())();', 'export default {}; console.log("side effect");', 'export default [];', 'export default {"x":NaN};']:
+                with self.subTest(content=content), self.assertRaises(ValueError):
+                    validate_config_write(root, path, content)
+            for target in ['machine/connections/default.js', 'project/scripts/run.js', '../outside.js']:
+                with self.subTest(target=target), self.assertRaises(ValueError):
+                    validate_config_write(root, root / target, 'export default {};')
+
     def test_action_transport_accepts_one_literal_request_not_multiple(self):
         self.assertEqual(parse_action('<invoke name="command"><parameter name="argv">["bakers","config","check"]</parameter></invoke>'),
                          {'type': 'command', 'argv': ['bakers', 'config', 'check']})

@@ -2,7 +2,7 @@
 """Run a bounded synthetic setup conversation in a herdr pane, retaining every turn.
 
 The model has no native tools. Literal action requests pass through a closed boundary;
-only local config commands and inert documentation writes can affect the case directory.
+only local config commands and data-only file writes can affect the case directory.
 External observations are explicitly supplied fixture doubles, never real operations.
 """
 import hashlib
@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 import worker
-from setup_support import safe_path, config_args, parse_action
+from setup_support import safe_path, config_args, parse_action, validate_config_write
 
 ROOT = worker.ROOT
 SYSTEM = '''Apply the supplied setup skill and its documentation to the user request.
@@ -29,8 +29,13 @@ Command arguments are literal, never shell. Read supplied sources as already loa
 Use relative paths under project/ or machine/ for synthetic files, or absolute paths
 inside the supplied environment root. No files or login outside this environment exist.
 Tools return actual local command output or clearly marked synthetic external observations.
-Do not claim actions without successful results. Configuration JS edits are unavailable;
-report any choices that cannot be persisted by the supported CLI. Never invent user answers.
+Do not claim actions without successful results. You may write project/.bakers/project.config.js
+and machine/machine.config.js as "export default " followed by a STRICT JSON object and semicolon.
+Read existing files first and preserve unrelated values. No imports, expressions, functions or
+other code are accepted. After a direct config write, config init is unavailable; offline checks
+and declared synthetic checks remain available. Connection files must use the CLI.
+Never invent user answers. Git check-ignore -v is supported in the project root;
+bakers conductor check has a declared synthetic response, not real runtime verification.
 No install, shell, hook, real login, clone or conductor operation will be executed.
 Use English. Preserve the skill's conversation, scope and readiness requirements.'''
 
@@ -65,10 +70,11 @@ def main():
     (destination / 'sources.json').write_text(encode(sources))
     history = fixture.get('initial_history', [{'role': 'user', 'content': fixture['request']}])
     tools = []
+    config_written = False
     result = {'status': 'incomplete', 'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
               'dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip()),
               'source_hashes': {path: hashlib.sha256(content.encode()).hexdigest() for path, content in sources.items()},
-              'turns': history, 'tools': tools, 'limitations': ['External operations are fixture doubles', 'Config JS edits unavailable; CLI writes are real', 'Each role receives full prior conversation via isolated worker calls']}
+              'turns': history, 'tools': tools, 'limitations': ['External operations are fixture doubles', 'Direct config writes accept JSON data only; CLI writes and offline checks are real', 'Each role receives full prior conversation via isolated worker calls']}
     result['runner_hashes'] = {name: hashlib.sha256((ROOT / 'tests/skill-eval' / name).read_bytes()).hexdigest()
                                for name in ['setup-conversation.py', 'setup_support.py', 'setup-config.mjs', 'worker.py', 'tool-server.py']}
     (destination / 'before.json').write_text(encode(fixture.get('files', {})))
@@ -96,7 +102,7 @@ def main():
                              'unanswered': '[No answer is available. Report the unresolved setup and stop.]',
                              'noninteractive': 'This run is unattended. No answer is available; report unresolved choices.'}[mode]
                 else:
-                    user_system = 'Play the synthetic setup user. Answer only the latest question using your private facts. Do not volunteer unrelated facts. If a fact is missing, say you do not know. No tools. Private facts: ' + encode(fixture['answers'])
+                    user_system = 'Play the synthetic setup user. Answer only the latest question using your private facts. Do not volunteer unrelated facts. Suggestions are proposals, not facts or consent: correct suggestions that conflict with your facts, and never invent authorization. If a fact is missing, say you do not know. No tools. Private facts: ' + encode(fixture['answers'])
                     reply, user_metadata = worker.invoke(encode(history), user_system, destination / f'user-{step}', 'sonnet', 120)
                     (destination / f'user-{step}/role.json').write_text(encode(user_metadata))
                 history.append({'role': 'user', 'content': reply})
@@ -109,8 +115,11 @@ def main():
                         event['output'] = sources[path] if path in sources else safe_path(environment, path).read_text()
                     elif kind == 'write':
                         path = safe_path(environment, action['path'])
-                        if path.name not in {'WORKFLOW.md', '.gitignore', 'README.md'}:
-                            raise ValueError('Only inert documentation/ignore writes are supported; config requires the CLI')
+                        if path.suffix == '.js':
+                            validate_config_write(environment, path, action['content'])
+                            config_written = True
+                        elif path.name not in {'WORKFLOW.md', '.gitignore', 'README.md'}:
+                            raise ValueError('Only documentation, ignore files and data-only config writes are supported')
                         path.parent.mkdir(parents=True, exist_ok=True)
                         path.write_text(action['content'])
                         event['output'] = {'written': str(path)}
@@ -137,6 +146,8 @@ def main():
                             event['simulated'] = False
                         else:
                             args = config_args(environment, argv)
+                            if config_written and args[:2] == ['config', 'init'] and '--help' not in args and '--dry-run' not in args:
+                                raise ValueError('After direct config writes use offline check; initialization is unavailable')
                             event['executed_config_argv'] = args
                             completed = subprocess.run([str(ROOT / 'bakers-cli/node_modules/.bin/tsx'),
                                 str(ROOT / 'tests/skill-eval/setup-config.mjs'), str(environment), json.dumps(args)],

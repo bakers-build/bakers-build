@@ -5,8 +5,7 @@ description: Use when preparing a machine for bakers.build, choosing its tooling
 
 # Initialize a bakers.build machine and user
 
-Guide the person through the documentation as a wizard. The documentation owns tool choices,
-requirements and commands; this skill owns the conversation. Return project configuration to
+Documentation owns choices and commands; this skill guides the conversation. Return project setup to
 `@bakers-build/bb-init-project`.
 
 ## Read
@@ -23,8 +22,7 @@ substitute a remembered tool list.
 Establish whether this host runs tickets, locally or remotely. Resolve agent harnesses, skills
 and host prerequisites from the documentation. Leave client and environment choices to project
 setup; reuse existing projects’ requirements. A Coder workspace is a remote worker whose
-template provides its tools; its operator documents it. Explain the options and their
-tradeoffs briefly, using the docs; distinguish supported integrations from planned ones.
+template provides its tools; its operator documents it. Explain documented tradeoffs; distinguish supported integrations from planned ones.
 
 Reuse supplied answers and explicit project or machine configuration, naming the source.
 Ask one unanswered question at a time and wait. Unattended, use known choices and mark unanswered
@@ -42,7 +40,9 @@ install command only with explicit consent, or hand it over when it needs `sudo`
 
 Before configuration writes, inspect existing configuration, collect only missing inputs and
 write after the person confirms.
-Preserve correct values and keep secrets out of output.
+Preserve correct values and keep secrets out of output. Follow the linked
+[machine configuration](https://bakers.build/configuration/machine) guide for harness registration
+and preview policy when requested; identity initialization alone does not configure these.
 Distinguish tool readiness, authentication and workspace access. Blocked prerequisites remain
 outstanding; they are not successful setup.
 **Done when the documented checks pass or each remaining action has an owner.**
