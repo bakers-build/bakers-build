@@ -80,7 +80,7 @@ On screen: the landing page hero; scroll slowly to the line with its four statio
 
 > Hi! This is bakers.build. Like a baker in their own bakery, every developer stays in charge of their work.
 > Your team writes down what it needs, as a ticket.
-> AI agents do the heavy lifting: they plan, build, check and deliver, always along the same line. The people decide.
+> AI agents do the heavy lifting: they plan, build, check and deliver, always along the same line. The developer steers: they read along, correct and decide.
 > How that line works is your recipe: WORKFLOW.md, a text file right next to your code.
 
 ### 2. A ticket system for AI (about 18 s)
