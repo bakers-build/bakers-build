@@ -658,12 +658,15 @@ Given('a disposable ticket titled {string}', async ({ page }, title: string) => 
   createDisposableTicket(page, 'bb_work', 'working', null, title);
 });
 
-Then('the page heading holds the whole title of the disposable ticket, also on hover', async ({ page }) => {
+// As text: no element inside the heading, and nothing the title carries ran.
+Then('the page heading shows the whole title of the disposable ticket as text, also on hover', async ({ page }) => {
   const { identifier, title } = subject(page);
   const headline = `${identifier} · ${title}`;
   const heading = page.getByRole('heading', { level: 1 });
   await expect(heading).toHaveText(headline);
   await expect(heading).toHaveAttribute('title', headline);
+  await expect(heading.locator('*')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as { __bbXss?: number }).__bbXss)).toBeUndefined();
 });
 
 // ---------------------------------------------------------------------------

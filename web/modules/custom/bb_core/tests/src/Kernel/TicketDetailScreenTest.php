@@ -329,6 +329,41 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
+   * The page header shows a ticket's title and sub-line as text.
+   *
+   * A title and a project name are typed by people; a tag in them shows as
+   * typed, a quote stays inside the hover title and nothing in them runs.
+   */
+  public function testPageHeaderRendersTitleAndSublineAsText(): void {
+    $hostile = 'A <i>tag</i>, a "quote" and <img src=x onerror="window.__bbXss=1">';
+    $project = $this->ticket->getProject();
+    self::assertNotNull($project);
+    $project->set('name', $hostile)->save();
+    $this->ticket->set('title', $hostile)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $string = $this->container->get('plugin.manager.ui_patterns_prop_type')->createInstance('string');
+    self::assertInstanceOf(PropTypeInterface::class, $string);
+    $sources = $this->container->get('plugin.manager.ui_patterns_source');
+    $props = [];
+    foreach (['title' => 'bb_page_title', 'description' => 'bb_page_header_description'] as $prop => $id) {
+      $source = $sources->createInstance($id, []);
+      self::assertInstanceOf(SourcePluginBase::class, $source);
+      $props[$prop] = $source->getValue($string);
+    }
+    $this->container->get('theme_installer')->install(['bb_theme']);
+    $build = ['#type' => 'component', '#component' => 'bb_theme:page_header', '#props' => $props];
+    $header = new Crawler((string) $this->container->get('renderer')->renderInIsolation($build));
+
+    foreach (['h1', '#page-header-description'] as $selector) {
+      $node = $header->filter($selector);
+      self::assertCount(1, $node, $selector);
+      self::assertCount(0, $node->filter('i, img'), $selector);
+      self::assertStringContainsString($hostile, $node->text(), $selector);
+      self::assertStringContainsString($hostile, (string) $node->attr('title'), $selector);
+    }
+  }
+
+  /**
    * A fresh page header description source, on the current route.
    */
   private function descriptionSource(): SourcePluginBase {

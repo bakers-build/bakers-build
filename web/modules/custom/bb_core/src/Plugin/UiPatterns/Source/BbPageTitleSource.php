@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
+use Drupal\Component\Render\MarkupInterface;
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Controller\TitleResolverInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -19,7 +21,8 @@ use Symfony\Component\Routing\Route;
  * The Drupal page title, as a string the shell header can print.
  *
  * TitleResolver may return a string, markup, or a render array with #markup
- * (`UserController::userTitle`). A string prop cannot hold a render array.
+ * (`UserController::userTitle`). A string prop cannot hold a render array,
+ * and it prints as markup, so plain text arrives escaped.
  */
 #[Source(
   id: 'bb_page_title',
@@ -58,7 +61,10 @@ final class BbPageTitleSource extends SourcePluginBase implements ContainerFacto
     if ($request === NULL || !$route instanceof Route) {
       return '';
     }
-    return self::stringify($this->titleResolver->getTitle($request, $route));
+    $title = $this->titleResolver->getTitle($request, $route);
+    // A string prop prints as markup, so a plain-text title is escaped here;
+    // a title that is markup already carries its escaping.
+    return $title instanceof MarkupInterface ? self::stringify($title) : Html::escape(self::stringify($title));
   }
 
   /**

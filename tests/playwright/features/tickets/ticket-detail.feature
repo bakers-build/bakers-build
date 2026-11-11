@@ -79,7 +79,20 @@ Feature: The ticket detail screen is one canvas inside the shell's island
   Scenario: A long title keeps its full text on hover
     Given a disposable ticket titled "Add designbook entity view-mode for bb_ticket so designers can preview every ticket detail layout, the summary band's $variables and the run history without hitting live Drupal data, in every workflow state and at both densities"
     When I visit the disposable ticket
-    Then the page heading holds the whole title of the disposable ticket, also on hover
+    Then the page heading shows the whole title of the disposable ticket as text, also on hover
+
+  # A ticket title is text, never markup: a tag shows as typed, a quote stays in
+  # the hover title and nothing in a title runs.
+  Scenario Outline: A ticket title renders as text
+    Given a disposable ticket titled '<title>'
+    When I visit the disposable ticket
+    Then the page heading shows the whole title of the disposable ticket as text, also on hover
+
+    Examples:
+      | title                                     |
+      | A <i>tag</i> title                        |
+      | Quote "here" title                        |
+      | <img src=x onerror="window.__bbXss=1">    |
 
   # AC 6's grouping, observed on the surface rather than on the grouper. BB-142
   # carries six links spanning mr, ci, report, design, ddev and chat — so all
