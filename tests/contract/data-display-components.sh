@@ -1113,6 +1113,7 @@ b4_row_cells_equal_the_column_keys() {
   python3 - "$THEME" $SECTION_SCENE_FILES <<'PY'
 import glob
 import os
+import re
 import sys
 import yaml
 
@@ -1183,8 +1184,12 @@ for path in mappings:
         if key not in src:
             print(f'  {rel}: a view mapping must emit {key}')
             rc = 1
-    if '"slots"' in src:
-        print(f'  {rel}: a view mapping must not fill a table slot (D2)')
+    # D2 is about a TABLE's `body`/`head`. Other nodes in a view mapping fill slots legitimately (the
+    # board's toolbar and filters, a zone's content), so only a `body`/`head` key that follows a table
+    # node, before the next component node, counts. shortcut: text, not a parse - a sibling body/head
+    # key right after a table would trip it, tighten then.
+    if re.search(r':table"(?:(?!"component").)*?"(?:body|head)"\s*:', src, re.S):
+        print(f'  {rel}: a view mapping must not fill a table `body` or `head` slot (D2)')
         rc = 1
 
 if not seen:
@@ -1336,10 +1341,14 @@ for mapping in sorted(glob.glob(f'{theme}/designbook/entity-mapping/*.jsonata'))
         # gap, not before.
         continue
     pairs += 1
+    # SUBSET, not equality: a Display Builder source (a PHP UI Patterns source such as
+    # `bb_project_overview`) fills inner trees at runtime, so the generator places only the outer
+    # components while the preview mapping must spell the inner ones out. What AC-1 needs is that every
+    # component the Drupal display places is previewed.
     mapped, synced = components_of(mapping), components_of(syncs[0])
-    if mapped != synced:
-        print(f'  {unit}: the mapping names {sorted(mapped)} but '
-              f'{os.path.basename(syncs[0])} names {sorted(synced)} (AC-1)')
+    if not synced <= mapped:
+        print(f'  {unit}: {os.path.basename(syncs[0])} places {sorted(synced - mapped)} '
+              f'which the mapping does not name (the mapping names {sorted(mapped)}) (AC-1)')
         rc = 1
 
 if pairs == 0:
@@ -1349,7 +1358,7 @@ sys.exit(rc)
 PY
 }
 
-check "B7 every entity mapping and its sync generator name the same component" \
+check "B7 every component an entity sync generator places is named by its mapping" \
   b7_mapping_and_sync_name_the_same_component
 
 # --- B8. The classification is `group:`, and the spelling is derived from it ---------------------
