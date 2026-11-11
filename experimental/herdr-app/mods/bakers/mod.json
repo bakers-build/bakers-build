@@ -1,1 +1,1 @@
-{ "place": "none", "title": "bakers", "overlay": { "width": 360, "height": 120 } }
+{ "place": "none", "title": "bakers", "focusable": true, "overlay": { "width": 360, "height": 120 } }

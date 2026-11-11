@@ -1,23 +1,26 @@
 import { View, div } from "gpui-kit";
 import { props, closeOverlay } from "herdr";
-import { Board } from "./board.js";
-import { Ticket } from "./ticket.js";
+import { List } from "./list.js";
+import { Panel } from "./panel.js";
 import { Rail } from "./rail.js";
+import { Sidebar } from "./sidebar.js";
+import { Status } from "./status.js";
+import { Menu } from "./menu.js";
 import { Confirm } from "./confirm.js";
-import { openBoard } from "./open.js";
+import { openList } from "./open.js";
 
-const VIEWS = { board: Board, ticket: Ticket, rail: Rail, confirm: Confirm };
+const VIEWS = { list: List, panel: Panel, rail: Rail, sidebar: Sidebar, status: Status, menu: Menu, confirm: Confirm };
 
-// One mod, one view per props().view. Opened by its key (mod.open:bakers) it shows the board tab and closes itself.
+// One mod, one view per props().view. Opened by its key (mod.open:bakers) it shows the Tickets tab with Needs me and closes itself.
 export default class Bakers extends View {
   init(_props, cx) {
     const p = props() ?? {};
     if (p.overlay && !p.view) {
-      openBoard();
+      openList("needs-me");
       closeOverlay(p.overlay);
       return;
     }
-    this.view = new (VIEWS[p.view] ?? Board)();
+    this.view = new (VIEWS[p.view] ?? List)();
     this.view.init(p, cx);
   }
 

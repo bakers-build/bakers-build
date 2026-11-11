@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  STATE_ORDER, stateLabel, terminalLabel, runTerminal, needsYou, toUnix, ago, boardColumns,
-  activeRun, newestComment, attention, openPlan, friendlyError, safeUrl, resolveProject, conductorLabel,
-  needsYouCount, boardSteps, machineOf, agentOf, statusLabel, claudeColor, CONFIRM,
+  STATE_ORDER, stateLabel, terminalLabel, runTerminal, toUnix, ago,
+  activeRun, newestComment, friendlyError, safeUrl, resolveProject, conductorLabel,
+  statusLabel, claudeColor, CONFIRM, machineIdOf,
 } from "../mods/bakers/derive.js";
 
 const NOW = 1_700_000_000_000;
@@ -31,13 +31,6 @@ test("runTerminal finds the live run", () => {
   assert.equal(runTerminal(terminals, "SHOP-60"), null);
 });
 
-test("needsYou needs frozen and the label", () => {
-  assert.equal(needsYou({ frozen: true, labels: ["question"] }), "Question");
-  assert.equal(needsYou({ frozen: true, labels: ["Technical Problem"] }), "Technical problem");
-  assert.equal(needsYou({ frozen: false, labels: ["Question"] }), null);
-  assert.equal(needsYou({ frozen: true, labels: [] }), null);
-});
-
 test("toUnix reads unix seconds and ISO dates", () => {
   assert.equal(toUnix(1_700_000_000), 1_700_000_000);
   assert.equal(toUnix("2023-11-14T22:13:20Z"), 1_700_000_000);
@@ -51,46 +44,6 @@ test("ago", () => {
   assert.equal(ago(secondsAgo(2 * 86400), NOW), "2d");
 });
 
-const ticket = (identifier, state, extra = {}) => ({
-  id: `u-${identifier}`, identifier, title: `Title of ${identifier}`, state, labels: [], frozen: false, frozen_at: null, closed: false, ...extra,
-});
-
-test("boardColumns orders, hides and explains", () => {
-  const tickets = [
-    ticket("SHOP-49", "review"),
-    ticket("SHOP-56", "plan", { frozen: true, labels: ["Question"] }),
-    ticket("SHOP-60", "qualification", { title: "Import legacy customer accounts" }),
-    ticket("SHOP-61", "pre_deployment"),
-    ticket("SHOP-62", "working", { frozen: true }),
-    ticket("SHOP-53", "done", { closed: true }),
-  ];
-  const events = [{ ticket: "SHOP-60", message: "created", created: secondsAgo(3600) }];
-  const terminals = [{ address: "t1", status: "blocked", program: { name: "Claude Code" }, labels: { "bakers.ticket": "SHOP-49" } }];
-  const runs = { "SHOP-60": { state: "running", agent: "codex" } };
-  const columns = boardColumns(tickets, events, terminals, "", NOW, runs);
-  assert.deepEqual(columns.map((c) => c.id), ["needs-you", "qualification", "working", "review", "pre_deployment"]);
-  assert.deepEqual(columns.map((c) => c.label), ["Needs you", "Qualification", "Working", "Review", "Pre deployment"]);
-  const card = (id) => columns.flatMap((c) => c.cards).find((c) => c.identifier === id);
-  assert.equal(card("SHOP-56").reason, "Question");
-  assert.equal(columns[0].cards[0].identifier, "SHOP-56");
-  assert.equal(card("SHOP-60").reason, "created");
-  assert.equal(card("SHOP-60").age, "1h");
-  assert.deepEqual(card("SHOP-49").agent, { name: "Claude Code", status: "blocked", where: "This computer", since: null });
-  assert.deepEqual(card("SHOP-60").agent, { name: "codex", status: "working", where: null, since: null }, "a run outside Herdr still shows");
-  assert.equal(card("SHOP-61").agent, null);
-  assert.equal(card("SHOP-62").reason, "Frozen");
-  assert.equal(columns.find((c) => c.id === "working").cards[0].identifier, "SHOP-62");
-  assert.equal(card("SHOP-53"), undefined);
-});
-
-test("boardColumns filters by identifier or title, case-insensitive", () => {
-  const tickets = [ticket("SHOP-60", "qualification", { title: "Import legacy customer accounts" }), ticket("SHOP-61", "plan")];
-  for (const filter of ["shop-60", "LEGACY"]) {
-    const cards = boardColumns(tickets, [], [], filter, NOW).flatMap((c) => c.cards);
-    assert.deepEqual(cards.map((c) => c.identifier), ["SHOP-60"]);
-  }
-});
-
 test("activeRun", () => {
   const running = { state: "running", closed: false };
   assert.equal(activeRun([{ state: "done", closed: true }, running]), running);
@@ -102,22 +55,6 @@ test("newestComment picks the newest of a type", () => {
   const comments = [{ type: "plan", created: 1, body: "a" }, { type: "plan", created: 5, body: "b" }, { type: "summary", created: 9, body: "c" }];
   assert.equal(newestComment(comments, "plan").body, "b");
   assert.equal(newestComment(comments, "spec"), null);
-});
-
-test("attention states facts only", () => {
-  const frozen = { frozen: true, labels: ["Question"] };
-  const asked = [{ type: "summary", created: 1, body: "old" }, { type: "question", created: 2, body: "Which carrier calendar?\nMore text" }];
-  assert.deepEqual(attention(frozen, asked, NOW), { kind: "question", title: "Question", body: "Which carrier calendar?" });
-  const open = { frozen: false, labels: [] };
-  assert.deepEqual(attention(open, [{ type: "plan", created: secondsAgo(180), body: "x" }], NOW), { kind: "newest", title: "Newest: plan, 3m", body: "" });
-  assert.equal(attention(open, [], NOW).kind, "none");
-});
-
-test("openPlan selects, adopts or opens a tab", () => {
-  const terminals = [{ address: "t3", labels: { "bakers.ticket": "SHOP-56", "bakers.run": "412" } }];
-  assert.deepEqual(openPlan("SHOP-56", terminals, [{ pane: "w1:p2", terminal: "t3", tab: "w1:t2" }]), { action: "select", tab: "w1:t2" });
-  assert.deepEqual(openPlan("SHOP-56", terminals, []), { action: "adopt", terminal: "t3", run: "412" });
-  assert.deepEqual(openPlan("SHOP-60", terminals, []), { action: "tab" });
 });
 
 test("friendlyError", () => {
@@ -146,44 +83,6 @@ test("conductorLabel falls back to the conductor id", () => {
   assert.equal(conductorLabel({ label: null, conductor_id: "c-1" }), "c-1");
 });
 
-test("needsYouCount counts open tickets that need a person", () => {
-  const tickets = [
-    ticket("SHOP-56", "plan", { frozen: true, labels: ["Question"] }),
-    ticket("SHOP-57", "working", { frozen: true }),
-    ticket("SHOP-58", "review", { frozen: true, labels: ["technical problem"], closed: true }),
-  ];
-  assert.equal(needsYouCount(tickets), 1);
-});
-
-test("boardSteps selects the board tab, or makes one", () => {
-  const space = { tabs: [{ id: "w1:t1", name: "1" }, { id: "w1:t2", name: "Tickets" }, { id: "w1:t3", name: "SHOP-56" }] };
-  const panes = [{ tab: "w1:t2", mod: "bakers" }, { tab: "w1:t3", mod: "bakers" }];
-  const newTab = ["tab.new", { name: "Tickets", mod: "bakers", props: { view: "board" } }];
-  assert.deepEqual(boardSteps(space, panes), [["tab.select", { id: "w1:t2" }]]);
-  assert.deepEqual(boardSteps(space, [{ tab: "w1:t2", terminal: "t9" }]), [newTab], "a terminal tab named Tickets is not the board");
-  assert.deepEqual(boardSteps(undefined, panes), [["space.new", {}], newTab], "with no space open, tab.new needs one first");
-});
-
-test("machineOf names where the ticket's run is", () => {
-  const conductors = [{ uuid: "c1", conductor_id: "mac-bakers", label: "rk-mac" }, { uuid: "c2", conductor_id: "vps", label: null }];
-  assert.equal(machineOf({ conductor: "c1" }, conductors, true), "This computer");
-  assert.equal(machineOf({ conductor: "c1" }, conductors, false), "rk-mac");
-  assert.equal(machineOf({ conductor: "c2" }, conductors, false), "vps");
-  assert.equal(machineOf(null, conductors, false), null);
-});
-
-test("agentOf takes the live status from Herdr, else the run's state from bakers", () => {
-  const conductors = [{ uuid: "c1", conductor_id: "mac-bakers", label: "rk-mac" }];
-  const run = { state: "running", agent: "claude", conductor: "c1", started_at: secondsAgo(240) };
-  const terminal = { address: "t3", status: "blocked", name: "Claude Code" };
-  assert.deepEqual(agentOf(terminal, run, conductors, NOW), { name: "Claude Code", status: "blocked", where: "This computer", since: "4m" });
-  assert.deepEqual(agentOf(null, run, conductors, NOW), { name: "claude", status: "working", where: "rk-mac", since: "4m" });
-  assert.equal(agentOf(null, { ...run, state: "claimed" }, conductors, NOW).status, "starting");
-  assert.equal(agentOf({ address: "vps/t3", status: "working" }, run, conductors, NOW).where, "rk-mac", "a terminal on another machine is not this computer");
-  assert.equal(agentOf({ address: "t3", name: "Claude Code" }, null, conductors, NOW).status, "working", "a live run terminal without a reported status is working");
-  assert.equal(agentOf(null, null, conductors, NOW), null);
-});
-
 test("statusLabel says blocked as needs you", () => {
   assert.equal(statusLabel("blocked"), "needs you");
   assert.equal(statusLabel("working"), "working");
@@ -200,11 +99,11 @@ test("claudeColor takes Claude Code's colors for the theme's brightness", () => 
 
 test("CONFIRM runs the confirmed action on the ticket", async () => {
   const calls = [];
-  const client = { cancelRun: async (...a) => calls.push(["cancel", ...a]), setFrozen: async (...a) => calls.push(["frozen", ...a]) };
+  const client = { cancelRun: async (...a) => calls.push(["cancel", ...a]), update: async (...a) => calls.push(["update", ...a]) };
   await CONFIRM.cancel.run(client, "u1", "Wrong branch");
   await CONFIRM.freeze.run(client, "u1");
   await CONFIRM.unfreeze.run(client, "u1");
-  assert.deepEqual(calls, [["cancel", "u1", "Wrong branch"], ["frozen", "u1", true], ["frozen", "u1", false]]);
+  assert.deepEqual(calls, [["cancel", "u1", "Wrong branch"], ["update", "u1", { frozen: true }], ["update", "u1", { frozen: false }]]);
   assert.equal(CONFIRM.cancel.title("SHOP-56"), "Cancel the running run on SHOP-56?");
   assert.equal(CONFIRM.cancel.reason, true);
   assert.equal(CONFIRM.freeze.reason, undefined);
@@ -213,4 +112,11 @@ test("CONFIRM runs the confirmed action on the ticket", async () => {
 test("friendlyError reads the message of a bakers error object", () => {
   const output = '{"error":{"code":"E_TOOL","message":"Invalid input: Project 0000 does not exist or is not readable."}}';
   assert.equal(friendlyError(output), "Invalid input: Project 0000 does not exist or is not readable.");
+});
+
+test("machineIdOf reads this computer's machine_id from the bakers machine config", () => {
+  assert.equal(machineIdOf('module.exports = {\n  machine_id: "MBP-von-Pascal",\n  label: "x",\n};'), "MBP-von-Pascal");
+  assert.equal(machineIdOf("export default { machine_id: 'studio-mac' }"), "studio-mac");
+  assert.equal(machineIdOf(null), null);
+  assert.equal(machineIdOf("{}"), null);
 });

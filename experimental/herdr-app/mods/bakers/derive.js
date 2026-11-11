@@ -2,7 +2,8 @@
 
 export const STATE_ORDER = ["qualification", "plan", "working", "review"];
 
-const NEEDS_YOU = { question: "Question", "technical problem": "Technical problem" };
+const ASKED = { question: "Asked a question", "technical problem": "Technical problem" };
+const CLOSED_STATES = new Set(["done", "cancelled"]);
 const ACTIVE_RUN = new Set(["claimed", "running"]);
 
 export function stateLabel(state) {
@@ -25,14 +26,16 @@ export function runTerminal(terminals, identifier) {
   return hit ? { address: hit.address, run: terminalLabel(hit, "bakers.run"), status: hit.status, name: hit.program?.name } : null;
 }
 
-export function needsYou(ticket) {
-  if (!ticket?.frozen) return null;
-  for (const label of ticket.labels ?? []) {
-    const hit = NEEDS_YOU[String(label).toLowerCase()];
-    if (hit) return hit;
-  }
-  return null;
+export const isClosed = (ticket) => Boolean(ticket?.closed ?? CLOSED_STATES.has(ticket?.state));
+
+// Why a ticket needs a person: the agent asked (frozen with the label), or its plan waits for approval.
+export function needsMe(ticket, planReady) {
+  if (isClosed(ticket)) return null;
+  const asked = ticket.frozen ? (ticket.labels ?? []).map((l) => ASKED[String(l).toLowerCase()]).find(Boolean) : null;
+  return asked ?? (planReady ? "Plan ready for approval" : null);
 }
+
+export const planWaits = (ticket, run, comments) => ticket?.state === "plan" && !run && (comments ?? []).some((c) => c.type === "plan");
 
 export function ago(unixSeconds, nowMs) {
   const minutes = Math.floor(Math.max(0, nowMs / 1000 - unixSeconds) / 60);
@@ -44,41 +47,95 @@ export function ago(unixSeconds, nowMs) {
 
 export const toUnix = (value) => (typeof value === "number" ? value : Date.parse(value) / 1000);
 
-export function boardColumns(tickets, events, terminals, filter, nowMs, runs) {
-  const newest = new Map();
-  for (const e of events ?? []) {
-    if (!newest.has(e.ticket) || e.created > newest.get(e.ticket).created) newest.set(e.ticket, e);
-  }
-  const needle = String(filter ?? "").trim().toLowerCase();
-  const columns = new Map([["needs-you", { id: "needs-you", label: "Needs you", cards: [] }]]);
-  for (const state of STATE_ORDER) columns.set(state, { id: state, label: stateLabel(state), cards: [] });
-  for (const t of tickets ?? []) {
-    if (t.closed) continue;
-    if (needle && !`${t.identifier} ${t.title}`.toLowerCase().includes(needle)) continue;
-    const asks = needsYou(t), event = newest.get(t.identifier);
-    const when = event?.created ?? (t.frozen_at ? toUnix(t.frozen_at) : null);
-    const card = {
-      id: t.id, identifier: t.identifier, title: t.title,
-      reason: asks ?? (t.frozen ? "Frozen" : event?.message ?? null),
-      age: when == null || Number.isNaN(when) ? null : ago(when, nowMs),
-      agent: agentOf(runTerminal(terminals, t.identifier), runs?.[t.identifier] ?? null, [], nowMs),
-    };
-    const id = asks ? "needs-you" : t.state;
-    if (!columns.has(id)) columns.set(id, { id, label: stateLabel(id), cards: [] });
-    columns.get(id).cards.push(card);
-  }
-  return [...columns.values()].filter((c) => c.cards.length);
+const VIEW_LABELS = { "needs-me": "Needs me", mine: "Mine", open: "Open by state", closed: "Recently closed" };
+
+export const viewLabel = (view) => VIEW_LABELS[view] ?? stateLabel(String(view).replace(/^state:/, ""));
+
+const openStates = (tickets) => [...new Set([...STATE_ORDER, ...tickets.map((t) => t.state)])];
+
+// The sidebar's saved views; Mine and Recently closed need fields the API does not have yet.
+export function sidebarViews(tickets, needing) {
+  const open = (tickets ?? []).filter((t) => !isClosed(t));
+  return [
+    { id: "needs-me", label: "Needs me", count: needing.length },
+    { id: "mine", label: "Mine", api: true },
+    { id: "open", label: "Open by state", count: open.length },
+    ...openStates(open).map((s) => ({ id: `state:${s}`, label: stateLabel(s), count: open.filter((t) => t.state === s).length, indent: true })),
+    { id: "closed", label: "Recently closed", api: true },
+  ];
 }
 
-export const needsYouCount = (tickets) => (tickets ?? []).filter((t) => !t.closed && needsYou(t)).length;
+export function statusLine({ project, needs, updated, error }, nowMs) {
+  const since = updated ? ago(updated / 1000, nowMs) : null;
+  const fresh = error ? "bakers offline" : since && (since === "now" ? "updated just now" : `updated ${since} ago`);
+  return { project, needs: `${needs} need${needs === 1 ? "s" : ""} you`, fresh: fresh ?? "" };
+}
 
-// The board is the active space's tab named "Tickets" that shows the bakers mod.
-// The commands that show the board: its tab if open, else a new one, in a new space when none is open.
-export function boardSteps(space, panes) {
-  const tab = (space?.tabs ?? []).find((t) => t.name === "Tickets" && (panes ?? []).some((p) => p.tab === t.id && p.mod === "bakers"));
-  const newTab = ["tab.new", { name: "Tickets", mod: "bakers", props: { view: "board" } }];
-  if (tab) return [["tab.select", { id: tab.id }]];
+const when = (ticket, events) => {
+  const at = ticket.frozen_at ? toUnix(ticket.frozen_at) : Math.max(...events.filter((e) => e.ticket === ticket.identifier).map((e) => e.created));
+  return Number.isFinite(at) ? at : null;
+};
+
+// The rows of a view: identifier, title, why it needs me (or its state), the agent and how long it waits.
+export function ticketRows(tickets, { reasons, events, agents }, view, filter, showClosed, nowMs) {
+  const needle = String(filter ?? "").trim().toLowerCase();
+  const order = openStates(tickets ?? []);
+  const inView = {
+    "needs-me": (t) => Boolean(reasons[t.identifier]),
+    open: (t) => !isClosed(t) || showClosed,
+    closed: isClosed,
+  }[view] ?? ((t) => view.startsWith("state:") && (t.state === view.slice(6) || (showClosed && isClosed(t))));
+  return (tickets ?? [])
+    .filter((t) => inView(t) && `${t.identifier} ${t.title}`.toLowerCase().includes(needle))
+    .map((t) => ({ t, at: when(t, events ?? []) }))
+    .sort((a, b) => isClosed(a.t) - isClosed(b.t) || (view === "needs-me" ? 0 : order.indexOf(a.t.state) - order.indexOf(b.t.state)) || (a.at ?? Infinity) - (b.at ?? Infinity))
+    .map(({ t, at }) => ({
+      id: t.id, identifier: t.identifier, title: t.title, state: t.state,
+      why: reasons[t.identifier] ?? stateLabel(t.state),
+      agent: agents?.[t.identifier] ?? { status: null, text: "No active run" },
+      age: at === null ? null : ago(at, nowMs),
+    }));
+}
+
+export const tabName = (ticket) => `${ticket.identifier} ${isClosed(ticket) ? "closed" : ticket.state}`;
+export const tabTicket = (name) => /^([A-Z][A-Z0-9_]*-\d+) /.exec(name ?? "")?.[1] ?? null;
+const bakersPane = (panes, tab) => (panes ?? []).some((p) => p.tab === tab.id && p.mod === "bakers");
+export const ticketTab = (space, panes, identifier) => (identifier && (space?.tabs ?? []).find((t) => tabTicket(t.name) === identifier && bakersPane(panes, t))) || null;
+export const listTab = (space, panes) => (space?.tabs ?? []).find((t) => t.name === "Tickets" && bakersPane(panes, t)) ?? null;
+
+// Close ticket tabs: only those that hold nothing but the ticket, since closing a run's terminal pane ends the run.
+export const ticketTabsToClose = (space, panes, finishedOnly) => (space?.tabs ?? [])
+  .filter((t) => tabTicket(t.name) && (!finishedOnly || t.name.endsWith(" closed")))
+  .filter((t) => (panes ?? []).filter((p) => p.tab === t.id).every((p) => p.mod === "bakers"))
+  .map((t) => t.id);
+
+// The Tickets tab is tab 1 of its space: selected if open, else made (in a new space when none is open).
+export function listSteps(space, panes) {
+  const tab = listTab(space, panes);
+  const newTab = ["tab.new", { name: "Tickets", mod: "bakers", props: { view: "list" } }];
+  if (tab) return [...(tab.index > 1 ? [["tab.move", { id: tab.id, index: 1 }]] : []), ["tab.select", { id: tab.id }]];
   return space ? [newTab] : [["space.new", {}], newTab];
+}
+
+// Enter opens the preview tab (reused by the next Enter), cmd-Enter a pinned one; an open ticket only gets selected.
+export function openSteps(space, panes, identifier, name, preview, pinned) {
+  const open = ticketTab(space, panes, identifier);
+  if (open) return { steps: [["tab.select", { id: open.id }]], preview: pinned && preview === identifier ? null : preview };
+  const reuse = !pinned && ticketTab(space, panes, preview);
+  if (reuse) return { steps: [["tab.rename", { id: reuse.id, name }], ["tab.select", { id: reuse.id }]], preview: identifier };
+  const props = pinned ? { view: "ticket", ticket: identifier } : { view: "ticket", preview: true };
+  const steps = [["tab.new", { name, mod: "bakers", props }]];
+  return { steps: space ? steps : [["space.new", {}], ...steps], preview: pinned ? preview : identifier };
+}
+
+// The ticket the right panel shows: the active ticket tab's, the list's selected row, or a run terminal's ticket.
+export function focusedTicket(space, panes, terminals, selected) {
+  const tab = space?.tabs.find((t) => t.active);
+  if (!tab) return null;
+  if (listTab(space, panes)?.id === tab.id) return selected ?? null;
+  if (bakersPane(panes, tab) && tabTicket(tab.name)) return tabTicket(tab.name);
+  const shown = new Set((panes ?? []).filter((p) => p.tab === tab.id).map((p) => p.terminal));
+  return (terminals ?? []).map((t) => shown.has(t.address) && terminalLabel(t, "bakers.ticket")).find(Boolean) ?? null;
 }
 
 export function activeRun(runs) {
@@ -86,23 +143,22 @@ export function activeRun(runs) {
 }
 
 export function newestComment(comments, type) {
-  return (comments ?? []).filter((c) => c.type === type).reduce((a, c) => (!a || c.created > a.created ? c : a), null);
+  return (comments ?? []).filter((c) => !type || c.type === type).reduce((a, c) => (!a || toUnix(c.created) > toUnix(a.created) ? c : a), null);
 }
 
-export function attention(ticket, comments, nowMs) {
-  const list = comments ?? [];
-  const latest = list.reduce((a, c) => (!a || c.created > a.created ? c : a), null);
-  const asks = needsYou(ticket);
-  if (asks) return { kind: "question", title: asks, body: (latest?.body ?? "").trim().split("\n")[0] };
-  if (latest) return { kind: "newest", title: `Newest: ${latest.type}, ${ago(toUnix(latest.created), nowMs)}`, body: "" };
-  return { kind: "none", title: "", body: "" };
-}
+export const askedComment = (comments) => newestComment(comments, "question") ?? newestComment(comments);
 
-export function openPlan(identifier, terminals, panes) {
-  const run = runTerminal(terminals, identifier);
-  if (!run) return { action: "tab" };
-  const pane = (panes ?? []).find((p) => p.terminal === run.address);
-  return pane ? { action: "select", tab: pane.tab } : { action: "adopt", terminal: run.address, run: run.run };
+const TOASTS = { "Asked a question": "asks a question", "Technical problem": "reports a technical problem", "Plan ready for approval": "has a plan ready for approval" };
+
+export const newlyNeeding = (before, reasons) => (before ? Object.entries(reasons).filter(([id]) => !before.includes(id)) : []);
+
+export const needsToast = (identifier, reason, body) => ({
+  title: `${identifier} ${TOASTS[reason]}`, body, level: "warning", action: { name: `bakers.open:${identifier}` },
+});
+
+export function findNode(node, id) {
+  if (node?.id === id) return node;
+  return (node?.children ?? []).map((child) => findNode(child, id)).find(Boolean) ?? null;
 }
 
 // Links come from tickets and comments anyone may edit: only https reaches the system's opener.
@@ -166,15 +222,18 @@ export const CONFIRM = {
     title: (id) => `Freeze ${id}?`,
     body: () => "No conductor picks it up while it is frozen.",
     yes: "Freeze", busy: "Freezing…", no: "Keep",
-    run: (client, ticket) => client.setFrozen(ticket, true),
+    run: (client, ticket) => client.update(ticket, { frozen: true }),
   },
   unfreeze: {
     title: (id) => `Unfreeze ${id}?`,
     body: () => "Conductors can pick it up again.",
     yes: "Unfreeze", busy: "Unfreezing…", no: "Keep frozen",
-    run: (client, ticket) => client.setFrozen(ticket, false),
+    run: (client, ticket) => client.update(ticket, { frozen: false }),
   },
 };
+
+// This computer's machine_id, from the bakers machine config (read only, never written).
+export const machineIdOf = (source) => /\bmachine_id\s*:\s*["']([^"']+)["']/.exec(source ?? "")?.[1] ?? null;
 
 export function friendlyError(output) {
   let text = String(output ?? "");

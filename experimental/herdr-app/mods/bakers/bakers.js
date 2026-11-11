@@ -17,25 +17,37 @@ export function makeClient(exec) {
     }
   }
 
-  async function allTickets(project) {
-    const tickets = [];
+  async function all(name, key, args) {
+    const rows = [];
     for (let offset = 0; offset !== null && offset !== undefined;) {
-      const page = await tool("ticket_list", { project, limit: 100, offset });
-      tickets.push(...(page.tickets ?? []));
+      const page = await tool(name, { ...args, limit: 100, offset });
+      rows.push(...(page[key] ?? []));
       offset = page.next_offset;
     }
-    return tickets;
+    return rows;
   }
 
   return {
     tool,
-    allTickets,
+    allTickets: (project) => all("ticket_list", "tickets", { project }),
     projects: async () => (await tool("project_list")).projects ?? [],
-    conductors: async (project) => (await tool("conductor_list", { project })).conductors ?? [],
+    conductors: (project) => all("conductor_list", "conductors", { project }),
+    // Older bakers servers have no machine_list: null says so, so the views can show what is missing.
+    machines: () => all("machine_list", "machines", {}).catch((e) => {
+      if (/unknown tool/.test(e.message)) return null;
+      throw e;
+    }),
     activity: async (args) => (await tool("ticket_activity_list", { limit: 100, ...args })).events ?? [],
-    ticket: (uuid) => tool("ticket_read", { ticket: uuid }),
-    runs: async (uuid) => (await tool("ticket_runs_list", { ticket: uuid })).runs ?? [],
-    cancelRun: (uuid, reason) => tool("run_cancel", { ticket: uuid, reason }),
-    setFrozen: (uuid, frozen) => tool("ticket_update", { ticket: uuid, frozen }),
+    ticket: (key) => tool("ticket_read", { ticket: key }),
+    runs: async (key) => (await tool("ticket_runs_list", { ticket: key })).runs ?? [],
+    search: async (query, project) => (await tool("ticket_search", { query, project })).tickets ?? [],
+    labels: (workspace) => all("label_list", "labels", { workspace }),
+    me: () => tool("user_read"),
+    cancelRun: (ticket, reason) => tool("run_cancel", { ticket, reason }),
+    update: (ticket, fields) => tool("ticket_update", { ticket, ...fields }),
+    transition: (ticket, state) => tool("ticket_transition", { ticket, state }),
+    classify: (ticket, fields) => tool("ticket_classify", { ticket, ...fields }),
+    comment: (ticket, body) => tool("comment_publish", { ticket, type: "comment", body }),
+    create: (fields) => tool("ticket_create", fields),
   };
 }

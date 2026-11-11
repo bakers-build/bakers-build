@@ -36,7 +36,7 @@ test("tool rejects with a friendly line", async () => {
 });
 
 test("list helpers unwrap their arrays", async () => {
-  const { exec } = fakeExec(() => ok({ projects: [1], conductors: [2], events: [3], runs: [4] }));
+  const { exec } = fakeExec(() => ok({ projects: [1], conductors: [2], events: [3], runs: [4], next_offset: null }));
   const client = makeClient(exec);
   assert.deepEqual(await client.projects(), [1]);
   assert.deepEqual(await client.conductors("p1"), [2]);
@@ -50,13 +50,44 @@ test("activity asks for the most rows one call allows", async () => {
   assert.deepEqual(JSON.parse(calls[0].args[3]), { limit: 100, project: "p1" });
 });
 
-test("cancelRun and setFrozen send their arguments", async () => {
+test("machines: the list of your machines, or null while bakers has no machine_list", async () => {
+  const listed = makeClient(fakeExec(() => ok({ machines: [{ machine_id: "build-vps" }], next_offset: null })).exec);
+  assert.deepEqual(await listed.machines(), [{ machine_id: "build-vps" }]);
+  const unknown = { error: { code: "E_VALIDATION", message: "unknown tool 'tool_api__bakers_machine_list'; closest: x" } };
+  const old = makeClient(fakeExec(() => ({ code: 1, stdout: JSON.stringify(unknown), stderr: "" })).exec);
+  assert.equal(await old.machines(), null);
+  const down = makeClient(fakeExec(() => ({ code: 1, stdout: "", stderr: "Error: 401 Unauthorized" })).exec);
+  await assert.rejects(down.machines(), { message: "Run bakers login first" });
+});
+
+test("search, labels and me read what the popups need", async () => {
+  const { exec, calls } = fakeExec((tool) => ok({ ticket_search: { tickets: [1] }, label_list: { labels: [{ name: "ui" }], next_offset: null }, user_read: { name: "pg" } }[tool]));
+  const client = makeClient(exec);
+  assert.deepEqual(await client.search("deliv", "p1"), [1]);
+  assert.deepEqual(await client.labels("w1"), [{ name: "ui" }]);
+  assert.deepEqual(await client.me(), { name: "pg" });
+  assert.deepEqual(calls.map((c) => [c.args[1], JSON.parse(c.args[3])]), [
+    ["tool_api__bakers_ticket_search", { query: "deliv", project: "p1" }],
+    ["tool_api__bakers_label_list", { workspace: "w1", limit: 100, offset: 0 }],
+    ["tool_api__bakers_user_read", {}],
+  ]);
+});
+
+test("writes send exactly their arguments", async () => {
   const { exec, calls } = fakeExec(() => ok({}));
   const client = makeClient(exec);
   await client.cancelRun("u1", "Cancelled from Herdr");
-  await client.setFrozen("u1", true);
-  assert.equal(calls[0].args[1], "tool_api__bakers_run_cancel");
-  assert.deepEqual(JSON.parse(calls[0].args[3]), { ticket: "u1", reason: "Cancelled from Herdr" });
-  assert.equal(calls[1].args[1], "tool_api__bakers_ticket_update");
-  assert.deepEqual(JSON.parse(calls[1].args[3]), { ticket: "u1", frozen: true });
+  await client.update("u1", { frozen: true });
+  await client.transition("u1", "working");
+  await client.classify("u1", { type: "bug" });
+  await client.comment("u1", "Looks good");
+  await client.create({ title: "T", workflow: "bb_work", project: "p1" });
+  assert.deepEqual(calls.map((c) => [c.args[1].replace("tool_api__bakers_", ""), JSON.parse(c.args[3])]), [
+    ["run_cancel", { ticket: "u1", reason: "Cancelled from Herdr" }],
+    ["ticket_update", { ticket: "u1", frozen: true }],
+    ["ticket_transition", { ticket: "u1", state: "working" }],
+    ["ticket_classify", { ticket: "u1", type: "bug" }],
+    ["comment_publish", { ticket: "u1", type: "comment", body: "Looks good" }],
+    ["ticket_create", { title: "T", workflow: "bb_work", project: "p1" }],
+  ]);
 });
