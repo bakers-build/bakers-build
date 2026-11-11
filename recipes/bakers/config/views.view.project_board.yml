@@ -1601,7 +1601,7 @@ display:
               facets_state:
                 plugin_id: bb_option_picker
                 clear_label: 'Any state'
-                icon: ''
+                icon: status-running
                 searchable: false
               facets_assignee_user_id:
                 plugin_id: bb_option_picker
@@ -1611,7 +1611,7 @@ display:
               facets_priority:
                 plugin_id: bb_option_picker
                 clear_label: 'Any priority'
-                icon: ''
+                icon: alert-triangle
                 searchable: false
       defaults:
         pager: false

@@ -69,17 +69,21 @@ final class ProjectBoardFilterBar {
   }
 
   /**
-   * A State or Priority picker with each option's count.
+   * A State or Priority picker as a toolbar pill, each option with its count.
+   *
+   * The picker's own variant is the full-width facet of a filter aside; the
+   * toolbar row takes the pill.
    *
    * @param array<string, mixed> $picker
    *   The picker element, empty when the form has none.
    * @param list<array<string, mixed>> $rows
-   *   The facet's rows; none, and the picker stays uncounted.
+   *   The facet's rows; none, and the options stay uncounted.
    *
    * @return array<string, mixed>
-   *   The picker, its options counted.
+   *   The picker as a pill.
    */
-  public function withCounts(array $picker, array $rows): array {
+  public function pill(array $picker, array $rows): array {
+    $picker['#props']['variant'] = 'field';
     if ($rows === []) {
       return $picker;
     }
