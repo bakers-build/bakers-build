@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
+use Drupal\Component\Render\PlainTextOutput;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -76,6 +77,13 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
   /**
    * {@inheritdoc}
    */
+  protected function autosaves(): bool {
+    return TRUE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   protected function readOnly(): array {
     return $this->inspectorRows->propertiesBlock($this->inspectorRows->build($this->entity));
   }
@@ -84,12 +92,14 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
    * Lays the configured widgets out as the Properties block's labelled rows.
    *
    * An editable picker is its row's value cell; fields the visitor may not
-   * edit render as read-only rows.
+   * edit render as read-only rows. A picker says "Saved" after its field was
+   * just written, or the error that refused it.
    */
-  public function prepareSurface(array $element, FormStateInterface $form_state): array {
-    $entity = $this->buildEntity($element, $form_state);
+  public function prepareSurface(array $element, FormStateInterface $form_state, ?BbTicketInterface $entity = NULL): array {
+    $entity ??= $this->buildEntity($element, $form_state);
     $display = $this->getFormDisplay($form_state);
     $rows = $this->inspectorRows->build($entity);
+    $statuses = $this->fieldStatuses($form_state);
     foreach (array_keys($display->getComponents()) as $field) {
       $widget = $display->getRenderer($field);
       if (!isset($element[$field]) || !$widget instanceof PickerWidgetInterface || !isset($rows[$field])) {
@@ -117,7 +127,8 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
         'selected_chips' => $props['selected_chips'] ?? FALSE,
         'selected' => $props['selected'] ?? [],
         'open' => FALSE,
-      ];
+        'autosave' => $this->autosaves(),
+      ] + ($statuses[$field] ?? ['status' => '', 'invalid' => FALSE]);
       $element[$field]['#printed'] = TRUE;
     }
     // `#parents` lets the form error handler walk this display-only element
@@ -127,6 +138,29 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
       '#parents' => ['inspector'],
     ];
     return $element;
+  }
+
+  /**
+   * What the last write did to each field: the error refusing it, or "Saved".
+   *
+   * "Saved" belongs to the answer of the save only, not to later requests of
+   * the same form.
+   *
+   * @return array<string, array{status: string, invalid: bool}>
+   *   Field statuses keyed by field name.
+   */
+  private function fieldStatuses(FormStateInterface $form_state): array {
+    $statuses = [];
+    foreach ($form_state->getErrors() as $name => $message) {
+      $statuses[explode('][', (string) $name)[0]] ??= [
+        'status' => PlainTextOutput::renderFromHtml((string) $message),
+        'invalid' => TRUE,
+      ];
+    }
+    foreach ($form_state->isRebuilding() ? $form_state->get('property_saved') ?? [] : [] as $field) {
+      $statuses[$field] ??= ['status' => (string) $this->t('Saved'), 'invalid' => FALSE];
+    }
+    return $statuses;
   }
 
   /**
@@ -141,6 +175,10 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
     $stored = $this->entityTypeManager->getStorage('bb_ticket')->loadUnchanged($entity->id());
     assert($stored instanceof BbTicketInterface);
     $this->rejectProjectScopedRelations($this->getFormDisplay($form_state), $entity, $form_state, $stored);
+    if ($form_state->getErrors()) {
+      // Lay the rows out again, so each refused field shows its error.
+      $form = $this->prepareSurface($form, $form_state, $entity);
+    }
     return $entity;
   }
 

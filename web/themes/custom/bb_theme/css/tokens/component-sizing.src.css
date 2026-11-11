@@ -10,6 +10,8 @@
   --spacing-zone-lg: var(--spacing-space-6);
   --spacing-empty-state-icon: 64px;
   --spacing-empty-state-compact-icon: 24px;
+  --spacing-list-plain-label-width: 96px;
+  --spacing-list-plain-row-height: 32px;
 }
 [data-layout="cozy"] {
     --spacing-row: 40px;

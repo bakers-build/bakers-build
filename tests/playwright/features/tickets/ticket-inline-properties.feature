@@ -1,8 +1,9 @@
 @feature:ticket-inline-properties
-Feature: Ticket properties persist inline on an explicit Save
-  A pick changes nothing until Save, exactly as on a Settings form: Save sits
-  at the right of the action row below the properties, a completed save shows
-  Drupal's ordinary status message as a toast, and the page stays put.
+Feature: Ticket properties save each pick on their own
+  A pick is the write: the Details have no Save button while JavaScript runs,
+  the field says "Saved" or names the error, and the page stays put. A pick on
+  a field someone changed since the page loaded writes nothing and the page
+  shows their value.
 
   Background:
     Given I am logged in as "Administrator"
@@ -12,25 +13,21 @@ Feature: Ticket properties persist inline on an explicit Save
 
   Scenario: A conductor selection survives reload and can be cleared
     When I select inline "Conductor" option "srv01-bakers"
-    And I save the inline properties
     Then the inline "Conductor" save succeeds without navigation
     And the Properties block holds the property pickers and Created by
     When I reload the page
     Then the inline "Conductor" selection is "srv01-bakers"
     When I select inline "Conductor" option "No conductor"
-    And I save the inline properties
     Then the inline "Conductor" save succeeds without navigation
     When I reload the page
     Then the inline "Conductor" selection is empty
 
   Scenario Outline: Existing properties survive reload and support clearing
     When I select inline "<property>" option "<value>"
-    And I save the inline properties
     Then the inline "<property>" save succeeds without navigation
     When I reload the page
     Then the inline "<property>" selection includes "<value>"
     When I select inline "<property>" option "<clear>"
-    And I save the inline properties
     Then the inline "<property>" save succeeds without navigation
     When I reload the page
     Then the inline "<property>" selection is empty
@@ -43,10 +40,8 @@ Feature: Ticket properties persist inline on an explicit Save
 
   Scenario: Saving another property preserves earlier inline changes
     When I select inline "Priority" option "High"
-    And I save the inline properties
     Then the inline "Priority" save succeeds without navigation
     When I select inline "Labels" option "bug"
-    And I save the inline properties
     Then the inline "Labels" save succeeds without navigation
     When I reload the page
     Then the inline "Priority" selection is "High"
@@ -55,37 +50,44 @@ Feature: Ticket properties persist inline on an explicit Save
   Scenario: Dismissing a property does not write
     Then dismissing the current priority sends no save and leaves it unchanged
 
-  Scenario: Picking a property writes nothing until Save
-    Then picking inline "Priority" option "High" writes nothing until Save
-    And the form Save sits at the right of the action row below its fields
+  Scenario: A pick saves itself
+    Then the property form shows no Save button
     When I select inline "Priority" option "High"
-    And I save the inline properties
-    Then the saved confirmation is a toast that hides again
+    Then the inline "Priority" save succeeds without navigation
+    When I reload the page
+    Then the inline "Priority" selection is "High"
 
-  Scenario: A rejected save retains the attempted selection and can be retried
+  Scenario: A concurrent change of the same field is refused
+    When another editor sets the priority of "BB-142" to "Low"
+    And I select inline "Priority" option "High"
+    Then the inline "Priority" says "Someone changed this meanwhile. The page shows their value."
+    And the inline "Priority" selection is "Low"
+    When I select inline "Priority" option "High"
+    Then the inline "Priority" save succeeds without navigation
+    When I reload the page
+    Then the inline "Priority" selection is "High"
+
+  Scenario: A rejected save retains the attempted selection and can be corrected
     Given the next conductor save contains an invalid reference
     When I select inline "Conductor" option "srv01-bakers"
-    And I save the inline properties
     Then the inline "Conductor" shows an unsaved error with the attempted value "Unavailable selection (2147483647)"
     And the Properties block holds the property pickers and Created by
     And the stored conductor is unchanged
-    When I retry the rejected inline "Conductor" save
-    Then the inline "Conductor" shows an unsaved error with the attempted value "Unavailable selection (2147483647)"
     When I correct the inline "Conductor" selection
     Then the inline "Conductor" save succeeds without navigation
     When I reload the page
     Then the inline "Conductor" selection is "srv01-bakers"
 
-  Scenario: A denied save clears prior success and can be retried
+  Scenario: A denied save clears prior success and can be picked again after a reload
     When I select inline "Priority" option "High"
-    And I save the inline properties
     Then the inline "Priority" save succeeds without navigation
     Given browser authentication is removed without reloading
     When I save denied inline "Priority" option "Low"
     Then the inline property save is rejected with HTTP 403
     And the inline "Priority" shows an unsaved error with the attempted value "Low"
     And an authenticated reload shows stored inline "Priority" option "High"
-    When I retry the rejected inline "Priority" save
+    When I reload the page
+    And I select inline "Priority" option "Low"
     Then the inline "Priority" save succeeds without navigation
     When I reload the page
     Then the inline "Priority" selection is "Low"
@@ -104,18 +106,14 @@ Feature: Ticket properties persist inline on an explicit Save
 
   Scenario: Multiple labels survive reload and removing one preserves the others
     When I select inline "Labels" option "No labels"
-    And I save the inline properties
     Then the inline "Labels" save succeeds without navigation
     When I select inline "Labels" option "ui"
-    And I save the inline properties
     Then the inline "Labels" save succeeds without navigation
     When I select inline "Labels" option "bug"
-    And I save the inline properties
     Then the inline "Labels" save succeeds without navigation
     When I reload the page
     Then the selected inline labels are "ui, bug"
     When I select inline "Labels" option "ui"
-    And I save the inline properties
     Then the inline "Labels" save succeeds without navigation
     When I reload the page
     Then the selected inline labels are "bug"
@@ -123,8 +121,8 @@ Feature: Ticket properties persist inline on an explicit Save
   Scenario: A stale form preserves another editor's property change
     Then separate stale property submissions preserve both editors changes
 
-  Scenario: A second Save after the replacement persists without repeating an in-flight Save
-    Then a second Save after the replacement persists and an in-flight Save is not repeated
+  Scenario: A second pick after the replacement persists without repeating an in-flight save
+    Then a second pick after the replacement persists and an in-flight save is not repeated
 
   Scenario: A cached property form cannot be replayed to another ticket
     Then a saved property form refuses a different ticket route

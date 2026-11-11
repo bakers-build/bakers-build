@@ -497,6 +497,23 @@ props:
                         type: string
                       label:
                         type: string
+                autosave:
+                  type: boolean
+                  title: Pick saves itself
+                  description: >-
+                    Forwarded to `option_picker`: a `picker` cell's pick submits
+                    its form. Default false, so a picker writes with its form's
+                    Save.
+                status:
+                  type: string
+                  title: Field status
+                  description: >-
+                    Forwarded to `option_picker`: "Saved" after this field was
+                    just written, or the error that refused it.
+                invalid:
+                  type: boolean
+                  title: Refused
+                  description: 'Forwarded to `option_picker`: the `status` is an error.'
                 picker_id:
                   type: string
                   title: Picker id

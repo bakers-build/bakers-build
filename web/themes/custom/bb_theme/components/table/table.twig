@@ -253,7 +253,9 @@
         `name` is the submitted field name, so the cell can live in a real form:
         `option_list` renders real inputs under it and a clearable clear row.
         Without it the name is derived from the label, for inert scenes. The
-        accessible name keeps reading the label. #}
+        accessible name keeps reading the label. `autosave`, `status` and
+        `invalid` go to `option_picker` unchanged: the pick submits the form, and
+        the field says "Saved" or names the error. #}
     {%- set field = c.name|default(c.label|lower) -%}
     {%- set spoken = c.label|lower -%}
     {%- set picked = c.value_labels|default([]) -%}
@@ -283,6 +285,9 @@
       selected_chips: c.selected_chips|default(false),
       selected: c.selected|default([]),
       open: c.open|default(false),
+      autosave: c.autosave|default(false),
+      status: c.status|default(''),
+      invalid: c.invalid|default(false),
       options: panel,
     }, with_context = false) }}
   {%- elseif c.kind == 'masked' -%}

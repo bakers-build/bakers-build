@@ -929,6 +929,31 @@ component:
         $value: '{primitive.layout.line-row-h}'
         $type: dimension
         $description: Minimum height of a list line row.
+    plain:
+      label-width:
+        $value: 96px
+        $type: dimension
+        $description: Label column of a block's property rows (`list` layout `plain`).
+        $extensions:
+          designbook:
+            provenance: addition
+            reference: 3a2b0e29e246a9d7/5b8824c4da4b3267
+            note: >-
+              Intake decision 2026-11-11 from the approved BAKERS-56 spec (D18);
+              the reference's ticket-detail note states 96 px labels. Fixed:
+              cozy density is outside BAKERS-56.
+      row-height:
+        $value: 32px
+        $type: dimension
+        $description: Minimum height of a block's property row (`list` layout `plain`).
+        $extensions:
+          designbook:
+            provenance: addition
+            reference: 3a2b0e29e246a9d7/5b8824c4da4b3267
+            note: >-
+              Intake decision 2026-11-11 from the approved BAKERS-56 spec (D18);
+              the reference's ticket-detail note states 32 px rows. Fixed: cozy
+              density is outside BAKERS-56.
   brand:
     compact:
       width:

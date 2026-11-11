@@ -6,8 +6,9 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Component\Serialization\Yaml;
 use Drupal\Core\Cache\Cache;
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Routing\RouteObjectInterface;
 use Drupal\KernelTests\KernelTestBase;
@@ -486,6 +487,151 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $state->setUserInput($input);
     $this->expectException(AccessDeniedHttpException::class);
     $builder->buildEntity($form, $state);
+  }
+
+  /**
+   * A pick on a field someone changed since the page opened writes nothing.
+   *
+   * The field says so and shows their value; the answer's snapshot holds the
+   * stored values, so the next pick on that field saves.
+   */
+  public function testSameFieldConcurrentEditIsRefused(): void {
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    $this->ticket->set('priority', 2)->save();
+
+    [$form, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $opening);
+
+    $refusal = 'Someone changed this meanwhile. The page shows their value.';
+    self::assertSame(['priority' => $refusal], array_map('strval', $state->getErrors()));
+    self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
+    $cell = $this->pickerCell($form, 'priority');
+    self::assertSame(['Medium'], array_map('strval', $cell['value_labels']));
+    self::assertSame($refusal, $cell['status']);
+    self::assertTrue($cell['invalid']);
+
+    $answer = [
+      'property_baseline' => $form['property_baseline']['#value'],
+      'property_signature' => $form['property_signature']['#value'],
+    ] + $opening;
+    [$saved, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $answer);
+
+    self::assertSame([], $state->getErrors());
+    self::assertEquals(1, $this->stored($this->ticket)->get('priority')->value);
+    self::assertSame('Saved', (string) $this->pickerCell($saved, 'priority')['status']);
+    self::assertFalse($this->pickerCell($saved, 'priority')['invalid']);
+    self::assertSame('', (string) $this->pickerCell($saved, 'labels')['status']);
+  }
+
+  /**
+   * Picks on different fields by two editors both persist.
+   */
+  public function testDifferentFieldConcurrentEditsBothPersist(): void {
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    $this->ticket->set('assignee_user_id', 1)->save();
+
+    [, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $opening);
+
+    self::assertSame([], $state->getErrors());
+    $stored = $this->stored($this->ticket);
+    self::assertEquals(1, $stored->get('priority')->value);
+    self::assertEquals(1, $stored->get('assignee_user_id')->target_id);
+  }
+
+  /**
+   * A detail card keeps its Save, and the last write still wins.
+   */
+  public function testDetailCardsKeepTheirSaveButton(): void {
+    $team = $this->container->get('entity_type.manager')->getStorage('bb_team')
+      ->create(['name' => 'Platform Crew', 'workspace_id' => $this->workspace->id()]);
+    self::assertInstanceOf(ContentEntityInterface::class, $team);
+    $team->save();
+    $this->tabsOn('entity.bb_team.canonical', ['bb_team' => $team]);
+    $opening = $this->openForm($team, 'identity');
+    $team->set('name', 'Renamed elsewhere')->save();
+
+    [$form, $state] = $this->postForm($team, 'identity', ['name' => [['value' => 'Platform Team']]] + $opening);
+
+    self::assertSame([], $state->getErrors());
+    self::assertSame('Platform Team', $this->stored($team)->label());
+    self::assertSame('Save', (string) $form['actions']['submit']['#value']);
+    self::assertNotContains('js-hide', $form['actions']['#attributes']['class'] ?? []);
+  }
+
+  /**
+   * Opens an entity form on GET, as the page does.
+   *
+   * @return array<string, string>
+   *   The hidden inputs the browser posts back.
+   */
+  private function openForm(EntityInterface $entity, string $operation): array {
+    $this->container->get('request_stack')->getCurrentRequest()->setMethod('GET');
+    $form = $this->container->get('entity.form_builder')->getForm($this->stored($entity), $operation);
+    // The rendered token is a placeholder the page replaces with this value.
+    $input = [
+      'form_id' => $form['#form_id'],
+      'form_token' => $this->container->get('csrf_token')->get($form['#token']),
+    ];
+    foreach (['form_build_id', 'property_baseline', 'property_signature'] as $name) {
+      $input[$name] = $form[$name]['#value'];
+    }
+    return $input;
+  }
+
+  /**
+   * Posts an entity form through the form builder, as the browser does.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The routed entity.
+   * @param string $operation
+   *   The form operation.
+   * @param array<string, mixed> $input
+   *   The posted input.
+   *
+   * @return array{0: array<string, mixed>, 1: \Drupal\Core\Form\FormStateInterface}
+   *   The answered form and its state.
+   */
+  private function postForm(EntityInterface $entity, string $operation, array $input): array {
+    $this->container->get('request_stack')->getCurrentRequest()->setMethod('POST');
+    $builder = $this->container->get('entity_type.manager')->getFormObject($entity->getEntityTypeId(), $operation);
+    $builder->setEntity($this->stored($entity));
+    $state = new FormState();
+    // A new request: core remembers a failed validation in a static flag.
+    $state->clearErrors();
+    $state->setUserInput($input);
+    $form = $this->container->get('form_builder')->buildForm($builder, $state);
+    return [$form, $state];
+  }
+
+  /**
+   * The entity as stored now.
+   */
+  private function stored(EntityInterface $entity): ContentEntityInterface {
+    $stored = $this->container->get('entity_type.manager')->getStorage($entity->getEntityTypeId())->loadUnchanged($entity->id());
+    self::assertInstanceOf(ContentEntityInterface::class, $stored);
+    return $stored;
+  }
+
+  /**
+   * The Details picker cell of one field in an answered property form.
+   *
+   * @param array<string, mixed> $form
+   *   The answered form.
+   * @param string $field
+   *   The field name.
+   *
+   * @return array<string, mixed>
+   *   The picker cell.
+   */
+  private function pickerCell(array $form, string $field): array {
+    foreach ($form['inspector']['#slots']['content']['#props']['items'] as $item) {
+      if (($item['cells']['value']['name'] ?? NULL) === $field) {
+        return $item['cells']['value'] + ['status' => NULL, 'invalid' => NULL];
+      }
+    }
+    self::fail(sprintf('The Details have no %s picker.', $field));
   }
 
   /**

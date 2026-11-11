@@ -146,6 +146,28 @@ props:
             type: string
           label:
             type: string
+    autosave:
+      type: boolean
+      title: Autosave
+      description: >-
+        The pick is the write: a pick that changes the checked options submits
+        the enclosing form, whose answer replaces it. An unchanged pick or a
+        dismissal submits nothing. Used by the inline variant on a ticket's
+        Details, where the form keeps its Save only without JavaScript. Default
+        false.
+    status:
+      type: string
+      title: Field status
+      description: >-
+        What the last write of this field did, said beside the value: "Saved",
+        or the error that refused it. Rendered with autosave, as a status region
+        the trigger is described by; a new pick clears it.
+    invalid:
+      type: boolean
+      title: Refused
+      description: >-
+        The status is an error: the trigger is marked aria-invalid and the
+        status is an alert in the attention ink.
     search_url:
       type: string
       title: Server search URL

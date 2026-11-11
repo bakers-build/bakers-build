@@ -67,11 +67,12 @@
   ? ['absolute', 'left-0', 'top-0', 'bottom-0', 'w-1', 'rounded-l-xs']
   : ['absolute', 'left-0', 'top-2', 'bottom-2', 'w-1', 'rounded-xs'] %}
 {#- `plain` is a block's property rows: no line, hover fill or inset. The
-    label cell takes a fixed `w-28` track so values align; values may wrap
-    anywhere, since clipping would also clip an inline picker's panel. #}
+    label cell takes the fixed 96px `list.plain.label-width` track so values
+    align, and a row is at least the 32px `list.plain.row-height`; values may
+    wrap anywhere, since clipping would also clip an inline picker's panel. #}
 {% set plain = layout == 'plain' %}
 {% set item_base = plain
-  ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-inline', 'gap-y-inline-xs', 'py-inline-xs']
+  ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-inline', 'gap-y-inline-xs', 'min-h-list-plain-row-height', 'py-inline-xs']
   : (cards
   ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-stack', 'gap-y-inline-xs', 'min-h-row', 'pl-stack', 'pr-inline', roomy ? 'py-stack' : 'py-inline', 'bg-surface-2', 'border', 'border-border-2', 'rounded-xs', 'transition-colors', 'duration-fast', 'hover:bg-surface-3']
   : ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-stack', 'pl-stack', 'pr-inline', 'py-inline', 'border-b', 'border-border-2', 'last:border-b-0', 'transition-colors', 'duration-fast', 'hover:bg-surface']) %}
@@ -207,7 +208,7 @@
             so no action is left behind at the start of the next line. #}
         {% set actions = not cards and not plain ? item.cells|filter(c => c and c.kind|default('') == 'action') : {} %}
         {% for key, c in item.cells %}
-          {% if c and actions[key] is not defined %}<span class="min-w-0 {{ not plain ? 'whitespace-nowrap' : (loop.first ? 'whitespace-nowrap w-28 shrink-0' : 'wrap-anywhere') }}" data-cell="{{ key }}">{{ cells.cell(c) }}</span>{% endif %}
+          {% if c and actions[key] is not defined %}<span class="min-w-0 {{ not plain ? 'whitespace-nowrap' : (loop.first ? 'whitespace-nowrap w-list-plain-label-width shrink-0' : 'wrap-anywhere') }}" data-cell="{{ key }}">{{ cells.cell(c) }}</span>{% endif %}
         {% endfor %}
         {% if actions is not empty %}
           <span data-list-actions class="ml-auto flex shrink-0 items-center gap-inline">

@@ -83,7 +83,6 @@ Feature: Reviewers write private reviews the assignee publishes
     When I visit the disposable review ticket
     Then I am not offered "Write a review"
     When I select inline "Reviewers" option "north-lead"
-    And I save the inline properties
     Then I am offered "Write a review" without leaving the page
 
   Scenario: Reviewer assignment grants no authority over the ticket

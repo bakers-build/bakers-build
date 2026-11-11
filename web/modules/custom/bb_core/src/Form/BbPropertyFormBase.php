@@ -25,6 +25,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * loaded fresh and only the fields changed against that snapshot are applied,
  * each re-checked for update and field edit access. The POST swaps this form
  * only, so sibling forms on the page keep their unsent input.
+ *
+ * A form that autosaves submits on every pick and keeps Save only without
+ * JavaScript. It refuses a changed field whose stored value no longer matches
+ * the snapshot, writing nothing; changes to other fields still merge.
  */
 abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyEntityFormInterface {
 
@@ -62,6 +66,13 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
    */
   protected function editsFields(): bool {
     return TRUE;
+  }
+
+  /**
+   * Whether each pick saves itself, refusing a field changed meanwhile.
+   */
+  protected function autosaves(): bool {
+    return FALSE;
   }
 
   /**
@@ -157,6 +168,10 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
     unset($actions['delete']);
     $actions['submit']['#value'] = $this->t('Save');
     $actions['submit']['#access'] = $this->entity->access('update');
+    if ($this->autosaves()) {
+      // Core's js-hide: Save stays the fallback without JavaScript only.
+      $actions['#attributes']['class'][] = 'js-hide';
+    }
     return $actions;
   }
 
@@ -188,13 +203,14 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
     $display = $this->getFormDisplay($form_state);
     $extracted = $display->extractFormValues($submitted, $form, $form_state);
     $baseline = $form_state->get('property_baseline');
-    if ($this->getRequest()->isMethod('POST') && !$form_state->get('property_saved')) {
+    if ($this->getRequest()->isMethod('POST') && !$form_state->has('property_saved')) {
       $snapshot = $this->openingSnapshot($form_state);
       $baseline = clone $entity;
       foreach (array_intersect_key($snapshot, $display->getComponents()) as $field => $values) {
         $baseline->set($field, $values);
       }
     }
+    $changed = [];
     foreach (array_keys($extracted) as $field) {
       if ($baseline !== NULL && $submitted->get($field)->equals($baseline->get($field))) {
         continue;
@@ -202,8 +218,21 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
       if (!$entity->access('update') || !$entity->get($field)->access('edit')) {
         throw new AccessDeniedHttpException();
       }
+      if ($this->changedMeanwhile($entity, $baseline, $field)) {
+        $form_state->setErrorByName($field, $this->t('Someone changed this meanwhile. The page shows their value.'));
+        continue;
+      }
       $entity->set($field, $submitted->get($field)->getValue());
+      $changed[] = $field;
     }
+    $form_state->set('property_changed', $changed);
+  }
+
+  /**
+   * Whether an autosaving form's field was stored anew since its snapshot.
+   */
+  private function changedMeanwhile(ContentEntityInterface $stored, ?ContentEntityInterface $baseline, string $field): bool {
+    return $this->autosaves() && $baseline !== NULL && !$stored->get($field)->equals($baseline->get($field));
   }
 
   /**
@@ -236,7 +265,15 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
     if (!$this->entity->access('update')) {
       throw new AccessDeniedHttpException();
     }
-    return parent::validateForm($form, $form_state);
+    $entity = parent::validateForm($form, $form_state);
+    if ($this->autosaves() && $form_state->getErrors()) {
+      // The answer shows the stored values; the next pick compares with them.
+      $form_state->set('property_baseline', clone $this->entity);
+      $payload = $this->baselinePayload($form_state);
+      $form['property_baseline']['#value'] = $payload;
+      $form['property_signature']['#value'] = $this->csrfToken->get($this->baselineKey($payload, $form['#build_id']));
+    }
+    return $entity;
   }
 
   /**
@@ -253,7 +290,8 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
       '%label' => $this->entity->label() ?? $this->entity->id(),
     ]));
     $form_state->set('property_baseline', clone $this->entity);
-    $form_state->set('property_saved', TRUE);
+    // The fields this save wrote. From now on the baseline lives here.
+    $form_state->set('property_saved', $form_state->get('property_changed') ?? []);
     $form_state->setUserInput([]);
     // A later Save belongs to this same form, not a new editor's snapshot.
     // Core caches this successful POST continuation, never the opening GET.

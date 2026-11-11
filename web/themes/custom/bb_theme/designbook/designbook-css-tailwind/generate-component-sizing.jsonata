@@ -31,7 +31,11 @@
   $stateLines := $each($$.component."empty-state", function($v, $k) {
     "  --spacing-empty-state-" & $k & ": " & $normalizeCssValue($v."$value") & ";"
   });
-  $baseLines := $append($append($append($baseLines, $brandLines), $zoneLines), $stateLines);
+  /* Inspector property row grid: fixed component values, so no cozy override. */
+  $plainLines := $each($$.component.list.plain, function($v, $k) {
+    "  --spacing-list-plain-" & $k & ": " & $normalizeCssValue($v."$value") & ";"
+  });
+  $baseLines := $append($append($append($append($baseLines, $brandLines), $zoneLines), $stateLines), $plainLines);
   $cozyLines := [
     "    --spacing-row: " & $normalizeCssValue($cozy."row-h"."$value") & ";",
     "    --spacing-control: " & $normalizeCssValue($cozy."control-h"."$value") & ";",
