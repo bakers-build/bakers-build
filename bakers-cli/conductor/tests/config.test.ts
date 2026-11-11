@@ -224,17 +224,27 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     expect(DEFAULT_AGENT_PROMPT).not.toContain('--- Ticket comments ---');
   });
 
-  it('instructs the step-0 read through the MCP tool, else bakers tools, which picks the route itself', () => {
-    // The run reads its ticket through the same tool as every skill step;
-    // `bakers tools` goes to the run's conductor when the run has one.
+  it('instructs the step-0 read: MCP tool, else load it, and the CLI only when it cannot be loaded', () => {
+    // A harness connects MCP servers in the background, so at the first turn the
+    // tool can be "not listed yet" without being "not served". The agent loads it
+    // before falling back; a run whose Bash forbids `bakers tools` stopped there.
     const paths = [
-      'the MCP tool bakers_ticket_read when it is listed',
+      'the MCP tool bakers_ticket_read',
+      'when it is not listed yet load it through your tool search',
+      'only when it cannot be loaded',
       `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
     ].map((p) => DEFAULT_AGENT_PROMPT.indexOf(p));
     expect(paths.every((at) => at >= 0)).toBe(true);
     expect([...paths].sort((a, b) => a - b)).toEqual(paths);
+    expect(DEFAULT_AGENT_PROMPT).toContain(
+      'a denial blocks that one command, not every command',
+    );
+    expect(DEFAULT_AGENT_PROMPT).not.toContain('when it is listed, else');
     expect(DEFAULT_AGENT_PROMPT).not.toContain('bakers oven tools');
-    expect(DEFAULT_AGENT_PROMPT).not.toContain('tool_api__');
+    // Harness-neutral: no Claude-only tool names.
+    for (const claudeOnly of ['tool_api__', 'mcp__', 'ToolSearch']) {
+      expect(DEFAULT_AGENT_PROMPT).not.toContain(claudeOnly);
+    }
   });
 
   it('routes through the loader to the skill that owns the step', () => {
@@ -286,10 +296,10 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     const rendered = DEFAULT_AGENT_PROMPT.replaceAll('{identifier}', 'BB-121')
       .replaceAll('{state}', 'working')
       .replaceAll('{run_uuid}', 'r-1')
-      .replaceAll('{ticket_uuid}', 't-1');
+      .replaceAll('{ticket_uuid}', 'ffcb6949-90bf-4639-96d1-91c2c2378575');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
-      `bakers tools bakers_ticket_read --data '{"ticket":"t-1"}'`,
+      `bakers tools bakers_ticket_read --data '{"ticket":"ffcb6949-90bf-4639-96d1-91c2c2378575"}'`,
     );
     expect(rendered).not.toContain('--- Ticket comments ---');
     expect(rendered).not.toContain('{comments}');
@@ -328,6 +338,7 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
     'Read the ticket and all comments',
     'bakers_ticket_read',
     `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
+    'load it through your tool search',
     './WORKFLOW.md',
     "that skill's {state} section",
     'Do not start or prepare a later state',

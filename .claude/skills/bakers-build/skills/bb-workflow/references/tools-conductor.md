@@ -4,7 +4,7 @@ Inside a conductor run, the `bakers` MCP server serves two kinds of tools under 
 
 - addon tools (`provision_up`, `ports_up`, a runtime addon's own tools, …), acting on the run's
   worktree;
-- the site's tools of [tools](tools.md) › Operations except `bakers_run_cancel`, plus
+- the site's tools of [tools](tools.md) › Operations, plus
   `bakers_ticket_runs_list`, `bakers_label_list`, `bakers_project_read` and `bakers_user_read`. The
   conductor calls the site with its own credentials and refuses a ticket, parent, project or
   workspace outside the run ticket's project (exit 1); a missing `project` or `workspace` means the
