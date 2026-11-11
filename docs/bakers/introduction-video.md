@@ -78,9 +78,9 @@ stay silent while you wait. Waiting is cut out later.
 
 On screen: the landing page hero; scroll slowly to the line with its four stations.
 
-> Hi! This is bakers.build. Every developer is a baker with their own bakery: they knead the dough, and they decide when the bread is ready.
-> The product manager places the orders. We call them tickets.
-> The ovens are AI agents. They plan, build, check and deliver, always along the same line. But the baker stays the baker.
+> Hi! This is bakers.build. Like a baker in their own bakery, every developer stays in charge of their work.
+> Your team writes down what it needs, as a ticket.
+> AI agents do the heavy lifting: they plan, build, check and deliver, always along the same line. The people decide.
 > How that line works is your recipe: a simple text file, right next to your code.
 
 ### 2. A ticket system for AI (about 18 s)
@@ -123,7 +123,7 @@ plan comments. Switch once to the GitLab issue: the label `doing` is there.
 On screen: herdr with the ticket's run tab; the agent's output scrolls. Type one short sentence
 to the agent, for example "Use the 24-hour format."
 
-> While the agent is busy, you can look into the oven.
+> While the agent is busy, you can look over its shoulder.
 > Open its window in a tool like herdr or Orca, read along, and if you have an idea, tell it in one sentence.
 
 ### 7. The ticket moves (about 20 s)
