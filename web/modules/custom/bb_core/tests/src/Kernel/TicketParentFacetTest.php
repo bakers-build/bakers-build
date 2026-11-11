@@ -23,9 +23,10 @@ use Symfony\Component\Yaml\Yaml;
 /**
  * The ticket lists filter by one parent, through `?parent=<identifier>`.
  *
- * One execution per test: contrib keeps each processed facet in a static for
- * the rest of the process, so a second query in the same test would read the
- * first one's options and chip.
+ * One exposed input per test: contrib keeps each processed facet in a static
+ * for the rest of the process, so a second, different input in the same test
+ * would read the first one's options and chip. A test that executes twice
+ * repeats the same input.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -156,6 +157,21 @@ final class TicketParentFacetTest extends KernelTestBase {
     $href = $this->removeHref($html, 'Parent');
     self::assertStringNotContainsString('parent', $href, 'Removing the chip keeps the parent filter.');
     self::assertSame('/' . self::SLUG . '/tickets/all', $href);
+  }
+
+  /**
+   * The chip names the parent even when no listed ticket has a parent.
+   *
+   * No ticket is in review, so the parent facet has no results at all and
+   * contrib states no chip for it; the chosen parent is still named and
+   * removable, as the picker keeps its row.
+   */
+  public function testChipSurvivesAnEmptyFacet(): void {
+    $key = $this->key('Parent ticket');
+    $html = $this->screen('parent=' . $key . '&state[]=review');
+
+    self::assertStringContainsString('Parent is ' . $key . ' · Parent ticket', $this->chipText($html));
+    self::assertSame('/' . self::SLUG . '/tickets/all?state[]=review', $this->removeHref($html, 'Parent'));
   }
 
   /**

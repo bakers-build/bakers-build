@@ -148,19 +148,15 @@ final class RunLogStore {
   public function firstLine(FileInterface $file, BbRunInterface $run): string {
     $this->assertOwnedBy($file, $run);
     $handle = @fopen((string) $file->getFileUri(), 'rb');
-    $inflate = self::isGzipLog($file) ? inflate_init(ZLIB_ENCODING_GZIP) : FALSE;
-    if ($handle === FALSE || $inflate === FALSE && self::isGzipLog($file)) {
+    $inflate = self::isGzipLog($file) ? inflate_init(ZLIB_ENCODING_GZIP) : NULL;
+    if ($handle === FALSE || $inflate === FALSE) {
       throw new RunLogException('Run log could not be read.');
     }
     // Pending text of the line being read, never longer than the cap.
     $text = '';
     try {
       while (!feof($handle)) {
-        $chunk = fread($handle, 1024);
-        if ($chunk === FALSE || ($inflate !== FALSE && ($chunk = @inflate_add($inflate, $chunk)) === FALSE)) {
-          throw new RunLogException('Run log could not be read.');
-        }
-        $parts = explode("\n", $chunk);
+        $parts = explode("\n", self::nextChunk($handle, $inflate));
         $tail = array_pop($parts);
         foreach ($parts as $part) {
           $text = trim($text . $part);
@@ -178,6 +174,29 @@ final class RunLogStore {
       fclose($handle);
     }
     return trim($text);
+  }
+
+  /**
+   * The next chunk of an open log, decompressed when it is a gzip log.
+   *
+   * @param resource $handle
+   *   The open log file.
+   * @param \InflateContext|null $inflate
+   *   The gzip stream of a gzip log, NULL for plain text.
+   *
+   * @throws \Drupal\bb_core\RunLog\RunLogException
+   *
+   * @SuppressWarnings("PHPMD.ErrorControlOperator")
+   */
+  private static function nextChunk($handle, ?\InflateContext $inflate): string {
+    $chunk = fread($handle, 1024);
+    if ($chunk !== FALSE && $inflate !== NULL) {
+      $chunk = @inflate_add($inflate, $chunk);
+    }
+    if ($chunk === FALSE) {
+      throw new RunLogException('Run log could not be read.');
+    }
+    return $chunk;
   }
 
   /**

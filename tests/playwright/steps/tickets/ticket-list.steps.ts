@@ -1095,14 +1095,16 @@ Given('the workspace has an open ticket and a closed ticket assigned to me', asy
     '} else {',
     `$open->set("state", "working")->set("assignee_user_id", ${listing.uid});`,
     '}',
-    '$open->save();',
+    // A real change on every run: re-saving an unchanged ticket keeps its old
+    // `changed`, and fresher fixtures then push it off the first page.
+    '$open->setChangedTime(\\Drupal::time()->getCurrentTime())->save();',
     `$closed = current($ts->loadByProperties(["title" => "${CLOSED_FIXTURE_TICKET_TITLE}"]));`,
     'if (!$closed) {',
     `$closed = $ts->create(["project_id" => $p->id(), "title" => "${CLOSED_FIXTURE_TICKET_TITLE}", "workflow" => "bb_work", "state" => "done", "assignee_user_id" => ${listing.uid}]);`,
     '} else {',
     `$closed->set("state", "done")->set("assignee_user_id", ${listing.uid});`,
     '}',
-    '$closed->save();',
+    '$closed->setChangedTime(\\Drupal::time()->getCurrentTime())->save();',
     'print "OK";',
   ].join(' ');
   const result = php(snippet);

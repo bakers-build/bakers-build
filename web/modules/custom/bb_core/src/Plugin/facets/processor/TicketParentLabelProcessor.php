@@ -70,24 +70,43 @@ final class TicketParentLabelProcessor extends ProcessorPluginBase implements Bu
     foreach ($results as $result) {
       $keys[] = (string) $result->getRawValue();
     }
-    if ($keys === []) {
-      return $results;
-    }
-    $storage = $this->entityTypeManager->getStorage('bb_ticket');
-    $ids = $storage->getQuery()->accessCheck(TRUE)->condition('identifier', $keys, 'IN')->execute();
-    $titles = [];
-    foreach ($storage->loadMultiple($ids) as $ticket) {
-      if ($ticket instanceof BbTicketInterface) {
-        $titles[$ticket->getIdentifier()] = (string) $ticket->label();
-      }
-    }
+    $labels = self::labels($this->entityTypeManager, $keys);
     foreach ($results as $result) {
       $key = (string) $result->getRawValue();
-      if (isset($titles[$key])) {
-        $result->setDisplayValue($key . ' · ' . $titles[$key]);
+      if (isset($labels[$key])) {
+        $result->setDisplayValue($labels[$key]);
       }
     }
     return $results;
+  }
+
+  /**
+   * The "KEY · Title" label of every given key the reader may read.
+   *
+   * Shared with the filter summary, which names a chosen parent the facet
+   * has no result for.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   * @param array<int, string> $keys
+   *   Ticket identifiers.
+   *
+   * @return array<string, string>
+   *   The labels, keyed by identifier; an unknown or unreadable key is absent.
+   */
+  public static function labels(EntityTypeManagerInterface $entity_type_manager, array $keys): array {
+    if ($keys === []) {
+      return [];
+    }
+    $storage = $entity_type_manager->getStorage('bb_ticket');
+    $ids = $storage->getQuery()->accessCheck(TRUE)->condition('identifier', $keys, 'IN')->execute();
+    $labels = [];
+    foreach ($storage->loadMultiple($ids) as $ticket) {
+      if ($ticket instanceof BbTicketInterface) {
+        $labels[$ticket->getIdentifier()] = $ticket->getIdentifier() . ' · ' . $ticket->label();
+      }
+    }
+    return $labels;
   }
 
 }

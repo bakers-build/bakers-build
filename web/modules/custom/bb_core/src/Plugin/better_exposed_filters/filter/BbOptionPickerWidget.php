@@ -201,6 +201,11 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
     $multiple = !empty($element['#multiple']) || ($element['#type'] ?? '') === 'checkboxes';
     $values = $this->pickedValues($element, $form_state, $key);
     $options = $this->withChosenRows($options, $values);
+    if ($this->handler instanceof FacetsFilter && empty($this->handler->value)) {
+      // A facet without results never sets its value, so the filter summary
+      // would skip it; what it then states is the facet's own decision.
+      $this->handler->value = $values;
+    }
     if ($counts !== NULL) {
       // A chosen value the facet did not count yields no ticket here, and
       // every row of a counting facet shows a number.
