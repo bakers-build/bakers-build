@@ -36,7 +36,7 @@ class SetupBoundaryTest(unittest.TestCase):
             (root / 'project').mkdir()
             args = config_args(root, ['bakers', 'config', 'init', '--scope', 'machine',
                                      '--machine-path', 'machine/custom.js', '--label', 'chosen-worker'])
-            command = [str(repo / 'bakers-cli/node_modules/.bin/tsx'), str(repo / 'tests/skill-eval/setup-config.mjs'), str(root), json.dumps(args)]
+            command = ['node', '--import', str(repo / 'bakers-cli/node_modules/tsx/dist/loader.mjs'), str(repo / 'tests/skill-eval/setup-config.mjs'), str(root), json.dumps(args)]
             first = subprocess.run(command, capture_output=True, text=True, timeout=30)
             self.assertEqual(first.returncode, 0, first.stderr)
             saved = (root / 'machine/custom.js').read_text()

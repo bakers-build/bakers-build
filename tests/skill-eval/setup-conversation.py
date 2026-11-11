@@ -149,7 +149,7 @@ def main():
                             if config_written and args[:2] == ['config', 'init'] and '--help' not in args and '--dry-run' not in args:
                                 raise ValueError('After direct config writes use offline check; initialization is unavailable')
                             event['executed_config_argv'] = args
-                            completed = subprocess.run([str(ROOT / 'bakers-cli/node_modules/.bin/tsx'),
+                            completed = subprocess.run(['node', '--import', str(ROOT / 'bakers-cli/node_modules/tsx/dist/loader.mjs'),  # the tsx CLI needs an IPC pipe that a sandbox denies
                                 str(ROOT / 'tests/skill-eval/setup-config.mjs'), str(environment), json.dumps(args)],
                                 cwd=environment / 'project', text=True, capture_output=True, timeout=30,
                                 env={**os.environ, 'BAKERS_HOME': str(environment / 'machine'),
