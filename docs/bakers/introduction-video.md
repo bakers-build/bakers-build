@@ -4,7 +4,7 @@ The script for the introduction video on the landing page. It introduces bakers.
 follows one ticket from a GitLab issue to `done`. You record screen and narration in one take
 from this file; the cut, the captions and the player are made from that recording afterwards.
 
-- Length of the final cut: 120 to 180 seconds. The narration below is about 380 words.
+- Length of the final cut: 120 to 180 seconds. The narration below is about 415 words.
 - Language: English. Say "bakers dot build".
 - Lines starting with `>` are the narration, word for word. Everything else is direction.
 
@@ -78,92 +78,92 @@ stay silent while you wait. Waiting is cut out later.
 
 On screen: the landing page hero; scroll slowly to the line with its four stations.
 
-> This is bakers.build, a ticket-driven software factory for teams.
-> You write tickets for AI, and agents work them automatically along a fixed line: plan, build, review, ship.
-> A recipe seasons how each station works, and the line itself lives in WORKFLOW.md in your repository.
+> Hi! This is bakers.build. Think of it as a small bakery for software.
+> Your team writes down what it needs, as a ticket. And AI agents do the baking: they plan, build, check and deliver, always along the same line.
+> How that line works is your recipe: a simple text file, right next to your code.
 
 ### 2. A ticket system for AI (about 18 s)
 
 On screen: the project's ticket board, then the machines list with both conductors.
 
-> It is not a classic ticket system. It is a ticket system for AI.
-> Every step stays on the ticket, and new tickets find earlier work again.
-> The work runs on your own machine, a colleague's machine or a remote worker.
+> It's not one more ticket system for people. It's one made for AI.
+> Everything an agent does stays on the ticket, so the next ticket can build on what's already there.
+> And the work happens on your own computer, a colleague's, or a machine in the background.
 
 ### 3. From an issue to a ticket (about 16 s)
 
 On screen: the GitLab issue, without labels. Then create the ticket from it in bakers.build and
 add the label `auto`.
 
-> Let's follow one ticket. Our shop needs its opening hours on the contact page.
-> It starts as a normal GitLab issue, because your issues stay where they are.
-> We create a ticket from it and add the label auto.
+> Let me show you with one ticket. Our little shop wants its opening hours on the contact page.
+> It starts where your wishes always start: as a normal issue in GitLab. That stays.
+> We turn it into a ticket and add one label: auto.
 
 ### 4. Labels (about 16 s)
 
 On screen: the ticket's Properties panel with the labels; rest the pointer on `auto`.
 
-> Labels steer how a ticket runs.
-> With auto, a simple ticket runs on its own and asks only what is yours to decide.
-> Without it, a person approves at every station.
-> So not every ticket has to pass through a developer's hands.
+> Labels decide how much you want to be involved.
+> With auto, a simple ticket just runs, and only asks you what is yours to decide.
+> Without it, a person says yes at every step.
+> So not everything needs a developer.
 
 ### 5. Qualification and plan (about 18 s)
 
 On screen: the ticket in `qualification`, its acceptance comment; then in `plan`, its spec and
 plan comments. Switch once to the GitLab issue: the label `doing` is there.
 
-> In qualification, the agent looks for earlier work and writes acceptance criteria you can check.
-> In plan, it writes the spec, the plan and the tests it will run. All of it lands on the ticket.
-> And on the GitLab issue, a label now says: doing.
+> First comes qualification. The agent makes sure it understood us: what do we want, and how will we know it's done?
+> Then it writes a plan. You can read all of it on the ticket.
+> And over in GitLab, the issue now says: doing.
 
 ### 6. Stepping in (about 13 s)
 
 On screen: herdr with the ticket's run tab; the agent's output scrolls. Type one short sentence
 to the agent, for example "Use the 24-hour format."
 
-> While the agent works, you can look into the oven.
-> In a client such as herdr or Orca you read along, and you step in with one sentence whenever you want.
+> While the agent is busy, you can peek into the oven.
+> Open its window in a tool like herdr or Orca, read along, and if you have an idea, tell it in one sentence.
 
 ### 7. The ticket moves (about 20 s)
 
 On screen: the agent's report of the technical problem on the ticket. Then Properties: change
 **Conductor** to `dev-workstation`, remove `auto`.
 
-> This ticket turns out harder than expected: opening hours need a change to the data model.
-> The agent does not guess. It reports the problem.
-> So we move the ticket to a developer's conductor.
-> A ticket can move: to another person, and to another machine.
+> Our ticket turns out to be trickier than it looked.
+> The agent doesn't guess. It says so.
+> So we hand the ticket to a developer, and it continues on their machine.
+> Tickets can move, to whoever is the right person.
 
 ### 8. Working (about 13 s)
 
 On screen: the ticket in `working` on the developer's conductor, the run in herdr, then the
 summary comment and the developer's confirmation.
 
-> In working, the agent builds on its own branch, tests first.
-> The developer reads the summary, tries the result and confirms it.
+> Now the ticket is in working. The agent builds the change and tests it.
+> Our developer tries it out and says: looks good.
 
 ### 9. Review (about 13 s)
 
 On screen: the ticket in `review`, the review comment with its verdict, the confirmation.
 
-> In review, a second agent checks the change independently and gives a verdict.
-> The developer confirms it and authorizes the merge.
+> Then comes the review. A second agent, with fresh eyes, checks everything again.
+> Only then does the developer give the go for the merge.
 
 ### 10. Done (about 13 s)
 
 On screen: the ticket in `done`. Switch to the GitLab issue: the label changed to `review`.
 
-> Done. On the GitLab issue the label has changed again, so your customer sees the progress without leaving GitLab.
-> Your own workflow rules can report back more.
+> And done! In GitLab the label has changed once more, so your customer sees the progress without learning a new tool.
+> If you like, it can report back even more.
 
 ### 11. Closing (about 11 s)
 
 On screen: the landing page, the section "Bake it yourself or let us run the oven".
 
-> Your code stays on your machines.
-> bakers.build is open source, and self-hosted or hosted, both are free.
-> Try it on a real ticket.
+> Your code never leaves your machines.
+> bakers.build is open source and free, whether you host it yourself or let us do it.
+> So give it a real ticket, and see what comes out of the oven.
 
 ## Handover
 
