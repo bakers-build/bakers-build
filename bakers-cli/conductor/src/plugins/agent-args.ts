@@ -486,15 +486,17 @@ export function resolveSecurityOptions(
   if (mode === 'custom' && input.config === undefined) {
     throw new Error("permissions: 'custom' requires config");
   }
-  if (mode !== 'sandbox' && input.sandbox !== undefined) {
+  // An isolating runtime makes the entry's sandbox block moot: ignore it, keep it for host runs.
+  const entrySandbox = isolated ? undefined : input.sandbox;
+  if (mode !== 'sandbox' && entrySandbox !== undefined) {
     throw new Error(
       `sandbox is only valid with permissions: 'sandbox' (the ${modeSource} layer sets '${mode}')`,
     );
   }
   const given =
-    input.sandbox === undefined
+    entrySandbox === undefined
       ? {}
-      : validatePlainObject(input.sandbox, 'sandbox');
+      : validatePlainObject(entrySandbox, 'sandbox');
   const sandbox = { ...defaults };
   const report: SecurityReport = {
     mode: { value: mode, source: modeSource },

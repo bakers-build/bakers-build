@@ -216,3 +216,14 @@ describe('an isolating runtime', () => {
     expect(r.report.mode.source).toBe('machine');
   });
 });
+
+describe('an isolating runtime with an entry sandbox block', () => {
+  it('ignores the block instead of failing the load', () => {
+    const r = resolve({
+      sandbox: { trusted_commands: ['make'] },
+      shared_permissions: { machine: { mode: 'sandbox' }, isolated: true },
+    });
+    expect(r.mode).toBe('system');
+    expect(r.report.mode.source).toBe('runtime');
+  });
+});
