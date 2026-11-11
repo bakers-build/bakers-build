@@ -58,6 +58,25 @@ final class BbDate {
   }
 
   /**
+   * The `bb_theme:time` element for an age, relative at any distance.
+   *
+   * "3 weeks ago" for how old something is, where `time()` would turn
+   * absolute after seven days.
+   *
+   * @param int $timestamp
+   *   Unix timestamp.
+   *
+   * @return array<string, mixed>
+   *   A component render array carrying the label's max-age.
+   */
+  public function age(int $timestamp): array {
+    $diff = $this->diff($timestamp);
+    $element = $this->element($timestamp, $diff->getString());
+    $element['#cache']['max-age'] = $diff->getCacheMaxAge();
+    return $element;
+  }
+
+  /**
    * The `bb_theme:time` element for a calendar date ("6 Jan"), never relative.
    *
    * @param int $timestamp
@@ -154,10 +173,14 @@ final class BbDate {
    * The relative label within the window, else NULL.
    */
   private function relative(int $timestamp): ?FormattedDateDiff {
+    return abs($timestamp - $this->time->getRequestTime()) < self::RELATIVE_WINDOW ? $this->diff($timestamp) : NULL;
+  }
+
+  /**
+   * The relative label: "2 hours ago" or "in 3 hours", with its max-age.
+   */
+  private function diff(int $timestamp): FormattedDateDiff {
     $now = $this->time->getRequestTime();
-    if (abs($timestamp - $now) >= self::RELATIVE_WINDOW) {
-      return NULL;
-    }
     $options = ['granularity' => 1, 'return_as_object' => TRUE];
     $ahead = $timestamp > $now;
     $diff = $ahead

@@ -66,6 +66,21 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     Then the band region "flow" comes before the band region "summary"
     And the band region "summary" comes before the band region "links"
 
+  # AC 10. The sub-line names who created the ticket and how long ago; the
+  # exact date is one hover away, on the time element.
+  Scenario: The header names creator and age
+    When I visit the ticket "BB-142"
+    Then the page header names the creator of ticket "BB-142" and how long ago it was created
+    And the age in the page header shows its exact date on hover
+
+  # AC 9. A title too long for two lines is clamped on screen, and the heading
+  # still holds the whole title, also on hover. The clamp itself is a layout
+  # measure and stays out of the suite.
+  Scenario: A long title keeps its full text on hover
+    Given a disposable ticket titled "Add designbook entity view-mode for bb_ticket so designers can preview every ticket detail layout, its summary band, the run history and the comment timeline without hitting live Drupal data, in every workflow state and at both densities"
+    When I visit the disposable ticket
+    Then the page heading holds the whole title of the disposable ticket, also on hover
+
   # AC 6's grouping, observed on the surface rather than on the grouper. BB-142
   # carries six links spanning mr, ci, report, design, ddev and chat — so all
   # four groups have rows. An empty group must be ABSENT, which is what the

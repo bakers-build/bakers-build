@@ -37,8 +37,8 @@ export function createDisposableTicket(
   workflow: string,
   state: string,
   runs: DisposableRuns | null,
+  title = `Intervention ${workflow} ${state} ${Date.now()}`,
 ): DisposableTicket {
-  const title = `Intervention ${workflow} ${state} ${Date.now()}`;
   const output = lastLine([
     '$etm = \\Drupal::entityTypeManager();',
     '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',

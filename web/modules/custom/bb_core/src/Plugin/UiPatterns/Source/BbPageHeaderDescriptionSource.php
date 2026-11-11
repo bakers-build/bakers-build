@@ -21,14 +21,16 @@ use Symfony\Component\HttpFoundation\RequestStack;
 /**
  * The recessive line under the shell page title, when this route has one.
  *
- * Listings name the workspace; a ticket names project / workflow / conductor;
+ * Listings name the workspace; a ticket names project / workflow / people;
  * a project names key and group. Every other screen leaves the sub-line empty.
+ * A ticket also fills the `subline` slot, where the creator's age is a time
+ * element; the `description` string stays its plain text, shown on hover.
  */
 #[Source(
   id: 'bb_page_header_description',
   label: new TranslatableMarkup('[bakers.build] Page header description'),
   description: new TranslatableMarkup('One line of context under the screen title.'),
-  prop_types: ['string'],
+  prop_types: ['string', 'slot'],
 )]
 final class BbPageHeaderDescriptionSource extends SourcePluginBase {
 
@@ -107,6 +109,18 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
   }
 
   /**
+   * The `subline` slot: a ticket's sub-line with its time element, else empty.
+   *
+   * @return array<int|string, mixed>
+   *   A render array, or empty off a ticket and on its nested run URLs.
+   */
+  private function sublineElement(): array {
+    $ticket = $this->routeMatch->getParameter('bb_ticket');
+    $run = str_starts_with((string) $this->routeMatch->getRouteName(), 'entity.bb_run.');
+    return !$run && $ticket instanceof BbTicketInterface ? BbTicketDetailHeaderSource::sublineElement($ticket) : [];
+  }
+
+  /**
    * The Insights sub-line: the workspace and what its filters narrow it to.
    */
   private function insightsSubline(): string {
@@ -137,9 +151,12 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
 
   /**
    * {@inheritdoc}
+   *
+   * A slot gets a ticket's sub-line with its time element; a string prop gets
+   * the plain text.
    */
   public function getValue(?PropTypeInterface $prop_type = NULL): mixed {
-    return $this->getPropValue();
+    return $prop_type?->getPluginId() === 'slot' ? $this->sublineElement() : $this->getPropValue();
   }
 
   /**
@@ -150,7 +167,9 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
       ->addCacheContexts(['url.path', 'url.query_args']);
     $ticket = $this->routeMatch->getParameter('bb_ticket');
     if ($ticket instanceof BbTicketInterface) {
-      $metadata = $metadata->merge(TicketStallReason::cacheability($ticket));
+      // The plain-text description carries the creator's age too.
+      $metadata = $metadata->merge(TicketStallReason::cacheability($ticket))
+        ->merge(CacheableMetadata::createFromRenderArray(BbTicketDetailHeaderSource::sublineElement($ticket)));
     }
     $project = $this->routeMatch->getParameter('bb_project');
     if ($project instanceof BbProjectInterface) {

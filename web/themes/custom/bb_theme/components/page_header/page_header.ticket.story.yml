@@ -1,0 +1,22 @@
+component: bb_theme:page_header
+name: Ticket
+props:
+  title: >-
+    BB-142 · Add designbook entity view-mode for bb_ticket so designers can
+    preview every ticket detail layout, its summary band, the run history and
+    the comment timeline without hitting live Drupal data, in every workflow
+    state and at both densities, with the handoff stream closed on arrival
+  description: >-
+    bakers.build Platform · bb_work · assigned to north-lead · created by admin
+    · 3 weeks ago
+slots:
+  subline:
+    - type: element
+      tag: span
+      value: 'bakers.build Platform · bb_work · assigned to north-lead · created by admin · '
+    - type: component
+      component: bb_theme:time
+      props:
+        label: 3 weeks ago
+        datetime: '2026-10-21T09:00:00+02:00'
+        title: Wed, 21 Oct 2026, 09:00 CEST

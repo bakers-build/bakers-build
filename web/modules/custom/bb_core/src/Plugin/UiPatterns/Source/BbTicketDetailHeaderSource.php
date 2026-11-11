@@ -13,6 +13,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Ticket\TicketLinkGroups;
+use Drupal\bb_core\Time\BbDate;
 use Drupal\state_machine\Plugin\Workflow\WorkflowInterface;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
@@ -74,12 +75,47 @@ final class BbTicketDetailHeaderSource extends SourcePluginBase implements Conta
   }
 
   /**
-   * The recessive line under the ticket headline.
+   * The recessive line under the ticket headline, as plain text.
    *
    * The heading itself is the shell page_header island. This is the
-   * project / workflow / conductor sub-line that island still needs.
+   * project / workflow / people sub-line that island still needs, with the
+   * creator's age as its label.
    */
   public static function subline(BbTicketInterface $ticket): string {
+    return implode(' · ', array_map(
+      static fn (string|array $part): string => is_array($part) ? (string) $part['#props']['label'] : $part,
+      self::sublineParts($ticket),
+    ));
+  }
+
+  /**
+   * The sub-line as a render array, the creator's age as a time element.
+   *
+   * @return array<int|string, mixed>
+   *   The parts joined by middots; `#cache` carries the age's max-age.
+   */
+  public static function sublineElement(BbTicketInterface $ticket): array {
+    $element = [];
+    foreach (self::sublineParts($ticket) as $i => $part) {
+      if ($i > 0) {
+        $element[] = ['#plain_text' => ' · '];
+      }
+      if (is_array($part)) {
+        // On top too, where the plain-text description reads it.
+        $element['#cache'] = $part['#cache'];
+      }
+      $element[] = is_array($part) ? $part : ['#plain_text' => $part];
+    }
+    return $element;
+  }
+
+  /**
+   * The sub-line's parts in order.
+   *
+   * @return list<string|array<string, mixed>>
+   *   Plain-text parts, and the creator's age as a `bb_theme:time` element.
+   */
+  private static function sublineParts(BbTicketInterface $ticket): array {
     $parts = [];
     $project = $ticket->getProject();
     if ($project !== NULL) {
@@ -95,6 +131,7 @@ final class BbTicketDetailHeaderSource extends SourcePluginBase implements Conta
     $owner = $ticket->get('owner_user_id')->entity;
     if ($owner instanceof AccountInterface) {
       $parts[] = 'created by ' . (string) $owner->getDisplayName();
+      $parts[] = \Drupal::service(BbDate::class)->age((int) $ticket->get('created')->value);
     }
     $conductor = $ticket->getConductor();
     if ($conductor !== NULL) {
@@ -105,7 +142,7 @@ final class BbTicketDetailHeaderSource extends SourcePluginBase implements Conta
     if ($stall !== '') {
       $parts[] = TicketStallReason::label($stall);
     }
-    return implode(' · ', $parts);
+    return $parts;
   }
 
   /**

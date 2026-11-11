@@ -7,11 +7,19 @@
 // so "the document was not reloaded" means one thing across both surfaces.
 //
 // THE SECOND CLICK IS THE ASSERTION. See the header of steps/team/team-islands.steps.ts.
-import { Given, When, Then } from '../../bdd.fixtures';
+import { Given, When, Then, test } from '../../bdd.fixtures';
+import { createBdd } from 'playwright-bdd';
 import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { markDocument } from '../../support/shell';
+import { createDisposableTicket, deleteDisposableTicket, subject } from '../../support/disposable-ticket';
+
+const { After } = createBdd(test);
+
+After({ tags: '@feature:ticket-detail' }, async ({ page }) => {
+  deleteDisposableTicket(page);
+});
 
 /**
  * Runs a PHP snippet through drush and returns its stdout.
@@ -617,6 +625,45 @@ Then(
     await expect(current).toContainText(state);
   },
 );
+
+// ---------------------------------------------------------------------------
+// The page header: the creator's age (AC 10) and a long title (AC 9).
+// ---------------------------------------------------------------------------
+
+const SUBLINE = '#page-header-description';
+
+Then(
+  'the page header names the creator of ticket {string} and how long ago it was created',
+  async ({ page }, identifier: string) => {
+    const creator = php(
+      'print (($e = current(\\Drupal::entityTypeManager()->getStorage("bb_ticket")' +
+        `->loadByProperties(["identifier" => "${safe(identifier)}"]))) && ($o = $e->get("owner_user_id")->entity)) ? $o->getDisplayName() : "";`,
+    );
+    expect(creator, `ticket ${identifier} has no creator`).not.toBe('');
+    const name = creator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    await expect(page.locator(SUBLINE)).toContainText(new RegExp(`created by ${name} · \\d+ \\w+ ago`));
+  },
+);
+
+Then('the age in the page header shows its exact date on hover', async ({ page }) => {
+  const age = page.locator(`${SUBLINE} time`);
+  await expect(age).toHaveCount(1);
+  await expect(age).toHaveText(/^\d+ \w+ ago$/);
+  await expect(age).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}T/);
+  await expect(age).toHaveAttribute('title', /\d{4}, \d{2}:\d{2}/);
+});
+
+Given('a disposable ticket titled {string}', async ({ page }, title: string) => {
+  createDisposableTicket(page, 'bb_work', 'working', null, title);
+});
+
+Then('the page heading holds the whole title of the disposable ticket, also on hover', async ({ page }) => {
+  const { identifier, title } = subject(page);
+  const headline = `${identifier} · ${title}`;
+  const heading = page.getByRole('heading', { level: 1 });
+  await expect(heading).toHaveText(headline);
+  await expect(heading).toHaveAttribute('title', headline);
+});
 
 // ---------------------------------------------------------------------------
 // Data formats: handoff times and the report source.
