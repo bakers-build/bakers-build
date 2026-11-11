@@ -27,7 +27,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_run_cancel',
   label: new TranslatableMarkup('Cancel active runs of a ticket or machine'),
-  description: new TranslatableMarkup('Sets claimed or running runs to cancelled and records the reason in each run’s error log; the conductor then stops the agent. With ticket: every active run of that ticket, refused with no run changed when it has none or the caller may not cancel one of them. With machine_id: every active run of your machine’s conductors across projects that you may cancel, with one comment per affected ticket; none cancelled is no error.'),
+  description: new TranslatableMarkup('Sets claimed or running runs to cancelled and records the reason in each run’s error log; the conductor then stops the agent. With ticket: every active run of that ticket; a ticket parked after repeated failed runs has none, so its newest failed run is cancelled instead, which restarts it. Refused with no run changed when there is nothing to cancel or the caller may not cancel one of them. With machine_id: every active run of your machine’s conductors across projects that you may cancel, with one comment per affected ticket; none cancelled is no error.'),
   operation: ToolOperation::Write,
   destructive: TRUE,
   permission: 'view bb_ticket',
@@ -101,9 +101,11 @@ final class RunCancel extends ToolBase {
       return $this->cancelByMachine($machine_input, $note);
     }
     $ticket = $this->readableTicket($ticket_input);
-    $runs = TicketInterventions::activeRuns($ticket, $this->entities());
+    // A parked ticket has no active run; cancelling its newest failed run
+    // restarts it.
+    $runs = TicketInterventions::activeRuns($ticket, $this->entities()) ?: array_filter([TicketInterventions::parkedRun($ticket)]);
     if ($runs === []) {
-      throw new \InvalidArgumentException(sprintf('Ticket %s has no active run.', $ticket_input));
+      throw new \InvalidArgumentException(sprintf('Ticket %s has no active run and is not parked after repeated failed runs.', $ticket_input));
     }
     // All or nothing: every run is checked before the first is cancelled.
     foreach ($runs as $run) {

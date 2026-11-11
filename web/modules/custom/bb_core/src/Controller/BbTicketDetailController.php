@@ -26,21 +26,30 @@ final class BbTicketDetailController extends ControllerBase {
    * The title of an intervention confirmation.
    */
   public function interventionTitle(BbTicketInterface $bb_ticket, Request $request): string {
+    $label = $bb_ticket->getIdentifier() !== '' ? $bb_ticket->getIdentifier() : (string) $bb_ticket->label();
     if ($request->query->has(TicketInterventions::FREEZE_PARAMETER)) {
-      $label = $bb_ticket->getIdentifier() !== '' ? $bb_ticket->getIdentifier() : (string) $bb_ticket->label();
       return $request->query->get(TicketInterventions::FREEZE_PARAMETER) === '1'
         ? (string) $this->t('Freeze @ticket?', ['@ticket' => $label])
         : (string) $this->t('Unfreeze @ticket?', ['@ticket' => $label]);
     }
     if ($request->query->has(TicketInterventions::RUN_PARAMETER)) {
-      $run = TicketInterventions::runByUuid($request->query->get(TicketInterventions::RUN_PARAMETER), $this->entityTypeManager());
-      // Name only a run the reader may cancel; any other gets no number.
-      return $run !== NULL && TicketInterventions::mayCancelRun($run, $bb_ticket)
-        ? (string) $this->t('Cancel run #@run?', ['@run' => $run->id()])
-        : (string) $this->t('Cancel run?');
+      return $this->runTitle($bb_ticket, $request, $label);
     }
-    $label = $bb_ticket->getIdentifier() !== '' ? $bb_ticket->getIdentifier() : (string) $bb_ticket->label();
     return (string) $this->t('Cancel @ticket?', ['@ticket' => $label]);
+  }
+
+  /**
+   * The title of a Cancel run confirmation, or Restart for a parked run.
+   */
+  private function runTitle(BbTicketInterface $bb_ticket, Request $request, string $label): string {
+    $run = TicketInterventions::runByUuid($request->query->get(TicketInterventions::RUN_PARAMETER), $this->entityTypeManager());
+    // Name only a run the reader may cancel; any other gets no number.
+    if ($run === NULL || !TicketInterventions::mayCancelRun($run, $bb_ticket)) {
+      return (string) $this->t('Cancel run?');
+    }
+    return $run->getRunState() === 'failed'
+      ? (string) $this->t('Restart @ticket?', ['@ticket' => $label])
+      : (string) $this->t('Cancel run #@run?', ['@run' => $run->id()]);
   }
 
 }
