@@ -34,6 +34,8 @@ tests/playwright/
 │   ├── login-flow.ts          #   Mailpit / login-link / flood helpers
 │   ├── picker.ts              #   option-picker locators
 │   ├── detail-cards.ts        #   detail-page cards, Activities, card save round trip
+│   ├── project-world.ts       #   disposable project world of the Overview and Board
+│   ├── board.ts               #   Project Board cards and active filter chips
 │   ├── provision-state.ts     #   account/workspace provisioning snapshots
 │   └── steps/                 # SHARED steps; each file names its consumer folders
 │       ├── core.ts            #   administrator/anonymous login and button click
@@ -43,6 +45,7 @@ tests/playwright/
 │       ├── landing.steps.ts   #   site root, workspace chooser, gate chrome
 │       ├── listing.steps.ts   #   facets, chips, address, closed-rows control
 │       ├── detail-cards.steps.ts # detail-page cards and the Activities feed
+│       ├── project-health-world.steps.ts # project world, its Overview and Board
 │       └── shell.steps.ts     #   shell navigation, reload mark, request counts
 ├── steps/<folder>/            # steps + hooks owned by ONE feature folder
 └── features/<folder>/         # the Gherkin, one folder per feature area:

@@ -1,10 +1,15 @@
-import { Given, When, Then } from '../bdd.fixtures';
+// The Project Board: its filter bar, columns, Done window, Details, cards and
+// active conductors. The disposable project world and the shared Board
+// observations come from support/steps/project-health-world.steps.ts.
+import { When, Then } from '../bdd.fixtures';
 import { Drush } from '../support/drush';
-import { expect } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
+import type { DataTable } from 'playwright-bdd';
 import { php } from '../support/drush';
-import { active, safe } from '../support/listing';
+import { card, expectCards } from '../support/board';
+import { active, listing, safe } from '../support/listing';
+import { requireWorld } from '../support/project-world';
 
-let boardPath = '';
 let boardStatus = 0;
 
 function projectId(name: string): string {
@@ -16,65 +21,151 @@ function projectId(name: string): string {
   return id;
 }
 
+function filterBar(page: Page): Locator {
+  return active(page).getByRole('search', { name: 'Board filters' });
+}
+
+function column(page: Page, name: string): Locator {
+  return active(page).locator(`[data-col="${safe(name)}"]`).first();
+}
+
+/** What the filter bar offers, by the name a scenario gives it. */
+const BAR_CONTROLS: Record<string, (bar: Locator) => Locator> = {
+  Search: (bar) => bar.getByRole('textbox', { name: 'Search', exact: true }),
+  State: (bar) => bar.getByRole('combobox', { name: /^Change State\./ }),
+  Priority: (bar) => bar.getByRole('combobox', { name: /^Change Priority\./ }),
+  Assignee: (bar) => bar.getByText('Assignee', { exact: true }),
+  Details: (bar) => bar.getByRole('group', { name: 'Details', exact: true }),
+};
+
+/** Clicks a link and waits until the address has moved on. */
+async function follow(page: Page, link: Locator): Promise<void> {
+  const before = page.url();
+  await link.click();
+  await page.waitForFunction((url) => window.location.href !== url, before, { timeout: 20000 });
+}
+
 When('I visit the project board for {string}', async ({ page }, name: string) => {
-  boardPath = `/bakers/project/${projectId(name)}/board`;
-  const response = await page.goto(boardPath);
+  const response = await page.goto(`/bakers/project/${projectId(name)}/board`);
   boardStatus = response?.status() ?? 0;
 });
 
+// The top-level columns in order; Details' state columns sit inside Working.
 Then('the Board shows the columns {string}', async ({ page }, names: string) => {
-  const target = active(page);
-  const columns = names.split(', ');
-  for (const name of columns) {
-    await expect(target.locator(`[data-col="${name}"]`)).toBeVisible();
-  }
-  await expect(target.locator('[data-col]')).toHaveCount(columns.length);
+  await expect.poll(() => active(page).locator('[data-col]').evaluateAll(
+    (columns) => columns.filter((col) => !col.parentElement?.closest('[data-col]')).map((col) => col.getAttribute('data-col')),
+  ), { timeout: 10000 }).toEqual(names.split(', '));
 });
 
-// People are filtered by the Assignee chips; a Conductor filter said the
+Then('the Board filter bar offers {string}', async ({ page }, controls: string) => {
+  await expect(active(page).getByRole('search')).toHaveCount(1);
+  for (const control of controls.split(', ')) {
+    await expect(BAR_CONTROLS[control](filterBar(page)).first(), control).toBeVisible();
+  }
+});
+
+// People are filtered by the Assignee avatars; a Conductor filter said the
 // same thing twice.
 Then('the Board shows no Conductor filter', async ({ page }) => {
   await expect(active(page).getByLabel('Conductor', { exact: true })).toHaveCount(0);
 });
 
-// The suite shares one world, and this project lands in the "bakers" workspace.
-// Its open tickets therefore stay in `qualification`: `ticket-list` asserts that
-// the "Working" facet narrows a full page, and two more open `working` tickets
-// fill that page. The Blocked marker reads `blocked_by`, not the state.
-Given('a dedicated Board project has a blocked ticket and a cancelled ticket', () => {
-  php(
-    [
-      '$etm = \\Drupal::entityTypeManager();',
-      '$ps = $etm->getStorage("bb_project");',
-      '$project = current($ps->loadByProperties(["name" => "Board markers"]));',
-      'if (!$project) {',
-      '$src = current($ps->loadByProperties(["name" => "bakers.build Platform"]));',
-      'if (!$src) { throw new \\RuntimeException("Need bakers.build Platform"); }',
-      '$teams = [];',
-      'foreach ($src->get("teams") as $item) { $teams[] = $item->target_id; }',
-      '$project = $ps->create(["name" => "Board markers", "key" => "BRDM", "group_id" => $src->get("group_id")->target_id, "teams" => $teams, "owner_user_id" => $src->get("owner_user_id")->target_id]);',
-      '$project->save();',
-      '}',
-      '$ts = $etm->getStorage("bb_ticket");',
-      'if (!current($ts->loadByProperties(["project_id" => $project->id(), "title" => "Board blocked"]))) {',
-      '$team = $project->get("teams")->target_id;',
-      '$peer = $ts->create(["project_id" => $project->id(), "title" => "Board peer", "workflow" => "bb_work", "state" => "qualification", "team" => $team]);',
-      '$peer->save();',
-      '$blocked = $ts->create(["project_id" => $project->id(), "title" => "Board blocked", "workflow" => "bb_work", "state" => "qualification", "team" => $team]);',
-      '$blocked->set("blocked_by", [$peer->id()])->save();',
-      '$cancelled = $ts->create(["project_id" => $project->id(), "title" => "Board cancelled", "workflow" => "bb_work", "state" => "cancelled", "closed" => 1, "team" => $team]);',
-      '$cancelled->save();',
-      '}',
-      'print $project->id();',
-    ].join(' '),
-  );
-  Drush.exec('search-api:index bb_tickets');
+When('I search the Board for {string}', async ({ page }, text: string) => {
+  await BAR_CONTROLS.Search(filterBar(page)).fill(text);
+  await BAR_CONTROLS.Search(filterBar(page)).press('Enter');
+  await active(page).waitForFunction(() => new URLSearchParams(window.location.search).has('search'), undefined, { timeout: 20000 });
 });
 
-// Scoped to the cards: the State facet's panel carries the same words
-// ("Cancelled") as hidden option labels.
-Then('the Board shows the marker {string}', async ({ page }, label: string) => {
-  await expect(active(page).locator('[data-col] article').getByText(label, { exact: true }).first()).toBeVisible();
+Then('the Board shows no active filter', async ({ page }) => {
+  await expect(active(page).locator('[data-active-filters="empty"]')).toBeVisible({ timeout: 10000 });
+  await expect(active(page).locator('[data-facet]')).toHaveCount(0);
+});
+
+When('I choose {string} in the Board details', async ({ page }, label: string) => {
+  await follow(active(page), BAR_CONTROLS.Details(filterBar(page)).getByRole('link', { name: label, exact: true }));
+});
+
+Then('the {string} column shows the tickets {string}', async ({ page }, name: string, titles: string) => {
+  await expectCards(column(page, name), titles);
+});
+
+Then('the {string} column holds no state columns', async ({ page }, name: string) => {
+  await expect(column(page, name)).toBeVisible();
+  await expect(column(page, name).locator('[data-col]')).toHaveCount(0);
+});
+
+Then('the {string} column holds the state columns {string}', async ({ page }, name: string, states: string) => {
+  await expect.poll(() => column(page, name).locator('[data-col]').evaluateAll(
+    (columns) => columns.map((col) => `${col.getAttribute('data-col')} ${col.getAttribute('data-count')}`),
+  ), { timeout: 10000 }).toEqual(states.split(', '));
+});
+
+Then('the {string} column header reads {string}', async ({ page }, name: string, text: string) => {
+  await expect(column(page, name).locator('h2')).toContainText(text);
+});
+
+When('I click {string} in the Done column', async ({ page }, label: string) => {
+  await follow(active(page), column(page, 'Done').getByRole('link', { name: label, exact: true }));
+});
+
+Then('the Done column is open', async ({ page }) => {
+  await expect(column(page, 'Done').getByRole('link', { name: 'Hide done', exact: true })).toBeVisible({ timeout: 10000 });
+});
+
+Then('the Done column is closed', async ({ page }) => {
+  await expect(column(page, 'Done').getByRole('link', { name: 'Show done', exact: true })).toBeVisible({ timeout: 10000 });
+  await expect(column(page, 'Done').locator('article')).toHaveCount(0);
+});
+
+Then('the Done column reads {string}', async ({ page }, text: string) => {
+  await expect(column(page, 'Done').getByText(text, { exact: true })).toBeVisible();
+});
+
+Then('the card {string} reads {string}', async ({ page }, title: string, text: string) => {
+  await expect(card(active(page), title)).toContainText(text);
+});
+
+Then('the card {string} reads no runs', async ({ page }, title: string) => {
+  await expect(card(active(page), title)).toBeVisible();
+  await expect(card(active(page), title)).not.toContainText(/\d+ runs?\b/);
+});
+
+Then('the card {string} is blocked by {string}', async ({ page }, title: string, blocker: string) => {
+  const identifier = requireWorld().identifiers[blocker];
+  expect(identifier, `the world has no ticket "${blocker}"`).toBeTruthy();
+  await expect(card(active(page), title)).toContainText(`Blocked by ${identifier}`);
+});
+
+// A new browser context signs in afresh: what it shows comes from the
+// account, not from the first session.
+When('I open the world project Board in another browser session', async ({ page }) => {
+  const world = requireWorld();
+  const origin = new URL(page.url()).origin;
+  const context = await page.context().browser()!.newContext({ ignoreHTTPSErrors: true });
+  const other = await context.newPage();
+  await other.goto(Drush.exec(`uli --uid=${world.ids.lead} --no-browser --uri=${origin}`).trim());
+  const response = await other.goto(`${origin}${world.board}`);
+  expect(response?.status()).toBe(200);
+  listing.page = other;
+});
+
+Then('the Active conductors are {string}', async ({ page }, note: string) => {
+  await expect(active(page).getByRole('heading', { name: 'Active conductors', exact: true })).toBeVisible();
+  await expect(active(page).getByText(note, { exact: true })).toBeVisible();
+});
+
+// Exactly these rows; each listed column is read under its header.
+Then('the Active conductors list:', async ({ page }, table: DataTable) => {
+  const conductors = active(page).getByRole('table').filter({ has: active(page).getByRole('columnheader', { name: 'Load' }) });
+  const headers = (await conductors.getByRole('columnheader').allInnerTexts()).map((header) => header.trim().toLowerCase());
+  const expected = table.hashes();
+  await expect(conductors.locator('tbody tr')).toHaveCount(expected.length);
+  for (const { conductor, ...cells } of expected) {
+    const row = conductors.locator('tbody tr').filter({ has: active(page).getByRole('link', { name: conductor, exact: true }) });
+    for (const [header, value] of Object.entries(cells)) {
+      await expect(row.getByRole('cell').nth(headers.indexOf(header)), `${conductor} ${header}`).toHaveText(value);
+    }
+  }
 });
 
 Then('the project board denies access', async ({ page }) => {
