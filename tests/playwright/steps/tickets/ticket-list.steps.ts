@@ -1132,6 +1132,55 @@ Then('I see the open ticket', async ({ page }) => {
   ).toHaveCount(1);
 });
 
+/**
+ * Tickets "<title> 1", "<title> 2", … assigned to the reader in project BB, one
+ * per listed state. Create-if-absent by title and re-set on every run, like the
+ * open/closed fixture above, so a reused site and a parallel worker agree; a
+ * terminal state closes its ticket on save. Project BB is in team "Design
+ * Crew", so the same tickets show on My work, the project tab and the team tab,
+ * and one title search narrows each list to exactly them.
+ */
+Given(
+  'tickets titled {string} are assigned to me in the states {string}',
+  async ({}, title: string, states: string) => {
+    if (listing.uid === null) {
+      throw new Error('No account was signed in, so there is nobody to assign these tickets to.');
+    }
+    const name = safe(title);
+    const snippet = [
+      '$etm = \\Drupal::entityTypeManager();',
+      '$ts = $etm->getStorage("bb_ticket");',
+      '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
+      'if (!$p) { print "NO_PROJECT"; return; }',
+      ...states.split(',').map((state, i) => [
+        `$t = current($ts->loadByProperties(["title" => "${name} ${i + 1}"]))`,
+        `?: $ts->create(["project_id" => $p->id(), "title" => "${name} ${i + 1}", "workflow" => "bb_work"]);`,
+        `$t->set("state", "${safe(state.trim())}")->set("assignee_user_id", ${listing.uid})->save();`,
+      ].join(' ')),
+      'print "OK";',
+    ].join(' ');
+    const result = php(snippet);
+    if (!result.includes('OK')) {
+      throw new Error(`The "${title}" tickets did not settle: "${result}".`);
+    }
+    Drush.exec('search-api:index bb_tickets');
+  },
+);
+
+/**
+ * The listing holds exactly the named tickets: one row each, and no other row.
+ * Meant after a search that narrows the list to a fixture's own tickets.
+ */
+Then('the ticket listing lists exactly the tickets {string}', async ({ page }, titles: string) => {
+  const rows = active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item]`);
+  const expected = titles.split(',').map((title) => title.trim());
+  for (const title of expected) {
+    // `(?!\d)`: "State tally 1" must not also match "State tally 10".
+    await expect(rows.filter({ hasText: new RegExp(`${title}(?!\\d)`) }), `"${title}" is not listed once`).toHaveCount(1);
+  }
+  await expect(rows).toHaveCount(expected.length);
+});
+
 Then('the facets sit in the filters aside, not above the ticket listing', async ({ page }) => {
   const aside = page.locator(`${CONTENT_ISLAND} aside`);
   await expect(aside).toHaveCount(1);

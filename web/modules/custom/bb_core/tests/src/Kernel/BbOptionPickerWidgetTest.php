@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\better_exposed_filters\Plugin\BetterExposedFiltersWidgetInterface;
 use Drupal\views\Plugin\views\filter\FilterPluginBase;
 use PHPUnit\Framework\Attributes\Group;
@@ -167,6 +168,32 @@ final class BbOptionPickerWidgetTest extends KernelTestBase {
       '/list?sort_bef_combine=changed_DESC&title=foo&closed=all&label[]=7',
       $form['state']['#slots']['options']['#props']['clear_url'],
     );
+  }
+
+  /**
+   * The state facet offers one quick choice: every non-terminal ticket state.
+   *
+   * Terminality comes from the workflows, so a state no transition leaves
+   * (`done`, `cancelled`) is never among the values. A facet that does not
+   * ask for the choice gets none: the runs and board views reuse the widget
+   * for other state facets.
+   */
+  public function testStateFacetOffersOnlyOpenStates(): void {
+    $open = array_values(array_unique(array_merge(...array_values(TypeWorkflows::nonTerminalTicketStates()))));
+    $terminal = array_merge(...array_values(TypeWorkflows::terminalTicketStates()));
+    self::assertNotEmpty($open);
+    self::assertNotEmpty($terminal);
+
+    $form = $this->alter($this->selectElement(TRUE, []), ['open_states' => TRUE]);
+
+    self::assertSame(
+      [['label' => 'Only open states', 'values' => $open]],
+      $form['state']['#slots']['options']['#props']['quick_choices'],
+    );
+    self::assertSame([], array_intersect($open, $terminal), 'A terminal state is offered as open.');
+
+    $plain = $this->alter($this->selectElement(TRUE, []));
+    self::assertArrayNotHasKey('quick_choices', $plain['state']['#slots']['options']['#props']);
   }
 
   /**

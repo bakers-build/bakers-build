@@ -130,7 +130,7 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
   }
 
   /**
-   * Three tickets, one state and one priority each, one of them assigned.
+   * Four tickets, one state and one priority each, one of them assigned.
    */
   private function seed(): void {
     $account = $this->createUser(['administer bakers', 'view bb_ticket']);
@@ -153,12 +153,15 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
     ]);
 
     // The spread is what makes the assertions bite: each priority selects
-    // exactly one ticket, so a facet that has not narrowed is visible as more
-    // than one value rather than as a wrong count.
+    // tickets of exactly one state, so a facet that has not narrowed is
+    // visible as more than one value rather than as a wrong count.
     $tickets = [
       ['state' => 'working', 'workflow' => 'bb_work', 'priority' => 1],
       ['state' => 'review', 'workflow' => 'bb_work', 'priority' => 2],
       ['state' => 'plan', 'workflow' => 'bb_work', 'priority' => 3],
+      // A second, unassigned `working` ticket, so the state's count differs
+      // between the whole list (2) and the list narrowed to the assignee (1).
+      ['state' => 'working', 'workflow' => 'bb_work', 'priority' => 1],
     ];
     foreach ($tickets as $i => $values) {
       $this->create('bb_ticket', $values + [
@@ -173,7 +176,7 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
 
     $index = Index::load('bb_tickets');
     self::assertNotNull($index);
-    self::assertSame(3, $index->indexItems(), 'An unindexed fixture proves nothing.');
+    self::assertSame(4, $index->indexItems(), 'An unindexed fixture proves nothing.');
   }
 
   /**
@@ -290,6 +293,66 @@ final class TicketFacetNarrowingTest extends KernelTestBase {
       $rows[$value] = $checked instanceof \DOMNodeList && $checked->length > 0;
     }
     return $rows;
+  }
+
+  /**
+   * Each state row counts the tickets it would list.
+   *
+   * The count sits in the row's own `count`, not in its label: contrib's
+   * `show_numbers` appends " (2)" to the label, which would also reach the
+   * trigger's value labels. `state` is an `or` facet, so choosing a state
+   * leaves its own counts whole.
+   */
+  public function testStateOptionsCarryCounts(): void {
+    $rows = $this->offeredRows('state', ['state' => ['working']]);
+
+    self::assertSame(
+      ['plan' => ['Plan', '1'], 'review' => ['Review', '1'], 'working' => ['Working', '2']],
+      $rows['options'],
+    );
+    self::assertSame(['Working'], $rows['value_labels']);
+  }
+
+  /**
+   * A state's count follows the other active filters.
+   *
+   * A test of its own: contrib keeps each processed facet in a static for the
+   * rest of the request, so a second execution here would read the first.
+   */
+  public function testStateCountsFollowTheOtherFilters(): void {
+    self::assertSame(
+      ['working' => ['Working', '1']],
+      $this->offeredRows('state', ['assignee' => [(string) $this->assignee->id()]])['options'],
+      'Only the assigned of the two working tickets is counted.',
+    );
+  }
+
+  /**
+   * One facet's offered rows as value => [label, count], and its value labels.
+   *
+   * Read from the props the widget hands `option_list`, sorted by value: the
+   * backend's facet order is not part of the contract.
+   *
+   * @param string $identifier
+   *   The facet's exposed identifier.
+   * @param array<string, mixed> $query
+   *   The query string the rows are rendered for.
+   *
+   * @return array{options: array<string, array{0: string, 1: string|null}>, value_labels: array<int, string>}
+   *   The rows and the trigger's value labels.
+   */
+  private function offeredRows(string $identifier, array $query): array {
+    $view = $this->executedView($query);
+    $exposed_form = $view->display_handler->getPlugin('exposed_form');
+    self::assertInstanceOf(ExposedFormPluginInterface::class, $exposed_form);
+    $picker = $exposed_form->renderExposedForm(TRUE)[$identifier];
+
+    $options = [];
+    foreach ($picker['#slots']['options']['#props']['options'] as $option) {
+      $options[$option['value']] = [$option['label'], $option['count'] ?? NULL];
+    }
+    ksort($options);
+    return ['options' => $options, 'value_labels' => $picker['#props']['value_labels']];
   }
 
   /**

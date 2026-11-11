@@ -767,6 +767,7 @@ display:
                 clear_label: 'Any state'
                 icon: ''
                 searchable: false
+                open_states: true
               facets_workflow:
                 plugin_id: bb_option_picker
                 clear_label: 'Any workflow'
@@ -1431,7 +1432,7 @@ display:
             min_count: 1
             missing: false
             missing_label: null
-            show_numbers: false
+            show_numbers: true
             show_only_one_result: false
             depends_on_exposed_filter: ''
             processor_configs:
@@ -1897,7 +1898,7 @@ display:
             min_count: 1
             missing: false
             missing_label: null
-            show_numbers: false
+            show_numbers: true
             show_only_one_result: false
             depends_on_exposed_filter: ''
             processor_configs:
@@ -2624,7 +2625,7 @@ display:
             min_count: 1
             missing: false
             missing_label: null
-            show_numbers: false
+            show_numbers: true
             show_only_one_result: false
             depends_on_exposed_filter: ''
             processor_configs:
@@ -3498,7 +3499,7 @@ display:
             min_count: 1
             missing: false
             missing_label: null
-            show_numbers: false
+            show_numbers: true
             show_only_one_result: false
             depends_on_exposed_filter: ''
             processor_configs:

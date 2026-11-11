@@ -6,8 +6,10 @@ namespace Drupal\bb_core\Plugin\better_exposed_filters\filter;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\better_exposed_filters\Attribute\FiltersWidget;
 use Drupal\better_exposed_filters\Plugin\BetterExposedFiltersWidgetBase;
+use Drupal\facets_exposed_filters\Plugin\views\filter\FacetsFilter;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -101,6 +103,7 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
       'clear_label' => '',
       'icon' => '',
       'searchable' => FALSE,
+      'open_states' => FALSE,
     ];
   }
 
@@ -134,6 +137,12 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
       '#default_value' => $this->configuration['searchable'],
       '#description' => $this->t('Render a search box above the rows, for a field with more options than a reader can scan.'),
     ];
+    $form['open_states'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Offer "Only open states"'),
+      '#default_value' => $this->configuration['open_states'],
+      '#description' => $this->t('A quick choice that selects every ticket state a workflow can still leave. Only for a ticket state facet.'),
+    ];
     return $form;
   }
 
@@ -157,6 +166,7 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
     parent::submitConfigurationForm($form, $form_state);
     $this->configuration['searchable'] = (bool) $this->configuration['searchable'];
+    $this->configuration['open_states'] = (bool) $this->configuration['open_states'];
     $this->configuration['clear_label'] = (string) $this->configuration['clear_label'];
     $this->configuration['icon'] = (string) $this->configuration['icon'];
   }
@@ -184,6 +194,7 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
     // FacetsFilter queries `All` as a literal value and matches nothing.
     // Clearing is `clear_url` below, for all seven facets alike.
     unset($options[self::ANY]);
+    $counts = $this->resultCounts($options);
     // The field holds several values, which is one fact with two renderings:
     // `aria-multiselectable` on the listbox and a checkbox rather than a radio
     // in each row.
@@ -231,11 +242,66 @@ final class BbOptionPickerWidget extends BetterExposedFiltersWidgetBase {
                 'value' => $value,
                 'label' => $label,
                 'selected' => in_array($value, $values, TRUE),
-              ],
+              ] + (isset($counts[$value]) ? ['count' => $counts[$value]] : []),
               array_map(strval(...), array_keys($options)),
               $options,
             ),
-          ],
+          ] + $this->quickChoices(),
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Each counted value's ticket count, with its label stripped of the count.
+   *
+   * With `show_numbers` contrib appends " (n)" to the option label, which would
+   * also reach the trigger; the count belongs in `option_list`'s own column, so
+   * the label is read back from the facet result instead. The facet computed
+   * the count with every other active filter applied.
+   *
+   * @param array<array-key, string> $options
+   *   The option set, keyed by submitted value; labels are replaced in place.
+   *
+   * @return array<string, string>
+   *   Submitted value => its count, for the values the facet counted.
+   */
+  private function resultCounts(array &$options): array {
+    if (!$this->handler instanceof FacetsFilter || empty($this->handler->options['facet']['show_numbers'])) {
+      return [];
+    }
+    $counts = [];
+    // shortcut: top-level results only; a hierarchical facet's children keep
+    // contrib's " (n)" label, upgrade when such a facet shows numbers.
+    foreach ($this->handler->facet_results as $result) {
+      $value = (string) $result->getRawValue();
+      if (isset($options[$value])) {
+        $options[$value] = (string) $result->getDisplayValue();
+        $counts[$value] = (string) $result->getCount();
+      }
+    }
+    return $counts;
+  }
+
+  /**
+   * The `quick_choices` prop, when this facet offers "Only open states".
+   *
+   * The values are the union of every ticket workflow's non-terminal states,
+   * derived from the workflows rather than listed here.
+   *
+   * @return array<string, array<int, array{label: string, values: array<int, string>}>>
+   *   The prop keyed by name, or nothing.
+   */
+  private function quickChoices(): array {
+    if (empty($this->configuration['open_states'])) {
+      return [];
+    }
+    $open = array_merge(...array_values(TypeWorkflows::nonTerminalTicketStates()));
+    return [
+      'quick_choices' => [
+        [
+          'label' => (string) $this->t('Only open states'),
+          'values' => array_values(array_unique($open)),
         ],
       ],
     ];

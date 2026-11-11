@@ -554,3 +554,50 @@ Feature: The ticket list is the nav home
 
     When I search the ticket list for "nosuchrepo#2"
     Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers.'
+
+  # BAKERS-56 D11/D12: the State facet counts the tickets each state would list
+  # under the list's other filters, and its footer offers "Only open states",
+  # on My work, Projects › Tickets and Teams alike. Four tickets assigned to the
+  # reader in project BB, found by one title search, keep the counts exact on a
+  # shared site. The Done one is hidden by the default Open position, so it is
+  # not counted until the closed control shows it.
+  Scenario: State options show counts
+    Given I am signed in as a member of the "bakers" workspace
+    And tickets titled "State tally" are assigned to me in the states "working, working, review, done"
+    When I visit the ticket list of the "bakers" workspace
+    And I search the ticket list for "State tally"
+    Then the "State" facet counts "Working 2, Review 1"
+
+    When I visit the tickets tab of project "bakers.build Platform"
+    And I search the ticket list for "State tally"
+    Then the "State" facet counts "Working 2, Review 1"
+
+    When I visit the tickets tab of team "Design Crew"
+    And I search the ticket list for "State tally"
+    Then the "State" facet counts "Working 2, Review 1"
+    When I choose the "All" closed position
+    Then the "State" facet counts "Working 2, Review 1, Done 1"
+
+  Scenario: Only open states keeps only open tickets
+    Given I am signed in as a member of the "bakers" workspace
+    And tickets titled "State tally" are assigned to me in the states "working, working, review, done"
+    When I visit the ticket list of the "bakers" workspace
+    And I search the ticket list for "State tally"
+    And I choose the "All" closed position
+    Then the ticket listing lists exactly the tickets "State tally 1, State tally 2, State tally 3, State tally 4"
+    When I choose "Only open states" in the "State" facet footer
+    Then the address carries "state[]=working"
+    And the address does not carry "state[]=done"
+    And the ticket listing lists exactly the tickets "State tally 1, State tally 2, State tally 3"
+
+    When I visit the tickets tab of project "bakers.build Platform"
+    And I search the ticket list for "State tally"
+    And I choose the "All" closed position
+    And I choose "Only open states" in the "State" facet footer
+    Then the ticket listing lists exactly the tickets "State tally 1, State tally 2, State tally 3"
+
+    When I visit the tickets tab of team "Design Crew"
+    And I search the ticket list for "State tally"
+    And I choose the "All" closed position
+    And I choose "Only open states" in the "State" facet footer
+    Then the ticket listing lists exactly the tickets "State tally 1, State tally 2, State tally 3"

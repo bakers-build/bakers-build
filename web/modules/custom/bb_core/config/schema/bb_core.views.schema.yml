@@ -44,6 +44,9 @@ better_exposed_filters.filter.bb_option_picker:
     searchable:
       type: boolean
       label: 'Searchable'
+    open_states:
+      type: boolean
+      label: 'Offer "Only open states"'
 
 # The label processor for the `state` facet. Facets types processor settings
 # as `plugin.plugin_configuration.facets_processor.<processor id>` (keyed by

@@ -343,6 +343,26 @@ final class TicketsViewConfigTest extends KernelTestBase {
   }
 
   /**
+   * The state facet counts its tickets and offers "Only open states".
+   *
+   * Every display that carries its own filter set restates `facets_state`, so
+   * each one has to ask for the numbers; the widget settings are shared.
+   */
+  public function testTheStateFacetCountsAndOffersOnlyOpenStates(): void {
+    $view = View::load('tickets');
+    self::assertNotNull($view);
+    foreach (['default', 'my_work', 'project_tickets', 'team_tickets'] as $display_id) {
+      $filter = $view->getDisplay($display_id)['display_options']['filters']['facets_state'] ?? NULL;
+      self::assertNotNull($filter, $display_id . ' has no state facet.');
+      self::assertTrue($filter['facet']['show_numbers'], $display_id . ' state facet shows no counts.');
+    }
+    self::assertTrue(
+      $this->display()['exposed_form']['options']['bef']['filter']['facets_state']['open_states'] ?? FALSE,
+      'The state facet does not offer "Only open states".',
+    );
+  }
+
+  /**
    * Contextual displays share the default table but own exact route filters.
    */
   public function testContextualDisplaysUseTheExactFilterMatrices(): void {
