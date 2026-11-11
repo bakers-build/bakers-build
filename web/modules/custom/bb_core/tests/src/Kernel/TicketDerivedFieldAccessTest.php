@@ -109,7 +109,7 @@ final class TicketDerivedFieldAccessTest extends KernelTestBase {
     $updater = $this->createBbUser('plain-updater', ['update bb_ticket']);
     $admin = $this->createBbUser('bakers-admin', ['administer bakers']);
 
-    foreach (['base_branch', 'identifier', 'number', 'branch_name'] as $field) {
+    foreach (['base_branch', 'target_branch', 'identifier', 'number', 'branch_name'] as $field) {
       $this->assertFalse(
         $ticket->get($field)->access('edit', $updater),
         sprintf('%s must not be editable by a plain updater.', $field),

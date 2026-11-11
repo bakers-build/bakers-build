@@ -83,6 +83,8 @@ export interface Ticket {
   branchName: string;
   /** Branch the ticket's work is based on (computed server-side): parent branch, project default, or 'main'. */
   baseBranch?: string;
+  /** Branch the ticket's work merges into (computed server-side): a deployment's environment branch, else baseBranch. */
+  targetBranch?: string;
   /**
    * Effective environment variables (BB-99), resolved server-side along the
    * parent_id chain (child wins) as canonical `.env`-style `KEY=value` lines.

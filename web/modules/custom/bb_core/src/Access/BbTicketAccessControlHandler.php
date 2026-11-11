@@ -31,6 +31,7 @@ final class BbTicketAccessControlHandler extends EntityAccessControlHandler impl
     'identifier',
     'number',
     'base_branch',
+    'target_branch',
     'frozen_at',
     'template_id',
   ];

@@ -128,6 +128,12 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('The branch the ticket’s work is based on.'),
       nullable: TRUE,
     ),
+    'target_branch' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Target branch'),
+      description: new TranslatableMarkup('The branch the ticket’s work merges into: a deployment’s environment branch, else the base branch.'),
+      nullable: TRUE,
+    ),
     'conductor' => new OutputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Conductor'),
@@ -272,6 +278,7 @@ final class TicketRead extends ToolBase {
       'project' => $ticket->get('project_id')->entity?->uuid(),
       'branch_name' => $ticket->get('branch_name')->value,
       'base_branch' => $ticket->get('base_branch')->value,
+      'target_branch' => $ticket->get('target_branch')->value,
       'conductor' => $ticket->get('conductor_id')->entity?->access('view', $this->currentUser) ? $ticket->get('conductor_id')->entity->uuid() : NULL,
       'frozen' => $ticket->isFrozen(),
       'metrics' => $ticket->get('metrics')->access('view', $this->currentUser) ? array_map(static fn (array $row): array => [

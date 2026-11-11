@@ -36,28 +36,17 @@ export function ownershipRefusal(branch: string, branchName: string): string {
   return `branch '${branch}' is not owned by this run: only '${branchName}' and '${branchName}-<suffix>' may be used`;
 }
 
-/** The ticket branch merges into `base_branch`; a variant into the ticket branch. */
+/**
+ * The ticket branch merges into `target_branch` (a deployment's environment
+ * branch), else `base_branch`; a variant into the ticket branch.
+ */
 export function derivedBase(
   branch: string,
-  run: { branchName: string; baseBranch: string },
+  run: { branchName: string; baseBranch: string; targetBranch?: string },
 ): string {
-  return branch === run.branchName ? run.baseBranch : run.branchName;
-}
-
-/**
- * A promotion (base_branch into `target`, pinned to a frozen SHA) is for a
- * deployment ticket, into a target the project merges by merge commit.
- */
-export function promotionRefusal(p: {
-  type: string | undefined;
-  rule: { method: string } | undefined;
-  target: string;
-}): string | undefined {
-  if (p.type !== 'deployment')
-    return `only a deployment ticket may promote; this run's ticket type is '${p.type ?? 'unknown'}'`;
-  if (p.rule?.method !== 'merge')
-    return `'${p.target}' has no merge rule with method 'merge' (merge['${p.target}'] in the forge entry); a promotion merges only by merge commit`;
-  return undefined;
+  return branch === run.branchName
+    ? (run.targetBranch ?? run.baseBranch)
+    : run.branchName;
 }
 
 /** Remove every secret and any Authorization header value. */

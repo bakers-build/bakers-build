@@ -144,27 +144,23 @@ async function withScratch<T>(
   }
 }
 
-/** The commit `rev` (e.g. `refs/heads/x`, `refs/remotes/origin/main^2`) names in the clone, if any. */
-async function cloneSha(
+/** The SHA of a local branch of the clone, if it exists. */
+export async function localSha(
   worktree: string,
-  rev: string,
+  branch: string,
 ): Promise<string | undefined> {
   const home = await mkdtemp(join(tmpdir(), 'bakers-forge-'));
   try {
     const env = baseEnv(home);
-    return await readRef(await commonDir(worktree, env), env, rev);
+    return await readRef(
+      await commonDir(worktree, env),
+      env,
+      `refs/heads/${branch}`,
+    );
   } finally {
     await rm(home, { recursive: true, force: true });
   }
 }
-
-/** The SHA of a local branch of the clone, if it exists. */
-export const localSha = (worktree: string, branch: string) =>
-  cloneSha(worktree, `refs/heads/${branch}`);
-
-/** The second parent of the fetched `origin/<branch>`, if it is a merge. */
-export const fetchedSecondParent = (worktree: string, branch: string) =>
-  cloneSha(worktree, `refs/remotes/origin/${branch}^2`);
 
 /** Remote heads of `branches` as `name → sha`; absent names are left out. */
 function parseLsRemote(out: string): Map<string, string> {

@@ -148,7 +148,6 @@ export const SIDEBAR = {
     ]),
     group("Delivery", [
       ["Forge", "/addons/forge"],
-      ["Forge promotion", "/addons/forge-promotion"],
       ["Forge for GitHub", "/addons/forge-github"],
       ["Forge for GitLab", "/addons/forge-gitlab"],
     ]),

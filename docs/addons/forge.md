@@ -50,7 +50,7 @@ Human approval stays the workflow's merge gate.
 
 ## Ownership and merge
 
-Tools take the ticket, `branch_name` and `base_branch` from the calling run, never from arguments; a call without a run is refused. A run owns `<branch_name>` and `<branch_name>-<suffix>`. The ticket branch merges into `base_branch`, a variant into the ticket branch. The merge sends method and source deletion explicitly, ends the body with `Merged-by: bakers.build` and `ref:<identifier>`, and keeps a source another open PR/MR targets.
+Tools take the ticket, `branch_name`, `base_branch` and `target_branch` from the calling run; a call without a run is refused. A run owns `<branch_name>` and `<branch_name>-<suffix>`. The ticket branch merges into `target_branch` (a deployment's environment branch, else `base_branch`), a variant into the ticket branch. The merge sends method and source deletion explicitly, ends the body with `Merged-by: bakers.build` and `ref:<identifier>`, and keeps a source another open PR/MR targets.
 
 ## Isolation
 
@@ -59,6 +59,5 @@ Network git runs in a throwaway repository on the clone's object store, without 
 ## Good to know
 
 - Skills use these tools whenever they are served; otherwise a run falls back to `git` and the service's client, which `sandbox` permissions allow only as trusted commands.
-- Only a [promotion](/addons/forge-promotion) merges a deployment through `forge_merge`.
 
 Package source in a checkout: `bakers-cli/addons/forge`.
