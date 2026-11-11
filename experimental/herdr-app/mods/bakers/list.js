@@ -115,8 +115,10 @@ export class List {
   render(cx) {
     const t = theme(), view = shared("bakers.view") ?? "needs-me";
     const space = spaces().find((s) => s.active), tab = listTab(space, panes());
-    // The Tickets tab is always tab 1 of its space.
+    // The Tickets tab is always tab 1 of its space; the keyboard lands on the list when it comes to the front.
     if (tab?.active && tab.index > 1) run("tab.move", { id: tab.id, index: 1 });
+    if (tab?.active && !this.shown) cx.spawn(async () => this.handle.focus());
+    this.shown = Boolean(tab?.active);
     const root = v_flex().id("bakers-list").track_focus(this.handle).size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13)
       .on_size_change((size, cx) => { this.width = size.width / settings().zoom; cx.notify(); });
     const cols = columns(this.width ?? 1100);

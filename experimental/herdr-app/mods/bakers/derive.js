@@ -117,14 +117,14 @@ export function listSteps(space, panes) {
   return space ? [newTab] : [["space.new", {}], newTab];
 }
 
-// Enter opens the preview tab (reused by the next Enter), cmd-Enter a pinned one; an open ticket only gets selected.
+// Enter opens the preview tab (replaced by the next Enter), cmd-Enter a pinned one; an open ticket only gets selected.
+// Every ticket tab carries its ticket in its props: a copy cannot learn its own tab, and props stay.
 export function openSteps(space, panes, identifier, name, preview, pinned) {
   const open = ticketTab(space, panes, identifier);
   if (open) return { steps: [["tab.select", { id: open.id }]], preview: pinned && preview === identifier ? null : preview };
-  const reuse = !pinned && ticketTab(space, panes, preview);
-  if (reuse) return { steps: [["tab.rename", { id: reuse.id, name }], ["tab.select", { id: reuse.id }]], preview: identifier };
-  const props = pinned ? { view: "ticket", ticket: identifier } : { view: "ticket", preview: true };
-  const steps = [["tab.new", { name, mod: "bakers", props }]];
+  const old = !pinned && ticketTab(space, panes, preview);
+  const replace = old && ticketTabsToClose(space, panes, false).includes(old.id) ? [["tab.close", { id: old.id, confirmed: true }]] : [];
+  const steps = [["tab.new", { name, mod: "bakers", props: { view: "ticket", ticket: identifier } }], ...replace];
   return { steps: space ? steps : [["space.new", {}], ...steps], preview: pinned ? preview : identifier };
 }
 

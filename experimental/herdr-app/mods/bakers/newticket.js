@@ -90,7 +90,10 @@ export class NewTicket {
     const tab = (id, text) => div().id(`bakers-new-desc-${id}`).px(8).h(22).flex().items_center().rounded(5).text_size(12).cursor_pointer()
       .when(this.write === id, (e) => e.bg(t.selected).text_color(t.foreground)).when(this.write !== id, (e) => e.text_color(t.muted))
       .on_click((_e, cx) => { this.write = id; cx.notify(); }).child(text);
-    const keys = { escape: () => closeOverlay(this.p.overlay), "cmd-enter": (cx) => this.create(cx) };
+    const keys = {
+      escape: () => closeOverlay(this.p.overlay), "cmd-enter": (cx) => this.create(cx),
+      tab: () => this.body.focus(), "shift-tab": () => this.title.focus(),
+    };
     return dialogBox("bakers-new", t, this.handle, (e, cx) => {
       if (!keys[e.keystroke]) return;
       keys[e.keystroke](cx);

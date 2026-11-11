@@ -127,16 +127,16 @@ test("listSteps selects the Tickets tab, or makes it first in its space", () => 
 });
 
 test("openSteps: Enter previews, cmd-Enter pins, an open ticket keeps its one tab", () => {
+  const tab = (identifier) => ["tab.new", { name: `${identifier} qualification`, mod: "bakers", props: { view: "ticket", ticket: identifier } }];
   assert.deepEqual(openSteps(SPACE, PANES, "SHOP-41", "SHOP-41 working", null, false), { steps: [["tab.select", { id: "w1:t3" }]], preview: null });
   assert.deepEqual(openSteps(SPACE, PANES, "SHOP-60", "SHOP-60 qualification", "SHOP-56", false), {
-    steps: [["tab.rename", { id: "w1:t4", name: "SHOP-60 qualification" }], ["tab.select", { id: "w1:t4" }]], preview: "SHOP-60",
-  }, "the next Enter reuses the preview tab");
-  assert.deepEqual(openSteps(SPACE, PANES, "SHOP-60", "SHOP-60 qualification", null, false), {
-    steps: [["tab.new", { name: "SHOP-60 qualification", mod: "bakers", props: { view: "ticket", preview: true } }]], preview: "SHOP-60",
-  });
-  assert.deepEqual(openSteps(SPACE, PANES, "SHOP-60", "SHOP-60 qualification", "SHOP-56", true), {
-    steps: [["tab.new", { name: "SHOP-60 qualification", mod: "bakers", props: { view: "ticket", ticket: "SHOP-60" } }]], preview: "SHOP-56",
-  }, "cmd-Enter leaves the preview tab alone");
+    steps: [tab("SHOP-60"), ["tab.close", { id: "w1:t4", confirmed: true }]], preview: "SHOP-60",
+  }, "the next Enter replaces the preview tab");
+  assert.deepEqual(openSteps(SPACE, [...PANES, { pane: "p5", tab: "w1:t4", terminal: "t9" }], "SHOP-60", "SHOP-60 qualification", "SHOP-56", false).steps,
+    [tab("SHOP-60")], "a preview tab that holds a run's terminal is never closed");
+  assert.deepEqual(openSteps(SPACE, PANES, "SHOP-60", "SHOP-60 qualification", null, false), { steps: [tab("SHOP-60")], preview: "SHOP-60" });
+  assert.deepEqual(openSteps(SPACE, PANES, "SHOP-60", "SHOP-60 qualification", "SHOP-56", true), { steps: [tab("SHOP-60")], preview: "SHOP-56" },
+    "cmd-Enter leaves the preview tab alone");
   assert.deepEqual(openSteps(SPACE, PANES, "SHOP-56", "SHOP-56 plan", "SHOP-56", true), { steps: [["tab.select", { id: "w1:t4" }]], preview: null }, "cmd-Enter on the preview's ticket pins it");
   assert.deepEqual(openSteps(undefined, [], "SHOP-60", "SHOP-60 plan", null, true).steps[0], ["space.new", {}]);
 });

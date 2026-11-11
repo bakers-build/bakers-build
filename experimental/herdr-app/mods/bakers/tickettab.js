@@ -1,5 +1,5 @@
 import { div, svg } from "gpui-kit";
-import { v_flex, h_flex, InputState, Input, TextareaState, Textarea, TextView } from "gpui-base";
+import { v_flex, h_flex, InputState, Input, TextareaState, Textarea, TextView, ScrollHandle } from "gpui-base";
 import { theme, shared, spaces, panes, run, notify, nextCommand } from "herdr";
 import { store, client, changed, loadTicket, stale, ticketOf, agentOf } from "./store.js";
 import { commentRows, isClosed, needsCard, tabName, ticketTab } from "./derive.js";
@@ -15,18 +15,18 @@ const COMPOSER = {
 };
 
 // A ticket tab: the ticket as a document (title, state, Needs you card, description, comments) with the composer below.
-// A preview tab shows bakers.preview; typing in it pins it, and a pinned preview keeps its ticket in localStorage.
+// Its ticket is props.ticket. While that is bakers.preview it is the preview tab: typing in it pins it.
 export class TicketTab {
   init(p, cx) {
     this.p = p;
-    this.pinned = localStorage.getItem("ticket");
     this.key = null;
     this.handle = cx.focus_handle();
     this.mode = "read";
     this.composing = "comment";
     this.unfreeze = true;
     this.unfolded = new Set();
-    this.preview = false;
+    this.at = 0;
+    this.scroll = ScrollHandle.new();
     this.composer = this.state(TextareaState.new({ placeholder: "Write a comment, Markdown", rows: 3 }), cx);
     this.composer.set_auto_grow(2, 10);
     this.title = this.state(InputState.new({}), cx);
@@ -49,20 +49,11 @@ export class TicketTab {
     return s;
   }
 
-  ticketKey() {
-    return this.pinned ?? this.p.ticket ?? (this.p.preview ? shared("bakers.preview") ?? this.key : null);
-  }
-
   pin() {
-    if (!this.p.preview || this.pinned || !this.key) return;
-    this.pinned = this.key;
-    localStorage.setItem("ticket", this.key);
-    if (shared("bakers.preview") === this.key) pinPreview();
+    if (this.key && shared("bakers.preview") === this.key) pinPreview();
   }
 
   follow(key) {
-    // A preview tab whose ticket is no longer the preview was pinned from outside (cmd-Enter, a double click).
-    if (this.p.preview && !this.pinned && this.key && shared("bakers.preview") !== this.key && !shared("bakers.preview")) this.pin();
     if (key === this.key) return;
     Object.assign(this, { key, mode: "read", composing: "comment", error: null, unfolded: new Set() });
     this.composer.set_value("");
@@ -122,6 +113,10 @@ export class TicketTab {
     const editing = this.mode === "edit";
     const move = section?.actions.find((a) => a.id === "run-on" || a.id === "move-to");
     const keys = {
+      down: () => this.step(1),
+      up: () => this.step(-1),
+      tab: () => editing && this.body.focus(),
+      "shift-tab": () => editing && this.title.focus(),
       e: () => !editing && this.edit(),
       a: () => this.act(card),
       s: () => !isClosed(d) && this.stateMenu(d),
@@ -132,10 +127,17 @@ export class TicketTab {
       "cmd-enter": () => (editing ? this.send("save", cx) : this.send(COMPOSER[this.composing].write, cx)),
     };
     const action = keys[e.keystroke];
-    if (!action || (this.typing && e.keystroke.length === 1)) return;
+    // While a field has the keyboard, letters and arrows are the field's.
+    if (!action || (this.typing && (e.keystroke.length === 1 || e.keystroke === "up" || e.keystroke === "down"))) return;
     action();
     cx.stop_propagation();
     cx.notify();
+  }
+
+  // Up and down walk the document: header, card, description, then each comment.
+  step(by) {
+    this.at = Math.max(0, Math.min(this.at + by, (this.sections ?? 1) - 1));
+    this.scroll.scroll_to_item(this.at);
   }
 
   stateMenu(d) {
@@ -210,9 +212,7 @@ export class TicketTab {
 
   comments(d, card, t) {
     const rows = commentRows(d.comments, store.me?.name, Date.now());
-    return v_flex().gap(12).child(label(`Comments ${rows.length}, newest last`, t))
-      .when(!rows.length, (e) => e.child(div().text_color(t.dim).child("No comments yet.")))
-      .children(rows.map((c) => {
+    return [label(`Comments ${rows.length}, newest last`, t), ...(rows.length ? [] : [div().text_color(t.dim).child("No comments yet.")]), ...rows.map((c) => {
         const open = !c.folded || this.unfolded.has(c.id) || (card?.kind === "plan" && card.comment === c.id);
         const asked = card?.comment === c.id && card.kind === "question";
         return v_flex().id(`bakers-comment-${c.id}`).gap(4).when(asked, (e) => e.pl(10).border_l(2).border_color(statusColor("blocked", t)))
@@ -224,7 +224,7 @@ export class TicketTab {
               .on_click((_e, cx) => { this.unfolded[open ? "delete" : "add"](c.id); cx.notify(); }).child(open ? "fold" : "show all"))))
           .child(open ? TextView.markdown(`bakers-comment-text-${c.id}`, c.body ?? "").selectable().on_link_click((url) => openLink(url))
             : div().truncate().text_color(t.muted).child(c.first));
-      }));
+      })];
   }
 
   composerBox(d, t) {
@@ -251,32 +251,36 @@ export class TicketTab {
       .child(button("bakers-edit-save-2", this.busy ? "Saving…" : "Save", t, (cx) => this.send("save", cx), "primary", this.busy));
   }
 
-  // The tab's name says the ticket's state: renamed when it changes.
-  rename(d) {
+  // The tab's name says the ticket's state (renamed when it changes); the keyboard lands here when the tab comes to the front.
+  ownTab(d, cx) {
     const tab = ticketTab(spaces().find((s) => s.active), panes(), d.identifier);
     if (tab && tab.name !== tabName(d)) run("tab.rename", { id: tab.id, name: tabName(d) });
+    if (tab?.active && !this.shown) cx.spawn(async () => this.handle.focus());
+    this.shown = Boolean(tab?.active);
   }
 
   render(cx) {
-    this.follow(this.ticketKey());
+    this.follow(this.p.ticket ?? (this.p.preview ? shared("bakers.preview") : null));
     if (stale(this.key)) loadTicket(this.key, cx);
     const t = theme(), d = store.details[this.key]?.data;
     const root = v_flex().id("bakers-ticket-tab").track_focus(this.handle).size_full().min_h(0).bg(t.background).text_color(t.foreground).text_size(13);
     if (!d) return root.child(div().p(24).text_color(t.dim).child(this.key ? store.details[this.key]?.error ?? "Loading…" : "No ticket."));
-    this.rename(d);
+    this.ownTab(d, cx);
     const section = agentOf(this.key, Date.now()), card = needsCard(d, store.reasons[this.key], d.comments, Date.now());
     const composing = this.composing !== "comment";
+    const column = (el) => el.w_full().max_w(760).mx_auto();
+    const sections = [
+      v_flex().gap(10).child(this.header(d, section, card, t)).child(this.mode === "edit"
+        ? field(t, true).child(Input.new(this.title).w_full().text_size(20).font_semibold())
+        : div().id("bakers-title").text_size(22).font_semibold().cursor_pointer().on_click((_e, cx) => { this.edit(); cx.notify(); }).child(d.title ?? "")),
+      ...(card && this.mode !== "edit" ? [this.card(card, section, t)] : []),
+      this.description(d, t),
+      ...(this.mode !== "edit" ? this.comments(d, card, t) : []),
+    ];
+    this.sections = sections.length;
     return root.on_key_down((e, cx) => this.onKey(e, d, card, section, cx))
-      .child(div().id("bakers-doc").flex_1().min_h(0).overflow_y_scrollbar()
-        .child(v_flex().w_full().max_w(760 + 56).mx_auto().px(28).py(20).gap(18)
-          .child(v_flex().gap(10)
-            .child(this.header(d, section, card, t))
-            .child(this.mode === "edit"
-              ? field(t, true).child(Input.new(this.title).w_full().text_size(20).font_semibold())
-              : div().id("bakers-title").text_size(22).font_semibold().cursor_pointer().on_click((_e, cx) => { this.edit(); cx.notify(); }).child(d.title ?? "")))
-          .when(Boolean(card) && this.mode !== "edit", (e) => e.child(this.card(card, section, t)))
-          .child(this.description(d, t))
-          .when(this.mode !== "edit", (e) => e.child(this.comments(d, card, t)))))
+      .child(v_flex().id("bakers-doc").flex_1().min_h(0).overflow_y_scrollbar().track_scroll(this.scroll).px(28).py(20).gap(16)
+        .children(sections.map(column)))
       .child(h_flex().flex_none().justify_center().px(28).py(12).border_t(composing ? 2 : 1).border_color(composing ? statusColor("blocked", t) : t.border)
         .child(v_flex().w_full().max_w(760).gap(6)
           .when(Boolean(this.error), (e) => e.child(div().text_size(12).text_color(t.ansi1).child(this.error)))
