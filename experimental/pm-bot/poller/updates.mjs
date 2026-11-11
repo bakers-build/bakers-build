@@ -82,10 +82,9 @@ export function updates({ previous, posted, tickets, now, interval, messages }) 
     const open = t.labels.includes(QUESTION_LABEL) || t.labels.includes(TECHNICAL_PROBLEM_LABEL);
     const end = (r, was) => {
       record.runs[r.uuid] = r.state;
-      // A run that moved the ticket on is told by its state line.
-      if (r.state_at_start !== t.state) return;
-      const text = r.state === 'done' ? (open ? null : messages.runWaiting) : messages.runPaused;
-      if (text) post(text, { run: [r.uuid, was] });
+      // A run that moved the ticket on is told by its state line; an open question or technical problem by its relayed note.
+      if (r.state_at_start !== t.state || open) return;
+      post(r.state === 'done' ? messages.runWaiting : messages.runPaused, { run: [r.uuid, was] });
     };
     // Only a run seen before ending; one first seen closed gets both its lines below.
     for (const r of runs.filter((r) => r.uuid in before.runs && ENDED.includes(r.state) && !ENDED.includes(before.runs[r.uuid]))) end(r, before.runs[r.uuid]);
