@@ -472,7 +472,11 @@ export async function loadConductorConfig(
     pathToFileURL(`${process.cwd()}/`).href,
     import.meta.url,
   ];
-  const sharedSecurity = {
+  const sharedSecurity: {
+    project: SharedSecurity | undefined;
+    machine: SharedSecurity | undefined;
+    isolated?: true;
+  } = {
     project: sharedSecurityOf(config, 'project', configPath),
     machine: sharedSecurityOf(machineCtx, 'machine', machineContextPath()),
   };
@@ -492,6 +496,15 @@ export async function loadConductorConfig(
       bases: addonBases,
     },
   ]);
+  // The runtime decides the agents' sandbox, so it resolves before them.
+  const runtime = resolveConductorSlots(
+    narrowConductorContributions(
+      await discoverScoped(effectiveAddons, 'conductor', {
+        only: ['runtimes'],
+      }),
+    ),
+  ).runtime;
+  if (runtime?.isolates) sharedSecurity.isolated = true;
   const discovered = narrowConductorContributions(
     await discoverScoped(effectiveAddons, 'conductor', { agentGlobals }),
   );
@@ -711,6 +724,7 @@ export async function loadConductorConfig(
         }
       : {}),
     workspace,
+    ...(runtime ? { runtime } : {}),
     marketplaces,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),

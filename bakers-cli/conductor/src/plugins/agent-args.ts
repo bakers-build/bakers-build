@@ -332,7 +332,7 @@ const SHARED_LIST_KEYS = [
 ] as const;
 export type SharedListKey = (typeof SHARED_LIST_KEYS)[number];
 export type SharedLayer = 'project' | 'machine';
-export type SecuritySource = 'default' | SharedLayer | 'agent';
+export type SecuritySource = 'default' | SharedLayer | 'agent' | 'runtime';
 
 /** A top-level `permissions` block of the machine or project config. */
 export interface SharedSecurity {
@@ -459,10 +459,22 @@ export function resolveSecurityOptions(
     return block ? [{ source, block }] : [];
   });
   const modeLayer = [...layers].reverse().find((l) => l.block.mode);
-  const mode: SecurityMode =
-    input.permissions ?? modeLayer?.block.mode ?? 'system';
-  const modeSource: SecuritySource =
-    input.permissions !== undefined
+  // An isolating runtime replaces the harness sandbox; the two never stack.
+  const isolated = shared.isolated === true;
+  if (isolated && input.permissions === 'sandbox')
+    throw new Error(
+      "permissions: 'sandbox' conflicts with the isolating runtime: the run already starts in its own container; drop the entry's permissions",
+    );
+  const runtimeOverrides =
+    isolated &&
+    input.permissions === undefined &&
+    modeLayer?.block.mode === 'sandbox';
+  const mode: SecurityMode = runtimeOverrides
+    ? 'system'
+    : (input.permissions ?? modeLayer?.block.mode ?? 'system');
+  const modeSource: SecuritySource = runtimeOverrides
+    ? 'runtime'
+    : input.permissions !== undefined
       ? 'agent'
       : (modeLayer?.source ?? 'default');
   if (!SECURITY_MODES.includes(mode)) {

@@ -338,3 +338,40 @@ describe('restart_on_change and the watched files', () => {
     ).rejects.toThrow(/restart_on_change must be boolean/);
   });
 });
+
+describe('the runtime slot', () => {
+  const runtimePreset = (isolates: boolean) => `
+export const scopes = ['machine'];
+export const runtimes = (acc) => [...acc, {
+  kind: 'runtime', id: 'probe', isolates: ${isolates}, requiredModules: [],
+  createRuntime: async () => ({ id: 'probe', wrap: async (l) => l, cleanup: async () => {} }),
+}];
+`;
+  const withRuntime = (isolates: boolean) => {
+    const machine = writeMachine(
+      `export default { permissions: { mode: 'sandbox' }, addons: ['@bakers-build/addon-claude', './runtime-probe.js'] };`,
+    );
+    writeFileSync(
+      join(machine, '../runtime-probe.js'),
+      runtimePreset(isolates),
+    );
+  };
+
+  it('an isolating runtime reaches the config and switches the sandbox off', async () => {
+    withRuntime(true);
+    const cfg = await loadConductorConfig(writeProject(projectConfig()));
+    expect(cfg.runtime?.id).toBe('probe');
+    const claude = cfg.agents.find((c) => c.agent.id === 'claude');
+    expect(claude?.agent.permissions?.mode.value).toBe('system');
+  });
+
+  it('without a runtime addon the shared sandbox stays', async () => {
+    writeMachine(
+      `export default { permissions: { mode: 'sandbox' }, addons: ['@bakers-build/addon-claude'] };`,
+    );
+    const cfg = await loadConductorConfig(writeProject(projectConfig()));
+    expect(cfg.runtime).toBeUndefined();
+    const claude = cfg.agents.find((c) => c.agent.id === 'claude');
+    expect(claude?.agent.permissions?.mode.value).toBe('sandbox');
+  });
+});
