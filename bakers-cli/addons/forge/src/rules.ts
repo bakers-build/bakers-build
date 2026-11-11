@@ -36,12 +36,17 @@ export function ownershipRefusal(branch: string, branchName: string): string {
   return `branch '${branch}' is not owned by this run: only '${branchName}' and '${branchName}-<suffix>' may be used`;
 }
 
-/** The ticket branch merges into `base_branch`; a variant into the ticket branch. */
+/**
+ * The ticket branch merges into `target_branch` (a deployment's environment
+ * branch), else `base_branch`; a variant into the ticket branch.
+ */
 export function derivedBase(
   branch: string,
-  run: { branchName: string; baseBranch: string },
+  run: { branchName: string; baseBranch: string; targetBranch?: string },
 ): string {
-  return branch === run.branchName ? run.baseBranch : run.branchName;
+  return branch === run.branchName
+    ? (run.targetBranch ?? run.baseBranch)
+    : run.branchName;
 }
 
 /** Remove every secret and any Authorization header value. */

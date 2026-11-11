@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 if [ "$GITHUB_EVENT_NAME" = pull_request ] && [ "$GITHUB_BASE_REF" = main ]; then
-  [ "$GITHUB_HEAD_REF" = next ] && [ "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY" ] || {
-    echo 'Stable main accepts promotion PRs only from this repository next branch.' >&2
+  # The checkout is the PR merge ref: HEAD^2 is the PR head.
+  [ "$HEAD_REPOSITORY" = "$GITHUB_REPOSITORY" ] && case "$GITHUB_HEAD_REF" in
+    next) true ;;
+    release/*) git merge-base --is-ancestor 'HEAD^2' origin/next ;;
+    *) false ;;
+  esac || {
+    echo 'Stable main accepts promotion PRs only from this repository next branch, or a release/* branch whose head is on next.' >&2
     exit 1
   }
 fi

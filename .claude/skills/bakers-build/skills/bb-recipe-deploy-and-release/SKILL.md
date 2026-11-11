@@ -44,12 +44,12 @@ own, so the commit `main` merges is the frozen one.
 
 In this order:
 
-1. Open the release branch's one merge request into the target branch, titled
+1. Open the release branch's one merge request with `forge_pr_upsert`, titled
    `chore(release): x.y.z` with the approved version (other targets: `chore(deploy): <target
-   branch>`). Play its `gate`; once green, merge by merge commit, sending squash off and source
-   deletion off explicitly, as the forge fallback (its target is not `base_branch`). The
+   branch>`); it targets the ticket's `target_branch`. Call `forge_checks` until `overall` is
+   `success`, then `forge_merge` (target's merge rule; `main`: merge commit, source kept). The
    frame's merge never runs here, and nothing merges back into `develop`.
-2. An unplayed, running or red gate blocks the merge: publish an honest `summary` and STOP.
+2. A pending or red check, or a refusal, blocks the merge: publish an honest `summary` and STOP.
 3. Watch the deploy of the merged SHA (`forge_checks`, `ref` that SHA), then expect HTTP 200
    from `<base_url>/user/login`. Then call `bakers_ticket_update` on this ticket only, with
    `environments_add` (the target) and `referenced_tickets_add` (the batch): this ticket is the

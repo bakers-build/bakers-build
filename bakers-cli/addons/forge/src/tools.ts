@@ -33,6 +33,7 @@ interface Run {
   identifier: string;
   branchName: string;
   baseBranch: string;
+  targetBranch?: string;
 }
 
 function runOf(req: ToolRequest): Run {
@@ -42,6 +43,7 @@ function runOf(req: ToolRequest): Run {
     identifier: t.identifier,
     branchName: t.branchName,
     baseBranch: t.baseBranch,
+    ...(t.targetBranch ? { targetBranch: t.targetBranch } : {}),
   };
 }
 
@@ -145,7 +147,7 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const run = runOf(req);
       const b = await backend();
       let ref: string;
-      let base = run.baseBranch;
+      let base = run.targetBranch ?? run.baseBranch;
       if (typeof req.args.ref === 'string' && req.args.branch === undefined) {
         ref = req.args.ref;
       } else {

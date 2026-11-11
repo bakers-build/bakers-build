@@ -40,13 +40,15 @@ by branch or commit, not by its ticket number.
 ## GitHub pull requests
 
 GitHub's default branch is `next`; `main` is stable. Open the PR from `<branch_name>` into the
-ticket's computed `<base_branch>` through the forge tools (`bb-workflow` ›
+ticket's computed `<target_branch>` (a deployment's environment branch, otherwise
+`<base_branch>`) through the forge tools (`bb-workflow` ›
 `references/forge.md`). Feature PRs squash-merge with the title
 as subject and final-line `ref:<identifier>` in the body. GitHub has no per-PR squash/deletion
 preferences: send the merge method explicitly and delete only an eligible short-lived source
 branch after verified success. Preserve shared branches and branches targeted by other PRs.
 
-Only this repository's `next` promotes into `main`, by merge commit preserving the candidate
+Only this repository's `next`, or its `release/*` branch at a commit of `next`, promotes into
+`main`, by merge commit preserving the candidate
 tree and second parent. Keep both branches. The frozen second parent identifies the release.
 The GitLab-specific client instructions below apply only to repositories still hosted there.
 

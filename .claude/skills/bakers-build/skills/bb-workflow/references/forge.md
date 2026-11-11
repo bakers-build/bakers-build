@@ -7,8 +7,8 @@ update the MR, read its checks, merge.
 
 When the `forge_*` conductor tools are served, every forge operation goes through them, in every
 permissions mode. They act on the calling run's ticket: its `branch_name`, variants
-`<branch_name>-<suffix>`, and the base each merges into (`base_branch` for the ticket branch, the
-ticket branch for a variant). The conductor holds the token, so the run never needs one.
+`<branch_name>-<suffix>`, and the base each merges into (`target_branch` for the ticket branch: a
+deployment's environment branch, otherwise `base_branch`; the ticket branch for a variant). The conductor holds the token, so the run never needs one.
 
 | Operation | Tool |
 |---|---|
