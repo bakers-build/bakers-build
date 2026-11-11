@@ -7,7 +7,7 @@ const schemas = Object.fromEntries(JSON.parse(readFileSync(new URL('./contract-f
   .tools.map(t => [t.name, t.inputSchema]));
 /** The MCP wire name of a bakers tool: mcp_server_tool_bridge serves tool `<id>` as `tool_api__<id>`. */
 export const tool = id => `tool_api__${id}`;
-export const WRITES = ['bakers_ticket_create', 'bakers_ticket_update', 'bakers_ticket_classify', 'bakers_ticket_transition', 'bakers_comment_publish', 'bakers_metric_write', 'bakers_time_propose', 'bakers_run_cancel'].map(tool);
+export const WRITES = ['bakers_ticket_create', 'bakers_ticket_update', 'bakers_ticket_classify', 'bakers_ticket_transition', 'bakers_comment_publish', 'bakers_metric_write', 'bakers_time_propose', 'bakers_run_cancel', 'bakers_ticket_restart'].map(tool);
 const SELECTORS = new Set(['--config', '--connection', '--auth-profile', '--conductor']);
 
 export function validateTools(fixture, skill) {
