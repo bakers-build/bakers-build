@@ -79,13 +79,8 @@ final class EntityDetailActivitiesSource extends SourcePluginBase implements Con
    * {@inheritdoc}
    */
   public function getPropValue(): mixed {
-    try {
-      $entity = $this->getContextValue('entity');
-    }
-    catch (\Exception) {
-      return [];
-    }
-    if (!$entity instanceof EntityInterface || $entity->isNew() || !$entity->access('view')) {
+    $entity = $this->viewableEntity();
+    if ($entity === NULL) {
       return [];
     }
     $project = $entity instanceof BbProjectInterface;
@@ -93,22 +88,59 @@ final class EntityDetailActivitiesSource extends SourcePluginBase implements Con
       // Nothing to show until a ticket the viewer may view arrives.
       return ['#cache' => ['contexts' => ['user'], 'tags' => ['bb_ticket_list']]];
     }
-    $content = [];
+    $build = $this->zone($entity, $project);
+    CacheableMetadata::createFromObject($entity)
+      ->addCacheContexts(['user'])
+      ->addCacheTags(['bb_ticket_list', 'bb_activity_list', 'bb_run_list', 'bb_conductor_list'])
+      ->applyTo($build);
+    return $build;
+  }
+
+  /**
+   * The context entity, when saved and viewable by the current user.
+   */
+  private function viewableEntity(): ?EntityInterface {
+    try {
+      $entity = $this->getContextValue('entity');
+    }
+    catch (\Exception) {
+      return NULL;
+    }
+    $viewable = $entity instanceof EntityInterface && !$entity->isNew() && $entity->access('view');
+    return $viewable ? $entity : NULL;
+  }
+
+  /**
+   * The activity rows, or the empty state.
+   *
+   * @return array<int, array<string, mixed>>
+   *   The render arrays of the zone content.
+   */
+  private function rows(EntityInterface $entity, bool $project): array {
     $builder = $this->entityTypeManager->getViewBuilder('bb_activity');
+    $content = [];
     foreach ($this->activities->activities($entity) as $activity) {
       $content[] = $project ? $this->compactRow($activity) : $builder->view($activity, 'full');
     }
-    if ($content === []) {
-      $content[] = [
-        '#type' => 'component',
-        '#component' => 'bb_theme:empty-state',
-        '#props' => ['message' => (string) $this->t('No activity yet.')],
-      ];
-    }
+    $empty = [
+      '#type' => 'component',
+      '#component' => 'bb_theme:empty-state',
+      '#props' => ['message' => (string) $this->t('No activity yet.')],
+    ];
+    return $content ?: [$empty];
+  }
+
+  /**
+   * The zone with its Refresh action around the rows.
+   *
+   * @return array<string, mixed>
+   *   The `bb_theme:zone` render array.
+   */
+  private function zone(EntityInterface $entity, bool $project): array {
     $refresh = (new Htmx())->get($entity->toUrl())->onlyMainContent()
       ->target('#' . self::ZONE_ID)->select('#' . self::ZONE_ID)
       ->swap('outerHTML')->pushUrl(FALSE)->getAttributes();
-    $build = [
+    return [
       '#type' => 'component',
       '#component' => 'bb_theme:zone',
       '#attached' => ['library' => ['core/drupal.htmx']],
@@ -129,14 +161,9 @@ final class EntityDetailActivitiesSource extends SourcePluginBase implements Con
             'attributes' => $refresh,
           ],
         ],
-        'content' => $content,
+        'content' => $this->rows($entity, $project),
       ],
     ];
-    CacheableMetadata::createFromObject($entity)
-      ->addCacheContexts(['user'])
-      ->addCacheTags(['bb_ticket_list', 'bb_activity_list', 'bb_run_list', 'bb_conductor_list'])
-      ->applyTo($build);
-    return $build;
   }
 
   /**
