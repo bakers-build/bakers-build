@@ -3,14 +3,11 @@ import { v_flex } from "gpui-base";
 import { theme, closeOverlay, shared, setShared, spaces, panes, run, notify } from "herdr";
 import { store, client, refresh, changed, ticketOf } from "./store.js";
 import { activeRun, isClosed, sidebarViews, ticketTabsToClose } from "./derive.js";
-import { WRITES, stateMenu } from "./flows.js";
+import { RECIPES, TYPES, WRITES, stateMenu } from "./flows.js";
 import { openList } from "./open.js";
 import { confirm, goToTicket, newTicket, toggleSidebar } from "./actions.js";
 import { chip, menuRow } from "./ui.js";
 
-// shortcut: no tool lists a project's types or recipes, so these are bakers' own; add one when a project has more.
-const TYPES = ["feature", "bug", "chore"];
-const RECIPES = ["matt", "superpowers"];
 const options = (list, current) => [...new Set([...list, current].filter(Boolean))];
 
 const closeTabs = (finishedOnly) => ticketTabsToClose(spaces().find((s) => s.active), panes(), finishedOnly)

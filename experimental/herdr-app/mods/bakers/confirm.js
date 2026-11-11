@@ -26,7 +26,12 @@ function context(p) {
 export class Confirm {
   init(p, cx) {
     this.p = p;
-    this.copy = DIALOGS[p.action](context(p));
+    // A dialog opened for a conductor or ticket that is gone says so instead of guessing.
+    try {
+      this.copy = DIALOGS[p.action](context(p));
+    } catch {
+      this.copy = { title: "Not available", body: "This ticket or conductor is not loaded any more. Close and try again.", no: "Close", esc: "Esc closes", enter: "no" };
+    }
     this.busy = false;
     this.error = null;
     const f = this.copy.field;
@@ -74,13 +79,13 @@ export class Confirm {
   render() {
     const t = theme(), { copy } = this;
     const yesKind = copy.enter === "yes" ? "primary" : this.p.action === "cancel" ? "danger" : "plain";
-    const yes = button("bakers-confirm-yes", this.busy ? "Working…" : copy.yes, t, (cx) => this.confirm(cx), yesKind, this.busy);
+    const yes = copy.yes ? button("bakers-confirm-yes", this.busy ? "Working…" : copy.yes, t, (cx) => this.confirm(cx), yesKind, this.busy) : div();
     const no = button("bakers-confirm-no", copy.no, t, () => this.close(), copy.enter === "no" ? "primary" : "plain", this.busy);
     // Enter does what the dialog's default is (outside its field); cmd-Enter always confirms; Esc never changes anything.
     const keys = {
       escape: () => this.close(),
       enter: (cx) => !this.typing && (copy.enter === "yes" ? this.confirm(cx) : this.close()),
-      "cmd-enter": (cx) => this.confirm(cx),
+      "cmd-enter": (cx) => copy.run && this.confirm(cx),
     };
     return dialogBox("bakers-confirm", t, this.handle, (e, cx) => {
       if (!keys[e.keystroke]) return;

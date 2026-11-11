@@ -4,6 +4,11 @@ import { sshTarget } from "./remote.js";
 
 const CLOSING = new Set(["done", "cancelled"]);
 
+// shortcut: no tool lists a project's types, recipes or default recipe, so these are bakers' own; add one when a project has more.
+export const TYPES = ["feature", "bug", "chore"];
+export const RECIPES = ["matt", "superpowers"];
+export const DEFAULT_RECIPE = "matt";
+
 const text = (value, empty) => {
   const trimmed = String(value ?? "").trim();
   if (!trimmed && empty) throw new Error(empty);

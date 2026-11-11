@@ -1,4 +1,4 @@
-import { spaces, panes, terminals, shared, run } from "herdr";
+import { spaces, panes, terminals, shared, run, openOverlay } from "herdr";
 import { activeRun, focusedTicket, runTerminal } from "./derive.js";
 import { machineOf, showAgentPlan } from "./remote.js";
 import { store, ticketOf } from "./store.js";
@@ -8,7 +8,8 @@ import { dialog, popup, showTerminal } from "./open.js";
 export const focused = () => focusedTicket(spaces().find((s) => s.active), panes(), terminals(), shared("bakers.selected") ?? null);
 
 export const newTicket = () => dialog("new", { parent: focused() }, 560);
-export const goToTicket = () => popup("goto", {}, 480);
+// Like Herdr's own Go to, it drops from the top: cmd-shift-O can come with the pointer anywhere.
+export const goToTicket = () => openOverlay({ mod: "bakers", kind: "popup", at: "top", offset: 56, width: 520, props: { view: "goto" } });
 export const toggleSidebar = () => run("layout.toggle", { id: "sidebar" });
 export const confirm = (action, ticket, extra) => dialog("confirm", { action, ticket, ...extra });
 

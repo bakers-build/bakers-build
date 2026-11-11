@@ -66,6 +66,6 @@ export const fromTo = (from, to, t, extra) => h_flex().gap(8).items_center().fle
 
 // Escape hint on the left, then the buttons; Done and Cancelled put the primary first.
 export const dialogButtons = (escHint, t, buttons) => h_flex().pt(2).gap(8).items_center()
-  .child(div().flex_1().text_size(11.5).text_color(t.dim).child(escHint)).children(buttons);
+  .child(div().flex_1().min_w(0).truncate().text_size(11.5).text_color(t.dim).child(escHint)).children(buttons);
 
 export const field = (t, focused) => div().px(10).py(6).rounded(6).border_1().border_color(focused ? t.accent : t.input).bg(t.background);

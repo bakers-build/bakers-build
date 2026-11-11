@@ -7,7 +7,7 @@ import { pickerRows } from "./remote.js";
 import { confirm } from "./actions.js";
 import { chip, field, hint, label, tint } from "./ui.js";
 
-const COLUMNS = [["Conductor", 0], ["Machine", 130], ["Status", 80], ["Load", 130]];
+const COLUMNS = [["Conductor", 0], ["Machine", 120], ["Status", 72], ["Load", 112]];
 
 // The conductor picker: picking one always leads to a dialog that names what happens (Run on, Move to, Stop dispatch).
 // From the sidebar it is the same list, read only, with the tickets that run on each conductor.
@@ -64,20 +64,20 @@ export class Picker {
       })
       .child(h_flex().items_center().gap(8)
         .child(div().flex_1().font_semibold().child(`${this.running() ? "Move" : "Run"} ${d?.identifier ?? ""} ${this.running() ? "to" : "on"}`))
+        .when(noMachine, (e) => e.child(chip("machines: needs API", t)))
         .child(div().text_size(12).text_color(t.muted).child(`${store.projectName ?? ""}, ${store.conductors.filter((c) => c.active).length} conductors`)))
       .child(field(t, true).child(Input.new(this.filter).w_full().text_size(12.5)))
       .child(v_flex().gap(1)
-        .child(h_flex().px(8).h(24).gap(10).items_center().children(COLUMNS.map(([name, width]) => cell(width,
-          h_flex().gap(5).items_center().child(label(name, t)).when(name === "Machine" && noMachine, (e) => e.child(chip("needs API", t)))))))
+        .child(h_flex().px(8).h(24).gap(10).items_center().children(COLUMNS.map(([name, width]) => cell(width, label(name, t)))))
         .children(rows.map((r, i) => h_flex().id(`bakers-pick-${i}`).h(30).px(8).gap(10).items_center().rounded(6).border_1().cursor_pointer()
           .border_color(i === this.at ? t.accent : t.popover).bg(i === this.at ? tint(t.accent, "14") : t.popover).hover((s) => s.bg(t.hover))
           .on_click(() => this.pick(r))
           .when(Boolean(r.stop), (e) => e.child(div().text_color(t.muted).child(r.label)))
           .when(!r.stop, (e) => e
             .child(cell(0, div().truncate().font_semibold().text_color(r.online ? t.foreground : t.muted).child(r.label)))
-            .child(cell(130, div().truncate().text_color(t.muted).child(r.machine ?? "-")))
-            .child(cell(80, div().text_color(r.online ? t.foreground : t.dim).child(r.status)))
-            .child(cell(130, div().truncate().text_color(t.muted).child(r.load)))))))
+            .child(cell(COLUMNS[1][1], div().truncate().text_color(t.muted).child(r.machine ?? "-")))
+            .child(cell(COLUMNS[2][1], div().text_color(r.online ? t.foreground : t.dim).child(r.status)))
+            .child(cell(COLUMNS[3][1], div().truncate().text_color(t.muted).child(r.load)))))))
       .child(hint("Up and down move, Enter opens the dialog that names what happens, Esc closes without a change. Offline rows can be picked: the run starts when the conductor is back.", t));
   }
 }

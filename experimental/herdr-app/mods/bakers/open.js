@@ -37,7 +37,7 @@ export function showTerminal(address) {
   else run("terminal.keep", { terminal: address, place: "right" });
 }
 
-export const dialog = (view, props, width = 480) => openOverlay({ mod: "bakers", kind: "dialog", width, props: { view, ...props } });
+export const dialog = (view, props, width = 520) => openOverlay({ mod: "bakers", kind: "dialog", width, props: { view, ...props } });
 export const popup = (view, props, width = 260) => openOverlay({ mod: "bakers", kind: "popup", width, props: { view, ...props } });
 
 export function openLink(url) {
