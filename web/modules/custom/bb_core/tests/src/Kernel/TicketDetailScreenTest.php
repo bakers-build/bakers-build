@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Component\Serialization\Yaml;
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Form\FormState;
@@ -19,6 +20,7 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\Field\FieldWidget\PickerWidgetInterface;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbRunRowSource;
 use Drupal\bb_core\Plugin\UiPatterns\Source\EntityFormSource;
+use Drupal\ui_patterns\PropTypeInterface;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
@@ -290,6 +292,49 @@ final class TicketDetailScreenTest extends KernelTestBase {
       self::assertContains('bb_ticket_list', $cache['tags'], $id);
       self::assertNotSame(0, $cache['max-age'], $id);
     }
+  }
+
+  /**
+   * The description source carries the creator's age on the ticket only.
+   *
+   * The `subline` slot gets the age as a time element, and the component its
+   * max-age. A nested run URL shows no ticket caption, so it gets neither.
+   */
+  public function testHeaderDescriptionCarriesTheAgeOnTheTicketOnly(): void {
+    $owner = $this->createUser([], 'Ada Lovelace');
+    self::assertInstanceOf(UserInterface::class, $owner);
+    $this->ticket->set('owner_user_id', $owner->id())
+      ->set('created', $this->container->get('datetime.time')->getRequestTime() - 22 * 86400)
+      ->save();
+    $slot = $this->container->get('plugin.manager.ui_patterns_prop_type')->createInstance('slot');
+    self::assertInstanceOf(PropTypeInterface::class, $slot);
+
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $source = $this->descriptionSource();
+    $element = $source->getValue($slot);
+    $times = array_values(array_filter($element, static fn (mixed $part): bool => is_array($part) && ($part['#component'] ?? '') === 'bb_theme:time'));
+    self::assertCount(1, $times);
+    self::assertSame('3 weeks ago', $times[0]['#props']['label']);
+    $age = $times[0]['#cache']['max-age'];
+    self::assertGreaterThan(0, $age);
+    self::assertSame($age, $element['#cache']['max-age']);
+    self::assertSame($age, $source->alterComponent([])['#cache']['max-age']);
+
+    $run = $this->createRun('done', 'plan', 1770003600);
+    $this->tabsOn('entity.bb_run.canonical', ['bb_ticket' => $this->ticket, 'bb_run' => $run]);
+    $source = $this->descriptionSource();
+    self::assertSame([], $source->getValue($slot));
+    self::assertSame('', $source->getValue());
+    self::assertSame(Cache::PERMANENT, $source->alterComponent([])['#cache']['max-age']);
+  }
+
+  /**
+   * A fresh page header description source, on the current route.
+   */
+  private function descriptionSource(): SourcePluginBase {
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_page_header_description', []);
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    return $source;
   }
 
   /**

@@ -603,8 +603,9 @@ Then('the run history comes before the handoff stream', async ({ page }) => {
   expect(precedes, 'the run history does not come before the handoff stream').toBe(true);
 });
 
-Then('no run history is shown', async ({ page }) => {
-  await expect(runHistoryHeading(page)).toHaveCount(0);
+// A reader who may view runs sees the Run history heading with "No runs yet".
+Then('the run history shows no runs', async ({ page }) => {
+  await expect(page.locator(MAIN_REGION).getByText('No runs yet', { exact: true })).toBeVisible();
   await expect(page.locator(`${MAIN_REGION} [data-cell="state"]`)).toHaveCount(0);
 });
 

@@ -74,10 +74,10 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     And the age in the page header shows its exact date on hover
 
   # AC 9. A title too long for two lines is clamped on screen, and the heading
-  # still holds the whole title, also on hover. The clamp itself is a layout
-  # measure and stays out of the suite.
+  # still holds the whole title, also on hover, an apostrophe and `$` included.
+  # The clamp itself is a layout measure and stays out of the suite.
   Scenario: A long title keeps its full text on hover
-    Given a disposable ticket titled "Add designbook entity view-mode for bb_ticket so designers can preview every ticket detail layout, its summary band, the run history and the comment timeline without hitting live Drupal data, in every workflow state and at both densities"
+    Given a disposable ticket titled "Add designbook entity view-mode for bb_ticket so designers can preview every ticket detail layout, the summary band's $variables and the run history without hitting live Drupal data, in every workflow state and at both densities"
     When I visit the disposable ticket
     Then the page heading holds the whole title of the disposable ticket, also on hover
 
@@ -163,7 +163,7 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     And the inspector is still held at the top of the viewport
     And nothing between the inspector and the document clips it
     And no handoff stream is shown
-    And no run history is shown
+    And the run history shows no runs
 
   # AC 11's island half. TWO CLICKS, and the second one lands on markup that
   # arrived through a swap rather than through a document load: leave the ticket

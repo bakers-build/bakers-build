@@ -43,7 +43,8 @@ export function createDisposableTicket(
     '$etm = \\Drupal::entityTypeManager();',
     '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
     'if (!$p) { print "NO_PROJECT"; return; }',
-    `$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "${title}", "workflow" => "${workflow}", "state" => "${state}"]);`,
+    // The title travels base64-encoded, so any quote or `$` arrives unchanged.
+    `$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => base64_decode("${Buffer.from(title).toString('base64')}"), "workflow" => "${workflow}", "state" => "${state}"]);`,
     '$t->save();',
     '$runUuid = ""; $runId = "";',
     runs?.state === 'running'
@@ -55,16 +56,16 @@ export function createDisposableTicket(
     runs?.state === 'failed'
       ? `$c = current($etm->getStorage("bb_conductor")->loadByProperties(["conductor_id" => "srv02-bakers-busy"])); if (!$c) { print "NO_CONDUCTOR"; return; } $t->set("conductor_id", $c->id())->save(); for ($i = 0; $i < ${runs.count}; $i++) { $r = $etm->getStorage("bb_run")->create(["ticket_id" => $t->id(), "conductor_id" => $c->id(), "state" => "failed", "state_at_start" => "working", "started_at" => time(), "error_log" => "Error: ${runs.reason}\\nstack trace"]); $r->save(); } $runUuid = $r->uuid(); $runId = $r->id();`
       : '',
-    'print $t->uuid() . "|" . $t->toUrl()->toString() . "|" . $runUuid . "|" . $runId . "|" . $t->getIdentifier() . "|" . $t->label();',
+    'print $t->uuid() . "|" . $t->toUrl()->toString() . "|" . $runUuid . "|" . $runId . "|" . $t->getIdentifier();',
   ].join(' '));
-  const [ticket, url, run, runId, identifier, ticketTitle] = output.split('|');
+  const [ticket, url, run, runId, identifier] = output.split('|');
   if (!ticket || !url) {
     throw new Error(`The disposable ticket fixture did not settle: "${output}".`);
   }
   const record: DisposableTicket = {
     ticket,
     url,
-    title: ticketTitle || title,
+    title,
     identifier: identifier || '',
     run: run || undefined,
     runId: runId || undefined,

@@ -46,7 +46,7 @@ slots:
   flow:
     title: Flow
     description: >-
-      Where the subject stands — an ordered chain with a current link, after any
+      Where the subject stands: an ordered chain with a current link, after any
       status badge, in one wrapping row. Renders left in the header strip.
   summary:
     title: Summary

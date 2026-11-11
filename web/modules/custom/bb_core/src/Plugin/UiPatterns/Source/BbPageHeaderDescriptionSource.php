@@ -60,13 +60,8 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
    */
   public function getPropValue(): mixed {
     $route = (string) $this->routeMatch->getRouteName();
-    // Nested run URLs carry `{bb_ticket}`; the sub-line is the run title's
-    // job, not the ticket caption.
-    if (str_starts_with($route, 'entity.bb_run.')) {
-      return '';
-    }
-    $ticket = $this->routeMatch->getParameter('bb_ticket');
-    if ($ticket instanceof BbTicketInterface) {
+    $ticket = $this->ticketForSubline();
+    if ($ticket !== NULL) {
       return BbTicketDetailHeaderSource::subline($ticket);
     }
     // Screens that say what they hold; the Billing and Templates tabs
@@ -109,15 +104,18 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
   }
 
   /**
-   * The `subline` slot: a ticket's sub-line with its time element, else empty.
+   * The ticket whose sub-line this screen shows, or NULL.
    *
-   * @return array<int|string, mixed>
-   *   A render array, or empty off a ticket and on its nested run URLs.
+   * Nested run URLs carry `{bb_ticket}` too; there the sub-line is the run
+   * title's job, not the ticket caption, so a run page shows none and does not
+   * expire with the ticket's age.
    */
-  private function sublineElement(): array {
+  private function ticketForSubline(): ?BbTicketInterface {
+    if (str_starts_with((string) $this->routeMatch->getRouteName(), 'entity.bb_run.')) {
+      return NULL;
+    }
     $ticket = $this->routeMatch->getParameter('bb_ticket');
-    $run = str_starts_with((string) $this->routeMatch->getRouteName(), 'entity.bb_run.');
-    return !$run && $ticket instanceof BbTicketInterface ? BbTicketDetailHeaderSource::sublineElement($ticket) : [];
+    return $ticket instanceof BbTicketInterface ? $ticket : NULL;
   }
 
   /**
@@ -156,7 +154,11 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
    * the plain text.
    */
   public function getValue(?PropTypeInterface $prop_type = NULL): mixed {
-    return $prop_type?->getPluginId() === 'slot' ? $this->sublineElement() : $this->getPropValue();
+    if ($prop_type?->getPluginId() !== 'slot') {
+      return $this->getPropValue();
+    }
+    $ticket = $this->ticketForSubline();
+    return $ticket === NULL ? [] : BbTicketDetailHeaderSource::sublineElement($ticket);
   }
 
   /**
@@ -165,8 +167,8 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
   public function alterComponent(array $element): array {
     $metadata = CacheableMetadata::createFromRenderArray($element)
       ->addCacheContexts(['url.path', 'url.query_args']);
-    $ticket = $this->routeMatch->getParameter('bb_ticket');
-    if ($ticket instanceof BbTicketInterface) {
+    $ticket = $this->ticketForSubline();
+    if ($ticket !== NULL) {
       // The plain-text description carries the creator's age too.
       $metadata = $metadata->merge(TicketStallReason::cacheability($ticket))
         ->merge(CacheableMetadata::createFromRenderArray(BbTicketDetailHeaderSource::sublineElement($ticket)));

@@ -72,6 +72,8 @@ final class BbDate {
   public function age(int $timestamp): array {
     $diff = $this->diff($timestamp);
     $element = $this->element($timestamp, $diff->getString());
+    // shortcut: core's one-unit max-age lets "3 weeks ago" lag up to a
+    // unit; expire at the next label change once a stale age is reported.
     $element['#cache']['max-age'] = $diff->getCacheMaxAge();
     return $element;
   }
