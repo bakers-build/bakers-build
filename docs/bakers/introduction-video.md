@@ -81,15 +81,15 @@ On screen: the landing page hero; scroll slowly to the line with its four statio
 > Hi! This is bakers.build. Like a baker in their own bakery, every developer stays in charge of their work.
 > Your team writes down what it needs, as a ticket.
 > AI agents do the heavy lifting: they plan, build, check and deliver, always along the same line. The people decide.
-> How that line works is your recipe: a simple text file, right next to your code.
+> How that line works is your recipe: WORKFLOW.md, a text file right next to your code.
 
 ### 2. A ticket system for AI (about 18 s)
 
 On screen: the project's ticket board, then the machines list with both conductors.
 
-> It's a ticket system where people and AI work together.
+> It's not a classic ticket system. It's one where people and AI work together.
 > Everything an agent does stays on the ticket, so the next ticket can build on it.
-> And the work runs on your own computer, a colleague's, or a machine in the background.
+> And the work runs on your own computer, a colleague's, or a remote worker.
 
 ### 3. From an issue to a ticket (about 16 s)
 
