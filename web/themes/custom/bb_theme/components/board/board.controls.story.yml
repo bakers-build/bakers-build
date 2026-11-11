@@ -78,6 +78,7 @@ slots:
               id: board-search
               value: ''
               placeholder: Search tickets
+              compact: true
           - type: component
             component: bb_theme:option_picker
             props:
@@ -214,6 +215,7 @@ slots:
     - type: component
       component: bb_theme:active-filters
       props:
+        variant: inline
         label: Active filters
         facets:
           - field: Priority

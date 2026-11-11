@@ -13,6 +13,7 @@ slots:
         id: board-search
         value: ''
         placeholder: Search tickets
+        compact: true
     - type: component
       component: bb_theme:option_picker
       props:

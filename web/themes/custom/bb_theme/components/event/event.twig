@@ -40,7 +40,7 @@
     {{- include('bb_theme:person', { variant: 'compact', initials: author_initials, color: author_color|default(role == 'agent' ? 'running' : 'lease'), size: 'sm' }, with_context = false) -}}
     <span class="min-w-0 truncate text-body-strong text-text">{{ author_name }}</span>
   </span>
-  <span class="w-22 shrink-0 truncate text-body text-text-light">{{ statement }}</span>
+  <span class="min-w-22 shrink-0 whitespace-nowrap text-body text-text-light">{{ statement }}</span>
   {% if subject_url %}
     <a class="w-20 shrink-0 truncate font-mono text-data text-link no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ subject_url }}">{{ subject_label }}</a>
   {% else %}

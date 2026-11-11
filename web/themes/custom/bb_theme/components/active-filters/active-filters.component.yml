@@ -188,6 +188,11 @@ variants:
       The inner half of a nested pair: the chip sentences with no wrapper, no
       unfiltered statement and no meta line, so an outer one can own those and
       test whether this rendered anything.
+  inline:
+    title: Inline
+    description: >-
+      The chips and the meta in one wrapping row, vertically centred, as the
+      Board filter bar shows them.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

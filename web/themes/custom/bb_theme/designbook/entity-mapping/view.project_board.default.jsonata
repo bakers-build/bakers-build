@@ -113,7 +113,7 @@
         "props": { "layout": "toolbar", "label": "Board filters" },
         "slots": {
           "controls": [
-            { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input", "props": { "type": "search", "name": "search", "id": "board-search", "value": "", "placeholder": "Search tickets" } },
+            { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input", "props": { "type": "search", "name": "search", "id": "board-search", "value": "", "placeholder": "Search tickets", "compact": true } },
             $picker("state", "State", "status-running", "All", ["plan", "qualification", "working"]),
             $picker("priority", "Priority", "alert-triangle", "All", ["p1", "p2", "p3"]),
             { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:text", "props": { "text": "Assignee", "as": "span", "size": "meta", "tone": "light" } },
@@ -134,7 +134,7 @@
       "filters_active": [{
         "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:active-filters",
         "props": {
-          "variant": "",
+          "variant": "inline",
           "label": "Active filters",
           "empty_label": "No filters",
           "facets": $s.health ? [{ "field": "Unhealthy", "count": $count($visible), "remove_url": "?" }] : []
