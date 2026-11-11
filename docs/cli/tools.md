@@ -62,7 +62,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_project_read` | `project` (key or UUID) | One project with its group, teams, repository and coder configuration |
 | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository`, `coder_config` | Create a project |
 | `bakers_conductor_list` | `project` | A project's conductors and their status, with each conductor's `machine` (machine_id) |
-| `bakers_machine_list` | optional `workspace`, `conductor` | Machines you may view, with `machine_id`, `label`, `connection_url`, `max_parallel` and `current_load` |
+| `bakers_machine_list` | optional `workspace` (UUID), `conductor_uuid` | Machines you may view, with `machine_id`, `label`, `connection_url`, `max_parallel` and `current_load` |
 | `bakers_label_list` | `workspace`; optional `query` | A workspace's labels |
 | `bakers_ticket_read` | `ticket` (identifier or UUID) | A ticket with its comments, oldest first, as an agent run reads it first, and `deployments`: each deployment ticket that carries it, with its `identifier` and `environments` |
 | `bakers_ticket_search` | `query` or `branch_name`; optional `project` | Tickets matching a text or a branch |

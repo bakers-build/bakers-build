@@ -54,10 +54,10 @@ final class MachineListToolTest extends BakersToolTestBase {
     $box_b = $this->machine($this->actor, 'box-b');
     $on_b = $this->conductor('on-b', $this->actor, $box_b);
     $bare = $this->conductor('bare', $this->actor);
-    self::assertSame(['box-b'], $this->machineIds(['conductor' => $on_b->uuid()]));
-    self::assertSame([], $this->machineIds(['conductor' => $bare->uuid()]));
+    self::assertSame(['box-b'], $this->machineIds(['conductor_uuid' => $on_b->uuid()]));
+    self::assertSame([], $this->machineIds(['conductor_uuid' => $bare->uuid()]));
     $this->assertFailure(
-      $this->runTool('bakers_machine_list', ['conductor' => '00000000-0000-4000-8000-000000000000']),
+      $this->runTool('bakers_machine_list', ['conductor_uuid' => '00000000-0000-4000-8000-000000000000']),
       'Conductor 00000000-0000-4000-8000-000000000000 does not exist or is not readable.',
     );
   }
@@ -99,13 +99,13 @@ final class MachineListToolTest extends BakersToolTestBase {
     $on_t = $this->conductor('on-t', $teammate, $box_t);
 
     self::assertSame([], $this->machineIds([]));
-    self::assertSame([], $this->machineIds(['conductor' => $on_t->uuid()]));
+    self::assertSame([], $this->machineIds(['conductor_uuid' => $on_t->uuid()]));
     self::assertSame([], $this->machineIds(['workspace' => $this->workspace->uuid()]));
 
     $this->container->get('current_user')->setAccount($teammate);
     self::assertSame(
       [$this->row($box_t, 'ssh://t@box-t.example', 5)],
-      $this->outputs($this->runTool('bakers_machine_list', ['conductor' => $on_t->uuid()]))['machines'],
+      $this->outputs($this->runTool('bakers_machine_list', ['conductor_uuid' => $on_t->uuid()]))['machines'],
     );
   }
 
@@ -114,7 +114,7 @@ final class MachineListToolTest extends BakersToolTestBase {
    */
   public function testInputAllowlist(): void {
     $definition = $this->container->get('plugin.manager.tool')->getDefinition('bakers_machine_list');
-    self::assertSame(['workspace', 'conductor', 'limit', 'offset'], array_keys($definition->getInputDefinitions()));
+    self::assertSame(['workspace', 'conductor_uuid', 'limit', 'offset'], array_keys($definition->getInputDefinitions()));
   }
 
   /**

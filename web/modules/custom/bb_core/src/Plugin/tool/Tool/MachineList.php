@@ -35,9 +35,9 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('Workspace UUID: only machines with a conductor in that workspace.'),
       required: FALSE,
     ),
-    'conductor' => new InputDefinition(
+    'conductor_uuid' => new InputDefinition(
       data_type: 'string',
-      label: new TranslatableMarkup('Conductor'),
+      label: new TranslatableMarkup('Conductor UUID'),
       description: new TranslatableMarkup("Conductor UUID: only that conductor's machine."),
       required: FALSE,
     ),
@@ -119,8 +119,8 @@ final class MachineList extends ToolBase {
     $query = $storage->getQuery()->accessCheck(TRUE)
       ->sort('name')
       ->sort('id');
-    if (($values['conductor'] ?? '') !== '') {
-      $query->condition('id', $this->machineIds([$this->readableConductor($values['conductor'])]) ?: [0], 'IN');
+    if (($values['conductor_uuid'] ?? '') !== '') {
+      $query->condition('id', $this->machineIds([$this->readableConductor($values['conductor_uuid'])]) ?: [0], 'IN');
     }
     if (($values['workspace'] ?? '') !== '') {
       $workspace = $this->readableWorkspace($values['workspace']);
