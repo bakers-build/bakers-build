@@ -1,7 +1,7 @@
 component: bb_theme:board-card
 name: Runs failed
 props:
-  identifier: GAIA-307
+  identifier: BB-307
   title: 'Expired runs are never closed: 1333 stand open because no path closes them'
   status: attention
   priority: p1

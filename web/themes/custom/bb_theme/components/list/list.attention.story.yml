@@ -35,7 +35,7 @@ props:
           tone: critical
         identifier:
           kind: link
-          value: GAIA-365
+          value: BB-365
           url: '#'
           mono: true
         created:
@@ -76,7 +76,7 @@ props:
           tone: critical
         identifier:
           kind: link
-          value: GAIA-412
+          value: BB-412
           url: '#'
           mono: true
         created:
@@ -117,7 +117,7 @@ props:
           tone: neutral
         identifier:
           kind: link
-          value: GAIA-348
+          value: BB-348
           url: '#'
           mono: true
         created:
@@ -158,7 +158,7 @@ props:
           tone: neutral
         identifier:
           kind: link
-          value: GAIA-307
+          value: BB-307
           url: '#'
           mono: true
         created:

@@ -1,7 +1,7 @@
 component: bb_theme:progress
 name: Default
 props:
-  identifier: GAIA-90
+  identifier: BB-90
   title: Ticket detail overhaul
   url: '#'
   percent: 58

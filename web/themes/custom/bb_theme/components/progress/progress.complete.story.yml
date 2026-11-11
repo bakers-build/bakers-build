@@ -1,7 +1,7 @@
 component: bb_theme:progress
 name: Complete
 props:
-  identifier: GAIA-112
+  identifier: BB-112
   title: Board v2
   url: '#'
   percent: 100

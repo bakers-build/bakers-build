@@ -6,4 +6,4 @@ props:
   state: plan
   status: idle
   blocked_by:
-    - GAIA-348
+    - BB-348

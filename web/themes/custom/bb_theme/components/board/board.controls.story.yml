@@ -7,14 +7,14 @@ props:
     - name: Not assigned
       dot: wait
       cards:
-        - identifier: GAIA-281
+        - identifier: BB-281
           title: >-
             Runs dispatch to the wrong agent: three conductors with divergent
             agent configs
           status: idle
           priority: p1
           state: plan
-        - identifier: GAIA-307
+        - identifier: BB-307
           title: >-
             Expired runs are never closed: 1333 stand open because no path
             closes them
@@ -30,7 +30,7 @@ props:
     - name: Working
       dot: running
       cards:
-        - identifier: GAIA-393
+        - identifier: BB-393
           title: Conductor reap leaks worktree DDEV environments
           status: running
           priority: p1
@@ -40,8 +40,8 @@ props:
           assignee_name: Christian Wiedemann
           assignee_initials: CW
           assignee_color: attention
-        - identifier: GAIA-365
-          title: gaia deployment tickets ignore every project whose key is not GAIA
+        - identifier: BB-365
+          title: Deployment tickets ignore every project whose key is not BB
           status: running
           priority: p1
           state: review

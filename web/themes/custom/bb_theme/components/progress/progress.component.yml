@@ -23,7 +23,7 @@ props:
     identifier:
       type: string
       title: Identifier
-      description: Mono key before the title, such as GAIA-90.
+      description: Mono key before the title, such as BB-90.
     title:
       type: string
       title: Title

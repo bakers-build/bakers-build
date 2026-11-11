@@ -1,8 +1,8 @@
 component: bb_theme:board-card
 name: Runs
 props:
-  identifier: GAIA-365
-  title: gaia deployment tickets ignore every project whose key is not GAIA
+  identifier: BB-365
+  title: Deployment tickets ignore every project whose key is not BB
   status: running
   priority: p1
   state: review
