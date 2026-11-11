@@ -109,7 +109,7 @@
     $component("$DESIGNBOOK_COMPONENT_NAMESPACE:event", { "compact": true, "author_name": $person($a.who).name, "author_initials": $person($a.who).initials, "author_color": $person($a.who).color,
       "statement": $a.what, "subject_label": $a.ticket, "subject_url": "#", "detail": $a.detail, "timestamp": $a.when, "datetime": $a.at })
   };
-  $activities := $zone("Activities", {}, [$map($f.activities, $event)],
+  $activities := $zone("Activities", { "gap": "none" }, [$map($f.activities, $event)],
     [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:button", { "label": "Refresh", "variant": "neutral" })]);
   $empty := [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:empty-state", { "title": "No tickets yet", "message": "Once tickets arrive, this page shows what needs attention, how epics progress and what happened.", "icon": "ticket" })];
   $description := $p.description ? $p.description : "—";
