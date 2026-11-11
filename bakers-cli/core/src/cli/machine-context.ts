@@ -28,6 +28,7 @@ export interface MachineContext {
   machine_id: string;
   /** Display name for people; never a key. */
   label: string;
+  connection_url?: string | null;
   /** Optional selection policy for the agents the machine `addons[]` contribute. */
   agents?: MachineAgentPolicy;
   /**

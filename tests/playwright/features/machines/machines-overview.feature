@@ -56,3 +56,18 @@ Feature: User Machines listing and View
     Given I am signed in as a member of the "bakers" workspace
     When I visit the machine "e2e default host"
     Then the Activities list "BB-142 started work in plan"
+
+  @machine-connection
+  Scenario: A lead sees and selects the connection address saved at start
+    Given I am signed in as a member of the "bakers" workspace
+    When I register a disposable connection machine with "ssh://christian@100.64.0.10:22"
+    And I open my disposable connection machine from the listing
+    Then the "Identity" card lets me select the link "ssh://christian@100.64.0.10:22" for "Connection URL"
+    And my connection machine API exposes "ssh://christian@100.64.0.10:22"
+    When my connection machine sends a heartbeat without an address
+    Then the "Identity" card lets me select the link "ssh://christian@100.64.0.10:22" for "Connection URL"
+    When I register a disposable connection machine with "https://example.com/connect"
+    Then the "Identity" card lets me select the link "https://example.com/connect" for "Connection URL"
+    When I register a disposable connection machine with "null"
+    Then the "Identity" card shows "Connection URL" as "—"
+    And my connection machine API exposes "null"

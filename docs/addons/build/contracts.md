@@ -110,3 +110,13 @@ Validate the actual example through its loader and input/result validators, then
 ## Addon inbox messages
 
 An addon can offer messages that run on the conductor's machine and are triggered from the message card inline in the ticket detail page's right column (web UI) or the ticket's own right-hand-column card in `bakers ui`. The preset exports them as `inbox` (contract 2): message definitions — a label, who may send it, an optional flat `input` — plus lazy `InboxMessageHandler`s or tool `bindings`, each giving one `{ markdown }` answer. Registration is unique per `(workspace, name, version)` and definition: two conductors of one workspace registering an identical definition share one record, and a differing definition gets its own, so each conductor's messages keep the access levels and input it declared. [Write an addon with inbox messages](/addons/build/actions) is the guide and holds the contract and the lifecycle.
+
+## Before conductor start
+
+`hooks` accepts `before_conductor_start(machine, conductor)`. Callbacks mutate `MachineRegistrationData`: `host_key`, `machine_label`,
+`connection_url?: string | null`. Readonly `ConductorStartContext` contains
+`id`, `project`, `variant`.
+
+Serve-only dispatch preserves identity and manual URLs.
+Invalid changes, errors or the five-second deadline discard all changes.
+Late callbacks cannot affect registration. Diagnostics omit values.

@@ -858,6 +858,26 @@ describe('DrupalBbRemote', () => {
     label: 'lbl',
   };
 
+  it.each([
+    undefined,
+    null,
+    'ssh://user@host:22',
+  ])('transports connection_url %s with exact presence', async (connection_url) => {
+    const post = vi.fn(async () => ({ data: { id: 'uuid' } }));
+    const remote = new DrupalBbRemote(fakeClient({ post }));
+    await remote.registerConductor({
+      ...takeoverReg,
+      ...(connection_url !== undefined ? { connection_url } : {}),
+    });
+    const body = post.mock.calls[0]?.[1] as {
+      data: { attributes: Record<string, unknown> };
+    };
+    expect(Object.hasOwn(body.data.attributes, 'connection_url')).toBe(
+      connection_url !== undefined,
+    );
+    expect(body.data.attributes.connection_url).toBe(connection_url);
+  });
+
   it('registerConductor turns a takeover 409 into the offered conductors', async () => {
     const detail = 'Take over "cw-framework", or start a new conductor.';
     const post = vi.fn(async () => {

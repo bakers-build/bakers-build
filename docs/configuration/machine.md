@@ -41,6 +41,7 @@ export default {
 | `agents.routes` | Named routes from workflow states (or `'*'`) to aliases. |
 | `agents.routes.default` | The automatic route, applied without a route label. `agents.routes.default['*']` is the default agent; without it the first enabled alias is. |
 | `tunnel` | Optional literal boolean, default `false`. See [below](#preview-link-tunnels). |
+| `connection_url` | Optional SSH or HTTPS address of this host, or `null` to clear the saved one. See [below](#connection-address). |
 | `permissions` | Optional. Run permissions for every agent on this host: `mode` (`sandbox`, `system` or `yolo`) and the `sandbox` lists `deny_read`, `allow_write`, `trusted_commands`. It replaces the project's block key by key, and a harness entry's `with` replaces both; `'$inherit'` keeps the layer below. See [Shared run security](/provision/security/shared-settings). |
 | `permissions.mode` | `sandbox`, `system` or `yolo`. |
 | `permissions.sandbox`, `permissions.sandbox.deny_read`, `permissions.sandbox.allow_write`, `permissions.sandbox.trusted_commands` | The `sandbox` block and its lists; see [Shared run security](/provision/security/shared-settings). |
@@ -79,3 +80,18 @@ bakers agents
 ```
 
 Check host identity; from a connected checkout, the agent catalog must contain an installed, authenticated harness.
+
+## Connection address
+
+Set `connection_url: 'ssh://christian@192.168.1.20:22'` or an absolute HTTPS URL
+in the machine configuration. The address is shown on the machine page, so it must not be secret: never include
+passwords, tokens or secret query parameters. SSH permits an optional username and
+port (1–65535), DNS, IPv4 or bracketed IPv6, and no path except `/`. HTTPS permits
+paths, queries and fragments but no username. The maximum length is 2048 characters.
+
+An actual conductor start publishes the address. A manual value takes precedence
+over addon discovery; `connection_url: null` explicitly clears it. Omitting the
+field preserves the saved address. Later heartbeats and CLI preflight registrations
+do not change it. Invalid manual addresses are omitted with a warning and disable
+start discovery for that start. If the server refuses the address, the conductor
+still starts and the saved address stays unchanged. The address is a snapshot, not proof of reachability.

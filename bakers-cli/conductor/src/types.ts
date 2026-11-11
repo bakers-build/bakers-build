@@ -39,6 +39,7 @@ export interface ConductorSettings {
   variant: string;
   /** This machine's display label (`machine.config.js` label). */
   machine_label?: string;
+  connection_url?: string | null;
   /** Project name (bb_project.name); resolved at registration. */
   project: string;
   /**

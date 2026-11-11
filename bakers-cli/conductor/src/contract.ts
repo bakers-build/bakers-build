@@ -60,6 +60,7 @@ export {
 } from './plugins/agent-home.js';
 export type {
   BbExecutor,
+  ConductorStartContext,
   ExecutorCapabilities,
   HookContext,
   HookListener,
@@ -67,6 +68,7 @@ export type {
   HookListenerFn,
   HookName,
   HookResult,
+  MachineRegistrationData,
   OpenWorkspaceContext,
   SpawnedSession,
   SpawnRunInput,
