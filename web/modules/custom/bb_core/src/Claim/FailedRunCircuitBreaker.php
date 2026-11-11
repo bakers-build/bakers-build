@@ -20,7 +20,8 @@ use Drupal\bb_core\Entity\BbTicketInterface;
  * re-fail every tick. Self-healing: once the window elapses (the newest failed
  * run ages out) or a non-failed run appears among the most recent N, the ticket
  * is claimable again — no permanent human gate. A ticket with fewer than `cap`
- * runs, or a mixed recent set, is never parked.
+ * runs, or a mixed recent set, is never parked. A restart releases it at once:
+ * only runs created after the ticket's `restarted_at` count.
  *
  * Split out of TicketClaimService so the claim service stays under the phpmd
  * class-complexity budget. The thresholds are fixed constants.
@@ -67,9 +68,14 @@ final class FailedRunCircuitBreaker {
     $window = self::DEFAULT_RETRY_WINDOW_SECONDS;
     $storage = $this->entityTypeManager->getStorage('bb_run');
     // The `cap` most-recent runs of this ticket, newest first.
-    $ids = $storage->getQuery()
+    $query = $storage->getQuery()
       ->accessCheck(FALSE)
-      ->condition('ticket_id', $ticket->id())
+      ->condition('ticket_id', $ticket->id());
+    $restarted_at = $ticket->getRestartedAt();
+    if ($restarted_at !== NULL) {
+      $query->condition('created', $restarted_at, '>');
+    }
+    $ids = $query
       ->sort('changed', 'DESC')
       ->sort('id', 'DESC')
       ->range(0, $cap)

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Entity;
 
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
+use Drupal\user\UserInterface;
 
 /**
  * Defines the interface for bakers.build ticket entities.
@@ -178,6 +179,18 @@ interface BbTicketInterface extends BbContentEntityInterface {
    * cleared on unfreeze. Clients write `frozen`; they never write this.
    */
   public function getFrozenAt(): ?int;
+
+  /**
+   * When the ticket was last restarted, or NULL if never.
+   *
+   * The failed-run circuit breaker counts only runs created after it.
+   */
+  public function getRestartedAt(): ?int;
+
+  /**
+   * Who last restarted the ticket, or NULL if never or the account is gone.
+   */
+  public function getRestartedBy(): ?UserInterface;
 
   /**
    * Whether the ticket is finalised (transcript captured, wound up).

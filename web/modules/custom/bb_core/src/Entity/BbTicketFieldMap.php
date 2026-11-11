@@ -129,6 +129,13 @@ final class BbTicketFieldMap {
       ->setDescription(new TranslatableMarkup('When the operator hold started. Cleared when the ticket is unfrozen. Stamped by the server from `frozen`, never by the client.'))
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayConfigurable('form', TRUE);
+    $fields['restarted_at'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(new TranslatableMarkup('Restarted at'))
+      ->setDescription(new TranslatableMarkup('When the ticket was last released from the failed-run circuit breaker; the breaker counts only runs created after it. Stamped by the server, never by the client.'));
+    $fields['restarted_by'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(new TranslatableMarkup('Restarted by'))
+      ->setDescription(new TranslatableMarkup('Who last restarted the ticket. Stamped by the server, never by the client.'))
+      ->setSetting('target_type', 'user');
     $fields['closed'] = BaseFieldDefinition::create('boolean')
       ->setLabel(new TranslatableMarkup('Closed'))
       ->setDescription(new TranslatableMarkup('Ticket is fully wound up; nothing more will happen. Distinct from the workflow state.'))

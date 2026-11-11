@@ -88,3 +88,16 @@ function bb_core_post_update_machine_connection_url(): void {
     $manager->installFieldStorageDefinition('connection_url', 'bb_machine', 'bb_core', $definition);
   }
 }
+
+/**
+ * Installs the ticket restart stamp without changing existing tickets.
+ */
+function bb_core_post_update_ticket_restart_fields(): void {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+  $definitions = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('bb_ticket');
+  foreach (['restarted_at', 'restarted_by'] as $name) {
+    if ($manager->getFieldStorageDefinition($name, 'bb_ticket') === NULL) {
+      $manager->installFieldStorageDefinition($name, 'bb_ticket', 'bb_core', $definitions[$name]);
+    }
+  }
+}
