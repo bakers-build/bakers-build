@@ -74,7 +74,8 @@
         "conductor_id": "team",
         "label": "Team conductor",
         "active": true,
-        "status": "online"
+        "status": "online",
+        "machine": null
       }
     ]
   },
