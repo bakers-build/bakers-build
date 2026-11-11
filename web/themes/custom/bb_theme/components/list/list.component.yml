@@ -35,18 +35,18 @@ description: >-
   A CELL IS THE SAME NINE KINDS `table` DECLARES — `text` (`value`, `emphasis:
   default|faint|strong`), `mono` (`value`), `link` (`value`, `url`, `mono?`),
   `badge` (`label`, `tone`, `dot?`, `icon?`, `suffix?`, `suffix_datetime?`,
-  `suffix_title?`, `mono?`, `mine?`,
-  `url?`), `person` (`display_name`, `initials`, `color`, `mail?`), `picker`
-  (`label`, `value_labels`, `options`, `picker_id`, `multiple?`, `open?`,
-  `icon?`, `clearable?`, `clear_label?`, `creatable?`, `create_label?`, `name?`,
-  `searchable?`, `selected_chips?`, `selected?`), `masked` (`value?`,
-  `revealed?`), `action` (`label`, `icon?`, `icon_only?`, `variant?`, `href?`,
-  `hx?` {`get?`, `target?`, `select?`, `swap?`}) and `rendered` (`markup`) — and
-  their field list is declared once, in `table.component.yml`, beside the
-  `cell()` macro that reads it. It is deliberately not copied here: one macro
-  renders both containers, and a second copy of its schema is a second copy that
-  drifts. An unknown or absent `kind` renders the value as plain text, so a
-  mapping mistake shows as unstyled content rather than as an empty item.
+  `suffix_title?`, `mono?`, `mine?`, `url?`), `person` (`display_name`,
+  `initials`, `color`, `mail?`), `picker` (`label`, `value_labels`, `options`,
+  `picker_id`, `multiple?`, `open?`, `icon?`, `clearable?`, `clear_label?`,
+  `creatable?`, `create_label?`, `name?`, `searchable?`, `selected_chips?`,
+  `selected?`), `masked` (`value?`, `revealed?`), `action` (`label`, `icon?`,
+  `icon_only?`, `variant?`, `href?`, `hx?` {`get?`, `target?`, `select?`,
+  `swap?`}) and `rendered` (`markup`) — and their field list is declared once,
+  in `table.component.yml`, beside the `cell()` macro that reads it. It is
+  deliberately not copied here: one macro renders both containers, and a second
+  copy of its schema is a second copy that drifts. An unknown or absent `kind`
+  renders the value as plain text, so a mapping mistake shows as unstyled
+  content rather than as an empty item.
 
 
   `rendered` WAS MISSING FROM THIS SCHEMA ONLY, and that is what BB-435
@@ -193,14 +193,17 @@ props:
             enum:
               - running
               - attention
+              - critical
               - wait
               - idle
             title: Status accent
             description: >-
-              The leading status rail. `wait` additionally tints the whole item,
-              because a thing nobody is acting on is the one state the absorbed
-              entries made loud, and the tint is what a `wait` badge's `-ink`
-              colour is legible against.
+              The leading status rail. `critical` is the red rail of a row that
+              needs a person now with a red severity (a Needs attention row
+              whose reason is red); `attention` is the yellow one. `wait`
+              additionally tints the whole item, because a thing nobody is
+              acting on is the one state the absorbed entries made loud, and the
+              tint is what a `wait` badge's `-ink` colour is legible against.
           cells:
             type: object
             title: Cells

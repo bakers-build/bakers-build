@@ -69,7 +69,7 @@
   $row := function ($t) {
     {
       "url": "#",
-      "accent": "attention",
+      "accent": $t.red ? "critical" : "attention",
       "cells": {
         "state": { "kind": "status", "label": $t.state, "working": $t.working ? true : false },
         "title": { "kind": "link", "value": $t.title, "url": "#" },

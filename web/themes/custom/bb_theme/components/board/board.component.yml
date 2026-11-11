@@ -30,14 +30,18 @@ description: >-
 
 
   THE COLUMN AREA IS THE ONLY SIDEWAYS SCROLL REGION. It is bounded to the
-  viewport height (`max-h-shell-height`) and scrolls both ways, so column
-  headers stick to its top while the page header, the toolbar, the active
-  filters and the conductors stay put. Columns keep at least 240 px at the
-  default density. Native scrolling only: Shift + mouse wheel scrolls the region
-  sideways without any script, and no scrollbar is drawn. A hairline with the
-  shadow-2 token sticks to the right edge while columns are cut off; a cover of
-  the page surface at the end of the row hides it once the last column is in
-  view.
+  viewport below the board chrome (`max-h-board-height`, the
+  `component.board.height` token) and scrolls both ways, so a long column
+  scrolls inside it and the column headers stick to its top while the page
+  header, the toolbar, the active filters and the conductors stay put. Columns
+  keep at least 240 px at the default density. Native scrolling only: Shift +
+  mouse wheel scrolls the region sideways without any script, and no scrollbar
+  is drawn. The region reaches 16 px into the page gutters on both sides. While
+  columns are cut off on a side, a hairline sticks to that edge and casts the
+  shadow-2 token in the `text-faint` colour over the cut-off columns (it
+  contrasts with every surface in both modes: a shade in light mode, a glow in
+  dark mode); a cover of the page surface at each end of the row hides hairline
+  and shadow once that end is in view.
 
 
   `details` and `done_open` are the real Details and Done preferences: on the

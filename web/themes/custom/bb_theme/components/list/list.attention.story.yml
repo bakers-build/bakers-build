@@ -19,7 +19,7 @@ props:
       created: Created
   items:
     - url: '#'
-      accent: attention
+      accent: critical
       cells:
         state:
           kind: status
@@ -60,7 +60,7 @@ props:
           name_hidden: true
           color: attention
     - url: '#'
-      accent: attention
+      accent: critical
       cells:
         state:
           kind: status
