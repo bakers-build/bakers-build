@@ -21,3 +21,20 @@ describe('runtime-docker preset', () => {
     expect(cliRoot.length).toBeGreaterThan(1);
   });
 });
+
+describe('imageVersion', () => {
+  it('changes when a shipped image file changes', async () => {
+    const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { imageVersion } = await import('../src/index.js');
+    const dir = mkdtempSync(join(tmpdir(), 'bb-image-'));
+    mkdirSync(join(dir, 'image'));
+    writeFileSync(join(dir, 'image/Dockerfile'), 'FROM x');
+    writeFileSync(join(dir, 'image/proxy.mjs'), 'a');
+    const first = imageVersion(dir, '1.2.3');
+    expect(first).toMatch(/^1\.2\.3-[0-9a-f]{12}$/);
+    writeFileSync(join(dir, 'image/proxy.mjs'), 'b');
+    expect(imageVersion(dir, '1.2.3')).not.toBe(first);
+  });
+});

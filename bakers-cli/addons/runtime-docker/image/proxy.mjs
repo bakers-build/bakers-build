@@ -48,18 +48,20 @@ export async function startProxy(o) {
     res.writeHead(403).end('only HTTPS (CONNECT) egress is allowed\n');
   });
   egress.on('connect', (req, socket, head) => {
+    // A client may reset any tunnel, refused ones included; unhandled, that kills every stream.
+    let upstream;
+    socket.on('error', () => upstream?.destroy());
     const { host, port } = splitHostPort(req.url ?? '');
     if (!host || !port || !allowed(host, o.allow)) {
       socket.end('HTTP/1.1 403 Forbidden\r\n\r\n');
       return;
     }
-    const upstream = connect(port, host, () => {
+    upstream = connect(port, host, () => {
       socket.write('HTTP/1.1 200 Connection Established\r\n\r\n');
       if (head.length) upstream.write(head);
       upstream.pipe(socket).pipe(upstream);
     });
     upstream.on('error', () => socket.end('HTTP/1.1 502 Bad Gateway\r\n\r\n'));
-    socket.on('error', () => upstream.destroy());
   });
   servers.push(egress);
   const ports = { egress: await listen(egress, o.ports?.egress ?? 0, bind) };

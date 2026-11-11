@@ -126,3 +126,32 @@ describe('startProxy', () => {
     expect(reply).toBe('ping');
   });
 });
+
+describe('startProxy after a refused CONNECT', () => {
+  it('survives a client that resets the connection after the 403', async () => {
+    const p = await proxy({ allow: [] });
+    const errors: unknown[] = [];
+    const onError = (e: unknown) => errors.push(e);
+    process.prependListener('uncaughtException', onError);
+    try {
+      await new Promise<void>((resolve) => {
+        const s = connect(p.ports.egress, '127.0.0.1', () =>
+          s.write(
+            'CONNECT evil.invalid:443 HTTP/1.1\r\nHost: evil.invalid\r\n\r\n',
+          ),
+        );
+        s.once('data', () => {
+          s.resetAndDestroy();
+          resolve();
+        });
+      });
+      await new Promise((r) => setTimeout(r, 100));
+      expect(await connectVia(p.ports.egress, 'evil.invalid:443')).toMatch(
+        / 403 /,
+      );
+    } finally {
+      process.off('uncaughtException', onError);
+    }
+    expect(errors).toEqual([]);
+  });
+});

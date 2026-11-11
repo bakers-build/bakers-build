@@ -13,8 +13,8 @@ paths. Machine scope only; add it to `~/.bakers/machine.config.js`:
 
 - A container cannot use your Claude login: export `CLAUDE_CODE_OAUTH_TOKEN` (from
   `claude setup-token`) or `ANTHROPIC_API_KEY` for the conductor. Without one, runs refuse to start.
-- The first run builds `bakers-runtime:<addon version>` from the shipped `image/Dockerfile`
-  (Claude Code only). Other harnesses need your own `with.image`.
+- The first run builds `bakers-runtime:<addon version>-<hash>` from the shipped `image/`
+  (Claude Code only); a changed image file rebuilds it. Other harnesses need your own `with.image`.
 
 ## Options
 

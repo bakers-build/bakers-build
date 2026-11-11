@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { RuntimePlugin } from '@bakers-build/conductor/contract';
@@ -44,6 +44,13 @@ export function pluginPaths(): { cliRoot: string; packageDir: string } {
   return { cliRoot, packageDir };
 }
 
+/** The shipped image's tag: the package version plus a hash of `image/`, so any change rebuilds it. */
+export function imageVersion(packageDir: string, version: string): string {
+  const dir = join(packageDir, 'image');
+  const files = readdirSync(dir).sort();
+  return `${version}-${shortHash(files.map((f) => f + readFileSync(join(dir, f), 'utf8')).join('\0'))}`;
+}
+
 export function runtimeDocker(
   options: RuntimeDockerOptions = {},
 ): RuntimePlugin {
@@ -63,7 +70,7 @@ export function runtimeDocker(
         logger,
         cliRoot,
         packageDir,
-        version,
+        version: imageVersion(packageDir, version),
         conductorKey: shortHash(config.config_path),
         ...(process.argv[1]
           ? { bakersEntry: realpathSync(process.argv[1]) }
