@@ -1185,10 +1185,12 @@ for path in mappings:
             print(f'  {rel}: a view mapping must emit {key}')
             rc = 1
     # D2 is about a TABLE's `body`/`head`. Other nodes in a view mapping fill slots legitimately (the
-    # board's toolbar and filters, a zone's content), so only a `body`/`head` key that follows a table
-    # node, before the next component node, counts. shortcut: text, not a parse - a sibling body/head
-    # key right after a table would trip it, tighten then.
-    if re.search(r':table"(?:(?!"component").)*?"(?:body|head)"\s*:', src, re.S):
+    # board's toolbar and filters, a zone's content), so only a `slots` block that follows a table
+    # node, before the next component node, and opens with `body`/`head` counts. shortcut: text, not a
+    # parse - a `body`/`head` slot key that is not the table's but sits before the next component node
+    # would trip it, tighten then.
+    if re.search(r':table"(?:(?!"component").)*?"slots"\s*:\s*\{(?:(?!"component").)*?"(?:body|head)"\s*:',
+                 src, re.S):
         print(f'  {rel}: a view mapping must not fill a table `body` or `head` slot (D2)')
         rc = 1
 
@@ -1344,11 +1346,13 @@ for mapping in sorted(glob.glob(f'{theme}/designbook/entity-mapping/*.jsonata'))
     # SUBSET, not equality: a Display Builder source (a PHP UI Patterns source such as
     # `bb_project_overview`) fills inner trees at runtime, so the generator places only the outer
     # components while the preview mapping must spell the inner ones out. What AC-1 needs is that every
-    # component the Drupal display places is previewed.
+    # component the Drupal display places is previewed. Accepted cost: a preview-only component in the
+    # mapping goes unnoticed. An empty generator still fails (an empty set is a subset of anything).
     mapped, synced = components_of(mapping), components_of(syncs[0])
-    if not synced <= mapped:
-        print(f'  {unit}: {os.path.basename(syncs[0])} places {sorted(synced - mapped)} '
-              f'which the mapping does not name (the mapping names {sorted(mapped)}) (AC-1)')
+    if not synced or not synced <= mapped:
+        print(f'  {unit}: {os.path.basename(syncs[0])} places {sorted(synced)}, the mapping names '
+              f'{sorted(mapped)}: the generator must place at least one component, all of them named '
+              f'by the mapping (AC-1)')
         rc = 1
 
 if pairs == 0:
