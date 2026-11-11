@@ -115,7 +115,7 @@ test("bakersTabs adds the Ticket button before the window buttons of Herdr's tab
 
 test("bakersTabs draws the Tickets count, the preview tab in italics and a dot on a ticket tab that needs you", () => {
   const out = bakersTabs(`${TAB_BAR}\n      .when(w?.buttons, el => el);`);
-  assert.match(out, /\.when\(bakersTab\(c\)\?\.preview, el => el\.italic\(\)\)/);
+  assert.match(out, /\.when\(bakersTab\(c\)\?\.preview, el => el\.italic\(\)\.font_family\("Helvetica Neue"\)\)/);
   assert.match(out, /bakersTab\(c\)\?\.count/);
   assert.match(out, /bakersTab\(c\)\?\.needs/);
   assert.match(out, /run\(bakersTab\(c\)\?\.ticket \? "bakers\.pin" : "tab\.rename", \{ id: c\.id \}\)/, "a double click pins a ticket tab instead of renaming it");

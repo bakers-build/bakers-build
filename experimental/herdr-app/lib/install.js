@@ -28,7 +28,8 @@ function bakersTab(c) {
 }
 `;
 const TAB_LABEL = ".child(div().max_w(170).truncate().child(c.zoomed ? `${name} Z` : name))";
-const BAKERS_LABEL = `.child(div().max_w(170).truncate().when(bakersTab(c)?.preview, el => el.italic()).child(c.zoomed ? \`\${name} Z\` : name))
+// Herdr's UI font has no italic face, so the preview tab's name takes one that has.
+const BAKERS_LABEL = `.child(div().max_w(170).truncate().when(bakersTab(c)?.preview, el => el.italic().font_family("Helvetica Neue")).child(c.zoomed ? \`\${name} Z\` : name))
         .when(bakersTab(c)?.count > 0, el => el.child(div().text_color(t.blocked).child(String(bakersTab(c).count))))
         .when(bakersTab(c)?.needs, el => el.child(div().size(6).rounded(3).bg(t.blocked)))`;
 const TAB_RENAME = 'run("tab.rename", { id: c.id })';

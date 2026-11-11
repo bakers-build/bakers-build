@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   isClosed, needsMe, planWaits, sidebarViews, viewLabel, statusLine, ticketRows,
-  tabName, tabTicket, ticketTab, listTab, listSteps, openSteps, focusedTicket, newlyNeeding, needsToast, askedComment, ticketTabsToClose,
+  tabName, tabTicket, ticketTab, listTab, listSteps, openSteps, focusedTicket, newlyNeeding, needsToast, askedComment, ticketTabsToClose, needsCard, commentRows,
 } from "../mods/bakers/derive.js";
 
 const NOW = 1_700_000_000_000;
@@ -186,4 +186,30 @@ test("ticketTabsToClose: only tabs that hold nothing but a ticket, so no run's t
   ];
   assert.deepEqual(ticketTabsToClose(space, panes, true), ["t3"]);
   assert.deepEqual(ticketTabsToClose(space, panes, false), ["t2", "t3"]);
+});
+
+test("needsCard: what the Needs you card says for a question, a problem or a plan", () => {
+  const comments = [
+    { id: "c1", type: "plan", created: new Date(NOW - 12 * 60_000).toISOString(), body: "# Plan" },
+    { id: "c2", type: "question", created: new Date(NOW - 35 * 60_000).toISOString(), body: "Redirect or empty-cart page?" },
+  ];
+  const asked = { frozen_at: new Date(NOW - 35 * 60_000).toISOString() };
+  assert.deepEqual(needsCard(asked, "Asked a question", comments, NOW), { kind: "question", title: "Asked a question, 35m ago", body: "Redirect or empty-cart page?", comment: "c2" });
+  assert.equal(needsCard(asked, "Technical problem", comments, NOW).title, "Reported a technical problem, 35m ago");
+  assert.deepEqual(needsCard({}, "Plan ready for approval", comments, NOW), {
+    kind: "plan", title: "Plan ready for approval", body: "Published 12m ago. Read it, then approve or ask for changes.", comment: "c1",
+  });
+  assert.equal(needsCard({ frozen_at: new Date(NOW).toISOString() }, "Asked a question", [], NOW).title, "Asked a question just now");
+  assert.equal(needsCard({}, null, comments, NOW), null);
+});
+
+test("commentRows: oldest first, you by name, plan and spec folded to their first line", () => {
+  const rows = commentRows([
+    { id: "b", type: "comment", author: "pg", created: new Date(NOW - 3600_000).toISOString(), body: "Agreed." },
+    { id: "a", type: "qualification", author: "cw", created: new Date(NOW - 7200_000).toISOString(), body: "## Outcome\n\nReproduced." },
+  ], "pg", NOW);
+  assert.deepEqual(rows, [
+    { id: "a", author: "cw", type: "qualification", age: "2h", body: "## Outcome\n\nReproduced.", first: "Outcome", folded: true },
+    { id: "b", author: "You", type: "comment", age: "1h", body: "Agreed.", first: "Agreed.", folded: false },
+  ]);
 });

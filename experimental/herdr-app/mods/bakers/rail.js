@@ -17,6 +17,7 @@ const COMMANDS = {
   panel: () => togglePanel(),
   pin: () => pinPreview(),
   open: (identifier) => openTicket(ticketOf(identifier) ?? { identifier, state: "open" }, true),
+  preview: (identifier) => openTicket(ticketOf(identifier) ?? { identifier, state: "open" }, false),
   view: (view) => openList(view),
 };
 

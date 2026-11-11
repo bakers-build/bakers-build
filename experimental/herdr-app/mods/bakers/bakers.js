@@ -43,6 +43,12 @@ export function makeClient(exec) {
     search: async (query, project) => (await tool("ticket_search", { query, project })).tickets ?? [],
     labels: (workspace) => all("label_list", "labels", { workspace }),
     me: () => tool("user_read"),
+    // label_list wants a workspace; bakers info names the ones this login reaches.
+    workspaces: async () => {
+      const result = await exec("bakers", ["info"]);
+      if (result.code !== 0) throw new Error(friendlyError(result.stderr || result.stdout));
+      return JSON.parse(result.stdout).workspace_ids ?? [];
+    },
     cancelRun: (ticket, reason) => tool("run_cancel", { ticket, reason }),
     update: (ticket, fields) => tool("ticket_update", { ticket, ...fields }),
     transition: (ticket, state) => tool("ticket_transition", { ticket, state }),

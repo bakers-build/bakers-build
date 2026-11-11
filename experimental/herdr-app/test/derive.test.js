@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   STATE_ORDER, stateLabel, terminalLabel, runTerminal, toUnix, ago,
   activeRun, newestComment, friendlyError, safeUrl, resolveProject, conductorLabel,
-  statusLabel, claudeColor, CONFIRM, machineIdOf,
+  statusLabel, claudeColor, machineIdOf,
 } from "../mods/bakers/derive.js";
 
 const NOW = 1_700_000_000_000;
@@ -95,18 +95,6 @@ test("claudeColor takes Claude Code's colors for the theme's brightness", () => 
   assert.equal(claudeColor("done", "#1e1e1e"), "#4eba65");
   assert.equal(claudeColor("blocked", "#ffffff"), "#5769f7");
   assert.equal(claudeColor("starting", "#1e1e1e"), null);
-});
-
-test("CONFIRM runs the confirmed action on the ticket", async () => {
-  const calls = [];
-  const client = { cancelRun: async (...a) => calls.push(["cancel", ...a]), update: async (...a) => calls.push(["update", ...a]) };
-  await CONFIRM.cancel.run(client, "u1", "Wrong branch");
-  await CONFIRM.freeze.run(client, "u1");
-  await CONFIRM.unfreeze.run(client, "u1");
-  assert.deepEqual(calls, [["cancel", "u1", "Wrong branch"], ["update", "u1", { frozen: true }], ["update", "u1", { frozen: false }]]);
-  assert.equal(CONFIRM.cancel.title("SHOP-56"), "Cancel the running run on SHOP-56?");
-  assert.equal(CONFIRM.cancel.reason, true);
-  assert.equal(CONFIRM.freeze.reason, undefined);
 });
 
 test("friendlyError reads the message of a bakers error object", () => {

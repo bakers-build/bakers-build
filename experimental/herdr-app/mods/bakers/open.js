@@ -30,6 +30,13 @@ export function togglePanel() {
   else showPanel();
 }
 
+// A run's terminal: its pane if it has one, else a pane right of the focused one (for good: closing it ends the run).
+export function showTerminal(address) {
+  const pane = panes().find((p) => p.terminal === address);
+  if (pane) run("pane.focus", { terminal: address });
+  else run("terminal.keep", { terminal: address, place: "right" });
+}
+
 export const dialog = (view, props, width = 480) => openOverlay({ mod: "bakers", kind: "dialog", width, props: { view, ...props } });
 export const popup = (view, props, width = 260) => openOverlay({ mod: "bakers", kind: "popup", width, props: { view, ...props } });
 

@@ -54,6 +54,16 @@ function running({ run, terminal, conductor, machine, machines, herdrMachines, n
   };
 }
 
+// A run's terminal that Herdr still shows after bakers closed the run: its live agent, which Show agent reaches.
+function alone(terminal) {
+  const where = /^t\d+$/.test(terminal.address) ? "this computer" : terminal.address.split("/")[0];
+  const title = `${agentName(terminal, null)} ${statusLabel(terminal.status ?? "idle")}`;
+  return {
+    kind: "run", status: terminal.status ?? "idle", title, detail: `on ${where}`, line: `${title} on ${where}`, cell: title, chip: null, note: null,
+    actions: [{ id: "show-agent", label: "Show agent" }],
+  };
+}
+
 // Why a ticket with a conductor has no run yet; full is derived (no queue field), so it says so.
 function waiting({ ticket, conductor, machine }) {
   const title = `Waiting for ${conductor ? conductorLabel(conductor) : "a conductor"}`;
@@ -72,6 +82,7 @@ export function agentSection({ ticket, run, terminal, conductors, machines, loca
   const conductor = (conductors ?? []).find((c) => c.uuid === (run?.conductor ?? ticket?.conductor));
   const machine = machineOf(conductor, machines, local);
   if (run) return running({ run, terminal, conductor, machine, machines, herdrMachines, nowMs });
+  if (terminal) return alone(terminal);
   if (ticket?.conductor && !moveFailed) return waiting({ ticket, conductor, machine });
   // A ticket from ticket_list has no conductor field: say only what is known.
   const idle = [

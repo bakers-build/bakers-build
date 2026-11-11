@@ -148,6 +148,38 @@ export function newestComment(comments, type) {
 
 export const askedComment = (comments) => newestComment(comments, "question") ?? newestComment(comments);
 
+// "Asked a question, 35m ago", "Asked a question just now".
+const since = (prefix, at, nowMs, comma = ",") => {
+  const age = at ? ago(toUnix(at), nowMs) : null;
+  return age === null ? prefix : age === "now" ? `${prefix} just now` : `${prefix}${comma} ${age} ago`;
+};
+
+const CARDS = {
+  "Asked a question": (ticket, comments, nowMs) => ({ kind: "question", title: since("Asked a question", ticket.frozen_at, nowMs), comment: askedComment(comments) }),
+  "Technical problem": (ticket, comments, nowMs) => ({ kind: "question", title: since("Reported a technical problem", ticket.frozen_at, nowMs), comment: askedComment(comments) }),
+  "Plan ready for approval": (_ticket, comments, nowMs) => {
+    const plan = newestComment(comments, "plan");
+    return { kind: "plan", title: "Plan ready for approval", comment: plan, body: `${since("Published", plan?.created, nowMs, "")}. Read it, then approve or ask for changes.` };
+  },
+};
+
+// The Needs you card at the top of a ticket tab: why, since when, and the comment it is about.
+export function needsCard(ticket, reason, comments, nowMs) {
+  const card = CARDS[reason]?.(ticket, comments, nowMs);
+  return card ? { kind: card.kind, title: card.title, body: card.body ?? card.comment?.body?.trim() ?? "", comment: card.comment?.id ?? null } : null;
+}
+
+const FULL = new Set(["comment", "question"]);
+const firstLine = (body) => String(body ?? "").split("\n").map((l) => l.replace(/^#+\s*/, "").trim()).find(Boolean) ?? "";
+
+// The comments thread, oldest first; plan, spec and summary comments fold to their first line.
+export const commentRows = (comments, me, nowMs) => [...(comments ?? [])]
+  .sort((a, b) => toUnix(a.created) - toUnix(b.created))
+  .map((c) => ({
+    id: c.id, author: c.author === me ? "You" : c.author, type: c.type, age: ago(toUnix(c.created), nowMs),
+    body: c.body, first: firstLine(c.body), folded: !FULL.has(c.type),
+  }));
+
 const TOASTS = { "Asked a question": "asks a question", "Technical problem": "reports a technical problem", "Plan ready for approval": "has a plan ready for approval" };
 
 export const newlyNeeding = (before, reasons) => (before ? Object.entries(reasons).filter(([id]) => !before.includes(id)) : []);
@@ -179,24 +211,6 @@ export function resolveProject(projects, value) {
 
 export const conductorLabel = (conductor) => conductor.label ?? conductor.conductor_id;
 
-export function machineOf(run, conductors, local) {
-  if (local) return "This computer";
-  const conductor = (conductors ?? []).find((c) => c.uuid === run?.conductor);
-  return conductor ? conductorLabel(conductor) : null;
-}
-
-// Who works on the ticket: its terminal in Herdr with the live status, else its active run in bakers.
-// Terminals on this computer have bare ids (t3); others carry their machine's name.
-export function agentOf(terminal, run, conductors, nowMs) {
-  if (!terminal && !run) return null;
-  return {
-    name: terminal?.name ?? run?.agent ?? "Agent",
-    status: terminal?.status ?? (run?.state === "claimed" ? "starting" : "working"),
-    where: machineOf(run, conductors, /^t\d+$/.test(terminal?.address ?? "")),
-    since: run?.started_at ? ago(toUnix(run.started_at), nowMs) : null,
-  };
-}
-
 export const statusLabel = (status) => (status === "blocked" ? "needs you" : status);
 
 // Claude Code's own colors: claude while working, permission when it needs you, inactive when idle, success when done.
@@ -209,28 +223,6 @@ export function claudeColor(status, background) {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(background.slice(i, i + 2), 16));
   return CLAUDE_COLORS[r + g + b < 384 ? "dark" : "light"][status] ?? null;
 }
-
-// What the confirm dialog says and does for each action on a ticket.
-export const CONFIRM = {
-  cancel: {
-    title: (id) => `Cancel the running run on ${id}?`,
-    body: (id, state) => `The agent stops in the run's terminal. Its work stays in the worktree and ${id} stays in ${state}, so it can run again.`,
-    yes: "Cancel run", busy: "Cancelling…", no: "Keep running", reason: true,
-    run: (client, ticket, reason) => client.cancelRun(ticket, reason),
-  },
-  freeze: {
-    title: (id) => `Freeze ${id}?`,
-    body: () => "No conductor picks it up while it is frozen.",
-    yes: "Freeze", busy: "Freezing…", no: "Keep",
-    run: (client, ticket) => client.update(ticket, { frozen: true }),
-  },
-  unfreeze: {
-    title: (id) => `Unfreeze ${id}?`,
-    body: () => "Conductors can pick it up again.",
-    yes: "Unfreeze", busy: "Unfreezing…", no: "Keep frozen",
-    run: (client, ticket) => client.update(ticket, { frozen: false }),
-  },
-};
 
 // This computer's machine_id, from the bakers machine config (read only, never written).
 export const machineIdOf = (source) => /\bmachine_id\s*:\s*["']([^"']+)["']/.exec(source ?? "")?.[1] ?? null;

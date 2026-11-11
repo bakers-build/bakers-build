@@ -116,3 +116,9 @@ test("agentSection: a ticket from the list has no conductor field, so it does no
   const s = agentSection({ ...base, ticket: { identifier: "SHOP-56", state: "plan", frozen: false } });
   assert.deepEqual([s.title, s.detail, s.line, s.cell], ["No active run", "", "No active run", "No active run"]);
 });
+
+test("agentSection: a run's terminal in Herdr that bakers no longer counts as active still shows its live agent", () => {
+  const s = agentSection({ ...base, ticket: ticket(), terminal: { address: "t13", status: "idle", name: "Claude Code" } });
+  assert.deepEqual([s.kind, s.status, s.title, s.detail, s.line], ["run", "idle", "Claude Code idle", "on this computer", "Claude Code idle on this computer"]);
+  assert.deepEqual(s.actions.map((a) => a.id), ["show-agent"]);
+});

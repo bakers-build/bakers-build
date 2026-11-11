@@ -91,3 +91,13 @@ test("writes send exactly their arguments", async () => {
     ["ticket_create", { title: "T", workflow: "bb_work", project: "p1" }],
   ]);
 });
+
+test("workspaces come from bakers info, for the label picker", async () => {
+  const calls = [];
+  const exec = async (cmd, args) => {
+    calls.push([cmd, args]);
+    return { code: 0, stdout: JSON.stringify({ project: null, workspace_ids: ["w1", "w2"] }), stderr: "" };
+  };
+  assert.deepEqual(await makeClient(exec).workspaces(), ["w1", "w2"]);
+  assert.deepEqual(calls, [["bakers", ["info"]]]);
+});
