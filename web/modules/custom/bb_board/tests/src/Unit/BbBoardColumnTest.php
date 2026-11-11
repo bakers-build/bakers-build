@@ -47,29 +47,57 @@ final class BbBoardColumnTest extends UnitTestCase {
   }
 
   /**
-   * Done attaches only when work_state names it.
-   *
-   * @return array<string, array{mixed, bool}>
-   *   Raw work_state query value and whether Done attaches.
+   * Details sub-columns paint between Working and Done.
    */
-  public static function showDoneInput(): array {
+  public function testAttachmentOrderWithDetails(): void {
+    $sorted = BbBoardColumn::sortAttachments([
+      ['#display_id' => 'done'],
+      ['#display_id' => 'working_review'],
+      ['#display_id' => 'backlog'],
+      ['#display_id' => 'working_plan'],
+      ['#display_id' => 'intake'],
+      ['#display_id' => 'working_working'],
+    ]);
+    self::assertSame(
+      ['backlog', 'intake', 'working_plan', 'working_working', 'working_review', 'done'],
+      array_column($sorted, '#display_id'),
+    );
+  }
+
+  /**
+   * Details on attaches the state sub-columns, off the Working column.
+   *
+   * @return array<string, array{string, bool, bool}>
+   *   Display id, Details on, and whether the display attaches.
+   */
+  public static function detailsInput(): array {
     return [
-      'done alone' => [['done'], TRUE],
-      'done among open' => [['not_assigned', 'intake', 'working', 'done'], TRUE],
-      'scalar done' => ['done', TRUE],
-      'missing' => [NULL, FALSE],
-      'open only' => [['not_assigned', 'intake', 'working'], FALSE],
-      'empty' => ['', FALSE],
-      'unrelated' => [['1'], FALSE],
+      'working, phases' => ['working', FALSE, TRUE],
+      'working, states' => ['working', TRUE, FALSE],
+      'plan, phases' => ['working_plan', FALSE, FALSE],
+      'plan, states' => ['working_plan', TRUE, TRUE],
+      'working state, states' => ['working_working', TRUE, TRUE],
+      'review, phases' => ['working_review', FALSE, FALSE],
+      'review, states' => ['working_review', TRUE, TRUE],
+      'not assigned, states' => ['backlog', TRUE, TRUE],
+      'intake, phases' => ['intake', FALSE, TRUE],
     ];
   }
 
   /**
-   * Absent or open-only work_state hides Done.
+   * Working or its sub-columns attach, never both.
    */
-  #[DataProvider('showDoneInput')]
-  public function testDoneAttachesWhenWorkStateNamesIt(mixed $raw, bool $expected): void {
-    self::assertSame($expected, BbBoardColumn::showsDone($raw));
+  #[DataProvider('detailsInput')]
+  public function testWorkingOrSubColumnsByDetails(string $display, bool $details, bool $expected): void {
+    self::assertSame($expected, BbBoardColumn::attaches($display, $details));
+  }
+
+  /**
+   * Done attaches with Details on and off; it is a column, not a filter.
+   */
+  public function testDoneAlwaysAttaches(): void {
+    self::assertTrue(BbBoardColumn::attaches('done', FALSE));
+    self::assertTrue(BbBoardColumn::attaches('done', TRUE));
   }
 
 }

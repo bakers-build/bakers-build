@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Drupal\bb_board\Hook;
 
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_board\BoardAddress;
 use Drupal\bb_board\BoardHealth;
+use Drupal\bb_board\BoardPreferences;
 use Drupal\search_api\Plugin\views\query\SearchApiQuery;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
 use Drupal\views\ViewExecutable;
@@ -18,17 +20,38 @@ use Drupal\views\ViewExecutable;
  */
 final class BoardViewsHooks {
 
+  /**
+   * The Done column's window: seven days, in seconds.
+   */
+  private const DONE_WINDOW = 604800;
+
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly BoardHealth $health,
+    private readonly BoardPreferences $preferences,
+    private readonly TimeInterface $time,
   ) {}
+
+  /**
+   * Implements hook_views_pre_view().
+   *
+   * The page display runs once per Board request; its columns read the
+   * stored preferences.
+   */
+  #[Hook('views_pre_view')]
+  public function viewsPreView(ViewExecutable $view, ?string $displayId): void {
+    if ($view->id() === 'project_board' && $displayId === 'project_board') {
+      $this->preferences->rememberRequest();
+    }
+  }
 
   /**
    * Implements hook_views_query_alter().
    *
    * The page's own search counts the open columns only; Done is a column, not
-   * a filter. The Unhealthy filter narrows every display to the attention set,
-   * and an empty set matches nothing, never everything.
+   * a filter, and shows the last seven days unless Show older asks for more.
+   * The Unhealthy filter narrows every display to the attention set, and an
+   * empty set matches nothing, never everything.
    */
   #[Hook('views_query_alter')]
   public function viewsQueryAlter(ViewExecutable $view, QueryPluginBase $query): void {
@@ -38,6 +61,9 @@ final class BoardViewsHooks {
     // Built already: a condition goes straight onto the Search API query.
     if ($view->current_display === 'project_board') {
       $query->createAndAddConditionGroup()->addCondition('work_state', BoardAddress::OPEN_WORK_STATES, 'IN');
+    }
+    if ($view->current_display === 'done' && !$this->preferences->doneOlder()) {
+      $query->createAndAddConditionGroup()->addCondition('closed_date', $this->time->getRequestTime() - self::DONE_WINDOW, '>=');
     }
     if (!$this->health->requested($view)) {
       return;

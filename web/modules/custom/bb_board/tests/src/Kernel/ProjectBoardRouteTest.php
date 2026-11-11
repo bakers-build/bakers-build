@@ -115,9 +115,9 @@ final class ProjectBoardRouteTest extends KernelTestBase {
   }
 
   /**
-   * The shipped view is four paged columns attached to the Board page.
+   * The shipped view is paged columns attached to the Board page.
    */
-  public function testTheShippedViewIsFourPagedColumns(): void {
+  public function testTheShippedViewIsPagedColumns(): void {
     $view = View::load('project_board');
     self::assertNotNull($view);
     $default = $view->getDisplay('default');
@@ -159,7 +159,7 @@ final class ProjectBoardRouteTest extends KernelTestBase {
     self::assertSame('some', $page['display_options']['pager']['type']);
     self::assertSame(1, $page['display_options']['pager']['options']['items_per_page']);
     $pagers = [];
-    foreach (['backlog', 'intake', 'working', 'done'] as $id) {
+    foreach (['backlog', 'intake', 'working', 'done', 'working_plan', 'working_working', 'working_review'] as $id) {
       $column = $view->getDisplay($id);
       self::assertSame('bb_board_column', $column['display_plugin']);
       self::assertSame('mini', $column['display_options']['pager']['type']);
@@ -171,7 +171,8 @@ final class ProjectBoardRouteTest extends KernelTestBase {
       );
       $pagers[] = $column['display_options']['pager']['options']['id'];
     }
-    self::assertSame([0, 1, 2, 3], $pagers);
+    // Every column pages on its own.
+    self::assertSame([0, 1, 2, 3, 4, 5, 6], $pagers);
     self::assertSame('Not assigned', $view->getDisplay('backlog')['display_options']['title']);
     self::assertSame('Not assigned', $view->getDisplay('backlog')['display_title']);
     $placement = [

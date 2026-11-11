@@ -1,0 +1,7 @@
+{# The Board's Working panel with Details on: its state sub-columns inside one
+   group column, drawn by the board's column macro.
+
+   @see \Drupal\bb_board\Hook\ProjectBoardColumnHooks::viewsPreRender()
+#}
+{% import 'bb_theme:board' as board %}
+{{ board.column(column) }}

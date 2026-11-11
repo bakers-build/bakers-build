@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_board;
 
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\views\ViewExecutable;
 
 /**
  * The Project Board address: chosen facets, parent focus and work states.
@@ -40,6 +41,14 @@ final class BoardAddress {
     private readonly array $query,
     private readonly array $input = [],
   ) {}
+
+  /**
+   * The address of a board view's request.
+   */
+  public static function fromView(ViewExecutable $view): self {
+    $request = $view->getRequest();
+    return new self($request->getBaseUrl() . $request->getPathInfo(), $request->query->all(), $view->getExposedInput());
+  }
 
   /**
    * Whether this address currently shows the Done column.

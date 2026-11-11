@@ -1,3 +1,3 @@
-{# The Views wrapper around one Project Board column: it takes an equal share
-   of the board's column row, so the four columns spread over its width. #}
-<div{{ attributes.addClass(['flex', 'flex-1', 'basis-38', 'min-w-38']) }}>{{ children }}</div>
+{# The Views wrapper around one Project Board column adds no box: the column
+   is the board row's item and sizes itself. #}
+{{ children }}

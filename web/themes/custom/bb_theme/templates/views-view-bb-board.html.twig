@@ -1,16 +1,12 @@
 {# The `bb_board` style hands over board-card props as `#rows`.
 
    Views style templates only receive view/options/rows/title, so the payload
-   uses that rows key. Column chrome (header, pager) lives on
-   `views-view--bb-board-column.html.twig`. A done card's facts (`done_*`,
+   uses that rows key. Column chrome (header, pager, the empty sentence) lives
+   on `views-view--bb-board-column.html.twig`. A done card's facts (`done_*`,
    `mr_*`) are board-card props; the card draws their footer itself.
 
    @see \Drupal\bb_core\Plugin\views\style\BbBoard
 #}
-{% if rows is empty %}
-  {{ include('bb_theme:empty-state', {message: 'No matching tickets.'|t}, with_context = false) }}
-{% else %}
-  {% for card in rows %}
-    {{ include('bb_theme:board-card', card, with_context = false) }}
-  {% endfor %}
-{% endif %}
+{% for card in rows %}
+  {{ include('bb_theme:board-card', card, with_context = false) }}
+{% endfor %}

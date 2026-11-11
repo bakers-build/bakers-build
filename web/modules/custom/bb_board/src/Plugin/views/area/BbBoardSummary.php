@@ -465,12 +465,7 @@ final class BbBoardSummary extends AreaPluginBase {
    * The board address of this request.
    */
   private function address(): BoardAddress {
-    $request = $this->view->getRequest();
-    return $this->address ??= new BoardAddress(
-      $request->getBaseUrl() . $request->getPathInfo(),
-      $request->query->all(),
-      $this->view->getExposedInput(),
-    );
+    return $this->address ??= BoardAddress::fromView($this->view);
   }
 
   /**
