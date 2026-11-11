@@ -1476,18 +1476,6 @@ display:
       cache:
         type: none
         options: {  }
-      header:
-        area_text_custom:
-          id: area_text_custom
-          table: views
-          field: area_text_custom
-          relationship: none
-          group_type: group
-          admin_label: 'Filter note'
-          plugin_id: text_custom
-          empty: true
-          content: 'not affected by ticket filters'
-          tokenize: false
       empty:
         area_text_custom:
           id: area_text_custom
@@ -1511,7 +1499,6 @@ display:
         style: false
         row: false
         cache: false
-        header: false
         empty: false
       display_extenders: {  }
     cache_metadata:

@@ -467,6 +467,10 @@ final class ProjectBoardViewTest extends KernelTestBase {
 
     $active = [(string) $this->fixture('a', 'bb_conductor')->label()];
     self::assertMatchesRegularExpression('/Active conductors not affected by ticket filters Conductor/', $this->text($plain));
+    $heading = (new Crawler($plain))->filter('h2[data-zone-heading]')->reduce(static fn (Crawler $h2): bool => trim($h2->text()) === 'Active conductors');
+    $note = $heading->nextAll()->filter('p')->each(static fn (Crawler $p): string => trim($p->text()));
+    self::assertSame(['not affected by ticket filters'], $note, 'The note is the zone description.');
+    self::assertSame(1, substr_count($plain, 'not affected by ticket filters'));
     self::assertSame($active, $this->conductorNames($plain));
     self::assertSame($active, $this->conductorNames($filtered), 'Ticket filters leave the conductors alone.');
     self::assertSame(1, $this->columns($plain)['Not assigned'] ?? NULL);

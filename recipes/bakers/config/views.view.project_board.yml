@@ -1678,6 +1678,10 @@ display:
                                               source_id: select
                                               source:
                                                 value: sm
+                                            description:
+                                              source_id: textfield
+                                              source:
+                                                value: 'not affected by ticket filters'
                                           slots:
                                             heading:
                                               sources:

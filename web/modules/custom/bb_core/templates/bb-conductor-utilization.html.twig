@@ -6,10 +6,11 @@
  * Available variables:
  * - label: Load text, e.g. "2 / 4 parallel runs" or "Unknown capacity".
  * - level: unknown, idle, partial or full.
- * - capacity: [current, max] of the linked machine, or NULL without one.
+ * - share: Filled share of the capacity, 0 to 100, or NULL when the capacity
+ *   is unknown or zero.
  */
 #}
 <span data-utilization="{{ level }}">{{ label }}</span>
-{%- if capacity %}
-  <meter min="0" max="{{ capacity[1] }}" value="{{ capacity[0] }}" aria-hidden="true"></meter>
+{%- if share is not null %}
+  <meter min="0" max="100" value="{{ share }}" aria-hidden="true"></meter>
 {%- endif %}

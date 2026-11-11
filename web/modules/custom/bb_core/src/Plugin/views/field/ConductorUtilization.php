@@ -16,9 +16,9 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  *
  * Views' `alter.text` rewrite yields "2/4" only as a plain string, so a full
  * conductor looks like an idle one in the DOM. This field emits "2 / 4
- * parallel runs" with a meter and a `data-utilization` level, the stable
- * contract tests bind to; without a linked machine it reads "Unknown
- * capacity" with neither number nor meter. The markup lives in
+ * parallel runs" with the filled share of the capacity and a
+ * `data-utilization` level; without a linked machine it reads "Unknown
+ * capacity" with neither number nor share. The markup lives in
  * `bb-conductor-utilization.html.twig`.
  *
  * Freshness is not folded in: the adjacent Heartbeat column carries it.
@@ -63,12 +63,13 @@ final class ConductorUtilization extends FieldPluginBase {
     if (!$conductor instanceof BbConductorInterface) {
       return '';
     }
-    $level = $this->conductorDeriver->nodeLoadLevel($conductor);
+    [$current, $max] = $this->conductorDeriver->nodeCapacity($conductor) ?? [0, 0];
     return [
       '#theme' => 'bb_conductor_utilization',
       '#label' => $this->conductorDeriver->nodeLoadLabel($conductor),
-      '#level' => $level,
-      '#capacity' => $this->conductorDeriver->nodeCapacity($conductor),
+      '#level' => $this->conductorDeriver->nodeLoadLevel($conductor),
+      // No share without a known capacity above zero.
+      '#share' => $max > 0 ? (int) round($current / $max * 100) : NULL,
     ];
   }
 

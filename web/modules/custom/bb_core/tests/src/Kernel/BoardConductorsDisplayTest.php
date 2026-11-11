@@ -58,15 +58,15 @@ final class BoardConductorsDisplayTest extends KernelTestBase {
   private UserInterface $member;
 
   /**
-   * The table carries the section title and the filter note.
+   * The display names the section; the filter note belongs to the Board zone.
    */
-  public function testNamesTheSectionAndItsNote(): void {
+  public function testNamesTheSectionWithoutTheNote(): void {
     $this->conductor('Alpha', $this->project);
     $view = Views::getView('conductors');
     $view->setDisplay('board');
 
     self::assertSame('Active conductors', (string) $view->getTitle());
-    self::assertSame('not affected by ticket filters', trim($this->table()->filter('header')->text()));
+    self::assertStringNotContainsString('not affected by ticket filters', $this->table()->html());
   }
 
   /**
@@ -149,12 +149,32 @@ final class BoardConductorsDisplayTest extends KernelTestBase {
     $load = $this->cell('Alpha', 'Load');
 
     self::assertSame('Unknown capacity', trim($load->text()));
-    self::assertCount(0, $load->filter('meter'), 'No meter without a capacity.');
+    self::assertCount(1, $load->filter('[data-utilization="unknown"]'));
+    self::assertCount(0, $load->filter('meter, svg'), 'No bar without a capacity.');
     self::assertDoesNotMatchRegularExpression('/\d|%/', $load->text());
   }
 
   /**
-   * With a machine, Load shows current / max parallel runs and a meter.
+   * A machine that allows no parallel run has no share to draw.
+   */
+  public function testLoadDrawsNoBarWithoutParallelRuns(): void {
+    $machine = $this->create('bb_machine', [
+      'name' => 'Host',
+      'host_key' => 'host-zero',
+      'owner_user_id' => $this->member->id(),
+      'max_parallel' => 0,
+      'current_load' => 0,
+    ]);
+    $this->conductor('Alpha', $this->project, ['machine' => $machine->id()]);
+
+    $load = $this->cell('Alpha', 'Load');
+
+    self::assertSame('0 / 0 parallel runs', trim($load->text()));
+    self::assertCount(0, $load->filter('meter, svg'), 'No bar without a capacity.');
+  }
+
+  /**
+   * With a machine, Load is the table's meter cell: a bar and its words.
    */
   public function testLoadShowsParallelRunsWithMachine(): void {
     $machine = $this->create('bb_machine', [
@@ -168,11 +188,12 @@ final class BoardConductorsDisplayTest extends KernelTestBase {
 
     $load = $this->cell('Alpha', 'Load');
 
-    self::assertStringContainsString('2 / 3 parallel runs', preg_replace('/\s+/', ' ', $load->text()));
-    $meter = $load->filter('meter');
-    self::assertCount(1, $meter);
-    self::assertSame('2', $meter->attr('value'));
-    self::assertSame('3', $meter->attr('max'));
+    self::assertSame('2 / 3 parallel runs', trim($load->text()));
+    self::assertCount(1, $load->filter('[data-utilization="partial"]'));
+    self::assertCount(0, $load->filter('meter'), 'No native meter widget.');
+    $bar = $load->filter('svg[aria-hidden="true"] rect');
+    self::assertCount(2, $bar, 'The track and the filled share.');
+    self::assertSame('67', $bar->eq(1)->attr('width'));
   }
 
   /**
