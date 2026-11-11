@@ -47,7 +47,38 @@ addons: [
 ],
 ```
 
-No `with` options are required. [Options and layouts](/addons/herdr/options) owns all defaults, placeholders, panes and launch timeouts. The herdr executor also runs on another workspace's worktree, and a machine can replace it with its own executor; see [Conductor slots](/addons/slots).
+No `with` options are required. [Options](#options) owns all defaults, placeholders, panes and launch timeouts. The herdr executor also runs on another workspace's worktree, and a machine can replace it with its own executor; see [Conductor slots](/addons/slots).
+
+## Options
+
+These optional `with` values control worktrees and terminal layouts. Merge the example into the existing project addon entry; preserve other addons:
+
+```js
+addons: [
+  '@bakers-build/addon-remote-drupal',
+  {
+    use: '@bakers-build/addon-herdr',
+    with: {
+      worktree_dir: '.bakers-worktrees',
+      open: {},
+      default: { panel_label: '{title}' },
+      states: {
+        review: { panes: [{ direction: 'right', command: 'git diff --stat' }] },
+      },
+    },
+  },
+],
+```
+
+<!-- @options @bakers-build/addon-herdr -->
+
+`auto_setup_merge` behaves as in [workspace-git](/addons/workspace-git#options).
+
+A `panes` array replaces the previous one. The open layout runs once, after `after_create`, for a freshly created worktree; the executor applies it, also to a worktree another workspace made ([Conductor slots](/addons/slots)). Top-level `states` chooses what is served, while `with.states` only lays out panes.
+
+The agent command is executed by non-interactive `/bin/sh`, so the harness binary must resolve through `PATH`. A shell alias or function is not loaded.
+
+Restart the conductor after changing options, then dispatch a disposable ticket and confirm its tab, panes and worktree.
 
 ## Verify
 

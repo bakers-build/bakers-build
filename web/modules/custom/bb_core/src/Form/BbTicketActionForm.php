@@ -13,7 +13,7 @@ use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\island\Form\WrappedDialogFormTrait;
 
 /**
- * Confirms an intervention: freeze, unfreeze, cancel a ticket or a run.
+ * Confirms an intervention: restart, freeze, unfreeze, cancel a ticket or run.
  *
  * Opened from the detail page's Properties footer or a run row, as a dialog
  * over the ticket with JavaScript and as a plain page without it. The page
@@ -82,15 +82,7 @@ final class BbTicketActionForm extends EntityForm {
       return $this->freezeConfirmation($ticket);
     }
     if ($run !== NULL && TicketInterventions::mayCancelRun($run, $ticket)) {
-      return [
-        $this->t('Run #@run stops. The ticket stays in its current state, and the conductor may start another run.', [
-          '@run' => $run->id(),
-        ]),
-        $this->actionButton('bb_confirm', (string) $this->t('Cancel run'), [
-          'kind' => 'run',
-          'run' => $run->uuid(),
-        ], 'danger'),
-      ];
+      return $this->runConfirmation($ticket, $run);
     }
     $asks_for_run = $this->getRequest()->query->get(TicketInterventions::RUN_PARAMETER) !== NULL;
     if ($asks_for_run || !TicketInterventions::mayCancelTicket($ticket)) {
@@ -106,6 +98,37 @@ final class BbTicketActionForm extends EntityForm {
         '@ticket' => $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label(),
       ]),
       $this->actionButton('bb_confirm', (string) $this->t('Cancel ticket'), $action, 'danger'),
+    ];
+  }
+
+  /**
+   * The Cancel run question and button, or Restart for a parked ticket's run.
+   *
+   * @return array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: array<string, mixed>}
+   *   The question and the button.
+   */
+  private function runConfirmation(BbTicketInterface $ticket, BbRunInterface $run): array {
+    // Only the newest failed run of a parked ticket may be cancelled.
+    if ($run->getRunState() === 'failed') {
+      return [
+        $this->t('@ticket can be claimed again on the next cycle. Its newest failed run #@run becomes cancelled; every run keeps its error log.', [
+          '@ticket' => $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label(),
+          '@run' => $run->id(),
+        ]),
+        $this->actionButton('bb_confirm', (string) $this->t('Restart ticket'), [
+          'kind' => 'restart',
+          'run' => $run->uuid(),
+        ], 'neutral'),
+      ];
+    }
+    return [
+      $this->t('Run #@run stops. The ticket stays in its current state, and the conductor may start another run.', [
+        '@run' => $run->id(),
+      ]),
+      $this->actionButton('bb_confirm', (string) $this->t('Cancel run'), [
+        'kind' => 'run',
+        'run' => $run->uuid(),
+      ], 'danger'),
     ];
   }
 
@@ -202,7 +225,7 @@ final class BbTicketActionForm extends EntityForm {
       return;
     }
     $target = match ($action['kind']) {
-      'run' => $this->cancellableRun($action['run'], $ticket),
+      'run', 'restart' => $this->cancellableRun($action['run'], $ticket),
       'freeze' => $this->freezeTarget($action, $ticket),
       default => $this->transitionTarget($action, $ticket),
     };
@@ -243,6 +266,7 @@ final class BbTicketActionForm extends EntityForm {
     $label = $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label();
     return match ($action['kind']) {
       'run' => (string) $this->t('The run was cancelled.'),
+      'restart' => (string) $this->t('@ticket was restarted.', ['@ticket' => $label]),
       'freeze' => $action['frozen'] === '1'
         ? (string) $this->t('@ticket is frozen.', ['@ticket' => $label])
         : (string) $this->t('@ticket is no longer frozen.', ['@ticket' => $label]),
@@ -281,7 +305,7 @@ final class BbTicketActionForm extends EntityForm {
     if ($run === NULL || !TicketInterventions::mayCancelRun($run, $ticket)) {
       return NULL;
     }
-    TicketInterventions::runState($run)->applyTransitionById(TicketInterventions::CANCEL);
+    TicketInterventions::runState($run)->applyTransitionById(TicketInterventions::cancelTransition($run));
     return $run;
   }
 

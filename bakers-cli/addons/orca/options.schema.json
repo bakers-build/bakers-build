@@ -6,49 +6,65 @@
   "properties": {
     "command": {
       "type": "string",
-      "description": "Fallback agent command when the conductor supplies none. Default `claude`."
+      "description": "Fallback agent command when the agent addons supply none.",
+      "default": "claude"
     },
     "open": {
       "type": "object",
-      "description": "Overview terminal of a fresh worktree; `{}` opens nothing. Templates expand {identifier}, {branch}, {title}, {worktree_path}.",
+      "description": "Overview terminal of a fresh worktree; when omitted it runs `bakers ui --ticket {identifier}` titled `{identifier} · {title}`, `{}` opens none. Templates expand {identifier}, {branch}, {title}, {worktree_path}.",
       "properties": {
         "command": {
-          "type": "string"
+          "type": "string",
+          "description": "Command of the overview terminal.",
+          "default": "bakers ui --ticket {identifier}"
         },
         "title": {
-          "type": "string"
+          "type": "string",
+          "description": "Title of the overview terminal.",
+          "default": "{identifier} · {title}"
         }
       },
       "additionalProperties": false
     },
     "root": {
       "type": "string",
-      "description": "Main clone; otherwise derived from the git common dir."
+      "description": "Main clone path; derived from Git's common directory when omitted."
     },
     "default": {
-      "$ref": "#/$defs/state"
+      "$ref": "#/$defs/state",
+      "description": "Agent terminal settings for every run; a `states` entry beats it."
     },
     "states": {
       "type": "object",
       "additionalProperties": {
         "$ref": "#/$defs/state"
+      },
+      "description": "Agent terminal settings per workflow state.",
+      "propertyNames": {
+        "title": "state"
       }
     },
     "launch_watch": {
       "type": "object",
-      "description": "Launch-watch windows: wait start_timeout_ms (default 60000) for the wrapper to start, then timeout_ms (default 4000) in which an immediate agent exit fails the launch.",
+      "description": "Launch-watch windows: how long a start may take and how soon an agent exit counts as a failed launch.",
       "properties": {
         "timeout_ms": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "Window after start in which an immediate agent exit fails the launch; 0 skips it.",
+          "default": 4000
         },
         "start_timeout_ms": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "How long the launch waits for the wrapper to report the start.",
+          "default": 60000
         },
         "poll_ms": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "Polling interval of both windows.",
+          "default": 50
         }
       },
       "additionalProperties": false
@@ -56,19 +72,22 @@
     "adopt_timeout_ms": {
       "type": "integer",
       "minimum": 0,
-      "description": "How long to wait for Orca to adopt a worktree. Default 35000."
+      "description": "How long to wait for Orca to adopt a new worktree.",
+      "default": 35000
     },
     "worktree_dir": {
       "type": "string",
-      "description": "Directory (relative to root, or absolute) for new worktrees. Default `.bakers-worktrees`."
+      "description": "Directory for new worktrees, relative to `root` or absolute.",
+      "default": ".bakers-worktrees"
     },
     "base_branch": {
       "type": "string",
-      "description": "Base ref for new branches. Default: the upstream of the root's HEAD."
+      "description": "Base ref for new branches; when omitted, the remote-tracking branch of the checked-out branch."
     },
     "auto_setup_merge": {
       "type": "boolean",
-      "description": "`true` leaves Git's branch.autoSetupMerge alone. Default `false`."
+      "description": "`false` sets Git's `branch.autoSetupMerge=false` in the root repository, so run branches have no upstream and push with `push.default=current` (see workspace-git); `true` leaves Git alone.",
+      "default": false
     }
   },
   "additionalProperties": false,
@@ -79,10 +98,12 @@
         "tab_label": {
           "type": "string",
           "pattern": "\\{identifier\\}",
-          "description": "Terminal title template; must contain {identifier}. Also {state}, {title}, {title_slug}, {run_uuid}, {workspace_path}."
+          "description": "Agent terminal title; must contain {identifier}, also expands {state}, {title}, {title_slug}, {run_uuid}, {workspace_path}. ` #<run id>` is always appended.",
+          "default": "{identifier} · {state}"
         }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "description": "Agent terminal settings of a run."
     }
   }
 }

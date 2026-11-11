@@ -68,6 +68,18 @@ A ticket without a worktree on that machine gets no hook and no marker. The cond
 
 `on_resume` runs whenever a ticket leaves the conductor's frozen list, so closing or reassigning a frozen ticket whose worktree still exists runs it too. A conductor follows its first 50 frozen tickets; any beyond that get no hooks. The server records the freeze time in `frozen_at`; clients cannot write it.
 
+## Restart a parked ticket
+
+A ticket is **parked** when its 3 most recent runs all failed and the newest of them changed within the last 2 hours, typically because the environment did not start (DDEV, credentials, the host). Conductors skip it and its Stall reads `failing`. It becomes claimable again by itself 2 hours after the last failure, or at once with a restart.
+
+Once the cause is fixed, open the ticket page and choose **Restart ticket** in the Properties footer, or cancel through the tool:
+
+```sh
+bakers tools tool_api__bakers_run_cancel --data '{"ticket":"<identifier>","reason":"environment fixed"}'
+```
+
+A restart sets the newest failed run to `cancelled`, so the 3 most recent runs are no longer all failed and the next claim succeeds. Every run stays with its error log; the tool appends the reason to that run's log. Restart needs update access to the ticket and is offered only while the ticket is parked; on a ticket that is neither parked nor running, the tool refuses and changes nothing. Three new failures park the ticket again.
+
 ## Blockers, parents and branches
 
 - **Blocked by.** A ticket is not dispatched while any ticket in `blocked_by` is open.

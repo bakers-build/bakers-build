@@ -56,7 +56,7 @@ The loop repeats every `poll_interval_ms` (default 5000). Each cycle:
 3. Reaps worktrees of closed tickets that were not cleaned up.
 4. Claims tickets one at a time while the machine is below its run budget, and dispatches each: it ensures the worktree under `.bakers-worktrees/`, prepares it through [`after_create`](/configuration/project/hooks#when-each-hook-runs) when needed, lays out a fresh worktree's overview tab, runs `before_run` and starts the agent session detached.
 
-A cycle never writes ticket state; the agent does that. A dispatch error marks that run `failed` with the error; after repeated failures the server parks the ticket behind a circuit breaker.
+A cycle never writes ticket state; the agent does that. A dispatch error marks that run `failed` with the error; after repeated failures the server parks the ticket behind a circuit breaker until it [is restarted](/addons/bakers-ui/tickets#restart-a-parked-ticket) or 2 hours pass.
 
 `once` runs one cycle without looping. With `--log-level debug` it shows whether it claimed, was at capacity or found nothing. It never says why a given ticket was passed over, because an ineligible ticket is simply not a candidate.
 

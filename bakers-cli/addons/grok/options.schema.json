@@ -4,11 +4,26 @@
   "title": "@bakers-build/addon-grok options",
   "$ref": "https://bakers.build/schema/harness-options.schema.json",
   "properties": {
-    "permissions": { "enum": ["sandbox", "system", "yolo"] },
+    "permissions": {
+      "enum": [
+        "sandbox",
+        "system",
+        "yolo"
+      ]
+    },
     "config": false,
     "reasoning_effort": {
       "type": "string",
       "description": "Reasoning effort (high, medium, low); effort wins when both are set."
+    },
+    "model": {
+      "description": "Passed as `--model`, else the CLI's default."
+    },
+    "effort": {
+      "description": "Passed as `--reasoning-effort`; overrides `reasoning_effort`."
+    },
+    "args": {
+      "description": "Extra arguments, each shell-quoted; explicit model flags win."
     }
   },
   "unevaluatedProperties": false

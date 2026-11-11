@@ -64,6 +64,10 @@ bb_run:
     # `CANCELLABLE_RUN_STATES` in the cockpit's run edit form mirrors this list
     # by hand — widen both together.
     cancel: { label: Cancel, from: [claimed, running], to: cancelled }
+    # Restart: a ticket editor cancels the newest failed run of a ticket the
+    # failed-run circuit breaker parked, so its next claim succeeds. The run
+    # and its error log stay; `TicketInterventions::parkedRun()` picks it.
+    cancel_failed: { label: 'Cancel failed run', from: [failed], to: cancelled }
 
 bb_review:
   id: bb_review

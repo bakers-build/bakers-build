@@ -9,7 +9,9 @@
     "transport": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["use"],
+      "required": [
+        "use"
+      ],
       "properties": {
         "use": {
           "type": "string",
@@ -19,14 +21,18 @@
         "with": {
           "description": "The transport package's own settings, checked by that package's options.schema.json."
         }
-      }
+      },
+      "description": "The tunnel transport; required for `bakers ports up`, `down`, `reap` and the Share tunnels message."
     },
     "services": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["key", "match"],
+        "required": [
+          "key",
+          "match"
+        ],
         "properties": {
           "key": {
             "type": "string",
@@ -39,17 +45,20 @@
             "description": "A command-line substring of the process."
           }
         }
-      }
+      },
+      "description": "Host processes shared as services; see Shared processes."
     },
     "all_node": {
-      "type": "boolean"
+      "type": "boolean",
+      "description": "Share every Node process; see Shared processes."
     },
     "claimers": {
       "type": "array",
       "items": {
         "type": "string",
         "minLength": 1
-      }
+      },
+      "description": "Runtime claimer packages; see Shared processes."
     }
   }
 }

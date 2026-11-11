@@ -11,7 +11,7 @@ variant (the config file's stem): bakers derives its `conductor_id` as
 
 The herdr executor runs the agent command with non-interactive `sh`. The harness
 binary must resolve through `PATH`; a shell alias or function is not loaded.
-See [Conductor configuration](../docs/addons/herdr/options.md).
+See [Conductor configuration](../docs/addons/herdr.md#options).
 
 Interactive conductor starts may offer to install a newer CLI and migrate configuration.
 The prompt, cache window, rerun, and `--no-update-check` opt-out are in

@@ -93,6 +93,63 @@ final class RunCancelToolTest extends BakersToolTestBase {
   }
 
   /**
+   * On a parked ticket the newest failed run is cancelled; every run stays.
+   */
+  public function testParkedTicketCancelsNewestFailedRun(): void {
+    $ticket = $this->ticket('RUN-6');
+    $runs = $this->seedFailedRuns($ticket, 3);
+    $newest = $runs[2];
+
+    $outputs = $this->outputs($this->runTool('bakers_run_cancel', [
+      'ticket' => $ticket->getIdentifier(),
+      'reason' => 'ddev fixed',
+    ]));
+
+    self::assertSame([$newest->uuid()], $outputs['runs']);
+    foreach ($runs as $run) {
+      $stored = $this->reloadRun($run);
+      self::assertSame($run->id() === $newest->id() ? 'cancelled' : 'failed', $stored->getRunState());
+      self::assertStringContainsString('ddev start failed', (string) $stored->getErrorLog());
+    }
+    self::assertStringContainsString('cancelled by actor: ddev fixed', (string) $this->reloadRun($newest)->getErrorLog());
+    self::assertFalse($this->container->get('bb_core.failed_run_circuit_breaker')->isTripped($ticket));
+  }
+
+  /**
+   * Failed runs that do not park the ticket are not cancelled.
+   */
+  public function testUnparkedFailedRunsAreRefused(): void {
+    $ticket = $this->ticket('RUN-7');
+    $runs = $this->seedFailedRuns($ticket, 2);
+
+    $this->assertFailure($this->runTool('bakers_run_cancel', ['ticket' => $ticket->getIdentifier(), 'reason' => 'stop']), 'has no active run');
+    foreach ($runs as $run) {
+      self::assertSame('failed', $this->reloadRun($run)->getRunState());
+    }
+  }
+
+  /**
+   * A reader who may not edit the ticket cannot restart a parked ticket.
+   */
+  public function testReaderMayNotRestartParkedTicket(): void {
+    $ticket = $this->ticket('RUN-8');
+    $runs = $this->seedFailedRuns($ticket, 3);
+    $etm = $this->container->get('entity_type.manager');
+    $etm->getStorage('user_role')->create(['id' => 'viewer', 'label' => 'Viewer'])->save();
+    user_role_grant_permissions('viewer', ['view bb_ticket', 'view bb_project']);
+    $reader = $this->account('reader', ['viewer']);
+    foreach ($etm->getStorage('bb_team')->loadByProperties(['name' => 'tool-team']) as $team) {
+      $this->addMembership($team, $reader);
+    }
+    $this->container->get('current_user')->setAccount($reader);
+
+    $this->assertFailure($this->runTool('bakers_run_cancel', ['ticket' => $ticket->getIdentifier(), 'reason' => 'stop']), 'may not cancel run');
+    foreach ($runs as $run) {
+      self::assertSame('failed', $this->reloadRun($run)->getRunState());
+    }
+  }
+
+  /**
    * The agent, acting as its conductor's owner, cancels its own run.
    */
   public function testAgentCancelsItsOwnRun(): void {
@@ -271,6 +328,32 @@ final class RunCancelToolTest extends BakersToolTestBase {
     assert($run instanceof BbRunInterface);
     $run->save();
     return $run;
+  }
+
+  /**
+   * Creates failed runs of the ticket on one conductor, oldest first.
+   *
+   * @return list<\Drupal\bb_core\Entity\BbRunInterface>
+   *   The runs.
+   */
+  private function seedFailedRuns(BbTicketInterface $ticket, int $count): array {
+    $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
+      'conductor_id' => 'failing-node',
+      'label' => 'failing-node',
+      'owner_user_id' => $this->account('machine-owner')->id(),
+      'status' => 'online',
+      'project_id' => $this->project->id(),
+    ]);
+    assert($conductor instanceof ContentEntityInterface);
+    $conductor->save();
+    $runs = [];
+    for ($i = 0; $i < $count; $i++) {
+      $run = $this->runOn($ticket, $conductor, 'failed');
+      $run->setErrorLog('ddev start failed');
+      $run->save();
+      $runs[] = $run;
+    }
+    return $runs;
   }
 
   /**
