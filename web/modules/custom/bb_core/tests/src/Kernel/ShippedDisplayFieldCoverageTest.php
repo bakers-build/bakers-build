@@ -38,7 +38,12 @@ final class ShippedDisplayFieldCoverageTest extends KernelTestBase {
   public function testShippedDisplaysListEveryConfigurableField(): void {
     $entity_type_manager = $this->container->get('entity_type.manager');
     $field_manager = $this->container->get('entity_field.manager');
-    $files = glob(dirname(DRUPAL_ROOT) . '/recipes/bakers/config/core.entity_{view,form}_display.*.yml', GLOB_BRACE) ?: [];
+    // Two plain globs: musl-based PHP images lack brace expansion.
+    $dir = dirname(DRUPAL_ROOT) . '/recipes/bakers/config/';
+    $files = array_merge(
+      glob($dir . 'core.entity_view_display.*.yml') ?: [],
+      glob($dir . 'core.entity_form_display.*.yml') ?: [],
+    );
     self::assertNotEmpty($files);
 
     $missing = [];
