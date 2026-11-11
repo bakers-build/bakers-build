@@ -51,6 +51,7 @@ export function tailscaleHook(options: TailscaleOptions): HookListener {
       if (address === undefined) return;
       const url = `ssh://${user}@${address}:${port}`;
       if (isValidMachineConnectionUrl(url)) machine.connection_url = url;
+      else console.warn('tailscale: invalid_url');
     },
   };
 }

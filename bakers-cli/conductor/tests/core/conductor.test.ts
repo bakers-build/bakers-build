@@ -373,6 +373,73 @@ describe('Conductor', () => {
     }
   });
 
+  it.each([
+    false,
+    true,
+  ])('sends a configured connection address only at serve start (serve=%s)', async (serve) => {
+    const remote = new FakeBbRemote();
+    const register = vi.spyOn(remote, 'registerConductor');
+    const heartbeat = vi.spyOn(remote, 'heartbeat');
+    const conductor = new TestConductor(
+      makeConfig({ connection_url: 'https://manual.example' }),
+      remote,
+      new RecordingExecutor(),
+      new FakeWorkspace(),
+      resolved(fakeAgent),
+      spyLogger().log,
+      CHECKOUT,
+    );
+    if (serve) conductor.claimServeProcess();
+    await conductor.start();
+    await conductor.tick();
+    expect(register.mock.calls[0][0].connection_url).toBe(
+      serve ? 'https://manual.example' : undefined,
+    );
+    expect(heartbeat.mock.calls.length).toBeGreaterThan(0);
+    for (const [reg] of heartbeat.mock.calls)
+      expect(reg).not.toHaveProperty('connection_url');
+  });
+
+  it('starts without the connection address when the server refuses it', async () => {
+    const remote = new FakeBbRemote();
+    const register = vi
+      .spyOn(remote, 'registerConductor')
+      .mockRejectedValueOnce(new Error('422 Unprocessable Content'));
+    const conductor = new TestConductor(
+      makeConfig({ connection_url: 'https://manual.example' }),
+      remote,
+      new RecordingExecutor(),
+      new FakeWorkspace(),
+      resolved(fakeAgent),
+      spyLogger().log,
+      CHECKOUT,
+    );
+    conductor.claimServeProcess();
+    await conductor.start();
+    expect(register).toHaveBeenCalledTimes(2);
+    expect(register.mock.calls[1][0]).not.toHaveProperty('connection_url');
+    expect(register.mock.calls[1][0].id).toBe(register.mock.calls[0][0].id);
+  });
+
+  it('does not retry a refused registration that carried no connection address', async () => {
+    const remote = new FakeBbRemote();
+    const register = vi
+      .spyOn(remote, 'registerConductor')
+      .mockRejectedValueOnce(new Error('refused'));
+    const conductor = new TestConductor(
+      makeConfig(),
+      remote,
+      new RecordingExecutor(),
+      new FakeWorkspace(),
+      resolved(fakeAgent),
+      spyLogger().log,
+      CHECKOUT,
+    );
+    conductor.claimServeProcess();
+    await expect(conductor.start()).rejects.toThrow('refused');
+    expect(register).toHaveBeenCalledTimes(1);
+  });
+
   // BB-663: the after_create bootstrap record lives beside the shared
   // CHECKOUT config file, keyed by worktree path, not inside the worktree.
   // Clear it before every test so one test's recorded outcome for a fixed

@@ -461,10 +461,27 @@ export class Conductor {
           (reason) => this.logger.warn({ conductorId: this.id }, reason),
         )
       : {};
-    this.uuid = await this.remote.registerConductor({
-      ...registration,
-      ...machine,
-    });
+    try {
+      this.uuid = await this.remote.registerConductor({
+        ...registration,
+        ...machine,
+      });
+    } catch (err) {
+      if (typeof machine.connection_url !== 'string') throw err;
+      // A server that refuses the address must not stop the start; without
+      // the field the stored address stays unchanged.
+      // Value-free: the error may quote the address.
+      this.logger.warn(
+        { conductorId: this.id },
+        'registration failed with the connection URL; retrying without it',
+      );
+      const rest = { ...machine };
+      delete rest.connection_url;
+      this.uuid = await this.remote.registerConductor({
+        ...registration,
+        ...rest,
+      });
+    }
     this.logger.info(
       { conductorId: this.id, uuid: this.uuid, project: this.config.project },
       'conductor started',

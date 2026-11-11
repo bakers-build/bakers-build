@@ -18,7 +18,8 @@ final class MachineConnectionUrl {
       || preg_match('/[^\x21-\x7e]|\\\\/', $value)
       || preg_match('/%(?![0-9a-f]{2})/i', $value)
       || !mb_check_encoding(rawurldecode($value), 'UTF-8')
-      || preg_match('/[\s\p{Cc}]/u', rawurldecode($value))) {
+      // U+FEFF: JavaScript's \s in the CLI covers it, PCRE's does not.
+      || preg_match('/[\s\p{Cc}\x{FEFF}]/u', rawurldecode($value))) {
       return FALSE;
     }
     if (!preg_match('~^(ssh|https)://([^/?#]+)(.*)\z~i', $value, $parts)) {

@@ -138,6 +138,10 @@ final class MachineEntityTest extends KernelTestBase {
       'ssh://user%zz@host',
       'ssh://user%00@host',
       'ssh://user%20name@host',
+      // Whitespace the JavaScript and PCRE classes disagree on.
+      'https://host/%E1%A0%8E',
+      'ssh://u%E1%A0%8E@host',
+      'https://host/%EF%BB%BF',
       "ssh://host\n",
       'https://host/%zz',
       'https://host/' . str_repeat('a',

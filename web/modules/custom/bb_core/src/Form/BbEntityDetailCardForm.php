@@ -339,7 +339,7 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
     }
     $value = trim($list->getString());
     if ($list->getName() === 'connection_url' && $value !== '') {
-      return ['kind' => 'link', 'value' => $value, 'url' => $value];
+      return ['kind' => 'link', 'value' => $value, 'url' => $value, 'external' => TRUE];
     }
     return $value === '' ? $empty : ['kind' => 'text', 'value' => $value];
   }

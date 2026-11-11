@@ -12,7 +12,8 @@ export function isValidMachineConnectionUrl(value: unknown): value is string {
   const parts = /^(ssh|https):\/\/([^/?#]+)(.*)$/i.exec(value);
   if (!parts) return false;
   try {
-    if (/[\s\p{Cc}]/u.test(decodeURIComponent(value))) return false;
+    // U+180E: PCRE's \s on the server covers it, JavaScript's does not.
+    if (/[\s\p{Cc}\u180e]/u.test(decodeURIComponent(value))) return false;
     const [, scheme = '', authority = '', tail] = parts;
     const ssh = scheme.toLowerCase() === 'ssh';
     if (ssh && tail !== '' && tail !== '/') return false;
@@ -23,7 +24,7 @@ export function isValidMachineConnectionUrl(value: unknown): value is string {
       (!hostPart[0] || /[:/?#@]/.test(decodeURIComponent(hostPart[0])))
     )
       return false;
-    const hostPort = hostPart.at(-1)!;
+    const hostPort = hostPart.at(-1) ?? '';
     const match = /^(\[[^\]]+\]|[^:]+)(?::([0-9]+))?$/.exec(hostPort);
     if (!match) return false;
     const [, host = '', port] = match;

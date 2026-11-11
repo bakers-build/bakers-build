@@ -101,7 +101,7 @@ final class EntityDetailCardFormTest extends KernelTestBase {
       self::assertCount(1, $matches);
       $expected = $url === NULL
         ? ['kind' => 'text', 'value' => '—', 'emphasis' => 'faint']
-        : ['kind' => 'link', 'value' => $url, 'url' => $url];
+        : ['kind' => 'link', 'value' => $url, 'url' => $url, 'external' => TRUE];
       self::assertSame($expected, $matches[0]['cells']['value']);
     }
   }

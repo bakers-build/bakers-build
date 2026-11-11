@@ -51,7 +51,6 @@ export async function runStartHooks(
     return await Promise.race([
       (async () => {
         for (const listener of listeners) {
-          if (closed) return baseline;
           await listener.before_conductor_start?.(shared, context);
           if (closed) return baseline;
           validate();

@@ -93,4 +93,5 @@ An actual conductor start publishes the address. A manual value takes precedence
 over addon discovery; `connection_url: null` explicitly clears it. Omitting the
 field preserves the saved address. Later heartbeats and CLI preflight registrations
 do not change it. Invalid manual addresses are omitted with a warning and disable
-start discovery for that start. The address is a snapshot, not proof of reachability.
+start discovery for that start. If the server refuses the address, the conductor
+still starts and the saved address stays unchanged. The address is a snapshot, not proof of reachability.
