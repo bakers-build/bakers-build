@@ -33,6 +33,7 @@ hidden:
   key: true
   name: true
   next_number: true
+  origin_sources: true
   owner_user_id: true
   repository: true
   search_api_excerpt: true

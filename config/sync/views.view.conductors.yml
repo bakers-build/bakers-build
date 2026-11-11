@@ -5,7 +5,6 @@ dependencies:
   module:
     - bb_core
     - better_exposed_filters
-    - block
     - user
 id: conductors
 label: Conductors
@@ -1471,6 +1470,7 @@ display:
           empty_table: false
           caption: ''
           description: ''
+          class: ''
       row:
         type: fields
         options: {  }
