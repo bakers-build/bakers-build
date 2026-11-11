@@ -97,6 +97,9 @@ RUN pnpm install --frozen-lockfile
 COPY docs /repo/docs
 COPY .claude-plugin /repo/.claude-plugin
 COPY .claude/skills/bakers-build /repo/.claude/skills/bakers-build
+# The docs build reads addon option schemas, shared schemas and included addon docs (docs/.vitepress/addon-options.mjs).
+COPY bakers-cli/addons /repo/bakers-cli/addons
+COPY bakers-cli/core/schema /repo/bakers-cli/core/schema
 # The sidebar's version row (docs/.vitepress/config.mts): target branch and commit.
 ARG CI_COMMIT_REF_NAME CI_COMMIT_SHORT_SHA
 RUN pnpm build
