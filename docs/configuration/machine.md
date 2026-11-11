@@ -84,7 +84,7 @@ Check host identity; from a connected checkout, the agent catalog must contain a
 ## Connection address
 
 Set `connection_url: 'ssh://christian@192.168.1.20:22'` or an absolute HTTPS URL
-in the machine configuration. Only public addresses belong here: never include
+in the machine configuration. The address is shown on the machine page, so it must not be secret: never include
 passwords, tokens or secret query parameters. SSH permits an optional username and
 port (1–65535), DNS, IPv4 or bracketed IPv6, and no path except `/`. HTTPS permits
 paths, queries and fragments but no username. The maximum length is 2048 characters.
