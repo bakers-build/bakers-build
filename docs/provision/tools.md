@@ -45,6 +45,8 @@ See [addon tools](/addons/build/tools) and [UI actions and messages](/addons/bui
 
 `provision_up` lets an agent request a ready application when a task needs it. Configure your project's command or named profiles using the [Configuration reference](/configuration/project/hooks#provision-on-an-agent-s-request). With a profile named `test`, the agent calls `provision_up` with `profile: 'test'`. The script owns reuse, readiness and the resulting URL.
 
+The first call on a new worktree can take minutes, and the call waits until the command ends, for up to 30 minutes. Agent harnesses cut MCP tool calls by default: Claude Code's HTTP MCP client after 60 seconds (the server entry's `timeout`, else `MCP_TOOL_TIMEOUT`), Codex after the server's `tool_timeout_sec` (60 seconds by default). bakers.build sets both for its `bakers` server at launch, past the 30-minute provision limit. The limit is the harness's, not the conductor's: a harness launched another way still cuts the call. After a client timeout the command keeps running; a new call with the same profile joins it and returns its result instead of starting the command again.
+
 The command runs outside the agent sandbox. This can let an agent prepare its environment while its own shell remains restricted. The script still runs with the execution user's rights, including any code it loads from the worktree. See [the security boundary](/provision/security/#provision-up-and-addon-tools) and the [full provisioning contract](/configuration/project/hooks#provision-on-an-agent-s-request).
 
 **Next:** [choose the agent's security context](/provision/security/), then return to [project verification](/provision/guide#verify-independent-operation).

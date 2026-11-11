@@ -682,6 +682,7 @@ describe('ClaudeAgent conductor tools', () => {
     type: 'http',
     url: 'http://127.0.0.1:4100',
     headers: { Authorization: 'Bearer ${BAKERS_CONDUCTOR_TOKEN}' },
+    timeout: 1_860_000,
   };
   const launch = (agent: ClaudeAgent) =>
     captureArgv(
@@ -703,6 +704,13 @@ describe('ClaudeAgent conductor tools', () => {
       },
     });
     expect(agent.launchWarnings).toEqual([]);
+  });
+
+  it("gives the bakers server a tool timeout past the conductor's 30-minute provision", () => {
+    const agent = new ClaudeAgent({ permissions: 'sandbox', sandbox: {} });
+    const { bakers } = JSON.parse(flagValue(launch(agent), '--mcp-config'))
+      .mcpServers as { bakers: { timeout: number } };
+    expect(bakers.timeout).toBeGreaterThan(30 * 60_000);
   });
 
   it("replaces a sandbox MCP server named bakers with the conductor's, and warns", () => {
