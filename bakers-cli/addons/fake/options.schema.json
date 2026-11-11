@@ -5,8 +5,12 @@
   "type": "object",
   "properties": {
     "outcome": {
-      "enum": ["exited", "failed"],
-      "description": "How the fake executor's runs end. Default: exited."
+      "enum": [
+        "exited",
+        "failed"
+      ],
+      "description": "How the fake executor's runs end.",
+      "default": "exited"
     },
     "marker_file": {
       "type": "string",

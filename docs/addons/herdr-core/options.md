@@ -2,10 +2,7 @@
 
 Optional `with` values for the [herdr-core addon](/addons/herdr-core).
 
-| Option under `with` | Meaning and default |
-|---|---|
-| `command` | Fallback agent command when the agent addons supply none, default `claude`. |
-| `launch_watch` | As for herdr: `start_timeout_ms` (default 60000) waits for the launch wrapper to write `started`; `timeout_ms` (default 4000) then fails the run if the agent exits immediately. |
+<!-- @options @bakers-build/addon-herdr-core -->
 
 ## Run lifecycle
 

@@ -22,15 +22,7 @@ Without a `model` it publishes `codex` (your locally configured Codex model) plu
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `model` | string | Codex's own default | Passed as `--model`. Drops the four named variants. |
-| `effort` | string | none | Passed as `-c model_reasoning_effort=…`. |
-| `permissions` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'system'` | How strictly a run starts; see [Security](#security). |
-| `sandbox` | object | see below | Only with `permissions: 'sandbox'`. Each key set replaces its default; lists are not merged. |
-| `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
-| `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
-| `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
+<!-- @options @bakers-build/addon-codex -->
 
 ## Security
 

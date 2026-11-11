@@ -16,14 +16,7 @@ The alias is `grok`; `bakers agents` lists it.
 
 ## Options
 
-| Option | Default | Effect |
-|---|---|---|
-| `model` | CLI default | `--model` |
-| `effort` | none | `--reasoning-effort`; overrides `reasoning_effort` |
-| `permissions` | `system` | See below |
-| `sandbox` | below | Only in sandbox mode |
-| `env_deny` | [default list](/provision/security/execution#ticket-env-vars) | Filters ticket environment |
-| `args` | `[]` | Shell-quoted arguments; explicit model flags win |
+<!-- @options @bakers-build/addon-grok -->
 
 ## Security
 

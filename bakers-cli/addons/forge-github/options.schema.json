@@ -12,7 +12,7 @@
     "repository": {
       "type": "string",
       "pattern": "^[\\w.-]+/[\\w.-]+$",
-      "description": "owner/repo."
+      "description": "`owner/repo`; the only repository the token reaches."
     },
     "auth": {
       "const": "gh",
@@ -23,14 +23,16 @@
         "integer",
         "string"
       ],
-      "minLength": 1
+      "minLength": 1,
+      "description": "The GitHub App's ID; required unless `auth` is set."
     },
     "installation_id": {
       "type": [
         "integer",
         "string"
       ],
-      "minLength": 1
+      "minLength": 1,
+      "description": "The App's installation on the repository; required unless `auth` is set."
     },
     "private_key": {
       "type": "string",

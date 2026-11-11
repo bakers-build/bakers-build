@@ -54,13 +54,7 @@ For a private Coder home (adapt paths for your host), create the includes direct
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `zone` | string | required | Domain of the public names. |
-| `client_config_path` | string | required | Absolute path to the frpc JSON config. Read only, never written. |
-| `admin_port` | integer | required | Port of frpc's local admin API. |
-| `admin_user` | string | required | Admin API user. |
-| `admin_password` | string | required | Admin API password, not the frps token. |
+<!-- @options @bakers-build/addon-ports-frp -->
 
 ## Check it works
 

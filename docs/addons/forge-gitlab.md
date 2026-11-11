@@ -29,14 +29,7 @@ backend: {
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `url` | string | `https://gitlab.com` | The GitLab instance. |
-| `project` | string | required | The project path, e.g. `group/repo`. |
-| `token_env` | string | — | Environment variable holding the token. |
-| `token` | string | — | The token itself; only in `~/.bakers/machine.config.js`. |
-
-| `auth` | `'glab'` | — | Use the conductor's `glab` login instead of a token. |
+<!-- @options @bakers-build/addon-forge-gitlab -->
 
 One of `auth`, `token_env` or `token` is required.
 
