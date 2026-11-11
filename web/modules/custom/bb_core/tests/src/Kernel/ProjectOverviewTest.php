@@ -333,6 +333,7 @@ final class ProjectOverviewTest extends KernelTestBase {
     $contributor = $this->createUser([], 'overview-cache');
     self::assertInstanceOf(UserInterface::class, $contributor);
     $this->addMembership($this->workspace(), $contributor, ['contributor']);
+    $this->seatOnProjectTeam($this->project, $contributor);
     foreach ([$this->container->get('current_user')->getAccount(), $contributor] as $account) {
       $this->setCurrentUser($account);
       $access = CacheableMetadata::createFromObject($this->project->access('update', NULL, TRUE));
