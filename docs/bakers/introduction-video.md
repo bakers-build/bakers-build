@@ -78,8 +78,9 @@ stay silent while you wait. Waiting is cut out later.
 
 On screen: the landing page hero; scroll slowly to the line with its four stations.
 
-> Hi! This is bakers.build. Think of it as a small bakery for software.
-> Your team writes down what it needs, as a ticket. And AI agents do the baking: they plan, build, check and deliver, always along the same line.
+> Hi! This is bakers.build. The idea is simple: every developer is a baker, with a bakery of their own and several ovens.
+> The product manager places the orders. We call them tickets.
+> And in the ovens, AI agents do the work: they plan, build, check and deliver, always along the same line.
 > How that line works is your recipe: a simple text file, right next to your code.
 
 ### 2. A ticket system for AI (about 18 s)
@@ -87,16 +88,16 @@ On screen: the landing page hero; scroll slowly to the line with its four statio
 On screen: the project's ticket board, then the machines list with both conductors.
 
 > It's not one more ticket system for people. It's one made for AI.
-> Everything an agent does stays on the ticket, so the next ticket can build on what's already there.
-> And the work happens on your own computer, a colleague's, or a machine in the background.
+> Everything an agent does stays on the ticket, so the next ticket can build on it.
+> And the work runs on your own computer, a colleague's, or a machine in the background.
 
 ### 3. From an issue to a ticket (about 16 s)
 
 On screen: the GitLab issue, without labels. Then create the ticket from it in bakers.build and
 add the label `auto`.
 
-> Let me show you with one ticket. Our little shop wants its opening hours on the contact page.
-> It starts where your wishes always start: as a normal issue in GitLab. That stays.
+> Let's follow one ticket. Our little shop wants its opening hours on the contact page.
+> It starts as a normal issue in GitLab. That stays.
 > We turn it into a ticket and add one label: auto.
 
 ### 4. Labels (about 16 s)
@@ -115,14 +116,14 @@ plan comments. Switch once to the GitLab issue: the label `doing` is there.
 
 > First comes qualification. The agent makes sure it understood us: what do we want, and how will we know it's done?
 > Then it writes a plan. You can read all of it on the ticket.
-> And over in GitLab, the issue now says: doing.
+> And in GitLab, the issue now says: doing.
 
 ### 6. Stepping in (about 13 s)
 
 On screen: herdr with the ticket's run tab; the agent's output scrolls. Type one short sentence
 to the agent, for example "Use the 24-hour format."
 
-> While the agent is busy, you can peek into the oven.
+> While the agent is busy, you can look into the oven.
 > Open its window in a tool like herdr or Orca, read along, and if you have an idea, tell it in one sentence.
 
 ### 7. The ticket moves (about 20 s)
@@ -147,7 +148,7 @@ summary comment and the developer's confirmation.
 
 On screen: the ticket in `review`, the review comment with its verdict, the confirmation.
 
-> Then comes the review. A second agent, with fresh eyes, checks everything again.
+> Then comes the review. A second agent checks everything again, with fresh eyes.
 > Only then does the developer give the go for the merge.
 
 ### 10. Done (about 13 s)
