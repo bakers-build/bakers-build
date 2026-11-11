@@ -9,6 +9,7 @@ use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\EnvVars;
 use Drupal\bb_core\Inspector\InspectorRows;
+use Drupal\bb_core\Run\TicketRunSummary;
 use Drupal\bb_core\Time\BbDate;
 
 /**
@@ -29,6 +30,7 @@ final class TicketInspectorRows extends InspectorRows {
     'recipe' => 'Recipe',
     'labels' => 'Labels',
     'owner_user_id' => 'Created by',
+    'runs' => 'Runs',
     'time_estimate' => 'Estimate',
     'time_spent' => 'Spent',
     'branch_name' => 'Branch',
@@ -44,6 +46,7 @@ final class TicketInspectorRows extends InspectorRows {
 
   public function __construct(
     private readonly BbDate $date,
+    private readonly TicketRunSummary $runSummary,
   ) {}
 
   /**
@@ -60,7 +63,7 @@ final class TicketInspectorRows extends InspectorRows {
    * Builds the rail's `items` array.
    *
    * @return array<string, array<string, mixed>>
-   *   Twenty `list` items, in the order the scene fixes.
+   *   Twenty-one `list` items, in the order the scene fixes.
    */
   public function build(BbTicketInterface $ticket): array {
     return $this->buildRows($ticket, self::FIELDS);
@@ -88,6 +91,7 @@ final class TicketInspectorRows extends InspectorRows {
       'time_estimate', 'time_spent' => $this->duration($entity, $field),
       'branch_name', 'base_branch' => $this->mono((string) $entity->get($field)->value),
       'stall_reason' => $this->stall($entity),
+      'runs' => ['kind' => 'badge'] + $this->runSummary->forTickets([$entity->id()])[(int) $entity->id()]->badge(),
       default => $this->text($this->labelsOf($entity, $field)),
     };
     return $this->row($label, $value);
@@ -131,6 +135,7 @@ final class TicketInspectorRows extends InspectorRows {
       'parent_id',
       'blocked_by',
       'owner_user_id',
+      'runs',
     ];
     $items = [];
     foreach ($fields as $field) {

@@ -194,23 +194,16 @@ final class EntitySchemaHooks {
       }
     }
 
-    // Ticket-list run count: occupancy is the conductor rail; this is how
-    // often the ticket has already run. Zero is omitted so idle rows stay
-    // quiet. The field lives on the Search API table the tickets view uses.
+    // Ticket-list runs summary: occupancy is the conductor rail; this is how
+    // often the ticket has already run and how its newest run ended. A ticket
+    // without runs stays quiet. The field lives on the Search API table the
+    // tickets view uses.
     if (isset($data['search_api_index_bb_tickets'])) {
-      $data['search_api_index_bb_tickets']['run_count'] = [
+      $data['search_api_index_bb_tickets']['run_summary'] = [
         'title' => 'Runs',
-        'help' => new TranslatableMarkup('How many entities reference this one.'),
+        'help' => new TranslatableMarkup('How many runs the ticket has, and the state and time of the newest.'),
         'field' => [
-          'id' => 'bb_reference_count',
-          'count_entity_type' => 'bb_run',
-          'count_field' => 'ticket_id',
-          'conditions' => [],
-          'icon' => 'run',
-          'tone' => 'neutral',
-          'singular' => '1 run',
-          'plural' => '@count runs',
-          'hide_zero' => TRUE,
+          'id' => 'bb_run_summary',
         ],
       ];
       $data['search_api_index_bb_tickets']['stall_reason'] = [

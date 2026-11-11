@@ -24,6 +24,7 @@ use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -677,7 +678,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $source->setContextValue('entity', $this->ticket);
     $form = $source->getPropValue();
     self::assertSame('bb_theme:zone', $form['readonly']['#component']);
-    self::assertCount(11, $form['readonly']['#slots']['content']['#props']['items']);
+    self::assertCount(12, $form['readonly']['#slots']['content']['#props']['items']);
     self::assertFalse($form['actions']['submit']['#access']);
     $ordinary = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('entity_form', [
       'settings' => ['operation' => 'default'],
@@ -733,6 +734,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
       [
         'Stall' => 'badge',
         'Created by' => 'text',
+        'Runs' => 'badge',
         'Estimate' => 'text',
         'Spent' => 'text',
         'Branch' => 'mono',
@@ -1074,9 +1076,9 @@ final class TicketDetailScreenTest extends KernelTestBase {
       'The control: with a description, the About zone is on the screen.',
     );
     self::assertSame(
-      2,
+      3,
       substr_count($before, 'data-zone-heading'),
-      'Two zones — About and the Properties block. Run history has no runs yet.',
+      'Three zones: About, Run history saying it has no runs yet, and the Properties block.',
     );
 
     $this->ticket->set('description', NULL);
@@ -1091,9 +1093,9 @@ final class TicketDetailScreenTest extends KernelTestBase {
       'The screen is the whole screen, not a fragment that survived.',
     );
     self::assertSame(
-      1,
+      2,
       substr_count($html, 'data-zone-heading'),
-      'No description, no About zone — only Properties keeps its heading.',
+      'No description, no About zone: Run history and Properties keep their headings.',
     );
     self::assertStringNotContainsString(
       'class="rich-text',
@@ -1103,7 +1105,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * A reader who may see no run gets NO Run history zone (BB-414).
+   * A reader who may see no run gets no run rows (BB-414).
    *
    * MEASURED CAUSE, and it is a permission rather than a display defect: run
    * rows are rendered by `EntityReferenceEntityFormatter`, which filters its
@@ -1120,8 +1122,12 @@ final class TicketDetailScreenTest extends KernelTestBase {
    * `administer bakers` now sees no trace of run history at all rather than an
    * empty box. That is an accepted trade by human decision; the permission
    * model is deliberately unchanged by this ticket and belongs to its own.
+   *
+   * The heading row's runs summary counts the runs the reader may view, so it
+   * keeps the zone and says "No runs yet" (BAKERS-56 D10) instead of leaving a
+   * heading over an empty box.
    */
-  public function testTheRunHistoryZoneIsAbsentWhenNoRunIsVisible(): void {
+  public function testReaderWhoMaySeeNoRunGetsNoRunRows(): void {
     $this->giveTheTicketItsRuns();
     $privileged = $this->renderScreen();
     self::assertStringContainsString(
@@ -1144,11 +1150,24 @@ final class TicketDetailScreenTest extends KernelTestBase {
       $html,
       'No run is visible to this reader.',
     );
-    self::assertStringNotContainsString(
-      'Run history',
-      $html,
-      'And no heading is left standing over the zone they cannot see into.',
+    self::assertSame(
+      ['No runs yet', 'No runs yet'],
+      $this->runsSummaries($html),
+      'The heading row and the Details state what this reader may see.',
     );
+  }
+
+  /**
+   * The runs summary sits on the Run history heading row and in the Details.
+   */
+  public function testRunsSummaryAboveRunHistoryAndInDetails(): void {
+    self::assertSame(['No runs yet', 'No runs yet'], $this->runsSummaries($this->renderScreen()));
+
+    $this->giveTheTicketItsRuns();
+    $this->container->get('cache.render')->deleteAll();
+    [$heading, $details] = $this->runsSummaries($this->renderScreen());
+    self::assertMatchesRegularExpression('/^3 runs · last running \d+ seconds? ago$/', $heading);
+    self::assertSame($heading, $details);
   }
 
   /**
@@ -1810,21 +1829,40 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * The markup BETWEEN the Run history heading and the inspector rail.
+   * The markup BETWEEN the Run history list and the inspector rail.
    *
    * Sliced rather than searched whole, because the inspector rail is made of
    * the same `list` component with the same cell macro: an unsliced
    * value scan picks up the rail's branch and base-branch rows and an
    * unsliced badge scan picks up its provenance badge. Slicing is also what
    * makes the value ORDER meaningful — inside the zone it is the mapping's
-   * order, across the page it is the canvas's.
+   * order, across the page it is the canvas's. The slice starts at the list,
+   * after the heading row's runs summary badge.
    */
   private function runHistoryZone(string $html): string {
-    $start = strpos($html, 'Run history');
-    self::assertIsInt($start, 'The Run history heading renders.');
+    $heading = strpos($html, 'Run history');
+    self::assertIsInt($heading, 'The Run history heading renders.');
+    $start = strpos($html, 'data-component-id="bb_theme:list"', $heading);
+    self::assertIsInt($start, 'The Run history list renders.');
     $end = strpos($html, 'bb_theme:inspector', $start);
     self::assertIsInt($end, 'The inspector rail closes the zone.');
     return substr($html, $start, $end - $start);
+  }
+
+  /**
+   * The runs summary on the Run history heading row and in the Details row.
+   *
+   * @return array<int, string>
+   *   Each badge's label and time, as one sentence.
+   */
+  private function runsSummaries(string $html): array {
+    $crawler = new Crawler($html);
+    $sentence = static fn (Crawler $badge): string => trim($badge->filter('[data-badge-label]')->text() . ' ' . ($badge->filter('time')->count() ? $badge->filter('time')->text() : ''));
+    $heading = $crawler->filterXPath('//h2[@data-zone-heading][normalize-space(.)="Run history"]/../following-sibling::div[1]');
+    $details = $crawler->filterXPath('//li[.//*[@data-cell="label"][normalize-space(.)="Runs"]]//*[@data-cell="value"]');
+    self::assertCount(1, $heading, 'The Run history heading row carries one summary.');
+    self::assertCount(1, $details, 'The Details have one Runs row.');
+    return [$sentence($heading), $sentence($details)];
   }
 
   /**

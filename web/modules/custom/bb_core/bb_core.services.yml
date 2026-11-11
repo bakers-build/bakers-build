@@ -120,6 +120,9 @@ services:
   bb_core.ticket_retry:
     class: Drupal\bb_core\Run\TicketRetry
     arguments: ['@keyvalue', '@datetime.time', '@cache_tags.invalidator']
+  bb_core.ticket_run_summary:
+    class: Drupal\bb_core\Run\TicketRunSummary
+    arguments: ['@entity_type.manager', '@bb_core.date']
   bb_core.failed_run_circuit_breaker:
     class: Drupal\bb_core\Claim\FailedRunCircuitBreaker
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_retry']
@@ -447,7 +450,7 @@ services:
   # Read-only formatting for the ticket-detail inspector.
   bb_core.ticket_inspector_rows:
     class: Drupal\bb_core\Ticket\TicketInspectorRows
-    arguments: ['@bb_core.date']
+    arguments: ['@bb_core.date', '@bb_core.ticket_run_summary']
   Drupal\bb_core\Ticket\TicketInspectorRows:
     alias: bb_core.ticket_inspector_rows
 

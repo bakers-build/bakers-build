@@ -192,7 +192,7 @@ final class TicketsViewConfigTest extends KernelTestBase {
     self::assertSame([
       'avatar' => ['state'],
       'headline' => ['title', 'priority'],
-      'meta' => ['identifier', 'created', 'owner', 'conductor', 'stall_reason', 'run_count'],
+      'meta' => ['identifier', 'created', 'owner', 'conductor', 'stall_reason', 'run_summary'],
       'right' => ['assignee'],
     ], $style['options']['pattern']);
   }
@@ -216,7 +216,7 @@ final class TicketsViewConfigTest extends KernelTestBase {
         'owner',
         'conductor',
         'stall_reason',
-        'run_count',
+        'run_summary',
         'assignee',
       ],
       array_keys($fields),
@@ -243,7 +243,7 @@ final class TicketsViewConfigTest extends KernelTestBase {
     ] as $key => $formatter) {
       self::assertSame($formatter, $fields[$key]['type'] ?? NULL, sprintf('Field %s.', $key));
     }
-    self::assertSame('bb_reference_count', $fields['run_count']['plugin_id'] ?? NULL);
+    self::assertSame('bb_run_summary', $fields['run_summary']['plugin_id'] ?? NULL);
     self::assertSame('bb_stall_reason', $fields['stall_reason']['plugin_id'] ?? NULL);
   }
 

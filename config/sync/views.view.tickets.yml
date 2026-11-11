@@ -567,14 +567,14 @@ display:
           hide_empty: true
           empty_zero: false
           hide_alter_empty: true
-        run_count:
-          id: run_count
+        run_summary:
+          id: run_summary
           table: search_api_index_bb_tickets
-          field: run_count
+          field: run_summary
           relationship: none
           group_type: group
           admin_label: ''
-          plugin_id: bb_reference_count
+          plugin_id: bb_run_summary
           label: ''
           exclude: false
           empty: ''
@@ -1513,7 +1513,7 @@ display:
               - owner
               - conductor
               - stall_reason
-              - run_count
+              - run_summary
             right:
               - assignee
       query:
