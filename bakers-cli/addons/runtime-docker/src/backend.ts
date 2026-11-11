@@ -1,6 +1,13 @@
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdirSync, rmSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
@@ -73,7 +80,8 @@ export function dockerRuntime(
   let gateway: string | undefined;
   let toolsPort: string | undefined;
   let proxyReady: { hash: string; ready: Promise<void> } | undefined;
-  const cacheHome = deps.env.XDG_CACHE_HOME || join(homedir(), '.cache');
+  const cacheHome =
+    deps.env.XDG_CACHE_HOME || join(deps.env.HOME || homedir(), '.cache');
   const runHomeOf = (uuid: string) => join(cacheHome, 'bakers/runtime', uuid);
   let imageReady: Promise<void> | undefined;
 
@@ -207,11 +215,29 @@ export function dockerRuntime(
       for (const file of ['settings.json', '.claude.json'])
         if (agentHome && existsSync(join(agentHome, file)))
           copyFileSync(join(agentHome, file), join(runHome, '.claude', file));
+      // A fresh home would stop Claude at its first-run setup screen.
+      const stateFile = agentHome
+        ? join(runHome, '.claude', '.claude.json')
+        : join(runHome, '.claude.json');
+      const state = existsSync(stateFile)
+        ? (JSON.parse(readFileSync(stateFile, 'utf8')) as object)
+        : {};
+      writeFileSync(
+        stateFile,
+        JSON.stringify({ ...state, hasCompletedOnboarding: true }),
+        { mode: 0o600 },
+      );
       // shortcut: only Claude's transcript layout is mapped; map another harness's when it is supported.
-      const configDir = agentHome ?? join(homedir(), '.claude');
-      mkdirSync(join(configDir, 'projects', transcriptKey(ws)), {
-        recursive: true,
-      });
+      const configDir =
+        agentHome ?? join(deps.env.HOME || homedir(), '.claude');
+      const key = transcriptKey(ws);
+      // Mount points docker would otherwise create root-owned, so cleanup could not delete the home.
+      for (const dir of [
+        join(configDir, 'projects', key),
+        join(runHome, '.claude/projects', key),
+        ...(agentHome ? [join(runHome, '.claude/plugins')] : []),
+      ])
+        mkdirSync(dir, { recursive: true });
       const env = { ...launch.env };
       // Allowlist mode: the credential stays with the proxy sidecar.
       if (!allowlist)

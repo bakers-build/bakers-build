@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ConductorLogger } from '@bakers-build/core';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { transcriptKey } from '../src/args.js';
 import { type BackendDeps, dockerRuntime } from '../src/backend.js';
 
 type Call = [string, string[]];
@@ -53,7 +54,11 @@ function deps(over: Partial<BackendDeps> = {}): BackendDeps {
         return { stdout: `${join(common, 'worktrees/tree')}\n` };
       return { stdout: '' };
     },
-    env: { CLAUDE_CODE_OAUTH_TOKEN: 'oauth', XDG_CACHE_HOME: cache },
+    env: {
+      CLAUDE_CODE_OAUTH_TOKEN: 'oauth',
+      XDG_CACHE_HOME: cache,
+      HOME: join(root, 'home'),
+    },
     logger,
     cliRoot: '/opt/cli',
     packageDir: '/pkg',
@@ -86,6 +91,28 @@ describe('runtime-docker wrap', () => {
     expect(out.command).toContain(`'${home}:/home/run'`);
     expect(out.command).not.toContain('oauth');
     expect(out.env.CLAUDE_CODE_OAUTH_TOKEN).toBe('oauth');
+  });
+
+  it('seeds a finished onboarding so Claude does not wait at first-run setup', async () => {
+    const home = join(cache, 'bakers/runtime/r-uuid');
+    await dockerRuntime({}, deps()).wrap(launch());
+    expect(
+      JSON.parse(readFileSync(join(home, '.claude/.claude.json'), 'utf8')),
+    ).toEqual({ c: 1, hasCompletedOnboarding: true });
+    const { CLAUDE_CONFIG_DIR: _, ...noAgentHome } = launch().env;
+    await dockerRuntime({}, deps()).wrap(launch({ env: noAgentHome }));
+    expect(
+      JSON.parse(readFileSync(join(home, '.claude.json'), 'utf8')),
+    ).toEqual({ hasCompletedOnboarding: true });
+  });
+
+  it('creates every mount point in the run home before docker does', async () => {
+    const home = join(cache, 'bakers/runtime/r-uuid');
+    await dockerRuntime({}, deps()).wrap(launch());
+    expect(existsSync(join(home, '.claude/projects', transcriptKey(ws)))).toBe(
+      true,
+    );
+    expect(existsSync(join(home, '.claude/plugins'))).toBe(true);
   });
 
   it('refuses without a model credential', async () => {
