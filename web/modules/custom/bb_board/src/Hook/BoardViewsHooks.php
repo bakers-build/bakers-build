@@ -8,8 +8,7 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_board\BoardAddress;
-use Drupal\bb_core\Entity\BbProjectInterface;
-use Drupal\bb_core\Project\ProjectHealth;
+use Drupal\bb_board\BoardHealth;
 use Drupal\search_api\Plugin\views\query\SearchApiQuery;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
 use Drupal\views\ViewExecutable;
@@ -19,23 +18,16 @@ use Drupal\views\ViewExecutable;
  */
 final class BoardViewsHooks {
 
-  /**
-   * The attention set per project id, read once per request.
-   *
-   * @var array<string, list<int>>
-   */
-  private array $unhealthy = [];
-
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly ProjectHealth $health,
+    private readonly BoardHealth $health,
   ) {}
 
   /**
    * Implements hook_views_query_alter().
    *
    * The page's own search counts the open columns only; Done is a column, not
-   * a filter. `?health=unhealthy` narrows every display to the attention set,
+   * a filter. The Unhealthy filter narrows every display to the attention set,
    * and an empty set matches nothing, never everything.
    */
   #[Hook('views_query_alter')]
@@ -47,11 +39,10 @@ final class BoardViewsHooks {
     if ($view->current_display === 'project_board') {
       $query->createAndAddConditionGroup()->addCondition('work_state', BoardAddress::OPEN_WORK_STATES, 'IN');
     }
-    if (($view->getExposedInput()['health'] ?? NULL) !== 'unhealthy') {
+    if (!$this->health->requested($view)) {
       return;
     }
-    // The validated argument, an id; the raw view argument may be a key.
-    $ids = $this->unhealthyIds((string) ($view->argument['project_id']->argument ?? ''));
+    $ids = $this->health->unhealthyIds($view);
     if ($ids === []) {
       $query->abort();
       return;
@@ -59,20 +50,6 @@ final class BoardViewsHooks {
     // The indexed entity id, as the parent filter: search_api_db drops
     // search_api_id from the facet queries.
     $query->createAndAddConditionGroup()->addCondition('ticket_id', $ids, 'IN');
-  }
-
-  /**
-   * The attention set of the board's project, empty when it cannot be read.
-   *
-   * @return list<int>
-   *   Ticket ids.
-   */
-  private function unhealthyIds(string $project_id): array {
-    if (!isset($this->unhealthy[$project_id])) {
-      $project = $project_id === '' ? NULL : $this->entityTypeManager->getStorage('bb_project')->load($project_id);
-      $this->unhealthy[$project_id] = $project instanceof BbProjectInterface ? $this->health->unhealthyIds($project) : [];
-    }
-    return $this->unhealthy[$project_id];
   }
 
   /**

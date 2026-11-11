@@ -74,12 +74,15 @@ final class ProjectBoardFilterBar {
    * @param array<string, mixed> $picker
    *   The picker element, empty when the form has none.
    * @param list<array<string, mixed>> $rows
-   *   The facet's rows.
+   *   The facet's rows; none, and the picker stays uncounted.
    *
    * @return array<string, mixed>
    *   The picker, its options counted.
    */
   public function withCounts(array $picker, array $rows): array {
+    if ($rows === []) {
+      return $picker;
+    }
     $counts = array_column(array_filter($rows, static fn (array $row): bool => $row['value'] !== NULL), 'count', 'value');
     foreach ($picker['#slots']['options']['#props']['options'] ?? [] as $delta => $option) {
       $picker['#slots']['options']['#props']['options'][$delta]['count'] = (string) ($counts[$option['value']] ?? 0);
@@ -119,6 +122,19 @@ final class ProjectBoardFilterBar {
         ],
       ],
     ];
+  }
+
+  /**
+   * The Unhealthy filter as a hidden input, so a submit keeps it.
+   *
+   * @param bool $on
+   *   Whether the filter is active.
+   *
+   * @return array<string, mixed>
+   *   A hidden form element, empty when the filter is off.
+   */
+  public function health(bool $on): array {
+    return $on ? ['#type' => 'hidden', '#name' => BoardHealth::PARAMETER, '#value' => BoardHealth::VALUE] : [];
   }
 
   /**

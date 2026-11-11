@@ -409,6 +409,14 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     self::assertStringContainsString('Unhealthy · 3', $this->text($this->renderSummary($this->execute('project_board', $input))));
 
     self::assertSame(19, $this->summary(['health' => 'something-else'])['total'], 'Only "unhealthy" filters.');
+
+    // One rule for the columns and the chip: only the scalar value filters.
+    $listed = ['health' => ['unhealthy']];
+    $this->request($listed);
+    $summary = $this->summary($listed);
+    self::assertSame(19, $summary['total']);
+    self::assertSame([], $summary['chips']);
+    self::assertSame((int) $this->execute('working', [])->total_rows, (int) $this->execute('working', $listed)->total_rows);
   }
 
   /**
@@ -594,6 +602,13 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     self::assertStringNotContainsString('name="assignee[]" value="' . $this->alice->id() . '"', $html, 'Avatars are links, not inputs.');
     self::assertMatchesRegularExpression('#<a\s(?=[^>]*aria-label="bob, 2 tickets")(?=[^>]*aria-current="true")[^>]*>#', $html, 'The chosen assignee is on.');
     self::assertMatchesRegularExpression('#<a\s(?=[^>]*aria-label="alice, 12 tickets")(?![^>]*aria-current)[^>]*>#', $html);
+    self::assertDoesNotMatchRegularExpression('#<input[^>]*name="health"#', $html);
+
+    // A submit keeps the Unhealthy filter: it rides along as a hidden input.
+    $input['health'] = 'unhealthy';
+    $this->request($input);
+    $html = $this->renderSummary($this->execute('project_board', $input));
+    self::assertMatchesRegularExpression('#<form[\s\S]*<input(?=[^>]*type="hidden")(?=[^>]*name="health")(?=[^>]*value="unhealthy")[^>]*>[\s\S]*</form>#', $html);
   }
 
   /**

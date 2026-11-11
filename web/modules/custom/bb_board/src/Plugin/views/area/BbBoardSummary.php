@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace Drupal\bb_board\Plugin\views\area;
 
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\facets\Result\ResultInterface;
 use Drupal\bb_board\BoardAddress;
+use Drupal\bb_board\BoardHealth;
 use Drupal\bb_board\BoardPreferences;
 use Drupal\bb_board\ProjectBoardFilterBar;
 use Drupal\bb_board\ProjectBoardSummary;
 use Drupal\bb_board\Plugin\views\filter\BbBoardParent;
-use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Plugin\views\filter\BbTicketSearch;
-use Drupal\bb_core\Project\ProjectHealth;
 use Drupal\search_api\Plugin\views\query\SearchApiQuery;
 use Drupal\views\Attribute\ViewsArea;
 use Drupal\views\Plugin\views\area\AreaPluginBase;
@@ -96,11 +94,6 @@ final class BbBoardSummary extends AreaPluginBase {
   private const SEARCH = 'search';
 
   /**
-   * The query parameter of the Unhealthy filter, and its one value.
-   */
-  private const HEALTH = 'health';
-
-  /**
    * Turns the aggregations into labelled, ordered rows.
    */
   private ProjectBoardSummary $rows;
@@ -116,14 +109,9 @@ final class BbBoardSummary extends AreaPluginBase {
   private LoggerInterface $logger;
 
   /**
-   * The attention set behind the Unhealthy chip.
+   * The Unhealthy filter's rule, the attention set and the board's project.
    */
-  private ProjectHealth $health;
-
-  /**
-   * Loads the board's project.
-   */
-  private EntityTypeManagerInterface $entityTypeManager;
+  private BoardHealth $health;
 
   /**
    * The board address, once per executed view.
@@ -145,8 +133,7 @@ final class BbBoardSummary extends AreaPluginBase {
     $instance->rows = $container->get(ProjectBoardSummary::class);
     $instance->preferences = $container->get(BoardPreferences::class);
     $instance->logger = $container->get('logger.channel.bb_core');
-    $instance->health = $container->get(ProjectHealth::class);
-    $instance->entityTypeManager = $container->get('entity_type.manager');
+    $instance->health = $container->get(BoardHealth::class);
     return $instance;
   }
 
@@ -300,10 +287,9 @@ final class BbBoardSummary extends AreaPluginBase {
       $chips[] = $this->chip((string) $this->t('Search'), [$search], $this->count(search: $search)['total'] ?? NULL, self::SEARCH);
     }
     $chips = [...$chips, ...$this->facetChips($summary, $focus['aggregations'] ?? NULL)];
-    if ($this->address()->active(self::HEALTH) === ['unhealthy']) {
-      $project = $this->project();
-      $ids = $project === NULL ? [] : $this->health->unhealthyIds($project);
-      $chips[] = $this->chip((string) $this->t('Unhealthy'), [], $this->count($ids)['total'] ?? NULL, self::HEALTH);
+    if ($this->health->requested($this->view)) {
+      $ids = $this->health->unhealthyIds($this->view);
+      $chips[] = $this->chip((string) $this->t('Unhealthy'), [], $this->count($ids)['total'] ?? NULL, BoardHealth::PARAMETER);
     }
     $summary['chips'] = $chips;
     return $summary;
@@ -354,7 +340,7 @@ final class BbBoardSummary extends AreaPluginBase {
    *   See ProjectBoardSummary::focus().
    */
   private function count(?array $ids = NULL, string $search = ''): ?array {
-    $project = $this->project();
+    $project = $this->health->project($this->view);
     $scope = $this->scope();
     $within = ($scope['mode'] ?? 'project') === 'project' ? NULL : array_values(array_map('intval', $scope['ticket_ids'] ?? []));
     return $project === NULL ? ['total' => 0, 'aggregations' => []] : $this->rows->focus($project, $within, $ids, $search);
@@ -381,16 +367,6 @@ final class BbBoardSummary extends AreaPluginBase {
   }
 
   /**
-   * The board's project; its argument already refused a reader without access.
-   *
-   * The validated argument, an id; the raw view argument may be a key.
-   */
-  private function project(): ?BbProjectInterface {
-    $project = $this->entityTypeManager->getStorage('bb_project')->load($this->view->argument['project_id']->argument ?? 0);
-    return $project instanceof BbProjectInterface ? $project : NULL;
-  }
-
-  /**
    * {@inheritdoc}
    *
    * @return array<string, mixed>
@@ -398,9 +374,10 @@ final class BbBoardSummary extends AreaPluginBase {
    */
   public function render($empty = FALSE): array {
     $summary = $this->summary();
-    $content = ['filters' => $this->filterBar($summary)];
+    $bar = new ProjectBoardFilterBar($this->address());
+    $content = ['filters' => $this->filterBar($summary, $bar)];
     $content['active'] = $summary['status'] === 'ok'
-      ? (new ProjectBoardFilterBar($this->address()))->activeFilters($summary['chips'], $summary['total'], $summary['open'])
+      ? $bar->activeFilters($summary['chips'], $summary['total'], $summary['open'])
       : [
         '#type' => 'component',
         '#component' => 'bb_theme:empty-state',
@@ -426,31 +403,29 @@ final class BbBoardSummary extends AreaPluginBase {
   /**
    * The exposed form as the filter bar: counts, avatars, Details and Clear.
    *
-   * The theme's exposed-form template lays the parts out in one row.
+   * The theme's exposed-form template lays the parts out in one row. A
+   * refused or failed summary has no rows, so nothing is counted.
    *
    * @param array<string, mixed> $summary
    *   The summary.
+   * @param \Drupal\bb_board\ProjectBoardFilterBar $bar
+   *   The filter bar parts for this request.
    *
    * @return array<string, mixed>
    *   The exposed form, empty when the display has none.
    */
-  private function filterBar(array $summary): array {
+  private function filterBar(array $summary, ProjectBoardFilterBar $bar): array {
     $form = $this->view->exposed_widgets ?: [];
     if ($form === []) {
       return [];
     }
-    $bar = new ProjectBoardFilterBar($this->address());
-    if (isset($form[self::SEARCH])) {
-      $form[self::SEARCH]['#title_display'] = 'invisible';
-    }
-    if ($summary['status'] === 'ok') {
-      foreach ([self::STATE => $summary['states'], self::PRIORITY => $summary['priorities']] as $key => $rows) {
-        $form[$key] = $bar->withCounts($form[$key] ?? [], $rows);
-      }
-      $form['board_assignees'] = $bar->assignees($summary['employees']);
-    }
+    $form[self::SEARCH]['#title_display'] = 'invisible';
+    $form[self::STATE] = $bar->withCounts($form[self::STATE] ?? [], $summary['states']);
+    $form[self::PRIORITY] = $bar->withCounts($form[self::PRIORITY] ?? [], $summary['priorities']);
+    $form['board_assignees'] = $bar->assignees($summary['employees']);
     $form['board_details'] = $bar->details($this->preferences->details());
     $form['board_clear'] = $bar->clear();
+    $form['board_health'] = $bar->health($this->health->requested($this->view));
     return $form;
   }
 

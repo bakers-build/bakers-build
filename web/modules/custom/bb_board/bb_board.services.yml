@@ -23,3 +23,9 @@ services:
     arguments: ['@user.data', '@current_user', '@request_stack']
   Drupal\bb_board\BoardPreferences:
     alias: bb_board.preferences
+  # The Board's Unhealthy filter: one rule, one attention set per request.
+  bb_board.health:
+    class: Drupal\bb_board\BoardHealth
+    arguments: ['@entity_type.manager', '@bb_core.project_health']
+  Drupal\bb_board\BoardHealth:
+    alias: bb_board.health
