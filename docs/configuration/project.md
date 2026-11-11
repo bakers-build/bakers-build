@@ -72,8 +72,8 @@ A slot entry `{ use, export, with }` names an installed package. `use` resolves 
 | Package | Provides | Options |
 |---|---|---|
 | `@bakers-build/addon-remote-drupal` | The server slot for a bakers.build control plane | None; it uses the connection and engine context. |
-| `@bakers-build/addon-herdr` | Executor and worktree from one `addons` entry; the same `with` goes to both | [herdr options](/addons/herdr/options) |
-| `@bakers-build/addon-orca` | Executor and worktree hosted in [Orca](https://www.onorca.dev/), from one `addons` entry | [Orca options](/addons/orca/options) |
+| `@bakers-build/addon-herdr` | Executor and worktree from one `addons` entry; the same `with` goes to both | [herdr options](/addons/herdr#options) |
+| `@bakers-build/addon-orca` | Executor and worktree hosted in [Orca](https://www.onorca.dev/), from one `addons` entry | [Orca options](/addons/orca#options) |
 | `@bakers-build/addon-workspace-git` | A worktree only, without a terminal executor; needs a compatible executor | [Git workspace](/addons/workspace-git) |
 
 [Conductor slots](/addons/slots) explains ownership and selection.

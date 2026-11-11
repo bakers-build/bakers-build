@@ -119,7 +119,7 @@ export function addonCoverage() {
       notGenerated.push(name)
       continue
     }
-    const page = existsSync(new URL(`${name}/options.md`, docs)) ? `${name}/options.md` : `${name}.md`
+    const page = `${name}.md`
     const text = existsSync(new URL(page, docs)) ? readFileSync(new URL(page, docs), 'utf8') : ''
     if (!text.includes(`<!-- @options @bakers-build/addon-${name} -->`)) missing.push(`addons/${page}`)
   }
