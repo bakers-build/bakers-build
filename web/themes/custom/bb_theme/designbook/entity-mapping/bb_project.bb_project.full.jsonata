@@ -58,12 +58,12 @@
   $f := $lookup($facts, $p.id);
   $or := function ($v) { $v ? $v : "—" };
   $list := function ($v) { $count($v) > 0 ? $join($v, ", ") : "—" };
-  $component := function ($name, $props, $slots) { { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:" & $name, "props": $props, "slots": $slots } };
+  $component := function ($name, $props, $slots) { { "component": $name, "props": $props, "slots": $slots } };
   $zone := function ($heading, $props, $content, $actions) {
-    $component("zone", $merge([{ "inset": "none", "gap": "sm" }, $props]), { "heading": $heading, "actions": $actions, "content": $content })
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:zone", $merge([{ "inset": "none", "gap": "sm" }, $props]), { "heading": $heading, "actions": $actions, "content": $content })
   };
   $tile := function ($label, $value, $detail, $info, $source, $more) {
-    $component("stat-tile", $merge([{ "size": "kpi", "label": $label, "value": $string($value), "detail": $detail, "info": $info, "source": $source }, $more]))
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:stat-tile", $merge([{ "size": "kpi", "label": $label, "value": $string($value), "detail": $detail, "info": $info, "source": $source }, $more]))
   };
   $person := function ($who) { $lookup($people, $who) };
   $row := function ($t) {
@@ -88,35 +88,35 @@
     $tile("Intake", $f.metrics.intake, "conductor set, not started", "The Board's Intake column.", "bb_ticket.work_state", {}),
     $tile("In progress", $f.metrics.working, "being worked on", "The Board's Working column.", "bb_ticket.work_state", {})
   ]);
-  $flowing := [$component("note", { "tone": "success", "lead": "Everything is flowing" }, { "body": "No open ticket needs a person right now." })];
+  $flowing := [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:note", { "tone": "success", "lead": "Everything is flowing" }, { "body": "No open ticket needs a person right now." })];
   $listed := [
-    $component("list", {
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:list", {
       "layout": "lines",
       "pattern": { "avatar": ["state"], "headline": ["title", "priority"], "meta": ["identifier", "created", "workflow", "reason"], "right": ["assignee"], "captions": { "created": "Created" } },
       "items": [$map($f.attention, $row)]
     }),
-    $component("text", { "text": "Showing " & $count($f.attention) & " of " & $f.metrics.unhealthy & " unhealthy tickets", "size": "meta", "tone": "light" })
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:text", { "text": "Showing " & $count($f.attention) & " of " & $f.metrics.unhealthy & " unhealthy tickets", "size": "meta", "tone": "light" })
   ];
   $attention := $zone("Needs attention", { "description": "Open tickets where a person has to act now" },
     $count($f.attention) > 0 ? $listed : $flowing,
-    [$component("button", { "label": "Open board", "href": $scene & "project-detail-board", "variant": "ghost" })]);
+    [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:button", { "label": "Open board", "href": $scene & "project-detail-board", "variant": "ghost" })]);
   $progress := function ($e) {
-    $component("progress", { "identifier": $e.id, "title": $e.title, "url": "#", "done": $e.done, "in_progress": $e.in_progress, "open": $e.open,
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:progress", { "identifier": $e.id, "title": $e.title, "url": "#", "done": $e.done, "in_progress": $e.in_progress, "open": $e.open,
       "total": $e.done + $e.in_progress + $e.open, "percent": $round(100 * $e.done / ($e.done + $e.in_progress + $e.open)) })
   };
-  $epics := $zone("Epics", {}, $count($f.epics) > 0 ? [$map($f.epics, $progress)] : [$component("empty-state", { "message": "No epics in this project." })]);
+  $epics := $zone("Epics", {}, $count($f.epics) > 0 ? [$map($f.epics, $progress)] : [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:empty-state", { "message": "No epics in this project." })]);
   $event := function ($a) {
-    $component("event", { "compact": true, "author_name": $person($a.who).name, "author_initials": $person($a.who).initials, "author_color": $person($a.who).color,
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:event", { "compact": true, "author_name": $person($a.who).name, "author_initials": $person($a.who).initials, "author_color": $person($a.who).color,
       "statement": $a.what, "subject_label": $a.ticket, "subject_url": "#", "detail": $a.detail, "timestamp": $a.when, "datetime": $a.at })
   };
   $activities := $zone("Activities", {}, [$map($f.activities, $event)],
-    [$component("button", { "label": "Refresh", "variant": "neutral" })]);
-  $empty := [$component("empty-state", { "title": "No tickets yet", "message": "Once tickets arrive, this page shows what needs attention, how epics progress and what happened.", "icon": "ticket" })];
+    [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:button", { "label": "Refresh", "variant": "neutral" })]);
+  $empty := [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:empty-state", { "title": "No tickets yet", "message": "Once tickets arrive, this page shows what needs attention, how epics progress and what happened.", "icon": "ticket" })];
   $description := $p.description ? $p.description : "—";
-  [$component("canvas", {}, {
+  [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:canvas", {}, {
     "main": $exists($f) ? [$metrics, $attention, $epics, $activities] : $empty,
-    "inspector": [$component("inspector", { "surface": true }, { "rows": [
-      $zone("About", {}, [$component("text", { "text": $description, "as": "p", "size": "body", "tone": $p.description ? "default" : "faint", "align": "start" })]),
+    "inspector": [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:inspector", { "surface": true }, { "rows": [
+      $zone("About", {}, [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:text", { "text": $description, "as": "p", "size": "body", "tone": $p.description ? "default" : "faint", "align": "start" })]),
       $zone("Properties", {},
         "Key: " & $or($p.key)
         & "<br>Origin: " & $list($f.origin)
@@ -124,7 +124,7 @@
         & "<br>Teams: " & $list([$map([$p.teams], function ($id) { $lookup($teams, $id) })])
         & "<br>Group: " & $or($lookup($groups, $p.group_id))
         & "<br>Environments: " & $list($f.environments),
-        [$component("button", { "label": "Edit", "href": $scene & "project-detail-settings", "variant": "ghost" })])
+        [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:button", { "label": "Edit", "href": $scene & "project-detail-settings", "variant": "ghost" })])
     ] })]
   })]
 )
