@@ -18,6 +18,7 @@ use Drupal\views\Views;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Executes each Project Board column against real Search API data.
@@ -41,6 +42,8 @@ final class ProjectBoardViewTest extends KernelTestBase {
     'better_exposed_filters', 'facets', 'facets_exposed_filters',
     'display_builder', 'ui_patterns', 'ui_patterns_views',
     'display_builder_views',
+    // The conductors block below the columns.
+    'block', 'path_alias',
     'bb_core', 'bb_board',
   ];
 
@@ -67,6 +70,7 @@ final class ProjectBoardViewTest extends KernelTestBase {
     $this->installEntitySchema('search_api_task');
     $this->installSchema('search_api', ['search_api_item']);
     $this->installSchema('user', ['users_data']);
+    $this->installEntitySchema('path_alias');
     $this->installReadScopeEnvironment();
     $this->installConfig(['search_api']);
     $this->container->get('config.installer')
@@ -412,6 +416,40 @@ final class ProjectBoardViewTest extends KernelTestBase {
   }
 
   /**
+   * Below the columns, the Board lists its project's active conductors.
+   *
+   * The block finds the project in the Board's own address; the Board's
+   * ticket filters narrow the columns and leave the conductors alone.
+   */
+  public function testConductorsBelowTheBoardIgnoreTicketFilters(): void {
+    $this->installConfig(['display_builder']);
+    // The page renders through Display Builder, as on the site.
+    $this->config('views.settings')->set('display_extenders', ['display_builder'])->save();
+    $this->installShippedView('views.view.conductors');
+    // The Board address names the workspace by its slug.
+    $this->fixture('a', 'bb_workspace')->set('slug', 'workspace-a')->save();
+    $this->createEntity('bb_conductor', [
+      'conductor_id' => 'board-dormant',
+      'label' => 'board-dormant',
+      'active' => FALSE,
+      'status' => 'online',
+      'project_id' => $this->projectA->id(),
+      'owner_user_id' => $this->worldOwner->id(),
+    ]);
+    $this->indexTickets();
+
+    $plain = $this->page([]);
+    $filtered = $this->page(['priority' => ['1']]);
+
+    $active = [(string) $this->fixture('a', 'bb_conductor')->label()];
+    self::assertMatchesRegularExpression('/Active conductors not affected by ticket filters Conductor/', $this->text($plain));
+    self::assertSame($active, $this->conductorNames($plain));
+    self::assertSame($active, $this->conductorNames($filtered), 'Ticket filters leave the conductors alone.');
+    self::assertSame(1, $this->columns($plain)['Not assigned'] ?? NULL);
+    self::assertSame(0, $this->columns($filtered)['Not assigned'] ?? NULL, 'The filter narrows the columns.');
+  }
+
+  /**
    * Two closed tickets of project A: two and nine days ago.
    *
    * @return array{BbTicketInterface, BbTicketInterface}
@@ -464,6 +502,46 @@ final class ProjectBoardViewTest extends KernelTestBase {
     finally {
       $switcher->switchBack();
     }
+  }
+
+  /**
+   * The whole Board page of project A at its address, as the reader.
+   *
+   * @param array<string, mixed> $query
+   *   The request's query parameters.
+   */
+  private function page(array $query): string {
+    $this->request($query);
+    $workspace = (string) $this->fixture('a', 'bb_workspace')->get('slug')->value;
+    $key = (string) $this->projectA->get('key')->value;
+    $this->container->get('path.current')->setPath("/_workspace/$workspace/project/$key/board");
+    $this->container->get('theme.manager')->setActiveTheme(
+      $this->container->get('theme.initialization')->initTheme('bb_theme'),
+    );
+    $switcher = $this->container->get('account_switcher');
+    $switcher->switchTo($this->reader);
+    try {
+      $view = Views::getView('project_board');
+      self::assertInstanceOf(ViewExecutable::class, $view);
+      $build = $view->executeDisplay('project_board', [$workspace, $key]);
+      self::assertIsArray($build);
+      return (string) $this->container->get('renderer')->renderInIsolation($build);
+    }
+    finally {
+      $switcher->switchBack();
+    }
+  }
+
+  /**
+   * The conductor names in the page's conductors table, in order.
+   *
+   * @return list<string>
+   *   One name per row.
+   */
+  private function conductorNames(string $html): array {
+    return (new Crawler($html))->filter('tbody tr')->each(
+      static fn (Crawler $row): string => trim($row->filter('td, th')->first()->text()),
+    );
   }
 
   /**

@@ -1664,6 +1664,39 @@ display:
                                       source_id: view_attachment_before
                                       source: {  }
                                       node_id: project_board_columns
+                                conductors:
+                                  sources:
+                                    -
+                                      source_id: component
+                                      source:
+                                        component:
+                                          component_id: 'bb_theme:zone'
+                                          variant_id: null
+                                          props:
+                                            inset:
+                                              source_id: select
+                                              source:
+                                                value: none
+                                            gap:
+                                              source_id: select
+                                              source:
+                                                value: sm
+                                          slots:
+                                            heading:
+                                              sources:
+                                                -
+                                                  source_id: textfield
+                                                  source:
+                                                    value: 'Active conductors'
+                                                  node_id: project_board_conductors_heading
+                                            content:
+                                              sources:
+                                                -
+                                                  source_id: block
+                                                  source:
+                                                    plugin_id: 'views_block:conductors-board'
+                                                  node_id: project_board_conductors
+                                      node_id: project_board_conductors_zone
                           node_id: project_board_board
               node_id: project_board_canvas
       path: _workspace/%bb_workspace/project/%bb_project/board
