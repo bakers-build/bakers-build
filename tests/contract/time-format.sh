@@ -34,6 +34,7 @@ php_allow=(
   # Machine-readable stamps for the API and stored figures, not display.
   'web/modules/custom/bb_core/src/Plugin/tool/Tool/TicketRead.php'
   'web/modules/custom/bb_core/src/Plugin/tool/Tool/TicketList.php'
+  'web/modules/custom/bb_core/src/Plugin/tool/Tool/TicketRestart.php'
   'web/modules/custom/bb_core/src/Statistics/Figure/FigureEvaluator.php'
   # Date math: today's UTC date as a period anchor.
   'web/modules/custom/bb_core/src/Statistics/MyWorkStatsPage.php'
