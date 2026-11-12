@@ -1798,6 +1798,7 @@ export class Conductor {
       workspacePath: ws.path,
       run: { uuid: run.runUuid, id: run.runId },
       harness: chosen.agent.id,
+      ...(chosen.agent.container ? { container: chosen.agent.container } : {}),
     });
     await this.executor.startRun({
       ticket: {

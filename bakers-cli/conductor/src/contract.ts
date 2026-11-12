@@ -18,6 +18,8 @@ export {
   resolveBbProjectContext,
 } from './bakers-project-context.js';
 export {
+  type AgentContainer,
+  type AgentContainerContext,
   type AgentFootprint,
   type AgentRunIdentity,
   type BbAgent,
@@ -25,6 +27,7 @@ export {
   CONDUCTOR_TOOL_TIMEOUT_MS,
   CONDUCTOR_TOOLS_SERVER,
   CONDUCTOR_URL_ENV,
+  type ContainerMount,
   DEFAULT_ENV_DENY,
   emptyAgentFootprint,
   matchesEnvDeny,

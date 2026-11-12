@@ -5,6 +5,7 @@ import {
   fakeWorkspace,
 } from '@bakers-build/addon-fake';
 import type {
+  AgentContainer,
   BbAgent,
   BbExecutor,
   BbRuntime,
@@ -90,8 +91,12 @@ function recordingRuntime(
   };
 }
 
-const agent = (seen: { tools?: string }): BbAgent => ({
+const agent = (
+  seen: { tools?: string },
+  container?: AgentContainer,
+): BbAgent => ({
   id: 'claude',
+  ...(container ? { container } : {}),
   launchCommand: (_p, _run, _ws, tools) => {
     if (tools) seen.tools = tools.url;
     return 'claude --go';
@@ -103,6 +108,7 @@ const agent = (seen: { tools?: string }): BbAgent => ({
 function setup(
   runtimeOf?: RuntimePlugin | ((order: string[]) => RuntimePlugin),
   withTools = false,
+  container?: AgentContainer,
 ) {
   const order: string[] = [];
   const runtime =
@@ -157,7 +163,7 @@ function setup(
         id: 'claude',
         alias: 'opus',
         permissions: 'sandbox',
-        agent: agent(seen),
+        agent: agent(seen, container),
       },
     ],
     log,
@@ -195,6 +201,16 @@ describe('runtime slot — launch wrapping', () => {
     expect(JSON.stringify(line?.obj)).not.toContain(
       launch.env.BAKERS_CONDUCTOR_TOKEN as string,
     );
+  });
+
+  it("hands the agent's container needs to the runtime", async () => {
+    const container = { install: 'true' } as unknown as AgentContainer;
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    await setup(recordingRuntime([], rec), false, container).run();
+    expect(rec.wraps[0]?.container).toBe(container);
+    const bare: Recorded = { wraps: [], cleanups: [] };
+    await setup(recordingRuntime([], bare)).run();
+    expect(bare.wraps[0]).not.toHaveProperty('container');
   });
 
   it('uses toolsUrl for the agent and BAKERS_CONDUCTOR_URL', async () => {
