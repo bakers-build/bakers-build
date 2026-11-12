@@ -1,0 +1,25 @@
+{
+  "commands": {
+    "[\"bakers\",\"auth\",\"status\"]": {
+      "exit_code": 1,
+      "stderr": "Synthetic: no session; human login required."
+    },
+    "[\"bakers\",\"config\",\"check\",\"--scope\",\"connection\",\"--online\"]": {
+      "exit_code": 1,
+      "stderr": "Synthetic: authentication missing; login cannot complete in this case."
+    },
+    "[\"bakers\",\"config\",\"check\",\"--scope\",\"project\",\"--online\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic identity authenticated; project access and runtime need separate checks."
+    },
+    "[\"bakers\",\"conductor\",\"check\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic sandbox prerequisites available. No conductor was started."
+    }
+  },
+  "request": "Use bb-init-project for scope project. Machine identity exists, but no login session exists. Guide missing steps and resume only if resolved.",
+  "files": {
+    "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker'};\n"
+  },
+  "id": "setup-s3-missing-auth"
+}

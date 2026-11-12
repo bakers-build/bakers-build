@@ -1,0 +1,12 @@
+{
+  "request": "Use bb-init then bb-init-project to set up this new machine and checkout. Inspect what exists and ask me missing choices one at a time.",
+  "id": "setup-s1-new",
+  "expected_files": {
+    "machine/machine.config.js": [
+      "audit-worker"
+    ],
+    "machine/connections/default.js": [
+      "https://setup.example.test"
+    ]
+  }
+}
