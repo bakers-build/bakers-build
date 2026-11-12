@@ -1493,6 +1493,39 @@ export default {
     vi.stubEnv('HOME', home);
   };
 
+  it('serves the loaded machine agent policy through agents_catalog without reloading it', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
+    const file = writeConfig(
+      slotConfig.replace(
+        "project: { name: 'bakers' },",
+        "project: { name: 'bakers' }, addons: ['@bakers-build/addon-agents'],",
+      ),
+    );
+    const cfg = await loadConductorConfig(file);
+    writeMachine(`export default { addons: [] };`);
+    const binding = { worktreePath: dirname(file) };
+    const result = await cfg.tools!.call('agents_catalog', {}, binding);
+    const report = JSON.parse(result.text);
+    const operator = agentReport(cfg);
+    expect(report).toEqual({
+      ...operator,
+      agents: operator.agents.map(({ alias, description, harness, model }) => ({
+        alias,
+        description,
+        harness,
+        model,
+      })),
+    });
+    expect(report.default_agent).toBe('opus');
+    expect(
+      report.agents.every((agent: object) => !('permissions' in agent)),
+    ).toBe(true);
+    expect(operator.agents[0]).toHaveProperty('permissions');
+    await expect(
+      cfg.tools!.call('agents_catalog', { reload: true }, binding),
+    ).rejects.toThrow(/invalid arguments/);
+  });
+
   it('reports the default Claude catalog including Fable without changing the default', async () => {
     writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
     const cfg = await loadConductorConfig(writeConfig(slotConfig));

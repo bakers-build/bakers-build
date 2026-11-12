@@ -1,5 +1,16 @@
 import type { ConductorEngineConfig } from '@bakers-build/conductor/contract';
 
+/** Sandbox-safe catalog; permission entries can contain personal machine paths. */
+export function catalogReport(config: Parameters<typeof agentReport>[0]) {
+  const report = agentReport(config);
+  return {
+    ...report,
+    agents: report.agents.map(
+      ({ permissions: _permissions, ...agent }) => agent,
+    ),
+  };
+}
+
 /** Report the already-resolved catalog; no agent launch or connection I/O. */
 export function agentReport(
   config: Pick<

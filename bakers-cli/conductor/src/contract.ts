@@ -142,9 +142,11 @@ export {
 } from './plugins/sandbox-preflight.js';
 export type {
   AddonTools,
+  AgentCatalog,
   ToolBinding,
   ToolDefinition,
   ToolHandler,
+  ToolHost,
   ToolRequest,
   ToolResult,
 } from './plugins/tools.js';

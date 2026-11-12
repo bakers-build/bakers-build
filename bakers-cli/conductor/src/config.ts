@@ -40,7 +40,12 @@ import {
   narrowConductorContributions,
 } from './plugins/preset.js';
 import type { Ticket } from './plugins/remote.js';
-import { loadTools, provisionRuns, provisionTools } from './plugins/tools.js';
+import {
+  type AgentCatalog,
+  loadTools,
+  provisionRuns,
+  provisionTools,
+} from './plugins/tools.js';
 import type { ConductorEngineConfig, ConductorFileConfig } from './types.js';
 
 // BB-201: the `.bakers/` walk-up + connection resolution moved to `@bakers-build/core`
@@ -506,7 +511,17 @@ export async function loadConductorConfig(
     ...discovered.addonTools,
     ...provisionTools(config.hooks?.provision_up, provisioning),
   ];
-  const tools = toolSets.length > 0 ? await loadTools(toolSets) : undefined;
+  let agentCatalog: AgentCatalog | undefined;
+  const tools =
+    toolSets.length > 0
+      ? await loadTools(toolSets, {
+          agentCatalog: () => {
+            if (!agentCatalog)
+              throw new Error('agent catalog is not resolved yet');
+            return agentCatalog;
+          },
+        })
+      : undefined;
   const inboxAddons = await loadInboxAddons(
     discovered.addonInbox,
     new Set(tools?.list().map((t) => t.name)),
@@ -697,6 +712,13 @@ export async function loadConductorConfig(
       `agents.routes.default names unavailable alias '${defaultAgent}'`,
     );
   if (!routes.default) routes.default = { '*': defaultAgent };
+  agentCatalog = {
+    agents: candidates,
+    enabled_agents: enabledAgents,
+    disabled_agents: disabled,
+    default_agent: defaultAgent,
+    routes,
+  };
   return {
     remote,
     executor,
