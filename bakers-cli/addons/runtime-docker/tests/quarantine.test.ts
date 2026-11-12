@@ -5,14 +5,20 @@ import {
   mkdirSync,
   mkdtempSync,
   readdirSync,
+  renameSync,
   rmSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, beforeEach, expect, it } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { quarantinePlanted, realExec } from '../src/backend.js';
+
+vi.mock('node:fs', async (importOriginal) => {
+  const fs = await importOriginal<typeof import('node:fs')>();
+  return { ...fs, renameSync: vi.fn(fs.renameSync) };
+});
 
 let root: string;
 let ws: string;
@@ -35,13 +41,24 @@ function repo(path: string) {
   git(path, 'commit', '-q', '--allow-empty', '-m', 'base');
 }
 
-beforeEach(() => {
+beforeEach(async () => {
+  const fs = await vi.importActual<typeof import('node:fs')>('node:fs');
+  vi.mocked(renameSync).mockImplementation(fs.renameSync);
   root = mkdtempSync(join(tmpdir(), 'bb-quarantine-'));
   ws = join(root, 'tree');
   marker = join(root, 'ran');
   repo(ws);
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+async function denyRename(path: string) {
+  const fs = await vi.importActual<typeof import('node:fs')>('node:fs');
+  // CI runs as root, which ignores chmod-based permission failures.
+  vi.mocked(renameSync).mockImplementation((source, target) => {
+    if (source === join(path, '.git')) throw new Error('EACCES');
+    fs.renameSync(source, target);
+  });
+}
 
 function plant(name = 'sub') {
   const sub = join(ws, name);
@@ -120,17 +137,13 @@ it('keeps ignored nested clones and their Git metadata', async () => {
 it('removes a gitlink when rename fails and still handles later entries', async () => {
   const blocked = plant('a');
   const later = plant('z');
-  chmodSync(blocked, 0o555);
-  try {
-    await quarantinePlanted(ws, join(ws, '.git'));
-    expect(existsSync(join(blocked, '.git'))).toBe(true);
-    expect(git(ws, 'ls-files', '--stage')).not.toContain('\ta\n');
-    expect(existsSync(join(later, '.git'))).toBe(false);
-    git(ws, 'status');
-    expect(existsSync(marker)).toBe(false);
-  } finally {
-    chmodSync(blocked, 0o755);
-  }
+  await denyRename(blocked);
+  await quarantinePlanted(ws, join(ws, '.git'));
+  expect(existsSync(join(blocked, '.git'))).toBe(true);
+  expect(git(ws, 'ls-files', '--stage')).not.toContain('\ta\n');
+  expect(existsSync(join(later, '.git'))).toBe(false);
+  git(ws, 'status');
+  expect(existsSync(marker)).toBe(false);
 });
 
 it('keeps host-initialised submodules whose Git directory is protected', async () => {
@@ -160,23 +173,19 @@ it('keeps an uninitialised submodule in the index', async () => {
 it('quarantines the index when a lock prevents removing an unsafe entry', async () => {
   const blocked = plant('a');
   const later = plant('z');
-  chmodSync(blocked, 0o555);
+  await denyRename(blocked);
   writeFileSync(join(ws, '.git/index.lock'), 'locked');
-  try {
-    await quarantinePlanted(ws, join(ws, '.git'));
-    expect(existsSync(join(later, '.git'))).toBe(false);
-    expect(existsSync(join(ws, '.git/index'))).toBe(false);
-    expect(
-      readdirSync(join(ws, '.git')).some((name) =>
-        name.startsWith('index.bakers-quarantine-'),
-      ),
-    ).toBe(true);
-    rmSync(join(ws, '.git/index.lock'));
-    git(ws, 'status');
-    expect(existsSync(marker)).toBe(false);
-  } finally {
-    chmodSync(blocked, 0o755);
-  }
+  await quarantinePlanted(ws, join(ws, '.git'));
+  expect(existsSync(join(later, '.git'))).toBe(false);
+  expect(existsSync(join(ws, '.git/index'))).toBe(false);
+  expect(
+    readdirSync(join(ws, '.git')).some((name) =>
+      name.startsWith('index.bakers-quarantine-'),
+    ),
+  ).toBe(true);
+  rmSync(join(ws, '.git/index.lock'));
+  git(ws, 'status');
+  expect(existsSync(marker)).toBe(false);
 });
 
 it('quarantines the index when listing it fails', async () => {
