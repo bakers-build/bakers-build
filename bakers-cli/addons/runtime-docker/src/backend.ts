@@ -28,7 +28,6 @@ import {
   type DockerOptions,
   dockerArgs,
   PROXY_PORTS,
-  RUN_NETWORK,
 } from './args.js';
 
 const EGRESS_NETWORK = 'bb-runtime-egress';
@@ -80,6 +79,7 @@ export function dockerRuntime(
     docker,
     mounts: options.mounts ?? [],
     network: options.network ?? 'host',
+    runNetwork: `bb-runtime-${deps.conductorKey ?? 'default'}`,
   };
   const allowlist = opts.network === 'allowlist';
   const proxyName = `bb-runtime-proxy-${deps.conductorKey ?? 'default'}`;
@@ -181,7 +181,7 @@ export function dockerRuntime(
       'node',
       '/opt/bb-runtime/proxy.mjs',
     ]);
-    await deps.exec(docker, ['network', 'connect', RUN_NETWORK, proxyName]);
+    await deps.exec(docker, ['network', 'connect', opts.runNetwork, proxyName]);
   };
 
   const git = async (ws: string, flag: string) =>
@@ -402,7 +402,7 @@ export function dockerRuntime(
       return `http://${proxyName}:${PROXY_PORTS.tools}${path}${u.search}`;
     };
     runtime.toolServerHosts = async () => {
-      await ensureNetwork(RUN_NETWORK, true);
+      await ensureNetwork(opts.runNetwork, true);
       await ensureNetwork(EGRESS_NETWORK, false);
       const { stdout } = await deps.exec(docker, [
         'network',

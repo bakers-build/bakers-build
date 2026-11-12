@@ -54,7 +54,13 @@ export async function startProxy(o) {
     let upstream;
     socket.on('error', () => upstream?.destroy());
     const { host, port } = splitHostPort(req.url ?? '');
-    if (!host || !port || !allowed(host, o.allow)) {
+    if (
+      !host ||
+      !Number.isInteger(port) ||
+      port < 1 ||
+      port > 65535 ||
+      !allowed(host, o.allow)
+    ) {
       socket.end('HTTP/1.1 403 Forbidden\r\n\r\n');
       return;
     }

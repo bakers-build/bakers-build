@@ -8,6 +8,8 @@ export interface DockerOptions {
   /** Extra host paths, mounted read-only at the same path. */
   mounts: string[];
   network: 'host' | 'allowlist';
+  /** The conductor-specific internal network used in allowlist mode. */
+  runNetwork: string;
   /** Allowlist mode: the conductor's proxy sidecar name. */
   proxy?: string;
 }
@@ -32,7 +34,6 @@ export const RUN_PATH = `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
 export const PROXY_PORTS = { egress: 3128, api: 8081, tools: 8082 } as const;
 /** What the run sends as its API key in allowlist mode; the proxy swaps in the real one. */
 export const API_KEY_PLACEHOLDER = 'bb-runtime-placeholder';
-export const RUN_NETWORK = 'bb-runtime';
 
 /** Keys whose host value means nothing inside the container. */
 const HOST_ONLY = (key: string) =>
@@ -96,7 +97,7 @@ export function dockerArgs(
     '--label',
     `build.bakers.run=${input.run.uuid}`,
     '--network',
-    allowlist ? RUN_NETWORK : 'host',
+    allowlist ? opts.runNetwork : 'host',
     '--user',
     `${where.uid}:${where.gid}`,
     ...(opts.docker.endsWith('podman') ? ['--userns=keep-id'] : []),

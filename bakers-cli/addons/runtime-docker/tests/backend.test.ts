@@ -407,7 +407,7 @@ describe('runtime-docker allowlist mode', () => {
     expect(await rt.toolServerHosts?.()).toEqual(['172.30.0.1']);
     expect(calls).toContainEqual([
       'docker',
-      ['network', 'create', '--internal', 'bb-runtime'],
+      ['network', 'create', '--internal', 'bb-runtime-aaa'],
     ]);
     expect(calls).toContainEqual([
       'docker',
@@ -422,6 +422,34 @@ describe('runtime-docker allowlist mode', () => {
     const out = await rt.wrap(launch());
     return out;
   }
+
+  it('keeps each conductor run network separate from the other proxy', async () => {
+    const state = { networks: new Set<string>() };
+    for (const conductorKey of ['aaa', 'bbb']) {
+      const rt = dockerRuntime(allowOpts, {
+        ...fakeDocker(state),
+        conductorKey,
+      });
+      await rt.toolServerHosts?.();
+      rt.toolsUrl?.('http://127.0.0.1:4242');
+      const out = await rt.wrap(launch({ run: { uuid: conductorKey, id: 7 } }));
+      expect(out.command).toContain(`'--network' 'bb-runtime-${conductorKey}'`);
+      expect(calls).toContainEqual([
+        'docker',
+        [
+          'network',
+          'connect',
+          `bb-runtime-${conductorKey}`,
+          `bb-runtime-proxy-${conductorKey}`,
+        ],
+      ]);
+    }
+    expect([...state.networks].sort()).toEqual([
+      'bb-runtime-aaa',
+      'bb-runtime-bbb',
+      'bb-runtime-egress',
+    ]);
+  });
 
   it('tells the agent the placeholder key the run holds', async () => {
     const out = await wrapped({ networks: new Set() });
@@ -446,10 +474,10 @@ describe('runtime-docker allowlist mode', () => {
     expect(args.join(' ')).not.toContain('oauth');
     expect(calls).toContainEqual([
       'docker',
-      ['network', 'connect', 'bb-runtime', 'bb-runtime-proxy-aaa'],
+      ['network', 'connect', 'bb-runtime-aaa', 'bb-runtime-proxy-aaa'],
     ]);
     expect(out.env.MODEL_TOKEN).toBeUndefined();
-    expect(out.command).toContain("'bb-runtime'");
+    expect(out.command).toContain("'bb-runtime-aaa'");
   });
 
   it('recreates the sidecar only when its config changed', async () => {

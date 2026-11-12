@@ -26,6 +26,7 @@ const opts: DockerOptions = {
   image: 'img',
   mounts: [],
   network: 'host',
+  runNetwork: 'bb-runtime-abc',
 };
 const where: HostPaths = {
   gitCommonDir: '/w/main/.git',
@@ -181,7 +182,7 @@ describe('dockerArgs in allowlist mode', () => {
 
   it('joins the internal network and routes through the proxy', () => {
     const { argv } = dockerArgs(withCred, allow, where);
-    expect(argv.join(' ')).toContain('--network bb-runtime ');
+    expect(argv.join(' ')).toContain('--network bb-runtime-abc ');
     const flags = envFlags(argv);
     expect(flags).toContain('HTTPS_PROXY=http://bb-runtime-proxy-abc:3128');
     expect(flags).toContain('NO_PROXY=bb-runtime-proxy-abc');

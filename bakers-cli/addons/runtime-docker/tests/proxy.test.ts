@@ -1,5 +1,7 @@
+import { execFile } from 'node:child_process';
 import { createServer, type IncomingHttpHeaders } from 'node:http';
 import { type AddressInfo, connect, createServer as tcp } from 'node:net';
+import { promisify } from 'node:util';
 import { afterEach, describe, expect, it } from 'vitest';
 // @ts-expect-error -- plain JS shipped in the image, no declarations
 import { allowed, startProxy } from '../image/proxy.mjs';
@@ -56,6 +58,39 @@ describe('startProxy', () => {
     expect(await connectVia(p.ports.egress, `localhost:${echo}`)).toMatch(
       / 403 /,
     );
+  });
+
+  it('refuses invalid CONNECT ports and still accepts a valid tunnel', async () => {
+    // A crash must fail this check without killing the test runner.
+    const { stdout } = await promisify(execFile)(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `
+        import assert from 'node:assert/strict';
+        import { connect, createServer } from 'node:net';
+        import { startProxy } from ${JSON.stringify(new URL('../image/proxy.mjs', import.meta.url).href)};
+        const server = createServer(s => s.pipe(s));
+        await new Promise(r => server.listen(0, '127.0.0.1', r));
+        const p = await startProxy({ host: '127.0.0.1', allow: ['127.0.0.1'] });
+        const request = port => new Promise((resolve, reject) => {
+          const s = connect(p.ports.egress, '127.0.0.1', () =>
+            s.write('CONNECT 127.0.0.1:' + port + ' HTTP/1.1\\r\\n\\r\\n'));
+          s.on('error', reject);
+          s.once('data', data => { resolve(String(data)); s.destroy(); });
+        });
+        for (const port of [65536, -1, 0, 1.5, 'NaN'])
+          assert.match(await request(port), / 403 /);
+        assert.match(await request(server.address().port), / 200 /);
+        await p.close();
+        await new Promise(r => server.close(r));
+        console.log('survived');
+      `,
+      ],
+      { timeout: 5000 },
+    );
+    expect(stdout.trim()).toBe('survived');
   });
 
   async function apiUpstream(): Promise<{

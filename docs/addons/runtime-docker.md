@@ -46,8 +46,8 @@ container and run home are removed after the run.
 
 ## Allowlist mode
 
-With `network: 'allowlist'`, runs join the internal network `bb-runtime`. One proxy per conductor
-is their only way out: HTTPS to `allow` hosts (others get `403`), the agent's model API with the
+With `network: 'allowlist'`, runs join the internal network `bb-runtime-<conductorKey>`.
+Each conductor’s proxy is its runs’ only way out: HTTPS to `allow` hosts (others get `403`), the agent's model API with the
 real credential added by the proxy, and the conductor tool server. The run holds a placeholder key.
 One conductor's proxy serves one model API at a time. The host's `127.0.0.1` is not
 reachable; use the conductor tools for DDEV and ports.
