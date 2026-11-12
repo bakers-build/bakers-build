@@ -20,10 +20,12 @@ final class TicketListToolTest extends BakersToolTestBase {
    * Every ticket of the project, with exactly the poller's fields.
    */
   public function testListsEveryReadableTicketWithFields(): void {
+    $this->container->get('router.builder')->rebuild();
     $frozenAt = 1767225600;
     $parent = $this->ticket('PAR-1', [
       'labels' => [$this->term('label', 'pingpong')->id(), $this->term('label', 'question')->id()],
       'links' => [['uri' => 'https://example.slack.com/archives/C1/p1', 'title' => 'Thread']],
+      'origin' => 'https://issues.test/1',
       'frozen' => TRUE,
       'frozen_at' => $frozenAt,
     ]);
@@ -40,11 +42,17 @@ final class TicketListToolTest extends BakersToolTestBase {
     );
 
     self::assertSame(
-      ['id', 'identifier', 'title', 'state', 'links', 'labels', 'frozen', 'frozen_at', 'parent', 'closed'],
+      [
+        'id', 'identifier', 'title', 'url', 'origin', 'state', 'links',
+        'labels', 'frozen', 'frozen_at', 'parent', 'closed',
+      ],
       array_keys($rows[0]),
     );
     self::assertSame($parent->getIdentifier(), $rows[0]['identifier']);
     self::assertSame('PAR-1', $rows[0]['title']);
+    self::assertSame($parent->toUrl()->setAbsolute()->toString(), $rows[0]['url']);
+    self::assertSame('https://issues.test/1', $rows[0]['origin']);
+    self::assertNull($rows[1]['origin']);
     self::assertSame('qualification', $rows[0]['state']);
     self::assertSame([['uri' => 'https://example.slack.com/archives/C1/p1', 'title' => 'Thread']], $rows[0]['links']);
     self::assertSame(['pingpong', 'question'], $rows[0]['labels']);

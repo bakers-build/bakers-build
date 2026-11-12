@@ -87,3 +87,20 @@ def read_json(path, strict=False):
 def text(code, key, **values):
     """The plugin's Slack text ``key`` in language ``code``, German when it has none."""
     return MESSAGES.get(code, MESSAGES[DEFAULT_LANGUAGE])[key].format(**values)
+
+
+def ticket_error(code, key, user, ticket):
+    """An existing error reply with a readable ticket's canonical link and stored origin."""
+    message = text(code, key, user=user)
+    if not ticket or not ticket.get("url"):
+        return message
+    def escape(value):
+        return str(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    def link(url, title):
+        return f"<{escape(url).replace('|', '%7C')}|{escape(title).replace('|', '¦')}>"
+    message += "\n\n" + link(ticket["url"], f"{ticket['identifier']} · {ticket['title']}")
+    origin = ticket.get("origin")
+    if origin:
+        value = link(origin, origin) if re.match(r"https?://", origin, re.I) else escape(origin)
+        message += f"\n{text(code, 'originLead')} {value}"
+    return message

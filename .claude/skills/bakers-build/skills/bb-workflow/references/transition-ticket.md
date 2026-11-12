@@ -8,7 +8,7 @@ Eligible done/cancelled: first [retrospective](retrospective.md), with completed
 ## Links-only write
 
 Before coding handoff persist verified MR, also when staying working; already present: verify/skip.
-Else `bakers_ticket_transition` with ticket/links and **no state**. Verify MR and existing links in
+Else `bakers_ticket_update` with ticket/`links_add` and **no state**. Verify MR and existing links in
 result. Failure/uncertainty blocks handoff: reconcile under [ticket writes](ticket-writes.md).
 This mode runs no retrospective/origin/transition.
 

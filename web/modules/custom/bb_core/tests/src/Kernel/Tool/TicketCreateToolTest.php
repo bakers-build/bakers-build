@@ -97,6 +97,8 @@ final class TicketCreateToolTest extends BakersToolTestBase {
       'workflow' => 'bb_work',
       'project' => 'TOOL',
     ]));
+    self::assertSame('Linked', $out['title']);
+    self::assertNull($out['origin']);
     self::assertMatchesRegularExpression('#^https?://[^/]+(/.*)?/tool-workspace/ticket/tool-1$#', $out['url']);
   }
 

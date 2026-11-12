@@ -133,3 +133,12 @@ test('a sub-ticket posts into its ancestor\'s conversation behind its identifier
   const { posts } = diff({ 'ACME-2': 'plan' }, [ticket('ACME-2', 'working', { channel: 'C1' }, { inherited: true })], {}, messages);
   assert.deepEqual(posts, [{ identifier: 'ACME-2', channel: 'C1', text: 'ACME-2 · Work on this has started.' }]);
 });
+
+test('done links the sub-ticket and its own origin, without extra posts after restart', () => {
+  const t = ticket('ACME-2', 'done', slackThread, { inherited: true, url: 'https://bakers.test/ticket/2', origin: 'https://issues.test/2' });
+  const texts = { ...messages, originLead: 'Origin ticket:' };
+  const first = diff({ 'ACME-2': 'review' }, [t], {}, texts);
+  assert.match(first.posts[0].text, /^ACME-2 · /);
+  assert.ok(first.posts[0].text.endsWith('<https://bakers.test/ticket/2|ACME-2 · Ticket ACME-2>\nOrigin ticket: <https://issues.test/2|https://issues.test/2>'));
+  assert.deepEqual(diff(JSON.parse(JSON.stringify(first.next)), [t], {}, texts).posts, []);
+});
