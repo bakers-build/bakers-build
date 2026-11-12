@@ -1431,7 +1431,7 @@ describe('Conductor', () => {
     expect(command).toContain('Custom BB-1 plan r-1');
   });
 
-  it('dispatch uses the embed-free default prompt: step-0 read command, no ticket body/comments (BB-112)', async () => {
+  it('dispatch uses the embed-free default prompt: workflow-first ticket read, no ticket body/comments (BB-112)', async () => {
     const remote = new FakeBbRemote({
       tickets: {
         't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
@@ -1463,7 +1463,7 @@ describe('Conductor', () => {
     // The agent self-reads the ticket + comments at step 0 — the dispatch line
     // embeds neither the ticket body nor any comment text, and stays bounded.
     expect(command).toContain(
-      `bakers tools bakers_ticket_read --data '{"ticket":"t-1"}'`,
+      `Read the ticket with the bakers tool bakers_ticket_read, arguments {"ticket":"t-1"}`,
     );
     expect(command).not.toContain('--- Ticket comments ---');
     expect(command).not.toContain('{comments}');

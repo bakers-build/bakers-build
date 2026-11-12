@@ -14,7 +14,7 @@ describe('site tool allowlist', () => {
       .filter((path) => path.endsWith('.md'))
       .map((path) => readFileSync(new URL(path, references), 'utf8'))
       .join('\n');
-    const named = new Set(operations.match(/bakers_[a-z_]+/g));
+    const named = new Set(operations.match(/bakers_[a-z][a-z_]+/g));
     expect(named.size).toBeGreaterThan(5);
     expect([...named].filter((t) => !SITE_TOOLS.includes(t))).toEqual([]);
   });
