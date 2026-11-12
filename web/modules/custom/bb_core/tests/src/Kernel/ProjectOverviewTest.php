@@ -70,9 +70,12 @@ final class ProjectOverviewTest extends KernelTestBase {
     $type->save();
     $ticket = $this->workTicket('Carried work');
     $environments = $this->container->get('entity_type.manager')->getStorage('bb_environment')->loadByProperties(['name' => 'production']);
+    $environment = reset($environments);
+    self::assertInstanceOf(ContentEntityInterface::class, $environment);
     $older = $this->workTicket('Older release', [
-      'ticket_type' => $type->id(), 'created' => 100,
-      'environments' => [reset($environments)->id()],
+      'ticket_type' => $type->id(),
+      'created' => 100,
+      'environments' => [$environment->id()],
       'referenced_tickets' => [$ticket->id()],
     ]);
     $newer = $this->workTicket('Newer release', ['ticket_type' => $type->id(), 'created' => 200]);
@@ -443,7 +446,10 @@ final class ProjectOverviewTest extends KernelTestBase {
     self::assertSame('overview_edit', $sources[1]['source']['component']['slots']['actions']['sources'][0]['node_id']);
     $main = $canvas['source']['component']['slots']['main']['sources'];
     self::assertSame(
-      ['overview_metrics', 'overview_attention', 'overview_epics', 'overview_deployments', 'project_activities', 'overview_empty'],
+      [
+        'overview_metrics', 'overview_attention', 'overview_epics',
+        'overview_deployments', 'project_activities', 'overview_empty',
+      ],
       array_column($main, 'node_id'),
     );
   }

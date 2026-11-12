@@ -161,7 +161,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
     if ($project !== NULL) {
       $metadata->addCacheableDependency($project);
       // Memberships decide which tickets the viewer sees, so the empty state.
-      $metadata->addCacheTags(['bb_ticket_list', 'og_membership_list']);
+      $metadata->addCacheTags(['bb_ticket_list', 'bb_environment_list', 'og_membership_list']);
     }
     $metadata->addCacheContexts(['user']);
     $metadata->applyTo($element);
@@ -343,27 +343,33 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
         'value' => implode(', ', $deployment['environments']) ?: '—',
       ];
       $row['cells']['workflow'] = [
-        'kind' => 'badge', 'label' => $row['cells']['state']['label'], 'tone' => 'neutral',
+        'kind' => 'badge',
+        'label' => $row['cells']['state']['label'],
+        'tone' => 'neutral',
       ];
       $row['cells']['count'] = [
         'kind' => 'link',
         'value' => (string) $this->formatPlural($deployment['count'], '1 ticket', '@count tickets'),
         'url' => Url::fromUserInput($project->toUrl()->toString() . '/tickets', [
-          'query' => ['deployment' => $ticket->getIdentifier()],
+          'query' => ['deployment' => $ticket->getIdentifier(), 'closed' => 'all'],
         ])->toString(),
       ];
       $items[] = $row;
     }
     $content = $items === [] ? [
-      '#type' => 'component', '#component' => 'bb_theme:empty-state',
+      '#type' => 'component',
+      '#component' => 'bb_theme:empty-state',
       '#props' => ['message' => (string) $this->t('No deployments in this project.')],
     ] : [
-      '#type' => 'component', '#component' => 'bb_theme:list',
+      '#type' => 'component',
+      '#component' => 'bb_theme:list',
       '#props' => [
         'layout' => 'lines',
         'pattern' => [
-          'avatar' => ['state'], 'headline' => ['identifier', 'title'],
-          'meta' => ['workflow', 'environment', 'created'], 'right' => ['count'],
+          'avatar' => ['state'],
+          'headline' => ['identifier', 'title'],
+          'meta' => ['workflow', 'environment', 'created'],
+          'right' => ['count'],
         ],
         'items' => $items,
       ],

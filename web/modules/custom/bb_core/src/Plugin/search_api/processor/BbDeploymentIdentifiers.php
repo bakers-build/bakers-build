@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\search_api\processor;
 
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\search_api\Attribute\SearchApiProcessor;
 use Drupal\search_api\Datasource\DatasourceInterface;
@@ -24,7 +27,21 @@ use Drupal\search_api\Query\QueryInterface;
   description: new TranslatableMarkup('Deployment tickets carrying this work ticket.'),
   stages: ['add_properties' => 0, 'preprocess_query' => 0],
 )]
-final class BbDeploymentIdentifiers extends ProcessorPluginBase {
+final class BbDeploymentIdentifiers extends ProcessorPluginBase implements ContainerFactoryPluginInterface {
+
+  /**
+   * Reads deployment records at indexing and query time.
+   */
+  private EntityTypeManagerInterface $entityTypeManager;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
+    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $instance->entityTypeManager = $container->get('entity_type.manager');
+    return $instance;
+  }
 
   /**
    * {@inheritdoc}
@@ -43,7 +60,7 @@ final class BbDeploymentIdentifiers extends ProcessorPluginBase {
       }
       elseif ($condition->getField() === 'deployment_identifiers') {
         $values = (array) $condition->getValue();
-        $storage = \Drupal::entityTypeManager()->getStorage('bb_ticket');
+        $storage = $this->entityTypeManager->getStorage('bb_ticket');
         $ids = $storage->getQuery()->accessCheck(TRUE)
           ->condition('ticket_type.entity.name', 'deployment')
           ->condition('identifier', $values, 'IN')->execute();
@@ -89,7 +106,7 @@ final class BbDeploymentIdentifiers extends ProcessorPluginBase {
       return;
     }
     // Indexing is viewer-independent; query-time scope protects the results.
-    $storage = \Drupal::entityTypeManager()->getStorage('bb_ticket');
+    $storage = $this->entityTypeManager->getStorage('bb_ticket');
     $ids = $storage->getQuery()->accessCheck(FALSE)
       ->condition('ticket_type.entity.name', 'deployment')
       ->condition('referenced_tickets', $ticket->id())->execute();

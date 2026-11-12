@@ -62,4 +62,11 @@
       {% if assignee_initials %}{{ include('bb_theme:person', {variant: 'compact', display_name: '', initials: assignee_initials, color: assignee_color|default('running'), attributes: create_attribute({role: 'img', 'aria-label': assignee_name|default(assignee_initials), title: assignee_name|default(assignee_initials)})}, with_context = false) }}{% endif %}
     </div>
   {% endif %}
+  {% if deployed_to|default([]) %}
+    <div class="flex flex-wrap gap-inline-xs mt-inline">
+      {% for environment in deployed_to %}
+        {{ include('bb_theme:badge', {label: environment, tone: 'neutral', attributes: create_attribute({'aria-label': 'Deployed to'|t ~ ' ' ~ environment})}, with_context = false) }}
+      {% endfor %}
+    </div>
+  {% endif %}
 </article>
