@@ -11,7 +11,7 @@ paths. Machine scope only; add it to `~/.bakers/machine.config.js`:
 
 ## Before the first run
 
-- The agent must support a container runtime; [Claude](/addons/claude#container-runtime) does.
+- The agent must support a container runtime; [Claude](/addons/claude#isolated-runtimes) does.
   Other agents refuse to start.
 - A container cannot use your harness login. Export the agent's credential for the conductor; for
   Claude `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or `ANTHROPIC_API_KEY`.
