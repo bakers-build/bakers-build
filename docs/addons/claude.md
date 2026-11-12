@@ -8,7 +8,7 @@ Ask AI to check this harness and its [skills](/skills-and-workflows/skills).
 
 ## Setup
 
-Follow the [installation guide](https://docs.claude.com/en/docs/claude-code/setup), authenticate as the conductor user and check `claude` is on `PATH`.
+[Install Claude](https://docs.claude.com/en/docs/claude-code/setup), authenticate as the conductor user and put its binary on `PATH`.
 
 ## Enable it
 
@@ -18,9 +18,9 @@ Enable only in `~/.bakers/machine.config.js`:
 addons: ['@bakers-build/addon-claude'],
 ```
 
-Aliases: `opus` for reasoning, `sonnet` for well-specified changes, `fable` for demanding, long-running work. Select `agent:fable`, or `agent:fable@working` for working only.
+Aliases: `opus` (reasoning), `sonnet` (well-specified changes), `fable` (demanding work). Select `agent:fable`, or `agent:fable@working` for working only.
 
-Fable uses `--model fable`; supported baseline: Claude Code **2.1.257+**. This version-free selector honors `ANTHROPIC_DEFAULT_FABLE_MODEL`; account/provider access still applies. See [Claude's Fable documentation](https://code.claude.com/docs/en/model-config#work-with-fable).
+Fable needs Claude Code **2.1.257+** and provider access. `--model fable` honors `ANTHROPIC_DEFAULT_FABLE_MODEL`; see [Fable documentation](https://code.claude.com/docs/en/model-config#work-with-fable).
 
 One custom candidate:
 
@@ -61,15 +61,13 @@ Default: `system`. An isolating [runtime](/addons/runtime-docker) turns `sandbox
 
 ## Container runtime
 
-Claude supports the [Docker runtime](/addons/runtime-docker). Each run gets its own home with your
-agent home's `settings.json` and `.claude.json`, never `.credentials.json`; first-run setup is
-marked done. Plugins are mounted read-only, and the transcript directory stays on the host, so the
-conductor reads it after the run. Export `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or
-`ANTHROPIC_API_KEY` for the conductor; in allowlist mode only the proxy holds it.
+The [Docker runtime](/addons/runtime-docker) gives Claude a per-run home with agent settings, never
+its login. Setup is pre-approved; plugins are read-only and transcripts stay on the host. Export
+`CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY`; allowlist mode keeps it in the proxy.
 
 ## Deny unused tools
 
-Recommended: deny the built-in tools your runs never use in the project's committed `.claude/settings.json`. [Project setup](/get-started/connect-a-project) proposes it and writes only what you choose.
+Deny unused built-in tools in committed `.claude/settings.json`. [Project setup](/get-started/connect-a-project) writes your choices.
 
 ```json
 { "permissions": { "deny": ["<ToolName>"] } }
@@ -79,7 +77,7 @@ Recommended: deny the built-in tools your runs never use in the project's commit
 - **Binds:** interactive sessions in the repository too.
 - **Lives in one file:** deny rules from all settings sources merge and `deny` wins; only deleting the line re-enables a tool.
 
-Keep `AskUserQuestion`; planning asks through it. To measure the effect, run a test ticket with `agent:opus-proxy`, which logs every model request.
+Keep `AskUserQuestion` for planning. Measure with `agent:opus-proxy`, which logs every model request.
 
 ## Check it works
 
@@ -93,7 +91,7 @@ bakers agents
 
 ## Good to know
 
-- The addon starts `claude` without installing or authenticating it. Non-interactive shells need the binary on `PATH`, not an alias.
+- Install and authenticate `claude` yourself; non-interactive shells need its binary on `PATH`.
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
