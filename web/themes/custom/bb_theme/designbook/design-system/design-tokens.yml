@@ -918,16 +918,6 @@ component:
     padding-y:
       $value: '{primitive.layout.spacing.space-5}'
       $type: dimension
-    max-width:
-      $value: 960px
-      $type: dimension
-      $description: Maximum width of a settings section such as Members.
-      $extensions:
-        designbook:
-          provenance: observation
-          reference: 8c75dc05ca021b53/96b34e1b9fb7053f
-          nodes:
-            - '71:4494'
   grid:
     gap:
       $value: '{primitive.layout.spacing.space-5}'
@@ -986,6 +976,17 @@ component:
           reference: 8c75dc05ca021b53/7d9c10ecf400eb5b
           nodes:
             - '68:152'
+  narrow:
+    max-width:
+      $value: 960px
+      $type: dimension
+      $description: Maximum width of a narrow content measure such as a Members section.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/96b34e1b9fb7053f
+          nodes:
+            - '71:4494'
 themes:
   cozy:
     primitive:

@@ -142,9 +142,11 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       $form += $this->tenancyParts($group, $may_write);
     }
 
+    $teams = $tenancy ? $this->tenancyInvite->teamNamesByMember($group) : NULL;
     $form['roster'] = $this->listZone(
       $this->t('Members'),
-      $this->itemBuilder->items($this->membershipWriter->memberships($group), $group, $may_write, $may_transfer),
+      $this->itemBuilder->items($this->membershipWriter->memberships($group), $group, $may_write, $may_transfer, $teams),
+      $this->itemBuilder->columns($tenancy),
       $this->t('This @group has no members yet.', ['@group' => $this->groupNoun($group)]),
       20,
     );
@@ -188,6 +190,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       $parts['pending'] = $this->listZone(
         $this->t('Pending invitations'),
         $this->tenancyInvite->inviteItems($invites, $may_write),
+        $this->tenancyInvite->inviteColumns(),
         $this->t('No pending invitations.'),
         15,
       );
@@ -223,6 +226,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       '#component' => 'bb_theme:zone',
       '#props' => [
         'inset' => 'none',
+        'measure' => 'narrow',
         'direction' => $element['#bb_zone_direction'] ?? 'column',
         'description' => (string) ($element['#bb_zone_description'] ?? ''),
       ],
@@ -325,7 +329,9 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    * @param \Drupal\Core\StringTranslation\TranslatableMarkup|string $heading
    *   The zone heading.
    * @param array{items: array<int, array<string, mixed>>, controls: array<int, array<string, array<string, mixed>>>} $built
-   *   Items and deferred controls.
+   *   Rows and deferred controls.
+   * @param array<int, array{key: string, label: string}> $columns
+   *   The table columns.
    * @param \Drupal\Core\StringTranslation\TranslatableMarkup|string $empty
    *   Empty-state sentence.
    * @param int $weight
@@ -334,7 +340,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
    * @return array<string, mixed>
    *   The zone container.
    */
-  private function listZone(mixed $heading, array $built, mixed $empty, int $weight): array {
+  private function listZone(mixed $heading, array $built, array $columns, mixed $empty, int $weight): array {
     return [
       '#type' => 'container',
       '#weight' => $weight,
@@ -344,23 +350,13 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       ],
       '#bb_zone_heading' => $heading,
       '#bb_member_controls' => $built['controls'],
-      'list' => [
+      'list' => $built['items'] === [] ? ['#markup' => $empty] : [
         '#type' => 'component',
-        '#component' => 'bb_theme:list',
+        '#component' => 'bb_theme:table',
         '#props' => [
-          'layout' => 'cards',
-          'spacing' => 'comfortable',
-          // Who and since when on the left; the role and the controls that
-          // change the membership right-aligned, as on the projects list.
-          'pattern' => [
-            'headline' => ['person'],
-            'meta' => ['joined', 'team'],
-            'right' => ['state', 'role', 'transfer', 'remove'],
-          ],
-          'items' => $built['items'],
-        ],
-        '#slots' => [
-          'empty' => ['#markup' => $empty],
+          'columns' => $columns,
+          'rows' => $built['items'],
+          'row_height' => 'lg',
         ],
       ],
     ];
@@ -441,11 +437,16 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     if ($messages === []) {
       return $build;
     }
+    // In a zone like the sections, so the message keeps their narrow measure.
     return $build + [
-      '#type' => 'component',
-      '#component' => 'bb_theme:message',
-      '#props' => ['status' => 'status'],
-      '#slots' => ['body' => ['#markup' => implode(' ', array_map('strval', $messages))]],
+      '#type' => 'container',
+      '#pre_render' => [[self::class, 'wrapInZone']],
+      'message' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:message',
+        '#props' => ['status' => 'status'],
+        '#slots' => ['body' => ['#markup' => implode(' ', array_map('strval', $messages))]],
+      ],
     ];
   }
 

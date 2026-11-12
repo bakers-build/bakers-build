@@ -3,8 +3,8 @@
 @import "./component-sizing.src.css";
 @import "./google-fonts.src.css";
 @import "./grid.src.css";
+@import "./layout-narrow.src.css";
 @import "./layout-prose.src.css";
-@import "./layout-section.src.css";
 @import "./layout-spacing.src.css";
 @import "./layout-width.src.css";
 @import "./primitive-color.src.css";

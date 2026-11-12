@@ -1,0 +1,14 @@
+# Execution problems — design-verify
+
+Score 8 (eight minor issues, diff 2.73% at 1440x900 against threshold 2%). Every issue is an approved spec decision or shared, out-of-scope styling; none is repaired in this ticket.
+
+| When | Step | Task | Title | Why | Attempted correction |
+|---|---|---|---|---|---|
+| 2026-11-12T01:50:00Z | triage | triage | members | invited-tone (minor): Invited badge is the neutral grey tone; the reference draws the lease indigo. File: web/modules/custom/bb_core/src/Members/WorkspaceInvite.php | Accepted, not repaired: Accepted deviation D4 (approved spec): AC-4 asks for the neutral tone; indigo means a claim lease. |
+| 2026-11-12T01:50:00Z | triage | triage | members | resend (minor): The expired invitation offers Revoke only; the reference shows Resend. File: web/modules/custom/bb_core/src/Members/WorkspaceInvite.php | Accepted, not repaired: Accepted deviation D5 (approved spec): Members behaviour is out of scope. |
+| 2026-11-12T01:50:00Z | triage | triage | members | invite-action (minor): Invite members sits on the Members zone header, not in the page header. File: web/modules/custom/bb_core/src/Form/GroupMembersForm.php | Accepted, not repaired: Kept: the existing dialog trigger placement (action-pattern exception) is Members behaviour, out of scope. |
+| 2026-11-12T01:50:00Z | triage | triage | members | relative-dates (minor): Dates read 31 Oct / 6 Jan; the reference shows 12 days ago / 6 Jan 2026. File: web/modules/custom/bb_core/src/Time/BbDate.php | Accepted, not repaired: Kept: the approved spec keeps the product date formatter. |
+| 2026-11-12T01:50:00Z | triage | triage | members | person-two-lines (minor): Name and mail stack on two lines in the Name cell; the reference sets them inline. File: web/themes/custom/bb_theme/components/person/person.twig | Accepted, not repaired: Kept: the shared person cell; the row still measures 44px. |
+| 2026-11-12T01:50:00Z | triage | triage | members | table-header (minor): Column header row is 40px on the app background; the reference draws a 33px header without fill. File: web/themes/custom/bb_theme/components/table/table.twig | Accepted, not repaired: Kept: the header style is the shared table component used by every table; changing it is outside this ticket. |
+| 2026-11-12T01:50:00Z | triage | triage | members | section-offset (minor): The first section starts about 20px lower than in the reference (message zone plus canvas stack gap). File: web/themes/custom/bb_theme/components/canvas/canvas.twig | Accepted, not repaired: Kept: the canvas stack rhythm is shared by every screen. |
+| 2026-11-12T01:50:00Z | triage | triage | members | shell (minor): Sidebar entries, message fill and status bar differ from the reference frame. File: web/themes/custom/bb_theme/designbook/design-system/design-system.scenes.yml | Accepted, not repaired: Out of scope: shell and colours belong to earlier tickets. |
