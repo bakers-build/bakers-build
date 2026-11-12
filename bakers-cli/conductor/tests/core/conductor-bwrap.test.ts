@@ -85,6 +85,8 @@ it.skipIf(!available)(
       'base',
     );
     git('worktree', 'add', '-q', ws, '-b', 'agent-run');
+    mkdirSync(join(ws, '.bakers'));
+    const parentTip = git('rev-parse', 'HEAD');
     const runtime = bwrapRuntime(
       {},
       {
@@ -198,7 +200,7 @@ it.skipIf(!available)(
       launchCommand: () =>
         [process.execPath, fixture].map(shellQuote).join(' '),
       getRunLog: async () => readFileSync(transcript, 'utf8'),
-      parseFootprint: () => ({ ...emptyAgentFootprint(), tool_calls: 1 }),
+      parseFootprint: () => ({ ...emptyAgentFootprint(), tool_calls: 2 }),
     };
     const log = { debug() {}, info() {}, warn() {}, error() {} };
     const config = {
@@ -244,8 +246,10 @@ it.skipIf(!available)(
         ticketRead: true,
         isolated: true,
         committed: true,
+        transferred: true,
       });
-      expect(calls).toContain('tool_api__bakers_ticket_read');
+      expect(calls).toEqual(['tool_api__bakers_ticket_read']);
+      expect(git('rev-parse', 'HEAD')).toBe(parentTip);
       expect(git('-C', ws, 'log', '-1', '--format=%s')).toBe(
         'fake agent completed',
       );
@@ -257,7 +261,7 @@ it.skipIf(!available)(
       expect(remote.calls.finalizeRun[0]).toMatchObject({
         runUuid: uuid,
         log: readFileSync(transcript, 'utf8'),
-        metrics: { harness: 'fake-agent', tool_calls: 1 },
+        metrics: { harness: 'fake-agent', tool_calls: 2 },
       });
       for (const suffix of ['', '.launch.json', '.launch.json.pid'])
         expect(existsSync(join(root, 'runtime', uuid) + suffix)).toBe(false);

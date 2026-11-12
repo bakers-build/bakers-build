@@ -11,4 +11,4 @@ Scope: ticket branch/suffixes; target_branch else base_branch, or ticket branch 
 
 With `runtime_transfer_commit`, refresh private origin refs after fetch; transfer the intended full hash before push. Deliver protected-file changes outside the run.
 
-Tools enforce ownership, target, Conventional Commits title, checks, merge method, safe deletion and squash trailer. Correct refusals before retrying. Without forge tools, read [fallback](forge-fallback.md).
+Tools enforce ownership, target, Conventional Commits title, checks, project merge method, safe deletion and squash trailer. Correct refusals before retrying. Without forge tools, read [fallback](forge-fallback.md).
