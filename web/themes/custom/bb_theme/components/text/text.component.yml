@@ -58,6 +58,7 @@ props:
       enum:
         - start
         - center
+        - end
       title: Alignment
       default: start
     tracking:

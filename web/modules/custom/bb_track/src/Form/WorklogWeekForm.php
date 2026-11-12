@@ -80,15 +80,16 @@ final class WorklogWeekForm extends FormBase {
     for ($i = 0; $i < 7; $i++) {
       $days[] = (new \DateTimeImmutable($selection->weekStart))->modify("+$i days")->format('Y-m-d');
     }
-    $rows = $this->rows($selection);
+    [$table_rows, $recorded] = $this->tableRows($selection, $this->rows($selection), $days, $form_state);
     $form['sheet'] = [
       '#type' => 'component',
       '#component' => 'bb_theme:table',
       '#props' => [
         'variant' => '',
         'live_sums' => TRUE,
-        'columns' => $this->columns($days),
-        'rows' => $this->tableRows($selection, $rows, $days, $form_state),
+        'row_height' => 'md',
+        'columns' => $this->columns($recorded),
+        'rows' => $table_rows,
       ],
     ];
     $add_row = $this->dialogLink(Url::fromRoute('bb_track.week.add_row'), $this->weekAddress($selection));
@@ -298,23 +299,28 @@ final class WorklogWeekForm extends FormBase {
   /**
    * Table columns: the row label, seven days and the row total.
    *
-   * @param list<string> $days
-   *   Y-m-d dates.
+   * @param array<string, int> $recorded
+   *   Recorded seconds per Y-m-d day; each day header carries its total.
    *
    * @return list<array<string, mixed>>
    *   Columns.
    */
-  private function columns(array $days): array {
+  private function columns(array $recorded): array {
     $columns = [['key' => 'label', 'label' => (string) $this->t('Project'), 'row_header' => TRUE]];
-    foreach ($days as $date) {
-      $columns[] = ['key' => $date, 'label' => (new \DateTimeImmutable($date))->format('D d'), 'num' => TRUE];
+    foreach ($recorded as $date => $seconds) {
+      $columns[] = [
+        'key' => $date,
+        'label' => (new \DateTimeImmutable($date))->format('D d'),
+        'sublabel' => WorklogFormLayout::formatDuration($seconds),
+        'num' => TRUE,
+      ];
     }
     $columns[] = ['key' => 'total', 'label' => (string) $this->t('Total'), 'num' => TRUE];
     return $columns;
   }
 
   /**
-   * Table rows with editable cells and the recorded and proposed totals.
+   * Table rows with editable cells and the proposed totals.
    *
    * @param \Drupal\bb_track\WorklogSelection $selection
    *   The active selection.
@@ -325,8 +331,8 @@ final class WorklogWeekForm extends FormBase {
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   Form state.
    *
-   * @return list<array<string, mixed>>
-   *   Rows of bb_theme:table.
+   * @return array{0: list<array<string, mixed>>, 1: array<string, int>}
+   *   Rows of bb_theme:table, and the recorded seconds per day.
    */
   private function tableRows(WorklogSelection $selection, array $rows, array $days, FormStateInterface $form_state): array {
     $errors = $form_state->get('cell_errors') ?? [];
@@ -368,11 +374,10 @@ final class WorklogWeekForm extends FormBase {
       ];
       $table[] = ['cells' => $out];
     }
-    $table[] = ['cells' => $this->totalRow((string) $this->t('Recorded'), $recorded, 'strong')];
     if (array_sum($proposed) > 0 || $proposal) {
       $table[] = ['cells' => $this->totalRow((string) $this->t('Proposed — not yet recorded'), $proposed, 'faint', 'proposed')];
     }
-    return $table;
+    return [$table, $recorded];
   }
 
   /**

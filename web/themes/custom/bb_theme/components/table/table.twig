@@ -520,7 +520,8 @@
                 {%- endif -%}
               </a>
             {%- else %}{{ column.label }}{% endif -%}
-            {%- if column.sublabel %}<span class="block text-body-strong text-text">{{ column.sublabel }}</span>{% endif -%}
+            {#- The space keeps label and sublabel apart in the header's text. #}
+            {%- if column.sublabel %} <span class="block text-body-strong text-text">{{ column.sublabel }}</span>{% endif -%}
           </th>
         {% endfor %}
       </tr>

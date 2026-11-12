@@ -1467,11 +1467,11 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: false
-                filters:
+                main:
                   - component: bb_theme:filters
                     props:
-                      title: Filters
                       label: Time filters
+                      layout: bar
                     slots:
                       controls:
                         - component: bb_theme:segmented_control
@@ -1535,58 +1535,10 @@ scenes:
                                   - value: api-member
                                     label: api-member
                                     selected: false
-                main:
-                  - component: bb_theme:week-strip
-                    props:
-                      label: Days of week 2026-12-07
-                      days:
-                        - weekday: Mon
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-07'
-                          active: false
-                          aria_label: Mon 2026-12-07, 0:00
-                        - weekday: Tue
-                          date: '08'
-                          total: '2:45'
-                          url: '?mode=day&date=2026-12-08'
-                          active: false
-                          aria_label: Tue 2026-12-08, 2:45
-                        - weekday: Wed
-                          date: '09'
-                          total: '1:00'
-                          url: '?mode=day&date=2026-12-09'
-                          active: false
-                          aria_label: Wed 2026-12-09, 1:00
-                        - weekday: Thu
-                          date: '10'
-                          total: '2:00'
-                          url: '?mode=day&date=2026-12-10'
-                          active: false
-                          aria_label: Thu 2026-12-10, 2:00
-                        - weekday: Fri
-                          date: '11'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-11'
-                          active: false
-                          aria_label: Fri 2026-12-11, 0:00
-                        - weekday: Sat
-                          date: '12'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-12'
-                          active: false
-                          aria_label: Sat 2026-12-12, 0:00
-                        - weekday: Sun
-                          date: '13'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-13'
-                          active: false
-                          aria_label: Sun 2026-12-13, 0:00
-                      total_label: Week total
-                      total: '5:45'
                   - component: bb_theme:text
                     props:
-                      text: 'Total recorded time: 5:45'
+                      text: Week total 5:45
+                      align: end
                   - component: bb_theme:table
                     props:
                       columns:
@@ -1596,24 +1548,31 @@ scenes:
                         - key: '2026-12-07'
                           label: Mon 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-08'
                           label: Tue 08
                           num: true
+                          sublabel: '2:45'
                         - key: '2026-12-09'
                           label: Wed 09
                           num: true
+                          sublabel: '1:00'
                         - key: '2026-12-10'
                           label: Thu 10
                           num: true
+                          sublabel: '2:00'
                         - key: '2026-12-11'
                           label: Fri 11
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-12'
                           label: Sat 12
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-13'
                           label: Sun 13
                           num: true
+                          sublabel: '0:00'
                         - key: total
                           label: Total
                           num: true
@@ -1758,31 +1717,4 @@ scenes:
                             total:
                               kind: text
                               value: '3:30'
-                        - cells:
-                            label:
-                              kind: text
-                              value: Total
-                            '2026-12-07':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-08':
-                              kind: text
-                              value: '2:45'
-                            '2026-12-09':
-                              kind: text
-                              value: '1:00'
-                            '2026-12-10':
-                              kind: text
-                              value: '2:00'
-                            '2026-12-11':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-12':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-13':
-                              kind: text
-                              value: '0:00'
-                            total:
-                              kind: text
-                              value: '5:45'
+                      row_height: md
