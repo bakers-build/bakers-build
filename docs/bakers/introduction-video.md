@@ -4,8 +4,8 @@ The script for the introduction video on the landing page. It introduces bakers.
 follows one ticket from a GitHub issue to `done`. You record screen and narration in one take
 from this file; the cut, the captions and the player are made from that recording afterwards.
 
-- Estimated length of the final cut: about 220 seconds at 150 words per minute. The narration
-  below is 546 words; confirm the timing in the dry run.
+- Estimated length of the final cut: about 205 seconds at 150 words per minute. The narration
+  below is 514 words; confirm the timing in the dry run.
 - Language: English. Say "bakers dot build".
 - Lines starting with `>` are the narration, word for word. Everything else is direction.
 
@@ -75,7 +75,7 @@ stay silent while you wait. Waiting is cut out later.
 
 ## Scenes
 
-### 1. Introduction (about 80 s)
+### 1. Introduction (about 69 s)
 
 On screen: the landing page hero. From "Your workflow lives", scroll slowly to the
 line with its four stations.
@@ -85,10 +85,9 @@ line with its four stations.
 > That's why we built bakers.build: one tool for the team, with a shared workflow everyone follows.
 > I'm Christian, and this started with our team of seven developers and two project managers.
 > Looking for a better way led us to OpenAI's Symphony spec.
-> We wanted a shared workflow, using our existing AI subscriptions, without being tied to one provider. Agents should run securely on our developers' own machines or on remote workers we control.
-> With a client of our choice, we could look inside the oven and step in when needed.
-> So we built Gaia on Symphony's spec. And honestly, it worked better than expected: less babysitting, more time to get things done.
-> It seemed worth sharing, so we made it open source as bakers.build. The name came from asking, "Is that ticket baked yet?" That was our naming process.
+> So we built Gaia on Symphony's spec. The team decides on one workflow, and the agents follow it, on our own machines, with the AI subscriptions we already had.
+> It worked better than expected. We're clearly faster, everyone runs several tickets in parallel, and nobody babysits anymore.
+> So we made it open source as bakers.build. The name? We kept asking, "Is that ticket baked yet?"
 > Your workflow lives in a text file next to your code. The agents follow it; you steer.
 > Let's give it a ticket.
 
