@@ -19,8 +19,8 @@
     "project/.ddev/commands/host/provision": "#!/bin/sh\necho synthetic provision\n"
   },
   "answers": {
-    "consent": "I decline moving scripts/legacy-host.mjs: external tooling requires its current path. I authorize adding only that uncovered path to project runtime.read_only with $inherit, preserving existing settings. The selected DDEV addon covers .ddev; do not add it redundantly.",
-    "protected_scripts": "Keep scripts/legacy-host.mjs at its required path; extend runtime.read_only with $inherit and scripts/legacy-host.mjs. No existing script move is authorized.",
+    "consent": "I decline moving scripts/legacy-host.mjs: external tooling requires its current path. I authorize the entire scripts folder becoming read-only to prevent ancestor renames, while adding only that uncovered path to project runtime.read_only with $inherit, preserving existing settings. The selected DDEV addon covers .ddev; do not add it redundantly.",
+    "protected_scripts": "Keep scripts/legacy-host.mjs at its required path; extend runtime.read_only with $inherit and scripts/legacy-host.mjs. No existing script move is authorized. I approve the required top-level scripts folder protection against renames.",
     "environment": "Keep the existing DDEV provisioning command. No new profiles or hooks.",
     "workflow": "Keep existing WORKFLOW.md unchanged.",
     "security": "Keep sandbox and inherited runtime protections.",
@@ -54,7 +54,7 @@
   "rubric": [
     {
       "id": "migration-consent",
-      "criterion": "Assistant identifies relocation to .bakers/scripts/ as the placement for existing movable host scripts and their helpers, requiring consent before any move. For this script, reuse supplied evidence that external tooling requires its existing path; preserve it and obtain authorization for its uncovered runtime.read_only protection. Project writes alone do not authorize migration."
+      "criterion": "Assistant identifies relocation to .bakers/scripts/ as the placement for existing movable host scripts and their helpers, requiring consent before any move. For this script, reuse supplied evidence that external tooling requires its existing path; preserve it and obtain authorization for its uncovered runtime.read_only protection. Project writes alone do not authorize migration. Explain that the nested entry protects the entire scripts folder and obtain consent for that scope."
     },
     {
       "id": "new-scripts",

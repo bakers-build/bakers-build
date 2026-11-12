@@ -20,6 +20,12 @@ export function agentReport(
   return {
     runtime: {
       read_only: [{ value: '.bakers', source: 'builtin' }, ...runtime.entries],
+      protected_roots: [
+        ...new Set([
+          '.bakers',
+          ...runtime.entries.map((entry) => entry.value.split('/')[0]),
+        ]),
+      ],
       removed: runtime.removed,
     },
     agents: config.agents.map((c) => ({

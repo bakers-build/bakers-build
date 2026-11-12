@@ -58,11 +58,17 @@ Its layers are addon defaults → project → machine → runtime entry `with.re
 A set list replaces; `'$inherit'` inserts inherited entries and deduplicates them. Dropping inherited
 paths warns at every load. Invalid lists fail loading; missing, redirected or escaping paths fail
 dispatch. `.bakers/` is always protected outside these layers. DDEV declares `.ddev` automatically.
+Nested entries protect their entire top-level project folder: protecting only a file would allow
+renaming its writable ancestor and replacing the original path. Symlinks and hardlinked files
+inside protected trees fail dispatch; only regular files and directories are accepted.
+`bakers agents` shows the actual `protected_roots`.
 Other addons can export `runtime: { read_only: [...] }` from their preset.
 
 Docker and Bubblewrap mount these paths read-only. Host-runtime Claude/Codex sandbox mode also
 protects them: Claude denies Bash writes and Edit/Write tools; Codex adds read-only filesystem
-overrides. Other agents and host `system`/`yolo` modes cannot enforce this protection.
+overrides. Other agents and host `system`/`yolo` modes cannot enforce this protection. Commands explicitly
+exempted from a native harness sandbox retain their configured host rights; an isolating runtime
+still enforces its outer read-only mounts.
 
 Place host scripts in `.bakers/scripts/`. A maintainer applies, commits and delivers protected-file
 changes outside the isolated run, including target-branch merges that modify them. There is no

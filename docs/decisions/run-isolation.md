@@ -246,3 +246,6 @@ Transfer updates the ticket ref, not the host index. After the run stops, a main
 the index with `git reset --mixed HEAD` in the ticket worktree, preserving working files; first
 preserve any host-side staged changes. Retained caches have no automatic GC; remove metadata and
 its matching record together only after successful delivery or recovery.
+
+Protected selections mount their top-level project entry read-only to prevent ancestor rename/replacement.
+Protected trees reject symlinks and hardlinked files, which would expose alternate writable aliases.

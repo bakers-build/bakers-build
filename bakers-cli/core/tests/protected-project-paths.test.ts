@@ -1,4 +1,6 @@
+import { execFileSync } from 'node:child_process';
 import {
+  linkSync,
   mkdirSync,
   mkdtempSync,
   rmSync,
@@ -64,3 +66,54 @@ it('rejects a redirected built-in .bakers directory', () => {
   symlinkSync('.ddev', join(root, '.bakers'));
   expect(() => protectedProjectPaths(root, [])).toThrow(/escapes or redirects/);
 });
+
+it('protects the first worktree component of nested paths and deduplicates roots', () => {
+  const root = fixture();
+  mkdirSync(join(root, 'scripts/nested'), { recursive: true });
+  writeFileSync(join(root, 'scripts/host.sh'), 'true');
+  writeFileSync(join(root, 'scripts/nested/other.sh'), 'true');
+  expect(
+    protectedProjectPaths(root, [
+      'scripts/host.sh',
+      './scripts/nested/other.sh',
+    ]),
+  ).toEqual([join(root, '.bakers'), join(root, 'scripts')]);
+  expect(() => protectedProjectPaths(root, ['scripts/missing'])).toThrow();
+});
+it('rejects descendant symlinks throughout the effective protected tree without following them', () => {
+  const root = fixture();
+  mkdirSync(join(root, 'scripts/nested'), { recursive: true });
+  writeFileSync(join(root, 'scripts/host.sh'), 'true');
+  symlinkSync('../../host.sh', join(root, 'scripts/nested/alias'));
+  expect(() => protectedProjectPaths(root, ['scripts/host.sh'])).toThrow(
+    /symlink/,
+  );
+});
+it('rejects descendant hardlinks even when the selected file has no aliases', () => {
+  const root = fixture();
+  mkdirSync(join(root, 'scripts/nested'), { recursive: true });
+  writeFileSync(join(root, 'scripts/host.sh'), 'true');
+  linkSync(join(root, 'host.sh'), join(root, 'scripts/nested/alias'));
+  expect(() => protectedProjectPaths(root, ['scripts/host.sh'])).toThrow(
+    /hardlink/,
+  );
+});
+it('scans the mandatory .bakers tree and selected top-level files for writable aliases', () => {
+  const root = fixture();
+  linkSync(join(root, 'host.sh'), join(root, '.bakers/alias'));
+  expect(() => protectedProjectPaths(root, [])).toThrow(/hardlink/);
+  rmSync(join(root, '.bakers/alias'));
+  linkSync(join(root, 'host.sh'), join(root, 'host-alias.sh'));
+  expect(() => protectedProjectPaths(root, ['host.sh'])).toThrow(/hardlink/);
+});
+
+it.skipIf(process.platform === 'win32')(
+  'rejects FIFOs in protected trees',
+  () => {
+    const root = fixture();
+    execFileSync('mkfifo', [join(root, '.bakers/host-input')]);
+    expect(() => protectedProjectPaths(root, [])).toThrow(
+      /unsupported.*file type/,
+    );
+  },
+);

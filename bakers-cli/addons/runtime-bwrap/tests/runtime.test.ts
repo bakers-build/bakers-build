@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { protectedProjectPaths } from '@bakers-build/core';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { bwrapRuntime } from '../src/backend.js';
 
@@ -378,3 +379,37 @@ it('transfers local commits through the runtime capability into only the ticket 
   expect(JSON.parse(readFileSync(recordPath, 'utf8')).expected).toBe(commit);
   await runtime.cleanup(run);
 });
+
+it.runIf(canBwrap)(
+  'pins ancestors of nested protected files against rename and replacement',
+  async () => {
+    mkdirSync(join(ws, '.bakers'));
+    mkdirSync(join(ws, 'scripts'));
+    writeFileSync(join(ws, 'scripts/host.sh'), 'trusted\n');
+    const runtime = make();
+    const context = await runtime.prepareRun!(run);
+    try {
+      const launch = await runtime.wrap({
+        command:
+          'if mv scripts moved 2>/dev/null; then exit 71; fi; if echo attack > scripts/host.sh 2>/dev/null; then exit 72; fi; test "$(cat scripts/host.sh)" = trusted',
+        env: {},
+        workspacePath: ws,
+        run,
+        harness: 'any',
+        ...context,
+        readPaths: protectedProjectPaths(ws, ['scripts/host.sh']),
+      });
+      const result = spawnSync('sh', ['-c', launch.command], {
+        env: { ...process.env, ...launch.env },
+        encoding: 'utf8',
+        timeout: 30000,
+      });
+      expect(result.status, result.stderr).toBe(0);
+      expect(readFileSync(join(ws, 'scripts/host.sh'), 'utf8')).toBe(
+        'trusted\n',
+      );
+    } finally {
+      await runtime.cleanup(run);
+    }
+  },
+);

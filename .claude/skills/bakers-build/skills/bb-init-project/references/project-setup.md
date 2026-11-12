@@ -64,7 +64,9 @@ consent before moving them; general project-write authorization alone is not mig
 If a required host-read or host-executed path cannot move, check the selected addons' default
 `runtime.read_only` declarations first. Ask for a project `runtime.read_only` addition only for
 an uncovered path, preserving inherited protections with `'$inherit'`. A declined or unanswered
-move stays unresolved; report the path and protection gap. See [hook protection](https://bakers.build/provision/hooks#protect-host-executed-files).
+move stays unresolved; report the path and protection gap. Nested entries protect their entire
+top-level project folder against ancestor renames; explain this scope when obtaining consent.
+See [hook protection](https://bakers.build/provision/hooks#protect-host-executed-files).
 
 Use [addon ownership](https://bakers.build/addons/configure), the linked configuration guides and current CLI help. Initialization supplies a starting
 configuration, not the user's choices. Read back every generated setting; reconcile defaults with
