@@ -30,7 +30,7 @@ requires shared-setup authorization. Obtain missing scope authorization before s
    `--machine-path <file>` / `--config <file>` select shared targets.
 2. For project setup, independently check machine validity and effective connection authentication.
    With no machine identity, no authenticated user or an open machine decision (agent harness,
-   routes, preview-tunnel policy), invoke `@bakers-build/bb-init` for it and resume afterwards. Resolve other prerequisites in their owning authorized scope.
+   routes, machine permissions, preview-tunnel policy), invoke `@bakers-build/bb-init` for it and resume afterwards. Resolve other prerequisites in their owning authorized scope.
 3. Obtain only missing inputs; reuse explicit values. Machine: `--label`
    (`bakers init` generates `machine_id`; the run budget is set in the backend). Connection: `--base-url`, `--client-id`,
    optional `--workspace-id`, `--secret-env <variable-name>`. Invent no identities, credentials or workspaces. Secrets stay

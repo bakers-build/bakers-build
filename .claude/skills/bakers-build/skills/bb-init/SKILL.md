@@ -37,7 +37,7 @@ install command only with explicit consent, or hand it over when it needs `sudo`
 Before configuration writes, inspect existing configuration, collect only missing inputs and
 write after the person confirms.
 Preserve correct values and keep secrets out of output. On a host that runs tickets, register
-the chosen agent harness and write chosen routes and preview policy per
+the chosen agent harness and write chosen routes, permissions and preview policy per
 [machine configuration](https://bakers.build/configuration/machine), or report each unresolved.
 Identity initialization configures none of them.
 Distinguish tool readiness, authentication and workspace access. Blocked prerequisites remain

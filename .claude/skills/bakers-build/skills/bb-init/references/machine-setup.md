@@ -12,6 +12,7 @@ workflow are project rows.
 | Always | Whether this host runs tickets, and where: prepared environment, Coder workspace, remote server or this computer | [Choose where agents run](https://bakers.build/provision/machine) |
 | Host runs tickets | Agent harness to register | [Agents](https://bakers.build/agents/), [machine agents](https://bakers.build/configuration/machine#agents) |
 | Several agents, or states need different agents | Default agent, then routes | [Configure and select agents](https://bakers.build/agents/guide) |
+| Host runs tickets | Permission mode for every agent on this host, and which project grants it accepts | [Execution security](https://bakers.build/provision/security/execution), [shared settings](https://bakers.build/provision/security/shared-settings) |
 | A project needs public previews | Preview-tunnel policy | [Preview-link tunnels](https://bakers.build/configuration/machine#preview-link-tunnels) |
 | Machine identity missing | Label | [Machine](https://bakers.build/configuration/machine) |
 | Not signed in | Server URL, client, then sign-in | [Connection](https://bakers.build/configuration/connection) |
