@@ -59,7 +59,7 @@ Verdict: `Status: **OK**` or `Status: **Not OK**`.
 
 ## transition
 
-OK: pass the ticket’s `identifier` to the authorized [merge](merge.md) once and apply its Caller
+OK: pass the ticket's `identifier` to the authorized [merge](merge.md) once and apply its Caller
 handoff. Verified merge permits done; a failed gate holds review with next action.
 Not OK without criterion cause: return to working once for a finding outside closed repairs.
 Any criterion cause, including mixed: hold review; show causes/rewrite for operator decision.

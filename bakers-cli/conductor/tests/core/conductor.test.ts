@@ -4761,10 +4761,13 @@ describe('qualification gate orchestration (the frame)', () => {
   const wf = readProjectWorkflow();
   const recoveryLink = '[return to qualification](return-to-qualification.md)';
 
-  it('unqualified path: plan and working disclose the shared recovery in read', () => {
+  it('unqualified path: plan and working disclose the shared guard and its recovery', () => {
     for (const state of ['plan.md', 'working.md']) {
-      expect(mdSection(readReference(state), 'read')).toContain(recoveryLink);
+      expect(mdSection(readReference(state), 'read')).toContain(
+        '[entry guard](entry-guard.md)',
+      );
     }
+    expect(readReference('entry-guard.md')).toContain(recoveryLink);
     const recovery = readReference('return-to-qualification.md');
     expect(recovery).toContain('returned_to_qualification');
     expect(recovery).toMatch(/then stop/);
@@ -4773,9 +4776,12 @@ describe('qualification gate orchestration (the frame)', () => {
     );
   });
 
-  it('qualified path: the inline check continues unchanged', () => {
+  it('qualified path: the shared check continues unchanged', () => {
     for (const state of ['plan.md', 'working.md']) {
-      const read = mdSection(readReference(state), 'read');
+      expect(mdSection(readReference(state), 'read')).toContain(
+        '[entry guard](entry-guard.md)',
+      );
+      const read = readReference('entry-guard.md');
       expect(read).toContain('`qualified`');
       expect(read).toMatch(/continue unchanged/);
       expect(read).toContain('acceptance_criteria');
