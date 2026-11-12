@@ -6,12 +6,12 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe-test` site;
 `config/sync` validation uses `provision_up('existing-config-fresh')` afterwards, a fresh
-`existing-config` install at the same revision. Never run `ddev` directly: a `ddev <cmd>` row
-runs as `ddev_exec("<cmd>")`, a project web command runs by path
+`existing-config` install at the same revision. DDEV commands run through `ddev_exec`;
+a project web command runs by path
 (`ddev_exec(".ddev/commands/web/<cmd>")`), and `ddev_status`/`ddev_start` replace
-`ddev describe`/`ddev start`. Never run `pnpm install` in a run: every `provision_up` profile
+project inspection and startup. Never run `pnpm install` in a run: every `provision_up` profile
 installs the `bakers-cli` and `docs` dependencies first, `provision_up('deps')` installs them
-alone for work that needs no site, and a site profile's `ddev init` installs and builds
+alone for work that needs no site, and a site profile's initialization installs and builds
 `web/themes/custom/bb_theme`. A docs preview for functional checks or manual review starts with
 `provision_up('docs-preview')`, which builds and serves `docs/`, and is shared with `ports_up docs`;
 never run `vitepress preview` in a run. The Playwright suite and `playwright-cli` run through
@@ -19,7 +19,7 @@ never run `vitepress preview` in a run. The Playwright suite and `playwright-cli
 sandbox, such as Storybook, is reachable only within that same command. Skill and conductor
 behavior is tested in the playground workspace that `scripts/setup-test-project.sh` sets up; a
 sandboxed run starts a playground conductor with `provision_up('conductor-e2e')` and stops or
-restarts it with `conductor-e2e-stop` and `conductor-e2e-start`. Core tests, Playwright, conductor and skill-behavior
+restarts it through `provision_up` with the `conductor-e2e-stop` and `conductor-e2e-start` profiles. Core tests, Playwright, conductor and skill-behavior
 setup: [testing](docs/bakers/testing.md#setup).
 
 ## bb-phase-work
@@ -51,12 +51,12 @@ included in core tests. Ticket-specific functional checks apply separately.
 | `docs/**` or documentation links | `cd docs && pnpm build && node --test scripts/manual.test.mjs scripts/marketplace.test.mjs scripts/addon-options.test.mjs` |
 | bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
 | bakers.build CLI source | `provision_up('deps')`, then `cd bakers-cli && pnpm -r run build` |
-| PHP implementation | `ddev phpcs && ddev phpmd && ddev phpstan` |
+| PHP implementation | PHP coding standards, mess detection and static analysis through `ddev_exec` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
 | `.ddev/**` | `bash tests/contract/ddev-provision.sh` |
 | `scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
-| `.gitlab-ci.yml` | `glab ci lint .gitlab-ci.yml && bash tests/config-sync/check-ci-wiring.sh` |
+| `.gitlab-ci.yml` | `bash tests/config-sync/check-ci-wiring.sh`; GitLab CI lint through the [operations table](.claude/skills/bakers-build/skills/bb-workflow/references/tools-conductor.md#operations) |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |
 | Web UI implementation, or `tests/contract/**` | `bash tests/contract/token-discipline.sh && bash tests/contract/time-format.sh && bash tests/contract/run-detail-overlay.sh && bash tests/contract/island-links.sh && node tests/contract/appearance.mjs && node tests/contract/icon-storybook.mjs && node tests/contract/period-range.mjs` |
@@ -75,7 +75,8 @@ the PR; fix it on the branch and require green checks on the new revision. Prote
 squashed feature PRs. Stable `main` accepts merge commits only from this repository's `next`,
 preserving its tree and second parent.
 
-For a project still using GitLab, play the newest MR pipeline's manual `gate` after fast checks.
+For a project still using GitLab, request the newest MR pipeline's manual gate operation after fast checks
+through the [operations table](.claude/skills/bakers-build/skills/bb-workflow/references/tools-conductor.md#operations).
 Its `build`, `phpunit`, `e2e` and `config_install` jobs must all succeed before merging.
 
 Local runs are for debugging, never a substitute for the CI gate
