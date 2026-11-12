@@ -11,10 +11,14 @@ paths. Machine scope only; add it to `~/.bakers/machine.config.js`:
 
 ## Before the first run
 
-- A container cannot use your Claude login: export `CLAUDE_CODE_OAUTH_TOKEN` (from
-  `claude setup-token`) or `ANTHROPIC_API_KEY` for the conductor. Without one, runs refuse to start.
-- The first run builds `bakers-runtime:<addon version>-<hash>` from the shipped `image/`
-  (Claude Code only); a changed image file rebuilds it. Other harnesses need your own `with.image`.
+- The agent must support a container runtime. [Claude](/addons/claude#container-runtime) does. A run
+  of an agent that does not refuses to start.
+- A container cannot use your harness login. Export the credential the agent names for the
+  conductor; for Claude that is `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or
+  `ANTHROPIC_API_KEY`. Without one, runs refuse to start.
+- The first run of an agent builds `bakers-runtime:<addon version>-<hash>-<install hash>` from the
+  shipped `image/` plus the agent's own install command. A changed image file or install rebuilds
+  it. `with.image` replaces it for every agent.
 
 ## Options
 
@@ -37,17 +41,19 @@ Container `bb-run-<run uuid>`, under your uid. Mounts, and nothing else of your 
 - the bakers CLI build, read-only. The runtime refuses to start when that build's root would
   contain your home directory;
 - `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` as `/home/run`;
-- Claude's transcript directory for the worktree, so the conductor reads the transcript.
+- what the agent asks for, such as Claude's plugins (read-only) and its transcript directory for
+  the worktree, so the conductor reads the transcript.
 
-No `~/.ssh`, `~/.bakers`, Docker socket or `.credentials.json`. Secrets enter as `-e KEY`, never in
+No `~/.ssh`, `~/.bakers`, Docker socket or harness login (`.credentials.json`). Secrets enter as `-e KEY`, never in
 the command line. The harness sandbox is off. Pushes go through `forge_push` in the conductor. The
 container and run home are removed after the run.
 
 ## Allowlist mode
 
 With `network: 'allowlist'`, runs join the internal network `bb-runtime`. One proxy per conductor
-is their only way out: HTTPS to `allow` hosts (others get `403`), the model API with the real
-credential added by the proxy, and the conductor tool server. The host's `127.0.0.1` is not
+is their only way out: HTTPS to `allow` hosts (others get `403`), the agent's model API with the
+real credential added by the proxy, and the conductor tool server. The run holds a placeholder key.
+One conductor's proxy serves one model API at a time. The host's `127.0.0.1` is not
 reachable; use the conductor tools for DDEV and ports.
 
 On macOS `--network host` does not reach the host, so use allowlist mode. macOS is not yet tested.

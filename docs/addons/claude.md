@@ -59,6 +59,14 @@ Default: `system`. An isolating [runtime](/addons/runtime-docker) turns `sandbox
 { use: '@bakers-build/addon-claude', with: { permissions: 'sandbox', sandbox: { trusted_commands: ['git', 'docker'] } } }
 ```
 
+## Container runtime
+
+Claude supports the [Docker runtime](/addons/runtime-docker). Each run gets its own home with your
+agent home's `settings.json` and `.claude.json`, never `.credentials.json`; first-run setup is
+marked done. Plugins are mounted read-only, and the transcript directory stays on the host, so the
+conductor reads it after the run. Export `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or
+`ANTHROPIC_API_KEY` for the conductor; in allowlist mode only the proxy holds it.
+
 ## Check it works
 
 `bakers agents` lists these aliases under harness `claude`. Claude-only default: `opus`.
