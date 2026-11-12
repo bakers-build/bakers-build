@@ -1,0 +1,6 @@
+{
+  "request": "Use bb-init for this machine. This run is noninteractive; machine role and other choices are unknown.",
+  "interaction": "noninteractive",
+  "id": "setup-s6-unattended",
+  "no_writes": true
+}

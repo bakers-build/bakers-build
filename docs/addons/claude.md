@@ -59,6 +59,20 @@ Default: `system`. See [Execution security](/provision/security/execution) for b
 { use: '@bakers-build/addon-claude', with: { permissions: 'sandbox', sandbox: { trusted_commands: ['git', 'docker'] } } }
 ```
 
+## Deny unused tools
+
+Recommended: deny the built-in tools your runs never use in the project's committed `.claude/settings.json`. [Project setup](/get-started/connect-a-project) proposes it and writes only what you choose.
+
+```json
+{ "permissions": { "deny": ["<ToolName>"] } }
+```
+
+- **Saves:** a denied tool's definition leaves every model request.
+- **Binds:** interactive sessions in the repository too.
+- **Lives in one file:** deny rules from all settings sources merge and `deny` wins; only deleting the line re-enables a tool.
+
+Keep `AskUserQuestion`; planning asks through it. To measure the effect, run a test ticket with `agent:opus-proxy`, which logs every model request.
+
 ## Check it works
 
 `bakers agents` lists these aliases under harness `claude`. Claude-only default: `opus`.

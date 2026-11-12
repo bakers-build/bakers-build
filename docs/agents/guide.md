@@ -147,7 +147,8 @@ A harness addon and an available agent are required. Custom aliases, filters and
 ## AI first
 
 ```text
-Help me choose one agent from the catalog or a route for different states.
+Use `bakers:bb-init` to help me choose one agent from the catalog or a route
+for different states.
 Show how the chosen setup fits my complete machine.config.js, preserving
 my identity and settings. Verify the catalog and the actual ticket runs.
 ```
