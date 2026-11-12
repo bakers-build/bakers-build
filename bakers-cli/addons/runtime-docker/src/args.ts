@@ -116,6 +116,8 @@ export function dockerArgs(
     // Git dir: host git in these repos would run what the run chose.
     ...ro(join(common, 'hooks')),
     ...ro(join(common, 'config')),
+    // Read by host git in the main checkout once `extensions.worktreeConfig` is on.
+    ...ro(join(common, 'config.worktree')),
     ...ro(join(common, 'modules')),
     ...ro(join(common, 'worktrees')),
     ...(linked
@@ -124,9 +126,9 @@ export function dockerArgs(
           ...bind(gitDir),
           ...ro(join(gitDir, 'commondir')),
           ...ro(join(gitDir, 'gitdir')),
+          ...ro(join(gitDir, 'config.worktree')),
         ]
       : []),
-    ...ro(join(gitDir, 'config.worktree')),
     ...bind(where.cliRoot, undefined, ':ro'),
     ...opts.mounts.flatMap((m) => bind(m, m, ':ro')),
     ...bind(where.runHome, RUN_HOME),

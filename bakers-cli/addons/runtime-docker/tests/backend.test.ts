@@ -142,6 +142,7 @@ describe('runtime-docker wrap', () => {
     const gitDir = join(common, 'worktrees/tree');
     // Bound read-only, so each must exist before docker would create it as root.
     expect(readFileSync(join(gitDir, 'config.worktree'), 'utf8')).toBe('');
+    expect(readFileSync(join(common, 'config.worktree'), 'utf8')).toBe('');
     for (const d of ['modules', 'worktrees'])
       expect(existsSync(join(common, d))).toBe(true);
     expect(out.command).toContain(

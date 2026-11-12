@@ -244,8 +244,10 @@ export function dockerRuntime(
       // Bound read-only, so each must exist before docker would create it as root.
       for (const d of ['hooks', 'modules', 'worktrees'])
         mkdirSync(join(gitCommonDir, d), { recursive: true });
-      const worktreeConfig = join(gitDir, 'config.worktree');
-      if (!existsSync(worktreeConfig)) writeFileSync(worktreeConfig, '');
+      for (const dir of new Set([gitCommonDir, gitDir])) {
+        const worktreeConfig = join(dir, 'config.worktree');
+        if (!existsSync(worktreeConfig)) writeFileSync(worktreeConfig, '');
+      }
       mkdirSync(runHome, { recursive: true });
       // The CLI build is mounted read-only; this puts the conductor's own CLI on PATH.
       if (deps.bakersEntry) {

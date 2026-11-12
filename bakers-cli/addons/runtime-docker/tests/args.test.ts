@@ -80,6 +80,7 @@ describe('dockerArgs', () => {
       '/w/main/.git:/w/main/.git',
       '/w/main/.git/hooks:/w/main/.git/hooks:ro',
       '/w/main/.git/config:/w/main/.git/config:ro',
+      '/w/main/.git/config.worktree:/w/main/.git/config.worktree:ro',
       '/w/main/.git/modules:/w/main/.git/modules:ro',
       '/w/main/.git/worktrees:/w/main/.git/worktrees:ro',
       '/w/main/.git/worktrees/tree:/w/main/.git/worktrees/tree',
@@ -156,9 +157,11 @@ describe('dockerArgs', () => {
         gitDir: '/w/main/.git',
       }).argv,
     );
-    expect(v).toContain(
-      '/w/main/.git/config.worktree:/w/main/.git/config.worktree:ro',
-    );
+    expect(
+      v.filter(
+        (m) => m === '/w/main/.git/config.worktree:/w/main/.git/config.worktree:ro',
+      ),
+    ).toHaveLength(1);
     expect(v).toContain('/w/main/.git/worktrees:/w/main/.git/worktrees:ro');
     expect(
       v.some((m) =>
