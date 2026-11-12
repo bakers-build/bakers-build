@@ -55,6 +55,7 @@ The documentation owns configuration syntax and supported options; this matrix o
 | Tests or previews need an environment | Provisioning profiles, commands, then readiness checks | [Environment](https://bakers.build/provision/guide), [provision_up](https://bakers.build/configuration/project/hooks#provision-on-an-agent-s-request) |
 | Workflow needs skills or recipes | Installed skills, required plugins and pinned sources | [Marketplaces](https://bakers.build/configuration/project#agent-plugins), [skills](https://bakers.build/skills-and-workflows/skills) |
 | Permissions unknown | Mode, necessary access and effective source | [Execution security](https://bakers.build/provision/security/execution), [shared settings](https://bakers.build/provision/security/shared-settings) |
+| Agent known | Project settings its agent guide recommends | [Agents](https://bakers.build/agents/), then the agent's guide |
 | Agents need repository delivery | Forge backend, repository, authentication and merge policy | [Forge](https://bakers.build/addons/forge), then its backend guide |
 | Preview needed | Local or public; if public, transport, service and shared-write authorization | [Ports](https://bakers.build/addons/ports), [services](https://bakers.build/addons/ports-services), [tunnel policy](https://bakers.build/configuration/machine#preview-link-tunnels) |
 
@@ -69,6 +70,10 @@ the authorized scope, preserving existing code and values. Explain the change fi
 machine change needs shared-scope authorization; reuse authorization already given. If safe editing
 is unavailable, report the exact choice and owning field as unpersisted. Never substitute another
 choice or call the setup complete.
+
+An agent guide's recommended project settings are a proposal: write only what the operator
+chooses, merged into the file the guide names with every existing key kept. Unattended, write
+nothing and report the proposal.
 **Done when the configuration read back after the last write matches every answer, or a concrete
 blocker is recorded.**
 
