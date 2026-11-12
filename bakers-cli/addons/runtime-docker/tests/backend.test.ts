@@ -480,6 +480,23 @@ describe('runtime-docker allowlist mode', () => {
     expect(out.command).toContain("'bb-runtime-aaa'");
   });
 
+  it('recreates a sidecar still attached to the old shared run network', async () => {
+    const oldHash = shortHash(
+      JSON.stringify([
+        '172.30.0.1',
+        '4242',
+        allowOpts.allow,
+        `bakers-runtime:1.2.3-${shortHash('install-agent')}`,
+        agent().modelApi,
+      ]),
+    );
+    await wrapped({ networks: new Set(), label: oldHash });
+    expect(calls).toContainEqual([
+      'docker',
+      ['rm', '-f', 'bb-runtime-proxy-aaa'],
+    ]);
+  });
+
   it('recreates the sidecar only when its config changed', async () => {
     await wrapped({ networks: new Set(), label: 'stale' });
     expect(calls).toContainEqual([

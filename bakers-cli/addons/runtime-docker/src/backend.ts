@@ -248,7 +248,14 @@ export function dockerRuntime(
             'runtime-docker: allowlist mode needs the conductor tool server; it was not started',
           );
         const hash = shortHash(
-          JSON.stringify([gateway, toolsPort, options.allow ?? [], image, api]),
+          JSON.stringify([
+            gateway,
+            toolsPort,
+            options.allow ?? [],
+            image,
+            api,
+            opts.runNetwork,
+          ]),
         );
         if (proxyReady?.hash !== hash)
           proxyReady = {
