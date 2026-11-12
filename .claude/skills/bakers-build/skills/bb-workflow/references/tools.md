@@ -11,7 +11,7 @@ The site serves tracker operations at `/mcp`.
   token in a [conductor](tools-conductor.md) run. There, a denied call means the tool is not loaded yet:
   load it and retry over MCP; the denial covers that command only.
 
-A CLI call runs alone, with literal values; chaining sandboxes it. Write its JSON file exactly
+A CLI call runs alone, with literal values; chaining sandboxes it. Write its JSON file
 with a JSON encoder
 (`jq -n --rawfile body <file.md> --arg t <ticket> '{ticket: $t, type: "plan", body: $body}'`).
 
@@ -35,7 +35,7 @@ are term names, reused or created.
 
 | Operation | Tool | Arguments | Result |
 |---|---|---|---|
-| Read a ticket | `bakers_ticket_read` | `ticket` | the ticket's fields, `branch_name`, `base_branch`, `conductor`, `frozen`, `comments` (`id`, `type`, `body`, `created`, `author`; oldest first) |
+| Read a ticket | `bakers_ticket_read` | `ticket`; `newest` | fields, `branch_name`, `base_branch`, `conductor`, `frozen`, `comments` (`id`, `type`, `body`, `created`, `author`; oldest first), `comment_facets` |
 | Search tickets | `bakers_ticket_search` | `query` (title or description) or exact `branch_name`; optional `project` | `tickets` (`identifier`, `title`, `state`, `branch_name`); newest first, at most 50 |
 | Create a ticket | `bakers_ticket_create` | `title`, `workflow`, `project` (key or UUID); optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee_email`, `reviewer_emails` | `id`, `identifier`, `state`, `branch_name`, `assignee`, `reviewers`, `url` |
 | Edit a ticket | `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor` (UUID), `labels_add`, `labels_remove` (absent ignored), `frozen`, `environments_add` (names, UUIDs), `referenced_tickets_add` (adds only) | saved values; others kept; a label in both lists refused; closed: refused |
@@ -44,4 +44,4 @@ are term names, reused or created.
 | Publish a comment | `bakers_comment_publish` | `ticket`, `type`, `body` | new comment `id`, stored `type` |
 | Record a measurement | `bakers_metric_write` | `ticket`, `name`, `rows` (`[{name, value, unit}]`), optional `label` | all metric rows; rows outside `<name>.` kept |
 
-User, workspace, project, conductor, label, template, run, activity and time tools: [lookups](tools-lookup.md).
+Comment, user, workspace, project, conductor, label, template, run, activity and time tools: [lookups](tools-lookup.md).

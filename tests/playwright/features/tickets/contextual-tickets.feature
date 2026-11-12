@@ -16,7 +16,7 @@ Feature: Contextual tickets keep route and filter state
   Scenario: Project tickets offer only filters that distinguish the project's tickets
     Given a dedicated project "Contextual filters" has 3 open tickets
     When I visit the contextual tickets for the project "Contextual filters"
-    Then the filters read "Closed, State, Workflow, Assignee, Created by, Priority, Labels" in order
+    Then the filters read "Closed, State, Parent, Workflow, Assignee, Created by, Priority, Labels" in order
     When I note the listed tickets
     And I reopen the address with the removed keys "group[]=999999&team[]=999999&project[]=999999"
     Then the listed tickets are unchanged
@@ -47,7 +47,7 @@ Feature: Contextual tickets keep route and filter state
     And I click the tab "Members"
     And I click the tab "Tickets"
     Then the application shell is present
-    And the filters read "Closed, Group, Project, Template, State, Workflow, Assignee, Created by, Priority, Labels" in order
+    And the filters read "Closed, Group, Project, Template, State, Parent, Workflow, Assignee, Created by, Priority, Labels" in order
     When I choose "Working" in the "State" facet
     Then the "State" facet shows "Working" as chosen
     When I remove the "State" chip

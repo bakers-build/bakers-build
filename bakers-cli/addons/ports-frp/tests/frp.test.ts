@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import type { TunnelDesiredRecord } from '@bakers-build/addon-ports/transport';
 import { describe, expect, it } from 'vitest';
 import {
@@ -200,7 +201,7 @@ describe('validateClientConfig', () => {
 function fakeWorld(
   opts: {
     readonly initialFile?: string;
-    readonly reload?: 'ok' | 'fail';
+    readonly reload?: 'ok' | 'fail' | 'unreachable';
     readonly statusSequence?: readonly Record<string, { status: string }[]>[];
     readonly failWrite?: boolean;
     readonly reachable?: boolean;
@@ -239,6 +240,7 @@ function fakeWorld(
     mkdir: async () => {},
     fetch: async (url: string) => {
       if (url.includes('/api/reload')) {
+        if (opts.reload === 'unreachable') throw new TypeError('fetch failed');
         if (opts.reload === 'fail') {
           return { ok: false, status: 500, json: async () => ({}) };
         }
@@ -322,6 +324,19 @@ describe('reconcileFrp', () => {
     expect(result.ok).toBe(false);
     expect(result.records[0]?.applied).toBe('pending');
     expect(writes).toHaveLength(1); // the file WAS written — reload is a separate step
+  });
+
+  it('names the admin API and asks whether frpc runs when the reload cannot connect', async () => {
+    const { deps } = fakeWorld({ reload: 'unreachable' });
+    const result = await reconcileFrp(
+      [record()],
+      baseCfg(),
+      deps,
+      noopCheckpoint,
+    );
+    expect(result.records[0]?.error).toBe(
+      'frpc admin API at 127.0.0.1:7400 is unreachable — is frpc running? (docs/addons/ports-frp)',
+    );
   });
 
   it('reports not-applied when reload returns 200 but status never confirms the proxy running (bounded poll, then timeout)', async () => {
@@ -755,5 +770,22 @@ describe('validateSettings', () => {
     expect(() => validateSettings({})).toThrow(
       "the @bakers-build/addon-ports entry's with.transport.with for 'frp' is missing: zone",
     );
+  });
+});
+
+describe('docs/addons/ports-frp.md › Set up', () => {
+  it('gives an frpc.json template that passes validateClientConfig', () => {
+    const page = readFileSync(
+      new URL('../../../../docs/addons/ports-frp.md', import.meta.url),
+      'utf8',
+    );
+    const template = /```json\n([\s\S]*?)```/.exec(page)?.[1];
+    expect(template).toBeDefined();
+    expect(
+      validateClientConfig(
+        JSON.parse(template ?? ''),
+        '/home/<you>/.bakers/frp/routes.json',
+      ),
+    ).toEqual({ server: '<server>:7000', user: '<user>' });
   });
 });

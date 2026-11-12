@@ -1,0 +1,31 @@
+{
+  "source": {
+    "kind": "figma",
+    "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv",
+    "revision": null
+  },
+  "role": "reference",
+  "elements": [
+    {
+      "id": "runs-failure-visible-actionable",
+      "locator": {
+        "kind": "figma-node",
+        "value": "63:3498"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1952,
+          "height": 1474
+        }
+      ]
+    }
+  ],
+  "assets_dir": "assets"
+}

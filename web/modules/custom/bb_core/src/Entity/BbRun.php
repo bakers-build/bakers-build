@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Entity;
 
+use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
@@ -18,6 +19,7 @@ use Drupal\bb_core\Form\BbContentEntityDeleteForm;
 use Drupal\bb_core\Form\BbRunForm;
 use Drupal\bb_core\ListBuilder\BbRunListBuilder;
 use Drupal\bb_core\Routing\BbRunRouteProvider;
+use Drupal\bb_core\RunLog\RunLogException;
 use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\bb_core\RunLog\RunLogStorageAllowedItemList;
 use Drupal\bb_core\RunLog\RunLogStore;
@@ -93,11 +95,11 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
    * @var array<string, array{0: string, 1: string}>
    */
   public const STATE_MARKS = [
-    'claimed' => ['lock', 'wait'],
+    'claimed' => ['lock', 'attention'],
     'running' => ['run', 'running'],
     'done' => ['check', 'idle'],
     'expired' => ['clock', 'stale'],
-    'failed' => ['alert-triangle', 'attention'],
+    'failed' => ['alert-triangle', 'critical'],
     'cancelled' => ['x-circle', 'stale'],
   ];
 
@@ -445,6 +447,41 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
    */
   public function readErrorLog(): ?string {
     return $this->readStored('error_log_file');
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function failureReason(): ?string {
+    $line = $this->failureLine();
+    return $line === NULL ? NULL : Unicode::truncate($line, 140, FALSE, TRUE);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function failureLine(): ?string {
+    if ($this->getRunState() !== 'failed') {
+      return NULL;
+    }
+    $file = $this->get('error_log_file')->entity;
+    $line = '';
+    try {
+      if ($file instanceof FileInterface) {
+        $line = \Drupal::service(RunLogStore::class)->firstLine($file, $this);
+      }
+    }
+    catch (RunLogException $e) {
+      // One unreadable log must not break the screens that show the reason.
+      \Drupal::logger('bb_core')->warning('Run @id: failure reason unreadable: @message', [
+        '@id' => $this->id(),
+        '@message' => $e->getMessage(),
+      ]);
+    }
+    $line = preg_replace('/^Error: /', '', $line);
+    return $line === '' || $line === NULL
+      ? (string) new TranslatableMarkup('No reason was recorded. Open the log for details.')
+      : $line;
   }
 
   /**

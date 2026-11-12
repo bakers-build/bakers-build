@@ -1,0 +1,67 @@
+{
+  "answers": {
+    "machine_role": "Remote worker that I manage.",
+    "harness": "Claude Code, already installed and signed in.",
+    "machine_label": "audit-worker",
+    "scope": "all; I authorize synthetic machine, connection and project setup.",
+    "server_url": "https://setup.example.test",
+    "client_id": "bakers-cli",
+    "workspace": "Audit Workspace",
+    "optional_workspace_uuid": "Skip the optional workspace UUID.",
+    "project": "Audit Project",
+    "client": "herdr-cli",
+    "environment": "Existing project scripts; no containers.",
+    "group": "Existing",
+    "team": "North",
+    "project_description": "Skip; no description.",
+    "repository": "https://git.example.test/audit/repo.git",
+    "branch": "main",
+    "after_create": "echo synthetic-setup",
+    "after_done": "echo synthetic-cleanup",
+    "provision_up": "No provisioning hook is needed.",
+    "security": "sandbox",
+    "tunnel": "Keep previews local, no tunnel.",
+    "consent": "Yes, apply the described synthetic changes.",
+    "optional_addons": "No optional addons; use required ones only.",
+    "workflow": "No origin labels; no extra skills or validation commands.",
+    "remote_projects": "Select Audit Project only; main branch; proposed checkout path is acceptable.",
+    "start_conductor": "No, do not start a conductor."
+  },
+  "request": "Use bb-init on a remote worker. Tools and synthetic login are ready; there are two accessible server projects, Audit Project and Other Project. Guide selection and checkout, then project setup.",
+  "id": "setup-s4-remote",
+  "max_turns": 70,
+  "observations": {
+    "tools": "Git, Node 24, npm, bakers CLI, Claude Code and herdr-cli already installed; Claude signed in.",
+    "skills": "Both setup skills, bb-create-project, bb-workflow and bb-recipe-superpowers are installed. Supplied local docs are loaded.",
+    "application": "No application runtime required; project scripts are operator-owned.",
+    "authentication": "Use supplied synthetic auth observations only; no real login.",
+    "api": "Use bakers tools to discover control-plane tool schemas.",
+    "file_paths": "project/ is checkout, machine/ is BAKERS_HOME. All writes require scope/consent per skill.",
+    "checkout": "Synthetic double, no real SSH or clone: the worker's SSH key is accepted by git.example.test, and project/ is the finished clone of Audit Project at main (stands in for ~/projects/AUDIT). Continue project setup there with --path project."
+  },
+  "expected_config": {
+    "project/.bakers/project.config.js": {
+      "project.name": "Audit Project",
+      "hooks.after_create": "echo synthetic-setup",
+      "hooks.after_done": "echo synthetic-cleanup",
+      "executor.use": "@bakers-build/addon-herdr",
+      "worktree.use": "@bakers-build/addon-herdr"
+    }
+  },
+  "forbidden_fragments": {
+    "project/.bakers/project.config.js": [
+      "@bakers-build/addon-claude"
+    ]
+  },
+  "expected_files": {
+    "machine/machine.config.js": [
+      "audit-worker",
+      "@bakers-build/addon-claude"
+    ],
+    "project/.gitignore": [
+      "assets-ai",
+      ".bakers/log.txt",
+      ".bakers/connection.config.js"
+    ]
+  }
+}

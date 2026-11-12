@@ -333,9 +333,11 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
     'State: {state}',
     // The run reads through bakers_ticket_read like every skill step.
     'dropsh --format md read',
+    // The default read returns the newest comments, not all of them.
+    'and all comments',
   ];
   const NEUTRAL_CONTRACT = [
-    'Read the ticket and all comments',
+    'Read the ticket with the bakers tool bakers_ticket_read',
     'bakers_ticket_read',
     `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
     'load it through your tool search',

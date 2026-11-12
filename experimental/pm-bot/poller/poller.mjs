@@ -30,6 +30,9 @@ import { forget, updates } from './updates.mjs';
 
 const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
 
+// shortcut: a ticket above 1000 comments loses the oldest, read through bakers_comment_read then.
+const ALL_COMMENTS = 1000;
+
 /** The Slack Web API calls the poller makes. */
 export function createSlack({ url = 'https://slack.com/api', token }) {
   async function call(method, body) {
@@ -119,7 +122,7 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
 
   // A ticket's comments, newest first, optionally of one type, from bakers_ticket_read.
   async function comments(ticketId, type) {
-    const ticket = await client.tool('bakers_ticket_read', { ticket: ticketId });
+    const ticket = await client.tool('bakers_ticket_read', { ticket: ticketId, newest: ALL_COMMENTS });
     return (ticket.comments ?? [])
       .filter((c) => !type || c.type === type)
       .map((c) => ({ id: c.id, type: c.type, created: c.created, body: c.body ?? '' }))
@@ -234,7 +237,7 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
     for (const t of current.filter((t) => t.conversation && !archived(state, t) && !CLOSED.includes(t.state))) {
       try {
         const { runs } = await client.tool('bakers_ticket_runs_list', { ticket: t.id });
-        const { comments } = await client.tool('bakers_ticket_read', { ticket: t.id });
+        const { comments } = await client.tool('bakers_ticket_read', { ticket: t.id, newest: ALL_COMMENTS });
         read.push({ ...t, runs: runs ?? [], comments: comments ?? [] });
       } catch (error) {
         if (state.updates[t.identifier]) kept[t.identifier] = state.updates[t.identifier];

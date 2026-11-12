@@ -96,4 +96,8 @@ Accept your workspace invitation at the server's `/user/login`. `Online: pending
 
 **Done when:** Git, Node/npm and the agent answer their checks, `bb-init` is available, authentication passes, and `bakers info` lists your workspace. Ask the AI to report each result. [Troubleshooting](/cli/troubleshooting) covers failures.
 
+### Optional: preview tunnel
+
+To share previews through your team's frp server, follow [frp tunnel › Set up](/addons/ports-frp#set-up) with the server details from your operator. Skip this without them; previews stay local.
+
 **Next:** [Prepare your project](/get-started/connect-a-project) in the chosen environment. Apply the local guide's commands there. You can reuse the same execution setup for more repositories.

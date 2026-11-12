@@ -8,10 +8,14 @@ use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
+use Drupal\Core\Hook\Order\Order;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\entity\QueryAccess\QueryAccessHandlerInterface;
+use Drupal\facets_exposed_filters\Plugin\views\filter\FacetsFilter;
 use Drupal\bb_core\EventSubscriber\WorkspaceReadScopeSubscriber;
+use Drupal\bb_core\Plugin\facets\processor\TicketParentLabelProcessor;
 use Drupal\bb_core\Plugin\views\filter\BbClosedRows;
+use Drupal\bb_core\Plugin\views\filter\BbHasChildren;
 use Drupal\jsonapi\JsonApiFilter;
 use Drupal\views\Plugin\views\filter\FilterPluginBase;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -72,19 +76,47 @@ final class JsonapiViewsFilterMenuHooks {
    * its own segmented control in place of the default widget and must never
    * show as a removable chip beside the other facets — the control is its own
    * object, not one of the chips it stands beside. Blanking the value keeps
-   * `views_filters_summary` from building a chip for it at all.
+   * `views_filters_summary` from building a chip for it at all. The
+   * "Has sub-tickets" checkbox states itself the same way, and as a chip it
+   * would read "Has sub-tickets is 1".
    *
    * @param array<string, mixed> $info
    *   The summary info to alter.
    * @param \Drupal\views\Plugin\views\filter\FilterPluginBase $filter
    *   The filter handler the summary info belongs to.
    */
-  #[Hook('views_filters_summary_info_alter')]
+  #[Hook('views_filters_summary_info_alter', order: Order::Last)]
   public function viewsFiltersSummaryInfoAlter(array &$info, FilterPluginBase $filter): void {
     $is_closed_rows = $filter->getPluginId() === 'bb_closed_rows'
       || $filter instanceof BbClosedRows;
-    if ($is_closed_rows) {
+    if ($is_closed_rows || $filter instanceof BbHasChildren) {
       $info['value'] = [];
+    }
+    if ($filter instanceof FacetsFilter && isset($filter->options['facet']['processor_configs']['bb_ticket_parent_label'])) {
+      $this->nameChosenParents($info, $filter);
+    }
+  }
+
+  /**
+   * Names every chosen parent the parent facet has no result for.
+   *
+   * Contrib states a chip only from the facet's results, and a facet with
+   * `min_count: 1` has none when no listed ticket has a parent; a chosen
+   * parent is still named, by key and title, or by key alone when unknown or
+   * unreadable. Runs after facets_exposed_filters' own alter.
+   *
+   * @param array<string, mixed> $info
+   *   The summary info to alter.
+   * @param \Drupal\facets_exposed_filters\Plugin\views\filter\FacetsFilter $filter
+   *   The parent facet.
+   */
+  private function nameChosenParents(array &$info, FacetsFilter $filter): void {
+    $info['value'] = is_array($info['value'] ?? NULL) ? $info['value'] : [];
+    $named = array_map(strval(...), array_column($info['value'], 'raw'));
+    $missing = array_values(array_diff(array_map(strval(...), (array) $filter->value), $named));
+    $labels = TicketParentLabelProcessor::labels($this->entityTypeManager, $missing);
+    foreach ($missing as $key) {
+      $info['value'][] = ['id' => $key, 'raw' => $key, 'value' => $labels[$key] ?? $key];
     }
   }
 

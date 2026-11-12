@@ -5,7 +5,8 @@ it. The method produces no implementation.
 
 ## read
 
-Apply [ensure qualification](ensure-qualification.md); continue only on `qualified`.
+Make the *plan* comment call of [read ticket](read-ticket.md), then apply
+[ensure qualification](ensure-qualification.md); continue only on `qualified`.
 
 ## provision
 

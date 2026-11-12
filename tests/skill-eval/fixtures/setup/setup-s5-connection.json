@@ -1,0 +1,15 @@
+{
+  "id": "setup-s5-connection",
+  "request": "Use bb-init-project, connection scope only, named connection staging. Server https://setup.example.test and client-id bakers-cli are already supplied. Skip the optional workspace UUID. I authorize writing only this named connection. Preserve the default connection and do not create a machine identity.",
+  "files": {
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n"
+  },
+  "preserved_files": {
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n"
+  },
+  "expected_files": {
+    "machine/connections/staging.js": [
+      "https://setup.example.test"
+    ]
+  }
+}

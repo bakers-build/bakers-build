@@ -1,0 +1,154 @@
+{
+  "sources": [
+    ".claude/skills/bakers-build/skills/bb-init/SKILL.md",
+    ".claude/skills/bakers-build/skills/bb-init/references/machine-setup.md",
+    ".claude/skills/bakers-build/skills/bb-init/references/setup-conversation.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/SKILL.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/project-setup.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/setup-checks.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/WORKFLOW.template.md",
+    ".claude/skills/bakers-build/skills/bb-create-project/SKILL.md",
+    "docs/provision/machine.md",
+    "docs/get-started/connect-a-project.md",
+    "docs/configuration/machine.md",
+    "docs/configuration/connection.md",
+    "docs/configuration/project.md",
+    "docs/provision/security/shared-settings.md",
+    "docs/provision/hooks.md",
+    "docs/get-started/use-your-client.md",
+    "docs/addons/herdr.md",
+    "docs/addons/slots.md",
+    "docs/agents/guide.md",
+    "docs/agents/index.md",
+    "docs/addons/claude.md",
+    "docs/cli/tools.md",
+    "docs/provision/worker-server.md",
+    "docs/provision/guide.md",
+    "docs/provision/tools.md",
+    "docs/provision/security/execution.md",
+    "docs/configuration/project/hooks.md",
+    "docs/addons/configure.md",
+    "docs/addons/forge.md",
+    "docs/addons/forge-github.md",
+    "docs/addons/ports.md",
+    "docs/addons/ports-services.md",
+    "docs/addons/ports-cloudflare-quick.md",
+    "docs/skills-and-workflows/workflow-file.md",
+    "docs/skills-and-workflows/skills.md"
+  ],
+  "answers": {
+    "machine_role": "Run tickets on my own local computer.",
+    "harness": "Claude Code, already installed and signed in.",
+    "machine_label": "audit-worker",
+    "scope": "all; I authorize synthetic machine, connection and project setup.",
+    "server_url": "https://setup.example.test",
+    "client_id": "bakers-cli",
+    "workspace": "Audit Workspace",
+    "optional_workspace_uuid": "Skip the optional workspace UUID.",
+    "project": "Audit Project",
+    "client": "herdr-cli",
+    "environment": "Existing project scripts; no containers.",
+    "group": "Existing",
+    "team": "North",
+    "project_description": "Skip; no description.",
+    "repository": "https://git.example.test/audit/repo.git",
+    "branch": "main",
+    "after_create": "echo synthetic-setup",
+    "after_done": "echo synthetic-cleanup",
+    "provision_up": "No provisioning hook is needed.",
+    "security": "sandbox",
+    "tunnel": "Keep previews local, no tunnel.",
+    "consent": "Yes, apply the described synthetic changes.",
+    "optional_addons": "No optional addons; use required ones only.",
+    "workflow": "No origin labels; no extra skills or validation commands."
+  },
+  "commands": {
+    "[\"bakers\",\"auth\",\"status\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic identity: operator@example.test; authenticated. No real session exists."
+    },
+    "[\"bakers\",\"config\",\"check\",\"--scope\",\"connection\",\"--online\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic authentication passed; workspace and project access not implied."
+    },
+    "[\"bakers\",\"config\",\"check\",\"--scope\",\"project\",\"--online\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic identity authenticated; project access and runtime need separate checks."
+    },
+    "[\"bakers\",\"conductor\",\"check\"]": {
+      "exit_code": 0,
+      "stdout": "Synthetic sandbox prerequisites available. No conductor was started."
+    },
+    "[\"bakers\",\"info\"]": {
+      "exit_code": 0,
+      "stdout": "{\"project\": \"Audit Project\", \"project_id\": \"55555555-5555-4555-8555-555555555555\", \"workspace\": \"Audit Workspace\", \"workspace_id\": \"66666666-6666-4666-8666-666666666666\"}"
+    }
+  },
+  "server": {
+    "input": {
+      "workspace_uuid": "66666666-6666-4666-8666-666666666666",
+      "project_uuid": "55555555-5555-4555-8555-555555555555"
+    },
+    "simulation": {
+      "teams": [
+        {
+          "uuid": "77777777-7777-4777-8777-000000000001",
+          "name": "North"
+        }
+      ],
+      "groups": [
+        {
+          "uuid": "44444444-4444-4444-8444-000000000009",
+          "name": "Existing",
+          "description": null
+        }
+      ],
+      "workspaces": [
+        {
+          "uuid": "66666666-6666-4666-8666-666666666666",
+          "name": "Audit Workspace",
+          "slug": "audit"
+        }
+      ],
+      "projects": [
+        {
+          "uuid": "55555555-5555-4555-8555-555555555555",
+          "key": "AUDIT",
+          "name": "Audit Project",
+          "workspace": "66666666-6666-4666-8666-666666666666",
+          "group": "44444444-4444-4444-8444-000000000009",
+          "teams": [
+            "77777777-7777-4777-8777-000000000001"
+          ],
+          "description": null,
+          "repository": {
+            "url": "https://git.example.test/audit/repo.git",
+            "default_branch": "main",
+            "branch_convention": null
+          },
+          "coder_config": null
+        },
+        {
+          "uuid": "55555555-5555-4555-8555-000000000002",
+          "key": "OTHER",
+          "name": "Other Project",
+          "workspace": "66666666-6666-4666-8666-666666666666",
+          "group": "44444444-4444-4444-8444-000000000009",
+          "teams": [],
+          "description": null,
+          "repository": null,
+          "coder_config": null
+        }
+      ]
+    }
+  },
+  "max_turns": 70,
+  "observations": {
+    "tools": "Git, Node 24, npm, bakers CLI, Claude Code and herdr-cli already installed; Claude signed in.",
+    "skills": "Both setup skills, bb-create-project, bb-workflow and bb-recipe-superpowers are installed. Supplied local docs are loaded.",
+    "application": "No application runtime required; project scripts are operator-owned.",
+    "authentication": "Use supplied synthetic auth observations only; no real login.",
+    "api": "Use bakers tools to discover control-plane tool schemas.",
+    "file_paths": "project/ is checkout, machine/ is BAKERS_HOME. All writes require scope/consent per skill."
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "request": "Use bb-init-project for this new checkout. Ask before changes.",
+  "interaction": "unanswered",
+  "id": "setup-s6-unanswered",
+  "no_writes": true
+}
