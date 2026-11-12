@@ -382,6 +382,7 @@ console.log(m[1]);
         'bakers_ticket_read',
         'Follow the loaded skill for tool discovery, transport and fallback',
         './WORKFLOW.md',
+        'Do not call ticket or service tools before reading both files',
         "that skill's {state} section",
         'Do not start or prepare a later state',
       ]) {

@@ -227,12 +227,16 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
   it('loads the workflow before reading the ticket and delegates transport to the skill', () => {
     const paths = [
       'Read ./WORKFLOW.md',
-      'load the bakers.build skill',
+      'load the bakers.build entry skill named there',
       'Read the ticket with the bakers tool bakers_ticket_read',
       'Follow the loaded skill for tool discovery, transport and fallback',
     ].map((p) => DEFAULT_AGENT_PROMPT.indexOf(p));
     expect(paths.every((at) => at >= 0)).toBe(true);
     expect([...paths].sort((a, b) => a - b)).toEqual(paths);
+    expect(DEFAULT_AGENT_PROMPT).toContain(
+      'Do not call ticket or service tools before reading both files',
+    );
+    expect(DEFAULT_AGENT_PROMPT).not.toContain("for this ticket's work type");
     for (const transport of [
       'bakers tools',
       'Bash',
@@ -339,6 +343,7 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
     'bakers_ticket_read',
     'Follow the loaded skill for tool discovery, transport and fallback',
     './WORKFLOW.md',
+    'Do not call ticket or service tools before reading both files',
     "that skill's {state} section",
     'Do not start or prepare a later state',
   ];

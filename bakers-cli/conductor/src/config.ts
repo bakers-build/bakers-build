@@ -104,8 +104,9 @@ export {
  * No semicolon in the text: the freshness test cuts the initializer at the first one.
  */
 export const DEFAULT_AGENT_PROMPT =
-  `You are working ticket {identifier}, current state: {state}. Read ./WORKFLOW.md and ` +
-  `load the bakers.build skill its loader names for this ticket's work type and state. ` +
+  `You are working ticket {identifier}, current state: {state}. Read ./WORKFLOW.md first and ` +
+  `load the bakers.build entry skill named there. ` +
+  `Do not call ticket or service tools before reading both files. ` +
   `Read the ticket with the bakers tool bakers_ticket_read, arguments {"ticket":"{ticket_uuid}"}. ` +
   `Follow the loaded skill for tool discovery, transport and fallback, ` +
   `and execute only that skill's {state} section. ` +
