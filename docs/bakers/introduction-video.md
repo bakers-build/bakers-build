@@ -4,7 +4,8 @@ The script for the introduction video on the landing page. It introduces bakers.
 follows one ticket from a GitHub issue to `done`. You record screen and narration in one take
 from this file; the cut, the captions and the player are made from that recording afterwards.
 
-- Length of the final cut: about 200 seconds. The narration below is about 505 words.
+- Estimated length of the final cut: about 220 seconds at 150 words per minute. The narration
+  below is 546 words; confirm the timing in the dry run.
 - Language: English. Say "bakers dot build".
 - Lines starting with `>` are the narration, word for word. Everything else is direction.
 
@@ -74,19 +75,22 @@ stay silent while you wait. Waiting is cut out later.
 
 ## Scenes
 
-### 1. Introduction (about 66 s)
+### 1. Introduction (about 80 s)
 
-On screen: the landing page hero. From "Here's the idea", scroll slowly to the line with its
-four stations.
+On screen: the landing page hero. From "Your workflow lives", scroll slowly to the
+line with its four stations.
 
-> Hi, I'm Christian. I build software with a team of ten.
-> At the beginning of this year, our whole team switched to AI, and everyone had their own way of doing it. Ten developers, ten workflows, and a lot of babysitting.
-> So we built our own tool, just for us, on top of OpenAI's Symphony spec. We called it Gaia.
-> One workflow for the whole team. Everyone runs several tickets in parallel. And we spend our time on how we build software, not on the building itself.
-> Gaia grew and grew. And at some point we thought: maybe this helps other teams and agencies too.
-> So we made it open source. And because we kept asking each other "Is that ticket baked yet?", it got a new name: bakers.build.
-> Here's the idea: your team writes down what it needs, as a ticket. AI agents do the heavy lifting, and the developer steers.
-> How that works is your recipe: WORKFLOW.md, a text file right next to your code.
+> Everyone on the team is using AI, but each developer has built their own setup. Different skills, different tools, different workflows.
+> Some projects already use worktrees to run tasks in parallel. Others don't. Keeping all of that working together becomes a job in itself.
+> That's why we built bakers.build: one tool for the team, with a shared workflow everyone follows.
+> I'm Christian, and this started with our team of seven developers and two project managers.
+> Looking for a better way led us to OpenAI's Symphony spec.
+> We wanted a shared workflow, using our existing AI subscriptions, without being tied to one provider. Agents should run securely on our developers' own machines or on remote workers we control.
+> With a client of our choice, we could look inside the oven and step in when needed.
+> So we built Gaia on Symphony's spec. And honestly, it worked better than expected: less babysitting, more time to get things done.
+> It seemed worth sharing, so we made it open source as bakers.build. The name came from asking, "Is that ticket baked yet?" That was our naming process.
+> Your workflow lives in a text file next to your code. The agents follow it; you steer.
+> Let's give it a ticket.
 
 ### 2. A ticket system for AI (about 18 s)
 
