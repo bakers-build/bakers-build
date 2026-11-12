@@ -300,6 +300,7 @@ function fakeSite(failLists = 0) {
       if (failLists-- > 0) throw new Error('site down');
       return [
         { name: 'tool_api__bakers_ticket_read', inputSchema: schema('ticket') },
+        { name: 'tool_api__bakers_run_cancel', inputSchema: schema('ticket') },
         {
           name: 'tool_api__bakers_comment_read',
           inputSchema: schema('ticket'),
@@ -375,6 +376,7 @@ describe('site tools on the bakers server', () => {
       'where',
       'boom',
       'bakers_ticket_read',
+      'bakers_run_cancel',
       'bakers_comment_read',
       'bakers_ticket_search',
       'bakers_ticket_update',
@@ -385,6 +387,49 @@ describe('site tools on the bakers server', () => {
     expect(
       tools.find((t) => t.name === 'bakers_ticket_read')?.inputSchema,
     ).toEqual({ type: 'object', properties: { ticket: { type: 'string' } } });
+    await client.close();
+  });
+
+  it('cancels own-project tickets, signals writes and refuses machine-wide or foreign cancellation', async () => {
+    const site = fakeSite();
+    const writes: unknown[] = [];
+    const binding = runBinding(PROJECT_A);
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: site,
+      onSiteWrite: (b) => writes.push(b),
+    });
+    const client = await connect(
+      server.url,
+      server.issueRunToken('run-1', binding),
+    );
+    for (const args of [
+      { ticket: 'XX-9', reason: 'Stop' },
+      { machine_id: 'machine-1', reason: 'Stop' },
+      { ticket: '', reason: 'Stop' },
+      { ticket: 'BB-1', machine_id: 'machine-1', reason: 'Stop' },
+    ]) {
+      const result = await client.callTool({
+        name: 'bakers_run_cancel',
+        arguments: args,
+      });
+      expect(result.isError).toBe(true);
+    }
+    expect(
+      site.calls.filter((c) => c.name === 'tool_api__bakers_run_cancel'),
+    ).toEqual([]);
+    expect(writes).toEqual([]);
+    const args = { ticket: 'BB-1', reason: 'Stop this run' };
+    const result = await client.callTool({
+      name: 'bakers_run_cancel',
+      arguments: args,
+    });
+    expect(result.isError).toBeFalsy();
+    expect(site.calls.at(-1)).toEqual({
+      name: 'tool_api__bakers_run_cancel',
+      args,
+    });
+    expect(writes).toEqual([binding]);
     await client.close();
   });
 
