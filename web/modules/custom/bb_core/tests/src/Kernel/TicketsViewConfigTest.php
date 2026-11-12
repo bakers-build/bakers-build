@@ -23,6 +23,17 @@ use PHPUnit\Framework\Attributes\Group;
 #[Group('bb_core')]
 final class TicketsViewConfigTest extends KernelTestBase {
 
+  /**
+   * Project drill-down accepts a deployment identifier.
+   */
+  public function testProjectDeploymentFilter(): void {
+    $view = Views::getView('tickets');
+    $view->setDisplay('project_tickets');
+    $filters = $view->display_handler->getOption('filters');
+    self::assertSame('facets_deployment_identifiers', $filters['facets_deployment']['field'] ?? NULL);
+    self::assertSame('deployment', $filters['facets_deployment']['expose']['identifier'] ?? NULL);
+  }
+
   use ProjectsViewTestTrait;
 
   /**
@@ -409,7 +420,7 @@ final class TicketsViewConfigTest extends KernelTestBase {
         'argument_field' => 'project_id',
         'hidden' => 'project',
         'filters' => [
-          'title', 'closed', 'state', 'parent', 'has_children', 'workflow', 'assignee', 'owner', 'priority', 'label',
+          'title', 'closed', 'state', 'deployment', 'parent', 'has_children', 'workflow', 'assignee', 'owner', 'priority', 'label',
         ],
       ],
       'team_tickets' => [
