@@ -1,7 +1,7 @@
 @project-board @feature:board-parent-focus
 Feature: Project Board parent focus and summary
-  A parent_id in the Board address focuses the Board on one parent ticket's
-  open descendants: the Parent chip, the assignee avatars and the open total
+  The Parent picker of the filter bar, or a parent_id in the Board address,
+  focuses the Board on one parent ticket's open descendants: the Parent chip, the assignee avatars and the open total
   count inside that focus. Show done opens the Done column of closed work.
   Each scenario builds its own project and accounts (the JS and no-JS projects
   run in parallel), so the names below are suffixed per scenario by the steps,
@@ -19,6 +19,15 @@ Feature: Project Board parent focus and summary
     And the Board reads "15 of 15 open tickets"
     And the Board assignees count "board-alice · 12, board-bob · 2, Unassigned · 1"
     And the "Not assigned" column shows 10 cards
+
+  Scenario: A parent is chosen in the filter bar and removed by its chip
+    When I visit the focus Board
+    And I choose the focus parent in the Board filter bar
+    Then the Board shows the focus parent chip counting 15
+    And the Board reads "15 of 15 open tickets"
+    When I remove the Board's Parent filter
+    Then the address does not carry "parent_id"
+    And the Board shows no active filter
 
   Scenario: Show done keeps the parent and survives reload
     When I open the focus Board focused on its parent
@@ -68,3 +77,6 @@ Feature: Project Board parent focus and summary
     When I click "Show done" in the Done column
     Then the address carries "done=show"
     And the "Done" column shows 2 cards
+    And the Board shows the focus parent chip counting 15
+    When I remove the Board's Parent filter
+    Then the address does not carry "parent_id"

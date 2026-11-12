@@ -1,15 +1,12 @@
-{# The Board filter bar: Search, the State and Priority pickers, the Assignee
-   avatars, then Details and Clear filters at its end (bb_board_summary adds
-   the avatars, Details and Clear to the form).
+{# The Board filter bar: Search, the State, Priority and Parent pickers, the
+   Assignee avatars, then Details and Clear filters at its end
+   (bb_board_summary adds the avatars, Details and Clear to the form).
 
-   Assignee and the parent focus are links, not inputs; their active values
-   ride along as hidden inputs, so Apply and a picker keep them. Apply is the
-   submit without JavaScript; with it, the bar submits itself. #}
+   Assignee is links, not inputs; its active values ride along as hidden
+   inputs, so Apply and a picker keep them. Apply is the submit without
+   JavaScript; with it, the bar submits itself. #}
 {% for value in form.assignee['#props'].values|default([]) %}
   <input type="hidden" name="assignee[]" value="{{ value }}">
-{% endfor %}
-{% for value in form.parent_id['#props'].values|default([]) %}
-  <input type="hidden" name="parent_id" value="{{ value }}">
 {% endfor %}
 {% embed 'bb_theme:filters' with {
   layout: 'toolbar',
@@ -17,12 +14,13 @@
   search: form.search,
   state: form.state,
   priority: form.priority,
+  parent: form.parent_id,
   assignees: form.board_assignees,
   submit: form.actions,
   details: form.board_details,
   clear: form.board_clear,
 } only %}
-  {% block controls %}{{ search }}{{ state }}{{ priority }}{{ assignees }}{{ submit }}{% endblock %}
+  {% block controls %}{{ search }}{{ state }}{{ priority }}{{ parent }}{{ assignees }}{{ submit }}{% endblock %}
   {% block actions %}{{ details }}{{ clear }}{% endblock %}
 {% endembed %}
 {{ form|without('search', 'state', 'priority', 'assignee', 'parent_id', 'actions', 'board_assignees', 'board_details', 'board_clear') }}

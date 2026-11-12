@@ -423,6 +423,10 @@ final class BbBoardSummary extends AreaPluginBase {
     $form[self::SEARCH]['#compact'] = TRUE;
     $form[self::STATE] = $bar->pill($form[self::STATE] ?? [], $summary['states']);
     $form[self::PRIORITY] = $bar->pill($form[self::PRIORITY] ?? [], $summary['priorities']);
+    // A project without eligible parents has no parent picker.
+    if (isset($form[self::PARENT])) {
+      $form[self::PARENT] = $bar->pill($form[self::PARENT], []);
+    }
     $form['board_assignees'] = $bar->assignees($summary['employees']);
     $form['board_details'] = $bar->details($this->preferences->details());
     $form['board_clear'] = $bar->clear();

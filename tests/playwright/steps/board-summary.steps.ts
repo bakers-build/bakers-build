@@ -9,9 +9,7 @@
 // this workspace would change what `ticket-list` measures. No conductor also
 // means nothing here can ever be dispatched. Its own viewer, a lead of the
 // workspace, keeps the Board preferences (stored per account) to itself.
-//
-// The Board is addressed by project id: on a key address BbBoardParent reads
-// the raw key and ignores parent_id, a known defect outside this suite.
+// The Board is addressed the way its tabs address it: by the project's key.
 import { randomUUID } from 'node:crypto';
 import { Given, When, Then, test } from '../bdd.fixtures';
 import { createBdd } from 'playwright-bdd';
@@ -28,7 +26,7 @@ const focus = {
   parentUuid: '',
   parentIdentifier: '',
   leafUuid: '',
-  projectId: '',
+  projectKey: '',
   viewer: '',
   names: [] as string[],
 };
@@ -91,10 +89,10 @@ Given(
         `for ($i = 0; $i < ${unassigned}; $i++) { $make("Focus child", $parent->id(), NULL); }`,
         'for ($i = 0; $i < 2; $i++) { $c = $make("Focus closed", $parent->id(), NULL); $c->set("closed", 1)->save(); }',
         '$leaf = $make("Focus leaf", NULL, NULL);',
-        'print $project->id() . " " . $parent->uuid() . " " . $parent->getIdentifier() . " " . $leaf->uuid() . " " . $viewer->id();',
+        'print $project->getKey() . " " . $parent->uuid() . " " . $parent->getIdentifier() . " " . $leaf->uuid() . " " . $viewer->id();',
       ].join(' '),
     );
-    [focus.projectId, focus.parentUuid, focus.parentIdentifier, focus.leafUuid, focus.viewer] = result.split(' ');
+    [focus.projectKey, focus.parentUuid, focus.parentIdentifier, focus.leafUuid, focus.viewer] = result.split(' ');
     expect(focus.parentUuid, 'The fixture parent was created').toMatch(/^[0-9a-f-]{36}$/);
     expect(focus.leafUuid, 'The fixture leaf was created').toMatch(/^[0-9a-f-]{36}$/);
     expect(focus.parentIdentifier, 'The parent chip shows the identifier').toMatch(/^\S+$/);
@@ -114,9 +112,30 @@ Given("I am signed in as the focus Board's viewer", async ({ page, authProvider 
 });
 
 function boardPath(): string {
-  expect(focus.projectId, 'The Board focus fixture project exists').not.toBe('');
-  return `/bakers/project/${focus.projectId}/board`;
+  expect(focus.projectKey, 'The Board focus fixture project exists').not.toBe('');
+  return `/bakers/project/${focus.projectKey}/board`;
 }
+
+When('I visit the focus Board', async ({ page }) => {
+  const response = await active(page).goto(boardPath());
+  expect(response?.status() ?? 0).toBeLessThan(400);
+});
+
+// The Parent picker of the filter bar; a pick submits the bar.
+When('I choose the focus parent in the Board filter bar', async ({ page }) => {
+  const target = active(page);
+  const bar = target.getByRole('search', { name: 'Board filters' });
+  await bar.getByRole('combobox', { name: /^Change Parent ticket\./ }).click();
+  await bar.getByRole('option').filter({ hasText: focus.parentIdentifier }).first().click();
+  await target.waitForFunction(() => new URLSearchParams(window.location.search).has('parent_id'), undefined, { timeout: 20000 });
+});
+
+When("I remove the Board's Parent filter", async ({ page }) => {
+  const target = active(page);
+  const before = target.url();
+  await target.getByRole('link', { name: 'Remove the Parent filter', exact: true }).click();
+  await target.waitForFunction((url) => window.location.href !== url, before, { timeout: 20000 });
+});
 
 When('I visit the focus Board with an unknown parent', async ({ page }) => {
   await active(page).goto(`${boardPath()}?parent_id=00000000-0000-4000-8000-000000000000`);

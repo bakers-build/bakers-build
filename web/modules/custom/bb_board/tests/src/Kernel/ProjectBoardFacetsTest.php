@@ -501,6 +501,24 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
   }
 
   /**
+   * The board's own URL names the project by key: the parent focus follows.
+   */
+  public function testProjectKeyAddressFocusesTheParent(): void {
+    $key = $this->project->getKey();
+    $input = ['parent_id' => $this->parent->uuid()];
+    $this->request($input);
+    $view = $this->execute('project_board', $input, $key);
+    $summary = $this->summaryOf($view);
+    self::assertSame('parent', $summary['mode']);
+    self::assertSame(15, $summary['total']);
+    self::assertMatchesRegularExpression('#data-option-picker-label="Parent ticket"\s+data-option-picker-variant="field"#', $this->renderSummary($view));
+    self::assertSame(
+      (int) $this->execute('working', $input)->total_rows,
+      (int) $this->execute('working', $input, $key)->total_rows,
+    );
+  }
+
+  /**
    * The parent focus is an active chip; removing it leaves the project board.
    */
   public function testParentFocusShowsAsActiveChip(): void {
@@ -599,11 +617,12 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     $this->request($input);
     $html = $this->renderSummary($this->execute('project_board', $input));
     self::assertMatchesRegularExpression(
-      '#role="search"[^>]*aria-label="Board filters"[\s\S]*name="search"[\s\S]*name="state\[\]"[\s\S]*name="priority\[\]"[\s\S]*aria-label="bob, 2 tickets"[\s\S]*details=states[\s\S]*Clear filters#',
+      '#role="search"[^>]*aria-label="Board filters"[\s\S]*name="search"[\s\S]*name="state\[\]"[\s\S]*name="priority\[\]"[\s\S]*data-option-picker-label="Parent ticket"[\s\S]*aria-label="bob, 2 tickets"[\s\S]*details=states[\s\S]*Clear filters#',
       $html,
     );
+    self::assertSame(1, substr_count($html, 'name="parent_id" value="' . $this->parent->uuid() . '"'), 'The chosen parent rides along once.');
     self::assertMatchesRegularExpression('#<input type="hidden" name="assignee\[\]" value="' . $this->bob->id() . '">#', $html);
-    self::assertMatchesRegularExpression('#<input type="hidden" name="parent_id" value="' . $this->parent->uuid() . '">#', $html);
+    self::assertMatchesRegularExpression('#<input type="radio" name="parent_id" value="' . $this->parent->uuid() . '"[^>]*\schecked#', $html, 'The picker submits the chosen parent.');
     self::assertStringNotContainsString('name="assignee[]" value="' . $this->alice->id() . '"', $html, 'Avatars are links, not inputs.');
     self::assertMatchesRegularExpression('#<a\s(?=[^>]*aria-label="bob, 2 tickets")(?=[^>]*aria-current="true")[^>]*>#', $html, 'The chosen assignee is on.');
     self::assertMatchesRegularExpression('#<a\s(?=[^>]*aria-label="alice, 12 tickets")(?![^>]*aria-current)[^>]*>#', $html);
