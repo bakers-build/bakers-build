@@ -27,3 +27,6 @@ patches.lock.json
 /.env.ddev
 
 /.env.ddev.*.tmp
+
+# Agent request logs (agent:opus-proxy).
+/assets-ai/

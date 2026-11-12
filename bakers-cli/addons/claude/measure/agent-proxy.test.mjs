@@ -206,12 +206,13 @@ test('auditRequest ranks tools by serialized UTF-8 bytes', () => {
   }
 });
 
-test('decodeResponse reports the three usage fields independently from SSE', () => {
+test('decodeResponse reports the usage fields, output from the final message_delta', () => {
   const decoded = decodeResponse(sseMessage());
   assert.deepEqual(decoded.usage, {
     input_tokens: 11,
     cache_read_input_tokens: 23,
     cache_creation_input_tokens: 7,
+    output_tokens: 1,
   });
 });
 
@@ -227,6 +228,7 @@ test('decodeResponse keeps a supplied numeric zero and does not fabricate missin
     input_tokens: 0,
     cache_read_input_tokens: 0,
     cache_creation_input_tokens: 0,
+    output_tokens: 1,
   });
 
   const missing = decodeResponse(
@@ -248,6 +250,7 @@ test('decodeResponse does not double-count overlapping SSE usage updates', () =>
   assert.equal(decoded.usage.input_tokens, 11);
   assert.equal(decoded.usage.cache_read_input_tokens, 23);
   assert.equal(decoded.usage.cache_creation_input_tokens, 7);
+  assert.equal(decoded.usage.output_tokens, 4);
 });
 
 test('decodeResponse reads usage from a non-streaming JSON body', () => {
@@ -263,6 +266,7 @@ test('decodeResponse reads usage from a non-streaming JSON body', () => {
     input_tokens: 11,
     cache_read_input_tokens: 23,
     cache_creation_input_tokens: 7,
+    output_tokens: 2,
   });
 });
 
