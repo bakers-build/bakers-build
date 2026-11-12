@@ -4,7 +4,7 @@
 
 import type { ConductorLogger } from '@bakers-build/core';
 import type { ConductorFileConfig } from '../types.js';
-import type { AgentContainer } from './agent.js';
+import type { BbAgent } from './agent.js';
 
 /** The run a launch belongs to. */
 export interface RuntimeRun {
@@ -21,8 +21,8 @@ export interface RuntimeLaunch {
   run: RuntimeRun;
   /** The harness id of the chosen agent (`claude`, `codex`, …). */
   harness: string;
-  /** The chosen agent's container needs; absent when it declares none. */
-  container?: AgentContainer;
+  /** The chosen agent; runtimes interpret their own optional plugin contracts. */
+  agent: BbAgent;
 }
 
 export interface BbRuntime {

@@ -9,7 +9,7 @@ import { join } from 'node:path';
 import type {
   AgentContainer,
   ContainerMount,
-} from '@bakers-build/conductor/contract';
+} from '@bakers-build/addon-runtime-docker/contract';
 
 /**
  * Encode an absolute cwd the way Claude Code names its per-project transcript

@@ -10,13 +10,11 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type {
-  AgentContainer,
-  AgentContainerContext,
-} from '@bakers-build/conductor/contract';
+import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { type BackendDeps, dockerRuntime, shortHash } from '../src/backend.js';
+import type { AgentContainer, AgentContainerContext } from '../src/contract.js';
 
 type Call = [string, string[]];
 
@@ -97,7 +95,13 @@ const launch = (over: Record<string, unknown> = {}) => ({
   workspacePath: ws,
   run: { uuid: 'r-uuid', id: 7 },
   harness: 'fake',
-  container: agent(),
+  agent: {
+    id: 'fake',
+    container: agent(),
+    launchCommand: () => '',
+    getRunLog: async () => '',
+    parseFootprint: emptyAgentFootprint,
+  },
   ...over,
 });
 
@@ -173,9 +177,9 @@ describe('runtime-docker wrap', () => {
       dockerRuntime({}, deps()),
       dockerRuntime({ image: 'mine' }, deps()),
     ])
-      await expect(rt.wrap(launch({ container: undefined }))).rejects.toThrow(
-        /agent fake does not support a container runtime/,
-      );
+      await expect(
+        rt.wrap(launch({ agent: { ...launch().agent, container: undefined } })),
+      ).rejects.toThrow(/agent fake does not support a container runtime/);
   });
 
   it('builds the default image once when missing', async () => {
@@ -191,7 +195,11 @@ describe('runtime-docker wrap', () => {
     const rt = dockerRuntime({}, d);
     await rt.wrap(launch());
     await rt.wrap(launch({ run: { uuid: 'r-2', id: 8 } }));
-    await rt.wrap(launch({ container: agent('install-other') }));
+    await rt.wrap(
+      launch({
+        agent: { ...launch().agent, container: agent('install-other') },
+      }),
+    );
     const build = (install: string) => [
       'docker',
       [

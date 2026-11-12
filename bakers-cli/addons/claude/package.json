@@ -23,11 +23,13 @@
   },
   "peerDependencies": {
     "@bakers-build/conductor": "workspace:^",
-    "@bakers-build/core": "workspace:^"
+    "@bakers-build/core": "workspace:^",
+    "@bakers-build/addon-runtime-docker": "workspace:^"
   },
   "devDependencies": {
     "@bakers-build/conductor": "workspace:^",
     "@bakers-build/core": "workspace:^",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "@bakers-build/addon-runtime-docker": "workspace:^"
   }
 }

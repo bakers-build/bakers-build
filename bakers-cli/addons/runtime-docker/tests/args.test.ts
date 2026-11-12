@@ -1,6 +1,7 @@
-import type { AgentContainer } from '@bakers-build/conductor/contract';
+import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
 import { describe, expect, it } from 'vitest';
 import { type DockerOptions, dockerArgs, type HostPaths } from '../src/args.js';
+import type { AgentContainer } from '../src/contract.js';
 
 /** A harness the runtime knows nothing about. */
 const container = {
@@ -19,6 +20,13 @@ const launch = {
   run: { uuid: 'r-uuid', id: 7 },
   harness: 'fake',
   container,
+  agent: {
+    id: 'fake',
+    container,
+    launchCommand: () => '',
+    getRunLog: async () => '',
+    parseFootprint: emptyAgentFootprint,
+  },
 };
 const opts: DockerOptions = {
   docker: 'docker',

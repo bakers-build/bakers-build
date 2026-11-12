@@ -5,7 +5,6 @@ import {
   fakeWorkspace,
 } from '@bakers-build/addon-fake';
 import type {
-  AgentContainer,
   BbAgent,
   BbExecutor,
   BbRuntime,
@@ -93,10 +92,10 @@ function recordingRuntime(
 
 const agent = (
   seen: { tools?: string },
-  container?: AgentContainer,
+  extension: Record<string, unknown> = {},
 ): BbAgent => ({
   id: 'claude',
-  ...(container ? { container } : {}),
+  ...extension,
   launchCommand: (_p, _run, _ws, tools) => {
     if (tools) seen.tools = tools.url;
     return 'claude --go';
@@ -108,7 +107,7 @@ const agent = (
 function setup(
   runtimeOf?: RuntimePlugin | ((order: string[]) => RuntimePlugin),
   withTools = false,
-  container?: AgentContainer,
+  extension: Record<string, unknown> = {},
 ) {
   const order: string[] = [];
   const runtime =
@@ -153,6 +152,7 @@ function setup(
     ...(runtime ? { runtime } : {}),
   } as unknown as ConductorFileConfig;
   const seen: { tools?: string } = {};
+  const selectedAgent = agent(seen, extension);
   const conductor = new TestConductor(
     config,
     remote,
@@ -163,7 +163,7 @@ function setup(
         id: 'claude',
         alias: 'opus',
         permissions: 'sandbox',
-        agent: agent(seen, container),
+        agent: selectedAgent,
       },
     ],
     log,
@@ -178,7 +178,7 @@ function setup(
     await conductor.tick();
     await conductor.stopTools();
   };
-  return { order, remote, executor, logs, seen, run };
+  return { order, remote, executor, logs, seen, run, selectedAgent };
 }
 
 describe('runtime slot — launch wrapping', () => {
@@ -203,14 +203,13 @@ describe('runtime slot — launch wrapping', () => {
     );
   });
 
-  it("hands the agent's container needs to the runtime", async () => {
-    const container = { install: 'true' } as unknown as AgentContainer;
+  it('hands the selected agent to the runtime without interpreting its extensions', async () => {
+    const extension = { pluginSpecific: { install: 'true' } };
     const rec: Recorded = { wraps: [], cleanups: [] };
-    await setup(recordingRuntime([], rec), false, container).run();
-    expect(rec.wraps[0]?.container).toBe(container);
-    const bare: Recorded = { wraps: [], cleanups: [] };
-    await setup(recordingRuntime([], bare)).run();
-    expect(bare.wraps[0]).not.toHaveProperty('container');
+    const s = setup(recordingRuntime([], rec), false, extension);
+    await s.run();
+    expect(rec.wraps[0]?.agent).toMatchObject({ id: 'claude', ...extension });
+    expect(rec.wraps[0]?.agent).toBe(s.selectedAgent);
   });
 
   it('uses toolsUrl for the agent and BAKERS_CONDUCTOR_URL', async () => {

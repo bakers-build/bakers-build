@@ -163,6 +163,9 @@ importers:
 
   addons/claude:
     devDependencies:
+      '@bakers-build/addon-runtime-docker':
+        specifier: workspace:^
+        version: link:../runtime-docker
       '@bakers-build/conductor':
         specifier: workspace:^
         version: link:../../conductor

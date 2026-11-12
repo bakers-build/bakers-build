@@ -58,6 +58,10 @@ Design, as the prototype implements it:
   its place. bubblewrap inside an unprivileged container needs extra privileges, and the two do
   not stack.
 
+The shipped `runtime-docker` plugin owns the container contract in its `/contract` export.
+Claude implements that contract in its own plugin. The conductor forwards the selected agent
+to the runtime without defining or interpreting container-specific properties.
+
 Prototype status, from the recorded run below: the launch rewrite is verified
 by its self-check, a container probe, and a run through the real herdr executor
 (`herdr-probe.mjs`). The Claude run on a ticket state waits for the maintainer steps below.

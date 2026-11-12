@@ -16,7 +16,6 @@ import { homedir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type {
-  AgentContainer,
   BbRuntime,
   RuntimeLaunch,
 } from '@bakers-build/conductor/contract';
@@ -29,6 +28,7 @@ import {
   RUN_HOME,
   RUN_NETWORK,
 } from './args.js';
+import type { AgentContainer, ContainerAgent } from './contract.js';
 
 const EGRESS_NETWORK = 'bb-runtime-egress';
 
@@ -276,7 +276,7 @@ export function dockerRuntime(
     id: 'docker',
     async wrap(launch: RuntimeLaunch) {
       const runHome = runHomeOf(launch.run.uuid);
-      const container = launch.container;
+      const container = (launch.agent as Partial<ContainerAgent>).container;
       if (!container)
         throw new Error(
           `runtime-docker: agent ${launch.harness} does not support a container runtime`,
@@ -362,7 +362,7 @@ export function dockerRuntime(
       if (!allowlist)
         for (const k of credentials) env[k] = deps.env[k] as string;
       const { argv, env: runEnv } = dockerArgs(
-        { ...launch, env },
+        { ...launch, env, container },
         { ...opts, image },
         {
           gitCommonDir,

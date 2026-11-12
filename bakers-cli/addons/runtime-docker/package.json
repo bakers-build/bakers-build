@@ -7,7 +7,8 @@
   "exports": {
     ".": "./dist/src/index.js",
     "./preset": "./dist/src/preset.js",
-    "./options.schema.json": "./options.schema.json"
+    "./options.schema.json": "./options.schema.json",
+    "./contract": "./dist/src/contract.js"
   },
   "files": [
     "dist/src",

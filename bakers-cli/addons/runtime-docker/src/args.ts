@@ -1,8 +1,5 @@
 import { join } from 'node:path';
-import type {
-  ContainerMount,
-  RuntimeLaunch,
-} from '@bakers-build/conductor/contract';
+import type { ContainerLaunch, ContainerMount } from './contract.js';
 
 export interface DockerOptions {
   /** The container CLI: `docker`, or `podman`. */
@@ -53,7 +50,7 @@ const HOST_ONLY = (key: string) =>
  * client; nothing of the operator home is mounted beyond the list below.
  */
 export function dockerArgs(
-  input: RuntimeLaunch,
+  input: ContainerLaunch,
   opts: DockerOptions,
   where: HostPaths,
 ): { argv: string[]; env: Record<string, string> } {
