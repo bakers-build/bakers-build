@@ -10,7 +10,6 @@ workflow are project rows.
 | When | Decide | Read |
 |---|---|---|
 | Always | Whether this host runs tickets, and where: prepared environment, Coder workspace, remote server or this computer | [Choose where agents run](https://bakers.build/provision/machine) |
-| Host runs tickets | Host prerequisites to complete | [Node](https://bakers.build/provision/node), [sandbox prerequisites](https://bakers.build/provision/security/execution#sandbox-prerequisites) |
 | Host runs tickets | Agent harness to register | [Agents](https://bakers.build/agents/), [machine agents](https://bakers.build/configuration/machine#agents) |
 | Several agents, or states need different agents | Default agent, then routes | [Configure and select agents](https://bakers.build/agents/guide) |
 | Skills missing | Installation for the chosen agent | [Skills](https://bakers.build/skills-and-workflows/skills) |
