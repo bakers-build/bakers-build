@@ -17,7 +17,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Confirms an intervention on a ticket or one of its runs.
  *
- * Freeze, unfreeze, cancel a ticket or a run, retry or re-dispatch a failed run.
+ * Freeze, unfreeze, cancel a ticket or a run, retry or re-dispatch a failed
+ * run.
  *
  * Opened from the detail page's Properties footer or a run row, as a dialog
  * over the ticket with JavaScript and as a plain page without it. The page

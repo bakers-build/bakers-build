@@ -21,8 +21,8 @@ use Drupal\bb_core\Run\TicketRetry;
  * re-fail every tick. Self-healing: once the window elapses (the newest failed
  * run ages out) or a non-failed run appears among the most recent N, the ticket
  * is claimable again — no permanent human gate. A member's Retry lifts it at
- * once: only runs changed after the request count. A ticket with fewer than `cap`
- * runs, or a mixed recent set, is never parked.
+ * once: only runs changed after the request count. A ticket with fewer than
+ * `cap` runs, or a mixed recent set, is never parked.
  *
  * Split out of TicketClaimService so the claim service stays under the phpmd
  * class-complexity budget. The thresholds are fixed constants.
