@@ -1,17 +1,19 @@
 import { execFile } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
+  chmodSync,
   existsSync,
+  lstatSync,
   mkdirSync,
-  readdirSync,
   readFileSync,
+  realpathSync,
   renameSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type {
   AgentContainer,
@@ -63,29 +65,83 @@ export interface BackendDeps {
 export const shortHash = (text: string) =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
 
-/**
- * Renames every `.git` under the worktree, beside its own, that does not point
- * into the read-only `modules/`: host git would follow it into config the run
- * wrote (`core.fsmonitor` runs a command). Returns the renamed paths.
- */
-// shortcut: walks the whole worktree, node_modules included; restrict it to index gitlinks if cleanup gets slow.
-export function quarantinePlanted(ws: string, gitCommonDir: string): string[] {
+/** Quarantine only repositories host Git follows through the index, never symlinks. */
+export async function quarantinePlanted(
+  workspace: string,
+  gitCommonDir: string,
+  exec: BackendDeps['exec'] = realExec,
+): Promise<string[]> {
+  const ws = realpathSync(workspace);
   const modules = join(gitCommonDir, 'modules') + sep;
   const moved: string[] = [];
-  for (const e of readdirSync(ws, { recursive: true, withFileTypes: true })) {
-    const path = join(e.parentPath, e.name);
-    if (e.name !== '.git' || path === join(ws, '.git')) continue;
-    // Inside a `.git` already handled: renaming its parent covers it.
-    if (path.slice(ws.length).split(sep).slice(0, -1).includes('.git'))
-      continue;
-    if (e.isFile()) {
-      const target = /^gitdir:\s*(.+)$/m.exec(readFileSync(path, 'utf8'))?.[1];
-      if (target && resolve(e.parentPath, target.trim()).startsWith(modules))
-        continue;
-    }
-    renameSync(path, `${path}.bakers-quarantine`);
-    moved.push(path);
+  const git = (...args: string[]) =>
+    exec('git', ['-C', ws, '-c', 'core.fsmonitor=false', ...args]);
+  const quarantineIndex = async () => {
+    // A planted index.lock or oversized index must not leave unsafe entries active.
+    const { stdout: indexPath } = await git('rev-parse', '--git-path', 'index');
+    const index = resolve(ws, indexPath.trim());
+    const parent = dirname(index);
+    chmodSync(parent, statSync(parent).mode | 0o700);
+    renameSync(index, `${index}.bakers-quarantine-${randomUUID()}`);
+    moved.push(index);
+  };
+  let stdout: string;
+  try {
+    ({ stdout } = await git('ls-files', '--stage', '-z'));
+  } catch {
+    await quarantineIndex();
+    return moved;
   }
+  let unresolved = false;
+  const links = new Set(
+    stdout.split('\0').flatMap((line) => {
+      const match = /^160000 [0-9a-f]+ [0-3]\t(.+)$/s.exec(line);
+      return match?.[1] ? [match[1]] : [];
+    }),
+  );
+  linksLoop: for (const name of links) {
+    try {
+      const parts = name.split('/');
+      if (
+        parts.some(
+          (part) =>
+            !part ||
+            part === '.' ||
+            part === '..' ||
+            part.toLowerCase() === '.git',
+        )
+      )
+        throw new Error(`unsafe gitlink: ${name}`);
+      let path = ws;
+      for (const part of [...parts, '.git']) {
+        path = join(path, part);
+        const entry = lstatSync(path, { throwIfNoEntry: false });
+        if (!entry) continue linksLoop; // An uninitialised submodule has no config to execute.
+        if (entry.isSymbolicLink()) throw new Error(`symlink: ${name}`);
+      }
+      if (lstatSync(path).isFile()) {
+        const target = /^gitdir:\s*(.+)$/m.exec(
+          readFileSync(path, 'utf8'),
+        )?.[1];
+        if (
+          target &&
+          realpathSync(resolve(ws, name, target.trim())).startsWith(modules)
+        )
+          continue;
+      }
+      renameSync(path, `${path}.bakers-quarantine-${randomUUID()}`);
+      moved.push(path);
+    } catch {
+      // If inspection or rename fails, stop host Git following this entry instead.
+      try {
+        await git('update-index', '--force-remove', '--', name);
+        moved.push(name);
+      } catch {
+        unresolved = true;
+      }
+    }
+  }
+  if (unresolved) await quarantineIndex();
   return moved;
 }
 
@@ -347,6 +403,7 @@ export function dockerRuntime(
           { run: r.uuid, err: String(err) },
           'runtime container cleanup failed',
         );
+        return;
       }
       // After the container is gone, so the run cannot plant anything behind the scan.
       const record = recordOf(r.uuid);
@@ -355,7 +412,11 @@ export function dockerRuntime(
           const { workspace, gitCommonDir } = JSON.parse(
             readFileSync(record, 'utf8'),
           );
-          const moved = quarantinePlanted(workspace, gitCommonDir);
+          const moved = await quarantinePlanted(
+            workspace,
+            gitCommonDir,
+            deps.exec,
+          );
           if (moved.length > 0)
             deps.logger.warn(
               { run: r.uuid, moved },

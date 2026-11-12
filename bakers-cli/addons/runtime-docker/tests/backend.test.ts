@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -268,6 +269,23 @@ describe('runtime-docker cleanup', () => {
     expect(warnings).toContain('runtime container cleanup failed');
   });
 
+  it('keeps the workspace record and home when container removal fails', async () => {
+    const d = deps();
+    const exec = d.exec;
+    d.exec = async (file, args) => {
+      if (file === 'docker' && args[0] === 'ps') return { stdout: 'running' };
+      if (file === 'docker' && args[0] === 'rm') throw new Error('busy');
+      return exec(file, args);
+    };
+    const runtime = dockerRuntime({}, d);
+    await runtime.wrap(launch());
+    await runtime.cleanup({ uuid: 'r-uuid', id: 7 });
+    expect(
+      existsSync(join(cache, 'bakers/runtime/r-uuid.workspace.json')),
+    ).toBe(true);
+    expect(existsSync(join(cache, 'bakers/runtime/r-uuid'))).toBe(true);
+  });
+
   it('quarantines a repository the run planted, so host git runs nothing of it', async () => {
     const env = {
       ...process.env,
@@ -326,7 +344,11 @@ describe('runtime-docker cleanup', () => {
     git(tree, 'status');
     expect(existsSync(marker)).toBe(false);
     expect(existsSync(join(sub, '.git'))).toBe(false);
-    expect(existsSync(join(sub, '.git.bakers-quarantine'))).toBe(true);
+    expect(
+      readdirSync(sub).some((name) =>
+        name.startsWith('.git.bakers-quarantine-'),
+      ),
+    ).toBe(true);
     expect(existsSync(join(kept, '.git'))).toBe(true);
     expect(existsSync(join(tree, '.git'))).toBe(true);
     expect(warnings).toContain(

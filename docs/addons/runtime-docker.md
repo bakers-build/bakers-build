@@ -28,9 +28,11 @@ Container `bb-run-<run uuid>`, under your uid. Mounts, and nothing else of your 
 
 - the worktree and the Git common directory, at their host paths. Read-only: the worktree's
   `.git` file, `hooks/`, `config`, `modules/`, `worktrees/` (except the run's own Git dir), and
-  every `config.worktree`, `commondir` and `gitdir`. A nested repository the run creates could
-  still make host Git run a command, so after the run every `.git` not pointing into `modules/` is
-  renamed `.git.bakers-quarantine`. Run no Git in a live run's worktree;
+  every `config.worktree`, `commondir` and `gitdir`. After container removal, cleanup checks index
+  gitlinks without following symlinks. Unprotected repositories get `.git.bakers-quarantine-<uuid>`;
+  failed inspections or renames remove the gitlink from the index. If that fails or the scan fails,
+  the intact index is quarantined for recovery. Ignored clones stay untouched.
+  Run no Git in the worktree until cleanup finishes;
 - the bakers CLI build, read-only. The runtime refuses to start when that build's root would
   contain your home directory;
 - `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` as `/home/run`;
@@ -52,4 +54,4 @@ real credential added by the proxy, and the conductor tool server. The run holds
 One conductor's proxy serves one model API at a time. The host's `127.0.0.1` is not
 reachable; use the conductor tools for DDEV and ports.
 
-On macOS `--network host` does not reach the host, so use allowlist mode. macOS is not yet tested.
+On macOS use allowlist mode; host networking cannot reach the host. macOS is untested.

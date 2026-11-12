@@ -194,7 +194,11 @@ Status after the build:
 2. **`runtime-docker` backend** — built: configurable `docker` command (Podman), a shipped image,
    `.git/hooks` and `.git/config` read-only. Read-only binds cannot stop the run from creating a
    nested repository whose own config runs a command under host Git (`core.fsmonitor`), so cleanup
-   quarantines every such `.git` after the run. Plugin sync cost is still to be measured in a real
+   checks index gitlinks after container removal, quarantining unprotected `.git` metadata with a
+   unique suffix. Symlinked paths and failed inspections or renames remove the gitlink from the
+   index instead. A failed scan or index update quarantines the whole index intact for recovery;
+   unrelated nested clones stay untouched. Host Git remains unsafe until cleanup
+   finishes. Plugin sync cost is still to be measured in a real
    run.
 3. **Egress allowlist** — built as `runtime-docker`'s `network: 'allowlist'` mode, with one proxy
    sidecar per conductor that adds the model credential. Verified design on Linux; macOS documented,
