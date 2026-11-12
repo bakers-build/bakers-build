@@ -49,9 +49,8 @@ def _post(url, headers, payload):
         return res.headers, res.read().decode()
 
 
-def read_background(bakers_url, api_key):
-    """The service account's ``background`` through bakers_user_read on /mcp, the poller
-    client's protocol (lib/bakers-client.mjs): initialize, initialized, tools/call."""
+def read_tool(bakers_url, api_key, name, arguments):
+    """One read-only tool call over the existing MCP transport."""
     endpoint = f"{bakers_url.rstrip('/')}/mcp"
     headers = {"accept": "application/json, text/event-stream", "authorization": f"Bearer {api_key}"}
 
@@ -65,16 +64,21 @@ def read_background(bakers_url, api_key):
             body = "".join(line[5:] for line in body.split("\n") if line.startswith("data:"))
         answer = json.loads(body)
         if answer.get("error"):
-            raise RuntimeError(f"bakers_user_read: {message['method']}: {answer['error'].get('message')}")
+            raise RuntimeError(f"{name}: {message['method']}: {answer['error'].get('message')}")
         return answer["result"]
 
     rpc({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "pm-bot", "version": "2"}}})
     rpc({"jsonrpc": "2.0", "method": "notifications/initialized"})
-    result = rpc({"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": "tool_api__bakers_user_read", "arguments": {}}})
+    result = rpc({"jsonrpc": "2.0", "id": 2, "method": "tools/call", "params": {"name": f"tool_api__{name}", "arguments": arguments}})
     text = next((c.get("text") for c in result.get("content") or [] if c.get("type") == "text"), "")
     if result.get("isError"):
-        raise RuntimeError(f"bakers_user_read: {text}")
-    return (result.get("structuredContent") or json.loads(text or "{}")).get("background") or ""
+        raise RuntimeError(f"{name}: {text}")
+    return result.get("structuredContent") or json.loads(text or "{}")
+
+
+def read_background(bakers_url, api_key):
+    """Read the service account background with the existing MCP transport."""
+    return read_tool(bakers_url, api_key, "bakers_user_read", {}).get("background") or ""
 
 
 def ask_model(background, model, api_key="", oauth_token=""):

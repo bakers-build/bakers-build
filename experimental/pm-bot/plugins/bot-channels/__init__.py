@@ -31,7 +31,7 @@ import re
 from datetime import datetime, timezone
 
 from . import language
-from .channels import DEFAULT_LANGUAGE, channel_prompt, language_prompt, open_channels, read_json, request_channel_name, text
+from .channels import DEFAULT_LANGUAGE, channel_prompt, language_prompt, open_channels, read_json, request_channel_name, text, ticket_error
 
 logger = logging.getLogger("pm_bot.bot_channels")
 
@@ -161,8 +161,19 @@ def factory(app, adapter):
             _write(BOT_FILE, bot)
         return channel
 
+    async def error_reply(key, user, channel):
+        record = (read_json(POLLER_FILE).get("channels") or {}).get(channel) or {}
+        ticket = None
+        if record.get("ticket"):
+            try:
+                ticket = await asyncio.to_thread(language.read_tool, os.environ.get("BAKERS_URL", ""), os.environ.get("BAKERS_API_KEY", ""), "bakers_ticket_read", {"ticket": record["ticket"]})
+            except Exception as exc:
+                logger.error("bot-channels: ticket link for %s: %s", channel, exc)
+        return ticket_error(lang["code"], key, user, ticket)
+
     async def intake(client, event, body):
         user = event["user"]
+        channel = event.get("channel")
         try:
             channel = await open_request_channel(client, event)
             await client.conversations_invite(channel=channel, users=user)
@@ -174,7 +185,7 @@ def factory(app, adapter):
         except Exception as exc:
             logger.error("bot-channels: request channel for %s: %s", event.get("ts"), exc)
             try:
-                await client.chat_postMessage(channel=home, text=text(lang["code"], "open_failed", user=user))
+                await client.chat_postMessage(channel=home, text=await error_reply("open_failed", user, channel))
             except Exception as post_exc:
                 logger.error("bot-channels: telling %s: %s", user, post_exc)
             return
@@ -185,7 +196,7 @@ def factory(app, adapter):
         except Exception as exc:
             logger.error("bot-channels: handing on %s: %s", event.get("ts"), exc)
             try:
-                await client.chat_postMessage(channel=channel, text=text(lang["code"], "repeat", user=user))
+                await client.chat_postMessage(channel=channel, text=await error_reply("repeat", user, channel))
             except Exception as post_exc:
                 logger.error("bot-channels: asking %s to repeat in %s: %s", user, channel, post_exc)
 
