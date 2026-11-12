@@ -21,7 +21,7 @@ expertise out of shared files; address deliverables to their audience.
 
 After routing/stop rule, render once before state read, without choosing work or writing:
 
-State, ticket (identifier/title), recipe/type and type/general/absent slots; matching hints;
+State, ticket (identifier/title), recipe/type and effective slot names per phase; matching hints;
 test_as personas or no login needed; selected test/path or build/validate; gate RED/GREEN/OK or
 Not OK; inputs (confirmed handoff/seeded criteria).
 

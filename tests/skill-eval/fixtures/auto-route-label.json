@@ -9,7 +9,8 @@
   ],
   "virtual_references": [
     "bb-workflow/references/read-ticket.md",
-    "bb-label-auto/SKILL.md"
+    "bb-label-auto/SKILL.md",
+    "bb-workflow/references/tools.md"
   ],
   "recipes": [
     "bb-recipe-probe"

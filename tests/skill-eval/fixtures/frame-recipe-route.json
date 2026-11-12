@@ -8,7 +8,8 @@
     "bb-workflow/references/working.md"
   ],
   "virtual_references": [
-    "bb-workflow/references/read-ticket.md"
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/tools.md"
   ],
   "recipes": [
     "bb-recipe-probe"
