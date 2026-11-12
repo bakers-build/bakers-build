@@ -28,7 +28,7 @@ final class OriginSource {
     if ($host === '') {
       return NULL;
     }
-    // User and password stay out of the link; an explicit port is another endpoint.
+    // Credentials stay out of the link; another port is another endpoint.
     $base = strtolower($parts['scheme']) . '://' . $host . (isset($parts['port']) ? ':' . $parts['port'] : '');
     $path = $parts['path'] ?? '';
 
