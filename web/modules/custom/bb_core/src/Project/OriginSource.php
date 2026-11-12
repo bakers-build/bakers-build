@@ -28,7 +28,8 @@ final class OriginSource {
     if ($host === '') {
       return NULL;
     }
-    $base = strtolower($parts['scheme']) . '://' . $host;
+    // User and password stay out of the link; an explicit port is another endpoint.
+    $base = strtolower($parts['scheme']) . '://' . $host . (isset($parts['port']) ? ':' . $parts['port'] : '');
     $path = $parts['path'] ?? '';
 
     $atlassian = str_ends_with($host, '.atlassian.net');

@@ -59,6 +59,25 @@ final class ProjectOriginSourcesTest extends ClaimKernelTestBase {
   }
 
   /**
+   * One repository path on two ports is two sources.
+   */
+  public function testPortsKeepSourcesApart(): void {
+    $project = $this->project();
+    $this->ticket($project, 1, 'https://gitlab.example.com/team/repo/-/issues/1');
+    $this->ticket($project, 2, 'https://gitlab.example.com:8443/team/repo/-/issues/2');
+    $this->container->get('current_user')->setAccount($this->viewer($project));
+
+    $uris = array_map(
+      static fn ($item): string => $item->getValue()['uri'],
+      iterator_to_array($project->get('origin_sources')),
+    );
+    self::assertSame([
+      'https://gitlab.example.com/team/repo',
+      'https://gitlab.example.com:8443/team/repo',
+    ], $uris);
+  }
+
+  /**
    * A viewer who may not read the project's tickets sees no source.
    */
   public function testNoSourceWithoutViewAccess(): void {

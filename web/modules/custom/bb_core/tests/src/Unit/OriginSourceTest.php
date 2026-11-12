@@ -68,6 +68,14 @@ final class OriginSourceTest extends UnitTestCase {
         'https://tracker.example.org/x/1',
         ['label' => 'tracker.example.org', 'url' => 'https://tracker.example.org'],
       ],
+      'explicit port' => [
+        'https://gitlab.example:8443/team/repo/-/issues/1',
+        ['label' => 'GitLab - team/repo', 'url' => 'https://gitlab.example:8443/team/repo'],
+      ],
+      'credentials stay out' => [
+        'https://user:secret@tracker.example.org:8080/x/1',
+        ['label' => 'tracker.example.org', 'url' => 'https://tracker.example.org:8080'],
+      ],
       'empty' => ['', NULL],
       'not a url' => ['not a url', NULL],
       'mailto' => ['mailto:a@b.c', NULL],
