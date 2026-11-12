@@ -6,6 +6,7 @@ import {
   mkdtempSync,
   readdirSync,
   readFileSync,
+  renameSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -458,4 +459,36 @@ it.each([
     /invalid protected path/,
   );
   expect(existsSync(privatePath)).toBe(false);
+});
+
+it('dissociates borrowed objects so deleting the alternate store cannot break local history or commits', () => {
+  const { root, main, workspace } = fixture();
+  const borrowed = join(root, 'borrowed-objects');
+  renameSync(join(main, '.git/objects'), borrowed);
+  mkdirSync(join(main, '.git/objects/info'), { recursive: true });
+  writeFileSync(join(main, '.git/objects/info/alternates'), `${borrowed}\n`);
+  const record = isolateGit(
+    workspace,
+    join(root, 'dissociated-private'),
+    'ticket',
+  );
+  expect(existsSync(join(record.path, 'objects/info/alternates'))).toBe(false);
+  rmSync(borrowed, { recursive: true });
+  const local = (...args: string[]) =>
+    git(workspace, `--git-dir=${record.path}`, ...args);
+  expect(local('log', '-1', '--format=%s')).toBe('base');
+  expect(local('show', 'HEAD:file')).toBe('base');
+  writeFileSync(join(workspace, 'file'), 'local after alternate removal');
+  local('add', 'file');
+  local(
+    '-c',
+    'user.name=test',
+    '-c',
+    'user.email=test@test',
+    'commit',
+    '-qm',
+    'independent',
+  );
+  expect(local('log', '-1', '--format=%s')).toBe('independent');
+  expect(local('show', 'HEAD^:file')).toBe('base');
 });

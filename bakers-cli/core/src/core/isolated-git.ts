@@ -97,6 +97,7 @@ export function isolateGit(
     'clone',
     '--bare',
     '--no-hardlinks',
+    '--dissociate',
     '--template=',
     commonDir,
     path,
