@@ -7,6 +7,10 @@ skill's decision matrix lists its rows; these rules run them.
   answer or explicit unresolved status; mark an inapplicable row with its reason. Every row gets a status.
 - Name the source of a reused choice. Link the row's documentation whenever explaining a choice;
   explain documented tradeoffs and distinguish supported integrations from planned ones.
+- With each question, say in one or two sentences which option fits when: the matrix
+  recommendation where the row has one, otherwise the row's documentation. Check an option's
+  prerequisites first; for an option that is unavailable here, name the failed prerequisite that
+  rules it out and what would make it available.
 - Ask for **one field or decision per turn** and wait. Request related follow-up values in later
   turns. Before sending, count requested inputs and keep only the first unanswered field.
   “Answer the first question first” does not permit appending another.

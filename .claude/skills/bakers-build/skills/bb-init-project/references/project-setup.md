@@ -50,7 +50,7 @@ The documentation owns configuration syntax and supported options; this matrix o
 | Application needs preparation or cleanup | Each lifecycle command separately | [Hooks](https://bakers.build/provision/hooks) |
 | Tests or previews need an environment | Provisioning profiles, commands, then readiness checks | [Environment](https://bakers.build/provision/guide), [provision_up](https://bakers.build/configuration/project/hooks#provision-on-an-agent-s-request) |
 | Workflow needs skills or recipes | Installed skills, required plugins and pinned sources | [Marketplaces](https://bakers.build/configuration/project#agent-plugins), [skills](https://bakers.build/skills-and-workflows/skills) |
-| Permissions unknown | Mode, necessary access and effective source | [Execution security](https://bakers.build/provision/security/execution), [shared settings](https://bakers.build/provision/security/shared-settings) |
+| Permissions unknown | Mode, necessary access and effective source; recommend as the [machine matrix](../../bb-init/references/machine-setup.md) does | [Execution security](https://bakers.build/provision/security/execution), [shared settings](https://bakers.build/provision/security/shared-settings) |
 | Agent known | Project settings its agent guide recommends | [Agents](https://bakers.build/agents/), then the agent's guide |
 | Agents need repository delivery | Forge backend, repository, authentication and merge policy | [Forge](https://bakers.build/addons/forge), then its backend guide |
 | Preview needed | Local or public; if public, transport and service. The tunnel policy is a machine row: hand it to `@bakers-build/bb-init` | [Ports](https://bakers.build/addons/ports), [services](https://bakers.build/addons/ports-services) |
