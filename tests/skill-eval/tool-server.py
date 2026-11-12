@@ -392,6 +392,19 @@ class Simulation:
             raise refused(f"Project {args['project']} does not exist or is not readable.")
         return copy.deepcopy(found)
 
+    def project_list(self, args):
+        limit, offset = args.get('limit', 50), args.get('offset', 0)
+        if not 1 <= limit <= 100 or offset < 0:
+            raise refused('limit must be 1-100 and offset 0 or more.')
+        # Fixture projects represent already-accessible rows; no live permission claim.
+        rows = [p for p in self.rows('projects', [])
+                if args.get('query', '').lower() in p['name'].lower()
+                and (not args.get('group') or p.get('group') == args['group'])
+                and (not args.get('workspace') or p.get('workspace', self.input.get('workspace_uuid')) == args['workspace'])]
+        rows.sort(key=lambda p: (p['name'], p['uuid']))
+        return {'projects': [{key: p.get(key) for key in ['uuid', 'key', 'name', 'group']} for p in rows[offset:offset + limit]],
+                'next_offset': offset + limit if len(rows) > offset + limit else None}
+
     def conductor_list(self, args):
         self.project(args['project'])
         return {'conductors': self.rows('conductors', []), 'next_offset': None}

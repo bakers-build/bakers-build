@@ -5083,41 +5083,29 @@ scenes:
     group: Action
     section: tickets
     docs: >-
-      HOW A TICKET IS EDITED, and since the third review gate this is the only
-      answer: there is no edit dialog. The human removed it, and what replaces
-      it is not new — it is `action-pattern.md`'s own rule for a reversible
-      field. The displayed VALUE is the trigger, there is no separate edit
-      control. A pick does NOT persist anything: the pickers commit together
-      through one explicit primary Save, right-aligned in a separated action row
-      below the properties — the same action row the Settings forms use
-      (BB-638). A completed Save shows the status message "bakers.build ticket <label>
-      saved." as the bottom-right `toast`, which hides itself after five
-      seconds, and the operator stays on the surface; warnings and errors stay
-      inline message bars. There is no autosave and no "Saving…" state. This
-      scene renders that toast. This is the dialog's pill grammar one size
-      smaller: the same option_picker component, the same self-naming
-      aria-label, the same panel.
+      HOW A TICKET IS EDITED: in place, in the inspector, and the pick is the
+      write (action-pattern.md, Inline edit). The displayed VALUE is the
+      trigger; there is no edit dialog and no Save button while JavaScript runs.
+      A pick that changes a field submits the property form at once, and the
+      field says beside its value what happened: "Saved" (shown on Priority), or
+      the error that refused the write. A pick on a field someone else changed
+      since the page loaded writes nothing and says "Someone changed this
+      meanwhile. The page shows their value." Without JavaScript the form keeps
+      its Save button. The rows are the inspector grid: 96px labels and 32px
+      rows.
 
-      The five fields this covers are the five the inspector puts first —
-      assignee, reviewers, conductor, priority and labels — and they are inline
-      pickers in the rail of every detail scene here. This scene is the
-      reference render for one of them OPEN, because Storybook never calls
-      Drupal.attachBehaviors: no pill opens on click on the review surface, so a
-      panel that had to be clicked would demonstrate nothing. The open state is
-      rendered from a prop instead, which is what BB-332 D8 exists for.
 
-      The open panel shows a checkmark on the current value and offers the clear
-      row as its FIRST row, so clearing is a value the operator picks from the
-      list rather than an absence they have to produce or a button bolted above
-      it.
+      This scene is the reference render for one picker OPEN, because Storybook
+      never calls Drupal.attachBehaviors: the open state is rendered from a
+      prop. The open panel shows a checkmark on the current value and offers the
+      clear row as its FIRST row.
 
-      STATE IS DELIBERATELY ABSENT from this set. By action-pattern.md a
-      transition is confirmed, and a property form with one Save cannot carry a
-      confirmation — and with the transition surface removed at the second gate
-      there is nowhere for one to live at all. CONDUCTOR is the one field here
-      with a server-side effect, so the effect is NAMED at the field: the same
-      sentence the create dialog carries beneath its pill row. The other three
-      are reversible and name nothing.
+
+      STATE IS DELIBERATELY ABSENT from this set: by action-pattern.md a
+      transition is confirmed, and a pick that is the write cannot carry a
+      confirmation. CONDUCTOR is the one field here with a server-side effect,
+      so the effect is NAMED at the field. The other fields are reversible and
+      name nothing.
     items:
       - scene: design-system:shell
         with:
@@ -5128,12 +5116,10 @@ scenes:
                 header:
                   - component: bb_theme:page_header
                     props:
-                      title: >-
-                        BB-142 · Add designbook entity view-mode for
-                        bb_ticket
+                      title: BB-142 · Add designbook entity view-mode for bb_ticket
                       description: >-
-                        Editing happens in the inspector — Save commits the
-                        picks
+                        Editing happens in the inspector - each pick saves
+                        itself
                 main:
                   - component: bb_theme:zone
                     props:
@@ -5144,19 +5130,13 @@ scenes:
                       content: >-
                         The inspector on the right is the detail screen's own
                         trailing column of properties, shown here with one
-                        picker open. There is no edit dialog: a pick in any of
-                        these five fields changes nothing until the Save button
-                        below the properties commits it. A completed Save shows
-                        the status message "bakers.build ticket <label> saved." as the
-                        bottom-right toast, and the operator stays on this
-                        surface. The main region is deliberately almost empty,
-                        because this scene is about the inspector; the full body
-                        is what ticket-detail shows.
-                  - component: bb_theme:toast
-                    props:
-                      message: >-
-                        bakers.build ticket Add designbook entity view-mode for
-                        bb_ticket saved.
+                        picker open. There is no edit dialog and no Save button:
+                        a pick in any of these fields saves itself, and the
+                        field says "Saved" beside its value, or the error that
+                        refused the write. The operator stays on this surface.
+                        The main region is deliberately almost empty, because
+                        this scene is about the inspector; the full body is what
+                        ticket-detail shows.
                 inspector:
                   - component: bb_theme:inspector
                     slots:
@@ -5166,7 +5146,7 @@ scenes:
                             lines:
                               - component: bb_theme:list
                                 props:
-                                  layout: lines
+                                  layout: plain
                                   items:
                                     - cells:
                                         label:
@@ -5191,6 +5171,7 @@ scenes:
                                             - value: '2'
                                               label: Sven Gruber
                                               selected: false
+                                          autosave: true
                                     - cells:
                                         label:
                                           kind: text
@@ -5225,6 +5206,7 @@ scenes:
                                             - value: '1'
                                               label: Christian Wiedemann
                                               selected: false
+                                          autosave: true
                                     - cells:
                                         label:
                                           kind: text
@@ -5253,6 +5235,8 @@ scenes:
                                               label: P3
                                               description: Low
                                               selected: false
+                                          autosave: true
+                                          status: Saved
                                     - cells:
                                         label:
                                           kind: text
@@ -5276,12 +5260,7 @@ scenes:
                                             - value: mvd-thinkpad
                                               label: mvd-thinkpad
                                               selected: false
-                            actions:
-                              - component: bb_theme:button
-                                props:
-                                  variant: primary
-                                  type: submit
-                                  label: Save
+                                          autosave: true
                         - component: bb_theme:note
                           props:
                             lead: Set
@@ -5292,7 +5271,7 @@ scenes:
                               to let it wait for a human.
                         - component: bb_theme:list
                           props:
-                            layout: lines
+                            layout: plain
                             items:
                               - cells:
                                   label:
@@ -5323,6 +5302,7 @@ scenes:
                                       - value: '7'
                                         label: epic
                                         selected: false
+                                    autosave: true
                               - cells:
                                   label:
                                     kind: text
@@ -5346,6 +5326,7 @@ scenes:
                                       - value: '9'
                                         label: docs-authoring
                                         selected: false
+                                    autosave: true
                               - cells:
                                   label:
                                     kind: text
@@ -5375,6 +5356,7 @@ scenes:
                                       - value: '3'
                                         label: bug
                                         selected: false
+                                    autosave: true
   - name: ticket-cancel
     group: Action
     section: tickets

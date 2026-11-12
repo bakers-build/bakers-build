@@ -1,0 +1,10 @@
+{
+  "request": "Use bb-init-project, scope machine only. I already chose label supplied-worker. Write machine/custom.js using --machine-path; machine/ is BAKERS_HOME. I authorize this machine-only change. Do not ask these answers again. No connection or project work.",
+  "id": "setup-s5-named",
+  "expected_files": {
+    "machine/custom.js": [
+      "label: 'supplied-worker'"
+    ]
+  },
+  "no_questions": true
+}

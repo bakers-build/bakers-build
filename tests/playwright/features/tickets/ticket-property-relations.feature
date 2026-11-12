@@ -14,10 +14,8 @@ Feature: Parent and Blocked by are edited inline within the ticket's project
     Then the inline "Parent" picker does not offer "waiting_for_input E2E ticket"
     And the inline "Blocked by" picker does not offer "waiting_for_input E2E ticket"
     When I select inline "Parent" option "Designbook coverage for core bakers.build entities"
-    And I save the inline properties
     Then the inline "Parent" save succeeds without navigation
     When I select inline "Blocked by" option "Ship data-model schema for bb_ticket bundle"
-    And I save the inline properties
     Then the inline "Blocked by" save succeeds without navigation
     When I reload the page
     Then the inline "Parent" selection is "Designbook coverage for core bakers.build entities"

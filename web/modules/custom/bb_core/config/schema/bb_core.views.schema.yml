@@ -44,6 +44,9 @@ better_exposed_filters.filter.bb_option_picker:
     searchable:
       type: boolean
       label: 'Searchable'
+    open_states:
+      type: boolean
+      label: 'Offer "Only open states"'
 
 # The label processor for the `state` facet. Facets types processor settings
 # as `plugin.plugin_configuration.facets_processor.<processor id>` (keyed by
@@ -57,6 +60,12 @@ plugin.plugin_configuration.facets_processor.bb_ticket_state_label:
 plugin.plugin_configuration.facets_processor.bb_run_state_label:
   type: mapping
   label: 'bakers.build run state label'
+
+# The parent label processor of the `parent` facet; same reason, same empty
+# mapping.
+plugin.plugin_configuration.facets_processor.bb_ticket_parent_label:
+  type: mapping
+  label: 'bakers.build ticket parent label'
 
 views.argument_validator.bb_project_reference:
   type: views.argument_validator_entity

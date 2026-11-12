@@ -67,24 +67,39 @@ final class HasChildrenFilterSubscriber implements EventSubscriberInterface {
       // than silently dropping one.
       throw new CacheableBadRequestHttpException(new CacheableMetadata(), 'has_children cannot be combined with a drupal_internal__id filter.');
     }
+    $filter['drupal_internal__id'] = [
+      'operator' => $value === '1' ? 'IN' : 'NOT IN',
+      'value' => self::parentIds($this->database),
+    ];
+    $request->query->set('filter', $filter);
+  }
+
+  /**
+   * The ids of every ticket that is some ticket's parent.
+   *
+   * The one "has children" rule, shared with the `bb_has_children` Views
+   * filter of the ticket lists.
+   *
+   * @param \Drupal\Core\Database\Connection $database
+   *   The database the tickets live in.
+   *
+   * @return array<int, int>
+   *   The parent ids; `[0]` when there is none, so an IN list stays valid:
+   *   IN (0) matches nothing and NOT IN (0) everything, both honest answers.
+   */
+  public static function parentIds(Connection $database): array {
     // parent_id is single-cardinality, so it lives as a same-named column on
     // the base table (one-column fields get no __target_id suffix there), not
     // in a dedicated field table; NULL is "no parent" and must not land in
     // the IN list.
-    $ids = $this->database
+    $ids = $database
       ->select('bb_ticket', 'p')
       ->fields('p', ['parent_id'])
       ->isNotNull('p.parent_id')
       ->distinct()
       ->execute()
       ->fetchCol();
-    $filter['drupal_internal__id'] = [
-      'operator' => $value === '1' ? 'IN' : 'NOT IN',
-      // No parents: IN (0) matches nothing — an honest empty page. NOT IN (0)
-      // matches everything, which is the correct childless answer too.
-      'value' => $ids === [] ? [0] : array_map('intval', $ids),
-    ];
-    $request->query->set('filter', $filter);
+    return $ids === [] ? [0] : array_map('intval', $ids);
   }
 
 }

@@ -211,6 +211,22 @@ final class TicketCellFormattersTest extends KernelTestBase {
   }
 
   /**
+   * A run's state badge carries its status role; a ticket's stays neutral.
+   */
+  public function testRunStateBadgeCarriesTheRunStatusRole(): void {
+    $ticket = $this->ticket(['state' => 'working']);
+    $tone = fn (ContentEntityInterface $entity): ?string => $this->flatten(
+      $entity->get('state')->view(['type' => 'bb_ticket_state_cell', 'label' => 'hidden']),
+    )[0]['#context']['cell']['tone'] ?? NULL;
+
+    self::assertSame('neutral', $tone($ticket));
+    foreach (['failed' => 'critical', 'claimed' => 'attention', 'running' => 'running'] as $state => $expected) {
+      $run = $this->create('bb_run', ['ticket_id' => $ticket->id(), 'state' => $state, 'state_at_start' => 'working']);
+      self::assertSame($expected, $tone($run), $state);
+    }
+  }
+
+  /**
    * Priority reads the field's own allowed value, in one vocabulary only.
    *
    * `P1` was a second vocabulary invented in PHP by the deleted presenter,

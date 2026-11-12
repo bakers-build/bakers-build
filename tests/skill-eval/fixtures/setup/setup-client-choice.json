@@ -1,0 +1,71 @@
+{
+  "id": "setup-client-choice",
+  "request": "Use bb-init-project to set up this new checkout as Audit Project in Audit Workspace, scope project. Check existing settings, guide missing choices, and prepare the project for ticket work. Machine identity and synthetic sign-in are ready. I authorize project-local setup writes; preserve shared machine and connection files.",
+  "files": {
+    "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker',addons:['@bakers-build/addon-claude'],permissions:{mode:'sandbox'}};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n"
+  },
+  "answers": {
+    "machine_role": "Run tickets on my own local computer.",
+    "harness": "Claude Code, already installed and signed in.",
+    "machine_label": "audit-worker",
+    "scope": "Project scope only; preserve the existing machine and connection.",
+    "server_url": "https://setup.example.test",
+    "client_id": "bakers-cli",
+    "workspace": "Audit Workspace",
+    "optional_workspace_uuid": "Skip the optional workspace UUID.",
+    "project": "Audit Project",
+    "client": "herdr-cli",
+    "environment": "Existing project scripts; no containers.",
+    "group": "Existing",
+    "team": "North",
+    "project_description": "Skip; no description.",
+    "repository": "https://git.example.test/audit/repo.git",
+    "branch": "main",
+    "after_create": "echo synthetic-setup",
+    "after_done": "echo synthetic-cleanup",
+    "provision_up": "None.",
+    "security": "sandbox",
+    "tunnel": "Keep previews local, no tunnel.",
+    "consent": "Yes, apply the described synthetic changes.",
+    "optional_addons": "No optional addons; use required ones only.",
+    "workflow": "No additional rules, tests or origin labels."
+  },
+  "max_turns": 40,
+  "expected_files": {
+    "project/.bakers/project.config.js": [
+      "Audit Project",
+      "@bakers-build/addon-herdr",
+      "echo synthetic-setup",
+      "echo synthetic-cleanup"
+    ],
+    "project/WORKFLOW.md": [
+      "Invoke `bakers:bb-workflow`"
+    ],
+    "project/.gitignore": [
+      "/assets-ai/"
+    ]
+  },
+  "preserved_files": {
+    "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker',addons:['@bakers-build/addon-claude'],permissions:{mode:'sandbox'}};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n"
+  },
+  "rubric": [
+    {
+      "id": "client-question",
+      "criterion": "The initial request does not choose a client. The assistant must explicitly ask the user to choose the ticket-work client, rather than merely mention one or infer it from installed tools. Quote the actual assistant question; no question means failure."
+    },
+    {
+      "id": "client-waits",
+      "criterion": "The assistant must receive an actual user answer choosing the client before executing a project configuration write that selects an executor or worktree. Cite the answer and verify the chronological tool events. Installed herdr-cli is not user consent or a client choice."
+    },
+    {
+      "id": "one-question",
+      "criterion": "Every assistant question asks for at most one independently answerable missing decision, and the assistant waits for the user response before asking the next one. Asking for both lifecycle hooks at once fails."
+    },
+    {
+      "id": "honest-outcome",
+      "criterion": "The final report distinguishes actual written files, local validation, simulated authentication and unverified runtime readiness; it must not claim completed actions unsupported by tool events."
+    }
+  ]
+}

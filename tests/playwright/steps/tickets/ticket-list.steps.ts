@@ -18,7 +18,7 @@ import type { Page } from '@playwright/test';
 import { test } from '../../bdd.fixtures';
 import { markDocument } from '../../support/shell';
 import { php } from '../../support/drush';
-import { active, closedControl, facetRow, facetTrigger, listing, safe } from '../../support/listing';
+import { active, closedControl, facetRow, facetTrigger, listing, safe, SEARCH_TOOLBAR } from '../../support/listing';
 
 const { After } = createBdd(test);
 
@@ -508,24 +508,31 @@ When('I click the {string} action', async ({ page }, label: string) => {
 /**
  * Types into a searchable facet's filter box, opening the panel first.
  */
+async function typeInFacetSearch(page: Page, query: string, facet: string): Promise<void> {
+  const target = active(page);
+  await target.waitForFunction(
+    () => !document.querySelector('.htmx-request'),
+    null,
+    { timeout: 20000 },
+  );
+  const trigger = facetTrigger(target, facet);
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true') {
+    await trigger.click();
+  }
+  const panelId = await trigger.getAttribute('aria-controls');
+  const search = target.locator(`#${panelId} [data-option-picker-search]`);
+  await search.waitFor({ state: 'visible' });
+  await search.fill(query);
+}
+
 When(
   'I type {string} in the {string} facet search',
-  async ({ page }, query: string, facet: string) => {
-    const target = active(page);
-    await target.waitForFunction(
-      () => !document.querySelector('.htmx-request'),
-      null,
-      { timeout: 20000 },
-    );
-    const trigger = facetTrigger(target, facet);
-    if ((await trigger.getAttribute('aria-expanded')) !== 'true') {
-      await trigger.click();
-    }
-    const panelId = await trigger.getAttribute('aria-controls');
-    const search = target.locator(`#${panelId} [data-option-picker-search]`);
-    await search.waitFor({ state: 'visible' });
-    await search.fill(query);
-  },
+  async ({ page }, query: string, facet: string) => typeInFacetSearch(page, query, facet),
+);
+
+When(
+  'I type the key of {string} in the {string} facet search',
+  async ({ page }, title: string, facet: string) => typeInFacetSearch(page, familyKey(title), facet),
 );
 
 /**
@@ -1088,14 +1095,16 @@ Given('the workspace has an open ticket and a closed ticket assigned to me', asy
     '} else {',
     `$open->set("state", "working")->set("assignee_user_id", ${listing.uid});`,
     '}',
-    '$open->save();',
+    // A real change on every run: re-saving an unchanged ticket keeps its old
+    // `changed`, and fresher fixtures then push it off the first page.
+    '$open->setChangedTime(\\Drupal::time()->getCurrentTime())->save();',
     `$closed = current($ts->loadByProperties(["title" => "${CLOSED_FIXTURE_TICKET_TITLE}"]));`,
     'if (!$closed) {',
     `$closed = $ts->create(["project_id" => $p->id(), "title" => "${CLOSED_FIXTURE_TICKET_TITLE}", "workflow" => "bb_work", "state" => "done", "assignee_user_id" => ${listing.uid}]);`,
     '} else {',
     `$closed->set("state", "done")->set("assignee_user_id", ${listing.uid});`,
     '}',
-    '$closed->save();',
+    '$closed->setChangedTime(\\Drupal::time()->getCurrentTime())->save();',
     'print "OK";',
   ].join(' ');
   const result = php(snippet);
@@ -1130,6 +1139,190 @@ Then('I see the open ticket', async ({ page }) => {
   await expect(
     active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item]`, { hasText: OPEN_FIXTURE_TICKET_TITLE }),
   ).toHaveCount(1);
+});
+
+/** The tally fixture this scenario assigned to the reader, for the `After` handback. */
+let tallyFixture: { name: string; count: number } | null = null;
+
+/**
+ * Tickets "<title> 1", "<title> 2", … assigned to the reader in project BB, one
+ * per listed state. Create-if-absent by title and re-set on every run, like the
+ * open/closed fixture above, so a reused site and a parallel worker agree; a
+ * terminal state closes its ticket on save. Project BB is in team "Design
+ * Crew", so the same tickets show on My work, the project tab and the team tab,
+ * and one title search narrows each list to exactly them.
+ */
+Given(
+  'tickets titled {string} are assigned to me in the states {string}',
+  async ({}, title: string, states: string) => {
+    if (listing.uid === null) {
+      throw new Error('No account was signed in, so there is nobody to assign these tickets to.');
+    }
+    const name = safe(title);
+    const snippet = [
+      '$etm = \\Drupal::entityTypeManager();',
+      '$ts = $etm->getStorage("bb_ticket");',
+      '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
+      'if (!$p) { print "NO_PROJECT"; return; }',
+      ...states.split(',').map((state, i) => [
+        `$t = current($ts->loadByProperties(["title" => "${name} ${i + 1}"]))`,
+        `?: $ts->create(["project_id" => $p->id(), "title" => "${name} ${i + 1}", "workflow" => "bb_work"]);`,
+        `$t->set("state", "${safe(state.trim())}")->set("assignee_user_id", ${listing.uid})->save();`,
+      ].join(' ')),
+      'print "OK";',
+    ].join(' ');
+    tallyFixture = { name, count: states.split(',').length };
+    const result = php(snippet);
+    if (!result.includes('OK')) {
+      throw new Error(`The "${title}" tickets did not settle: "${result}".`);
+    }
+    Drush.exec('search-api:index bb_tickets');
+  },
+);
+
+/**
+ * Hands the tally tickets back, unassigned, after success or failure. Left
+ * assigned they would push the reader's open work past one page, and "My work
+ * is the nav home" compares every open ticket of the reader with the first page.
+ */
+After(async () => {
+  if (tallyFixture === null) {
+    return;
+  }
+  const { name, count } = tallyFixture;
+  tallyFixture = null;
+  php([
+    '$ts = \\Drupal::entityTypeManager()->getStorage("bb_ticket");',
+    ...Array.from({ length: count }, (_, i) => `foreach ($ts->loadByProperties(["title" => "${name} ${i + 1}"]) as $t) { $t->set("assignee_user_id", NULL)->save(); }`),
+  ].join(' '));
+  Drush.exec('search-api:index bb_tickets');
+});
+
+/** The ticket family this scenario assigned to the reader: title => identifier. */
+let familyFixture: Record<string, string> | null = null;
+
+/** The identifier of one ticket of the family fixture. */
+function familyKey(title: string): string {
+  const key = familyFixture?.[title];
+  if (!key) {
+    throw new Error(`"${title}" is not a ticket of the family fixture.`);
+  }
+  return key;
+}
+
+/**
+ * "<name> parent" with the sub-tickets "<name> child 1" and "<name> child 2",
+ * and "<name> grandchild" under child 1: open and assigned to the reader in
+ * project BB, so My work, the project tab and team "Design Crew" list them.
+ * Create-if-absent by title and re-set on every run, like the tally fixture.
+ */
+Given('the ticket family {string} is assigned to me', async ({}, name: string) => {
+  if (listing.uid === null) {
+    throw new Error('No account was signed in, so there is nobody to assign these tickets to.');
+  }
+  const n = safe(name);
+  // Parents first, so every child points at an id that already exists.
+  const tree: Array<[string, string | null]> = [
+    [`${n} parent`, null],
+    [`${n} child 1`, `${n} parent`],
+    [`${n} child 2`, `${n} parent`],
+    [`${n} grandchild`, `${n} child 1`],
+  ];
+  const result = php([
+    '$etm = \\Drupal::entityTypeManager();',
+    '$ts = $etm->getStorage("bb_ticket");',
+    '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
+    'if (!$p) { print "NO_PROJECT"; return; }',
+    '$ids = []; $keys = [];',
+    ...tree.map(([title, parent]) => [
+      `$t = current($ts->loadByProperties(["title" => "${title}"]))`,
+      `?: $ts->create(["project_id" => $p->id(), "title" => "${title}", "workflow" => "bb_work"]);`,
+      `$t->set("state", "working")->set("assignee_user_id", ${listing.uid})`,
+      `->set("parent_id", ${parent === null ? 'NULL' : `$ids["${parent}"]`})->save();`,
+      `$ids["${title}"] = $t->id(); $keys["${title}"] = $t->getIdentifier();`,
+    ].join(' ')),
+    'print json_encode($keys);',
+  ].join(' '));
+  if (!result.startsWith('{')) {
+    throw new Error(`The "${name}" family did not settle: "${result}".`);
+  }
+  familyFixture = JSON.parse(result) as Record<string, string>;
+  Drush.exec('search-api:index bb_tickets');
+});
+
+/**
+ * Deletes the family after success or failure. Left behind, four fresh open
+ * tickets in project BB would push other scenarios' fixtures off the first
+ * page and into the State counts they measure.
+ */
+After(async () => {
+  if (familyFixture === null) {
+    return;
+  }
+  const titles = Object.keys(familyFixture).map((title) => `"${title}"`).join(', ');
+  familyFixture = null;
+  php([
+    '$ts = \\Drupal::entityTypeManager()->getStorage("bb_ticket");',
+    `$ids = $ts->getQuery()->accessCheck(FALSE)->condition("title", [${titles}], "IN")->execute();`,
+    '$ts->delete($ts->loadMultiple($ids));',
+  ].join(' '));
+  Drush.exec('search-api:index bb_tickets');
+});
+
+/** Reopens the current list with `parent=<the family ticket's key>`. */
+When('I open this list for the parent {string}', async ({ page }, title: string) => {
+  const target = active(page);
+  const url = new URL(target.url());
+  url.searchParams.set('parent', familyKey(title));
+  const response = await target.goto(url.toString());
+  expect(response?.status() ?? 0, `${url} did not render`).toBeLessThan(400);
+});
+
+Then(
+  'the address carries the key of {string} as {string}',
+  async ({ page }, title: string, parameter: string) => {
+    const key = familyKey(title);
+    await expect.poll(() => new URL(active(page).url()).searchParams.get(parameter)).toBe(key);
+  },
+);
+
+Then('the address does not carry the key of {string}', async ({ page }, title: string) => {
+  const key = familyKey(title);
+  expect([...new URL(active(page).url()).searchParams.values()]).not.toContain(key);
+});
+
+/**
+ * One chip reads "<field> is <KEY> · <title>". Read off the chip itself: the
+ * project and team tabs render the chips without the outer strip wrapper.
+ */
+Then(
+  'the active filters read the key and title of {string} as {string}',
+  async ({ page }, title: string, field: string) => {
+    const chips = active(page).locator(`${CONTENT_ISLAND} [data-facet]`);
+    await expect(chips.filter({ hasText: `${field} is ${familyKey(title)} · ${title}` })).toHaveCount(1);
+  },
+);
+
+/** Ticks one checkbox of the filters aside; auto-submit applies it. */
+When('I switch on {string}', async ({ page }, label: string) => {
+  const target = active(page);
+  const before = await target.evaluate(() => window.location.search);
+  await target.locator(`${CONTENT_ISLAND} aside`).getByRole('checkbox', { name: label }).check();
+  await target.waitForFunction((previous) => window.location.search !== previous, before, { timeout: 20000 });
+});
+
+/**
+ * The listing holds exactly the named tickets: one row each, and no other row.
+ * Meant after a search that narrows the list to a fixture's own tickets.
+ */
+Then('the ticket listing lists exactly the tickets {string}', async ({ page }, titles: string) => {
+  const rows = active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item]`);
+  const expected = titles.split(',').map((title) => title.trim());
+  for (const title of expected) {
+    // `(?!\d)`: "State tally 1" must not also match "State tally 10".
+    await expect(rows.filter({ hasText: new RegExp(`${title}(?!\\d)`) }), `"${title}" is not listed once`).toHaveCount(1);
+  }
+  await expect(rows).toHaveCount(expected.length);
 });
 
 Then('the facets sit in the filters aside, not above the ticket listing', async ({ page }) => {
@@ -1330,4 +1523,83 @@ Then('the ticket list shows the origin tickets {string}', async ({ page }, names
 
 Then('the ticket list does not show the origin ticket {string}', async ({ page }, name: string) => {
   await expect(originRow(page, name)).toHaveCount(0);
+});
+
+Then(
+  'the search is named {string} and the sort {string}',
+  async ({ page }, search: string, sort: string) => {
+    const bar = active(page).locator(`${CONTENT_ISLAND} ${SEARCH_TOOLBAR}`);
+    await expect(bar.locator('input[name="title"]')).toBeVisible();
+    await expect(bar.locator('input[name="title"]')).toHaveAccessibleName(search);
+    await expect(bar.getByRole('combobox', { name: sort })).toBeVisible();
+  },
+);
+
+/** The ticket this scenario put in front of a conductor, for the `After` cleanup. */
+let conductorFixtureTitle: string | null = null;
+
+/**
+ * An open ticket in project BB, assigned to the reader and held by a seeded
+ * conductor, found by its `conductor_id`. Create-if-absent by title.
+ */
+Given(
+  'the ticket {string} held by the conductor {string} is assigned to me',
+  async ({}, title: string, conductor: string) => {
+    if (listing.uid === null) {
+      throw new Error('No account was signed in, so there is nobody to assign this ticket to.');
+    }
+    const t = safe(title);
+    const result = php([
+      '$etm = \\Drupal::entityTypeManager();',
+      '$ts = $etm->getStorage("bb_ticket");',
+      '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
+      `$c = current($etm->getStorage("bb_conductor")->loadByProperties(["conductor_id" => "${safe(conductor)}"]));`,
+      'if (!$p || !$c) { print "NO_PROJECT_OR_CONDUCTOR"; return; }',
+      `$t = current($ts->loadByProperties(["title" => "${t}"])) ?: $ts->create(["project_id" => $p->id(), "title" => "${t}", "workflow" => "bb_work"]);`,
+      `$t->set("state", "working")->set("assignee_user_id", ${listing.uid})->set("conductor_id", $c->id())->save();`,
+      'print "OK";',
+    ].join(' '));
+    if (!result.includes('OK')) {
+      throw new Error(`The "${title}" fixture did not settle: "${result}".`);
+    }
+    conductorFixtureTitle = t;
+    Drush.exec('search-api:index bb_tickets');
+  },
+);
+
+/** Deletes the conductor fixture after success or failure, as the family fixture does. */
+After(async () => {
+  if (conductorFixtureTitle === null) {
+    return;
+  }
+  const title = conductorFixtureTitle;
+  conductorFixtureTitle = null;
+  php([
+    '$ts = \\Drupal::entityTypeManager()->getStorage("bb_ticket");',
+    `$ts->delete($ts->loadByProperties(["title" => "${title}"]));`,
+  ].join(' '));
+  Drush.exec('search-api:index bb_tickets');
+});
+
+function ticketRow(page: Page, title: string) {
+  return active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item]`, { hasText: title });
+}
+
+Then('every listed ticket has a conductor column and no assignee', async ({ page }) => {
+  const rows = active(page).locator(`${CONTENT_ISLAND} [data-component-id="bb_theme:list"] li[data-list-item]`);
+  await expect(rows.first()).toBeVisible();
+  const count = await rows.count();
+  await expect(rows.locator('[data-list-region="right"] > [data-cell="conductor"]')).toHaveCount(count);
+  await expect(rows.locator('[data-cell="assignee"]')).toHaveCount(0);
+});
+
+Then(
+  'the ticket {string} shows {string} in its conductor column',
+  async ({ page }, title: string, conductor: string) => {
+    await expect(ticketRow(page, title).locator('[data-list-region="right"] > [data-cell="conductor"]')).toHaveText(conductor);
+  },
+);
+
+Then('the ticket {string} shows its assignee', async ({ page }, title: string) => {
+  await expect(ticketRow(page, title).locator('[data-list-region="right"] > [data-cell="assignee"] [role="img"]')).toBeVisible();
 });

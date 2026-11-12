@@ -80,6 +80,20 @@ final class BbDateTest extends UnitTestCase {
   }
 
   /**
+   * An age stays relative past the seven-day window and expires with it.
+   */
+  public function testAgeStaysRelative(): void {
+    $element = $this->bakersDate()->age((int) strtotime('2026-06-01T12:00:00Z'));
+    self::assertSame('bb_theme:time', $element['#component']);
+    self::assertSame([
+      'datetime' => '2026-06-01T12:00:00+00:00',
+      'title' => 'Mon, 1 Jun 2026, 12:00 UTC',
+      'label' => '21 days ago',
+    ], $element['#props']);
+    self::assertSame(86400, $element['#cache']['max-age']);
+  }
+
+  /**
    * Durations read "41s", "36 min" or "1h 10m".
    */
   #[DataProvider('durations')]

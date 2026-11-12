@@ -36,8 +36,11 @@
    no heading and no collapse, the same surface as the panel, and its controls in
    ONE row — the first (the search) grows and wraps onto its own line before it
    would overflow, the later ones (the sort) keep their own width capped at the
-   row. Its fields live OUTSIDE the exposed <form> (bound by the HTML `form`
-   attribute), so BEF's autosubmit, which watches only the form's own elements,
+   row. The row is 36px at compact density: its controls take the control-size
+   token instead of a form's own height, inside an `inline-xs` inset and no
+   border, and their labels stay only for screen readers. Its fields live
+   OUTSIDE the exposed <form> (bound by the HTML `form` attribute), so BEF's
+   autosubmit, which watches only the form's own elements,
    never sees them; the bar submits their form itself: a select on `change`, a
    text field 500ms after the last keystroke, and never the same value twice, so
    an Enter (which already submits natively) is not followed by a second request.
@@ -46,8 +49,9 @@
 {% set filters_controls %}{% block controls %}{{ controls }}{% endblock %}{% endset %}
 {% if layout|default('panel') == 'bar' %}
 <div{{ (attributes ?: create_attribute()).addClass([
-    'flex', 'flex-row', 'flex-wrap', 'items-end', 'gap-stack', 'p-stack', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
+    'flex', 'flex-row', 'flex-wrap', 'items-center', 'gap-inline', 'p-inline-xs', 'bg-app', 'rounded-sm',
     '*:first:flex-1', '*:first:basis-40', '*:first:min-w-0', '*:not-first:shrink-0', '*:not-first:max-w-full',
+    '[&_label]:sr-only', '[&_input]:h-control', '[&_select]:h-control',
   ]) }} role="search"
   {%- if label %} aria-label="{{ label }}"{% endif %}
   x-data="{ send(field) { if (field.form && field.dataset.sent !== field.value) { field.dataset.sent = field.value; field.form.requestSubmit(); } } }"

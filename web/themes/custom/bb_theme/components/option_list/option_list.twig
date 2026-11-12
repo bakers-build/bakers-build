@@ -107,6 +107,8 @@
 {% set checkboxes = control and control_type == 'checkbox' %}
 {% set bulk_on = bulk_actions|default(false) and checkboxes %}
 {% set summary_on = summary|default(false) and checkboxes %}
+{#- Quick choices set a named selection at once, so they only make sense for a checkbox list too. #}
+{% set quick_on = quick_choices|default([]) is not empty and checkboxes %}
 {% set option_total = options|default([])|length %}
 {% set selected_count = options|default([])|filter(o => o.selected)|length %}
 <ul{{ (attributes ?: create_attribute()).addClass([
@@ -238,11 +240,24 @@
     </button>
   </li>
   {%- endif %}
-  {%- if summary_on or (apply_label and control) %}
-  {#- Pinned to the bottom of a scrolling panel, so the count stays visible however long the list is. #}
-  <li class="sticky bottom-0 flex items-center gap-stack mt-inline-xs pt-inline px-inline border-t border-border-2 bg-surface-2" role="presentation">
+  {%- if summary_on or (apply_label and control) or quick_on %}
+  {#- Pinned to the bottom of a scrolling panel, so the count stays visible however long the list is.
+      A quick choice checks exactly its values and unchecks every other row, Clear unchecks them all;
+      both act on every row, hidden by a search or not, report the change and leave submitting to the
+      enclosing form, like Select all. A value without a row is ignored. #}
+  <li class="sticky bottom-0 flex items-center gap-stack mt-inline-xs pt-inline px-inline border-t border-border-2 bg-surface-2" role="presentation"
+    {%- if quick_on %} x-data{% endif %}>
+    {%- for choice in quick_on ? quick_choices : [] %}
+    <button type="button" class="p-0 bg-transparent border-0 text-label text-text cursor-pointer hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+      data-option-list-choice="{{ choice.values|default([])|json_encode|e('html_attr') }}"
+      @click="$el.closest('[role=listbox]').querySelectorAll('[role=option] input[type=checkbox]').forEach((i) => { i.checked = JSON.parse($el.dataset.optionListChoice).includes(i.value); i.closest('[role=option]').setAttribute('aria-selected', String(i.checked)); }); $dispatch('change')">{{ choice.label }}</button>
+    {%- endfor %}
     {%- if summary_on %}
     <span class="flex-1 text-meta text-text-light" x-text="count + ' of {{ option_total }} selected'">{{ selected_count }} of {{ option_total }} selected</span>
+    {%- endif %}
+    {%- if quick_on %}
+    <button type="button" class="ml-auto p-0 bg-transparent border-0 text-label text-text-light cursor-pointer hover:underline hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+      @click="$el.closest('[role=listbox]').querySelectorAll('[role=option] input[type=checkbox]').forEach((i) => { i.checked = false; i.closest('[role=option]').setAttribute('aria-selected', 'false'); }); $dispatch('change')">Clear</button>
     {%- endif %}
     {%- if apply_label and control and auto_apply|default(false) %}
     {#- The enclosing form applies every change itself once scripting runs, so Apply is only for a

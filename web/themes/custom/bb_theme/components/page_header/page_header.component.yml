@@ -28,11 +28,16 @@ props:
     title:
       type: string
       title: Screen title
-      description: What this screen is. Rendered as the region's h1.
+      description: >-
+        What this screen is. Rendered as the region's h1 on up to two lines; a
+        longer title is clamped and shows in full on hover.
     description:
       type: string
       title: Sub-line
-      description: One line of context beneath the title, where the screen needs it.
+      description: >-
+        One line of context beneath the title, where the screen needs it. Its
+        plain text is also the line's hover title when the `subline` slot is
+        filled.
 slots:
   breadcrumb:
     title: Breadcrumb
@@ -60,6 +65,13 @@ slots:
       renders the `title` prop exactly as before. The h1 is kept rather than
       swapped for a div: an editable heading is still the region's heading, and
       a text input contributes its value to the heading's accessible name.
+  subline:
+    title: Sub-line markup
+    description: >-
+      Replaces the `description` prop's plain text INSIDE the sub-line, for a
+      line that carries markup: a ticket's "created by X · 3 weeks ago", whose
+      age is a `time` element with the exact date on hover. Filling nothing is
+      the normal case and renders the `description` prop exactly as before.
   actions:
     title: Actions
     description: >-
