@@ -88,6 +88,7 @@
     }
   ],
   "virtual_references": [
-    "bb-workflow/references/tools-conductor.md"
+    "bb-workflow/references/tools-conductor.md",
+    "bb-workflow/references/entry-guard.md"
   ]
 }

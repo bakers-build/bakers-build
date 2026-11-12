@@ -82,6 +82,7 @@
     }
   ],
   "virtual_references": [
-    "bb-label-auto/SKILL.md"
+    "bb-label-auto/SKILL.md",
+    "bb-workflow/references/entry-guard.md"
   ]
 }

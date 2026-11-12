@@ -77,5 +77,8 @@
       "id": "no-fix",
       "criterion": "Writes no code and does not transition; stops at the approval."
     }
+  ],
+  "virtual_references": [
+    "bb-workflow/references/entry-guard.md"
   ]
 }

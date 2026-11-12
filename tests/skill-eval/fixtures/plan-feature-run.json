@@ -90,5 +90,8 @@
       "id": "stops-at-approval",
       "criterion": "Publishes spec, plan, test and summary, then stops at the approval without transitioning."
     }
+  ],
+  "virtual_references": [
+    "bb-workflow/references/entry-guard.md"
   ]
 }

@@ -44,6 +44,6 @@ Render [outtake](outtake.md), publish `summary`, print it.
 ## transition
 
 Obtain one approval of proposal (bugs: cause, fix direction, verification); reuse covering
-approval. Without approval stop in plan. Otherwise record confirmed comment IDs, publish
+approval, including explicit authorization from a loaded label. Without approval stop in plan. Otherwise record confirmed comment IDs, publish
 authorized [origin status](origin-status.md) if origin exists, [transition](transition-ticket.md)
 once to working, verify readback and STOP.
