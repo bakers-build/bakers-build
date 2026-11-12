@@ -13,6 +13,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Url;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Deployment\DeploymentLookup;
 use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
 use Drupal\bb_core\Project\AttentionItem;
 use Drupal\bb_core\Project\ProjectHealth;
@@ -78,6 +79,11 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
   protected BbDate $date;
 
   /**
+   * Reads accessible deployment rows.
+   */
+  protected DeploymentLookup $deploymentLookup;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
@@ -87,6 +93,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
     $instance->requestStack = $container->get('request_stack');
     $instance->currentUser = $container->get('current_user');
     $instance->date = $container->get(BbDate::class);
+    $instance->deploymentLookup = $container->get('bb_core.deployment_lookup');
     return $instance;
   }
 
@@ -108,6 +115,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
         'metrics' => $this->t('Metrics'),
         'attention' => $this->t('Needs attention'),
         'epics' => $this->t('Epics'),
+        'deployments' => $this->t('Deployments'),
         'empty' => $this->t('Empty state'),
         'description' => $this->t('About'),
         'edit' => $this->t('Edit link'),
@@ -135,6 +143,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
       'metrics' => $this->metrics($project),
       'attention' => $this->attention($project),
       'epics' => $this->epics($project),
+      'deployments' => $this->deployments($project),
       'empty' => $this->emptyState(),
       'description' => $this->description($project),
       'edit' => $this->editLink($project),
@@ -316,6 +325,50 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
       ];
     }
     return $this->zone((string) $this->t('Epics'), '', $content);
+  }
+
+  /**
+   * Deployment history with a project-scoped ticket drill-down.
+   *
+   * @return array<string, mixed>
+   *   A zone containing the deployment list or its empty state.
+   */
+  private function deployments(BbProjectInterface $project): array {
+    $items = [];
+    foreach ($this->deploymentLookup->projectDeployments($project) as $deployment) {
+      $ticket = $deployment['ticket'];
+      $row = $this->ticketItem($ticket);
+      $row['cells']['environment'] = [
+        'kind' => 'text',
+        'value' => implode(', ', $deployment['environments']) ?: '—',
+      ];
+      $row['cells']['workflow'] = [
+        'kind' => 'badge', 'label' => $row['cells']['state']['label'], 'tone' => 'neutral',
+      ];
+      $row['cells']['count'] = [
+        'kind' => 'link',
+        'value' => (string) $this->formatPlural($deployment['count'], '1 ticket', '@count tickets'),
+        'url' => Url::fromUserInput($project->toUrl()->toString() . '/tickets', [
+          'query' => ['deployment' => $ticket->getIdentifier()],
+        ])->toString(),
+      ];
+      $items[] = $row;
+    }
+    $content = $items === [] ? [
+      '#type' => 'component', '#component' => 'bb_theme:empty-state',
+      '#props' => ['message' => (string) $this->t('No deployments in this project.')],
+    ] : [
+      '#type' => 'component', '#component' => 'bb_theme:list',
+      '#props' => [
+        'layout' => 'lines',
+        'pattern' => [
+          'avatar' => ['state'], 'headline' => ['identifier', 'title'],
+          'meta' => ['workflow', 'environment', 'created'], 'right' => ['count'],
+        ],
+        'items' => $items,
+      ],
+    ];
+    return $this->zone((string) $this->t('Deployments'), '', [$content]);
   }
 
   /**
