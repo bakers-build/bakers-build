@@ -22,5 +22,6 @@ glab issue update "$origin" --label "$label" --unlabel "$remove"
 ```
 
 Pass comma-separated remove; mapped labels cannot contain commas. If selected label is absent,
-pass only --unlabel; if neither remains, no call. Return success. Unknown adapters/write failures warn, leaving ticket work unblocked. [Ticket writes](ticket-writes.md) owns compensation and
+pass only --unlabel; if neither remains, no call. Return `Outcome: success` with applied/skipped labels and warnings. Missing mapped labels,
+unknown adapters and write failures leave the caller's transition unblocked. [Ticket writes](ticket-writes.md) owns compensation and
 uncertain-state reconciliation; the caller owns ordering, authorization and destination.
