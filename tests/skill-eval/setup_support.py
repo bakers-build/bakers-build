@@ -52,6 +52,14 @@ def validate_config_write(root, path, content):
         raise ValueError('Expected a JSON object')
 
 
+def init_blocked(written, args):
+    """A direct write to a scope's file ends CLI initialization of that scope, so init cannot replace the edit."""
+    if args[:2] != ['config', 'init'] or '--help' in args or '--dry-run' in args or '--scope' not in args:
+        return False
+    scope = args[args.index('--scope') + 1]
+    return bool(written) if scope == 'all' else scope in written
+
+
 def config_args(root, argv):
     if not isinstance(argv, list) or not all(isinstance(value, str) for value in argv):
         raise ValueError('Expected literal argv')

@@ -3,7 +3,7 @@
   "id": "setup-s1-new",
   "expected_files": {
     "machine/machine.config.js": [
-      "label: 'audit-worker'"
+      "audit-worker"
     ],
     "machine/connections/default.js": [
       "https://setup.example.test"

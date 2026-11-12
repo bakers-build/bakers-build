@@ -5,7 +5,7 @@ import unittest
 import json
 import subprocess
 
-from setup_support import safe_path, config_args, parse_action, validate_config_write
+from setup_support import safe_path, config_args, init_blocked, parse_action, validate_config_write
 
 
 class SetupBoundaryTest(unittest.TestCase):
@@ -33,6 +33,16 @@ class SetupBoundaryTest(unittest.TestCase):
         for text in ['{"type":"command","argv":5}', '{"type":"command","argv":["git",3]}', '{"type":"read","path":["a"]}']:
             with self.assertRaises(ValueError):
                 parse_action(text)
+
+    def test_direct_write_blocks_initialization_of_that_scope_only(self):
+        machine = ['config', 'init', '--scope', 'machine']
+        self.assertTrue(init_blocked({'machine'}, machine))
+        self.assertTrue(init_blocked({'machine'}, ['config', 'init', '--scope', 'all']))
+        self.assertFalse(init_blocked({'machine'}, ['config', 'init', '--scope', 'connection']))
+        self.assertFalse(init_blocked({'machine'}, ['config', 'init', '--scope', 'project']))
+        self.assertFalse(init_blocked({'machine'}, machine + ['--dry-run']))
+        self.assertFalse(init_blocked(set(), machine))
+        self.assertFalse(init_blocked({'machine'}, ['config', 'check', '--scope', 'machine']))
 
     def test_real_cli_preserves_identity_on_repeat_and_honors_custom_path(self):
         repo = Path(__file__).resolve().parents[2]

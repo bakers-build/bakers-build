@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 import worker
-from setup_support import safe_path, config_args, parse_action, validate_config_write
+from setup_support import safe_path, config_args, init_blocked, parse_action, validate_config_write
 
 ROOT = worker.ROOT
 SYSTEM = '''Apply the supplied setup skill and its documentation to the user request.
@@ -32,7 +32,7 @@ Tools return actual local command output or clearly marked synthetic external ob
 Do not claim actions without successful results. You may write project/.bakers/project.config.js
 and machine/machine.config.js as "export default " followed by a STRICT JSON object and semicolon.
 Read existing files first and preserve unrelated values. No imports, expressions, functions or
-other code are accepted. After a direct config write, config init is unavailable; offline checks
+other code are accepted. After a direct write to a machine or project config, config init of that scope is unavailable; offline checks
 and declared synthetic checks remain available. Connection files must use the CLI.
 Never invent user answers. Git check-ignore -v is supported in the project root;
 bakers conductor check has a declared synthetic response, not real runtime verification.
@@ -52,7 +52,7 @@ def main():
     environment = destination.resolve() / 'environment'
     (environment / 'project').mkdir(parents=True)
     (environment / 'machine').mkdir()
-    subprocess.run(['git', '-c', 'init.templateDir=', 'init', '-q', str(environment / 'project')],
+    subprocess.run(['git', '-c', 'init.templateDir=', '-c', 'init.defaultBranch=main', 'init', '-q', str(environment / 'project')],
                    check=True, env={**os.environ, 'GIT_CONFIG_GLOBAL': '/dev/null', 'GIT_CONFIG_SYSTEM': '/dev/null'})
     for path, content in fixture.get('files', {}).items():
         target = safe_path(environment, path)
@@ -70,7 +70,7 @@ def main():
     (destination / 'sources.json').write_text(encode(sources))
     history = [{'role': 'user', 'content': fixture['request']}]
     tools = []
-    config_written = False
+    config_written = set()
     result = {'status': 'incomplete', 'revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
               'dirty': bool(subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True).strip()),
               'source_hashes': {path: hashlib.sha256(content.encode()).hexdigest() for path, content in sources.items()},
@@ -117,7 +117,7 @@ def main():
                         path = safe_path(environment, action['path'])
                         if path.suffix == '.js':
                             validate_config_write(environment, path, action['content'])
-                            config_written = True
+                            config_written.add(path.parent.name if path.parent.name == 'machine' else 'project')
                         elif path.name not in {'WORKFLOW.md', '.gitignore', 'README.md'}:
                             raise ValueError('Only documentation, ignore files and data-only config writes are supported')
                         path.parent.mkdir(parents=True, exist_ok=True)
@@ -146,8 +146,8 @@ def main():
                             event['simulated'] = False
                         else:
                             args = config_args(environment, argv)
-                            if config_written and args[:2] == ['config', 'init'] and '--help' not in args and '--dry-run' not in args:
-                                raise ValueError('After direct config writes use offline check; initialization is unavailable')
+                            if init_blocked(config_written, args):
+                                raise ValueError('This scope was written directly; use its offline check, initialization is unavailable')
                             event['executed_config_argv'] = args
                             completed = subprocess.run(['node', '--import', str(ROOT / 'bakers-cli/node_modules/tsx/dist/loader.mjs'),  # the tsx CLI needs an IPC pipe that a sandbox denies
                                 str(ROOT / 'tests/skill-eval/setup-config.mjs'), str(environment), json.dumps(args)],
