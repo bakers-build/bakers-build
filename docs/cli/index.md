@@ -21,7 +21,7 @@ Run `bakers <command> --help` for the options available in your installed versio
 | `bakers config` | Initialize, migrate and validate scoped configuration: `init`, `upgrade`, `check` |
 | `bakers update` | Install the latest CLI |
 | `bakers conductor` | Node-agent lifecycle and the registry of conductors: [bakers conductor](/cli/conductor) |
-| `bakers ui` | Interactive terminal UI: [bakers ui](/addons/bakers-ui/reference) and [keys](/addons/bakers-ui-keys) |
+| `bakers ui` | Interactive terminal UI: [bakers ui](/addons/bakers-ui/reference) |
 | `bakers tools` | List, describe and call the server's named tools: [bakers tools](/cli/tools) |
 | `bakers auth` | Sign in, switch auth profiles and show the session: [bakers auth](/cli/auth) |
 | `bakers deployment` | Release and deployment helpers: [bakers deployment](/addons/deployment/reference) |

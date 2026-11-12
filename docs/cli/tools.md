@@ -4,6 +4,8 @@
 
 Inside a conductor run (`BAKERS_CONDUCTOR_URL` and `BAKERS_CONDUCTOR_TOKEN` set), `bakers tools` calls the run's [`bakers` server](/addons/build/tools#site-tools) with the run token instead, needs no connection config and reaches only that run's project. Name a tool plainly (`bakers_ticket_read`) in either place; the `tool_api__` wire name works too.
 
+`bakers info` prints project and workspace context.
+
 ## Synopsis
 
 ```

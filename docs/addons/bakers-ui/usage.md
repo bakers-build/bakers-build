@@ -43,4 +43,4 @@ Open the `bakers ui` cockpit, find a ticket, read it, edit it, and keep the scre
 
 Piped output prints the target once and exits, so scripts and agents read what you would see: `bakers ui <identifier> | cat`.
 
-**Done when:** you can open a ticket and read its latest summary. Every screen, filter and key is in the [terminal UI reference](/addons/bakers-ui/reference) and its [key reference](/addons/bakers-ui-keys).
+**Done when:** you can open a ticket and read its latest summary. Every screen, filter and key is in the [terminal UI reference](/addons/bakers-ui/reference).
