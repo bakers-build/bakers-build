@@ -1,4 +1,9 @@
 services:
+  bb_core.deployment_lookup:
+    class: Drupal\bb_core\Deployment\DeploymentLookup
+    autowire: true
+  Drupal\bb_core\Deployment\DeploymentLookup:
+    alias: bb_core.deployment_lookup
   bb_core.error_page_route_subscriber:
     class: Drupal\bb_core\Routing\BbErrorPageRouteSubscriber
     tags:
