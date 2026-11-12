@@ -15,7 +15,8 @@ if paginated lookups are needed: tools-lookup.md
 if forge tools absent: forge-fallback.md
 if merging without tools: merge-fallback.md
 if named retrospective causes: retrospective-evidence.md
-if rating/reason supplied: retrospective-write.md, measurement.md
+if rating/reason supplied: retrospective-write.md
+if rating supplied: measurement.md
 
 ## read
 
