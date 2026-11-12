@@ -1340,6 +1340,11 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $html = $this->renderScreen();
     self::assertStringContainsString('>Restart ticket<', $html);
     self::assertStringContainsString('run=' . $newest->uuid(), $html, 'Restart confirms cancelling the newest failed run.');
+    self::assertArrayNotHasKey('cancel', $this->rowItem($newest)['cells'], 'Its run row offers no Cancel run; Restart is in the footer.');
+    $zone = $this->container->get('bb_core.run_inspector_rows')->status($newest);
+    $status = (string) $this->container->get('renderer')->renderInIsolation($zone);
+    self::assertStringContainsString('failed', $status);
+    self::assertStringNotContainsString('Cancel run', $status, 'Its run page offers no Cancel run.');
 
     $state = $newest->get('state')->first();
     self::assertInstanceOf(StateItemInterface::class, $state);

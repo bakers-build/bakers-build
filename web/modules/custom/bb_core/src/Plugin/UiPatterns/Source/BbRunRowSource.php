@@ -239,7 +239,7 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
       if (TicketInterventions::mayRedispatchRun($run, $ticket)) {
         $cells['redispatch'] = $this->runAction($ticket, $run, TicketInterventions::REDISPATCH, (string) $this->t('Re-dispatch'), 'ghost', '');
       }
-      if (TicketInterventions::mayCancelRun($run, $ticket)) {
+      if (TicketInterventions::mayCancelActiveRun($run, $ticket)) {
         $cells['cancel'] = [
           'kind' => 'action',
           'label' => (string) $this->t('Cancel run'),

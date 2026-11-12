@@ -309,7 +309,7 @@ final class BbRunInspectorRows extends InspectorRows {
         }
       }
     }
-    if (TicketInterventions::mayCancelRun($run, $ticket)) {
+    if (TicketInterventions::mayCancelActiveRun($run, $ticket)) {
       $buttons['cancel'] = $this->button((string) $this->t('Cancel run'), 'danger', TicketInterventions::confirmationUrl($ticket, $run, FALSE), TicketInterventions::dialogHx($ticket, $run));
     }
     return $buttons;

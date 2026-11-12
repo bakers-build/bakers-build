@@ -120,6 +120,15 @@ final class TicketInterventions {
   }
 
   /**
+   * Whether a run's row and page offer Cancel run: a claimed or running run.
+   *
+   * A parked ticket's failed run is restarted from the Properties footer.
+   */
+  public static function mayCancelActiveRun(BbRunInterface $run, BbTicketInterface $ticket): bool {
+    return in_array($run->getRunState(), self::ACTIVE_RUN_STATES, TRUE) && self::mayCancelRun($run, $ticket);
+  }
+
+  /**
    * The newest failed run of a ticket the failed-run breaker parks, if any.
    *
    * Cancelling it restarts the ticket: a non-failed run among the newest
