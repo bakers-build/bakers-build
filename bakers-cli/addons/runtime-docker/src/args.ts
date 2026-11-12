@@ -15,8 +15,10 @@ export interface DockerOptions {
 /** Host facts the launch depends on, resolved by the backend. */
 export interface HostPaths {
   gitCommonDir: string;
-  /** The worktree's own `config.worktree`, when it has one. */
-  worktreeConfig?: string;
+  /** The worktree's own Git dir; the common dir itself for a main checkout. */
+  gitDir: string;
+  /** `<worktree>/.git` when it is a gitlink file. */
+  gitLink?: string;
   /** The per-run home, mounted at `/home/run`. */
   runHome: string;
   /** Where the harness keeps transcripts: the agent home, or `~/.claude`. */
@@ -93,6 +95,10 @@ export function dockerArgs(
       // Allowlist mode keeps the model credential in the proxy only.
       !(allowlist && (MODEL_CREDENTIALS as readonly string[]).includes(k)),
   );
+  const common = where.gitCommonDir;
+  const gitDir = where.gitDir;
+  const linked = gitDir !== common;
+  const ro = (path: string) => bind(path, path, ':ro');
   const plugins = where.agentHome ? join(where.agentHome, 'plugins') : '';
   const argv = [
     opts.docker,
@@ -111,13 +117,23 @@ export function dockerArgs(
     ...computed.flatMap((c) => ['-e', c]),
     ...forwarded.flatMap((k) => ['-e', k]),
     ...bind(ws),
-    ...bind(where.gitCommonDir),
-    // The run must not plant a hook or rewrite Git config the host runs later.
-    ...bind(join(where.gitCommonDir, 'hooks'), undefined, ':ro'),
-    ...bind(join(where.gitCommonDir, 'config'), undefined, ':ro'),
-    ...(where.worktreeConfig
-      ? bind(where.worktreeConfig, undefined, ':ro')
+    ...(where.gitLink ? bind(where.gitLink, undefined, ':ro') : []),
+    ...bind(common),
+    // The run must not plant a hook, rewrite Git config or repoint a worktree's
+    // Git dir: host git in these repos would run what the run chose.
+    ...ro(join(common, 'hooks')),
+    ...ro(join(common, 'config')),
+    ...ro(join(common, 'modules')),
+    ...ro(join(common, 'worktrees')),
+    ...(linked
+      ? [
+          // Docker mounts by depth, so this reopens only the run's own Git dir.
+          ...bind(gitDir),
+          ...ro(join(gitDir, 'commondir')),
+          ...ro(join(gitDir, 'gitdir')),
+        ]
       : []),
+    ...ro(join(gitDir, 'config.worktree')),
     ...bind(where.cliRoot, undefined, ':ro'),
     ...opts.mounts.flatMap((m) => bind(m, m, ':ro')),
     ...(plugins

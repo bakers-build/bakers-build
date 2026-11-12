@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
-import { dirname, join, sep } from 'node:path';
+import { homedir } from 'node:os';
+import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { RuntimePlugin } from '@bakers-build/conductor/contract';
 import {
@@ -34,14 +35,24 @@ export function pluginPaths(): { cliRoot: string; packageDir: string } {
   const conductor = packageOf(
     fileURLToPath(import.meta.resolve('@bakers-build/conductor/contract')),
   );
-  const a = packageDir.split(sep);
-  const b = conductor.split(sep);
+  return { cliRoot: cliRootOf(packageDir, conductor, homedir()), packageDir };
+}
+
+/** The CLI build root for two package dirs; refuses one that would expose the operator home. */
+export function cliRootOf(a: string, b: string, home: string): string {
+  const x = a.split(sep);
+  const y = b.split(sep);
   let i = 0;
-  while (i < a.length && a[i] === b[i]) i++;
-  let cliRoot = a.slice(0, i).join(sep) || sep;
+  while (i < x.length && x[i] === y[i]) i++;
+  let cliRoot = x.slice(0, i).join(sep) || sep;
   const nm = cliRoot.indexOf(`${sep}node_modules`);
   if (nm >= 0) cliRoot = cliRoot.slice(0, nm + `${sep}node_modules`.length);
-  return { cliRoot, packageDir };
+  const rel = relative(cliRoot, home);
+  if (rel === '' || (!rel.startsWith('..') && !isAbsolute(rel)))
+    throw new Error(
+      `runtime-docker: the CLI build ${cliRoot} would mount ${home} into every run; install the CLI and its addons in one tree`,
+    );
+  return cliRoot;
 }
 
 /** The shipped image's tag: the package version plus a hash of `image/`, so any change rebuilds it. */

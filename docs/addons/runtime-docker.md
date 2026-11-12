@@ -30,9 +30,12 @@ paths. Machine scope only; add it to `~/.bakers/machine.config.js`:
 
 Container `bb-run-<run uuid>`, under your uid. Mounts, and nothing else of your home:
 
-- the worktree and the Git common directory, at their host paths; `hooks/`, `config` and
-  `config.worktree` read-only;
-- the bakers CLI build, read-only;
+- the worktree and the Git common directory, at their host paths. Read-only: the worktree's
+  `.git` file, `hooks/`, `config`, `modules/`, `worktrees/` (except the run's own Git dir), and
+  that Git dir's `commondir`, `gitdir` and `config.worktree`. Host Git therefore runs nothing the
+  run planted;
+- the bakers CLI build, read-only. The runtime refuses to start when that build's root would
+  contain your home directory;
 - `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` as `/home/run`;
 - Claude's transcript directory for the worktree, so the conductor reads the transcript.
 

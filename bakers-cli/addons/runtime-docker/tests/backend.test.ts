@@ -125,6 +125,32 @@ describe('runtime-docker wrap', () => {
     expect(existsSync(join(home, '.claude/plugins'))).toBe(true);
   });
 
+  it('protects the worktree Git files the host reads later', async () => {
+    writeFileSync(
+      join(ws, '.git'),
+      `gitdir: ${join(common, 'worktrees/tree')}\n`,
+    );
+    const out = await dockerRuntime({}, deps()).wrap(launch());
+    const gitDir = join(common, 'worktrees/tree');
+    // Bound read-only, so each must exist before docker would create it as root.
+    expect(readFileSync(join(gitDir, 'config.worktree'), 'utf8')).toBe('');
+    for (const d of ['modules', 'worktrees'])
+      expect(existsSync(join(common, d))).toBe(true);
+    expect(out.command).toContain(
+      `'${join(ws, '.git')}:${join(ws, '.git')}:ro'`,
+    );
+    expect(out.command).toContain(
+      `'${gitDir}/commondir:${gitDir}/commondir:ro'`,
+    );
+  });
+
+  it('refuses a run uuid that is not a plain name', async () => {
+    for (const uuid of ['', '../x', 'a/b'])
+      await expect(
+        dockerRuntime({}, deps()).wrap(launch({ run: { uuid, id: 7 } })),
+      ).rejects.toThrow(/run uuid/);
+  });
+
   it('refuses without a model credential', async () => {
     const rt = dockerRuntime({}, deps({ env: { XDG_CACHE_HOME: cache } }));
     await expect(rt.wrap(launch())).rejects.toThrow(/claude setup-token/);
@@ -218,6 +244,17 @@ describe('runtime-docker cleanup', () => {
       dockerRuntime({}, d).cleanup({ uuid: 'r-uuid', id: 7 }),
     ).resolves.toBeUndefined();
     expect(warnings).toContain('runtime container cleanup failed');
+  });
+
+  it('deletes nothing for a run uuid that is not a plain name', async () => {
+    const homes = join(cache, 'bakers/runtime');
+    mkdirSync(join(homes, 'other'), { recursive: true });
+    mkdirSync(join(cache, 'bakers/x'), { recursive: true });
+    for (const uuid of ['', '../x'])
+      await dockerRuntime({}, deps()).cleanup({ uuid, id: 7 });
+    expect(existsSync(join(homes, 'other'))).toBe(true);
+    expect(existsSync(join(cache, 'bakers/x'))).toBe(true);
+    expect(calls).toEqual([]);
   });
 });
 

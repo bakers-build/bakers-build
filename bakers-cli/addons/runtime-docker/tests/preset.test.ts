@@ -22,6 +22,34 @@ describe('runtime-docker preset', () => {
   });
 });
 
+describe('cliRootOf', () => {
+  it('is the common ancestor, widened to the outermost node_modules', async () => {
+    const { cliRootOf } = await import('../src/index.js');
+    expect(
+      cliRootOf('/opt/cli/addons/rd', '/opt/cli/conductor', '/home/op'),
+    ).toBe('/opt/cli');
+    expect(
+      cliRootOf(
+        '/g/lib/node_modules/a/node_modules/rd',
+        '/g/lib/node_modules/c',
+        '/home/op',
+      ),
+    ).toBe('/g/lib/node_modules');
+  });
+
+  it('refuses a root that would expose the operator home', async () => {
+    const { cliRootOf } = await import('../src/index.js');
+    for (const [a, b] of [
+      ['/opt/cli/rd', '/srv/conductor'],
+      ['/home/op/dev/rd', '/home/op/.npm/conductor'],
+      ['/home/op/dev/rd', '/home/other/conductor'],
+    ])
+      expect(() => cliRootOf(a as string, b as string, '/home/op')).toThrow(
+        /would mount/,
+      );
+  });
+});
+
 describe('imageVersion', () => {
   it('changes when a shipped image file changes', async () => {
     const { mkdtempSync, mkdirSync, writeFileSync } = await import('node:fs');

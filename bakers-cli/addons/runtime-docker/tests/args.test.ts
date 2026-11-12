@@ -16,7 +16,8 @@ const opts: DockerOptions = {
 };
 const where: HostPaths = {
   gitCommonDir: '/w/main/.git',
-  worktreeConfig: '/w/main/.git/worktrees/tree/config.worktree',
+  gitDir: '/w/main/.git/worktrees/tree',
+  gitLink: '/w/tree/.git',
   runHome: '/h/run',
   configDir: '/home/op/.claude',
   cliRoot: '/opt/cli',
@@ -53,9 +54,15 @@ describe('dockerArgs', () => {
   it('mounts exactly the allowed paths', () => {
     expect(volumes(dockerArgs(launch, opts, where).argv)).toEqual([
       '/w/tree:/w/tree',
+      '/w/tree/.git:/w/tree/.git:ro',
       '/w/main/.git:/w/main/.git',
       '/w/main/.git/hooks:/w/main/.git/hooks:ro',
       '/w/main/.git/config:/w/main/.git/config:ro',
+      '/w/main/.git/modules:/w/main/.git/modules:ro',
+      '/w/main/.git/worktrees:/w/main/.git/worktrees:ro',
+      '/w/main/.git/worktrees/tree:/w/main/.git/worktrees/tree',
+      '/w/main/.git/worktrees/tree/commondir:/w/main/.git/worktrees/tree/commondir:ro',
+      '/w/main/.git/worktrees/tree/gitdir:/w/main/.git/worktrees/tree/gitdir:ro',
       '/w/main/.git/worktrees/tree/config.worktree:/w/main/.git/worktrees/tree/config.worktree:ro',
       '/opt/cli:/opt/cli:ro',
       '/h/run:/home/run',
@@ -131,12 +138,29 @@ describe('dockerArgs', () => {
     expect(argv).toContain('--userns=keep-id');
   });
 
-  it('skips a missing config.worktree and adds operator mounts read-only', () => {
-    const { worktreeConfig: _, ...rest } = where;
+  it('protects the Git files of a main checkout', () => {
+    const { gitLink: _, ...main } = where;
     const v = volumes(
-      dockerArgs(launch, { ...opts, mounts: ['/srv/data'] }, rest).argv,
+      dockerArgs({ ...launch, workspacePath: '/w/main' }, opts, {
+        ...main,
+        gitDir: '/w/main/.git',
+      }).argv,
     );
-    expect(v.some((m) => m.includes('config.worktree'))).toBe(false);
+    expect(v).toContain(
+      '/w/main/.git/config.worktree:/w/main/.git/config.worktree:ro',
+    );
+    expect(v).toContain('/w/main/.git/worktrees:/w/main/.git/worktrees:ro');
+    expect(
+      v.some((m) =>
+        /commondir|gitdir|\/w\/main\/\.git:\/w\/main\/\.git:ro/.test(m),
+      ),
+    ).toBe(false);
+  });
+
+  it('adds operator mounts read-only', () => {
+    const v = volumes(
+      dockerArgs(launch, { ...opts, mounts: ['/srv/data'] }, where).argv,
+    );
     expect(v).toContain('/srv/data:/srv/data:ro');
   });
 });

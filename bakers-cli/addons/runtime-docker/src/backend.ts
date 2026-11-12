@@ -6,6 +6,7 @@ import {
   mkdirSync,
   readFileSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
@@ -85,7 +86,15 @@ export function dockerRuntime(
   let proxyReady: { hash: string; ready: Promise<void> } | undefined;
   const cacheHome =
     deps.env.XDG_CACHE_HOME || join(deps.env.HOME || homedir(), '.cache');
-  const runHomeOf = (uuid: string) => join(cacheHome, 'bakers/runtime', uuid);
+  // The uuid names a container filter and a directory removed recursively.
+  const plainName = (uuid: string) => /^[A-Za-z0-9-]+$/.test(uuid);
+  const runHomeOf = (uuid: string) => {
+    if (!plainName(uuid))
+      throw new Error(
+        `runtime-docker: invalid run uuid ${JSON.stringify(uuid)}`,
+      );
+    return join(cacheHome, 'bakers/runtime', uuid);
+  };
   let imageReady: Promise<void> | undefined;
 
   const ensureImage = async () => {
@@ -171,6 +180,7 @@ export function dockerRuntime(
   const runtime: BbRuntime = {
     id: 'docker',
     async wrap(launch: RuntimeLaunch) {
+      const runHome = runHomeOf(launch.run.uuid);
       if (launch.harness !== 'claude' && options.image === undefined)
         throw new Error(
           `runtime-docker: the shipped image runs only Claude Code, not ${launch.harness}; set with.image to an image that has it`,
@@ -205,13 +215,13 @@ export function dockerRuntime(
       }
       const ws = launch.workspacePath;
       const gitCommonDir = await git(ws, '--git-common-dir');
-      const worktreeConfig = join(
-        await git(ws, '--git-dir'),
-        'config.worktree',
-      );
-      // Bound read-only, so it must exist before docker would create it as root.
-      mkdirSync(join(gitCommonDir, 'hooks'), { recursive: true });
-      const runHome = runHomeOf(launch.run.uuid);
+      const gitDir = await git(ws, '--git-dir');
+      const gitLink = join(ws, '.git');
+      // Bound read-only, so each must exist before docker would create it as root.
+      for (const d of ['hooks', 'modules', 'worktrees'])
+        mkdirSync(join(gitCommonDir, d), { recursive: true });
+      const worktreeConfig = join(gitDir, 'config.worktree');
+      if (!existsSync(worktreeConfig)) writeFileSync(worktreeConfig, '');
       mkdirSync(join(runHome, '.claude'), { recursive: true });
       const agentHome = launch.env.CLAUDE_CONFIG_DIR;
       // Settings travel; the login (.credentials.json) never does.
@@ -268,7 +278,10 @@ export function dockerRuntime(
         for (const k of credentials) env[k] = deps.env[k] as string;
       const { argv, env: runEnv } = dockerArgs({ ...launch, env }, opts, {
         gitCommonDir,
-        ...(existsSync(worktreeConfig) ? { worktreeConfig } : {}),
+        gitDir,
+        ...(statSync(gitLink, { throwIfNoEntry: false })?.isFile()
+          ? { gitLink }
+          : {}),
         runHome,
         configDir,
         ...(agentHome ? { agentHome } : {}),
@@ -279,6 +292,13 @@ export function dockerRuntime(
       return { command: argv.map(shellQuote).join(' '), env: runEnv };
     },
     async cleanup(r) {
+      if (!plainName(r.uuid)) {
+        deps.logger.warn(
+          { run: r.uuid },
+          'runtime cleanup skipped: invalid run uuid',
+        );
+        return;
+      }
       try {
         const { stdout } = await deps.exec(docker, [
           'ps',
