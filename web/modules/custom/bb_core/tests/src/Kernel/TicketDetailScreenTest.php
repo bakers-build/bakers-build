@@ -93,6 +93,11 @@ final class TicketDetailScreenTest extends KernelTestBase {
   private const ROUTE = 'entity.bb_ticket.canonical';
 
   /**
+   * The copy of a refused pick (spec, Copy).
+   */
+  private const REFUSAL = 'Someone changed this meanwhile. The page shows their value.';
+
+  /**
    * The ambient workspace.
    */
   private BbWorkspaceInterface $workspace;
@@ -503,12 +508,11 @@ final class TicketDetailScreenTest extends KernelTestBase {
 
     [$form, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $opening);
 
-    $refusal = 'Someone changed this meanwhile. The page shows their value.';
-    self::assertSame(['priority' => $refusal], array_map('strval', $state->getErrors()));
+    self::assertSame(['priority' => self::REFUSAL], array_map('strval', $state->getErrors()));
     self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
     $cell = $this->pickerCell($form, 'priority');
     self::assertSame(['Medium'], array_map('strval', $cell['value_labels']));
-    self::assertSame($refusal, $cell['status']);
+    self::assertSame(self::REFUSAL, $cell['status']);
     self::assertTrue($cell['invalid']);
 
     $answer = [
@@ -538,6 +542,96 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $stored = $this->stored($this->ticket);
     self::assertEquals(1, $stored->get('priority')->value);
     self::assertEquals(1, $stored->get('assignee_user_id')->target_id);
+  }
+
+  /**
+   * A form that already saved once refuses a field changed since that save.
+   */
+  public function testSameFieldEditAfterAnEarlierSaveIsRefused(): void {
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    [, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $opening);
+    self::assertSame([], $state->getErrors());
+    $this->ticket->set('priority', 2)->save();
+
+    [$form, $state] = $this->postForm($this->ticket, 'property', ['priority' => '3'] + $opening);
+
+    self::assertSame(['priority' => self::REFUSAL], array_map('strval', $state->getErrors()));
+    self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
+    self::assertSame(self::REFUSAL, $this->pickerCell($form, 'priority')['status']);
+  }
+
+  /**
+   * A pick of the value someone else just stored is not a conflict.
+   */
+  public function testPickOfTheStoredValueIsNotRefused(): void {
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    $this->ticket->set('priority', 2)->save();
+
+    [, $state] = $this->postForm($this->ticket, 'property', ['priority' => '2'] + $opening);
+
+    self::assertSame([], $state->getErrors());
+    self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
+  }
+
+  /**
+   * A write landing between validation and save is refused at the field.
+   *
+   * No exception, nothing overwritten; the answer shows the stored value.
+   */
+  public function testLateConcurrentEditIsRefusedAtTheField(): void {
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $builder = $this->container->get('entity_type.manager')->getFormObject('bb_ticket', 'property');
+    $builder->setEntity($this->stored($this->ticket));
+    $state = new FormState();
+    $state->setFormObject($builder);
+    $form = $builder->buildForm([], $state);
+    $this->container->get('request_stack')->getCurrentRequest()->setMethod('POST');
+    $state->setRequestMethod('POST');
+    $state->setUserInput([
+      'form_build_id' => $form['#build_id'],
+      'property_baseline' => $form['property_baseline']['#default_value'],
+      'property_signature' => $form['property_signature']['#default_value'],
+    ]);
+    $state->setValue('priority', ['1']);
+    $builder->validateForm($form, $state);
+    self::assertSame([], $state->getErrors());
+    $state->setValidationComplete();
+
+    $this->ticket->set('priority', 2)->save();
+    $builder->submitForm($form, $state);
+    $builder->save($form, $state);
+
+    self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
+    self::assertTrue($state->isRebuilding());
+    $answer = $this->container->get('form_builder')->rebuildForm($builder->getFormId(), $state, $form);
+    $cell = $this->pickerCell($answer, 'priority');
+    self::assertSame(['Medium'], array_map('strval', $cell['value_labels']));
+    self::assertSame(self::REFUSAL, $cell['status']);
+    self::assertTrue($cell['invalid']);
+  }
+
+  /**
+   * An answer refused by the project rule still carries the stored snapshot.
+   */
+  public function testRelationRefusalCarriesTheStoredSnapshot(): void {
+    $closed = $this->ticket->createDuplicate()->set('state', 'done');
+    $closed->save();
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    $this->ticket->set('priority', 2)->save();
+
+    $input = ['priority' => '3', 'parent_id' => (string) $closed->id()] + $opening;
+    [$form, $state] = $this->postForm($this->ticket, 'property', $input);
+
+    self::assertSame(['parent_id'], array_keys($state->getErrors()));
+    $snapshot = json_decode(base64_decode(strtr($form['property_baseline']['#value'], '-_', '+/')), TRUE);
+    self::assertEquals(2, $snapshot['priority'][0]['value']);
   }
 
   /**

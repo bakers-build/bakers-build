@@ -118,6 +118,13 @@ Feature: Ticket properties save each pick on their own
     When I reload the page
     Then the selected inline labels are "bug"
 
+  Scenario: Two labels are picked in one opening of the panel
+    When I select inline "Labels" option "No labels"
+    And I select inline "Labels" options "ui, bug" in one opening
+    Then the inline "Labels" save succeeds without navigation
+    When I reload the page
+    Then the selected inline labels are "ui, bug"
+
   Scenario: A stale form preserves another editor's property change
     Then separate stale property submissions preserve both editors changes
 

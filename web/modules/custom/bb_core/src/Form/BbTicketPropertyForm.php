@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Form;
 
 use Drupal\Component\Render\PlainTextOutput;
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Security\TrustedCallbackInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Plugin\Field\FieldWidget\PickerWidgetInterface;
 use Drupal\bb_core\Ticket\TicketInspectorRows;
@@ -15,7 +18,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Saves the configured ticket property widgets without overwriting edits.
  */
-final class BbTicketPropertyForm extends BbPropertyFormBase {
+final class BbTicketPropertyForm extends BbPropertyFormBase implements TrustedCallbackInterface {
 
   use ProjectScopedRelationsTrait;
 
@@ -47,8 +50,17 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
     $form = parent::form($form, $form_state);
     if (isset($form['property_baseline'])) {
       $form['#after_build'][] = '::prepareSurface';
+      $form['#property_fields'] = array_keys($this->getFormDisplay($form_state)->getComponents());
+      $form['#pre_render'][] = [$this, 'keepFieldErrorsAtTheirField'];
     }
     return $form;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function trustedCallbacks(): array {
+    return ['keepFieldErrorsAtTheirField'];
   }
 
   /**
@@ -61,7 +73,7 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
   public function save(array $form, FormStateInterface $form_state): int {
     $baseline = $form_state->get('property_baseline');
     $result = parent::save($form, $form_state);
-    if ($baseline instanceof BbTicketInterface && $this->isReviewer($baseline) !== $this->isReviewer($this->entity)) {
+    if ($result && $baseline instanceof BbTicketInterface && $this->isReviewer($baseline) !== $this->isReviewer($this->entity)) {
       TicketNavigation::finishAt($this->entity->toUrl(), $form_state, $this->getRequest());
     }
     return $result;
@@ -141,10 +153,37 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
   }
 
   /**
+   * Leaves an error shown at its field out of the form's messages.
+   *
+   * Pre-render callback: a field's outcome is said at the field only, never
+   * again as a form message.
+   *
+   * @param array<string, mixed> $element
+   *   The form.
+   *
+   * @return array<string, mixed>
+   *   The form.
+   */
+  public function keepFieldErrorsAtTheirField(array $element): array {
+    $shown = [];
+    foreach ($element['#children_errors'] ?? [] as $key => $message) {
+      if (in_array(explode('][', (string) $key)[0], $element['#property_fields'] ?? [], TRUE)) {
+        $shown[] = (string) $message;
+      }
+    }
+    foreach ($this->messenger()->deleteByType(MessengerInterface::TYPE_ERROR) ?? [] as $message) {
+      if (!in_array((string) $message, $shown, TRUE)) {
+        $this->messenger()->addError($message);
+      }
+    }
+    return $element;
+  }
+
+  /**
    * What the last write did to each field: the error refusing it, or "Saved".
    *
-   * "Saved" belongs to the answer of the save only, not to later requests of
-   * the same form.
+   * "Saved" and a refusal after validation belong to the answer of that save
+   * only, not to later requests of the same form.
    *
    * @return array<string, array{status: string, invalid: bool}>
    *   Field statuses keyed by field name.
@@ -157,7 +196,13 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
         'invalid' => TRUE,
       ];
     }
-    foreach ($form_state->isRebuilding() ? $form_state->get('property_saved') ?? [] : [] as $field) {
+    if (!$form_state->isRebuilding()) {
+      return $statuses;
+    }
+    foreach ($form_state->get('property_refused') ?? [] as $field => $message) {
+      $statuses[$field] ??= ['status' => $message, 'invalid' => TRUE];
+    }
+    foreach ($form_state->get('property_saved') ?? [] as $field) {
       $statuses[$field] ??= ['status' => (string) $this->t('Saved'), 'invalid' => FALSE];
     }
     return $statuses;
@@ -169,12 +214,18 @@ final class BbTicketPropertyForm extends BbPropertyFormBase {
    * Newly chosen Parent and Blocked by values must be open tickets of this
    * ticket's project; relations it already holds are kept.
    */
-  public function validateForm(array &$form, FormStateInterface $form_state): EntityInterface {
-    $entity = parent::validateForm($form, $form_state);
-    assert($entity instanceof BbTicketInterface);
+  protected function validateProperties(ContentEntityInterface $entity, FormStateInterface $form_state): void {
     $stored = $this->entityTypeManager->getStorage('bb_ticket')->loadUnchanged($entity->id());
     assert($stored instanceof BbTicketInterface);
     $this->rejectProjectScopedRelations($this->getFormDisplay($form_state), $entity, $form_state, $stored);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state): EntityInterface {
+    $entity = parent::validateForm($form, $form_state);
+    assert($entity instanceof BbTicketInterface);
     if ($form_state->getErrors()) {
       // Lay the rows out again, so each refused field shows its error.
       $form = $this->prepareSurface($form, $form_state, $entity);

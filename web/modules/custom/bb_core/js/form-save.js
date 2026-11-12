@@ -60,7 +60,8 @@
         form.addEventListener('htmx:afterRequest', own(() => {
           form.inert = false;
         }));
-        const fail = own(() => report(Drupal.t('Not saved.')));
+        // An autosaving picker that submitted says it at its own field.
+        const fail = own(() => form.querySelector('[data-option-picker-submitted]') || report(Drupal.t('Not saved.')));
         ['htmx:responseError', 'htmx:sendError', 'htmx:timeout', 'htmx:sendAbort']
           .forEach((name) => form.addEventListener(name, fail));
       });

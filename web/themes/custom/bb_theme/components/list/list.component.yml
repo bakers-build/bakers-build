@@ -156,10 +156,12 @@ props:
         scanned down. `plain` is a block's property rows — no line, hover fill
         or inset; the enclosing block carries the separation, the label cell
         takes the fixed 96px `list.plain.label-width` track and a row is at
-        least the 32px `list.plain.row-height`, on every inspector. Default
-        `lines`. In `lines`, the `action` cells of an item form one group at the
-        right edge, in their own order; the group wraps as a whole when the line
-        is full.
+        least the 32px `list.plain.row-height`, on every inspector. A row with
+        one text, mono, link or picker value gives it the rest of the line: text
+        is cut to one line with the full value in its title, and a picker cuts
+        its own value. Default `lines`. In `lines`, the `action` cells of an
+        item form one group at the right edge, in their own order; the group
+        wraps as a whole when the line is full.
       default: lines
     spacing:
       type: string
