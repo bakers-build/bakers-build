@@ -19,11 +19,10 @@ expertise out of shared files; address deliverables to their audience.
 
 ## Frame the run
 
-After routing/stop rule, render once before state read, without choosing work or writing:
+After routing/stop rule, render once before state read:
 
 State, ticket (identifier/title), recipe/type and effective slot names per phase; matching hints;
-test_as personas or no login needed; selected test/path or build/validate; gate RED/GREEN/OK or
-Not OK; inputs (confirmed handoff/seeded criteria).
+test_as personas or no login needed; selected test/path or build/validate; gate (bug plan RED, working GREEN, review OK/Not OK); inputs (confirmed handoff/seeded criteria).
 
 Render in that order; review includes persisted MR. Omit empties; history only for material
 failures/skips/constraints/human actions.

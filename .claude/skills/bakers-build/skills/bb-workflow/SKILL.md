@@ -30,9 +30,9 @@ transitions. Beside it, read the matching **slots**; they supply the method insi
    | every other state | the recipe's `bb-state-<state>` section, run in the state file of that name: [plan](references/plan.md), [working](references/working.md), [review](references/review.md) |
 
    Unreadable state file: stop and name it before reading a recipe.
-3. Resolve the recipe: `bb-recipe-<name>` from the ticket's `recipe` field, empty at qualification
-   until [classify](references/classify.md) chooses; slots and the stop rule wait
-   for it.
+3. Qualification loads recipes at work's [classify](references/classify.md), after prior art.
+   Other states load `bb-recipe-<name>` from the ticket's `recipe`. Recipe slots and its stop rule
+   wait until the recipe is resolved.
 4. Apply *Stop rule*, then render [read ticket](references/read-ticket.md) › *Frame the run* and start the state
    file's `## read`.
 
