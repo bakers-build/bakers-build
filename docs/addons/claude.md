@@ -1,10 +1,10 @@
 # Claude
 
-Run tickets with Claude Code.
+Run tickets with Claude.
 
 ## AI first
 
-Ask AI to check this harness and its [skills](/skills-and-workflows/skills).
+Ask AI to check [skills](/skills-and-workflows/skills).
 
 ## Setup
 
@@ -12,7 +12,7 @@ Ask AI to check this harness and its [skills](/skills-and-workflows/skills).
 
 ## Enable it
 
-Enable only in `~/.bakers/machine.config.js`:
+Enable in `~/.bakers/machine.config.js`:
 
 ```js
 addons: ['@bakers-build/addon-claude'],
@@ -20,9 +20,9 @@ addons: ['@bakers-build/addon-claude'],
 
 Aliases: `opus` (reasoning), `sonnet` (well-specified changes), `fable` (demanding work), `opus-proxy` (request logs in ignored `assets-ai/`). Select `agent:fable`, or `agent:fable@working` for working only.
 
-Fable needs Claude Code **2.1.257+** and provider access. `--model fable` honors `ANTHROPIC_DEFAULT_FABLE_MODEL`; see [Fable documentation](https://code.claude.com/docs/en/model-config#work-with-fable).
+Fable needs Claude Code **2.1.257+** and access. `--model fable` honors `ANTHROPIC_DEFAULT_FABLE_MODEL`; see [Fable documentation](https://code.claude.com/docs/en/model-config#work-with-fable).
 
-One custom candidate:
+Custom candidate:
 
 ```js
 { use: '@bakers-build/addon-claude', with: { model: 'opus', effort: 'high' } }
@@ -59,11 +59,10 @@ Default: `system`. An isolating [runtime](/addons/runtime-docker) turns `sandbox
 { use: '@bakers-build/addon-claude', with: { permissions: 'sandbox', sandbox: { trusted_commands: ['git', 'docker'] } } }
 ```
 
-## Container runtime
+## Isolated runtimes
 
-The [Docker runtime](/addons/runtime-docker) gives Claude a per-run home with agent settings, never
-its login. Setup is pre-approved; plugins are read-only and transcripts stay on the host. Export
-`CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY`; allowlist mode keeps it in the proxy.
+[Docker](/addons/runtime-docker) gives Claude a private home without its login; plugins are read-only and transcripts stay on the host. Export
+`CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY`; allowlist mode keeps it in the proxy. [Bubblewrap](/addons/runtime-bwrap) can copy the login into its private home.
 
 ## Deny unused tools
 
@@ -77,11 +76,11 @@ Deny unused built-in tools in committed `.claude/settings.json`. [Project setup]
 - **Binds:** interactive sessions in the repository too.
 - **Lives in one file:** deny rules from all settings sources merge and `deny` wins; only deleting the line re-enables a tool.
 
-Keep `AskUserQuestion` for planning; measure with `agent:opus-proxy`.
+Keep `AskUserQuestion` for planning.
 
 ## Check it works
 
-`bakers agents` lists these aliases under harness `claude`. Claude-only default: `opus`.
+`bakers agents` lists these aliases under harness `claude`. Default: `opus`.
 
 ::: details Per CLI
 ```sh
