@@ -13,11 +13,13 @@ before/after screenshot points.
 
 ## Inspection
 
-For mode agent, run `playwright-cli` through the project's testing environment; sandboxed runs
-use the external runtime tool. Load saved auth before authenticated actions and verify identity;
-anonymous paths use anonymous sessions. Execute the path at the resolved absolute URL and capture
-specified screenshots. Record actions/selectors and expected versus observed views, including
-expected denial, in one result per check under the shared contracts above.
+For mode agent, perform browser inspection through
+[tool discovery and fallback](tools.md#choose-an-operation) using the project's testing
+environment; sandboxed runs use the external runtime tool.
+Load saved auth before authenticated actions and verify identity; anonymous paths use anonymous
+sessions. Execute the path at the resolved absolute URL and capture specified screenshots.
+Record actions/selectors and expected versus observed views, including expected denial, in one
+result per check under the shared contracts above.
 
 ## Artifacts
 

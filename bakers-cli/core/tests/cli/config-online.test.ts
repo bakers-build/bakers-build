@@ -22,6 +22,27 @@ let cwd: string;
 let server: Server;
 let requests: string[];
 let base: string;
+
+it('cancels an in-flight connection request and closes its socket', async () => {
+  const controller = new AbortController();
+  server.removeAllListeners('request');
+  const closed = new Promise<void>((resolve) => {
+    server.on('request', (_req, res) => {
+      res.on('close', resolve);
+      controller.abort(new Error('Cancelled connection'));
+    });
+  });
+  const context = await online.createBbConnectionContext(
+    {
+      site: { base_url: base, jsonapi_prefix: 'jsonapi' } as never,
+      plugins: [],
+    },
+    { auth: { apply: async (request) => request }, signal: controller.signal },
+  );
+  await expect(context.client.me()).rejects.toThrow();
+  await closed;
+});
+
 const id = '11111111-1111-4111-8111-111111111111';
 beforeEach(async () => {
   root = mkdtempSync(join(tmpdir(), 'bakers-config-online-'));
@@ -96,6 +117,7 @@ beforeEach(async () => {
   );
 });
 afterEach(async () => {
+  server.closeAllConnections();
   await new Promise<void>((resolve) => server.close(() => resolve()));
   rmSync(root, { recursive: true, force: true });
 });

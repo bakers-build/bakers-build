@@ -577,11 +577,13 @@ export class FakeBbRemote implements BbRemote {
   }
 
   async resolveTicketByIdentifier(
-    _project: string,
+    project: string | { uuid: string },
     identifier: string,
   ): Promise<{ uuid: string; title: string } | null> {
     const hit = Object.entries(this.tickets).find(
-      ([, t]) => t.identifier === identifier,
+      ([, t]) =>
+        t.identifier === identifier &&
+        (typeof project === 'string' || t.projectId === project.uuid),
     );
     return hit ? { uuid: hit[0], title: hit[1].title ?? '' } : null;
   }
