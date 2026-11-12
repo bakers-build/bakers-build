@@ -8,6 +8,7 @@ use Drupal\Core\Form\FormInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\bb_core\Workflow\TypeWorkflows;
 use Drupal\better_exposed_filters\Plugin\BetterExposedFiltersWidgetInterface;
 use Drupal\views\Plugin\views\filter\FilterPluginBase;
 use PHPUnit\Framework\Attributes\Group;
@@ -170,6 +171,37 @@ final class BbOptionPickerWidgetTest extends KernelTestBase {
   }
 
   /**
+   * The state facet offers one quick choice: every non-terminal ticket state.
+   *
+   * Terminality comes from the workflows, so a state no transition leaves
+   * (`done`, `cancelled`) is never among the values. A facet that does not
+   * ask for the choice gets none: the runs and board views reuse the widget
+   * for other state facets.
+   */
+  public function testStateFacetOffersOnlyOpenStates(): void {
+    $open = array_values(array_unique(array_merge(...array_values(TypeWorkflows::nonTerminalTicketStates()))));
+    $terminal = array_merge(...array_values(TypeWorkflows::terminalTicketStates()));
+    self::assertNotEmpty($open);
+    self::assertNotEmpty($terminal);
+
+    $form = $this->alter($this->selectElement(TRUE, []), ['open_states' => TRUE]);
+
+    self::assertSame(
+      [['label' => 'Only open states', 'values' => $open]],
+      $form['state']['#slots']['options']['#props']['quick_choices'],
+    );
+    self::assertSame([], array_intersect($open, $terminal), 'A terminal state is offered as open.');
+
+    $plain = $this->alter($this->selectElement(TRUE, []));
+    self::assertArrayNotHasKey('quick_choices', $plain['state']['#slots']['options']['#props']);
+
+    // Under the Closed position only terminal states are offered; a choice
+    // that matches no row would act as Clear, so it is not offered either.
+    $closed = $this->alter($this->selectElement(TRUE, [], $terminal), ['open_states' => TRUE]);
+    self::assertArrayNotHasKey('quick_choices', $closed['state']['#slots']['options']['#props']);
+  }
+
+  /**
    * Runs the widget over an exposed form holding one `state` element.
    *
    * @param array<string, mixed> $element
@@ -215,16 +247,18 @@ final class BbOptionPickerWidgetTest extends KernelTestBase {
    *   Whether the field holds several values at once.
    * @param array<int, string>|string $value
    *   The current exposed input.
+   * @param array<int, string> $options
+   *   The values the filter offers.
    *
    * @return array<string, mixed>
    *   The form element.
    */
-  private function selectElement(bool $multiple, array|string $value): array {
+  private function selectElement(bool $multiple, array|string $value, array $options = self::OPTIONS): array {
     return [
       '#type' => 'select',
       '#multiple' => $multiple,
       '#title' => 'State',
-      '#options' => array_combine(self::OPTIONS, self::OPTIONS),
+      '#options' => array_combine($options, $options),
       '#value' => $value,
     ];
   }

@@ -306,9 +306,9 @@ final class TicketsViewTableTest extends KernelTestBase {
   }
 
   /**
-   * A run count shows in the meta line only when the ticket has runs.
+   * The runs summary shows in the meta line, toned by the newest run.
    */
-  public function testTheRunCountShowsOnlyWhenThereAreRuns(): void {
+  public function testTheRunsSummaryShowsOnlyWhenThereAreRuns(): void {
     $conductor = $this->createEntity('bb_conductor', [
       'label' => 'count-conductor',
       'project_id' => $this->fixture('a', 'bb_project')->id(),
@@ -316,26 +316,27 @@ final class TicketsViewTableTest extends KernelTestBase {
     ]);
     $with = $this->ticket(['state' => 'working']);
     $without = $this->ticket(['state' => 'plan']);
-    $this->createEntity('bb_run', [
-      'ticket_id' => $with->id(),
-      'conductor_id' => $conductor->id(),
-      'owner_user_id' => $this->reader->id(),
-      'state' => 'claimed',
-    ]);
-    $this->createEntity('bb_run', [
-      'ticket_id' => $with->id(),
-      'conductor_id' => $conductor->id(),
-      'owner_user_id' => $this->reader->id(),
-      'state' => 'done',
-    ]);
+    $now = $this->container->get('datetime.time')->getRequestTime();
+    foreach (['done' => $now - 7200, 'failed' => $now - 3600] as $state => $created) {
+      $this->createEntity('bb_run', [
+        'ticket_id' => $with->id(),
+        'conductor_id' => $conductor->id(),
+        'owner_user_id' => $this->reader->id(),
+        'state' => $state,
+        'created' => $created,
+      ]);
+    }
     $html = $this->renderList($this->executed());
 
-    $with_meta = $this->regionOf($this->itemOf($html, $with), 'meta');
-    self::assertStringContainsString('2 runs', $with_meta);
-    self::assertStringContainsString('#run', $with_meta);
+    $summary = (new Crawler($this->regionOf($this->itemOf($html, $with), 'meta')))->filter('[data-cell="run_summary"]');
+    self::assertCount(1, $summary);
+    self::assertSame('2 runs · last failed', $summary->filter('[data-badge-label]')->text());
+    self::assertSame('1 hour ago', $summary->filter('time')->text());
+    self::assertStringContainsString('bg-state-unassigned-tint', $summary->html(), 'Failed is the danger role.');
     self::assertStringNotContainsString(
-      'run',
-      $this->regionOf($this->itemOf($html, $without), 'meta'),
+      'data-cell="run_summary"',
+      $this->itemOf($html, $without),
+      'A ticket without runs shows neither count nor state.',
     );
   }
 
@@ -552,6 +553,11 @@ final class TicketsViewTableTest extends KernelTestBase {
     $switcher = $this->container->get('account_switcher');
     $switcher->switchTo($this->reader);
     try {
+      // What ViewExecutable::render() does before the style renders: a field
+      // batch-loads the page's values here.
+      foreach ($view->field as $field) {
+        $field->preRender($view->result);
+      }
       $build = $view->style_plugin->render();
       return (string) $this->container->get('renderer')->renderInIsolation($build);
     }

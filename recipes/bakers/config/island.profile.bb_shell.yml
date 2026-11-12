@@ -172,6 +172,10 @@ placements:
             source_id: bb_page_header_description
             source: {  }
         slots:
+          subline:
+            sources:
+              - source_id: bb_page_header_description
+                source: {  }
           leading:
             sources:
               - source_id: bb_entity_page_header_mark

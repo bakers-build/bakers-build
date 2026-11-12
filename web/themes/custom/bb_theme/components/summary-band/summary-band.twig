@@ -18,19 +18,26 @@
    wraps every label. Slot order is unchanged: flow, summary, links, in the DOM
    and on screen.
 
+   IT IS COMPACT: about 150 px for a one-line summary at compact density. The
+   padding and the gaps between regions are small because the summary's own
+   entry brings its vertical padding, and on a wide screen the summary region
+   lays its parts out side by side, so an entry's link and action sit beside
+   it rather than under it. The flow's parts, a status badge and the chain,
+   share one wrapping row too.
+
    IT KNOWS NOTHING ABOUT WHAT IT SUMMARISES. The three questions are asked of a
    release, a run and a deployment in the same words; every region renders only
    when its slot is filled, so a caller with two of the three gets a band of
    two. #}
-<div{{ (attributes ?: create_attribute()).addClass(['summary-band', 'flex', 'flex-col', 'gap-5', 'p-5', 'bg-surface-2', 'border', 'border-border', 'rounded-[var(--radius-sm,7px)]']) }}>
+<div{{ (attributes ?: create_attribute()).addClass(['summary-band', 'flex', 'flex-col', 'gap-inline-xs', 'py-inline', 'px-group', 'xl:px-gutter', 'bg-surface-2', 'border', 'border-border', 'rounded-sm']) }}>
   {% if flow %}
     <div class="summary-band__header flex items-center justify-between gap-stack flex-wrap">
-      <div class="summary-band__flow min-w-0">{% block flow %}{{ flow }}{% endblock %}</div>
+      <div class="summary-band__flow min-w-0 flex flex-wrap items-center gap-inline">{% block flow %}{{ flow }}{% endblock %}</div>
     </div>
   {% endif %}
   {% if summary or links %}
-    <div class="summary-band__body flex flex-col gap-5">
-      {% if summary %}<div class="summary-band__summary min-w-0">{% block summary %}{{ summary }}{% endblock %}</div>{% endif %}
+    <div class="summary-band__body flex flex-col gap-inline-xs">
+      {% if summary %}<div class="summary-band__summary min-w-0 flex flex-col gap-inline-xs lg:flex-row lg:items-center lg:gap-group">{% block summary %}{{ summary }}{% endblock %}</div>{% endif %}
       {% if links %}<div class="summary-band__links min-w-0 flex flex-wrap items-start gap-x-[28px] gap-y-stack">{% block links %}{{ links }}{% endblock %}</div>{% endif %}
     </div>
   {% endif %}

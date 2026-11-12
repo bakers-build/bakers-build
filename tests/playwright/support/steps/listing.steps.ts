@@ -218,6 +218,52 @@ Then(
 );
 
 /**
+ * Reads every value row of a facet panel as "<label> <count>", in any order.
+ *
+ * The rows are the panel's offered values, so the expectation lists them all:
+ * a value missing from it must not be offered at all. Read as visible text,
+ * because the count is what a reader sees beside the label.
+ */
+Then('the {string} facet counts {string}', async ({ page }, facet: string, rows: string) => {
+  const target = active(page);
+  const trigger = facetTrigger(target, facet);
+  await expect(trigger, `No facet is called "${facet}"`).toBeAttached();
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true') {
+    await trigger.click();
+  }
+  const panelId = await trigger.getAttribute('aria-controls');
+  const values = target.locator(`#${panelId} li[role="option"][data-value]:not([data-value=""])`);
+  const expected = rows.split(',').map((row) => row.trim()).sort();
+  await expect
+    .poll(async () => (await values.allInnerTexts()).map((text) => text.replace(/\s+/g, ' ').trim()).sort())
+    .toEqual(expected);
+  await target.keyboard.press('Escape');
+});
+
+/**
+ * Presses one of a facet panel's footer choices, such as "Only open states".
+ *
+ * The choice only sets the panel's checkboxes; the exposed form's own
+ * auto-submit applies them, so the wait is on the address changing.
+ */
+When(
+  'I choose {string} in the {string} facet footer',
+  async ({ page }, label: string, facet: string) => {
+    const target = active(page);
+    await target.waitForFunction(() => !document.querySelector('.htmx-request'), null, { timeout: 20000 });
+    const trigger = facetTrigger(target, facet);
+    await expect(trigger, `No facet is called "${facet}"`).toBeAttached();
+    if ((await trigger.getAttribute('aria-expanded')) !== 'true') {
+      await trigger.click();
+    }
+    const panelId = await trigger.getAttribute('aria-controls');
+    const before = await target.evaluate(() => window.location.search);
+    await target.locator(`#${panelId}`).getByRole('button', { name: label, exact: true }).click();
+    await target.waitForFunction((previous) => window.location.search !== previous, before, { timeout: 20000 });
+  },
+);
+
+/**
  * Opens the current address in a second tab of the SAME context.
  *
  * That is what sharing a URL is: the address alone carries the filter set, with

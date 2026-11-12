@@ -390,7 +390,7 @@ Feature: The ticket list is the nav home
     And the active filters read "My open tickets"
     And the ticket listing lists exactly my open tickets
     And the rail marks "My work" as current
-    And the filters read "Closed, Group, Project, Template, State, Workflow, Created by, Priority, Labels" in order
+    And the filters read "Closed, Group, Project, Template, State, Parent, Workflow, Created by, Priority, Labels" in order
 
     # The current-user predicate already fixes the assignee, so an assignee
     # key left in an old link must neither narrow nor widen the rows.
@@ -554,3 +554,134 @@ Feature: The ticket list is the nav home
 
     When I search the ticket list for "nosuchrepo#2"
     Then the page says 'No repository matches "nosuchrepo". Known in your projects: bakers.'
+
+  # BAKERS-56 D11/D12: the State facet counts the tickets each state would list
+  # under the list's other filters, and its footer offers "Only open states",
+  # on My work, Projects › Tickets and Teams alike. Four tickets assigned to the
+  # reader in project BB, found by one title search, keep the counts exact on a
+  # shared site. The Done one is hidden by the default Open position, so it is
+  # not counted until the closed control shows it.
+  Scenario: State options show counts
+    Given I am signed in as a member of the "bakers" workspace
+    And tickets titled "State tally" are assigned to me in the states "working, working, review, done"
+    When I visit the ticket list of the "bakers" workspace
+    And I search the ticket list for "State tally"
+    Then the "State" facet counts "Working 2, Review 1"
+
+    When I visit the tickets tab of project "bakers.build Platform"
+    And I search the ticket list for "State tally"
+    Then the "State" facet counts "Working 2, Review 1"
+
+    When I visit the tickets tab of team "Design Crew"
+    And I search the ticket list for "State tally"
+    Then the "State" facet counts "Working 2, Review 1"
+    When I choose the "All" closed position
+    Then the "State" facet counts "Working 2, Review 1, Done 1"
+
+  Scenario: Only open states keeps only open tickets
+    Given I am signed in as a member of the "bakers" workspace
+    And tickets titled "State tally" are assigned to me in the states "working, working, review, done"
+    When I visit the ticket list of the "bakers" workspace
+    And I search the ticket list for "State tally"
+    And I choose the "All" closed position
+    Then the ticket listing lists exactly the tickets "State tally 1, State tally 2, State tally 3, State tally 4"
+    When I choose "Only open states" in the "State" facet footer
+    Then the address carries "state[]=working"
+    And the address does not carry "state[]=done"
+    And the ticket listing lists exactly the tickets "State tally 1, State tally 2, State tally 3"
+
+    When I visit the tickets tab of project "bakers.build Platform"
+    And I search the ticket list for "State tally"
+    And I choose the "All" closed position
+    And I choose "Only open states" in the "State" facet footer
+    Then the ticket listing lists exactly the tickets "State tally 1, State tally 2, State tally 3"
+
+    When I visit the tickets tab of team "Design Crew"
+    And I search the ticket list for "State tally"
+    And I choose the "All" closed position
+    And I choose "Only open states" in the "State" facet footer
+    Then the ticket listing lists exactly the tickets "State tally 1, State tally 2, State tally 3"
+
+  # BAKERS-56 D13/D14: the Parent facet narrows to one parent's direct
+  # sub-tickets and reads `?parent=<KEY>`; "Has sub-tickets" lists the parents
+  # themselves. The "Brood" family is open and assigned to the reader in
+  # project BB: Brood parent > Brood child 1 > Brood grandchild, and
+  # Brood parent > Brood child 2.
+  Scenario: Filter by one parent
+    Given I am signed in as a member of the "bakers" workspace
+    And the ticket family "Brood" is assigned to me
+    When I visit the ticket list of the "bakers" workspace
+    And I type the key of "Brood parent" in the "Parent" facet search
+    And I click "Brood parent" in the "Parent" facet with a pointer
+    Then the address carries the key of "Brood parent" as "parent"
+    And the active filters read the key and title of "Brood parent" as "Parent"
+    And the ticket listing lists exactly the tickets "Brood child 1, Brood child 2"
+
+    # A second pick replaces the first: the facet is single-select.
+    When I type "Brood child" in the "Parent" facet search
+    And I click "Brood child 1" in the "Parent" facet with a pointer
+    Then the address carries the key of "Brood child 1" as "parent"
+    And the address does not carry the key of "Brood parent"
+    And the ticket listing lists exactly the tickets "Brood grandchild"
+
+    When I remove the "Parent" chip
+    Then the document survived
+    And the address does not carry "parent="
+    And the active filters read "My open tickets"
+
+  Scenario: Open a parent-filtered list by its address
+    Given I am signed in as a member of the "bakers" workspace
+    And the ticket family "Brood" is assigned to me
+    When I visit the tickets tab of project "bakers.build Platform"
+    And I open this list for the parent "Brood parent"
+    Then the active filters read the key and title of "Brood parent" as "Parent"
+    And the "Parent" facet shows "Brood parent" as chosen
+    And the ticket listing lists exactly the tickets "Brood child 1, Brood child 2"
+
+    When I visit the tickets tab of team "Design Crew"
+    And I open this list for the parent "Brood parent"
+    Then the active filters read the key and title of "Brood parent" as "Parent"
+    And the ticket listing lists exactly the tickets "Brood child 1, Brood child 2"
+    When I remove the "Parent" chip
+    Then the address does not carry "parent="
+
+  # BAKERS-56 AC-7: the compact search-and-sort row hides the visible labels,
+  # so both controls must keep their accessible names on every ticket list.
+  Scenario: Search and sort keep their accessible names
+    Given I am signed in as a member of the "bakers" workspace
+    When I visit the ticket list of the "bakers" workspace
+    Then the search is named "Search" and the sort "Sort by"
+    When I visit the tickets tab of project "bakers.build Platform"
+    Then the search is named "Search" and the sort "Sort by"
+    When I visit the tickets tab of team "Design Crew"
+    Then the search is named "Search" and the sort "Sort by"
+
+  # BAKERS-56 AC-8/D16: every row on My work is the reader's own, so it shows no
+  # assignee; the conductor has its own column on the right. Projects › Tickets
+  # still shows whose each ticket is.
+  Scenario: My work shows the conductor and no assignee
+    Given I am signed in as a member of the "bakers" workspace
+    And the ticket "Conductor column fixture" held by the conductor "srv01-bakers" is assigned to me
+    When I visit the ticket list of the "bakers" workspace
+    Then every listed ticket has a conductor column and no assignee
+    When I search the ticket list for "Conductor column fixture"
+    Then the ticket "Conductor column fixture" shows "srv01-bakers" in its conductor column
+    When I visit the tickets tab of project "bakers.build Platform"
+    And I search the ticket list for "Conductor column fixture"
+    Then the ticket "Conductor column fixture" shows its assignee
+
+  Scenario: Has sub-tickets
+    Given I am signed in as a member of the "bakers" workspace
+    And the ticket family "Brood" is assigned to me
+    When I visit the ticket list of the "bakers" workspace
+    And I search the ticket list for "Brood"
+    And I switch on "Has sub-tickets"
+    Then the address carries "has_children=1"
+    And the ticket listing lists exactly the tickets "Brood parent, Brood child 1"
+    # The checkbox states itself; a chip would read "Has sub-tickets is 1".
+    And no active filter names "Has sub-tickets"
+
+    # It combines with the parent filter: of Brood parent's two children,
+    # only Brood child 1 has a sub-ticket of its own.
+    When I open this list for the parent "Brood parent"
+    Then the ticket listing lists exactly the tickets "Brood child 1"

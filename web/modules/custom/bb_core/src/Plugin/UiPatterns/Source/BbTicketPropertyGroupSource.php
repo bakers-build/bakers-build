@@ -68,7 +68,7 @@ final class BbTicketPropertyGroupSource extends SourcePluginBase implements Cont
     if ($ticket === NULL || !isset(TicketInspectorRows::GROUPS[$group])) {
       return [];
     }
-    $build = $this->inspectorRows->groupBlock($group, $this->inspectorRows->build($ticket));
+    $build = $this->inspectorRows->groupBlock($group, $this->inspectorRows->build($ticket), $ticket);
     CacheableMetadata::createFromRenderArray($build)
       ->addCacheableDependency($ticket)
       ->addCacheContexts(['user'])

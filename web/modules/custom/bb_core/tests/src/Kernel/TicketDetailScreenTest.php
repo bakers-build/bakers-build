@@ -5,24 +5,31 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Component\Serialization\Yaml;
-use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\ContentEntityForm;
+use Drupal\Core\Entity\ContentEntityInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Routing\RouteObjectInterface;
+use Drupal\Core\Url;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Controller\BbTicketDetailController;
+use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\Field\FieldWidget\PickerWidgetInterface;
+use Drupal\bb_core\Plugin\UiPatterns\Source\BbRunRowSource;
 use Drupal\bb_core\Plugin\UiPatterns\Source\EntityFormSource;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
+use Drupal\ui_patterns\PropTypeInterface;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -86,6 +93,11 @@ final class TicketDetailScreenTest extends KernelTestBase {
    * The canonical route the screen hangs off.
    */
   private const ROUTE = 'entity.bb_ticket.canonical';
+
+  /**
+   * The copy of a refused pick (spec, Copy).
+   */
+  private const REFUSAL = 'Someone changed this meanwhile. The page shows their value.';
 
   /**
    * The ambient workspace.
@@ -291,6 +303,84 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
+   * The description source carries the creator's age on the ticket only.
+   *
+   * The `subline` slot gets the age as a time element, and the component its
+   * max-age. A nested run URL shows no ticket caption, so it gets neither.
+   */
+  public function testHeaderDescriptionCarriesTheAgeOnTheTicketOnly(): void {
+    $owner = $this->createUser([], 'Ada Lovelace');
+    self::assertInstanceOf(UserInterface::class, $owner);
+    $this->ticket->set('owner_user_id', $owner->id())
+      ->set('created', $this->container->get('datetime.time')->getRequestTime() - 22 * 86400)
+      ->save();
+    $slot = $this->container->get('plugin.manager.ui_patterns_prop_type')->createInstance('slot');
+    self::assertInstanceOf(PropTypeInterface::class, $slot);
+
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $source = $this->descriptionSource();
+    $element = $source->getValue($slot);
+    $times = array_values(array_filter($element, static fn (mixed $part): bool => is_array($part) && ($part['#component'] ?? '') === 'bb_theme:time'));
+    self::assertCount(1, $times);
+    self::assertSame('3 weeks ago', $times[0]['#props']['label']);
+    $age = $times[0]['#cache']['max-age'];
+    self::assertGreaterThan(0, $age);
+    self::assertSame($age, $element['#cache']['max-age']);
+    self::assertSame($age, $source->alterComponent([])['#cache']['max-age']);
+
+    $run = $this->createRun('done', 'plan', 1770003600);
+    $this->tabsOn('entity.bb_run.canonical', ['bb_ticket' => $this->ticket, 'bb_run' => $run]);
+    $source = $this->descriptionSource();
+    self::assertSame([], $source->getValue($slot));
+    self::assertSame('', $source->getValue());
+    self::assertSame(Cache::PERMANENT, $source->alterComponent([])['#cache']['max-age']);
+  }
+
+  /**
+   * The page header shows a ticket's title and sub-line as text.
+   *
+   * A title and a project name are typed by people; a tag in them shows as
+   * typed, a quote stays inside the hover title and nothing in them runs.
+   */
+  public function testPageHeaderRendersTitleAndSublineAsText(): void {
+    $hostile = 'A <i>tag</i>, a "quote" and <img src=x onerror="window.__bbXss=1">';
+    $project = $this->ticket->getProject();
+    self::assertNotNull($project);
+    $project->set('name', $hostile)->save();
+    $this->ticket->set('title', $hostile)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $string = $this->container->get('plugin.manager.ui_patterns_prop_type')->createInstance('string');
+    self::assertInstanceOf(PropTypeInterface::class, $string);
+    $sources = $this->container->get('plugin.manager.ui_patterns_source');
+    $props = [];
+    foreach (['title' => 'bb_page_title', 'description' => 'bb_page_header_description'] as $prop => $id) {
+      $source = $sources->createInstance($id, []);
+      self::assertInstanceOf(SourcePluginBase::class, $source);
+      $props[$prop] = $source->getValue($string);
+    }
+    $this->container->get('theme_installer')->install(['bb_theme']);
+    $build = ['#type' => 'component', '#component' => 'bb_theme:page_header', '#props' => $props];
+    $header = new Crawler((string) $this->container->get('renderer')->renderInIsolation($build));
+
+    foreach (['h1', '#page-header-description'] as $selector) {
+      $node = $header->filter($selector);
+      self::assertCount(1, $node, $selector);
+      self::assertCount(0, $node->filter('i, img'), $selector);
+      self::assertStringContainsString($hostile, $node->text(), $selector);
+      self::assertStringContainsString($hostile, (string) $node->attr('title'), $selector);
+    }
+  }
+
+  /**
+   * A fresh page header description source, on the current route.
+   */
+  private function descriptionSource(): SourcePluginBase {
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance('bb_page_header_description', []);
+    self::assertInstanceOf(SourcePluginBase::class, $source);
+    return $source;
+  }
+
+  /**
    * The `#cache` of both header sources for the fixture ticket.
    *
    * @return array<string, array<string, mixed>>
@@ -404,6 +494,245 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $state->setUserInput($input);
     $this->expectException(AccessDeniedHttpException::class);
     $builder->buildEntity($form, $state);
+  }
+
+  /**
+   * A pick on a field someone changed since the page opened writes nothing.
+   *
+   * The field says so and shows their value; the answer's snapshot holds the
+   * stored values, so the next pick on that field saves.
+   */
+  public function testSameFieldConcurrentEditIsRefused(): void {
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    $this->ticket->set('priority', 2)->save();
+
+    [$form, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $opening);
+
+    self::assertSame(['priority' => self::REFUSAL], array_map('strval', $state->getErrors()));
+    self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
+    $cell = $this->pickerCell($form, 'priority');
+    self::assertSame(['Medium'], array_map('strval', $cell['value_labels']));
+    self::assertSame(self::REFUSAL, $cell['status']);
+    self::assertTrue($cell['invalid']);
+
+    $answer = [
+      'property_baseline' => $form['property_baseline']['#value'],
+      'property_signature' => $form['property_signature']['#value'],
+    ] + $opening;
+    [$saved, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $answer);
+
+    self::assertSame([], $state->getErrors());
+    self::assertEquals(1, $this->stored($this->ticket)->get('priority')->value);
+    self::assertSame('Saved', (string) $this->pickerCell($saved, 'priority')['status']);
+    self::assertFalse($this->pickerCell($saved, 'priority')['invalid']);
+    self::assertSame('', (string) $this->pickerCell($saved, 'labels')['status']);
+  }
+
+  /**
+   * Picks on different fields by two editors both persist.
+   */
+  public function testDifferentFieldConcurrentEditsBothPersist(): void {
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    $this->ticket->set('assignee_user_id', 1)->save();
+
+    [, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $opening);
+
+    self::assertSame([], $state->getErrors());
+    $stored = $this->stored($this->ticket);
+    self::assertEquals(1, $stored->get('priority')->value);
+    self::assertEquals(1, $stored->get('assignee_user_id')->target_id);
+  }
+
+  /**
+   * A form that already saved once refuses a field changed since that save.
+   */
+  public function testSameFieldEditAfterAnEarlierSaveIsRefused(): void {
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    [, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $opening);
+    self::assertSame([], $state->getErrors());
+    self::assertTrue($state->has('property_saved'), 'The baseline now lives in the cached form state.');
+    $this->ticket->set('priority', 2)->save();
+
+    [$form, $state] = $this->postForm($this->ticket, 'property', ['priority' => '3'] + $opening);
+
+    self::assertSame(['priority' => self::REFUSAL], array_map('strval', $state->getErrors()));
+    self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
+    self::assertSame(self::REFUSAL, $this->pickerCell($form, 'priority')['status']);
+  }
+
+  /**
+   * A pick of the value someone else just stored is not a conflict.
+   *
+   * The field holds the pick, so it says "Saved".
+   */
+  public function testPickOfTheStoredValueIsNotRefused(): void {
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    $this->ticket->set('priority', 2)->save();
+
+    [$form, $state] = $this->postForm($this->ticket, 'property', ['priority' => '2'] + $opening);
+
+    self::assertSame([], $state->getErrors());
+    self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
+    self::assertSame('Saved', (string) $this->pickerCell($form, 'priority')['status']);
+    self::assertFalse($this->pickerCell($form, 'priority')['invalid']);
+  }
+
+  /**
+   * A write landing between validation and save is refused at the field.
+   *
+   * No exception, nothing overwritten; the answer shows the stored value.
+   */
+  public function testLateConcurrentEditIsRefusedAtTheField(): void {
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $builder = $this->container->get('entity_type.manager')->getFormObject('bb_ticket', 'property');
+    $builder->setEntity($this->stored($this->ticket));
+    $state = new FormState();
+    $state->setFormObject($builder);
+    $form = $builder->buildForm([], $state);
+    $this->container->get('request_stack')->getCurrentRequest()->setMethod('POST');
+    $state->setRequestMethod('POST');
+    $state->setUserInput([
+      'form_build_id' => $form['#build_id'],
+      'property_baseline' => $form['property_baseline']['#default_value'],
+      'property_signature' => $form['property_signature']['#default_value'],
+    ]);
+    $state->setValue('priority', ['1']);
+    $builder->validateForm($form, $state);
+    self::assertSame([], $state->getErrors());
+    $state->setValidationComplete();
+
+    $this->ticket->set('priority', 2)->save();
+    $builder->submitForm($form, $state);
+    $builder->save($form, $state);
+
+    self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
+    self::assertTrue($state->isRebuilding());
+    $answer = $this->container->get('form_builder')->rebuildForm($builder->getFormId(), $state, $form);
+    $cell = $this->pickerCell($answer, 'priority');
+    self::assertSame(['Medium'], array_map('strval', $cell['value_labels']));
+    self::assertSame(self::REFUSAL, $cell['status']);
+    self::assertTrue($cell['invalid']);
+  }
+
+  /**
+   * An answer refused by the project rule still carries the stored snapshot.
+   */
+  public function testRelationRefusalCarriesTheStoredSnapshot(): void {
+    $closed = $this->ticket->createDuplicate()->set('state', 'done');
+    $closed->save();
+    $this->ticket->set('priority', 3)->save();
+    $this->tabsOn(self::ROUTE, ['bb_ticket' => $this->ticket]);
+    $opening = $this->openForm($this->ticket, 'property');
+    $this->ticket->set('priority', 2)->save();
+
+    $input = ['priority' => '3', 'parent_id' => (string) $closed->id()] + $opening;
+    [$form, $state] = $this->postForm($this->ticket, 'property', $input);
+
+    self::assertSame(['parent_id'], array_keys($state->getErrors()));
+    $snapshot = json_decode(base64_decode(strtr($form['property_baseline']['#value'], '-_', '+/')), TRUE);
+    self::assertEquals(2, $snapshot['priority'][0]['value']);
+  }
+
+  /**
+   * A detail card keeps its Save, and the last write still wins.
+   */
+  public function testDetailCardsKeepTheirSaveButton(): void {
+    $team = $this->container->get('entity_type.manager')->getStorage('bb_team')
+      ->create(['name' => 'Platform Crew', 'workspace_id' => $this->workspace->id()]);
+    self::assertInstanceOf(ContentEntityInterface::class, $team);
+    $team->save();
+    $this->tabsOn('entity.bb_team.canonical', ['bb_team' => $team]);
+    $opening = $this->openForm($team, 'identity');
+    $team->set('name', 'Renamed elsewhere')->save();
+
+    [$form, $state] = $this->postForm($team, 'identity', ['name' => [['value' => 'Platform Team']]] + $opening);
+
+    self::assertSame([], $state->getErrors());
+    self::assertSame('Platform Team', $this->stored($team)->label());
+    self::assertSame('Save', (string) $form['actions']['submit']['#value']);
+    self::assertNotContains('js-hide', $form['actions']['#attributes']['class'] ?? []);
+  }
+
+  /**
+   * Opens an entity form on GET, as the page does.
+   *
+   * @return array<string, string>
+   *   The hidden inputs the browser posts back.
+   */
+  private function openForm(EntityInterface $entity, string $operation): array {
+    $this->container->get('request_stack')->getCurrentRequest()->setMethod('GET');
+    $form = $this->container->get('entity.form_builder')->getForm($this->stored($entity), $operation);
+    // The rendered token is a placeholder the page replaces with this value.
+    $input = [
+      'form_id' => $form['#form_id'],
+      'form_token' => $this->container->get('csrf_token')->get($form['#token']),
+    ];
+    foreach (['form_build_id', 'property_baseline', 'property_signature'] as $name) {
+      $input[$name] = $form[$name]['#value'];
+    }
+    return $input;
+  }
+
+  /**
+   * Posts an entity form through the form builder, as the browser does.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The routed entity.
+   * @param string $operation
+   *   The form operation.
+   * @param array<string, mixed> $input
+   *   The posted input.
+   *
+   * @return array{0: array<string, mixed>, 1: \Drupal\Core\Form\FormStateInterface}
+   *   The answered form and its state.
+   */
+  private function postForm(EntityInterface $entity, string $operation, array $input): array {
+    $this->container->get('request_stack')->getCurrentRequest()->setMethod('POST');
+    $builder = $this->container->get('entity_type.manager')->getFormObject($entity->getEntityTypeId(), $operation);
+    $builder->setEntity($this->stored($entity));
+    $state = new FormState();
+    // A new request: core remembers a failed validation in a static flag.
+    $state->clearErrors();
+    $state->setUserInput($input);
+    $form = $this->container->get('form_builder')->buildForm($builder, $state);
+    return [$form, $state];
+  }
+
+  /**
+   * The entity as stored now.
+   */
+  private function stored(EntityInterface $entity): ContentEntityInterface {
+    $stored = $this->container->get('entity_type.manager')->getStorage($entity->getEntityTypeId())->loadUnchanged($entity->id());
+    self::assertInstanceOf(ContentEntityInterface::class, $stored);
+    return $stored;
+  }
+
+  /**
+   * The Details picker cell of one field in an answered property form.
+   *
+   * @param array<string, mixed> $form
+   *   The answered form.
+   * @param string $field
+   *   The field name.
+   *
+   * @return array<string, mixed>
+   *   The picker cell.
+   */
+  private function pickerCell(array $form, string $field): array {
+    foreach ($form['inspector']['#slots']['content']['#props']['items'] as $item) {
+      if (($item['cells']['value']['name'] ?? NULL) === $field) {
+        return $item['cells']['value'] + ['status' => NULL, 'invalid' => NULL];
+      }
+    }
+    self::fail(sprintf('The Details have no %s picker.', $field));
   }
 
   /**
@@ -732,6 +1061,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
       [
         'Stall' => 'badge',
         'Created by' => 'text',
+        'Runs' => 'badge',
         'Estimate' => 'text',
         'Spent' => 'text',
         'Branch' => 'mono',
@@ -1010,6 +1340,11 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $html = $this->renderScreen();
     self::assertStringContainsString('>Restart ticket<', $html);
     self::assertStringContainsString('run=' . $newest->uuid(), $html, 'Restart confirms cancelling the newest failed run.');
+    self::assertArrayNotHasKey('cancel', $this->rowItem($newest)['cells'], 'Its run row offers no Cancel run; Restart is in the footer.');
+    $zone = $this->container->get('bb_core.run_inspector_rows')->status($newest);
+    $status = (string) $this->container->get('renderer')->renderInIsolation($zone);
+    self::assertStringContainsString('failed', $status);
+    self::assertStringNotContainsString('Cancel run', $status, 'Its run page offers no Cancel run.');
 
     $state = $newest->get('state')->first();
     self::assertInstanceOf(StateItemInterface::class, $state);
@@ -1041,6 +1376,64 @@ final class TicketDetailScreenTest extends KernelTestBase {
     }
     self::assertNotEmpty($chips);
     self::assertTrue($rows_service->groupBlock('effort', $rows)['#props']['open'] ?? TRUE, 'Effort stays open when it has rows.');
+  }
+
+  /**
+   * Sub-tickets offer "Show in list →", the parent-filtered list with closed.
+   */
+  public function testShowInListLinksToTheParentFilteredList(): void {
+    $rows_service = $this->container->get('bb_core.ticket_inspector_rows');
+    $links = static function (array $block): array {
+      $found = [];
+      foreach ($block['#slots']['content']['#props']['items'] ?? [] as $item) {
+        foreach ($item['cells'] as $cell) {
+          if (($cell['kind'] ?? '') === 'link') {
+            $found[] = $cell;
+          }
+        }
+      }
+      return $found;
+    };
+
+    // A Referenced row alone fills the block, yet there is no link.
+    $this->ticket->set('referenced_tickets', [$this->ticket->id()]);
+    self::assertSame([], $links($rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket)), 'No sub-tickets, no link.');
+
+    $this->enrichTheTicket();
+    $block = $rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket);
+    $found = $links($block);
+    self::assertCount(1, $found);
+    self::assertSame('Show in list →', $found[0]['value']);
+    $expected = Url::fromRoute(
+      'view.tickets.project_tickets',
+      ['bb_project' => $this->ticket->getProjectId()],
+      ['query' => ['parent' => $this->ticket->getIdentifier(), 'closed' => 'all']],
+    )->toString();
+    self::assertSame($expected, $found[0]['url']);
+    self::assertStringContainsString('parent=' . $this->ticket->getIdentifier(), $found[0]['url']);
+    self::assertStringContainsString('closed=all', $found[0]['url']);
+
+    // A ticket without a project has no list to open.
+    $this->ticket->set('project_id', NULL);
+    self::assertSame([], $links($rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket)), 'No project, no link.');
+  }
+
+  /**
+   * A reader who opens none of the sub-tickets gets no link.
+   */
+  public function testShowInListNeedsOneReadableSubTicket(): void {
+    $this->enrichTheTicket();
+    $rows_service = $this->container->get('bb_core.ticket_inspector_rows');
+    $this->setUpCurrentUser(['uid' => 77]);
+    $block = $rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket);
+    $cells = [];
+    foreach ($block['#slots']['content']['#props']['items'] as $item) {
+      $cells = array_merge($cells, array_values($item['cells']));
+    }
+    $badges = array_filter($cells, static fn(array $cell): bool => ($cell['kind'] ?? '') === 'badge');
+    self::assertNotEmpty($badges);
+    self::assertSame([], array_filter($badges, static fn(array $cell): bool => isset($cell['url'])), 'The reader opens none of the related tickets.');
+    self::assertSame([], array_filter($cells, static fn(array $cell): bool => ($cell['kind'] ?? '') === 'link'), 'No readable sub-ticket, no link.');
   }
 
   /**
@@ -1094,9 +1487,9 @@ final class TicketDetailScreenTest extends KernelTestBase {
       'The control: with a description, the About zone is on the screen.',
     );
     self::assertSame(
-      2,
+      3,
       substr_count($before, 'data-zone-heading'),
-      'Two zones — About and the Properties block. Run history has no runs yet.',
+      'Three zones: About, Run history saying it has no runs yet, and the Properties block.',
     );
 
     $this->ticket->set('description', NULL);
@@ -1111,9 +1504,9 @@ final class TicketDetailScreenTest extends KernelTestBase {
       'The screen is the whole screen, not a fragment that survived.',
     );
     self::assertSame(
-      1,
+      2,
       substr_count($html, 'data-zone-heading'),
-      'No description, no About zone — only Properties keeps its heading.',
+      'No description, no About zone: Run history and Properties keep their headings.',
     );
     self::assertStringNotContainsString(
       'class="rich-text',
@@ -1169,6 +1562,36 @@ final class TicketDetailScreenTest extends KernelTestBase {
       $html,
       'And no heading is left standing over the zone they cannot see into.',
     );
+    self::assertCount(
+      0,
+      (new Crawler($html))->filterXPath('//li[.//*[@data-cell="label"][normalize-space(.)="Runs"]]'),
+      'Nor a Runs row saying "No runs yet" about runs this reader cannot see.',
+    );
+  }
+
+  /**
+   * A run administrator sees "No runs yet" on a ticket without runs.
+   *
+   * Only a reader who may view every run is told there are none: for anyone
+   * else a count of 0 visible runs is not that statement.
+   */
+  public function testRunAdministratorSeesNoRunsYetInBothPlaces(): void {
+    $administrator = $this->createUser(['administer bakers']);
+    self::assertInstanceOf(UserInterface::class, $administrator);
+    $this->setCurrentUser($administrator);
+
+    self::assertSame(['No runs yet', 'No runs yet'], $this->runsSummaries($this->renderScreen()));
+  }
+
+  /**
+   * The runs summary sits on the Run history heading row and in the Details.
+   */
+  public function testRunsSummaryAboveRunHistoryAndInDetails(): void {
+    $this->giveTheTicketItsRuns();
+    $this->container->get('cache.render')->deleteAll();
+    [$heading, $details] = $this->runsSummaries($this->renderScreen());
+    self::assertMatchesRegularExpression('/^3 runs · last running \d+ seconds? ago$/', $heading);
+    self::assertSame($heading, $details);
   }
 
   /**
@@ -1221,6 +1644,86 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $row = $this->runRow($done);
     $html = (string) $this->container->get('renderer')->renderInIsolation($row);
     self::assertStringNotContainsString('data-cell="cancel"', $html, 'A finished run offers none.');
+  }
+
+  /**
+   * The newest failed run is danger, says why and offers its three actions.
+   */
+  public function testFailedRunRowShowsReasonAndActions(): void {
+    $this->assignTheConductors();
+    $older = $this->createRun('failed', 'working', 1770000000);
+    $newest = $this->createRun('failed', 'working', 1770003600);
+    foreach ([$older, $newest] as $run) {
+      self::assertInstanceOf(BbRunInterface::class, $run);
+      $run->set('error_log_bytes', 42)->save();
+    }
+
+    $item = $this->rowItem($newest);
+    self::assertSame('critical', $item['accent']);
+    self::assertSame('critical', $item['cells']['state']['tone']);
+    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
+    self::assertSame(['Retry', 'Re-dispatch', 'Log'], $this->actionLabels($item));
+    self::assertStringContainsString('run_action=retry', $item['cells']['retry']['href']);
+    self::assertStringContainsString('run_action=redispatch', $item['cells']['redispatch']['hx']['get']);
+    self::assertTrue($item['cells']['log']['full_load'], 'The Log downloads as a whole document, outside the boost.');
+
+    $item = $this->rowItem($older);
+    self::assertSame('critical', $item['accent']);
+    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
+    self::assertSame(['Log'], $this->actionLabels($item), 'An older failed run offers its log only.');
+
+    $guest = $this->createUser(['view bb_ticket']);
+    self::assertInstanceOf(UserInterface::class, $guest);
+    $this->setCurrentUser($guest);
+    $item = $this->rowItem($newest);
+    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
+    self::assertSame(['Log'], $this->actionLabels($item), 'A guest sees the reason and no intervention.');
+  }
+
+  /**
+   * A failed run that cannot be retried names the ticket's stall instead.
+   */
+  public function testFrozenTicketsFailedRunNamesTheStall(): void {
+    $this->assignTheConductors();
+    $failed = $this->createRun('failed', 'working', 1770000000);
+    $this->ticket->setFrozen(TRUE)->save();
+
+    $item = $this->rowItem($failed);
+    self::assertSame([], $this->actionLabels($item));
+    self::assertSame('frozen', $item['cells']['stall']['label'] ?? NULL);
+  }
+
+  /**
+   * A claimed run explains its claim and an expired run its lapse.
+   */
+  public function testClaimedRunRowExplainsTheClaim(): void {
+    $now = $this->container->get('datetime.time')->getRequestTime();
+    $claimed = $this->createRun('claimed', 'working', $now - 120);
+    self::assertInstanceOf(BbRunInterface::class, $claimed);
+    $claimed->set('created', $now - 120)->set('claim_expires_at', $now + 600)->save();
+    // A label that HTML-escapes: the sentence must reach the page escaped once.
+    $conductor = $claimed->get('conductor_id')->entity;
+    self::assertInstanceOf(BbConductorInterface::class, $conductor);
+    $conductor->set('label', "O'Brien & Co")->save();
+
+    $item = $this->rowItem($claimed);
+    self::assertSame('attention', $item['accent']);
+    self::assertSame('attention', $item['cells']['state']['tone']);
+    self::assertStringStartsWith("Claimed by O'Brien & Co ", $item['detail']);
+    self::assertMatchesRegularExpression('/, not started yet\. The claim lapses in \d+ minutes; after that the run expires and the ticket can be claimed again\.$/', $item['detail']);
+    self::assertSame(['Cancel run'], $this->actionLabels($item));
+
+    $row = $this->runRow($claimed);
+    $html = (string) $this->container->get('renderer')->renderInIsolation($row);
+    self::assertStringContainsString('Claimed by O&#039;Brien &amp; Co ', $html);
+    self::assertStringNotContainsString('&amp;#039;', $html);
+    self::assertStringNotContainsString('&amp;amp;', $html);
+
+    $expired = $this->createRun('expired', 'working', $now - 3600);
+    self::assertSame(
+      'The claim lapsed before the run started. The ticket can be claimed again.',
+      $this->rowItem($expired)['detail'],
+    );
   }
 
   /**
@@ -1691,21 +2194,99 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * The markup BETWEEN the Run history heading and the inspector rail.
+   * The one `list` item the run row source builds for a run.
+   *
+   * @return array<string, mixed>
+   *   The item: accent, cells and detail.
+   */
+  private function rowItem(EntityInterface $run): array {
+    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
+      ->getDefinition('unknown')['schema'] ?? ['type' => 'array'];
+    $source = $this->container->get('plugin.manager.ui_patterns_source')
+      ->createInstance('bb_run_row', SourcePluginBase::buildConfiguration('items', $definition, ['source' => []], []));
+    self::assertInstanceOf(BbRunRowSource::class, $source);
+    $source->setContextValue('entity', $run);
+    $items = $source->getPropValue();
+    self::assertIsArray($items);
+    self::assertCount(1, $items);
+    return $items[0];
+  }
+
+  /**
+   * The labels of a row item's action cells, in order.
+   *
+   * @param array<string, mixed> $item
+   *   A run row item.
+   *
+   * @return array<int, string>
+   *   The action labels.
+   */
+  private function actionLabels(array $item): array {
+    $actions = array_filter($item['cells'], static fn (array $cell): bool => ($cell['kind'] ?? '') === 'action');
+    return array_values(array_map(static fn (array $cell): string => (string) $cell['label'], $actions));
+  }
+
+  /**
+   * Gives the ticket its conductor and a second one it may move to.
+   *
+   * Both belong to one owner who may take the work, so the second is a
+   * re-dispatch target. `createRun()` reuses the first by its conductor id.
+   */
+  private function assignTheConductors(): void {
+    $owner = $this->createUser(['administer bakers'], 'run-owner');
+    self::assertInstanceOf(UserInterface::class, $owner);
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
+    $ids = [];
+    foreach (['srv01-bakers', 'srv02-bakers'] as $name) {
+      $conductor = $storage->create([
+        'conductor_id' => $name,
+        'label' => $name,
+        'owner_user_id' => $owner->id(),
+        'status' => 'online',
+        'project_id' => $this->ticket->get('project_id')->target_id,
+        'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
+      ]);
+      $conductor->save();
+      $ids[] = $conductor->id();
+    }
+    $this->ticket->set('conductor_id', $ids[0])->save();
+  }
+
+  /**
+   * The markup BETWEEN the Run history list and the inspector rail.
    *
    * Sliced rather than searched whole, because the inspector rail is made of
    * the same `list` component with the same cell macro: an unsliced
    * value scan picks up the rail's branch and base-branch rows and an
    * unsliced badge scan picks up its provenance badge. Slicing is also what
    * makes the value ORDER meaningful — inside the zone it is the mapping's
-   * order, across the page it is the canvas's.
+   * order, across the page it is the canvas's. The slice starts at the list,
+   * after the heading row's runs summary badge.
    */
   private function runHistoryZone(string $html): string {
-    $start = strpos($html, 'Run history');
-    self::assertIsInt($start, 'The Run history heading renders.');
+    $heading = strpos($html, 'Run history');
+    self::assertIsInt($heading, 'The Run history heading renders.');
+    $start = strpos($html, 'data-component-id="bb_theme:list"', $heading);
+    self::assertIsInt($start, 'The Run history list renders.');
     $end = strpos($html, 'bb_theme:inspector', $start);
     self::assertIsInt($end, 'The inspector rail closes the zone.');
     return substr($html, $start, $end - $start);
+  }
+
+  /**
+   * The runs summary on the Run history heading row and in the Details row.
+   *
+   * @return array<int, string>
+   *   Each badge's label and time, as one sentence.
+   */
+  private function runsSummaries(string $html): array {
+    $crawler = new Crawler($html);
+    $sentence = static fn (Crawler $badge): string => trim($badge->filter('[data-badge-label]')->text() . ' ' . ($badge->filter('time')->count() ? $badge->filter('time')->text() : ''));
+    $heading = $crawler->filterXPath('//h2[@data-zone-heading][normalize-space(.)="Run history"]/../following-sibling::div[1]');
+    $details = $crawler->filterXPath('//li[.//*[@data-cell="label"][normalize-space(.)="Runs"]]//*[@data-cell="value"]');
+    self::assertCount(1, $heading, 'The Run history heading row carries one summary.');
+    self::assertCount(1, $details, 'The Details have one Runs row.');
+    return [$sentence($heading), $sentence($details)];
   }
 
   /**
