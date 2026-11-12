@@ -4,7 +4,7 @@ The script for the introduction video on the landing page. It introduces bakers.
 follows one ticket from a GitHub issue to `done`. You record screen and narration in one take
 from this file; the cut, the captions and the player are made from that recording afterwards.
 
-- Length of the final cut: about 200 seconds. The narration below is about 495 words.
+- Length of the final cut: about 200 seconds. The narration below is about 490 words.
 - Language: English. Say "bakers dot build".
 - Lines starting with `>` are the narration, word for word. Everything else is direction.
 
@@ -74,13 +74,13 @@ stay silent while you wait. Waiting is cut out later.
 
 ## Scenes
 
-### 1. Introduction (about 62 s)
+### 1. Introduction (about 59 s)
 
 On screen: the landing page hero. From "Here's the idea", scroll slowly to the line with its
 four stations.
 
-> Hi, I'm Christian. I love working with AI. I just didn't love sitting next to it all day.
-> We're ten people, and everyone had their own way of working with AI. Ten developers, ten workflows, and a lot of babysitting.
+> Hi, I'm Christian. I build software with a team of ten.
+> We all use AI, and everyone had their own way of doing it. Ten developers, ten workflows, and a lot of babysitting.
 > So we built our own tool, just for us, on top of OpenAI's Symphony spec. We called it Gaia.
 > One workflow for the whole team. Everyone runs several tickets in parallel. And we spend our time on how we build software, not on the building itself.
 > Soon we kept asking each other: "Is that ticket baked yet?" So Gaia got a new name.
