@@ -10,7 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { createBdd } from 'playwright-bdd';
 import type { Page } from '@playwright/test';
 import { test, expect } from '../../bdd.fixtures';
-import { php } from '../../support/drush';
+import { php, phpWithRetry } from '../../support/drush';
 
 const { Given, When, Then, After } = createBdd(test);
 
@@ -33,9 +33,11 @@ let issued: IssuedServiceAccount | undefined;
 let accessToken: string | undefined;
 let requestStatus = 0;
 
-function removeWorld(slug: string): void {
-  php(
+async function removeWorld(slug: string): Promise<void> {
+  // shortcut: retries MySQL 1412 in teardown; the concurrent cache_entity DDL is unidentified — find and serialize it if 1412 appears outside teardown.
+  await phpWithRetry(
     [
+      '$transaction = \\Drupal::database()->startTransaction(); try {',
       '$etm = \\Drupal::entityTypeManager();',
       `$w = current($etm->getStorage("bb_workspace")->loadByProperties(["slug" => "${slug}"]));`,
       'if ($w) {',
@@ -62,7 +64,9 @@ function removeWorld(slug: string): void {
       '$w->delete();',
       'if ($admin) { $etm->getStorage("user")->load($admin)?->delete(); }',
       `$etm->getStorage("user")->load(current($etm->getStorage("user")->getQuery()->accessCheck(FALSE)->condition("name", "${slug}-member")->execute()) ?: 0)?->delete(); }`,
+      '} catch (\\Throwable $error) { $transaction->rollBack(); throw $error; }',
     ].join(' '),
+    ['1412 Table definition has changed'],
   );
 }
 
@@ -72,7 +76,7 @@ After({ tags: '@feature:service-accounts' }, async () => {
   world = undefined;
   issued = undefined;
   accessToken = undefined;
-  removeWorld(slug);
+  await removeWorld(slug);
 });
 
 Given('I lead a disposable service-accounts workspace', async () => {

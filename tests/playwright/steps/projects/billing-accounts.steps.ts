@@ -6,6 +6,7 @@ import { Given, When, Then } from '../../bdd.fixtures';
 import { expect, type Locator, type Page } from '@playwright/test';
 import { php, phpUnderLock } from '../../support/drush';
 import { safe } from '../../support/listing';
+import { openInDialog } from '../../support/dialog';
 import { CONTENT_ISLAND, PAGE_HEADER_ISLAND, markDocument } from '../../support/shell';
 
 const routeStatus = new WeakMap<object, { status: number; location: string }>();
@@ -113,7 +114,7 @@ Then('the billing account {string} offers Make default and Archive', async ({ pa
 
 When('I create the billing account {string} in the dialog', async ({ page }, name: string) => {
   // The page header's action, top right.
-  await page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: 'New billing account', exact: true }).click();
+  await openInDialog(page, page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: 'New billing account', exact: true }));
   const dialog = page.locator('dialog[open]');
   await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
   await page.getByRole('button', { name: 'Create billing account', exact: true }).click();
@@ -122,7 +123,7 @@ When('I create the billing account {string} in the dialog', async ({ page }, nam
 });
 
 When('I create the billing account {string} with external ID {string} in the dialog', async ({ page }, name: string, externalId: string) => {
-  await page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: 'New billing account', exact: true }).click();
+  await openInDialog(page, page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: 'New billing account', exact: true }));
   const dialog = page.locator('dialog[open]');
   await dialog.getByRole('textbox', { name: 'Name', exact: true }).fill(name);
   await dialog.getByRole('textbox', { name: 'External ID', exact: true }).fill(externalId);
@@ -132,7 +133,7 @@ When('I create the billing account {string} with external ID {string} in the dia
 });
 
 When('I edit the billing account {string} to external ID {string}', async ({ page }, name: string, externalId: string) => {
-  await accountRow(page, name).getByRole('link', { name: 'Edit', exact: true }).click();
+  await openInDialog(page, accountRow(page, name).getByRole('link', { name: 'Edit', exact: true }));
   const dialog = page.locator('dialog[open]');
   await dialog.getByRole('textbox', { name: 'External ID', exact: true }).fill(externalId);
   await page.getByRole('button', { name: 'Save', exact: true }).click();
@@ -158,12 +159,12 @@ function labels(list: string): string[] {
 }
 
 When('I open the new billing account dialog', async ({ page }) => {
-  await page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: 'New billing account', exact: true }).click();
+  await openInDialog(page, page.locator(PAGE_HEADER_ISLAND).getByRole('link', { name: 'New billing account', exact: true }));
   await expect(page.locator(DIALOG)).toBeVisible();
 });
 
 When('I open the edit dialog of the billing account {string}', async ({ page }, name: string) => {
-  await accountRow(page, name).getByRole('link', { name: 'Edit', exact: true }).click();
+  await openInDialog(page, accountRow(page, name).getByRole('link', { name: 'Edit', exact: true }));
   await expect(page.locator(DIALOG)).toBeVisible();
 });
 
