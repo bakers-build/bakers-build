@@ -202,3 +202,7 @@ Status after the build:
 4. **Push from the host** — no code needed: `forge_push` runs in the conductor with the forge
    credential, and the run holds none.
 5. **`runtime-sbx`** — evaluated in section 6; not adopted.
+6. **Host tools stay outside the boundary** — decided: conductor tools and project hooks that run
+   worktree files on the host (`provision_up`, `ddev_start`, `ddev_exec`, `before_run`,
+   `after_run`) execute what the run may have edited. This is documented as a limit. Gating
+   them under an isolating runtime is a follow-up.

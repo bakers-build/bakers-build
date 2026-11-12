@@ -11,14 +11,12 @@ paths. Machine scope only; add it to `~/.bakers/machine.config.js`:
 
 ## Before the first run
 
-- The agent must support a container runtime. [Claude](/addons/claude#container-runtime) does. A run
-  of an agent that does not refuses to start.
-- A container cannot use your harness login. Export the credential the agent names for the
-  conductor; for Claude that is `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or
-  `ANTHROPIC_API_KEY`. Without one, runs refuse to start.
-- The first run of an agent builds `bakers-runtime:<addon version>-<hash>-<install hash>` from the
-  shipped `image/` plus the agent's own install command. A changed image file or install rebuilds
-  it. `with.image` replaces it for every agent.
+- The agent must support a container runtime; [Claude](/addons/claude#container-runtime) does.
+  Other agents refuse to start.
+- A container cannot use your harness login. Export the agent's credential for the conductor; for
+  Claude `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or `ANTHROPIC_API_KEY`.
+- An agent's first run builds `bakers-runtime:<addon version>-<hash>-<install hash>` from the
+  shipped `image/` plus the agent's install command. `with.image` replaces it.
 
 ## Options
 
@@ -42,6 +40,9 @@ Container `bb-run-<run uuid>`, under your uid. Mounts, and nothing else of your 
 No `~/.ssh`, `~/.bakers`, Docker socket or harness login (`.credentials.json`). Secrets enter as `-e KEY`, never in
 the command line. The harness sandbox is off. Pushes go through `forge_push` in the conductor. The
 container and run home are removed after the run.
+
+**Not isolated:** conductor tools and project hooks that run worktree files on the host
+(`provision_up`, `ddev_start`, `ddev_exec`, `before_run`, `after_run`); the run can edit them.
 
 ## Allowlist mode
 
