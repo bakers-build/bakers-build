@@ -6,6 +6,7 @@ Read in order at the consuming step; skip unmet conditions.
 
 always: read-ticket.md, tools.md, qualification.md
 if ticket read fails: read-ticket-troubleshooting.md
+if needed comments missing: comment-context.md
 always: prior-art-search.md
 if paginated lookups or agent overrides need resolution: tools-lookup.md
 always: prior-art-build.md, forge.md
@@ -17,7 +18,7 @@ if ticket has an origin: origin-status.md
 
 ## read
 
-Frame context is complete; recipe waits for classification.
+Frame context is complete; qualification makes no comment call. Recipe waits for classification.
 
 ## provision
 

@@ -6,6 +6,7 @@ Read in order at the consuming step; skip unmet conditions.
 
 always: read-ticket.md, tools.md, plan.md, entry-guard.md
 if ticket read fails: read-ticket-troubleshooting.md
+if needed comments missing: comment-context.md
 if qualification entry guard fails: return-to-qualification.md
 if reproduction needs runtime: results.md, verify.md, tools-conductor.md
 always: boundaries.md
@@ -17,7 +18,8 @@ if ticket has an origin: origin-status.md
 
 ## read
 
-Apply [entry guard](entry-guard.md).
+Make the plan comment calls under [read ticket](read-ticket.md), then apply
+[entry guard](entry-guard.md).
 
 ## provision
 

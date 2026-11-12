@@ -6,6 +6,7 @@ Step order; skip unmet conditions.
 
 always: read-ticket.md, tools.md, review.md
 if read fails: read-ticket-troubleshooting.md
+if needed comments missing: comment-context.md
 if runtime needed: tools-conductor.md
 always: boundaries.md, ../../bb-verdict/SKILL.md
 if executing checks: verify.md

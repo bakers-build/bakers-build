@@ -6,6 +6,7 @@ Read in order at the consuming step; skip unmet conditions.
 
 always: read-ticket.md, tools.md, working.md, entry-guard.md
 if ticket read fails: read-ticket-troubleshooting.md
+if needed comments missing: comment-context.md
 if qualification entry guard fails: return-to-qualification.md
 if acceptance is absent for confirmed scope: ticket-writes.md, acceptance.md
 if a check needs a running environment: results.md, verify.md, tools-conductor.md
@@ -26,7 +27,8 @@ if ticket has an origin: origin-status.md
 
 ## read
 
-Apply [entry guard](entry-guard.md).
+Make the working comment calls under [read ticket](read-ticket.md), then apply
+[entry guard](entry-guard.md).
 Resume confirmed scope/test plan; publish [acceptance](acceptance.md) if absent for this scope.
 
 ## provision
