@@ -39,5 +39,26 @@
     "designbook-figma@designbook": true,
     "ponytail@ponytail": true,
     "superpowers@superpowers-dev": true
+  },
+  "permissions": {
+    "deny": [
+      "Artifact",
+      "ArtifactComments",
+      "ArtifactData",
+      "Workflow",
+      "ScheduleWakeup",
+      "SendFeedback",
+      "SendMessage",
+      "RemoteTrigger",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "EnterWorktree",
+      "ExitWorktree",
+      "ReportFindings",
+      "DesignSync",
+      "ShareOnboardingGuide",
+      "PushNotification"
+    ]
   }
 }

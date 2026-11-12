@@ -39,6 +39,8 @@ ROOT="${CONTRACT_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 # every `working` run applies. Same three properties, same region shape, different home.
 IMPL_ROOT="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/working.md"
 IMPL="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/delivery.md"
+FALLBACK="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/merge-fallback.md"
+FORGE="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/forge.md"
 MERGE="$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/merge.md"
 # `WORKFLOW.md` › `## Standards` declares itself the SOURCE of the merge-request convention, so it
 # is part of this contract even though the two skills are what an agent executes. A convention whose
@@ -76,7 +78,7 @@ hasre() { printf '%s' "$1" | grep -E -- "$2" >/dev/null; }
 # renumbering the list or re-wrapping the prose leaves the region intact.
 impl_mr_region() {
   { awk '
-      /^Commit the scoped change/ { f = 1 }
+      /^Commit scoped work/ { f = 1 }
       f && /^## / { exit }
       f { print }
     ' "$IMPL" | flat; } 2>/dev/null || true
@@ -90,7 +92,7 @@ merge_section() {
       /^## Merge$/ { f = 1; next }
       f && /^## / { exit }
       f { print }
-    ' "$MERGE" | flat; } 2>/dev/null || true
+    ' "$FALLBACK" | flat; } 2>/dev/null || true
 }
 
 # The `## Gates` section keeps four numbered behavioral gates; emphasis is presentation.
@@ -109,7 +111,7 @@ check 'the bb-workflow delivery instructions exist' test -f "$IMPL"
 check 'the merge reference exists' test -f "$MERGE"
 check 'WORKFLOW.md exists' test -f "$WF"
 
-IMPL_MR="$(impl_mr_region)"
+IMPL_MR="$(impl_mr_region) $(flat < "$(dirname "$IMPL")/forge-fallback.md") $(flat < "$FALLBACK")"
 MERGE_MR="$(merge_section)"
 MERGE_GATES="$(gates_section | tr -d '*')"
 MERGE_GATES_FLAT="$(printf '%s' "$MERGE_GATES" | flat)"
@@ -130,13 +132,13 @@ check 'the ## Merge section of merge-mr is non-empty' test -n "$MERGE_MR"
 # rather than reworded: the property is asserted from prose this contract's ticket can keep true.
 
 check 'AC-1 the MR region names base_branch as the target property' \
-  hasre "$IMPL_MR" '\*\*target\*\* = the ticket.{0,3}s `base_branch`'
+  hasre "$IMPL_MR" 'target is target_branch \(else base_branch\)'
 check 'AC-1 the MR region names squash commits as enabled' \
-  hasre "$IMPL_MR" '\*\*squash commits\*\* = enabled'
+  hasre "$IMPL_MR" 'Feature branches squash into one commit'
 check 'AC-1 the MR region names delete source branch as enabled' \
-  hasre "$IMPL_MR" '\*\*delete source branch\*\* = enabled'
+  hasre "$IMPL_MR" '[Dd]elete only the merged ticket.s own short-lived work branch'
 check 'AC-1 the MR region says the properties are set on the MR itself, not left to a default' \
-  hasi "$IMPL_MR" 'never left to a client default'
+  hasi "$IMPL_MR" 'omission inherits stored MR/project values.'
 
 # --- AC 2 — that instruction names no client: the forge tools carry it ---------------------------
 #
@@ -146,9 +148,9 @@ check 'AC-1 the MR region says the properties are set on the MR itself, not left
 # says the properties travel explicitly with the merge.
 
 check 'AC-2 the MR region routes push and MR through the forge operations' \
-  hasi "$IMPL_MR" 'create or update its MR through the forge operations'
-check 'AC-2 the MR region says the tools send method and deletion explicitly at the merge' \
-  hasi "$IMPL_MR" 'send method and deletion explicitly at the merge'
+  hasi "$IMPL_MR" 'create/update MR'
+check 'AC-2 the MR region requires explicit method and source deletion' \
+  hasi "$IMPL_MR" 'decision explicitly on this merge call'
 
 # --- AC 3 — merge-mr states both as properties of the MERGE CALL ---------------------------------
 
@@ -172,7 +174,7 @@ check 'AC-3 the ## Merge section says an omitted property inherits the MR stored
 check 'AC-3 the ## Merge section says the negative is sent explicitly, not omitted' \
   has "$MERGE_MR" 'For retained sources, send the deletion negative explicitly.'
 check 'AC-3 the ## Merge section says forge_merge guarantees its properties' \
-  has "$MERGE_MR" '`forge_merge` guarantees every property in this section'
+  has "$(flat < "$FORGE")" 'Tools enforce ownership, target, Conventional Commits title, checks, project merge method'
 
 # --- AC 3 — unchanged-guards: this ticket adds no gate and touches no trailer --------------------
 #
@@ -182,7 +184,7 @@ check 'AC-3 the ## Merge section says forge_merge guarantees its properties' \
 
 check 'AC-3 unchanged: exactly four numbered gates survive' four_gates
 check 'AC-3 unchanged: explicit merge authorization is a caller input' \
-  has "$MERGE_INPUT" 'Explicit merge authorization, obtained or reused by the caller.'
+  has "$MERGE_INPUT" 'explicit merge authorization, obtained or reused by the caller.'
 check 'AC-3 unchanged: gates block done' \
   grep -qF '## Gates (each a hard block on `done`)' "$MERGE"
 check 'AC-3 unchanged: gate 1 MR link present' \
@@ -194,7 +196,7 @@ check 'AC-3 unchanged: incomplete or failed required pipeline jobs block' \
 check 'AC-3 unchanged: gate 3 No merge conflict' \
   hasre "$MERGE_GATES" '^3\. No merge conflict; MR mergeable against its target\.'
 check 'AC-3 unchanged: gate 4 Merge call succeeds' \
-  hasre "$MERGE_GATES" '^4\. Merge call succeeds, followed by verified results below\.'
+  hasre "$MERGE_GATES" '^4\. Merge succeeds;'
 check 'AC-3 unchanged: the Merged-by: bakers.build trailer is still written' \
   has "$MERGE_MR" 'Merged-by: bakers.build'
 # What AC 3 requires is that the signature trailer survives on the last line — not that it spells the
@@ -205,7 +207,7 @@ check 'AC-3 unchanged: the Merged-by: bakers.build trailer is still written' \
 check 'AC-3 unchanged: the signature trailer is still anchored on the last line' \
   hasre "$MERGE_MR" 'final-line `ref:[^`]+` in the squash body'
 check 'AC-3 unchanged: the merge result is still verified' \
-  has "$MERGE_MR" 'Verify that the MR reports merged and its target advanced.'
+  has "$MERGE_GATES" 'verify the MR reports merged and its target advanced.'
 
 # --- AC 8 — delete-source-branch never appears without its guard ---------------------------------
 #
@@ -217,17 +219,17 @@ check 'AC-3 unchanged: the merge result is still verified' \
 # but the branch must survive its own merge to be promoted.
 
 check 'AC-8 bb-workflow ties the deletion to the ticket own branch_name' \
-  hasre "$IMPL_MR" 'the source is this ticket.{0,3}s own `branch_name`'
-check 'AC-8 bb-workflow calls the deletion the only conditional property' \
-  hasi "$IMPL_MR" 'the only conditional property'
-check 'AC-8 bb-workflow names a long-lived or shared branch as failing the condition' \
-  hasi "$IMPL_MR" 'long-lived or shared branch'
+  hasre "$IMPL_MR" '[Dd]elete only the merged ticket.s own short-lived work branch'
+check 'AC-8 bb-workflow makes deletion conditional' \
+  hasi "$IMPL_MR" 'delete only'
+check 'AC-8 bb-workflow retains shared and environment branches' \
+  hasi "$IMPL_MR" 'shared and environment branches'
 check 'AC-8 bb-workflow names a reused release branch as failing the condition' \
-  hasi "$IMPL_MR" 'release branch a later promote reuses'
+  hasi "$IMPL_MR" 'release branches a later promote reuses'
 check 'AC-8 bb-workflow names a branch other open MRs target as failing the condition' \
-  hasi "$IMPL_MR" 'other open MRs still target as their base'
+  hasi "$IMPL_MR" 'open MRs target as their base'
 check 'AC-8 bb-workflow says why it is nevertheless always set here' \
-  hasi "$IMPL_MR" "from the ticket's own branch"
+  hasi "$IMPL_MR" "ticket's own short-lived work branch"
 
 check 'AC-8 merge-mr states the positive condition for deleting the source' \
   has "$MERGE_MR" "Delete only the merged ticket's own short-lived work branch."
@@ -246,7 +248,7 @@ check 'AC-8 merge-mr sends the deletion negative on a source that fails the cond
 check 'AC-8 merge-mr blocks forced deletion until the branch owner clears it' \
   has "$MERGE_MR" 'A stored `force_remove_source_branch: true` overrides this negative: block until the branch owner decides to clear it before merge.'
 check 'AC-8 merge-mr retains squash when source deletion is disabled' \
-  has "$MERGE_MR" 'clear it before merge. Keep squash enabled.'
+  has "$MERGE_MR" 'clear it before merge. For feature work keep squash enabled.'
 
 # --- Consistency — the stated REASONS hold, not only the properties ------------------------------
 #
@@ -268,9 +270,9 @@ check 'AC-8 merge-mr retains squash when source deletion is disabled' \
 # corrected direction is asserted, over this ticket's own block and nowhere else.
 
 check 'consistency: the MR region gives a squash reason that holds — the branch lands as one commit' \
-  hasi "$IMPL_MR" 'as one commit'
+  hasi "$IMPL_MR" 'into one commit'
 check 'consistency: the MR region says the squash is what discards the per-commit trailers' \
-  hasi "$IMPL_MR" 'Squash discards'
+  hasi "$MERGE_MR" 'Squash discards individual commit trailers'
 
 # --- The stated source agrees with the two skills ------------------------------------------------
 #

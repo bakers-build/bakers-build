@@ -18,7 +18,7 @@ Enable only in `~/.bakers/machine.config.js`:
 addons: ['@bakers-build/addon-claude'],
 ```
 
-Aliases: `opus` (reasoning), `sonnet` (well-specified changes), `fable` (demanding work). Select `agent:fable`, or `agent:fable@working` for working only.
+Aliases: `opus` (reasoning), `sonnet` (well-specified changes), `fable` (demanding work), `opus-proxy` (request logs in ignored `assets-ai/`). Select `agent:fable`, or `agent:fable@working` for working only.
 
 Fable needs Claude Code **2.1.257+** and provider access. `--model fable` honors `ANTHROPIC_DEFAULT_FABLE_MODEL`; see [Fable documentation](https://code.claude.com/docs/en/model-config#work-with-fable).
 
@@ -77,7 +77,7 @@ Deny unused built-in tools in committed `.claude/settings.json`. [Project setup]
 - **Binds:** interactive sessions in the repository too.
 - **Lives in one file:** deny rules from all settings sources merge and `deny` wins; only deleting the line re-enables a tool.
 
-Keep `AskUserQuestion` for planning. Measure with `agent:opus-proxy`, which logs every model request.
+Keep `AskUserQuestion` for planning; measure with `agent:opus-proxy`.
 
 ## Check it works
 
@@ -95,6 +95,7 @@ bakers agents
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
+- `proxy: true` only logs the requests; `measure` wins when both are set.
 - Listed in a project config, an agent addon is ignored with a warning.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).

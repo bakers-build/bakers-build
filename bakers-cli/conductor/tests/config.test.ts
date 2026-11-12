@@ -333,9 +333,11 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
     'State: {state}',
     // The run reads through bakers_ticket_read like every skill step.
     'dropsh --format md read',
+    // The default read returns the newest comments, not all of them.
+    'and all comments',
   ];
   const NEUTRAL_CONTRACT = [
-    'Read the ticket and all comments',
+    'Read the ticket with the bakers tool bakers_ticket_read',
     'bakers_ticket_read',
     `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
     'load it through your tool search',
@@ -1500,6 +1502,7 @@ export default {
       'opus',
       'sonnet',
       'fable',
+      'opus-proxy',
     ]);
     expect(report.agents[2]).toMatchObject({
       alias: 'fable',
@@ -1507,7 +1510,12 @@ export default {
       model: 'fable',
       description: expect.stringMatching(/\S/),
     });
-    expect(report.enabled_agents).toEqual(['opus', 'sonnet', 'fable']);
+    expect(report.enabled_agents).toEqual([
+      'opus',
+      'sonnet',
+      'fable',
+      'opus-proxy',
+    ]);
     expect(report.default_agent).toBe('opus');
     expect(report.routes).toEqual({ default: { '*': 'opus' } });
   });
@@ -1521,11 +1529,23 @@ export default {
       expected: 'fable',
     },
     { labels: ['agent:fable@working'], state: 'review', expected: 'opus' },
+    {
+      labels: ['agent:opus-proxy'],
+      state: 'working',
+      expected: 'opus-proxy',
+      model: 'opus',
+    },
     { labels: [], state: 'working', expected: 'opus' },
-  ])('resolves Claude labels $labels in $state to $expected', async ({
+  ] as {
+    labels: string[];
+    state: string;
+    expected: string;
+    model?: string;
+  }[])('resolves Claude labels $labels in $state to $expected', async ({
     labels,
     state,
     expected,
+    model,
   }) => {
     writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
     const cfg = await loadConductorConfig(writeConfig(slotConfig));
@@ -1547,11 +1567,14 @@ export default {
     expect(selected).toMatchObject({
       alias: expected,
       id: 'claude',
-      model: expected,
+      model: model ?? expected,
     });
     expect(warn).not.toHaveBeenCalled();
     const command = selected.agent.launchCommand('task');
-    expect(command).toContain(`--model '${expected}'`);
+    expect(command).toContain(`--model '${model ?? expected}'`);
+    expect(command.includes(' --capture claude ')).toBe(
+      expected === 'opus-proxy',
+    );
     expect(command.match(/--model/g)).toHaveLength(1);
   });
 
@@ -1586,7 +1609,7 @@ export default {
 
   it.each([
     "enabled: ['opus', 'sonnet']",
-    "disabled: ['fable']",
+    "disabled: ['fable', 'opus-proxy']",
   ])('honors machine filtering of Fable via %s', async (policy) => {
     writeMachine(`export default {
       addons: ['@bakers-build/addon-claude'], agents: { ${policy} },

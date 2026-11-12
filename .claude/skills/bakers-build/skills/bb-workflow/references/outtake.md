@@ -1,62 +1,32 @@
 # Outtake
 
-Read at every state's `outtake`. The reader switches between tickets: explain what you did, what
-worked, what failed, then make manual review immediately usable. Success stays brief; problems get
-enough detail to act.
+Read state section: [qualification](outtake/qualification.md), [plan](outtake/plan.md),
+[working](outtake/working.md), [review](outtake/review.md).
+Render English handoff/[results](results.md) once; print/publish identical summary before questions. Supplied facts only; name missing values. State owns writes.
 
-## Input contract
-
-Render from the state's typed handoff and its [result records](results.md). **Show only what the
-handoff contains**: a fact, link or value it lacks is absent or named as not recorded, never
-inferred. The rendered text has two destinations with identical content: the caller prints it in
-full in the terminal and publishes it as the ticket's `summary`. Any confirmation or destination
-question comes after the printed outtake; a run that stops without a question prints it too.
-Render once per state, in English; no separate recap in another format. The outtake writes no data.
-
-## Skeleton
-
-Use these headings in order and omit empty optional sections. The state section comes from
-[qualification](outtake/qualification.md), [plan](outtake/plan.md), [working](outtake/working.md) or
-[review](outtake/review.md), and says what fills each heading.
+Headings in order; omit empty optional sections:
 
 ### 🎯 Outcome
 
-Name the ticket and explain what you did and why in one or two sentences. Distinguish delivered
-work from proposals. A state's lead section follows directly.
+Ticket, change and reason in 1–2 sentences; distinguish delivery/proposal. State lead follows.
 
 ### ✅ Success
 
-Optional. Report executed or reused results as such; created tests and checks not run are not
-passes.
+Executed/reused results; unrun is no pass.
 
 ### ⚠️ Problems
 
-For failed, blocked or unresolved work, give AC IDs where applicable, expected versus observed
-behavior, impact, evidence and required repair/decision. State unknown causes honestly. Distinguish
-proposed fixes from completed ones. Include criterion rewrites when supplied.
+Failed/blocked/unresolved: AC, expected/observed, impact/evidence, repair/decision. Include supplied
+criterion rewrites; distinguish proposed/completed repairs.
 
 ### 🧪 Manual review
 
-State what remains for the human, the intended persona and environment. Agent inspection is not
-human approval. Give short actions with expected observations and all related resources: MR,
-running surfaces, designs, artifacts and runnable CLI commands with working directory/access.
-Preserve every supplied persona/path, including denied personas; name missing access instead of
-guessing.
-
-Each link gets 🔗, a descriptive label and blank lines around it. Show each URL once. Apply
-[evidence and links](evidence.md) and [preview links](preview-links.md). Ticket evidence uses
-verified absolute `https://` URLs; never invent URLs or add pipeline URLs. One-time login URLs are
-allowed in terminal and ticket: preserve each issued URL unchanged and label persona, role and
-environment. Never substitute an administrator. Login URLs are access, not durable evidence. From
-working onward a missing MR is a run failure.
-
-**Recipe slot.** The recipe's `bb-phase-outtake` slot for this state and type adds its lines here,
-at the end of *Manual review*, directly before *Next action*, under no heading of its own. The type
-slot replaces the general slot; no slot adds nothing. A value the slot asks for that the handoff
-lacks is shown as not recorded.
+Human steps/view, persona/environment, MR/surfaces/designs/artifacts/commands (cwd/access).
+Keep denied/missing personas; agent inspection is no human approval.
+From working, missing MR fails run. Links: 🔗, label, blank lines, each URL once; verified HTTPS
+([evidence](evidence.md)), no pipelines. Preserve login URLs with persona/role/environment (access only). Local surfaces use [preview links](preview-links.md).
+Recipe type outtake slot (else general) appends without heading; absent values: `not recorded`.
 
 ### ➡️ Next action
 
-End with one concrete action or decision.
-
-Apply [audience and register](boundaries.md). Complete evidence stays in the typed handoff.
+One action/decision. Full evidence stays typed.

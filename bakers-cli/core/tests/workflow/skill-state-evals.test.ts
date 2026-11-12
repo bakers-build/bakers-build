@@ -60,7 +60,7 @@ async function judge(
 }
 
 describe('frame routing profile', () => {
-  const intakeFile = file('skills/bb-workflow/references/intake.md');
+  const intakeFile = file('skills/bb-workflow/references/read-ticket.md');
   const route = [
     readTicket(),
     file('skills/bb-recipe-probe/SKILL.md'),
@@ -106,16 +106,16 @@ describe('frame routing profile', () => {
   });
   it('requires the stop to name the missing recipe and substitute none', async () => {
     const stop = 'Stopped: bb-recipe-lean is not installed.';
-    expect(await judge('frame-recipe-missing', stop, [readTicket()])).toEqual(
-      [],
-    );
+    expect(
+      await judge('frame-recipe-missing', stop, [intakeFile, readTicket()]),
+    ).toEqual([]);
     expect(
       await judge('frame-recipe-missing', 'Using probe-method instead.', [
         readTicket(),
         file('skills/bb-recipe-probe/SKILL.md'),
         intakeFile,
       ]),
-    ).toEqual(['slot-markers', 'intake-read', 'stop-named']);
+    ).toEqual(['slot-markers', 'stop-named']);
   });
 });
 

@@ -98,6 +98,8 @@ final class TicketsViewConfigTest extends KernelTestBase {
     'template',
     // The title search, which the search-and-sort toolbar prints.
     'title',
+    // One parent's direct sub-tickets, and the parents themselves.
+    'parent', 'has_children',
   ];
 
   /**
@@ -192,7 +194,7 @@ final class TicketsViewConfigTest extends KernelTestBase {
     self::assertSame([
       'avatar' => ['state'],
       'headline' => ['title', 'priority'],
-      'meta' => ['identifier', 'created', 'owner', 'conductor', 'stall_reason', 'run_count'],
+      'meta' => ['identifier', 'created', 'owner', 'conductor', 'stall_reason', 'run_summary'],
       'right' => ['assignee'],
     ], $style['options']['pattern']);
   }
@@ -216,7 +218,7 @@ final class TicketsViewConfigTest extends KernelTestBase {
         'owner',
         'conductor',
         'stall_reason',
-        'run_count',
+        'run_summary',
         'assignee',
       ],
       array_keys($fields),
@@ -243,7 +245,7 @@ final class TicketsViewConfigTest extends KernelTestBase {
     ] as $key => $formatter) {
       self::assertSame($formatter, $fields[$key]['type'] ?? NULL, sprintf('Field %s.', $key));
     }
-    self::assertSame('bb_reference_count', $fields['run_count']['plugin_id'] ?? NULL);
+    self::assertSame('bb_run_summary', $fields['run_summary']['plugin_id'] ?? NULL);
     self::assertSame('bb_stall_reason', $fields['stall_reason']['plugin_id'] ?? NULL);
   }
 
@@ -343,6 +345,59 @@ final class TicketsViewConfigTest extends KernelTestBase {
   }
 
   /**
+   * The state facet counts its tickets and offers "Only open states".
+   *
+   * Every display that carries its own filter set restates `facets_state`, so
+   * each one has to ask for the numbers; the widget settings are shared.
+   */
+  public function testTheStateFacetCountsAndOffersOnlyOpenStates(): void {
+    $view = View::load('tickets');
+    self::assertNotNull($view);
+    foreach (['default', 'my_work', 'project_tickets', 'team_tickets'] as $display_id) {
+      $filter = $view->getDisplay($display_id)['display_options']['filters']['facets_state'] ?? NULL;
+      self::assertNotNull($filter, $display_id . ' has no state facet.');
+      self::assertTrue($filter['facet']['show_numbers'], $display_id . ' state facet shows no counts.');
+    }
+    self::assertTrue(
+      $this->display()['exposed_form']['options']['bef']['filter']['facets_state']['open_states'] ?? FALSE,
+      'The state facet does not offer "Only open states".',
+    );
+  }
+
+  /**
+   * Every list filters by one parent and by "Has sub-tickets".
+   *
+   * The parent facet is single, counts sub-tickets and is searchable, and
+   * never offers the state facet's "Only open states". The URL reads
+   * `?parent=<identifier>` and `?has_children=1`.
+   */
+  public function testTheParentFacetAndHasSubTicketsOnEveryList(): void {
+    $view = View::load('tickets');
+    self::assertNotNull($view);
+    foreach (['default', 'my_work', 'project_tickets', 'team_tickets'] as $display_id) {
+      $filters = $view->getDisplay($display_id)['display_options']['filters'];
+      $parent = $filters['facets_parent'] ?? NULL;
+      self::assertNotNull($parent, $display_id . ' has no parent facet.');
+      self::assertSame('facets_parent_identifier', $parent['field']);
+      self::assertSame('parent', $parent['expose']['identifier']);
+      self::assertSame('Parent', $parent['expose']['label']);
+      self::assertFalse($parent['expose']['multiple'], $display_id . ' parent facet must be single.');
+      self::assertTrue($parent['facet']['show_numbers'], $display_id . ' parent facet shows no counts.');
+      $children = $filters['bb_has_children'] ?? NULL;
+      self::assertNotNull($children, $display_id . ' has no "Has sub-tickets" filter.');
+      self::assertSame('bb_has_children', $children['plugin_id']);
+      self::assertTrue($children['exposed']);
+      self::assertSame('has_children', $children['expose']['identifier']);
+      self::assertSame('Has sub-tickets', $children['expose']['label']);
+    }
+    $bef = $this->display()['exposed_form']['options']['bef']['filter'];
+    self::assertSame('bb_option_picker', $bef['facets_parent']['plugin_id']);
+    self::assertTrue($bef['facets_parent']['searchable']);
+    self::assertEmpty($bef['facets_parent']['open_states'] ?? FALSE);
+    self::assertSame('bef_single', $bef['bb_has_children']['plugin_id']);
+  }
+
+  /**
    * Contextual displays share the default table but own exact route filters.
    */
   public function testContextualDisplaysUseTheExactFilterMatrices(): void {
@@ -354,14 +409,14 @@ final class TicketsViewConfigTest extends KernelTestBase {
         'argument_field' => 'project_id',
         'hidden' => 'project',
         'filters' => [
-          'title', 'closed', 'state', 'workflow', 'assignee', 'owner', 'priority', 'label',
+          'title', 'closed', 'state', 'parent', 'has_children', 'workflow', 'assignee', 'owner', 'priority', 'label',
         ],
       ],
       'team_tickets' => [
         'argument_field' => 'project_team_ids',
         'hidden' => 'team',
         'filters' => [
-          'title', 'closed', 'group', 'project', 'template', 'state', 'workflow', 'assignee', 'owner', 'priority', 'label',
+          'title', 'closed', 'group', 'project', 'template', 'state', 'parent', 'has_children', 'workflow', 'assignee', 'owner', 'priority', 'label',
         ],
       ],
     ];
@@ -412,6 +467,7 @@ final class TicketsViewConfigTest extends KernelTestBase {
         'owner' => ['uid_to_username_callback'],
         'group' => ['translate_entity'],
         'label' => ['translate_entity'],
+        'parent' => ['bb_ticket_parent_label'],
         'priority' => ['list_item'],
         'project' => ['translate_entity'],
         'state' => ['bb_ticket_state_label'],
@@ -444,11 +500,38 @@ final class TicketsViewConfigTest extends KernelTestBase {
     }
 
     self::assertSame(
-      ['title', 'closed', 'group', 'project', 'template', 'state', 'workflow', 'owner', 'priority', 'label'],
+      [
+        'title', 'closed', 'group', 'project', 'template', 'state', 'parent', 'has_children',
+        'workflow', 'owner', 'priority', 'label',
+      ],
       $exposed,
     );
     self::assertFalse($filters['bb_assignee_is_current_user']['exposed']);
     self::assertSame('bb_search_api_current_user', $filters['bb_assignee_is_current_user']['plugin_id']);
+  }
+
+  /**
+   * My work's own fields and style are the default's, minus the assignee.
+   *
+   * The override copies the default display's fields, so a field changed on
+   * `default` and not here would drift silently. Only two differences are
+   * allowed: no assignee, and the conductor in the right-hand column.
+   */
+  public function testMyWorkCopiesTheDefaultRowWithoutTheAssignee(): void {
+    $view = View::load('tickets');
+    $default = $view->getDisplay('default')['display_options'];
+    $my_work = $view->getDisplay('my_work')['display_options'];
+
+    self::assertFalse($my_work['defaults']['fields'] ?? NULL, 'My work overrides the fields.');
+    self::assertFalse($my_work['defaults']['style'] ?? NULL, 'My work overrides the style.');
+    $expected_fields = $default['fields'];
+    unset($expected_fields['assignee']);
+    self::assertSame($expected_fields, $my_work['fields']);
+
+    $expected_style = $default['style'];
+    $expected_style['options']['pattern']['meta'] = array_values(array_diff($expected_style['options']['pattern']['meta'], ['conductor']));
+    $expected_style['options']['pattern']['right'] = ['conductor'];
+    self::assertSame($expected_style, $my_work['style']);
   }
 
   /**

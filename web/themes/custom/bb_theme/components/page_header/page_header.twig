@@ -40,6 +40,12 @@
    header, so a nested place can name its parents without a Drupal breadcrumb
    region. Empty is the supported case and renders no extra row.
 
+   THE TITLE TAKES TWO LINES. A long title wraps once and is clamped beyond the
+   second line; the h1's `title` carries the whole title on hover. The sub-line
+   stays one line, and its `subline` slot carries markup the plain
+   `description` cannot, such as a ticket's age as a `time` element with the
+   exact date on hover; `description` then stays the line's hover title.
+
    Spacing is the token scale, never a hard pixel value (D16). #}
 <header{{ (attributes ?: create_attribute()).addClass([
     'flex', 'flex-col', 'border-b', 'border-border-2', 'text-text',
@@ -58,6 +64,8 @@
   {%- set heading_content %}{% block heading %}{{ heading }}{% endblock %}{% endset %}
   {%- set breadcrumb_content %}{% block breadcrumb %}{{ breadcrumb }}{% endblock %}{% endset %}
   {%- set tabs_content %}{% block tabs %}{{ tabs }}{% endblock %}{% endset %}
+  {%- set subline_content %}{% block subline %}{{ subline }}{% endblock %}{% endset %}
+  {%- set has_subline = subline_content|trim is not empty %}
   {%- set editable = heading_content|trim is not empty %}
   {%- if breadcrumb_content|trim is not empty %}
     <div class="px-group xl:px-gutter pt-group">{{ breadcrumb_content }}</div>
@@ -82,11 +90,11 @@
           is judged to want one. #}
       {%- set editable_classes = 'min-w-0' %}
       {%- if editable or title %}
-        <h1 class="text-page-title font-display text-title {{ editable ? editable_classes : 'truncate' }}"{% if not editable %} title="{{ title }}"{% endif %}>{{ editable ? heading_content : title }}</h1>
+        <h1 class="text-page-title font-display text-title {{ editable ? editable_classes : 'line-clamp-2' }}"{% if not editable %} title="{{ title }}"{% endif %}>{{ editable ? heading_content : title }}</h1>
       {% endif %}
-      {%- if description %}
+      {%- if description or has_subline %}
         {#- One page header per page: the fixed id lets an htmx swap refresh the line out of band. #}
-        <p id="page-header-description" class="truncate text-meta text-text-faint" title="{{ description }}">{{ description }}</p>
+        <p id="page-header-description" class="truncate text-meta text-text-faint"{% if description %} title="{{ description }}"{% endif %}>{{ has_subline ? subline_content : description }}</p>
       {% endif %}
     </div>
     </div>

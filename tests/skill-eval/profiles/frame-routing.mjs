@@ -1,7 +1,7 @@
 import { calls, check, names, succeeded, toolCalls, uuid, validateTools, writes } from '../call-utils.mjs';
 import { requireValue } from '../validation.mjs';
 
-const INTAKE = 'bb-workflow/references/intake.md';
+const INTAKE = 'bb-workflow/references/read-ticket.md';
 
 // Routing through bb-workflow: which recipe file is read, which slots are named, where it stops.
 export function validate(f) {
@@ -13,7 +13,7 @@ export function validate(f) {
   requireValue(e.skill === undefined || (typeof e.skill?.path === 'string' && typeof e.skill.read === 'boolean'),
     'Expected expect.skill {path, read}');
   requireValue(Boolean(e.stop) !== Boolean(e.intake), 'Expect either a stop identifier or an intake gate');
-  requireValue(f.virtual_references?.includes(INTAKE), 'Serve the intake as a virtual file so its reads are counted');
+  requireValue(f.virtual_references?.includes(INTAKE), 'Serve read-ticket as a virtual file so entry reads are counted');
 }
 
 export function checkOutput(f, output, context) {
@@ -26,8 +26,8 @@ export function checkOutput(f, output, context) {
       e.recipe.read ? 'Read the resolved recipe as a file' : 'Read no content for this recipe: it is missing, or routing stopped first'),
     check('slot-markers', e.markers.every(m => output.includes(m)) && e.absent.every(m => !output.includes(m)),
       'Name the slot markers of the chosen sections, and none of the sections that do not apply'),
-    check('intake-read', skillReads.filter(c => c.arguments.path === `skills/${INTAKE}`).length === (e.stop ? 0 : 1),
-      e.stop ? 'Stop before the intake: no intake read' : 'Read the intake exactly once'),
+    check('intake-read', skillReads.filter(c => c.arguments.path === `skills/${INTAKE}`).length === 1,
+      'Read the merged ticket-context and framing reference exactly once'),
     e.stop
       ? check('stop-named', output.includes(e.stop), 'Stop and name the exact identifier that failed')
       : check('intake-rendered', output.includes(e.intake), 'Render the intake with its target gate; no write starts the state'),

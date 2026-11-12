@@ -316,6 +316,10 @@ function fakeSite(failLists = 0) {
       return [
         { name: 'tool_api__bakers_ticket_read', inputSchema: schema('ticket') },
         {
+          name: 'tool_api__bakers_comment_read',
+          inputSchema: schema('ticket'),
+        },
+        {
           name: 'tool_api__bakers_ticket_search',
           inputSchema: schema('query'),
         },
@@ -386,6 +390,7 @@ describe('site tools on the bakers server', () => {
       'where',
       'boom',
       'bakers_ticket_read',
+      'bakers_comment_read',
       'bakers_ticket_search',
       'bakers_ticket_update',
       'bakers_ticket_create',

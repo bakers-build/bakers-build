@@ -9,8 +9,13 @@
       "description": "Start the launch through the addon's measuring proxy.",
       "default": false
     },
+    "proxy": {
+      "type": "boolean",
+      "description": "Log every model request of the unchanged launch to `assets-ai/`; `measure` wins.",
+      "default": false
+    },
     "model": {
-      "description": "Passed as `--model`; replaces `opus`, `sonnet` and `fable` with one custom candidate."
+      "description": "Passed as `--model`; replaces `opus`, `sonnet`, `fable` and `opus-proxy` with one custom candidate."
     },
     "effort": {
       "description": "Passed as `--effort`."

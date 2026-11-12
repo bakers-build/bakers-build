@@ -115,6 +115,14 @@ third_party_settings:
                                 source:
                                   value: 'Run history'
                                 node_id: zone_runs_heading
+                          actions:
+                            sources:
+                              -
+                                source_id: bb_ticket_runs_summary
+                                source:
+                                  context_mapping:
+                                    entity: entity
+                                node_id: zone_runs_summary
                           content:
                             sources:
                               -

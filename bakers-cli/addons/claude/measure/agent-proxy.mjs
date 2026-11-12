@@ -37,6 +37,7 @@ const USAGE_KEYS = [
   'input_tokens',
   'cache_read_input_tokens',
   'cache_creation_input_tokens',
+  'output_tokens',
 ];
 const REDACT = new Set(['authorization', 'x-api-key', 'api-key']);
 
@@ -191,6 +192,7 @@ function renderAudit(a) {
         `- **input_tokens**: ${a.usage.input_tokens}`,
         `- **cache_read_input_tokens**: ${a.usage.cache_read_input_tokens}`,
         `- **cache_creation_input_tokens**: ${a.usage.cache_creation_input_tokens}`,
+        `- **output_tokens**: ${a.usage.output_tokens}`,
       ]
     : ['- **usage**: unknown'];
 
@@ -219,7 +221,7 @@ function printAudit(a, base, logDir) {
   const top = a.toolRows.slice(0, 12);
   const w = Math.max(4, ...top.map((r) => r.name.length));
   const usage = a.usage
-    ? ` · in ${a.usage.input_tokens} / cache-read ${a.usage.cache_read_input_tokens} / cache-create ${a.usage.cache_creation_input_tokens}`
+    ? ` · in ${a.usage.input_tokens} / cache-read ${a.usage.cache_read_input_tokens} / cache-create ${a.usage.cache_creation_input_tokens} / out ${a.usage.output_tokens}`
     : '';
   console.log(
     `\n[agent-proxy] ${a.toolCount} tools · ${a.toolsBytes.toLocaleString()} tool bytes · first user ${a.firstUserBytes.toLocaleString()} B${usage}`,
