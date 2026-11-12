@@ -5,8 +5,9 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 ## bb-phase-provision
 
 <!-- The `provision_up` profile each kind of check needs (its commands live in the conductor's
-     `hooks.provision_up`), and how container commands run. Leave empty when no work needs a
-     runtime. -->
+     `hooks.provision_up`), how container commands run, and the readiness command that proves a
+     site works and its expected output (e.g. a status command that needs the database).
+     Leave empty when no work needs a runtime. -->
 
 ## bb-phase-work
 
