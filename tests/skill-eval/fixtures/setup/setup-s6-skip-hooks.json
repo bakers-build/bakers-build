@@ -30,6 +30,5 @@
     "consent": "Yes, apply the described synthetic changes.",
     "optional_addons": "No optional addons; use required ones only.",
     "workflow": "No additional rules, tests or origin labels."
-  },
-  "max_turns": 32
+  }
 }
