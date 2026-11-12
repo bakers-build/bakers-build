@@ -53,6 +53,7 @@
     "@bakers-build/addon-ports-frp": "workspace:^",
     "@bakers-build/addon-remote-drupal": "workspace:^",
     "@bakers-build/addon-runtime-docker": "workspace:^",
+    "@bakers-build/addon-runtime-bwrap": "workspace:^",
     "@bakers-build/addon-tailscale": "workspace:^",
     "@bakers-build/addon-track": "workspace:^",
     "@bakers-build/addon-workspace": "workspace:^",

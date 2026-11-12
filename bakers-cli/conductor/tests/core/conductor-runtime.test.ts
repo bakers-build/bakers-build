@@ -203,13 +203,54 @@ describe('runtime slot — launch wrapping', () => {
     );
   });
 
-  it('hands the selected agent to the runtime without interpreting its extensions', async () => {
-    const extension = { pluginSpecific: { install: 'true' } };
+  it('prepares a neutral private home before building the launch', async () => {
     const rec: Recorded = { wraps: [], cleanups: [] };
-    const s = setup(recordingRuntime([], rec), false, extension);
+    const s = setup(
+      recordingRuntime([], rec, {
+        prepareRun: async () => ({ homePath: '/private/run' }),
+      }),
+      false,
+      {
+        prepareRun: (context: { homePath: string; workspacePath: string }) => {
+          expect(context).toMatchObject({
+            homePath: '/private/run',
+            workspacePath: '/fake/BB-1',
+          });
+          return {
+            env: { AGENT_HOME: context.homePath },
+            readPaths: ['/shared/plugins'],
+            writePaths: ['/shared/transcripts'],
+          };
+        },
+      },
+    );
     await s.run();
-    expect(rec.wraps[0]?.agent).toMatchObject({ id: 'claude', ...extension });
-    expect(rec.wraps[0]?.agent).toBe(s.selectedAgent);
+    expect(rec.wraps[0]).toMatchObject({
+      homePath: '/private/run',
+      readPaths: ['/shared/plugins'],
+      writePaths: ['/shared/transcripts'],
+      env: { AGENT_HOME: '/private/run' },
+    });
+  });
+
+  it('cleans the allocated home when agent preparation fails', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const s = setup(
+      recordingRuntime([], rec, {
+        prepareRun: async () => ({ homePath: '/private/run' }),
+      }),
+      false,
+      {
+        prepareRun: async () => {
+          throw new Error('invalid settings');
+        },
+      },
+    );
+    await s.run();
+    expect(s.executor.started).toHaveLength(0);
+    expect(rec.wraps).toHaveLength(0);
+    // One cleanup before dispatch, another after preparation fails.
+    expect(rec.cleanups).toHaveLength(2);
   });
 
   it('uses toolsUrl for the agent and BAKERS_CONDUCTOR_URL', async () => {

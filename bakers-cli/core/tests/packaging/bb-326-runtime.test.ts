@@ -95,7 +95,8 @@ describe('BB-326 runtime packaging', () => {
     // Tailscale adds one optional machine addon with the same Node floor.
     // 38 since `@bakers-build/addon-runtime-docker` (the Docker runtime); it
     // sets no `engines`.
-    expect(dirs).toHaveLength(38);
+    // External Bubblewrap runtime adds one independently published addon.
+    expect(dirs).toHaveLength(39);
     for (const dir of dirs) {
       const engines = manifestOf(dir).engines?.node;
       if (engines !== undefined)

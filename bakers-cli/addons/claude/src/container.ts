@@ -11,13 +11,9 @@ import type {
   ContainerMount,
 } from '@bakers-build/addon-runtime-docker/contract';
 
-/**
- * Encode an absolute cwd the way Claude Code names its per-project transcript
- * directory under `~/.claude/projects/`: every non-alphanumeric char → `-`.
- */
-export function encodeClaudeProjectDir(cwd: string): string {
-  return cwd.replace(/[^a-zA-Z0-9]/g, '-');
-}
+import { encodeClaudeProjectDir } from './run.js';
+
+export { encodeClaudeProjectDir } from './run.js';
 
 /** What a Claude run needs in an isolating container runtime. */
 export const claudeContainer: AgentContainer = {

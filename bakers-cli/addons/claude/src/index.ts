@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import {
   type AgentFootprint,
   type AgentPlugin,
+  type AgentRunContext,
   type AgentRunIdentity,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
@@ -38,11 +39,13 @@ import {
   shellQuote,
   withoutGitDirs,
 } from '@bakers-build/core';
-import { claudeContainer, encodeClaudeProjectDir } from './container.js';
+import { claudeContainer } from './container.js';
 import { parseClaudeTranscript } from './footprint.js';
+import { encodeClaudeProjectDir, prepareClaudeRun } from './run.js';
 
-export { claudeContainer, encodeClaudeProjectDir } from './container.js';
+export { claudeContainer } from './container.js';
 export { parseClaudeTranscript } from './footprint.js';
+export { encodeClaudeProjectDir } from './run.js';
 
 /** src/index.ts and dist/src/index.js both sit two levels below the package root. */
 const MEASURE_WRAPPER = fileURLToPath(
@@ -251,6 +254,10 @@ export class ClaudeAgent implements BbAgent {
     if (this.pluginsDisabled || marketplaces.length === 0) return;
     this.pluginsOn = true;
     this.configDir = homePath(this.id, homeKey([...marketplaces]));
+  }
+
+  prepareRun(context: AgentRunContext) {
+    return prepareClaudeRun(context, this.configDir);
   }
 
   async installPlugins(

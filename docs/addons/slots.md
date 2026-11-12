@@ -40,8 +40,8 @@ The executor resolves in this order: the machine's `executor`, the project's `ex
 
 ## Runtime: where a run starts
 
-The optional machine slot `runtime` decides where the agent runs: on the host by default, or in a
-container per run with [Docker runtime](/addons/runtime-docker). It rewrites the launch before the
+The optional machine slot `runtime` decides where the agent runs: on the host, in a
+[Docker container](/addons/runtime-docker), or a [Bubblewrap sandbox](/addons/runtime-bwrap). It rewrites the launch before the
 executor starts it; a failure fails the run. An isolating runtime turns the harness `sandbox` into
 `system`.
 

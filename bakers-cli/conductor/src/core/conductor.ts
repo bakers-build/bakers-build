@@ -1759,6 +1759,18 @@ export class Conductor {
       : undefined;
     const plugins = await this.installPlugins(chosen, t, run);
     Object.assign(env, plugins.env);
+    const runtimeContext = await runtime.prepareRun?.({
+      uuid: run.runUuid,
+      id: run.runId,
+    });
+    const preparation = runtimeContext
+      ? await chosen.agent.prepareRun?.({
+          ...runtimeContext,
+          workspacePath: ws.path,
+          env,
+        })
+      : undefined;
+    if (preparation) Object.assign(env, preparation.env);
     const command = chosen.agent.launchCommand(
       prompt,
       identity,
@@ -1799,6 +1811,13 @@ export class Conductor {
       run: { uuid: run.runUuid, id: run.runId },
       harness: chosen.agent.id,
       agent: chosen.agent,
+      ...(runtimeContext
+        ? {
+            ...runtimeContext,
+            readPaths: preparation?.readPaths ?? [],
+            writePaths: preparation?.writePaths ?? [],
+          }
+        : {}),
     });
     await this.executor.startRun({
       ticket: {
@@ -1870,6 +1889,8 @@ export class Conductor {
           runUuid,
           ctx.run?.id ?? 0,
         );
+      } else {
+        await this.cleanupRuntime(runUuid, ctx.run?.id ?? 0);
       }
       await this.runSlot(
         'after_run',

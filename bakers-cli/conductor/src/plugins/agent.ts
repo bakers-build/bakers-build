@@ -154,9 +154,27 @@ export interface PluginLaunch {
   gaps?: string[];
 }
 
+/** Inputs for preparing an agent in a runtime-provided home. */
+export interface AgentRunContext {
+  homePath: string;
+  workspacePath: string;
+  env: Readonly<Record<string, string>>;
+}
+
+/** Files and environment an agent needs, independent of its execution backend. */
+export interface AgentRunPreparation {
+  env: Record<string, string>;
+  readPaths: string[];
+  writePaths: string[];
+}
+
 export interface BbAgent {
   /** Stable id, e.g. 'claude'. */
   readonly id: string;
+  /** Prepare configuration in a private run home without runtime-specific flags. */
+  prepareRun?(
+    context: AgentRunContext,
+  ): AgentRunPreparation | Promise<AgentRunPreparation>;
   /** True when the catalog entry sets `plugins: false`: the run uses the user's own agent home. */
   readonly pluginsDisabled?: boolean;
   /**

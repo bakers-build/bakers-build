@@ -23,10 +23,15 @@ export interface RuntimeLaunch {
   harness: string;
   /** The chosen agent; runtimes interpret their own optional plugin contracts. */
   agent: BbAgent;
+  homePath?: string;
+  readPaths?: string[];
+  writePaths?: string[];
 }
 
 export interface BbRuntime {
   id: string;
+  /** Allocate a private home before the agent prepares its command and files. */
+  prepareRun?(run: RuntimeRun): Promise<{ homePath: string }>;
   /** Rewrite the launch; a rejection fails the dispatch, never falls back to the host. */
   wrap(
     launch: RuntimeLaunch,

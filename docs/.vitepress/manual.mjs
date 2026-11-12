@@ -131,6 +131,7 @@ export const SIDEBAR = {
       ["bakers.build server remote", "/addons/remote-drupal"],
       ["Tailscale", "/addons/tailscale"],
       ["Docker runtime", "/addons/runtime-docker"],
+      ["Bubblewrap runtime", "/addons/runtime-bwrap"],
     ]),
     group("Runtimes", [
       ["DDEV", "/addons/ddev"],
