@@ -5,17 +5,13 @@ import re
 import sys
 import tempfile
 
-# Read only at an eligible terminal decision, as one unit; splitting it would add a pointer, not clarity.
-EXCEPTIONS = ('bb-workflow/references/retrospective.md',)
-
 
 def violations(root: Path, limit: int = 500) -> list[tuple[Path, int]]:
     files = sorted([*root.glob('*/SKILL.md'), *root.glob('bb-workflow/references/**/*.md')])
     if not files:
         raise ValueError(f'No skills found in {root}')
     return [(path, count) for path in files
-            if path.relative_to(root).as_posix() not in EXCEPTIONS
-            and (count := len(path.read_text().split())) > limit]
+            if (count := len(path.read_text().split())) > limit]
 
 
 STATE_LIMITS = {'qualification': 18000, 'plan': 12000, 'working': 19000, 'review': 15000}

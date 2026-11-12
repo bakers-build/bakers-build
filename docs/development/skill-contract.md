@@ -86,7 +86,7 @@ records. The summary gives brief successes, actionable problems and persona-spec
 
 ## Size and verification
 
-Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` permits 500 whitespace-separated words, including frontmatter and code; `references/retrospective.md` is the listed exception.
+Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` permits 500 whitespace-separated words, including frontmatter and code.
 `python3 tests/contract/skill-size.py` enforces this in CI. Remove repetition instead of moving entire instructions elsewhere.
 
 `python3 tests/contract/skill-references.py` is the one structure check: links resolve, retired skill names are absent, grid headings are valid, every state file has the seven phases, `WORKFLOW.md` holds only `## bb-phase-*` sections, recipes link no frame reference and call no other bakers.build skill, no skill declares an input, exactly the bundle's skills exist, no contributor-facing file requires a private keytec skill, and every project skill `WORKFLOW.md` names exists under `.claude/skills/`. No skill check asserts a sentence.

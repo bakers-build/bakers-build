@@ -95,11 +95,11 @@ check 'the working state file exists' test -f "$IMPL"
 check 'the deployment addon source exists' test -f "$DEPLOY"
 
 WF_FLAT="$(flatten "$WF")"
-MERGE_FLAT="$(flatten "$MERGE")"
+MERGE_FLAT="$(flatten "$MERGE") $(flatten "$(dirname "$MERGE")/merge-fallback.md")"
 for reference in coding-gate delivery; do
   check "the working state discloses $reference" grep -qF "($reference.md)" "$IMPL"
 done
-IMPL_FLAT="$(for reference in coding-gate review delivery; do flatten "$(dirname "$IMPL")/$reference.md"; done)"
+IMPL_FLAT="$(for reference in coding-gate review delivery forge-fallback; do flatten "$(dirname "$IMPL")/$reference.md"; done)"
 WF_PLAIN="$(plain "$WF")"
 IMPL_PLAIN="$(plain "$IMPL")"
 MERGE_PLAIN="$(plain "$MERGE")"

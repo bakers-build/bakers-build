@@ -11,9 +11,6 @@ if ticket has an origin: origin-status.md
 if ticket read fails: read-ticket-troubleshooting.md
 if paginated lookups are needed: tools-lookup.md
 
-Read at the consuming phase, not upfront. [Read ticket](read-ticket.md) owns context and framing;
-its troubleshooting branch and tools' lookup branch load only when triggered.
-
 ## read
 
 Use highest-handoff_version qualification. With recipe, type, entered state and handoff
@@ -26,9 +23,7 @@ Runtime-dependent bug reproduction uses the frame's Provision rule; otherwise no
 
 ## work
 
-Apply [boundaries](boundaries.md). Give recipe method acceptance criteria, repository boundaries,
-hints and ticket target. Prepare selected [browser paths](browser.md) only when needed.
-No implementation.
+Apply [boundaries](boundaries.md); run recipe method with acceptance criteria. Prepare selected [browser paths](browser.md) only when needed.
 
 ## validate
 
@@ -37,9 +32,8 @@ For bugs record real pre-fix RED under [results](results.md); otherwise none.
 ## deliver
 
 Publish complete `spec`, `plan`, `test` via [ticket writes](ticket-writes.md). Bugs publish cause
-and observations as `debug_diagnose` instead of spec. Test plan separates Project checks and
-Functional validation; per check include type, rationale, command/path, expected RED/GREEN and
-evidence to report. Use approved seams and reuse coverage.
+and observations as `debug_diagnose` instead of spec. Test plan uses approved seams/reused coverage, separating Project checks/Functional validation.
+Per check: type, rationale, command/path, expected RED/GREEN, evidence to report.
 
 ## outtake
 

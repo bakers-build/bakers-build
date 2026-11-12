@@ -76,8 +76,8 @@ Refresh only the selected environment; preserve unrelated global skill libraries
 ## Review records and skill size
 
 Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` is limited to 500
-whitespace-separated words, including frontmatter, tables and examples (`references/retrospective.md`
-excepted). `python3 tests/contract/skill-size.py` enforces this in the core CI suite;
+whitespace-separated words, including frontmatter, tables and examples.
+`python3 tests/contract/skill-size.py` enforces this in the core CI suite;
 `python3 tests/contract/skill-references.py` checks links, grid headings and the skill set.
 
 Qualification records intended test users and environments. The shared contract in

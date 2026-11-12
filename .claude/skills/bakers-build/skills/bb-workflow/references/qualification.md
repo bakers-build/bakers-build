@@ -8,8 +8,10 @@ if cancellation is authorized: retrospective.md
 if agent override is confirmed: tools-lookup.md
 if ticket read fails: read-ticket-troubleshooting.md
 if paginated lookups are needed: tools-lookup.md
-
-Read at consuming phase; triggered branches only. Qualify/route once, then STOP.
+if forge tools absent: forge-fallback.md
+if merging without tools: merge-fallback.md
+if named retrospective causes: retrospective-evidence.md
+if rating/reason supplied: retrospective-write.md, measurement.md
 
 ## read
 

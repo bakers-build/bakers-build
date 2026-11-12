@@ -38,10 +38,9 @@ transitions. Beside it, read the matching **slots**; they supply the method insi
 
 ## Required skills
 
-Recipe sections and hint rows are **binding**: load every skill they require before doing the work
-it governs, and where a slot names its own deliverable, comment, merge or check, it replaces the
-state file's default for that phase. Approval, the coding gate, the verdict and every readback stay. **Load** means invoke the skill and read its **complete** `SKILL.md`,
-then announce what you loaded. Paraphrasing or naming it later does **not** count. A hint
+Recipe sections and hints are **binding**. Load required skills before their work. A slot's own
+deliverable, comment, merge or check replaces that phase default. Approval, the coding gate, the verdict and every readback stay. **Load** means invoke the skill and read its **complete** `SKILL.md`,
+then announce what you loaded. A hint
 may mark a skill **advisory** (skippable; the outtake says so). Only an explicit
 user request replaces a required skill; the outtake names the replacement and why.
 
@@ -50,9 +49,12 @@ user request replaces a required skill; the outtake names the replacement and wh
 **If the recipe, its section for this state, the ticket's type among the recipe's declared types,
 or a required skill cannot be resolved or read, stop and report the
 identifier that failed**, *before* any file edit, commit, comment, confirmation or transition.
-Substitute no method of your own.
+
 
 ## Rules
+
+Load references at the manifest's consuming phase/condition. References return to caller; only
+assigned writes/routes are theirs.
 
 - References route nothing, except [return to qualification](references/return-to-qualification.md)
   (recovery); `@bakers-build/bb-create-ticket` routes a new ticket once.
