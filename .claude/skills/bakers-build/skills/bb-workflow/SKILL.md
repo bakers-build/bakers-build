@@ -5,7 +5,7 @@ description: Use when executing or authoring bakers.build lifecycle steps — th
 
 # Running a state
 
-A state run passes seven phases in order: **read, provision, work, validate, deliver, outtake,
+Run seven phases in order: **read, provision, work, validate, deliver, outtake,
 transition**. Its state file holds one section per phase and is the only description of its flow.
 For authoring read [authoring](references/authoring.md).
 
