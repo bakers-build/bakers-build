@@ -30,18 +30,14 @@ Search the control plane for the requested project. Reuse an unambiguous hit and
 otherwise invoke `@bakers-build/bb-create-project`. Use the returned entity's name for `--project`.
 A denied lookup is not proof that the project is absent.
 
-For each applicable row below, inspect existing settings and caller answers first.
-Track its source, answer or explicit unresolved status; mark inapplicable rows with a reason.
+Resolve the matrix below row by row under the
+[setup conversation](../../bb-init/references/setup-conversation.md) rules.
 Finish the missing decisions before treating the configuration as complete; creating a WORKFLOW
-does not resolve its recipe/marketplace choice. Do not silently skip a row.
-Name the source of a reused choice. Link the applicable documentation whenever explaining a choice.
-Ask for **one field or decision per turn** and wait. Request related follow-up values in later turns:
-profile commands and readiness checks are separate decisions, as are marketplace and workflow hints.
-Before sending, count requested inputs and keep only the first unanswered field. A service key and
-its match text are separate fields. “Answer the first question first” does not permit appending another.
-Ask each lifecycle command separately. An installed
-client is not a selected client. Unattended, keep unknown choices unresolved and report them.
-**Done when every applicable choice has a source, an answer, or an explicit unresolved status.**
+does not resolve its recipe/marketplace choice.
+Separate decisions, one turn each: profile commands and readiness checks; marketplace and workflow
+hints; a service key and its match text; each lifecycle command. An installed client is not a
+selected client.
+**Done when every applicable row has a source, an answer, or an explicit unresolved status.**
 
 ## Decision matrix
 
@@ -57,7 +53,7 @@ The documentation owns configuration syntax and supported options; this matrix o
 | Permissions unknown | Mode, necessary access and effective source | [Execution security](https://bakers.build/provision/security/execution), [shared settings](https://bakers.build/provision/security/shared-settings) |
 | Agent known | Project settings its agent guide recommends | [Agents](https://bakers.build/agents/), then the agent's guide |
 | Agents need repository delivery | Forge backend, repository, authentication and merge policy | [Forge](https://bakers.build/addons/forge), then its backend guide |
-| Preview needed | Local or public; if public, transport, service and shared-write authorization | [Ports](https://bakers.build/addons/ports), [services](https://bakers.build/addons/ports-services), [tunnel policy](https://bakers.build/configuration/machine#preview-link-tunnels) |
+| Preview needed | Local or public; if public, transport and service. The tunnel policy is a machine row: hand it to `@bakers-build/bb-init` | [Ports](https://bakers.build/addons/ports), [services](https://bakers.build/addons/ports-services) |
 
 ## Persist the choices
 
@@ -66,8 +62,8 @@ configuration, not the user's choices. Read back every generated setting; reconc
 the selected client and documented addon scopes. Preserve unrelated custom values and identities.
 
 For documented settings without CLI flags, edit the selected configuration file directly within
-the authorized scope, preserving existing code and values. Explain the change first. A requested
-machine change needs shared-scope authorization; reuse authorization already given. If safe editing
+the authorized scope, preserving existing code and values. Explain the change first. Hand a
+requested machine change to `@bakers-build/bb-init`; reuse shared-scope authorization already given. If safe editing
 is unavailable, report the exact choice and owning field as unpersisted. Never substitute another
 choice or call the setup complete.
 

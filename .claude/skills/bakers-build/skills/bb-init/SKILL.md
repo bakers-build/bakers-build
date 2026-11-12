@@ -10,7 +10,8 @@ Documentation owns choices and commands; this skill guides the conversation. Ret
 
 ## Read
 
-Read [Set up a machine](https://bakers.build/provision/machine).
+Read [machine setup](references/machine-setup.md), the [setup conversation](references/setup-conversation.md)
+and [Set up a machine](https://bakers.build/provision/machine).
 In a bakers.build source checkout, use its `docs/provision/machine.md` instead, to match the revision.
 If the required documentation cannot be read, report the missing source and stop; do not
 substitute a remembered tool list.
@@ -18,15 +19,11 @@ substitute a remembered tool list.
 
 ## Ask and explain
 
-Establish whether this host runs tickets, locally or remotely. Resolve agent harnesses, skills
-and host prerequisites from the documentation. Leave client and environment choices to project
-setup; reuse existing projects’ requirements. A Coder workspace is a remote worker whose
-template provides its tools; its operator documents it. Explain documented tradeoffs; distinguish supported integrations from planned ones.
-
-Reuse supplied answers and explicit project or machine configuration, naming the source.
-Ask one unanswered question at a time and wait. Unattended, use known choices and mark unanswered
-ones `not determined`; a custom environment calls for its project's documented setup and checks.
-**Done when each applicable choice is known or explicitly unresolved.**
+Resolve the machine matrix row by row under the conversation rules. Leave client and environment
+choices to project setup; reuse existing projects’ requirements. A Coder workspace is a remote
+worker whose template provides its tools; its operator documents it. A custom environment calls
+for its project's documented setup and checks.
+**Done when each applicable row is known or explicitly unresolved.**
 
 ## Guide and check
 
@@ -40,8 +37,9 @@ install command only with explicit consent, or hand it over when it needs `sudo`
 Before configuration writes, inspect existing configuration, collect only missing inputs and
 write after the person confirms.
 Preserve correct values and keep secrets out of output. On a host that runs tickets, register
-the chosen agent harness per [machine configuration](https://bakers.build/configuration/machine)
-or report it unresolved; set preview policy when requested. Identity initialization configures neither.
+the chosen agent harness and write chosen routes and preview policy per
+[machine configuration](https://bakers.build/configuration/machine), or report each unresolved.
+Identity initialization configures none of them.
 Distinguish tool readiness, authentication and workspace access. Blocked prerequisites remain
 outstanding; they are not successful setup.
 **Done when the documented checks pass or each remaining action has an owner.**

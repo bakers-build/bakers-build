@@ -1,6 +1,8 @@
 {
   "sources": [
     ".claude/skills/bakers-build/skills/bb-init/SKILL.md",
+    ".claude/skills/bakers-build/skills/bb-init/references/machine-setup.md",
+    ".claude/skills/bakers-build/skills/bb-init/references/setup-conversation.md",
     ".claude/skills/bakers-build/skills/bb-init-project/SKILL.md",
     ".claude/skills/bakers-build/skills/bb-init-project/references/project-setup.md",
     ".claude/skills/bakers-build/skills/bb-init-project/references/setup-checks.md",
