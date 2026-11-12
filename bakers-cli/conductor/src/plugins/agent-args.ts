@@ -425,6 +425,31 @@ function validatePlainObject(
   return value as Record<string, unknown>;
 }
 
+/** Resolve replacement lists, retaining the source of inherited entries. */
+export function resolveLayeredList<S extends string>(
+  defaults: readonly string[],
+  layers: readonly { source: S; list: readonly string[] }[],
+): { entries: { value: string; source: S | 'default' }[]; removed: string[] } {
+  let entries: { value: string; source: S | 'default' }[] = defaults.map(
+    (value) => ({ value, source: 'default' }),
+  );
+  for (const { source, list } of layers) {
+    const next = list.flatMap((value) =>
+      value === INHERIT ? entries : [{ value, source }],
+    );
+    entries = next.filter(
+      (entry, index) =>
+        next.findIndex((other) => other.value === entry.value) === index,
+    );
+  }
+  return {
+    entries,
+    removed: defaults.filter(
+      (value) => !entries.some((entry) => entry.value === value),
+    ),
+  };
+}
+
 /**
  * Validate the permission options an agent addon takes in `with` and resolve
  * them over the harness defaults and the shared project and machine layers
@@ -491,9 +516,6 @@ export function resolveSecurityOptions(
     not_applied: [],
   };
   for (const key of SHARED_LIST_KEYS) {
-    let entries: { value: string; source: SecuritySource }[] = defaults[
-      key
-    ].map((value) => ({ value, source: 'default' }));
     const stack: { source: SecuritySource; list: string[] }[] = [];
     for (const { source, block } of layers) {
       const list = block.sandbox?.[key];
@@ -512,19 +534,8 @@ export function resolveSecurityOptions(
         source: 'agent',
         list: validateStringList(given[key], `sandbox.${key}`),
       });
-    for (const { source, list } of stack) {
-      const next = list.flatMap((value) =>
-        value === INHERIT ? entries : [{ value, source }],
-      );
-      entries = next.filter(
-        (e, i) => next.findIndex((o) => o.value === e.value) === i,
-      );
-    }
-    sandbox[key] = entries.map((e) => e.value);
-    report.sandbox[key] = {
-      entries,
-      removed: defaults[key].filter((d) => !sandbox[key].includes(d)),
-    };
+    report.sandbox[key] = resolveLayeredList(defaults[key], stack);
+    sandbox[key] = report.sandbox[key].entries.map((entry) => entry.value);
   }
   for (const [key, value] of Object.entries(given)) {
     if (key === 'mcp_servers') {
