@@ -56,6 +56,8 @@ export async function site({ pageSize = 50 } = {}) {
           id: t.id,
           identifier: t.identifier,
           title: t.title,
+          url: t.url,
+          origin: t.origin,
           state: t.state,
           links: t.links.map(link),
           labels: [...t.labels],

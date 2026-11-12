@@ -62,6 +62,21 @@ async function connect(url: string, token: string): Promise<Client> {
 }
 
 describe('conductor tool server', () => {
+  it('also listens on the extra hosts, on the same port', async () => {
+    server = await startToolServer({
+      registry: await registry(),
+      hosts: ['127.0.0.2'],
+    });
+    const token = server.issueRunToken('run-1', { worktreePath: '/work/bb-1' });
+    const client = await connect(
+      server.url.replace('127.0.0.1', '127.0.0.2'),
+      token,
+    );
+    const result = await client.callTool({ name: 'where', arguments: {} });
+    expect(result.content).toEqual([{ type: 'text', text: '/work/bb-1' }]);
+    await client.close();
+  });
+
   it("serves the addon tools bound to the run token's worktree", async () => {
     server = await startToolServer({ registry: await registry() });
     const token = server.issueRunToken('run-1', { worktreePath: '/work/bb-1' });
@@ -300,6 +315,7 @@ function fakeSite(failLists = 0) {
       if (failLists-- > 0) throw new Error('site down');
       return [
         { name: 'tool_api__bakers_ticket_read', inputSchema: schema('ticket') },
+        { name: 'tool_api__bakers_run_cancel', inputSchema: schema('ticket') },
         {
           name: 'tool_api__bakers_comment_read',
           inputSchema: schema('ticket'),
@@ -375,6 +391,7 @@ describe('site tools on the bakers server', () => {
       'where',
       'boom',
       'bakers_ticket_read',
+      'bakers_run_cancel',
       'bakers_comment_read',
       'bakers_ticket_search',
       'bakers_ticket_update',
@@ -385,6 +402,49 @@ describe('site tools on the bakers server', () => {
     expect(
       tools.find((t) => t.name === 'bakers_ticket_read')?.inputSchema,
     ).toEqual({ type: 'object', properties: { ticket: { type: 'string' } } });
+    await client.close();
+  });
+
+  it('cancels own-project tickets, signals writes and refuses machine-wide or foreign cancellation', async () => {
+    const site = fakeSite();
+    const writes: unknown[] = [];
+    const binding = runBinding(PROJECT_A);
+    server = await startToolServer({
+      registry: await registry(),
+      siteTools: site,
+      onSiteWrite: (b) => writes.push(b),
+    });
+    const client = await connect(
+      server.url,
+      server.issueRunToken('run-1', binding),
+    );
+    for (const args of [
+      { ticket: 'XX-9', reason: 'Stop' },
+      { machine_id: 'machine-1', reason: 'Stop' },
+      { ticket: '', reason: 'Stop' },
+      { ticket: 'BB-1', machine_id: 'machine-1', reason: 'Stop' },
+    ]) {
+      const result = await client.callTool({
+        name: 'bakers_run_cancel',
+        arguments: args,
+      });
+      expect(result.isError).toBe(true);
+    }
+    expect(
+      site.calls.filter((c) => c.name === 'tool_api__bakers_run_cancel'),
+    ).toEqual([]);
+    expect(writes).toEqual([]);
+    const args = { ticket: 'BB-1', reason: 'Stop this run' };
+    const result = await client.callTool({
+      name: 'bakers_run_cancel',
+      arguments: args,
+    });
+    expect(result.isError).toBeFalsy();
+    expect(site.calls.at(-1)).toEqual({
+      name: 'tool_api__bakers_run_cancel',
+      args,
+    });
+    expect(writes).toEqual([binding]);
     await client.close();
   });
 

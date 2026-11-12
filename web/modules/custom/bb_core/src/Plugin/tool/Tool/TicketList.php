@@ -70,6 +70,17 @@ use Drupal\tool\TypedData\OutputDefinition;
             label: new TranslatableMarkup('Title'),
             description: new TranslatableMarkup('The ticket title.'),
           ),
+          'url' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Url'),
+            description: new TranslatableMarkup('The absolute canonical ticket URL.'),
+          ),
+          'origin' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Origin'),
+            description: new TranslatableMarkup('The stored origin, null when absent or unreadable.'),
+            nullable: TRUE,
+          ),
           'state' => new OutputDefinition(
             data_type: 'string',
             label: new TranslatableMarkup('State'),
@@ -212,11 +223,13 @@ final class TicketList extends ToolBase {
       'id' => $ticket->uuid(),
       'identifier' => $ticket->getIdentifier(),
       'title' => $ticket->getTitle(),
+      'url' => $ticket->toUrl()->setAbsolute()->toString(),
+      'origin' => $ticket->get('origin')->access('view', $this->currentUser) ? $ticket->get('origin')->value : NULL,
       'state' => (string) $ticket->get('state')->value,
       'links' => array_map(static fn (array $link): array => [
         'uri' => $link['uri'],
         'title' => (string) $link['title'],
-      ], $ticket->get('links')->getValue()),
+      ], $ticket->get('links')->access('view', $this->currentUser) ? $ticket->get('links')->getValue() : []),
       'labels' => array_map(static fn ($term): string => (string) $term->label(), $ticket->get('labels')->referencedEntities()),
       'frozen' => $ticket->isFrozen(),
       'frozen_at' => $frozenAt === NULL ? NULL : date('c', $frozenAt),

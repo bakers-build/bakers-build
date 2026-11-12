@@ -1,7 +1,7 @@
 # Ticket writes
 
-Use [tools](tools.md). Descriptions/comments are Markdown source (`bb_rich`), not HTML; inspect
-format before sending. Type/recipe/labels are term names; verify resolved values. Links add only.
+Use [tools](tools.md). Send Markdown (`bb_rich`); verify format and resolved type/recipe/label names.
+Maintain reviewers/links with `bakers_ticket_update`; use transition links for state changes.
 
 ## Publish a comment
 

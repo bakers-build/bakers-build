@@ -1,6 +1,8 @@
 // Pure core of the PM bot's poller: which posts a set of ticket states calls for,
 // given the states the poller saw last time. No I/O.
 
+import { withTicket } from './ticket-footer.mjs';
+
 import { CLOSED } from './channels.mjs';
 
 /**
@@ -25,6 +27,7 @@ export function diff(previous, tickets, summaries, messages) {
       const hint = manualReview(summaries[t.identifier] ?? '');
       text += hint ? `\n\n${messages.testHint}\n\n${hint}` : `\n\n${messages.noTestHint}`;
     }
+    if (t.state === 'done') text = withTicket(text, t, messages);
     posts.push({ identifier: t.identifier, ...target(t.conversation), text: named(t, text) });
   }
   return { posts, next };

@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-runtime-docker/options.schema.json",
+  "title": "@bakers-build/addon-runtime-docker options",
+  "description": "The runtime-docker entry's with.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "docker": {
+      "type": "string",
+      "minLength": 1,
+      "default": "docker",
+      "description": "The container CLI; podman also works."
+    },
+    "image": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Your image, used for every agent and never built. Default: the shipped image, built on first use."
+    },
+    "mounts": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^/" },
+      "default": [],
+      "description": "Extra absolute host paths, mounted read-only at the same path."
+    },
+    "network": {
+      "enum": ["host", "allowlist"],
+      "default": "host",
+      "description": "host shares the host network; allowlist routes the run through the conductor's proxy."
+    },
+    "allow": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": [],
+      "description": "Allowlist mode: hosts the run may reach, exact or *.suffix."
+    }
+  }
+}
