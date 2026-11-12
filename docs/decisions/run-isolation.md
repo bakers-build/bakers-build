@@ -214,8 +214,8 @@ Status after the build:
 ## Git boundary revision
 
 Each isolating run uses independent writable Git metadata, mounted over its worktree admin directory.
-The host `.git` pointer is read-only. Docker no longer mounts the shared common directory; Bubblewrap
-no longer grants shared objects, refs or logs writable. Runtime-host Git behavior is unchanged.
+The host `.git` pointer is read-only. Both backends mount host Git read-only for refreshing remote-tracking refs; only the private
+admin-directory overlay is writable. Shared objects, refs and logs are never writable. Runtime-host Git behavior is unchanged.
 
 `runtime_transfer_commit` accepts a full commit hash and a run-bound grant; the destination comes
 from the host-owned launch record. It copies object bytes without following symlinks into clean
@@ -228,7 +228,7 @@ operators remove them only after delivery. No shared objects or writable hardlin
 GC dependency. Submodules/gitlinks are refused at startup and transfer: their run-edited metadata
 could otherwise execute through concurrent host Git. Built-in host forge tools do not stage files;
 custom host hooks that stage or execute arbitrary run-controlled code remain outside this guarantee.
-The old shared-metadata protective overlays and post-run quarantine helper are removed: the run
+The old per-file shared-metadata protective overlays and post-run quarantine helper are removed: the run
 cannot write the host index, and gitlink-bearing starts/transfers are rejected before exposure.
 
 Measurement on this workspace (Linux, revision `582b7ebc85efaefb2561fa17130e1e265b0ca80a`):

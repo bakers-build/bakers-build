@@ -119,6 +119,21 @@ export function isolateGit(
   git(workspace, `--git-dir=${path}`, 'config', 'core.bare', 'false');
   git(workspace, `--git-dir=${path}`, 'config', 'core.worktree', workspace);
   git(workspace, `--git-dir=${path}`, 'read-tree', expected);
+  git(
+    workspace,
+    `--git-dir=${path}`,
+    'config',
+    'remote.origin.fetch',
+    '+refs/remotes/origin/*:refs/remotes/origin/*',
+  );
+  git(
+    workspace,
+    `--git-dir=${path}`,
+    'fetch',
+    '--no-tags',
+    '--no-write-fetch-head',
+    'origin',
+  );
   mkdirSync(join(path, 'hooks'), { recursive: true });
   return {
     path: realpathSync(path),

@@ -47,8 +47,9 @@ beforeEach(() => {
 afterEach(() => rmSync(CHECKOUT, { recursive: true, force: true }));
 
 class Workspace implements BbWorkspace {
+  constructor(private readonly instructions: string | null = null) {}
   async ensure(): Promise<EnsuredWorkspace> {
-    return { path: worktree, instructions: null, created: false };
+    return { path: worktree, instructions: this.instructions, created: false };
   }
 }
 
@@ -109,12 +110,13 @@ function recordingRuntime(
 }
 
 const agent = (
-  seen: { tools?: string },
+  seen: { tools?: string; prompt?: string },
   extension: Record<string, unknown> = {},
 ): BbAgent => ({
   id: 'claude',
   ...extension,
-  launchCommand: (_p, _run, _ws, tools) => {
+  launchCommand: (prompt, _run, _ws, tools) => {
+    seen.prompt = prompt;
     if (tools) seen.tools = tools.url;
     return 'claude --go';
   },
@@ -126,6 +128,7 @@ function setup(
   runtimeOf?: RuntimePlugin | ((order: string[]) => RuntimePlugin),
   withTools = false,
   extension: Record<string, unknown> = {},
+  instructions: string | null = null,
 ) {
   const order: string[] = [];
   const runtime =
@@ -169,13 +172,13 @@ function setup(
     marketplaces: [],
     ...(runtime ? { runtime } : {}),
   } as unknown as ConductorFileConfig;
-  const seen: { tools?: string } = {};
+  const seen: { tools?: string; prompt?: string } = {};
   const selectedAgent = agent(seen, extension);
   const conductor = new TestConductor(
     config,
     remote,
     executor,
-    new Workspace(),
+    new Workspace(instructions),
     [
       {
         id: 'claude',
@@ -214,6 +217,41 @@ function setup(
 }
 
 describe('runtime slot — launch wrapping', () => {
+  it('adds private Git delivery guidance only when the runtime supports transfer', async () => {
+    const runtime = recordingRuntime(
+      [],
+      { wraps: [], cleanups: [] },
+      {
+        transferCommit: async () => {},
+      },
+    );
+    const isolated = setup(runtime, false, {}, 'workflow');
+    isolated.config.prompt = 'Project instructions.';
+    await isolated.run();
+    expect(isolated.seen.prompt).toContain('Project instructions.');
+    expect(isolated.seen.prompt).toContain('Git commits and refs are private');
+    expect(isolated.seen.prompt).toContain(
+      'After forge_fetch, run git fetch origin',
+    );
+    expect(isolated.seen.prompt).toContain(
+      'before forge_push, call runtime_transfer_commit',
+    );
+    expect(isolated.seen.prompt).toContain('full commit hash');
+    expect(isolated.seen.prompt).toContain(
+      'maintainer outside the isolated run',
+    );
+
+    const { hostRuntime } = await import('../../src/plugins/runtime.js');
+    const host = setup(hostRuntime, false, {}, 'workflow');
+    host.config.prompt = 'Project instructions.';
+    await host.run();
+    expect(host.seen.prompt).toBe('Project instructions.');
+
+    const empty = setup(runtime);
+    await empty.run();
+    expect(empty.seen.prompt).toBe('');
+  });
+
   it('wraps the launch before startRun', async () => {
     const rec: Recorded = { wraps: [], cleanups: [] };
     const s = setup(recordingRuntime([], rec), true);

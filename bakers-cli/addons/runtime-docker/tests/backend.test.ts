@@ -137,7 +137,7 @@ describe('runtime-docker wrap', () => {
     );
   });
 
-  it('mounts independent Git metadata without exposing the parent repository', async () => {
+  it('mounts independent Git metadata and read-only host refs', async () => {
     const before = readFileSync(join(common, 'config'), 'utf8');
     const out = await dockerRuntime({}, deps()).wrap(launch());
     const gitDir = join(common, 'worktrees/tree');
@@ -150,7 +150,7 @@ describe('runtime-docker wrap', () => {
       `'${join(ws, '.git')}:${join(ws, '.git')}:ro'`,
     );
     expect(out.command).not.toContain(`'${common}:${common}'`);
-    expect(out.command).not.toContain(`'${common}:${common}:ro'`);
+    expect(out.command).toContain(`'${common}:${common}:ro'`);
     expect(readFileSync(join(common, 'config'), 'utf8')).toBe(before);
   });
 

@@ -29,6 +29,7 @@ const opts: DockerOptions = {
   runNetwork: 'bb-runtime-abc',
 };
 const where: HostPaths = {
+  gitCommonDir: '/w/main/.git',
   privateGitDir: '/cache/run.git',
   gitDir: '/w/main/.git/worktrees/tree',
   gitLink: '/w/tree/.git',
@@ -44,13 +45,14 @@ const envFlags = (argv: string[]) =>
   argv.flatMap((a, i) => (a === '-e' ? [argv[i + 1] as string] : []));
 
 describe('dockerArgs', () => {
-  it('mounts private Git metadata instead of the parent repository', () => {
+  it('keeps host Git read-only and writable metadata private', () => {
     const mounts = volumes(
       dockerArgs(launch, opts, { ...where, privateGitDir: '/cache/run.git' })
         .argv,
     );
     expect(mounts).toContain('/cache/run.git:/w/main/.git/worktrees/tree');
     expect(mounts).not.toContain('/w/main/.git:/w/main/.git');
+    expect(mounts).toContain('/w/main/.git:/w/main/.git:ro');
   });
   it('starts one named, labelled container', () => {
     const { argv } = dockerArgs(launch, opts, where);
@@ -76,6 +78,7 @@ describe('dockerArgs', () => {
     expect(volumes(dockerArgs(launch, opts, where).argv)).toEqual([
       '/w/tree:/w/tree',
       '/w/tree/.git:/w/tree/.git:ro',
+      '/w/main/.git:/w/main/.git:ro',
       '/cache/run.git:/w/main/.git/worktrees/tree',
       '/opt/cli:/opt/cli:ro',
       '/h/run:/h/run',

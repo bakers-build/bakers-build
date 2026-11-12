@@ -72,7 +72,9 @@ per-ticket write bypass. Host-generated DDEV files remain writable from host pro
 
 Docker and Bubblewrap use independent Git metadata with copied objects, preserving worktree paths.
 Gitlinks/submodules are refused because nested Git configuration can execute on the host.
-Commit normally inside the run, then explicitly call `runtime_transfer_commit` with a full hash
+The host Git store is mounted read-only. After `forge_fetch`, run `git fetch origin` to refresh
+private remote-tracking refs; private local branches remain independent. Agent launches include
+this delivery context. Commit normally inside the run, then explicitly call `runtime_transfer_commit` with a full hash
 before forge push. The destination is the ticket branch from the host-owned launch record.
 The host verifies objects, ancestry and every incoming commit's protected-path changes through clean
 metadata; source config/hooks and unrelated refs are never imported. Concurrent host branch movement

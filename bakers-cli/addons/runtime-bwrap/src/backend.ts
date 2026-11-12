@@ -142,6 +142,7 @@ function argv(
     ...SYSTEM.filter(existsSync),
     ...softwarePaths(deps.env),
     deps.cliRoot,
+    privateGit.commonDir,
     ...(options.readPaths ?? []),
     ...(input.readPaths ?? []),
   ])

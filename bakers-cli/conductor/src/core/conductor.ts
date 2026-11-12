@@ -1772,7 +1772,7 @@ export class Conductor {
     await this.executor.cleanupRun(t.branchName, run.runId);
     await this.cleanupRuntime(run.runUuid, run.runId);
     const runtime = await this.runtime();
-    const prompt = ws.instructions
+    let prompt = ws.instructions
       ? renderPrompt(this.config.prompt, {
           identifier: t.identifier,
           state: t.state || 'qualification',
@@ -1780,6 +1780,12 @@ export class Conductor {
           ticketUuid: t.uuid,
         })
       : '';
+    if (prompt && runtime.transferCommit)
+      prompt +=
+        '\n\nRuntime context: Git commits and refs are private to this run. ' +
+        'After forge_fetch, run git fetch origin to refresh private remote-tracking refs; ' +
+        'before forge_push, call runtime_transfer_commit with the intended full commit hash. ' +
+        'Commits changing protected files require a maintainer outside the isolated run.';
     // BB-473 review round 2 (Critical 1): pinning the run's own UUID
     // unconditionally makes a re-dispatch of the same run — an existing,
     // supported path (see the cleanupRun comment above) — fail to launch,

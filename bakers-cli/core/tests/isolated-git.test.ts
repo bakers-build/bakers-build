@@ -492,3 +492,52 @@ it('dissociates borrowed objects so deleting the alternate store cannot break lo
   expect(local('log', '-1', '--format=%s')).toBe('independent');
   expect(local('show', 'HEAD^:file')).toBe('base');
 });
+
+it('refreshes private origin refs from host fetches without rewriting local branches or host metadata', () => {
+  const { root, main, workspace } = fixture();
+  const base = git(main, 'rev-parse', 'HEAD');
+  git(main, 'update-ref', 'refs/remotes/origin/next', base);
+  const record = isolateGit(workspace, join(root, 'refresh-private'), 'ticket');
+  const local = (...args: string[]) =>
+    git(workspace, `--git-dir=${record.path}`, ...args);
+  expect(local('rev-parse', 'origin/next')).toBe(base);
+  expect(local('config', '--get-all', 'remote.origin.fetch')).toBe(
+    '+refs/remotes/origin/*:refs/remotes/origin/*',
+  );
+  writeFileSync(join(workspace, 'file'), 'private');
+  local('add', 'file');
+  local(
+    '-c',
+    'user.name=test',
+    '-c',
+    'user.email=test@test',
+    'commit',
+    '-qm',
+    'private',
+  );
+  const privateTip = local('rev-parse', 'HEAD');
+  const sibling = local('rev-parse', 'sibling');
+  const next = git(
+    main,
+    '-c',
+    'user.name=test',
+    '-c',
+    'user.email=test@test',
+    'commit-tree',
+    git(main, 'rev-parse', 'HEAD^{tree}'),
+    '-p',
+    base,
+    '-m',
+    'host fetch',
+  );
+  git(main, 'update-ref', 'refs/remotes/origin/next', next);
+  const before = snapshot(main);
+  local('fetch', 'origin');
+  expect(local('rev-parse', 'origin/next')).toBe(next);
+  expect(local('rev-parse', 'HEAD')).toBe(privateTip);
+  expect(local('rev-parse', 'ticket')).toBe(privateTip);
+  expect(local('rev-parse', 'sibling')).toBe(sibling);
+  expect(local('show', 'HEAD:file')).toBe('private');
+  expect(snapshot(main)).toEqual(before);
+  expect(existsSync(join(record.path, 'objects/info/alternates'))).toBe(false);
+});

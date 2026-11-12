@@ -106,7 +106,7 @@ const fs = require('node:fs'), cp = require('node:child_process'), assert = requ
 const git = (...args) => cp.execFileSync('git', args, {encoding:'utf8'}).trim();
 const deny = fn => assert.throws(fn);
 const common = ${JSON.stringify(common)};
-assert.equal(fs.existsSync(common + '/config'), false);
+assert.equal(fs.existsSync(common + '/config'), true);
 deny(() => fs.writeFileSync('.git', 'gitdir: /tmp/attack'));
 deny(() => fs.unlinkSync('.git'));
 deny(() => fs.renameSync('.git', '.git-moved'));

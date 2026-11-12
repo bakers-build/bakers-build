@@ -360,6 +360,7 @@ export function dockerRuntime(
         { ...launch, env },
         { ...opts, image },
         {
+          gitCommonDir,
           gitDir,
           privateGitDir: privateGit.path,
           ...(statSync(gitLink, { throwIfNoEntry: false })?.isFile()

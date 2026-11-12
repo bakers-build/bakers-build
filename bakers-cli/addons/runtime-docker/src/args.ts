@@ -15,6 +15,7 @@ export interface DockerOptions {
 
 /** Host facts the launch depends on, resolved by the backend. */
 export interface HostPaths {
+  gitCommonDir: string;
   /** Independent metadata mounted over the worktree admin directory. */
   privateGitDir: string;
   /** The worktree's own Git dir; the common dir itself for a main checkout. */
@@ -103,6 +104,7 @@ export function dockerArgs(
     ...forwarded.flatMap((k) => ['-e', k]),
     ...bind(ws),
     ...(where.gitLink ? bind(where.gitLink, undefined, ':ro') : []),
+    ...ro(where.gitCommonDir),
     ...bind(where.privateGitDir, gitDir),
     ...bind(where.cliRoot, undefined, ':ro'),
     ...opts.mounts.flatMap((m) => bind(m, m, ':ro')),

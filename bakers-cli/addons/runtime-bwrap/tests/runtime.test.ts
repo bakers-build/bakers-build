@@ -287,7 +287,7 @@ it.skipIf(!canBwrap)(
   },
 );
 
-it('overlays private metadata without exposing the parent store and keeps requested paths read-only', async () => {
+it('overlays private metadata while host refs and requested paths stay read-only', async () => {
   const runtime = make();
   const context = await runtime.prepareRun!(run);
   const readPath = join(ws, 'protected');
@@ -320,11 +320,17 @@ it('overlays private metadata without exposing the parent store and keeps reques
     join(ws, '.git'),
   ]);
   expect(mounts).toContainEqual(['--ro-bind', readPath, readPath]);
+  expect(mounts).toContainEqual([
+    '--ro-bind',
+    record.commonDir,
+    record.commonDir,
+  ]);
   expect(
     mounts.some(
-      ([, source]) =>
-        source === record.commonDir ||
-        source.startsWith(`${record.commonDir}/`),
+      ([mode, source]) =>
+        mode === '--bind' &&
+        (source === record.commonDir ||
+          source.startsWith(`${record.commonDir}/`)),
     ),
   ).toBe(false);
   expect(

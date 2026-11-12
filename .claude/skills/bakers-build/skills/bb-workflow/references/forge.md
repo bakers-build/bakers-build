@@ -10,6 +10,11 @@ base: target_branch else base_branch; variants target ticket branch.
 - forge_checks: poll until success/failure.
 - forge_merge: only at explicitly authorized done.
 
+When `runtime_transfer_commit` is served, Git commits and refs are private to the run.
+After `forge_fetch`, run `git fetch origin` to refresh private remote-tracking refs.
+Before `forge_push`, call `runtime_transfer_commit` with the intended full commit hash.
+Commits changing protected files require a maintainer to apply and deliver them outside the isolated run.
+
 Tools enforce ownership, target, Conventional Commits title, checks, project merge method,
 safe deletion and squash trailer. Correct named refusals before retrying.
 When no forge tools are served, read [forge fallback](forge-fallback.md) at the operation needed.
