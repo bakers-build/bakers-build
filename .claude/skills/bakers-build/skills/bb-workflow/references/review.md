@@ -32,7 +32,7 @@ none — the merge belongs to *transition*.
 Aggregate the result records and render once through [the outtake](outtake.md), reusing the MR link
 and distinguishing reused, agent and human observations; print it in full. Take the human's
 confirmation of the verdict; an unattended run has none to wait for. Then the credentialed parent
-publishes the typed verdict through [publish comment](publish-comment.md) — full verdict, evidence
+publishes the typed verdict through [ticket writes](ticket-writes.md) — full verdict, evidence
 and walkthrough — and the rendered outtake as its own `summary` comment, with any supplied
 [measurement](measurement.md), before origin publication and transition. A blocked or
 state-restricted run publishes both too.

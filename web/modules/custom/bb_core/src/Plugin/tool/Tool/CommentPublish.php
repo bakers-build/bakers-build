@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
 use Drupal\bb_core\Entity\BbCommentInterface;
+use Drupal\bb_core\TicketWriteBudget;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -72,6 +73,7 @@ final class CommentPublish extends ToolBase {
     if (!$this->entities()->getAccessControlHandler('bb_comment')->createAccess('bb_comment', $this->currentUser)) {
       throw new \InvalidArgumentException('You may not comment on tickets.');
     }
+    TicketWriteBudget::check($values['body'], $values['type']);
     $comment = $storage->create([
       'ticket_id' => $ticket->id(),
       'type' => $values['type'],

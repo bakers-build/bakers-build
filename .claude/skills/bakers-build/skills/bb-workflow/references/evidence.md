@@ -4,9 +4,8 @@ Read before running a check, writing a test, capturing output or writing ticket 
 
 ## Durable evidence and the transient root
 
-**Durable evidence** is the triad: **command**, **observed result**, **immutable commit**.
-Missing any part leaves verification incomplete. Keep complete evidence in typed ticket comments;
-retain the MR and permanent regression test as reproducible deliverables.
+Apply [ticket writes](ticket-writes.md) to evidence in comments. Retain the MR and permanent
+regression test as reproducible deliverables.
 
 Transient reports, logs, screenshots and probes live under `assets-ai/<bakers.build-nnn>/`,
 gitignored and removed with the worktree. They are not durable ticket links.

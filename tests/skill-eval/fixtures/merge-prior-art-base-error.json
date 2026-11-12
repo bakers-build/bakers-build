@@ -7,8 +7,7 @@
   "references": [
     "bb-workflow/references/prior-art-build.md",
     "bb-workflow/references/prior-art-search.md",
-    "bb-workflow/references/read-ticket.md",
-    "bb-workflow/references/publish-comment.md"
+    "bb-workflow/references/read-ticket.md"
   ],
   "input": {
     "task": "Run the explicitly authorized merge capability only. Return merged or blocked with evidence. Publish no comments or state changes.",

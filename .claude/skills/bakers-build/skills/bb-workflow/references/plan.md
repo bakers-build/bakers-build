@@ -25,7 +25,7 @@ none — a bug records a real RED observation of the reported condition before a
 
 ## deliver
 
-Publish the method's result through [publish comment](publish-comment.md) as complete comments:
+Publish the method's result through [ticket writes](ticket-writes.md) as complete comments:
 `spec`, `plan` and `test`. A bug publishes the cause and observed evidence as `debug_diagnose`
 instead of `spec`.
 

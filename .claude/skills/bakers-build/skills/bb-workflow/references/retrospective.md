@@ -81,7 +81,7 @@ failed write is reported as a retrospective write
 failure; it must not block or fail an otherwise authorized close. Never invent a score or silently
 claim a failed write succeeded.
 
-Publish **one** comment through [publish comment](publish-comment.md), type `retro`, Markdown in
+Publish **one** comment through [ticket writes](ticket-writes.md), type `retro`, Markdown in
 `bb_rich`, whenever a rating or a cancellation reason was supplied. Use this shape without pipe
 tables:
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\TicketWriteBudget;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
@@ -217,6 +218,9 @@ final class TicketUpdate extends ToolBase {
       throw new \InvalidArgumentException(sprintf('Ticket %s is closed and can no longer be changed.', $values['ticket']));
     }
     $ticket = $this->writableTicket($values['ticket'], array_values(array_intersect_key(self::FIELDS, $given)));
+    if (isset($given['description'])) {
+      TicketWriteBudget::check($given['description']);
+    }
     // A label created on the way must not outlive a refused update.
     $transaction = $this->database->startTransaction();
     // List inputs change their field in place; the rest replace the value.

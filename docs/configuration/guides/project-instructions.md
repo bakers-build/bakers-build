@@ -8,7 +8,7 @@ request from prior-art search through qualification to `plan`. See
 this bundle.
 
 **Source of truth.** This bundle derives from `.claude/skills/bakers-build/skills/{bb-create-ticket,
-bb-workflow}/SKILL.md` and the `bb-workflow` references `read-ticket.md`, `publish-comment.md`,
+bb-workflow}/SKILL.md` and the `bb-workflow` references `read-ticket.md`, `ticket-writes.md`,
 `transition-ticket.md`, `prior-art-search.md`, `tools.md`, `qualification.md` and
 `ensure-qualification.md`. When those files change,
 re-derive this file; do not hand-edit it out of sync with them.

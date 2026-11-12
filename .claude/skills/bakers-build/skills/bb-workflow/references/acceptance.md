@@ -1,16 +1,16 @@
 # Establish acceptance criteria
 
 Read at qualification's `work`, and at working's `read` when no `acceptance` comment covers the
-confirmed scope. Own the complete acceptance-criteria list and bug reproduction. Read the
-qualification handoff and adopt PM-seeded wording when already checkable, role-named and
+confirmed scope. Index criteria and bug reproduction under [ticket writes](ticket-writes.md).
+Read the qualification handoff and adopt PM-seeded wording when already checkable, role-named and
 benefit-bearing.
 
 Each criterion is a condition another worker can mark met or not met:
 “As a <role>, I want <feature>, so that <benefit>.” Cover every implied condition; list length
 follows scope, not a fixed number. Assign stable AC IDs.
 
-Fold the recipe's additional criteria into this list, deduplicating while preserving
-PM-seeded and standing criteria. This `acceptance` comment is the single source verification reads.
+Reference qualification's unchanged criteria by ID and comment ID; write only added or changed
+criteria in full. Preserve PM-seeded and standing criteria. Verification resolves this index.
 
 Include one standing criterion that the change passes every matching `bb-phase-validate`
 row of `WORKFLOW.md`. For bugs, also require that the reproducible condition no longer reproduces.
@@ -35,6 +35,6 @@ facts are missing, ask or record the unresolved assumption rather than inventing
 The gate's passed/rewritten tally evaluates criterion quality, not implementation success.
 Qualification's outtake presents it.
 
-Publish the complete list through [publish comment](publish-comment.md) with `bb_comment_type`
+Publish the criterion index through [ticket writes](ticket-writes.md) with `bb_comment_type`
 **`acceptance`**. Acceptance is validator-neutral: it selects no command, runs no tests, prepares no
 scenarios and writes no destination. Return the published comment identifier.

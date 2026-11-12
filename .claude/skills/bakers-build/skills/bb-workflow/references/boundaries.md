@@ -12,7 +12,7 @@ register. Personal expertise stays out of shared files. Deliverables follow thei
 Supply bakers.build, ticket UUID and confirmed `spec`, `plan`, `test` comments to the recipe's
 skills. Proposals carry scope markers and proposal/confirmed status. Record exact confirmed comment
 IDs and covering approval. Later proposals supersede scope only after approval. Publish complete
-plans in the ticket through [publish comment](publish-comment.md); product docs remain in the
+plans in the ticket through [ticket writes](ticket-writes.md); product docs remain in the
 repository.
 
 ## Project checks and functional validation

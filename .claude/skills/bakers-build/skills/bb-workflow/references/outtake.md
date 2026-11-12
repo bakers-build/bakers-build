@@ -1,8 +1,6 @@
 # Outtake
 
-Read at every state's `outtake`. The reader switches between tickets: explain what you did, what
-worked, what failed, then make manual review immediately usable. Success stays brief; problems get
-enough detail to act.
+Read at every state's `outtake`. Apply [ticket writes](ticket-writes.md).
 
 ## Input contract
 
@@ -21,7 +19,7 @@ Use these headings in order and omit empty optional sections. The state section 
 
 ### 🎯 Outcome
 
-Name the ticket and explain what you did and why in one or two sentences. Distinguish delivered
+Name the ticket and outcome. Distinguish delivered
 work from proposals. A state's lead section follows directly.
 
 ### ✅ Success
@@ -31,21 +29,18 @@ passes.
 
 ### ⚠️ Problems
 
-For failed, blocked or unresolved work, give AC IDs where applicable, expected versus observed
-behavior, impact, evidence and required repair/decision. State unknown causes honestly. Distinguish
-proposed fixes from completed ones. Include criterion rewrites when supplied.
+For failed, blocked or unresolved work, cite handoff AC/finding IDs, impact and required repair
+or decision. Include not checked / risk lines.
 
 ### 🧪 Manual review
 
 State what remains for the human, the intended persona and environment. Agent inspection is not
-human approval. Give short actions with expected observations and all related resources: MR,
+human approval. Give actions with expected observations and related resources: MR,
 running surfaces, designs, artifacts and runnable CLI commands with working directory/access.
 Preserve every supplied persona/path, including denied personas; name missing access instead of
 guessing.
 
-Each link gets 🔗, a descriptive label and blank lines around it. Show each URL once. Apply
-[evidence and links](evidence.md) and [preview links](preview-links.md). Ticket evidence uses
-verified absolute `https://` URLs; never invent URLs or add pipeline URLs. One-time login URLs are
+Apply [evidence and links](evidence.md) and [preview links](preview-links.md). One-time login URLs are
 allowed in terminal and ticket: preserve each issued URL unchanged and label persona, role and
 environment. Never substitute an administrator. Login URLs are access, not durable evidence. From
 working onward a missing MR is a run failure.
@@ -59,4 +54,3 @@ lacks is shown as not recorded.
 
 End with one concrete action or decision.
 
-Apply [audience and register](boundaries.md). Complete evidence stays in the typed handoff.

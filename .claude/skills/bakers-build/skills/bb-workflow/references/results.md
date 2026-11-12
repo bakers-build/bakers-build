@@ -1,8 +1,7 @@
 # Result records
 
 Read when qualifying, planning or reporting checks, resolving access, or rendering a handoff.
-Use these Markdown tables/records in existing qualification, test and coding/review comments;
-there is no new entity or separate mapping artifact. Owners supply records; outtake renders once.
+Use these records in qualification, test and coding/review comments; outtake cites them.
 
 | Record | Required fields |
 |---|---|
@@ -13,14 +12,6 @@ there is no new entity or separate mapping artifact. Owners supply records; outt
 | `manual_review` | checks requested from the human, `pending` or `completed`, human observation when completed |
 
 ## Test as
-
-Qualification names who tests, as a short list:
-
-```markdown
-## Test as
-- `north-lead`: sees the new Export button
-- `north-guest`: denied, no Export button
-```
 
 Personas come from the project's test-user list, which the `WORKFLOW.md` `bb-phase-outtake` hint
 names; include `anonymous` and denied personas when the criteria need them. A change without a web
@@ -41,10 +32,7 @@ reuse reason; it does not claim a fresh execution. Failed/blocked/not-run checks
 PASS. A missing required check blocks its AC. A pending human invitation alone does not fail an
 AC already established by other confirmed evidence, unless the plan requires human acceptance.
 
-Retain complete acceptance evidence. Record each AC's PASS/FAIL/RED/PENDING and concise reasoning
-with complete durable evidence in the typed handoff. A bare verdict is a defect. Review uses
+Record each AC's PASS/FAIL/RED/PENDING and reasoning under [ticket writes](ticket-writes.md). A bare verdict is a defect. Review uses
 `FAIL(<cause>)` or `RED(<cause>)` at the result position. An uncovered criterion without
 justification is `FAIL(evidence)`. `@bakers-build/bb-verdict` › *The verdict* owns the cause set.
-Retain each finding's **What / Why / Fix** and success check. Keep all related resources available
-to manual review, without full logs in the visible summary; it lists criteria only where the
-state's outtake section asks for them.
+Retain each finding's **What / Why / Fix** and success check. Keep related resources available to manual review.

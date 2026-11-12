@@ -39,7 +39,7 @@ blocker in the records.
 ## outtake
 
 Issue each `test_as` persona's login link through the `WORKFLOW.md` `bb-phase-outtake` hint and add it
-to the records. Publish the typed coding handoff through [publish comment](publish-comment.md):
+to the records. Publish the typed coding handoff through [ticket writes](ticket-writes.md):
 confirmed scope IDs, base and head SHAs, MR, per-criterion evidence and the login links. Render it
 through [the outtake](outtake.md), publish that as its own comment of type `summary`, and print it.
 Both writes are owed even when no transition follows.

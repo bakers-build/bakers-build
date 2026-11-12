@@ -39,7 +39,7 @@ none
 
 ## outtake
 
-Publish two comments through [publish comment](publish-comment.md), in this order. First, one
+Publish two comments through [ticket writes](ticket-writes.md), in this order. First, one
 complete `qualification` handoff: Outcome, Acceptance, Out of scope, then Handoff metadata.
 Acceptance holds stable AC IDs, the gate's passed/rewritten tally, previous wording for rewrites and
 explicit assumptions; that tally is not a passed implementation test. Required fields:
