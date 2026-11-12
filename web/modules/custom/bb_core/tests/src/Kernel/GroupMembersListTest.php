@@ -16,7 +16,6 @@ use PHPUnit\Framework\Attributes\Group;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 
-
 /**
  * The members surface is a LIST, exercised on the team — its one live arm.
  *

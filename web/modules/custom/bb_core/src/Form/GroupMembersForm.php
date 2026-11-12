@@ -142,7 +142,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       $form += $this->tenancyParts($group, $may_write);
     }
 
-    $teams = $tenancy ? $this->tenancyInvite->teamNamesByMember($group) : NULL;
+    $teams = $tenancy ? $this->membershipWriter->teamNamesByMember($group) : NULL;
     $form['roster'] = $this->listZone(
       $this->t('Members'),
       $this->itemBuilder->items($this->membershipWriter->memberships($group), $group, $may_write, $may_transfer, $teams),
@@ -190,7 +190,7 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
       $parts['pending'] = $this->listZone(
         $this->t('Pending invitations'),
         $this->tenancyInvite->inviteItems($invites, $may_write),
-        $this->tenancyInvite->inviteColumns(),
+        $this->itemBuilder->inviteColumns(),
         $this->t('No pending invitations.'),
         15,
       );

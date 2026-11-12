@@ -304,56 +304,6 @@ final class WorkspaceInvite {
   }
 
   /**
-   * The columns of the pending invitations table.
-   *
-   * @return array<int, array{key: string, label: string}>
-   *   The columns, in render order.
-   */
-  public function inviteColumns(): array {
-    return [
-      ['key' => 'person', 'label' => (string) $this->t('Email')],
-      ['key' => 'team', 'label' => (string) $this->t('Team')],
-      ['key' => 'role', 'label' => (string) $this->t('Role')],
-      ['key' => 'state', 'label' => (string) $this->t('Status')],
-      ['key' => 'joined', 'label' => (string) $this->t('Invited')],
-      ['key' => 'controls', 'label' => ''],
-    ];
-  }
-
-  /**
-   * Each member's team names in this workspace, joined for the Team column.
-   *
-   * @param \Drupal\Core\Entity\ContentEntityInterface $group
-   *   The workspace.
-   *
-   * @return array<int, string>
-   *   Comma-joined team labels in name order, keyed by user id.
-   */
-  public function teamNamesByMember(ContentEntityInterface $group): array {
-    // The team type is the one an invitation names, which keeps this class
-    // blind to group types.
-    $team_type = (string) BbInvite::create([])->getFieldDefinition('team_id')?->getSetting('target_type');
-    $teams = $this->entityTypeManager->getStorage($team_type)->loadByProperties(['workspace_id' => $group->id()]);
-    if ($teams === []) {
-      return [];
-    }
-    uasort($teams, static fn ($a, $b): int => strnatcasecmp((string) $a->label(), (string) $b->label()));
-    $order = array_flip(array_map('strval', array_keys($teams)));
-    $memberships = $this->entityTypeManager->getStorage('og_membership')->loadByProperties([
-      'entity_type' => $team_type,
-      'entity_id' => array_keys($teams),
-      'state' => OgMembershipInterface::STATE_ACTIVE,
-    ]);
-    $names = [];
-    foreach (array_filter($memberships, static fn ($m): bool => $m instanceof OgMembershipInterface) as $membership) {
-      $team_id = (string) $membership->getGroupId();
-      $names[(int) $membership->getOwnerId()][$order[$team_id]] = (string) $teams[$team_id]->label();
-    }
-    array_walk($names, 'ksort');
-    return array_map(static fn (array $labels): string => implode(', ', $labels), $names);
-  }
-
-  /**
    * List items for pending invitations.
    *
    * @param array<int, \Drupal\bb_core\Entity\BbInvite> $invites

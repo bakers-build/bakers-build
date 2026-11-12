@@ -743,7 +743,7 @@ final class WorklogOverviewTest extends KernelTestBase {
   }
 
   /**
-   * The team grid's day headers carry the day totals; no Total row repeats them.
+   * The team grid's day headers carry the day totals; no Total row repeats.
    */
   public function testTeamGridHeaderCarriesDayTotals(): void {
     $w = $this->createTeamWorld();

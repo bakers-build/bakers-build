@@ -365,7 +365,11 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
    */
   public function testInvitedIsNeutralExpiredIsCritical(): void {
     $now = \Drupal::time()->getRequestTime();
-    $fresh = BbInvite::create(['workspace_id' => $this->workspace->id(), 'email' => 'fresh@example.com', 'created' => $now]);
+    $fresh = BbInvite::create([
+      'workspace_id' => $this->workspace->id(),
+      'email' => 'fresh@example.com',
+      'created' => $now,
+    ]);
     $stale = BbInvite::create([
       'workspace_id' => $this->workspace->id(),
       'email' => 'stale@example.com',
@@ -373,8 +377,9 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     ]);
     $items = $this->container->get('bb_core.workspace_invite')->inviteItems([$fresh, $stale], FALSE)['items'];
 
-    self::assertSame(['Invited', 'neutral'], [$items[0]['cells']['state']['label'], $items[0]['cells']['state']['tone']]);
-    self::assertSame(['Expired', 'critical'], [$items[1]['cells']['state']['label'], $items[1]['cells']['state']['tone']]);
+    $state = static fn (array $item): array => [$item['cells']['state']['label'], $item['cells']['state']['tone']];
+    self::assertSame(['Invited', 'neutral'], $state($items[0]));
+    self::assertSame(['Expired', 'critical'], $state($items[1]));
   }
 
   /**
@@ -392,7 +397,13 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
     $none = $this->createUser([], 'in-no-team');
     self::assertInstanceOf(UserInterface::class, $both);
     self::assertInstanceOf(UserInterface::class, $none);
-    foreach ([[$both, $this->workspace], [$none, $this->workspace], [$both, $beta], [$both, $alpha]] as [$account, $group]) {
+    $memberships = [
+      [$both, $this->workspace],
+      [$none, $this->workspace],
+      [$both, $beta],
+      [$both, $alpha],
+    ];
+    foreach ($memberships as [$account, $group]) {
       OgMembership::create(['type' => OgMembershipInterface::TYPE_DEFAULT])
         ->setOwner($account)
         ->setGroup($group)
@@ -411,7 +422,10 @@ final class WorkspaceMemberInviteTest extends KernelTestBase {
       static fn (Crawler $th): string => trim($th->text()),
     ));
 
-    self::assertSame([['Email', 'Team', 'Role', 'Status', 'Invited', ''], ['Name', 'Team', 'Role', 'Joined', '']], $headers);
+    self::assertSame([
+      ['Email', 'Team', 'Role', 'Status', 'Invited', ''],
+      ['Name', 'Team', 'Role', 'Joined', ''],
+    ], $headers);
     self::assertCount(0, $page->filter('[data-list-item]'), 'no card list remains');
     $team_of = static function (Crawler $table, string $name): string {
       foreach ($table->filter('tbody tr') as $row) {

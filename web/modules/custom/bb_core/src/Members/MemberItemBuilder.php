@@ -172,6 +172,23 @@ final class MemberItemBuilder implements TrustedCallbackInterface {
   }
 
   /**
+   * The columns of the pending invitations table.
+   *
+   * @return array<int, array{key: string, label: string}>
+   *   The columns, in render order.
+   */
+  public function inviteColumns(): array {
+    return [
+      ['key' => 'person', 'label' => (string) $this->t('Email')],
+      ['key' => 'team', 'label' => (string) $this->t('Team')],
+      ['key' => 'role', 'label' => (string) $this->t('Role')],
+      ['key' => 'state', 'label' => (string) $this->t('Status')],
+      ['key' => 'joined', 'label' => (string) $this->t('Invited')],
+      ['key' => 'controls', 'label' => ''],
+    ];
+  }
+
+  /**
    * The roster table's columns.
    *
    * @param bool $with_team

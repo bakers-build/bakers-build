@@ -24,7 +24,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * My time uses the ticket-list canvas: a toolbar above the rows, summary chips, no search.
+ * My time on the ticket-list canvas: a toolbar above the rows, no search.
  */
 #[Group('bb_track')]
 #[RunTestsInSeparateProcesses]
@@ -183,7 +183,7 @@ final class WorklogCanvasTest extends KernelTestBase {
   }
 
   /**
-   * Each day column header carries that day's recorded total; no day reads blank.
+   * Each day column header carries that day's recorded total, 0:00 included.
    */
   public function testWeekHeaderCarriesDayTotals(): void {
     $this->createRecorded($this->employee, ['work_date' => '2026-10-06', 'duration_seconds' => 5400]);
@@ -192,7 +192,17 @@ final class WorklogCanvasTest extends KernelTestBase {
     $week = new Crawler($this->screen(['mode' => 'week', 'date' => '2026-10-06']));
 
     self::assertSame(
-      ['Project', 'Mon 05 0:00', 'Tue 06 1:30', 'Wed 07 0:00', 'Thu 08 0:00', 'Fri 09 0:00', 'Sat 10 0:00', 'Sun 11 0:30', 'Total'],
+      [
+        'Project',
+        'Mon 05 0:00',
+        'Tue 06 1:30',
+        'Wed 07 0:00',
+        'Thu 08 0:00',
+        'Fri 09 0:00',
+        'Sat 10 0:00',
+        'Sun 11 0:30',
+        'Total',
+      ],
       $week->filter('table thead th')->each(static fn (Crawler $th): string => trim((string) preg_replace('/\s+/', ' ', $th->text()))),
     );
   }
