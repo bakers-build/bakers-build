@@ -35,8 +35,8 @@ Resolve the matrix below row by row under the
 Finish the missing decisions before treating the configuration as complete; creating a WORKFLOW
 does not resolve its recipe/marketplace choice.
 Separate decisions, one turn each: profile commands and readiness checks; marketplace and workflow
-hints; a service key and its match text; each lifecycle command. An installed client is not a
-selected client.
+hints; a service key and its match text. Ask each lifecycle command by name, in its own turn; an
+environment or worktree answer does not answer a hook. An installed client is not a selected client.
 **Done when every applicable row has a source, an answer, or an explicit unresolved status.**
 
 ## Decision matrix
@@ -47,7 +47,7 @@ The documentation owns configuration syntax and supported options; this matrix o
 | When | Decide | Read |
 |---|---|---|
 | Client unknown | Client, executor and worktree | [Clients](https://bakers.build/get-started/use-your-client), [slots](https://bakers.build/addons/slots) |
-| Application needs preparation or cleanup | Each lifecycle command separately | [Hooks](https://bakers.build/provision/hooks) |
+| Lifecycle commands unanswered | Each lifecycle command separately; none is a valid answer | [Hooks](https://bakers.build/provision/hooks) |
 | Tests or previews need an environment | Provisioning profiles, commands, then readiness checks | [Environment](https://bakers.build/provision/guide), [provision_up](https://bakers.build/configuration/project/hooks#provision-on-an-agent-s-request) |
 | Workflow needs skills or recipes | Installed skills, required plugins and pinned sources | [Marketplaces](https://bakers.build/configuration/project#agent-plugins), [skills](https://bakers.build/skills-and-workflows/skills) |
 | Permissions unknown | Mode, necessary access and effective source; recommend as the [machine matrix](../../bb-init/references/machine-setup.md) does | [Execution security](https://bakers.build/provision/security/execution), [shared settings](https://bakers.build/provision/security/shared-settings) |
