@@ -892,18 +892,3 @@ describe('ClaudeAgent.sandboxPreflight', () => {
     ).toEqual({ ok: true });
   });
 });
-
-describe('ClaudeAgent under an isolating runtime', () => {
-  it('launches without a sandbox settings block', async () => {
-    const plugin = claudeAgent({
-      shared_permissions: { machine: { mode: 'sandbox' }, isolated: true },
-    } as never);
-    const agent = await plugin.createAgent({} as never);
-    const argv = captureArgv('claude', agent.launchCommand('x'));
-    expect(argv).not.toContain('--settings');
-    expect(plugin.permissions?.mode).toEqual({
-      value: 'system',
-      source: 'runtime',
-    });
-  });
-});

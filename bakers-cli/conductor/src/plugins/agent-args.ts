@@ -332,7 +332,7 @@ const SHARED_LIST_KEYS = [
 ] as const;
 export type SharedListKey = (typeof SHARED_LIST_KEYS)[number];
 export type SharedLayer = 'project' | 'machine';
-export type SecuritySource = 'default' | SharedLayer | 'agent' | 'runtime';
+export type SecuritySource = 'default' | SharedLayer | 'agent';
 
 /** A top-level `permissions` block of the machine or project config. */
 export interface SharedSecurity {
@@ -459,22 +459,10 @@ export function resolveSecurityOptions(
     return block ? [{ source, block }] : [];
   });
   const modeLayer = [...layers].reverse().find((l) => l.block.mode);
-  // An isolating runtime replaces the harness sandbox; the two never stack.
-  const isolated = shared.isolated === true;
-  if (isolated && input.permissions === 'sandbox')
-    throw new Error(
-      "permissions: 'sandbox' conflicts with the isolating runtime: the run already starts in its own container; drop the entry's permissions",
-    );
-  const runtimeOverrides =
-    isolated &&
-    input.permissions === undefined &&
-    modeLayer?.block.mode === 'sandbox';
-  const mode: SecurityMode = runtimeOverrides
-    ? 'system'
-    : (input.permissions ?? modeLayer?.block.mode ?? 'system');
-  const modeSource: SecuritySource = runtimeOverrides
-    ? 'runtime'
-    : input.permissions !== undefined
+  const mode: SecurityMode =
+    input.permissions ?? modeLayer?.block.mode ?? 'system';
+  const modeSource: SecuritySource =
+    input.permissions !== undefined
       ? 'agent'
       : (modeLayer?.source ?? 'default');
   if (!SECURITY_MODES.includes(mode)) {
@@ -486,8 +474,7 @@ export function resolveSecurityOptions(
   if (mode === 'custom' && input.config === undefined) {
     throw new Error("permissions: 'custom' requires config");
   }
-  // An isolating runtime makes the entry's sandbox block moot: ignore it, keep it for host runs.
-  const entrySandbox = isolated ? undefined : input.sandbox;
+  const entrySandbox = input.sandbox;
   if (mode !== 'sandbox' && entrySandbox !== undefined) {
     throw new Error(
       `sandbox is only valid with permissions: 'sandbox' (the ${modeSource} layer sets '${mode}')`,

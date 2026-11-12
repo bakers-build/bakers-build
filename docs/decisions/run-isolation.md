@@ -54,9 +54,10 @@ Design, as the prototype implements it:
   `--network host`, the `bakers` MCP server in Claude's `--mcp-config` keeps its URL. `bakers_*`,
   `ddev_*`, `provision_up` and `ports_*` run in the conductor on the host, so DDEV is reached only
   through those tools and never through a Docker socket in the run.
-- The harness sandbox is off inside the container (Claude in `system` mode). The container takes
-  its place. bubblewrap inside an unprivileged container needs extra privileges, and the two do
-  not stack.
+- Agent permissions remain unchanged inside the runtime. The runtime wraps the finished agent
+  command and reuses the executor; it never downgrades `sandbox` to `system`. Native sandbox
+  prerequisites, including nested namespace support on Linux, must exist inside that boundary.
+  If unavailable, sandbox mode fails closed; no extra container privileges are granted automatically.
 
 Agents declare neutral installation and model-API facts, and prepare environment/files through
 `prepareRun` in the home allocated by the runtime. The conductor forwards these facts and explicit
@@ -196,7 +197,7 @@ near Docker's. A shipped `runtime-sbx` backend would be its own ticket.
 Status after the build:
 
 1. **`runtime` slot** — built: core holds one runtime and applies `wrap` and `cleanup` around
-   `executor.startRun` and `cleanupRun`; an isolating runtime switches the harness sandbox off.
+   `executor.startRun` and `cleanupRun`; the configured agent permissions remain unchanged.
 2. **`runtime-docker` backend** — built: configurable `docker` command (Podman), a shipped image,
    `.git/hooks` and `.git/config` read-only. Read-only binds cannot stop the run from creating a
    nested repository whose own config runs a command under host Git (`core.fsmonitor`), so cleanup

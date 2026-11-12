@@ -14,7 +14,8 @@ the terminal. Machine scope only:
 Install `bwrap` on the conductor host and enable unprivileged user namespaces. Startup checks
 namespace support and refuses to run if unavailable. A Linux Coder workspace is supported;
 the outer container's security policy must allow nested namespaces. This external wrapper does
-not require `socat`. Claude's native sandbox is disabled when this runtime is selected.
+not require `socat` itself. Agent permissions remain unchanged; native sandbox mode additionally
+needs its own tools and support for nested namespaces.
 
 Runs require linked Git worktrees; the main checkout is refused. Programs come from the host's
 system directories and executable search paths. Additional tool resources can be granted through
