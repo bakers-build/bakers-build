@@ -192,7 +192,10 @@ Status after the build:
 1. **`runtime` slot** — built: core holds one runtime and applies `wrap` and `cleanup` around
    `executor.startRun` and `cleanupRun`; an isolating runtime switches the harness sandbox off.
 2. **`runtime-docker` backend** — built: configurable `docker` command (Podman), a shipped image,
-   `.git/hooks` and `.git/config` read-only. Plugin sync cost is still to be measured in a real run.
+   `.git/hooks` and `.git/config` read-only. Read-only binds cannot stop the run from creating a
+   nested repository whose own config runs a command under host Git (`core.fsmonitor`), so cleanup
+   quarantines every such `.git` after the run. Plugin sync cost is still to be measured in a real
+   run.
 3. **Egress allowlist** — built as `runtime-docker`'s `network: 'allowlist'` mode, with one proxy
    sidecar per conductor that adds the model credential. Verified design on Linux; macOS documented,
    not run.

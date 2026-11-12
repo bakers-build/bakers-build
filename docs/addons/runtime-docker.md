@@ -30,8 +30,11 @@ Container `bb-run-<run uuid>`, under your uid. Mounts, and nothing else of your 
 
 - the worktree and the Git common directory, at their host paths. Read-only: the worktree's
   `.git` file, `hooks/`, `config`, `modules/`, `worktrees/` (except the run's own Git dir), and
-  that Git dir's `commondir`, `gitdir` and `config.worktree`. Host Git therefore runs nothing the
-  run planted;
+  that Git dir's `commondir`, `gitdir` and `config.worktree`, plus the common `config.worktree`.
+  The run can still create a nested repository in the worktree, whose own config can name a command
+  for host Git to run. After the run, the runtime renames every such `.git` to
+  `.git.bakers-quarantine` and logs it. A submodule that points into `modules/` keeps its name.
+  Until then, do not run Git in a running run's worktree;
 - the bakers CLI build, read-only. The runtime refuses to start when that build's root would
   contain your home directory;
 - `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` as `/home/run`;

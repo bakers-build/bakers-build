@@ -159,7 +159,8 @@ describe('dockerArgs', () => {
     );
     expect(
       v.filter(
-        (m) => m === '/w/main/.git/config.worktree:/w/main/.git/config.worktree:ro',
+        (m) =>
+          m === '/w/main/.git/config.worktree:/w/main/.git/config.worktree:ro',
       ),
     ).toHaveLength(1);
     expect(v).toContain('/w/main/.git/worktrees:/w/main/.git/worktrees:ro');

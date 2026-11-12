@@ -3,12 +3,15 @@ import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type {
   AgentContainer,
@@ -60,6 +63,32 @@ export interface BackendDeps {
 export const shortHash = (text: string) =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
 
+/**
+ * Renames every `.git` under the worktree, beside its own, that does not point
+ * into the read-only `modules/`: host git would follow it into config the run
+ * wrote (`core.fsmonitor` runs a command). Returns the renamed paths.
+ */
+// shortcut: walks the whole worktree, node_modules included; restrict it to index gitlinks if cleanup gets slow.
+export function quarantinePlanted(ws: string, gitCommonDir: string): string[] {
+  const modules = join(gitCommonDir, 'modules') + sep;
+  const moved: string[] = [];
+  for (const e of readdirSync(ws, { recursive: true, withFileTypes: true })) {
+    const path = join(e.parentPath, e.name);
+    if (e.name !== '.git' || path === join(ws, '.git')) continue;
+    // Inside a `.git` already handled: renaming its parent covers it.
+    if (path.slice(ws.length).split(sep).slice(0, -1).includes('.git'))
+      continue;
+    if (e.isFile()) {
+      const target = /^gitdir:\s*(.+)$/m.exec(readFileSync(path, 'utf8'))?.[1];
+      if (target && resolve(e.parentPath, target.trim()).startsWith(modules))
+        continue;
+    }
+    renameSync(path, `${path}.bakers-quarantine`);
+    moved.push(path);
+  }
+  return moved;
+}
+
 const run = promisify(execFile);
 export const realExec: BackendDeps['exec'] = (file, args) => run(file, args);
 
@@ -90,6 +119,8 @@ export function dockerRuntime(
       );
     return join(cacheHome, 'bakers/runtime', uuid);
   };
+  // Beside the run home, never mounted: cleanup trusts it to find the worktree.
+  const recordOf = (uuid: string) => `${runHomeOf(uuid)}.workspace.json`;
   // One image per agent install; built once each.
   const imagesReady = new Map<string, Promise<void>>();
 
@@ -249,6 +280,10 @@ export function dockerRuntime(
         if (!existsSync(worktreeConfig)) writeFileSync(worktreeConfig, '');
       }
       mkdirSync(runHome, { recursive: true });
+      writeFileSync(
+        recordOf(launch.run.uuid),
+        JSON.stringify({ workspace: ws, gitCommonDir }),
+      );
       // The CLI build is mounted read-only; this puts the conductor's own CLI on PATH.
       if (deps.bakersEntry) {
         mkdirSync(join(runHome, 'bin'), { recursive: true });
@@ -312,6 +347,27 @@ export function dockerRuntime(
           { run: r.uuid, err: String(err) },
           'runtime container cleanup failed',
         );
+      }
+      // After the container is gone, so the run cannot plant anything behind the scan.
+      const record = recordOf(r.uuid);
+      if (existsSync(record)) {
+        try {
+          const { workspace, gitCommonDir } = JSON.parse(
+            readFileSync(record, 'utf8'),
+          );
+          const moved = quarantinePlanted(workspace, gitCommonDir);
+          if (moved.length > 0)
+            deps.logger.warn(
+              { run: r.uuid, moved },
+              'runtime quarantined repositories the run planted',
+            );
+          rmSync(record);
+        } catch (err) {
+          deps.logger.error(
+            { run: r.uuid, err: String(err) },
+            'runtime quarantine failed: host git in the worktree may run what the run planted',
+          );
+        }
       }
       rmSync(runHomeOf(r.uuid), { recursive: true, force: true });
     },

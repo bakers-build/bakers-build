@@ -1,8 +1,10 @@
+import { execFileSync } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -264,6 +266,72 @@ describe('runtime-docker cleanup', () => {
       dockerRuntime({}, d).cleanup({ uuid: 'r-uuid', id: 7 }),
     ).resolves.toBeUndefined();
     expect(warnings).toContain('runtime container cleanup failed');
+  });
+
+  it('quarantines a repository the run planted, so host git runs nothing of it', async () => {
+    const env = {
+      ...process.env,
+      GIT_CONFIG_GLOBAL: '/dev/null',
+      GIT_CONFIG_NOSYSTEM: '1',
+      GIT_AUTHOR_NAME: 't',
+      GIT_AUTHOR_EMAIL: 't@t',
+      GIT_COMMITTER_NAME: 't',
+      GIT_COMMITTER_EMAIL: 't@t',
+    };
+    const git = (cwd: string, ...args: string[]) =>
+      execFileSync('git', args, { cwd, env, stdio: 'pipe' }).toString();
+    const main = join(root, 'repo');
+    const tree = join(root, 'linked');
+    mkdirSync(main);
+    git(main, 'init', '-q');
+    git(main, 'commit', '-q', '--allow-empty', '-m', 'base');
+    git(main, 'worktree', 'add', '-q', tree, '-b', 'run');
+    // What the run does inside the container: a nested repo whose config runs a command.
+    const marker = join(root, 'planted-ran');
+    const hook = join(root, 'fsmonitor.sh');
+    writeFileSync(hook, `#!/bin/sh\ntouch '${marker}'\nexit 1\n`, {
+      mode: 0o755,
+    });
+    const sub = join(tree, 'sub');
+    mkdirSync(sub);
+    git(sub, 'init', '-q');
+    writeFileSync(join(sub, 'f'), 'x');
+    git(sub, 'add', 'f');
+    git(sub, 'commit', '-q', '-m', 'sub');
+    git(sub, 'config', 'core.fsmonitor', hook);
+    git(tree, 'add', 'sub');
+    // A submodule the host initialised itself points into the read-only modules dir.
+    const kept = join(tree, 'kept');
+    mkdirSync(kept);
+    writeFileSync(
+      join(kept, '.git'),
+      `gitdir: ${join(main, '.git/modules/kept')}\n`,
+    );
+    git(tree, 'status');
+    expect(existsSync(marker)).toBe(true);
+    rmSync(marker);
+
+    const d = deps({
+      exec: async (file, args) => {
+        calls.push([file, args]);
+        return file === 'git'
+          ? { stdout: git(tree, ...args.slice(2)) }
+          : { stdout: '' };
+      },
+    });
+    const runtime = dockerRuntime({}, d);
+    await runtime.wrap(launch({ workspacePath: tree }));
+    await runtime.cleanup({ uuid: 'r-uuid', id: 7 });
+
+    git(tree, 'status');
+    expect(existsSync(marker)).toBe(false);
+    expect(existsSync(join(sub, '.git'))).toBe(false);
+    expect(existsSync(join(sub, '.git.bakers-quarantine'))).toBe(true);
+    expect(existsSync(join(kept, '.git'))).toBe(true);
+    expect(existsSync(join(tree, '.git'))).toBe(true);
+    expect(warnings).toContain(
+      'runtime quarantined repositories the run planted',
+    );
   });
 
   it('deletes nothing for a run uuid that is not a plain name', async () => {
