@@ -4,8 +4,8 @@ The script for the introduction video on the landing page. It introduces bakers.
 follows one ticket from a GitHub issue to `done`. You record screen and narration in one take
 from this file; the cut, the captions and the player are made from that recording afterwards.
 
-- Estimated length of the final cut: about 205 seconds at 150 words per minute. The narration
-  below is 514 words; confirm the timing in the dry run.
+- Estimated length of the final cut: about 195 seconds at 150 words per minute. The narration
+  below is 491 words; confirm the timing in the dry run.
 - Language: English. Say "bakers dot build".
 - Lines starting with `>` are the narration, word for word. Everything else is direction.
 
@@ -75,35 +75,30 @@ stay silent while you wait. Waiting is cut out later.
 
 ## Scenes
 
-### 1. Introduction (about 69 s)
+### 1. Introduction (about 67 s)
 
-On screen: the landing page hero. From "Your workflow lives", scroll slowly to the
+On screen: the landing page hero. From "It all lives next to your code", scroll slowly to the
 line with its four stations.
 
-> Everyone on the team is using AI, but each developer has built their own setup. Different skills, different tools, different workflows.
-> Some projects already use worktrees to run tasks in parallel. Others don't. Keeping all of that working together becomes a job in itself.
-> That's why we built bakers.build: one tool for the team, with a shared workflow everyone follows.
-> I'm Christian, and this started with our team of seven developers and two project managers.
-> Looking for a better way led us to OpenAI's Symphony spec.
-> So we built Gaia on Symphony's spec. The team decides on one workflow, and the agents follow it, on our own machines, with the AI subscriptions we already had.
-> It worked better than expected. We're clearly faster, everyone runs several tickets in parallel, and nobody babysits anymore.
-> So we made it open source as bakers.build. The name? We kept asking, "Is that ticket baked yet?"
-> Your workflow lives in a text file next to your code. The agents follow it; you steer.
-> Let's give it a ticket.
+> Hi, I'm Christian. We're a team of seven developers, and for a few months now every one of us has been shipping noticeably more tickets.
+> We do it with bakers.build. You hand it a ticket, and AI agents take it through the same fixed steps every time: plan, build, review, ship. At every step you can look in and steer.
+> That makes it easy to run several tickets in parallel. And step by step, each ticket takes less of your time, because you keep improving what the agents work with: your automated tests, your linting rules, your skills.
+> It all lives next to your code, so every improvement helps the whole team. And it runs on your own machine or on remote workers, with the AI subscription you already pay for.
+> We built it for ourselves first, starting from OpenAI's Symphony spec, which we adapted and extended a lot. It worked so well that we made it open source.
+> Let me show you. Let's give it a ticket.
 
-### 2. A ticket system for AI (about 18 s)
+### 2. A ticket system for AI (about 12 s)
 
-On screen: the project's ticket board, then the machines list with both conductors.
+On screen: the project's ticket board.
 
 > It's not a classic ticket system. It's one where people and AI work together.
 > Everything an agent does stays on the ticket, so the next ticket can build on it.
-> And the work runs on your own computer, a colleague's, or a remote worker.
 
-### 3. From an issue to a ticket (about 14 s)
+### 3. From an issue to a ticket (about 12 s)
 
 On screen: the GitHub issue. Then create the ticket from it in bakers.build.
 
-> Let's follow one ticket. Our little shop wants its opening hours on the contact page.
+> Our little shop wants its opening hours on the contact page.
 > It starts as a normal issue on GitHub. That stays.
 > We turn it into a ticket, and the agent starts.
 
