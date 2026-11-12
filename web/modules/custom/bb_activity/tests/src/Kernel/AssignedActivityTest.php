@@ -7,6 +7,7 @@ namespace Drupal\Tests\bb_activity\Kernel;
 use Drupal\Tests\bb_core\Kernel\OgScopeFixtureTrait;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\bb_activity\Entity\BbActivity;
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -74,11 +75,13 @@ final class AssignedActivityTest extends KernelTestBase {
     $group->save();
     $project = $storage('bb_project')->create(['name' => 'p', 'key' => 'ASG', 'group_id' => $group->id()]);
     $project->save();
+    self::assertInstanceOf(BbProjectInterface::class, $project);
     $this->projectId = (int) $project->id();
     foreach (['owner', 'first', 'second', 'reviewer', 'reader'] as $name) {
       $account = $this->createUser(['access user profiles'], $name);
       self::assertInstanceOf(UserInterface::class, $account);
       $this->addMembership($workspace, $account, ['contributor']);
+      $this->seatOnProjectTeam($project, $account);
       $this->people[$name] = $account;
     }
   }

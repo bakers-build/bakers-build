@@ -35,10 +35,11 @@ export interface ConductorSettings {
    * Absent until `bakers init` gave the machine its UUID.
    */
   conductor_id?: string;
-  /** The selected config file's stem: `conductor` for `conductor.config.js`. */
+  /** The selected config file's stem: `conductor` for `project.config.js`. */
   variant: string;
   /** This machine's display label (`machine.config.js` label). */
   machine_label?: string;
+  connection_url?: string | null;
   /** Project name (bb_project.name); resolved at registration. */
   project: string;
   /**
@@ -99,7 +100,7 @@ export interface ConductorSettings {
   watch_paths?: { files: string[]; dirs: string[] };
 }
 
-/** Whole conductor.config.js (dropsh-superset): site + named plugin slots. */
+/** Whole project.config.js (dropsh-superset): site + named plugin slots. */
 export interface ConductorFileConfig extends ConductorSettings {
   bakers: BbProjectSelection;
   resolved_bakers?: ResolvedBbProjectContext;
@@ -137,8 +138,8 @@ export interface ConductorFileConfig extends ConductorSettings {
 
 /**
  * BB-201 split config model: the ENGINE half of a conductor config —
- * everything a `conductor.config.js` carries EXCEPT the connection (`site`) and
- * the auth `plugins`, which now live in a separate `bakers.config.js`
+ * everything a `project.config.js` carries EXCEPT the connection (`site`) and
+ * the auth `plugins`, which now live in a separate connection file
  * (`BbConnectionConfig`). `loadConductorConfig` returns this; the conductor
  * command composes it with the connection (`composeConductorConfig`) into the
  * full `ConductorFileConfig` the engine consumes.

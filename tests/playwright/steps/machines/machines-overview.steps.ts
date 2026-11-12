@@ -1,5 +1,8 @@
 // Machine listing in the user-area rail.
-import { When, Then } from '../../bdd.fixtures';
+import { When, Then, test } from '../../bdd.fixtures';
+import { createBdd } from 'playwright-bdd';
+import { randomUUID } from 'node:crypto';
+const { After } = createBdd(test);
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { cardField, cardRow } from '../../support/detail-cards';
@@ -120,4 +123,54 @@ Then('the machine Overview shows its host key, max parallel and current load', a
   await expect(cardRow(page, 'Identity', 'Host key')).toContainText('e2e-host', { timeout: 10000 });
   await expect(cardField(page, 'Identity', 'Max parallel')).toBeVisible();
   await expect(cardRow(page, 'Identity', 'Current load')).toBeVisible();
+});
+
+let connectionHost: string | undefined;
+let connectionMachine: { url: string; uuid: string; name: string } | undefined;
+
+function registerConnection(value?: string): void {
+  connectionHost ??= `connection-${randomUUID()}`;
+  connectionMachine = JSON.parse(php(
+    '$etm = \\Drupal::entityTypeManager();' +
+    '$owner = current($etm->getStorage("user")->loadByProperties(["name" => "north-lead"]));' +
+    '$existing = current($etm->getStorage("bb_conductor")->loadByProperties(["owner_user_id" => $owner->id()]));' +
+    '$project = $existing->get("project_id")->entity->label();' +
+    `$attrs = ["conductor_id" => "${connectionHost}", "host_key" => "${connectionHost}", "machine_label" => "${connectionHost}", "project" => $project, "create_new" => TRUE];` +
+    (value === undefined ? '' : `$attrs["connection_url"] = ${value === 'null' ? 'NULL' : `"${safe(value)}"`};`) +
+    '$m = \\Drupal::service("bb_core.conductor_registrar")->heartbeat($owner, $attrs)->getMachine();' +
+    'print json_encode(["url" => $m->toUrl()->toString(), "uuid" => $m->uuid(), "name" => $m->label()]);',
+  ));
+}
+
+When('I register a disposable connection machine with {string}', async ({ page }, url: string) => {
+  registerConnection(url);
+  if (new URL(page.url()).pathname === connectionMachine!.url) await page.reload();
+});
+
+When('I open my disposable connection machine from the listing', async ({ page }) => {
+  await page.goto(`/user/${uidOf('north-lead')}/machines`);
+  await searchUserMachines(page, connectionMachine!.name);
+  await page.getByRole('link', { name: connectionMachine!.name, exact: true }).click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe(connectionMachine!.url);
+});
+
+When('my connection machine sends a heartbeat without an address', async ({ page }) => {
+  registerConnection(); await page.reload();
+});
+
+Then('my connection machine API exposes {string}', async ({ page, apiClient }, expected: string) => {
+  const response = await page.request.get(`/jsonapi/bb_machine/bb_machine/${connectionMachine!.uuid}`);
+  expect(response.status()).toBe(200);
+  expect((await response.json()).data.attributes.connection_url).toBe(expected === 'null' ? null : expected);
+  await apiClient.identify('north-guest');
+  await apiClient.read(`/jsonapi/bb_machine/bb_machine/${connectionMachine!.uuid}`);
+  expect([403, 404]).toContain(apiClient.response!.status());
+});
+
+After({ tags: '@machine-connection' }, async () => {
+  if (!connectionHost) return;
+  php('$etm = \\Drupal::entityTypeManager();' +
+    `foreach ($etm->getStorage("bb_conductor")->loadByProperties(["conductor_id" => "${connectionHost}"]) as $c) { $c->delete(); }` +
+    `foreach ($etm->getStorage("bb_machine")->loadByProperties(["host_key" => "${connectionHost}"]) as $m) { $m->delete(); }`);
+  connectionHost = undefined; connectionMachine = undefined;
 });

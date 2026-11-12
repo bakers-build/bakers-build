@@ -64,7 +64,9 @@ final class ListingToolbarHooks {
         }
       }
       $toolbar[$key] = $element;
-      unset($exposed[$key]);
+      // UI Patterns' "view_exposed" source renders $view->exposed_widgets, not
+      // the preprocessed variable.
+      unset($exposed[$key], $view->exposed_widgets[$key]);
     }
     $variables['bb_toolbar'] = $toolbar;
   }

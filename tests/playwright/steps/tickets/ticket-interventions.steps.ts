@@ -32,6 +32,11 @@ Given('a disposable {string} ticket in state {string} whose last {int} runs fail
   createDisposableTicket(page, workflow, state, { state: 'failed', count, reason });
 });
 
+// Three failed runs in a row trip the failed-run circuit breaker.
+Given('a disposable {string} ticket in state {string} parked after repeated failed runs', async ({ page }, workflow: string, state: string) => {
+  createDisposableTicket(page, workflow, state, { state: 'failed', count: 3, reason: 'ddev start failed' });
+});
+
 When('I visit the disposable ticket', async ({ page }) => {
   await page.goto(subject(page).url);
   await markDocument(page);
@@ -142,6 +147,12 @@ Then('the ticket page offers no workflow step', async ({ page }) => {
 
 Then('the ticket page offers {string}', async ({ page }, name: string) => {
   await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
+});
+
+Then('the ticket page does not offer {string}', async ({ page }, name: string) => {
+  // Offered links are asserted visible first, so absence here is not a slow render.
+  await expect(page.locator('[data-canvas-region="inspector"]')).toContainText('Properties');
+  await expect(page.getByRole('link', { name, exact: true })).toHaveCount(0);
 });
 
 Then('the inspector names the stall {string}', async ({ page }, reason: string) => {

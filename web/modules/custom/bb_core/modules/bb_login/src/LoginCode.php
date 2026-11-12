@@ -54,6 +54,24 @@ final class LoginCode {
   public const FLOOD_EVENT = 'bb_login.code_attempt';
 
   /**
+   * How many wrong codes one client may offer across all addresses.
+   *
+   * The per-address limit alone lets one client try five codes on every
+   * address it can request a link for; this caps the sum.
+   */
+  public const MAX_CLIENT_ATTEMPTS = 20;
+
+  /**
+   * The window the client limit counts over, in seconds.
+   */
+  public const CLIENT_WINDOW = 3600;
+
+  /**
+   * The flood event the client limit is counted under.
+   */
+  public const CLIENT_FLOOD_EVENT = 'bb_login.code_attempt_ip';
+
+  /**
    * The expirable key-value collection codes live in.
    */
   private const COLLECTION = 'bb_login.code';

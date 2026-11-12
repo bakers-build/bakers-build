@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-pi/options.schema.json",
+  "title": "@bakers-build/addon-pi options",
+  "$ref": "https://bakers.build/schema/harness-options.schema.json",
+  "properties": {
+    "permissions": {
+      "enum": [
+        "system",
+        "custom"
+      ]
+    },
+    "sandbox": false,
+    "config": {
+      "type": "object",
+      "properties": {
+        "extensions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "description": "pi extensions the run loads."
+        }
+      },
+      "required": [
+        "extensions"
+      ],
+      "additionalProperties": false
+    },
+    "provider": {
+      "type": "string",
+      "description": "Passed as `--provider`."
+    },
+    "thinking": {
+      "type": "string",
+      "description": "Passed as `--thinking`."
+    },
+    "approve": {
+      "type": "boolean",
+      "description": "Trust the worktree's project-local pi files (`--approve`); grants no bakers.build access.",
+      "default": false
+    },
+    "model": {
+      "description": "Passed as `--model`, else pi's own default."
+    },
+    "effort": {
+      "description": "Same as `thinking`, and wins over it."
+    }
+  },
+  "unevaluatedProperties": false
+}

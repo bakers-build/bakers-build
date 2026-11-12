@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 import {
   resolveBaseRef,
   restoreWritable,
-  validateBranch,
 } from '@bakers-build/addon-herdr/shared';
 import {
   loadInstructions,
@@ -37,7 +36,7 @@ export type Sleep = (ms: number) => Promise<void>;
 
 /**
  * The overview terminal a FRESH worktree opens. `{identifier}`, `{branch}`,
- * `{title}` and `{worktreePath}` expand in both; `open: {}` opens nothing.
+ * `{title}` and `{worktree_path}` expand in both; `open: {}` opens nothing.
  */
 export interface OrcaOpenLayout {
   command?: string;
@@ -188,7 +187,6 @@ export class OrcaWorkspace implements BbWorkspace {
     if (branch === undefined) {
       throw new Error('orca workspace requires a branch name');
     }
-    validateBranch(branch);
     const extra = this.options.autoSetupMerge
       ? {}
       : { env: await runBranchGit(this.root, this.logger) };
@@ -254,7 +252,7 @@ export class OrcaWorkspace implements BbWorkspace {
       return;
     }
     try {
-      await this.execGit(['-C', this.root, 'fetch', 'origin', branch]);
+      await this.execGit(['-C', this.root, 'fetch', 'origin', '--', branch]);
     } catch {
       // Non-fatal: the branch is simply not on origin (yet).
     }
@@ -350,16 +348,16 @@ export function orcaWorkspace(
   opts: {
     /** Explicit repo-root override; otherwise derived from the git common dir. */
     root?: string;
-    worktreeDir?: string;
-    baseBranch?: string;
-    adoptTimeoutMs?: number;
-    autoSetupMerge?: boolean;
+    worktree_dir?: string;
+    base_branch?: string;
+    adopt_timeout_ms?: number;
+    auto_setup_merge?: boolean;
     /** Overrideable git exec for root derivation (tests). */
     execGit?: RootGitExec;
   } = {},
 ): WorkspacePlugin {
   return {
-    kind: 'workspace',
+    kind: 'worktree',
     id: 'orca',
     requiredModules: [],
     async createWorkspace(config: ConductorFileConfig, deps?: ExecutorDeps) {
@@ -369,12 +367,12 @@ export function orcaWorkspace(
       });
       return new OrcaWorkspace({
         root,
-        ...(opts.worktreeDir ? { worktreeDir: opts.worktreeDir } : {}),
-        ...(opts.baseBranch ? { baseBranch: opts.baseBranch } : {}),
-        ...(opts.adoptTimeoutMs !== undefined
-          ? { adoptTimeoutMs: opts.adoptTimeoutMs }
+        ...(opts.worktree_dir ? { worktreeDir: opts.worktree_dir } : {}),
+        ...(opts.base_branch ? { baseBranch: opts.base_branch } : {}),
+        ...(opts.adopt_timeout_ms !== undefined
+          ? { adoptTimeoutMs: opts.adopt_timeout_ms }
           : {}),
-        ...(opts.autoSetupMerge ? { autoSetupMerge: true } : {}),
+        ...(opts.auto_setup_merge ? { autoSetupMerge: true } : {}),
         ...(deps?.logger ? { logger: deps.logger } : {}),
       });
     },

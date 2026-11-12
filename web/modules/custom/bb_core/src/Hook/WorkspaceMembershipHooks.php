@@ -95,9 +95,9 @@ final class WorkspaceMembershipHooks {
   /**
    * Places a group's owner in the group's `lead` rank.
    *
-   * OG's automatic owner membership is bare (`member` only), which would
-   * project member capability for the owner in every list while
-   * `group_manager_full_access` lets them through on single entities. Insert
+   * OG's automatic owner membership is bare (`member` only); with
+   * `group_manager_full_access` off, the lead seat is where the owner's rights
+   * come from. Insert
    * only; re-owning is out of scope. Failures are logged, not raised: a
    * deployed site passes through a missing rank config between `updatedb` and
    * `config:import`.
@@ -236,6 +236,40 @@ final class WorkspaceMembershipHooks {
   #[Hook('og_membership_delete')]
   public function ogMembershipDelete(EntityInterface $membership): void {
     $this->forgetReadScope($membership);
+    if ($membership instanceof OgMembershipInterface && $membership->getGroupEntityType() === 'bb_workspace') {
+      $this->endTeamSeats((int) $membership->getGroupId(), (int) $membership->getOwnerId());
+    }
+  }
+
+  /**
+   * Deletes a person's team memberships in one workspace.
+   *
+   * A team seat outlives the workspace seat otherwise and keeps the rank's
+   * rights on the workspace's projects.
+   *
+   * @param int $workspace_id
+   *   The workspace the person left.
+   * @param int $uid
+   *   The person.
+   */
+  private function endTeamSeats(int $workspace_id, int $uid): void {
+    $team_ids = $this->entityTypeManager->getStorage('bb_team')->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('workspace_id', $workspace_id)
+      ->execute();
+    if (!$team_ids) {
+      return;
+    }
+    $storage = $this->entityTypeManager->getStorage('og_membership');
+    $ids = $storage->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('entity_type', 'bb_team')
+      ->condition('entity_id', array_values($team_ids), 'IN')
+      ->condition('uid', $uid)
+      ->execute();
+    if ($ids) {
+      $storage->delete($storage->loadMultiple($ids));
+    }
   }
 
   /**

@@ -54,7 +54,7 @@ export interface ToolServerEndpoint {
 
 export interface ToolServerOptions {
   registry: ToolRegistry;
-  /** `<BB_HOME>/conductors/<conductor_id>.json`; absent: no operator access. */
+  /** `<BAKERS_HOME>/conductors/<conductor_id>.json`; absent: no operator access. */
   endpointFile?: string;
   /** The operator may only name worktrees below this directory. */
   workspaceRoot?: string;

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/harness-options.schema.json",
+  "title": "Options every agent harness takes",
+  "description": "Composed by each harness addon's options.schema.json, which adds its own keys and rejects unknown ones with unevaluatedProperties: false.",
+  "type": "object",
+  "properties": {
+    "args": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extra command-line arguments appended to the agent launch, each shell-quoted.",
+      "default": []
+    },
+    "model": {
+      "type": "string",
+      "description": "Model the agent runs."
+    },
+    "effort": {
+      "type": "string",
+      "description": "Reasoning effort the agent runs at."
+    },
+    "permissions": {
+      "enum": [
+        "sandbox",
+        "system",
+        "yolo",
+        "custom"
+      ],
+      "description": "Permission mode: how strictly a run starts; see the addon's Security section.",
+      "default": "system"
+    },
+    "sandbox": {
+      "type": "object",
+      "description": "Sandbox lists; only valid with `permissions: 'sandbox'`. Each key set replaces its default; lists are not merged.",
+      "properties": {
+        "trusted_commands": {
+          "$ref": "#/$defs/string_list",
+          "description": "Commands that run outside the sandbox."
+        },
+        "deny_read": {
+          "$ref": "#/$defs/string_list",
+          "description": "Paths the agent may not read."
+        },
+        "allow_write": {
+          "$ref": "#/$defs/string_list",
+          "description": "Paths the agent may write besides the worktree and the temporary directory."
+        },
+        "network": {
+          "$ref": "#/$defs/string_list",
+          "description": "Hosts the agent may reach; `*` allows every host."
+        },
+        "mcp_servers": {
+          "type": "object",
+          "description": "MCP servers of a sandboxed run, in the agent's own shape; the `bakers` server is always added."
+        }
+      },
+      "additionalProperties": false
+    },
+    "config": {
+      "type": "object",
+      "description": "The agent's own permission configuration; required with, and only valid with, `permissions: 'custom'`."
+    },
+    "env_deny": {
+      "$ref": "#/$defs/string_list",
+      "description": "Ticket environment variable names (`*` globs) removed from the run environment; replaces the default list."
+    }
+  },
+  "$defs": {
+    "string_list": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

@@ -19,7 +19,7 @@ final class ActivityMailHooks {
    * @param array<string, mixed> $message
    *   The message to build.
    * @param array<string, mixed> $params
-   *   Subject and body, already in the recipient's language.
+   *   Subject, body and links, already in the recipient's language.
    */
   #[Hook('mail')]
   public function mail(string $key, array &$message, array $params): void {
@@ -28,6 +28,8 @@ final class ActivityMailHooks {
     }
     $message['subject'] = $params['subject'];
     $message['body'] = $params['body'];
+    // The body carries ticket titles and kind text: only these are links.
+    $message['bb_links'] = $params['links'];
   }
 
 }

@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-herdr/options.schema.json",
+  "title": "herdr executor + worktree options",
+  "type": "object",
+  "properties": {
+    "command": {
+      "type": "string",
+      "description": "Fallback agent command when the agent addons supply none.",
+      "default": "claude"
+    },
+    "open": {
+      "type": "object",
+      "description": "Overview layout of a fresh worktree; when omitted it runs `bakers ui --ticket {identifier}`, `{}` leaves a bare tab. Templates also expand {branch} and {worktree_path}.",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command of the overview pane.",
+          "default": "bakers ui --ticket {identifier}"
+        },
+        "panes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pane"
+          },
+          "description": "Extra splits beside the overview pane."
+        },
+        "tab_label": {
+          "type": "string",
+          "description": "Tab label template.",
+          "default": "{identifier} · {title}"
+        },
+        "panel_label": {
+          "type": "string",
+          "description": "Panel label template.",
+          "default": "{identifier} · {title}"
+        }
+      },
+      "additionalProperties": false
+    },
+    "root": {
+      "type": "string",
+      "description": "Main clone path; derived from Git's common directory when omitted."
+    },
+    "default": {
+      "$ref": "#/$defs/state",
+      "description": "Layout for every run; a `states` entry beats it, and it beats the built-ins."
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/state"
+      },
+      "description": "Layout per workflow state; it only lays out panes and does not choose which states are served.",
+      "propertyNames": {
+        "title": "state"
+      }
+    },
+    "launch_watch": {
+      "type": "object",
+      "description": "Launch-watch windows: how long a start may take and how soon an agent exit counts as a failed launch.",
+      "properties": {
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Window after start in which an immediate agent exit fails the launch; 0 skips it.",
+          "default": 4000
+        },
+        "start_timeout_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How long the launch waits for the wrapper to report the start.",
+          "default": 60000
+        },
+        "poll_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Polling interval of both windows.",
+          "default": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "worktree_dir": {
+      "type": "string",
+      "description": "Directory for new worktrees, relative to `root` or absolute.",
+      "default": ".bakers-worktrees"
+    },
+    "base_branch": {
+      "type": "string",
+      "description": "Base ref for new branches; when omitted, the remote-tracking branch of the checked-out branch."
+    },
+    "auto_setup_merge": {
+      "type": "boolean",
+      "description": "`false` sets Git's `branch.autoSetupMerge=false` in the root repository, so run branches have no upstream and push with `push.default=current` (see workspace-git); `true` leaves Git alone.",
+      "default": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "pane": {
+      "type": "object",
+      "properties": {
+        "direction": {
+          "enum": [
+            "right",
+            "down"
+          ],
+          "description": "Where the split opens."
+        },
+        "command": {
+          "type": "string",
+          "description": "Command the split runs."
+        },
+        "focus": {
+          "type": "boolean",
+          "description": "Focus this split after opening."
+        }
+      },
+      "required": [
+        "direction",
+        "command"
+      ],
+      "additionalProperties": false,
+      "description": "One extra split; not the agent command."
+    },
+    "state": {
+      "type": "object",
+      "description": "Per-run layout. Labels expand {identifier}, {title}, {title_slug}, {run_uuid}, {repo_name}, {workspace_path}.",
+      "properties": {
+        "tab_label": {
+          "type": "string",
+          "description": "Tab label; must contain {identifier}.",
+          "default": "{identifier} · {title_slug}"
+        },
+        "workspace_label": {
+          "type": "string",
+          "description": "Workspace label.",
+          "default": "{repo_name}"
+        },
+        "panel_label": {
+          "type": "string",
+          "description": "Label of the agent panel.",
+          "default": "{title}"
+        },
+        "panes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/pane"
+          },
+          "description": "Extra splits; an array replaces the previous one."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

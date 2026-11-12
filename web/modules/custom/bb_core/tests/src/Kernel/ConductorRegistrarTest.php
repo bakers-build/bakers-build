@@ -200,6 +200,32 @@ final class ConductorRegistrarTest extends KernelTestBase {
   }
 
   /**
+   * Over HTTP a JSON null clears the address; an invalid one changes nothing.
+   */
+  public function testHeartbeatEndpointClearsOrRefusesTheConnectionUrl(): void {
+    $owner = $this->createUser('owner-connection-http');
+    $this->registrar()->heartbeat($owner, ['connection_url' => 'ssh://user@host:22'] + $this->derivedAttrs());
+    user_role_grant_permissions(RoleInterface::AUTHENTICATED_ID, ['register bakers conductor']);
+    $this->config('jsonapi.settings')->set('read_only', FALSE)->save();
+    $this->container->get('current_user')->setAccount($owner);
+    // A heartbeat without the field changes nothing, so it reads the value.
+    $stored = fn (): ?string => $this->registrar()->heartbeat($owner, $this->derivedAttrs())->getMachine()?->get('connection_url')->value;
+    $post = fn (mixed $url): int => $this->container->get('http_kernel')->handle(
+      Request::create('/jsonapi/bakers/heartbeat', 'POST', [], [], [], [
+        'CONTENT_TYPE' => 'application/vnd.api+json',
+        'HTTP_ACCEPT' => 'application/vnd.api+json',
+        'HTTP_X_BAKERS_CLIENT' => 'bakers/99.0.0',
+      ],
+        json_encode(['data' => ['attributes' => ['connection_url' => $url] + $this->derivedAttrs()]], JSON_THROW_ON_ERROR))
+    )->getStatusCode();
+
+    $this->assertSame(422, $post('https://host/%EF%BB%BF'));
+    $this->assertSame('ssh://user@host:22', $stored());
+    $this->assertLessThan(300, $post(NULL));
+    $this->assertNull($stored());
+  }
+
+  /**
    * Adopting waits for a heartbeat still running under the conductor's old id.
    *
    * Otherwise an old CLI could save the conductor back under its old id.
@@ -689,6 +715,30 @@ final class ConductorRegistrarTest extends KernelTestBase {
       'host_key' => 'aeee0147-dd6e-5305-983a-6661dfd66529',
       'project' => 'does-not-exist',
     ]);
+  }
+
+  /**
+   * An unknown workspace answers like a known one, so names cannot be probed.
+   */
+  public function testHeartbeatAnswersUnknownWorkspaceLikeUnknownProject(): void {
+    $owner = $this->createUser('owner-probe');
+    $answer = function (array $workspace) use ($owner): string {
+      try {
+        $this->registrar()->heartbeat($owner, [
+          'conductor_id' => 'mid-probe',
+          'host_key' => 'aeee0147-dd6e-5305-983a-6661dfd66529',
+          'project' => 'does-not-exist',
+        ] + $workspace);
+      }
+      catch (UnprocessableEntityHttpException $e) {
+        return $e->getMessage();
+      }
+      self::fail('The heartbeat was accepted.');
+    };
+    $known = $answer(['workspace' => 'ws-default-project']);
+    self::assertSame('bakers.build project "does-not-exist" not found.', $known);
+    self::assertSame($known, $answer(['workspace' => 'no-such-workspace']));
+    self::assertSame($known, $answer(['workspace_id' => 99999]));
   }
 
   /**

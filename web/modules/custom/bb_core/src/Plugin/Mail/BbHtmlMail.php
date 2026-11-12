@@ -9,6 +9,7 @@ use Drupal\Core\Extension\ThemeExtensionList;
 use Drupal\Core\Mail\Attribute\Mail;
 use Drupal\Core\Mail\Plugin\Mail\SymfonyMailer;
 use Drupal\Core\Render\RendererInterface;
+use Drupal\Core\Routing\RequestContext;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\Core\Utility\Error;
 use Drupal\bb_core\Mail\UnwrappedMailFormatHelper;
@@ -48,6 +49,7 @@ final class BbHtmlMail extends SymfonyMailer {
     LoggerInterface $logger,
     private readonly RendererInterface $renderer,
     private readonly ThemeExtensionList $themeList,
+    private readonly RequestContext $requestContext,
     ?MailerInterface $mailer = NULL,
   ) {
     parent::__construct($logger, $mailer);
@@ -72,6 +74,7 @@ final class BbHtmlMail extends SymfonyMailer {
       $container->get('logger.channel.mail'),
       $container->get('renderer'),
       $container->get('extension.list.theme'),
+      $container->get('router.request_context'),
     );
   }
 
@@ -153,7 +156,7 @@ final class BbHtmlMail extends SymfonyMailer {
       '#subject' => (string) ($message['headline'] ?? $message['subject']),
       '#paragraphs' => self::paragraphs(isset($message['headline'])
         ? substr((string) $message['body'], strlen((string) $message['headline']))
-        : (string) $message['body']),
+        : (string) $message['body'], $this->requestContext->getCompleteBaseUrl(), $message['bb_links'] ?? NULL),
       '#langcode' => (string) ($message['langcode'] ?? 'en'),
       '#logo_src' => 'cid:' . self::LOGO_CID,
     ];
@@ -173,12 +176,23 @@ final class BbHtmlMail extends SymfonyMailer {
    * or ends its paragraph after a colon, becomes its own paragraph with
    * `'action' => TRUE`, rendered as a button. When the colon closes a short
    * one-line label (`Sign in: <url>`), that label names the button instead
-   * of standing above it. Markup is left to the template.
+   * of standing above it. The body carries user text such as ticket titles
+   * and names, so a mail whose hook_mail() names its links in `bb_links`
+   * links only those; any other mail links only the site's own origin.
+   * Markup is left to the template.
+   *
+   * @param string $body
+   *   The formatted text body.
+   * @param string $siteUrl
+   *   The site's base URL, whose scheme, host and port a link must share.
+   * @param list<string>|null $links
+   *   The only URLs to link, exactly as they appear, or NULL for the origin
+   *   rule.
    *
    * @return list<list<array{text: string, url?: string, code?: true, action?: true, label?: string}>>
    *   The paragraphs, in order.
    */
-  public static function paragraphs(string $body): array {
+  public static function paragraphs(string $body, string $siteUrl, ?array $links = NULL): array {
     $paragraphs = [];
     foreach (preg_split('/\n(?:[ \t]*\n)+/', trim($body)) ?: [] as $block) {
       $block = trim($block, "\n");
@@ -194,6 +208,9 @@ final class BbHtmlMail extends SymfonyMailer {
       preg_match_all(self::URL_PATTERN, $block, $matches, PREG_OFFSET_CAPTURE);
       foreach ($matches[0] as [$url, $position]) {
         $url = self::trimUrl($url);
+        if ($links !== NULL ? !in_array($url, $links, TRUE) : !self::isSiteUrl($url, $siteUrl)) {
+          continue;
+        }
         if ($position > $offset) {
           $segments[] = ['text' => substr($block, $offset, $position - $offset)];
         }
@@ -237,6 +254,22 @@ final class BbHtmlMail extends SymfonyMailer {
     }
     $segments[count($segments) - 1]['text'] = rtrim($before['text']);
     return [$segments, $action];
+  }
+
+  /**
+   * Whether a URL shares the site's scheme, host and port.
+   *
+   * A backslash or a user part is refused: browsers read `\` as `/`, so
+   * parse_url() and the browser would disagree on the host.
+   */
+  private static function isSiteUrl(string $url, string $siteUrl): bool {
+    $origin = static function (string $candidate): ?string {
+      $parts = parse_url($candidate);
+      return isset($parts['scheme'], $parts['host']) && !isset($parts['user']) && !isset($parts['pass']) && !str_contains($candidate, '\\')
+        ? strtolower($parts['scheme'] . '://' . $parts['host'] . ':' . ($parts['port'] ?? ''))
+        : NULL;
+    };
+    return $origin($url) !== NULL && $origin($url) === $origin($siteUrl);
   }
 
   /**

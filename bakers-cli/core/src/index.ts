@@ -65,6 +65,18 @@ export {
   skipTrivia,
 } from './cli/config-source.js';
 export {
+  addonOptionProblems,
+  assertValidConfig,
+  type ConfigKind,
+  checkConfigText,
+  configAjv,
+  coreSchemaPath,
+  type SchemaProblem,
+  type StaticConfig,
+  staticConfig,
+  validateConfig,
+} from './cli/config-validate.js';
+export {
   HOME_IMPORT_EXPRESSION_PATTERN,
   importConfig,
 } from './cli/import-config.js';
@@ -86,14 +98,15 @@ export {
   reportLoadedBbConfigFields,
   resolveBbConnectionSelection,
 } from './cli/load-bakers-config.js';
+export { isValidMachineConnectionUrl } from './cli/machine-connection.js';
 export {
   type AgentRoutes,
-  assertSchemaVersion1,
+  assertSchemaVersion,
+  CONFIG_SCHEMA_VERSION,
   type MachineContext,
   machineContextPath,
   readMachineContext,
   resolveMachineContextPath,
-  warnIgnoredMaxParallel,
 } from './cli/machine-context.js';
 export { corePackageRoot } from './cli/paths.js';
 export { resolveModuleEslintStyle } from './cli/resolve-module.js';
@@ -121,6 +134,13 @@ export {
   type WorkspaceRecoveryOptions,
   workspaceSearchCommand,
 } from './cli/workspace-recovery.js';
+// BB-194 AC-2: there is no agent-host contract here; `bakers ui` no longer
+// hosts agents.
+export type {
+  ConnectionConfig,
+  MachineConfig,
+  ProjectConfig,
+} from './config-types.generated.js';
 export {
   configHomeOf,
   defaultRootGitExec,
@@ -202,5 +222,3 @@ export {
   readEffectiveAddon,
   scopeAddons,
 } from './plugins/scoped-addons.js';
-// BB-194 AC-2: there is no agent-host contract here; `bakers ui` no longer
-// hosts agents.

@@ -64,12 +64,26 @@ final class ConductorRegistrar {
    *   The upserted conductor.
    */
   public function heartbeat(AccountInterface $owner, array $attrs): BbConductorInterface {
+    if (array_key_exists('connection_url', $attrs) && $attrs['connection_url'] !== NULL && !MachineConnectionUrl::isValid($attrs['connection_url'])) {
+      throw new UnprocessableEntityHttpException('Invalid machine connection URL.');
+    }
     $conductorId = $this->registration->conductorId($attrs);
     $hostKey = $this->registration->hostKey($attrs);
     // Resolved on every heartbeat, so an owner who lost access is refused
     // before any write.
     $projectId = $this->registration->projectId($attrs, $owner);
     return $this->locked($conductorId, fn () => $this->register($owner, $conductorId, $hostKey, $projectId, $attrs));
+  }
+
+  /**
+   * Whether the account owns the conductor and may still register it.
+   *
+   * The heartbeat's own check: an owner who left the conductor's workspace
+   * keeps the conductor row, not its inbox or addon registration.
+   */
+  public function serves(BbConductorInterface $conductor, AccountInterface $account): bool {
+    $projectId = (int) $conductor->get('project_id')->target_id;
+    return $conductor->isOwnedBy($account) && $projectId > 0 && $this->registration->mayRegister($account, $projectId);
   }
 
   /**
@@ -152,6 +166,9 @@ final class ConductorRegistrar {
       $this->refuseRebinding($owner, $existing, $hostKey, $projectId, (string) $attrs['project']);
     }
     $machine = $this->loadOrCreateMachine($owner, $hostKey, $attrs);
+    if (array_key_exists('connection_url', $attrs)) {
+      $machine->set('connection_url', $attrs['connection_url']);
+    }
     $machine->save();
 
     $conductor = $existing ?? $this->create($owner, $conductorId, $projectId, $attrs);

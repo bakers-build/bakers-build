@@ -17,6 +17,7 @@ export interface ConductorRegistration {
   host_key?: string;
   /** This machine's display label; names a newly created bb_machine. */
   machine_label?: string;
+  connection_url?: string | null;
   project: string;
   /** Empty = serve all claimable states in the project (BB-207). */
   states: string[];
@@ -33,7 +34,7 @@ export interface ConductorRegistration {
   last_pid?: number;
   /**
    * The stem of the config file this conductor was started from (`conductor`
-   * for the default, `shop` for `shop.conductor.config.js`) — what
+   * for the default, `shop` for `shop.project.config.js`) — what
    * `--conductor <name>` selects. Together with `workspace` it identifies one
    * conductor in a repo that holds several.
    */
@@ -82,10 +83,12 @@ export interface Ticket {
   branchName: string;
   /** Branch the ticket's work is based on (computed server-side): parent branch, project default, or 'main'. */
   baseBranch?: string;
+  /** Branch the ticket's work merges into (computed server-side): a deployment's environment branch, else baseBranch. */
+  targetBranch?: string;
   /**
    * Effective environment variables (BB-99), resolved server-side along the
    * parent_id chain (child wins) as canonical `.env`-style `KEY=value` lines.
-   * The conductor parses this, strips reserved keys, overlays the core BB_*
+   * The conductor parses this, strips reserved keys, overlays the core BAKERS_*
    * vars, and injects the result into the agent run env AND the workspace hooks.
    * Omitted when the ticket (and its ancestors) set none. Values may be secret.
    */
@@ -100,9 +103,9 @@ export interface Ticket {
    */
   workspaceId?: string;
   workspaceName?: string;
-  /** The ticket type term name (`feature`, `bug`, …), sideloaded for the required-skills check. */
+  /** The ticket type term name (`feature`, `bug`, …), sideloaded for agent selection. */
   type?: string;
-  /** The recipe term name (`matt`, …): the run requires the skill `bb-recipe-<recipe>`. */
+  /** The recipe term name (`matt`, …), sideloaded for agent selection. */
   recipe?: string;
   /** Ticket label term names (`label` bundle), sideloaded for agent selection. Empty when none. */
   labels: string[];
@@ -383,7 +386,7 @@ export interface BbRemote {
   getTicket(ticketUuid: string): Promise<Ticket>;
   /**
    * BB-495: every `bb_workspace` uuid the dispatching identity can reach —
-   * dispatch exports this as `BB_WORKSPACE_IDS` so the agent knows the full
+   * dispatch exports this as `BAKERS_WORKSPACE_IDS` so the agent knows the full
    * radius it may name, not only the point it starts standing on.
    */
   getReachableWorkspaces(): Promise<string[]>;
@@ -433,7 +436,7 @@ export interface BbRemote {
    * tickets assigned to `conductorId` are loaded, so every ticket on the list
    * is unambiguously this conductor's — a missing worktree means "already torn
    * down on this host", not "belongs to another host". The same query backs
-   * the live tick and the standalone `bakers oven clean`. Empty once every
+   * the live tick and the standalone `bakers conductor clean`. Empty once every
    * closed ticket this conductor owns is cleaned.
    */
   fetchUncleanedTickets(conductorId: string): Promise<UncleanTicket[]>;

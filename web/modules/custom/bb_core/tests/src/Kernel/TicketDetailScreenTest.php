@@ -22,6 +22,7 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\bb_core\Plugin\Field\FieldWidget\PickerWidgetInterface;
 use Drupal\bb_core\Plugin\UiPatterns\Source\BbRunRowSource;
 use Drupal\bb_core\Plugin\UiPatterns\Source\EntityFormSource;
+use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
 use Drupal\ui_patterns\PropTypeInterface;
 use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\user\UserInterface;
@@ -1324,6 +1325,27 @@ final class TicketDetailScreenTest extends KernelTestBase {
       '/just now|.+ ago/',
       (string) ($stall['suffix'] ?? ''),
     );
+  }
+
+  /**
+   * Restart sits in the footer only while failed runs park the ticket.
+   */
+  public function testParkedTicketOffersRestart(): void {
+    $this->createRun('failed', 'working', 1770000000);
+    $this->createRun('failed', 'working', 1770000100);
+    self::assertStringNotContainsString('>Restart ticket<', $this->renderScreen(), 'Two failed runs do not park.');
+
+    $newest = $this->createRun('failed', 'working', 1770000200);
+    self::assertInstanceOf(BbRunInterface::class, $newest);
+    $html = $this->renderScreen();
+    self::assertStringContainsString('>Restart ticket<', $html);
+    self::assertStringContainsString('run=' . $newest->uuid(), $html, 'Restart confirms cancelling the newest failed run.');
+
+    $state = $newest->get('state')->first();
+    self::assertInstanceOf(StateItemInterface::class, $state);
+    $state->applyTransitionById('cancel_failed');
+    $newest->save();
+    self::assertStringNotContainsString('>Restart ticket<', $this->renderScreen(), 'A restarted ticket is no longer parked.');
   }
 
   /**

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -117,5 +117,20 @@ describe('measureMrChanges', () => {
       additions: 2,
       deletions: 0,
     });
+  });
+
+  it('never lets git read the base branch as an option', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'mr-changes-'));
+    dirs.push(root);
+    const origin = join(root, 'origin.git');
+    const work = join(root, 'work');
+    git(root, 'init', '--bare', '-b', 'develop', origin);
+    git(root, 'clone', '-q', origin, work);
+    const pwned = join(work, 'PWNED');
+
+    await expect(
+      measureMrChanges(work, `--upload-pack=touch ${pwned}; git-upload-pack`),
+    ).rejects.toThrow();
+    expect(existsSync(pwned)).toBe(false);
   });
 });

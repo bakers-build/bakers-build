@@ -9,6 +9,7 @@ use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Url;
 use Drupal\bb_core\Claim\TicketStallReason;
+use Drupal\bb_core\Entity\BbMachineInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
@@ -17,11 +18,13 @@ use Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface;
  * Who may intervene in a ticket or run, and how an intervention is opened.
  *
  * AI agents drive the workflow; a human on the ticket detail intervenes. The
- * detail offers Freeze, Unfreeze, Cancel ticket and Cancel run, each through a
- * confirmation. Settings carry no transition; Delete is their one action.
+ * detail offers Restart (cancel a parked ticket's newest failed run), Freeze,
+ * Unfreeze, Cancel ticket and Cancel run, each through a confirmation.
+ * Settings carry no transition; Delete is their one action.
  *
  * One home for every intervention rule, so the UI and the tools share it.
  *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  * @SuppressWarnings("PHPMD.TooManyPublicMethods")
  */
 final class TicketInterventions {
@@ -30,6 +33,11 @@ final class TicketInterventions {
    * The one ticket transition the detail page offers.
    */
   public const string CANCEL = 'cancel';
+
+  /**
+   * The run transition that cancels the failed run of a parked ticket.
+   */
+  private const string CANCEL_FAILED = 'cancel_failed';
 
   /**
    * Run states a ticket editor may cancel; mirrors the run workflow's edge.
@@ -104,11 +112,40 @@ final class TicketInterventions {
   public static function mayCancelRun(BbRunInterface $run, BbTicketInterface $ticket): bool {
     return $run->getTicketId() === (int) $ticket->id()
       && $ticket->access('update')
-      && in_array($run->getRunState(), self::ACTIVE_RUN_STATES, TRUE)
+      && (in_array($run->getRunState(), self::ACTIVE_RUN_STATES, TRUE) || self::parkedRun($ticket)?->id() === $run->id())
       && $run->access('view')
       && $run->access('update')
       && $run->get('state')->access('edit')
-      && self::runState($run)->isTransitionAllowed(self::CANCEL);
+      && self::runState($run)->isTransitionAllowed(self::cancelTransition($run));
+  }
+
+  /**
+   * The newest failed run of a ticket the failed-run breaker parks, if any.
+   *
+   * Cancelling it restarts the ticket: a non-failed run among the newest
+   * three frees the next claim. Loaded without access checks.
+   */
+  public static function parkedRun(BbTicketInterface $ticket): ?BbRunInterface {
+    if (!\Drupal::service('bb_core.failed_run_circuit_breaker')->isTripped($ticket)) {
+      return NULL;
+    }
+    $storage = \Drupal::entityTypeManager()->getStorage('bb_run');
+    // The breaker's order, so this is the run it counts as newest.
+    $ids = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('ticket_id', $ticket->id())
+      ->sort('changed', 'DESC')
+      ->sort('id', 'DESC')
+      ->range(0, 1)
+      ->execute();
+    $run = $ids ? $storage->load(reset($ids)) : NULL;
+    return $run instanceof BbRunInterface ? $run : NULL;
+  }
+
+  /**
+   * The transition that cancels this run: `cancel_failed` for a failed run.
+   */
+  public static function cancelTransition(BbRunInterface $run): string {
+    return $run->getRunState() === 'failed' ? self::CANCEL_FAILED : self::CANCEL;
   }
 
   /**
@@ -242,10 +279,35 @@ final class TicketInterventions {
   }
 
   /**
+   * The claimed or running runs of the machine's conductors, across projects.
+   *
+   * Loaded without access checks; callers decide who may cancel them.
+   *
+   * @return array<int|string, \Drupal\bb_core\Entity\BbRunInterface>
+   *   The active runs keyed by id.
+   */
+  public static function activeMachineRuns(BbMachineInterface $machine, EntityTypeManagerInterface $entity_type_manager): array {
+    $conductor_ids = $entity_type_manager->getStorage('bb_conductor')->getQuery()->accessCheck(FALSE)
+      ->condition('machine', $machine->id())
+      ->execute();
+    if ($conductor_ids === []) {
+      return [];
+    }
+    $storage = $entity_type_manager->getStorage('bb_run');
+    $ids = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('conductor_id', $conductor_ids, 'IN')
+      ->condition('state', self::ACTIVE_RUN_STATES, 'IN')
+      ->execute();
+    /** @var array<int|string, \Drupal\bb_core\Entity\BbRunInterface> $runs */
+    $runs = $storage->loadMultiple($ids);
+    return $runs;
+  }
+
+  /**
    * Cancels the run and appends the note to its error log.
    */
   public static function cancelRun(BbRunInterface $run, string $note): void {
-    self::runState($run)->applyTransitionById(self::CANCEL);
+    self::runState($run)->applyTransitionById(self::cancelTransition($run));
     $log = rtrim($run->getErrorLog() ?? '', "\r\n");
     $run->setErrorLog($log === '' ? $note : $log . "\n" . $note);
     $run->save();

@@ -18,7 +18,10 @@ echo "$*" >> "$STATE/calls"
 case "$1" in
   describe)
     [ -f "$STATE/status" ] || { echo 'no project' >&2; exit 1; }
-    printf '{"raw":{"status":"%s","primary_url":"%s"}}\n' "$(cat "$STATE/status")" "$URL" ;;
+    printf '{"raw":{"status":"%s","primary_url":"%s","approot":"%s"}}\n' "$(cat "$STATE/status")" "$URL" "$APPROOT" ;;
+  # DDEV runs the resolved project's copy of the command in its approot.
+  provision) shift; cd "$APPROOT" && DDEV_APPROOT="$APPROOT" bash .ddev/commands/host/provision "$@" ;;
+  config) echo 'rewritten' > .ddev/config.yaml ;;
   start) echo running > "$STATE/status" ;;
   init)
     if [ -f "$STATE/init-fails" ]; then echo 'init broke'; exit 2; fi
@@ -49,6 +52,7 @@ arrange() {
   [ "$1" = - ] || echo "$1" > "$STATE/status"
   [ "$2" = - ] || echo "$2" > "$work/app/.ddev/.bakers-test/profile"
   echo "$3" > "$work/http-code"
+  export APPROOT="$work/app"
 }
 run() {
   rc=0
@@ -90,6 +94,48 @@ case=no-provider; arrange - - 200; rc=0
 out="$(cd "$work/app" && PATH="$work/bin:$PATH" bash "$script" 2>&1)" || rc=$?
 [ "$rc" != 0 ] || fail 'exit 0'
 
+# hook <name> <profile|->: a hook command from .bakers/project.config.js, run in a git worktree
+# nested in the ready site $work/app, where deps are stubbed; sets $out and $rc.
+hook() {
+  local tree="$work/app/wt"
+  rm -rf "$tree"; mkdir -p "$tree/scripts" "$tree/.ddev/commands/host"
+  git -C "$tree" init -q; cp "$script" "$tree/.ddev/commands/host/"
+  printf '#!/bin/bash\n' > "$tree/scripts/worktree-deps.sh"
+  cp "$root/scripts/ddev-own-project.sh" "$tree/scripts/" 2>/dev/null || true
+  local cmd
+  cmd="$(cd "$root" && node --input-type=module -e '
+const { hooks } = (await import("./.bakers/project.config.js")).default;
+console.log(process.argv[2] === "-" ? hooks[process.argv[1]] : hooks[process.argv[1]][process.argv[2]]);
+' "$1" "$2")"
+  rc=0
+  out="$(cd "$tree" && PATH="$work/bin:$PATH" bash -c "$cmd" 2>&1)" || rc=$?
+}
+
+# An unregistered worktree makes DDEV resolve the registered parent; its ready site is not ours.
+for profile in recipe-test existing-config existing-config-fresh conductor-e2e; do
+  case="parent-project $profile"; arrange running "$profile" 200
+  mkdir -p "$work/app/.ddev/commands/host"; cp "$script" "$work/app/.ddev/commands/host/"
+  hook provision_up "$profile"
+  [ "$rc" != 0 ] || fail "exit 0: $out"
+  grep -qF "$work/app" <<<"$out" || fail "parent approot not named: $out"
+  [ "$(calls 'provision|init|start')" = 0 ] || fail "ran setup: $(cat "$STATE/calls")"
+done
+case=own-project; arrange running - 200; export APPROOT="$work/app/wt"; hook provision_up recipe-test
+[ "$rc" = 0 ] && grep -qx 'provision --provider recipe-test' "$STATE/calls" || fail "exit $rc, calls: $(cat "$STATE/calls"): $out"
+case=parent-project-delete; arrange running - 200; hook after_done -
+[ "$(calls delete)" = 0 ] || fail "deleted the parent: $(cat "$STATE/calls")"
+
+# A new worktree registers its own project on creation and keeps the tracked config.yaml.
+case=register; tree="$work/register"
+mkdir -p "$tree/scripts" "$tree/.ddev" "$tree/.bakers"
+cp "$root/scripts/setup-worktree.mjs" "$tree/scripts/"; cp "$root/.ddev/worktree-post.sh" "$tree/.ddev/"
+printf 'name: bakers\n# kept\n' > "$tree/.ddev/config.yaml"; touch "$tree/.bakers/.worktree-post-done"
+git -C "$tree" init -q; STATE="$work/state"; : > "$STATE/calls"; rc=0
+out="$(cd "$tree" && PATH="$work/bin:$PATH" bash .ddev/worktree-post.sh 2>&1)" || rc=$?
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(cat "$STATE/calls")" = 'config --auto' ] || fail "calls: $(cat "$STATE/calls")"
+[ "$(cat "$tree/.ddev/config.yaml")" = "$(printf 'name: bakers\n# kept')" ] || fail 'config.yaml rewritten'
+
 # Agents run Playwright through ddev_exec, so the web image's browsers must match the suite's lock.
 case=playwright-image
 locked="$(node -p 'require(process.argv[1]).packages["node_modules/@playwright/test"].version' "$root/tests/playwright/package-lock.json")"
@@ -107,4 +153,4 @@ for token in KEYTEC_REGISTRY_TOKEN KEYTEC_REGISTRY_WRITE_TOKEN; do
 done
 
 [ "$failures" = 0 ] || exit 1
-echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, Playwright image, container credentials'
+echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, Playwright image, container credentials'

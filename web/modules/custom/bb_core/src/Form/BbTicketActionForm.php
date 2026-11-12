@@ -17,13 +17,15 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Confirms an intervention on a ticket or one of its runs.
  *
- * Freeze, unfreeze, cancel a ticket or a run, retry or re-dispatch a failed
- * run.
+ * Restart, freeze, unfreeze, cancel a ticket or a run, retry or re-dispatch a
+ * failed run.
  *
  * Opened from the detail page's Properties footer or a run row, as a dialog
  * over the ticket with JavaScript and as a plain page without it. The page
  * itself writes nothing; only the Confirm submit does, after re-reading the
  * ticket or the named run.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 final class BbTicketActionForm extends EntityForm {
 
@@ -108,15 +110,7 @@ final class BbTicketActionForm extends EntityForm {
       return $this->runActionConfirmation($ticket, $run);
     }
     if ($run !== NULL && TicketInterventions::mayCancelRun($run, $ticket)) {
-      return [
-        $this->t('Run #@run stops. The ticket stays in its current state, and the conductor may start another run.', [
-          '@run' => $run->id(),
-        ]),
-        $this->actionButton('bb_confirm', (string) $this->t('Cancel run'), [
-          'kind' => 'run',
-          'run' => $run->uuid(),
-        ], 'danger'),
-      ];
+      return $this->runConfirmation($ticket, $run);
     }
     $asks_for_run = $this->getRequest()->query->get(TicketInterventions::RUN_PARAMETER) !== NULL;
     if ($asks_for_run || !TicketInterventions::mayCancelTicket($ticket)) {
@@ -167,6 +161,37 @@ final class BbTicketActionForm extends EntityForm {
         ]),
         $this->actionButton('bb_confirm', (string) $this->t('Re-dispatch'), $action, 'neutral'),
       ];
+  }
+
+  /**
+   * The Cancel run question and button, or Restart for a parked ticket's run.
+   *
+   * @return array{0: \Drupal\Core\StringTranslation\TranslatableMarkup, 1: array<string, mixed>}
+   *   The question and the button.
+   */
+  private function runConfirmation(BbTicketInterface $ticket, BbRunInterface $run): array {
+    // Only the newest failed run of a parked ticket may be cancelled.
+    if ($run->getRunState() === 'failed') {
+      return [
+        $this->t('@ticket can be claimed again on the next cycle. Its newest failed run #@run becomes cancelled; every run keeps its error log.', [
+          '@ticket' => $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label(),
+          '@run' => $run->id(),
+        ]),
+        $this->actionButton('bb_confirm', (string) $this->t('Restart ticket'), [
+          'kind' => 'restart',
+          'run' => $run->uuid(),
+        ], 'neutral'),
+      ];
+    }
+    return [
+      $this->t('Run #@run stops. The ticket stays in its current state, and the conductor may start another run.', [
+        '@run' => $run->id(),
+      ]),
+      $this->actionButton('bb_confirm', (string) $this->t('Cancel run'), [
+        'kind' => 'run',
+        'run' => $run->uuid(),
+      ], 'danger'),
+    ];
   }
 
   /**
@@ -262,7 +287,7 @@ final class BbTicketActionForm extends EntityForm {
       return;
     }
     $target = match ($action['kind']) {
-      'run' => $this->cancellableRun($action['run'], $ticket),
+      'run', 'restart' => $this->cancellableRun($action['run'], $ticket),
       'freeze' => $this->freezeTarget($action, $ticket),
       TicketInterventions::RETRY, TicketInterventions::REDISPATCH => $this->retryTarget($action, $ticket, $form_state),
       default => $this->transitionTarget($action, $ticket),
@@ -341,6 +366,7 @@ final class BbTicketActionForm extends EntityForm {
     $label = $ticket->getIdentifier() !== '' ? $ticket->getIdentifier() : (string) $ticket->label();
     return match ($action['kind']) {
       'run' => (string) $this->t('The run was cancelled.'),
+      'restart' => (string) $this->t('@ticket was restarted.', ['@ticket' => $label]),
       TicketInterventions::RETRY => (string) $this->t('Retry requested.'),
       TicketInterventions::REDISPATCH => (string) $this->t('@ticket moved to @conductor.', [
         '@ticket' => $label,
@@ -384,7 +410,7 @@ final class BbTicketActionForm extends EntityForm {
     if ($run === NULL || !TicketInterventions::mayCancelRun($run, $ticket)) {
       return NULL;
     }
-    TicketInterventions::runState($run)->applyTransitionById(TicketInterventions::CANCEL);
+    TicketInterventions::runState($run)->applyTransitionById(TicketInterventions::cancelTransition($run));
     return $run;
   }
 

@@ -21,10 +21,55 @@ function check(head: string, repository: string) {
     },
   });
 }
-it('only promotes the same repository next branch into stable main', () => {
+it('promotes only the same repository next or release branches into stable main', () => {
   expect(check('next', 'bakers-build/bakers-build').status).toBe(0);
   expect(check('feature', 'bakers-build/bakers-build').status).not.toBe(0);
   expect(check('next', 'fork/bakers-build').status).not.toBe(0);
+});
+
+it('promotes a same-repository release branch only when its head is on next', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'branch-policy-'));
+  const env = {
+    ...process.env,
+    GIT_AUTHOR_NAME: 'Fixture',
+    GIT_AUTHOR_EMAIL: 'fixture@example.test',
+    GIT_COMMITTER_NAME: 'Fixture',
+    GIT_COMMITTER_EMAIL: 'fixture@example.test',
+  };
+  const git = (...args: string[]) =>
+    execFileSync('git', args, { cwd: dir, env, encoding: 'utf8' }).trim();
+  // The checked-out pull_request ref: main merged with the PR head.
+  const pr = (head: string, repository = 'bakers-build/bakers-build') => {
+    git('checkout', '-q', '--detach', 'main');
+    git('merge', '--no-ff', '-qm', 'pr', head);
+    return spawnSync('bash', [script], {
+      cwd: dir,
+      encoding: 'utf8',
+      env: {
+        ...env,
+        GITHUB_EVENT_NAME: 'pull_request',
+        GITHUB_BASE_REF: 'main',
+        GITHUB_HEAD_REF: 'release/bb-9',
+        GITHUB_REPOSITORY: 'bakers-build/bakers-build',
+        HEAD_REPOSITORY: repository,
+      },
+    }).status;
+  };
+  try {
+    git('init', '-q', '-b', 'main');
+    git('commit', '--allow-empty', '-qm', 'initial');
+    git('checkout', '-qb', 'next');
+    git('commit', '--allow-empty', '-qm', 'candidate');
+    git('update-ref', 'refs/remotes/origin/next', 'HEAD');
+    git('branch', 'release/bb-9');
+    expect(pr('release/bb-9')).toBe(0);
+    expect(pr('release/bb-9', 'fork/bakers-build')).not.toBe(0);
+    git('checkout', '-q', 'release/bb-9');
+    git('commit', '--allow-empty', '-qm', 'not on next');
+    expect(pr('release/bb-9')).not.toBe(0);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 it('stable push requires a next merge with exactly the candidate tree', () => {

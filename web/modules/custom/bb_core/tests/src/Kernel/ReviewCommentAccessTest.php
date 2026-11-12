@@ -268,9 +268,14 @@ final class ReviewCommentAccessTest extends KernelTestBase {
     self::assertContains((string) $draft->id(), $this->visibleIds($actors['ticket'], $actors['reviewer']));
     self::assertContains((string) $submitted->id(), $this->visibleIds($actors['ticket'], $actors['assignee']));
 
-    // The ticket moves into a workspace neither account belongs to.
+    // The ticket moves into a workspace neither account belongs to. Its owner
+    // is set, as the current user would otherwise become its lead.
     $storage = fn(string $type) => $this->container->get('entity_type.manager')->getStorage($type);
-    $workspace = $storage('bb_workspace')->create(['name' => 'foreign', 'slug' => 'ws-foreign']);
+    $workspace = $storage('bb_workspace')->create([
+      'name' => 'foreign',
+      'slug' => 'ws-foreign',
+      'owner_user_id' => $this->account('foreign-owner')->id(),
+    ]);
     $workspace->save();
     $group = $storage('bb_group')->create(['name' => 'fg', 'workspace_id' => $workspace->id()]);
     $group->save();

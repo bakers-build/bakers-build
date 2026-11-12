@@ -59,8 +59,8 @@ final class RunLogDownloadAuthTest extends KernelTestBase {
     $this->allowRunLogStorage();
     $this->setSetting('file_private_path', $this->siteDirectory . '/private');
     foreach ([
-      'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_project',
-      'bb_ticket', 'bb_run', 'file',
+      'user', 'og_membership', 'bb_workspace', 'bb_group', 'bb_team',
+      'bb_project', 'bb_ticket', 'bb_run', 'file',
     ] as $type) {
       $this->installEntitySchema($type);
     }
@@ -86,6 +86,7 @@ final class RunLogDownloadAuthTest extends KernelTestBase {
     $member = $this->createAccount('member-basic', []);
     $member->setPassword($password)->save();
     $this->addMembership($workspace, $member, ['contributor']);
+    $this->seatOnProjectTeam($run->getTicket()?->getProject(), $member);
     $outsider = $this->createAccount('outsider-basic', []);
     $outsider->setPassword($password)->save();
     $url = Url::fromRoute('bb_core.run_log_download_api', [

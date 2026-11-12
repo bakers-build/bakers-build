@@ -79,7 +79,7 @@ export interface ToolRegistry {
 /** `hooks.provision_up`: one command, or a command per profile. */
 export type ProvisionHook = string | Record<string, string>;
 
-const PROVISION_TIMEOUT_MS = 30 * 60_000;
+export const PROVISION_TIMEOUT_MS = 30 * 60_000;
 const OUTPUT_CAP = 64 * 1024;
 
 type ShellResult = { exitCode: number; output: string };
@@ -155,7 +155,7 @@ export function provisionTools(
         contract: 1,
         tools: {
           provision_up: {
-            description: `Bring this worktree's environment up${profiles ? ` with a configured profile (${keys})` : ''}; the project's command reuses a ready environment. Returns the command's output, including the base URL.`,
+            description: `Bring this worktree's environment up${profiles ? ` with a configured profile (${keys})` : ''}; the project's command reuses a ready environment. Returns the command's output, including the base URL. The first call on a new worktree can take minutes; the call waits until the command ends, for up to 30 minutes. On a client timeout the command keeps running: call again with the same profile to join it and receive its result, without starting a second one.`,
             input: {
               type: 'object',
               properties: {
@@ -169,7 +169,7 @@ export function provisionTools(
         handlers: async () => ({
           provision_up: async (req) => {
             const command = commandFor(req.args.profile);
-            // shortcut: inherits the conductor's env, not the run's BB_* env; pass it through the binding once a hook needs it.
+            // shortcut: inherits the conductor's env, not the run's BAKERS_* env; pass it through the binding once a hook needs it.
             const { exitCode, output } = await runs.run(
               req.worktreePath,
               command,

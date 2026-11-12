@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
@@ -152,11 +151,11 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
    * {@inheritdoc}
    *
    * A slot gets a ticket's sub-line with its time element; a string prop gets
-   * the plain text, escaped, because a string prop prints as markup.
+   * the plain text, which Twig escapes.
    */
   public function getValue(?PropTypeInterface $prop_type = NULL): mixed {
     if ($prop_type?->getPluginId() !== 'slot') {
-      return Html::escape($this->getPropValue());
+      return $this->getPropValue();
     }
     $ticket = $this->ticketForSubline();
     return $ticket === NULL ? [] : BbTicketDetailHeaderSource::sublineElement($ticket);

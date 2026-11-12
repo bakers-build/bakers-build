@@ -18,6 +18,14 @@ final class ConductorListToolTest extends BakersToolTestBase {
   use ForeignWorkspaceTrait;
 
   /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+    $this->installEntitySchema('bb_machine');
+  }
+
+  /**
    * Only the project's conductors, by label.
    */
   public function testListsTheProjectsConductors(): void {
@@ -35,6 +43,7 @@ final class ConductorListToolTest extends BakersToolTestBase {
       'label' => $conductor->label(),
       'active' => $active,
       'status' => $status,
+      'machine' => NULL,
     ];
     self::assertSame([
       'conductors' => [$row($offline, FALSE, 'offline'), $row($online, TRUE, 'online')],
@@ -44,6 +53,20 @@ final class ConductorListToolTest extends BakersToolTestBase {
     $first = $this->outputs($this->runTool('bakers_conductor_list', ['project' => $this->project->uuid(), 'limit' => 1]));
     self::assertSame([$row($offline, FALSE, 'offline')], $first['conductors']);
     self::assertSame(1, $first['next_offset']);
+  }
+
+  /**
+   * The machine_id is returned even when another account owns the machine.
+   */
+  public function testReturnsMachineId(): void {
+    $machine = $this->entity('bb_machine', [
+      'name' => 'box-a',
+      'host_key' => 'box-a',
+      'owner_user_id' => $this->account('machine-owner')->id(),
+    ]);
+    $this->conductor('on-box', (int) $this->project->id(), 'online', TRUE, (int) $machine->id());
+    $rows = $this->outputs($this->runTool('bakers_conductor_list', ['project' => 'TOOLPROJEC']))['conductors'];
+    self::assertSame('box-a', $rows[0]['machine']);
   }
 
   /**
@@ -67,7 +90,7 @@ final class ConductorListToolTest extends BakersToolTestBase {
   /**
    * A conductor of the given project owned by the actor.
    */
-  private function conductor(string $label, int $project_id, string $status, bool $active = TRUE): ContentEntityInterface {
+  private function conductor(string $label, int $project_id, string $status, bool $active = TRUE, ?int $machine_id = NULL): ContentEntityInterface {
     return $this->entity('bb_conductor', [
       'conductor_id' => $this->randomMachineName(),
       'label' => $label,
@@ -75,6 +98,7 @@ final class ConductorListToolTest extends BakersToolTestBase {
       'active' => $active,
       'status' => $status,
       'project_id' => $project_id,
+      'machine' => $machine_id,
     ]);
   }
 

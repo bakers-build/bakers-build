@@ -10,6 +10,7 @@ import {
   type AgentRunIdentity,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_TOOL_TIMEOUT_MS,
   CONDUCTOR_TOOLS_SERVER,
   ensureHome,
   homeKey,
@@ -376,7 +377,7 @@ export class CodexAgent implements BbAgent {
       parts.push(
         '-c',
         word(
-          `mcp_servers.${CONDUCTOR_TOOLS_SERVER}={url=${JSON.stringify(tools.url)},bearer_token_env_var=${JSON.stringify(CONDUCTOR_TOKEN_ENV)},default_tools_approval_mode="approve"}`,
+          `mcp_servers.${CONDUCTOR_TOOLS_SERVER}={url=${JSON.stringify(tools.url)},bearer_token_env_var=${JSON.stringify(CONDUCTOR_TOKEN_ENV)},default_tools_approval_mode="approve",tool_timeout_sec=${CONDUCTOR_TOOL_TIMEOUT_MS / 1000}}`,
         ),
       );
     }

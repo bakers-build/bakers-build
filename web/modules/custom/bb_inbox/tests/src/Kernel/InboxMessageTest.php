@@ -79,18 +79,16 @@ final class InboxMessageTest extends KernelTestBase {
   }
 
   /**
-   * A viewer whose collection scope lacks the ticket may still send.
+   * A workspace guest outside the project's teams cannot open its ticket.
    *
-   * Ticket view access and the ticket query's read scope can disagree (a
-   * workspace guest outside the project's teams); the sender checked view
-   * access explicitly, so the reference check must not reject the message.
+   * Ticket view access follows the read scope, so the sender's own view check
+   * refuses whom the ticket listing hides.
    */
-  public function testViewerOutsideTheReadScopeCanSend(): void {
+  public function testGuestOutsideTheTeamsCannotOpenTheTicket(): void {
     $viewer = $this->createAccount('guest-without-team');
     $this->addMembership($this->fixture('a', 'bb_workspace'), $viewer, ['guest']);
-    self::assertTrue($this->ticket->access('view', $viewer), 'Precondition: the viewer may view the ticket.');
-    self::assertNotContains((int) $this->ticket->id(), $this->queryIdsAs('bb_ticket', $viewer), 'Precondition: the read scope lacks it.');
-    self::assertSame('pending', $this->send($viewer, 'test.echo')->status());
+    self::assertNotContains((int) $this->ticket->id(), $this->queryIdsAs('bb_ticket', $viewer));
+    self::assertFalse($this->ticket->access('view', $viewer));
   }
 
   /**

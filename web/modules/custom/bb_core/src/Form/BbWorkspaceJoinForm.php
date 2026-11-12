@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
 use Drupal\Core\Cache\CacheableMetadata;
@@ -173,9 +172,8 @@ final class BbWorkspaceJoinForm extends FormBase {
       $build['description'] = [
         '#type' => 'component',
         '#component' => 'bb_theme:text',
-        // Escaped here: ui_patterns hands a top-level string prop to Twig as
-        // markup, so the template would print a description's tags.
-        '#props' => ['text' => Html::escape($description), 'tone' => 'light'],
+        // ui_patterns escapes string props itself.
+        '#props' => ['text' => $description, 'tone' => 'light'],
       ];
     }
     $cache->applyTo($build);

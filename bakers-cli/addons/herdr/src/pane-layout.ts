@@ -35,7 +35,7 @@ export function parsePaneSplit(output: string): string {
  * split panes. Shared by the executor's per-run tab (`startRun`) and the
  * workspace's initial open pane (`herdrWorkspace` `open`) — one code path, no
  * duplication. The per-state `StateConfig` (executor) and the workspace `open`
- * option both narrow to this shape (the executor adds `tabLabel`; there is only
+ * option both narrow to this shape (the executor adds `tab_label`; there is only
  * one open layout, not a per-state map).
  */
 export interface PaneLayout {
@@ -58,7 +58,7 @@ export interface PaneLayout {
  * secret, while the command herdr actually runs stays real. An empty layout
  * (`{}`) issues no calls at all — the caller's unconfigured default is preserved.
  *
- * `opts.env` is forwarded to each split pane as `--env` args (BB_* only, see
+ * `opts.env` is forwarded to each split pane as `--env` args (BAKERS_* only, see
  * {@link envArgs}). It is deliberately per-CALLER rather than baked in: this
  * primitive serves both the executor's agent tab and the workspace's own open
  * pane, and only the former's panes are agent-owned (BB-64). The ROOT pane is

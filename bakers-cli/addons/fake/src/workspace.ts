@@ -27,7 +27,7 @@ export class FakeWorkspace implements BbWorkspace {
 export function fakeWorkspace(): WorkspacePlugin {
   const workspace = new FakeWorkspace();
   return {
-    kind: 'workspace',
+    kind: 'worktree',
     id: 'fake',
     requiredModules: [],
     async createWorkspace(_config: ConductorFileConfig) {

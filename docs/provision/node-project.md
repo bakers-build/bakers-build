@@ -14,7 +14,7 @@ A Node.js project does not need Docker or another container runtime unless your 
 
 ## Example: npm project hooks
 
-**For a repository with `package-lock.json`.** Merge this entry into `hooks` in `.bakers/conductor.config.js`, keeping the rest of your configuration:
+**For a repository with `package-lock.json`.** Merge this entry into `hooks` in `.bakers/project.config.js`, keeping the rest of your configuration:
 
 ```js
 hooks: {

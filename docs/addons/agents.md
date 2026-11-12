@@ -10,7 +10,7 @@ Nothing to enable. The command ships with the bakers.build CLI as `bakers agents
 
 ## Options
 
-No addon settings. Run inside a configured project, or pass `--config <path>` for its conductor config. The command loads that config together with the machine [agent policy](/agents/reference#the-agents-object).
+No addon settings. Run inside a configured project, or pass `--config <path>` for its project config. The command loads that config together with the machine [agent policy](/agents/reference#the-agents-object).
 
 ## Check it works
 

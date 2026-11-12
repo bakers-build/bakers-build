@@ -81,6 +81,7 @@ final class OauthClaudeConnectorAccessTest extends KernelTestBase {
 
     $account = $this->createAccount('mcp-connector-member');
     $this->addMembership($workspace, $account, ['contributor']);
+    $this->seatOnProjectTeam($project, $account);
 
     $ticket = $this->createEntity('bb_ticket', [
       'identifier' => 'MCP-1',
@@ -139,6 +140,7 @@ final class OauthClaudeConnectorAccessTest extends KernelTestBase {
     $project = $this->createEntity('bb_project', ['name' => 'mcp-project-2', 'group_id' => $group->id()]);
     $account = $this->createAccount('mcp-connector-member-2');
     $this->addMembership($workspace, $account, ['contributor']);
+    $this->seatOnProjectTeam($project, $account);
     $ticket = $this->createEntity('bb_ticket', [
       'identifier' => 'MCP-2',
       'workflow' => 'bb_work',

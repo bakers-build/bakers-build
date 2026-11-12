@@ -167,6 +167,7 @@ Given('a CLI device sign-in is waiting for this test site', async ({ baseURL }) 
 
 When('I approve that CLI device sign-in', async ({ page }) => {
   await page.goto(verificationUrl);
+  await page.getByLabel('Device code').fill(new URL(verificationUrl).searchParams.get('user_code') ?? '');
   await page.getByRole('button', { name: 'Confirm sign-in' }).click();
   await page.waitForURL('**/oauth/device?done=confirmed');
   expectOk(await login!, 'device login');

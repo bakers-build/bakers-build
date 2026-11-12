@@ -31,6 +31,7 @@ describe('workspace package structure', () => {
     expect(pkg.exports).toEqual({
       '.': './dist/src/index.js',
       './preset': './dist/src/preset.js',
+      './options.schema.json': './options.schema.json',
     });
     // BB-224 (Finding 6, decision 12): a conductor-surface addon peer-depends
     // on BOTH the kernel and the surface-contract package that owns the agent

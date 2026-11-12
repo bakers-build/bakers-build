@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Plugin\UiPatterns\Source;
 
 use Drupal\Component\Render\MarkupInterface;
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Controller\TitleResolverInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Render\Markup;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\PropTypeInterface;
@@ -22,7 +22,7 @@ use Symfony\Component\Routing\Route;
  *
  * TitleResolver may return a string, markup, or a render array with #markup
  * (`UserController::userTitle`). A string prop cannot hold a render array,
- * and it prints as markup, so plain text arrives escaped.
+ * and Twig escapes a plain string, so only a markup title stays markup.
  */
 #[Source(
   id: 'bb_page_title',
@@ -62,9 +62,8 @@ final class BbPageTitleSource extends SourcePluginBase implements ContainerFacto
       return '';
     }
     $title = $this->titleResolver->getTitle($request, $route);
-    // A string prop prints as markup, so a plain-text title is escaped here;
-    // a title that is markup already carries its escaping.
-    return $title instanceof MarkupInterface ? self::stringify($title) : Html::escape(self::stringify($title));
+    // A plain-text title is escaped at render; markup carries its escaping.
+    return $title instanceof MarkupInterface ? Markup::create(self::stringify($title)) : self::stringify($title);
   }
 
   /**

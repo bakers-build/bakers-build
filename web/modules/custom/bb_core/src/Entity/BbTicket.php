@@ -337,6 +337,7 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
     $fields['ticket_type'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Ticket type'))
       ->setSetting('target_type', 'bb_term')
+      ->setSetting('handler', 'bb_label_in_entity_workspace')
       ->setSetting('handler_settings', ['target_bundles' => ['type' => 'type']])
       ->addConstraint('BbTicketLabelWorkspace')
       ->setDisplayConfigurable('form', TRUE)
@@ -344,6 +345,7 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
     $fields['recipe'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Recipe'))
       ->setSetting('target_type', 'bb_term')
+      ->setSetting('handler', 'bb_label_in_entity_workspace')
       ->setSetting('handler_settings', ['target_bundles' => ['recipe' => 'recipe']])
       ->addConstraint('BbTicketLabelWorkspace')
       ->setDisplayConfigurable('form', TRUE)
@@ -351,6 +353,7 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
     $fields['labels'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Labels'))
       ->setSetting('target_type', 'bb_term')
+      ->setSetting('handler', 'bb_label_in_entity_workspace')
       ->setSetting('handler_settings', ['target_bundles' => ['label' => 'label']])
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       // A term must belong to the ticket's own workspace. The
@@ -453,6 +456,7 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
       ->setSetting('target_type', 'bb_ticket')
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->addConstraint('BbBlockedByAcyclic')
+      ->addConstraint('BbParentSameProject', ['message' => "Choose open blocking tickets from this ticket's project."])
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'entity_reference_autocomplete', 'weight' => 13])
       // View-displayable so the ticket_detail full display can map the

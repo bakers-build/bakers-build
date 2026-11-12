@@ -106,7 +106,7 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
       // Both are write gates: core's ValidReference validates through the
       // handler's buildEntityQuery(), and BbWorkspaceScope owns the
       // membership and ambient-match rules.
-      ->setSetting('handler', 'bb_group_in_active_workspace')
+      ->setSetting('handler', 'bb_in_entity_workspace')
       ->addConstraint('BbWorkspaceScope')
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'entity_reference_autocomplete', 'weight' => 0]);
@@ -167,6 +167,7 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
       ->setDescription(new TranslatableMarkup('The teams this project belongs to. A project belongs to at least one team; visibility and the right to create a project both flow from team membership.'))
       ->setRequired(TRUE)
       ->setSetting('target_type', 'bb_team')
+      ->setSetting('handler', 'bb_in_entity_workspace')
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->addConstraint('BbWorkspaceScope')
       ->setDisplayConfigurable('form', TRUE)
@@ -186,6 +187,7 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
     // value, and Required refuses an explicitly emptied one at validation
     // instead of a database error.
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition()
+      ->setSetting('handler', 'bb_assignee_in_ticket_workspace')
       ->setRequired(TRUE);
 
     return $fields;

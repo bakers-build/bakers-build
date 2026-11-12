@@ -29,14 +29,21 @@ tool enforces this pattern.
 Human approval before a merge stays a workflow rule (the merge gate), not a tool gate.
 
 **Backends.** `forge-github` uses a GitHub App installation token. `forge-gitlab` uses a Project
-Access Token with role Developer and an expiry date. The tokens live only with the conductor.
+Access Token with role Developer and an expiry date. Either can instead use the conductor's own
+`gh` or `glab` login (`auth: 'gh'`, `auth: 'glab'`): the CLI runs on the conductor, outside the
+sandbox, and only its token is used. The tokens live only with the conductor.
 
 ## Until the forge addon exists
 
 A sandboxed run that has to push or open a PR/MR needs explicit trusted commands on the project
-or machine layer, for example `trusted_commands: ['bakers', 'git', 'gh']` (or `glab`). This
-repository pins `bakers` and `git` in `.bakers/conductor.config.js`. Every such entry runs outside
-the sandbox with the operator's full rights; see [Run security](/provision/security/execution).
+or machine layer, for example `trusted_commands: ['bakers', 'git', 'gh']` (or `glab`). Every
+such entry runs outside the sandbox with the operator's full rights; see
+[Run security](/provision/security/execution).
+
+The addons now exist: [Forge](/addons/forge) with [Forge for GitHub](/addons/forge-github) or
+[Forge for GitLab](/addons/forge-gitlab). With them configured, no trusted `git`, `gh` or `glab` is
+needed for delivery; this section stays the fallback for a project without them. This repository
+configures the forge addon in `.bakers/project.config.js` and trusts no command.
 
 ## The key is `permissions`, not `security`
 
@@ -56,8 +63,8 @@ tools cover delivery.
 
 ## Secrets and Vault
 
-No separate Vault addon for now. Forge backends read their token from the conductor's config or
-environment. A `secrets` interface with a Vault backend comes only when a second addon needs
+No separate Vault addon for now. Forge backends read their token from the conductor's config,
+environment or `gh`/`glab` login. A `secrets` interface with a Vault backend comes only when a second addon needs
 credentials. Then it can serve both without changing the tools.
 
 ## Rejected alternative

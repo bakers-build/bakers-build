@@ -12,17 +12,17 @@ import {
  * Layout applied to a fresh worktree's initial (root) pane (BB-139): `command`
  * launches a tool in the main pane (e.g. `spiceedit`) so the human lands in an
  * editor instead of a bare shell; `panes[]` are optional splits off it. Same
- * shape as the executor's per-state layout minus `tabLabel` — there is only ONE
+ * shape as the executor's per-state layout minus `tab_label` — there is only ONE
  * open layout, not a per-ticket-state map.
  *
- * BB-234: `{identifier}`, `{branch}`, `{title}` and `{worktreePath}` expand in
+ * BB-234: `{identifier}`, `{branch}`, `{title}` and `{worktree_path}` expand in
  * `command` **and** in every `panes[].command`. The root command is rendered
  * here before the finished layout reaches `applyPaneLayout` — that shared
  * helper types its root command VERBATIM on purpose, because its other caller
  * (the run tab) pre-assembles `KEY='value' <agent>` env prefixes whose values
  * may legitimately contain braces (spec D2).
  *
- * BB-374: `tabLabel` / `panelLabel` are chrome strings applied after the
+ * BB-374: `tab_label` / `panel_label` are chrome strings applied after the
  * layout via `herdr tab rename` / `herdr pane rename` ("panel label" = pane
  * label). Defaults ship when keys are absent on an active layout; `open: {}`
  * remains the full opt-out (no command, no splits, no labels). The overview
@@ -40,12 +40,12 @@ export interface OpenLayout {
    * Overview tab label template. Default: `{identifier} · {title}` (title
    * truncated to {@link OPEN_TAB_TITLE_MAX} when rendering).
    */
-  tabLabel?: string;
+  tab_label?: string;
   /**
    * Overview root-pane label template (`herdr pane rename`). Default:
    * `{identifier} · {title}` (full title).
    */
-  panelLabel?: string;
+  panel_label?: string;
 }
 
 /** Max `{title}` length substituted into the overview **tab** label (BB-374). */
@@ -78,8 +78,8 @@ export const DEFAULT_OPEN_PANEL_LABEL = '{identifier} · {title}';
  */
 export const DEFAULT_OPEN_LAYOUT: OpenLayout = {
   command: 'bakers ui --ticket {identifier}',
-  tabLabel: DEFAULT_OPEN_TAB_LABEL,
-  panelLabel: DEFAULT_OPEN_PANEL_LABEL,
+  tab_label: DEFAULT_OPEN_TAB_LABEL,
+  panel_label: DEFAULT_OPEN_PANEL_LABEL,
 };
 
 /** `open: {}` — the opt-out back to the bare tab: no command, splits or labels. */
@@ -87,8 +87,8 @@ export function isEmptyLayout(open: OpenLayout): boolean {
   return (
     open.command === undefined &&
     !open.panes?.length &&
-    open.tabLabel === undefined &&
-    open.panelLabel === undefined
+    open.tab_label === undefined &&
+    open.panel_label === undefined
   );
 }
 
@@ -169,7 +169,7 @@ export async function applyOpenLayout(
       identifier: ctx.identifier,
       branch: ctx.branch,
       title: ctx.title,
-      worktreePath: path,
+      worktree_path: path,
     };
     const layout: OpenLayout = {
       ...open,
@@ -209,11 +209,11 @@ async function applyOverviewLabels(
     title: truncateOpenTabTitle(vars.title ?? ''),
   };
   const tabLabel = renderTemplate(
-    open.tabLabel ?? DEFAULT_OPEN_TAB_LABEL,
+    open.tab_label ?? DEFAULT_OPEN_TAB_LABEL,
     tabVars,
   );
   const panelLabel = renderTemplate(
-    open.panelLabel ?? DEFAULT_OPEN_PANEL_LABEL,
+    open.panel_label ?? DEFAULT_OPEN_PANEL_LABEL,
     vars,
   );
 

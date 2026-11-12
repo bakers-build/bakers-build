@@ -31,11 +31,20 @@ beforeEach(() => {
   mkdirSync(join(home, '.bakers'));
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    `export default { addons: ['@bakers-build/addon-codex'] };`,
+    machineSource(`export default { addons: ['@bakers-build/addon-codex'] };`),
   );
   vi.stubEnv('HOME', home);
 });
 afterEach(() => vi.unstubAllEnvs());
+
+// The machine schema requires machine_id and label; a body that sets its own
+// keeps them (a later duplicate key wins).
+function machineSource(body: string): string {
+  return body.replace(
+    'export default {',
+    "export default { machine_id: 'm1', label: 'M1',",
+  );
+}
 
 // A minimal already-constructed agent plugin (kind-guard must accept it).
 const madeAgent = (id = 'fake') => ({
@@ -116,18 +125,17 @@ describe('resolveAgents', () => {
 const VALID = `
 const slot = (kind) => ({ kind, id: kind, requiredModules: [] });
 export default {
-  site: { base_url: 'http://web' },
-  remote: slot('remote'),
+  server: slot('server'),
   executor: slot('executor'),
-  workspace: slot('workspace'),
-  bakers: { project: 'bakers' },
+  worktree: slot('worktree'),
+  project: { name: 'bakers' },
   states: ['todo', 'working'],
 };
 `;
 
 function writeConfig(content: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'bakers-conductor-'));
-  const file = join(dir, 'conductor.config.js');
+  const file = join(dir, 'project.config.js');
   writeFileSync(file, content);
   return file;
 }
@@ -138,16 +146,16 @@ function writeConfig(content: string): string {
 function setMachineAgentAddons(entriesLiteral: string): void {
   writeFileSync(
     join(process.env.HOME as string, '.bakers/machine.config.js'),
-    `export default { addons: [${entriesLiteral}] };`,
+    machineSource(`export default { addons: [${entriesLiteral}] };`),
   );
 }
 
 // Map a conductor stem to its file name: `conductor` → the default
-// `conductor.config.js`, else the variant `<stem>.conductor.config.js`.
+// `project.config.js`, else the variant `project.<stem>.config.js`.
 function fileForStem(stem: string): string {
   return stem === 'conductor'
-    ? 'conductor.config.js'
-    : `${stem}.conductor.config.js`;
+    ? 'project.config.js'
+    : `project.${stem}.config.js`;
 }
 
 // Write a second, named variant config next to an existing config file.
@@ -162,7 +170,7 @@ function writeNamedConfigBeside(
 }
 
 // Build <root>/.bakers/ containing one conductor config per given stem (via the
-// `.conductor.config.js` convention); return the repo root dir (holding `.bakers/`).
+// `project.<stem>.config.js` convention); return the repo root dir (holding `.bakers/`).
 function writeBbProject(stems: string[]): string {
   const root = mkdtempSync(join(tmpdir(), 'bakers-repo-'));
   const bakers = join(root, '.bakers');
@@ -176,10 +184,10 @@ function writeBbProject(stems: string[]): string {
 // A fixture plugin module exporting slot/plugin factories, written next to the
 // config so it resolves from the config dir. Mirrors dropsh's tmpdir config test.
 const FIXTURE = `
-export const mkRemote = (opts) => ({ kind: 'remote', id: opts?.id ?? 'r', requiredModules: [] });
+export const mkRemote = (opts) => ({ kind: 'server', id: opts?.id ?? 'r', requiredModules: [] });
 export const mkExecutor = () => ({ kind: 'executor', id: 'e', requiredModules: [] });
 export const mkAgent = () => ({ kind: 'agent', id: 'a', requiredModules: [] });
-export const mkWorkspace = () => ({ kind: 'workspace', id: 'w', requiredModules: [] });
+export const mkWorkspace = () => ({ kind: 'worktree', id: 'w', requiredModules: [] });
 export const mkPlugin = (opts) => ({ kind: 'plugin', id: opts?.id ?? 'p', requiredModules: [] });
 // A composePlugins-style aggregator: the factory returns an ARRAY of plugins.
 // dropsh flattens such a nested plugins[] entry into separate entries; the
@@ -198,16 +206,14 @@ function writeDescriptorConfig(extra = ''): string {
   writeFileSync(join(dir, 'fixture.js'), FIXTURE);
   const content = `
 export default {
-  site: { base_url: 'http://web' },
-  remote:    { plugin: './fixture.js', export: 'mkRemote', with: { id: 'from-with' } },
-  executor:  { plugin: './fixture.js', export: 'mkExecutor' },
-  workspace: { plugin: './fixture.js', export: 'mkWorkspace' },
-  plugins:   [ { plugin: './fixture.js', export: 'mkPlugin', with: { id: 'session' } } ],
-  bakers: { project: 'bakers' },
+  server:   { use: './fixture.js', export: 'mkRemote', with: { id: 'from-with' } },
+  executor: { use: './fixture.js', export: 'mkExecutor' },
+  worktree: { use: './fixture.js', export: 'mkWorkspace' },
+  project: { name: 'bakers' },
   states: ['todo', 'working'],
 ${extra}};
 `;
-  const file = join(dir, 'conductor.config.js');
+  const file = join(dir, 'project.config.js');
   writeFileSync(file, content);
   return file;
 }
@@ -218,17 +224,27 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     expect(DEFAULT_AGENT_PROMPT).not.toContain('--- Ticket comments ---');
   });
 
-  it('instructs the step-0 read through the MCP tool, else bakers tools, which picks the route itself', () => {
-    // The run reads its ticket through the same tool as every skill step;
-    // `bakers tools` goes to the run's conductor when the run has one.
+  it('instructs the step-0 read: MCP tool, else load it, and the CLI only when it cannot be loaded', () => {
+    // A harness connects MCP servers in the background, so at the first turn the
+    // tool can be "not listed yet" without being "not served". The agent loads it
+    // before falling back; a run whose Bash forbids `bakers tools` stopped there.
     const paths = [
-      'the MCP tool bakers_ticket_read when it is listed',
-      `bakers tools bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+      'the MCP tool bakers_ticket_read',
+      'when it is not listed yet load it through your tool search',
+      'only when it cannot be loaded',
+      `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
     ].map((p) => DEFAULT_AGENT_PROMPT.indexOf(p));
     expect(paths.every((at) => at >= 0)).toBe(true);
     expect([...paths].sort((a, b) => a - b)).toEqual(paths);
+    expect(DEFAULT_AGENT_PROMPT).toContain(
+      'a denial blocks that one command, not every command',
+    );
+    expect(DEFAULT_AGENT_PROMPT).not.toContain('when it is listed, else');
     expect(DEFAULT_AGENT_PROMPT).not.toContain('bakers oven tools');
-    expect(DEFAULT_AGENT_PROMPT).not.toContain('tool_api__');
+    // Harness-neutral: no Claude-only tool names.
+    for (const claudeOnly of ['tool_api__', 'mcp__', 'ToolSearch']) {
+      expect(DEFAULT_AGENT_PROMPT).not.toContain(claudeOnly);
+    }
   });
 
   it('routes through the loader to the skill that owns the step', () => {
@@ -279,11 +295,11 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
   it('renders bounded (<= 1 KB) and embed-free regardless of ticket size', () => {
     const rendered = DEFAULT_AGENT_PROMPT.replaceAll('{identifier}', 'BB-121')
       .replaceAll('{state}', 'working')
-      .replaceAll('{runUuid}', 'r-1')
-      .replaceAll('{ticketUuid}', 't-1');
+      .replaceAll('{run_uuid}', 'r-1')
+      .replaceAll('{ticket_uuid}', 'ffcb6949-90bf-4639-96d1-91c2c2378575');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
-      `bakers tools bakers_ticket_read --data '{"ticket":"t-1"}'`,
+      `bakers tools bakers_ticket_read --data '{"ticket":"ffcb6949-90bf-4639-96d1-91c2c2378575"}'`,
     );
     expect(rendered).not.toContain('--- Ticket comments ---');
     expect(rendered).not.toContain('{comments}');
@@ -321,7 +337,8 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
   const NEUTRAL_CONTRACT = [
     'Read the ticket and all comments',
     'bakers_ticket_read',
-    `bakers tools bakers_ticket_read --data '{"ticket":"{ticketUuid}"}'`,
+    `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
+    'load it through your tool search',
     './WORKFLOW.md',
     "that skill's {state} section",
     'Do not start or prepare a later state',
@@ -396,8 +413,8 @@ describe('loadConductorConfig', () => {
   it('reads no identity from the project config', async () => {
     const path = writeConfig(VALID);
     const config = await loadConductorConfig(path);
-    // The default machine file has no machine_id yet: no id can be derived.
-    expect(config.conductor_id).toBeUndefined();
+    // The id comes from the machine file, project and variant only.
+    expect(config.conductor_id).toBe('m1-bakers-conductor');
     expect(config.variant).toBe('conductor');
     expect(config.project).toBe('bakers');
     expect(config.states).toEqual(['todo', 'working']);
@@ -439,57 +456,56 @@ describe('loadConductorConfig', () => {
     ['conductor_id', "'cw-framework'"],
     ['machine_id', "'cw-laptop'"],
     ['label', "'my custom label'"],
-  ])('rejects a project config carrying %s, naming bakers init', async (key, value) => {
+  ])('rejects a project config carrying %s as an unknown key', async (key, value) => {
     const stale = VALID.replace(
-      "bakers: { project: 'bakers' },",
-      `bakers: { project: 'bakers' },\n  ${key}: ${value},`,
+      "project: { name: 'bakers' },",
+      `project: { name: 'bakers' },\n  ${key}: ${value},`,
     );
-    await expect(loadConductorConfig(writeConfig(stale))).rejects.toThrow(
-      new RegExp(`${key}.*bakers init`),
+    const path = writeConfig(stale);
+    await expect(loadConductorConfig(path)).rejects.toThrow(
+      `${path}: ${key} unknown key`,
     );
   });
 
   it('rejects a project config at a schema version other than 1, naming bakers init', async () => {
-    const stale = `// @bakers-schema-version 2\n${VALID}`;
+    const stale = `// @bakers-schema-version 3\n${VALID}`;
     await expect(loadConductorConfig(writeConfig(stale))).rejects.toThrow(
-      /bakers init/,
+      /schema version 3 is not supported; remove the file and run bakers init/,
     );
   });
 
   it('accepts a prompt override from the raw config', async () => {
     const withPrompt = VALID.replace(
-      "bakers: { project: 'bakers' },",
-      "bakers: { project: 'bakers' },\n  prompt: 'Custom {identifier} {state} {runUuid}',",
+      "project: { name: 'bakers' },",
+      "project: { name: 'bakers' },\n  prompt: 'Custom {identifier} {state} {run_uuid}',",
     );
     const config = await loadConductorConfig(writeConfig(withPrompt));
-    expect(config.prompt).toBe('Custom {identifier} {state} {runUuid}');
+    expect(config.prompt).toBe('Custom {identifier} {state} {run_uuid}');
   });
 
   it('passes the hooks object through (incl. after_done)', async () => {
     const withHooks = VALID.replace(
-      "bakers: { project: 'bakers' },",
-      "bakers: { project: 'bakers' },\n  hooks: { after_create: 'setup', after_done: 'make clean' },",
+      "project: { name: 'bakers' },",
+      "project: { name: 'bakers' },\n  hooks: { after_create: 'setup', after_done: 'make clean' },",
     );
     const config = await loadConductorConfig(writeConfig(withHooks));
     expect(config.hooks?.after_create).toBe('setup');
     expect(config.hooks?.after_done).toBe('make clean');
   });
 
-  it('ignores a machine max_parallel with one warning naming the backend', async () => {
+  it('rejects a machine max_parallel as an unknown key', async () => {
+    const machine = join(
+      process.env.HOME as string,
+      '.bakers/machine.config.js',
+    );
     writeFileSync(
-      join(process.env.HOME as string, '.bakers/machine.config.js'),
-      `export default { max_parallel: 2, addons: ['@bakers-build/addon-codex'] };`,
+      machine,
+      machineSource(
+        `export default { max_parallel: 2, addons: ['@bakers-build/addon-codex'] };`,
+      ),
     );
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const config = await loadConductorConfig(writeConfig(VALID));
-    const budget = warn.mock.calls.filter((c) =>
-      /max_parallel/.test(String(c[0])),
-    );
-    warn.mockRestore();
-    expect('max_parallel' in config).toBe(false);
-    expect(budget).toHaveLength(1);
-    expect(String(budget[0]?.[0])).toMatch(
-      /machine\.config\.js.*ignored.*backend/,
+    await expect(loadConductorConfig(writeConfig(VALID))).rejects.toThrow(
+      `${machine}: max_parallel unknown key`,
     );
   });
 
@@ -500,23 +516,42 @@ describe('loadConductorConfig', () => {
   ])('carries machine tunnel %s onto the engine config', async (field, expected) => {
     writeFileSync(
       join(process.env.HOME as string, '.bakers/machine.config.js'),
-      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'op', max_parallel: 1, addons: ['@bakers-build/addon-codex']${field ? `, ${field}` : ''} };`,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'op', addons: ['@bakers-build/addon-codex']${field ? `, ${field}` : ''} };`,
     );
     const config = await loadConductorConfig(writeConfig(VALID));
     expect(config.tunnel).toBe(expected);
   });
 
-  it('does not coerce a non-boolean machine tunnel value to true', async () => {
+  it.each([
+    undefined,
+    null,
+    'ssh://user@host:22',
+  ])('carries connection_url %s into start config', async (value) => {
     writeFileSync(
       join(process.env.HOME as string, '.bakers/machine.config.js'),
-      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'op', max_parallel: 1, tunnel: 'true', addons: ['@bakers-build/addon-codex'] };`,
+      `export default ${JSON.stringify({ machine_id: 'm1', label: 'M1', addons: ['@bakers-build/addon-codex'], ...(value !== undefined ? { connection_url: value } : {}) })};`,
     );
     const config = await loadConductorConfig(writeConfig(VALID));
-    expect(config.tunnel).toBe(false);
+    expect(config.connection_url).toBe(value);
+    expect(Object.hasOwn(config, 'connection_url')).toBe(value !== undefined);
+  });
+
+  it('refuses a non-boolean machine tunnel value instead of coercing it to true', async () => {
+    const machine = join(
+      process.env.HOME as string,
+      '.bakers/machine.config.js',
+    );
+    writeFileSync(
+      machine,
+      `export default { machine_id: '0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30', label: 'op', tunnel: 'true', addons: ['@bakers-build/addon-codex'] };`,
+    );
+    await expect(loadConductorConfig(writeConfig(VALID))).rejects.toThrow(
+      `${machine}: tunnel must be boolean`,
+    );
   });
 
   it('rejects a missing project', async () => {
-    const bad = VALID.replace("bakers: { project: 'bakers' },", '');
+    const bad = VALID.replace("project: { name: 'bakers' },", '');
     await expect(loadConductorConfig(writeConfig(bad))).rejects.toThrow(
       /project/,
     );
@@ -541,23 +576,16 @@ describe('loadConductorConfig', () => {
     );
   });
 
-  // BB-201: site/base_url is a CONNECTION concern (bakers.config.js), no longer
+  // BB-201: site/base_url is a CONNECTION concern (the connection file), no longer
   // required by the engine loader — see core's load-bakers-config tests.
 
-  it('ignores a conductor-file max_parallel with one warning naming the backend', async () => {
+  it('rejects a project max_parallel as an unknown key', async () => {
     const path = writeConfig(
       VALID.replace('export default {', 'export default {max_parallel: 2,'),
     );
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const config = await loadConductorConfig(path);
-    const budget = warn.mock.calls.filter((c) =>
-      /max_parallel/.test(String(c[0])),
+    await expect(loadConductorConfig(path)).rejects.toThrow(
+      `${path}: max_parallel unknown key`,
     );
-    warn.mockRestore();
-    expect('max_parallel' in config).toBe(false);
-    expect(budget).toHaveLength(1);
-    expect(String(budget[0]?.[0])).toContain(path);
-    expect(String(budget[0]?.[0])).toMatch(/ignored.*backend/);
   });
 });
 
@@ -565,8 +593,8 @@ describe('marketplaces: the project declares its agent plugins', () => {
   const withMarketplaces = (literal: string) =>
     writeConfig(
       VALID.replace(
-        "bakers: { project: 'bakers' },",
-        `bakers: { project: 'bakers' },\n  marketplaces: ${literal},`,
+        "project: { name: 'bakers' },",
+        `project: { name: 'bakers' },\n  marketplaces: ${literal},`,
       ),
     );
 
@@ -619,7 +647,7 @@ describe('marketplaces: the project declares its agent plugins', () => {
     [
       'a non-array',
       "{ url: 'https://x.test/p.git' }",
-      /marketplaces must be an array/,
+      /marketplaces must be array/,
     ],
   ])('rejects %s, naming the entry', async (_label, literal, message) => {
     await expect(
@@ -627,22 +655,22 @@ describe('marketplaces: the project declares its agent plugins', () => {
     ).rejects.toThrow(message);
   });
 
-  it('rejects marketplaces in the machine config: plugins are declared per project', async () => {
+  it('rejects marketplaces in the machine config as an unknown key', async () => {
     writeFileSync(
       join(process.env.HOME as string, '.bakers/machine.config.js'),
       `export default { addons: ['@bakers-build/addon-codex'], marketplaces: [] };`,
     );
     await expect(loadConductorConfig(writeConfig(VALID))).rejects.toThrow(
-      /machine\.config\.js.*marketplaces.*project/,
+      /machine\.config\.js: .*marketplaces unknown key/,
     );
   });
 });
 
 // ---------------------------------------------------------------------------
-// BB-218 AC-6 — the engine loader warns (once) on leftover connection/auth and
-// never merges it. `site`/`plugins` are connection concerns (bakers.config.js).
+// BB-218 AC-6 — the engine loader refuses leftover connection/auth and never
+// merges it. `site`/`plugins` are connection concerns (the connection file).
 // ---------------------------------------------------------------------------
-describe('BB-218 AC-6: engine loader warns on leftover site/plugins', () => {
+describe('BB-218 AC-6: engine loader refuses leftover site/plugins', () => {
   const capture = async (
     fn: () => Promise<unknown>,
   ): Promise<{ warnings: string[]; result: unknown }> => {
@@ -659,31 +687,21 @@ describe('BB-218 AC-6: engine loader warns on leftover site/plugins', () => {
     }
   };
 
-  it('emits exactly one warning naming the file + both keys, and drops them', async () => {
+  it('refuses the file naming both keys', async () => {
     const path = writeConfig(
       VALID.replace(
-        "site: { base_url: 'http://web' },",
-        "site: { base_url: 'http://web' },\n  plugins: [{ id: 'x' }],",
-      ).replace('  max_parallel: 2,\n', ''),
+        'export default {',
+        "export default {\n  site: { base_url: 'http://web' },\n  plugins: [{ id: 'x' }],",
+      ),
     );
-    const { warnings, result } = await capture(() => loadConductorConfig(path));
-    const siteWarn = warnings.filter((w) => /site|plugins/.test(w));
-    expect(siteWarn).toHaveLength(1);
-    expect(siteWarn[0]).toContain(path);
-    expect(siteWarn[0]).toMatch(/site/);
-    expect(siteWarn[0]).toMatch(/plugins/);
-    expect((result as { site?: unknown }).site).toBeUndefined();
-    expect((result as { plugins?: unknown }).plugins).toBeUndefined();
+    await expect(loadConductorConfig(path)).rejects.toThrow(
+      `${path}: plugins unknown key; site unknown key`,
+    );
   });
 
   it('a clean engine config (no site/plugins) emits no warning', async () => {
-    // No engine max_parallel → clean.
-    const clean = VALID.replace(
-      "  site: { base_url: 'http://web' },\n",
-      '',
-    ).replace('  max_parallel: 2,\n', '');
     const { warnings } = await capture(() =>
-      loadConductorConfig(writeConfig(clean)),
+      loadConductorConfig(writeConfig(VALID)),
     );
     expect(warnings).toHaveLength(0);
   });
@@ -843,7 +861,7 @@ export default {
     writeFileSync(
       join(dir, 'plugin.js'),
       `const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export const mkRemote = () => slot('remote');
+export const mkRemote = () => slot('server');
 export default mkRemote;`,
     );
     const loadable = `
@@ -855,36 +873,36 @@ const clientSecret = local.oauth?.client_secret;
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
 export default {
   site: { base_url: baseUrl },
-  bakers: { project: 'bakers' }, states: ['working'],
-  remote: { plugin: './plugin.js' },
-  executor: slot('executor'), addons: ['@bakers-build/addon-codex'], workspace: slot('workspace'),
+  project: { name: 'bakers' }, states: ['working'],
+  server: { use: './plugin.js' },
+  executor: slot('executor'), addons: ['@bakers-build/addon-codex'], worktree: slot('worktree'),
   plugins: [{ plugin: '@dropsh/plugin-oauth2', export: 'oauth2Plugin', with: { token_url: \`\${baseUrl}/x\`, client_id: clientId, client_secret: clientSecret } }],
 };`;
     const { text } = stripLegacyConnectionFromConfigSource(loadable);
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(file, text);
     const cfg = await loadConductorConfig(file);
     expect(cfg.project).toBe('bakers');
-    expect(cfg.remote.kind).toBe('remote');
+    expect(cfg.remote.kind).toBe('server');
   });
 });
 
 describe('resolveConfigPath — cwd walk-up (BB-88)', () => {
-  const savedEnv = process.env.BB_CONDUCTOR_CONFIG;
+  const savedEnv = process.env.BAKERS_CONDUCTOR_CONFIG;
   afterEach(() => {
     if (savedEnv === undefined) {
-      delete process.env.BB_CONDUCTOR_CONFIG;
+      delete process.env.BAKERS_CONDUCTOR_CONFIG;
     } else {
-      process.env.BB_CONDUCTOR_CONFIG = savedEnv;
+      process.env.BAKERS_CONDUCTOR_CONFIG = savedEnv;
     }
   });
 
-  // Build a worktree-shaped temp tree whose root holds .bakers/conductor.config.js.
+  // Build a worktree-shaped temp tree whose root holds .bakers/project.config.js.
   function makeTree(): { root: string; configPath: string } {
     const root = mkdtempSync(join(tmpdir(), 'bakers-worktree-'));
     const bakersDir = join(root, '.bakers');
     mkdirSync(bakersDir, { recursive: true });
-    const configPath = join(bakersDir, 'conductor.config.js');
+    const configPath = join(bakersDir, 'project.config.js');
     writeFileSync(configPath, VALID);
     mkdirSync(join(root, 'conductor', 'packages', 'conductor', 'src'), {
       recursive: true,
@@ -895,13 +913,13 @@ describe('resolveConfigPath — cwd walk-up (BB-88)', () => {
   // AC-1 + AC-5: walk up from any depth, all resolve the SAME config.
   it('resolves the root config from the worktree root', () => {
     const { root, configPath } = makeTree();
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(resolveConfigPath(undefined, root)).toBe(configPath);
   });
 
   it('resolves the root config from the conductor/ subdirectory', () => {
     const { root, configPath } = makeTree();
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(resolveConfigPath(undefined, join(root, 'conductor'))).toBe(
       configPath,
     );
@@ -909,7 +927,7 @@ describe('resolveConfigPath — cwd walk-up (BB-88)', () => {
 
   it('resolves the same root config from a deep subdirectory', () => {
     const { root, configPath } = makeTree();
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(
       resolveConfigPath(
         undefined,
@@ -921,25 +939,25 @@ describe('resolveConfigPath — cwd walk-up (BB-88)', () => {
   // AC-2: explicit override wins over the walk-up.
   it('honours the --config override without walking the tree', () => {
     const { root } = makeTree();
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(
-      resolveConfigPath('/elsewhere/.bakers/conductor.config.js', root),
-    ).toBe('/elsewhere/.bakers/conductor.config.js');
+      resolveConfigPath('/elsewhere/.bakers/project.config.js', root),
+    ).toBe('/elsewhere/.bakers/project.config.js');
   });
 
   // AC-2: environment variable wins over the walk-up.
-  it('honours $BB_CONDUCTOR_CONFIG without walking the tree', () => {
+  it('honours $BAKERS_CONDUCTOR_CONFIG without walking the tree', () => {
     const { root } = makeTree();
-    process.env.BB_CONDUCTOR_CONFIG = '/env/.bakers/conductor.config.js';
+    process.env.BAKERS_CONDUCTOR_CONFIG = '/env/.bakers/project.config.js';
     expect(resolveConfigPath(undefined, join(root, 'conductor'))).toBe(
-      '/env/.bakers/conductor.config.js',
+      '/env/.bakers/project.config.js',
     );
   });
 
   // AC-3: clear, actionable error when nothing is found up the tree.
   it('throws an actionable error when no config is found up the tree', () => {
     const empty = mkdtempSync(join(tmpdir(), 'bakers-empty-'));
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     let caught: unknown;
     try {
       resolveConfigPath(undefined, empty);
@@ -948,107 +966,121 @@ describe('resolveConfigPath — cwd walk-up (BB-88)', () => {
     }
     expect(caught).toBeInstanceOf(Error);
     const message = (caught as Error).message;
-    expect(message).toContain('no .bakers/conductor.config.js found from');
+    expect(message).toContain('no .bakers/project.config.js found from');
     // Not `bakers init`: that writes machine and connection and leaves the
     // project layer alone, so it cannot be the remedy for a missing one.
     expect(message).toContain('run `bakers config init --scope project`');
     expect((caught as NodeJS.ErrnoException).code).toBe('ENOENT');
     expect(message).not.toContain('Cannot find module');
   });
+
+  // An old file name is simply not found: the project file resolves as usual.
+  it('ignores old file names beside the project file', () => {
+    const { root, configPath } = makeTree();
+    const bakersDir = join(root, '.bakers');
+    for (const name of [
+      'shop.conductor.config.js',
+      'conductor.config.local.js',
+      'connection.config.local.js',
+    ])
+      writeFileSync(join(bakersDir, name), 'export default {};');
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
+    expect(resolveConfigPath(undefined, root)).toBe(configPath);
+  });
 });
 
 // BB-126: a `.bakers/` may hold several `<stem>.config.js`, each a distinct
-// conductor. Selection is by `--conductor <name>` / `$BB_CONDUCTOR` (stem);
+// conductor. Selection is by `--conductor <name>` / `$BAKERS_CONDUCTOR` (stem);
 // a single config keeps working with no selector (back-compat).
 describe('resolveConfigPath — named configs (BB-126)', () => {
-  const savedName = process.env.BB_CONDUCTOR;
-  const savedCfg = process.env.BB_CONDUCTOR_CONFIG;
+  const savedName = process.env.BAKERS_CONDUCTOR;
+  const savedCfg = process.env.BAKERS_CONDUCTOR_CONFIG;
   afterEach(() => {
-    if (savedName === undefined) delete process.env.BB_CONDUCTOR;
-    else process.env.BB_CONDUCTOR = savedName;
-    if (savedCfg === undefined) delete process.env.BB_CONDUCTOR_CONFIG;
-    else process.env.BB_CONDUCTOR_CONFIG = savedCfg;
+    if (savedName === undefined) delete process.env.BAKERS_CONDUCTOR;
+    else process.env.BAKERS_CONDUCTOR = savedName;
+    if (savedCfg === undefined) delete process.env.BAKERS_CONDUCTOR_CONFIG;
+    else process.env.BAKERS_CONDUCTOR_CONFIG = savedCfg;
   });
 
-  it('single conductor.config.js, no selector → resolves it (back-compat)', () => {
+  it('single project.config.js, no selector → resolves it (back-compat)', () => {
     const root = writeBbProject(['conductor']);
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(resolveConfigPath(undefined, root)).toBe(
-      join(root, '.bakers', 'conductor.config.js'),
+      join(root, '.bakers', 'project.config.js'),
     );
   });
 
-  it('--conductor name (param) → resolves .bakers/<name>.conductor.config.js', () => {
+  it('--conductor name (param) → resolves .bakers/project.<name>.config.js', () => {
     const root = writeBbProject(['conductor', 'shop']);
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(resolveConfigPath(undefined, root, 'shop')).toBe(
-      join(root, '.bakers', 'shop.conductor.config.js'),
+      join(root, '.bakers', 'project.shop.config.js'),
     );
   });
 
-  it('$BB_CONDUCTOR selects when no param is given', () => {
+  it('$BAKERS_CONDUCTOR selects when no param is given', () => {
     const root = writeBbProject(['conductor', 'intra']);
-    delete process.env.BB_CONDUCTOR_CONFIG;
-    process.env.BB_CONDUCTOR = 'intra';
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
+    process.env.BAKERS_CONDUCTOR = 'intra';
     expect(resolveConfigPath(undefined, root)).toBe(
-      join(root, '.bakers', 'intra.conductor.config.js'),
+      join(root, '.bakers', 'project.intra.config.js'),
     );
   });
 
-  // BB-137 discovery: a file is a conductor config iff it is exactly
-  // conductor.config.js or ends with .conductor.config.js. Everything else
-  // (vite.config.js, the near-miss myconductor.config.js) is ignored.
-  it('discovers conductor.config.js + <v>.conductor.config.js, ignores others', () => {
+  // BB-137 discovery: a file is a project config iff it is exactly
+  // project.config.js or matches project.<v>.config.js. Everything else
+  // (vite.config.js, the near-miss myproject.config.js) is ignored.
+  it('discovers project.config.js + project.<v>.config.js, ignores others', () => {
     const root = mkdtempSync(join(tmpdir(), 'bakers-repo-'));
     const bakers = join(root, '.bakers');
     mkdirSync(bakers);
-    writeFileSync(join(bakers, 'conductor.config.js'), VALID);
-    writeFileSync(join(bakers, 'shop.conductor.config.js'), VALID);
+    writeFileSync(join(bakers, 'project.config.js'), VALID);
+    writeFileSync(join(bakers, 'project.shop.config.js'), VALID);
     writeFileSync(join(bakers, 'vite.config.js'), 'export default {}');
-    writeFileSync(join(bakers, 'myconductor.config.js'), VALID);
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
-    // conductor.config.js present → it is the default.
+    writeFileSync(join(bakers, 'myproject.config.js'), VALID);
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
+    // project.config.js present → it is the default.
     expect(resolveConfigPath(undefined, root)).toBe(
-      join(bakers, 'conductor.config.js'),
+      join(bakers, 'project.config.js'),
     );
-    // shop is selectable; vite / myconductor are not conductor configs.
+    // shop is selectable; vite / myproject are not project configs.
     expect(resolveConfigPath(undefined, root, 'shop')).toBe(
-      join(bakers, 'shop.conductor.config.js'),
+      join(bakers, 'project.shop.config.js'),
     );
     expect(() => resolveConfigPath(undefined, root, 'vite')).toThrow(/shop/);
-    expect(() => resolveConfigPath(undefined, root, 'myconductor')).toThrow(
+    expect(() => resolveConfigPath(undefined, root, 'myproject')).toThrow(
       /shop/,
     );
   });
 
-  // BB-137 AC-2: many configs, no selector, conductor.config.js present → default.
-  it('AC-2: many configs, no selector, conductor.config.js present → default loaded', () => {
+  // BB-137 AC-2: many configs, no selector, project.config.js present → default.
+  it('AC-2: many configs, no selector, project.config.js present → default loaded', () => {
     const root = writeBbProject(['conductor', 'shop', 'intra']);
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(resolveConfigPath(undefined, root)).toBe(
-      join(root, '.bakers', 'conductor.config.js'),
+      join(root, '.bakers', 'project.config.js'),
     );
   });
 
   // BB-137 AC-3: the default is selectable explicitly by its `conductor` name.
   it('AC-3: --conductor conductor selects the default explicitly', () => {
     const root = writeBbProject(['conductor', 'shop']);
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(resolveConfigPath(undefined, root, 'conductor')).toBe(
-      join(root, '.bakers', 'conductor.config.js'),
+      join(root, '.bakers', 'project.config.js'),
     );
   });
 
   // BB-137 AC-4: many configs, no selector, NO default present → error listing stems.
-  it('AC-4: many configs, no selector, NO conductor.config.js → error listing stems', () => {
+  it('AC-4: many configs, no selector, NO project.config.js → error listing stems', () => {
     const root = writeBbProject(['shop', 'intra']);
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     let caught: unknown;
     try {
       resolveConfigPath(undefined, root);
@@ -1064,17 +1096,17 @@ describe('resolveConfigPath — named configs (BB-126)', () => {
   // BB-137 back-compat: a lone variant config resolves with no selector.
   it('back-compat: a single lone variant config resolves with no selector', () => {
     const root = writeBbProject(['shop']);
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(resolveConfigPath(undefined, root)).toBe(
-      join(root, '.bakers', 'shop.conductor.config.js'),
+      join(root, '.bakers', 'project.shop.config.js'),
     );
   });
 
   it('explicit override wins verbatim over a name', () => {
     const root = writeBbProject(['conductor', 'shop']);
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(resolveConfigPath('/abs/path.js', root, 'shop')).toBe(
       '/abs/path.js',
     );
@@ -1086,15 +1118,15 @@ describe('resolveConfigPath — named configs (BB-126)', () => {
 
   it('--conductor <missing> → throws listing the available stems', () => {
     const root = writeBbProject(['conductor', 'shop']);
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(() => resolveConfigPath(undefined, root, 'nope')).toThrow(/shop/);
   });
 
   it('no .bakers config anywhere → throws the project-scope init hint', () => {
     const empty = mkdtempSync(join(tmpdir(), 'bakers-empty-'));
-    delete process.env.BB_CONDUCTOR;
-    delete process.env.BB_CONDUCTOR_CONFIG;
+    delete process.env.BAKERS_CONDUCTOR;
+    delete process.env.BAKERS_CONDUCTOR_CONFIG;
     expect(() => resolveConfigPath(undefined, empty)).toThrow(
       /bakers config init --scope project/,
     );
@@ -1102,16 +1134,16 @@ describe('resolveConfigPath — named configs (BB-126)', () => {
 });
 
 describe('loadConductorConfig — descriptor-resolved slots', () => {
-  // AC4: all four slots resolve from a { plugin, export, with } descriptor.
+  // AC4: every slot resolves from a { use, export, with } descriptor.
   it('resolves the four slots from descriptors and constructs each plugin', async () => {
     const config = await loadConductorConfig(writeDescriptorConfig());
-    expect(config.remote.kind).toBe('remote');
+    expect(config.remote.kind).toBe('server');
     expect(config.executor.kind).toBe('executor');
     expect(config.agents[0]?.agent.kind).toBe('agent');
-    expect(config.workspace.kind).toBe('workspace');
+    expect(config.workspace.kind).toBe('worktree');
   });
 
-  // The factory receives `with` (falling back to `options`).
+  // The factory receives `with`.
   it('passes the descriptor `with` block to the slot factory', async () => {
     const config = await loadConductorConfig(writeDescriptorConfig());
     expect((config.remote as { id: string }).id).toBe('from-with');
@@ -1124,58 +1156,56 @@ describe('loadConductorConfig — descriptor-resolved slots', () => {
   // AC3: a constructed (import-form) config still loads unchanged.
   it('passes an already-constructed plugin through unchanged (backward-compat)', async () => {
     const config = await loadConductorConfig(writeConfig(VALID));
-    expect(config.remote.kind).toBe('remote');
-    expect(config.workspace.kind).toBe('workspace');
+    expect(config.remote.kind).toBe('server');
+    expect(config.workspace.kind).toBe('worktree');
   });
 
   it('throws naming the plugin when a descriptor is unresolvable', async () => {
     const bad = writeConfig(
       VALID.replace(
-        "remote: slot('remote'),",
-        "remote: { plugin: '@does/not-exist' },",
+        "server: slot('server'),",
+        "server: { use: '@does/not-exist' },",
       ),
     );
     await expect(loadConductorConfig(bad)).rejects.toThrow(/@does\/not-exist/);
   });
 
   it('throws the kind-guard error when a descriptor builds the wrong kind', async () => {
-    // remote slot resolves an export that builds a workspace plugin.
+    // server slot resolves an export that builds a worktree plugin.
     const dir = mkdtempSync(join(tmpdir(), 'bakers-conductor-'));
     writeFileSync(join(dir, 'fixture.js'), FIXTURE);
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(
       file,
       `
 export default {
-  site: { base_url: 'http://web' },
-  remote:    { plugin: './fixture.js', export: 'mkWorkspace' },
-  executor:  { plugin: './fixture.js', export: 'mkExecutor' },
+  server:   { use: './fixture.js', export: 'mkWorkspace' },
+  executor: { use: './fixture.js', export: 'mkExecutor' },
   addons: ['@bakers-build/addon-codex'],
-  workspace: { plugin: './fixture.js', export: 'mkWorkspace' },
-  bakers: { project: 'bakers' },
+  worktree: { use: './fixture.js', export: 'mkWorkspace' },
+  project: { name: 'bakers' },
   states: ['todo', 'working'],
 };
 `,
     );
     await expect(loadConductorConfig(file)).rejects.toThrow(
-      /remote plugin in the "remote" slot/,
+      /server plugin in the "server" slot/,
     );
   });
 
   it('throws when the named export is not callable', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'bakers-conductor-'));
     writeFileSync(join(dir, 'fixture.js'), FIXTURE);
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(
       file,
       `
 export default {
-  site: { base_url: 'http://web' },
-  remote:    { plugin: './fixture.js', export: 'nope' },
-  executor:  { plugin: './fixture.js', export: 'mkExecutor' },
+  server:   { use: './fixture.js', export: 'nope' },
+  executor: { use: './fixture.js', export: 'mkExecutor' },
   addons: ['@bakers-build/addon-codex'],
-  workspace: { plugin: './fixture.js', export: 'mkWorkspace' },
-  bakers: { project: 'bakers' },
+  worktree: { use: './fixture.js', export: 'mkWorkspace' },
+  project: { name: 'bakers' },
   states: ['todo', 'working'],
 };
 `,
@@ -1185,53 +1215,53 @@ export default {
     );
   });
 
-  const FIXTURE_DEFAULT = `export default (opts) => ({ kind: 'remote', id: opts?.id ?? 'd', requiredModules: [] });`;
-  const FIXTURE_SOLE = `export const onlyOne = () => ({ kind: 'remote', id: 'sole', requiredModules: [] });`;
+  const FIXTURE_DEFAULT = `export default (opts) => ({ kind: 'server', id: opts?.id ?? 'd', requiredModules: [] });`;
+  const FIXTURE_SOLE = `export const onlyOne = () => ({ kind: 'server', id: 'sole', requiredModules: [] });`;
 
   it('picks the default export when no export is named', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'bakers-conductor-'));
     writeFileSync(join(dir, 'def.js'), FIXTURE_DEFAULT);
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
-  remote:{ plugin:'./def.js', with:{ id:'from-default' } },
-  executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
+export default { project:{name:'bakers'}, states:['working'],
+  server:{ use:'./def.js', with:{ id:'from-default' } },
+  executor:slot('executor'), addons:['@bakers-build/addon-codex'], worktree:slot('worktree') };`,
     );
     const cfg = await loadConductorConfig(file);
-    expect(cfg.remote.kind).toBe('remote');
+    expect(cfg.remote.kind).toBe('server');
     expect((cfg.remote as { id: string }).id).toBe('from-default');
   });
 
   it('picks the sole function export when none named and no default', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'bakers-conductor-'));
     writeFileSync(join(dir, 'sole.js'), FIXTURE_SOLE);
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
-  remote:{ plugin:'./sole.js' },
-  executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
+export default { project:{name:'bakers'}, states:['working'],
+  server:{ use:'./sole.js' },
+  executor:slot('executor'), addons:['@bakers-build/addon-codex'], worktree:slot('worktree') };`,
     );
     const cfg = await loadConductorConfig(file);
-    expect(cfg.remote.kind).toBe('remote');
+    expect(cfg.remote.kind).toBe('server');
   });
 
   it('throws when no export named and the module is ambiguous (2 function exports)', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'bakers-conductor-'));
     writeFileSync(join(dir, 'fixture.js'), FIXTURE); // has 5 function exports
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
-  remote:{ plugin:'./fixture.js' },
-  executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
+export default { project:{name:'bakers'}, states:['working'],
+  server:{ use:'./fixture.js' },
+  executor:slot('executor'), addons:['@bakers-build/addon-codex'], worktree:slot('worktree') };`,
     );
     await expect(loadConductorConfig(file)).rejects.toThrow(
       /specify .*export|ambiguous/i,
@@ -1250,21 +1280,21 @@ export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states
     writeFileSync(
       join(dir, 'plugin.js'),
       `export class TheRemote {}
-const mkRemote = () => ({ kind: 'remote', id: 'defaulted', requiredModules: [] });
+const mkRemote = () => ({ kind: 'server', id: 'defaulted', requiredModules: [] });
 export { mkRemote };
 export default mkRemote;`,
     );
-    const file = join(dir, 'conductor.config.js');
+    const file = join(dir, 'project.config.js');
     writeFileSync(
       file,
       `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
-  remote:{ plugin:'./plugin.js' },
-  executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`,
+export default { project:{name:'bakers'}, states:['working'],
+  server:{ use:'./plugin.js' },
+  executor:slot('executor'), addons:['@bakers-build/addon-codex'], worktree:slot('worktree') };`,
     );
     const cfg = await loadConductorConfig(file);
-    expect(cfg.remote.kind).toBe('remote');
+    expect(cfg.remote.kind).toBe('server');
     expect((cfg.remote as { id: string }).id).toBe('defaulted');
   });
 });
@@ -1282,23 +1312,20 @@ describe('BB-209 upgrade states-strip', () => {
     const bakers = join(root, '.bakers');
     mkdirSync(bakers);
     // valid: default + one variant
-    writeFileSync(join(bakers, 'conductor.config.js'), 'export default {};');
-    writeFileSync(
-      join(bakers, 'shop.conductor.config.js'),
-      'export default {};',
-    );
+    writeFileSync(join(bakers, 'project.config.js'), 'export default {};');
+    writeFileSync(join(bakers, 'project.shop.config.js'), 'export default {};');
     // unrelated / near-miss: never enumerated
     writeFileSync(join(bakers, 'vite.config.js'), 'export default {};');
-    writeFileSync(join(bakers, 'myconductor.config.js'), 'export default {};');
+    writeFileSync(join(bakers, 'myproject.config.js'), 'export default {};');
 
     expect(configStems(bakers)).toEqual(['conductor', 'shop']);
     expect(listConductorConfigFiles(bakers)).toEqual([
-      'conductor.config.js',
-      'shop.conductor.config.js',
+      'project.config.js',
+      'project.shop.config.js',
     ]);
     expect(listConductorConfigFiles(bakers)).not.toContain('vite.config.js');
     expect(listConductorConfigFiles(bakers)).not.toContain(
-      'myconductor.config.js',
+      'myproject.config.js',
     );
   });
 
@@ -1344,15 +1371,15 @@ describe('BB-209 upgrade states-strip', () => {
     writeFileSync(
       join(dir, 'plugin.js'),
       `const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export const mkRemote = () => slot('remote');
+export const mkRemote = () => slot('server');
 export default mkRemote;`,
     );
     const withStates = `
 const slot = (k) => ({ kind: k, id: k, requiredModules: [] });
-export default { site:{base_url:'http://web'}, bakers:{project:'bakers'}, states:['working'],
-  remote:{ plugin:'./plugin.js' },
-  executor:slot('executor'), addons:['@bakers-build/addon-codex'], workspace:slot('workspace') };`;
-    const file = join(dir, 'conductor.config.js');
+export default { project:{name:'bakers'}, states:['working'],
+  server:{ use:'./plugin.js' },
+  executor:slot('executor'), addons:['@bakers-build/addon-codex'], worktree:slot('worktree') };`;
+    const file = join(dir, 'project.config.js');
     writeFileSync(file, stripStatesFromConfigSource(withStates));
     const cfg = await loadConductorConfig(file);
     expect(cfg.project).toBe('bakers');
@@ -1451,16 +1478,16 @@ describe('machine agent policy', () => {
   const slotConfig = `
 const slot = (kind) => ({ kind, id: kind, requiredModules: [] });
 export default {
-  remote: slot('remote'),
+  server: slot('server'),
   executor: slot('executor'),
-  workspace: slot('workspace'),
-  bakers: { project: 'bakers' },
+  worktree: slot('worktree'),
+  project: { name: 'bakers' },
 };
 `;
   const writeMachine = (body: string) => {
     const home = mkdtempSync(join(tmpdir(), 'bakers-agent-home-'));
     mkdirSync(join(home, '.bakers'));
-    writeFileSync(join(home, '.bakers/machine.config.js'), body);
+    writeFileSync(join(home, '.bakers/machine.config.js'), machineSource(body));
     vi.stubEnv('HOME', home);
   };
 
@@ -1614,7 +1641,6 @@ export default {
         catalog: [{ harness: '@bakers-build/addon-codex', alias: 'luna' }],
         enabled: ['codex', 'luna'],
         disabled: ['codex'],
-        default_agent: 'luna',
         routes: { default: { coding: 'luna' }, fast: { '*': 'luna' } },
       },
     };`);
@@ -1649,7 +1675,7 @@ export default {
           { harness: ${JSON.stringify(custom)}, alias: 'renamed', with: { model: 'renamed-model' } },
           { harness: ${JSON.stringify(custom)}, alias: 'base', with: { model: 'replacement-model' } },
         ],
-        default_agent: 'renamed',
+        routes: { default: { '*': 'renamed' } },
       },
     };`);
 
@@ -1685,18 +1711,36 @@ export default {
     );
   });
 
-  it('accepts a catalog harness declared with a Storybook-style name descriptor', async () => {
+  it('accepts a catalog harness declared with a { use } descriptor', async () => {
     writeMachine(`export default {
-      addons: [{ name: '@bakers-build/addon-codex' }],
+      addons: [{ use: '@bakers-build/addon-codex' }],
       agents: {
         catalog: [{ harness: '@bakers-build/addon-codex', alias: 'luna' }],
-        default_agent: 'luna',
+        routes: { default: { '*': 'luna' } },
       },
     };`);
 
     const cfg = await loadConductorConfig(writeConfig(slotConfig));
 
     expect(cfg.default_agent).toBe('luna');
+  });
+
+  it('refuses the old { name } addon descriptor as an unknown key', async () => {
+    writeMachine(
+      `export default { addons: [{ name: '@bakers-build/addon-codex' }] };`,
+    );
+    await expect(loadConductorConfig(writeConfig(slotConfig))).rejects.toThrow(
+      /machine\.config\.js: .*addons\[0\]\.name unknown key/,
+    );
+  });
+
+  it('refuses agents.default_agent as an unknown key', async () => {
+    writeMachine(
+      `export default { addons: ['@bakers-build/addon-codex'], agents: { default_agent: 'luna' } };`,
+    );
+    await expect(loadConductorConfig(writeConfig(slotConfig))).rejects.toThrow(
+      'agents.default_agent unknown key',
+    );
   });
 
   it.each([
@@ -1730,14 +1774,14 @@ export default {
     'agents',
     'default_agent',
     'agent_routes',
-  ])('rejects retired conductor key %s with the migration command', async (key) => {
+  ])('rejects the old project key %s as an unknown key', async (key) => {
     const value = key === 'agent' ? "slot('agent')" : '{}';
     const source = slotConfig.replace(
-      "bakers: { project: 'bakers' },",
-      `bakers: { project: 'bakers' }, ${key}: ${value},`,
+      "project: { name: 'bakers' },",
+      `project: { name: 'bakers' }, ${key}: ${value},`,
     );
     await expect(loadConductorConfig(writeConfig(source))).rejects.toThrow(
-      /bakers config upgrade --scope all/,
+      `${key} unknown key`,
     );
   });
 });
@@ -1748,16 +1792,16 @@ describe('machine-owned agent addons', () => {
   const slotOnlyConfig = (extraAddons = '') => `
 const slot = (kind) => ({ kind, id: kind, requiredModules: [] });
 export default {
-  remote: slot('remote'),
+  server: slot('server'),
   executor: slot('executor'),
-  workspace: slot('workspace'),${extraAddons ? `\n  addons: [${extraAddons}],` : ''}
-  bakers: { project: 'bakers' },
+  worktree: slot('worktree'),${extraAddons ? `\n  addons: [${extraAddons}],` : ''}
+  project: { name: 'bakers' },
 };
 `;
   const writeMachine = (body: string) => {
     const home = mkdtempSync(join(tmpdir(), 'bakers-agent-home-'));
     mkdirSync(join(home, '.bakers'));
-    writeFileSync(join(home, '.bakers/machine.config.js'), body);
+    writeFileSync(join(home, '.bakers/machine.config.js'), machineSource(body));
     vi.stubEnv('HOME', home);
   };
   const capture = async (
@@ -1794,7 +1838,7 @@ export default {
 
   it('applies the machine agents policy over machine-sourced candidates', async () => {
     writeMachine(`export default {
-      addons: ['@bakers-build/addon-codex'], agents: { enabled: ['luna'], default_agent: 'luna' },
+      addons: ['@bakers-build/addon-codex'], agents: { enabled: ['luna'], routes: { default: { '*': 'luna' } } },
     };`);
 
     const cfg = await loadConductorConfig(writeConfig(slotOnlyConfig()));
@@ -1854,7 +1898,7 @@ export default {
 
     await expect(
       loadConductorConfig(writeConfig(slotOnlyConfig())),
-    ).rejects.toThrow(/machine addons must be an array/);
+    ).rejects.toThrow(/machine\.config\.js: addons must be array/);
   });
 });
 
@@ -1896,16 +1940,16 @@ describe('machine agent args and effort', () => {
   const slotConfig = `
 const slot = (kind) => ({ kind, id: kind, requiredModules: [] });
 export default {
-  remote: slot('remote'),
+  server: slot('server'),
   executor: slot('executor'),
-  workspace: slot('workspace'),
-  bakers: { project: 'bakers' },
+  worktree: slot('worktree'),
+  project: { name: 'bakers' },
 };
 `;
   const writeMachine = (body: string) => {
     const home = mkdtempSync(join(tmpdir(), 'bakers-agent-home-'));
     mkdirSync(join(home, '.bakers'));
-    writeFileSync(join(home, '.bakers/machine.config.js'), body);
+    writeFileSync(join(home, '.bakers/machine.config.js'), machineSource(body));
     vi.stubEnv('HOME', home);
   };
 

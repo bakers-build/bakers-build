@@ -100,6 +100,8 @@ function navigation(t, mutate = () => {}) {
   writeFileSync(join(root, 'docs/development/internal-only.md'), '---\ndraft: true\n---\n# Internal contributor notes\n')
   mutate(areas, sidebar)
   copyFileSync(new URL('./check-pages.mjs', import.meta.url), join(root, 'docs/scripts/check-pages.mjs'))
+  copyFileSync(new URL('../.vitepress/addon-options.mjs', import.meta.url), join(root, 'docs/.vitepress/addon-options.mjs'))
+  mkdirSync(join(root, 'bakers-cli/addons'), { recursive: true })
   writeFileSync(join(root, 'docs/.vitepress/manual.mjs'), `export const AREAS = ${JSON.stringify(areas)}; export const SIDEBAR = ${JSON.stringify(sidebar)}; export const SRC_EXCLUDE = ['bakers/**', 'development/**'];`)
   return spawnSync(process.execPath, [join(root, 'docs/scripts/check-pages.mjs')], { encoding: 'utf8' })
 }

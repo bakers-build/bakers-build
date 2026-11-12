@@ -36,6 +36,14 @@ Choose an integration for your task, then follow its setup guide. [Configure add
 | [Cloudflare Quick tunnel](/addons/ports-cloudflare-quick) | Random URL, no account |
 | [frp tunnel](/addons/ports-frp) | Fixed names through your frp server |
 
+## Delivery
+
+| Addon | What it adds |
+|---|---|
+| [Forge](/addons/forge) | Fetch, push, PR/MR, checks and merge as conductor tools; the token stays with the conductor |
+| [Forge for GitHub](/addons/forge-github) | GitHub App installation token for one repository, or your `gh` login |
+| [Forge for GitLab](/addons/forge-gitlab) | GitLab Project Access Token, or your `glab` login |
+
 
 ## Provisioning support
 
@@ -69,5 +77,11 @@ The [DDEV addon](/addons/ddev) and [Compose discovery](/addons/docker-compose) f
 | [HTTP Basic sign-in](/addons/auth-basic) | Fixed Basic auth token |
 
 Generated connection support needs no separate selection; see [connection defaults](/addons/configure#connection-defaults).
+
+## Machine connections
+
+| Addon | What it adds |
+|---|---|
+| [Tailscale](/addons/tailscale) | Detects a private SSH address once at conductor start |
 
 [Configure addons](/addons/configure) · [Build your own](/addons/build/first-addon)

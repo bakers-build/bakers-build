@@ -77,7 +77,7 @@ describe('GitWorkspace', () => {
     const manager = new GitWorkspace({
       root: '/tmp/x',
       branchPrefix: 'wt/',
-      branchTemplate: '{branchPrefix}{titleSlug}--{key}',
+      branchTemplate: '{branch_prefix}{title_slug}--{key}',
     });
     expect(manager.branchFor('GL-9', 'Some Title')).toBe('wt/some-title--GL-9');
   });

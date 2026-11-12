@@ -11,11 +11,12 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { AREAS, SIDEBAR, SRC_EXCLUDE } from '../.vitepress/manual.mjs'
+import { addonCoverage } from '../.vitepress/addon-options.mjs'
 
 const DOCS = fileURLToPath(new URL('../../docs/', import.meta.url))
 const AREA_INDEX = new Set(['index.md', ...AREAS.map(({ link }) => `${link.slice(1)}index.md`)])
 const MAIN_AREAS = ['get-started/', 'addons/']
-const REFERENCE_AREAS = ['configuration/', 'provision/', 'agents/', 'skills-and-workflows/', 'self-hosting/']
+const REFERENCE_AREAS = ['configuration/', 'cli/', 'provision/', 'agents/', 'skills-and-workflows/', 'self-hosting/']
 // landing.md and de/index.md render the Vue landing page (EN, DE); index.md is /manual,
 // reached from the nav.
 const NO_PROSE = new Set(['landing.md', 'de/index.md'])
@@ -102,6 +103,10 @@ const publicRoutes = new Set(pages(DOCS)
   .map(rel => rel === 'index.md' ? '/manual' : rel === 'landing.md' ? '/' : route(rel)))
 for (const link of linked) requireNavigation(publicRoutes.has(link), `sidebar links missing or excluded page: ${link}`)
 for (const area of AREAS) requireNavigation(publicRoutes.has(area.link), `area links missing page: ${area.link}`)
+// Options tables of schema-bearing addons are rendered from options.schema.json (.vitepress/addon-options.mjs).
+const { missing, notGenerated } = addonCoverage()
+for (const page of missing) requireNavigation(false, `${page} lacks <!-- @options … -->, though its addon ships options.schema.json`)
+console.log(`Options not generated (no options.schema.json): ${notGenerated.join(', ')}`)
 for (const rel of selected) {
   const markdown = readFileSync(join(DOCS, rel), 'utf8')
   const words = proseWords(markdown)

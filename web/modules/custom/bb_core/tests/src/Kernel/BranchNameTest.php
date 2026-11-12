@@ -8,6 +8,7 @@ use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Ticket\BranchName;
 use Drupal\KernelTests\KernelTestBase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
@@ -179,6 +180,118 @@ final class BranchNameTest extends KernelTestBase {
       'feat/gl-7-fix-login-flow',
       BranchName::cap('feat/gl-7-fix-login-flow', 'gl-7'),
     );
+  }
+
+  /**
+   * A derived name is always a valid branch, whatever the title holds.
+   */
+  #[DataProvider('awkwardTitles')]
+  public function testDerivedNameIsAlwaysValid(string $title, string $expected): void {
+    $branch = (string) $this->createTicket('GL-7', $title)->get('branch_name')->value;
+    $this->assertSame($expected, $branch);
+    $this->assertMatchesRegularExpression(BranchName::PATTERN, $branch);
+  }
+
+  /**
+   * Data provider: titles git would refuse as they stand.
+   *
+   * @return array<string, array{string, string}>
+   *   Title and the expected branch, keyed by a readable label.
+   */
+  public static function awkwardTitles(): array {
+    return [
+      'trailing dot' => ['Fix v1.', 'feat/gl-7-fix-v1'],
+      'dot dot' => ['a..b', 'feat/gl-7-a.b'],
+      'lock suffix' => ['x.lock', 'feat/gl-7-x'],
+      'dot segment' => ['a/.b', 'feat/gl-7-a/b'],
+      'lone dot segment' => ['a/./b', 'feat/gl-7-a/b'],
+      'lock segment' => ['a/.lock/b', 'feat/gl-7-a/b'],
+      'double lock suffix' => ['x.lock.lock', 'feat/gl-7-x'],
+      'cut ends in lock' => ['abcdefghijklmno.lockxyz', 'feat/gl-7-abcdefghijklmno'],
+    ];
+  }
+
+  /**
+   * Stored names git would refuse are repaired once; valid ones stay.
+   */
+  public function testPostUpdateRepairsStoredBranchNames(): void {
+    $bad = $this->createTicket('GL-9', 'x');
+    $good = $this->createTicket('GL-10', 'y');
+    $database = $this->container->get('database');
+    $database->update('bb_ticket')->fields(['branch_name' => '--upload-pack=touch PWNED'])->condition('id', $bad->id())->execute();
+    $database->update('bb_ticket')->fields(['branch_name' => 'release/1.2'])->condition('id', $good->id())->execute();
+    $gitValid = $this->createTicket('GL-11', 'z');
+    $database->update('bb_ticket')->fields(['branch_name' => 'renovate/@types/node+x'])->condition('id', $gitValid->id())->execute();
+
+    $project = $this->container->get('entity_type.manager')->getStorage('bb_project')
+      ->create([
+        'name' => 'p',
+        'repository' => [['url' => 'https://github.com/acme/widget.git', 'default_branch' => 'main']],
+      ]);
+    $project->save();
+    $database->update('bb_project')->fields(['repository__default_branch' => '-x..y'])->condition('id', $project->id())->execute();
+
+    require_once __DIR__ . '/../../../bb_core.post_update.php';
+    bb_core_post_update_valid_branch_names();
+
+    $names = $database->select('bb_ticket', 't')->fields('t', ['id', 'branch_name'])->execute()->fetchAllKeyed();
+    $this->assertSame('upload-pack-touch-pwned', $names[$bad->id()]);
+    $this->assertSame('release/1.2', $names[$good->id()]);
+    // Git accepts '@' and '+', so the repair leaves such a branch alone.
+    $this->assertSame('renovate/@types/node+x', $names[$gitValid->id()]);
+    $this->assertSame('x.y', $database->select('bb_project', 'p')->fields('p', ['repository__default_branch'])->execute()->fetchField());
+  }
+
+  /**
+   * A supplied branch name that git or a shell could misread is refused.
+   */
+  #[DataProvider('invalidBranchNames')]
+  public function testRefusesInvalidSuppliedBranchName(string $branch): void {
+    $this->assertContains('branch_name.0.value', $this->violationPaths($branch), sprintf('%s should be refused.', $branch));
+  }
+
+  /**
+   * Supplied release and feature branches stay valid.
+   */
+  public function testAcceptsValidSuppliedBranchName(): void {
+    foreach (['release/1.2', 'feat/gl-7-fix-login-flow', 'Main', 'next', 'renovate/@types/node', 'fix+x'] as $branch) {
+      $this->assertNotContains('branch_name.0.value', $this->violationPaths($branch), $branch);
+    }
+  }
+
+  /**
+   * The violation paths of a new ticket supplied with a branch name.
+   *
+   * @return list<string>
+   *   Property paths of every violation.
+   */
+  private function violationPaths(string $branch): array {
+    $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
+      ->create(['identifier' => 'GL-8', 'workflow' => 'bb_work', 'title' => 't', 'branch_name' => $branch]);
+    $this->assertInstanceOf(BbTicketInterface::class, $ticket);
+    return array_map(fn ($v) => (string) $v->getPropertyPath(), iterator_to_array($ticket->validate(), FALSE));
+  }
+
+  /**
+   * Data provider: branch names that must be refused.
+   *
+   * @return array<string, array{string}>
+   *   Test cases keyed by a readable label.
+   */
+  public static function invalidBranchNames(): array {
+    return [
+      'option' => ['--upload-pack=touch PWNED'],
+      'short option' => ['-x'],
+      'dot dot' => ['a..b'],
+      'space' => ['a b'],
+      'leading dot' => ['.hidden'],
+      'double slash' => ['a//b'],
+      'trailing slash' => ['a/'],
+      'lock suffix' => ['a.lock'],
+      'reflog' => ['a@{1}'],
+      'bare at' => ['@'],
+      'trailing newline' => ["main\n"],
+    ];
   }
 
 }

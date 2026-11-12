@@ -13,17 +13,16 @@ export const executors: Preset['executors'] = (acc, opts) => [
   fakeExecutor(opts as Parameters<typeof fakeExecutor>[0]),
 ];
 
-export const workspaces: Preset['workspaces'] = (acc) => [
+export const worktrees: Preset['worktrees'] = (acc) => [
   ...acc,
   fakeWorkspace(),
 ];
 
-export const remotes: Preset['remotes'] = (acc, opts) => [
-  ...acc,
-  fakeRemote(opts as Parameters<typeof fakeRemote>[0]),
-];
+// The entry's `with` configures the executor only; seed the fake server from
+// code (`fakeRemote({ runs, tickets })`).
+export const servers: Preset['servers'] = (acc) => [...acc, fakeRemote()];
 
 export const inbox: Preset['inbox'] = fakeInbox;
 
-// Conductor wiring of one project: list this addon in .bakers/conductor.config.js addons[].
+// Conductor wiring of one project: list this addon in .bakers/project.config.js addons[].
 export const scopes: Preset['scopes'] = ['project'];

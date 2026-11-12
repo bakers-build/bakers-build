@@ -13,7 +13,7 @@
  * exits. The proxy therefore lives exactly as long as the agent process: no
  * conductor state, nothing to reap after a restart.
  *
- * Reads `BB_STATE`, `BB_TICKET_IDENTIFIER` and `BB_RUN_UUID` from the run
+ * Reads `BAKERS_STATE`, `BAKERS_TICKET_IDENTIFIER` and `BAKERS_RUN_UUID` from the run
  * env; logs go to `assets-ai/<identifier>/node/<run uuid>/`, exported to the
  * command as `BB_PROXY_LOG_DIR`. When the
  * proxy cannot start (no identifier, log directory not gitignored) the command
@@ -64,7 +64,7 @@ function projectPlugins() {
 
 // `--settings` outranks project settings, so fold the project's enabledPlugins
 // into the copy: the profile is a default, the project has the last word.
-const group = GROUPS[process.env.BB_STATE] ?? 'ops';
+const group = GROUPS[process.env.BAKERS_STATE] ?? 'ops';
 let profile = JSON.parse(
   fs.readFileSync(path.join(HERE, `keytec-${group}.json`), 'utf8'),
 );
@@ -108,7 +108,7 @@ try {
     port: 0,
     cwd: process.cwd(),
     quiet: true,
-    logSubdir: process.env.BB_RUN_UUID || undefined,
+    logSubdir: process.env.BAKERS_RUN_UUID || undefined,
   });
   env.ANTHROPIC_BASE_URL = `http://127.0.0.1:${proxy.address.port}`;
   env.BB_PROXY_LOG_DIR = proxy.logDirectory;

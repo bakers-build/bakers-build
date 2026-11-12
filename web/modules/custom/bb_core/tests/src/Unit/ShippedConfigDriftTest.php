@@ -190,12 +190,41 @@ final class ShippedConfigDriftTest extends UnitTestCase {
    */
   public function testContainerSettingsFollowTheirOwnVariables(): void {
     $settings = $this->containerSettings(['TRUSTED_PROXY_SUBNET' => '', 'DOMAIN' => '']);
-    self::assertArrayNotHasKey('reverse_proxy', $settings);
+    // Without a subnet, any private-network proxy is trusted, for the client
+    // address and scheme only.
+    self::assertTrue($settings['reverse_proxy']);
+    self::assertSame(['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'], $settings['reverse_proxy_addresses']);
     self::assertSame(['.*'], $settings['trusted_host_patterns']);
     $settings = $this->containerSettings(['DOMAIN' => '']);
     self::assertTrue($settings['reverse_proxy']);
     self::assertSame(['.*'], $settings['trusted_host_patterns']);
     self::assertStringNotContainsString('BB_SELF_HOSTED', (string) file_get_contents($this->repositoryRoot() . '/web/sites/default/settings.container.php'));
+  }
+
+  /**
+   * Behind any private proxy, a client can fake neither its address nor host.
+   */
+  public function testPrivateProxyKeepsTheRealClientAndHost(): void {
+    $settings = $this->containerSettings(['TRUSTED_PROXY_SUBNET' => '']);
+    $request = Request::create('https://app.example.test/user/login', 'GET', [], [], [], [
+      // Traefik on its own Docker network, appending the real client address.
+      'REMOTE_ADDR' => '172.18.0.4',
+      'HTTP_X_FORWARDED_FOR' => '10.1.2.3, 203.0.113.7',
+      'HTTP_X_FORWARDED_HOST' => 'evil.example.test',
+      'HTTP_X_FORWARDED_PROTO' => 'https',
+    ]);
+    $trusted = Request::getTrustedProxies();
+    /** @var int<0, 63> $headers */
+    $headers = Request::getTrustedHeaderSet();
+    Request::setTrustedProxies($settings['reverse_proxy_addresses'], $settings['reverse_proxy_trusted_headers']);
+    try {
+      self::assertSame('203.0.113.7', $request->getClientIp());
+      self::assertSame('app.example.test', $request->getHost());
+      self::assertTrue($request->isSecure());
+    }
+    finally {
+      Request::setTrustedProxies($trusted, $headers);
+    }
   }
 
   /**

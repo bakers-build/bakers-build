@@ -78,7 +78,7 @@ final class InboxRead extends ToolBase {
     $found = $this->entities()->getStorage('bb_inbox_message')->loadByProperties(['uuid' => $values['message']]);
     $message = reset($found);
     // One wording for unknown and unreadable, so existence does not leak.
-    if (!$message instanceof BbInboxMessageInterface || !$message->ticket()?->access('view', $this->currentUser)) {
+    if (!$message instanceof BbInboxMessageInterface || !$message->access('view', $this->currentUser)) {
       throw new \InvalidArgumentException(sprintf('Message %s not found.', $values['message']));
     }
     return ExecutableResult::success(new TranslatableMarkup('Message @status.', ['@status' => $message->status()]), self::outputs($message));
@@ -90,7 +90,7 @@ final class InboxRead extends ToolBase {
    * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
    */
   protected function checkAccess(array $values, AccountInterface $account, bool $return_as_object = FALSE): bool|AccessResultInterface {
-    // Access depends on the message's ticket; doExecute() checks it.
+    // Access depends on the message; doExecute() checks it.
     return $return_as_object ? AccessResult::allowed() : TRUE;
   }
 

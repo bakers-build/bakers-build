@@ -22,17 +22,17 @@ bakers ui [target] [--ticket <id>] [--project <id>] [--run <uuid>] [--here]
 | `--yes` | Never prompt for a workspace |
 | `--print-config` | Print the resolved connection and exit |
 
-The renderer needs the Bun runtime that `@bakers-build/addon-bakers-ui` installs, so `bakers ui` re-runs itself under it (`--print-config` stays on Node); `BB_UI_NO_BUN=1` uses Node 26.1 or later with `--experimental-ffi` instead.
+The renderer needs the Bun runtime that `@bakers-build/addon-bakers-ui` installs, so `bakers ui` re-runs itself under it (`--print-config` stays on Node); `BAKERS_UI_NO_BUN=1` uses Node 26.1 or later with `--experimental-ffi` instead.
 
 ## Which control plane answers
 
-The [connection selection order](/configuration/connector/connections#which-connection-is-used) is shared with the CLI. Explicit selectors override the checkout selector and defaults.
+The [connection selection order](/configuration/connection#which-connection-is-used) is shared with the CLI. Explicit selectors override the checkout selector and defaults.
 
-When the cockpit talks to a server you did not expect, run `bakers ui --print-config`: it prints the connection file, how it was selected (`selection`), `base_url` and the project's `.bakers` directory (`bb_dir`). Precedence in full: [Connections](/configuration/connector/connections).
+When the cockpit talks to a server you did not expect, run `bakers ui --print-config`: it prints the connection file, how it was selected (`selection`), `base_url` and the project's `.bakers` directory (`bb_dir`). Precedence in full: [Connections](/configuration/connection).
 
 ## Which workspace
 
-Inside a checkout the workspace comes from `bakers.workspace` in the conductor config, otherwise from the connection; `--workspace` overrides both for one run. `W` opens the workspace picker, and `Enter` writes the choice to `bakers.workspace` and restarts the cockpit.
+Inside a checkout the workspace comes from `project.workspace` in the project config, otherwise from the connection; `--workspace` overrides both for one run. `W` opens the workspace picker, and `Enter` writes the choice to `project.workspace` and restarts the cockpit.
 
 ## Navigation - five scopes
 

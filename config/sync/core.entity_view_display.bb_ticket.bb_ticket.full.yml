@@ -337,6 +337,7 @@ hidden:
   state_flow: true
   sub_tickets: true
   summary_comment: true
+  target_branch: true
   template_id: true
   ticket_type: true
   work_state: true

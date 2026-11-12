@@ -51,8 +51,8 @@ describe('bakers ui live PTY update notice', () => {
 
     const home = await mkdtemp(join(tmpdir(), 'bakers-ui-pty-'));
     const bakersDir = join(home, '.bakers');
-    await mkdir(bakersDir, { recursive: true });
-    const config = join(bakersDir, 'bakers.config.js');
+    await mkdir(join(bakersDir, 'connections'), { recursive: true });
+    const config = join(bakersDir, 'connections', 'default.js');
     await writeFile(
       config,
       `import { basicAuthProvider } from '${pathToFileURL(basicAuthModule).href}';\n` +
@@ -79,7 +79,7 @@ describe('bakers ui live PTY update notice', () => {
           env: {
             ...process.env,
             HOME: home,
-            BB_CONFIG: config,
+            BAKERS_CONFIG: config,
             DROPSH_CONFIG: config,
             BB_UI_PLUGIN: renderer,
             // BB-391 (AC2): NO `$DROPSH_AUTH_PROFILE`. This used to pin

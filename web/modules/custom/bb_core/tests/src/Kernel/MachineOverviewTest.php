@@ -226,6 +226,20 @@ final class MachineOverviewTest extends KernelTestBase {
   }
 
   /**
+   * Saving the shipped full display keeps its hidden list, so recipes reapply.
+   */
+  public function testShippedFullDisplayHiddenFieldsSurviveSave(): void {
+    $this->installOverviewDisplay();
+    $name = 'core.entity_view_display.bb_machine.bb_machine.full';
+    $shipped = Yaml::decode((string) file_get_contents(dirname(DRUPAL_ROOT) . '/recipes/bakers/config/' . $name . '.yml'));
+    $this->container->get('entity_type.manager')
+      ->getStorage('entity_view_display')
+      ->load('bb_machine.bb_machine.full')
+      ->save();
+    self::assertSame($shipped['hidden'], $this->config($name)->get('hidden'));
+  }
+
+  /**
    * The owner reaches Overview and is sent there from Edit; others are refused.
    */
   public function testLeadReachesOverviewAndEditAndGuestIsForbidden(): void {

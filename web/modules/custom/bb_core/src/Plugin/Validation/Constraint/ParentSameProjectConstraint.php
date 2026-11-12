@@ -9,10 +9,11 @@ use Drupal\Core\Validation\Attribute\Constraint;
 use Symfony\Component\Validator\Constraint as SymfonyConstraint;
 
 /**
- * A newly set parent ticket must be in the ticket's own project.
+ * A newly set parent or blocking ticket must be in the ticket's own project.
  *
- * Applies on every write path (Web, JSON:API, CLI). A stored parent is not
- * checked again, so existing data and project moves stay valid.
+ * Applies on every write path (Web, JSON:API, CLI). A stored relation is not
+ * checked again, so existing data and project moves stay valid. Blocked by
+ * passes its own message.
  */
 #[Constraint(
   id: 'BbParentSameProject',

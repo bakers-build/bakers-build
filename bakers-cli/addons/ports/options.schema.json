@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-ports/options.schema.json",
+  "title": "@bakers-build/addon-ports options",
+  "description": "The ports addon entry's with. A duplicate services key is rejected at load by the addon itself.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "transport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "use"
+      ],
+      "properties": {
+        "use": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The transport package."
+        },
+        "with": {
+          "description": "The transport package's own settings, checked by that package's options.schema.json."
+        }
+      },
+      "description": "The tunnel transport; required for `bakers ports up`, `down`, `reap` and the Share tunnels message."
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "match"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9]([a-z0-9-]*[a-z0-9])?$",
+            "description": "A DNS-safe label."
+          },
+          "match": {
+            "type": "string",
+            "minLength": 1,
+            "description": "A command-line substring of the process."
+          }
+        }
+      },
+      "description": "Host processes shared as services; see Shared processes."
+    },
+    "all_node": {
+      "type": "boolean",
+      "description": "Share every Node process; see Shared processes."
+    },
+    "claimers": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Runtime claimer packages; see Shared processes."
+    }
+  }
+}

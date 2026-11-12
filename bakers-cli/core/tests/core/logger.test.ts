@@ -13,13 +13,15 @@ const ROOT = '/tmp/bakers-checkout';
 
 describe('resolveSink', () => {
   it('override=stdout wins over non-TTY', () => {
-    expect(resolveSink({ BB_CONDUCTOR_LOG: 'stdout' }, false, ROOT)).toEqual({
+    expect(
+      resolveSink({ BAKERS_CONDUCTOR_LOG: 'stdout' }, false, ROOT),
+    ).toEqual({
       kind: 'stdout',
     });
   });
 
   it('override=file wins over TTY', () => {
-    expect(resolveSink({ BB_CONDUCTOR_LOG: 'file' }, true, ROOT)).toEqual({
+    expect(resolveSink({ BAKERS_CONDUCTOR_LOG: 'file' }, true, ROOT)).toEqual({
       kind: 'file',
       path: '/tmp/bakers-checkout/.bakers/log.txt',
     });
@@ -46,14 +48,16 @@ describe('resolveSink', () => {
   });
 
   it('override=stdout on a TTY still means stdout ONLY (explicit narrows the default)', () => {
-    expect(resolveSink({ BB_CONDUCTOR_LOG: 'stdout' }, true, ROOT)).toEqual({
-      kind: 'stdout',
-    });
+    expect(resolveSink({ BAKERS_CONDUCTOR_LOG: 'stdout' }, true, ROOT)).toEqual(
+      {
+        kind: 'stdout',
+      },
+    );
   });
 
   it('the CLI override beats the env var and still narrows the TTY default', () => {
     expect(
-      resolveSink({ BB_CONDUCTOR_LOG: 'file' }, true, ROOT, 'stdout'),
+      resolveSink({ BAKERS_CONDUCTOR_LOG: 'file' }, true, ROOT, 'stdout'),
     ).toEqual({ kind: 'stdout' });
   });
 
@@ -73,8 +77,8 @@ describe('resolveLevel', () => {
     expect(resolveLevel({})).toBe('info');
   });
 
-  it('honors BB_LOG_LEVEL', () => {
-    expect(resolveLevel({ BB_LOG_LEVEL: 'debug' })).toBe('debug');
+  it('honors BAKERS_LOG_LEVEL', () => {
+    expect(resolveLevel({ BAKERS_LOG_LEVEL: 'debug' })).toBe('debug');
   });
 });
 
@@ -123,7 +127,7 @@ describe('createLogger', () => {
     const log = createLogger({
       checkoutRoot: tempRoot,
       isTTY: false,
-      env: { BB_CONDUCTOR_LOG: 'file' },
+      env: { BAKERS_CONDUCTOR_LOG: 'file' },
     });
     expect(() => log.info({ a: 1 }, 'x')).not.toThrow();
     for (const level of ['debug', 'info', 'warn', 'error'] as const) {

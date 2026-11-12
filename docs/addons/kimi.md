@@ -24,11 +24,7 @@ It publishes one alias, `kimi`, which uses your locally configured Kimi model.
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `model` | string | Kimi's own default | Passed as `--model`. |
-| `effort` | string | none | Not supported; ignored with a log line. |
-| `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
+<!-- @options @bakers-build/addon-kimi -->
 
 ## Check it works
 
@@ -46,7 +42,7 @@ bakers agents
 
 - `-p`, `--prompt` and `--output-format` are reserved; putting them in `args` fails loading.
 - The addon starts `kimi`; it does not install it or sign it in. The binary must be on `PATH`.
-- Listed in a conductor config, an agent addon is ignored with a warning.
+- Listed in a project config, an agent addon is ignored with a warning.
 - Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).

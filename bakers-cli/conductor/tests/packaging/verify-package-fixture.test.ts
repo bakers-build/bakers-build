@@ -10,7 +10,7 @@ import { applyConfigPlan, planConfig } from '../../src/cli/config-plan.js';
 it('generates a current connection with credentials and workspace independent of machine context', async () => {
   const root = mkdtempSync(join(tmpdir(), 'bakers-package-template-'));
   try {
-    const connectionPath = join(root, 'bakers.config.js');
+    const connectionPath = join(root, 'connection.config.js');
     const plan = planConfig({
       scope: 'connection',
       home: root,

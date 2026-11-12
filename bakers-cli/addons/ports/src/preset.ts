@@ -36,8 +36,9 @@ export const inbox: Preset['inbox'] = {
 // Configurable on either level; the machine entry's with wins.
 export const scopes: BbPreset['scopes'] = ['machine', 'project'];
 
-// Merge and check the entry's own settings (services, all_node, transport).
-export { checkWith, mergeWith } from './service-config.js';
+// Merge the entry's own settings across scopes (services, all_node, transport);
+// options.schema.json describes them.
+export { mergeWith } from './service-config.js';
 
 // Agent tools the conductor serves to every run (and the CLI calls through
 // it): the conductor is the only writer of the tunnel routes.

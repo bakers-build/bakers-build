@@ -6,23 +6,21 @@ For operators pairing a terminal executor with plain Git worktrees. Git must be 
 
 ## Enable it
 
-Add the package to `addons` in the project's `.bakers/conductor.config.js`, next to your executor.
+Add the package to `addons` in the project's `.bakers/project.config.js`, next to your executor.
 
 ```js
 addons: [
   '@bakers-build/addon-remote-drupal',
   '@bakers-build/addon-herdr-core',
-  { use: '@bakers-build/addon-workspace-git', with: { branchPrefix: 'bakers/' } },
+  { use: '@bakers-build/addon-workspace-git', with: { branch_prefix: 'bakers/' } },
 ],
 ```
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `branchPrefix` | string | `bakers/` | Prefix of every ticket branch. |
-| `branchTemplate` | string | `{branchPrefix}{key}-{titleSlug}` | Branch name. `{identifier}` is also available. |
-| `autoSetupMerge` | boolean | `false` | `false`: before it creates a worktree, the addon sets `branch.autoSetupMerge=false` in the root repository. Creating a worktree then writes nothing to the shared `.git/config`, so once the setting is written it still works while a sandbox holds `config.lock`. If that first write meets a held lock, the conductor logs a warning with the repair command. Runs get `push.default=current` through `GIT_CONFIG_COUNT`, so a plain `git push` creates the same-name remote branch, and run branches have no upstream. This applies to everyone who uses that repository: `git switch <remote branch>` no longer sets an upstream either. `true` leaves Git alone, but it does not revert an earlier change; for that, run `git config --unset branch.autoSetupMerge`. |
+<!-- @options @bakers-build/addon-workspace-git -->
+
+With `auto_setup_merge: false`, the setting applies to everyone who uses that repository: `git switch <remote branch>` no longer sets an upstream either. If the first write meets a `config.lock` held by a sandbox, the conductor logs a warning with the repair command. To undo it after switching to `true`, run `git config --unset branch.autoSetupMerge`.
 
 ## Check it works
 

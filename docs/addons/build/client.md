@@ -115,11 +115,11 @@ Make your client's CLI available on the conductor's `PATH`. In the project's `ad
 { use: './addons/my-client' },
 ```
 
-Keep the existing agents, remote and workspace provider: bakers.build already supplies the worktree. If an explicit `executor` setting or machine executor overrides the addon, adjust it as described in [Conductor slots](/addons/slots). Commit the package/configuration, check configuration and restart the conductor:
+Keep the existing agents, server and worktree provider: bakers.build already supplies the worktree. If an explicit `executor` setting or machine executor overrides the addon, adjust it as described in [Conductor slots](/addons/slots). Commit the package/configuration, check configuration and restart the conductor:
 
 ```sh
 bakers config check --scope project --online
-bakers oven check
+bakers conductor check
 ```
 
 Dispatch a disposable ticket. Its agent should appear in your application, inside the ticket's worktree. Test two runs: finishing one must close only its terminal. Restart the conductor and check cleanup again. An absent terminal is harmless; a failed launch must fail the run, and a failed cleanup must warn. After a timeout, inspect the run in your client before retrying: it may have started.

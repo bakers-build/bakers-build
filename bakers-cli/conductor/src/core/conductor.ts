@@ -44,7 +44,7 @@ import { attemptFamily } from './attempt.js';
 import { type HookRunner, shellHookRunner } from './hook-runner.js';
 import { InboxRuntime, runInbox } from './inbox-runtime.js';
 import { measureMrChanges, mrChangesRows } from './mr-changes.js';
-import { checkRequiredSkills } from './required-skills.js';
+import { runStartHooks } from './start-hooks.js';
 import { startToolServer, type ToolServer } from './tool-server.js';
 import { signalUi } from './ui-signal.js';
 
@@ -68,12 +68,16 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 
 /**
  * A run-env key is reserved when it names a conductor-provided core variable:
- * any `BB_*`, `WORKSPACE_ROOT`, or `TICKET_URL`. User `env_vars` may not
- * clobber these — the core vars always win (BB-99).
+ * any `BAKERS_*`, `WORKSPACE_ROOT`, or `TICKET_URL`. User `env_vars` may not
+ * clobber these — the core vars always win (BB-99). `BB_*` stays reserved: a
+ * retired name in the run env would make the agent's `bakers` refuse to start.
  */
 function isReservedEnvKey(key: string): boolean {
   return (
-    key.startsWith('BB_') || key === 'WORKSPACE_ROOT' || key === 'TICKET_URL'
+    key.startsWith('BAKERS_') ||
+    key.startsWith('BB_') ||
+    key === 'WORKSPACE_ROOT' ||
+    key === 'TICKET_URL'
   );
 }
 
@@ -220,8 +224,8 @@ function renderPrompt(
   return template
     .replaceAll('{identifier}', values.identifier)
     .replaceAll('{state}', values.state)
-    .replaceAll('{runUuid}', values.runUuid)
-    .replaceAll('{ticketUuid}', values.ticketUuid);
+    .replaceAll('{run_uuid}', values.runUuid)
+    .replaceAll('{ticket_uuid}', values.ticketUuid);
 }
 
 /**
@@ -341,7 +345,7 @@ export class Conductor {
    *
    * Only `cmdStartForeground` calls this. `cmdPoll` and `cmdReap` also build a
    * Conductor and call start() + tick(), then exit; if they reported a pid,
-   * every `bakers oven once` would overwrite the running conductor's pid
+   * every `bakers conductor once` would overwrite the running conductor's pid
    * with its own short-lived one and the next stop would signal a dead — or
    * recycled — process. Making the report opt-in means those two commands
    * cannot do so even by accident.
@@ -433,7 +437,50 @@ export class Conductor {
   }
 
   async start() {
-    this.uuid = await this.remote.registerConductor(this.registration());
+    const registration = this.registration();
+    const machine = this.ownsServeProcess
+      ? await runStartHooks(
+          this.config.hookListeners ?? [],
+          {
+            ...(registration.host_key !== undefined
+              ? { host_key: registration.host_key }
+              : {}),
+            ...(registration.machine_label !== undefined
+              ? { machine_label: registration.machine_label }
+              : {}),
+            ...(this.config.connection_url !== undefined
+              ? { connection_url: this.config.connection_url }
+              : {}),
+          },
+          {
+            id: registration.id,
+            project: registration.project,
+            variant: registration.conductor_name ?? this.config.variant,
+          },
+          (reason) => this.logger.warn({ conductorId: this.id }, reason),
+        )
+      : {};
+    try {
+      this.uuid = await this.remote.registerConductor({
+        ...registration,
+        ...machine,
+      });
+    } catch (err) {
+      if (typeof machine.connection_url !== 'string') throw err;
+      // A server that refuses the address must not stop the start; without
+      // the field the stored address stays unchanged.
+      // Value-free: the error may quote the address.
+      this.logger.warn(
+        { conductorId: this.id },
+        'registration failed with the connection URL; retrying without it',
+      );
+      const rest = { ...machine };
+      delete rest.connection_url;
+      this.uuid = await this.remote.registerConductor({
+        ...registration,
+        ...rest,
+      });
+    }
     this.logger.info(
       { conductorId: this.id, uuid: this.uuid, project: this.config.project },
       'conductor started',
@@ -455,7 +502,7 @@ export class Conductor {
     }
   }
 
-  /** One tick that also waits for its actions: `bakers oven once`, tests. */
+  /** One tick that also waits for its actions: `bakers conductor once`, tests. */
   async tick(): Promise<void> {
     await this.produce();
     await this.queue.drain();
@@ -1053,7 +1100,7 @@ export class Conductor {
    * whose workspace still lingers (BB-89). Driven by the durable `cleaned_up`
    * flag via {@link BbRemote.fetchUncleanedTickets}: every ticket the server
    * has already closed but not yet cleaned. The SAME reconciliation runs on
-   * every tick AND standalone as `bakers oven clean`, and the query is
+   * every tick AND standalone as `bakers conductor clean`, and the query is
    * scoped to THIS conductor (BB-121) — so it catches the orphans a
    * live-tick-only path structurally cannot (the conductor was down when the
    * ticket closed, or crashed mid-cleanup) for its OWN tickets. A foreign
@@ -1336,25 +1383,25 @@ export class Conductor {
     } catch (err) {
       this.logger.warn(
         { ticket: t.identifier, err: String(err) },
-        'could not resolve reachable workspaces for BB_WORKSPACE_IDS',
+        'could not resolve reachable workspaces for BAKERS_WORKSPACE_IDS',
       );
     }
     const core: Record<string, string> = {
-      BB_URL: this.config.site.base_url,
-      BB_ID: t.uuid,
+      BAKERS_URL: this.config.site.base_url,
+      BAKERS_ID: t.uuid,
       // BB-569: lets a launch wrapper key off the ticket and the run's
       // start state without parsing the prompt (addon-claude `measure`).
-      ...(t.identifier ? { BB_TICKET_IDENTIFIER: t.identifier } : {}),
-      ...(state ? { BB_STATE: state } : {}),
-      ...(runUuid ? { BB_RUN_UUID: runUuid } : {}),
-      BB_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
+      ...(t.identifier ? { BAKERS_TICKET_IDENTIFIER: t.identifier } : {}),
+      ...(state ? { BAKERS_STATE: state } : {}),
+      ...(runUuid ? { BAKERS_RUN_UUID: runUuid } : {}),
+      BAKERS_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
       WORKSPACE_ROOT: this.checkoutRoot,
       ...(t.issueUrl ? { TICKET_URL: t.issueUrl } : {}),
-      ...(t.projectName ? { BB_PROJECT: t.projectName } : {}),
-      ...(t.projectId ? { BB_PROJECT_ID: t.projectId } : {}),
-      ...(t.workspaceName ? { BB_WORKSPACE: t.workspaceName } : {}),
-      ...(t.workspaceId ? { BB_WORKSPACE_ID: t.workspaceId } : {}),
-      ...(workspaceIds ? { BB_WORKSPACE_IDS: workspaceIds } : {}),
+      ...(t.projectName ? { BAKERS_PROJECT: t.projectName } : {}),
+      ...(t.projectId ? { BAKERS_PROJECT_ID: t.projectId } : {}),
+      ...(t.workspaceName ? { BAKERS_WORKSPACE: t.workspaceName } : {}),
+      ...(t.workspaceId ? { BAKERS_WORKSPACE_ID: t.workspaceId } : {}),
+      ...(workspaceIds ? { BAKERS_WORKSPACE_IDS: workspaceIds } : {}),
     };
     return resolveRunEnv(t.effectiveEnvVars, core, this.logger, {
       ticket: t.identifier,
@@ -1429,7 +1476,6 @@ export class Conductor {
     chosen: ResolvedAgent,
     t: Ticket,
     run: ClaimedRun,
-    worktree: string,
   ): Promise<{ env: Record<string, string>; args: string[] }> {
     const marketplaces = this.config.marketplaces ?? [];
     const harness = chosen.agent.id;
@@ -1453,8 +1499,6 @@ export class Conductor {
             : undefined;
     if (off || !chosen.agent.installPlugins) {
       entry.state = `off (${off})`;
-      // Without the agent home, which skills the run gets is the user's own setup.
-      entry.required_skills = 'skipped (plugins off)';
       log();
       return { env: {}, args: [] };
     }
@@ -1476,13 +1520,6 @@ export class Conductor {
       log();
       throw new Error(`plugins: ${harness} install failed: ${entry.failure}`);
     }
-    const skills = checkRequiredSkills(worktree, home, t);
-    entry.required_skills = skills;
-    if (skills.missing.length > 0) {
-      entry.failure = `missing required skills: ${skills.missing.join(', ')}`;
-      log();
-      throw new Error(`plugins: ${harness}: ${entry.failure}`);
-    }
     log();
     return { env: launch.env, args: launch.args };
   }
@@ -1502,7 +1539,7 @@ export class Conductor {
     const [unavailable] = await sandboxFailures([chosen]);
     if (unavailable) throw new Error(unavailable);
     const baseRef = t.baseBranch ? `origin/${t.baseBranch}` : undefined;
-    // Resolve the run env once (per-ticket env_vars + core BB_* vars) and
+    // Resolve the run env once (per-ticket env_vars + core BAKERS_* vars) and
     // inject it into BOTH the lifecycle hooks AND the agent run
     // env (BB-99). Reserved core keys always win; values may be sensitive so
     // only key names are ever logged.
@@ -1688,7 +1725,7 @@ export class Conductor {
     const tools = chosen.agent.withoutConductorTools
       ? undefined
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
-    const plugins = await this.installPlugins(chosen, t, run, ws.path);
+    const plugins = await this.installPlugins(chosen, t, run);
     Object.assign(env, plugins.env);
     const command = chosen.agent.launchCommand(
       prompt,
@@ -1850,7 +1887,7 @@ export class Conductor {
     }
     await this.queue.drain();
     // NB: the poll loop never writes status=offline itself. A graceful stop
-    // (`bakers oven stop`) writes offline directly server-side; a crash or
+    // (`bakers conductor stop`) writes offline directly server-side; a crash or
     // hard-kill leaves a stale lease that the Drupal cron reaper flips to
     // offline (bb_core cron → ConductorReaper). Liveness is thus always
     // derived from status + last_seen/lease_expires_at, never from the loop.

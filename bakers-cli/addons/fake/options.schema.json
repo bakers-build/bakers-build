@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-fake/options.schema.json",
+  "title": "@bakers-build/addon-fake options",
+  "type": "object",
+  "properties": {
+    "outcome": {
+      "enum": [
+        "exited",
+        "failed"
+      ],
+      "description": "How the fake executor's runs end.",
+      "default": "exited"
+    },
+    "marker_file": {
+      "type": "string",
+      "description": "Path inside the worktree where each run writes a JSON marker."
+    }
+  },
+  "additionalProperties": false
+}

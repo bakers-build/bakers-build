@@ -37,5 +37,5 @@ Feature: Device sign-in consent and result
     When I request an login link for "north-lead@example.test"
     And I sign in with the code from the mail
     Then the address is "/oauth/device"
-    And the consent shows that device code
+    And the consent asks for the device code
     And the consent names the requesting client

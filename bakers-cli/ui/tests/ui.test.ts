@@ -38,7 +38,7 @@ function fakeLoader(over: Partial<BbConnectionConfig> = {}): {
         },
         workspace_id: '00000000-0000-4000-8000-000000000000',
         plugins: [],
-        config_path: '/resolved/bakers.config.js',
+        config_path: '/resolved/connection.config.js',
         fallback: false,
         source: 'project',
         legacy: false,
@@ -50,7 +50,7 @@ function fakeLoader(over: Partial<BbConnectionConfig> = {}): {
 
 describe('cmdUi connection resolution (BB-219)', () => {
   const savedUiPlugin = process.env.BB_UI_PLUGIN;
-  const savedBbConfig = process.env.BB_CONFIG;
+  const savedBbConfig = process.env.BAKERS_CONFIG;
   const savedDropshConfig = process.env.DROPSH_CONFIG;
   let tmp: string;
 
@@ -58,7 +58,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
   const makeProject = (
     root: string,
     baseUrl: string,
-    file = 'bakers.config.js',
+    file = 'connection.config.js',
   ): string => {
     const d = join(root, '.bakers');
     mkdirSync(d, { recursive: true });
@@ -72,7 +72,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
 
   beforeEach(() => {
     delete process.env.BB_UI_PLUGIN;
-    delete process.env.BB_CONFIG;
+    delete process.env.BAKERS_CONFIG;
     delete process.env.DROPSH_CONFIG;
     tmp = mkdtempSync(join(tmpdir(), 'bakers-ui-'));
   });
@@ -80,7 +80,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
     rmSync(tmp, { recursive: true, force: true });
     for (const [k, v] of [
       ['BB_UI_PLUGIN', savedUiPlugin],
-      ['BB_CONFIG', savedBbConfig],
+      ['BAKERS_CONFIG', savedBbConfig],
       ['DROPSH_CONFIG', savedDropshConfig],
     ] as const) {
       if (v === undefined) delete process.env[k];
@@ -90,7 +90,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
 
   // ── AC-1 / AC-2: the project's connection wins, found by walk-up ──────────
 
-  it('AC-1: resolves the project ./.bakers/bakers.config.js when started in the project', async () => {
+  it('AC-1: resolves the project ./.bakers/connection.config.js when started in the project', async () => {
     const cfg = makeProject(tmp, 'https://project.test');
     let opts: RunBbUiOptions | undefined;
     await cmdUi({
@@ -138,7 +138,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
 
   it('AC-3: outside any project the resolution is delegated with that cwd (home legs are core’s)', async () => {
     const loader = fakeLoader({
-      config_path: '/home/cw/.bakers/bakers.config.js',
+      config_path: '/home/cw/.bakers/connection.config.js',
       source: 'home',
     });
     let opts: RunBbUiOptions | undefined;
@@ -151,13 +151,13 @@ describe('cmdUi connection resolution (BB-219)', () => {
     });
     expect(loader.calls).toEqual([{ cwd: tmp, explicit: undefined }]);
     expect(opts?.connection.configPath).toBe(
-      '/home/cw/.bakers/bakers.config.js',
+      '/home/cw/.bakers/connection.config.js',
     );
   });
 
   it('AC-3: the global connection is passed through', async () => {
     const loader = fakeLoader({
-      config_path: '/ship/bakers.config.js',
+      config_path: '/ship/connection.config.js',
       fallback: false,
       source: 'home',
     });
@@ -169,7 +169,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
         opts = o;
       },
     });
-    expect(opts?.connection.configPath).toBe('/ship/bakers.config.js');
+    expect(opts?.connection.configPath).toBe('/ship/connection.config.js');
   });
 
   // ── AC-4: explicit wins ───────────────────────────────────────────────────
@@ -193,39 +193,39 @@ describe('cmdUi connection resolution (BB-219)', () => {
     expect(opts?.connection.baseUrl).toBe('https://explicit.test');
   });
 
-  it('AC-4: $BB_CONFIG supplies the explicit leg when --config is absent', async () => {
+  it('AC-4: $BAKERS_CONFIG supplies the explicit leg when --config is absent', async () => {
     const loader = fakeLoader();
-    process.env.BB_CONFIG = '/env/bakers.config.js';
+    process.env.BAKERS_CONFIG = '/env/connection.config.js';
     await cmdUi({
       cwd: tmp,
       loadConnection: loader.load,
       runUi: async () => {},
     });
-    expect(loader.calls[0]?.explicit).toBe('/env/bakers.config.js');
+    expect(loader.calls[0]?.explicit).toBe('/env/connection.config.js');
   });
 
   it('AC-4: $DROPSH_CONFIG is the lowest-priority explicit source', async () => {
     const loader = fakeLoader();
-    process.env.DROPSH_CONFIG = '/dropsh/bakers.config.js';
+    process.env.DROPSH_CONFIG = '/dropsh/connection.config.js';
     await cmdUi({
       cwd: tmp,
       loadConnection: loader.load,
       runUi: async () => {},
     });
-    expect(loader.calls[0]?.explicit).toBe('/dropsh/bakers.config.js');
+    expect(loader.calls[0]?.explicit).toBe('/dropsh/connection.config.js');
   });
 
-  it('AC-4: --config beats $BB_CONFIG beats $DROPSH_CONFIG', async () => {
+  it('AC-4: --config beats $BAKERS_CONFIG beats $DROPSH_CONFIG', async () => {
     const loader = fakeLoader();
-    process.env.BB_CONFIG = '/env/bakers.config.js';
-    process.env.DROPSH_CONFIG = '/dropsh/bakers.config.js';
+    process.env.BAKERS_CONFIG = '/env/connection.config.js';
+    process.env.DROPSH_CONFIG = '/dropsh/connection.config.js';
     await cmdUi({
       cwd: tmp,
-      explicitConfig: '/flag/bakers.config.js',
+      explicitConfig: '/flag/connection.config.js',
       loadConnection: loader.load,
       runUi: async () => {},
     });
-    expect(loader.calls[0]?.explicit).toBe('/flag/bakers.config.js');
+    expect(loader.calls[0]?.explicit).toBe('/flag/connection.config.js');
 
     loader.calls.length = 0;
     await cmdUi({
@@ -233,7 +233,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
       loadConnection: loader.load,
       runUi: async () => {},
     });
-    expect(loader.calls[0]?.explicit).toBe('/env/bakers.config.js');
+    expect(loader.calls[0]?.explicit).toBe('/env/connection.config.js');
   });
 
   // ── AC-5: legacy conductor.config.js, with no UI-side branch ──────────────
@@ -268,7 +268,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
       printConfig: true,
       stdout: (s) => out.push(s),
       loadConnection: fakeLoader({
-        config_path: '/ship/bakers.config.js',
+        config_path: '/ship/connection.config.js',
         fallback: false,
         source: 'home',
         site: { base_url: 'https://prod.test', jsonapi_prefix: '/jsonapi' },
@@ -277,7 +277,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
       runUi: async () => {},
     });
     const text = out.join('');
-    expect(text).toContain('/ship/bakers.config.js');
+    expect(text).toContain('/ship/connection.config.js');
     expect(text).toMatch(/source:\s+home/);
     expect(text).toMatch(/fallback:\s+no/);
     expect(text).toContain('https://prod.test');
@@ -432,7 +432,7 @@ describe('cmdUi connection resolution (BB-219)', () => {
   });
 
   // The BB-218-canonical repo, end to end through `cmdUi`: an engine-only
-  // `conductor.config.js` is deliberately NOT a connection source (BB-230
+  // `project.config.js` is deliberately NOT a connection source (BB-230
   // content-gate), so the connection is inherited from home — and yet the repo
   // is still the project we are standing in. Both halves are asserted together
   // because the bug they guard against is exactly them disagreeing: a `bakers ui`
@@ -441,8 +441,8 @@ describe('cmdUi connection resolution (BB-219)', () => {
     const d = join(tmp, '.bakers');
     mkdirSync(d, { recursive: true });
     writeFileSync(
-      join(d, 'conductor.config.js'),
-      `export default { project: 'p', machine_id: 'm' };\n`,
+      join(d, 'project.config.js'),
+      `export default { project: { name: 'p' } };\n`,
     );
     const loader = fakeLoader();
     let opts: RunBbUiOptions | undefined;
@@ -812,7 +812,7 @@ describe('cmdUi write client (BB-233, one identity per BB-391)', () => {
       },
     });
     expect(opts?.connection.baseUrl).toBe('https://bakers.example');
-    expect(opts?.connection.configPath).toBe('/resolved/bakers.config.js');
+    expect(opts?.connection.configPath).toBe('/resolved/connection.config.js');
   });
 });
 

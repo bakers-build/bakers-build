@@ -1,5 +1,6 @@
 import type { MarketplaceDeclaration } from './agent-home.js';
 import type { SandboxHost, SandboxPreflight } from './sandbox-preflight.js';
+import { PROVISION_TIMEOUT_MS } from './tools.js';
 
 /**
  * Per-agent effort footprint parsed from that agent's run transcript
@@ -127,10 +128,17 @@ export interface AgentRunIdentity {
 
 /** The MCP server name agents see for the conductor's addon tools. */
 export const CONDUCTOR_TOOLS_SERVER = 'bakers';
+/**
+ * The tool-call timeout a launch sets on that server, past the longest
+ * provision. Without it Claude Code's HTTP MCP client cuts a call at 60 s
+ * (per-server `timeout`, else `MCP_TOOL_TIMEOUT`) and Codex at
+ * `tool_timeout_sec` (60 s default).
+ */
+export const CONDUCTOR_TOOL_TIMEOUT_MS = PROVISION_TIMEOUT_MS + 60_000;
 /** The run env var holding the run's bearer token for that server. */
-export const CONDUCTOR_TOKEN_ENV = 'BB_CONDUCTOR_TOKEN';
-/** The run env var holding that server's URL, for `bakers oven tools`. */
-export const CONDUCTOR_URL_ENV = 'BB_CONDUCTOR_URL';
+export const CONDUCTOR_TOKEN_ENV = 'BAKERS_CONDUCTOR_TOKEN';
+/** The run env var holding that server's URL, for `bakers conductor tools`. */
+export const CONDUCTOR_URL_ENV = 'BAKERS_CONDUCTOR_URL';
 
 /** What {@link BbAgent.installPlugins} hands the run's launch. */
 export interface PluginLaunch {

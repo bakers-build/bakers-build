@@ -8,13 +8,15 @@ Cloudflare.
 
 ## What this addon owns, and what it doesn't
 
-- **Owns:** one file, `<BB_HOME>/frp/routes.json` — the complete desired
+- **Owns:** one file, `<BAKERS_HOME>/frp/routes.json` — the complete desired
   proxy list for every worktree on this machine, no secrets, atomic 0600
   write.
 - **Does not own:** the `frpc` process (operator-managed, same stance as
   Cloudflare's `cloudflared`), the frpc client config file itself (read and
   strictly validated, never written to), and any token/credential (those
   live in the operator's own config/token source and are never echoed).
+  Installing `frpc`, writing that config and starting the user service are
+  documented in `docs/addons/ports-frp.md` › Set up.
 
 ## Operator setup expectations
 
@@ -31,7 +33,7 @@ Cloudflare.
    manager, a local file with its own permissions, …). This addon never
    reads, writes, or logs it.
 4. **The client config's `includes`** must be exactly one entry: the
-   absolute path `<BB_HOME>/frp/routes.json`. No inline `proxies`,
+   absolute path `<BAKERS_HOME>/frp/routes.json`. No inline `proxies`,
    `visitors`, or `store` — this addon strictly rejects any other shape
    before touching anything, so a misconfigured operator file fails loudly
    instead of silently losing routes.
@@ -80,10 +82,10 @@ addons: [
         use: '@bakers-build/addon-ports-frp',
         with: {
           zone: 'preview.example',
-          clientConfigPath: '/etc/frp/frpc.json', // operator-owned, absolute
-          adminPort: 7400,
-          adminUser: 'admin',
-          adminPassword: '...', // the LOCAL admin API's own credential, not the frps token
+          client_config_path: '/etc/frp/frpc.json', // operator-owned, absolute
+          admin_port: 7400,
+          admin_user: 'admin',
+          admin_password: '...', // the LOCAL admin API's own credential, not the frps token
         },
       },
     },

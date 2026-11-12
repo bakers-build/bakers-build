@@ -1,6 +1,6 @@
 # Fake conductor fixture
 
-**A deterministic remote, executor, workspace and message set for bakers.build's own tests.**
+**A deterministic server, executor, worktree and message set for bakers.build's own tests.**
 
 It is for bakers.build's own tests and end-to-end runs only. It is private, is not published, and never talks to a real server or agent.
 
@@ -14,7 +14,9 @@ addons: ['@bakers-build/addon-fake'],
 
 ## Options
 
-No options for users. The test-only settings are in the source.
+Test-only settings; users need none.
+
+<!-- @options @bakers-build/addon-fake -->
 
 ## Check it works
 

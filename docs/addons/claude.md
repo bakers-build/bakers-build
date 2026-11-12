@@ -30,16 +30,9 @@ One custom candidate:
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `model` | string | none | Passed as `--model`. Replaces `opus`, `sonnet` and `fable` with one custom candidate. |
-| `effort` | string | none | Passed as `--effort`. |
-| `permissions` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'system'` | How strictly a run starts; see [Security](#security). |
-| `sandbox` | object | see below | Only with `permissions: 'sandbox'`. Each key set replaces its default; lists are not merged. |
-| `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
-| `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
-| `measure` | boolean | `false` | Starts Claude through the addon's measure wrapper. |
-| `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
+<!-- @options @bakers-build/addon-claude -->
+
+Without `env_deny`, the [default list](/provision/security/execution#ticket-env-vars) of ticket env vars is kept from the run.
 
 ## Security
 
@@ -82,7 +75,7 @@ bakers agents
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
-- Listed in a conductor config, an agent addon is ignored with a warning.
+- Listed in a project config, an agent addon is ignored with a warning.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 

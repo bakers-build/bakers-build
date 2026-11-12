@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-ports-cloudflare/options.schema.json",
+  "title": "@bakers-build/addon-ports-cloudflare options",
+  "description": "The ports entry's with.transport.with for the named Cloudflare tunnel.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "account_id",
+    "tunnel_id",
+    "zone_id",
+    "zone",
+    "api_token"
+  ],
+  "properties": {
+    "account_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Cloudflare account."
+    },
+    "tunnel_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Named tunnel."
+    },
+    "zone_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Zone ID for DNS records."
+    },
+    "zone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Zone the public names are created in."
+    },
+    "api_token": {
+      "type": "string",
+      "minLength": 1,
+      "description": "API token. Rotating it alone is not an identity change."
+    }
+  }
+}
