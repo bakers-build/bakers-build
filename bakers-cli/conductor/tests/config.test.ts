@@ -224,26 +224,23 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     expect(DEFAULT_AGENT_PROMPT).not.toContain('--- Ticket comments ---');
   });
 
-  it('instructs the step-0 read: MCP tool, else load it, and the CLI only when it cannot be loaded', () => {
-    // A harness connects MCP servers in the background, so at the first turn the
-    // tool can be "not listed yet" without being "not served". The agent loads it
-    // before falling back; a run whose Bash forbids `bakers tools` stopped there.
+  it('loads the workflow before reading the ticket and delegates transport to the skill', () => {
     const paths = [
-      'the MCP tool bakers_ticket_read',
-      'when it is not listed yet load it through your tool search',
-      'only when it cannot be loaded',
-      `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
+      'Read ./WORKFLOW.md',
+      'load the bakers.build skill',
+      'Read the ticket with the bakers tool bakers_ticket_read',
+      'Follow the loaded skill for tool discovery, transport and fallback',
     ].map((p) => DEFAULT_AGENT_PROMPT.indexOf(p));
     expect(paths.every((at) => at >= 0)).toBe(true);
     expect([...paths].sort((a, b) => a - b)).toEqual(paths);
-    expect(DEFAULT_AGENT_PROMPT).toContain(
-      'a denial blocks that one command, not every command',
-    );
-    expect(DEFAULT_AGENT_PROMPT).not.toContain('when it is listed, else');
-    expect(DEFAULT_AGENT_PROMPT).not.toContain('bakers oven tools');
-    // Harness-neutral: no Claude-only tool names.
-    for (const claudeOnly of ['tool_api__', 'mcp__', 'ToolSearch']) {
-      expect(DEFAULT_AGENT_PROMPT).not.toContain(claudeOnly);
+    for (const transport of [
+      'bakers tools',
+      'Bash',
+      'tool_api__',
+      'mcp__',
+      'ToolSearch',
+    ]) {
+      expect(DEFAULT_AGENT_PROMPT).not.toContain(transport);
     }
   });
 
@@ -299,7 +296,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
       .replaceAll('{ticket_uuid}', 'ffcb6949-90bf-4639-96d1-91c2c2378575');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
-      `bakers tools bakers_ticket_read --data '{"ticket":"ffcb6949-90bf-4639-96d1-91c2c2378575"}'`,
+      `arguments {"ticket":"ffcb6949-90bf-4639-96d1-91c2c2378575"}`,
     );
     expect(rendered).not.toContain('--- Ticket comments ---');
     expect(rendered).not.toContain('{comments}');
@@ -330,6 +327,7 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
     'Invoke the bakers skill',
     'ticket:run',
     'coding engine',
+    'bakers tools',
     'State: {state}',
     // The run reads through bakers_ticket_read like every skill step.
     'dropsh --format md read',
@@ -339,8 +337,7 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
   const NEUTRAL_CONTRACT = [
     'Read the ticket with the bakers tool bakers_ticket_read',
     'bakers_ticket_read',
-    `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
-    'load it through your tool search',
+    'Follow the loaded skill for tool discovery, transport and fallback',
     './WORKFLOW.md',
     "that skill's {state} section",
     'Do not start or prepare a later state',
