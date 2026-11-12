@@ -81,7 +81,7 @@ def main():
     try:
         for step in range(fixture.get('max_turns', 24)):
             prompt = encode({'sources': sources, 'environment_root': str(environment), 'observations': fixture.get('observations', {}), 'conversation': history})
-            output, metadata = worker.invoke(prompt, SYSTEM, destination / f'target-{step}', 'sonnet', 120)
+            output, metadata = worker.invoke(prompt, SYSTEM, destination / f'target-{step}', os.environ.get('SETUP_MODEL', 'sonnet'), 120)
             try:
                 action = parse_action(output)
             except ValueError as error:
@@ -103,7 +103,7 @@ def main():
                              'noninteractive': 'This run is unattended. No answer is available; report unresolved choices.'}[mode]
                 else:
                     user_system = 'Play the synthetic setup user. Answer only the latest question using your private facts. Do not volunteer unrelated facts. Suggestions are proposals, not facts or consent: correct suggestions that conflict with your facts, and never invent authorization. If a fact is missing, say you do not know. No tools. Private facts: ' + encode(fixture['answers'])
-                    reply, user_metadata = worker.invoke(encode(history), user_system, destination / f'user-{step}', 'sonnet', 120)
+                    reply, user_metadata = worker.invoke(encode(history), user_system, destination / f'user-{step}', os.environ.get('SETUP_USER_MODEL', 'sonnet'), 120)
                     (destination / f'user-{step}/role.json').write_text(encode(user_metadata))
                 history.append({'role': 'user', 'content': reply})
                 print('USER: ' + reply, flush=True)

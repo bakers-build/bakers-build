@@ -119,6 +119,8 @@ node --require ./tests/skill-eval/offline-guard.cjs tests/skill-eval/run.mjs rep
   --output assets-ai/EXAMPLE-1/setup-replay.json
 ```
 
+`SETUP_MODEL` selects the setup agent's model and `SETUP_USER_MODEL` the synthetic user's; both default to `sonnet`. Each result records the model it ran with.
+
 Directories and replay files must be unused. The driver keeps private answers out of the setup
 role, retains per-role raw streams, and passes literal actions through a closed boundary. Local
 config commands use the real registered CLI implementation with `BAKERS_HOME` and auth state
