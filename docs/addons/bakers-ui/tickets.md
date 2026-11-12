@@ -10,7 +10,7 @@ The terminal UI's Overview tab leads with the latest `summary`:
 bakers ui <identifier>
 ```
 
-`bakers ui <identifier> | cat` prints the same sections as text. The full record with every comment, through the `bakers_ticket_read` tool that every agent run starts with:
+`bakers ui <identifier> | cat` prints the same sections as text. The full record with its 2 newest comments and an index of all of them, through the `bakers_ticket_read` tool that every agent run starts with; `bakers_comment_read` returns the others:
 
 ```sh
 bakers tools tool_api__bakers_ticket_read --data '{"ticket":"<identifier>"}'
