@@ -13,7 +13,6 @@ always: boundaries.md
 if a browser path is selected: browser.md
 if recording checks: results.md
 always: evidence.md, ticket-writes.md, outtake.md, outtake/plan.md, transition-ticket.md
-if paginated lookups are needed: tools.md
 if ticket has an origin: origin-status.md
 
 ## read

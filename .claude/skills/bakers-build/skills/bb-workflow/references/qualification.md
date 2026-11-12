@@ -8,7 +8,6 @@ always: read-ticket.md, tools.md, qualification.md
 if ticket read fails: read-ticket-troubleshooting.md
 if needed comments missing: comment-context.md
 always: prior-art-search.md
-if paginated lookups or agent overrides need resolution: tools.md
 always: prior-art-build.md, forge.md
 if forge tools absent: forge-fallback.md
 if asking for cancellation confirmation: retrospective.md

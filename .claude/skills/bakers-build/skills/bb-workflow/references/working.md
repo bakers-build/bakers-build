@@ -12,7 +12,6 @@ if acceptance is absent for confirmed scope: ticket-writes.md, acceptance.md
 if a check needs a running environment: results.md, verify.md, tools.md
 always: boundaries.md, prior-art-build.md, forge.md
 if forge tools absent at an operation: forge-fallback.md
-if paginated lookups are needed: tools.md
 if a browser path is selected: browser.md
 always: evidence.md, results.md, delivery.md, ticket-writes.md, transition-ticket.md
 if a preview is available: preview-links.md
