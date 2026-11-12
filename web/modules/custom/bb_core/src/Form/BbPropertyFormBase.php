@@ -214,15 +214,9 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
     $submitted = clone $entity;
     $display = $this->getFormDisplay($form_state);
     $extracted = $display->extractFormValues($submitted, $form, $form_state);
-    $baseline = $form_state->get('property_baseline');
-    if ($this->getRequest()->isMethod('POST') && !$form_state->has('property_saved')) {
-      $snapshot = $this->openingSnapshot($form_state);
-      $baseline = clone $entity;
-      foreach (array_intersect_key($snapshot, $display->getComponents()) as $field => $values) {
-        $baseline->set($field, $values);
-      }
-    }
+    $baseline = $this->comparedBaseline($entity, $form_state);
     $changed = [];
+    $kept = [];
     foreach (array_keys($extracted) as $field) {
       if ($baseline !== NULL && $submitted->get($field)->equals($baseline->get($field))) {
         continue;
@@ -230,26 +224,46 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
       if (!$entity->access('update') || !$entity->get($field)->access('edit')) {
         throw new AccessDeniedHttpException();
       }
-      if ($this->leftAlone($submitted, $entity, $baseline, $field, $form_state)) {
+      // Stored already, by someone else: nothing to write, nothing to refuse.
+      if ($submitted->get($field)->equals($entity->get($field))) {
+        $kept[] = $field;
+        continue;
+      }
+      if ($this->refusedAsStale($entity, $baseline, $field, $form_state)) {
         continue;
       }
       $entity->set($field, $submitted->get($field)->getValue());
       $changed[] = $field;
     }
     $form_state->set('property_changed', $changed);
+    $form_state->set('property_kept', $kept);
     $form_state->setTemporaryValue('property_compared', $baseline);
   }
 
   /**
-   * Whether a changed field is not written: already stored, or stale.
+   * The values the submitted ones are compared with.
    *
-   * Validation refuses a stale field at the field; after validation save()
-   * checks again under its lock, so this only skips.
+   * The signed opening snapshot on a form's first POST; the baseline this
+   * form state keeps from then on.
    */
-  private function leftAlone(ContentEntityInterface $submitted, ContentEntityInterface $stored, ?ContentEntityInterface $baseline, string $field, FormStateInterface $form_state): bool {
-    if ($submitted->get($field)->equals($stored->get($field))) {
-      return TRUE;
+  private function comparedBaseline(ContentEntityInterface $entity, FormStateInterface $form_state): ?ContentEntityInterface {
+    if (!$this->getRequest()->isMethod('POST') || $form_state->has('property_saved')) {
+      return $form_state->get('property_baseline');
     }
+    $baseline = clone $entity;
+    $components = $this->getFormDisplay($form_state)->getComponents();
+    foreach (array_intersect_key($this->openingSnapshot($form_state), $components) as $field => $values) {
+      $baseline->set($field, $values);
+    }
+    return $baseline;
+  }
+
+  /**
+   * Whether validation refuses a field someone stored anew since the snapshot.
+   *
+   * After validation save() checks again under its lock, so this is false.
+   */
+  private function refusedAsStale(ContentEntityInterface $stored, ?ContentEntityInterface $baseline, string $field, FormStateInterface $form_state): bool {
     if ($form_state->isValidationComplete() || !$this->changedMeanwhile($stored, $baseline, $field)) {
       return FALSE;
     }
@@ -337,6 +351,14 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
     if (!$this->autosaves()) {
       return $this->write($form_state, TRUE);
     }
+    $announce = !$this->getRequest()->headers->has('HX-Request');
+    if (($form_state->get('property_changed') ?? []) === []) {
+      // Nothing to write: no lock and no save. Save without JavaScript is
+      // still confirmed.
+      $this->confirm($announce);
+      $this->answer($form_state, $form_state->get('property_kept') ?? [], []);
+      return 0;
+    }
     $type = $this->entity->getEntityTypeId();
     $lock = 'bb_property:' . $type . ':' . $this->entity->id();
     $locked = $this->lock->acquire($lock) || (!$this->lock->wait($lock) && $this->lock->acquire($lock));
@@ -357,7 +379,7 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
         $stored->set($field, $this->entity->get($field)->getValue());
       }
       $this->entity = $stored;
-      return $this->write($form_state, !$this->getRequest()->headers->has('HX-Request'));
+      return $this->write($form_state, $announce);
     }
     finally {
       if ($locked) {
@@ -377,6 +399,16 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
    */
   private function write(FormStateInterface $form_state, bool $announce): int {
     $result = $this->entity->save();
+    $this->confirm($announce);
+    $saved = array_merge($form_state->get('property_changed') ?? [], $form_state->get('property_kept') ?? []);
+    $this->answer($form_state, $saved, []);
+    return $result;
+  }
+
+  /**
+   * Confirms the save with a status message, when it is announced.
+   */
+  private function confirm(bool $announce): void {
     if ($announce) {
       // The same wording Settings uses, rendered by this form's own messages.
       $this->messenger()->addStatus($this->t('@type %label saved.', [
@@ -384,8 +416,6 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
         '%label' => $this->entity->label() ?? $this->entity->id(),
       ]));
     }
-    $this->answer($form_state, $form_state->get('property_changed') ?? [], []);
-    return $result;
   }
 
   /**
@@ -393,8 +423,8 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
    *
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state.
-   * @param list<string> $saved
-   *   The fields this save wrote.
+   * @param array<string> $saved
+   *   The fields that now hold what was picked.
    * @param array<string, string> $refused
    *   Messages of the fields refused after validation, keyed by field.
    */

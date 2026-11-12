@@ -34,6 +34,15 @@ Feature: Ticket reviewers persist as searchable chips
     Then the inline "Reviewers" selection includes "north-lead"
     And the inline "Reviewers" chips are "north-lead"
 
+  Scenario: Removing a chip saves and leaves the panel closed
+    When I select inline "Reviewers" option "north-member"
+    And I reload the page
+    And I remove the inline "Reviewers" chip "north-member"
+    Then the inline "Reviewers" save succeeds without navigation
+    And the inline "Reviewers" panel is closed
+    When I reload the page
+    Then the inline "Reviewers" chips are ""
+
   Scenario: Clearing all reviewers survives reload
     When I select inline "Reviewers" option "north-member"
     Then the inline "Reviewers" save succeeds without navigation
@@ -46,7 +55,8 @@ Feature: Ticket reviewers persist as searchable chips
   Scenario: Saving another property preserves earlier reviewer changes
     When I select inline "Reviewers" option "north-member"
     Then the inline "Reviewers" save succeeds without navigation
-    When I select inline "Priority" option "High"
+    When I close the inline "Reviewers" panel
+    And I select inline "Priority" option "High"
     Then the inline "Priority" save succeeds without navigation
     When I reload the page
     Then the inline "Reviewers" selection includes "north-member"

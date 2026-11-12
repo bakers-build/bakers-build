@@ -553,6 +553,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $opening = $this->openForm($this->ticket, 'property');
     [, $state] = $this->postForm($this->ticket, 'property', ['priority' => '1'] + $opening);
     self::assertSame([], $state->getErrors());
+    self::assertTrue($state->has('property_saved'), 'The baseline now lives in the cached form state.');
     $this->ticket->set('priority', 2)->save();
 
     [$form, $state] = $this->postForm($this->ticket, 'property', ['priority' => '3'] + $opening);
@@ -564,6 +565,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
 
   /**
    * A pick of the value someone else just stored is not a conflict.
+   *
+   * The field holds the pick, so it says "Saved".
    */
   public function testPickOfTheStoredValueIsNotRefused(): void {
     $this->ticket->set('priority', 3)->save();
@@ -571,10 +574,12 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $opening = $this->openForm($this->ticket, 'property');
     $this->ticket->set('priority', 2)->save();
 
-    [, $state] = $this->postForm($this->ticket, 'property', ['priority' => '2'] + $opening);
+    [$form, $state] = $this->postForm($this->ticket, 'property', ['priority' => '2'] + $opening);
 
     self::assertSame([], $state->getErrors());
     self::assertEquals(2, $this->stored($this->ticket)->get('priority')->value);
+    self::assertSame('Saved', (string) $this->pickerCell($form, 'priority')['status']);
+    self::assertFalse($this->pickerCell($form, 'priority')['invalid']);
   }
 
   /**

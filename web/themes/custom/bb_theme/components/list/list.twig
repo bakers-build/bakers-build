@@ -73,7 +73,9 @@
     stays beside its label: text is cut to one line with the full value in its
     title, and a picker cuts its own value. The cell itself never clips, since
     that would also clip an inline picker's panel. Several values, such as
-    chips, and a badge still wrap onto a line of their own. #}
+    chips, and a badge still wrap onto a line of their own. The label keeps to
+    the first line of a taller value: it is one 24px line, the height of an
+    inline picker's trigger, at the top of the row. #}
 {% set plain = layout == 'plain' %}
 {% set item_base = plain
   ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-inline', 'gap-y-inline-xs', 'min-h-list-plain-row-height', 'py-inline-xs']
@@ -214,9 +216,14 @@
         {% set single = plain and item.cells|keys|length == 2 %}
         {% for key, c in item.cells %}
           {% set fits = single and not loop.first and c and c.kind|default('text') in ['text', 'mono', 'link', 'picker'] %}
-          {% if c and actions[key] is not defined %}<span class="min-w-0 {{ not plain ? 'whitespace-nowrap' : (loop.first ? 'whitespace-nowrap w-list-plain-label-width shrink-0' : (fits ? 'flex-1 wrap-anywhere' : 'wrap-anywhere')) }}" data-cell="{{ key }}">
+          {% if c and actions[key] is not defined %}<span class="min-w-0 {{ not plain ? 'whitespace-nowrap' : (loop.first ? 'whitespace-nowrap w-list-plain-label-width shrink-0 self-start leading-6' : (fits ? 'flex-1 wrap-anywhere' : 'wrap-anywhere')) }}" data-cell="{{ key }}">
             {%- if fits and c.kind|default('text') != 'picker' -%}
-              <span class="block truncate *:truncate" title="{{ c.value }}">{{ cells.cell(c) }}</span>
+              {#- The inset keeps a link's focus ring inside the clip. The margin takes it back
+                  on the left and vertically, inside the row; on the right it would reach past
+                  the inspector, so the cut comes 4px earlier there instead. The value itself is
+                  an inline block no wider than the line, so a cut link still has its whole
+                  ring. -#}
+              <span class="block truncate *:truncate *:inline-block *:max-w-full *:align-top p-inline-xs -my-inline-xs -ml-inline-xs" title="{{ c.value }}">{{ cells.cell(c) }}</span>
             {%- else -%}
               {{ cells.cell(c) }}
             {%- endif -%}

@@ -152,11 +152,11 @@ props:
       description: >-
         The pick is the write: a pick that changes the checked options submits
         the enclosing form, whose answer replaces it. An unchanged pick or a
-        dismissal submits nothing. A multi-select panel stays open across the
-        answer, with its search text and the toggled row focused, and a request
-        that fails says "Not saved." at the field. Used by the inline variant on
-        a ticket's Details, where the form keeps its Save only without
-        JavaScript. Default false.
+        dismissal submits nothing. An open multi-select panel stays open across
+        the answer, with its search text and the toggled row focused; removing a
+        chip leaves it closed. A request that fails or is aborted says "Not
+        saved." at the field. Used by the inline variant on a ticket's Details,
+        where the form keeps its Save only without JavaScript. Default false.
     status:
       type: string
       title: Field status

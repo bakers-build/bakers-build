@@ -267,15 +267,8 @@ async function choose(page: Page, label: string, option: string) {
     await expect(propertyForm(page)).not.toHaveAttribute('inert');
     const trigger = control.locator('[data-option-picker-trigger]');
     const panel = control.locator('[data-option-picker-panel]');
-    // A multi-select panel reopens after its pick saved; it may cover the next
-    // field, so another field's pick closes it first, as a person would.
-    const elsewhere = propertyForm(page).locator('[data-option-picker-trigger][aria-expanded="true"]');
-    if (await elsewhere.count() && await trigger.getAttribute('aria-expanded') !== 'true') {
-        await page.keyboard.press('Escape');
-        await expect(elsewhere).toHaveCount(0);
-    }
-    // Clicking the trigger of the reopened panel would close it and hide
-    // every option from getByRole.
+    // A multi-select panel reopens after its pick saved. Clicking its trigger
+    // again would close it and hide every option from getByRole.
     if (await trigger.getAttribute('aria-expanded') !== 'true') {
         await trigger.click();
     }
@@ -354,6 +347,22 @@ When('I remove the inline {string} chip {string}', async ({ page }, label: strin
     await expect.poll(() => form!.evaluate(element => element.isConnected)).toBe(false);
     await expect(button).toHaveCount(0);
     await expect(control.locator('[data-option-picker-chip]', { hasText: option })).toHaveCount(0);
+});
+
+// A multi-select panel stays open after its pick saved; a person closes it
+// before turning to a field it may cover.
+When('I close the inline {string} panel', async ({ page }, label: string) => {
+    const trigger = picker(page, label).locator('[data-option-picker-trigger]');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+});
+
+Then('the inline {string} panel is closed', async ({ page }, label: string) => {
+    const control = picker(page, label);
+    await expect(control.locator('[data-option-picker-trigger]')).toHaveAttribute('aria-expanded', 'false');
+    await expect(control.locator('[data-option-picker-panel]')).toBeHidden();
+    await expect(control.locator('[data-option-picker-panel] :focus')).toHaveCount(0);
 });
 
 Then('the inline {string} chips are {string}', async ({ page }, label: string, chips: string) => {

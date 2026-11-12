@@ -201,9 +201,10 @@
       rendered selection is never updated here: an unchanged pick or a dismissal writes
       nothing, a pick after a failed request submits again, and htmx drops a submit
       while one is in flight. The pick clears the previous status; a request that
-      fails says "Not saved." at this field. A multi-select panel stays open across
-      the answer: the pick leaves a note on the form's parent, which the swap keeps,
-      and the new picker reopens with its search text and the toggled row focused. #}
+      fails or is aborted says "Not saved." at this field. A multi-select panel that
+      was open stays open across the answer: the pick leaves a note on the form's
+      parent, which the swap keeps, and the new picker reopens with its search text
+      and the toggled row focused. Removing a chip leaves the panel closed. #}
   {%- if autosave %}
   data-option-picker-autosave
   x-data="Object.assign(optionPicker(), {
@@ -227,7 +228,7 @@
       const now = this.checked();
       if (now.join() === this.rendered.join()) return;
       const host = this.host();
-      if (host && this.$root.querySelector('[aria-multiselectable=true]')) {
+      if (host && this.open && this.$root.querySelector('[aria-multiselectable=true]')) {
         const value = now.find((v) => !this.rendered.includes(v)) ?? this.rendered.find((v) => !now.includes(v));
         host.dataset.optionPickerReopen = JSON.stringify({ name: this.$root.dataset.optionPickerName, value, query: this.query });
       }
@@ -254,6 +255,7 @@
   @htmx:response-error.window="failed($event)"
   @htmx:send-error.window="failed($event)"
   @htmx:timeout.window="failed($event)"
+  @htmx:send-abort.window="failed($event)"
   {%- else %}
   x-data="optionPicker()"
   {%- endif %}
