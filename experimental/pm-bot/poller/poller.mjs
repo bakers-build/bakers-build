@@ -30,10 +30,10 @@ import { forget, updates } from './updates.mjs';
 
 const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
 
-/** The Slack Web API calls the poller makes. */
-// The read returns only the newest comments by default; the bot diffs them all.
+// shortcut: a ticket above 1000 comments loses the oldest, read through bakers_comment_read then.
 const ALL_COMMENTS = 1000;
 
+/** The Slack Web API calls the poller makes. */
 export function createSlack({ url = 'https://slack.com/api', token }) {
   async function call(method, body) {
     const res = await fetch(`${url}/${method}`, {

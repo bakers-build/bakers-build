@@ -7,7 +7,7 @@ names, links, its 2 newest readable comments in full (oldest first) and `comment
 is complete: a missing field or a truncated result is incomplete context and must be recovered; an
 empty `comments` list is valid.
 
-Then make your state's one comment call, `bakers_comment_read` with the row's filter, skipping
+Then make your state's comment call(s), `bakers_comment_read` with the row's filter, skipping
 types the facets show absent or the 2 newest already hold:
 
 | State | Filter |

@@ -33,6 +33,7 @@ php_allow=(
   'web/modules/custom/bb_core/src/Time/BbDate.php'
   # Machine-readable stamps for the API and stored figures, not display.
   'web/modules/custom/bb_core/src/Plugin/tool/Tool/TicketRead.php'
+  'web/modules/custom/bb_core/src/Plugin/tool/Tool/TicketInputTrait.php'
   'web/modules/custom/bb_core/src/Plugin/tool/Tool/TicketList.php'
   'web/modules/custom/bb_core/src/Statistics/Figure/FigureEvaluator.php'
   # Date math: today's UTC date as a period anchor.
