@@ -1,5 +1,8 @@
 import { join } from 'node:path';
-import type { RuntimeLaunch } from '@bakers-build/conductor/contract';
+import type {
+  ContainerMount,
+  RuntimeLaunch,
+} from '@bakers-build/conductor/contract';
 
 export interface DockerOptions {
   /** The container CLI: `docker`, or `podman`. */
@@ -21,10 +24,8 @@ export interface HostPaths {
   gitLink?: string;
   /** The per-run home, mounted at `/home/run`. */
   runHome: string;
-  /** Where the harness keeps transcripts: the agent home, or `~/.claude`. */
-  configDir: string;
-  /** The run's agent home (`CLAUDE_CONFIG_DIR`), when it has one. */
-  agentHome?: string;
+  /** What the agent's `container.prepare` returned. */
+  agent: { env: Record<string, string>; mounts: ContainerMount[] };
   /** The bakers CLI build, mounted read-only at its host path. */
   cliRoot: string;
   uid: number;
@@ -46,15 +47,6 @@ const HOST_ONLY = (key: string) =>
   key === 'TMPDIR' ||
   key.startsWith('XDG_');
 
-/** Claude Code's transcript directory name for a cwd (as the claude addon encodes it). */
-export const transcriptKey = (cwd: string) => cwd.replace(/[^a-zA-Z0-9]/g, '-');
-
-/** The model credentials a run may need; values never enter argv. */
-export const MODEL_CREDENTIALS = [
-  'CLAUDE_CODE_OAUTH_TOKEN',
-  'ANTHROPIC_API_KEY',
-] as const;
-
 /**
  * The `docker run` argv for one run. Pure: every secret travels as `-e KEY`
  * with its value in the returned env, which the executor hands the docker
@@ -66,40 +58,41 @@ export function dockerArgs(
   where: HostPaths,
 ): { argv: string[]; env: Record<string, string> } {
   const ws = input.workspacePath;
-  const key = transcriptKey(ws);
+  const api = input.container?.api;
   const bind = (from: string, to = from, mode = '') => [
     '-v',
     `${from}:${to}${mode}`,
   ];
   const env = { ...input.env };
-  const runClaudeDir = `${RUN_HOME}/.claude`;
-  const computed: string[] = [`HOME=${RUN_HOME}`, `PATH=${RUN_PATH}`];
-  if (env.CLAUDE_CONFIG_DIR !== undefined)
-    computed.push(`CLAUDE_CONFIG_DIR=${runClaudeDir}`);
+  const computed: string[] = [
+    `HOME=${RUN_HOME}`,
+    `PATH=${RUN_PATH}`,
+    ...Object.entries(where.agent.env).map(([k, v]) => `${k}=${v}`),
+  ];
   const allowlist = opts.network === 'allowlist';
-  if (allowlist) {
+  if (allowlist && api) {
     const proxy = `http://${opts.proxy}:${PROXY_PORTS.egress}`;
     computed.push(
       `HTTPS_PROXY=${proxy}`,
       `HTTP_PROXY=${proxy}`,
       `NO_PROXY=${opts.proxy}`,
-      `ANTHROPIC_BASE_URL=http://${opts.proxy}:${PROXY_PORTS.api}`,
-      `ANTHROPIC_API_KEY=${API_KEY_PLACEHOLDER}`,
+      `${api.baseUrlEnv}=http://${opts.proxy}:${PROXY_PORTS.api}`,
+      `${api.keyEnv}=${API_KEY_PLACEHOLDER}`,
     );
   }
   const overridden = new Set(computed.map((c) => c.slice(0, c.indexOf('='))));
+  const credentials = Object.keys(api?.auth ?? {});
   const forwarded = Object.keys(env).filter(
     (k) =>
       !HOST_ONLY(k) &&
       !overridden.has(k) &&
       // Allowlist mode keeps the model credential in the proxy only.
-      !(allowlist && (MODEL_CREDENTIALS as readonly string[]).includes(k)),
+      !(allowlist && credentials.includes(k)),
   );
   const common = where.gitCommonDir;
   const gitDir = where.gitDir;
   const linked = gitDir !== common;
   const ro = (path: string) => bind(path, path, ':ro');
-  const plugins = where.agentHome ? join(where.agentHome, 'plugins') : '';
   const argv = [
     opts.docker,
     'run',
@@ -136,16 +129,9 @@ export function dockerArgs(
     ...ro(join(gitDir, 'config.worktree')),
     ...bind(where.cliRoot, undefined, ':ro'),
     ...opts.mounts.flatMap((m) => bind(m, m, ':ro')),
-    ...(plugins
-      ? [
-          ...bind(plugins, plugins, ':ro'),
-          ...bind(plugins, `${runClaudeDir}/plugins`, ':ro'),
-        ]
-      : []),
     ...bind(where.runHome, RUN_HOME),
-    ...bind(
-      join(where.configDir, 'projects', key),
-      `${runClaudeDir}/projects/${key}`,
+    ...where.agent.mounts.flatMap((m) =>
+      bind(m.host, m.container, m.readOnly ? ':ro' : ''),
     ),
     '-w',
     ws,

@@ -7,20 +7,44 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type {
+  AgentContainer,
+  AgentContainerContext,
+} from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { transcriptKey } from '../src/args.js';
-import { type BackendDeps, dockerRuntime } from '../src/backend.js';
+import { type BackendDeps, dockerRuntime, shortHash } from '../src/backend.js';
 
 type Call = [string, string[]];
 
 let root: string;
 let ws: string;
 let common: string;
-let agentHome: string;
 let cache: string;
 let calls: Call[];
 let warnings: string[];
+let prepared: AgentContainerContext[];
+
+/** A harness the runtime knows nothing about. */
+const agent = (install = 'install-agent'): AgentContainer => ({
+  install,
+  credentialHint: 'fake hint: set MODEL_TOKEN',
+  api: {
+    target: 'https://api.example',
+    baseUrlEnv: 'MODEL_BASE_URL',
+    keyEnv: 'MODEL_KEY',
+    auth: { MODEL_TOKEN: { set: { authorization: 'Bearer {value}' } } },
+  },
+  prepare: (ctx) => {
+    prepared.push(ctx);
+    return {
+      env: { AGENT_DIR: '/home/run/.agent' },
+      mounts: [
+        { host: join(root, 'transcripts'), container: '/home/run/.agent/t' },
+      ],
+    };
+  },
+});
 
 const logger: ConductorLogger = {
   debug: () => {},
@@ -33,15 +57,12 @@ beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'bb-runtime-'));
   ws = join(root, 'tree');
   common = join(root, 'main/.git');
-  agentHome = join(root, 'agent');
   cache = join(root, 'cache');
-  for (const d of [ws, common, join(common, 'worktrees/tree'), agentHome])
+  for (const d of [ws, common, join(common, 'worktrees/tree')])
     mkdirSync(d, { recursive: true });
-  writeFileSync(join(agentHome, 'settings.json'), '{"s":1}');
-  writeFileSync(join(agentHome, '.claude.json'), '{"c":1}');
-  writeFileSync(join(agentHome, '.credentials.json'), '{"secret":1}');
   calls = [];
   warnings = [];
+  prepared = [];
 });
 
 function deps(over: Partial<BackendDeps> = {}): BackendDeps {
@@ -55,7 +76,7 @@ function deps(over: Partial<BackendDeps> = {}): BackendDeps {
       return { stdout: '' };
     },
     env: {
-      CLAUDE_CODE_OAUTH_TOKEN: 'oauth',
+      MODEL_TOKEN: 'oauth',
       XDG_CACHE_HOME: cache,
       HOME: join(root, 'home'),
     },
@@ -68,42 +89,38 @@ function deps(over: Partial<BackendDeps> = {}): BackendDeps {
 }
 
 const launch = (over: Record<string, unknown> = {}) => ({
-  command: 'claude --go',
-  env: { CLAUDE_CONFIG_DIR: agentHome, BAKERS_CONDUCTOR_TOKEN: 'tok' },
+  command: 'agent --go',
+  env: { BAKERS_CONDUCTOR_TOKEN: 'tok' },
   workspacePath: ws,
   run: { uuid: 'r-uuid', id: 7 },
-  harness: 'claude',
+  harness: 'fake',
+  container: agent(),
   ...over,
 });
 
 describe('runtime-docker wrap', () => {
-  it('prepares the run home without the credentials file', async () => {
-    const rt = dockerRuntime({}, deps());
-    const out = await rt.wrap(launch());
+  it("prepares the run home and adds the agent's env and mounts", async () => {
+    const out = await dockerRuntime({}, deps()).wrap(launch());
     const home = join(cache, 'bakers/runtime/r-uuid');
-    expect(readFileSync(join(home, '.claude/settings.json'), 'utf8')).toBe(
-      '{"s":1}',
-    );
-    expect(existsSync(join(home, '.claude/.claude.json'))).toBe(true);
-    expect(existsSync(join(home, '.claude/.credentials.json'))).toBe(false);
+    expect(existsSync(home)).toBe(true);
+    expect(prepared).toEqual([
+      {
+        runHome: home,
+        containerHome: '/home/run',
+        workspacePath: ws,
+        env: launch().env,
+        hostHome: join(root, 'home'),
+      },
+    ]);
     expect(existsSync(join(common, 'hooks'))).toBe(true);
     expect(out.command).toMatch(/^'?docker'? 'run'/);
     expect(out.command).toContain(`'${home}:/home/run'`);
+    expect(out.command).toContain(
+      `'${join(root, 'transcripts')}:/home/run/.agent/t'`,
+    );
+    expect(out.command).toContain("'AGENT_DIR=/home/run/.agent'");
     expect(out.command).not.toContain('oauth');
-    expect(out.env.CLAUDE_CODE_OAUTH_TOKEN).toBe('oauth');
-  });
-
-  it('seeds a finished onboarding so Claude does not wait at first-run setup', async () => {
-    const home = join(cache, 'bakers/runtime/r-uuid');
-    await dockerRuntime({}, deps()).wrap(launch());
-    expect(
-      JSON.parse(readFileSync(join(home, '.claude/.claude.json'), 'utf8')),
-    ).toEqual({ c: 1, hasCompletedOnboarding: true });
-    const { CLAUDE_CONFIG_DIR: _, ...noAgentHome } = launch().env;
-    await dockerRuntime({}, deps()).wrap(launch({ env: noAgentHome }));
-    expect(
-      JSON.parse(readFileSync(join(home, '.claude.json'), 'utf8')),
-    ).toEqual({ hasCompletedOnboarding: true });
+    expect(out.env.MODEL_TOKEN).toBe('oauth');
   });
 
   it('puts the conductor own bakers CLI into the run home bin', async () => {
@@ -114,15 +131,6 @@ describe('runtime-docker wrap', () => {
     expect(readFileSync(join(home, 'bin/bakers'), 'utf8')).toBe(
       '#!/bin/sh\nexec node \'/opt/cli/bin/bakers\' "$@"\n',
     );
-  });
-
-  it('creates every mount point in the run home before docker does', async () => {
-    const home = join(cache, 'bakers/runtime/r-uuid');
-    await dockerRuntime({}, deps()).wrap(launch());
-    expect(existsSync(join(home, '.claude/projects', transcriptKey(ws)))).toBe(
-      true,
-    );
-    expect(existsSync(join(home, '.claude/plugins'))).toBe(true);
   });
 
   it('protects the worktree Git files the host reads later', async () => {
@@ -153,18 +161,17 @@ describe('runtime-docker wrap', () => {
 
   it('refuses without a model credential', async () => {
     const rt = dockerRuntime({}, deps({ env: { XDG_CACHE_HOME: cache } }));
-    await expect(rt.wrap(launch())).rejects.toThrow(/claude setup-token/);
+    await expect(rt.wrap(launch())).rejects.toThrow(/fake hint/);
   });
 
-  it('refuses a non-Claude harness on the default image', async () => {
-    await expect(
-      dockerRuntime({}, deps()).wrap(launch({ harness: 'codex' })),
-    ).rejects.toThrow(/codex/);
-    await expect(
-      dockerRuntime({ image: 'mine' }, deps()).wrap(
-        launch({ harness: 'codex' }),
-      ),
-    ).resolves.toBeDefined();
+  it('refuses an agent without container support', async () => {
+    for (const rt of [
+      dockerRuntime({}, deps()),
+      dockerRuntime({ image: 'mine' }, deps()),
+    ])
+      await expect(rt.wrap(launch({ container: undefined }))).rejects.toThrow(
+        /agent fake does not support a container runtime/,
+      );
   });
 
   it('builds the default image once when missing', async () => {
@@ -180,9 +187,21 @@ describe('runtime-docker wrap', () => {
     const rt = dockerRuntime({}, d);
     await rt.wrap(launch());
     await rt.wrap(launch({ run: { uuid: 'r-2', id: 8 } }));
-    const builds = calls.filter(([, a]) => a[0] === 'build');
-    expect(builds).toEqual([
-      ['docker', ['build', '-t', 'bakers-runtime:1.2.3', '/pkg/image']],
+    await rt.wrap(launch({ container: agent('install-other') }));
+    const build = (install: string) => [
+      'docker',
+      [
+        'build',
+        '-t',
+        `bakers-runtime:1.2.3-${shortHash(install)}`,
+        '--build-arg',
+        `AGENT_INSTALL=${install}`,
+        '/pkg/image',
+      ],
+    ];
+    expect(calls.filter(([, a]) => a[0] === 'build')).toEqual([
+      build('install-agent'),
+      build('install-other'),
     ]);
   });
 
@@ -324,18 +343,13 @@ describe('runtime-docker allowlist mode', () => {
     return out;
   }
 
-  it('approves the placeholder API key so Claude does not ask about it', async () => {
-    await wrapped({ networks: new Set() });
-    const state = JSON.parse(
-      readFileSync(
-        join(cache, 'bakers/runtime/r-uuid/.claude/.claude.json'),
-        'utf8',
-      ),
+  it('tells the agent the placeholder key the run holds', async () => {
+    const out = await wrapped({ networks: new Set() });
+    expect(prepared[0]?.keyPlaceholder).toBe('bb-runtime-placeholder');
+    expect(out.command).toContain("'MODEL_KEY=bb-runtime-placeholder'");
+    expect(out.command).toContain(
+      "'MODEL_BASE_URL=http://bb-runtime-proxy-aaa:8081'",
     );
-    expect(state.customApiKeyResponses).toEqual({
-      approved: ['bb-runtime-placeholder'.slice(-20)],
-      rejected: [],
-    });
   });
 
   it('starts its sidecar with the credential by name and keeps it out of the run', async () => {
@@ -343,15 +357,17 @@ describe('runtime-docker allowlist mode', () => {
     const runCall = calls.find(([, a]) => a[0] === 'run' && a.includes('-d'));
     const args = runCall?.[1] ?? [];
     expect(args).toContain('bb-runtime-proxy-aaa');
-    expect(args).toContain('CLAUDE_CODE_OAUTH_TOKEN');
+    expect(args).toContain('MODEL_TOKEN');
     expect(args).toContain('BB_ALLOW=registry.npmjs.org');
+    expect(args).toContain('BB_API_TARGET=https://api.example');
+    expect(args).toContain(`BB_API_AUTH=${JSON.stringify(agent().api.auth)}`);
     expect(args).toContain('BB_TOOLS=172.30.0.1:4242');
     expect(args.join(' ')).not.toContain('oauth');
     expect(calls).toContainEqual([
       'docker',
       ['network', 'connect', 'bb-runtime', 'bb-runtime-proxy-aaa'],
     ]);
-    expect(out.env.CLAUDE_CODE_OAUTH_TOKEN).toBeUndefined();
+    expect(out.env.MODEL_TOKEN).toBeUndefined();
     expect(out.command).toContain("'bb-runtime'");
   });
 

@@ -75,42 +75,49 @@ describe('startProxy', () => {
     };
   }
 
-  it('swaps the placeholder API key for the real one', async () => {
+  const auth = {
+    TOK: {
+      set: { authorization: 'Bearer {value}' },
+      append: { 'x-beta': 'b2' },
+    },
+    KEY: { set: { 'x-key': '{value}' } },
+  };
+
+  it('swaps the placeholder for the credential that is set', async () => {
     const up = await apiUpstream();
     const p = await proxy({
       allow: [],
       apiTarget: up.url,
-      credential: { name: 'ANTHROPIC_API_KEY', value: 'real-key' },
+      auth,
+      secrets: { KEY: 'real-key' },
     });
     const res = await fetch(`http://127.0.0.1:${p.ports.api}/v1/messages`, {
       method: 'POST',
-      headers: { 'x-api-key': 'bb-runtime-placeholder' },
+      headers: { 'x-key': 'placeholder', authorization: 'Bearer placeholder' },
       body: '{}',
     });
     expect(await res.text()).toBe('ok');
-    expect(up.seen[0]?.['x-api-key']).toBe('real-key');
+    expect(up.seen[0]?.['x-key']).toBe('real-key');
+    expect(up.seen[0]?.authorization).toBeUndefined();
   });
 
-  it('sends an OAuth token as a bearer with the OAuth beta', async () => {
+  it('prefers the first credential and appends to its headers', async () => {
     const up = await apiUpstream();
     const p = await proxy({
       allow: [],
       apiTarget: up.url,
-      credential: { name: 'CLAUDE_CODE_OAUTH_TOKEN', value: 'tok' },
+      auth,
+      secrets: { KEY: 'k', TOK: 'tok' },
     });
     await fetch(`http://127.0.0.1:${p.ports.api}/v1/messages`, {
       method: 'POST',
-      headers: {
-        'x-api-key': 'bb-runtime-placeholder',
-        'anthropic-beta': 'other-1',
-      },
+      headers: { 'x-key': 'placeholder', 'x-beta': 'b1' },
       body: '{}',
     });
     const h = up.seen[0] as IncomingHttpHeaders;
     expect(h.authorization).toBe('Bearer tok');
-    expect(h['x-api-key']).toBeUndefined();
-    expect(h['anthropic-beta']).toContain('oauth-2025-04-20');
-    expect(h['anthropic-beta']).toContain('other-1');
+    expect(h['x-key']).toBeUndefined();
+    expect(h['x-beta']).toBe('b1,b2');
   });
 
   it('relays the tool port in both directions', async () => {

@@ -1,10 +1,8 @@
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
-  copyFileSync,
   existsSync,
   mkdirSync,
-  readFileSync,
   rmSync,
   statSync,
   writeFileSync,
@@ -13,6 +11,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import type {
+  AgentContainer,
   BbRuntime,
   RuntimeLaunch,
 } from '@bakers-build/conductor/contract';
@@ -21,10 +20,9 @@ import {
   API_KEY_PLACEHOLDER,
   type DockerOptions,
   dockerArgs,
-  MODEL_CREDENTIALS,
   PROXY_PORTS,
+  RUN_HOME,
   RUN_NETWORK,
-  transcriptKey,
 } from './args.js';
 
 const EGRESS_NETWORK = 'bb-runtime-egress';
@@ -70,11 +68,8 @@ export function dockerRuntime(
   deps: BackendDeps,
 ): BbRuntime {
   const docker = options.docker ?? 'docker';
-  const defaultImage = `bakers-runtime:${deps.version}`;
-  const image = options.image ?? defaultImage;
-  const opts: DockerOptions = {
+  const opts: Omit<DockerOptions, 'image'> = {
     docker,
-    image,
     mounts: options.mounts ?? [],
     network: options.network ?? 'host',
   };
@@ -95,9 +90,10 @@ export function dockerRuntime(
       );
     return join(cacheHome, 'bakers/runtime', uuid);
   };
-  let imageReady: Promise<void> | undefined;
+  // One image per agent install; built once each.
+  const imagesReady = new Map<string, Promise<void>>();
 
-  const ensureImage = async () => {
+  const ensureImage = async (image: string, install: string) => {
     try {
       await deps.exec(docker, ['image', 'inspect', image]);
     } catch (err) {
@@ -110,6 +106,8 @@ export function dockerRuntime(
         'build',
         '-t',
         image,
+        '--build-arg',
+        `AGENT_INSTALL=${install}`,
         join(deps.packageDir, 'image'),
       ]);
     }
@@ -129,7 +127,13 @@ export function dockerRuntime(
   };
 
   // One sidecar per conductor; recreated only when what it relays changed.
-  const startProxy = async (hash: string, credentials: string[]) => {
+  // shortcut: one model API per sidecar; agents of different APIs on one conductor recreate it, give each its own when that is needed.
+  const startProxy = async (
+    hash: string,
+    credentials: string[],
+    api: AgentContainer['api'],
+    image: string,
+  ) => {
     const current = await deps
       .exec(docker, [
         'inspect',
@@ -159,6 +163,10 @@ export function dockerRuntime(
       `BB_ALLOW=${(options.allow ?? []).join(',')}`,
       '-e',
       `BB_TOOLS=${gateway}:${toolsPort}`,
+      '-e',
+      `BB_API_TARGET=${api.target}`,
+      '-e',
+      `BB_API_AUTH=${JSON.stringify(api.auth)}`,
       image,
       'node',
       '/opt/bb-runtime/proxy.mjs',
@@ -181,35 +189,51 @@ export function dockerRuntime(
     id: 'docker',
     async wrap(launch: RuntimeLaunch) {
       const runHome = runHomeOf(launch.run.uuid);
-      if (launch.harness !== 'claude' && options.image === undefined)
+      const container = launch.container;
+      if (!container)
         throw new Error(
-          `runtime-docker: the shipped image runs only Claude Code, not ${launch.harness}; set with.image to an image that has it`,
+          `runtime-docker: agent ${launch.harness} does not support a container runtime`,
         );
-      const credentials = MODEL_CREDENTIALS.filter((k) => deps.env[k]);
+      const credentials = Object.keys(container.api.auth).filter(
+        (k) => deps.env[k],
+      );
       if (credentials.length === 0)
-        throw new Error(
-          'runtime-docker: set CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`) or ANTHROPIC_API_KEY in the conductor environment; a container cannot use the host login',
+        throw new Error(`runtime-docker: ${container.credentialHint}`);
+      const image =
+        options.image ??
+        `bakers-runtime:${deps.version}-${shortHash(container.install)}`;
+      if (!imagesReady.has(image))
+        imagesReady.set(
+          image,
+          ensureImage(image, container.install).catch((err) => {
+            imagesReady.delete(image);
+            throw err;
+          }),
         );
-      imageReady ??= ensureImage().catch((err) => {
-        imageReady = undefined;
-        throw err;
-      });
-      await imageReady;
+      await imagesReady.get(image);
       if (allowlist) {
         if (!gateway || !toolsPort)
           throw new Error(
             'runtime-docker: allowlist mode needs the conductor tool server; it was not started',
           );
         const hash = shortHash(
-          JSON.stringify([gateway, toolsPort, options.allow ?? [], image]),
+          JSON.stringify([
+            gateway,
+            toolsPort,
+            options.allow ?? [],
+            image,
+            container.api,
+          ]),
         );
         if (proxyReady?.hash !== hash)
           proxyReady = {
             hash,
-            ready: startProxy(hash, credentials).catch((err) => {
-              proxyReady = undefined;
-              throw err;
-            }),
+            ready: startProxy(hash, credentials, container.api, image).catch(
+              (err) => {
+                proxyReady = undefined;
+                throw err;
+              },
+            ),
           };
         await proxyReady.ready;
       }
@@ -222,12 +246,7 @@ export function dockerRuntime(
         mkdirSync(join(gitCommonDir, d), { recursive: true });
       const worktreeConfig = join(gitDir, 'config.worktree');
       if (!existsSync(worktreeConfig)) writeFileSync(worktreeConfig, '');
-      mkdirSync(join(runHome, '.claude'), { recursive: true });
-      const agentHome = launch.env.CLAUDE_CONFIG_DIR;
-      // Settings travel; the login (.credentials.json) never does.
-      for (const file of ['settings.json', '.claude.json'])
-        if (agentHome && existsSync(join(agentHome, file)))
-          copyFileSync(join(agentHome, file), join(runHome, '.claude', file));
+      mkdirSync(runHome, { recursive: true });
       // The CLI build is mounted read-only; this puts the conductor's own CLI on PATH.
       if (deps.bakersEntry) {
         mkdirSync(join(runHome, 'bin'), { recursive: true });
@@ -237,58 +256,34 @@ export function dockerRuntime(
           { mode: 0o755 },
         );
       }
-      // A fresh home would stop Claude at its first-run setup screen.
-      const stateFile = agentHome
-        ? join(runHome, '.claude', '.claude.json')
-        : join(runHome, '.claude.json');
-      const state = existsSync(stateFile)
-        ? (JSON.parse(readFileSync(stateFile, 'utf8')) as object)
-        : {};
-      writeFileSync(
-        stateFile,
-        JSON.stringify({
-          ...state,
-          hasCompletedOnboarding: true,
-          // Claude asks before using a custom API key; the run's placeholder is pre-approved.
-          ...(allowlist
-            ? {
-                customApiKeyResponses: {
-                  approved: [API_KEY_PLACEHOLDER.slice(-20)],
-                  rejected: [],
-                },
-              }
-            : {}),
-        }),
-        { mode: 0o600 },
-      );
-      // shortcut: only Claude's transcript layout is mapped; map another harness's when it is supported.
-      const configDir =
-        agentHome ?? join(deps.env.HOME || homedir(), '.claude');
-      const key = transcriptKey(ws);
-      // Mount points docker would otherwise create root-owned, so cleanup could not delete the home.
-      for (const dir of [
-        join(configDir, 'projects', key),
-        join(runHome, '.claude/projects', key),
-        ...(agentHome ? [join(runHome, '.claude/plugins')] : []),
-      ])
-        mkdirSync(dir, { recursive: true });
+      const agent = container.prepare({
+        runHome,
+        containerHome: RUN_HOME,
+        workspacePath: ws,
+        env: launch.env,
+        hostHome: deps.env.HOME || homedir(),
+        ...(allowlist ? { keyPlaceholder: API_KEY_PLACEHOLDER } : {}),
+      });
       const env = { ...launch.env };
       // Allowlist mode: the credential stays with the proxy sidecar.
       if (!allowlist)
         for (const k of credentials) env[k] = deps.env[k] as string;
-      const { argv, env: runEnv } = dockerArgs({ ...launch, env }, opts, {
-        gitCommonDir,
-        gitDir,
-        ...(statSync(gitLink, { throwIfNoEntry: false })?.isFile()
-          ? { gitLink }
-          : {}),
-        runHome,
-        configDir,
-        ...(agentHome ? { agentHome } : {}),
-        cliRoot: deps.cliRoot,
-        uid: process.getuid?.() ?? 1000,
-        gid: process.getgid?.() ?? 1000,
-      });
+      const { argv, env: runEnv } = dockerArgs(
+        { ...launch, env },
+        { ...opts, image },
+        {
+          gitCommonDir,
+          gitDir,
+          ...(statSync(gitLink, { throwIfNoEntry: false })?.isFile()
+            ? { gitLink }
+            : {}),
+          runHome,
+          agent,
+          cliRoot: deps.cliRoot,
+          uid: process.getuid?.() ?? 1000,
+          gid: process.getgid?.() ?? 1000,
+        },
+      );
       return { command: argv.map(shellQuote).join(' '), env: runEnv };
     },
     async cleanup(r) {

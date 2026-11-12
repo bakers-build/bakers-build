@@ -1,12 +1,24 @@
+import type { AgentContainer } from '@bakers-build/conductor/contract';
 import { describe, expect, it } from 'vitest';
 import { type DockerOptions, dockerArgs, type HostPaths } from '../src/args.js';
 
+/** A harness the runtime knows nothing about. */
+const container = {
+  api: {
+    target: 'https://api.example',
+    baseUrlEnv: 'MODEL_BASE_URL',
+    keyEnv: 'MODEL_KEY',
+    auth: { MODEL_TOKEN: { set: { authorization: 'Bearer {value}' } } },
+  },
+} as unknown as AgentContainer;
+
 const launch = {
-  command: "claude 'it''s'",
+  command: "agent 'it''s'",
   env: { BAKERS_CONDUCTOR_TOKEN: 'secret-token', BAKERS_STATE: 'working' },
   workspacePath: '/w/tree',
   run: { uuid: 'r-uuid', id: 7 },
-  harness: 'claude',
+  harness: 'fake',
+  container,
 };
 const opts: DockerOptions = {
   docker: 'docker',
@@ -19,7 +31,17 @@ const where: HostPaths = {
   gitDir: '/w/main/.git/worktrees/tree',
   gitLink: '/w/tree/.git',
   runHome: '/h/run',
-  configDir: '/home/op/.claude',
+  agent: {
+    env: { AGENT_DIR: '/home/run/.agent' },
+    mounts: [
+      { host: '/home/op/.agent/t', container: '/home/run/.agent/t' },
+      {
+        host: '/home/op/.agent/p',
+        container: '/home/run/.agent/p',
+        readOnly: true,
+      },
+    ],
+  },
   cliRoot: '/opt/cli',
   uid: 1000,
   gid: 1000,
@@ -47,7 +69,7 @@ describe('dockerArgs', () => {
       '--user',
       '1000:1000',
     ]);
-    expect(argv.slice(-4)).toEqual(['img', 'sh', '-c', "claude 'it''s'"]);
+    expect(argv.slice(-4)).toEqual(['img', 'sh', '-c', "agent 'it''s'"]);
     expect(argv.join(' ')).toContain('-w /w/tree');
   });
 
@@ -66,23 +88,9 @@ describe('dockerArgs', () => {
       '/w/main/.git/worktrees/tree/config.worktree:/w/main/.git/worktrees/tree/config.worktree:ro',
       '/opt/cli:/opt/cli:ro',
       '/h/run:/home/run',
-      '/home/op/.claude/projects/-w-tree:/home/run/.claude/projects/-w-tree',
+      '/home/op/.agent/t:/home/run/.agent/t',
+      '/home/op/.agent/p:/home/run/.agent/p:ro',
     ]);
-  });
-
-  it('mounts an agent home read-only for plugins and its transcripts', () => {
-    const v = volumes(
-      dockerArgs(launch, opts, {
-        ...where,
-        configDir: '/agent',
-        agentHome: '/agent',
-      }).argv,
-    );
-    expect(v).toContain('/agent/plugins:/agent/plugins:ro');
-    expect(v).toContain('/agent/plugins:/home/run/.claude/plugins:ro');
-    expect(v).toContain(
-      '/agent/projects/-w-tree:/home/run/.claude/projects/-w-tree',
-    );
   });
 
   it('passes secrets by name only', () => {
@@ -101,7 +109,7 @@ describe('dockerArgs', () => {
           HOME: '/home/op',
           TMPDIR: '/tmp/x',
           XDG_CACHE_HOME: '/c',
-          CLAUDE_CONFIG_DIR: '/agent',
+          AGENT_DIR: '/host/agent',
         },
       },
       opts,
@@ -111,7 +119,9 @@ describe('dockerArgs', () => {
     for (const key of ['PATH', 'HOME', 'TMPDIR', 'XDG_CACHE_HOME'])
       expect(flags).not.toContain(key);
     expect(flags).toContain('HOME=/home/run');
-    expect(flags).toContain('CLAUDE_CONFIG_DIR=/home/run/.claude');
+    // The agent's own value replaces the host one.
+    expect(flags).toContain('AGENT_DIR=/home/run/.agent');
+    expect(flags).not.toContain('AGENT_DIR');
     // The docker client itself still runs with the host env.
     expect(env.PATH).toBe('/usr/bin');
   });
@@ -173,7 +183,7 @@ describe('dockerArgs in allowlist mode', () => {
   };
   const withCred = {
     ...launch,
-    env: { ...launch.env, CLAUDE_CODE_OAUTH_TOKEN: 'oauth' },
+    env: { ...launch.env, MODEL_TOKEN: 'oauth' },
   };
 
   it('joins the internal network and routes through the proxy', () => {
@@ -182,15 +192,13 @@ describe('dockerArgs in allowlist mode', () => {
     const flags = envFlags(argv);
     expect(flags).toContain('HTTPS_PROXY=http://bb-runtime-proxy-abc:3128');
     expect(flags).toContain('NO_PROXY=bb-runtime-proxy-abc');
-    expect(flags).toContain(
-      'ANTHROPIC_BASE_URL=http://bb-runtime-proxy-abc:8081',
-    );
-    expect(flags).toContain('ANTHROPIC_API_KEY=bb-runtime-placeholder');
+    expect(flags).toContain('MODEL_BASE_URL=http://bb-runtime-proxy-abc:8081');
+    expect(flags).toContain('MODEL_KEY=bb-runtime-placeholder');
   });
 
   it('keeps the model credential out of the run', () => {
     const { argv } = dockerArgs(withCred, allow, where);
-    expect(envFlags(argv)).not.toContain('CLAUDE_CODE_OAUTH_TOKEN');
+    expect(envFlags(argv)).not.toContain('MODEL_TOKEN');
     expect(argv.join(' ')).not.toContain('oauth');
   });
 });

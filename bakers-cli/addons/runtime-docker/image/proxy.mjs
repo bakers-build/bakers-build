@@ -8,8 +8,6 @@ import { createServer, request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { connect, createServer as createTcpServer } from 'node:net';
 
-const OAUTH_BETA = 'oauth-2025-04-20';
-
 /** Exact host, or `*.suffix` for any subdomain; case-insensitive. */
 export function allowed(host, patterns) {
   const h = String(host).toLowerCase();
@@ -35,8 +33,12 @@ function splitHostPort(target) {
 }
 
 /**
+ * `auth` maps each credential name, preferred first, to the headers sent with
+ * it: `set` replaces a header (`{value}` is the secret), `append` adds a
+ * comma-separated value. `secrets` holds the credential values (the sidecar's env).
  * @param {{ allow: string[], host?: string, apiTarget?: string,
- *   credential?: { name: string, value: string }, tools?: string,
+ *   auth?: Record<string, { set: Record<string, string>, append?: Record<string, string> }>,
+ *   secrets?: Record<string, string | undefined>, tools?: string,
  *   ports?: { egress?: number, api?: number, tools?: number } }} o
  */
 export async function startProxy(o) {
@@ -66,22 +68,31 @@ export async function startProxy(o) {
   servers.push(egress);
   const ports = { egress: await listen(egress, o.ports?.egress ?? 0, bind) };
 
-  if (o.apiTarget && o.credential) {
+  const auth = o.auth ?? {};
+  const name = Object.keys(auth).find((k) => o.secrets?.[k]);
+  if (o.apiTarget && name) {
+    const value = String(o.secrets[name]);
+    const { set, append = {} } = auth[name];
+    // The run's placeholder may sit in any credential header.
+    const strip = Object.values(auth).flatMap((a) =>
+      Object.keys(a.set).map((h) => h.toLowerCase()),
+    );
     const target = new URL(o.apiTarget);
     const send = target.protocol === 'https:' ? httpsRequest : httpRequest;
     const api = createServer((req, res) => {
       const headers = { ...req.headers, host: target.host };
-      delete headers['x-api-key'];
-      delete headers.authorization;
-      if (o.credential.name === 'CLAUDE_CODE_OAUTH_TOKEN') {
-        headers.authorization = `Bearer ${o.credential.value}`;
-        const betas = String(headers['anthropic-beta'] ?? '')
+      for (const h of strip) delete headers[h];
+      for (const [h, v] of Object.entries(set))
+        headers[h.toLowerCase()] = v.replaceAll('{value}', value);
+      for (const [h, v] of Object.entries(append)) {
+        const k = h.toLowerCase();
+        const list = String(headers[k] ?? '')
           .split(',')
           .map((b) => b.trim())
           .filter(Boolean);
-        if (!betas.includes(OAUTH_BETA)) betas.push(OAUTH_BETA);
-        headers['anthropic-beta'] = betas.join(',');
-      } else headers['x-api-key'] = o.credential.value;
+        if (!list.includes(v)) list.push(v);
+        headers[k] = list.join(',');
+      }
       const up = send(
         {
           protocol: target.protocol,
@@ -128,13 +139,11 @@ export async function startProxy(o) {
 
 // Run as the sidecar: configuration comes from the environment.
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const name = ['CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY'].find(
-    (k) => process.env[k],
-  );
   const p = await startProxy({
     allow: (process.env.BB_ALLOW ?? '').split(',').filter(Boolean),
-    apiTarget: process.env.BB_API_TARGET ?? 'https://api.anthropic.com',
-    ...(name ? { credential: { name, value: process.env[name] } } : {}),
+    apiTarget: process.env.BB_API_TARGET,
+    auth: JSON.parse(process.env.BB_API_AUTH ?? '{}'),
+    secrets: process.env,
     ...(process.env.BB_TOOLS ? { tools: process.env.BB_TOOLS } : {}),
     ports: { egress: 3128, api: 8081, tools: 8082 },
   });
