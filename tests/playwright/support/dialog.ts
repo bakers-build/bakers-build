@@ -14,5 +14,7 @@ export async function openInDialog(page: Page, trigger: Locator): Promise<void> 
   await trigger.click();
   await answered;
   await expect(openDialog(page)).toBeVisible();
+  // Drupal attaches initial focus after the swap; filling earlier can type into its first field.
+  await expect(openDialog(page).locator('[data-once~="island-dialog-focus"]')).toBeFocused();
 }
 
