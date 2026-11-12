@@ -102,3 +102,9 @@ The bot keeps no memory and writes no skill without you. Review its proposals in
 
 - **Stop it:** `docker compose -p pm-bot down` in the workspace, or empty its parameters so no start brings it back.
 - **Cut its access:** delete the service account's API key or disable the account. The next tool call of the bot and the poller is refused.
+
+## Ticket-link smoke test
+
+On an allowed PM-bot box, use a served Slack user to create a request. Check that the first reply links the ticket’s identifier and title using the returned canonical URL. With a stored origin, check its labelled line: HTTP(S) is clickable, other values are plain text; without an origin there is no line.
+
+Cause a technical problem and a paused run, then finish the ticket. Each message must link that ticket and show its own origin. Repeat with a sub-ticket sharing its parent’s channel or thread: keep the identifier prefix and link the sub-ticket. Poll again and restart the poller: no duplicate messages. Refuse the done post once: the channel stays open until the retry succeeds, then archives. No message is pinned and no additional Slack scope or reinstall is needed.

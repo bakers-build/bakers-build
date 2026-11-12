@@ -92,7 +92,7 @@ class Texts(unittest.TestCase):
         messages = json.loads((HERE / "messages.json").read_text(encoding="utf-8"))
         self.assertEqual(set(messages), {"de", "en"})
         self.assertEqual(set(messages["de"]), set(messages["en"]))
-        self.assertEqual(set(messages["de"]), {"acknowledge", "opened", "open_failed", "repeat"})
+        self.assertEqual(set(messages["de"]), {"acknowledge", "opened", "open_failed", "repeat", "originLead"})
 
     def test_placeholders_are_filled_in_the_language(self):
         self.assertEqual(text("en", "opened", user="U1", channel="C1"), "<@U1> I opened <#C1> for this request. Let's continue there.")
@@ -108,3 +108,32 @@ class Texts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TicketErrors(unittest.TestCase):
+    def test_known_ticket_errors_use_backend_link_and_origin(self):
+        from channels import ticket_error
+        ticket = {"identifier": "ACME-2", "title": "Child <@U1>", "url": "https://bakers.test/child", "origin": "https://issues.test/child"}
+        for key in ("repeat", "open_failed"):
+            for code, label in (("en", "Origin ticket:"), ("de", "Ursprungsticket:")):
+                result = ticket_error(code, key, "U1", ticket)
+                self.assertIn("<https://bakers.test/child|ACME-2 · Child &lt;@U1&gt;>", result)
+                self.assertIn(f"{label} <https://issues.test/child|https://issues.test/child>", result)
+                self.assertEqual(ticket_error(code, key, "U1", None), text(code, key, user="U1"))
+        self.assertIn("Origin ticket: legacy &lt;@U1&gt;", ticket_error("en", "repeat", "U1", dict(ticket, origin="legacy <@U1>")))
+        self.assertNotIn("Origin ticket:", ticket_error("en", "repeat", "U1", dict(ticket, origin=None)))
+
+
+class TicketRead(unittest.TestCase):
+    def test_error_reply_reads_the_known_ticket_through_mcp(self):
+        import language
+        from unittest.mock import patch
+        requests = []
+        ticket = {"identifier": "ACME-2", "title": "Child", "url": "https://bakers.test/child", "origin": None}
+        def post(url, headers, payload):
+            requests.append(payload)
+            result = {"structuredContent": ticket} if payload["method"] == "tools/call" else {}
+            return {}, json.dumps({"result": result})
+        with patch.object(language, "_post", side_effect=post):
+            self.assertEqual(language.read_tool("https://bakers.test", "test-key", "bakers_ticket_read", {"ticket": "ACME-2"}), ticket)
+        self.assertEqual(requests[-1]["params"], {"name": "tool_api__bakers_ticket_read", "arguments": {"ticket": "ACME-2"}})

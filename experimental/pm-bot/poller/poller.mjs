@@ -26,6 +26,7 @@ import { diff, reachedDone } from './diff.mjs';
 import { heartbeatInterval, pollInterval } from './interval.mjs';
 import { openNote, QUESTION_LABEL, relay, TECHNICAL_PROBLEM_LABEL } from './questions.mjs';
 import { conversation, conversations } from './tickets.mjs';
+import { withTicket } from './ticket-footer.mjs';
 import { forget, updates } from './updates.mjs';
 
 const fill = (template, values) => template.replace(/\{(\w+)\}/g, (_, key) => values[key]);
@@ -104,6 +105,8 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
           id: t.id,
           identifier: t.identifier,
           title: t.title,
+          url: t.url,
+          origin: t.origin,
           state: t.state,
           conversation: conversation(t.links),
           links: t.links ?? [],
@@ -218,7 +221,8 @@ export function createPoller({ client, slack, send, stateFile, botChannelsFile, 
     state.relayed = selected.relayed;
     for (const post of selected.posts) {
       try {
-        await send(post);
+        const ticket = current.find((t) => t.identifier === post.identifier);
+        await send(post.kind === 'technical_problem' ? { ...post, text: withTicket(post.text, ticket, messages) } : post);
         state.relayed.push(post.comment);
         stampPost(state, post);
         log.log(`${stamp()} relayed ${post.kind} ${post.comment} of ${post.identifier}`);

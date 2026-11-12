@@ -302,3 +302,12 @@ PY
 pass "compose: two mounts (clone read-only), no Docker socket, unless-stopped, capabilities dropped"
 
 echo "OK: pm-bot lock-down and configurability contract holds"
+
+python3 - <<'PYTEST'
+from pathlib import Path
+soul = Path('experimental/pm-bot/SOUL.template.md').read_text()
+assert '[<identifier> · <title>](<url>)' in soul
+assert 'Origin ticket' in soul and 'Ursprungsticket' in soul
+assert 'pins:write' not in Path('experimental/pm-bot/slack-app-manifest.yaml').read_text()
+PYTEST
+pass "creation reply links identifier and title and shows stored origin; pinning excluded"

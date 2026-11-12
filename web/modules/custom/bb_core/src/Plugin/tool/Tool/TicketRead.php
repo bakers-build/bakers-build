@@ -43,6 +43,46 @@ use Drupal\tool\TypedData\OutputDefinition;
     ),
   ],
   output_definitions: [
+    'reviewers' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Reviewers'),
+      description: new TranslatableMarkup('The readable reviewers.'),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Reviewer'),
+        description: new TranslatableMarkup('The saved account.'),
+        property_definitions: [
+          'name' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Name'),
+            description: new TranslatableMarkup('The display name.'),
+          ),
+          'mail' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Mail'),
+            description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
+            nullable: TRUE,
+          ),
+        ],
+      ),
+    ),
+    'assignee' => new MapOutputDefinition(
+      label: new TranslatableMarkup('Assignee'),
+      description: new TranslatableMarkup('The saved account.'),
+      nullable: TRUE,
+      property_definitions: [
+        'name' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('Name'),
+          description: new TranslatableMarkup('The display name.'),
+        ),
+        'mail' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('Mail'),
+          description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
+          nullable: TRUE,
+        ),
+      ],
+    ),
+
     'id' => new OutputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('UUID'),
@@ -57,6 +97,17 @@ use Drupal\tool\TypedData\OutputDefinition;
       data_type: 'string',
       label: new TranslatableMarkup('Title'),
       description: new TranslatableMarkup('The ticket title.'),
+    ),
+    'url' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Url'),
+      description: new TranslatableMarkup('The absolute canonical ticket URL.'),
+    ),
+    'origin' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Origin'),
+      description: new TranslatableMarkup('The stored origin, null when absent or unreadable.'),
+      nullable: TRUE,
     ),
     'state' => new OutputDefinition(
       data_type: 'string',
@@ -324,8 +375,11 @@ final class TicketRead extends ToolBase {
     }
     return ExecutableResult::success(new TranslatableMarkup('Ticket read.'), [
       'id' => $ticket->uuid(),
+      ...$this->ticketPeople($ticket),
       'identifier' => $ticket->getIdentifier(),
       'title' => $ticket->getTitle(),
+      'url' => $ticket->toUrl()->setAbsolute()->toString(),
+      'origin' => $ticket->get('origin')->access('view', $this->currentUser) ? $ticket->get('origin')->value : NULL,
       'state' => (string) $ticket->get('state')->value,
       'workflow' => $ticket->getWorkflow(),
       'description' => $ticket->get('description')->value,
@@ -335,7 +389,7 @@ final class TicketRead extends ToolBase {
       'links' => array_map(static fn (array $link): array => [
         'uri' => $link['uri'],
         'title' => (string) $link['title'],
-      ], $ticket->get('links')->getValue()),
+      ], $ticket->get('links')->access('view', $this->currentUser) ? $ticket->get('links')->getValue() : []),
       'project' => $ticket->get('project_id')->entity?->uuid(),
       'branch_name' => $ticket->get('branch_name')->value,
       'base_branch' => $ticket->get('base_branch')->value,

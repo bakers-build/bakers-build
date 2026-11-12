@@ -534,3 +534,47 @@ test('a language written between passes applies on the next pass, without a poll
   await poller.pass();
   assert.deepEqual(slack.posts().map((p) => p.text), ['Die Arbeit daran hat begonnen.', 'The work is finished and is being checked.']);
 });
+
+test('technical problems, paused runs and done link the known sub-ticket across restarts', async (t) => {
+  const { s, sent, slack, poller, restart } = await setup(t);
+  const parent = s.addTicket({ state: 'working', links: [thread()], url: 'https://bakers.test/parent', origin: 'parent origin' });
+  const child = s.addTicket({ state: 'working', parent: parent.id, url: 'https://bakers.test/child', origin: 'https://issues.test/child' });
+  const run = s.addRun(child);
+  await poller.pass();
+  frozenWithTechnicalProblem(s, child);
+  await poller.pass();
+  assert.match(sent[0].text, /<https:\/\/bakers.test\/child\|ACME-2 · Price updater>/);
+  assert.match(sent[0].text, /Ursprungsticket: <https:\/\/issues.test\/child\|/);
+  child.labels = [];
+  child.frozen = false;
+  run.state = 'failed';
+  await restart().pass();
+  assert.match(slack.posts().at(-1).text, /^ACME-2 · .*\n\n<https:\/\/bakers.test\/child\|/);
+  child.state = 'done';
+  await restart().pass();
+  const count = slack.posts().length;
+  assert.match(slack.posts().at(-1).text, /<https:\/\/bakers.test\/child\|/);
+  await restart().pass();
+  assert.equal(slack.posts().length, count);
+  assert.equal(sent.length, 1);
+});
+
+test('a refused linked done post keeps the channel open until a successful retry', async (t) => {
+  const { s, slack, poller, botChannels, restart, state, language } = await setup(t);
+  language('en');
+  botChannels(requestChannel());
+  const ticket = s.addTicket({ state: 'review', links: [channel()], url: 'https://bakers.test/1', origin: 'legacy reference' });
+  await poller.pass();
+  ticket.state = 'done';
+  slack.fail('chat.postMessage');
+  await poller.pass();
+  assert.equal(slack.calls.some((c) => c.method === 'conversations.archive'), false);
+  assert.equal(state().channels.C0000000001.final, undefined);
+  slack.heal();
+  const before = slack.posts().length;
+  await restart().pass();
+  await restart().pass();
+  assert.equal(slack.posts().length, before + 1);
+  assert.match(slack.posts().at(-1).text, /<https:\/\/bakers.test\/1\|ACME-1 · Price updater>\nOrigin ticket: legacy reference$/);
+  assert.equal(state().channels.C0000000001.archived, true);
+});

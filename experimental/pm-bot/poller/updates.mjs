@@ -2,6 +2,7 @@
 // new summary, a preview link, and a heartbeat while a run works in a quiet conversation.
 // No I/O.
 
+import { withTicket } from './ticket-footer.mjs';
 import { named, target } from './diff.mjs';
 import { escape, QUESTION_LABEL, TECHNICAL_PROBLEM_LABEL } from './questions.mjs';
 
@@ -84,7 +85,7 @@ export function updates({ previous, posted, tickets, now, interval, messages }) 
       record.runs[r.uuid] = r.state;
       // A run that moved the ticket on is told by its state line; an open question or technical problem by its relayed note.
       if (r.state_at_start !== t.state || open) return;
-      post(r.state === 'done' ? messages.runWaiting : messages.runPaused, { run: [r.uuid, was] });
+      post(r.state === 'done' ? messages.runWaiting : withTicket(messages.runPaused, t, messages), { run: [r.uuid, was] });
     };
     // Only a run seen before ending; one first seen closed gets both its lines below.
     for (const r of runs.filter((r) => r.uuid in before.runs && ENDED.includes(r.state) && !ENDED.includes(before.runs[r.uuid]))) end(r, before.runs[r.uuid]);

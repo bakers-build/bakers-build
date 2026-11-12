@@ -18,6 +18,64 @@ final class TicketReadToolTest extends BakersToolTestBase {
   use ForeignWorkspaceTrait;
 
   /**
+   * Read exposes canonical location and people without leaking private mail.
+   */
+  public function testReadReturnsLocationAndPeople(): void {
+    $this->container->get('router.builder')->rebuild();
+    $other = $this->account('reviewer');
+    $other->set('mail', 'private@example.test')->save();
+    $ticket = $this->ticket('TR-people', [
+      'reviewers' => [$other->id()],
+      'assignee_user_id' => $this->actor->id(),
+      'origin' => 'legacy origin',
+    ]);
+    $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
+    self::assertSame([['name' => 'reviewer', 'mail' => NULL]], $out['reviewers']);
+    self::assertSame(['name' => 'actor', 'mail' => NULL], $out['assignee']);
+    self::assertSame('legacy origin', $out['origin']);
+    self::assertSame($ticket->toUrl()->setAbsolute()->toString(), $out['url']);
+    user_role_grant_permissions('skill_user', ['view user email addresses']);
+    $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
+    self::assertSame('private@example.test', $out['reviewers'][0]['mail']);
+  }
+
+  /**
+   * Read, list and update preserve field visibility restrictions.
+   */
+  public function testMetadataFieldAccess(): void {
+    $this->enableModules(['bb_property_access_test']);
+    $this->container->get('router.builder')->rebuild();
+    $ticket = $this->ticket('TR-private', [
+      'reviewers' => [$this->actor->id()],
+      'assignee_user_id' => $this->actor->id(),
+      'origin' => 'private origin',
+      'links' => [['uri' => 'https://example.test/private', 'title' => 'Private']],
+    ]);
+    $this->container->get('state')->set('bb_property_access_test.denied', [
+      'view' => ['origin', 'reviewers', 'assignee_user_id', 'links'],
+      'edit' => ['reviewers', 'links'],
+    ]);
+    $read = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
+    self::assertNull($read['origin']);
+    self::assertSame([], $read['links']);
+    self::assertSame([], $read['reviewers']);
+    self::assertNull($read['assignee']);
+    $list = $this->outputs($this->runTool('bakers_ticket_list', ['project' => $this->project->uuid()]));
+    self::assertNull($list['tickets'][0]['origin']);
+    self::assertSame([], $list['tickets'][0]['links']);
+    $update = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->uuid(),
+      'title' => 'Visible title',
+    ]));
+    self::assertSame([], $update['reviewers']);
+    self::assertNull($update['assignee']);
+    self::assertSame([], $update['links']);
+    foreach (['reviewers_remove' => ['actor@example.test'], 'links_remove' => ['https://example.test/private']] as $input => $value) {
+      $this->assertFailure($this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), $input => $value]), 'You may not change');
+    }
+  }
+
+  /**
    * Returns the ticket fields and its comments in chronological order.
    */
   public function testReadReturnsFieldsAndComments(): void {
