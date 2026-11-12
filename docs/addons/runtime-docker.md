@@ -22,13 +22,7 @@ paths. Machine scope only; add it to `~/.bakers/machine.config.js`:
 
 ## Options
 
-| `with` key | Default | Meaning |
-|---|---|---|
-| `docker` | `'docker'` | `'podman'` also works. |
-| `image` | shipped image | Your image; never built. |
-| `mounts` | `[]` | Extra host paths, read-only. |
-| `network` | `'host'` | Or `'allowlist'`. |
-| `allow` | `[]` | Allowlist hosts, exact or `*.suffix`. |
+<!-- @options @bakers-build/addon-runtime-docker -->
 
 ## What a run sees
 
