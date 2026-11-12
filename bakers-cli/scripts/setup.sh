@@ -139,7 +139,7 @@ fi
 
 # --- 5. PATH shim -------------------------------------------------------------
 # A test-workspace-aware `bakers` on PATH (BB-390). Two tiers: inside a
-# `.bakers-testbuild` workspace — the skill-test project `scripts/setup-test-project.sh`
+# `.bakers-testbuild` workspace — the skill-test project `.bakers/scripts/setup-test-project.sh`
 # creates, recognised by a marker file at or above the working directory — it runs
 # the checkout that marker names, failing loudly if that checkout is unbuilt;
 # EVERYWHERE ELSE, a plain bakers checkout included, it runs the globally-installed

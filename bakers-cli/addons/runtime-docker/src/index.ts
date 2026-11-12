@@ -2,7 +2,10 @@ import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { RuntimePlugin } from '@bakers-build/conductor/contract';
+import {
+  type RuntimePlugin,
+  resolveRuntimeOptions,
+} from '@bakers-build/conductor/contract';
 import { cliRootOf } from '@bakers-build/core';
 import {
   dockerRuntime,
@@ -55,6 +58,7 @@ export function runtimeDocker(
     kind: 'runtime',
     id: 'docker',
     isolates: true,
+    readOnly: resolveRuntimeOptions(options),
     requiredModules: [],
     createRuntime: async (config, { logger }) => {
       const { cliRoot, packageDir } = pluginPaths();

@@ -67,7 +67,7 @@ gates are unmet.
 
 `worktree-lifecycle`'s second gate is independent of herdr and is not going
 away: the suite needs a running, seeded bakers site and a real DDEV host. Only the
-herdr **daemon** is isolated — the `after_create: bash .ddev/worktree-post.sh` hook still
+herdr **daemon** is isolated — the `after_create: bash .bakers/scripts/worktree-post.sh` hook still
 runs against the real checkout and the real DDEV project.
 
 **CI:** `ddev bakers-test-integration` runs inside the web container, which has no

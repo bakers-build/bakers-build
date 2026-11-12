@@ -9,16 +9,16 @@ All six lifecycle keys are optional shell command strings. An omitted or empty c
 ```js
 // Fragment inside the exported project configuration.
 hooks: {
-  after_create: 'sh scripts/prepare.sh',
-  before_run: 'sh scripts/refresh.sh',
-  after_run: 'sh scripts/stop-sidecar.sh',
-  after_done: 'sh scripts/cleanup.sh',
-  on_freeze: 'sh scripts/pause.sh',
-  on_resume: 'sh scripts/resume.sh',
+  after_create: 'sh .bakers/scripts/prepare.sh',
+  before_run: 'sh .bakers/scripts/refresh.sh',
+  after_run: 'sh .bakers/scripts/stop-sidecar.sh',
+  after_done: 'sh .bakers/scripts/cleanup.sh',
+  on_freeze: 'sh .bakers/scripts/pause.sh',
+  on_resume: 'sh .bakers/scripts/resume.sh',
 },
 ```
 
-These scripts are examples you must supply. Commands run through `sh -c` in the ticket worktree with the conductor user's permissions. Tools must be on that process's `PATH`. Keep long-running servers out of blocking hooks. Hooks execute worktree code outside the agent sandbox: review that code before giving it credentials or host access.
+These scripts are examples you must supply under `.bakers/scripts/`, including host-side helpers; see [protect host-executed files](/provision/hooks#protect-host-executed-files). Commands run through `sh -c` in the ticket worktree with the conductor user's permissions. Tools must be on that process's `PATH`. Keep long-running servers out of blocking hooks. Hooks execute worktree code outside the agent sandbox: review that code before giving it credentials or host access.
 
 A selected variant is a complete file, not an overlay. Local values apply only through explicit JavaScript imports. The herdr addon's former `with.hooks` option is rejected; move commands to the top level. Addon listeners run before the project command, awaited in addon discovery order (children first). Listener failures do not skip later listeners or the command.
 
@@ -66,8 +66,8 @@ Lifecycle commands and listeners are best effort. Failures are logged (`lifecycl
 ```js
 hooks: {
   provision_up: {
-    test: 'sh scripts/provision.sh test',
-    'test-fresh': 'sh scripts/install.sh test',
+    test: 'sh .bakers/scripts/provision.sh test',
+    'test-fresh': 'sh .bakers/scripts/install.sh test',
   },
 },
 ```

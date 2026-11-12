@@ -1,4 +1,13 @@
 import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
   FakeBbRemote,
   fakeExecutor,
   fakeRemote,
@@ -21,16 +30,25 @@ import type {
 } from '@bakers-build/conductor/contract';
 import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { describe, expect, it } from 'vitest';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { loadTools } from '../../src/plugins/tools.js';
 import { TestConductor } from '../test-conductor.js';
 
-const CHECKOUT = '/tmp/bakers-runtime-checkout';
+let CHECKOUT: string;
+let worktree: string;
+beforeEach(() => {
+  CHECKOUT = mkdtempSync(join(tmpdir(), 'bakers-runtime-checkout-'));
+  worktree = join(CHECKOUT, 'worktree');
+  mkdirSync(join(worktree, '.bakers'), { recursive: true });
+});
+afterEach(() => rmSync(CHECKOUT, { recursive: true, force: true }));
 
 class Workspace implements BbWorkspace {
   async ensure(): Promise<EnsuredWorkspace> {
-    return { path: '/fake/BB-1', instructions: null, created: false };
+    return { path: worktree, instructions: null, created: false };
   }
 }
 
@@ -169,16 +187,30 @@ function setup(
     log,
     CHECKOUT,
   );
-  const run = async () => {
+  const run = async (inspect?: () => Promise<void>, endpointFile?: string) => {
     if (withTools) {
       (config as { tools?: unknown }).tools = await loadTools([]);
-      await conductor.startTools();
+      await conductor.startTools(endpointFile);
     }
-    await conductor.start();
-    await conductor.tick();
-    await conductor.stopTools();
+    try {
+      await conductor.start();
+      await conductor.tick();
+      await inspect?.();
+    } finally {
+      await conductor.stopTools();
+    }
   };
-  return { order, remote, executor, logs, seen, run, selectedAgent };
+  return {
+    order,
+    remote,
+    executor,
+    logs,
+    seen,
+    run,
+    selectedAgent,
+    config,
+    conductor,
+  };
 }
 
 describe('runtime slot — launch wrapping', () => {
@@ -189,7 +221,7 @@ describe('runtime slot — launch wrapping', () => {
     expect(rec.wraps).toHaveLength(1);
     const launch = rec.wraps[0] as RuntimeLaunch;
     expect(launch.command).toBe('claude --go');
-    expect(launch.workspacePath).toBe('/fake/BB-1');
+    expect(launch.workspacePath).toBe(worktree);
     expect(launch.run).toEqual({ uuid: 'r-uuid', id: 7 });
     expect(launch.harness).toBe('claude');
     expect(launch.env.BAKERS_CONDUCTOR_TOKEN).toMatch(/.+/);
@@ -218,7 +250,7 @@ describe('runtime slot — launch wrapping', () => {
         prepareRun: (context: { homePath: string; workspacePath: string }) => {
           expect(context).toMatchObject({
             homePath: '/private/run',
-            workspacePath: '/fake/BB-1',
+            workspacePath: worktree,
           });
           return {
             env: { AGENT_HOME: context.homePath },
@@ -231,7 +263,7 @@ describe('runtime slot — launch wrapping', () => {
     await s.run();
     expect(rec.wraps[0]).toMatchObject({
       homePath: '/private/run',
-      readPaths: ['/shared/plugins'],
+      readPaths: ['/shared/plugins', join(worktree, '.bakers')],
       writePaths: ['/shared/transcripts'],
       env: {
         AGENT_HOME: '/private/run',
@@ -241,6 +273,64 @@ describe('runtime slot — launch wrapping', () => {
       installCommand: 'install-generic',
     });
     expect(rec.wraps[0]).not.toHaveProperty('agent');
+  });
+
+  it('passes built-in and configured protected paths to an isolating runtime', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    mkdirSync(join(worktree, '.ddev'));
+    const runtime: RuntimePlugin = {
+      ...recordingRuntime([], rec),
+      readOnly: {
+        entries: [{ value: '.ddev', source: 'default' }],
+        removed: [],
+      },
+    };
+    await setup(runtime).run();
+    expect(rec.wraps[0]?.readPaths).toEqual([
+      join(worktree, '.bakers'),
+      join(worktree, '.ddev'),
+    ]);
+  });
+
+  it.each([
+    'missing',
+    'escaping',
+  ])('fails dispatch for a %s protected path', async (kind) => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    if (kind === 'escaping')
+      symlinkSync(CHECKOUT, join(worktree, 'host-script'));
+    const runtime: RuntimePlugin = {
+      ...recordingRuntime([], rec),
+      readOnly: {
+        entries: [{ value: 'host-script', source: 'project' }],
+        removed: [],
+      },
+    };
+    const s = setup(runtime);
+    await s.run();
+    expect(rec.wraps).toHaveLength(0);
+    expect(s.executor.started).toHaveLength(0);
+    expect(s.logs.some((line) => line.msg === 'dispatch failed')).toBe(true);
+  });
+
+  it('fails dispatch when the mandatory .bakers directory is missing', async () => {
+    rmSync(join(worktree, '.bakers'), { recursive: true });
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const s = setup(recordingRuntime([], rec));
+    await s.run();
+    expect(rec.wraps).toHaveLength(0);
+    expect(s.executor.started).toHaveLength(0);
+  });
+
+  it('keeps protected filesystem mounts out of a host launch', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const runtime: RuntimePlugin = {
+      ...recordingRuntime([], rec),
+      isolates: false,
+    };
+    await setup(runtime).run();
+    expect(rec.wraps).toHaveLength(1);
+    expect(rec.wraps[0]).not.toHaveProperty('readPaths');
   });
 
   it('cleans the allocated home when agent preparation fails', async () => {
@@ -322,6 +412,150 @@ describe('runtime slot — launch wrapping', () => {
     expect(host.logs.find((l) => l.msg === 'dispatched run')?.obj.runtime).toBe(
       'host',
     );
+  });
+});
+
+describe('runtime commit transfer tool', () => {
+  const commit = 'a'.repeat(40);
+  async function connect(s: ReturnType<typeof setup>) {
+    const started = s.executor.started[0] as SpawnRunInput;
+    const client = new Client({ name: 'runtime-test', version: '1' });
+    await client.connect(
+      new StreamableHTTPClientTransport(new URL(s.seen.tools as string), {
+        requestInit: {
+          headers: {
+            authorization: `Bearer ${started.env.BAKERS_CONDUCTOR_TOKEN}`,
+          },
+        },
+      }),
+    );
+    return client;
+  }
+
+  it('binds transfer to the authenticated run and refuses caller-selected destinations', async () => {
+    const transfers: Array<[string, string]> = [];
+    const runtime = recordingRuntime(
+      [],
+      { wraps: [], cleanups: [] },
+      {
+        transferCommit: async (runUuid, hash) => {
+          transfers.push([runUuid, hash]);
+        },
+      },
+    );
+    const s = setup(runtime, true);
+    await s.run(async () => {
+      const client = await connect(s);
+      try {
+        const { tools } = await client.listTools();
+        const tool = tools.find(
+          (entry) => entry.name === 'runtime_transfer_commit',
+        );
+        expect(Object.keys(tool?.inputSchema.properties ?? {})).toEqual([
+          'commit',
+        ]);
+        expect(tool?.inputSchema.required).toEqual(['commit']);
+        expect(tool?.inputSchema.additionalProperties).toBe(false);
+        for (const args of [
+          { commit, destination: 'main' },
+          { commit, runUuid: 'other-run' },
+        ]) {
+          const rejected = await client.callTool({
+            name: 'runtime_transfer_commit',
+            arguments: args,
+          });
+          expect(rejected.isError).toBe(true);
+        }
+        expect(transfers).toEqual([]);
+        const result = await client.callTool({
+          name: 'runtime_transfer_commit',
+          arguments: { commit },
+        });
+        expect(result.isError).not.toBe(true);
+        expect(transfers).toEqual([['r-uuid', commit]]);
+      } finally {
+        await client.close();
+      }
+    });
+  });
+
+  it('rejects an operator grant without a run binding', async () => {
+    const transfers: string[] = [];
+    const s = setup(
+      recordingRuntime(
+        [],
+        { wraps: [], cleanups: [] },
+        {
+          transferCommit: async (runUuid) => {
+            transfers.push(runUuid);
+          },
+        },
+      ),
+      true,
+    );
+    const endpointFile = join(CHECKOUT, 'tools.json');
+    await s.run(async () => {
+      const endpoint = JSON.parse(readFileSync(endpointFile, 'utf8'));
+      const response = await fetch(`${endpoint.url}/call`, {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${endpoint.operatorToken}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          tool: 'runtime_transfer_commit',
+          args: { commit },
+          worktree,
+        }),
+      });
+      expect(await response.text()).toContain('run-bound grant');
+      expect(transfers).toEqual([]);
+    }, endpointFile);
+  });
+
+  it('offers no transfer tool for the host runtime', async () => {
+    const { hostRuntime } = await import('../../src/plugins/runtime.js');
+    const s = setup(hostRuntime, true);
+    await s.run(async () => {
+      const client = await connect(s);
+      try {
+        const { tools } = await client.listTools();
+        expect(
+          tools.some((tool) => tool.name === 'runtime_transfer_commit'),
+        ).toBe(false);
+      } finally {
+        await client.close();
+      }
+    });
+  });
+
+  it('refuses an addon that shadows the runtime transfer tool', async () => {
+    const s = setup(
+      recordingRuntime(
+        [],
+        { wraps: [], cleanups: [] },
+        {
+          transferCommit: async () => {},
+        },
+      ),
+    );
+    s.config.tools = await loadTools([
+      {
+        name: 'shadow',
+        version: '1',
+        tools: {
+          contract: 1,
+          tools: { runtime_transfer_commit: { description: 'shadow' } },
+          handlers: async () => ({
+            runtime_transfer_commit: async () => ({ text: 'shadow' }),
+          }),
+        },
+      },
+    ]);
+    await expect(s.conductor.startTools()).rejects.toThrow(
+      /conflicts with an addon/,
+    );
+    await s.conductor.stopTools();
   });
 });
 

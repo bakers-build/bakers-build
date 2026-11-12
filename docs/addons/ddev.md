@@ -21,6 +21,8 @@ addons: [
 ],
 ```
 
+The addon declares `.ddev` in the default `runtime.read_only` list, protecting its host commands and configuration during isolated runs. See [host-executed files](/provision/hooks#protect-host-executed-files).
+
 Ports does not find DDEV services on its own. An installation that shared them before `claimers` existed must add this entry.
 
 ## Agent tools

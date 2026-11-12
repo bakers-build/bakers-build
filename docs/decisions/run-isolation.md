@@ -138,13 +138,13 @@ exist only there; the built backend's checks are in the ticket's test plan.
 
 1. `docker build -t bakers-run-isolation:spike experimental/run-isolation`
 2. Start time: `time docker run --rm bakers-run-isolation:spike true` twice (cold after the build, warm).
-3. Playground: `bash scripts/conductor-e2e.sh`, then `bash scripts/conductor-e2e.sh stop`.
+3. Playground: `bash .bakers/scripts/conductor-e2e.sh`, then `bash .bakers/scripts/conductor-e2e.sh stop`.
 4. `cp experimental/run-isolation/isolation-docker.mjs workspaces/bakers-playground/.bakers/`
 5. In `workspaces/bakers-playground/.bakers/conductor.config.js` set
    `executor: { plugin: './isolation-docker.mjs', with: { inner: '@bakers-build/addon-herdr', mounts: ['<absolute worktree>/bakers-cli'] } }`.
    The relative `plugin` path resolves from the config directory (ESLint-style resolution).
 6. Run Claude in `system` mode for this conductor (the claude addon's security setting).
-7. `export CLAUDE_CODE_OAUTH_TOKEN=<token from claude setup-token>`, then `bash scripts/conductor-e2e.sh start`.
+7. `export CLAUDE_CODE_OAUTH_TOKEN=<token from claude setup-token>`, then `bash .bakers/scripts/conductor-e2e.sh start`.
 8. Create a playground ticket in `plan`:
    `ddev drush php:script scripts/e2e/playground-ticket.php -- <conductor id> 'Isolation probe' plan`.
    Its description asks the agent to report, as a comment, the output of: the `bakers_ticket_read`
@@ -200,20 +200,49 @@ Status after the build:
    `executor.startRun` and `cleanupRun`; the configured agent permissions remain unchanged.
 2. **`runtime-docker` backend** — built: configurable `docker` command (Podman), a shipped image,
    `.git/hooks` and `.git/config` read-only. Read-only binds cannot stop the run from creating a
-   nested repository whose own config runs a command under host Git (`core.fsmonitor`), so cleanup
-   checks index gitlinks after container removal, quarantining unprotected `.git` metadata with a
-   unique suffix. Symlinked paths and failed inspections or renames remove the gitlink from the
-   index instead. A failed scan or index update quarantines the whole index intact for recovery;
-   unrelated nested clones stay untouched. Host Git remains unsafe until cleanup
-   finishes. Plugin sync cost is still to be measured in a real
-   run.
+   nested repository whose config host Git might execute. This historical cleanup-based
+   quarantine is replaced by private metadata and fail-closed gitlink checks below.
+
 3. **Egress allowlist** — built as `runtime-docker`'s `network: 'allowlist'` mode, with one proxy
    sidecar per conductor that adds the model credential. Verified design on Linux; macOS documented,
    not run.
 4. **Push from the host** — no code needed: `forge_push` runs in the conductor with the forge
    credential, and the run holds none.
 5. **`runtime-sbx`** — evaluated in section 6; not adopted.
-6. **Host tools stay outside the boundary** — decided: conductor tools and project hooks that run
-   worktree files on the host (`provision_up`, `ddev_start`, `ddev_exec`, `before_run`,
-   `after_run`) execute what the run may have edited. This is documented as a limit. Gating
-   them under an isolating runtime is a follow-up.
+6. **Host-executed paths** — `.bakers` is mandatory read-only; addon defaults and project/machine/runtime-entry `runtime.read_only` protect other paths. Host scripts live in `.bakers/scripts`. DDEV contributes `.ddev`; host provisioning writes remain possible. Claude/Codex host sandbox mode applies equivalent write denials. Maintainers deliver protected-file changes outside the run. Package lifecycle scripts, docs configuration and CLI builds remain a separate host-execution gap.
+
+## Git boundary revision
+
+Each isolating run uses independent writable Git metadata, mounted over its worktree admin directory.
+The host `.git` pointer is read-only. Docker no longer mounts the shared common directory; Bubblewrap
+no longer grants shared objects, refs or logs writable. Runtime-host Git behavior is unchanged.
+
+`runtime_transfer_commit` accepts a full commit hash and a run-bound grant; the destination comes
+from the host-owned launch record. It copies object bytes without following symlinks into clean
+scratch metadata, checks object integrity and ancestry, and updates only the intended ticket ref
+with its expected old tip. Source config/hooks and unrelated refs are never imported. Every
+new commit is checked against protected paths, including edit-then-restore histories, so Git plumbing
+cannot bypass read-only host-file protection. The host
+index remains separate. Private metadata and host-owned records survive cleanup for recovery;
+operators remove them only after delivery. No shared objects or writable hardlinks means no parent
+GC dependency. Submodules/gitlinks are refused at startup and transfer: their run-edited metadata
+could otherwise execute through concurrent host Git. Built-in host forge tools do not stage files;
+custom host hooks that stage or execute arbitrary run-controlled code remain outside this guarantee.
+The old shared-metadata protective overlays and post-run quarantine helper are removed: the run
+cannot write the host index, and gitlink-bearing starts/transfers are rejected before exposure.
+
+Measurement on this workspace (Linux, revision `582b7ebc85efaefb2561fa17130e1e265b0ca80a`):
+two successive `git clone --bare --no-hardlinks` runs took 0.244 / 0.074 seconds and allocated
+56,094,720 bytes per copy. `--shared` took 0.010 / 0.009 seconds and allocated 102,400 bytes locally,
+excluding the borrowed parent object store. These are first/repeat cache observations, not controlled
+cold-cache timings or end-to-end startup measurements. The independent copy retains shared working
+files and stable paths, but pays duplicated metadata/object storage per run. The shared alternative
+was rejected: safe retention would require protecting objects from parent GC and keeping the
+borrowed store strictly read-only. No worktree-equivalent performance is promised.
+
+Docker retains `$XDG_CACHE_HOME/bakers/runtime/<run uuid>.git` and its `.workspace.json` record.
+Bubblewrap retains `<cache>/<run uuid>.git` and `.git.json`. Records stay outside run mounts.
+Transfer updates the ticket ref, not the host index. After the run stops, a maintainer can reconcile
+the index with `git reset --mixed HEAD` in the ticket worktree, preserving working files; first
+preserve any host-side staged changes. Retained caches have no automatic GC; remove metadata and
+its matching record together only after successful delivery or recovery.

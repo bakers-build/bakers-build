@@ -12,7 +12,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type {
   BbRuntime,
@@ -20,13 +20,16 @@ import type {
   RuntimeRun,
 } from '@bakers-build/conductor/contract';
 import {
-  gitSandboxPaths,
-  quarantinePlanted,
+  type IsolatedGit,
+  isolateGit,
   shellQuote,
+  transferIsolatedCommit,
 } from '@bakers-build/core';
 
 export interface BwrapOptions {
   readPaths?: string[];
+  read_only?: string[];
+  shared_runtime?: unknown;
 }
 export interface BwrapDeps {
   cachePath: string;
@@ -88,24 +91,18 @@ function argv(
   input: RuntimeLaunch,
   options: BwrapOptions,
   deps: BwrapDeps,
+  privateGit: IsolatedGit,
 ): string[] {
   const ws = resolve(input.workspacePath);
-  const git = (flag: string) =>
-    execFileSync(
-      'git',
-      ['-C', ws, 'rev-parse', '--path-format=absolute', flag],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
-    ).trim();
-  const common = git('--git-common-dir');
-  const gitDir = git('--git-dir');
-  if (common === gitDir)
-    throw new Error(
-      'runtime-bwrap requires a linked Git worktree; the main checkout stays outside the run',
-    );
-  const worktreeConfig = join(gitDir, 'config.worktree');
-  if (!existsSync(worktreeConfig)) writeFileSync(worktreeConfig, '');
-  const gitPaths = gitSandboxPaths(ws);
-  const protectedPaths = [...gitPaths.protect, join(ws, '.git'), deps.cliRoot];
+  const protectedPaths = [
+    privateGit.commonDir,
+    resolve(deps.cachePath),
+    privateGit.gitDir,
+    join(ws, '.git'),
+    deps.cliRoot,
+    ...(options.readPaths ?? []),
+    ...(input.readPaths ?? []),
+  ];
   for (const path of input.writePaths ?? []) {
     if (
       !isAbsolute(path) ||
@@ -145,7 +142,6 @@ function argv(
     ...SYSTEM.filter(existsSync),
     ...softwarePaths(deps.env),
     deps.cliRoot,
-    common,
     ...(options.readPaths ?? []),
     ...(input.readPaths ?? []),
   ])
@@ -153,11 +149,11 @@ function argv(
   for (const path of [
     ws,
     input.homePath as string,
-    ...gitPaths.write,
     ...(input.writePaths ?? []),
   ])
     mount(path, true);
-  for (const path of protectedPaths.filter(existsSync)) mount(path, false);
+  for (const path of [join(ws, '.git'), deps.cliRoot].filter(existsSync))
+    mount(path, false);
   const bindings = [...mounts].sort(
     ([a], [b]) =>
       a.split(sep).length - b.split(sep).length || a.localeCompare(b),
@@ -184,6 +180,9 @@ function argv(
       path,
       path,
     ]),
+    '--bind',
+    privateGit.path,
+    privateGit.gitDir,
     '--chdir',
     ws,
     '--',
@@ -223,12 +222,44 @@ export function bwrapRuntime(
         XDG_CONFIG_HOME: join(homePath, '.config'),
         XDG_DATA_HOME: join(homePath, '.local/share'),
       };
+      if (
+        within(realpathSync(deps.cachePath), realpathSync(input.workspacePath))
+      )
+        throw new Error(
+          'runtime-bwrap: private state must stay outside the worktree',
+        );
+      const recordPath = `${homePath}.git.json`;
+      const branch =
+        input.ticketBranch ??
+        execFileSync(
+          'git',
+          ['-C', input.workspacePath, 'symbolic-ref', '--short', 'HEAD'],
+          { encoding: 'utf8' },
+        ).trim();
+      const privateGit: IsolatedGit = existsSync(recordPath)
+        ? JSON.parse(readFileSync(recordPath, 'utf8'))
+        : isolateGit(
+            input.workspacePath,
+            `${homePath}.git`,
+            branch,
+            [...(input.readPaths ?? []), ...(options.readPaths ?? [])]
+              .filter((path) => within(path, input.workspacePath))
+              .map((path) => relative(input.workspacePath, path)),
+          );
+      if (
+        privateGit.workspace !== input.workspacePath ||
+        privateGit.branch !== branch
+      )
+        throw new Error(
+          'runtime-bwrap: private Git record does not match this launch',
+        );
+      writeFileSync(recordPath, JSON.stringify(privateGit), { mode: 0o600 });
       const planPath = `${homePath}.launch.json`;
       writeFileSync(
         planPath,
         JSON.stringify({
           bwrap: deps.bwrapPath ?? '/usr/bin/bwrap',
-          argv: argv(input, options, deps),
+          argv: argv(input, options, deps, privateGit),
           envKeys: Object.keys(env),
           workspacePath: input.workspacePath,
         }),
@@ -240,6 +271,14 @@ export function bwrapRuntime(
           .join(' '),
         env,
       };
+    },
+    async transferCommit(runUuid, commit) {
+      const path = `${pathOf({ uuid: runUuid, id: 0 })}.git.json`;
+      const record: IsolatedGit = JSON.parse(readFileSync(path, 'utf8'));
+      transferIsolatedCommit(record, commit);
+      writeFileSync(path, JSON.stringify({ ...record, expected: commit }), {
+        mode: 0o600,
+      });
     },
     async cleanup(run) {
       const homePath = pathOf(run);
@@ -271,22 +310,7 @@ export function bwrapRuntime(
             );
         }
       }
-      if (existsSync(planPath)) {
-        const plan = JSON.parse(readFileSync(planPath, 'utf8'));
-        const common = execFileSync(
-          'git',
-          [
-            '-C',
-            plan.workspacePath,
-            'rev-parse',
-            '--path-format=absolute',
-            '--git-common-dir',
-          ],
-          { encoding: 'utf8' },
-        ).trim();
-        await quarantinePlanted(plan.workspacePath, common);
-        rmSync(planPath);
-      }
+      rmSync(planPath, { force: true });
       rmSync(homePath, { recursive: true, force: true });
       rmSync(pidPath, { force: true });
     },

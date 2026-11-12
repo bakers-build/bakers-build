@@ -19,6 +19,18 @@ describe('default export', () => {
 });
 
 describe('CodexAgent.launchCommand', () => {
+  it('marks protected host files read-only in sandbox mode', () => {
+    const command = new CodexAgent({ permissions: 'sandbox' }).launchCommand(
+      'x',
+      undefined,
+      tmpdir(),
+      undefined,
+      {},
+      [],
+      ['/project/.bakers'],
+    );
+    expect(command).toContain('"/project/.bakers" = "read"');
+  });
   it('includes the prompt, model, sandbox, and bypass flag', () => {
     const agent = new CodexAgent({ model: 'gpt-5', permissions: 'yolo' });
     expect(agent.launchCommand('do the thing')).toBe(
@@ -285,6 +297,27 @@ describe('CodexAgent permissions: sandbox', () => {
         { encoding: 'utf8' },
       ).replace(/\n$/, '');
       expect(own.startsWith(join(common, 'worktrees'))).toBe(true);
+      const isolated = captureArgv(
+        'codex',
+        new CodexAgent({ permissions: 'sandbox' }).launchCommand(
+          'x',
+          undefined,
+          worktree,
+          undefined,
+          undefined,
+          [],
+          [],
+          true,
+        ),
+      );
+      const isolatedProfile = isolated.find((arg) =>
+        arg.startsWith('permissions.bakers='),
+      );
+      expect(gitEntries(isolatedProfile)).toEqual(grant(own));
+      expect(isolatedProfile).not.toContain(
+        `${JSON.stringify(join(own, 'config'))} = "read"`,
+      );
+
       // The run writes its own git dir and the shared objects, refs and reflogs.
       expect(gitEntries(profile)).toEqual({
         ...grant(own),

@@ -17,6 +17,20 @@ const candidate = (alias?: string): AgentCandidate => ({
 });
 
 describe('agent catalog report', () => {
+  it('reports effective runtime paths and source layers', () => {
+    const report = agentReport({
+      agents: [],
+      enabled_agents: [],
+      disabled_agents: [],
+      default_agent: '',
+      routes: {},
+      sharedRuntime: { default: { read_only: ['.ddev'] } },
+    });
+    expect(report.runtime.read_only).toEqual([
+      { value: '.bakers', source: 'builtin' },
+      { value: '.ddev', source: 'default' },
+    ]);
+  });
   it('projects the normalized effective policy without retired keys', () => {
     const report = agentReport({
       agents: [candidate('fast')],
@@ -29,6 +43,10 @@ describe('agent catalog report', () => {
       },
     });
     expect(report).toEqual({
+      runtime: {
+        read_only: [{ value: '.bakers', source: 'builtin' }],
+        removed: [],
+      },
       agents: [
         {
           alias: 'fast',

@@ -6,6 +6,14 @@
   "type": "object",
   "additionalProperties": false,
   "properties": {
+    "read_only": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?:\\$inherit|(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*?/$)[^\\\\:\\u0000$]+)$"
+      },
+      "description": "Worktree-relative host-executed paths; replaces inherited defaults unless '$inherit' is included. .bakers is always protected."
+    },
     "docker": {
       "type": "string",
       "minLength": 1,
@@ -19,18 +27,27 @@
     },
     "mounts": {
       "type": "array",
-      "items": { "type": "string", "pattern": "^/" },
+      "items": {
+        "type": "string",
+        "pattern": "^/"
+      },
       "default": [],
       "description": "Extra absolute host paths, mounted read-only at the same path."
     },
     "network": {
-      "enum": ["host", "allowlist"],
+      "enum": [
+        "host",
+        "allowlist"
+      ],
       "default": "host",
       "description": "host shares the host network; allowlist routes the run through the conductor's proxy."
     },
     "allow": {
       "type": "array",
-      "items": { "type": "string", "minLength": 1 },
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
       "default": [],
       "description": "Allowlist mode: hosts the run may reach, exact or *.suffix."
     }

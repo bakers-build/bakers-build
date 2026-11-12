@@ -5,7 +5,7 @@
 # `tests/contract/` does NOT run in CI (a green pipeline does not cover this
 # suite), so this file is a BY-HAND gate: run it for this ticket and for any
 # later change to `bakers-cli/templates/bakers.pathshim.sh` or to the marker
-# `scripts/setup-test-project.sh` writes.
+# `.bakers/scripts/setup-test-project.sh` writes.
 #
 #   bash tests/contract/pathshim-resolution.sh
 #

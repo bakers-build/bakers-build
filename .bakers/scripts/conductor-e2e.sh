@@ -11,13 +11,13 @@
 # edits its config directly. Every ticket the conductor claims starts a paid agent run.
 set -euo pipefail
 
-root="$(cd "$(dirname "$0")/.." && pwd -P)"
+root="$(cd "$(dirname "$0")/../.." && pwd -P)"
 workspace="$root/workspaces/bakers-playground"
 bakers="$root/bakers-cli/bin/bakers"
 
 teardown() {
   [ -d "$workspace" ] || return 0
-  bash "$root/scripts/teardown-test-project.sh"
+  bash "$root/.bakers/scripts/teardown-test-project.sh"
 }
 
 # start: `conductor start` returns once the detached conductor's first heartbeat arrived.
@@ -50,7 +50,7 @@ teardown
 (cd "$root/bakers-cli" && pnpm -r run build)
 # setup-test-project.sh refuses any control plane whose host is not *.ddev.site before any write,
 # so the gate below is lowered on this worktree's local site only. The source build reports 0.0.1.
-bash "$root/scripts/setup-test-project.sh"
+bash "$root/.bakers/scripts/setup-test-project.sh"
 (cd "$root" && ddev drush cset -y bb_core.settings min_client_version 0.0.1)
 # No `conductor once` first: its fresh heartbeat makes `conductor start` report "already running" and start
 # nothing. `conductor start` registers a missing conductor itself.

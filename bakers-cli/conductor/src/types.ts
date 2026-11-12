@@ -118,6 +118,7 @@ export interface ConductorFileConfig extends ConductorSettings {
   workspace: WorkspacePlugin;
   /** Where agent processes run (the `runtime` slot); absent means on the host. */
   runtime?: RuntimePlugin;
+  sharedRuntime?: import('./plugins/agent-args.js').SharedRuntimeLayers;
   /** The project's agent plugin marketplaces; empty when it declares none. */
   marketplaces: MarketplaceDeclaration[];
   /**

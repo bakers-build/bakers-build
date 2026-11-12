@@ -65,6 +65,7 @@
       "description": "Share local preview links through bakers ports. Default false."
     },
     "permissions": { "$ref": "project.schema.json#/$defs/permissions" },
+    "runtime": { "$ref": "project.schema.json#/$defs/runtime" },
     "executor": {
       "$ref": "project.schema.json#/$defs/slot",
       "description": "This machine's executor; overrides every project's."

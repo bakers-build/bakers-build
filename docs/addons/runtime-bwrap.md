@@ -32,19 +32,24 @@ and its own `/proc`, `/dev` and temporary directory. The operator's home, SSH ke
 and Docker socket are absent. Only explicitly selected environment variables reach the process;
 credential values are absent from the launcher command and plan file.
 
-The agent prepares its configuration and declares required read and write paths. Claude copies
-settings and the selected login into the private home, exposes plugins read-only and writes its
-transcript to the existing worktree transcript directory. An explicit API key or OAuth token
-takes precedence over the stored login.
+The agent prepares its configuration and grants. Claude copies settings and login into the
+private home, mounts plugins read-only, and writes its transcript to the worktree transcript directory.
+Explicit API credentials override stored login.
 
-The worktree and required Git data retain host paths. Git control files are read-only; cleanup
-quarantines unsafe indexed submodule metadata before host Git resumes. Cleanup stops the
-launcher and removes the private home.
+The worktree keeps its host path, but independent private Git metadata replaces its admin
+directory inside the run. The `.git` pointer is read-only; parent and sibling Git metadata is
+not writable. `.bakers/` and effective `runtime.read_only` paths are read-only; DDEV contributes
+`.ddev`. Host provisioning can still write generated files under these mounts.
+
+Commit locally, then call `runtime_transfer_commit` with the full hash before forge delivery.
+Only the ticket branch advances, checking its previous tip; source config/hooks are never imported.
+Gitlinks/submodules are refused. Cleanup stops the launcher, removes the home, and retains private
+Git for recovery. See [transfer, index reconciliation and cache paths](/provision/security/shared-settings#isolated-git-delivery).
+A maintainer delivers protected-file changes outside the run.
 
 ## Boundaries
 
 Networking is shared with the Coder environment, including localhost. There is no egress
 allowlist in this backend. Resource limits remain those of the outer environment.
 
-Conductor tools and project hooks execute on the host, outside this sandbox; runs can edit
-worktree scripts those tools execute. Use the conductor's forge tools for delivery.
+Host tools still execute unprotected repository code, including package lifecycle scripts, docs configuration and CLI builds. Protecting launch scripts alone does not isolate that code.

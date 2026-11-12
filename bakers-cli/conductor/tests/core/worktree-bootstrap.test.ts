@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 /**
- * BB-237 — `.ddev/worktree-post.sh` must run to its end and write its sentinel.
+ * BB-237 — `.bakers/scripts/worktree-post.sh` must run to its end and write its sentinel.
  * With `conductor.config.local.js` gone, the script copies only
  * `audience.local.md` from the parent and no longer rewrites a base_url.
  */
@@ -72,10 +72,10 @@ function makeWorktreeFixture(): { parent: string; worktree: string } {
   );
   git('worktree', 'add', '-q', '-b', 'feat/bb-237-fixture', worktree);
   mkdirSync(join(worktree, '.ddev'));
-  mkdirSync(join(worktree, 'scripts'));
+  mkdirSync(join(worktree, '.bakers/scripts'), { recursive: true });
   copyFileSync(
-    join(repoRoot(), 'scripts/setup-worktree.mjs'),
-    join(worktree, 'scripts/setup-worktree.mjs'),
+    join(repoRoot(), '.bakers/scripts/setup-worktree.mjs'),
+    join(worktree, '.bakers/scripts/setup-worktree.mjs'),
   );
   writeFileSync(join(worktree, '.ddev/config.yaml'), 'name: bakers\n');
   writeFileSync(
@@ -92,7 +92,7 @@ interface BootstrapResult {
 }
 
 function runBootstrap(worktree: string): BootstrapResult {
-  const script = join(repoRoot(), '.ddev/worktree-post.sh');
+  const script = join(repoRoot(), '.bakers/scripts/worktree-post.sh');
   // spawnSync (not execFileSync) so BOTH streams are captured on the success
   // path too: the script's loud lines — the sentinel skip, the unresolvable-URL
   // WARN — are deliberately on stderr, and execFileSync returns only stdout
@@ -108,7 +108,7 @@ function runBootstrap(worktree: string): BootstrapResult {
   };
 }
 
-describe('BB-237 worktree bootstrap completes (.ddev/worktree-post.sh)', () => {
+describe('BB-237 worktree bootstrap completes (.bakers/scripts/worktree-post.sh)', () => {
   it('runs to its end: writes the sentinel, copies audience.local.md, not the retired local config', () => {
     const { worktree } = makeWorktreeFixture();
 
@@ -157,7 +157,10 @@ describe('BB-237 worktree bootstrap completes (.ddev/worktree-post.sh)', () => {
   });
   it('propagates workspace setup failure without a success sentinel', () => {
     const { worktree } = makeWorktreeFixture();
-    writeFileSync(join(worktree, 'scripts/setup-test-project.sh'), 'exit 7\n');
+    writeFileSync(
+      join(worktree, '.bakers/scripts/setup-test-project.sh'),
+      'exit 7\n',
+    );
     expect(runBootstrap(worktree).status).not.toBe(0);
     expect(existsSync(join(worktree, '.bakers/.worktree-post-done'))).toBe(
       false,

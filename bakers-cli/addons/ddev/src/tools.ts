@@ -80,7 +80,7 @@ export function ddevTools(run: DdevRun): Record<string, Handler> {
     const approot = typeof raw?.approot === 'string' ? raw.approot : undefined;
     if (!raw || !approot || real(approot) !== real(req.worktreePath)) {
       throw new Error(
-        `DDEV resolves the project at ${approot ?? '(unknown)'}, not this worktree (${req.worktreePath}); run bash .ddev/worktree-post.sh in the worktree to register it.\n${tail(output)}`,
+        `DDEV resolves the project at ${approot ?? '(unknown)'}, not this worktree (${req.worktreePath}); run bash .bakers/scripts/worktree-post.sh in the worktree to register it.\n${tail(output)}`,
       );
     }
     return raw;

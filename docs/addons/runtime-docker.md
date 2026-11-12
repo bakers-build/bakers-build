@@ -1,7 +1,7 @@
 # Docker runtime
 
 `@bakers-build/addon-runtime-docker` fills the [`runtime` slot](/addons/slots#runtime-where-a-run-starts),
-starting each run in a container while preserving host paths. Machine scope; add to `~/.bakers/machine.config.js`:
+starting each run in a container at host paths. Machine scope:
 
 ```js
 { use: '@bakers-build/addon-runtime-docker', with: { docker: 'podman' } }
@@ -9,11 +9,8 @@ starting each run in a container while preserving host paths. Machine scope; add
 
 ## Before the first run
 
-- The default image uses neutral `installCommand`; [Claude](/addons/claude#isolated-runtimes) declares one. With `image`, supply the installed agent.
-- A container cannot use your harness login. Export the agent's credential for the conductor; for
-  Claude `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or `ANTHROPIC_API_KEY`.
-- An agent's first run builds `bakers-runtime:<addon version>-<hash>-<install hash>` from the
-  shipped `image/` plus the agent's install command. `with.image` replaces it.
+- The agent declares `installCommand`; its first run builds the versioned image. `with.image` supplies an installed agent instead.
+- Export the agent credential for the conductor: Claude uses `CLAUDE_CODE_OAUTH_TOKEN` or `ANTHROPIC_API_KEY`. A container cannot use the host login.
 
 ## Options
 
@@ -21,15 +18,13 @@ starting each run in a container while preserving host paths. Machine scope; add
 
 ## What a run sees
 
-Container `bb-run-<run uuid>`, under your uid. Mounts, and nothing else of your home:
+Container `bb-run-<run uuid>`, under your uid, mounts:
 
-- the worktree and the Git common directory, at their host paths. Read-only: the worktree's
-  `.git` file, `hooks/`, `config`, `modules/`, `worktrees/` (except the run's own Git dir), and
-  every `config.worktree`, `commondir` and `gitdir`. After container removal, cleanup checks index
-  gitlinks without following symlinks. Unprotected repositories get `.git.bakers-quarantine-<uuid>`;
-  failed inspections or renames remove the gitlink from the index. If that fails or the scan fails,
-  the intact index is quarantined for recovery. Ignored clones stay untouched.
-  Run no Git in the worktree until cleanup finishes;
+- the worktree, with its `.git` pointer read-only. Independent per-run Git metadata replaces
+  the linked worktree's admin directory inside the container. Parent and sibling Git metadata
+  is never mounted writable; commits and refs stay private until explicit transfer;
+- `.bakers/` and effective `runtime.read_only` paths, read-only. DDEV contributes `.ddev`
+  automatically. Host provisioning still writes generated files there;
 - the bakers CLI build, read-only. The runtime refuses to start when that build's root would
   contain your home directory;
 - `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` at its host path;
@@ -38,10 +33,19 @@ Container `bb-run-<run uuid>`, under your uid. Mounts, and nothing else of your 
 No `~/.ssh`, `~/.bakers`, Docker socket or harness login (`.credentials.json`). Secrets use `-e KEY`, never values in argv.
 Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
-See [prerequisites](/provision/security/shared-settings#verify). Pushes use `forge_push`; cleanup removes the container and home.
+See [prerequisites](/provision/security/shared-settings#verify). Transfer commits first with `runtime_transfer_commit`, then push with `forge_push`. Cleanup removes the container and home, retaining private Git for recovery.
 
-**Not isolated:** conductor tools and project hooks that run worktree files on the host
-(`provision_up`, `ddev_start`, `ddev_exec`, `before_run`, `after_run`); the run can edit them.
+## Delivery and limits
+
+`runtime_transfer_commit` imports a full commit hash through clean metadata, advancing only
+the ticket branch if its previous tip matches. No source config/hooks are imported. Gitlinks/submodules
+are refused. Cleanup retains private Git for recovery; remove it only after delivery.
+See [transfer, index reconciliation and cache paths](/provision/security/shared-settings#isolated-git-delivery).
+
+A maintainer changes protected files outside the isolated run. See
+[shared runtime paths](/provision/security/shared-settings#host-executed-paths).
+Host tools still execute unprotected repository code: package lifecycle scripts, docs
+configuration and CLI builds. Protecting their launch scripts does not isolate that code.
 
 ## Allowlist mode
 

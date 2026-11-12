@@ -11,7 +11,7 @@ Prepare a checkout to change bakers.build, run the checks that fit your change, 
    cd bakers-cli && pnpm install && pnpm -r run build
    ```
 
-3. For Drupal work, prepare identity with `node scripts/setup-worktree.mjs`, then explicitly
+3. For Drupal work, prepare identity with `node .bakers/scripts/setup-worktree.mjs`, then explicitly
    provision a disposable site with `ddev init --provider recipe-test`. Initialization reinstalls
    that local database. Worktree setup itself leaves DDEV stopped. The project owns these scripts
    and its three QA wrappers; no keytec DDEV addon or keytec-ai configuration tool is needed.

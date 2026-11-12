@@ -98,10 +98,10 @@ out="$(cd "$work/app" && PATH="$work/bin:$PATH" bash "$script" 2>&1)" || rc=$?
 # nested in the ready site $work/app, where deps are stubbed; sets $out and $rc.
 hook() {
   local tree="$work/app/wt"
-  rm -rf "$tree"; mkdir -p "$tree/scripts" "$tree/.ddev/commands/host"
+  rm -rf "$tree"; mkdir -p "$tree/.bakers/scripts" "$tree/.ddev/commands/host"
   git -C "$tree" init -q; cp "$script" "$tree/.ddev/commands/host/"
-  printf '#!/bin/bash\n' > "$tree/scripts/worktree-deps.sh"
-  cp "$root/scripts/ddev-own-project.sh" "$tree/scripts/" 2>/dev/null || true
+  printf '#!/bin/bash\n' > "$tree/.bakers/scripts/worktree-deps.sh"
+  cp "$root/.bakers/scripts/ddev-own-project.sh" "$tree/.bakers/scripts/" 2>/dev/null || true
   local cmd
   cmd="$(cd "$root" && node --input-type=module -e '
 const { hooks } = (await import("./.bakers/project.config.js")).default;
@@ -127,11 +127,11 @@ case=parent-project-delete; arrange running - 200; hook after_done -
 
 # A new worktree registers its own project on creation and keeps the tracked config.yaml.
 case=register; tree="$work/register"
-mkdir -p "$tree/scripts" "$tree/.ddev" "$tree/.bakers"
-cp "$root/scripts/setup-worktree.mjs" "$tree/scripts/"; cp "$root/.ddev/worktree-post.sh" "$tree/.ddev/"
+mkdir -p "$tree/.bakers/scripts" "$tree/.ddev" "$tree/.bakers"
+cp "$root/.bakers/scripts/setup-worktree.mjs" "$tree/.bakers/scripts/"; cp "$root/.bakers/scripts/worktree-post.sh" "$tree/.bakers/scripts/"
 printf 'name: bakers\n# kept\n' > "$tree/.ddev/config.yaml"; touch "$tree/.bakers/.worktree-post-done"
 git -C "$tree" init -q; STATE="$work/state"; : > "$STATE/calls"; rc=0
-out="$(cd "$tree" && PATH="$work/bin:$PATH" bash .ddev/worktree-post.sh 2>&1)" || rc=$?
+out="$(cd "$tree" && PATH="$work/bin:$PATH" bash .bakers/scripts/worktree-post.sh 2>&1)" || rc=$?
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ "$(cat "$STATE/calls")" = 'config --auto' ] || fail "calls: $(cat "$STATE/calls")"
 [ "$(cat "$tree/.ddev/config.yaml")" = "$(printf 'name: bakers\n# kept')" ] || fail 'config.yaml rewritten'

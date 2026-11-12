@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# `scripts/docs-preview.sh` (the `provision_up('docs-preview')` profile) builds docs/ and serves the
+# `.bakers/scripts/docs-preview.sh` (the `provision_up('docs-preview')` profile) builds docs/ and serves the
 # built site detached, one preview per worktree, on 127.0.0.1 only. A fake `pnpm` on PATH writes a
 # numbered build; a fake `vitepress.js` serves it with `node:http` and, like vitepress 1.6 `preview`,
 # ignores `--host` (`listen(port, cb)`), then records the address Node bound.
@@ -9,7 +9,7 @@ set -euo pipefail
 root="$(git rev-parse --show-toplevel)"
 work="$(mktemp -d)"
 cleanup() {
-  for wt in "$work"/wt*; do [ -d "$wt" ] && bash "$wt/scripts/docs-preview.sh" stop >/dev/null 2>&1 || true; done
+  for wt in "$work"/wt*; do [ -d "$wt" ] && bash "$wt/.bakers/scripts/docs-preview.sh" stop >/dev/null 2>&1 || true; done
   rm -rf "$work"
 }
 trap cleanup EXIT
@@ -27,8 +27,8 @@ chmod +x "$work/bin/pnpm"
 # worktree <name>: a worktree root holding the real script and a fake vitepress.
 worktree() {
   local wt="$work/$1"
-  mkdir -p "$wt/scripts" "$wt/docs/node_modules/vitepress/bin"
-  cp "$root/scripts/docs-preview.sh" "$root/scripts/docs-preview-loopback.mjs" "$wt/scripts/"
+  mkdir -p "$wt/.bakers/scripts" "$wt/docs/node_modules/vitepress/bin"
+  cp "$root/.bakers/scripts/docs-preview.sh" "$root/.bakers/scripts/docs-preview-loopback.mjs" "$wt/.bakers/scripts/"
   cat > "$wt/docs/node_modules/vitepress/bin/vitepress.js" <<'EOF'
 const fs = require('node:fs');
 const args = process.argv.slice(2);
@@ -46,7 +46,7 @@ fail() { echo "FAIL $case: $*"; failures=$((failures + 1)); }
 # run <worktree> [stop]; sets $out, $rc and $url.
 run() {
   rc=0
-  out="$(cd "$work/$1" && PATH="$work/bin:$PATH" bash scripts/docs-preview.sh ${2:-} 2>&1)" || rc=$?
+  out="$(cd "$work/$1" && PATH="$work/bin:$PATH" bash .bakers/scripts/docs-preview.sh ${2:-} 2>&1)" || rc=$?
   url="$(grep -oE 'http://127\.0\.0\.1:[0-9]+/' <<<"$out" | head -1 || true)"
 }
 body() { curl -s --max-time 2 "$1" || true; }

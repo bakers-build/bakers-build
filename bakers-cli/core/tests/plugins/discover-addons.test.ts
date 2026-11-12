@@ -344,3 +344,21 @@ describe('discoverAddons — scopes and per-entry bases', () => {
     expect(out.servers.map((r) => (r as { id: string }).id)).toEqual(['p']);
   });
 });
+
+describe('runtime declarations', () => {
+  it('unions declarations including nested presets and routes runtime globals only to runtimes', async () => {
+    fixture('paths.js', `export const runtime = { read_only: ['.ddev'] };`);
+    fixture(
+      'runtime.js',
+      `export const addons = ['./paths.js']; export const runtime = { read_only: ['.ddev', 'scripts'] }; export const runtimes = (acc, opts) => [...acc, opts]; export const agents = (acc, opts) => [...acc, opts];`,
+    );
+    const out = await discoverAddons(['./runtime.js'], 'conductor', bases, {
+      runtimeGlobals: { shared_runtime: { project: { read_only: [] } } },
+    });
+    expect(out.runtimeReadOnly).toEqual(['.ddev', 'scripts']);
+    expect(out.runtimes).toEqual([
+      { shared_runtime: { project: { read_only: [] } } },
+    ]);
+    expect(out.agents).toEqual([undefined]);
+  });
+});

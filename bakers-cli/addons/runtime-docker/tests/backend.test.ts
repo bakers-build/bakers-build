@@ -3,16 +3,14 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   rmSync,
-  writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AgentRuntimeInfo } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type BackendDeps, dockerRuntime, shortHash } from '../src/backend.js';
 
 type Call = [string, string[]];
@@ -48,21 +46,40 @@ beforeEach(() => {
   ws = join(root, 'tree');
   common = join(root, 'main/.git');
   cache = join(root, 'cache');
-  for (const d of [ws, common, join(common, 'worktrees/tree')])
-    mkdirSync(d, { recursive: true });
+  const main = join(root, 'main');
+  mkdirSync(main);
+  const git = (...args: string[]) =>
+    execFileSync('git', args, {
+      cwd: main,
+      env: {
+        ...process.env,
+        GIT_CONFIG_GLOBAL: '/dev/null',
+        GIT_CONFIG_NOSYSTEM: '1',
+        GIT_AUTHOR_NAME: 'test',
+        GIT_AUTHOR_EMAIL: 'test@example.com',
+        GIT_COMMITTER_NAME: 'test',
+        GIT_COMMITTER_EMAIL: 'test@example.com',
+      },
+      stdio: 'pipe',
+    });
+  git('init', '-q', '-b', 'main');
+  git('commit', '-q', '--allow-empty', '-m', 'base');
+  git('worktree', 'add', '-q', '-b', 'ticket', ws);
   mkdirSync(join(root, 'transcripts'));
+  // The conductor supplies a home already created by prepareRun.
+  mkdirSync(join(cache, 'bakers/runtime/r-uuid'), { recursive: true });
   calls = [];
   warnings = [];
 });
+
+afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 function deps(over: Partial<BackendDeps> = {}): BackendDeps {
   return {
     exec: async (file, args) => {
       calls.push([file, args]);
-      if (file === 'git' && args.includes('--git-common-dir'))
-        return { stdout: `${common}\n` };
-      if (file === 'git' && args.includes('--git-dir'))
-        return { stdout: `${join(common, 'worktrees/tree')}\n` };
+      if (file === 'git')
+        return { stdout: execFileSync(file, args, { encoding: 'utf8' }) };
       return { stdout: '' };
     },
     env: {
@@ -100,7 +117,7 @@ describe('runtime-docker wrap', () => {
     const out = await dockerRuntime({}, deps()).wrap(launch());
     const home = join(cache, 'bakers/runtime/r-uuid');
     expect(existsSync(home)).toBe(true);
-    expect(existsSync(join(common, 'hooks'))).toBe(true);
+    expect(existsSync(join(`${home}.git`, 'objects'))).toBe(true);
     expect(out.command).toMatch(/^'?docker'? 'run'/);
     expect(out.command).toContain(`'${home}:${home}'`);
     expect(out.command).toContain(
@@ -120,24 +137,21 @@ describe('runtime-docker wrap', () => {
     );
   });
 
-  it('protects the worktree Git files the host reads later', async () => {
-    writeFileSync(
-      join(ws, '.git'),
-      `gitdir: ${join(common, 'worktrees/tree')}\n`,
-    );
+  it('mounts independent Git metadata without exposing the parent repository', async () => {
+    const before = readFileSync(join(common, 'config'), 'utf8');
     const out = await dockerRuntime({}, deps()).wrap(launch());
     const gitDir = join(common, 'worktrees/tree');
-    // Bound read-only, so each must exist before docker would create it as root.
-    expect(readFileSync(join(gitDir, 'config.worktree'), 'utf8')).toBe('');
-    expect(readFileSync(join(common, 'config.worktree'), 'utf8')).toBe('');
-    for (const d of ['modules', 'worktrees'])
-      expect(existsSync(join(common, d))).toBe(true);
+    const privateGit = join(cache, 'bakers/runtime/r-uuid.git');
+    expect(existsSync(join(privateGit, 'objects'))).toBe(true);
+    expect(existsSync(join(privateGit, 'index'))).toBe(true);
+    expect(existsSync(join(privateGit, 'commondir'))).toBe(false);
+    expect(out.command).toContain(`'${privateGit}:${gitDir}'`);
     expect(out.command).toContain(
       `'${join(ws, '.git')}:${join(ws, '.git')}:ro'`,
     );
-    expect(out.command).toContain(
-      `'${gitDir}/commondir:${gitDir}/commondir:ro'`,
-    );
+    expect(out.command).not.toContain(`'${common}:${common}'`);
+    expect(out.command).not.toContain(`'${common}:${common}:ro'`);
+    expect(readFileSync(join(common, 'config'), 'utf8')).toBe(before);
   });
 
   it('refuses a run uuid that is not a plain name', async () => {
@@ -273,76 +287,6 @@ describe('runtime-docker cleanup', () => {
       existsSync(join(cache, 'bakers/runtime/r-uuid.workspace.json')),
     ).toBe(true);
     expect(existsSync(join(cache, 'bakers/runtime/r-uuid'))).toBe(true);
-  });
-
-  it('quarantines a repository the run planted, so host git runs nothing of it', async () => {
-    const env = {
-      ...process.env,
-      GIT_CONFIG_GLOBAL: '/dev/null',
-      GIT_CONFIG_NOSYSTEM: '1',
-      GIT_AUTHOR_NAME: 't',
-      GIT_AUTHOR_EMAIL: 't@t',
-      GIT_COMMITTER_NAME: 't',
-      GIT_COMMITTER_EMAIL: 't@t',
-    };
-    const git = (cwd: string, ...args: string[]) =>
-      execFileSync('git', args, { cwd, env, stdio: 'pipe' }).toString();
-    const main = join(root, 'repo');
-    const tree = join(root, 'linked');
-    mkdirSync(main);
-    git(main, 'init', '-q');
-    git(main, 'commit', '-q', '--allow-empty', '-m', 'base');
-    git(main, 'worktree', 'add', '-q', tree, '-b', 'run');
-    // What the run does inside the container: a nested repo whose config runs a command.
-    const marker = join(root, 'planted-ran');
-    const hook = join(root, 'fsmonitor.sh');
-    writeFileSync(hook, `#!/bin/sh\ntouch '${marker}'\nexit 1\n`, {
-      mode: 0o755,
-    });
-    const sub = join(tree, 'sub');
-    mkdirSync(sub);
-    git(sub, 'init', '-q');
-    writeFileSync(join(sub, 'f'), 'x');
-    git(sub, 'add', 'f');
-    git(sub, 'commit', '-q', '-m', 'sub');
-    git(sub, 'config', 'core.fsmonitor', hook);
-    git(tree, 'add', 'sub');
-    // A submodule the host initialised itself points into the read-only modules dir.
-    const kept = join(tree, 'kept');
-    mkdirSync(kept);
-    writeFileSync(
-      join(kept, '.git'),
-      `gitdir: ${join(main, '.git/modules/kept')}\n`,
-    );
-    git(tree, 'status');
-    expect(existsSync(marker)).toBe(true);
-    rmSync(marker);
-
-    const d = deps({
-      exec: async (file, args) => {
-        calls.push([file, args]);
-        return file === 'git'
-          ? { stdout: git(tree, ...args.slice(2)) }
-          : { stdout: '' };
-      },
-    });
-    const runtime = dockerRuntime({}, d);
-    await runtime.wrap(launch({ workspacePath: tree }));
-    await runtime.cleanup({ uuid: 'r-uuid', id: 7 });
-
-    git(tree, 'status');
-    expect(existsSync(marker)).toBe(false);
-    expect(existsSync(join(sub, '.git'))).toBe(false);
-    expect(
-      readdirSync(sub).some((name) =>
-        name.startsWith('.git.bakers-quarantine-'),
-      ),
-    ).toBe(true);
-    expect(existsSync(join(kept, '.git'))).toBe(true);
-    expect(existsSync(join(tree, '.git'))).toBe(true);
-    expect(warnings).toContain(
-      'runtime quarantined repositories the run planted',
-    );
   });
 
   it('deletes nothing for a run uuid that is not a plain name', async () => {

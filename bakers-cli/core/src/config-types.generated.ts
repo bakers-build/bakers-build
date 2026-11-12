@@ -84,6 +84,9 @@ export interface ProjectConfig {
   }>;
   /** Function choosing the agent for a ticket; replaces the shipped selection. */
   select_agent?: (...args: never[]) => unknown;
+  runtime?: {
+    read_only?: Array<string>;
+  };
 }
 
 /** This machine's private configuration: ~/.bakers/machine.config.js. */
@@ -131,6 +134,9 @@ export interface MachineConfig {
       allow_write?: Array<string>;
       trusted_commands?: Array<string>;
     };
+  };
+  runtime?: {
+    read_only?: Array<string>;
   };
   /** This machine's executor; overrides every project's. */
   executor?: { kind: string; [key: string]: unknown } | {

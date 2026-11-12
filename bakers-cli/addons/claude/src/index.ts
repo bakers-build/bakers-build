@@ -88,6 +88,8 @@ function securityFlags(
   { mode, sandbox, config }: ResolvedSecurity,
   workspacePath: string | undefined,
   pluginsOn = false,
+  readOnlyPaths: readonly string[] = [],
+  isolatedGit = false,
 ): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
@@ -96,7 +98,7 @@ function securityFlags(
   const git =
     workspacePath === undefined
       ? { write: [], protect: [] }
-      : gitSandboxPaths(workspacePath);
+      : gitSandboxPaths(workspacePath, isolatedGit);
   const settings = {
     sandbox: {
       enabled: true,
@@ -110,7 +112,7 @@ function securityFlags(
       filesystem: {
         denyRead: sandbox.deny_read,
         allowWrite: [...sandbox.allow_write, ...git.write],
-        denyWrite: git.protect,
+        denyWrite: [...git.protect, ...readOnlyPaths],
       },
       network: { allowedDomains: sandbox.network },
     },
@@ -130,10 +132,19 @@ function securityFlags(
       ],
       // Claude reads a single leading `/` as relative to the settings file;
       // the plain rule covers a file entry, `/**` a directory's contents.
-      deny: sandbox.deny_read.flatMap((path) => {
-        const rule = path.startsWith('/') ? `/${path}` : path;
-        return [`Read(${rule})`, `Read(${rule}/**)`];
-      }),
+      deny: [
+        ...readOnlyPaths.flatMap((path) => {
+          const rule = path.startsWith('/') ? `/${path}` : path;
+          return ['Edit', 'Write'].flatMap((tool) => [
+            `${tool}(${rule})`,
+            `${tool}(${rule}/**)`,
+          ]);
+        }),
+        ...sandbox.deny_read.flatMap((path) => {
+          const rule = path.startsWith('/') ? `/${path}` : path;
+          return [`Read(${rule})`, `Read(${rule}/**)`];
+        }),
+      ],
     },
   };
   return [
@@ -327,6 +338,8 @@ export class ClaudeAgent implements BbAgent {
     tools?: { url: string },
     _env?: Readonly<Record<string, string>>,
     pluginArgs: readonly string[] = [],
+    readOnlyPaths: readonly string[] = [],
+    isolatedGit = false,
   ): string {
     if (prompt === '') {
       return 'claude';
@@ -357,7 +370,13 @@ export class ClaudeAgent implements BbAgent {
     // The flags are constants; only their generated values need quoting.
     parts.push(
       ...[
-        ...securityFlags(this.security, workspacePath, this.pluginsOn),
+        ...securityFlags(
+          this.security,
+          workspacePath,
+          this.pluginsOn,
+          readOnlyPaths,
+          isolatedGit,
+        ),
         ...this.mcpFlags(tools),
       ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );

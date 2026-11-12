@@ -65,3 +65,6 @@ bakers agents
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 
+
+In host sandbox mode, `.bakers/` and effective `runtime.read_only` paths are write-protected.
+See [host-executed paths](/provision/security/shared-settings#host-executed-paths) for layers and protected-file delivery.

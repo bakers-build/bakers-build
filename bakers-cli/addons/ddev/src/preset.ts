@@ -1,3 +1,5 @@
+export const runtime = { read_only: ['.ddev'] };
+
 // The ddev addon on the conductor surface: agent tools for the run's own
 // DDEV project (the worktree is its approot). Listed in a conductor's
 // `addons[]`, the conductor serves them through its MCP server.

@@ -31,13 +31,13 @@ export default {
   // The project bootstrap validates env and registers the worktree's DDEV
   // project before its sentinel, then prepares the local test workspace. It
   // starts no DDEV; hook failures remain best-effort. Every hook that acts on a
-  // DDEV project first runs scripts/ddev-own-project.sh, which refuses the
+  // DDEV project first runs .bakers/scripts/ddev-own-project.sh, which refuses the
   // parent checkout an unregistered worktree falls back to.
   hooks: {
-    after_create: 'bash .ddev/worktree-post.sh',
-    before_run: 'bash scripts/worktree-deps.sh',
+    after_create: 'bash .bakers/scripts/worktree-post.sh',
+    before_run: 'bash .bakers/scripts/worktree-deps.sh',
     after_done:
-      'bash scripts/docs-preview.sh stop; bash scripts/conductor-e2e.sh teardown; bash scripts/ddev-own-project.sh && ddev delete -Oy',
+      'bash .bakers/scripts/docs-preview.sh stop; bash .bakers/scripts/conductor-e2e.sh teardown; bash .bakers/scripts/ddev-own-project.sh && ddev delete -Oy',
     // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
     // a trusted `ddev` nor `pnpm install`. Every profile installs the
     // bakers-cli and docs dependencies first; `deps` does only that.
@@ -48,21 +48,21 @@ export default {
     // service claims it for `ports_up docs`; a repeat call replaces it.
     // `conductor-e2e` resets the recipe-test playground and starts a detached
     // playground conductor from this worktree's build; `-stop` and `-start`
-    // stop and restart it without a reset (scripts/conductor-e2e.sh).
+    // stop and restart it without a reset (.bakers/scripts/conductor-e2e.sh).
     provision_up: {
-      deps: 'bash scripts/worktree-deps.sh --all',
+      deps: 'bash .bakers/scripts/worktree-deps.sh --all',
       'docs-preview':
-        'bash scripts/worktree-deps.sh --all && bash scripts/docs-preview.sh',
+        'bash .bakers/scripts/worktree-deps.sh --all && bash .bakers/scripts/docs-preview.sh',
       'conductor-e2e':
-        'bash scripts/worktree-deps.sh --all && bash scripts/ddev-own-project.sh && ddev provision --provider recipe-test && bash scripts/conductor-e2e.sh',
-      'conductor-e2e-stop': 'bash scripts/conductor-e2e.sh stop',
-      'conductor-e2e-start': 'bash scripts/conductor-e2e.sh start',
+        'bash .bakers/scripts/worktree-deps.sh --all && bash .bakers/scripts/ddev-own-project.sh && ddev provision --provider recipe-test && bash .bakers/scripts/conductor-e2e.sh',
+      'conductor-e2e-stop': 'bash .bakers/scripts/conductor-e2e.sh stop',
+      'conductor-e2e-start': 'bash .bakers/scripts/conductor-e2e.sh start',
       'recipe-test':
-        'bash scripts/worktree-deps.sh && bash scripts/ddev-own-project.sh && ddev provision --provider recipe-test',
+        'bash .bakers/scripts/worktree-deps.sh && bash .bakers/scripts/ddev-own-project.sh && ddev provision --provider recipe-test',
       'existing-config':
-        'bash scripts/worktree-deps.sh && bash scripts/ddev-own-project.sh && ddev provision --provider existing-config',
+        'bash .bakers/scripts/worktree-deps.sh && bash .bakers/scripts/ddev-own-project.sh && ddev provision --provider existing-config',
       'existing-config-fresh':
-        'bash scripts/worktree-deps.sh && bash scripts/ddev-own-project.sh && ddev init --provider existing-config',
+        'bash .bakers/scripts/worktree-deps.sh && bash .bakers/scripts/ddev-own-project.sh && ddev init --provider existing-config',
     },
   },
   // The agent plugins every run of this project gets, installed into a

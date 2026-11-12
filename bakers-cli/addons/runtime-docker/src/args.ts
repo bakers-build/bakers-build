@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import type { RuntimeLaunch } from '@bakers-build/conductor/contract';
 
 export interface DockerOptions {
@@ -16,7 +15,8 @@ export interface DockerOptions {
 
 /** Host facts the launch depends on, resolved by the backend. */
 export interface HostPaths {
-  gitCommonDir: string;
+  /** Independent metadata mounted over the worktree admin directory. */
+  privateGitDir: string;
   /** The worktree's own Git dir; the common dir itself for a main checkout. */
   gitDir: string;
   /** `<worktree>/.git` when it is a gitlink file. */
@@ -83,9 +83,7 @@ export function dockerArgs(
       // Allowlist mode keeps the model credential in the proxy only.
       !(allowlist && credentials.includes(k)),
   );
-  const common = where.gitCommonDir;
   const gitDir = where.gitDir;
-  const linked = gitDir !== common;
   const ro = (path: string) => bind(path, path, ':ro');
   const argv = [
     opts.docker,
@@ -105,24 +103,7 @@ export function dockerArgs(
     ...forwarded.flatMap((k) => ['-e', k]),
     ...bind(ws),
     ...(where.gitLink ? bind(where.gitLink, undefined, ':ro') : []),
-    ...bind(common),
-    // The run must not plant a hook, rewrite Git config or repoint a worktree's
-    // Git dir: host git in these repos would run what the run chose.
-    ...ro(join(common, 'hooks')),
-    ...ro(join(common, 'config')),
-    // Read by host git in the main checkout once `extensions.worktreeConfig` is on.
-    ...ro(join(common, 'config.worktree')),
-    ...ro(join(common, 'modules')),
-    ...ro(join(common, 'worktrees')),
-    ...(linked
-      ? [
-          // Docker mounts by depth, so this reopens only the run's own Git dir.
-          ...bind(gitDir),
-          ...ro(join(gitDir, 'commondir')),
-          ...ro(join(gitDir, 'gitdir')),
-          ...ro(join(gitDir, 'config.worktree')),
-        ]
-      : []),
+    ...bind(where.privateGitDir, gitDir),
     ...bind(where.cliRoot, undefined, ':ro'),
     ...opts.mounts.flatMap((m) => bind(m, m, ':ro')),
     ...bind(where.runHome),

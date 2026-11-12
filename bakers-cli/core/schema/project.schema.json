@@ -151,6 +151,9 @@
     "select_agent": {
       "function": true,
       "description": "Function choosing the agent for a ticket; replaces the shipped selection."
+    },
+    "runtime": {
+      "$ref": "#/$defs/runtime"
     }
   },
   "required": [
@@ -257,6 +260,19 @@
         ],
         "additionalProperties": false
       }
+    },
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "read_only": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(?:\\$inherit|(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*?/$)[^\\\\:\\u0000$]+)$"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

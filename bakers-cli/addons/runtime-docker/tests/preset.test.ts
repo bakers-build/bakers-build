@@ -66,3 +66,27 @@ describe('imageVersion', () => {
     expect(imageVersion(dir, '1.2.3')).not.toBe(first);
   });
 });
+
+it('reports layered runtime paths at config load', async () => {
+  const plugins = await runtimes!([], {
+    shared_runtime: {
+      default: { read_only: ['.ddev'] },
+      project: { read_only: ['$inherit', 'scripts'] },
+    },
+    read_only: ['$inherit', 'bin'],
+  });
+  expect(plugins[0]?.readOnly).toEqual({
+    entries: [
+      { value: '.ddev', source: 'default' },
+      { value: 'scripts', source: 'project' },
+      { value: 'bin', source: 'runtime' },
+    ],
+    removed: [],
+  });
+});
+
+it('rejects invalid runtime paths before dispatch', () => {
+  expect(() => runtimes!([], { read_only: ['../escape'] })).toThrow(
+    /invalid worktree-relative path/,
+  );
+});

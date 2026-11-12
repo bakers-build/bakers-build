@@ -4,6 +4,7 @@ import {
   type ConductorLogger,
   killRunProcesses,
   type MachineContext,
+  protectedProjectPaths,
   shellQuote,
   stemForConfigFile,
 } from '@bakers-build/core';
@@ -16,6 +17,7 @@ import {
   matchesEnvDeny,
   type RunEnvPolicy,
 } from '../plugins/agent.js';
+import { resolveRuntimeOptions } from '../plugins/agent-args.js';
 import { homeKey, homePath } from '../plugins/agent-home.js';
 import type {
   BbExecutor,
@@ -380,8 +382,61 @@ export class Conductor {
    */
   async startTools(endpointFile?: string): Promise<void> {
     const { siteTools } = this.remote;
-    if ((!this.config.tools && !siteTools) || this.toolServer) return;
-    const hosts = (await (await this.runtime()).toolServerHosts?.()) ?? [];
+    const runtime = await this.runtime();
+    if (
+      (!this.config.tools && !siteTools && !runtime.transferCommit) ||
+      this.toolServer
+    )
+      return;
+    const hosts = (await runtime.toolServerHosts?.()) ?? [];
+    const addonRegistry = this.config.tools ?? (await loadTools([]));
+    const transferRegistry = await loadTools(
+      runtime.transferCommit
+        ? [
+            {
+              name: 'runtime',
+              version: '1',
+              tools: {
+                contract: 1,
+                tools: {
+                  runtime_transfer_commit: {
+                    description:
+                      'Explicitly transfer a full run-local commit hash to this ticket branch. Source config/hooks and other refs are never imported. The run Git cache is retained for recovery.',
+                    input: {
+                      type: 'object',
+                      required: ['commit'],
+                      properties: { commit: { type: 'string', minLength: 40 } },
+                    },
+                  },
+                },
+                handlers: async () => ({
+                  runtime_transfer_commit: async ({ runUuid, args }) => {
+                    if (!runUuid)
+                      throw new Error(
+                        'Commit transfer requires a run-bound grant',
+                      );
+                    await runtime.transferCommit?.(
+                      runUuid,
+                      args.commit as string,
+                    );
+                    return {
+                      text: 'Commit transferred to the authorized ticket branch.',
+                    };
+                  },
+                }),
+              },
+            },
+          ]
+        : [],
+    );
+    if (
+      addonRegistry
+        .list()
+        .some((tool) =>
+          transferRegistry.list().some((other) => other.name === tool.name),
+        )
+    )
+      throw new Error('runtime tool conflicts with an addon tool');
     // Runs closed while no server ran (`oven once`, a crash) lose their grant here.
     const openRuns = await this.remote.fetchActiveRuns(this.id).then(
       (runs) => runs.map((r) => r.runUuid),
@@ -394,7 +449,13 @@ export class Conductor {
       },
     );
     this.toolServer = await startToolServer({
-      registry: this.config.tools ?? (await loadTools([])),
+      registry: {
+        list: () => [...addonRegistry.list(), ...transferRegistry.list()],
+        call: (name, ...args) =>
+          transferRegistry.list().some((tool) => tool.name === name)
+            ? transferRegistry.call(name, ...args)
+            : addonRegistry.call(name, ...args),
+      },
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
@@ -449,7 +510,10 @@ export class Conductor {
     binding: ToolBinding,
   ): { url: string; token: string } | undefined {
     if (!this.toolServer) return undefined;
-    const token = this.toolServer.issueRunToken(runUuid, binding);
+    const token = this.toolServer.issueRunToken(runUuid, {
+      ...binding,
+      runUuid,
+    });
     return { url: this.toolServer.url, token };
   }
 
@@ -1786,6 +1850,17 @@ export class Conductor {
         })
       : undefined;
     if (preparation) Object.assign(env, preparation.env);
+    const isolates = this.config.runtime?.isolates === true;
+    const runtimePaths =
+      this.config.runtime?.readOnly ??
+      resolveRuntimeOptions({ shared_runtime: this.config.sharedRuntime });
+    const protectedPaths =
+      isolates || chosen.permissions === 'sandbox'
+        ? protectedProjectPaths(
+            ws.path,
+            runtimePaths.entries.map((entry) => entry.value),
+          )
+        : [];
     const command = chosen.agent.launchCommand(
       prompt,
       identity,
@@ -1793,6 +1868,8 @@ export class Conductor {
       toolsUrl ? { url: toolsUrl } : undefined,
       env,
       plugins.args,
+      protectedPaths,
+      isolates,
     );
     // Read after launchCommand: a warning may depend on what this launch got.
     const warnings = chosen.agent.launchWarnings;
@@ -1823,16 +1900,21 @@ export class Conductor {
       command,
       env: runEnv,
       workspacePath: ws.path,
+      ticketBranch: t.branchName,
       run: { uuid: run.runUuid, id: run.runId },
       harness: chosen.agent.id,
       ...agentInfo,
       ...(runtimeContext
         ? {
             homePath: runtimeContext.homePath,
-            readPaths: preparation?.readPaths ?? [],
+            readPaths: [
+              ...(preparation?.readPaths ?? []),
+              ...(isolates ? protectedPaths : []),
+            ],
             writePaths: preparation?.writePaths ?? [],
           }
         : {}),
+      ...(isolates && !runtimeContext ? { readPaths: protectedPaths } : {}),
     });
     await this.executor.startRun({
       ticket: {

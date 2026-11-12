@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type {
   AgentModelApi,
@@ -20,8 +20,10 @@ import type {
 } from '@bakers-build/conductor/contract';
 import {
   type ConductorLogger,
-  quarantinePlanted,
+  type IsolatedGit,
+  isolateGit,
   shellQuote,
+  transferIsolatedCommit,
 } from '@bakers-build/core';
 import {
   API_KEY_PLACEHOLDER,
@@ -36,6 +38,8 @@ const EGRESS_NETWORK = 'bb-runtime-egress';
 export interface RuntimeDockerOptions {
   /** The container CLI; `podman` works too. */
   docker?: string;
+  read_only?: string[];
+  shared_runtime?: unknown;
   /** An operator image; never built. Default: the shipped image. */
   image?: string;
   /** Extra host paths mounted read-only. */
@@ -64,8 +68,6 @@ export interface BackendDeps {
 /** The first 12 hex chars of the sha256 of `text`. */
 export const shortHash = (text: string) =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
-
-export { quarantinePlanted } from '@bakers-build/core';
 
 const run = promisify(execFile);
 export const realExec: BackendDeps['exec'] = (file, args) => run(file, args);
@@ -278,6 +280,10 @@ export function dockerRuntime(
       const gitLink = join(ws, '.git');
       const within = (path: string, root: string) =>
         path === root || path.startsWith(root + sep);
+      if (within(realpathSync(dirname(runHome)), realpathSync(ws)))
+        throw new Error(
+          'runtime-docker: private state must stay outside the worktree',
+        );
       const canonical = (path: string) =>
         existsSync(path) ? realpathSync(path) : resolve(path);
       for (const [paths, write] of [
@@ -295,7 +301,14 @@ export function dockerRuntime(
             throw new Error(`runtime-docker: refusing broad path ${path}`);
           if (
             write &&
-            [gitCommonDir, gitLink, deps.cliRoot].some(
+            [
+              gitCommonDir,
+              dirname(runHome),
+              gitLink,
+              deps.cliRoot,
+              ...(launch.readPaths ?? []),
+              ...opts.mounts,
+            ].some(
               (root) =>
                 within(actual, canonical(root)) ||
                 within(canonical(root), actual),
@@ -305,18 +318,31 @@ export function dockerRuntime(
         }
       }
 
-      // Bound read-only, so each must exist before docker would create it as root.
-      for (const d of ['hooks', 'modules', 'worktrees'])
-        mkdirSync(join(gitCommonDir, d), { recursive: true });
-      for (const dir of new Set([gitCommonDir, gitDir])) {
-        const worktreeConfig = join(dir, 'config.worktree');
-        if (!existsSync(worktreeConfig)) writeFileSync(worktreeConfig, '');
-      }
-      mkdirSync(runHome, { recursive: true });
-      writeFileSync(
-        recordOf(launch.run.uuid),
-        JSON.stringify({ workspace: ws, gitCommonDir }),
-      );
+      const recordPath = recordOf(launch.run.uuid);
+      const branch =
+        launch.ticketBranch ??
+        (
+          await deps.exec('git', ['-C', ws, 'symbolic-ref', '--short', 'HEAD'])
+        ).stdout.trim();
+      const privateGit: IsolatedGit = existsSync(recordPath)
+        ? JSON.parse(readFileSync(recordPath, 'utf8'))
+        : isolateGit(
+            ws,
+            `${runHome}.git`,
+            branch,
+            [...(launch.readPaths ?? []), ...opts.mounts]
+              .filter((path) => within(path, ws))
+              .map((path) => relative(ws, path)),
+          );
+      if (
+        privateGit.workspace !== ws ||
+        privateGit.branch !== branch ||
+        privateGit.gitDir !== gitDir
+      )
+        throw new Error(
+          'runtime-docker: private Git record does not match this launch',
+        );
+      writeFileSync(recordPath, JSON.stringify(privateGit), { mode: 0o600 });
       // The CLI build is mounted read-only; this puts the conductor's own CLI on PATH.
       if (deps.bakersEntry) {
         mkdirSync(join(runHome, 'bin'), { recursive: true });
@@ -334,8 +360,8 @@ export function dockerRuntime(
         { ...launch, env },
         { ...opts, image },
         {
-          gitCommonDir,
           gitDir,
+          privateGitDir: privateGit.path,
           ...(statSync(gitLink, { throwIfNoEntry: false })?.isFile()
             ? { gitLink }
             : {}),
@@ -346,6 +372,19 @@ export function dockerRuntime(
         },
       );
       return { command: argv.map(shellQuote).join(' '), env: runEnv };
+    },
+    async transferCommit(runUuid, commit) {
+      const path = recordOf(runUuid);
+      const record: IsolatedGit = JSON.parse(readFileSync(path, 'utf8'));
+      transferIsolatedCommit(record, commit);
+      writeFileSync(
+        path,
+        JSON.stringify({
+          ...record,
+          expected: commit,
+        }),
+        { mode: 0o600 },
+      );
     },
     async cleanup(r) {
       if (!plainName(r.uuid)) {
@@ -373,31 +412,7 @@ export function dockerRuntime(
         );
         return;
       }
-      // After the container is gone, so the run cannot plant anything behind the scan.
-      const record = recordOf(r.uuid);
-      if (existsSync(record)) {
-        try {
-          const { workspace, gitCommonDir } = JSON.parse(
-            readFileSync(record, 'utf8'),
-          );
-          const moved = await quarantinePlanted(
-            workspace,
-            gitCommonDir,
-            deps.exec,
-          );
-          if (moved.length > 0)
-            deps.logger.warn(
-              { run: r.uuid, moved },
-              'runtime quarantined repositories the run planted',
-            );
-          rmSync(record);
-        } catch (err) {
-          deps.logger.error(
-            { run: r.uuid, err: String(err) },
-            'runtime quarantine failed: host git in the worktree may run what the run planted',
-          );
-        }
-      }
+      // Private Git and its host-owned record remain available for delivery/recovery.
       rmSync(runHomeOf(r.uuid), { recursive: true, force: true });
     },
   };

@@ -2064,3 +2064,59 @@ export default {
     );
   });
 });
+
+describe('runtime config layers', () => {
+  it('keeps addon defaults and shared project/machine layers and warns for each removal', async () => {
+    const path = writeDescriptorConfig(
+      `runtime: { read_only: ['scripts'] }, addons: ['./paths.js'],`,
+    );
+    writeFileSync(
+      join(dirname(path), 'paths.js'),
+      `export const runtime = { read_only: ['.ddev'] };`,
+    );
+    writeFileSync(
+      join(process.env.HOME as string, '.bakers/machine.config.js'),
+      machineSource(
+        `export default { addons: ['@bakers-build/addon-codex'], runtime: { read_only: [] } };`,
+      ),
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const config = await loadConductorConfig(path);
+      expect(config.sharedRuntime).toEqual({
+        default: { read_only: ['.ddev'] },
+        project: { read_only: ['scripts'] },
+        machine: { read_only: [] },
+      });
+      expect(warn.mock.calls.flat().join('\n')).toMatch(
+        /project.*runtime.read_only.*\.ddev/,
+      );
+      expect(warn.mock.calls.flat().join('\n')).toMatch(
+        /machine.*runtime.read_only.*scripts/,
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+describe('runtime entry loosening', () => {
+  it('warns when the runtime entry removes a project path', async () => {
+    const path = writeDescriptorConfig(
+      `runtime: { read_only: ['scripts'] }, addons: ['./runtime.js'],`,
+    );
+    writeFileSync(
+      join(dirname(path), 'runtime.js'),
+      `export const runtimes = acc => [...acc, { kind: 'runtime', id: 'test', readOnly: { entries: [], removed: [] } }];`,
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      await loadConductorConfig(path);
+      expect(warn.mock.calls.flat().join('\n')).toMatch(
+        /runtime entry.*runtime.read_only.*scripts/,
+      );
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});

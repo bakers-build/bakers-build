@@ -5,7 +5,7 @@
 set -euo pipefail
 
 scripts="$(cd "$(dirname "$0")" && pwd -P)"
-docs="$(cd "$scripts/../docs" && pwd -P)"
+docs="$(cd "$scripts/../../docs" && pwd -P)"
 log="$docs/.vitepress/cache/preview.log"
 
 # This worktree's preview: a `vitepress … preview` process whose cwd is docs/, the identity the

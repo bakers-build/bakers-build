@@ -1,8 +1,10 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import {
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -39,6 +41,19 @@ beforeEach(() => {
   git(main, 'worktree', 'add', '-q', ws, '-b', 'run');
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
+function snapshot(path: string): Record<string, string> {
+  const files: Record<string, string> = {};
+  const visit = (relative: string) => {
+    for (const name of readdirSync(join(path, relative))) {
+      const file = join(relative, name);
+      if (lstatSync(join(path, file)).isDirectory()) visit(file);
+      else files[file] = readFileSync(join(path, file)).toString('hex');
+    }
+  };
+  visit('');
+  return files;
+}
+
 const run = { uuid: 'test-run', id: 1 };
 const make = () =>
   bwrapRuntime(
@@ -114,6 +129,35 @@ it.skipIf(!canBwrap)(
     const runtime = make();
     const context = await runtime.prepareRun!(run);
     writeFileSync(join(root, 'host-secret'), 'secret');
+    const protectedDirs = ['.bakers', '.ddev'].map((path) => join(ws, path));
+    for (const path of protectedDirs) mkdirSync(path);
+    const protectedFiles = [
+      join(ws, '.bakers/host.sh'),
+      join(ws, '.ddev/config.yaml'),
+    ];
+    for (const path of protectedFiles) writeFileSync(path, 'trusted');
+    const hostConfig = readFileSync(join(root, 'main/.git/config'), 'utf8');
+    const main = join(root, 'main');
+    const sibling = join(root, 'sibling');
+    git(main, 'worktree', 'add', '-qb', 'sibling', sibling);
+    const parentBranch = git(main, 'symbolic-ref', '--short', 'HEAD');
+    const parentCommit = git(main, 'rev-parse', 'HEAD');
+    const parentBefore = snapshot(join(main, '.git'));
+    const siblingBefore = snapshot(sibling);
+    const attackPaths = [
+      join(main, '.git/refs/heads', parentBranch),
+      join(main, '.git/index'),
+      join(
+        main,
+        '.git/objects',
+        parentCommit.slice(0, 2),
+        parentCommit.slice(2),
+      ),
+      join(main, '.git/logs/HEAD'),
+      join(main, '.git/config'),
+      join(main, '.git/hooks/pre-commit'),
+      join(main, '.git/worktrees/sibling/gitdir'),
+    ];
     const command = `set -eu
 test "$HOME" = '${context.homePath}'
 test ! -e '${join(root, 'host-secret')}'
@@ -123,19 +167,37 @@ test ! -e /home/cw/.bakers
 test ! -e /proc/${process.pid}
 test -z "\${HOST_SECRET:-}"
 test "$MODEL_TOKEN" = test-secret
+test "$(cat '${join(ws, '.ddev/generated.yaml')}')" = generated
+for path in ${protectedFiles.map((path) => `'${path}'`).join(' ')}; do
+  if (printf attack > "$path") 2>/dev/null; then exit 1; fi
+  if (printf attack > "$(dirname "$path")/created") 2>/dev/null; then exit 1; fi
+  if mv "$path" "$path.moved" 2>/dev/null; then exit 1; fi
+  if rm "$path" 2>/dev/null; then exit 1; fi
+done
 echo x > work.txt
 git add work.txt
 git -c user.name=t -c user.email=t@t commit -qm run
-if git config --local malicious.value x 2>/dev/null; then exit 1; fi
+git config --local local.value x
+git update-ref 'refs/heads/${parentBranch}' HEAD
+git update-ref refs/heads/sibling HEAD
+for path in ${attackPaths.map((path) => `'${path}'`).join(' ')}; do
+  mkdir -p "$(dirname "$path")" 2>/dev/null || true
+  (printf attack > "$path") 2>/dev/null || true
+  mv "$path" "$path.moved" 2>/dev/null || true
+  rm -f "$path.moved" 2>/dev/null || true
+done
 echo isolated`;
     const launch = await runtime.wrap({
       command,
       env: { MODEL_TOKEN: 'test-secret' },
       workspacePath: ws,
+      readPaths: protectedDirs,
       run,
       harness: 'any',
       ...context,
     });
+    writeFileSync(join(ws, '.ddev/generated.yaml'), 'generated');
+    const protectedBefore = protectedDirs.map((path) => snapshot(path));
     const result = spawnSync('sh', ['-c', launch.command], {
       env: { ...process.env, ...launch.env, HOST_SECRET: 'hidden' },
       encoding: 'utf8',
@@ -144,7 +206,29 @@ echo isolated`;
     expect(result.stderr).not.toContain('test-secret');
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain('isolated');
+    expect(protectedDirs.map((path) => snapshot(path))).toEqual(
+      protectedBefore,
+    );
+    expect(snapshot(join(main, '.git'))).toEqual(parentBefore);
+    expect(snapshot(sibling)).toEqual(siblingBefore);
+    expect(git(ws, 'log', '-1', '--format=%s')).toBe('base');
+    const record = JSON.parse(
+      readFileSync(join(root, 'cache/test-run.git.json'), 'utf8'),
+    );
+    const commit = git(ws, `--git-dir=${record.path}`, 'rev-parse', 'HEAD');
+    expect(git(ws, `--git-dir=${record.path}`, 'rev-parse', parentBranch)).toBe(
+      commit,
+    );
+    expect(git(ws, `--git-dir=${record.path}`, 'rev-parse', 'sibling')).toBe(
+      commit,
+    );
+    await runtime.transferCommit!(run.uuid, commit);
     expect(git(ws, 'log', '-1', '--format=%s')).toBe('run');
+    expect(git(main, 'rev-parse', parentBranch)).toBe(parentCommit);
+    expect(git(main, 'rev-parse', 'sibling')).toBe(parentCommit);
+    expect(readFileSync(join(root, 'main/.git/config'), 'utf8')).toBe(
+      hostConfig,
+    );
     await runtime.cleanup(run);
   },
 );
@@ -202,3 +286,89 @@ it.skipIf(!canBwrap)(
     }
   },
 );
+
+it('overlays private metadata without exposing the parent store and keeps requested paths read-only', async () => {
+  const runtime = make();
+  const context = await runtime.prepareRun!(run);
+  const readPath = join(ws, 'protected');
+  mkdirSync(readPath);
+  await runtime.wrap({
+    command: 'true',
+    env: {},
+    workspacePath: ws,
+    run,
+    harness: 'any',
+    readPaths: [readPath],
+    ...context,
+  });
+  const record = JSON.parse(
+    readFileSync(join(root, 'cache/test-run.git.json'), 'utf8'),
+  );
+  const plan = JSON.parse(
+    readFileSync(join(root, 'cache/test-run.launch.json'), 'utf8'),
+  );
+  const mounts: string[][] = [];
+  for (let index = 0; index < plan.argv.length; index++)
+    if (['--bind', '--ro-bind'].includes(plan.argv[index]))
+      mounts.push(plan.argv.slice(index, index + 3));
+  expect(record.path).toBe(join(root, 'cache/test-run.git'));
+  expect(record.path.startsWith(`${context.homePath}/`)).toBe(false);
+  expect(mounts).toContainEqual(['--bind', record.path, record.gitDir]);
+  expect(mounts).toContainEqual([
+    '--ro-bind',
+    join(ws, '.git'),
+    join(ws, '.git'),
+  ]);
+  expect(mounts).toContainEqual(['--ro-bind', readPath, readPath]);
+  expect(
+    mounts.some(
+      ([, source]) =>
+        source === record.commonDir ||
+        source.startsWith(`${record.commonDir}/`),
+    ),
+  ).toBe(false);
+  expect(
+    mounts.findIndex(([, , target]) => target === readPath),
+  ).toBeGreaterThan(mounts.findIndex(([, , target]) => target === ws));
+  await runtime.cleanup(run);
+});
+it('transfers local commits through the runtime capability into only the ticket branch', async () => {
+  const main = join(root, 'main');
+  git(main, 'branch', 'sibling');
+  const refs = git(main, 'show-ref');
+  const runtime = make();
+  const context = await runtime.prepareRun!(run);
+  await runtime.wrap({
+    command: 'true',
+    env: {},
+    workspacePath: ws,
+    ticketBranch: 'run',
+    run,
+    harness: 'any',
+    ...context,
+  });
+  const recordPath = join(root, 'cache/test-run.git.json');
+  const record = JSON.parse(readFileSync(recordPath, 'utf8'));
+  const local = (...args: string[]) =>
+    git(ws, `--git-dir=${record.path}`, ...args);
+  writeFileSync(join(ws, 'local.txt'), 'local');
+  local('add', 'local.txt');
+  local(
+    '-c',
+    'user.name=test',
+    '-c',
+    'user.email=test@test',
+    'commit',
+    '-qm',
+    'private',
+  );
+  const commit = local('rev-parse', 'HEAD');
+  local('update-ref', 'refs/heads/sibling', commit);
+  expect(git(main, 'show-ref')).toBe(refs);
+  await runtime.transferCommit!(run.uuid, commit);
+  expect(git(main, 'rev-parse', 'run')).toBe(commit);
+  expect(git(main, 'rev-parse', 'sibling')).toBe(record.expected);
+  expect(git(main, 'rev-parse', 'HEAD')).toBe(record.expected);
+  expect(JSON.parse(readFileSync(recordPath, 'utf8')).expected).toBe(commit);
+  await runtime.cleanup(run);
+});

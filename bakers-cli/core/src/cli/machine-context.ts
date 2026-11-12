@@ -45,6 +45,7 @@ export interface MachineContext {
   tunnel?: boolean;
   /** Shared run permissions for every agent; the conductor validates it. */
   permissions?: unknown;
+  runtime?: unknown;
   /** Renamed to `permissions`; the conductor rejects it on load. */
   security?: unknown;
   /**

@@ -12,6 +12,6 @@ try {
 } catch {}
 ')"
 if [ "$approot" != "$root" ]; then
-  echo "DDEV resolves the project at ${approot:-(none)}, not this worktree ($root); run bash .ddev/worktree-post.sh to register it." >&2
+  echo "DDEV resolves the project at ${approot:-(none)}, not this worktree ($root); run bash .bakers/scripts/worktree-post.sh to register it." >&2
   exit 1
 fi

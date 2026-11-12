@@ -15,7 +15,7 @@ case "$provider" in existing-config|recipe|recipe-test) ;; *) echo 'Unsupported 
 cd "${DDEV_APPROOT:-$(pwd)}"
 # Any reinstall invalidates `ddev provision`'s record of the installed provider.
 rm -f .ddev/.bakers-test/profile
-node scripts/setup-worktree.mjs
+node .bakers/scripts/setup-worktree.mjs
 # Check the registry before startup: an existing name must belong to this exact root.
 ddev list -j | node --input-type=module -e '
 import { readFileSync, realpathSync } from "node:fs";

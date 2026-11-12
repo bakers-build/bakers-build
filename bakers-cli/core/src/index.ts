@@ -153,12 +153,16 @@ export {
   exec,
   setDefaultCommandRunner,
 } from './core/exec.js';
-export { quarantinePlanted } from './core/git-quarantine.js';
 export {
   type GitSandboxPaths,
   gitSandboxPaths,
   withoutGitDirs,
 } from './core/git-sandbox.js';
+export {
+  type IsolatedGit,
+  isolateGit,
+  transferIsolatedCommit,
+} from './core/isolated-git.js';
 export {
   type ConductorLiveness,
   type ConductorLivenessInput,
@@ -180,6 +184,7 @@ export {
   type VerifyProcessInput,
   verifyConductorProcess,
 } from './core/proc.js';
+export { protectedProjectPaths } from './core/protected-project-paths.js';
 export { normalizeRepoUrl } from './core/repo-url.js';
 export { cliRootOf } from './core/runtime-paths.js';
 export { shellQuote } from './core/shell.js';

@@ -1,5 +1,9 @@
 # `.bakers/` — connection and engine configuration
 
+Host scripts live under `.bakers/scripts/`. After applying the script relocation, reload the
+conductor configuration before using `provision_up`: a running conductor retains old command
+strings. Apply and deliver protected-file changes outside the isolated run.
+
 > **This repo commits no connection.** It once pointed every checkout at the
 > develop control plane (dev2); bakers's own tickets now live on prod
 > (`https://app.bakers.build`), so `bakers` uses each developer's private
@@ -123,5 +127,5 @@ working on this stack and nothing more.
 
 It is deliberately not in the tree. How a person wants to be spoken to is that person's preference,
 and a committed declaration asserts it on behalf of everyone who clones the repository. `.gitignore`
-carries the rule; `.ddev/worktree-post.sh` copies the file from the parent clone into each new
+carries the rule; `.bakers/scripts/worktree-post.sh` copies the file from the parent clone into each new
 worktree, so a conductor-dispatched run reads the same declaration you wrote once here.

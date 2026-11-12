@@ -17,7 +17,7 @@ alone for work that needs no site, and a site profile's `ddev init` installs and
 never run `vitepress preview` in a run. The Playwright suite and `playwright-cli` run through
 `ddev_exec`. A server an agent starts in the
 sandbox, such as Storybook, is reachable only within that same command. Skill and conductor
-behavior is tested in the playground workspace that `scripts/setup-test-project.sh` sets up; a
+behavior is tested in the playground workspace that `.bakers/scripts/setup-test-project.sh` sets up; a
 sandboxed run starts a playground conductor with `provision_up('conductor-e2e')` and stops or
 restarts it with `conductor-e2e-stop` and `conductor-e2e-start`. Core tests, Playwright, conductor and skill-behavior
 setup: [testing](docs/bakers/testing.md#setup).
@@ -49,13 +49,13 @@ included in core tests. Ticket-specific functional checks apply separately.
 | When | Command |
 |---|---|
 | `docs/**` or documentation links | `cd docs && pnpm build && node --test scripts/manual.test.mjs scripts/marketplace.test.mjs scripts/addon-options.test.mjs` |
-| bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
+| bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**`, `.bakers/scripts/**` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
 | bakers.build CLI source | `provision_up('deps')`, then `cd bakers-cli && pnpm -r run build` |
 | PHP implementation | `ddev phpcs && ddev phpmd && ddev phpstan` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
 | `.ddev/**` | `bash tests/contract/ddev-provision.sh` |
-| `scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
+| `.bakers/scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
 | `.gitlab-ci.yml` | `glab ci lint .gitlab-ci.yml && bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |
