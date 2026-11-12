@@ -125,7 +125,7 @@ config commands use the real registered CLI implementation with `BAKERS_HOME` an
 inside the case; external authentication and tracker responses are labelled fixture doubles.
 Direct machine/project config writes accept only `export default` followed by a strict JSON
 object; imports, expressions, extra statements and connection writes are rejected. After such a
-write, real CLI operations are limited to offline checks and dry runs. Exact field assertions
+write, initialization of that scope is unavailable. Exact field assertions
 parse this data without executing it. Arbitrary config JavaScript, installation, cloning, hooks
 and conductor startup are unavailable. These restrictions can block
 a scenario and must not be reported as skill defects. `completed` means the conversation reached
