@@ -1,9 +1,7 @@
 # Docker runtime
 
-`@bakers-build/addon-runtime-docker` starts each agent run in its own container. It fills the
-[`runtime` slot](/addons/slots#runtime-where-a-run-starts): the executor's terminal runs
-`docker run …` instead of the agent, and the worktree, Git and conductor tools keep their host
-paths. Machine scope; add to `~/.bakers/machine.config.js`:
+`@bakers-build/addon-runtime-docker` fills the [`runtime` slot](/addons/slots#runtime-where-a-run-starts),
+starting each run in a container while preserving host paths. Machine scope; add to `~/.bakers/machine.config.js`:
 
 ```js
 { use: '@bakers-build/addon-runtime-docker', with: { docker: 'podman' } }
@@ -38,8 +36,9 @@ Container `bb-run-<run uuid>`, under your uid. Mounts, and nothing else of your 
 - the read/write paths from neutral agent preparation: Claude plugins read-only and the worktree transcript directory writable. Docker has no Claude-specific adapter.
 
 No `~/.ssh`, `~/.bakers`, Docker socket or harness login (`.credentials.json`). Secrets use `-e KEY`, never values in argv.
-Agent permissions stay unchanged; sandbox mode needs its tools and nested namespace support
-inside the runtime. Unavailable sandboxes fail closed. Pushes use `forge_push`; cleanup removes the container and home.
+Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
+The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
+See [prerequisites](/provision/security/shared-settings#verify). Pushes use `forge_push`; cleanup removes the container and home.
 
 **Not isolated:** conductor tools and project hooks that run worktree files on the host
 (`provision_up`, `ddev_start`, `ddev_exec`, `before_run`, `after_run`); the run can edit them.

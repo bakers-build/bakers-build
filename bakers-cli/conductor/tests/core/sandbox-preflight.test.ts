@@ -10,6 +10,7 @@ import {
 import type {
   BbAgent,
   ConductorFileConfig,
+  RuntimePlugin,
   SandboxPreflight,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
@@ -37,7 +38,7 @@ function agentWith(results: SandboxPreflight[]) {
   return agent;
 }
 
-function setup(agent: BbAgent) {
+function setup(agent: BbAgent, runtime?: RuntimePlugin) {
   const logs: { level: string; msg?: string }[] = [];
   const mk = (level: string) => (_obj: object, msg?: string) => {
     logs.push({ level, msg });
@@ -71,6 +72,7 @@ function setup(agent: BbAgent) {
     remote: fakeRemote(),
     executor: fakeExecutor(),
     agent: [],
+    runtime,
     workspace: fakeWorkspace(),
     label: 'test',
     conductor_id: 'bakers-test-conductor',
@@ -98,6 +100,27 @@ const SANDBOX_LINE =
   'sandbox unavailable: claude: socat not found — install it with sudo apt-get install -y socat (see https://bakers.build/docs/advanced/run-security#sandbox-prerequisites)';
 
 describe('sandbox preflight gate', () => {
+  it('warns that runtime prerequisites are unchecked without withholding claims', async () => {
+    const { conductor, remote, logs } = setup(agentWith([{ ok: true }]), {
+      kind: 'runtime',
+      id: 'docker',
+      isolates: true,
+      requiredModules: [],
+      createRuntime: async () => ({
+        id: 'docker',
+        wrap: async ({ command, env }) => ({ command, env }),
+        cleanup: async () => {},
+      }),
+    });
+    await conductor.start();
+    expect(logs).toContainEqual({
+      level: 'warn',
+      msg: expect.stringMatching(/host only.*docker.*not checked/),
+    });
+    await conductor.tick();
+    expect(remote.calls.markRunning[0]).toMatchObject({ runUuid: 'r-1' });
+  });
+
   it('start logs the unavailable sandbox at error', async () => {
     const { conductor, logs } = setup(agentWith([MISSING]));
     await conductor.start();

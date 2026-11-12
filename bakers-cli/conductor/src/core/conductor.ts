@@ -36,7 +36,10 @@ import type {
   UncleanTicket,
 } from '../plugins/remote.js';
 import { type BbRuntime, hostRuntime } from '../plugins/runtime.js';
-import { sandboxFailures } from '../plugins/sandbox-preflight.js';
+import {
+  runtimeSandboxWarning,
+  sandboxFailures,
+} from '../plugins/sandbox-preflight.js';
 import { loadTools, type ToolBinding } from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
@@ -523,6 +526,8 @@ export class Conductor {
         'addon registration failed',
       );
     }
+    const warning = runtimeSandboxWarning(this.config.runtime?.id);
+    if (warning) this.logger.warn({ conductorId: this.id }, warning);
     for (const line of await sandboxFailures(this.agents)) {
       this.logger.error({ conductorId: this.id }, line);
     }

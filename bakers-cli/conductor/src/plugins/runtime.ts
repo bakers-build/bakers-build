@@ -48,7 +48,7 @@ export interface BbRuntime {
 export interface RuntimePlugin {
   readonly kind: 'runtime';
   readonly id: string;
-  /** True when runs are isolated from the host, which switches the harness sandbox off. */
+  /** True when runs are isolated from the host; agent permissions remain unchanged. */
   readonly isolates: boolean;
   readonly requiredModules: string[];
   createRuntime(
