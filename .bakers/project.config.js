@@ -105,6 +105,7 @@ export default {
   // '@bakers-build/addon-ports-frp', with: { … } } } }, merged with this one.
   addons: [
     '@bakers-build/addon-ddev',
+    '@bakers-build/addon-deployment',
     {
       use: '@bakers-build/addon-ports',
       with: {

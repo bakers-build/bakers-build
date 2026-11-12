@@ -832,7 +832,7 @@ describe('state run profile', () => {
       ),
     ).toEqual(['classified']);
   });
-  it('requires every expected read: the conductor tools for a bug RED in plan', async () => {
+  it('requires every expected read: tool discovery for a bug RED in plan', async () => {
     const diagnose = [
       readTicket(),
       comment('debug_diagnose', 'HTTP 500 at c0ffee0'),
@@ -840,7 +840,7 @@ describe('state run profile', () => {
       comment('test'),
       comment('summary', 'Probe-plan: 0'),
     ];
-    const provision = file('skills/bb-workflow/references/tools-conductor.md');
+    const provision = file('skills/bb-workflow/references/tools.md');
     expect(
       await judge('plan-bug-provision', 'Approve?', [...diagnose, provision]),
     ).toEqual([]);
@@ -850,7 +850,7 @@ describe('state run profile', () => {
     expect(
       await judge('plan-bug-provision', 'Approve?', [
         ...diagnose,
-        file('skills/bb-workflow/references/tools-conductor.md', 1),
+        file('skills/bb-workflow/references/tools.md', 1),
       ]),
     ).toEqual(['reads']);
   });
