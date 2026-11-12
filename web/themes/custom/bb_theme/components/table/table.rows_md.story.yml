@@ -1,0 +1,27 @@
+component: bb_theme:table
+name: Dense rows
+props:
+  variant: ''
+  row_height: md
+  columns:
+    - key: project
+      label: Project
+      row_header: true
+    - key: hours
+      label: Hours
+      num: true
+  rows:
+    - cells:
+        project:
+          kind: text
+          value: keytec · Time capture
+        hours:
+          kind: text
+          value: '4:00'
+    - cells:
+        project:
+          kind: text
+          value: keytec · Time capture two
+        hours:
+          kind: text
+          value: '0:30'
