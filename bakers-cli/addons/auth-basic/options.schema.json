@@ -7,7 +7,7 @@
   "properties": {
     "basic": {
       "type": "string",
-      "description": "Inline HTTP Basic token (base64 user:pass)."
+      "description": "Base64 of `user:password`, sent as `Authorization: Basic …` on every request; without it the addon adds nothing."
     }
   }
 }

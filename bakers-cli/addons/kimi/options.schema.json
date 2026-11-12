@@ -9,10 +9,12 @@
       "$ref": "https://bakers.build/schema/harness-options.schema.json#/properties/args"
     },
     "model": {
-      "$ref": "https://bakers.build/schema/harness-options.schema.json#/properties/model"
+      "$ref": "https://bakers.build/schema/harness-options.schema.json#/properties/model",
+      "description": "Passed as `--model`, else Kimi's own default."
     },
     "effort": {
-      "$ref": "https://bakers.build/schema/harness-options.schema.json#/properties/effort"
+      "$ref": "https://bakers.build/schema/harness-options.schema.json#/properties/effort",
+      "description": "Not supported; ignored with a log line."
     }
   },
   "additionalProperties": false

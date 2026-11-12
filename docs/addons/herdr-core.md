@@ -46,7 +46,17 @@ To use it on your machine only, while the project keeps its own executor, set it
 executor: { use: '@bakers-build/addon-herdr-core' },
 ```
 
-The machine's executor wins for every project on that machine; the project keeps its workspace and hooks. [Conductor slots](/addons/slots) explains the precedence. No `with` options are required; [herdr-core options](/addons/herdr-core/options) lists them.
+The machine's executor wins for every project on that machine; the project keeps its workspace and hooks. [Conductor slots](/addons/slots) explains the precedence. No `with` options are required; [Options](#options) lists them.
+
+## Options
+
+<!-- @options @bakers-build/addon-herdr-core -->
+
+## Run lifecycle
+
+`startRun` runs `hc run --bg --no-parent --outlive-parent` in the worktree. Its terminal name holds at most 32 characters of `a-z0-9-_`. The run's environment travels in a private launch script, never in the command line. `stopRun` does nothing. Cleanup finds the run's terminals by their branch and run labels, ends a live one with `hc kill` and removes it with `hc rm`; a sibling run's terminal is left alone. Run state reaches bakers.build through the agent and the server, as with herdr.
+
+herdr-core has no workspace of its own and opens no layout. Remote machines (`hc run --on`) are not used.
 
 ## Verify
 

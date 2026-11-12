@@ -48,7 +48,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 
 | When | Command |
 |---|---|
-| `docs/**` or documentation links | `cd docs && pnpm build && node --test scripts/manual.test.mjs scripts/marketplace.test.mjs` |
+| `docs/**` or documentation links | `cd docs && pnpm build && node --test scripts/manual.test.mjs scripts/marketplace.test.mjs scripts/addon-options.test.mjs` |
 | bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
 | bakers.build CLI source | `provision_up('deps')`, then `cd bakers-cli && pnpm -r run build` |
 | PHP implementation | `ddev phpcs && ddev phpmd && ddev phpstan` |

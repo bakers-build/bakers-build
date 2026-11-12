@@ -32,15 +32,7 @@ backend: {
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `repository` | string | required | `owner/repo`; the only repository the token reaches. |
-| `app_id` | number | required | The App's ID. |
-| `installation_id` | number | required | The App's installation on that repository. |
-| `private_key_env` | string | — | Environment variable holding the App's PEM private key. |
-| `private_key` | string | — | The PEM key itself; only in `~/.bakers/machine.config.js`. |
-
-| `auth` | `'gh'` | — | Use the conductor's `gh` login instead of a GitHub App. |
+<!-- @options @bakers-build/addon-forge-github -->
 
 With `auth: 'gh'` no App option is needed. Otherwise `app_id`, `installation_id` and one of `private_key_env` or `private_key` are required.
 

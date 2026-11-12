@@ -24,11 +24,12 @@
         "with": {
           "description": "The backend package's own settings, checked by that package's options.schema.json."
         }
-      }
+      },
+      "description": "The forge backend: the package and its own settings."
     },
     "merge": {
       "type": "object",
-      "description": "Merge rule per base branch; '*' for every other base.",
+      "description": "Merge rule per base branch; `*` for every other base. Without a rule: squash and delete the source branch.",
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
@@ -41,12 +42,18 @@
             "enum": [
               "squash",
               "merge"
-            ]
+            ],
+            "description": "Squash or merge commit."
           },
           "delete_source": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Delete the source branch after the merge."
           }
-        }
+        },
+        "description": "The rule for merging into this base."
+      },
+      "propertyNames": {
+        "title": "base"
       }
     }
   }

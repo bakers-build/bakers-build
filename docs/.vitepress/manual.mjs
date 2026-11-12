@@ -124,11 +124,8 @@ export const SIDEBAR = {
     ]),
     group("Clients and workspaces", [
       ["herdr", "/addons/herdr"],
-      ["herdr options", "/addons/herdr/options"],
       ["herdr-core", "/addons/herdr-core"],
-      ["herdr-core options", "/addons/herdr-core/options"],
       ["Orca", "/addons/orca"],
-      ["Orca options", "/addons/orca/options"],
       ["Git workspace", "/addons/workspace-git"],
       ["Conductor slots", "/addons/slots"],
       ["bakers.build server remote", "/addons/remote-drupal"],

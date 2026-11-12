@@ -152,7 +152,7 @@ jobs:
         run: |-
           set -eu
           node docs/scripts/check-pages.mjs
-          node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs docs/scripts/config-fields.test.mjs
+          node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs docs/scripts/config-fields.test.mjs docs/scripts/addon-options.test.mjs
           bash tests/contract/docs-preview.sh
     container: node:22
   config_sync:

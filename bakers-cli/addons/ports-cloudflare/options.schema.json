@@ -5,27 +5,38 @@
   "description": "The ports entry's with.transport.with for the named Cloudflare tunnel.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["account_id", "tunnel_id", "zone_id", "zone", "api_token"],
+  "required": [
+    "account_id",
+    "tunnel_id",
+    "zone_id",
+    "zone",
+    "api_token"
+  ],
   "properties": {
     "account_id": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Cloudflare account."
     },
     "tunnel_id": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Named tunnel."
     },
     "zone_id": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Zone ID for DNS records."
     },
     "zone": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Zone the public names are created in."
     },
     "api_token": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "API token. Rotating it alone is not an identity change."
     }
   }
 }
