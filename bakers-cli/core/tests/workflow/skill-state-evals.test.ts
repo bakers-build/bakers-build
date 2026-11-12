@@ -325,6 +325,29 @@ describe('bb-label-auto profile', () => {
       ]),
     ).toEqual(['auto-cause-recorded']);
   });
+  // No usable site: a timed-out provision or a failed readiness command stops the run like an error.
+  it.each([
+    ['auto-provision-timeout', 'The operation timed out'],
+    ['auto-provision-unready', 'drush status --field=bootstrap'],
+  ])('%s stops as a technical problem', async (id, output) => {
+    const error = comment(
+      'comment',
+      `# Error\n\n\`provision_up('site')\`: ${output}\n\nF1 blocked.`,
+    );
+    expect(
+      await judge(id, 'Stopped.', [readTicket(), error, problem, reported]),
+    ).toEqual([]);
+    expect(
+      await judge(id, 'Stopped.', [readTicket(), problem, reported]),
+    ).toEqual(['auto-cause-recorded']);
+    expect(
+      await judge(id, 'Delivered.', [readTicket(), transition('review')]),
+    ).toEqual([
+      'auto-technical-problem',
+      'auto-transition',
+      'auto-cause-recorded',
+    ]);
+  });
   it('sends a Not OK verdict back to working', async () => {
     expect(await judge(notOk, 'Back.', back)).toEqual([]);
     expect(

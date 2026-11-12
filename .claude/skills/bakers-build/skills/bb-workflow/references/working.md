@@ -11,7 +11,8 @@ confirmed scope and verification plan; publish [acceptance](acceptance.md) if ab
 ## provision
 
 Before any environment-dependent execution, apply the frame's *Provision* rule. A
-**missing** persona blocks its checks; nobody else tests in its place. No need → skip silently.
+**missing** persona blocks its checks; nobody else tests in its place. A failed provision blocks
+its site checks and skips `deliver` ([conductor tools](tools-conductor.md)). No need → skip silently.
 
 ## work
 
