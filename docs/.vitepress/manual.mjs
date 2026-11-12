@@ -128,6 +128,8 @@ export const SIDEBAR = {
       ["Git workspace", "/addons/workspace-git"],
       ["Conductor slots", "/addons/slots"],
       ["Tailscale", "/addons/tailscale"],
+      ["Docker runtime", "/addons/runtime-docker"],
+      ["Bubblewrap runtime", "/addons/runtime-bwrap"],
     ]),
     group("Runtimes", [
       ["DDEV", "/addons/ddev"],

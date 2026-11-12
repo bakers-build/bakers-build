@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import {
   type AgentFootprint,
   type AgentPlugin,
+  type AgentRunContext,
   type AgentRunIdentity,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
@@ -39,8 +40,12 @@ import {
   withoutGitDirs,
 } from '@bakers-build/core';
 import { parseClaudeTranscript } from './footprint.js';
+import { encodeClaudeProjectDir, prepareClaudeRun } from './run.js';
+import { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 export { parseClaudeTranscript } from './footprint.js';
+export { encodeClaudeProjectDir } from './run.js';
+export { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 /** src/index.ts and dist/src/index.js both sit two levels below the package root. */
 const MEASURE_WRAPPER = fileURLToPath(
@@ -142,14 +147,6 @@ function securityFlags(
   ];
 }
 
-/**
- * Encode an absolute cwd the way Claude Code names its per-project transcript
- * directory under `~/.claude/projects/`: every non-alphanumeric char → `-`.
- */
-export function encodeClaudeProjectDir(cwd: string): string {
-  return cwd.replace(/[^a-zA-Z0-9]/g, '-');
-}
-
 export interface ClaudeAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
@@ -212,6 +209,8 @@ const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
 
 export class ClaudeAgent implements BbAgent {
   readonly id = 'claude';
+  readonly installCommand = claudeInstallCommand;
+  readonly modelApi = claudeModelApi;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
@@ -263,6 +262,10 @@ export class ClaudeAgent implements BbAgent {
     if (this.pluginsDisabled || marketplaces.length === 0) return;
     this.pluginsOn = true;
     this.configDir = homePath(this.id, homeKey([...marketplaces]));
+  }
+
+  prepareRun(context: AgentRunContext) {
+    return prepareClaudeRun(context, this.configDir);
   }
 
   async installPlugins(

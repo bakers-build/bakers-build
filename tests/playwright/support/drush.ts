@@ -46,11 +46,16 @@ export function php(snippet: string): string {
  * "Time data is being changed", so it is retried rather than reported.
  */
 export async function phpUnderLock(snippet: string): Promise<string> {
+  return phpWithRetry(snippet, ['Time data is being changed']);
+}
+
+/** Retries only the named transient failures, preserving the final error. */
+export async function phpWithRetry(snippet: string, transientErrors: string[]): Promise<string> {
   for (let attempt = 1; ; attempt++) {
     try {
       return php(snippet);
     } catch (error) {
-      if (attempt >= 5 || !String(error).includes('Time data is being changed')) {
+      if (attempt >= 5 || !transientErrors.some(message => String(error).includes(message))) {
         throw error;
       }
       await new Promise(resolve => setTimeout(resolve, 500 * attempt));

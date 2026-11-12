@@ -6,8 +6,8 @@ Feature: Entity detail pages save each card on its own
   editable card; a Save replaces only that card, a refresh of another
   placement keeps its unsent input, and a rename updates the page heading
   and the document title without a reload. The project and group details
-  edit nothing: their Settings do. Readers see read-only rows, and a card
-  POST without update access is refused. The former Settings addresses of
+  edit nothing: their Settings do. The project inspector has About and Properties.
+  Readers see read-only rows, and a card POST without update access is refused. The former Settings addresses of
   team and machine lead to the detail page. Conductor and machine Activities list only the activities of
   their own runs. Every editing scenario edits a disposable world of its own,
   removed afterwards; the access scenarios only read seeded fixtures.
@@ -58,8 +58,8 @@ Feature: Entity detail pages save each card on its own
     When I open the project detail page
     Then the "Properties" card offers no Save and no inputs
     And the "Properties" card shows "Key" as "D"
-    And the "Identity" card offers no Save and no inputs
-    And the "Identity" card shows "Description" as "Seeded project text"
+    And the "About" card offers no Save and no inputs
+    And the "About" card says "Seeded project text"
     When I post the "properties" card of the world project directly
     Then the card post is refused with status 404
     And the stored project name is still its original value

@@ -474,7 +474,10 @@ export async function loadConductorConfig(
     pathToFileURL(`${process.cwd()}/`).href,
     import.meta.url,
   ];
-  const sharedSecurity = {
+  const sharedSecurity: {
+    project: SharedSecurity | undefined;
+    machine: SharedSecurity | undefined;
+  } = {
     project: sharedSecurityOf(config, 'project', configPath),
     machine: sharedSecurityOf(machineCtx, 'machine', machineContextPath()),
   };
@@ -713,6 +716,7 @@ export async function loadConductorConfig(
         }
       : {}),
     workspace,
+    ...(wired.runtime ? { runtime: wired.runtime } : {}),
     marketplaces,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),

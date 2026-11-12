@@ -16,6 +16,11 @@ export interface SandboxHost {
   run(cmd: string, args: string[]): Promise<{ ok: boolean; stderr: string }>;
 }
 
+export function runtimeSandboxWarning(runtime = 'host'): string | undefined {
+  if (runtime === 'host') return;
+  return `Sandbox preflight checks the host only; runtime ${runtime} is not checked. Sandbox tools and namespace support must be available inside the runtime; permissions remain unchanged.`;
+}
+
 export function systemSandboxHost(env = process.env): SandboxHost {
   return {
     platform: process.platform,

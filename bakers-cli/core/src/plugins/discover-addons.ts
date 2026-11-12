@@ -477,10 +477,12 @@ export interface ResolvedConductorSlots<
   E = unknown,
   W = unknown,
   A = unknown,
+  U = unknown,
 > {
   remote?: R;
   executor?: E;
   workspace?: W;
+  runtime?: U;
   agents: A[];
 }
 
@@ -512,15 +514,16 @@ function resolveSingleton<T>(
 }
 
 /** Resolve discovered conductor contributions into the four engine slots. */
-export function resolveConductorSlots<R, E, W, A>(
+export function resolveConductorSlots<R, E, W, A, U = unknown>(
   contributions: {
     servers: R[];
     executors: E[];
     worktrees: W[];
     agents: A[];
+    runtimes?: U[];
   },
   logger?: ConductorLogger,
-): ResolvedConductorSlots<R, E, W, A> {
+): ResolvedConductorSlots<R, E, W, A, U> {
   const remote = resolveSingleton(contributions.servers, 'server', logger);
   const executor = resolveSingleton(
     contributions.executors,
@@ -532,10 +535,16 @@ export function resolveConductorSlots<R, E, W, A>(
     'worktree',
     logger,
   );
+  const runtime = resolveSingleton(
+    contributions.runtimes ?? [],
+    'runtime',
+    logger,
+  );
   return {
     ...(remote ? { remote } : {}),
     ...(executor ? { executor } : {}),
     ...(workspace ? { workspace } : {}),
+    ...(runtime ? { runtime } : {}),
     agents: contributions.agents,
   };
 }

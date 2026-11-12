@@ -49,7 +49,10 @@ import type {
   ConductorStatus,
   ConductorTakeoverRequired,
 } from '../plugins/remote.js';
-import { sandboxFailures } from '../plugins/sandbox-preflight.js';
+import {
+  runtimeSandboxWarning,
+  sandboxFailures,
+} from '../plugins/sandbox-preflight.js';
 import type { BbWorkspace } from '../plugins/workspace.js';
 import {
   type DetachedChild,
@@ -449,6 +452,8 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
 /** `bakers conductor check`: whether each enabled agent can start its sandbox. */
 async function cmdCheck(deps: BbCliDeps): Promise<void> {
   const config = await resolveConfig(deps);
+  const warning = runtimeSandboxWarning(config.runtime?.id);
+  if (warning) console.warn(`warning: ${warning}`);
   for (const agent of deps.agents ?? (await selectAgents(config))) {
     const [failure] = await sandboxFailures([agent]);
     console.log(failure ?? `${agent.alias ?? agent.id}: sandbox ok`);
@@ -1042,6 +1047,8 @@ async function cmdStartBody(
   if (!(await ensureAuthenticated(config, logger))) return;
   // The loop withholds claims while this fails; say so before it starts.
   // Best-effort: an agent config the loop cannot load fails there, as before.
+  const warning = runtimeSandboxWarning(config.runtime?.id);
+  if (warning) console.warn(`warning: ${warning}`);
   try {
     for (const line of await sandboxFailures(
       deps.agents ?? (await selectAgents(config)),

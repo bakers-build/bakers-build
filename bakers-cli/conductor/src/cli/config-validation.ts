@@ -30,6 +30,8 @@ export const CONDUCTOR_ADDON_SLOTS: Record<string, string[]> = {
   '@bakers-build/addon-kimi': ['agent'],
   '@bakers-build/addon-opencode': ['agent'],
   '@bakers-build/addon-pi': ['agent'],
+  '@bakers-build/addon-runtime-docker': ['runtime'],
+  '@bakers-build/addon-runtime-bwrap': ['runtime'],
   '@bakers-build/addon-ports': [],
   '@bakers-build/addon-ports-cloudflare': [],
   '@bakers-build/addon-ports-cloudflare-quick': [],
