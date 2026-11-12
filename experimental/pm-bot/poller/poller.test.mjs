@@ -68,6 +68,18 @@ test('done adds the Manual review section of the newest summary, without reviewe
   assert.equal(slack.posts()[0].text, `${messages.states.done}\n\n${messages.testHint}\n\nOpen the price list and check the 3 a.m. run.`);
 });
 
+test('done finds the newest summary behind newer comments of other types', async (t) => {
+  const { s, slack, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'review', links: [thread()] });
+  s.addComment(ticket, { type: 'summary', created: '2026-11-02T09:00:00+00:00', body: '### 🧪 Manual review\n\nCheck the price list.' });
+  s.addComment(ticket, { type: 'review', created: '2026-11-02T10:00:00+00:00', body: 'OK' });
+  s.addComment(ticket, { type: 'coding', created: '2026-11-02T11:00:00+00:00', body: 'merged' });
+  await poller.pass();
+  ticket.state = 'done';
+  await poller.pass();
+  assert.equal(slack.posts()[0].text, `${messages.states.done}\n\n${messages.testHint}\n\nCheck the price list.`);
+});
+
 test('an open question is relayed into its thread exactly once, keyed by the comment', async (t) => {
   const { s, sent, poller, state } = await setup(t);
   const ticket = s.addTicket({ title: 'Price updater', state: 'working', links: [thread()] });

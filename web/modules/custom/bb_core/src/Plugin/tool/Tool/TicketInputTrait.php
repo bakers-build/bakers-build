@@ -40,6 +40,22 @@ trait TicketInputTrait {
   }
 
   /**
+   * A comment as the read tools return it.
+   *
+   * @return array{id: string|null, type: string, body: string, created: string, author: string}
+   *   The comment's UUID, type, Markdown body, ISO 8601 time and author name.
+   */
+  protected function commentItem(ContentEntityInterface $comment): array {
+    return [
+      'id' => $comment->uuid(),
+      'type' => (string) $comment->get('type')->value,
+      'body' => (string) $comment->get('body')->value,
+      'created' => date('c', (int) $comment->get('created')->value),
+      'author' => (string) $comment->get('author')->entity?->label(),
+    ];
+  }
+
+  /**
    * The readable ticket, when the caller may also edit the given fields.
    *
    * @param string $ticket

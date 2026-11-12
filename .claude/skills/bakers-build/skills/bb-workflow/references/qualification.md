@@ -5,7 +5,8 @@ handoff, and route once. Execute only qualification, then STOP.
 
 ## read
 
-The frame's read is complete; no recipe is set until *work* chooses one.
+The frame's read is complete ([read ticket](read-ticket.md) › *qualification*: no comment call);
+no recipe is set until *work* chooses one.
 
 ## provision
 

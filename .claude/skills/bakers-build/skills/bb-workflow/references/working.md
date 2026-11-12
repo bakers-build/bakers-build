@@ -5,7 +5,8 @@ frame around it.
 
 ## read
 
-Apply [ensure qualification](ensure-qualification.md); continue only on `qualified`. Resume the
+Make the *working* comment call of [read ticket](read-ticket.md), then apply
+[ensure qualification](ensure-qualification.md); continue only on `qualified`. Resume the
 confirmed scope and verification plan; publish [acceptance](acceptance.md) if absent for this scope.
 
 ## provision

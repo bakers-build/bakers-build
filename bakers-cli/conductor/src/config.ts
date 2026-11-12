@@ -64,8 +64,10 @@ export {
  * The ticket + its comments are NOT embedded (BB-112): embedding unbounded
  * ticket content into a single typed pane line overran the PTY canonical line
  * cap and truncated the dispatch command. Instead the prompt is a bounded,
- * constant-size pointer and the agent reads the ticket + all comments at run
- * start.
+ * constant-size pointer and the agent reads the ticket at run start. That read
+ * returns the newest comments and facets over all of them; a state fetches the
+ * older comments it needs through `bakers_comment_read` (bb-workflow's
+ * read-ticket.md).
  *
  * That read goes through the bakers tool `bakers_ticket_read`, the same path
  * every skill step uses, so the run does not read its ticket twice in two
@@ -106,7 +108,7 @@ export {
  * freshness test cuts the initializer at the first one.
  */
 export const DEFAULT_AGENT_PROMPT =
-  `You are working ticket {identifier}, current state: {state}. Read the ticket and all comments ` +
+  `You are working ticket {identifier}, current state: {state}. Read the ticket ` +
   `with the bakers tool bakers_ticket_read, arguments {"ticket":"{ticket_uuid}"}: ` +
   `the MCP tool bakers_ticket_read, when it is not listed yet load it through your tool search, ` +
   `which waits for a server still connecting, and only when it cannot be loaded, ` +

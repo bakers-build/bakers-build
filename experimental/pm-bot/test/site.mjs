@@ -22,6 +22,8 @@ export async function site({ pageSize = 50 } = {}) {
   };
   // As the list tool returns a link: its URI and title, no options.
   const link = (l) => ({ uri: l.uri, title: l.title });
+  // The tool returns the newest N comments, oldest first; 2 by default.
+  const newest = (list, n) => (n === 0 ? [] : list.slice(-n));
   const comments = (t) =>
     s.comments
       .filter((c) => c.ticket === t.id)
@@ -67,7 +69,7 @@ export async function site({ pageSize = 50 } = {}) {
     }),
     bakers_ticket_read: guard('bakers_ticket_read', (a) => {
       const t = find(a.ticket);
-      return { id: t.id, identifier: t.identifier, title: t.title, state: t.state, labels: [...t.labels], links: t.links.map(link), frozen: t.frozen, comments: comments(t) };
+      return { id: t.id, identifier: t.identifier, title: t.title, state: t.state, labels: [...t.labels], links: t.links.map(link), frozen: t.frozen, comments: newest(comments(t), a.newest ?? 2) };
     }),
     // Newest first, as the tool lists them; started_at in epoch seconds.
     bakers_ticket_runs_list: guard('bakers_ticket_runs_list', (a) => {

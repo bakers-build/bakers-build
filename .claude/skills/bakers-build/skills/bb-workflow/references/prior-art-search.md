@@ -17,6 +17,8 @@ carrying **this ask** is a hit. **A ticket is never its own prior art** — wher
 a ticket of its own, drop that ticket's row before judging the rest, or the search reports the very
 ticket it was run for and stops the run for nothing. Drop that one row and no other: a row is never
 dropped for carrying this ask, which is the very thing that makes it a hit. Read each candidate
-before deciding, and when a search fills the whole 50-row window, narrow the noun rather than
+before deciding, with `bakers_ticket_read` `newest: 0`: title, description, state and
+`comment_facets`; fetch its newest `qualification` through `bakers_comment_read` only when that
+leaves the ask open. When a search fills the whole 50-row window, narrow the noun rather than
 trusting whatever the sort left on top.
 

@@ -9,6 +9,7 @@ import type { ToolBinding } from '../plugins/tools.js';
 /** The site tools a run may call. */
 export const SITE_TOOLS: readonly string[] = [
   'bakers_ticket_read',
+  'bakers_comment_read',
   'bakers_ticket_search',
   'bakers_ticket_create',
   'bakers_ticket_update',

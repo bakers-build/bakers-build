@@ -4,7 +4,8 @@ Every `review` state runs this flow. The recipe's slots name the review method, 
 
 ## read
 
-Resume the confirmed scope, the persisted MR link and coding's environment and evidence.
+Make the *review* comment call of [read ticket](read-ticket.md), then resume the confirmed scope,
+the persisted MR link and coding's environment and evidence.
 
 ## provision
 

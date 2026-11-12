@@ -6,6 +6,7 @@ needs every page. A conductor run is served only the lookups [conductor](tools-c
 
 | Operation | Tool | Arguments | Result |
 |---|---|---|---|
+| Read comments | `bakers_comment_read` | `ticket`; optional `ids`, `type`, `author` (lists), `newest` (per type when `type` is given); all filters apply, none returns all | `comments` as `bakers_ticket_read` returns them, oldest first |
 | Read your user | `bakers_user_read` | none | `uuid`, `name`, `position`, `background`; empty where unset |
 | List workspaces | `bakers_workspace_list` | none; works before a workspace is chosen | `workspaces` (`uuid`, `name`, `slug`) |
 | List groups | `bakers_group_list` | `workspace`; optional `group` | `groups` (`uuid`, `name`, `description`) |
