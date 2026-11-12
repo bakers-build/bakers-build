@@ -1,89 +1,130 @@
 (
-  /* The PROJECT OVERVIEW TAB BODY, one `canvas` like its sync generator
-     (core.entity_view_display.bb_project.bb_project.full). The section
-     scene owns `page_header` (mark, plain title, tabs) and places this entity
-     as `canvas.main`. Count figures belong on the Board.
+  /* HAND-WRITTEN ONCE under a waiver: Pascal Glass, 2026-11-11 (BAKERS-55
+     Task 12). Designbook a4fea9d7 map-entity only compiles a field-map, and
+     this Display Builder canvas is filled by computed sources, not fields.
 
-     `main`: the Activities zone, its Refresh control and its rows.
-     `inspector`: one surface whose zones are the cards, all read-only —
-     the project is edited in its Settings, never on this tab —
-       Identity     name and description.
-       Properties   key, repository, teams, group and environments.
-       Epics        this project's `epics` view mode.
-
-     Drupal fills the Activities zone (`bb_entity_detail_activities`) and
-     the Identity and Properties cards (the shared detail-card `entity_form`)
-     from sources, so the preview pins their reader output as text and names
-     exactly the generator's components. Epics stays an entity node — it
-     names no component of its own here.
-
-     PINNED FACTS. A mapping is evaluated against one record and cannot join
-     the activity, environment, group or team collections, so rows and labels
-     are pinned per record — a sample-data change is a visible diff. */
+     THE PROJECT OVERVIEW TAB BODY, as core.entity_view_display.bb_project.
+     bb_project.full ships it. `main`: metrics, Needs attention, Epics and
+     Activities, or one page empty state for a project without tickets.
+     `inspector`: About and Properties with its Edit link. A mapping sees one
+     record and cannot join tickets, runs or activities, so those facts are
+     pinned per project: 1 needs attention, 3 flows, 4 has no tickets. */
   $p := $;
+  $scene := "/?path=/story/designbook-sections-projects-scenes--";
+  $people := {
+    "cw": { "name": "Christian Wiedemann", "initials": "CW", "color": "attention" },
+    "sg": { "name": "Sven Gruber", "initials": "SG", "color": "running" },
+    "agent": { "name": "bakers.build agent", "initials": "BA", "color": "running" },
+    "none": { "name": "Unassigned", "initials": "?", "color": "offline" }
+  };
   $facts := {
     "1": {
-      "activities": [
-        "Christian Wiedemann · claimed · 2 hours ago — BB-142 claimed at coding.",
-        "Sven Gruber · status · yesterday — BB-118 moved from spec to coding.",
-        "Christian Wiedemann · status · 3 days ago — BB-105 moved from review to done."
+      "metrics": { "unhealthy": 6, "intake": 3, "working": 5 },
+      "attention": [
+        { "id": "BB-307", "title": "Expired runs are never closed: 1333 stand open because no path closes them", "prio": 1, "state": "plan", "created": "3 weeks ago", "reason": "Last run failed", "red": true, "who": "none" },
+        { "id": "BB-398", "title": "Conductor cannot reach the repository after the team move", "prio": 1, "state": "qualification", "created": "4 days ago", "reason": "Conductor has no access", "red": true, "who": "none" },
+        { "id": "BB-348", "title": "Ticket detail drops the handoff stream on reload", "prio": 2, "state": "plan", "created": "1 week ago", "reason": "Last run expired", "red": true, "who": "cw" },
+        { "id": "BB-390", "title": "Import connector stalls on the staging data", "prio": 2, "state": "working", "created": "2 days ago", "reason": "Technical problem", "red": true, "who": "sg", "working": true },
+        { "id": "BB-312", "title": "Billing account picker shows archived accounts", "prio": 2, "state": "qualification", "created": "2 weeks ago", "reason": "Needs info", "who": "none" }
       ],
+      "epics": [
+        { "id": "BB-90", "title": "Ticket detail overhaul", "done": 7, "in_progress": 3, "open": 2 },
+        { "id": "BB-91", "title": "First-time setup", "done": 2, "in_progress": 2, "open": 4 },
+        { "id": "BB-112", "title": "Board v2", "done": 5, "in_progress": 0, "open": 0 }
+      ],
+      "activities": [
+        { "who": "cw", "what": "claimed", "ticket": "BB-142", "detail": "at coding", "when": "2h ago", "at": "2026-11-11T08:00:00Z" },
+        { "who": "sg", "what": "moved", "ticket": "BB-118", "detail": "spec to coding", "when": "yesterday", "at": "2026-11-10T10:00:00Z" },
+        { "who": "agent", "what": "finished run", "ticket": "BB-146", "detail": "#24 - 1h 10m", "when": "4d ago", "at": "2026-11-07T10:00:00Z" },
+        { "who": "cw", "what": "created", "ticket": "BB-405", "detail": "Retire the Gin-era ticket components and move their last two callers onto the shared list rows", "when": "5d ago", "at": "2026-11-06T10:00:00Z" }
+      ],
+      "origin": ["GitLab - bakers/bakers", "Jira - BAKERS"],
       "environments": ["production", "develop"]
     },
     "3": {
-      "activities": [],
+      "metrics": { "unhealthy": 0, "intake": 2, "working": 14 },
+      "attention": [],
+      "epics": [],
+      "activities": [
+        { "who": "agent", "what": "finished run", "ticket": "GDB-9", "detail": "#3 - 22m", "when": "1h ago", "at": "2026-11-11T09:00:00Z" },
+        { "who": "cw", "what": "moved", "ticket": "GDB-11", "detail": "review to done", "when": "yesterday", "at": "2026-11-10T09:00:00Z" }
+      ],
+      "origin": ["GitLab - bakers/designbook"],
       "environments": ["develop"]
     }
   };
   $groups := { "1": "keytec", "2": "Northwind Trading" };
   $teams := { "1": "Platform crew", "2": "Commerce crew", "3": "Design crew" };
   $f := $lookup($facts, $p.id);
-  $activities := $exists($f) ? $f.activities : [];
-  $envs := $exists($f) ? $f.environments : [];
-  $teamLabels := [$map([$p.teams], function ($id) { $lookup($teams, $id) })];
   $or := function ($v) { $v ? $v : "—" };
-  $zone := function ($heading, $content) {
+  $list := function ($v) { $count($v) > 0 ? $join($v, ", ") : "—" };
+  $component := function ($name, $props, $slots) { { "component": $name, "props": $props, "slots": $slots } };
+  $zone := function ($heading, $props, $content, $actions) {
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:zone", $merge([{ "inset": "none", "gap": "sm" }, $props]), { "heading": $heading, "actions": $actions, "content": $content })
+  };
+  $tile := function ($label, $value, $detail, $info, $source, $more) {
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:stat-tile", $merge([{ "size": "kpi", "label": $label, "value": $string($value), "detail": $detail, "info": $info, "source": $source }, $more]))
+  };
+  $person := function ($who) { $lookup($people, $who) };
+  $row := function ($t) {
     {
-      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
-      "props": { "inset": "none", "gap": "sm", "columns": 1 },
-      "slots": { "heading": $heading, "content": $content }
+      "url": "#",
+      "accent": $t.red ? "critical" : "attention",
+      "cells": {
+        "state": { "kind": "status", "label": $t.state, "working": $t.working ? true : false },
+        "title": { "kind": "link", "value": $t.title, "url": "#" },
+        "priority": { "kind": "badge", "label": "P" & $t.prio, "tone": $t.prio = 1 ? "critical" : "neutral" },
+        "identifier": { "kind": "link", "value": $t.id, "url": "#", "mono": true },
+        "created": { "kind": "time", "label": $t.created, "datetime": "2026-11-01T10:00:00Z" },
+        "workflow": { "kind": "badge", "label": $t.state, "tone": "neutral", "dot": true },
+        "reason": { "kind": "badge", "label": $t.reason, "tone": $t.red ? "critical" : "attention", "dot": true },
+        "assignee": { "kind": "person", "display_name": $person($t.who).name, "initials": $person($t.who).initials, "color": $person($t.who).color, "name_hidden": true }
+      }
     }
   };
-  $surface := function ($rows) {
-    {
-      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:inspector",
-      "props": { "surface": true },
-      "slots": { "rows": $rows }
-    }
+  $metrics := $zone("", { "columns": 3 }, [
+    $tile("Unhealthy", $f.metrics.unhealthy, $f.metrics.unhealthy > 0 ? "need a person now" : "nothing blocks the flow", "Open tickets where a person has to act now.", "bb_core.project_health",
+      { "tone": $f.metrics.unhealthy > 0 ? "attention" : "neutral", "url": $scene & "project-detail-board-unhealthy" }),
+    $tile("Intake", $f.metrics.intake, "conductor set, not started", "The Board's Intake column.", "bb_ticket.work_state", {}),
+    $tile("In progress", $f.metrics.working, "being worked on", "The Board's Working column.", "bb_ticket.work_state", {})
+  ]);
+  $flowing := [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:note", { "tone": "success", "lead": "Everything is flowing" }, { "body": "No open ticket needs a person right now." })];
+  $listed := [
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:list", {
+      "layout": "lines",
+      "pattern": { "avatar": ["state"], "headline": ["title", "priority"], "meta": ["identifier", "created", "workflow", "reason"], "right": ["assignee"], "captions": { "created": "Created" } },
+      "items": [$map($f.attention, $row)]
+    }),
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:text", { "text": "Showing " & $count($f.attention) & " of " & $f.metrics.unhealthy & " unhealthy tickets", "size": "meta", "tone": "light" })
+  ];
+  $attention := $zone("Needs attention", { "description": "Open tickets where a person has to act now" },
+    $count($f.attention) > 0 ? $listed : $flowing,
+    [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:button", { "label": "Open board", "href": $scene & "project-detail-board", "variant": "ghost" })]);
+  $progress := function ($e) {
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:progress", { "identifier": $e.id, "title": $e.title, "url": "#", "done": $e.done, "in_progress": $e.in_progress, "open": $e.open,
+      "total": $e.done + $e.in_progress + $e.open, "percent": $round(100 * $e.done / ($e.done + $e.in_progress + $e.open)) })
   };
-  [{
-    "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:canvas",
-    "slots": {
-      "main": [{
-        "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
-        "props": { "inset": "none", "gap": "sm", "columns": 1 },
-        "slots": {
-          "heading": "Activities",
-          "actions": "Refresh",
-          "content": $count($activities) > 0 ? $join($activities, "<br>") : "No activity yet."
-        }
-      }],
-      "inspector": [$surface([
-        $zone("Identity",
-          "Name: " & $or($p.name)
-          & "<br>Description: " & $or($p.description)),
-        $zone("Properties",
-          "Key: " & $or($p.key)
-          & "<br>Repository: " & $or($p.repository.url)
-          & "<br>Teams: " & ($count($teamLabels) > 0 ? $join($teamLabels, ", ") : "—")
-          & "<br>Group: " & $or($lookup($groups, $p.group_id))
-          & "<br>Environments: " & ($count($envs) > 0 ? $join($envs, ", ") : "—")),
-        $zone("Epics", [{
-          "entity": "bb_project.bb_project",
-          "view_mode": "epics",
-          "select": "$[id='" & $p.id & "']"
-        }])
-      ])]
-    }
-  }]
+  $epics := $zone("Epics", {}, $count($f.epics) > 0 ? [$map($f.epics, $progress)] : [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:empty-state", { "message": "No epics in this project." })]);
+  $event := function ($a) {
+    $component("$DESIGNBOOK_COMPONENT_NAMESPACE:event", { "compact": true, "author_name": $person($a.who).name, "author_initials": $person($a.who).initials, "author_color": $person($a.who).color,
+      "statement": $a.what, "subject_label": $a.ticket, "subject_url": "#", "detail": $a.detail, "timestamp": $a.when, "datetime": $a.at })
+  };
+  $activities := $zone("Activities", { "gap": "none" }, [$map($f.activities, $event)],
+    [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:button", { "label": "Refresh", "variant": "neutral" })]);
+  $empty := [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:empty-state", { "title": "No tickets yet", "message": "Once tickets arrive, this page shows what needs attention, how epics progress and what happened.", "icon": "ticket" })];
+  $description := $p.description ? $p.description : "—";
+  [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:canvas", {}, {
+    "main": $exists($f) ? [$metrics, $attention, $epics, $activities] : $empty,
+    "inspector": [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:inspector", { "surface": true }, { "rows": [
+      $zone("About", {}, [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:text", { "text": $description, "as": "p", "size": "body", "tone": $p.description ? "default" : "faint", "align": "start" })]),
+      $zone("Properties", {},
+        "Key: " & $or($p.key)
+        & "<br>Origin: " & $list($f.origin)
+        & "<br>Repository: " & $or($p.repository.url)
+        & "<br>Teams: " & $list([$map([$p.teams], function ($id) { $lookup($teams, $id) })])
+        & "<br>Group: " & $or($lookup($groups, $p.group_id))
+        & "<br>Environments: " & $list($f.environments),
+        [$component("$DESIGNBOOK_COMPONENT_NAMESPACE:button", { "label": "Edit", "href": $scene & "project-detail-settings", "variant": "ghost" })])
+    ] })]
+  })]
 )

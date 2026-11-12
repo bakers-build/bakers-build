@@ -41,7 +41,7 @@ final class ThemeHooks {
       // The conductor listing's Load cell, a module template rather than a
       // front-theme component.
       'bb_conductor_utilization' => [
-        'variables' => ['label' => '', 'level' => ''],
+        'variables' => ['label' => '', 'level' => '', 'share' => NULL],
       ],
       // The HTML envelope of every outgoing mail, rendered by
       // \Drupal\bb_core\Plugin\Mail\BbHtmlMail independently of any

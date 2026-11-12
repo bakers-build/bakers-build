@@ -128,7 +128,7 @@ services:
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_retry']
   bb_core.ticket_stall_reason:
     class: Drupal\bb_core\Claim\TicketStallReason
-    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.failed_run_circuit_breaker', '@bb_core.conductor_owner_access']
+    arguments: ['@bb_core.ticket_run_deriver', '@bb_core.failed_run_circuit_breaker', '@bb_core.conductor_owner_access']
   Drupal\bb_core\Claim\TicketStallReason:
     alias: bb_core.ticket_stall_reason
   bb_core.ticket_claim:
@@ -416,6 +416,11 @@ services:
     arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.date']
   Drupal\bb_core\Derive\TicketRunDeriver:
     alias: bb_core.ticket_run_deriver
+  bb_core.project_health:
+    class: Drupal\bb_core\Project\ProjectHealth
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_run_deriver', '@bb_core.conductor_owner_access']
+  Drupal\bb_core\Project\ProjectHealth:
+    alias: bb_core.project_health
   # Request-cached counts of referencing entities (a project's tickets, a
   # group's projects), shared by every listing that shows them.
   bb_core.reference_counter:

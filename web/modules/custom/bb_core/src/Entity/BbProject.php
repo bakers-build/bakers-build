@@ -14,6 +14,7 @@ use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\views\EntityViewsData;
 use Drupal\bb_core\Access\BbProjectAccessControlHandler;
 use Drupal\bb_core\Field\EnvironmentsItemList;
+use Drupal\bb_core\Field\OriginSourcesItemList;
 use Drupal\entity\EntityPermissionProvider;
 use Drupal\bb_core\Routing\BbProjectRouteProvider;
 use Drupal\bb_core\Form\BbProjectCreateForm;
@@ -61,8 +62,7 @@ use Drupal\bb_core\Form\BbEntityDetailCardForm;
       // The Settings surface: exists so `EntityForm::init()` picks the
       // `settings` form mode of the same name.
       'settings' => BbProjectForm::class,
-      // Detail page cards, one Save each.
-      'identity' => BbEntityDetailCardForm::class,
+      // The detail page's Properties card.
       'properties' => BbEntityDetailCardForm::class,
       'delete' => BbContentEntityDeleteForm::class,
     ],
@@ -180,6 +180,15 @@ final class BbProject extends BbContentEntityBase implements BbProjectInterface,
       ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
       ->setComputed(TRUE)
       ->setClass(EnvironmentsItemList::class)
+      ->setDisplayConfigurable('view', TRUE);
+    $fields['origin_sources'] = BaseFieldDefinition::create('link')
+      ->setLabel(new TranslatableMarkup('Origin'))
+      ->setDescription(new TranslatableMarkup('The distinct sources of the Origin URLs of the tickets the current user may view.'))
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setComputed(TRUE)
+      ->setClass(OriginSourcesItemList::class)
+      // Per viewer, so not in JSON:API, which caches a project per entity.
+      ->setInternal(TRUE)
       ->setDisplayConfigurable('view', TRUE);
     // The owning account, declared as the `owner` entity key so query access
     // and JSON:API filter access can reason about it; access-inert otherwise.

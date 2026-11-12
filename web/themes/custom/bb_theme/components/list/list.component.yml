@@ -200,8 +200,8 @@ props:
             enum:
               - running
               - attention
-              - wait
               - critical
+              - wait
               - idle
             title: Status accent
             description: >-
@@ -209,8 +209,9 @@ props:
               the whole item, because a thing that needs a person is the one
               state the absorbed entries made loud, and the tint is what a
               `wait` or `critical` badge's `-ink` colour is legible against.
-              `critical` is the danger role of a failed run; `wait` is a thing
-              nobody is acting on.
+              `critical` is the danger role of a failed run or of a Needs
+              attention row whose reason is red; `wait` is a thing nobody is
+              acting on.
           detail:
             type: string
             title: Detail line

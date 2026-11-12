@@ -302,6 +302,64 @@ final class BbMenuSourceTest extends KernelTestBase {
   }
 
   /**
+   * A project's Overview and Board both keep Projects current and open.
+   *
+   * The Board is a Views page route carrying the project; the Tickets child
+   * stays inactive there.
+   */
+  public function testProjectsIsActiveOnOverviewAndBoard(): void {
+    $this->installOgScopeFixture();
+    $lead = $this->createUser();
+    self::assertInstanceOf(UserInterface::class, $lead);
+    $this->addMembership($this->workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+    $project = $this->createProject($this->createTeam('Platform Crew'));
+    $this->installProjectBoardDisplay();
+
+    foreach (['entity.bb_project.canonical', 'view.project_board.project_board'] as $route) {
+      $this->visit($route, ['bb_workspace' => 'acme', 'bb_project' => $project->id()]);
+
+      $projects = $this->projectsRow();
+      self::assertTrue($projects['in_active_trail'], $route);
+      self::assertSame(['Tickets'], array_column($projects['below'], 'title'), $route);
+      self::assertFalse($projects['below'][0]['in_active_trail'], $route);
+    }
+  }
+
+  /**
+   * Registers the project Board page display for the rail's active routes.
+   */
+  private function installProjectBoardDisplay(): void {
+    View::create([
+      'id' => 'project_board',
+      'label' => 'project_board',
+      'base_table' => 'bb_project',
+      'display' => [
+        'default' => [
+          'id' => 'default',
+          'display_title' => 'Default',
+          'display_plugin' => 'default',
+          'position' => 0,
+          'display_options' => [
+            'access' => ['type' => 'none'],
+          ],
+        ],
+        'project_board' => [
+          'id' => 'project_board',
+          'display_title' => 'Project board',
+          'display_plugin' => 'page',
+          'position' => 1,
+          'display_options' => [
+            'path' => '_workspace/%bb_workspace/project/%bb_project/board',
+            'access' => ['type' => 'none'],
+          ],
+        ],
+      ],
+    ])->save();
+    $this->container->get('router.builder')->rebuild();
+  }
+
+  /**
    * On a project's Tickets task, Projects is in the trail and its panel open.
    */
   public function testProjectTicketsTaskKeepsProjectsInTheTrail(): void {

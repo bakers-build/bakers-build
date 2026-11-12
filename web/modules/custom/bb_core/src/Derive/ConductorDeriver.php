@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Derive;
 
 use Drupal\Component\Datetime\TimeInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Time\BbDate;
 
@@ -75,17 +76,22 @@ final class ConductorDeriver {
   }
 
   /**
-   * Load label showing current/max parallelism.
+   * Load label showing current/max parallel runs.
+   *
+   * A conductor without a linked machine has no known capacity; the label says
+   * so rather than inventing a number.
    *
    * @param \Drupal\bb_core\Entity\BbConductorInterface $conductor
    *   The conductor entity.
    *
    * @return string
-   *   E.g. "2/4".
+   *   E.g. "2 / 4 parallel runs", or "Unknown capacity" without a machine.
    */
   public function nodeLoadLabel(BbConductorInterface $conductor): string {
-    [$current, $max] = $this->machineCapacity($conductor);
-    return $current . '/' . $max;
+    $capacity = $this->nodeCapacity($conductor);
+    return (string) ($capacity === NULL
+      ? new TranslatableMarkup('Unknown capacity')
+      : new TranslatableMarkup('@current / @max parallel runs', ['@current' => $capacity[0], '@max' => $capacity[1]]));
   }
 
   /**
@@ -97,6 +103,7 @@ final class ConductorDeriver {
    *
    * The mapping is total and division-free, which settles the degenerate pairs
    * deliberately rather than by accident:
+   *  - no linked machine        → 'unknown'
    *  - load <= 0                → 'idle'   (covers 0/0)
    *  - max > 0 && load >= max   → 'full'   (covers over-capacity, e.g. 4/3)
    *  - otherwise                → 'partial' (covers max <= 0 with a load)
@@ -108,10 +115,14 @@ final class ConductorDeriver {
    *   The conductor entity.
    *
    * @return string
-   *   One of 'idle', 'partial', or 'full'.
+   *   One of 'unknown', 'idle', 'partial', or 'full'.
    */
   public function nodeLoadLevel(BbConductorInterface $conductor): string {
-    [$current, $max] = $this->machineCapacity($conductor);
+    $capacity = $this->nodeCapacity($conductor);
+    if ($capacity === NULL) {
+      return 'unknown';
+    }
+    [$current, $max] = $capacity;
     if ($current <= 0) {
       return 'idle';
     }
@@ -119,17 +130,14 @@ final class ConductorDeriver {
   }
 
   /**
-   * Host capacity from the linked machine; defaults 0/1 if unlinked.
+   * Host capacity from the linked machine.
    *
-   * @return array{0: int, 1: int}
-   *   current_load, max_parallel.
+   * @return array{0: int, 1: int}|null
+   *   current_load, max_parallel; NULL when no machine is linked.
    */
-  private function machineCapacity(BbConductorInterface $conductor): array {
+  public function nodeCapacity(BbConductorInterface $conductor): ?array {
     $machine = $conductor->getMachine();
-    if ($machine === NULL) {
-      return [0, 1];
-    }
-    return [$machine->getCurrentLoad(), $machine->getMaxParallel()];
+    return $machine === NULL ? NULL : [$machine->getCurrentLoad(), $machine->getMaxParallel()];
   }
 
   /**

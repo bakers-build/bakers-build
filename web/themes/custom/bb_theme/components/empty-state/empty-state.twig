@@ -1,12 +1,17 @@
-{# Lists keep their existing message, with one small decorative icon. #}
+{# Lists keep their existing message, with one small decorative icon. A
+   `title` (or a signpost error icon) turns it into a PAGE-LEVEL state that
+   stands in for a whole screen body: centred, dashed outline, large icon,
+   a heading over the message. #}
 {% set error_page = (icon ~ '') in ['signpost-missing', 'signpost-denied'] %}
-{% set state_classes = error_page
+{% set page = error_page or title|default('') is not empty %}
+{% set state_classes = page
   ? ['flex', 'flex-col', 'items-center', 'justify-center', 'gap-stack', 'text-center', 'text-text-light', 'min-w-0', 'py-gutter', 'px-group', 'border', 'border-dashed', 'border-border', 'rounded-sm']
   : ['flex', 'items-center', 'justify-center', 'gap-inline', 'text-meta', 'text-text-faint', 'min-w-0'] %}
 <div{{ (attributes ?: create_attribute()).addClass(state_classes) }}>
   {{ include('bb_theme:icon', {
     name: icon|default('inbox'),
-    attributes: create_attribute().addClass([error_page ? 'size-empty-state-icon' : 'size-empty-state-compact-icon', 'shrink-0', error_page ? 'text-primary' : 'text-text-faint']),
+    attributes: create_attribute().addClass([page ? 'size-empty-state-icon' : 'size-empty-state-compact-icon', 'shrink-0', page ? 'text-primary' : 'text-text-faint']),
   }, with_context = false) }}
-  <p class="{{ error_page ? 'text-prose' : 'text-meta' }} max-w-prose wrap-break-word">{{ message }}</p>
+  {% if title|default('') is not empty %}<h2 class="m-0 text-section-title text-title">{{ title }}</h2>{% endif %}
+  <p class="{{ page ? 'text-prose' : 'text-meta' }} max-w-prose wrap-break-word">{{ message }}</p>
 </div>

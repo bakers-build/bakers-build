@@ -8,6 +8,9 @@ use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\facets\Result\ResultInterface;
 use Drupal\bb_board\BoardAddress;
+use Drupal\bb_board\BoardHealth;
+use Drupal\bb_board\BoardPreferences;
+use Drupal\bb_board\ProjectBoardFilterBar;
 use Drupal\bb_board\ProjectBoardSummary;
 use Drupal\bb_board\Plugin\views\filter\BbBoardParent;
 use Drupal\bb_core\Plugin\views\filter\BbTicketSearch;
@@ -18,14 +21,15 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * The Project Board's State, Assignee, Priority, Work state and Parent chips.
+ * The Project Board's filter bar, active filter chips and open ticket total.
  *
  * Placed on the page display, whose own search carries every board filter but
  * no column and no meaningful pager. query() asks that search for its result
- * count and OR aggregations: each chip dimension counts under every OTHER
- * filter but not its own, exactly like a facet. The chips ARE those filters.
- * Work state chips default to the three open columns; Done is the fourth chip
- * and the Done column.
+ * count and OR aggregations: each dimension counts under every OTHER filter
+ * but not its own, exactly like a facet. Those counts feed the State and
+ * Priority pickers and the Assignee avatars of the exposed form, which this
+ * area renders as the filter bar. Below it, each active filter is a chip with
+ * what it matches on its own, then "N of M open tickets".
  *
  * @see \Drupal\bb_board\Hook\ProjectBoardSummaryHooks
  *
@@ -55,16 +59,6 @@ final class BbBoardSummary extends AreaPluginBase {
   public const PRIORITIES = 'bb_board_priorities';
 
   /**
-   * Aggregation key for the per-work-state counts.
-   */
-  public const WORK_STATES = 'bb_board_work_states';
-
-  /**
-   * Aggregation key for the per-parent counts.
-   */
-  public const PARENTS = 'bb_board_parents';
-
-  /**
    * The exposed identifier of the shared Assignee facet.
    */
   private const ASSIGNEE = 'assignee';
@@ -90,14 +84,14 @@ final class BbBoardSummary extends AreaPluginBase {
   private const PRIORITY_FILTER = 'facets_priority';
 
   /**
-   * The exposed identifier of the Work state facet.
-   */
-  private const WORK_STATE = 'work_state';
-
-  /**
    * The exposed identifier of the Parent filter.
    */
   private const PARENT = 'parent_id';
+
+  /**
+   * The exposed identifier of the ticket search.
+   */
+  private const SEARCH = 'search';
 
   /**
    * Turns the aggregations into labelled, ordered rows.
@@ -105,9 +99,19 @@ final class BbBoardSummary extends AreaPluginBase {
   private ProjectBoardSummary $rows;
 
   /**
+   * The Details preference the segmented control shows.
+   */
+  private BoardPreferences $preferences;
+
+  /**
    * Records failed summary searches.
    */
   private LoggerInterface $logger;
+
+  /**
+   * The Unhealthy filter's rule, the attention set and the board's project.
+   */
+  private BoardHealth $health;
 
   /**
    * The board address, once per executed view.
@@ -127,7 +131,9 @@ final class BbBoardSummary extends AreaPluginBase {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->rows = $container->get(ProjectBoardSummary::class);
+    $instance->preferences = $container->get(BoardPreferences::class);
     $instance->logger = $container->get('logger.channel.bb_core');
+    $instance->health = $container->get(BoardHealth::class);
     return $instance;
   }
 
@@ -146,8 +152,6 @@ final class BbBoardSummary extends AreaPluginBase {
       self::EMPLOYEES => ['field' => 'assignee_user_id'] + $request,
       self::STATES => ['field' => 'state'] + $request,
       self::PRIORITIES => ['field' => 'priority'] + $request,
-      self::WORK_STATES => ['field' => 'work_state'] + $request,
-      self::PARENTS => ['field' => 'parent_id'] + $request,
     ];
   }
 
@@ -167,11 +171,12 @@ final class BbBoardSummary extends AreaPluginBase {
    * The summary of the executed search.
    *
    * @return array<string, mixed>
-   *   Keys: `status` (`ok`, `invalid` for bad parent input, `error` when the
-   *   search failed; only `ok` carries counts), `mode` (`project`, `parent`),
-   *   `parent` label or NULL, `message` or NULL, `total`, `employees`,
-   *   `states`, `priorities`, `work_states` and `parents` (rows of
-   *   value/label/count/active).
+   *   Keys: `status` (`ok`, `invalid` for bad parent or search input, `error`
+   *   when the search failed; only `ok` carries counts), `mode` (`project`,
+   *   `parent`), `parent` label or NULL, `message` or NULL, `total`, `open`
+   *   (the open tickets before the clearable filters, NULL when unknown),
+   *   `employees`, `states` and `priorities` (rows of value/label/count/active)
+   *   and `chips` (the active filters: field, values, count, remove_url).
    */
   public function summary(): array {
     if ($this->summary !== NULL) {
@@ -212,11 +217,11 @@ final class BbBoardSummary extends AreaPluginBase {
       'parent' => $parent === NULL ? NULL : $parent->getIdentifier() . ' ' . $parent->getTitle(),
       'message' => NULL,
       'total' => 0,
+      'open' => NULL,
       'employees' => [],
       'priorities' => [],
       'states' => [],
-      'work_states' => [],
-      'parents' => [],
+      'chips' => [],
     ];
   }
 
@@ -247,54 +252,137 @@ final class BbBoardSummary extends AreaPluginBase {
       $this->missingToken(self::PRIORITY_FILTER, $priorities),
     );
     $summary['states'] = $this->rows->states($aggregations[self::STATES] ?? [], $this->address()->active(self::STATE));
-    $summary['work_states'] = $this->rows->workStates(
-      $aggregations[self::WORK_STATES] ?? [],
-      $this->address()->active(self::WORK_STATE),
-    );
-    $summary['parents'] = $this->rows->parents(
-      $aggregations[self::PARENTS] ?? [],
-      $this->parentOptions(),
-      $this->address()->active(self::PARENT),
-    );
     if ($summary['total'] === 0) {
       $summary['message'] = $summary['mode'] === 'parent'
         ? new TranslatableMarkup('No open descendants match these filters.')
         : new TranslatableMarkup('No tickets match these filters.');
     }
+    return $this->withChips($summary);
+  }
+
+  /**
+   * The summary with its active filter chips and open ticket total.
+   *
+   * A chip counts what its own filter matches inside the focus: the project's
+   * open tickets, inside the parent focus, which "Clear filters" keeps. The
+   * focus is also the "M" of "N of M open tickets", and the parent's chip
+   * counts it. Nothing clearable chosen, the focus is what the board shows.
+   *
+   * @param array<string, mixed> $summary
+   *   The counted summary.
+   *
+   * @return array<string, mixed>
+   *   The summary with `chips` and `open`.
+   */
+  private function withChips(array $summary): array {
+    $focus = $this->address()->clear() === NULL
+      ? ['total' => $summary['total'], 'aggregations' => []]
+      : $this->count();
+    $summary['open'] = $focus['total'] ?? NULL;
+    $chips = $summary['mode'] === 'parent'
+      ? [$this->chip((string) $this->t('Parent'), [(string) $summary['parent']], $summary['open'], self::PARENT)]
+      : [];
+    $search = $this->address()->active(self::SEARCH)[0] ?? '';
+    if ($search !== '') {
+      $chips[] = $this->chip((string) $this->t('Search'), [$search], $this->count(search: $search)['total'] ?? NULL, self::SEARCH);
+    }
+    $chips = [...$chips, ...$this->facetChips($summary, $focus['aggregations'] ?? NULL)];
+    if ($this->health->requested($this->view)) {
+      $ids = $this->health->unhealthyIds($this->view);
+      $chips[] = $this->chip((string) $this->t('Unhealthy'), [], $this->count($ids)['total'] ?? NULL, BoardHealth::PARAMETER);
+    }
+    $summary['chips'] = $chips;
     return $summary;
+  }
+
+  /**
+   * The State, Priority and Assignee chips, each counted on its own.
+   *
+   * @param array<string, mixed> $summary
+   *   The counted summary, for the value labels.
+   * @param array<string, mixed>|null $aggregations
+   *   The focus's per-facet counts, NULL when unknown.
+   *
+   * @return list<array<string, mixed>>
+   *   One chip per facet with a chosen value.
+   */
+  private function facetChips(array $summary, ?array $aggregations): array {
+    $chips = [];
+    foreach ([
+      [self::STATE, (string) $this->t('State'), $summary['states'], self::STATES],
+      [self::PRIORITY, (string) $this->t('Priority'), $summary['priorities'], self::PRIORITIES],
+      [self::ASSIGNEE, (string) $this->t('Assignee'), $summary['employees'], self::EMPLOYEES],
+    ] as [$identifier, $field, $rows, $aggregation]) {
+      $values = $this->address()->active($identifier);
+      if ($values === []) {
+        continue;
+      }
+      $labels = array_column(array_filter($rows, static fn (array $row): bool => $row['value'] !== NULL), 'label', 'value');
+      $chips[] = $this->chip(
+        $field,
+        array_map(static fn (string $value): string => (string) ($labels[$value] ?? $value), $values),
+        $aggregations === NULL ? NULL : $this->rows->alone($aggregations[$aggregation] ?? [], $values),
+        $identifier,
+      );
+    }
+    return $chips;
+  }
+
+  /**
+   * Counts the focus, optionally only some tickets or a search line.
+   *
+   * @param list<int>|null $ids
+   *   Only these tickets, NULL for no such limit.
+   * @param string $search
+   *   A search line.
+   *
+   * @return array{total: int, aggregations: array<string, mixed>}|null
+   *   See ProjectBoardSummary::focus().
+   */
+  private function count(?array $ids = NULL, string $search = ''): ?array {
+    $project = $this->health->project($this->view);
+    $scope = $this->scope();
+    $within = ($scope['mode'] ?? 'project') === 'project' ? NULL : array_values(array_map('intval', $scope['ticket_ids'] ?? []));
+    return $project === NULL ? ['total' => 0, 'aggregations' => []] : $this->rows->focus($project, $within, $ids, $search);
+  }
+
+  /**
+   * One active filter chip; it carries a count only when its search ran.
+   *
+   * @param string $field
+   *   The filter's name.
+   * @param list<string> $values
+   *   The chosen values, empty for a filter that is a state.
+   * @param int|null $count
+   *   What the filter matches on its own, NULL when unknown.
+   * @param string $identifier
+   *   The query parameter its removal drops.
+   *
+   * @return array<string, mixed>
+   *   An `active-filters` facet.
+   */
+  private function chip(string $field, array $values, ?int $count, string $identifier): array {
+    $chip = ['field' => $field, 'values' => $values, 'remove_url' => $this->address()->without($identifier)];
+    return $count === NULL ? $chip : $chip + ['count' => $count];
   }
 
   /**
    * {@inheritdoc}
    *
    * @return array<string, mixed>
-   *   The summary strip.
+   *   The filter bar, then the active filters or the refusal.
    */
   public function render($empty = FALSE): array {
     $summary = $this->summary();
-    $content = [];
-    $content['filters'] = $this->view->exposed_widgets ?: [];
-    if ($summary['status'] !== 'ok') {
-      $content['message'] = [
+    $bar = new ProjectBoardFilterBar($this->address());
+    $content = ['filters' => $this->filterBar($summary, $bar)];
+    $content['active'] = $summary['status'] === 'ok'
+      ? $bar->activeFilters($summary['chips'], $summary['total'], $summary['open'])
+      : [
         '#type' => 'component',
         '#component' => 'bb_theme:empty-state',
         '#props' => ['message' => (string) $summary['message'], 'icon' => 'inbox', 'compact' => TRUE],
       ];
-    }
-    $cells = $this->cells($summary);
-    $clear = $this->address()->clear();
-    if ($clear !== NULL && $cells !== []) {
-      $first = array_key_first($cells);
-      $cells[$first]['#slots']['actions'] = $this->chip((string) $this->t('Clear filters'), $clear, FALSE, 'ghost');
-    }
-    if ($cells !== []) {
-      $content['cells'] = [
-        '#type' => 'component',
-        '#component' => 'bb_theme:zone',
-        '#props' => ['inset' => 'none', 'gap' => 'md', 'columns' => 3],
-        '#slots' => ['content' => $cells],
-      ];
-    }
 
     $build = [
       '#type' => 'component',
@@ -310,6 +398,40 @@ final class BbBoardSummary extends AreaPluginBase {
     $metadata->addCacheTags(['search_api_list:bb_tickets']);
     $metadata->applyTo($build);
     return $build;
+  }
+
+  /**
+   * The exposed form as the filter bar: counts, avatars, Details and Clear.
+   *
+   * The theme's exposed-form template lays the parts out in one row. A
+   * refused or failed summary has no rows, so nothing is counted.
+   *
+   * @param array<string, mixed> $summary
+   *   The summary.
+   * @param \Drupal\bb_board\ProjectBoardFilterBar $bar
+   *   The filter bar parts for this request.
+   *
+   * @return array<string, mixed>
+   *   The exposed form, empty when the display has none.
+   */
+  private function filterBar(array $summary, ProjectBoardFilterBar $bar): array {
+    $form = $this->view->exposed_widgets ?: [];
+    if ($form === []) {
+      return [];
+    }
+    $form[self::SEARCH]['#title_display'] = 'invisible';
+    $form[self::SEARCH]['#compact'] = TRUE;
+    $form[self::STATE] = $bar->pill($form[self::STATE] ?? [], $summary['states']);
+    $form[self::PRIORITY] = $bar->pill($form[self::PRIORITY] ?? [], $summary['priorities']);
+    // A project without eligible parents has no parent picker.
+    if (isset($form[self::PARENT])) {
+      $form[self::PARENT] = $bar->pill($form[self::PARENT], []);
+    }
+    $form['board_assignees'] = $bar->assignees($summary['employees']);
+    $form['board_details'] = $bar->details($this->preferences->details());
+    $form['board_clear'] = $bar->clear();
+    $form['board_health'] = $bar->health($this->health->requested($this->view));
+    return $form;
   }
 
   /**
@@ -338,7 +460,7 @@ final class BbBoardSummary extends AreaPluginBase {
     $results = $query->getSearchApiResults();
     $total = (int) $results->getResultCount();
     $aggregations = $results->getExtraData('search_api_facets', []);
-    if ($total > 0 && !isset($aggregations[self::EMPLOYEES], $aggregations[self::STATES], $aggregations[self::WORK_STATES])) {
+    if ($total > 0 && !isset($aggregations[self::EMPLOYEES], $aggregations[self::STATES], $aggregations[self::PRIORITIES])) {
       return NULL;
     }
     return ['total' => $total, 'aggregations' => $aggregations];
@@ -348,12 +470,7 @@ final class BbBoardSummary extends AreaPluginBase {
    * The board address of this request.
    */
   private function address(): BoardAddress {
-    $request = $this->view->getRequest();
-    return $this->address ??= new BoardAddress(
-      $request->getBaseUrl() . $request->getPathInfo(),
-      $request->query->all(),
-      $this->view->getExposedInput(),
-    );
+    return $this->address ??= BoardAddress::fromView($this->view);
   }
 
   /**
@@ -387,21 +504,6 @@ final class BbBoardSummary extends AreaPluginBase {
   }
 
   /**
-   * Eligible parent choices for the Parent chips, UUID keyed.
-   *
-   * @return array<string, string>
-   *   Ticket UUID => "IDENTIFIER Title".
-   */
-  private function parentOptions(): array {
-    foreach ($this->view->filter as $filter) {
-      if ($filter instanceof BbBoardParent) {
-        return $filter->getValueOptions();
-      }
-    }
-    return [];
-  }
-
-  /**
    * A facet's own value for "no value", NULL when it has none.
    *
    * Contrib encodes missing as `!(v1,v2,…)`: not any value present in the
@@ -427,113 +529,6 @@ final class BbBoardSummary extends AreaPluginBase {
       }
     }
     return NULL;
-  }
-
-  /**
-   * The cells: Work state, State, Assignee, Priority and Parent facet chips.
-   *
-   * @param array<string, mixed> $summary
-   *   The summary.
-   *
-   * @return array<string, array<string, mixed>>
-   *   Zone render arrays; none for refusals and failures.
-   */
-  private function cells(array $summary): array {
-    if ($summary['status'] !== 'ok') {
-      return [];
-    }
-    $facets = [
-      'work_states' => [self::WORK_STATE, $this->t('By work state'), $summary['work_states']],
-      'states' => [self::STATE, $this->t('By state'), $summary['states']],
-      'employees' => [self::ASSIGNEE, $this->t('By assignee'), $summary['employees']],
-      'priorities' => [self::PRIORITY, $this->t('By priority'), $summary['priorities']],
-      'parents' => [self::PARENT, $this->t('By parent'), $summary['parents']],
-    ];
-    $cells = [];
-    foreach ($facets as $key => [$identifier, $heading, $rows]) {
-      if ($rows === []) {
-        continue;
-      }
-      $cells[$key] = $this->cell($heading, array_map(
-        fn (array $row): array => $this->chip(
-          $row['label'] . ' · ' . $row['count'],
-          $row['value'] === NULL || $row['value'] === '!' ? NULL : $this->address()->toggle($identifier, $row['value']),
-          $row['active'],
-          title: $row['title'] ?? NULL,
-          tone: $row['tone'] ?? NULL,
-        ),
-        $rows,
-      ), 'row');
-    }
-    return $cells;
-  }
-
-  /**
-   * One facet chip: a toggle link, highlighted when its value is active.
-   *
-   * @return array<string, mixed>
-   *   A button render array; without a link it is disabled.
-   */
-  private function chip(
-    string $label,
-    ?string $href,
-    bool $active,
-    string $variant = 'neutral',
-    ?string $title = NULL,
-    ?string $tone = NULL,
-  ): array {
-    $props = $href === NULL ? ['label' => $label, 'disabled' => TRUE] : ['label' => $label, 'href' => $href];
-    $chosen = $variant;
-    $attrs = [];
-    if ($variant !== 'ghost') {
-      $attrs['aria-pressed'] = 'false';
-      if ($active && $tone !== NULL && $tone !== '') {
-        $props['tone'] = $tone;
-        $attrs['aria-pressed'] = 'true';
-      }
-      elseif ($active) {
-        $chosen = 'primary';
-        $attrs['aria-pressed'] = 'true';
-      }
-      elseif (in_array($tone, ['critical', 'wait'], TRUE)) {
-        $chosen = 'danger';
-      }
-    }
-    if ($title !== NULL && $title !== '') {
-      $attrs['title'] = $title;
-    }
-    return [
-      '#type' => 'component',
-      '#component' => 'bb_theme:button',
-      '#variant' => $chosen,
-      '#props' => $props,
-      '#attributes' => $attrs,
-    ];
-  }
-
-  /**
-   * One labelled summary cell.
-   *
-   * @param \Drupal\Core\StringTranslation\TranslatableMarkup $heading
-   *   The cell heading.
-   * @param array<int, array<string, mixed>> $items
-   *   The cell content.
-   * @param string $direction
-   *   Either `row` for wrapping chips or `column` for stacked text.
-   *
-   * @return array<string, mixed>
-   *   A zone render array.
-   */
-  private function cell(TranslatableMarkup $heading, array $items, string $direction): array {
-    return [
-      '#type' => 'component',
-      '#component' => 'bb_theme:zone',
-      '#props' => ['inset' => 'none', 'gap' => 'sm', 'direction' => $direction],
-      '#slots' => [
-        'heading' => ['#plain_text' => (string) $heading],
-        'content' => $items,
-      ],
-    ];
   }
 
 }

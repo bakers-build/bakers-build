@@ -119,6 +119,15 @@ props:
     timestamp_title:
       type: string
       title: Posted-at full date and time, shown on hover
+    compact:
+      type: boolean
+      default: false
+      title: Compact row
+      description: >-
+        One 36 px line for the project Overview: a 24 px avatar and who, what,
+        ticket, detail and when in fixed columns; no tag, no role badge, no rich
+        body. Only the project Overview passes it; every other activity feed
+        keeps the full entry.
   required:
     - author_name
     - author_initials

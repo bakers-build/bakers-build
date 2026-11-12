@@ -2,7 +2,7 @@ services:
   # Board-card records for one column's tickets.
   bb_board.project_board:
     class: Drupal\bb_board\ProjectBoard
-    arguments: ['@bb_core.ticket_run_deriver', '@bb_core.date']
+    arguments: ['@bb_core.ticket_run_deriver', '@bb_core.date', '@bb_core.reference_counter', '@entity_type.manager']
   Drupal\bb_board\ProjectBoard:
     alias: bb_board.project_board
   # A board parent's visible descendants, resolved once per request.
@@ -11,9 +11,21 @@ services:
     arguments: ['@entity_type.manager', '@current_user']
   Drupal\bb_board\ParentTicketScope:
     alias: bb_board.parent_ticket_scope
-  # Labelled, ordered chip rows from the control panel's aggregations.
+  # Labelled rows and focus counts behind the filter bar.
   bb_board.project_board_summary:
     class: Drupal\bb_board\ProjectBoardSummary
-    arguments: ['@entity_type.manager']
+    arguments: ['@entity_type.manager', '@bb_core.ticket_search_resolver', '@logger.channel.bb_core']
   Drupal\bb_board\ProjectBoardSummary:
     alias: bb_board.project_board_summary
+  # Details and Done open/closed, remembered per account in user.data.
+  bb_board.preferences:
+    class: Drupal\bb_board\BoardPreferences
+    arguments: ['@user.data', '@current_user', '@request_stack']
+  Drupal\bb_board\BoardPreferences:
+    alias: bb_board.preferences
+  # The Board's Unhealthy filter: one rule, one attention set per request.
+  bb_board.health:
+    class: Drupal\bb_board\BoardHealth
+    arguments: ['@entity_type.manager', '@bb_core.project_health']
+  Drupal\bb_board\BoardHealth:
+    alias: bb_board.health

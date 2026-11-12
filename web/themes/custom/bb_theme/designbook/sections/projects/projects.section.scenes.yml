@@ -1,3 +1,8 @@
+# HAND-EDITED ONCE under a waiver: Pascal Glass, 2026-11-11 (BAKERS-55 Task 12).
+# Designbook a4fea9d7 write-scene refuses every scene that names a mapping its
+# map-entity step cannot compile (list-view views, the Display Builder Overview),
+# so the scenes project-detail-overview-empty, project-detail-board-details,
+# -done-open and -unhealthy were added and three docs texts updated by hand.
 id: projects
 group: "Designbook/Sections/Projects"
 title: Projects
@@ -1059,13 +1064,13 @@ scenes:
     group: Screens
     section: projects
     docs: >-
-      PROJECT DETAIL default: Overview. Answers whether the project is running.
-      Scene owns page_header (mark, plain title, key · group, tabs — no search,
-      no team switcher). The project's `full` view mode is the tab body: a
-      `canvas` with description then Activities in `main`, and Properties and
-      Epics in `inspector`. Each activity row is `bb_activity` in `full`
-      (`event`; `empty-state` “No activity yet.”). Sample id 1 has three
-      activity rows and two epics.
+      PROJECT DETAIL default: Overview of project 1, which needs attention. The
+      full view mode is a canvas: main = three kpi stat-tiles (Unhealthy 6
+      links the Unhealthy board), Needs attention (five list rows of six, each
+      with a red or yellow reason badge, "Showing 5 of 6 unhealthy tickets",
+      Open board), Epics (three progress rows) and Activities (compact event
+      rows, Refresh); inspector = About (the description) and Properties (Key,
+      Origin, Repository, Teams, Group, Environments) with Edit.
     items:
       - scene: "design-system:shell"
         with:
@@ -1182,9 +1187,11 @@ scenes:
     group: Screens
     section: projects
     docs: >-
-      Overview `full` view mode on sample id 3: empty description omitted,
-      `empty-state` “No activity yet.”, no epics.
-      Same chrome as `project-detail-overview`.
+      Overview of project 3, which flows: Unhealthy 0 ("nothing blocks the
+      flow"), the success note "Everything is flowing - No open ticket needs a
+      person right now.", "No epics in this project." and two compact activity
+      rows; About shows the faint empty mark. Same chrome as
+      project-detail-overview.
     items:
       - scene: "design-system:shell"
         with:
@@ -1237,17 +1244,76 @@ scenes:
                     view_mode: full
                     select: $[id='3']
 
+  - name: project-detail-overview-empty
+    group: Screens
+    section: projects
+    docs: >-
+      Overview of project 4, which has no ticket yet: the main column is one
+      page empty state "No tickets yet"; the inspector keeps About and
+      Properties.
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: Øresund Ærø Straße Überführungsgesellschaft für Großprojekte
+                      description: key ORE · group keytec
+                    slots:
+                      leading:
+                        component: bb_theme:person
+                        props:
+                          variant: compact
+                          size: md
+                          initials: OR
+                          color: lease
+                          image_fit: contain
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: true
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: false
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - entity: bb_project.bb_project
+                    view_mode: full
+                    select: $[id='4']
+
   - name: project-detail-board
     group: Screens
     section: projects
     docs: >-
-      Operational Board for this project. Not assigned has no conductor; Intake
-      is qualification with a conductor; Working is every other open state with
-      a conductor; Done is closed. Work-state chips default to the three open
-      columns; the Done chip reveals the Done column. Summary chips
-      filter State, Assignee, Priority, Work state and Parent. Done size
-      (10 / 25 / 50, default 10) sits in the Done column of the operational
-      component story. Details splits only Working by exact workflow state.
+      Board of project 1: Details "Phases", Done closed. The view page display
+      renders the filter bar (search, State and Priority pickers, Assignee
+      avatars with counts, Unassigned, Details Phases|States, Clear filters),
+      "No filters" with "11 of 11 open tickets", the columns Not assigned,
+      Intake (a card blocked by BB-348, one blocked by a hidden ticket),
+      Working and Done ("Done 3", Show done), and Active conductors below (one
+      without a machine reads "Unknown capacity").
     items:
       - scene: "design-system:shell"
         with:
@@ -1290,6 +1356,154 @@ scenes:
                 main:
                   - entity: view.project_board
                     view_mode: default
+  - name: project-detail-board-details
+    group: Screens
+    section: projects
+    docs: >-
+      Board with Details "States": Working becomes a panel with the sub-columns
+      plan and working and the hint "empty: review".
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: Board · this project only
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: true
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - entity: view.project_board
+                    view_mode: default
+                    record: 1
+  - name: project-detail-board-done-open
+    group: Screens
+    section: projects
+    docs: >-
+      Board with Done open: "last 7 days", three closed tickets (one
+      cancelled), "Show older" and "Hide done".
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: Board · this project only
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: true
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - entity: view.project_board
+                    view_mode: default
+                    record: 2
+  - name: project-detail-board-unhealthy
+    group: Screens
+    section: projects
+    docs: >-
+      Board filtered to the unhealthy tickets, where the Overview Unhealthy
+      tile leads: chip "Unhealthy · 6", "6 of 11 open tickets", only the six
+      unhealthy tickets in their columns, Done 0.
+    items:
+      - scene: "design-system:shell"
+        with:
+          overlay: ""
+          content:
+            - component: bb_theme:canvas
+              slots:
+                header:
+                  - component: bb_theme:page_header
+                    props:
+                      title: bakers.build Platform
+                      description: Board · this project only
+                    slots:
+                      tabs:
+                        component: bb_theme:tabs
+                        props:
+                          label: Project sections
+                          items:
+                            - label: Overview
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-overview
+                              active: false
+                            - label: Board
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-board
+                              active: true
+                            - label: Tickets
+                              url: /?path=/story/designbook-sections-tickets-scenes--ticket-list
+                              active: false
+                            - label: Stats
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-stats
+                              active: false
+                            - label: Runs
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-runs
+                              active: false
+                            - label: Members
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-members
+                              active: false
+                            - label: Settings
+                              url: /?path=/story/designbook-sections-projects-scenes--project-detail-settings
+                              active: false
+                main:
+                  - entity: view.project_board
+                    view_mode: default
+                    record: 3
   - name: project-detail-stats
     group: Screens
     section: projects

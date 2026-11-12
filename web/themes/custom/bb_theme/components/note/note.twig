@@ -18,18 +18,32 @@
    styled edge here, so `attention` can mark a note a reader must not skim past
    without any of it announcing a state — and `neutral`, the default, is the
    whole of what this rendered before the tone existed. Still no icon, no tint
-   and no background, at any tone. #}
+   and no background at either of those tones; `success` is the one exception
+   below. #}
 {% set tone_map = {
   'neutral': 'border-border',
   'attention': 'border-state-attention-mark'
 } %}
-<div{{ (attributes ?: create_attribute()).addClass([
+{#- SUCCESS IS THE ONE TONE THAT TINTS. It states an outcome ("Everything is
+    flowing"), not the consequence of a control, so it takes the running tint
+    and a leading dot instead of the hairline, as the approved reference draws
+    it, and the body follows the lead without a separator. -#}
+{% set success = tone|default('neutral') == 'success' %}
+<div{{ (attributes ?: create_attribute()).addClass(success ? [
+    'note',
+    'flex', 'flex-wrap', 'items-center', 'gap-x-stack', 'gap-y-inline-xs',
+    'px-group', 'py-stack', 'rounded-sm', 'bg-state-running-tint',
+    'text-body', 'text-state-running-ink',
+  ] : [
     'note',
     'border-l', tone_map[tone|default('neutral')]|default('border-border'),
     'pl-[10px]', 'py-[2px]',
     'text-meta', 'text-text-light',
   ]) }}>
-  {%- if lead %}<span class="note__lead font-semibold text-text">{{ lead }}</span>
+  {%- if success %}<span class="size-2 shrink-0 rounded-full bg-state-running" aria-hidden="true"></span>
+  {% if lead %}<span class="note__lead font-semibold">{{ lead }}</span>
+  {% endif %}
+  {%- elseif lead %}<span class="note__lead font-semibold text-text">{{ lead }}</span>
   <span class="note__separator text-text-faint" aria-hidden="true">·</span>
   {% endif -%}
   <span class="note__body">{% block body %}{% if body %}{{ body }}{% endif %}{% endblock %}</span>

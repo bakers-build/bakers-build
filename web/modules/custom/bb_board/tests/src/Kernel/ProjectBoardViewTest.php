@@ -8,6 +8,7 @@ use Drupal\Tests\bb_core\Kernel\ProjectsViewTestTrait;
 use Drupal\Tests\bb_core\Kernel\WorkspaceReadScopeTestTrait;
 use Drupal\Core\TypedData\ComplexDataInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\search_api\Entity\Index;
@@ -17,6 +18,7 @@ use Drupal\views\Views;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\DomCrawler\Crawler;
 
 /**
  * Executes each Project Board column against real Search API data.
@@ -40,6 +42,8 @@ final class ProjectBoardViewTest extends KernelTestBase {
     'better_exposed_filters', 'facets', 'facets_exposed_filters',
     'display_builder', 'ui_patterns', 'ui_patterns_views',
     'display_builder_views',
+    // The conductors block below the columns.
+    'block', 'path_alias',
     'bb_core', 'bb_board',
   ];
 
@@ -65,12 +69,15 @@ final class ProjectBoardViewTest extends KernelTestBase {
     parent::setUp();
     $this->installEntitySchema('search_api_task');
     $this->installSchema('search_api', ['search_api_item']);
+    $this->installSchema('user', ['users_data']);
+    $this->installEntitySchema('path_alias');
     $this->installReadScopeEnvironment();
     $this->installConfig(['search_api']);
     $this->container->get('config.installer')
       ->installOptionalConfig(NULL, ['module' => 'bb_core']);
     $this->installShippedView('views.view.project_board');
     $this->container->get('router.builder')->rebuild();
+    $this->container->get('theme_installer')->install(['bb_theme']);
     $this->buildTwoWorkspaceWorld();
 
     $project_a = $this->fixture('a', 'bb_project');
@@ -134,25 +141,27 @@ final class ProjectBoardViewTest extends KernelTestBase {
       $this->fixture('b', 'bb_conductor')->id(),
     );
 
-    $done->markClosed(1_000)->save();
+    // Inside the seven-day window, so the order decides the first page.
+    $day_ago = $this->container->get('datetime.time')->getRequestTime() - 86_400;
+    $done->markClosed($day_ago + 1_000)->save();
     $oldest_on_page = $this->createTicket($this->projectA, 'BOARD-DONE-NEW', 'cancelled', TRUE, $conductor_a->id());
-    $oldest_on_page->markClosed(2_000)->save();
+    $oldest_on_page->markClosed($day_ago + 2_000)->save();
     $newest_on_page = $oldest_on_page;
     for ($i = 1; $i <= 9; $i++) {
       $newest_on_page = $this->createTicket($this->projectA, sprintf('BOARD-DONE-%02d', $i), 'cancelled', TRUE, $conductor_a->id());
-      $newest_on_page->markClosed(2_000 + $i)->save();
+      $newest_on_page->markClosed($day_ago + 2_000 + $i)->save();
     }
 
     $this->indexTickets();
 
     $backlog_ids = [$backlog->getIdentifier(), $fixture->getIdentifier()];
     sort($backlog_ids);
-    $working_ids = [$blocked->getIdentifier(), $working->getIdentifier()];
-    sort($working_ids);
+    $intake_ids = [$blocked->getIdentifier(), $intake->getIdentifier()];
+    sort($intake_ids);
 
     self::assertSame($backlog_ids, $this->identifiers('backlog', $this->projectA));
-    self::assertSame([$intake->getIdentifier()], $this->identifiers('intake', $this->projectA));
-    self::assertSame($working_ids, $this->identifiers('working', $this->projectA));
+    self::assertSame($intake_ids, $this->identifiers('intake', $this->projectA));
+    self::assertSame([$working->getIdentifier()], $this->identifiers('working', $this->projectA));
     $done_page = $this->identifiersInOrder('done', $this->projectA);
     self::assertCount(10, $done_page);
     self::assertSame($newest_on_page->getIdentifier(), $done_page[0]);
@@ -168,8 +177,9 @@ final class ProjectBoardViewTest extends KernelTestBase {
   /**
    * Classification cases for the derived work_state field.
    *
-   * @return array<string, array{bool, string, bool, bool, string}>
-   *   closed, state, assigned, frozen, expected work_state.
+   * @return array<string, array{bool, string, bool, bool, string, 2?: string|null, 3?: string|null}>
+   *   closed, state, assigned, frozen, expected work_state, then the state of
+   *   the ticket's single blocker and of its single run, each NULL for none.
    */
   public static function workStateCases(): array {
     return [
@@ -182,6 +192,11 @@ final class ProjectBoardViewTest extends KernelTestBase {
       'open cancelled unassigned' => [FALSE, 'cancelled', FALSE, FALSE, 'not_assigned'],
       'frozen assigned coding stays working' => [FALSE, 'coding', TRUE, TRUE, 'working'],
       'frozen unassigned stays not assigned' => [FALSE, 'coding', FALSE, TRUE, 'not_assigned'],
+      'blocked, conductor, no live run' => [FALSE, 'coding', TRUE, FALSE, 'intake', 'coding'],
+      'blocked, conductor, live run' => [FALSE, 'coding', TRUE, FALSE, 'working', 'coding', 'running'],
+      'blocked, conductor, finished run' => [FALSE, 'coding', TRUE, FALSE, 'intake', 'coding', 'done'],
+      'blocked, no conductor' => [FALSE, 'coding', FALSE, FALSE, 'not_assigned', 'coding'],
+      'blocker done' => [FALSE, 'coding', TRUE, FALSE, 'working', 'done'],
     ];
   }
 
@@ -195,11 +210,13 @@ final class ProjectBoardViewTest extends KernelTestBase {
     bool $assigned,
     bool $frozen,
     string $expected,
+    ?string $blockerState = NULL,
+    ?string $runState = NULL,
   ): void {
     $conductor_id = $assigned ? $this->fixture('a', 'bb_conductor')->id() : NULL;
     $ticket = $this->createTicket(
       $this->projectA,
-      'WS-' . substr(hash('sha256', $state . (int) $closed . (int) $assigned . (int) $frozen), 0, 8),
+      'WS-' . substr(hash('sha256', $state . (int) $closed . (int) $assigned . (int) $frozen . $blockerState . $runState), 0, 8),
       'coding',
       FALSE,
       $conductor_id,
@@ -207,6 +224,13 @@ final class ProjectBoardViewTest extends KernelTestBase {
     $ticket->set('state', $state);
     $ticket->set('closed', $closed);
     $ticket->setFrozen($frozen);
+    if ($blockerState !== NULL) {
+      $blocker = $this->createTicket($this->projectA, 'WS-BLK-' . $blockerState, $blockerState, FALSE, $conductor_id);
+      $ticket->set('blocked_by', [$blocker->id()]);
+    }
+    if ($runState !== NULL) {
+      $this->createRun($ticket, $runState);
+    }
     self::assertSame($expected, $ticket->get('work_state')->value);
   }
 
@@ -248,6 +272,52 @@ final class ProjectBoardViewTest extends KernelTestBase {
   }
 
   /**
+   * Closing a blocker re-indexes the tickets it blocks.
+   */
+  public function testWorkStateIndexFollowsBlockerClosure(): void {
+    $conductor = $this->fixture('a', 'bb_conductor');
+    $blocker = $this->createTicket($this->projectA, 'WS-BLKR', 'working', FALSE, $conductor->id());
+    $ticket = $this->createTicket($this->projectA, 'WS-BLKD', 'working', FALSE, $conductor->id());
+    $ticket->set('blocked_by', [$blocker->id()])->save();
+    $this->assertIndexedWorkState($ticket, 'intake');
+
+    $blocker->set('state', 'done')->save();
+    $this->assertIndexedWorkState($ticket, 'working');
+  }
+
+  /**
+   * Saving a run re-indexes its ticket.
+   */
+  public function testWorkStateIndexFollowsRunSave(): void {
+    $conductor = $this->fixture('a', 'bb_conductor');
+    $blocker = $this->createTicket($this->projectA, 'WS-RBLR', 'coding', FALSE, $conductor->id());
+    $ticket = $this->createTicket($this->projectA, 'WS-RUNT', 'coding', FALSE, $conductor->id());
+    $ticket->set('blocked_by', [$blocker->id()])->save();
+    $run = $this->createRun($ticket, 'running');
+    $this->assertIndexedWorkState($ticket, 'working');
+
+    $run->set('state', 'done')->save();
+    $this->assertIndexedWorkState($ticket, 'intake');
+  }
+
+  /**
+   * Only a run's state or lease re-indexes its ticket, not a heartbeat.
+   */
+  public function testRunHeartbeatLeavesTheTicketIndexed(): void {
+    $ticket = $this->createTicket($this->projectA, 'WS-BEAT', 'coding', FALSE, $this->fixture('a', 'bb_conductor')->id());
+    $run = $this->createRun($ticket, 'running');
+    $this->assertIndexedWorkState($ticket, 'working');
+    $tracker = Index::load('bb_tickets')?->getTrackerInstance();
+    self::assertNotNull($tracker);
+
+    $run->set('heartbeat', time())->save();
+    self::assertSame(0, $tracker->getRemainingItemsCount(), 'A heartbeat queues nothing.');
+
+    $run->set('claim_expires_at', time() - 1)->save();
+    self::assertSame(1, $tracker->getRemainingItemsCount(), 'An expired lease queues the ticket.');
+  }
+
+  /**
    * Parent focus lists closed descendants in Done; active columns stay open.
    */
   public function testParentScopedDoneIncludesClosedDescendants(): void {
@@ -262,6 +332,299 @@ final class ProjectBoardViewTest extends KernelTestBase {
     $exposed = ['parent_id' => $parent->uuid()];
     self::assertSame([$open->getIdentifier()], $this->identifiers('working', $this->projectA, exposed: $exposed));
     self::assertSame([$closed->getIdentifier()], $this->identifiers('done', $this->projectA, exposed: $exposed));
+  }
+
+  /**
+   * States splits Working into one sub-column per state that has tickets.
+   */
+  public function testDetailsSplitsWorkingByState(): void {
+    $conductor = $this->fixture('a', 'bb_conductor')->id();
+    $this->createTicket($this->projectA, 'DET-PLAN', 'plan', FALSE, $conductor);
+    $this->createTicket($this->projectA, 'DET-REVIEW-1', 'review', FALSE, $conductor);
+    $this->createTicket($this->projectA, 'DET-REVIEW-2', 'review', FALSE, $conductor);
+    $this->indexTickets();
+
+    $html = $this->board(['details' => 'states']);
+    $columns = $this->columns($html);
+    self::assertSame(3, $columns['Working'] ?? NULL, 'The Working panel counts the sum.');
+    self::assertSame(1, $columns['plan'] ?? NULL);
+    self::assertSame(2, $columns['review'] ?? NULL);
+    self::assertArrayNotHasKey('working', $columns, 'A state without tickets gets no sub-column.');
+    self::assertStringContainsString('empty: working', $this->text($html));
+    self::assertStringNotContainsString('empty: plan', $this->text($html));
+    self::assertStringNotContainsString('empty: review', $this->text($html));
+
+    $phases = $this->columns($this->board(['details' => 'phases']));
+    self::assertSame(3, $phases['Working'] ?? NULL);
+    self::assertArrayNotHasKey('plan', $phases, 'Phases shows no sub-columns.');
+  }
+
+  /**
+   * The state sub-columns carry the same exposed filters as Working.
+   */
+  public function testSubColumnsCarryTheBoardFilters(): void {
+    $working = $this->exposedIdentifiers('working');
+    self::assertContains('search', $working);
+    foreach (['working_plan', 'working_working', 'working_review'] as $display) {
+      self::assertSame($working, $this->exposedIdentifiers($display), $display);
+    }
+  }
+
+  /**
+   * With Phases, an empty column keeps its header, count 0 and a sentence.
+   */
+  public function testPhasesKeepsEmptyColumns(): void {
+    // The world's one open ticket of project A has no conductor.
+    $this->indexTickets();
+    $html = $this->board([]);
+    $columns = $this->columns($html);
+    self::assertSame(1, $columns['Not assigned'] ?? NULL);
+    self::assertSame(0, $columns['Intake'] ?? NULL);
+    self::assertSame(0, $columns['Working'] ?? NULL);
+    // Intake and Working; the closed Done column shows no body.
+    self::assertSame(2, substr_count($this->text($html), 'No ticket matches these filters.'));
+  }
+
+  /**
+   * Done shows the tickets closed in the last seven days.
+   */
+  public function testDoneShowsLastSevenDays(): void {
+    [$recent] = $this->closedTwoAndNineDaysAgo();
+    $this->request(['done' => 'show']);
+    self::assertSame([$recent->getIdentifier()], $this->identifiersInOrder('done', $this->projectA));
+    self::assertSame(1, $this->columns($this->board(['done' => 'show']))['Done'] ?? NULL);
+  }
+
+  /**
+   * Show older drops the window, newest first.
+   */
+  public function testShowOlderAddsOlderTickets(): void {
+    [$recent, $old] = $this->closedTwoAndNineDaysAgo();
+    $this->request(['done' => 'show', 'done_older' => '1']);
+    self::assertSame(
+      [$recent->getIdentifier(), $old->getIdentifier()],
+      $this->identifiersInOrder('done', $this->projectA),
+    );
+    self::assertSame(2, $this->columns($this->board(['done' => 'show', 'done_older' => '1']))['Done'] ?? NULL);
+  }
+
+  /**
+   * A closed Done column shows the window's count and no cards.
+   */
+  public function testClosedDoneKeepsCountWithoutCards(): void {
+    [$recent] = $this->closedTwoAndNineDaysAgo();
+
+    $closed = $this->board(['done' => 'hide']);
+    self::assertSame(1, $this->columns($closed)['Done'] ?? NULL);
+    self::assertStringNotContainsString($recent->getIdentifier(), $closed);
+    self::assertStringContainsString('Show done', $this->text($closed));
+    self::assertStringContainsString('done=show', $closed);
+    self::assertStringNotContainsString('last 7 days', $this->text($closed));
+
+    $open = $this->board(['done' => 'show']);
+    self::assertStringContainsString($recent->getIdentifier(), $open);
+    self::assertStringContainsString('last 7 days', $this->text($open));
+    self::assertStringContainsString('Show older', $this->text($open));
+    self::assertStringContainsString('done_older=1', $open);
+
+    $older = $this->text($this->board(['done' => 'show', 'done_older' => '1']));
+    self::assertStringNotContainsString('last 7 days', $older);
+    self::assertStringNotContainsString('Show older', $older);
+  }
+
+  /**
+   * An open Done column closes again, also while it shows older tickets.
+   */
+  public function testOpenDoneCanCloseAgain(): void {
+    $this->closedTwoAndNineDaysAgo();
+
+    $open = $this->board(['done' => 'show']);
+    self::assertMatchesRegularExpression('/last 7 days .* Show older Hide done$/', $this->text($open));
+    self::assertMatchesRegularExpression('#href="[^"?]*\?done=show&(?:amp;)?done_older=1"#', $open);
+    self::assertMatchesRegularExpression('#href="[^"?]*\?done=hide"#', $open);
+
+    $older = $this->board(['done' => 'show', 'done_older' => '1']);
+    self::assertStringContainsString('Hide done', $this->text($older));
+    self::assertMatchesRegularExpression('#href="[^"?]*\?done=hide"#', $older, 'Hiding drops the older window.');
+
+    $this->board(['done' => 'hide']);
+    $stored = $this->container->get('user.data')->get('bb_board', (int) $this->reader->id(), 'done_open');
+    self::assertNotNull($stored, 'Hide done is remembered.');
+    self::assertFalse((bool) $stored);
+    $next = $this->text($this->board([]));
+    self::assertStringContainsString('Show done', $next);
+    self::assertStringNotContainsString('Hide done', $next);
+  }
+
+  /**
+   * Below the columns, the Board lists its project's active conductors.
+   *
+   * The block finds the project in the Board's own address; the Board's
+   * ticket filters narrow the columns and leave the conductors alone.
+   */
+  public function testConductorsBelowTheBoardIgnoreTicketFilters(): void {
+    $this->installConfig(['display_builder']);
+    // The page renders through Display Builder, as on the site.
+    $this->config('views.settings')->set('display_extenders', ['display_builder'])->save();
+    $this->installShippedView('views.view.conductors');
+    // The Board address names the workspace by its slug.
+    $this->fixture('a', 'bb_workspace')->set('slug', 'workspace-a')->save();
+    $this->createEntity('bb_conductor', [
+      'conductor_id' => 'board-dormant',
+      'label' => 'board-dormant',
+      'active' => FALSE,
+      'status' => 'online',
+      'project_id' => $this->projectA->id(),
+      'owner_user_id' => $this->worldOwner->id(),
+    ]);
+    $this->indexTickets();
+
+    $plain = $this->page([]);
+    $filtered = $this->page(['priority' => ['1']]);
+
+    $active = [(string) $this->fixture('a', 'bb_conductor')->label()];
+    self::assertMatchesRegularExpression('/Active conductors not affected by ticket filters Conductor/', $this->text($plain));
+    $heading = (new Crawler($plain))->filter('h2[data-zone-heading]')->reduce(static fn (Crawler $h2): bool => trim($h2->text()) === 'Active conductors');
+    $note = $heading->nextAll()->filter('p')->each(static fn (Crawler $p): string => trim($p->text()));
+    self::assertSame(['not affected by ticket filters'], $note, 'The note is the zone description.');
+    self::assertSame(1, substr_count($plain, 'not affected by ticket filters'));
+    self::assertSame($active, $this->conductorNames($plain));
+    self::assertSame($active, $this->conductorNames($filtered), 'Ticket filters leave the conductors alone.');
+    self::assertSame(1, $this->columns($plain)['Not assigned'] ?? NULL);
+    self::assertSame(0, $this->columns($filtered)['Not assigned'] ?? NULL, 'The filter narrows the columns.');
+  }
+
+  /**
+   * Two closed tickets of project A: two and nine days ago.
+   *
+   * @return array{BbTicketInterface, BbTicketInterface}
+   *   The recent ticket, then the old one.
+   */
+  private function closedTwoAndNineDaysAgo(): array {
+    $now = $this->container->get('datetime.time')->getRequestTime();
+    $conductor = $this->fixture('a', 'bb_conductor')->id();
+    $recent = $this->createTicket($this->projectA, 'DONE-RECENT', 'done', TRUE, $conductor);
+    $recent->markClosed($now - 2 * 86_400)->save();
+    $old = $this->createTicket($this->projectA, 'DONE-OLD', 'done', TRUE, $conductor);
+    $old->markClosed($now - 9 * 86_400)->save();
+    $this->indexTickets();
+    return [$recent, $old];
+  }
+
+  /**
+   * Makes the current request carry this query, as the browser would.
+   *
+   * @param array<string, mixed> $query
+   *   The query parameters.
+   */
+  private function request(array $query): void {
+    $this->container->get('request_stack')->getCurrentRequest()->query->replace($query);
+  }
+
+  /**
+   * The rendered columns of project A's board in the theme, as the reader.
+   *
+   * @param array<string, mixed> $query
+   *   The request's query parameters.
+   */
+  private function board(array $query): string {
+    $this->request($query);
+    $this->container->get('theme.manager')->setActiveTheme(
+      $this->container->get('theme.initialization')->initTheme('bb_theme'),
+    );
+    $switcher = $this->container->get('account_switcher');
+    $switcher->switchTo($this->reader);
+    try {
+      $view = Views::getView('project_board');
+      self::assertInstanceOf(ViewExecutable::class, $view);
+      self::assertTrue($view->setDisplay('project_board'));
+      $arguments = [(string) $this->fixture('a', 'bb_workspace')->id(), (string) $this->projectA->id()];
+      $view->preExecute($arguments);
+      $view->render();
+      $columns = $view->attachment_before;
+      return (string) $this->container->get('renderer')->renderInIsolation($columns);
+    }
+    finally {
+      $switcher->switchBack();
+    }
+  }
+
+  /**
+   * The whole Board page of project A at its address, as the reader.
+   *
+   * @param array<string, mixed> $query
+   *   The request's query parameters.
+   */
+  private function page(array $query): string {
+    $this->request($query);
+    $workspace = (string) $this->fixture('a', 'bb_workspace')->get('slug')->value;
+    $key = (string) $this->projectA->get('key')->value;
+    $this->container->get('path.current')->setPath("/_workspace/$workspace/project/$key/board");
+    $this->container->get('theme.manager')->setActiveTheme(
+      $this->container->get('theme.initialization')->initTheme('bb_theme'),
+    );
+    $switcher = $this->container->get('account_switcher');
+    $switcher->switchTo($this->reader);
+    try {
+      $view = Views::getView('project_board');
+      self::assertInstanceOf(ViewExecutable::class, $view);
+      $build = $view->executeDisplay('project_board', [$workspace, $key]);
+      self::assertIsArray($build);
+      return (string) $this->container->get('renderer')->renderInIsolation($build);
+    }
+    finally {
+      $switcher->switchBack();
+    }
+  }
+
+  /**
+   * The conductor names in the page's conductors table, in order.
+   *
+   * @return list<string>
+   *   One name per row.
+   */
+  private function conductorNames(string $html): array {
+    return (new Crawler($html))->filter('tbody tr')->each(
+      static fn (Crawler $row): string => trim($row->filter('td, th')->first()->text()),
+    );
+  }
+
+  /**
+   * Column label and count of each rendered column, in order.
+   *
+   * @return array<string, int>
+   *   Counts keyed by column label.
+   */
+  private function columns(string $html): array {
+    preg_match_all('#<section[^>]*\sdata-col="([^"]+)"[^>]*\sdata-count="(\d+)"#', $html, $matches);
+    return array_map('intval', array_combine($matches[1], $matches[2]));
+  }
+
+  /**
+   * The visible text of rendered markup, one space between words.
+   */
+  private function text(string $html): string {
+    return trim(preg_replace('/\s+/', ' ', html_entity_decode(preg_replace('/<[^>]+>/', ' ', $html))));
+  }
+
+  /**
+   * The exposed identifiers of one board display.
+   *
+   * @return list<string>
+   *   Identifiers in filter order.
+   */
+  private function exposedIdentifiers(string $display): array {
+    $view = Views::getView('project_board');
+    self::assertInstanceOf(ViewExecutable::class, $view);
+    self::assertTrue($view->setDisplay($display));
+    $view->initHandlers();
+    $identifiers = [];
+    foreach ($view->filter as $filter) {
+      if ($filter->isExposed()) {
+        $identifiers[] = $filter->options['expose']['identifier'];
+      }
+    }
+    return $identifiers;
   }
 
   /**
@@ -285,6 +648,20 @@ final class ProjectBoardViewTest extends KernelTestBase {
     ]);
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     return $ticket;
+  }
+
+  /**
+   * Creates a run of the ticket in the given state.
+   */
+  private function createRun(BbTicketInterface $ticket, string $state): BbRunInterface {
+    $run = $this->createEntity('bb_run', [
+      'ticket_id' => $ticket->id(),
+      'conductor_id' => $this->fixture('a', 'bb_conductor')->id(),
+      'state' => $state,
+      'claim_expires_at' => time() + 600,
+    ]);
+    self::assertInstanceOf(BbRunInterface::class, $run);
+    return $run;
   }
 
   /**

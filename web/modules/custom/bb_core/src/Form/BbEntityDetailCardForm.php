@@ -67,8 +67,10 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
     ],
     // Project Settings edit a project; its detail cards only show it.
     'bb_project' => [
-      'identity' => ['edit' => [], 'show' => ['name', 'description']],
-      'properties' => ['edit' => [], 'show' => ['key', 'repository', 'teams', 'group_id', 'environments']],
+      'properties' => [
+        'edit' => [],
+        'show' => ['key', 'origin_sources', 'repository', 'teams', 'group_id', 'environments'],
+      ],
     ],
   ];
 
@@ -309,18 +311,44 @@ final class BbEntityDetailCardForm extends BbPropertyFormBase {
             'value' => (string) $list->getFieldDefinition()->getLabel(),
             'emphasis' => 'faint',
           ],
-          'value' => $this->cell($list),
-        ],
+        ] + $this->valueCells($list),
       ];
     }
     if ($items === []) {
       return [];
     }
-    return [
+    $build = [
       '#type' => 'component',
       '#component' => 'bb_theme:list',
       '#props' => ['layout' => 'plain', 'items' => $items],
     ];
+    // Origin sources are computed per viewer from the project's tickets.
+    if (in_array('origin_sources', $fields, TRUE)) {
+      $build['#cache'] = ['contexts' => ['user'], 'tags' => ['bb_ticket_list']];
+    }
+    return $build;
+  }
+
+  /**
+   * The value cells of a row: one per link of a link field, else one.
+   *
+   * @return array<string, array<string, mixed>>
+   *   Cells keyed `value`, `value_2`, ….
+   */
+  private function valueCells(FieldItemListInterface $list): array {
+    if ($list->getFieldDefinition()->getType() !== 'link' || $list->isEmpty()) {
+      return ['value' => $this->cell($list)];
+    }
+    $cells = [];
+    foreach ($list as $delta => $item) {
+      $cells[$delta === 0 ? 'value' : 'value_' . ($delta + 1)] = [
+        'kind' => 'link',
+        'value' => (string) $item->get('title')->getValue(),
+        'url' => (string) $item->get('uri')->getValue(),
+        'external' => TRUE,
+      ];
+    }
+    return $cells;
   }
 
   /**

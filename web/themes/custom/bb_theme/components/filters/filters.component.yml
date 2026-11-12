@@ -65,6 +65,7 @@ props:
       enum:
         - panel
         - bar
+        - toolbar
       default: panel
       title: Layout
       description: >-
@@ -75,7 +76,11 @@ props:
         first control grows, later ones keep their own width — and which submits
         its fields' form itself (a select on change, a text field 500ms after
         typing), because those fields sit outside the exposed `<form>`. `title`
-        and `collapsed` apply to `panel` only.
+        and `collapsed` apply to `panel` only. `toolbar` is the board filter
+        bar: the same `role="search"` region and self-submitting fields as
+        `bar`, but no surface and no border, one centred row of at least 36 px
+        (wrapping only when narrow) whose first control (the search) is 240 px
+        wide, and a trailing `actions` group pushed to the right.
 slots:
   controls:
     title: Controls
@@ -84,6 +89,11 @@ slots:
       `option_picker` components — the same pill grammar the dialogs use, so a
       filter reads and announces itself exactly like a property. Renamed from
       `facets` with the vocabulary (D8).
+  actions:
+    title: Actions
+    description: >-
+      Trailing controls of the `toolbar` layout, right-aligned: the Details
+      segmented control and "Clear filters".
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true
