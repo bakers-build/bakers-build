@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import type { ContainerLaunch, ContainerMount } from './contract.js';
+import type { RuntimeLaunch } from '@bakers-build/conductor/contract';
 
 export interface DockerOptions {
   /** The container CLI: `docker`, or `podman`. */
@@ -19,19 +19,16 @@ export interface HostPaths {
   gitDir: string;
   /** `<worktree>/.git` when it is a gitlink file. */
   gitLink?: string;
-  /** The per-run home, mounted at `/home/run`. */
+  /** The per-run home, mounted at its host path. */
   runHome: string;
-  /** What the agent's `container.prepare` returned. */
-  agent: { env: Record<string, string>; mounts: ContainerMount[] };
   /** The bakers CLI build, mounted read-only at its host path. */
   cliRoot: string;
   uid: number;
   gid: number;
 }
 
-export const RUN_HOME = '/home/run';
 /** The image's PATH, behind the run home's `bin` (the `bakers` shim lives there). */
-export const RUN_PATH = `${RUN_HOME}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`;
+export const RUN_PATH = `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`;
 export const PROXY_PORTS = { egress: 3128, api: 8081, tools: 8082 } as const;
 /** What the run sends as its API key in allowlist mode; the proxy swaps in the real one. */
 export const API_KEY_PLACEHOLDER = 'bb-runtime-placeholder';
@@ -50,21 +47,20 @@ const HOST_ONLY = (key: string) =>
  * client; nothing of the operator home is mounted beyond the list below.
  */
 export function dockerArgs(
-  input: ContainerLaunch,
+  input: RuntimeLaunch,
   opts: DockerOptions,
   where: HostPaths,
 ): { argv: string[]; env: Record<string, string> } {
   const ws = input.workspacePath;
-  const api = input.container?.api;
+  const api = input.modelApi;
   const bind = (from: string, to = from, mode = '') => [
     '-v',
     `${from}:${to}${mode}`,
   ];
   const env = { ...input.env };
   const computed: string[] = [
-    `HOME=${RUN_HOME}`,
-    `PATH=${RUN_PATH}`,
-    ...Object.entries(where.agent.env).map(([k, v]) => `${k}=${v}`),
+    `HOME=${where.runHome}`,
+    `PATH=${where.runHome}/bin:${RUN_PATH}`,
   ];
   const allowlist = opts.network === 'allowlist';
   if (allowlist && api) {
@@ -128,10 +124,9 @@ export function dockerArgs(
       : []),
     ...bind(where.cliRoot, undefined, ':ro'),
     ...opts.mounts.flatMap((m) => bind(m, m, ':ro')),
-    ...bind(where.runHome, RUN_HOME),
-    ...where.agent.mounts.flatMap((m) =>
-      bind(m.host, m.container, m.readOnly ? ':ro' : ''),
-    ),
+    ...bind(where.runHome),
+    ...(input.readPaths ?? []).flatMap((path) => ro(path)),
+    ...(input.writePaths ?? []).flatMap((path) => bind(path)),
     '-w',
     ws,
     opts.image,

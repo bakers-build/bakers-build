@@ -59,7 +59,6 @@ it('creates a private home, keeps secrets out of argv, and records namespace/pro
     workspacePath: ws,
     run,
     harness: 'any',
-    agent: {} as never,
     ...context,
   });
   expect(existsSync(context.homePath)).toBe(true);
@@ -91,7 +90,6 @@ it('rejects invalid run names and refuses a main checkout', async () => {
       workspacePath: join(root, 'main'),
       run,
       harness: 'any',
-      agent: {} as never,
       ...context,
     }),
   ).rejects.toThrow(/linked Git worktree/);
@@ -136,7 +134,6 @@ echo isolated`;
       workspacePath: ws,
       run,
       harness: 'any',
-      agent: {} as never,
       ...context,
     });
     const result = spawnSync('sh', ['-c', launch.command], {
@@ -161,7 +158,6 @@ it('rejects relative grants and writable aliases of protected Git metadata', asy
     workspacePath: ws,
     run,
     harness: 'any',
-    agent: {} as never,
     ...context,
   };
   await expect(
@@ -186,7 +182,6 @@ it.skipIf(!canBwrap)(
       workspacePath: ws,
       run,
       harness: 'any',
-      agent: {} as never,
       ...context,
     });
     const child = spawn('sh', ['-c', launch.command], {

@@ -4,10 +4,8 @@
 FROM node:22-slim
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git ca-certificates \
- && rm -rf /var/lib/apt/lists/* \
- && mkdir -m 0777 /home/run
-# The agent's own install (its `container.install`); one image per agent.
+ && rm -rf /var/lib/apt/lists/*
+# The agent's own install (its `installCommand`); one image per agent.
 ARG AGENT_INSTALL
 RUN test -n "$AGENT_INSTALL" && sh -c "$AGENT_INSTALL"
 COPY proxy.mjs /opt/bb-runtime/proxy.mjs
-ENV HOME=/home/run

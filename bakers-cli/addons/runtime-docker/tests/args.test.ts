@@ -1,17 +1,15 @@
-import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
+import type { AgentModelApi } from '@bakers-build/conductor/contract';
 import { describe, expect, it } from 'vitest';
 import { type DockerOptions, dockerArgs, type HostPaths } from '../src/args.js';
-import type { AgentContainer } from '../src/contract.js';
 
 /** A harness the runtime knows nothing about. */
-const container = {
-  api: {
-    target: 'https://api.example',
-    baseUrlEnv: 'MODEL_BASE_URL',
-    keyEnv: 'MODEL_KEY',
-    auth: { MODEL_TOKEN: { set: { authorization: 'Bearer {value}' } } },
-  },
-} as unknown as AgentContainer;
+const modelApi: AgentModelApi = {
+  credentialHint: 'set MODEL_TOKEN',
+  target: 'https://api.example',
+  baseUrlEnv: 'MODEL_BASE_URL',
+  keyEnv: 'MODEL_KEY',
+  auth: { MODEL_TOKEN: { set: { authorization: 'Bearer {value}' } } },
+};
 
 const launch = {
   command: "agent 'it''s'",
@@ -19,14 +17,9 @@ const launch = {
   workspacePath: '/w/tree',
   run: { uuid: 'r-uuid', id: 7 },
   harness: 'fake',
-  container,
-  agent: {
-    id: 'fake',
-    container,
-    launchCommand: () => '',
-    getRunLog: async () => '',
-    parseFootprint: emptyAgentFootprint,
-  },
+  modelApi,
+  readPaths: ['/home/op/.agent/p'],
+  writePaths: ['/home/op/.agent/t'],
 };
 const opts: DockerOptions = {
   docker: 'docker',
@@ -39,17 +32,6 @@ const where: HostPaths = {
   gitDir: '/w/main/.git/worktrees/tree',
   gitLink: '/w/tree/.git',
   runHome: '/h/run',
-  agent: {
-    env: { AGENT_DIR: '/home/run/.agent' },
-    mounts: [
-      { host: '/home/op/.agent/t', container: '/home/run/.agent/t' },
-      {
-        host: '/home/op/.agent/p',
-        container: '/home/run/.agent/p',
-        readOnly: true,
-      },
-    ],
-  },
   cliRoot: '/opt/cli',
   uid: 1000,
   gid: 1000,
@@ -96,9 +78,9 @@ describe('dockerArgs', () => {
       '/w/main/.git/worktrees/tree/gitdir:/w/main/.git/worktrees/tree/gitdir:ro',
       '/w/main/.git/worktrees/tree/config.worktree:/w/main/.git/worktrees/tree/config.worktree:ro',
       '/opt/cli:/opt/cli:ro',
-      '/h/run:/home/run',
-      '/home/op/.agent/t:/home/run/.agent/t',
-      '/home/op/.agent/p:/home/run/.agent/p:ro',
+      '/h/run:/h/run',
+      '/home/op/.agent/p:/home/op/.agent/p:ro',
+      '/home/op/.agent/t:/home/op/.agent/t',
     ]);
   });
 
@@ -127,10 +109,9 @@ describe('dockerArgs', () => {
     const flags = envFlags(argv);
     for (const key of ['PATH', 'HOME', 'TMPDIR', 'XDG_CACHE_HOME'])
       expect(flags).not.toContain(key);
-    expect(flags).toContain('HOME=/home/run');
-    // The agent's own value replaces the host one.
-    expect(flags).toContain('AGENT_DIR=/home/run/.agent');
-    expect(flags).not.toContain('AGENT_DIR');
+    expect(flags).toContain('HOME=/h/run');
+    expect(flags).toContain('AGENT_DIR');
+    expect(env.AGENT_DIR).toBe('/host/agent');
     // The docker client itself still runs with the host env.
     expect(env.PATH).toBe('/usr/bin');
   });
@@ -147,7 +128,7 @@ describe('dockerArgs', () => {
 
   it('puts the run home bin first on PATH', () => {
     expect(envFlags(dockerArgs(launch, opts, where).argv)).toContain(
-      'PATH=/home/run/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+      'PATH=/h/run/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
     );
   });
 

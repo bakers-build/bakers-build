@@ -168,7 +168,25 @@ export interface AgentRunPreparation {
   writePaths: string[];
 }
 
-export interface BbAgent {
+/** Model API facts used by credential relays, independent of an execution backend. */
+export interface AgentModelApi {
+  target: string;
+  baseUrlEnv: string;
+  keyEnv: string;
+  credentialHint: string;
+  auth: Record<
+    string,
+    { set: Record<string, string>; append?: Record<string, string> }
+  >;
+}
+
+/** Optional software and API facts; the runtime owns installation and transport. */
+export interface AgentRuntimeInfo {
+  readonly installCommand?: string;
+  readonly modelApi?: AgentModelApi;
+}
+
+export interface BbAgent extends AgentRuntimeInfo {
   /** Stable id, e.g. 'claude'. */
   readonly id: string;
   /** Prepare configuration in a private run home without runtime-specific flags. */

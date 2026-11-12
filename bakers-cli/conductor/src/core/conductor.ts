@@ -1759,10 +1759,20 @@ export class Conductor {
       : undefined;
     const plugins = await this.installPlugins(chosen, t, run);
     Object.assign(env, plugins.env);
-    const runtimeContext = await runtime.prepareRun?.({
-      uuid: run.runUuid,
-      id: run.runId,
-    });
+    const agentInfo = {
+      ...(chosen.agent.installCommand
+        ? { installCommand: chosen.agent.installCommand }
+        : {}),
+      ...(chosen.agent.modelApi ? { modelApi: chosen.agent.modelApi } : {}),
+    };
+    const runtimeContext = await runtime.prepareRun?.(
+      {
+        uuid: run.runUuid,
+        id: run.runId,
+      },
+      agentInfo,
+    );
+    if (runtimeContext?.env) Object.assign(env, runtimeContext.env);
     const preparation = runtimeContext
       ? await chosen.agent.prepareRun?.({
           ...runtimeContext,
@@ -1810,10 +1820,10 @@ export class Conductor {
       workspacePath: ws.path,
       run: { uuid: run.runUuid, id: run.runId },
       harness: chosen.agent.id,
-      agent: chosen.agent,
+      ...agentInfo,
       ...(runtimeContext
         ? {
-            ...runtimeContext,
+            homePath: runtimeContext.homePath,
             readPaths: preparation?.readPaths ?? [],
             writePaths: preparation?.writePaths ?? [],
           }

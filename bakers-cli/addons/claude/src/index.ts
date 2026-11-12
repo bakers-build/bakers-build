@@ -39,13 +39,13 @@ import {
   shellQuote,
   withoutGitDirs,
 } from '@bakers-build/core';
-import { claudeContainer } from './container.js';
 import { parseClaudeTranscript } from './footprint.js';
 import { encodeClaudeProjectDir, prepareClaudeRun } from './run.js';
+import { claudeInstallCommand, claudeModelApi } from './setup.js';
 
-export { claudeContainer } from './container.js';
 export { parseClaudeTranscript } from './footprint.js';
 export { encodeClaudeProjectDir } from './run.js';
+export { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 /** src/index.ts and dist/src/index.js both sit two levels below the package root. */
 const MEASURE_WRAPPER = fileURLToPath(
@@ -209,7 +209,8 @@ const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
 
 export class ClaudeAgent implements BbAgent {
   readonly id = 'claude';
-  readonly container = claudeContainer;
+  readonly installCommand = claudeInstallCommand;
+  readonly modelApi = claudeModelApi;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;

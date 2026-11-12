@@ -10,11 +10,10 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { emptyAgentFootprint } from '@bakers-build/conductor/contract';
+import type { AgentRuntimeInfo } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { type BackendDeps, dockerRuntime, shortHash } from '../src/backend.js';
-import type { AgentContainer, AgentContainerContext } from '../src/contract.js';
 
 type Call = [string, string[]];
 
@@ -24,26 +23,16 @@ let common: string;
 let cache: string;
 let calls: Call[];
 let warnings: string[];
-let prepared: AgentContainerContext[];
 
 /** A harness the runtime knows nothing about. */
-const agent = (install = 'install-agent'): AgentContainer => ({
-  install,
-  credentialHint: 'fake hint: set MODEL_TOKEN',
-  api: {
+const agent = (installCommand = 'install-agent'): AgentRuntimeInfo => ({
+  installCommand,
+  modelApi: {
+    credentialHint: 'fake hint: set MODEL_TOKEN',
     target: 'https://api.example',
     baseUrlEnv: 'MODEL_BASE_URL',
     keyEnv: 'MODEL_KEY',
     auth: { MODEL_TOKEN: { set: { authorization: 'Bearer {value}' } } },
-  },
-  prepare: (ctx) => {
-    prepared.push(ctx);
-    return {
-      env: { AGENT_DIR: '/home/run/.agent' },
-      mounts: [
-        { host: join(root, 'transcripts'), container: '/home/run/.agent/t' },
-      ],
-    };
   },
 });
 
@@ -61,9 +50,9 @@ beforeEach(() => {
   cache = join(root, 'cache');
   for (const d of [ws, common, join(common, 'worktrees/tree')])
     mkdirSync(d, { recursive: true });
+  mkdirSync(join(root, 'transcripts'));
   calls = [];
   warnings = [];
-  prepared = [];
 });
 
 function deps(over: Partial<BackendDeps> = {}): BackendDeps {
@@ -95,13 +84,14 @@ const launch = (over: Record<string, unknown> = {}) => ({
   workspacePath: ws,
   run: { uuid: 'r-uuid', id: 7 },
   harness: 'fake',
-  agent: {
-    id: 'fake',
-    container: agent(),
-    launchCommand: () => '',
-    getRunLog: async () => '',
-    parseFootprint: emptyAgentFootprint,
-  },
+  ...agent(),
+  homePath: join(
+    cache,
+    'bakers/runtime',
+    (over.run as { uuid: string } | undefined)?.uuid ?? 'r-uuid',
+  ),
+  readPaths: [],
+  writePaths: [join(root, 'transcripts')],
   ...over,
 });
 
@@ -110,22 +100,12 @@ describe('runtime-docker wrap', () => {
     const out = await dockerRuntime({}, deps()).wrap(launch());
     const home = join(cache, 'bakers/runtime/r-uuid');
     expect(existsSync(home)).toBe(true);
-    expect(prepared).toEqual([
-      {
-        runHome: home,
-        containerHome: '/home/run',
-        workspacePath: ws,
-        env: launch().env,
-        hostHome: join(root, 'home'),
-      },
-    ]);
     expect(existsSync(join(common, 'hooks'))).toBe(true);
     expect(out.command).toMatch(/^'?docker'? 'run'/);
-    expect(out.command).toContain(`'${home}:/home/run'`);
+    expect(out.command).toContain(`'${home}:${home}'`);
     expect(out.command).toContain(
-      `'${join(root, 'transcripts')}:/home/run/.agent/t'`,
+      `'${join(root, 'transcripts')}:${join(root, 'transcripts')}'`,
     );
-    expect(out.command).toContain("'AGENT_DIR=/home/run/.agent'");
     expect(out.command).not.toContain('oauth');
     expect(out.env.MODEL_TOKEN).toBe('oauth');
   });
@@ -172,14 +152,15 @@ describe('runtime-docker wrap', () => {
     await expect(rt.wrap(launch())).rejects.toThrow(/fake hint/);
   });
 
-  it('refuses an agent without container support', async () => {
-    for (const rt of [
-      dockerRuntime({}, deps()),
-      dockerRuntime({ image: 'mine' }, deps()),
-    ])
-      await expect(
-        rt.wrap(launch({ agent: { ...launch().agent, container: undefined } })),
-      ).rejects.toThrow(/agent fake does not support a container runtime/);
+  it('requires installation metadata only for the default image', async () => {
+    await expect(
+      dockerRuntime({}, deps()).wrap(launch({ installCommand: undefined })),
+    ).rejects.toThrow(/installCommand/);
+    await expect(
+      dockerRuntime({ image: 'mine' }, deps()).wrap(
+        launch({ installCommand: undefined, modelApi: undefined }),
+      ),
+    ).resolves.toMatchObject({ env: expect.any(Object) });
   });
 
   it('builds the default image once when missing', async () => {
@@ -197,7 +178,7 @@ describe('runtime-docker wrap', () => {
     await rt.wrap(launch({ run: { uuid: 'r-2', id: 8 } }));
     await rt.wrap(
       launch({
-        agent: { ...launch().agent, container: agent('install-other') },
+        installCommand: 'install-other',
       }),
     );
     const build = (install: string) => [
@@ -444,7 +425,6 @@ describe('runtime-docker allowlist mode', () => {
 
   it('tells the agent the placeholder key the run holds', async () => {
     const out = await wrapped({ networks: new Set() });
-    expect(prepared[0]?.keyPlaceholder).toBe('bb-runtime-placeholder');
     expect(out.command).toContain("'MODEL_KEY=bb-runtime-placeholder'");
     expect(out.command).toContain(
       "'MODEL_BASE_URL=http://bb-runtime-proxy-aaa:8081'",
@@ -459,7 +439,9 @@ describe('runtime-docker allowlist mode', () => {
     expect(args).toContain('MODEL_TOKEN');
     expect(args).toContain('BB_ALLOW=registry.npmjs.org');
     expect(args).toContain('BB_API_TARGET=https://api.example');
-    expect(args).toContain(`BB_API_AUTH=${JSON.stringify(agent().api.auth)}`);
+    expect(args).toContain(
+      `BB_API_AUTH=${JSON.stringify(agent().modelApi!.auth)}`,
+    );
     expect(args).toContain('BB_TOOLS=172.30.0.1:4242');
     expect(args.join(' ')).not.toContain('oauth');
     expect(calls).toContainEqual([

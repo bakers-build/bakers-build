@@ -58,9 +58,11 @@ Design, as the prototype implements it:
   its place. bubblewrap inside an unprivileged container needs extra privileges, and the two do
   not stack.
 
-The shipped `runtime-docker` plugin owns the container contract in its `/contract` export.
-Claude implements that contract in its own plugin. The conductor forwards the selected agent
-to the runtime without defining or interpreting container-specific properties.
+Agents declare neutral installation and model-API facts, and prepare environment/files through
+`prepareRun` in the home allocated by the runtime. The conductor forwards these facts and explicit
+read/write paths. Docker owns image builds, mounts and proxy transport; Bubblewrap uses the same
+preparation without an image. Claude depends on neither runtime addon. Run homes retain their
+host paths inside both backends, so agent preparation needs no path translation.
 
 Prototype status, from the recorded run below: the launch rewrite is verified
 by its self-check, a container probe, and a run through the real herdr executor

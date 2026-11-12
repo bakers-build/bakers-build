@@ -4,7 +4,7 @@
 
 import type { ConductorLogger } from '@bakers-build/core';
 import type { ConductorFileConfig } from '../types.js';
-import type { BbAgent } from './agent.js';
+import type { AgentRuntimeInfo } from './agent.js';
 
 /** The run a launch belongs to. */
 export interface RuntimeRun {
@@ -13,7 +13,7 @@ export interface RuntimeRun {
 }
 
 /** The finished launch the conductor would hand to `executor.startRun`. */
-export interface RuntimeLaunch {
+export interface RuntimeLaunch extends AgentRuntimeInfo {
   command: string;
   /** The run env, run token included. */
   env: Record<string, string>;
@@ -21,8 +21,6 @@ export interface RuntimeLaunch {
   run: RuntimeRun;
   /** The harness id of the chosen agent (`claude`, `codex`, …). */
   harness: string;
-  /** The chosen agent; runtimes interpret their own optional plugin contracts. */
-  agent: BbAgent;
   homePath?: string;
   readPaths?: string[];
   writePaths?: string[];
@@ -31,7 +29,10 @@ export interface RuntimeLaunch {
 export interface BbRuntime {
   id: string;
   /** Allocate a private home before the agent prepares its command and files. */
-  prepareRun?(run: RuntimeRun): Promise<{ homePath: string }>;
+  prepareRun?(
+    run: RuntimeRun,
+    agent: AgentRuntimeInfo,
+  ): Promise<{ homePath: string; env?: Record<string, string> }>;
   /** Rewrite the launch; a rejection fails the dispatch, never falls back to the host. */
   wrap(
     launch: RuntimeLaunch,

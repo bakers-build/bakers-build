@@ -207,10 +207,14 @@ describe('runtime slot — launch wrapping', () => {
     const rec: Recorded = { wraps: [], cleanups: [] };
     const s = setup(
       recordingRuntime([], rec, {
-        prepareRun: async () => ({ homePath: '/private/run' }),
+        prepareRun: async () => ({
+          homePath: '/private/run',
+          env: { MODEL_KEY: 'placeholder' },
+        }),
       }),
-      false,
+      true,
       {
+        installCommand: 'install-generic',
         prepareRun: (context: { homePath: string; workspacePath: string }) => {
           expect(context).toMatchObject({
             homePath: '/private/run',
@@ -229,8 +233,14 @@ describe('runtime slot — launch wrapping', () => {
       homePath: '/private/run',
       readPaths: ['/shared/plugins'],
       writePaths: ['/shared/transcripts'],
-      env: { AGENT_HOME: '/private/run' },
+      env: {
+        AGENT_HOME: '/private/run',
+        MODEL_KEY: 'placeholder',
+        BAKERS_CONDUCTOR_TOKEN: expect.any(String),
+      },
+      installCommand: 'install-generic',
     });
+    expect(rec.wraps[0]).not.toHaveProperty('agent');
   });
 
   it('cleans the allocated home when agent preparation fails', async () => {

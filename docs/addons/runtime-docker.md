@@ -3,7 +3,7 @@
 `@bakers-build/addon-runtime-docker` starts each agent run in its own container. It fills the
 [`runtime` slot](/addons/slots#runtime-where-a-run-starts): the executor's terminal runs
 `docker run …` instead of the agent, and the worktree, Git and conductor tools keep their host
-paths. Machine scope only; add it to `~/.bakers/machine.config.js`:
+paths. Machine scope; add to `~/.bakers/machine.config.js`:
 
 ```js
 { use: '@bakers-build/addon-runtime-docker', with: { docker: 'podman' } }
@@ -11,8 +11,7 @@ paths. Machine scope only; add it to `~/.bakers/machine.config.js`:
 
 ## Before the first run
 
-- The agent must support a container runtime; [Claude](/addons/claude#isolated-runtimes) does.
-  Other agents refuse to start.
+- The default image uses neutral `installCommand`; [Claude](/addons/claude#isolated-runtimes) declares one. With `image`, supply the installed agent.
 - A container cannot use your harness login. Export the agent's credential for the conductor; for
   Claude `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or `ANTHROPIC_API_KEY`.
 - An agent's first run builds `bakers-runtime:<addon version>-<hash>-<install hash>` from the
@@ -35,9 +34,8 @@ Container `bb-run-<run uuid>`, under your uid. Mounts, and nothing else of your 
   Run no Git in the worktree until cleanup finishes;
 - the bakers CLI build, read-only. The runtime refuses to start when that build's root would
   contain your home directory;
-- `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` as `/home/run`;
-- what the agent asks for, such as Claude's plugins (read-only) and its transcript directory for
-  the worktree, so the conductor reads the transcript.
+- `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` at its host path;
+- the read/write paths from neutral agent preparation: Claude plugins read-only and the worktree transcript directory writable. Docker has no Claude-specific adapter.
 
 No `~/.ssh`, `~/.bakers`, Docker socket or harness login (`.credentials.json`). Secrets enter as `-e KEY`, never in
 the command line. The harness sandbox is off. Pushes go through `forge_push` in the conductor. The

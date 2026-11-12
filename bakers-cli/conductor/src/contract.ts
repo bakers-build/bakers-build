@@ -19,9 +19,11 @@ export {
 } from './bakers-project-context.js';
 export {
   type AgentFootprint,
+  type AgentModelApi,
   type AgentRunContext,
   type AgentRunIdentity,
   type AgentRunPreparation,
+  type AgentRuntimeInfo,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOL_TIMEOUT_MS,

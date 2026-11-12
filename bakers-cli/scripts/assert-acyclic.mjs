@@ -90,8 +90,6 @@ const SINKS = new Set(['@bakers-build/ui', '@bakers-build/bakers']);
  * (a) is what keeps such sibling edges honest.
  */
 const PERMITTED_SIBLINGS = {
-  // Claude implements the container contract owned by runtime-docker, not the conductor.
-  '@bakers-build/addon-claude': ['@bakers-build/addon-runtime-docker'],
   '@bakers-build/addon-herdr': ['@bakers-build/addon-workspace-git'],
   // The Orca host reuses herdr's launch wrapper, templates and base-ref
   // resolution (`addon-herdr/shared`) and the same `loadInstructions`.

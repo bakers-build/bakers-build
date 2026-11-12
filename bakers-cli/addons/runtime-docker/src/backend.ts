@@ -4,14 +4,17 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type {
+  AgentModelApi,
+  AgentRuntimeInfo,
   BbRuntime,
   RuntimeLaunch,
 } from '@bakers-build/conductor/contract';
@@ -25,10 +28,8 @@ import {
   type DockerOptions,
   dockerArgs,
   PROXY_PORTS,
-  RUN_HOME,
   RUN_NETWORK,
 } from './args.js';
-import type { AgentContainer, ContainerAgent } from './contract.js';
 
 const EGRESS_NETWORK = 'bb-runtime-egress';
 
@@ -140,7 +141,7 @@ export function dockerRuntime(
   const startProxy = async (
     hash: string,
     credentials: string[],
-    api: AgentContainer['api'],
+    api: AgentModelApi,
     image: string,
   ) => {
     const current = await deps
@@ -194,27 +195,48 @@ export function dockerRuntime(
       ])
     ).stdout.trim();
 
+  const credentialsFor = (agent: AgentRuntimeInfo) => {
+    const api = agent.modelApi;
+    if (allowlist && !api)
+      throw new Error(
+        'runtime-docker: allowlist mode requires model API metadata',
+      );
+    const credentials = Object.keys(api?.auth ?? {}).filter((k) => deps.env[k]);
+    if (api && credentials.length === 0)
+      throw new Error(`runtime-docker: ${api.credentialHint}`);
+    return credentials;
+  };
+
   const runtime: BbRuntime = {
     id: 'docker',
+    async prepareRun(run, agent) {
+      const credentials = credentialsFor(agent);
+      const homePath = runHomeOf(run.uuid);
+      mkdirSync(homePath, { recursive: true, mode: 0o700 });
+      const env = allowlist
+        ? { [(agent.modelApi as AgentModelApi).keyEnv]: API_KEY_PLACEHOLDER }
+        : Object.fromEntries(
+            credentials.map((k) => [k, deps.env[k] as string]),
+          );
+      return { homePath, env };
+    },
     async wrap(launch: RuntimeLaunch) {
       const runHome = runHomeOf(launch.run.uuid);
-      const container = (launch.agent as Partial<ContainerAgent>).container;
-      if (!container)
+      if (launch.homePath !== runHome)
+        throw new Error('runtime-docker: private run home was not prepared');
+      const api = launch.modelApi;
+      const credentials = credentialsFor(launch);
+      if (!options.image && !launch.installCommand)
         throw new Error(
-          `runtime-docker: agent ${launch.harness} does not support a container runtime`,
+          `runtime-docker: agent ${launch.harness} has no installCommand; configure an image`,
         );
-      const credentials = Object.keys(container.api.auth).filter(
-        (k) => deps.env[k],
-      );
-      if (credentials.length === 0)
-        throw new Error(`runtime-docker: ${container.credentialHint}`);
       const image =
         options.image ??
-        `bakers-runtime:${deps.version}-${shortHash(container.install)}`;
+        `bakers-runtime:${deps.version}-${shortHash(launch.installCommand ?? '')}`;
       if (!imagesReady.has(image))
         imagesReady.set(
           image,
-          ensureImage(image, container.install).catch((err) => {
+          ensureImage(image, launch.installCommand ?? '').catch((err) => {
             imagesReady.delete(image);
             throw err;
           }),
@@ -226,23 +248,20 @@ export function dockerRuntime(
             'runtime-docker: allowlist mode needs the conductor tool server; it was not started',
           );
         const hash = shortHash(
-          JSON.stringify([
-            gateway,
-            toolsPort,
-            options.allow ?? [],
-            image,
-            container.api,
-          ]),
+          JSON.stringify([gateway, toolsPort, options.allow ?? [], image, api]),
         );
         if (proxyReady?.hash !== hash)
           proxyReady = {
             hash,
-            ready: startProxy(hash, credentials, container.api, image).catch(
-              (err) => {
-                proxyReady = undefined;
-                throw err;
-              },
-            ),
+            ready: startProxy(
+              hash,
+              credentials,
+              api as AgentModelApi,
+              image,
+            ).catch((err) => {
+              proxyReady = undefined;
+              throw err;
+            }),
           };
         await proxyReady.ready;
       }
@@ -250,6 +269,35 @@ export function dockerRuntime(
       const gitCommonDir = await git(ws, '--git-common-dir');
       const gitDir = await git(ws, '--git-dir');
       const gitLink = join(ws, '.git');
+      const within = (path: string, root: string) =>
+        path === root || path.startsWith(root + sep);
+      const canonical = (path: string) =>
+        existsSync(path) ? realpathSync(path) : resolve(path);
+      for (const [paths, write] of [
+        [launch.readPaths ?? [], false],
+        [launch.writePaths ?? [], true],
+      ] as const) {
+        for (const path of paths) {
+          if (!isAbsolute(path) || path.includes(':') || !existsSync(path))
+            throw new Error(`runtime-docker: invalid prepared path ${path}`);
+          const actual = canonical(path);
+          if (
+            actual === '/' ||
+            (deps.env.HOME && within(canonical(deps.env.HOME), actual))
+          )
+            throw new Error(`runtime-docker: refusing broad path ${path}`);
+          if (
+            write &&
+            [gitCommonDir, gitLink, deps.cliRoot].some(
+              (root) =>
+                within(actual, canonical(root)) ||
+                within(canonical(root), actual),
+            )
+          )
+            throw new Error(`runtime-docker: protected write path ${path}`);
+        }
+      }
+
       // Bound read-only, so each must exist before docker would create it as root.
       for (const d of ['hooks', 'modules', 'worktrees'])
         mkdirSync(join(gitCommonDir, d), { recursive: true });
@@ -271,20 +319,12 @@ export function dockerRuntime(
           { mode: 0o755 },
         );
       }
-      const agent = container.prepare({
-        runHome,
-        containerHome: RUN_HOME,
-        workspacePath: ws,
-        env: launch.env,
-        hostHome: deps.env.HOME || homedir(),
-        ...(allowlist ? { keyPlaceholder: API_KEY_PLACEHOLDER } : {}),
-      });
       const env = { ...launch.env };
       // Allowlist mode: the credential stays with the proxy sidecar.
       if (!allowlist)
         for (const k of credentials) env[k] = deps.env[k] as string;
       const { argv, env: runEnv } = dockerArgs(
-        { ...launch, env, container },
+        { ...launch, env },
         { ...opts, image },
         {
           gitCommonDir,
@@ -293,7 +333,6 @@ export function dockerRuntime(
             ? { gitLink }
             : {}),
           runHome,
-          agent,
           cliRoot: deps.cliRoot,
           uid: process.getuid?.() ?? 1000,
           gid: process.getgid?.() ?? 1000,
