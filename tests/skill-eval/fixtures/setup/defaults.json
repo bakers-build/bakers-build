@@ -19,6 +19,8 @@
     "docs/addons/herdr.md",
     "docs/addons/slots.md",
     "docs/agents/guide.md",
+    "docs/agents/index.md",
+    "docs/addons/claude.md",
     "docs/cli/tools.md",
     "docs/provision/worker-server.md",
     "docs/provision/guide.md",
