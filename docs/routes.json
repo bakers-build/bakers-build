@@ -184,5 +184,8 @@
   "/setup/user-and-access": "/provision/machine",
   "/start/": "/get-started/",
   "/writeback/bakers-issue": "/cli/tools",
-  "/writeback/oauth-setup": "/configuration/connection"
+  "/writeback/oauth-setup": "/configuration/connection",
+  "/addons/herdr/options": "/addons/herdr#options",
+  "/addons/herdr-core/options": "/addons/herdr-core#options",
+  "/addons/orca/options": "/addons/orca#options"
 }

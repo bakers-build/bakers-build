@@ -13,9 +13,8 @@ Add this entry to `~/.bakers/machine.config.js`, keeping your existing addons:
 { use: '@bakers-build/addon-tailscale', with: { ssh_user: 'christian', ssh_port: 22 } }
 ```
 
-`ssh_user` is required; `ssh_port` defaults to 22 and must be an integer from
-1 through 65535. Start the conductor, then open the machine's Identity card to
-see and copy the connection address. No browser terminal or login is launched.
+Start the conductor, then open the machine's Identity card to see and copy the
+connection address. No browser terminal or login is launched.
 
 A manual `connection_url` takes precedence, including explicit `null` to clear
 the saved address. `tailscale ip -4` runs without a shell, with a three-second
@@ -26,3 +25,7 @@ Tailscale discovery is unsupported; a manual IPv6 SSH address works.
 The addon never writes local configuration or calls Drupal directly. Later
 heartbeats preserve the saved URL. Restart the conductor after address or user
 changes; the saved URL is not a reachability or authentication guarantee.
+
+## Options
+
+<!-- @options @bakers-build/addon-tailscale -->

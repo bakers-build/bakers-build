@@ -17,6 +17,9 @@
               reversible fields may use it; `state` may not, because a transition
               is confirmed and a control that writes on pick cannot carry a
               confirmation (designbook/design-system/action-pattern.md).
+              With `autosave` the pick submits the enclosing form, and `status`
+              says beside the value what the last write did: "Saved", or the
+              error that refused it (`invalid`).
 
    One component, not two: the ticket this implements asked for ONE agreed
    pattern, and two components that happen to look alike is how that requirement
@@ -172,13 +175,17 @@
     bound would silently not exist. The inline control may run wider because it sits alone on a rail
     row; a pill shares a wrapping row with its peers and may not. #}
 {% set value_bound = is_inline ? 'max-w-60' : 'max-w-40' %}
+{#- `align-middle` keeps the inline trigger's line at its own 24px. On the text baseline,
+    a trigger without an icon grew its line by the font's descent: a 32px row became 35px.
+    `max-w-full`, here and on the root, fits the inline trigger to its cell: a long value
+    is cut to the cell's width instead of reaching past it. #}
 {% set trigger_classes = is_inline
-  ? ['inline-flex', 'items-center', 'gap-1.5', 'h-6', 'px-1.5',
+  ? ['inline-flex', 'items-center', 'align-middle', 'max-w-full', 'gap-1.5', 'h-6', 'px-1.5',
      'bg-app', 'border', 'border-control-border', 'rounded-xs', 'text-body',
      'text-text', 'text-left', 'cursor-pointer', 'hover:bg-surface-3',
      'focus:border-primary', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring']
   : pill_classes|merge(pill_weight) %}
-<div{{ (attributes ?: create_attribute()).addClass(['relative', use_chips ? 'inline-flex flex-wrap items-center gap-1.5' : (is_facet ? 'block w-full' : 'inline-block')]) }}
+<div{{ (attributes ?: create_attribute()).addClass(['relative', use_chips ? 'inline-flex flex-wrap items-center gap-1.5' : (is_facet ? 'block w-full' : (is_inline ? 'inline-block max-w-full' : 'inline-block'))]) }}
   data-option-picker
   data-option-picker-label="{{ field_name }}"
   {%- if use_chips %} data-option-picker-selected-chips{% endif %}
@@ -189,7 +196,69 @@
   data-option-picker-variant="{{ is_inline ? 'inline' : (is_facet ? 'facet' : 'field') }}"
   {%- if search_url %} data-option-picker-remote{% endif %}
   {%- if name %} data-option-picker-name="{{ name }}"{% endif %}
+  {#- AUTOSAVE: a pick that leaves the checked options different from what the server
+      rendered submits the enclosing form, and the answer replaces the form. So the
+      rendered selection is never updated here: an unchanged pick or a dismissal writes
+      nothing, a pick after a failed request submits again, and htmx drops a submit
+      while one is in flight. The pick clears the previous status; a request that
+      fails or is aborted says "Not saved." at this field. A multi-select panel that
+      was open stays open across the answer: the pick leaves a note on the form's
+      parent, which the swap keeps, and the new picker reopens with its search text
+      and the toggled row focused. Removing a chip leaves the panel closed. #}
+  {%- if autosave %}
+  data-option-picker-autosave
+  x-data="Object.assign(optionPicker(), {
+    rendered: [],
+    checked() { return [...this.$root.querySelectorAll('[data-option-picker-panel] input:checked')].map((input) => input.value); },
+    host() { return this.$root.closest('form')?.parentElement; },
+    restore() {
+      this.rendered = this.checked();
+      const note = JSON.parse(this.host()?.dataset.optionPickerReopen || 'null');
+      if (!note || note.name !== this.$root.dataset.optionPickerName) return;
+      delete this.host().dataset.optionPickerReopen;
+      this.query = note.query;
+      // Opened once Alpine has finished the swapped form, as a click would: during
+      // its initialisation the panel is still hidden and cannot take focus.
+      setTimeout(() => {
+        this.toggle();
+        this.$nextTick(() => { this.filter(); this.focusRow(this.$refs.panel.querySelector(`[role=option][data-value='${CSS.escape(note.value)}']`)); });
+      });
+    },
+    save() {
+      const now = this.checked();
+      if (now.join() === this.rendered.join()) return;
+      const host = this.host();
+      if (host && this.open && this.$root.querySelector('[aria-multiselectable=true]')) {
+        const value = now.find((v) => !this.rendered.includes(v)) ?? this.rendered.find((v) => !now.includes(v));
+        host.dataset.optionPickerReopen = JSON.stringify({ name: this.$root.dataset.optionPickerName, value, query: this.query });
+      }
+      else if (host) {
+        delete host.dataset.optionPickerReopen;
+      }
+      this.report('', false);
+      this.$root.setAttribute('data-option-picker-submitted', '');
+      this.$root.closest('form')?.requestSubmit();
+    },
+    report(text, invalid) {
+      const status = this.$root.querySelector('[data-picker-part=status]');
+      status.textContent = text;
+      status.setAttribute('role', invalid ? 'alert' : 'status');
+      status.toggleAttribute('data-invalid', invalid);
+      invalid ? this.$refs.trigger.setAttribute('aria-invalid', 'true') : this.$refs.trigger.removeAttribute('aria-invalid');
+    },
+    failed(event) {
+      if (event.detail?.elt === this.$root.closest('form') && this.$root.hasAttribute('data-option-picker-submitted')) this.report('Not saved.', true);
+    },
+  })"
+  x-init="restore()"
+  @bakers-picker-picked="save()"
+  @htmx:response-error.window="failed($event)"
+  @htmx:send-error.window="failed($event)"
+  @htmx:timeout.window="failed($event)"
+  @htmx:send-abort.window="failed($event)"
+  {%- else %}
   x-data="optionPicker()"
+  {%- endif %}
   {#- These four replace the document-level handlers the behaviour used to
       register once on `body`: one picker owns its own dismissal and its own
       re-placement, rather than a single listener sweeping every picker. #}
@@ -210,6 +279,8 @@
     aria-expanded="{{ open ? 'true' : 'false' }}"
     aria-controls="{{ panel }}"
     aria-label="{{ trigger_aria }}"
+    {%- if autosave %} aria-describedby="{{ picker_id }}__status"{% endif %}
+    {%- if invalid %} aria-invalid="true"{% endif %}
     title="{{ trigger_title }}">
     {%- if icon and not is_facet %}<span data-picker-part="icon" class="shrink-0 {{ prominent ? 'text-primary' : 'text-text-light' }}">{{ include('bb_theme:icon', { name: icon, size: 'sm' }, with_context = false) }}</span>{% endif %}
     {#- The field name. On a pill it is always rendered — beside the value when one is set (C17), and
@@ -242,6 +313,9 @@
     </span>
     {%- endfor %}
   </span>
+  {%- endif %}
+  {%- if autosave %}
+  <span id="{{ picker_id }}__status" data-picker-part="status" role="{{ invalid ? 'alert' : 'status' }}"{% if invalid %} data-invalid{% endif %} class="empty:hidden {{ use_chips ? '' : 'ml-inline' }} text-meta text-text-light data-invalid:text-state-attention-ink">{{ status }}</span>
   {%- endif %}
   {#- Variant alignment is the no-JS default; the behavior fits open menus to the viewport. #}
   <div id="{{ panel }}"

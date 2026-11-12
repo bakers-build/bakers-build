@@ -41,7 +41,7 @@ Distinguish proposed repairs from completed repairs.
 A `criterion` cause additionally identifies `out of scope`, `unsatisfiable`, `ambiguous` or
 `untestable` and proposes rewritten wording. A fourth cause or omitted rewrite is a verdict defect.
 Classification grants no additional repair authority: follow *Review's closed repair list* in
-[boundaries](../bb-workflow/references/boundaries.md). The parent alone makes allowed repairs and reruns their checks.
+[review](../bb-workflow/references/review.md). The parent alone makes allowed repairs and reruns their checks.
 
 The typed verdict keeps full details. Return findings and result records to the parent;
 [outtake](../bb-workflow/references/outtake.md) owns the visible format and line shape. Choose no ticket state, run no merge,

@@ -1,0 +1,36 @@
+component: bb_theme:option_picker
+name: Inline refused
+variant: inline
+props:
+  variant: inline
+  label: Priority
+  value_label: P3
+  aria_label: Change priority. Currently P3.
+  open: false
+  name: priority
+  id: inline-priority-refused
+  autosave: true
+  status: Someone changed this meanwhile. The page shows their value.
+  invalid: true
+slots:
+  options:
+    - type: component
+      component: bb_theme:option_list
+      props:
+        name: priority
+        multiple: false
+        clearable: true
+        clear_label: No priority
+        options:
+          - value: p1
+            label: P1
+            description: Urgent
+            selected: false
+          - value: p2
+            label: P2
+            description: Normal
+            selected: false
+          - value: p3
+            label: P3
+            description: Low
+            selected: true

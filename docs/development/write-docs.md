@@ -60,10 +60,10 @@ Use logical canonical URLs and update current internal links and anchors. Backwa
 ```sh
 cd docs
 pnpm build
-node --test scripts/manual.test.mjs scripts/marketplace.test.mjs
+node --test scripts/manual.test.mjs scripts/marketplace.test.mjs scripts/addon-options.test.mjs
 ```
 
-The build checks page length/navigation, compiles VitePress, validates rendered internal links across landing/nav/sidebar/content/footer, checks redirect pages and target anchors, and generates the plugin marketplace. The regression tests cover valid links and broken navigation/redirect cases.
+The build checks page length/navigation and that every schema-bearing addon page carries its `<!-- @options … -->` directive, compiles VitePress (rendering those Options tables from each addon's `options.schema.json`), validates rendered internal links across landing/nav/sidebar/content/footer, checks redirect pages and target anchors, and generates the plugin marketplace. The regression tests cover valid links and broken navigation/redirect cases.
 
 `docs_pages` runs the page gate and checker/marketplace tests before merge. The merge gate's `docs` image runs the full build; the deployed site describes `develop`, with its revision in the version row. Follow all additional matching gates in root `WORKFLOW.md` when changing checker code, CI, skills or Markdown-consuming tests.
 

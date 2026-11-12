@@ -15,6 +15,8 @@ Cloudflare.
   Cloudflare's `cloudflared`), the frpc client config file itself (read and
   strictly validated, never written to), and any token/credential (those
   live in the operator's own config/token source and are never echoed).
+  Installing `frpc`, writing that config and starting the user service are
+  documented in `docs/addons/ports-frp.md` › Set up.
 
 ## Operator setup expectations
 

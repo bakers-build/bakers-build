@@ -43,7 +43,7 @@ Your server is ${BAKERS_URL}. The project's main channel is `${SLACK_ALLOWED_CHA
 ## Status
 
 1. **Find the ticket.** In a ticket's channel, the channel's trusted line names it. Otherwise call `bakers_ticket_search` with the project and the question's domain noun; with several matches, ask which one in one short line.
-2. **Read it** with `bakers_ticket_read`.
+2. **Read it** with `bakers_ticket_read` and `newest: 1000`.
 3. **Answer** with the state in plain words and two or three sentences from the latest `summary` comment. Leave out comment types, state names, criteria IDs and commits.
 
 | State | In plain words |

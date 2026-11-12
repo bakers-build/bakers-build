@@ -2,7 +2,7 @@
 Feature: A person intervenes on the ticket page while agents drive the workflow
   The ticket page offers no workflow step: AI agents move the ticket. A person
   freezes or unfreezes the ticket, cancels it from the Properties footer or one
-  run from its own row, each confirmed in a dialog, and reaches the few
+  run from its own row, retries a failed run, each confirmed in a dialog, and reaches the few
   exception fields through More settings. A closed ticket is read-only. Every
   scenario works on its own disposable ticket so the seeded fixtures stay
   untouched.
@@ -65,6 +65,20 @@ Feature: A person intervenes on the ticket page while agents drive the workflow
     When I choose "Cancel run" in the dialog
     Then the disposable run is "cancelled"
     And the disposable ticket is in state "working"
+
+  Scenario: Retry a failed run
+    Given a disposable "bb_work" ticket in state "working" whose last 3 runs failed with "plugins: claude install failed: 401"
+    When I visit the disposable ticket
+    Then the disposable run's row says why it failed: "plugins: claude install failed: 401"
+    And the disposable run's row offers "Re-dispatch"
+    And the disposable run's row offers "Log"
+    When I open "Retry" on the disposable run's own row
+    Then a dialog asks "again on its next check, and the new run appears in Run history."
+    When I choose "Retry run" in the dialog
+    Then the page says "Retry requested."
+    When the ticket's conductor claims the disposable ticket on its next check
+    And I visit the disposable ticket
+    Then the newest run in Run history is "claimed"
 
   Scenario: Settings open inside the app and offer only the exception fields
     Given a disposable "bb_work" ticket in state "plan"

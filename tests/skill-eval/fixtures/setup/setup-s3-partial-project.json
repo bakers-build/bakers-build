@@ -1,0 +1,11 @@
+{
+  "id": "setup-s3-partial-project",
+  "request": "Use bb-init-project, project scope. Machine and synthetic authentication are ready. Existing project config is missing a project name; preserve the custom hook, resolve Audit Project and complete what is missing.",
+  "files": {
+    "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker',addons:['@bakers-build/addon-claude'],permissions:{mode:'sandbox'}};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n",
+    "project/.bakers/project.config.js": "export default {schema_version:1,hooks:{after_create:'echo keep-custom'}};\n",
+    "project/.gitignore": "/assets-ai/\n/.bakers/log.txt\n/.bakers/connection.config.js\n",
+    "project/WORKFLOW.md": "# Workflow\n\nInvoke `bakers:bb-workflow` and follow it for the ticket's current state.\n"
+  }
+}

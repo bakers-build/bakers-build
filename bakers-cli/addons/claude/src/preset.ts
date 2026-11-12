@@ -35,12 +35,25 @@ export const agents: Preset<ClaudeAgentOptions | undefined>['agents'] = (
       description: 'Demanding problems and long-running autonomous work.',
       model: 'fable',
     },
+    {
+      alias: 'opus-proxy',
+      description:
+        'Opus with every model request logged to `assets-ai/`; for diagnostics, not routine work.',
+      model: 'opus',
+      proxy: true,
+    },
   ].map((candidate) =>
     'agent' in candidate
       ? candidate
       : {
-          ...candidate,
-          agent: claudeAgent({ ...opts, model: candidate.model }),
+          alias: candidate.alias,
+          description: candidate.description,
+          model: candidate.model,
+          agent: claudeAgent({
+            ...opts,
+            model: candidate.model,
+            ...('proxy' in candidate && { proxy: candidate.proxy }),
+          }),
         },
   );
 };

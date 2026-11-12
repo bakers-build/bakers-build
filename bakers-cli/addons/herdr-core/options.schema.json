@@ -6,23 +6,30 @@
   "properties": {
     "command": {
       "type": "string",
-      "description": "Fallback agent command when the conductor supplies none. Default `claude`."
+      "description": "Fallback agent command when the agent addons supply none.",
+      "default": "claude"
     },
     "launch_watch": {
       "type": "object",
-      "description": "Launch-watch windows: wait start_timeout_ms (default 60000) for the wrapper to start, then timeout_ms (default 4000) in which an immediate agent exit fails the launch.",
+      "description": "Launch-watch windows: how long a start may take and how soon an agent exit counts as a failed launch.",
       "properties": {
         "timeout_ms": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "Window after start in which an immediate agent exit fails the launch; 0 skips it.",
+          "default": 4000
         },
         "start_timeout_ms": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "How long the launch waits for the wrapper to report the start.",
+          "default": 60000
         },
         "poll_ms": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "description": "Polling interval of both windows.",
+          "default": 50
         }
       },
       "additionalProperties": false

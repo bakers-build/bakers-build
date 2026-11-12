@@ -148,14 +148,15 @@ props:
               - running
               - attention
               - wait
+              - critical
               - idle
             title: Status accent
             description: >-
-              The leading status rail on the row's first cell. `wait`
-              additionally tints the whole row, because a ticket nobody is
-              acting on is the one state the deleted row components made loud,
-              and the tint is what the `wait` badge's `-ink` colour is legible
-              against.
+              The leading status rail on the row's first cell. `wait` and
+              `critical` additionally tint the whole row, because a thing that
+              needs a person is the one state the deleted row components made
+              loud, and the tint is what a `wait` or `critical` badge's `-ink`
+              colour is legible against.
           depth:
             type: integer
             minimum: 0
@@ -314,8 +315,8 @@ props:
                   type: boolean
                   title: Full document load
                   description: >-
-                    A `link` cell whose target must be reached as a WHOLE
-                    DOCUMENT rather than swapped in, emitted as
+                    A `link` or `action` cell whose target must be reached as a
+                    WHOLE DOCUMENT rather than swapped in, emitted as
                     `data-hx-boost="false"` on the anchor. It is for a link that
                     points at a FORM PAGE inside a boosted island: an island
                     fragment does not run the response pipeline that replaces a
@@ -325,7 +326,10 @@ props:
                     overview is the case — it links to the join confirm form.
                     Omitted or false keeps the row inside the island's boosted
                     navigation, which is right for every link that targets
-                    another rendered row rather than a form.
+                    another rendered row rather than a form. An `action` that
+                    downloads a file, such as a run's Log, sets it too: a
+                    boosted request would swap the file into the island instead
+                    of saving it.
                 external:
                   type: boolean
                   title: External address
@@ -497,6 +501,23 @@ props:
                         type: string
                       label:
                         type: string
+                autosave:
+                  type: boolean
+                  title: Pick saves itself
+                  description: >-
+                    Forwarded to `option_picker`: a `picker` cell's pick submits
+                    its form. Default false, so a picker writes with its form's
+                    Save.
+                status:
+                  type: string
+                  title: Field status
+                  description: >-
+                    Forwarded to `option_picker`: "Saved" after this field was
+                    just written, or the error that refused it.
+                invalid:
+                  type: boolean
+                  title: Refused
+                  description: 'Forwarded to `option_picker`: the `status` is an error.'
                 picker_id:
                   type: string
                   title: Picker id

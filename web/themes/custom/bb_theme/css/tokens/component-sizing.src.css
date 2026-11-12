@@ -4,14 +4,18 @@
   --spacing-board-height: calc(100dvh - var(--drupal-displace-offset-top, 0px) - 16rem);
   --spacing-row: 34px;
   --spacing-control: 28px;
+  --spacing-list-row: 56px;
   --spacing-brand-compact-width: 200px;
   --spacing-zone-sm: var(--spacing-space-3);
   --spacing-zone-md: var(--spacing-space-5);
   --spacing-zone-lg: var(--spacing-space-6);
   --spacing-empty-state-icon: 64px;
   --spacing-empty-state-compact-icon: 24px;
+  --spacing-list-plain-label-width: 96px;
+  --spacing-list-plain-row-height: 32px;
 }
 [data-layout="cozy"] {
     --spacing-row: 40px;
     --spacing-control: 36px;
+    --spacing-list-row: 64px;
 }

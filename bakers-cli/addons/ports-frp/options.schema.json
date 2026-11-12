@@ -15,23 +15,27 @@
   "properties": {
     "zone": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Domain of the public names."
     },
     "client_config_path": {
       "type": "string",
       "pattern": "^/",
-      "description": "Absolute path to the frpc JSON config."
+      "description": "Absolute path to the frpc JSON config, written in Set up; the addon only reads it."
     },
     "admin_port": {
-      "type": "integer"
+      "type": "integer",
+      "description": "Port of frpc's local admin API."
     },
     "admin_user": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Admin API user."
     },
     "admin_password": {
       "type": "string",
-      "minLength": 1
+      "minLength": 1,
+      "description": "Admin API password, not the frps token."
     }
   }
 }

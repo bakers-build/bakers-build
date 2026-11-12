@@ -117,9 +117,15 @@ services:
   logger.channel.bb_core:
     parent: logger.channel_base
     arguments: ['bb_core']
+  bb_core.ticket_retry:
+    class: Drupal\bb_core\Run\TicketRetry
+    arguments: ['@keyvalue', '@datetime.time', '@cache_tags.invalidator']
+  bb_core.ticket_run_summary:
+    class: Drupal\bb_core\Run\TicketRunSummary
+    arguments: ['@entity_type.manager', '@bb_core.date', '@current_user']
   bb_core.failed_run_circuit_breaker:
     class: Drupal\bb_core\Claim\FailedRunCircuitBreaker
-    arguments: ['@entity_type.manager', '@datetime.time']
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_retry']
   bb_core.ticket_stall_reason:
     class: Drupal\bb_core\Claim\TicketStallReason
     arguments: ['@bb_core.ticket_run_deriver', '@bb_core.failed_run_circuit_breaker', '@bb_core.conductor_owner_access']
@@ -452,7 +458,7 @@ services:
   # Read-only formatting for the ticket-detail inspector.
   bb_core.ticket_inspector_rows:
     class: Drupal\bb_core\Ticket\TicketInspectorRows
-    arguments: ['@bb_core.date']
+    arguments: ['@bb_core.date', '@bb_core.ticket_run_summary']
   Drupal\bb_core\Ticket\TicketInspectorRows:
     alias: bb_core.ticket_inspector_rows
 
@@ -463,10 +469,13 @@ services:
   Drupal\bb_core\Time\BbDate:
     alias: bb_core.date
 
+  Drupal\bb_core\Run\RunExplanation:
+    autowire: true
+
   # Read-only formatting for the canonical run inspector.
   bb_core.run_inspector_rows:
     class: Drupal\bb_core\Run\BbRunInspectorRows
-    arguments: ['@bb_core.date']
+    arguments: ['@bb_core.date', '@Drupal\bb_core\Run\RunExplanation']
   Drupal\bb_core\Run\BbRunInspectorRows:
     alias: bb_core.run_inspector_rows
 

@@ -20,6 +20,7 @@ use Drupal\bb_core\Run\BbRunInspectorRows;
 use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\bb_core\RunLog\RunLogStore;
 use Drupal\ui_patterns\SourcePluginBase;
+use Drupal\user\UserInterface;
 use Drupal\views\Entity\View;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -355,6 +356,64 @@ final class RunCanonicalViewTest extends KernelTestBase {
   }
 
   /**
+   * A failed run's Status says why and offers Retry, Re-dispatch and Log.
+   */
+  public function testFailedRunPageOffersRunActions(): void {
+    $this->assignConductors();
+    $this->run->set('state', 'failed')
+      ->set('error_log', "Error: plugins: claude install failed: 401\nstack trace")
+      ->save();
+
+    $html = $this->renderBuild($this->inspector()->status($this->run));
+    self::assertStringContainsString('plugins: claude install failed: 401', $html);
+    self::assertSame(['Retry', 'Re-dispatch', 'Log'], $this->buttonLabels($html));
+    self::assertStringContainsString('run_action=retry', $html);
+    self::assertStringContainsString('run_action=redispatch', $html);
+    self::assertMatchesRegularExpression('#<a[^>]*data-hx-boost="false"[^>]*><span class="button__label">Log</span>#', $html, 'The Log downloads outside the boost.');
+
+    $guest = $this->createUser([]);
+    self::assertInstanceOf(UserInterface::class, $guest);
+    $this->setCurrentUser($guest);
+    $html = $this->renderBuild($this->inspector()->status($this->run));
+    self::assertStringContainsString('plugins: claude install failed: 401', $html);
+    self::assertSame([], $this->buttonLabels($html), 'A guest sees the reason and no action.');
+  }
+
+  /**
+   * A reason cut at 140 characters carries its full line on hover.
+   */
+  public function testCutReasonCarriesTheFullLineOnHover(): void {
+    $line = str_repeat('x', 200);
+    $this->run->set('state', 'failed')->set('error_log', 'Error: ' . $line)->save();
+    $cut = str_repeat('x', 139) . '…';
+
+    $html = $this->renderBuild($this->inspector()->status($this->run));
+    self::assertStringContainsString('>' . $cut . '<', $html);
+    self::assertStringContainsString('>' . $line . '<', $html);
+
+    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
+      ->getDefinition('unknown')['schema'] ?? ['type' => 'array'];
+    $source = $this->container->get('plugin.manager.ui_patterns_source')
+      ->createInstance('bb_run_row', SourcePluginBase::buildConfiguration('items', $definition, ['source' => []], []));
+    self::assertInstanceOf(BbRunRowSource::class, $source);
+    $source->setContextValue('entity', $this->run);
+    $item = $source->getPropValue()[0];
+    self::assertSame($cut, $item['detail']);
+    self::assertSame($line, $item['detail_title']);
+  }
+
+  /**
+   * A claimed run's Status explains the claim.
+   */
+  public function testClaimedRunPageExplainsTheClaim(): void {
+    $now = $this->container->get('datetime.time')->getRequestTime();
+    $this->run->set('state', 'claimed')->set('claim_expires_at', $now - 60)->save();
+    $html = $this->renderBuild($this->inspector()->status($this->run));
+    self::assertStringContainsString('The claim lapsed 1 minute ago before the run started.', $html);
+    self::assertSame(['Cancel run'], $this->buttonLabels($html));
+  }
+
+  /**
    * A stored log larger than 32 MiB is not read or embedded.
    *
    * BbRun::preSave() writes the payload and then sets log_bytes to its
@@ -405,6 +464,38 @@ final class RunCanonicalViewTest extends KernelTestBase {
       }
 
     });
+  }
+
+  /**
+   * Gives the ticket its conductor and a second one it may move to.
+   */
+  private function assignConductors(): void {
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_conductor');
+    $ids = [];
+    foreach (['srv01-bakers', 'srv02-bakers'] as $name) {
+      $conductor = $storage->create([
+        'conductor_id' => $name,
+        'label' => $name,
+        'owner_user_id' => 1,
+        'status' => 'online',
+        'project_id' => $this->ticket->get('project_id')->target_id,
+      ]);
+      $conductor->save();
+      $ids[] = $conductor->id();
+    }
+    $this->ticket->set('conductor_id', $ids[0])->save();
+    $this->run->set('conductor_id', $ids[0]);
+  }
+
+  /**
+   * The visible labels of the buttons in a render, in document order.
+   *
+   * @return array<int, string>
+   *   The labels.
+   */
+  private function buttonLabels(string $html): array {
+    preg_match_all('#<span class="button__label">([^<]+)</span>#', $html, $matches);
+    return $matches[1];
   }
 
   /**

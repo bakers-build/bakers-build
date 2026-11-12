@@ -16,6 +16,7 @@
 #   - Traefik is the only ingress overlay, and no removed keytec variable
 #     (content recipe, per-user consumer secrets, GitLab token) renders
 #   - `/oauth/register` is rate-limited in the baked nginx config
+#   - the docs-build image stage copies the bakers-cli files the docs build reads
 #   - the merge gate's e2e overlay (docker/e2e/compose.yml) renders, publishes
 #     no port, keeps config/sync out of its recipe world and leaks no secret
 # ---------------------------------------------------------------------------
@@ -309,6 +310,14 @@ grep -q 'limit_req_zone .*zone=oauth_register:' docker/nginx/oauth-register-zone
 awk '/location = \/oauth\/register/{f=1} f' docker/nginx/oauth-discovery.conf | grep -q 'limit_req zone=oauth_register' \
   || fail "/oauth/register is not rate-limited in docker/nginx/oauth-discovery.conf"
 pass "/oauth/register rate limit wired"
+
+# The docs build reads addon option schemas, shared schemas and included addon docs from bakers-cli/.
+docs_stage="$(awk '/^FROM .* AS docs-build/{f=1} f && /^RUN pnpm build/{exit} f' Dockerfile)"
+for path in bakers-cli/addons bakers-cli/core/schema; do
+  grep -q "^COPY $path /repo/$path\$" <<<"$docs_stage" \
+    || fail "docs-build stage misses $path the docs build reads"
+done
+pass "docs-build stage copies the bakers-cli inputs of the docs build"
 
 # The extra conf must parse in the pinned Wodby nginx (a syntax error is a full outage).
 # Skipped when docker or the image is unavailable locally.

@@ -18,7 +18,7 @@ Enable only in `~/.bakers/machine.config.js`:
 addons: ['@bakers-build/addon-claude'],
 ```
 
-Aliases: `opus` for reasoning, `sonnet` for well-specified changes, `fable` for demanding, long-running work. Select `agent:fable`, or `agent:fable@working` for working only.
+Aliases: `opus` for reasoning, `sonnet` for well-specified changes, `fable` for demanding, long-running work, `opus-proxy` to log every model request to an ignored `assets-ai/`. Select `agent:fable`, or `agent:fable@working` for working only.
 
 Fable uses `--model fable`; supported baseline: Claude Code **2.1.257+**. This version-free selector honors `ANTHROPIC_DEFAULT_FABLE_MODEL`; account/provider access still applies. See [Claude's Fable documentation](https://code.claude.com/docs/en/model-config#work-with-fable).
 
@@ -30,16 +30,9 @@ One custom candidate:
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `model` | string | none | Passed as `--model`. Replaces `opus`, `sonnet` and `fable` with one custom candidate. |
-| `effort` | string | none | Passed as `--effort`. |
-| `permissions` | `'sandbox'` \| `'system'` \| `'yolo'` \| `'custom'` | `'system'` | How strictly a run starts; see [Security](#security). |
-| `sandbox` | object | see below | Only with `permissions: 'sandbox'`. Each key set replaces its default; lists are not merged. |
-| `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
-| `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
-| `measure` | boolean | `false` | Starts Claude through the addon's measure wrapper. |
-| `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
+<!-- @options @bakers-build/addon-claude -->
+
+Without `env_deny`, the [default list](/provision/security/execution#ticket-env-vars) of ticket env vars is kept from the run.
 
 ## Security
 
@@ -66,6 +59,20 @@ Default: `system`. See [Execution security](/provision/security/execution) for b
 { use: '@bakers-build/addon-claude', with: { permissions: 'sandbox', sandbox: { trusted_commands: ['git', 'docker'] } } }
 ```
 
+## Deny unused tools
+
+Recommended: deny the built-in tools your runs never use in the project's committed `.claude/settings.json`. [Project setup](/get-started/connect-a-project) proposes it and writes only what you choose.
+
+```json
+{ "permissions": { "deny": ["<ToolName>"] } }
+```
+
+- **Saves:** a denied tool's definition leaves every model request.
+- **Binds:** interactive sessions in the repository too.
+- **Lives in one file:** deny rules from all settings sources merge and `deny` wins; only deleting the line re-enables a tool.
+
+Keep `AskUserQuestion`; planning asks through it. Measure the effect with `agent:opus-proxy`.
+
 ## Check it works
 
 `bakers agents` lists these aliases under harness `claude`. Claude-only default: `opus`.
@@ -82,6 +89,7 @@ bakers agents
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.
+- `proxy: true` only logs the requests; `measure` wins when both are set.
 - Listed in a project config, an agent addon is ignored with a warning.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).

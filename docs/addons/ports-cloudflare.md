@@ -36,13 +36,7 @@ addons: [
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `zone` | string | required | Zone the public names are created in. |
-| `account_id` | string | required | Cloudflare account. |
-| `tunnel_id` | string | required | Named tunnel. |
-| `zone_id` | string | required | Zone ID for DNS records. |
-| `api_token` | string | required | API token. Rotating it alone is not an identity change. |
+<!-- @options @bakers-build/addon-ports-cloudflare -->
 
 ## Check it works
 

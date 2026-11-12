@@ -25,7 +25,7 @@ const fs = require('node:fs');
 const net = require('node:net');
 const base = process.env.ANTHROPIC_BASE_URL || null;
 const settingsPath = process.argv[process.argv.lastIndexOf('--settings') + 1];
-const settings = fs.readFileSync(settingsPath, 'utf8');
+const settings = fs.existsSync(settingsPath) ? fs.readFileSync(settingsPath, 'utf8') : null;
 if (process.env.FAKE_CLAUDE_SIGNAL) process.kill(process.pid, process.env.FAKE_CLAUDE_SIGNAL);
 const report = (listening) => {
   console.log(JSON.stringify({ base, settings, settingsPath, listening, logDir: process.env.BB_PROXY_LOG_DIR ?? null, argv: process.argv.slice(1) }));
@@ -56,12 +56,14 @@ async function measured(
   extraEnv: Record<string, string> = {},
   callerArgs: string[] = ['extra-arg'],
   settingsArgs: string[] = SETTINGS_ARGS,
+  wrapperArgs: string[] = [],
 ) {
   try {
     await run(
       process.execPath,
       [
         wrapper,
+        ...wrapperArgs,
         process.execPath,
         '-e',
         FAKE_CLAUDE,
@@ -275,6 +277,43 @@ describe('claude-measure launch wrapper', () => {
   });
 });
 
+describe('claude-measure --capture', () => {
+  const inline = ['--settings', '{"sandbox":{"enabled":true}}'];
+  const runUuid = '9f0c2c1e-3b4a-4d5e-8f60-718293a4b5c6';
+
+  it('passes argv and the caller settings through, writes no settings file, and proxies the child', async () => {
+    const cwd = await worktree(true);
+    const out = await measured(
+      cwd,
+      'coding',
+      { BAKERS_RUN_UUID: runUuid },
+      ['extra-arg'],
+      inline,
+      ['--capture'],
+    );
+    expect(out.argv).toEqual(['extra-arg', ...inline]);
+    expect(existsSync(join(cwd, '.bakers'))).toBe(false);
+    expect(out.base).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
+    expect(out.listening).toBe(true);
+    expect(out.logDir).toBe(
+      join(await realpath(cwd), 'assets-ai', 'BB-569', 'node', runUuid),
+    );
+  });
+
+  it('runs the command unlogged with a warning when assets-ai is not ignored', async () => {
+    const cwd = await worktree(false);
+    const out = await measured(cwd, 'coding', {}, ['extra-arg'], inline, [
+      '--capture',
+    ]);
+    expect(out.argv).toEqual(['extra-arg', ...inline]);
+    expect(out.base).toBeNull();
+    expect(out.stderr).toMatch(/not ignored by git/);
+    expect(
+      execFileSync('git', ['status', '--porcelain'], { cwd, encoding: 'utf8' }),
+    ).toBe('');
+  });
+});
+
 describe('ClaudeAgent measure', () => {
   it('wraps the launch in the measure script and appends the settings flags', () => {
     const cmd = new ClaudeAgent({
@@ -342,6 +381,7 @@ describe('ClaudeAgent measure', () => {
       'opus',
       'sonnet',
       'fable',
+      'opus-proxy',
     ]);
     for (const c of candidates) {
       const agent = await c.agent.createAgent({} as never);
@@ -350,6 +390,44 @@ describe('ClaudeAgent measure', () => {
       expect(agent.withoutConductorTools).toBe(true);
     }
     expect('hooks' in preset).toBe(false);
+  });
+});
+
+describe('ClaudeAgent proxy', () => {
+  const tools = { url: 'http://127.0.0.1:4100/mcp' };
+  const launch = (options: object) =>
+    new ClaudeAgent({
+      model: 'opus',
+      permissions: 'system',
+      ...options,
+    }).launchCommand('go', { sessionId: 's-1' } as never, '/w', tools);
+
+  it('prefixes the unchanged launch with the capture wrapper', () => {
+    const plain = launch({});
+    expect(launch({ proxy: true })).toBe(
+      plain.replace(` claude 'go'`, ` node '${wrapper}' --capture claude 'go'`),
+    );
+    expect(plain).toContain('127.0.0.1:4100');
+  });
+
+  it('keeps the conductor tools', () => {
+    expect(new ClaudeAgent({ proxy: true }).withoutConductorTools).toBe(false);
+  });
+
+  it('launches plain claude for an empty prompt', () => {
+    expect(new ClaudeAgent({ proxy: true }).launchCommand('')).toBe('claude');
+  });
+
+  it('lets measure win when both are set', () => {
+    expect(launch({ measure: true, proxy: true })).toBe(
+      launch({ measure: true }),
+    );
+  });
+
+  it('rejects a non-boolean proxy option', () => {
+    expect(() => new ClaudeAgent({ proxy: 'yes' as never })).toThrow(
+      /proxy must be a boolean/,
+    );
   });
 });
 

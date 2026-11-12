@@ -18,11 +18,9 @@ addons: [
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `branch_prefix` | string | `bakers/` | Prefix of every ticket branch. |
-| `branch_template` | string | `{branch_prefix}{key}-{title_slug}` | Branch name. `{identifier}` is also available. |
-| `auto_setup_merge` | boolean | `false` | `false`: before it creates a worktree, the addon sets `branch.autoSetupMerge=false` in the root repository. Creating a worktree then writes nothing to the shared `.git/config`, so once the setting is written it still works while a sandbox holds `config.lock`. If that first write meets a held lock, the conductor logs a warning with the repair command. Runs get `push.default=current` through `GIT_CONFIG_COUNT`, so a plain `git push` creates the same-name remote branch, and run branches have no upstream. This applies to everyone who uses that repository: `git switch <remote branch>` no longer sets an upstream either. `true` leaves Git alone, but it does not revert an earlier change; for that, run `git config --unset branch.autoSetupMerge`. |
+<!-- @options @bakers-build/addon-workspace-git -->
+
+With `auto_setup_merge: false`, the setting applies to everyone who uses that repository: `git switch <remote branch>` no longer sets an upstream either. If the first write meets a `config.lock` held by a sandbox, the conductor logs a warning with the repair command. To undo it after switching to `true`, run `git config --unset branch.autoSetupMerge`.
 
 ## Check it works
 

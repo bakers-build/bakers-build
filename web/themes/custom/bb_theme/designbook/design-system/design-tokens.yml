@@ -39,6 +39,18 @@ primitive:
     control-h:
       $value: 28px
       $type: dimension
+    line-row-h:
+      $value: 56px
+      $type: dimension
+      $description: A list line row with a one-line title.
+      $extensions:
+        designbook:
+          provenance: addition
+          reference: 3a2b0e29e246a9d7/5b8824c4da4b3267
+          note: >-
+            Intake decision 2026-11-11 from the approved BAKERS-56 spec (D15): a
+            list line row is 56px for a one-line title at compact density; the
+            reference states the same value for a two-line list row.
     radius:
       '5':
         $value: 5px
@@ -920,6 +932,37 @@ component:
     height:
       $value: '{primitive.layout.control-h}'
       $type: dimension
+  list:
+    row:
+      height:
+        $value: '{primitive.layout.line-row-h}'
+        $type: dimension
+        $description: Minimum height of a list line row.
+    plain:
+      label-width:
+        $value: 96px
+        $type: dimension
+        $description: Label column of a block's property rows (`list` layout `plain`).
+        $extensions:
+          designbook:
+            provenance: addition
+            reference: 3a2b0e29e246a9d7/5b8824c4da4b3267
+            note: >-
+              Intake decision 2026-11-11 from the approved BAKERS-56 spec (D18);
+              the reference's ticket-detail note states 96 px labels. Fixed:
+              cozy density is outside BAKERS-56.
+      row-height:
+        $value: 32px
+        $type: dimension
+        $description: Minimum height of a block's property row (`list` layout `plain`).
+        $extensions:
+          designbook:
+            provenance: addition
+            reference: 3a2b0e29e246a9d7/5b8824c4da4b3267
+            note: >-
+              Intake decision 2026-11-11 from the approved BAKERS-56 spec (D18);
+              the reference's ticket-detail note states 32 px rows. Fixed: cozy
+              density is outside BAKERS-56.
   brand:
     compact:
       width:
@@ -997,6 +1040,17 @@ themes:
         control-h:
           $value: 36px
           $type: dimension
+        line-row-h:
+          $value: 64px
+          $type: dimension
+          $description: Cozy list line row.
+          $extensions:
+            designbook:
+              provenance: addition
+              note: >-
+                Intake decision 2026-11-11: cozy density is outside BAKERS-56;
+                +8px like control-h (28 to 36) keeps the cozy inset and a 24px
+                avatar meta line inside the row.
         radius:
           '5':
             $value: 5px

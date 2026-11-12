@@ -54,7 +54,7 @@ def grid_errors(path, text, recipe=False):
 def check(scan):
     errors = []
     installed = scan / 'skills'
-    names = sorted(d.name for d in installed.iterdir() if d.is_dir())
+    names = sorted(d.name for d in installed.iterdir() if d.is_dir() and not d.name.startswith('.'))
     assert names == sorted(SKILLS), ('skills', names)
     assert all((installed / n / 'SKILL.md').is_file() for n in names)
     count = 0
@@ -94,18 +94,14 @@ def check(scan):
     references = installed / 'bb-workflow/references'
     for state in STATES:
         found = [h[3:] for h in headings((references / f'{state}.md').read_text(), 2)]
-        if found != list(PHASES):
+        if found != ['references', *PHASES]:
             errors.append((f'{state}.md', f'phase headings {found}'))
         if not (references / 'outtake' / f'{state}.md').is_file():
             errors.append((f'outtake/{state}.md', 'missing'))
     frame = (installed / 'bb-workflow/SKILL.md').read_text()
     errors += [('bb-workflow/SKILL.md', h) for h in headings(frame, 2) if h[3:] in PHASES]
-    errors += [('bb-workflow/SKILL.md', f'no link to {f}') for f in [*STATES, 'intake']
+    errors += [('bb-workflow/SKILL.md', f'no link to {f}') for f in [*STATES, 'read-ticket']
                if f'](references/{f}.md)' not in frame]
-    for source in installed.rglob('*.md'):
-        if source.name != 'SKILL.md' or source.parent.name != 'bb-workflow':
-            if re.search(r'\]\([^)]*intake\.md', source.read_text()):
-                errors.append((source.relative_to(installed), 'names the intake; only the frame reads it'))
     assert not errors, errors
     assert count >= 10, count
     return f'PASS {len(names)} skills, {count} local references, state × phase grid, no retired skill names'

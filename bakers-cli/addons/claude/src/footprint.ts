@@ -9,6 +9,7 @@ interface TranscriptEntry {
   /** ISO-8601 wall-clock time the entry was written (BB-151 duration). */
   timestamp?: string;
   message?: {
+    id?: string;
     role?: string;
     model?: string;
     content?: unknown;
@@ -49,6 +50,11 @@ function countWords(text: string): number {
  * as an array and are ignored). Blank or malformed lines are skipped — never
  * throws.
  *
+ * Claude Code writes one API response as several assistant entries (thinking,
+ * text, each tool_use) that share `message.id` and repeat its usage, so usage
+ * and the agent turn count once per id, from its last entry; entries without an
+ * id count one each. `tool_calls` counts every tool_use block.
+ *
  * `duration_s` is the run's wall-clock length: the span between the first and
  * last entry that carries a parseable `timestamp` (BB-151). This makes the
  * transcript the single source of the run length — no `started_at` re-read, no
@@ -68,6 +74,7 @@ export function parseClaudeTranscript(jsonl: string): AgentFootprint {
   // shortcut: parallel open questions are summed, not merged, so overlapping
   // waits count twice (clamped at 0); merge intervals if parallel asks appear.
   const openQuestions = new Map<string, number>();
+  const usageById = new Map<string, number>();
 
   for (const raw of jsonl.split('\n')) {
     const line = raw.trim();
@@ -103,10 +110,17 @@ export function parseClaudeTranscript(jsonl: string): AgentFootprint {
     }
 
     if (entry.type === 'assistant') {
-      footprint.agent_turns += 1;
       const usage = message.usage ?? {};
+      let tokens = 0;
       for (const key of TOKEN_KEYS) {
-        footprint.tokens += num(usage[key]);
+        tokens += num(usage[key]);
+      }
+      if (typeof message.id === 'string') {
+        // Entries of one response repeat its usage; the last one is final.
+        usageById.set(message.id, tokens);
+      } else {
+        footprint.agent_turns += 1;
+        footprint.tokens += tokens;
       }
       if (Array.isArray(message.content)) {
         for (const block of message.content) {
@@ -126,6 +140,11 @@ export function parseClaudeTranscript(jsonl: string): AgentFootprint {
       footprint.user_prompts += 1;
       footprint.user_prompt_words += countWords(message.content);
     }
+  }
+
+  footprint.agent_turns += usageById.size;
+  for (const tokens of usageById.values()) {
+    footprint.tokens += tokens;
   }
 
   if (Number.isFinite(minTs) && Number.isFinite(maxTs) && maxTs > minTs) {

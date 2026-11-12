@@ -425,30 +425,38 @@ conductor) are edited in place with an `option_picker` in its `inline` variant �
 the pill grammar one size smaller: the same component, the same self-naming
 `aria-label`, the same popover with the clear row first, only without the pill's
 chip chrome, because on a detail screen the value is already the thing on the
-page. A pick changes nothing until **Save**, the same explicit commit a Settings
-form uses: the primary button at the right of the separated action row below the
-properties. A completed save shows Drupal's ordinary status message
-(`bakers.build ticket <label> saved.`) as the bottom-right toast every status
-message uses, and leaves the operator on the screen; a rejected save keeps the
-attempted values and names the error, which is the dialog's rule one level
-smaller.
+page.
 
-A single organisation control inside a list row — a membership role, a
-team assignment, a term's weight — still writes on pick. It is one field
-with one control and no neighbouring properties to commit together, so it
-needs no Save; the explicit Save belongs to a form of several properties.
+On a ticket's Details **the pick is the write**. A pick that changes a field
+submits the property form at once; there is no Save button while JavaScript
+runs, and the field says beside its value what happened: "Saved", or the error
+that refused the write, while the attempted value stays shown. A dismissal or a
+pick of the value already set writes nothing. Without JavaScript the panel does
+not open and the form keeps its Save button as the fallback.
+
+**A pick never overwrites someone else's change.** When the stored value of the
+field a pick changes is no longer the value the page showed, nothing is written
+and the field says "Someone changed this meanwhile. The page shows their
+value." The page does show it, so the next pick on that field saves. Picks
+on different fields by two people both persist.
+
+The detail cards of a team, a machine or a conductor keep the explicit
+**Save** of a Settings form: they edit text, which is typed rather than picked,
+and their save keeps the last write. A single organisation control inside a
+list row (a membership role, a team assignment, a term's weight) writes on
+pick as well: one field with one control.
 
 **Conductor is the one inline field with a side effect**, and the second
 half of the rule applies to it unchanged: setting it claims the ticket at
 the next poll and starts an agent run, so the effect is **named at the
 field** — the same sentence the create dialog carries beneath its pill
-row. It is still not confirmed beyond Save, because the operator chose it
-at the control. The other three fields are reversible and name nothing.
+row. It is still not confirmed, because the operator chose it at the
+control. The other three fields are reversible and name nothing.
 
 `state` is deliberately **not** inline-editable. By the rule above a
-transition is confirmed on its own, and a property form that commits
-several fields with one Save cannot carry that confirmation. Transitions are
-therefore actions that open a confirmation dialog, never a picker.
+transition is confirmed on its own, and a pick that is the write cannot
+carry that confirmation. Transitions are therefore actions that open a
+confirmation dialog, never a picker.
 
 ## Which components carry this
 
@@ -466,7 +474,8 @@ therefore actions that open a confirmation dialog, never a picker.
 - `option_picker` — the property pill itself: a trigger plus an
   `option_list` popover, in a `field` variant (the pill; hidden inputs,
   writes with the form) and an `inline` variant (the bare value on a
-  detail screen; writes with the property form's Save).
+  detail screen; on a ticket's Details the pick submits the property form
+  and the field says "Saved" or names the error).
 - `option_list` — the shared checkable list inside the popover: one panel
   markup for both the dialog and the inline case. It owns the clear row
   of rule 5, because a row of a listbox belongs to the list, and the

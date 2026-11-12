@@ -201,6 +201,35 @@ beforeAll(() => {
 
 describe('skill CLI contract: real repository CLI vs simulator', () => {
   it(
+    'lists projects by name without creating a duplicate',
+    async () => {
+      const simulation = {
+        projects: [
+          { uuid: ticketId, key: 'AUDIT', name: 'Audit Project', group: null },
+          {
+            uuid: contractFixture.project,
+            key: 'OTHER',
+            name: 'Other Project',
+            group: null,
+          },
+        ],
+      };
+      const steps = [
+        [...T, wire('bakers_project_list'), '--param', 'query=Audit'],
+      ];
+      const { real, sim } = await pair(simulation, steps, {});
+      expect(real[0]!.exit_code, real[0]!.stderr).toBe(0);
+      expect(sim[0]!.exit_code, sim[0]!.stderr).toBe(0);
+      expect(JSON.parse(real[0]!.stdout)).toEqual(JSON.parse(sim[0]!.stdout));
+      expect(
+        JSON.parse(real[0]!.stdout).projects.map(
+          (row: { key: string }) => row.key,
+        ),
+      ).toEqual(['AUDIT']);
+    },
+    MS,
+  );
+  it(
     'public tools alias preserves discovery, JSON files, validation and uncertain writes',
     async () => {
       const base = (await loadFixture('publish-comment-uncertain')).simulation;

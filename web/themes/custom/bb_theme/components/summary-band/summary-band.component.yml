@@ -28,6 +28,13 @@ description: >-
   gutter that wraps every label.
 
 
+  IT IS COMPACT: about 150 px for a one-line summary at compact density. Its
+  padding and the gaps between regions are small because the summary's own entry
+  brings its vertical padding, and on a wide screen the summary region lays its
+  parts out side by side, so an entry's link and action sit beside it rather
+  than under it.
+
+
   IT KNOWS NOTHING ABOUT WHAT IT SUMMARISES. It used to be named for one screen
   and its slots described that screen's fields; the questions it answers are
   asked of a release, a run and a deployment in the same words, and every one of
@@ -39,13 +46,14 @@ slots:
   flow:
     title: Flow
     description: >-
-      Where the subject stands — an ordered chain with a current link. Renders
-      left in the header strip.
+      Where the subject stands: an ordered chain with a current link, after any
+      status badge, in one wrapping row. Renders left in the header strip.
   summary:
     title: Summary
     description: >-
       What was done, as one timeline entry rather than a component of this
-      band's own. Renders beneath the header strip.
+      band's own, with the entry's link and action. Renders beneath the header
+      strip; on a wide screen its parts sit side by side.
   links:
     title: Links
     description: >-

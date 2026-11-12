@@ -12,7 +12,8 @@
     "url": {
       "type": "string",
       "pattern": "^https?://",
-      "description": "Default https://gitlab.com."
+      "description": "The GitLab instance.",
+      "default": "https://gitlab.com"
     },
     "project": {
       "type": "string",

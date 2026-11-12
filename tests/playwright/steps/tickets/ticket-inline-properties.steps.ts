@@ -9,13 +9,14 @@ import { markDocument, documentWasKept } from '../../support/shell';
 const { After } = createBdd(test);
 const snapshots = new WeakMap<Page, { url: string; title: string; values: Record<string, string[]> }>();
 const rejectedStatuses = new WeakMap<Page, number>();
-const writesSinceSelection = new WeakMap<Page, string[]>();
 const authenticatedCookies = new WeakMap<Page, Awaited<ReturnType<BrowserContext['cookies']>>>();
 const fields: Record<string, string> = { Assignee: 'assignee_user_id', Reviewers: 'reviewers', Conductor: 'conductor_id', Priority: 'priority', Type: 'ticket_type', Recipe: 'recipe', Labels: 'labels', Parent: 'parent_id', 'Blocked by': 'blocked_by' };
 const propertyForm = (page: Page) => page.locator('form[data-form-save]');
 const savedMessage = (page: Page) => propertyForm(page).locator('#messages-status');
 const saveButton = (page: Page) => propertyForm(page).getByRole('button', { name: 'Save', exact: true });
 const picker = (page: Page, label: string) => propertyForm(page).locator(`[data-option-picker-name="${fields[label]}"]`);
+const fieldStatus = (page: Page, label: string) => picker(page, label).locator('[data-picker-part="status"]');
+const propertyPost = (page: Page) => page.waitForResponse(r => r.request().method() === 'POST' && r.url().includes('/property'));
 
 Then('the property form has a usable manual Save button', async ({ page }) => {
     const button = propertyForm(page).getByRole('button', { name: 'Save', exact: true });
@@ -83,7 +84,9 @@ Then('the Properties block holds the property pickers and Created by', async ({ 
     // blocks of their own, outside the form.
     const labels = await propertyForm(page).locator('[data-cell="label"]').allTextContents();
     const afterStall = labels[0] === 'Stall' ? labels.slice(1) : labels;
-    expect(afterStall).toEqual(['Assignee', 'Reviewers', 'Conductor', 'Priority', 'Type', 'Recipe', 'Labels', 'Parent', 'Blocked by', 'Created by']);
+    // Runs closes the block for a reader who may view runs.
+    const beforeRuns = afterStall.at(-1) === 'Runs' ? afterStall.slice(0, -1) : afterStall;
+    expect(beforeRuns).toEqual(['Assignee', 'Reviewers', 'Conductor', 'Priority', 'Type', 'Recipe', 'Labels', 'Parent', 'Blocked by', 'Created by']);
     // Relations renders only with sub-tickets or referenced tickets, so it
     // is not asserted here; Parent and Blocked by are rows of the form above.
     await expect(page.locator('[data-canvas-region="inspector"] details > summary', { hasText: /^\s*Code/ })).toHaveCount(1);
@@ -206,9 +209,8 @@ async function post(page: Page, url: string, data: URLSearchParams) {
 Then('a saved property form refuses a different ticket route', async ({ page }) => {
     const opening = (await values(page)).priority[0];
     const saved = opening === '1' ? '2' : '1';
-    await choose(page, 'Priority', saved === '1' ? 'High' : 'Medium');
-    await save(page);
-    await expect(savedMessage(page)).toContainText(/bakers.build ticket .+ saved\./);
+    await pick(page, 'Priority', saved === '1' ? 'High' : 'Medium');
+    await expect(fieldStatus(page, 'Priority')).toHaveText('Saved');
     const { entries } = await formData(page);
     const fixture = world['ticket.home'];
     const otherRoute = Drush.exec(`ev 'print current(\\Drupal::entityTypeManager()->getStorage("${fixture.entityType}")->loadByProperties(["uuid" => "${fixture.uuid}"]))->toUrl()->toString();'`).trim();
@@ -220,7 +222,7 @@ Then('a saved property form refuses a different ticket route', async ({ page }) 
     expect((await values(page)).priority).toEqual([saved]);
 });
 
-Then('a second Save after the replacement persists and an in-flight Save is not repeated', async ({ page }) => {
+Then('a second pick after the replacement persists and an in-flight save is not repeated', async ({ page }) => {
     const opening = (await values(page)).priority[0];
     expect(opening).toBeTruthy();
     const posts: string[] = [];
@@ -235,30 +237,29 @@ Then('a second Save after the replacement persists and an in-flight Save is not 
         await route.fulfill({ response });
     }, { times: 1 });
     await choose(page, 'Priority', opening === '1' ? 'Medium' : 'High');
-    await saveButton(page).click();
     await expect.poll(() => posts.length).toBe(1);
     // The form is inert while its save is in flight; a programmatic submit
     // stands in for a second activation and is dropped.
+    await expect(propertyForm(page)).toHaveJSProperty('inert', true);
     await propertyForm(page).evaluate(form => (form as HTMLFormElement).requestSubmit());
     releaseResponse();
-    await expect(savedMessage(page)).toContainText(/bakers.build ticket .+ saved\./);
+    await expect(fieldStatus(page, 'Priority')).toHaveText('Saved');
     expect(posts).toHaveLength(1);
-    await choose(page, 'Priority', opening === '1' ? 'High' : 'Medium');
-    await expect(savedMessage(page)).toHaveCount(0);
-    await save(page);
-    await expect(savedMessage(page)).toContainText(/bakers.build ticket .+ saved\./);
+    await pick(page, 'Priority', opening === '1' ? 'High' : 'Medium');
+    await expect(fieldStatus(page, 'Priority')).toHaveText('Saved');
     expect(posts).toHaveLength(2);
     await page.reload();
     expect((await values(page)).priority).toEqual([opening]);
 });
 
-/** Closes an open multi-select panel, then submits with the visible Save. */
-async function save(page: Page) {
-    const open = propertyForm(page).locator('[data-option-picker-panel]:visible');
-    if (await open.count()) await page.keyboard.press('Escape');
-    const response = page.waitForResponse(r => r.request().method() === 'POST' && r.url().includes('/property'));
-    await saveButton(page).click();
-    return response;
+/** Picks an option of an autosaving form and waits until its answer replaced the form. */
+async function pick(page: Page, label: string, option: string) {
+    const form = await propertyForm(page).elementHandle();
+    const saved = propertyPost(page);
+    await choose(page, label, option);
+    await saved;
+    await expect.poll(() => form!.evaluate(element => element.isConnected)).toBe(false);
+    await expect(propertyForm(page)).not.toHaveAttribute('inert');
 }
 
 async function choose(page: Page, label: string, option: string) {
@@ -266,8 +267,8 @@ async function choose(page: Page, label: string, option: string) {
     await expect(propertyForm(page)).not.toHaveAttribute('inert');
     const trigger = control.locator('[data-option-picker-trigger]');
     const panel = control.locator('[data-option-picker-panel]');
-    // Multi-select stays open after a pick. Clicking the trigger again would
-    // close it and hide every option from getByRole.
+    // A multi-select panel reopens after its pick saved. Clicking its trigger
+    // again would close it and hide every option from getByRole.
     if (await trigger.getAttribute('aria-expanded') !== 'true') {
         await trigger.click();
     }
@@ -276,13 +277,17 @@ async function choose(page: Page, label: string, option: string) {
     if (await search.count()) {
         await search.fill(option);
     }
-    // Administrators can see same-named terms from several fixture workspaces.
-    // Select the committed label identity, not an arbitrary matching row.
-    const row = label === 'Labels' && option === 'bug'
-        ? control.locator(`[role="option"][data-value="${fixtureId('label.bug')}"]`)
-        : control.getByRole('option', { name: option, exact: true });
+    const row = optionRow(page, label, option);
     await expect(row).toHaveAccessibleName(option);
     await row.click();
+}
+
+function optionRow(page: Page, label: string, option: string) {
+    // Administrators can see same-named terms from several fixture workspaces.
+    // Select the committed label identity, not an arbitrary matching row.
+    return label === 'Labels' && option === 'bug'
+        ? picker(page, label).locator(`[role="option"][data-value="${fixtureId('label.bug')}"]`)
+        : picker(page, label).getByRole('option', { name: option, exact: true });
 }
 
 Given('I remember the inline properties for cleanup', async ({ page }) => {
@@ -312,28 +317,52 @@ After({ tags: '@feature:ticket-inline-properties' }, async ({ page, authProvider
 
 When('I select inline {string} option {string}', async ({ page }, label: string, option: string) => {
     await markDocument(page);
-    const writes: string[] = [];
-    writesSinceSelection.set(page, writes);
-    page.on('request', request => {
-        if (request.method() === 'POST' && request.url().includes('/property')) writes.push(request.url());
-    });
-    await choose(page, label, option);
+    await pick(page, label, option);
+});
+
+When('I select inline {string} options {string} in one opening', async ({ page }, label: string, options: string) => {
+    await markDocument(page);
+    let previous = '';
+    for (const option of options.split(', ')) {
+        if (previous) {
+            // The answer reopened the panel on the option just toggled.
+            await expect(picker(page, label).locator('[data-option-picker-trigger]')).toHaveAttribute('aria-expanded', 'true');
+            await expect(optionRow(page, label, previous)).toBeFocused();
+        }
+        await pick(page, label, option);
+        previous = option;
+    }
 });
 
 When('I remove the inline {string} chip {string}', async ({ page }, label: string, option: string) => {
     await markDocument(page);
-    const writes: string[] = [];
-    writesSinceSelection.set(page, writes);
-    page.on('request', request => {
-        if (request.method() === 'POST' && request.url().includes('/property')) writes.push(request.url());
-    });
     const control = picker(page, label);
     await expect(control).toHaveAttribute('data-option-picker-ready');
     const button = control.getByRole('button', { name: `Remove ${option} from ${label}` });
     await expect(button).toBeVisible();
+    const form = await propertyForm(page).elementHandle();
+    const saved = propertyPost(page);
     await button.click();
+    await saved;
+    await expect.poll(() => form!.evaluate(element => element.isConnected)).toBe(false);
     await expect(button).toHaveCount(0);
     await expect(control.locator('[data-option-picker-chip]', { hasText: option })).toHaveCount(0);
+});
+
+// A multi-select panel stays open after its pick saved; a person closes it
+// before turning to a field it may cover.
+When('I close the inline {string} panel', async ({ page }, label: string) => {
+    const trigger = picker(page, label).locator('[data-option-picker-trigger]');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    await page.keyboard.press('Escape');
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+});
+
+Then('the inline {string} panel is closed', async ({ page }, label: string) => {
+    const control = picker(page, label);
+    await expect(control.locator('[data-option-picker-trigger]')).toHaveAttribute('aria-expanded', 'false');
+    await expect(control.locator('[data-option-picker-panel]')).toBeHidden();
+    await expect(control.locator('[data-option-picker-panel] :focus')).toHaveCount(0);
 });
 
 Then('the inline {string} chips are {string}', async ({ page }, label: string, chips: string) => {
@@ -350,23 +379,10 @@ Then('the inline {string} picker does not offer {string}', async ({ page }, labe
     await expect(picker(page, label).getByRole('option', { name: option, exact: true })).toHaveCount(0);
 });
 
-When('I save the inline properties', async ({ page }) => {
-    // Picking alone wrote nothing; Save is the only commit.
-    expect(writesSinceSelection.get(page) ?? []).toEqual([]);
-    await save(page);
-});
-
-Then('picking inline {string} option {string} writes nothing until Save', async ({ page }, label: string, option: string) => {
-    const before = await values(page);
-    const writes: string[] = [];
-    page.on('request', request => { if (request.method() === 'POST') writes.push(request.url()); });
-    await choose(page, label, option);
-    await expect(saveButton(page)).toBeVisible();
-    await saveButton(page).focus();
-    await expect(saveButton(page)).toBeFocused();
-    await page.reload();
-    expect(writes).toEqual([]);
-    expect(await values(page)).toEqual(before);
+Then('the property form shows no Save button', async ({ page }) => {
+    // Save stays in the form as the fallback without JavaScript.
+    await expect(propertyForm(page).getByRole('button', { name: 'Save', exact: true, includeHidden: true })).toBeAttached();
+    await expect(saveButton(page)).toBeHidden();
 });
 
 Given('browser authentication is removed without reloading', async ({ page }) => {
@@ -375,18 +391,21 @@ Given('browser authentication is removed without reloading', async ({ page }) =>
 });
 
 When('I save denied inline {string} option {string}', async ({ page }, label: string, option: string) => {
+    const response = propertyPost(page);
     await choose(page, label, option);
-    rejectedStatuses.set(page, (await save(page)).status());
+    rejectedStatuses.set(page, (await response).status());
 });
 
 Then('the inline property save is rejected with HTTP {int}', async ({ page }, status: number) => {
     expect(rejectedStatuses.get(page)).toBe(status);
 });
 
-Then('the inline {string} save succeeds without navigation', async ({ page }, _label: string) => {
-    await expect(savedMessage(page)).toHaveCount(1);
-    await expect(savedMessage(page)).toContainText(/bakers.build ticket .+ saved\./);
-    await expect(saveButton(page)).toBeVisible();
+Then('the inline {string} save succeeds without navigation', async ({ page }, label: string) => {
+    // One channel: the field says it, no form message repeats it.
+    await expect(fieldStatus(page, label)).toHaveText('Saved');
+    await expect(picker(page, label).getByRole('combobox')).not.toHaveAttribute('aria-invalid', 'true');
+    await expect(savedMessage(page)).toHaveCount(0);
+    await expect(saveButton(page)).toBeHidden();
     await expect(page).toHaveURL(snapshots.get(page)!.url);
     await expect(page).toHaveTitle(snapshots.get(page)!.title);
     expect(await documentWasKept(page)).toBe(true);
@@ -425,12 +444,23 @@ Given('the next conductor save contains an invalid reference', async ({ page }) 
 });
 
 Then('the inline {string} shows an unsaved error with the attempted value {string}', async ({ page }, label: string, value: string) => {
-    // A validation error comes back as Drupal's error message; a request that
-    // never completed is reported by the form's own alert. Neither claims success.
-    await expect(propertyForm(page).getByRole('alert').filter({ hasText: /\S/ }).first()).toBeVisible();
+    // A refused write and a request that never completed both say it at the
+    // field, and only there.
+    await expect(fieldStatus(page, label)).toHaveText(/\S/);
+    await expect(fieldStatus(page, label)).not.toHaveText('Saved');
+    await expect(fieldStatus(page, label)).toHaveAttribute('role', 'alert');
+    await expect(picker(page, label).getByRole('combobox')).toHaveAttribute('aria-invalid', 'true');
+    await expect(propertyForm(page).getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(1);
     await expect(savedMessage(page)).toHaveCount(0);
     await expect(picker(page, label).locator('[data-option-picker-trigger]')).toContainText(value);
-    await expect(saveButton(page)).toBeVisible();
+    await expect(saveButton(page)).toBeHidden();
+});
+
+Then('the inline {string} says {string}', async ({ page }, label: string, message: string) => {
+    await expect(fieldStatus(page, label)).toHaveText(message);
+    await expect(picker(page, label).getByRole('combobox')).toHaveAttribute('aria-invalid', 'true');
+    // Said at the field only: no form message repeats it.
+    await expect(propertyForm(page).getByRole('alert').filter({ hasText: /\S/ })).toHaveCount(1);
 });
 
 Then('the stored conductor is unchanged', async ({ page }) => {
@@ -448,17 +478,19 @@ Then('an authenticated reload shows stored inline {string} option {string}', asy
     await other.close();
 });
 
-When('I retry the rejected inline {string} save', async ({ page }, _label: string) => {
-    const originalForm = await propertyForm(page).elementHandle();
-    await saveButton(page).click();
-    await expect.poll(() => originalForm!.evaluate(form => form.isConnected)).toBe(false);
-});
-
 When('I correct the inline {string} selection', async ({ page }, label: string) => {
     await markDocument(page);
-    await choose(page, label, 'srv01-bakers');
-    await save(page);
+    await pick(page, label, 'srv01-bakers');
 });
+
+/** Whether an answer says at the field's picker, and only there, that the write was refused. */
+function refusedAtField(html: string, field: string): boolean {
+    const picker = html.slice(html.indexOf(`data-option-picker-name="${field}"`));
+    const fieldMarkup = picker.slice(0, picker.indexOf('data-picker-part="panel"'));
+    return fieldMarkup.includes('aria-invalid="true"')
+        && fieldMarkup.includes('data-picker-part="status" role="alert"')
+        && !html.includes('id="messages-error"');
+}
 
 /** Resolves committed recipe data without creating hidden test fixtures. */
 function fixtureId(name: keyof typeof world): string {
@@ -481,7 +513,7 @@ Then('invalid inline property requests are rejected without changing the ticket'
         setField(data, field, selection);
         const response = await post(page, url, data);
         expect(response.status()).toBe(200);
-        expect(await response.text()).toContain('id="messages-error"');
+        expect(refusedAtField(await response.text(), field)).toBe(true);
     }
     for (const submitted of [{ 'priority[0]': '1', 'priority[1]': '2' }, { 'priority[0][nested]': '1' }]) {
         const data = new URLSearchParams(entries);
@@ -489,7 +521,7 @@ Then('invalid inline property requests are rejected without changing the ticket'
         for (const [key, value] of Object.entries(submitted)) data.set(key, value!);
         const response = await post(page, url, data);
         expect(response.status()).toBe(200);
-        expect(await response.text()).toContain('id="messages-error"');
+        expect(refusedAtField(await response.text(), 'priority')).toBe(true);
     }
     const tampered = new URLSearchParams(entries);
     tampered.set('property_baseline', '{}');
@@ -520,8 +552,15 @@ Then('the inline save refuses missing CSRF tokens and users without update acces
     expect([302, 403, 404]).toContain((await page.request.post(url, { data: new URLSearchParams(entries).toString(), maxRedirects: 0 })).status());
 });
 
-// Another editor's save, between this page's load and its own Save: written
-// straight to storage, as the other tab's Save would have committed it.
+// Another editor's save, between this page's load and its own pick: written
+// straight to storage, as the other tab's pick would have committed it.
+When('another editor sets the priority of {string} to {string}', async ({}, identifier: string, priority: string) => {
+    const value = ({ High: 1, Medium: 2, Low: 3 } as Record<string, number>)[priority];
+    expect(value).toBeTruthy();
+    const out = Drush.exec(`php:eval '$t = current(\\Drupal::entityTypeManager()->getStorage("bb_ticket")->loadByProperties(["identifier" => "${identifier.replace(/[^A-Z0-9-]/g, '')}"])); $t->set("priority", ${value}); $t->save(); print $t->get("priority")->value;'`).trim();
+    expect(out.split('\n').pop()).toBe(String(value));
+});
+
 When('another editor sets the reviewers of {string} to {string}', async ({}, identifier: string, names: string) => {
     const accounts = names.split(', ').map(name =>
         `current(\\Drupal::entityTypeManager()->getStorage("user")->loadByProperties(["name" => "${name.replace(/[^a-z0-9_-]/gi, '')}"]))->id()`);

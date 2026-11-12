@@ -39,14 +39,14 @@ description: >-
   `initials`, `color`, `mail?`), `picker` (`label`, `value_labels`, `options`,
   `picker_id`, `multiple?`, `open?`, `icon?`, `clearable?`, `clear_label?`,
   `creatable?`, `create_label?`, `name?`, `searchable?`, `selected_chips?`,
-  `selected?`), `masked` (`value?`, `revealed?`), `action` (`label`, `icon?`,
-  `icon_only?`, `variant?`, `href?`, `hx?` {`get?`, `target?`, `select?`,
-  `swap?`}) and `rendered` (`markup`) — and their field list is declared once,
-  in `table.component.yml`, beside the `cell()` macro that reads it. It is
-  deliberately not copied here: one macro renders both containers, and a second
-  copy of its schema is a second copy that drifts. An unknown or absent `kind`
-  renders the value as plain text, so a mapping mistake shows as unstyled
-  content rather than as an empty item.
+  `selected?`, `autosave?`, `status?`, `invalid?`), `masked` (`value?`,
+  `revealed?`), `action` (`label`, `icon?`, `icon_only?`, `variant?`, `href?`,
+  `hx?` {`get?`, `target?`, `select?`, `swap?`}) and `rendered` (`markup`) — and
+  their field list is declared once, in `table.component.yml`, beside the
+  `cell()` macro that reads it. It is deliberately not copied here: one macro
+  renders both containers, and a second copy of its schema is a second copy that
+  drifts. An unknown or absent `kind` renders the value as plain text, so a
+  mapping mistake shows as unstyled content rather than as an empty item.
 
 
   `rendered` WAS MISSING FROM THIS SCHEMA ONLY, and that is what BB-435
@@ -154,8 +154,15 @@ props:
         `cards` gives each item its own surface, border and radius, and it is
         the members list, whose entries are read one at a time rather than
         scanned down. `plain` is a block's property rows — no line, hover fill
-        or inset; the enclosing block carries the separation, and the label cell
-        takes a fixed `w-28` track. Default `lines`.
+        or inset; the enclosing block carries the separation, the label cell
+        takes the fixed 96px `list.plain.label-width` track and a row is at
+        least the 32px `list.plain.row-height`, on every inspector. A row with
+        one text, mono, link or picker value gives it the rest of the line: text
+        is cut to one line with the full value in its title, and a picker cuts
+        its own value. The label stays level with the first line of a taller
+        value. Default `lines`. In `lines`, the `action` cells of an item form
+        one group at the right edge, in their own order; the group wraps as a
+        whole when the line is full.
       default: lines
     spacing:
       type: string
@@ -198,12 +205,29 @@ props:
               - idle
             title: Status accent
             description: >-
-              The leading status rail. `critical` is the red rail of a row that
-              needs a person now with a red severity (a Needs attention row
-              whose reason is red); `attention` is the yellow one. `wait`
-              additionally tints the whole item, because a thing nobody is
-              acting on is the one state the absorbed entries made loud, and the
-              tint is what a `wait` badge's `-ink` colour is legible against.
+              The leading status rail. `wait` and `critical` additionally tint
+              the whole item, because a thing that needs a person is the one
+              state the absorbed entries made loud, and the tint is what a
+              `wait` or `critical` badge's `-ink` colour is legible against.
+              `critical` is the danger role of a failed run or of a Needs
+              attention row whose reason is red; `wait` is a thing nobody is
+              acting on.
+          detail:
+            type: string
+            title: Detail line
+            description: >-
+              One short sentence on a line of its own beneath the item's cells,
+              such as why a run failed or what its claim waits for. It takes the
+              ink of the item's accent: red for `critical` and `wait`, amber for
+              `attention`, light text otherwise. Omitted means no line. Read by
+              an item without `pattern`; a patterned row has its `description`
+              region instead.
+          detail_title:
+            type: string
+            title: Detail on hover
+            description: >-
+              The full text of a `detail` that was shortened, shown on hover as
+              the line's title. Omitted when the detail is already complete.
           cells:
             type: object
             title: Cells

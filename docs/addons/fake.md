@@ -14,7 +14,9 @@ addons: ['@bakers-build/addon-fake'],
 
 ## Options
 
-No options for users. The test-only settings are in the source.
+Test-only settings; users need none.
+
+<!-- @options @bakers-build/addon-fake -->
 
 ## Check it works
 

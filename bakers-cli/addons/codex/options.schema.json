@@ -3,6 +3,13 @@
   "$id": "https://bakers.build/schema/addon-codex/options.schema.json",
   "title": "@bakers-build/addon-codex options",
   "$ref": "https://bakers.build/schema/harness-options.schema.json",
-  "properties": {},
+  "properties": {
+    "model": {
+      "description": "Passed as `--model`, else Codex's own default; drops the four named variants."
+    },
+    "effort": {
+      "description": "Passed as `-c model_reasoning_effort=…`."
+    }
+  },
   "unevaluatedProperties": false
 }

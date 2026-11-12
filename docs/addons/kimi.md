@@ -24,11 +24,7 @@ It publishes one alias, `kimi`, which uses your locally configured Kimi model.
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `model` | string | Kimi's own default | Passed as `--model`. |
-| `effort` | string | none | Not supported; ignored with a log line. |
-| `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
+<!-- @options @bakers-build/addon-kimi -->
 
 ## Check it works
 

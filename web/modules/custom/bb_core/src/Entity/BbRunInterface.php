@@ -125,4 +125,21 @@ interface BbRunInterface extends BbContentEntityInterface {
    */
   public function readErrorLog(): ?string;
 
+  /**
+   * One-line reason a failed run failed, or NULL for any other state.
+   *
+   * The first non-empty error-log line without a leading "Error: ", cut at 140
+   * characters; a failed run with no or an unreadable error log gets the
+   * no-reason copy. Never throws.
+   */
+  public function failureReason(): ?string;
+
+  /**
+   * The failure reason before it is cut, for the full line on hover.
+   *
+   * The first non-empty error-log line without a leading "Error: ", or the
+   * no-reason copy; NULL for any state but failed. Never throws.
+   */
+  public function failureLine(): ?string;
+
 }
