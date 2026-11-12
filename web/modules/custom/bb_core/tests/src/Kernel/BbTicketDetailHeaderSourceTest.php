@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -101,6 +102,33 @@ final class BbTicketDetailHeaderSourceTest extends KernelTestBase {
 
     self::assertStringContainsString('assigned to Grace Hopper', $description);
     self::assertStringContainsString('created by Ada Lovelace', $description);
+  }
+
+  /**
+   * The creator's age follows their name, relative, with the date on hover.
+   */
+  public function testSublineCarriesCreatorAndAge(): void {
+    $owner = $this->createUser([], 'Ada Lovelace');
+    self::assertInstanceOf(UserInterface::class, $owner);
+    // A day over three weeks, so a daylight-saving shift cannot make it two.
+    $created = $this->container->get('datetime.time')->getRequestTime() - 22 * 86400;
+    $ticket = $this->createTicket([
+      'owner_user_id' => $owner->id(),
+      'created' => $created,
+    ]);
+
+    self::assertStringContainsString('created by Ada Lovelace · 3 weeks ago', $this->headerDescription($ticket));
+
+    $element = BbTicketDetailHeaderSource::sublineElement($ticket);
+    $times = array_values(array_filter($element, static fn (array $part): bool => ($part['#component'] ?? '') === 'bb_theme:time'));
+    self::assertCount(1, $times);
+    self::assertSame('3 weeks ago', $times[0]['#props']['label']);
+    self::assertSame(
+      $this->container->get('date.formatter')->format($created, 'custom', 'D, j M Y, H:i T'),
+      $times[0]['#props']['title'],
+    );
+    self::assertGreaterThan(0, $element['#cache']['max-age']);
+    self::assertNotSame(Cache::PERMANENT, $element['#cache']['max-age']);
   }
 
   /**

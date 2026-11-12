@@ -1,0 +1,11 @@
+decided_at: '2026-11-10T12:44:06.879Z'
+fingerprint: 562b8f34e6cf8d21d2a1e3a8b2eadc074f302ee2a20bce0581ec84e776149f45
+note: Approved by the user on 2026-11-10 after reviewing the captured screenshots.
+scope:
+  states:
+    - default
+  subjects:
+    - runs-failure-visible-actionable
+  views:
+    - desktop
+status: approved

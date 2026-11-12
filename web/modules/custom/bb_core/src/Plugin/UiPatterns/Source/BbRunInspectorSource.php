@@ -10,6 +10,7 @@ use Drupal\Core\Plugin\Context\EntityContextDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Run\BbRunInspectorRows;
+use Drupal\bb_core\Ticket\TicketInterventions;
 use Drupal\ui_patterns\Attribute\Source;
 use Drupal\ui_patterns\SourcePluginBase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -53,6 +54,7 @@ final class BbRunInspectorSource extends SourcePluginBase implements ContainerFa
     $build = $this->inspectorRows->blocks($run);
     $cache = CacheableMetadata::createFromRenderArray($build)
       ->addCacheableDependency($run)
+      ->addCacheableDependency(TicketInterventions::runCacheability($run))
       ->addCacheContexts(['user', 'url.path'])
       ->addCacheTags(['og_membership_list']);
     $ticket = $run->getTicket();

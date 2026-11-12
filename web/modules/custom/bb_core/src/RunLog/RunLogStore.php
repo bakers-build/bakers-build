@@ -27,6 +27,11 @@ final class RunLogStore {
 
   public const DIRECTORY = 'bakers-run-logs';
 
+  /**
+   * Bytes of a line firstLine() keeps before it stops reading.
+   */
+  private const FIRST_LINE_CAP = 4096;
+
   public function __construct(
     private readonly WorkspaceResolverInterface $workspaceResolver,
     private readonly FileSystemInterface $fileSystem,
@@ -115,14 +120,7 @@ final class RunLogStore {
    * @SuppressWarnings("PHPMD.ErrorControlOperator")
    */
   public function read(FileInterface $file, BbRunInterface $run): string {
-    $path_workspace = self::workspaceUuidFromUri((string) $file->getFileUri());
-    $run_workspace = $this->workspaceUuid($run);
-    if ($path_workspace === '' || $path_workspace !== $run_workspace) {
-      // The path says one workspace and the run resolves to another. Refuse
-      // rather than pick one: this cross-check turns a resolution defect into a
-      // denial instead of a cross-workspace read.
-      throw new RunLogException('Run log does not belong to this run.');
-    }
+    $this->assertOwnedBy($file, $run);
     $contents = @file_get_contents((string) $file->getFileUri());
     if ($contents === FALSE) {
       throw new RunLogException('Run log could not be read.');
@@ -135,6 +133,102 @@ final class RunLogStore {
       throw new RunLogException('Run log could not be decompressed.');
     }
     return $decoded;
+  }
+
+  /**
+   * The first non-blank line of a log, read in chunks (never the whole file).
+   *
+   * A line longer than FIRST_LINE_CAP bytes comes back cut there; callers
+   * shorten it further.
+   *
+   * @throws \Drupal\bb_core\RunLog\RunLogException
+   *
+   * @SuppressWarnings("PHPMD.ErrorControlOperator")
+   */
+  public function firstLine(FileInterface $file, BbRunInterface $run): string {
+    $this->assertOwnedBy($file, $run);
+    $handle = @fopen((string) $file->getFileUri(), 'rb');
+    $inflate = self::isGzipLog($file) ? inflate_init(ZLIB_ENCODING_GZIP) : NULL;
+    if ($handle === FALSE || $inflate === FALSE) {
+      throw new RunLogException('Run log could not be read.');
+    }
+    // Pending text of the line being read, never longer than the cap.
+    $text = '';
+    try {
+      while (!feof($handle)) {
+        $line = self::scan(self::nextChunk($handle, $inflate), $text);
+        if ($line !== NULL) {
+          return $line;
+        }
+      }
+    }
+    finally {
+      fclose($handle);
+    }
+    return trim($text);
+  }
+
+  /**
+   * Adds a chunk to the pending text; the first non-blank line, once complete.
+   *
+   * @param string $chunk
+   *   The next decompressed chunk.
+   * @param string $text
+   *   The pending text of the line being read, updated here.
+   *
+   * @return string|null
+   *   The line, cut at FIRST_LINE_CAP, or NULL while it is still unfinished.
+   */
+  private static function scan(string $chunk, string &$text): ?string {
+    $parts = explode("\n", $chunk);
+    $tail = array_pop($parts);
+    foreach ($parts as $part) {
+      $text = trim($text . $part);
+      if ($text !== '') {
+        return substr($text, 0, self::FIRST_LINE_CAP);
+      }
+    }
+    $text = ltrim($text . $tail);
+    return strlen($text) >= self::FIRST_LINE_CAP ? substr($text, 0, self::FIRST_LINE_CAP) : NULL;
+  }
+
+  /**
+   * The next chunk of an open log, decompressed when it is a gzip log.
+   *
+   * @param resource $handle
+   *   The open log file.
+   * @param \InflateContext|null $inflate
+   *   The gzip stream of a gzip log, NULL for plain text.
+   *
+   * @throws \Drupal\bb_core\RunLog\RunLogException
+   *
+   * @SuppressWarnings("PHPMD.ErrorControlOperator")
+   */
+  private static function nextChunk($handle, ?\InflateContext $inflate): string {
+    $chunk = fread($handle, 1024);
+    if ($chunk !== FALSE && $inflate !== NULL) {
+      $chunk = @inflate_add($inflate, $chunk);
+    }
+    if ($chunk === FALSE) {
+      throw new RunLogException('Run log could not be read.');
+    }
+    return $chunk;
+  }
+
+  /**
+   * Refuses a file whose path names another workspace than the run's.
+   *
+   * @throws \Drupal\bb_core\RunLog\RunLogException
+   */
+  private function assertOwnedBy(FileInterface $file, BbRunInterface $run): void {
+    $path_workspace = self::workspaceUuidFromUri((string) $file->getFileUri());
+    $run_workspace = $this->workspaceUuid($run);
+    if ($path_workspace === '' || $path_workspace !== $run_workspace) {
+      // The path says one workspace and the run resolves to another. Refuse
+      // rather than pick one: this cross-check turns a resolution defect into a
+      // denial instead of a cross-workspace read.
+      throw new RunLogException('Run log does not belong to this run.');
+    }
   }
 
   /**

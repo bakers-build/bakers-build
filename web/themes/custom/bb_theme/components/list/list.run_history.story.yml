@@ -1,0 +1,187 @@
+component: bb_theme:list
+name: Run history
+props:
+  layout: lines
+  items:
+    - accent: critical
+      detail: 'plugins: claude install failed: 401'
+      cells:
+        state:
+          kind: badge
+          label: failed
+          tone: critical
+          icon: alert-triangle
+          dot: true
+        from_label:
+          kind: text
+          value: from
+          emphasis: faint
+        from:
+          kind: text
+          value: working
+        conductor:
+          kind: badge
+          label: srv01-bakers
+          tone: neutral
+          icon: conductor
+          mono: true
+        started_label:
+          kind: text
+          value: started
+          emphasis: faint
+        started:
+          kind: time
+          label: 18 Jun, 11:05
+          datetime: '2026-06-18T11:05:00+00:00'
+          title: Thu, 18 Jun 2026, 11:05 UTC
+        took_label:
+          kind: text
+          value: took
+          emphasis: faint
+        took:
+          kind: text
+          value: 36 min
+        retry:
+          kind: action
+          label: Retry
+          variant: neutral
+          icon: play
+        redispatch:
+          kind: action
+          label: Re-dispatch
+        log:
+          kind: action
+          label: Log
+          icon: report
+    - accent: attention
+      detail: >-
+        Claimed by srv01-bakers 40 minutes ago, not started yet. The claim
+        lapses in 20 minutes; after that the run expires and the ticket can be
+        claimed again.
+      cells:
+        state:
+          kind: badge
+          label: claimed
+          tone: attention
+          icon: lock
+          dot: true
+        from_label:
+          kind: text
+          value: from
+          emphasis: faint
+        from:
+          kind: text
+          value: working
+        conductor:
+          kind: badge
+          label: srv01-bakers
+          tone: neutral
+          icon: conductor
+          mono: true
+        cancel:
+          kind: action
+          label: Cancel run
+          variant: danger
+    - accent: running
+      cells:
+        state:
+          kind: badge
+          label: running
+          tone: running
+          icon: run
+          dot: true
+        from_label:
+          kind: text
+          value: from
+          emphasis: faint
+        from:
+          kind: text
+          value: working
+        conductor:
+          kind: badge
+          label: srv01-bakers
+          tone: neutral
+          icon: conductor
+          mono: true
+        started_label:
+          kind: text
+          value: started
+          emphasis: faint
+        started:
+          kind: time
+          label: 12 minutes ago
+          datetime: '2026-06-30T15:50:00+00:00'
+          title: Tue, 30 Jun 2026, 15:50 UTC
+        cancel:
+          kind: action
+          label: Cancel run
+          variant: danger
+        log:
+          kind: action
+          label: Log
+          icon: report
+    - accent: idle
+      detail: >-
+        The claim lapsed before the run started. The ticket can be claimed
+        again.
+      cells:
+        state:
+          kind: badge
+          label: expired
+          tone: stale
+          icon: clock
+          dot: true
+        from_label:
+          kind: text
+          value: from
+          emphasis: faint
+        from:
+          kind: text
+          value: review
+        conductor:
+          kind: badge
+          label: srv01-bakers
+          tone: neutral
+          icon: conductor
+          mono: true
+    - accent: idle
+      cells:
+        state:
+          kind: badge
+          label: done
+          tone: idle
+          icon: check
+          dot: true
+        from_label:
+          kind: text
+          value: from
+          emphasis: faint
+        from:
+          kind: text
+          value: plan
+        conductor:
+          kind: badge
+          label: srv01-bakers
+          tone: neutral
+          icon: conductor
+          mono: true
+        started_label:
+          kind: text
+          value: started
+          emphasis: faint
+        started:
+          kind: time
+          label: 2 Jun, 09:00
+          datetime: '2026-06-02T09:00:00+00:00'
+          title: Tue, 2 Jun 2026, 09:00 UTC
+        took_label:
+          kind: text
+          value: took
+          emphasis: faint
+        took:
+          kind: text
+          value: 1h 10m
+        log:
+          kind: action
+          label: Log
+          icon: report

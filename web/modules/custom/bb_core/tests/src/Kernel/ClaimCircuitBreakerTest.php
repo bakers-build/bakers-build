@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\bb_core\Claim\ClaimConflictException;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
@@ -93,6 +94,61 @@ final class ClaimCircuitBreakerTest extends ClaimKernelTestBase {
     $this->seedFailedRun($ticket, $this->now() - 50);
     $run = $this->claimService->claim($this->reloadTicket($ticket), $this->conductor);
     $this->assertSame('claimed', $run->getRunState());
+  }
+
+  /**
+   * A retry lifts a tripped breaker, so the conductor claims the ticket again.
+   */
+  public function testRetryLiftsTrippedBreaker(): void {
+    $ticket = $this->seedAssignedTicket('plan');
+    for ($i = 0; $i < 3; $i++) {
+      $this->seedFailedRun($ticket, $this->now() - 600);
+    }
+    $breaker = $this->container->get('bb_core.failed_run_circuit_breaker');
+    $this->assertTrue($breaker->isTripped($this->reloadTicket($ticket)));
+
+    $this->container->get('bb_core.ticket_retry')->request($ticket);
+
+    $this->assertFalse($breaker->isTripped($this->reloadTicket($ticket)));
+    $run = $this->claimService->claimNext($this->conductor);
+    $this->assertNotNull($run);
+    $this->assertSame((int) $ticket->id(), $run->getTicketId());
+    $this->assertSame('claimed', $run->getRunState());
+  }
+
+  /**
+   * Failures after a retry count again: three of them trip the breaker anew.
+   */
+  public function testThreeFailuresAfterRetryTripAgain(): void {
+    $ticket = $this->seedAssignedTicket('plan');
+    for ($i = 0; $i < 3; $i++) {
+      $this->seedFailedRun($ticket, $this->now() - 600);
+    }
+    $this->container->get('bb_core.ticket_retry')->request($ticket);
+    $breaker = $this->container->get('bb_core.failed_run_circuit_breaker');
+
+    // Two new failures are below the cap: the older ones no longer count.
+    $this->seedFailedRun($ticket, $this->now() + 1);
+    $this->seedFailedRun($ticket, $this->now() + 2);
+    $this->assertFalse($breaker->isTripped($this->reloadTicket($ticket)));
+    $this->seedFailedRun($ticket, $this->now() + 3);
+    $this->assertTrue($breaker->isTripped($this->reloadTicket($ticket)));
+  }
+
+  /**
+   * A retry invalidates the ticket's cache tag, so a cached stall reason goes.
+   */
+  public function testRetryInvalidatesTheTicketCacheTags(): void {
+    $ticket = $this->seedAssignedTicket('plan');
+    $tags = $ticket->getCacheTagsToInvalidate();
+    $this->assertNotEmpty($tags);
+    $cache = $this->container->get('cache.default');
+    $cache->set('stall-reason-render', 'failing', Cache::PERMANENT, $tags);
+    $this->assertNotFalse($cache->get('stall-reason-render'));
+
+    $this->container->get('bb_core.ticket_retry')->request($ticket);
+
+    $this->assertFalse($cache->get('stall-reason-render'));
   }
 
 }

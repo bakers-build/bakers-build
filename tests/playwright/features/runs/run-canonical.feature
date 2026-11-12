@@ -56,3 +56,17 @@ Feature: A run has a ticket-relative canonical page
     Then the run page offers "Cancel run"
     When I visit the seeded run "dbb00000-0000-4000-8000-000000000001"
     Then the run page offers no "Cancel run"
+
+  Scenario: A failed run explains itself and offers its actions
+    Given I am logged in as "Administrator"
+    And a disposable "bb_work" ticket in state "working" whose last 3 runs failed with "plugins: claude install failed: 401"
+    When I visit the disposable run page
+    Then the page says "plugins: claude install failed: 401"
+    And the run page offers "Retry"
+    And the run page offers "Re-dispatch"
+    And the run page offers "Log"
+    And the run page offers no "Cancel run"
+    Given I am signed in as "north-guest"
+    When I visit the disposable ticket
+    Then the page heading is the disposable ticket title
+    And the ticket page offers no intervention

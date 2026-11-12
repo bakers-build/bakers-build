@@ -7,11 +7,30 @@
 // so "the document was not reloaded" means one thing across both surfaces.
 //
 // THE SECOND CLICK IS THE ASSERTION. See the header of steps/team/team-islands.steps.ts.
-import { Given, When, Then } from '../../bdd.fixtures';
+import { Given, When, Then, test } from '../../bdd.fixtures';
+import { createBdd } from 'playwright-bdd';
 import { Drush } from '../../support/drush';
 import { expect } from '@playwright/test';
 import type { Locator, Page } from '@playwright/test';
 import { markDocument } from '../../support/shell';
+import { createDisposableTicket, deleteDisposableTicket, subject } from '../../support/disposable-ticket';
+
+const { After } = createBdd(test);
+
+/** The sub-tickets a scenario gave its disposable ticket, by uuid. */
+const subTickets = new WeakMap<Page, string[]>();
+
+After({ tags: '@feature:ticket-detail' }, async ({ page }) => {
+  const uuids = subTickets.get(page) ?? [];
+  subTickets.delete(page);
+  deleteDisposableTicket(page);
+  if (uuids.length > 0) {
+    php(
+      `foreach ([${uuids.map((uuid) => `"${uuid}"`).join(', ')}] as $u) { $t = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_ticket", $u); if ($t) { $t->delete(); } }`,
+    );
+    Drush.exec('search-api:index bb_tickets');
+  }
+});
 
 /**
  * Runs a PHP snippet through drush and returns its stdout.
@@ -595,8 +614,9 @@ Then('the run history comes before the handoff stream', async ({ page }) => {
   expect(precedes, 'the run history does not come before the handoff stream').toBe(true);
 });
 
-Then('no run history is shown', async ({ page }) => {
-  await expect(runHistoryHeading(page)).toHaveCount(0);
+// A reader who may view runs sees the Run history heading with "No runs yet".
+Then('the run history shows no runs', async ({ page }) => {
+  await expect(page.locator(MAIN_REGION).getByText('No runs yet', { exact: true })).toBeVisible();
   await expect(page.locator(`${MAIN_REGION} [data-cell="state"]`)).toHaveCount(0);
 });
 
@@ -617,6 +637,82 @@ Then(
     await expect(current).toContainText(state);
   },
 );
+
+// ---------------------------------------------------------------------------
+// The page header: the creator's age (AC 10) and a long title (AC 9).
+// ---------------------------------------------------------------------------
+
+const SUBLINE = '#page-header-description';
+
+Then(
+  'the page header names the creator of ticket {string} and how long ago it was created',
+  async ({ page }, identifier: string) => {
+    const creator = php(
+      'print (($e = current(\\Drupal::entityTypeManager()->getStorage("bb_ticket")' +
+        `->loadByProperties(["identifier" => "${safe(identifier)}"]))) && ($o = $e->get("owner_user_id")->entity)) ? $o->getDisplayName() : "";`,
+    );
+    expect(creator, `ticket ${identifier} has no creator`).not.toBe('');
+    const name = creator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    await expect(page.locator(SUBLINE)).toContainText(new RegExp(`created by ${name} · \\d+ \\w+ ago`));
+  },
+);
+
+Then('the age in the page header shows its exact date on hover', async ({ page }) => {
+  const age = page.locator(`${SUBLINE} time`);
+  await expect(age).toHaveCount(1);
+  await expect(age).toHaveText(/^\d+ \w+ ago$/);
+  await expect(age).toHaveAttribute('datetime', /^\d{4}-\d{2}-\d{2}T/);
+  await expect(age).toHaveAttribute('title', /\d{4}, \d{2}:\d{2}/);
+});
+
+Given('a disposable ticket titled {string}', async ({ page }, title: string) => {
+  createDisposableTicket(page, 'bb_work', 'working', null, title);
+});
+
+// BAKERS-56 AC-14: "Show in list →" under the sub-tickets.
+Given('the disposable ticket has an open and a closed sub-ticket', async ({ page }) => {
+  const { ticket } = subject(page);
+  const output = php(
+    '$r = \\Drupal::service("entity.repository"); $ts = \\Drupal::entityTypeManager()->getStorage("bb_ticket");' +
+      `$parent = $r->loadEntityByUuid("bb_ticket", "${ticket}"); $uuids = [];` +
+      'foreach (["open" => "working", "closed" => "done"] as $kind => $state) {' +
+      '$c = $ts->create(["project_id" => $parent->get("project_id")->target_id, "title" => "Sub-ticket " . $kind . " " . $parent->getIdentifier(), "workflow" => "bb_work", "state" => $state, "parent_id" => $parent->id()]);' +
+      '$c->save(); $uuids[] = $c->uuid(); }' +
+      'print "UUIDS:" . implode(",", $uuids);',
+  );
+  const uuids = output.split('UUIDS:').pop()?.split(',') ?? [];
+  expect(uuids, `The sub-tickets did not settle: "${output}".`).toHaveLength(2);
+  subTickets.set(page, uuids);
+  Drush.exec('search-api:index bb_tickets');
+});
+
+When('I open the Relations block', async ({ page }) => {
+  await page.locator('[data-canvas-region="inspector"] details > summary', { hasText: /^\s*Relations/ }).click();
+});
+
+Then('the inspector offers no {string} link', async ({ page }, name: string) => {
+  await expect(page.locator('[data-canvas-region="inspector"]').getByRole('link', { name, exact: true })).toHaveCount(0);
+});
+
+Then('the list shows the parent filter for the disposable ticket and exactly its sub-tickets', async ({ page }) => {
+  const { identifier, title } = subject(page);
+  await expect(page.locator('[data-facet]').filter({ hasText: `Parent is ${identifier} · ${title}` })).toHaveCount(1);
+  const rows = page.locator('[data-component-id="bb_theme:list"] li[data-list-item]');
+  await expect(rows.filter({ hasText: `Sub-ticket open ${identifier}` })).toHaveCount(1);
+  await expect(rows.filter({ hasText: `Sub-ticket closed ${identifier}` })).toHaveCount(1);
+  await expect(rows).toHaveCount(2);
+});
+
+// As text: no element inside the heading, and nothing the title carries ran.
+Then('the page heading shows the whole title of the disposable ticket as text, also on hover', async ({ page }) => {
+  const { identifier, title } = subject(page);
+  const headline = `${identifier} · ${title}`;
+  const heading = page.getByRole('heading', { level: 1 });
+  await expect(heading).toHaveText(headline);
+  await expect(heading).toHaveAttribute('title', headline);
+  await expect(heading.locator('*')).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as { __bbXss?: number }).__bbXss)).toBeUndefined();
+});
 
 // ---------------------------------------------------------------------------
 // Data formats: handoff times and the report source.

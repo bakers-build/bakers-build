@@ -37,7 +37,9 @@ description: >-
   <m> selected` summary and an Apply submit (Figma 95:1096, 95:1947); every
   addition is a presentational row inside the listbox, like the create row. The
   summary row (`<k> of <m> selected`, with Apply) is pinned to the bottom of a
-  scrolling panel, so it stays visible however long the list is.
+  scrolling panel, so it stays visible however long the list is. The same footer
+  carries the quick choices and their Clear (Figma 102:13055, "Only open
+  states").
 provider: bb_theme
 props:
   type: object
@@ -220,6 +222,29 @@ props:
         (e.g. an htmx GET on change), so the Apply button is only rendered for a
         visitor without JavaScript; with scripting it is removed. The summary
         row stays pinned to the bottom of a scrolling panel in every mode.
+    quick_choices:
+      type: array
+      title: Quick choices
+      description: >-
+        Named selections a control list with several values offers in its pinned
+        footer, beside a Clear action ("Only open states"). A choice checks
+        exactly its values and unchecks every other row; Clear unchecks every
+        row. Both act on all rows, hidden by a search or not, report the change
+        and leave submitting to the enclosing form, like Select all. A value the
+        list has no row for is ignored.
+      items:
+        type: object
+        properties:
+          label:
+            type: string
+            title: Label
+            description: What the choice is called, e.g. `Only open states`.
+          values:
+            type: array
+            title: Values
+            description: The option values the choice selects.
+            items:
+              type: string
 variants:
   single:
     title: Single

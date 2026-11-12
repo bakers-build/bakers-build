@@ -21,14 +21,16 @@ use Symfony\Component\HttpFoundation\RequestStack;
 /**
  * The recessive line under the shell page title, when this route has one.
  *
- * Listings name the workspace; a ticket names project / workflow / conductor;
+ * Listings name the workspace; a ticket names project / workflow / people;
  * a project names key and group. Every other screen leaves the sub-line empty.
+ * A ticket also fills the `subline` slot, where the creator's age is a time
+ * element; the `description` string stays its plain text, shown on hover.
  */
 #[Source(
   id: 'bb_page_header_description',
   label: new TranslatableMarkup('[bakers.build] Page header description'),
   description: new TranslatableMarkup('One line of context under the screen title.'),
-  prop_types: ['string'],
+  prop_types: ['string', 'slot'],
 )]
 final class BbPageHeaderDescriptionSource extends SourcePluginBase {
 
@@ -58,13 +60,8 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
    */
   public function getPropValue(): mixed {
     $route = (string) $this->routeMatch->getRouteName();
-    // Nested run URLs carry `{bb_ticket}`; the sub-line is the run title's
-    // job, not the ticket caption.
-    if (str_starts_with($route, 'entity.bb_run.')) {
-      return '';
-    }
-    $ticket = $this->routeMatch->getParameter('bb_ticket');
-    if ($ticket instanceof BbTicketInterface) {
+    $ticket = $this->ticketForSubline();
+    if ($ticket !== NULL) {
       return BbTicketDetailHeaderSource::subline($ticket);
     }
     // Screens that say what they hold; the Billing and Templates tabs
@@ -107,6 +104,21 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
   }
 
   /**
+   * The ticket whose sub-line this screen shows, or NULL.
+   *
+   * Nested run URLs carry `{bb_ticket}` too; there the sub-line is the run
+   * title's job, not the ticket caption, so a run page shows none and does not
+   * expire with the ticket's age.
+   */
+  private function ticketForSubline(): ?BbTicketInterface {
+    if (str_starts_with((string) $this->routeMatch->getRouteName(), 'entity.bb_run.')) {
+      return NULL;
+    }
+    $ticket = $this->routeMatch->getParameter('bb_ticket');
+    return $ticket instanceof BbTicketInterface ? $ticket : NULL;
+  }
+
+  /**
    * The Insights sub-line: the workspace and what its filters narrow it to.
    */
   private function insightsSubline(): string {
@@ -137,9 +149,16 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
 
   /**
    * {@inheritdoc}
+   *
+   * A slot gets a ticket's sub-line with its time element; a string prop gets
+   * the plain text, which Twig escapes.
    */
   public function getValue(?PropTypeInterface $prop_type = NULL): mixed {
-    return $this->getPropValue();
+    if ($prop_type?->getPluginId() !== 'slot') {
+      return $this->getPropValue();
+    }
+    $ticket = $this->ticketForSubline();
+    return $ticket === NULL ? [] : BbTicketDetailHeaderSource::sublineElement($ticket);
   }
 
   /**
@@ -148,9 +167,11 @@ final class BbPageHeaderDescriptionSource extends SourcePluginBase {
   public function alterComponent(array $element): array {
     $metadata = CacheableMetadata::createFromRenderArray($element)
       ->addCacheContexts(['url.path', 'url.query_args']);
-    $ticket = $this->routeMatch->getParameter('bb_ticket');
-    if ($ticket instanceof BbTicketInterface) {
-      $metadata = $metadata->merge(TicketStallReason::cacheability($ticket));
+    $ticket = $this->ticketForSubline();
+    if ($ticket !== NULL) {
+      // The plain-text description carries the creator's age too.
+      $metadata = $metadata->merge(TicketStallReason::cacheability($ticket))
+        ->merge(CacheableMetadata::createFromRenderArray(BbTicketDetailHeaderSource::sublineElement($ticket)));
     }
     $project = $this->routeMatch->getParameter('bb_project');
     if ($project instanceof BbProjectInterface) {
