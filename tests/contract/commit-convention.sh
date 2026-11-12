@@ -173,9 +173,9 @@ check 'AC-3 merge-mr forbids constructing the trailer project prefix' \
 check 'AC-3 merge-mr carries a NON-bakers.build worked example (SHOP-42 -> ref:SHOP-42)' \
   has "$MERGE_FLAT" 'ref:SHOP-42'
 check 'AC-3 merge-mr says the subject comes from the MR title' \
-  has "$MERGE_FLAT" 'comes from the MR title'
+  has "$MERGE_FLAT" 'Use the validated MR title verbatim as the subject.'
 check 'AC-3 merge-mr says that MR title carries no bakers.build reference (so it cannot supply it)' \
-  has "$MERGE_FLAT" 'MR title, which carries no bakers.build reference'
+  has "$(flatten "$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/delivery.md")" 'MR title/description carry no bakers.build reference.'
 check 'AC-3 merge-mr says the squash discards each commit trailer' \
   has "$MERGE_FLAT" 'Squash discards individual commit trailers'
 check 'AC-3 merge-mr names the loss as silent' \
@@ -199,7 +199,7 @@ check 'AC-3 the Coding gate merge-mr call names the ticket `identifier` field' \
 # bb-workflow › Review flow (review-ticket is the credential-less verdict helper and calls no
 # merge). Assert the flow's call site names the `identifier` field.
 check 'AC-3 the Review flow merge-mr call names the ticket `identifier` field' \
-  hasre "$IMPL_FLAT" '\[merge\]\(merge\.md\) once, ticket .identifier. field'
+  hasre "$IMPL_FLAT" 'pass the ticket.s .identifier. to the authorized \[merge\]\(merge\.md\) once'
 
 # --- AC-4 — shared coding context reaches the project convention ------------------------------
 

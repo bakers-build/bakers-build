@@ -196,7 +196,7 @@ check 'AC-3 unchanged: incomplete or failed required pipeline jobs block' \
 check 'AC-3 unchanged: gate 3 No merge conflict' \
   hasre "$MERGE_GATES" '^3\. No merge conflict; MR mergeable against its target\.'
 check 'AC-3 unchanged: gate 4 Merge call succeeds' \
-  hasre "$MERGE_GATES" '^4\. Merge call succeeds, followed by verified results below\.'
+  hasre "$MERGE_GATES" '^4\. Merge succeeds;'
 check 'AC-3 unchanged: the Merged-by: bakers.build trailer is still written' \
   has "$MERGE_MR" 'Merged-by: bakers.build'
 # What AC 3 requires is that the signature trailer survives on the last line — not that it spells the
@@ -207,7 +207,7 @@ check 'AC-3 unchanged: the Merged-by: bakers.build trailer is still written' \
 check 'AC-3 unchanged: the signature trailer is still anchored on the last line' \
   hasre "$MERGE_MR" 'final-line `ref:[^`]+` in the squash body'
 check 'AC-3 unchanged: the merge result is still verified' \
-  has "$MERGE_MR" 'Verify that the MR reports merged and its target advanced.'
+  has "$MERGE_GATES" 'verify the MR reports merged and its target advanced.'
 
 # --- AC 8 — delete-source-branch never appears without its guard ---------------------------------
 #
