@@ -99,6 +99,34 @@ describe('discoverAddons — singleton resolution (last wins + warn + guard)', (
     const out = await discoverAddons(['./bad.js'], 'conductor', bases);
     expect(() => resolveConductorSlots(out)).toThrow(/executor/);
   });
+
+  it('the runtime slot takes the last runtimes contribution', async () => {
+    const runtime = (id: string) =>
+      `export const runtimes = (acc) => [...acc, { kind: 'runtime', id: '${id}', isolates: true, requiredModules: [] }];`;
+    fixture('r1.js', runtime('one'));
+    fixture('r2.js', runtime('docker'));
+    const out = await discoverAddons(
+      ['./r1.js', './r2.js'],
+      'conductor',
+      bases,
+    );
+    expect(resolveConductorSlots(out).runtime?.id).toBe('docker');
+    const narrowed = await discoverAddons(['./r2.js'], 'conductor', bases, {
+      only: ['runtimes'],
+    });
+    expect(narrowed.runtimes).toHaveLength(1);
+  });
+
+  it('the runtime slot rejects a contribution of another kind', async () => {
+    fixture(
+      'bad-runtime.js',
+      `export const runtimes = (acc) => [...acc, { kind: 'executor', id: 'oops', requiredModules: [] }];`,
+    );
+    const out = await discoverAddons(['./bad-runtime.js'], 'conductor', bases);
+    expect(() => resolveConductorSlots(out)).toThrow(
+      "addon contributed a 'executor' into the runtime slot",
+    );
+  });
 });
 
 describe('discoverAddons — agents (candidate list + priority)', () => {

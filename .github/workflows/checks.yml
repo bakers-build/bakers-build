@@ -260,6 +260,42 @@ jobs:
           path: bakers-cli/junit-vitest.xml
           retention-days: 7
     container: node:22
+  runtime_bwrap:
+    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
+    if: *checks
+    timeout-minutes: 15
+    env:
+      BAKERS_TEST_BWRAP_REQUIRED: "1"
+      PNPM_CONFIG_MINIMUM_RELEASE_AGE: "0"
+      PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Enable Bubblewrap namespaces on the disposable runner
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap
+          if ! bwrap --unshare-user --unshare-pid --ro-bind / / --proc /proc -- /bin/true; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+      - name: Run the deterministic agent lifecycle in real isolation
+        working-directory: bakers-cli
+        run: |
+          corepack enable pnpm
+          pnpm install --frozen-lockfile
+          pnpm run build:all
+          pnpm exec vitest run conductor/tests/core/conductor-bwrap.test.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runtime-bwrap-report
+          path: bakers-cli/junit-vitest.xml
+          retention-days: 7
   tui:
     runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
     if: *checks
@@ -529,6 +565,7 @@ jobs:
       - compose_render
       - pm_bot
       - conductor
+      - runtime_bwrap
       - tui
       - tui_musl
       - web_ui

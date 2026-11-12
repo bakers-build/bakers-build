@@ -12,6 +12,7 @@ import type {
   BbAgent,
   ConductorFileConfig,
   ResolvedAgent,
+  RuntimePlugin,
   SandboxPreflight,
 } from '@bakers-build/conductor/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -85,6 +86,32 @@ describe('bakers conductor check / start sandbox report', () => {
     expect(process.exitCode).toBeUndefined();
   });
 
+  it.each([
+    'check',
+    'start',
+  ])('%s warns about unchecked runtime prerequisites without failing', async (command) => {
+    const spawner = fakeSpawn();
+    await run(
+      command === 'check' ? ['check'] : ['start', '--no-update-check'],
+      [agent('claude', { ok: true })],
+      spawner,
+      {
+        kind: 'runtime',
+        id: 'docker',
+        isolates: true,
+        requiredModules: [],
+        createRuntime: async () => {
+          throw new Error('not needed');
+        },
+      },
+    );
+    expect(out).toContainEqual(
+      expect.stringMatching(/warning:.*host only.*docker.*not checked/),
+    );
+    if (command === 'check') expect(process.exitCode).toBeUndefined();
+    else expect(spawner.spawned).toHaveLength(1);
+  });
+
   it('check names each agent by its alias', async () => {
     await run(
       ['check'],
@@ -114,10 +141,11 @@ describe('bakers conductor check / start sandbox report', () => {
     argv: string[],
     agents: ResolvedAgent[],
     spawner = fakeSpawn(),
+    runtime?: RuntimePlugin,
   ): Promise<void> {
     await buildConductorProgram({
       remote: new FakeBbRemote(),
-      config: makeConfig(),
+      config: { ...makeConfig(), ...(runtime ? { runtime } : {}) },
       agents,
       spawnConductor: spawner,
       sleep: async () => {},

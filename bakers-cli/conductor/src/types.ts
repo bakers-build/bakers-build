@@ -19,6 +19,7 @@ import type {
   WorkspacePlugin,
 } from './plugins/plugins.js';
 import type { Ticket } from './plugins/remote.js';
+import type { RuntimePlugin } from './plugins/runtime.js';
 import type {
   ProvisionHook,
   ProvisionRuns,
@@ -115,6 +116,8 @@ export interface ConductorFileConfig extends ConductorSettings {
   /** Replaces the shipped label/default resolution for this project. */
   selectAgent?: (candidates: ResolvedAgent[], ticket: Ticket) => ResolvedAgent;
   workspace: WorkspacePlugin;
+  /** Where agent processes run (the `runtime` slot); absent means on the host. */
+  runtime?: RuntimePlugin;
   /** The project's agent plugin marketplaces; empty when it declares none. */
   marketplaces: MarketplaceDeclaration[];
   /**

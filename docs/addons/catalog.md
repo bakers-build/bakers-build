@@ -83,5 +83,7 @@ Generated connection support needs no separate selection; see [connection defaul
 | Addon | What it adds |
 |---|---|
 | [Tailscale](/addons/tailscale) | Detects a private SSH address once at conductor start |
+| [Docker runtime](/addons/runtime-docker) | Starts each agent run in its own container |
+| [Bubblewrap runtime](/addons/runtime-bwrap) | Isolates complete agent processes on Linux |
 
 [Configure addons](/addons/configure) · [Build your own](/addons/build/first-addon)

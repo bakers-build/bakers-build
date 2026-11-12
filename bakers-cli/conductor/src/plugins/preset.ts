@@ -26,6 +26,7 @@ import type {
   WorkspacePlugin,
 } from './plugins.js';
 import type { Ticket } from './remote.js';
+import type { RuntimePlugin } from './runtime.js';
 import type { AddonTools, DiscoveredTools } from './tools.js';
 
 /**
@@ -41,6 +42,8 @@ export interface ConductorContributions {
   agents: AgentCandidate[];
   /** Lifecycle hook listeners, in accumulator order (BB-599). */
   hooks: HookListener[];
+  /** Runtime plugins; the slot takes the last. */
+  runtimes: RuntimePlugin[];
   /** Addon `inbox` exports with their package name and version (contract 2, BB-661). */
   addonInbox: DiscoveredInbox[];
   /** Addon `tools` exports with their package name and version. */
@@ -91,6 +94,10 @@ export interface Preset<O = unknown> extends BbPreset<O> {
     acc: HookListener[],
     opts: O,
   ) => HookListener[] | Promise<HookListener[]>;
+  runtimes?: (
+    acc: RuntimePlugin[],
+    opts: O,
+  ) => RuntimePlugin[] | Promise<RuntimePlugin[]>;
   /** Addon inbox messages: contract 2, BB-661. */
   inbox?: InboxMessages;
   /** Agent tools served through the conductor's MCP server. */
@@ -112,6 +119,7 @@ export function narrowConductorContributions(
     | 'worktrees'
     | 'agents'
     | 'hooks'
+    | 'runtimes'
     | 'addonInbox'
     | 'addonTools'
   >,

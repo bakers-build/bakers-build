@@ -65,6 +65,8 @@ export interface ToolServerOptions {
   onSiteWrite?: (binding: ToolBinding) => void;
   /** The runs still open; persisted grants of any other run are dropped. Absent: keep all. */
   openRuns?: string[];
+  /** Further addresses to listen on, on the same port (a runtime's container network). */
+  hosts?: string[];
 }
 
 const newToken = () => randomBytes(32).toString('hex');
@@ -252,7 +254,7 @@ export async function startToolServer(
     }
   };
 
-  const http = createServer((req, res) => {
+  const handler = (req: IncomingMessage, res: ServerResponse) => {
     const handle = async () => {
       if (req.method === 'POST' && req.url === '/call')
         return operatorCall(req, res);
@@ -278,12 +280,14 @@ export async function startToolServer(
       logger?.error({ err }, 'tool server request failed');
       if (!res.headersSent) send(res, 500, { error: 'internal error' });
     });
-  });
-  const listen = (at: number) =>
+  };
+  const http = createServer(handler);
+  const extra = (options.hosts ?? []).map(() => createServer(handler));
+  const listen = (at: number, server = http, host = '127.0.0.1') =>
     new Promise<void>((done, fail) => {
-      http.once('error', fail);
-      http.listen(at, '127.0.0.1', () => {
-        http.off('error', fail);
+      server.once('error', fail);
+      server.listen(at, host, () => {
+        server.off('error', fail);
         done();
       });
     });
@@ -301,6 +305,13 @@ export async function startToolServer(
   }
   port = (http.address() as AddressInfo).port;
   const url = `http://127.0.0.1:${port}`;
+  try {
+    for (const [i, host] of (options.hosts ?? []).entries())
+      await listen(port, extra[i], host);
+  } catch (err) {
+    for (const s of [http, ...extra]) s.close();
+    throw err;
+  }
 
   if (options.endpointFile) {
     mkdirSync(dirname(options.endpointFile), { recursive: true, mode: 0o700 });
@@ -330,8 +341,12 @@ export async function startToolServer(
     stop: async () => {
       // The state file stays: the next start serves the same grants.
       if (options.endpointFile) rmSync(options.endpointFile, { force: true });
-      http.closeAllConnections();
-      await new Promise<void>((done) => http.close(() => done()));
+      await Promise.all(
+        [http, ...extra].map((s) => {
+          s.closeAllConnections();
+          return new Promise<void>((done) => s.close(() => done()));
+        }),
+      );
     },
   };
 }
