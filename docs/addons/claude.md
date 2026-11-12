@@ -67,6 +67,20 @@ marked done. Plugins are mounted read-only, and the transcript directory stays o
 conductor reads it after the run. Export `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or
 `ANTHROPIC_API_KEY` for the conductor; in allowlist mode only the proxy holds it.
 
+## Deny unused tools
+
+Recommended: deny the built-in tools your runs never use in the project's committed `.claude/settings.json`. [Project setup](/get-started/connect-a-project) proposes it and writes only what you choose.
+
+```json
+{ "permissions": { "deny": ["<ToolName>"] } }
+```
+
+- **Saves:** a denied tool's definition leaves every model request.
+- **Binds:** interactive sessions in the repository too.
+- **Lives in one file:** deny rules from all settings sources merge and `deny` wins; only deleting the line re-enables a tool.
+
+Keep `AskUserQuestion`; planning asks through it. To measure the effect, run a test ticket with `agent:opus-proxy`, which logs every model request.
+
 ## Check it works
 
 `bakers agents` lists these aliases under harness `claude`. Claude-only default: `opus`.
