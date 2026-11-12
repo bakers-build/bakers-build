@@ -349,13 +349,17 @@ export async function reconcileFrp(
   // confirms every intended proxy running/absent marks intent applied.
   const authHeader = basicAuthHeader(cfg.adminUser, cfg.adminPassword);
   try {
-    const res = await deps.fetch(
-      `${cfg.adminBase}/api/reload?strictConfig=true`,
-      {
+    const res = await deps
+      .fetch(`${cfg.adminBase}/api/reload?strictConfig=true`, {
         method: 'GET',
         headers: { authorization: authHeader },
-      },
-    );
+      })
+      .catch(() => {
+        // No connection at all: frpc (or its admin API) is not running.
+        throw new Error(
+          `frpc admin API at ${new URL(cfg.adminBase).host} is unreachable — is frpc running? (docs/addons/ports-frp)`,
+        );
+      });
     if (!res.ok) throw new Error(`reload failed: HTTP ${res.status}`);
   } catch (err) {
     ok = false;
