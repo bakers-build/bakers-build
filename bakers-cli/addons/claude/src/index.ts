@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import {
   type AgentFootprint,
   type AgentPlugin,
+  type AgentRunContext,
   type AgentRunIdentity,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
@@ -39,8 +40,12 @@ import {
   withoutGitDirs,
 } from '@bakers-build/core';
 import { parseClaudeTranscript } from './footprint.js';
+import { encodeClaudeProjectDir, prepareClaudeRun } from './run.js';
+import { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 export { parseClaudeTranscript } from './footprint.js';
+export { encodeClaudeProjectDir } from './run.js';
+export { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 /** src/index.ts and dist/src/index.js both sit two levels below the package root. */
 const MEASURE_WRAPPER = fileURLToPath(
@@ -142,14 +147,6 @@ function securityFlags(
   ];
 }
 
-/**
- * Encode an absolute cwd the way Claude Code names its per-project transcript
- * directory under `~/.claude/projects/`: every non-alphanumeric char → `-`.
- */
-export function encodeClaudeProjectDir(cwd: string): string {
-  return cwd.replace(/[^a-zA-Z0-9]/g, '-');
-}
-
 export interface ClaudeAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
@@ -160,6 +157,11 @@ export interface ClaudeAgentOptions extends SecurityOptions {
    * applies the state-group settings shipped with the addon.
    */
   measure?: boolean;
+  /**
+   * When true (and `measure` is not), the unchanged launch runs through
+   * `claude-measure.mjs --capture`, which only logs every model request.
+   */
+  proxy?: boolean;
   /** False runs this agent in the user's own `~/.claude`, without the project's plugins. */
   plugins?: boolean;
 }
@@ -207,6 +209,8 @@ const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
 
 export class ClaudeAgent implements BbAgent {
   readonly id = 'claude';
+  readonly installCommand = claudeInstallCommand;
+  readonly modelApi = claudeModelApi;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
@@ -218,6 +222,7 @@ export class ClaudeAgent implements BbAgent {
   /** Set by the last launch: the conductor's server replaced the sandbox's own `bakers`. */
   private replacedBakersServer = false;
   private readonly measure: boolean;
+  private readonly proxy: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
   readonly pluginsDisabled: boolean;
   /** The Claude config dir runs read and write: the agent home while plugins are on. */
@@ -246,6 +251,7 @@ export class ClaudeAgent implements BbAgent {
     this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
+    this.proxy = validateOptionalBoolean(options.proxy, 'proxy') ?? false;
     this.pluginsDisabled =
       validateOptionalBoolean(options.plugins, 'plugins') === false;
     this.configDir = join(home, '.claude');
@@ -256,6 +262,10 @@ export class ClaudeAgent implements BbAgent {
     if (this.pluginsDisabled || marketplaces.length === 0) return;
     this.pluginsOn = true;
     this.configDir = homePath(this.id, homeKey([...marketplaces]));
+  }
+
+  prepareRun(context: AgentRunContext) {
+    return prepareClaudeRun(context, this.configDir);
   }
 
   async installPlugins(
@@ -331,8 +341,12 @@ export class ClaudeAgent implements BbAgent {
         ? ['node', shellQuote(TRUST_WRAPPER), shellQuote(workspacePath)]
         : []),
       ...(this.measure
-        ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
-        : ['claude', shellQuote(prompt)]),
+        ? ['node', shellQuote(MEASURE_WRAPPER)]
+        : this.proxy
+          ? ['node', shellQuote(MEASURE_WRAPPER), '--capture']
+          : []),
+      'claude',
+      shellQuote(prompt),
     ];
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('--model', shellQuote(this.model));

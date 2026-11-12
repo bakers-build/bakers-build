@@ -1,12 +1,24 @@
 # Qualification
 
-Qualify the ticket: check prior art, choose the recipe and type, confirm an acceptance-first
-handoff, and route once. Execute only qualification, then STOP.
+## references
+
+Read in order at the consuming step; skip unmet conditions.
+
+always: read-ticket.md, tools.md, qualification.md
+if ticket read fails: read-ticket-troubleshooting.md
+if needed comments missing: comment-context.md
+always: prior-art-search.md
+if paginated lookups or agent overrides need resolution: tools-lookup.md
+always: prior-art-build.md, forge.md
+if forge tools absent: forge-fallback.md
+if asking for cancellation confirmation: retrospective.md
+if cancellation reason supplied: retrospective-write.md
+always: classify.md, ticket-writes.md, acceptance.md, results.md, agent-choice.md, outtake.md, outtake/qualification.md, evidence.md, transition-ticket.md
+if ticket has an origin: origin-status.md
 
 ## read
 
-The frame's read is complete ([read ticket](read-ticket.md) › *qualification*: no comment call);
-no recipe is set until *work* chooses one.
+Frame context is complete; qualification makes no comment call. Recipe waits for classification.
 
 ## provision
 
@@ -14,20 +26,14 @@ none
 
 ## work
 
-1. Execute [prior-art search](prior-art-search.md). On a hit, publish nothing, transition nothing;
-   report the outcome `prior_art_hit` with identifier, title, state, assignee and available MR/merge, and ask whether to continue,
-   combine or close. Close is a [transition](transition-ticket.md) to `cancelled`, never a direct
-   `closed` field write. Run the ticket searches, and the probe when a search is empty, before any
-   Git call: in sequence, never in parallel.
-2. Run the [remote base check](prior-art-build.md). On `prior_art_hit`, apply step 1's stop and
-   decision. An `error` also stops publication; its report names the remote branch, every searched
-   term and every searched path, and the failing command with its status. Retain the searched terms, the negative
-   evidence of both checks and the checked revision for the handoff.
-3. Apply [classify](classify.md).
-4. Apply [acceptance](acceptance.md) › *Gate each criterion* only: the criteria are published in the
-   handoff below, not as a separate `acceptance` comment. Name who tests under
-   [result records](results.md) › *Test as*.
-5. Apply [agent choice](agent-choice.md).
+1. [Prior-art search](prior-art-search.md) before Git. On hit publish/transition nothing; report
+   candidate and ask continue/combine/close. Close uses [transition](transition-ticket.md), not closed.
+2. [Remote base check](prior-art-build.md): stop on hit or error; retain both searches' evidence
+   and checked revision for the handoff.
+3. [Classify](classify.md).
+4. [Acceptance](acceptance.md) › Gate each criterion, published in handoff, not separate acceptance.
+   Name [test personas](results.md).
+5. [Agent choice](agent-choice.md).
 
 ## validate
 
@@ -39,27 +45,16 @@ none
 
 ## outtake
 
-Publish two comments through [ticket writes](ticket-writes.md), in this order. First, one
-complete `qualification` handoff: Outcome, Acceptance, Out of scope, then Handoff metadata.
-Acceptance holds stable AC IDs, the gate's passed/rewritten tally, previous wording for rewrites and
-explicit assumptions; that tally is not a passed implementation test. Required fields:
-
-- `acceptance_criteria`: exhaustive role-named, checkable conditions; a confirmed intake's criteria
-  word for word.
-- `out_of_scope`: explicit boundary, including a reasoned none.
-- `recipe` and `ticket_type`, with the reason for the recipe choice.
-- `reproduction`: bug condition, otherwise `not_required`.
-- `scenario_required`: whether confirmed runtime behavior needs a browser path.
-- `test_as`: the personas who test and what each should see, or `no login needed`.
-- searched terms, and each prior-art check's outcome (`negative`, `prior_art_hit` or `error`) with
-  its evidence and the checked revision.
-- `handoff_version`: monotonically increasing; requalification supersedes older versions.
-
-Second, render the handoff through [the outtake](outtake.md) and publish that as its own comment of
-type `summary`; print it.
+Via [ticket writes](ticket-writes.md) publish qualification: Outcome, Acceptance, Out of scope,
+Handoff metadata. Include stable exhaustive AC IDs, role-named checkable conditions (confirmed
+seed word for word), wording tally, previous rewrites/assumptions. The tally rates wording, not implementation.
+Metadata: acceptance_criteria; out_of_scope (explain if none); recipe/type/method reason;
+reproduction (bug condition else not_required); scenario_required (runtime browser path);
+test_as (personas/expected views or no login needed); searched terms, each prior-art outcome/
+evidence/SHA; monotonically increasing handoff_version superseding older ones.
+Then render [outtake](outtake.md), publish separate summary and print.
 
 ## transition
 
-Obtain or reuse approval of the qualification handoff. Publish authorized
-[origin status](origin-status.md) for `plan`, then perform one [transition](transition-ticket.md) to
-`plan` with its readback. STOP without starting the destination state.
+Obtain/reuse handoff approval; authorized [origin status](origin-status.md) to plan if origin;
+[transition](transition-ticket.md) once to plan with readback. STOP before destination work.

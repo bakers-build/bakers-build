@@ -9,6 +9,9 @@ use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\user\UserInterface;
+use Drupal\Core\Session\AccountInterface;
 
 /**
  * Resolves a tool's `ticket` input, an identifier or UUID, under view access.
@@ -135,6 +138,84 @@ trait TicketInputTrait {
       ->condition('name', $names, 'IN')
       ->condition('workspace_id', $workspace->id())
       ->execute();
+  }
+
+  /**
+   * Readable reviewers and assignee, with mail checked on each user field.
+   *
+   * @return array<string, mixed>
+   *   People in the read/update contract.
+   */
+  protected function ticketPeople(BbTicketInterface $ticket): array {
+    $person = function (EntityInterface $account): array {
+      assert($account instanceof UserInterface);
+      return [
+        'name' => $account->getDisplayName(),
+        'mail' => $account->get('mail')->access('view', $this->currentUser) ? $account->get('mail')->value : NULL,
+      ];
+    };
+    $reviewers = $ticket->get('reviewers');
+    $assignee = $ticket->get('assignee_user_id');
+    return [
+      'reviewers' => $reviewers->access('view', $this->currentUser) ? array_map($person, $reviewers->referencedEntities()) : [],
+      'assignee' => $assignee->access('view', $this->currentUser) && $assignee->entity ? $person($assignee->entity) : NULL,
+    ];
+  }
+
+  /**
+   * Assigns the active account of this address when the field's rule allows.
+   *
+   * The assignee field's own validation (ValidReference with its selection
+   * handler) decides, as in the web form. Returns whether it was assigned.
+   */
+  protected function assign(BbTicketInterface $ticket, string $email): bool {
+    $account = $this->activeAccount($email);
+    if (!$account) {
+      return FALSE;
+    }
+    $ticket->set('assignee_user_id', $account->id());
+    if ($ticket->get('assignee_user_id')->validate()->count() === 0) {
+      return TRUE;
+    }
+    $ticket->set('assignee_user_id', NULL);
+    return FALSE;
+  }
+
+  /**
+   * Adds the active account of this address as a reviewer when allowed.
+   *
+   * The reviewers field's own validation decides, as for the assignee.
+   * Returns whether it was added.
+   */
+  protected function addReviewer(BbTicketInterface $ticket, string $email): bool {
+    $account = $this->activeAccount($email);
+    if (!$account) {
+      return FALSE;
+    }
+    $reviewers = $ticket->get('reviewers')->getValue();
+    if (!in_array($account->id(), array_column($reviewers, 'target_id'))) {
+      $ticket->get('reviewers')->appendItem($account->id());
+    }
+    if ($ticket->get('reviewers')->validate()->count() === 0) {
+      return TRUE;
+    }
+    $ticket->set('reviewers', $reviewers);
+    return FALSE;
+  }
+
+  /**
+   * The active account with this e-mail address, if any.
+   */
+  protected function activeAccount(string $email): ?AccountInterface {
+    $storage = $this->entities()->getStorage('user');
+    // Case-insensitive, like core's unique-mail check; escaped as escapeLike().
+    $ids = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('mail', addcslashes($email, '\\%_'), 'LIKE')
+      ->condition('status', 1)
+      ->range(0, 1)
+      ->execute();
+    $account = $ids ? $storage->load(reset($ids)) : NULL;
+    return $account instanceof AccountInterface ? $account : NULL;
   }
 
 }

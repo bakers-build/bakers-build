@@ -1,0 +1,148 @@
+component: bb_theme:filters
+name: Toolbar
+props:
+  layout: toolbar
+  label: Board filters
+slots:
+  controls:
+    - type: component
+      component: bb_theme:form_input
+      props:
+        type: search
+        name: search
+        id: board-search
+        value: ''
+        placeholder: Search tickets
+        compact: true
+    - type: component
+      component: bb_theme:option_picker
+      props:
+        variant: field
+        label: State
+        icon: status-running
+        value_label: All
+        aria_label: Filter by state. Currently all states.
+        multiple: true
+        name: state
+        id: board-state
+      slots:
+        options:
+          - type: component
+            component: bb_theme:option_list
+            props:
+              name: state
+              multiple: true
+              options:
+                - value: plan
+                  label: plan
+                  count: 3
+                - value: working
+                  label: working
+                  count: 1
+                - value: review
+                  label: review
+                  count: 1
+    - type: component
+      component: bb_theme:option_picker
+      props:
+        variant: field
+        label: Priority
+        icon: alert-triangle
+        value_label: High
+        aria_label: Filter by priority. Currently High.
+        multiple: true
+        name: priority
+        id: board-priority
+        values:
+          - '1'
+      slots:
+        options:
+          - type: component
+            component: bb_theme:option_list
+            props:
+              name: priority
+              multiple: true
+              options:
+                - value: '1'
+                  label: High
+                  count: 5
+                  selected: true
+                - value: '2'
+                  label: Normal
+                  count: 21
+                - value: '3'
+                  label: Low
+                  count: 18
+    - type: component
+      component: bb_theme:text
+      props:
+        text: Assignee
+        as: span
+        size: meta
+        tone: light
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: ghost
+        label: '18'
+        href: '?assignee[]=1'
+        pressed: true
+        aria_label: Christian Wiedemann, 18 tickets
+      slots:
+        icon:
+          - type: component
+            component: bb_theme:person
+            props:
+              variant: compact
+              initials: CW
+              color: attention
+              display_name: ''
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: ghost
+        label: '3'
+        href: '?assignee[]=1&assignee[]=2'
+        pressed: false
+        aria_label: Sven Gruber, 3 tickets
+      slots:
+        icon:
+          - type: component
+            component: bb_theme:person
+            props:
+              variant: compact
+              initials: SG
+              color: running
+              display_name: ''
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: neutral
+        label: Unassigned · 21
+        href: '?assignee[]=1&assignee[]=!'
+        pressed: false
+  actions:
+    - type: component
+      component: bb_theme:text
+      props:
+        text: Details
+        as: span
+        size: meta
+        tone: light
+    - type: component
+      component: bb_theme:segmented_control
+      props:
+        label: Details
+        items:
+          - label: Phases
+            url: '?details=phases'
+            active: true
+          - label: States
+            url: '?details=states'
+            active: false
+    - type: component
+      component: bb_theme:button
+      props:
+        variant: ghost
+        label: Clear filters
+        href: '?'

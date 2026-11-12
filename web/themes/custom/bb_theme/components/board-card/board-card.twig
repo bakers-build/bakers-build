@@ -26,12 +26,22 @@
         for its colour while the token layer had no name for the red that ranks. #}
     {% if priority %}{{ include('bb_theme:badge', { label: priority|upper, tone: priority == 'p1' ? 'critical' : 'neutral' }, with_context = false) }}{% endif %}
   </div>
-  <p class="text-item-title text-text m-0 line-clamp-2">{{ title }}</p>
-  {% if blocked or state == 'cancelled' %}
+  <p class="text-item-title text-text m-0">{{ title }}</p>
+  {#- Blocked names the open blockers the reader may see; a hidden blocker
+      still blocks, so the marker then reads "Blocked by" alone. -#}
+  {% set blockers = blocked_by|default([]) %}
+  {% set is_blocked = blockers|length > 0 or blocked_hidden|default(false) %}
+  {% if is_blocked or state == 'cancelled' %}
     <div class="flex flex-wrap gap-inline-xs mt-inline">
-      {% if blocked %}{{ include('bb_theme:badge', { label: 'Blocked', tone: 'neutral' }, with_context = false) }}{% endif %}
+      {% if is_blocked %}<span class="inline-flex items-center gap-inline-xs px-inline py-inline-xs rounded-xs bg-surface-2 border border-border text-meta font-medium text-text"><span class="size-2 shrink-0 bg-state-unassigned-ink" aria-hidden="true"></span>Blocked by{% if blockers|length > 0 %} <span class="font-mono text-data">{{ blockers|join(', ') }}</span>{% endif %}</span>{% endif %}
       {% if state == 'cancelled' %}{{ include('bb_theme:badge', { label: 'Cancelled', tone: 'neutral' }, with_context = false) }}{% endif %}
     </div>
+  {% endif %}
+  {% set runs = run_count|default(0) %}
+  {% if runs > 0 %}
+    {% set alarm = last_run_state|default('') in ['failed', 'expired'] %}
+    {% set run_dot = alarm ? 'bg-state-unassigned' : (last_run_state|default('') in ['running', 'claimed'] ? 'bg-state-running' : 'bg-text-faint') %}
+    <div class="flex items-center gap-inline-xs mt-inline text-meta {{ alarm ? 'text-state-unassigned-ink' : 'text-text-light' }}"><span class="size-2 shrink-0 rounded-full {{ run_dot }}" aria-hidden="true"></span>{{ runs }} {{ runs == 1 ? 'run' : 'runs' }}{% if last_run_state|default('') is not empty %} - last {{ last_run_state }}{% endif %}</div>
   {% endif %}
   {% if footer %}
     <div class="relative z-20 flex items-center gap-inline-xs mt-inline">{{ footer }}</div>
@@ -41,14 +51,15 @@
     <div class="relative z-20 flex items-center gap-inline-xs mt-inline">
       {% if mr_url %}{{ include('bb_theme:text', {text: mr_label|default('MR'), href: mr_url, as: 'span', size: 'meta'}, with_context = false) }}{% endif %}
       {% if done_label %}<span class="text-meta text-text-light">{{ 'Done'|t }} {{ include('bb_theme:time', {label: done_label, datetime: done_datetime|default(''), title: done_title|default('')}, with_context = false) }}</span>{% endif %}
-      {% if assignee_initials %}{{ include('bb_theme:person', {variant: 'compact', display_name: assignee_name, initials: assignee_initials, color: assignee_color|default('running')}, with_context = false) }}{% endif %}
+      <span class="flex-1"></span>
+      {% if assignee_initials %}{{ include('bb_theme:person', {variant: 'compact', display_name: '', initials: assignee_initials, color: assignee_color|default('running'), attributes: create_attribute({role: 'img', 'aria-label': assignee_name|default(assignee_initials), title: assignee_name|default(assignee_initials)})}, with_context = false) }}{% endif %}
     </div>
   {% elseif lease or state or assignee_initials %}
     <div class="relative z-20 flex items-center gap-inline-xs mt-inline">
       {% if lease %}{{ include('bb_theme:badge', {label: lease, tone: 'lease', mono: true, icon: 'lock'}, with_context = false) }}{% endif %}
-      <span class="flex-1"></span>
       {% if state %}{{ include('bb_theme:badge', {label: state, tone: status_tone[status]|default('neutral'), dot: true}, with_context = false) }}{% endif %}
-      {% if assignee_initials %}{{ include('bb_theme:person', {variant: 'compact', display_name: assignee_name, initials: assignee_initials, color: assignee_color|default('running')}, with_context = false) }}{% endif %}
+      <span class="flex-1"></span>
+      {% if assignee_initials %}{{ include('bb_theme:person', {variant: 'compact', display_name: '', initials: assignee_initials, color: assignee_color|default('running'), attributes: create_attribute({role: 'img', 'aria-label': assignee_name|default(assignee_initials), title: assignee_name|default(assignee_initials)})}, with_context = false) }}{% endif %}
     </div>
   {% endif %}
 </article>

@@ -1,0 +1,10 @@
+component: bb_theme:note
+name: Success
+props:
+  tone: success
+  lead: Everything is flowing
+slots:
+  body:
+    - type: element
+      tag: span
+      value: No open ticket needs a person right now.

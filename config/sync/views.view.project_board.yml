@@ -16,9 +16,10 @@ id: project_board
 label: 'Project board'
 module: views
 description: |-
-  Four-column project board of bb_ticket on the tickets Search API
+  Project board of bb_ticket on the tickets Search API
   index. The page display owns the route. Each lifecycle column is a
   bb_board_column attachment with its own mini pager. Column membership is the indexed work_state value.
+  Details splits Working into the state attachments working_plan, working_working and working_review.
   Parent focus applies to every display; the page header summarizes the whole matching selection.
 tag: ''
 base_table: search_api_index_bb_tickets
@@ -141,7 +142,18 @@ display:
       cache:
         type: search_api_none
         options: {  }
-      empty: {  }
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: text_custom
+          empty: true
+          content: 'No ticket matches these filters.'
+          tokenize: false
       sorts:
         priority_rank:
           id: priority_rank
@@ -273,6 +285,50 @@ display:
               authenticated: authenticated
             reduce: false
           is_grouped: false
+        bb_ticket_search:
+          id: bb_ticket_search
+          table: search_api_index_bb_tickets
+          field: bb_ticket_search
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_ticket_search
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: bb_ticket_search_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: bb_ticket_search_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            expose_fields: false
+            placeholder: 'Search tickets'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - title
         facets_state:
           id: facets_state
           table: search_api_index_bb_tickets
@@ -443,56 +499,6 @@ display:
                 weights:
                   build: 10
                 settings: {  }
-        facets_work_state:
-          id: facets_work_state
-          table: search_api_index_bb_tickets
-          field: facets_work_state
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: facets_filter
-          operator: '='
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: 'Work state'
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: work_state
-            required: false
-            remember: false
-            multiple: true
-            remember_roles:
-              authenticated: authenticated
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          hierarchy: false
-          label_display: visible
-          facet:
-            query_operator: or
-            hard_limit: 0
-            min_count: 1
-            missing: false
-            missing_label: null
-            show_numbers: false
-            show_only_one_result: false
-            depends_on_exposed_filter: ''
-            processor_configs: {  }
       filter_groups:
         operator: AND
         groups:
@@ -583,6 +589,50 @@ display:
               authenticated: authenticated
             reduce: false
           is_grouped: false
+        bb_ticket_search:
+          id: bb_ticket_search
+          table: search_api_index_bb_tickets
+          field: bb_ticket_search
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_ticket_search
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: bb_ticket_search_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: bb_ticket_search_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            expose_fields: false
+            placeholder: 'Search tickets'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - title
         facets_state:
           id: facets_state
           table: search_api_index_bb_tickets
@@ -753,56 +803,6 @@ display:
                 weights:
                   build: 10
                 settings: {  }
-        facets_work_state:
-          id: facets_work_state
-          table: search_api_index_bb_tickets
-          field: facets_work_state
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: facets_filter
-          operator: '='
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: 'Work state'
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: work_state
-            required: false
-            remember: false
-            multiple: true
-            remember_roles:
-              authenticated: authenticated
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          hierarchy: false
-          label_display: visible
-          facet:
-            query_operator: or
-            hard_limit: 0
-            min_count: 1
-            missing: false
-            missing_label: null
-            show_numbers: false
-            show_only_one_result: false
-            depends_on_exposed_filter: ''
-            processor_configs: {  }
         work_state:
           id: work_state
           table: search_api_index_bb_tickets
@@ -838,7 +838,6 @@ display:
         groups:
           1: AND
       defaults:
-        empty: false
         title: false
         pager: false
         filters: false
@@ -954,6 +953,50 @@ display:
               authenticated: authenticated
             reduce: false
           is_grouped: false
+        bb_ticket_search:
+          id: bb_ticket_search
+          table: search_api_index_bb_tickets
+          field: bb_ticket_search
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_ticket_search
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: bb_ticket_search_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: bb_ticket_search_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            expose_fields: false
+            placeholder: 'Search tickets'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - title
         facets_state:
           id: facets_state
           table: search_api_index_bb_tickets
@@ -1124,56 +1167,6 @@ display:
                 weights:
                   build: 10
                 settings: {  }
-        facets_work_state:
-          id: facets_work_state
-          table: search_api_index_bb_tickets
-          field: facets_work_state
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: facets_filter
-          operator: '='
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: 'Work state'
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: work_state
-            required: false
-            remember: false
-            multiple: true
-            remember_roles:
-              authenticated: authenticated
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          hierarchy: false
-          label_display: visible
-          facet:
-            query_operator: or
-            hard_limit: 0
-            min_count: 1
-            missing: false
-            missing_label: null
-            show_numbers: false
-            show_only_one_result: false
-            depends_on_exposed_filter: ''
-            processor_configs: {  }
         work_state:
           id: work_state
           table: search_api_index_bb_tickets
@@ -1209,7 +1202,6 @@ display:
         groups:
           1: AND
       defaults:
-        empty: false
         title: false
         pager: false
         sorts: false
@@ -1286,6 +1278,50 @@ display:
               authenticated: authenticated
             reduce: false
           is_grouped: false
+        bb_ticket_search:
+          id: bb_ticket_search
+          table: search_api_index_bb_tickets
+          field: bb_ticket_search
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_ticket_search
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: bb_ticket_search_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: bb_ticket_search_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            expose_fields: false
+            placeholder: 'Search tickets'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - title
         facets_state:
           id: facets_state
           table: search_api_index_bb_tickets
@@ -1456,56 +1492,6 @@ display:
                 weights:
                   build: 10
                 settings: {  }
-        facets_work_state:
-          id: facets_work_state
-          table: search_api_index_bb_tickets
-          field: facets_work_state
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: facets_filter
-          operator: '='
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: 'Work state'
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: work_state
-            required: false
-            remember: false
-            multiple: true
-            remember_roles:
-              authenticated: authenticated
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          hierarchy: false
-          label_display: visible
-          facet:
-            query_operator: or
-            hard_limit: 0
-            min_count: 1
-            missing: false
-            missing_label: null
-            show_numbers: false
-            show_only_one_result: false
-            depends_on_exposed_filter: ''
-            processor_configs: {  }
         work_state:
           id: work_state
           table: search_api_index_bb_tickets
@@ -1541,7 +1527,6 @@ display:
         groups:
           1: AND
       defaults:
-        empty: false
         title: false
         pager: false
         filters: false
@@ -1619,7 +1604,7 @@ display:
               facets_state:
                 plugin_id: bb_option_picker
                 clear_label: 'Any state'
-                icon: ''
+                icon: status-running
                 searchable: false
               facets_assignee_user_id:
                 plugin_id: bb_option_picker
@@ -1629,12 +1614,7 @@ display:
               facets_priority:
                 plugin_id: bb_option_picker
                 clear_label: 'Any priority'
-                icon: ''
-                searchable: false
-              facets_work_state:
-                plugin_id: bb_option_picker
-                clear_label: 'Any work state'
-                icon: ''
+                icon: alert-triangle
                 searchable: false
       defaults:
         pager: false
@@ -1684,6 +1664,43 @@ display:
                                       source_id: view_attachment_before
                                       source: {  }
                                       node_id: project_board_columns
+                                conductors:
+                                  sources:
+                                    -
+                                      source_id: component
+                                      source:
+                                        component:
+                                          component_id: 'bb_theme:zone'
+                                          variant_id: null
+                                          props:
+                                            inset:
+                                              source_id: select
+                                              source:
+                                                value: none
+                                            gap:
+                                              source_id: select
+                                              source:
+                                                value: sm
+                                            description:
+                                              source_id: textfield
+                                              source:
+                                                value: 'not affected by ticket filters'
+                                          slots:
+                                            heading:
+                                              sources:
+                                                -
+                                                  source_id: textfield
+                                                  source:
+                                                    value: 'Active conductors'
+                                                  node_id: project_board_conductors_heading
+                                            content:
+                                              sources:
+                                                -
+                                                  source_id: block
+                                                  source:
+                                                    plugin_id: 'views_block:conductors-board'
+                                                  node_id: project_board_conductors
+                                      node_id: project_board_conductors_zone
                           node_id: project_board_board
               node_id: project_board_canvas
       path: _workspace/%bb_workspace/project/%bb_project/board
@@ -1750,6 +1767,50 @@ display:
               authenticated: authenticated
             reduce: false
           is_grouped: false
+        bb_ticket_search:
+          id: bb_ticket_search
+          table: search_api_index_bb_tickets
+          field: bb_ticket_search
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_ticket_search
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: bb_ticket_search_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: bb_ticket_search_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            expose_fields: false
+            placeholder: 'Search tickets'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - title
         facets_state:
           id: facets_state
           table: search_api_index_bb_tickets
@@ -1920,56 +1981,6 @@ display:
                 weights:
                   build: 10
                 settings: {  }
-        facets_work_state:
-          id: facets_work_state
-          table: search_api_index_bb_tickets
-          field: facets_work_state
-          relationship: none
-          group_type: group
-          admin_label: ''
-          plugin_id: facets_filter
-          operator: '='
-          value: ''
-          group: 1
-          exposed: true
-          expose:
-            operator_id: ''
-            label: 'Work state'
-            description: ''
-            use_operator: false
-            operator: ''
-            operator_limit_selection: false
-            operator_list: {  }
-            identifier: work_state
-            required: false
-            remember: false
-            multiple: true
-            remember_roles:
-              authenticated: authenticated
-          is_grouped: false
-          group_info:
-            label: ''
-            description: ''
-            identifier: ''
-            optional: true
-            widget: select
-            multiple: false
-            remember: false
-            default_group: All
-            default_group_multiple: {  }
-            group_items: {  }
-          hierarchy: false
-          label_display: visible
-          facet:
-            query_operator: or
-            hard_limit: 0
-            min_count: 1
-            missing: false
-            missing_label: null
-            show_numbers: false
-            show_only_one_result: false
-            depends_on_exposed_filter: ''
-            processor_configs: {  }
         work_state:
           id: work_state
           table: search_api_index_bb_tickets
@@ -2005,7 +2016,1068 @@ display:
         groups:
           1: AND
       defaults:
-        empty: false
+        title: false
+        pager: false
+        filters: false
+      display_description: ''
+      display_extenders: {  }
+      displays:
+        project_board: project_board
+      attachment_position: before
+      inherit_arguments: true
+      inherit_exposed_filters: true
+      inherit_pager: false
+      render_pager: true
+    cache_metadata:
+      max-age: 0
+      contexts:
+        - url
+        - url.query_args
+      tags:
+        - 'config:search_api.index.bb_tickets'
+        - 'search_api_list:bb_tickets'
+  working_plan:
+    id: working_plan
+    display_title: 'Working: plan'
+    display_plugin: bb_board_column
+    position: 6
+    display_options:
+      title: plan
+      pager:
+        type: mini
+        options:
+          offset: 0
+          pagination_heading_level: h4
+          items_per_page: 10
+          total_pages: 0
+          id: 4
+          tags:
+            next: ››
+            previous: ‹‹
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+      filters:
+        board_parent:
+          id: board_parent
+          table: search_api_index_bb_tickets
+          field: board_parent
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_board_parent
+          operator: in
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: parent_op
+            label: 'Parent ticket'
+            description: ''
+            use_operator: false
+            operator: parent_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: parent_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+        bb_ticket_search:
+          id: bb_ticket_search
+          table: search_api_index_bb_tickets
+          field: bb_ticket_search
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_ticket_search
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: bb_ticket_search_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: bb_ticket_search_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            expose_fields: false
+            placeholder: 'Search tickets'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - title
+        facets_state:
+          id: facets_state
+          table: search_api_index_bb_tickets
+          field: facets_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: State
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: state
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_ticket_state_label:
+                processor_id: bb_ticket_state_label
+                weights:
+                  build: 5
+                settings: {  }
+        facets_assignee_user_id:
+          id: facets_assignee_user_id
+          table: search_api_index_bb_tickets
+          field: facets_assignee_user_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Assignee
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: assignee
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: true
+            missing_label: Unassigned
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_user_label:
+                processor_id: bb_user_label
+                weights:
+                  build: 5
+                settings: {  }
+        facets_priority:
+          id: facets_priority
+          table: search_api_index_bb_tickets
+          field: facets_priority
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Priority
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: priority
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: true
+            missing_label: 'No priority'
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              list_item:
+                processor_id: list_item
+                weights:
+                  build: 5
+                settings: {  }
+              bb_missing_label:
+                processor_id: bb_missing_label
+                weights:
+                  build: 10
+                settings: {  }
+        work_state:
+          id: work_state
+          table: search_api_index_bb_tickets
+          field: work_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_string
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: working
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+        state:
+          id: state
+          table: search_api_index_bb_tickets
+          field: state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_string
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: plan
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      defaults:
+        title: false
+        pager: false
+        filters: false
+      display_description: ''
+      display_extenders: {  }
+      displays:
+        project_board: project_board
+      attachment_position: before
+      inherit_arguments: true
+      inherit_exposed_filters: true
+      inherit_pager: false
+      render_pager: true
+    cache_metadata:
+      max-age: 0
+      contexts:
+        - url
+        - url.query_args
+      tags:
+        - 'config:search_api.index.bb_tickets'
+        - 'search_api_list:bb_tickets'
+  working_review:
+    id: working_review
+    display_title: 'Working: review'
+    display_plugin: bb_board_column
+    position: 8
+    display_options:
+      title: review
+      pager:
+        type: mini
+        options:
+          offset: 0
+          pagination_heading_level: h4
+          items_per_page: 10
+          total_pages: 0
+          id: 6
+          tags:
+            next: ››
+            previous: ‹‹
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+      filters:
+        board_parent:
+          id: board_parent
+          table: search_api_index_bb_tickets
+          field: board_parent
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_board_parent
+          operator: in
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: parent_op
+            label: 'Parent ticket'
+            description: ''
+            use_operator: false
+            operator: parent_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: parent_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+        bb_ticket_search:
+          id: bb_ticket_search
+          table: search_api_index_bb_tickets
+          field: bb_ticket_search
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_ticket_search
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: bb_ticket_search_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: bb_ticket_search_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            expose_fields: false
+            placeholder: 'Search tickets'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - title
+        facets_state:
+          id: facets_state
+          table: search_api_index_bb_tickets
+          field: facets_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: State
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: state
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_ticket_state_label:
+                processor_id: bb_ticket_state_label
+                weights:
+                  build: 5
+                settings: {  }
+        facets_assignee_user_id:
+          id: facets_assignee_user_id
+          table: search_api_index_bb_tickets
+          field: facets_assignee_user_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Assignee
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: assignee
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: true
+            missing_label: Unassigned
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_user_label:
+                processor_id: bb_user_label
+                weights:
+                  build: 5
+                settings: {  }
+        facets_priority:
+          id: facets_priority
+          table: search_api_index_bb_tickets
+          field: facets_priority
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Priority
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: priority
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: true
+            missing_label: 'No priority'
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              list_item:
+                processor_id: list_item
+                weights:
+                  build: 5
+                settings: {  }
+              bb_missing_label:
+                processor_id: bb_missing_label
+                weights:
+                  build: 10
+                settings: {  }
+        work_state:
+          id: work_state
+          table: search_api_index_bb_tickets
+          field: work_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_string
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: working
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+        state:
+          id: state
+          table: search_api_index_bb_tickets
+          field: state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_string
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: review
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      defaults:
+        title: false
+        pager: false
+        filters: false
+      display_description: ''
+      display_extenders: {  }
+      displays:
+        project_board: project_board
+      attachment_position: before
+      inherit_arguments: true
+      inherit_exposed_filters: true
+      inherit_pager: false
+      render_pager: true
+    cache_metadata:
+      max-age: 0
+      contexts:
+        - url
+        - url.query_args
+      tags:
+        - 'config:search_api.index.bb_tickets'
+        - 'search_api_list:bb_tickets'
+  working_working:
+    id: working_working
+    display_title: 'Working: working'
+    display_plugin: bb_board_column
+    position: 7
+    display_options:
+      title: working
+      pager:
+        type: mini
+        options:
+          offset: 0
+          pagination_heading_level: h4
+          items_per_page: 10
+          total_pages: 0
+          id: 5
+          tags:
+            next: ››
+            previous: ‹‹
+          expose:
+            items_per_page: false
+            items_per_page_label: 'Items per page'
+            items_per_page_options: '5, 10, 25, 50'
+            items_per_page_options_all: false
+            items_per_page_options_all_label: '- All -'
+            offset: false
+            offset_label: Offset
+      filters:
+        board_parent:
+          id: board_parent
+          table: search_api_index_bb_tickets
+          field: board_parent
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_board_parent
+          operator: in
+          value: {  }
+          group: 1
+          exposed: true
+          expose:
+            operator_id: parent_op
+            label: 'Parent ticket'
+            description: ''
+            use_operator: false
+            operator: parent_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: parent_id
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            reduce: false
+          is_grouped: false
+        bb_ticket_search:
+          id: bb_ticket_search
+          table: search_api_index_bb_tickets
+          field: bb_ticket_search
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_ticket_search
+          operator: and
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: bb_ticket_search_op
+            label: Search
+            description: ''
+            use_operator: false
+            operator: bb_ticket_search_op
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: search
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+            expose_fields: false
+            placeholder: 'Search tickets'
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          parse_mode: terms
+          min_length: null
+          fields:
+            - title
+        facets_state:
+          id: facets_state
+          table: search_api_index_bb_tickets
+          field: facets_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: State
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: state
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_ticket_state_label:
+                processor_id: bb_ticket_state_label
+                weights:
+                  build: 5
+                settings: {  }
+        facets_assignee_user_id:
+          id: facets_assignee_user_id
+          table: search_api_index_bb_tickets
+          field: facets_assignee_user_id
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Assignee
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: assignee
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: true
+            missing_label: Unassigned
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              bb_user_label:
+                processor_id: bb_user_label
+                weights:
+                  build: 5
+                settings: {  }
+        facets_priority:
+          id: facets_priority
+          table: search_api_index_bb_tickets
+          field: facets_priority
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Priority
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: priority
+            required: false
+            remember: false
+            multiple: true
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: true
+            missing_label: 'No priority'
+            show_numbers: false
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs:
+              list_item:
+                processor_id: list_item
+                weights:
+                  build: 5
+                settings: {  }
+              bb_missing_label:
+                processor_id: bb_missing_label
+                weights:
+                  build: 10
+                settings: {  }
+        work_state:
+          id: work_state
+          table: search_api_index_bb_tickets
+          field: work_state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_string
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: working
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+        state:
+          id: state
+          table: search_api_index_bb_tickets
+          field: state
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: search_api_string
+          operator: '='
+          value:
+            min: ''
+            max: ''
+            value: working
+          group: 1
+          exposed: false
+          expose:
+            operator_id: ''
+            label: ''
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: ''
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      defaults:
         title: false
         pager: false
         filters: false

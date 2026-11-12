@@ -1,0 +1,17 @@
+decided_at: '2026-11-10T12:59:48.274Z'
+fingerprint: eb125819ca74113184be437a7612dc94e8511f671ab4ff2f1f8fb314dc84ba30
+note: 'Approved by Pascal Glass on 2026-11-10: screenshots match, the reference fits the Overview and Board work. Choices: native horizontal scrolling only (no drawn scrollbar, no Shift + scroll hint); card run line always "N runs - last <state>" (no "many runs"); Done keeps the existing "Cancelled" marker without "duplicate of". Spec departures as noted before: no Note section, About shows the description (D9); no Default branch row (D24); Done count is the 7-day window (D16); In progress = Working column, caption "being worked on" (D11); no "All activity" link (D13); health reasons per spec section A (D1, D2); Working sub-columns plan, working, review (D15); active conductors only (D19); active filter chips carry match counts.'
+scope:
+  states:
+    - default
+  subjects:
+    - project-overview-needs-attention
+    - project-overview-metrics-flowing
+    - project-board-details-off
+    - project-board-details-on
+    - project-board-done-open-scroll
+    - project-overview-layout
+    - project-board-layout
+  views:
+    - desktop
+status: approved

@@ -7,18 +7,28 @@ namespace Drupal\bb_board;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
-use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_board\Plugin\views\area\BbBoardSummary;
+use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
+use Drupal\bb_core\Ticket\TicketSearchResolver;
 use Drupal\bb_core\Workflow\TypeWorkflows;
+use Drupal\search_api\Entity\Index;
+use Drupal\search_api\SearchApiException;
+use Psr\Log\LoggerInterface;
 
 /**
- * Turns the Project Board summary's aggregations into labelled rows.
+ * Turns the Project Board summary's aggregations into labelled rows and counts.
  *
  * @see \Drupal\bb_board\Plugin\views\area\BbBoardSummary
  */
 final class ProjectBoardSummary {
 
+  use PersonIdentityTrait;
+
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly TicketSearchResolver $resolver,
+    private readonly LoggerInterface $logger,
   ) {}
 
   /**
@@ -34,8 +44,9 @@ final class ProjectBoardSummary {
    * @param string|null $token
    *   The Assignee facet's value for "no assignee", NULL when it has none.
    *
-   * @return list<array{value: ?string, label: string, count: int, active: bool, tone?: string}>
-   *   One entry per person, then Unassigned (`tone` wait).
+   * @return list<array{value: ?string, label: string, count: int, active: bool, initials?: string, color?: string, tone?: string}>
+   *   One entry per person with their avatar mark, then Unassigned (`tone`
+   *   wait).
    */
   public function employees(array $rows, array $active, ?string $token): array {
     $counts = [];
@@ -62,11 +73,14 @@ final class ProjectBoardSummary {
         $unassigned += $count;
         continue;
       }
+      $label = (string) $account->getDisplayName();
       $people[] = [
         'value' => (string) $id,
-        'label' => (string) $account->getDisplayName(),
+        'label' => $label,
         'count' => $count,
         'active' => in_array((string) $id, $active, TRUE),
+        'initials' => $this->personInitials($label),
+        'color' => $this->personColor((int) $id),
       ];
     }
     usort($people, static fn (array $a, array $b): int => [$b['count'], mb_strtolower($a['label']), (int) $a['value']]
@@ -167,138 +181,78 @@ final class ProjectBoardSummary {
   }
 
   /**
-   * Per-work-state counts in column order: Not assigned, Intake, Working, Done.
+   * Counts a board's focus, optionally narrowed to ticket ids or a search line.
+   *
+   * The focus is the board's scope without its filters: the project's open
+   * tickets, inside the parent focus. A plain Search API query rather than
+   * another run of the board view, whose facet filters would rewrite the
+   * request the columns still read. The index applies the reader's scope.
+   *
+   * @param \Drupal\bb_core\Entity\BbProjectInterface $project
+   *   The board's project.
+   * @param list<int>|null $within
+   *   The parent focus's tickets, NULL for the whole project.
+   * @param list<int>|null $ids
+   *   Only these tickets, NULL for no such limit.
+   * @param string $search
+   *   A search line, in the board search's grammar.
+   *
+   * @return array{total: int, aggregations: array<string, mixed>}|null
+   *   The count, with per-facet counts for the plain focus; NULL when the
+   *   search failed.
+   */
+  public function focus(BbProjectInterface $project, ?array $within, ?array $ids = NULL, string $search = ''): ?array {
+    $plain = $ids === NULL && $search === '';
+    $ids = $within === NULL ? $ids : array_values(array_intersect($ids ?? $within, $within));
+    if ($ids === []) {
+      return ['total' => 0, 'aggregations' => []];
+    }
+    $query = Index::load('bb_tickets')?->query();
+    if ($query === NULL) {
+      return NULL;
+    }
+    $query->addCondition('project_id', $project->id());
+    $query->addCondition('work_state', BoardAddress::OPEN_WORK_STATES, 'IN');
+    if ($ids !== NULL) {
+      $query->addCondition('ticket_id', $ids, 'IN');
+    }
+    if ($search !== '') {
+      $this->resolver->apply($query, $this->resolver->resolve($search, $project));
+    }
+    if ($plain) {
+      $query->setOption('search_api_facets', BbBoardSummary::aggregations());
+    }
+    $query->range(0, 0);
+    try {
+      $results = $query->execute();
+    }
+    catch (SearchApiException $e) {
+      $this->logger->error('A project board count failed: @message', ['@message' => $e->getMessage()]);
+      return NULL;
+    }
+    return [
+      'total' => (int) $results->getResultCount(),
+      'aggregations' => $results->getExtraData('search_api_facets', []),
+    ];
+  }
+
+  /**
+   * Tickets the chosen values of one facet match in an unfiltered search.
    *
    * @param list<array{filter: string, count: int}> $rows
-   *   The work_state aggregation.
-   * @param list<string> $active
-   *   The Work state values in the request.
-   *
-   * @return list<array{value: string, label: string, count: int, active: bool, tone?: string}>
-   *   All four work states, then any unexpected aggregation keys.
+   *   The facet's aggregation without any filter.
+   * @param list<string> $values
+   *   The chosen values; a missing-value token `!(…)` is the `!` row.
    */
-  public function workStates(array $rows, array $active = []): array {
+  public function alone(array $rows, array $values): int {
     $counts = [];
     foreach ($rows as $row) {
       $counts[trim((string) $row['filter'], '"')] = (int) $row['count'];
     }
-    $labels = [
-      'not_assigned' => [new TranslatableMarkup('Not assigned'), 'wait'],
-      'intake' => [new TranslatableMarkup('Intake'), 'attention'],
-      'working' => [new TranslatableMarkup('Working'), 'running'],
-      'done' => [new TranslatableMarkup('Done'), 'idle'],
-    ];
-    $states = [];
-    foreach ($labels as $value => [$label, $tone]) {
-      $count = $counts[$value] ?? 0;
-      unset($counts[$value]);
-      $states[] = [
-        'value' => $value,
-        'label' => (string) $label,
-        'count' => $count,
-        'active' => in_array($value, $active, TRUE),
-        'tone' => $tone,
-      ];
-    }
-    foreach ($counts as $value => $count) {
-      $value = (string) $value;
-      if ($value === '!' || $value === '') {
-        continue;
-      }
-      $states[] = [
-        'value' => $value,
-        'label' => $value,
-        'count' => $count,
-        'active' => in_array($value, $active, TRUE),
-      ];
-    }
-    return $states;
-  }
-
-  /**
-   * Per-parent counts: eligible parents, count descending, then label.
-   *
-   * Aggregation keys are parent entity ids. Chip values are ticket UUIDs,
-   * matching BbBoardParent's exposed identifier.
-   *
-   * @param list<array{filter: string, count: int}> $rows
-   *   The parent_id aggregation.
-   * @param array<string, string> $options
-   *   UUID => "IDENTIFIER Title" from ParentTicketScope::options().
-   * @param list<string> $active
-   *   The Parent values in the request.
-   *
-   * @return list<array{value: string, label: string, title: string, count: int, active: bool}>
-   *   Eligible parents. `label` is the identifier, `title` the hover text.
-   */
-  public function parents(array $rows, array $options, array $active): array {
-    $counts = $this->parentCountsByUuid($rows);
-    $parents = [];
-    foreach ($options as $uuid => $combined) {
-      $parents[] = $this->parentChip(
-        $uuid,
-        $combined,
-        $counts[$uuid] ?? 0,
-        in_array($uuid, $active, TRUE),
-      );
-    }
-    $seen = array_column($parents, 'value');
-    foreach ($active as $uuid) {
-      if (in_array($uuid, $seen, TRUE)) {
-        continue;
-      }
-      $parents[] = $this->parentChip($uuid, $options[$uuid] ?? $uuid, $counts[$uuid] ?? 0, TRUE);
-    }
-    usort($parents, static fn (array $a, array $b): int => [$b['count'], mb_strtolower($a['label']), $a['value']]
-      <=> [$a['count'], mb_strtolower($b['label']), $b['value']]);
-    return $parents;
-  }
-
-  /**
-   * Aggregation counts keyed by parent ticket UUID.
-   *
-   * @param list<array{filter: string, count: int}> $rows
-   *   The parent_id aggregation (entity ids).
-   *
-   * @return array<string, int>
-   *   UUID => count for indexed parents.
-   */
-  private function parentCountsByUuid(array $rows): array {
-    $by_id = [];
-    foreach ($rows as $row) {
-      $id = trim((string) $row['filter'], '"');
-      if ($id === '!' || $id === '') {
-        continue;
-      }
-      $by_id[$id] = (int) $row['count'];
-    }
-    if ($by_id === []) {
-      return [];
-    }
-    $counts = [];
-    foreach ($this->entityTypeManager->getStorage('bb_ticket')->loadMultiple(array_keys($by_id)) as $id => $ticket) {
-      if ($ticket instanceof BbTicketInterface) {
-        $counts[$ticket->uuid()] = $by_id[$id];
-      }
-    }
-    return $counts;
-  }
-
-  /**
-   * One parent chip: identifier on the chip, title on hover.
-   *
-   * @return array{value: string, label: string, title: string, count: int, active: bool}
-   *   Identifier on `label`, ticket title on `title`.
-   */
-  private function parentChip(string $uuid, string $combined, int $count, bool $active): array {
-    $parts = explode(' ', $combined, 2);
-    return [
-      'value' => $uuid,
-      'label' => $parts[0],
-      'title' => $parts[1] ?? '',
-      'count' => $count,
-      'active' => $active,
-    ];
+    return array_sum(array_map(
+      static fn (string $value): int => $counts[str_starts_with($value, '!') ? '!' : $value] ?? 0,
+      $values,
+    ));
   }
 
 }

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Drupal\bb_board\Plugin\views\filter;
 
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\ParamConverter\ParamConverterInterface;
 use Drupal\bb_board\ParentTicketScope;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\search_api\Plugin\views\SearchApiHandlerTrait;
@@ -38,9 +38,9 @@ final class BbBoardParent extends InOperator {
   private ParentTicketScope $scope;
 
   /**
-   * Loads the board's project.
+   * Resolves the board's project from an id or a key.
    */
-  private EntityTypeManagerInterface $entityTypeManager;
+  private ParamConverterInterface $projectConverter;
 
   /**
    * The resolved scope of the last query() call, NULL before it.
@@ -55,7 +55,7 @@ final class BbBoardParent extends InOperator {
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = new static($configuration, $plugin_id, $plugin_definition);
     $instance->scope = $container->get(ParentTicketScope::class);
-    $instance->entityTypeManager = $container->get('entity_type.manager');
+    $instance->projectConverter = $container->get('bb_core.paramconverter.project_key');
     return $instance;
   }
 
@@ -120,13 +120,17 @@ final class BbBoardParent extends InOperator {
 
   /**
    * The board's project, when the reader may view it.
+   *
+   * The exposed form and the filters are built before the arguments are
+   * validated, so the raw argument, an id or the project's key, is resolved
+   * the way the argument validator resolves it.
    */
   private function project(): ?BbProjectInterface {
-    $project_id = $this->view->args[1] ?? NULL;
-    if ($project_id === NULL || $project_id === '') {
+    $reference = $this->view->args[1] ?? NULL;
+    if (!is_scalar($reference) || (string) $reference === '') {
       return NULL;
     }
-    $project = $this->entityTypeManager->getStorage('bb_project')->load($project_id);
+    $project = $this->projectConverter->convert((string) $reference, ['type' => 'entity:bb_project'], 'bb_project', []);
     return $project instanceof BbProjectInterface && $project->access('view') ? $project : NULL;
   }
 

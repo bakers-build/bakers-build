@@ -1,12 +1,13 @@
 /*
- * sync-to generator — core.entity_view_display.bb_project.bb_project.full
+ * sync-to generator - core.entity_view_display.bb_project.bb_project.full
  *
- * The entity detail page: one `canvas` whose `main` is the
- * `bb_entity_detail_activities` feed and whose `inspector` holds one
- * surface `inspector` with one `zone` per card — the activities of the project's tickets beside an Identity card (`identity` form: name,
- * description, image), a Properties card (`properties` form: key, repository, teams; group and
- * environments read-only) and the Epics list.
- * Each editable card is its own entity form operation with its own Save.
+ * The project Overview (BAKERS-55): one `canvas`. `main` holds the
+ * `bb_project_overview` sections metrics, attention and epics, then the
+ * `bb_entity_detail_activities` feed, then the page empty state (the three
+ * ticket sections and the empty state exclude each other). `inspector` is one
+ * surface `inspector` with two zones: About (the description) and
+ * Properties (the `properties` entity form, with the Edit action for
+ * holders of `update` access).
  *
  * THE SHIPPED YAML IS THE SAVED FORM (see README.md): `content` and `hidden`
  * are materialised from the entity's fields on first save and re-exported
@@ -21,8 +22,8 @@
       "core.entity_view_mode.bb_project.full"
     ],
     "module": [
-      "display_builder",
-      "bb_core"
+      "bb_core",
+      "display_builder"
     ]
   },
   "third_party_settings": {
@@ -40,6 +41,36 @@
                 "main": {
                   "sources": [
                     {
+                      "source_id": "bb_project_overview",
+                      "source": {
+                        "section": "metrics",
+                        "context_mapping": {
+                          "entity": "entity"
+                        }
+                      },
+                      "node_id": "overview_metrics"
+                    },
+                    {
+                      "source_id": "bb_project_overview",
+                      "source": {
+                        "section": "attention",
+                        "context_mapping": {
+                          "entity": "entity"
+                        }
+                      },
+                      "node_id": "overview_attention"
+                    },
+                    {
+                      "source_id": "bb_project_overview",
+                      "source": {
+                        "section": "epics",
+                        "context_mapping": {
+                          "entity": "entity"
+                        }
+                      },
+                      "node_id": "overview_epics"
+                    },
+                    {
                       "source_id": "bb_entity_detail_activities",
                       "source": {
                         "context_mapping": {
@@ -47,6 +78,16 @@
                         }
                       },
                       "node_id": "project_activities"
+                    },
+                    {
+                      "source_id": "bb_project_overview",
+                      "source": {
+                        "section": "empty",
+                        "context_mapping": {
+                          "entity": "entity"
+                        }
+                      },
+                      "node_id": "overview_empty"
                     }
                   ]
                 },
@@ -95,30 +136,30 @@
                                             {
                                               "source_id": "token",
                                               "source": {
-                                                "value": "Identity"
+                                                "value": "About"
                                               },
-                                              "node_id": "project_identity_heading"
+                                              "node_id": "project_about_heading"
                                             }
                                           ]
                                         },
                                         "content": {
                                           "sources": [
                                             {
-                                              "source_id": "entity_form",
+                                              "source_id": "bb_project_overview",
                                               "source": {
-                                                "operation": "identity",
+                                                "section": "description",
                                                 "context_mapping": {
                                                   "entity": "entity"
                                                 }
                                               },
-                                              "node_id": "project_identity_form"
+                                              "node_id": "overview_about"
                                             }
                                           ]
                                         }
                                       }
                                     }
                                   },
-                                  "node_id": "project_identity"
+                                  "node_id": "project_about"
                                 },
                                 {
                                   "source_id": "component",
@@ -152,6 +193,20 @@
                                             }
                                           ]
                                         },
+                                        "actions": {
+                                          "sources": [
+                                            {
+                                              "source_id": "bb_project_overview",
+                                              "source": {
+                                                "section": "edit",
+                                                "context_mapping": {
+                                                  "entity": "entity"
+                                                }
+                                              },
+                                              "node_id": "overview_edit"
+                                            }
+                                          ]
+                                        },
                                         "content": {
                                           "sources": [
                                             {
@@ -170,16 +225,6 @@
                                     }
                                   },
                                   "node_id": "project_properties"
-                                },
-                                {
-                                  "source_id": "bb_project_overview",
-                                  "source": {
-                                    "section": "epics",
-                                    "context_mapping": {
-                                      "entity": "entity"
-                                    }
-                                  },
-                                  "node_id": "overview_epics"
                                 }
                               ]
                             }

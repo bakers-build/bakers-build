@@ -5,4 +5,3 @@ props:
   title: Cancelled experiment
   state: cancelled
   status: idle
-  blocked: false

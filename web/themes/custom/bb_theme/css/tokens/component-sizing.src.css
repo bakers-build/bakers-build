@@ -1,6 +1,7 @@
 @theme static {
   --spacing-shell-offset: var(--drupal-displace-offset-top, 0px);
   --spacing-shell-height: calc(100dvh - var(--drupal-displace-offset-top, 0px));
+  --spacing-board-height: calc(100dvh - var(--drupal-displace-offset-top, 0px) - 16rem);
   --spacing-row: 34px;
   --spacing-control: 28px;
   --spacing-list-row: 56px;

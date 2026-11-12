@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Drupal\bb_board\Plugin\views\display;
 
 use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\bb_board\BoardPreferences;
 use Drupal\views\Attribute\ViewsDisplay;
 use Drupal\views\Plugin\views\display\Attachment;
 use Drupal\views\ViewExecutable;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * A board column: an attachment that has its own pager.
@@ -18,6 +20,9 @@ use Drupal\views\ViewExecutable;
  *
  * View::preSave() ksorts display ids, so getAttachedDisplays() would paint
  * Backlog, Done, Intake, Working. attachTo() reorders to the lifecycle.
+ *
+ * Details on replaces Working with its state sub-columns; Done always
+ * attaches and, while closed, shows its count only.
  */
 #[ViewsDisplay(
   id: 'bb_board_column',
@@ -30,14 +35,48 @@ use Drupal\views\ViewExecutable;
 final class BbBoardColumn extends Attachment {
 
   /**
-   * Lifecycle order of the four column displays.
+   * Lifecycle order of the column displays.
    */
-  public const COLUMN_ORDER = ['backlog', 'intake', 'working', 'done'];
+  public const COLUMN_ORDER = [
+    'backlog',
+    'intake',
+    'working',
+    'working_plan',
+    'working_working',
+    'working_review',
+    'done',
+  ];
+
+  /**
+   * The Working displays: whether each attaches with Details on.
+   *
+   * The other displays always attach.
+   */
+  public const DETAILS = [
+    'working' => FALSE,
+    'working_plan' => TRUE,
+    'working_working' => TRUE,
+    'working_review' => TRUE,
+  ];
 
   /**
    * {@inheritdoc}
    */
   protected $usesPager = TRUE;
+
+  /**
+   * The Details and Done preferences of this request.
+   */
+  private BoardPreferences $preferences;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
+    $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
+    $instance->preferences = $container->get(BoardPreferences::class);
+    return $instance;
+  }
 
   /**
    * {@inheritdoc}
@@ -66,7 +105,7 @@ final class BbBoardColumn extends Attachment {
    * {@inheritdoc}
    */
   public function attachTo(ViewExecutable $view, $display_id, array &$build): void {
-    if (($this->display['id'] ?? '') === 'done' && !self::showsDone($this->rawWorkState())) {
+    if (!self::attaches((string) $this->display['id'], $this->preferences->details())) {
       return;
     }
     parent::attachTo($view, $display_id, $build);
@@ -75,35 +114,26 @@ final class BbBoardColumn extends Attachment {
   }
 
   /**
-   * Whether the raw work_state query includes Done.
+   * Whether a column display attaches with Details on or off.
+   */
+  public static function attaches(string $displayId, bool $details): bool {
+    return (self::DETAILS[$displayId] ?? $details) === $details;
+  }
+
+  /**
+   * {@inheritdoc}
    *
-   * Absent work_state is the three open columns, so Done stays detached.
+   * A closed Done column shows its count only, so it builds no cards.
    */
-  public static function showsDone(mixed $raw): bool {
-    if (!is_array($raw)) {
-      $raw = is_scalar($raw) && (string) $raw !== '' ? [(string) $raw] : [];
+  public function render(): array {
+    if ($this->display['id'] === 'done' && !$this->preferences->doneOpen()) {
+      $this->view->result = [];
     }
-    foreach ($raw as $value) {
-      if (is_scalar($value) && (string) $value === 'done') {
-        return TRUE;
-      }
-    }
-    return FALSE;
+    return parent::render();
   }
 
   /**
-   * The request's raw work_state value, or NULL when absent.
-   */
-  private function rawWorkState(): mixed {
-    $request = $this->view->getRequest();
-    if ($request === NULL) {
-      return NULL;
-    }
-    return $request->query->all()['work_state'] ?? NULL;
-  }
-
-  /**
-   * Orders column attachments Backlog, Intake, Working, Done.
+   * Orders column attachments in lifecycle order.
    *
    * @param array<int, array<string, mixed>> $attachments
    *   Views attachment render arrays, each carrying `#display_id`.

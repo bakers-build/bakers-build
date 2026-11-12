@@ -20,6 +20,8 @@ use Drupal\tool\TypedData\InputDefinition;
 use Drupal\tool\TypedData\ListInputDefinition;
 use Drupal\tool\TypedData\ListOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
+use Drupal\tool\TypedData\MapInputDefinition;
+use Drupal\tool\TypedData\MapOutputDefinition;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -28,7 +30,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 #[Tool(
   id: 'bakers_ticket_update',
   label: new TranslatableMarkup('Update a ticket'),
-  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added or removed by name, every other one kept), frozen flag, environments and referenced tickets (both add-only, existing ones kept); fields left out keep their values. A closed ticket can no longer be changed. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.'),
+  description: new TranslatableMarkup('Changes an open ticket’s title, description (Markdown, replaced whole), conductor, labels (added or removed by name, every other one kept), frozen flag, reviewers (added or removed by e-mail), links (upserted by exact URI or removed), environments and referenced tickets (both add-only, existing ones kept); fields left out keep their values. A closed ticket can no longer be changed. Setting a conductor dispatches a run on the ticket’s current state and fills an empty assignee with the conductor’s owner. Returns the saved values.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -107,8 +109,103 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
         constraints: ['NotBlank' => []],
       ),
     ),
+    'reviewers_add' => new ListInputDefinition(
+      label: new TranslatableMarkup('Reviewers to add'),
+      description: new TranslatableMarkup('Reviewer e-mail addresses to add; other reviewers stay. Omitted, null and empty lists change nothing.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Reviewer e-mail address'),
+        description: new TranslatableMarkup('One active workspace account’s e-mail address.'),
+        constraints: ['Email' => [], 'NotBlank' => []],
+      ),
+    ),
+    'reviewers_remove' => new ListInputDefinition(
+      label: new TranslatableMarkup('Reviewers to remove'),
+      description: new TranslatableMarkup('Reviewer e-mail addresses to remove; other reviewers stay. Omitted, null and empty lists change nothing.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('Reviewer e-mail address'),
+        description: new TranslatableMarkup('One active workspace account’s e-mail address.'),
+        constraints: ['Email' => [], 'NotBlank' => []],
+      ),
+    ),
+    'links_add' => new ListInputDefinition(
+      label: new TranslatableMarkup('Links'),
+      description: new TranslatableMarkup('Links to add or retitle by exact URI. Omitted title keeps it; empty title clears it. Other links stay.'),
+      required: FALSE,
+      item_definition: new MapInputDefinition(
+        label: new TranslatableMarkup('Link'),
+        description: new TranslatableMarkup('One link.'),
+        property_definitions: [
+          'uri' => new InputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('URI'),
+            description: new TranslatableMarkup('The link target, e.g. a merge request URL.'),
+            constraints: ['NotBlank' => []],
+          ),
+          'title' => new InputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Title'),
+            description: new TranslatableMarkup('The link text.'),
+            required: FALSE,
+          ),
+        ],
+      ),
+    ),
+    'links_remove' => new ListInputDefinition(
+      label: new TranslatableMarkup('Links to remove'),
+      description: new TranslatableMarkup('Exact URIs to remove; absent URIs and empty lists change nothing.'),
+      required: FALSE,
+      item_definition: new InputDefinition(
+        data_type: 'string',
+        label: new TranslatableMarkup('URI'),
+        description: new TranslatableMarkup('One stored link URI.'),
+        constraints: ['NotBlank' => []],
+      ),
+    ),
   ],
   output_definitions: [
+    'reviewers' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Reviewers'),
+      description: new TranslatableMarkup('The readable reviewers.'),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Reviewer'),
+        description: new TranslatableMarkup('The saved account.'),
+        property_definitions: [
+          'name' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Name'),
+            description: new TranslatableMarkup('The display name.'),
+          ),
+          'mail' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Mail'),
+            description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
+            nullable: TRUE,
+          ),
+        ],
+      ),
+    ),
+    'assignee' => new MapOutputDefinition(
+      label: new TranslatableMarkup('Assignee'),
+      description: new TranslatableMarkup('The saved account.'),
+      nullable: TRUE,
+      property_definitions: [
+        'name' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('Name'),
+          description: new TranslatableMarkup('The display name.'),
+        ),
+        'mail' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('Mail'),
+          description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
+          nullable: TRUE,
+        ),
+      ],
+    ),
     'identifier' => new OutputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('Identifier'),
@@ -163,6 +260,26 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
         description: new TranslatableMarkup('One ticket identifier.'),
       ),
     ),
+    'links' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Links'),
+      description: new TranslatableMarkup('The saved links.'),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Link'),
+        description: new TranslatableMarkup('One link.'),
+        property_definitions: [
+          'uri' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('URI'),
+            description: new TranslatableMarkup('The link target.'),
+          ),
+          'title' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Title'),
+            description: new TranslatableMarkup('The link text.'),
+          ),
+        ],
+      ),
+    ),
   ],
 )]
 final class TicketUpdate extends ToolBase {
@@ -195,6 +312,10 @@ final class TicketUpdate extends ToolBase {
     'frozen' => 'frozen',
     'environments_add' => 'environments',
     'referenced_tickets_add' => 'referenced_tickets',
+    'reviewers_add' => 'reviewers',
+    'reviewers_remove' => 'reviewers',
+    'links_add' => 'links',
+    'links_remove' => 'links',
   ];
 
   /**
@@ -209,10 +330,7 @@ final class TicketUpdate extends ToolBase {
     if (!$given) {
       throw new \InvalidArgumentException('Give a title, a description, a conductor, labels to add or remove, frozen, environments to add or referenced tickets to add.');
     }
-    $both = array_intersect($given['labels_add'] ?? [], $given['labels_remove'] ?? []);
-    if ($both) {
-      throw new \InvalidArgumentException(sprintf('Label %s is both added and removed.', reset($both)));
-    }
+    $this->assertDisjointLists($given);
     // Closed tickets deny every field edit; say why before the access check.
     if ($this->readableTicket($values['ticket'])->isClosed()) {
       throw new \InvalidArgumentException(sprintf('Ticket %s is closed and can no longer be changed.', $values['ticket']));
@@ -225,6 +343,10 @@ final class TicketUpdate extends ToolBase {
     $transaction = $this->database->startTransaction();
     // List inputs change their field in place; the rest replace the value.
     $lists = [
+      'links_add' => $this->addLinks(...),
+      'links_remove' => $this->removeLinks(...),
+      'reviewers_add' => $this->addReviewers(...),
+      'reviewers_remove' => $this->removeReviewers(...),
       'labels_add' => $this->addLabels(...),
       'labels_remove' => $this->removeLabels(...),
       'environments_add' => $this->addEnvironments(...),
@@ -254,6 +376,11 @@ final class TicketUpdate extends ToolBase {
     $saved = $this->entities()->getStorage('bb_ticket')->loadUnchanged($ticket->id());
     assert($saved instanceof BbTicketInterface);
     return ExecutableResult::success(new TranslatableMarkup('Ticket updated.'), [
+      'links' => array_map(static fn (array $link): array => [
+        'uri' => $link['uri'],
+        'title' => (string) $link['title'],
+      ], $saved->get('links')->access('view', $this->currentUser) ? $saved->get('links')->getValue() : []),
+      ...$this->ticketPeople($saved),
       'identifier' => $saved->getIdentifier(),
       'title' => $saved->label(),
       'description' => $saved->get('description')->value,
@@ -263,6 +390,100 @@ final class TicketUpdate extends ToolBase {
       'environments' => array_map(static fn ($env) => (string) $env->label(), $saved->get('environments')->referencedEntities()),
       'referenced_tickets' => array_map(static fn (BbTicketInterface $ref) => $ref->getIdentifier(), $saved->getReferencedTickets()),
     ]);
+  }
+
+  /**
+   * Refuses contradictory operations before changing any field.
+   *
+   * @param array<string, mixed> $given
+   *   The supplied update inputs.
+   */
+  private function assertDisjointLists(array $given): void {
+    $both = array_intersect($given['labels_add'] ?? [], $given['labels_remove'] ?? []);
+    if ($both) {
+      throw new \InvalidArgumentException(sprintf('Label %s is both added and removed.', reset($both)));
+    }
+    $bothReviewers = array_intersect(
+      array_map('strtolower', $given['reviewers_add'] ?? []),
+      array_map('strtolower', $given['reviewers_remove'] ?? []),
+    );
+    if ($bothReviewers) {
+      throw new \InvalidArgumentException('A reviewer is both added and removed.');
+    }
+    if (array_intersect(array_column($given['links_add'] ?? [], 'uri'), $given['links_remove'] ?? [])) {
+      throw new \InvalidArgumentException('A link URI is both added and removed.');
+    }
+  }
+
+  /**
+   * Upserts exact URIs in place; missing title preserves the stored title.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket being changed.
+   * @param array<array{uri: string, title?: string|null}> $links
+   *   Links to add or retitle.
+   */
+  private function addLinks(BbTicketInterface $ticket, array $links): void {
+    $stored = $ticket->get('links')->getValue();
+    foreach ($links as $link) {
+      $index = array_search($link['uri'], array_column($stored, 'uri'), TRUE);
+      if ($index === FALSE) {
+        $stored[] = ['uri' => $link['uri'], 'title' => $link['title'] ?? ''];
+      }
+      elseif (isset($link['title'])) {
+        $stored[$index]['title'] = $link['title'];
+      }
+    }
+    $ticket->set('links', $stored);
+  }
+
+  /**
+   * Removes exact URIs, keeping every other link in order.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket being changed.
+   * @param array<string> $uris
+   *   Exact link URIs.
+   */
+  private function removeLinks(BbTicketInterface $ticket, array $uris): void {
+    $ticket->get('links')->filter(static fn ($item) => !in_array($item->uri, $uris, TRUE));
+  }
+
+  /**
+   * Adds reviewers through the same account and field validation as create.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket being changed.
+   * @param array<string> $emails
+   *   Reviewer e-mail addresses.
+   */
+  private function addReviewers(BbTicketInterface $ticket, array $emails): void {
+    foreach (array_unique($emails) as $email) {
+      if (!$this->addReviewer($ticket, $email)) {
+        throw new \InvalidArgumentException('No account with this e-mail address can be a reviewer in this workspace.');
+      }
+    }
+  }
+
+  /**
+   * Removes eligible accounts by address, keeping every other reviewer.
+   *
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The ticket being changed.
+   * @param array<string> $emails
+   *   Reviewer e-mail addresses.
+   */
+  private function removeReviewers(BbTicketInterface $ticket, array $emails): void {
+    foreach (array_unique($emails) as $email) {
+      $original = $ticket->get('reviewers')->getValue();
+      if (!$this->addReviewer($ticket, $email)) {
+        throw new \InvalidArgumentException('No account with this e-mail address can be a reviewer in this workspace.');
+      }
+      $account = $this->activeAccount($email);
+      assert($account !== NULL);
+      $ticket->set('reviewers', $original);
+      $ticket->get('reviewers')->filter(static fn ($item) => $item->target_id != $account->id());
+    }
   }
 
   /**

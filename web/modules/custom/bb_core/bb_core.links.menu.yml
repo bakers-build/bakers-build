@@ -31,6 +31,8 @@ bb_core.rail.projects:
   weight: 2
   options:
     icon: project
+    # A project's Overview and Board are pages of Projects too.
+    active_routes: [entity.bb_project.canonical, view.project_board.project_board]
 
 # Shown only on a route that carries a project.
 bb_core.rail.project_tickets:

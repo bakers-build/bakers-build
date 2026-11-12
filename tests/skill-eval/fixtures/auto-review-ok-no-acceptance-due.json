@@ -9,12 +9,9 @@
     "bb-workflow/references/read-ticket.md",
     "bb-workflow/references/review.md",
     "bb-workflow/references/ticket-writes.md",
-    "bb-workflow/references/merge.md",
-    "bb-workflow/references/prior-art-build.md",
     "bb-workflow/references/transition-ticket.md",
     "bb-workflow/references/outtake.md",
     "bb-workflow/references/outtake/review.md",
-    "bb-workflow/references/origin-status.md",
     "bb-label-ticket-question/SKILL.md"
   ],
   "recipes": [
@@ -225,5 +222,8 @@
       "id": "merged-done",
       "criterion": "The final answer reports merge request 61 merged after a negative remote base check, and then the transition to done, naming the handoff's \"no acceptance due\" as the reason it asked nothing."
     }
+  ],
+  "virtual_references": [
+    "bb-workflow/references/retrospective.md"
   ]
 }

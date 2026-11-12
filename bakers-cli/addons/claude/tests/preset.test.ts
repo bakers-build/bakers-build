@@ -19,8 +19,25 @@ describe('Claude catalog', () => {
       { alias: 'opus', model: 'opus' },
       { alias: 'sonnet', model: 'sonnet' },
       { alias: 'fable', model: 'fable' },
+      { alias: 'opus-proxy', model: 'opus' },
     ]);
     expect(candidates.every((c) => Boolean(c.description))).toBe(true);
+  });
+
+  it('launches only opus-proxy through the capture wrapper', async () => {
+    const captured: string[] = [];
+    for (const c of await agents([], { permissions: 'yolo' })) {
+      const agent = await c.agent.createAgent({} as never);
+      if (agent.launchCommand('go').includes(' --capture claude '))
+        captured.push(c.alias!);
+      expect(agent.withoutConductorTools).toBe(false);
+    }
+    expect(captured).toEqual(['opus-proxy']);
+  });
+
+  it('offers a custom model as the only candidate', async () => {
+    const candidates = await agents([], { model: 'custom-model' });
+    expect(candidates.map(({ model }) => model)).toEqual(['custom-model']);
   });
 
   it('carries options and the sandbox into the Fable launch', async () => {

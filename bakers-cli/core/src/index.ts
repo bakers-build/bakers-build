@@ -153,6 +153,7 @@ export {
   exec,
   setDefaultCommandRunner,
 } from './core/exec.js';
+export { quarantinePlanted } from './core/git-quarantine.js';
 export {
   type GitSandboxPaths,
   gitSandboxPaths,
@@ -180,6 +181,7 @@ export {
   verifyConductorProcess,
 } from './core/proc.js';
 export { normalizeRepoUrl } from './core/repo-url.js';
+export { cliRootOf } from './core/runtime-paths.js';
 export { shellQuote } from './core/shell.js';
 export { DEFAULT_SLUG_MAX_LENGTH, slugify } from './core/slug.js';
 export { bumpUiRefresh, UI_REFRESH_FILE } from './core/ui-refresh.js';

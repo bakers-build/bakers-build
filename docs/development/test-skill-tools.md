@@ -1,6 +1,6 @@
 # Test a skill's tool calls
 
-Evaluate the actual tool calls made by ticket-writes (comment publication), create-ticket and transition-ticket against a local bakers.build simulation.
+Evaluate the actual tool calls made by ticket-writes, create-ticket and transition-ticket against a local bakers.build simulation.
 
 **You need:** the setup from [Test a skill](test-skills.md), including authenticated Claude Code for generation. No bakers.build connection or application account is used by the simulator.
 

@@ -148,6 +148,14 @@ props:
         `132,768,940 tokens per closed ticket — Run tokens ÷ closed tickets`.
         Shown when the value is hovered or focused, dismissed with Escape; the
         value becomes focusable when set.
+    url:
+      type: string
+      title: Link
+      description: >-
+        Where the figure leads, such as the Board filtered to the unhealthy
+        tickets. The whole tile becomes the link target through a stretched
+        anchor named after the figure; the info and exact-value triggers stay
+        reachable above it.
   required:
     - value
     - label

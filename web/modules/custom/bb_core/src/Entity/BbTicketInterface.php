@@ -138,6 +138,11 @@ interface BbTicketInterface extends BbContentEntityInterface {
   public function hasOpenBlockers(): bool;
 
   /**
+   * Whether this ticket still blocks others: not done or cancelled.
+   */
+  public function isBlocking(): bool;
+
+  /**
    * Returns the entity ID of the parent ticket, or NULL for top-level tickets.
    *
    * @return int|null

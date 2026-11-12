@@ -1,40 +1,19 @@
-# Establish acceptance criteria
+# Establish acceptance
 
-Read at qualification's `work`, and at working's `read` when no `acceptance` comment covers the
-confirmed scope. Index criteria and bug reproduction under [ticket writes](ticket-writes.md).
-Read the qualification handoff and adopt PM-seeded wording when already checkable, role-named and
-benefit-bearing.
+Qualification adopts checkable seeded criteria; working publishes a missing `acceptance` index.
+Cite qualification comment/AC IDs; write additions/changes in full. Verification resolves the index.
+Assign stable AC IDs, covering every implied condition and deduplicated recipe additions:
+“As a <role>, I want <feature>, so that <benefit>.” Include passing all matching WORKFLOW.md
+validate rows; for bugs include that the reproducible condition no longer reproduces.
+[Results](results.md) owns personas.
 
-Each criterion is a condition another worker can mark met or not met:
-“As a <role>, I want <feature>, so that <benefit>.” Cover every implied condition; list length
-follows scope, not a fixed number. Assign stable AC IDs.
+## Gate each criterion
 
-Reference qualification's unchanged criteria by ID and comment ID; write only added or changed
-criteria in full. Preserve PM-seeded and standing criteria. Verification resolves this index.
+Judge scope, satisfiability, ambiguity and testability. Narrow disproportionate scope, replace
+contradictions/external guarantees, specify observable inputs/results, and name the deciding
+observation. `@bakers-build/bb-verdict` owns the defect vocabulary. Preserve passing wording
+exactly; for supported rewrites report previous wording and assumptions. Ask or record missing
+facts. The passed/rewritten tally rates wording, never implementation success.
 
-Include one standing criterion that the change passes every matching `bb-phase-validate`
-row of `WORKFLOW.md`. For bugs, also require that the reproducible condition no longer reproduces.
-
-The role names who benefits; the concrete test personas belong to qualification's `test_as`
-([result records](results.md) › *Test as*).
-
-## Gate each criterion before publishing it
-
-Check every criterion:
-
-| Defect | Question | Action |
-|---|---|---|
-| `out of scope` | Is this proportionate to the ticket? | Narrow it to the authorized change. |
-| `unsatisfiable` | Can an implementation make it true? | Replace contradictions or external guarantees with achievable behavior. |
-| `ambiguous` | Can another person judge it consistently? | Specify input, condition and observable result. |
-| `untestable` | What observation decides it? | Name the observation; exact commands belong to the test plan. |
-
-`@bakers-build/bb-verdict` › *The verdict* owns the defect vocabulary. Rewrite supported defects here;
-report the previous wording and any assumption. Preserve passing wording exactly. If required
-facts are missing, ask or record the unresolved assumption rather than inventing scope.
-The gate's passed/rewritten tally evaluates criterion quality, not implementation success.
-Qualification's outtake presents it.
-
-Publish the criterion index through [ticket writes](ticket-writes.md) with `bb_comment_type`
-**`acceptance`**. Acceptance is validator-neutral: it selects no command, runs no tests, prepares no
-scenarios and writes no destination. Return the published comment identifier.
+Publish index via [ticket writes](ticket-writes.md), type `acceptance`; return ID.
+Qualification uses its handoff. No checks, scenarios or destination here.

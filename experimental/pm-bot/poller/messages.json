@@ -1,5 +1,6 @@
 {
   "de": {
+    "originLead": "Ursprungsticket:",
     "states": {
       "qualification": "Wir sehen uns diese Anfrage noch einmal an, um sicherzugehen, dass wir verstehen, was gebraucht wird.",
       "plan": "Diese Anfrage ist ausgearbeitet und wartet auf die Freigabe, damit wir anfangen können.",
@@ -26,6 +27,7 @@
     "stillWorking": "Wir arbeiten noch daran."
   },
   "en": {
+    "originLead": "Origin ticket:",
     "states": {
       "qualification": "We are looking at this request again to make sure we understand what is needed.",
       "plan": "This request is written up and waits for the go-ahead to start.",

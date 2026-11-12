@@ -11,20 +11,17 @@ and coding evidence. The parent owns publication, authorized repairs, merge and 
 
 ## Reuse evidence
 
-Reuse coding's durable evidence, resolved MR link and environment surfaces. Preserve the original
-revision and scope; mark reused results using [the result contract](../bb-workflow/references/results.md).
-Rerun only for new changes, failures, missing evidence, unresolved concerns or an explicit request;
-record why. Read available transient output and screenshots. Missing artifacts require an honest
-limitation and any necessary fresh check, never a fabricated pass.
-
-Use [verify](../bb-workflow/references/verify.md) for suite commands, including browser suites; use
-[browser](../bb-workflow/references/browser.md) for agent browser inspection. Resolve required environments and personas
-through the `bb-workflow` *Provision* rule. Human review remains pending until a human supplies an observation.
+Reuse coding evidence/MR/surfaces under [results](../bb-workflow/references/results.md), retaining
+revision/scope and reuse reason. Rerun for new changes, failure, missing evidence, unresolved
+concerns or explicit request; record why. Transient artifacts may be missing: report limitations
+and run necessary checks; never infer a pass. Use [verify](../bb-workflow/references/verify.md),
+[browser](../bb-workflow/references/browser.md) and frame Provision for environments/personas.
+Human review needs a human observation.
 
 ## The verdict
 
-Return `OK` or `Not OK`. Every AC result (`PASS`, `FAIL`, intentional `RED`) includes its reasoning,
-command/observation, tested revision and evidence. A bare verdict is itself a review defect.
+Return `OK` or `Not OK` with each AC result/reason under
+[ticket writes](../bb-workflow/references/ticket-writes.md). A bare verdict is a defect.
 Any FAIL or RED forces `Not OK`; an uncovered criterion also does unless justified.
 
 Failure causes are closed:
@@ -41,11 +38,10 @@ Distinguish proposed repairs from completed repairs.
 A `criterion` cause additionally identifies `out of scope`, `unsatisfiable`, `ambiguous` or
 `untestable` and proposes rewritten wording. A fourth cause or omitted rewrite is a verdict defect.
 Classification grants no additional repair authority: follow *Review's closed repair list* in
-[boundaries](../bb-workflow/references/boundaries.md). The parent alone makes allowed repairs and reruns their checks.
+[review](../bb-workflow/references/review.md). The parent alone makes allowed repairs and reruns their checks.
 
-The typed verdict keeps full details. Return findings and result records to the parent;
-[outtake](../bb-workflow/references/outtake.md) owns the visible format and line shape. Choose no ticket state, run no merge,
-and publish no comment.
+Return findings/results to the parent; [outtake](../bb-workflow/references/outtake.md) owns format.
+Choose no state, merge nothing, publish nothing.
 
 ## Over-engineering pass
 

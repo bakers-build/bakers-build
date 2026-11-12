@@ -1,0 +1,14 @@
+{#
+/**
+ * @file
+ * Fallback for the Board's Working panel outside `bb_theme`.
+ *
+ * `bb_theme` overrides this template and draws the board's column macro.
+ *
+ * @see \Drupal\bb_board\Hook\ProjectBoardColumnHooks::viewsPreRender()
+ */
+#}
+<section>
+  <h2>{{ column.label }} {{ column.count }}{% for hint in column.hints %} · {{ hint }}{% endfor %}</h2>
+  {{ column.content }}
+</section>

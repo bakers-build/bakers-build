@@ -3,7 +3,9 @@ $schema: >-
 name: Input
 status: stable
 group: Form
-description: Lean text-based input element; the input type is set via the type prop.
+description: >-
+  Lean text-based input element; the input type is set via the type prop.
+  `compact` makes it the 32 px field of a one-row toolbar.
 provider: bb_theme
 props:
   type: object
@@ -35,6 +37,13 @@ props:
     readonly:
       type: boolean
       title: Readonly
+    compact:
+      type: boolean
+      default: false
+      title: Compact field
+      description: >-
+        The 32 px field of a one-row toolbar, such as the Board filter bar
+        search (BAKERS-55). Left out, the field keeps its 38 px form height.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true
