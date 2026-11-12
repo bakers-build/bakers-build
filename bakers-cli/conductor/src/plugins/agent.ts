@@ -194,7 +194,7 @@ export interface AgentContainer {
     keyEnv: string;
     /**
      * Per conductor env name holding a credential, preferred first: the
-     * headers a proxy sets (`${value}` is the secret) and appends to
+     * headers a proxy sets (`{value}` is the secret) and appends to
      * (comma-separated).
      */
     auth: Record<

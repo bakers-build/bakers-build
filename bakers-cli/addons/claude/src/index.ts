@@ -38,8 +38,10 @@ import {
   shellQuote,
   withoutGitDirs,
 } from '@bakers-build/core';
+import { claudeContainer, encodeClaudeProjectDir } from './container.js';
 import { parseClaudeTranscript } from './footprint.js';
 
+export { claudeContainer, encodeClaudeProjectDir } from './container.js';
 export { parseClaudeTranscript } from './footprint.js';
 
 /** src/index.ts and dist/src/index.js both sit two levels below the package root. */
@@ -142,14 +144,6 @@ function securityFlags(
   ];
 }
 
-/**
- * Encode an absolute cwd the way Claude Code names its per-project transcript
- * directory under `~/.claude/projects/`: every non-alphanumeric char → `-`.
- */
-export function encodeClaudeProjectDir(cwd: string): string {
-  return cwd.replace(/[^a-zA-Z0-9]/g, '-');
-}
-
 export interface ClaudeAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
@@ -207,6 +201,7 @@ const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
 
 export class ClaudeAgent implements BbAgent {
   readonly id = 'claude';
+  readonly container = claudeContainer;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
