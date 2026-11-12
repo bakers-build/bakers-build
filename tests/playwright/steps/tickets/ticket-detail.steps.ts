@@ -17,8 +17,19 @@ import { createDisposableTicket, deleteDisposableTicket, subject } from '../../s
 
 const { After } = createBdd(test);
 
+/** The sub-tickets a scenario gave its disposable ticket, by uuid. */
+const subTickets = new WeakMap<Page, string[]>();
+
 After({ tags: '@feature:ticket-detail' }, async ({ page }) => {
+  const uuids = subTickets.get(page) ?? [];
+  subTickets.delete(page);
   deleteDisposableTicket(page);
+  if (uuids.length > 0) {
+    php(
+      `foreach ([${uuids.map((uuid) => `"${uuid}"`).join(', ')}] as $u) { $t = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_ticket", $u); if ($t) { $t->delete(); } }`,
+    );
+    Drush.exec('search-api:index bb_tickets');
+  }
 });
 
 /**
@@ -656,6 +667,40 @@ Then('the age in the page header shows its exact date on hover', async ({ page }
 
 Given('a disposable ticket titled {string}', async ({ page }, title: string) => {
   createDisposableTicket(page, 'bb_work', 'working', null, title);
+});
+
+// BAKERS-56 AC-14: "Show in list →" under the sub-tickets.
+Given('the disposable ticket has an open and a closed sub-ticket', async ({ page }) => {
+  const { ticket } = subject(page);
+  const output = php(
+    '$r = \\Drupal::service("entity.repository"); $ts = \\Drupal::entityTypeManager()->getStorage("bb_ticket");' +
+      `$parent = $r->loadEntityByUuid("bb_ticket", "${ticket}"); $uuids = [];` +
+      'foreach (["open" => "working", "closed" => "done"] as $kind => $state) {' +
+      '$c = $ts->create(["project_id" => $parent->get("project_id")->target_id, "title" => "Sub-ticket " . $kind . " " . $parent->getIdentifier(), "workflow" => "bb_work", "state" => $state, "parent_id" => $parent->id()]);' +
+      '$c->save(); $uuids[] = $c->uuid(); }' +
+      'print "UUIDS:" . implode(",", $uuids);',
+  );
+  const uuids = output.split('UUIDS:').pop()?.split(',') ?? [];
+  expect(uuids, `The sub-tickets did not settle: "${output}".`).toHaveLength(2);
+  subTickets.set(page, uuids);
+  Drush.exec('search-api:index bb_tickets');
+});
+
+When('I open the Relations block', async ({ page }) => {
+  await page.locator('[data-canvas-region="inspector"] details > summary', { hasText: /^\s*Relations/ }).click();
+});
+
+Then('the inspector offers no {string} link', async ({ page }, name: string) => {
+  await expect(page.locator('[data-canvas-region="inspector"]').getByRole('link', { name, exact: true })).toHaveCount(0);
+});
+
+Then('the list shows the parent filter for the disposable ticket and exactly its sub-tickets', async ({ page }) => {
+  const { identifier, title } = subject(page);
+  await expect(page.locator('[data-facet]').filter({ hasText: `Parent is ${identifier} · ${title}` })).toHaveCount(1);
+  const rows = page.locator('[data-component-id="bb_theme:list"] li[data-list-item]');
+  await expect(rows.filter({ hasText: `Sub-ticket open ${identifier}` })).toHaveCount(1);
+  await expect(rows.filter({ hasText: `Sub-ticket closed ${identifier}` })).toHaveCount(1);
+  await expect(rows).toHaveCount(2);
 });
 
 // As text: no element inside the heading, and nothing the title carries ran.

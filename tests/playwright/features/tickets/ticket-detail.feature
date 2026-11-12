@@ -108,6 +108,21 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     When I visit the ticket "BB-142"
     Then the link group "More" has a row for "https://example.slack.com/archives/C0123ABCD/p1700000000000100" with the icon "inbox"
 
+  # BAKERS-56 AC-14: the link opens the project list on the ticket's direct
+  # sub-tickets, closed ones included; without sub-tickets there is no link.
+  Scenario: Show in list opens the sub-tickets in the project list
+    Given a disposable ticket titled "Parent of two"
+    And the disposable ticket has an open and a closed sub-ticket
+    When I visit the disposable ticket
+    And I open the Relations block
+    And I open "Show in list →"
+    Then the list shows the parent filter for the disposable ticket and exactly its sub-tickets
+
+  Scenario: A ticket without sub-tickets offers no Show in list link
+    Given a disposable ticket titled "Childless"
+    When I visit the disposable ticket
+    Then the inspector offers no "Show in list →" link
+
   # The state flow is a list, not colour alone: exactly one step is current,
   # and it is the ticket's own state.
   Scenario: The state flow marks the ticket's state as the current step

@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Ticket;
 
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Url;
 use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\EnvVars;
@@ -167,11 +168,13 @@ final class TicketInspectorRows extends InspectorRows {
    *   A key of self::GROUPS.
    * @param array<string, array<string, mixed>> $rows
    *   The `list` items keyed by field, as build() returns them.
+   * @param \Drupal\bb_core\Entity\BbTicketInterface|null $ticket
+   *   The ticket the rows describe; Relations offers "Show in list →" for it.
    *
    * @return array<string, mixed>
    *   The `collapsible` render array, or an empty array.
    */
-  public function groupBlock(string $group, array $rows): array {
+  public function groupBlock(string $group, array $rows, ?BbTicketInterface $ticket = NULL): array {
     $filled = array_values(array_filter(
       array_intersect_key($rows, array_flip(self::GROUPS[$group])),
       fn(array $row): bool => !$this->isEmpty($row),
@@ -185,6 +188,9 @@ final class TicketInspectorRows extends InspectorRows {
       'code' => $base === '' || $base === '—' ? 'Code' : 'Code · ' . $base,
       default => 'Relations · ' . array_sum(array_map(static fn(array $row): int => count($row['cells']) - 1, $filled)),
     };
+    if ($group === 'relations' && $ticket !== NULL && !$this->isEmpty($rows['sub_tickets'] ?? [])) {
+      $filled = $this->withShowInList($filled, $rows['sub_tickets'], $ticket);
+    }
     return [
       '#type' => 'component',
       '#component' => 'bb_theme:collapsible',
@@ -203,6 +209,34 @@ final class TicketInspectorRows extends InspectorRows {
         'content' => $this->list($filled),
       ],
     ];
+  }
+
+  /**
+   * Puts the "Show in list →" row right under the sub-tickets row.
+   *
+   * It opens the project's ticket list on this ticket's direct sub-tickets;
+   * `closed=all` keeps the closed ones in.
+   *
+   * @param array<int, array<string, mixed>> $filled
+   *   The block's rows.
+   * @param array<string, mixed> $subTickets
+   *   The sub-tickets row among them.
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The parent ticket.
+   *
+   * @return array<int, array<string, mixed>>
+   *   The rows with the link row added.
+   */
+  private function withShowInList(array $filled, array $subTickets, BbTicketInterface $ticket): array {
+    $url = Url::fromRoute(
+      'view.tickets.project_tickets',
+      ['bb_project' => $ticket->getProjectId()],
+      ['query' => ['parent' => $ticket->getIdentifier(), 'closed' => 'all']],
+    )->toString();
+    $link = $this->row('', ['kind' => 'link', 'value' => 'Show in list →', 'url' => $url]);
+    $position = array_search($subTickets, $filled, TRUE);
+    array_splice($filled, $position === FALSE ? count($filled) : $position + 1, 0, [$link]);
+    return $filled;
   }
 
   /**

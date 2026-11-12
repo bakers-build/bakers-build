@@ -11,6 +11,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Routing\RouteObjectInterface;
+use Drupal\Core\Url;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
 use Drupal\bb_core\Controller\BbTicketDetailController;
@@ -1348,6 +1349,42 @@ final class TicketDetailScreenTest extends KernelTestBase {
     }
     self::assertNotEmpty($chips);
     self::assertTrue($rows_service->groupBlock('effort', $rows)['#props']['open'] ?? TRUE, 'Effort stays open when it has rows.');
+  }
+
+  /**
+   * Sub-tickets offer "Show in list →", the parent-filtered list with closed.
+   */
+  public function testShowInListLinksToTheParentFilteredList(): void {
+    $rows_service = $this->container->get('bb_core.ticket_inspector_rows');
+    $links = static function (array $block): array {
+      $found = [];
+      foreach ($block['#slots']['content']['#props']['items'] ?? [] as $item) {
+        foreach ($item['cells'] as $cell) {
+          if (($cell['kind'] ?? '') === 'link') {
+            $found[] = $cell;
+          }
+        }
+      }
+      return $found;
+    };
+
+    // A Referenced row alone fills the block, yet there is no link.
+    $this->ticket->set('referenced_tickets', [$this->ticket->id()]);
+    self::assertSame([], $links($rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket)), 'No sub-tickets, no link.');
+
+    $this->enrichTheTicket();
+    $block = $rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket);
+    $found = $links($block);
+    self::assertCount(1, $found);
+    self::assertSame('Show in list →', $found[0]['value']);
+    $expected = Url::fromRoute(
+      'view.tickets.project_tickets',
+      ['bb_project' => $this->ticket->getProjectId()],
+      ['query' => ['parent' => $this->ticket->getIdentifier(), 'closed' => 'all']],
+    )->toString();
+    self::assertSame($expected, $found[0]['url']);
+    self::assertStringContainsString('parent=' . $this->ticket->getIdentifier(), $found[0]['url']);
+    self::assertStringContainsString('closed=all', $found[0]['url']);
   }
 
   /**
