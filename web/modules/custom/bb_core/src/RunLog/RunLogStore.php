@@ -156,17 +156,9 @@ final class RunLogStore {
     $text = '';
     try {
       while (!feof($handle)) {
-        $parts = explode("\n", self::nextChunk($handle, $inflate));
-        $tail = array_pop($parts);
-        foreach ($parts as $part) {
-          $text = trim($text . $part);
-          if ($text !== '') {
-            return substr($text, 0, self::FIRST_LINE_CAP);
-          }
-        }
-        $text = ltrim($text . $tail);
-        if (strlen($text) >= self::FIRST_LINE_CAP) {
-          return substr($text, 0, self::FIRST_LINE_CAP);
+        $line = self::scan(self::nextChunk($handle, $inflate), $text);
+        if ($line !== NULL) {
+          return $line;
         }
       }
     }
@@ -174,6 +166,30 @@ final class RunLogStore {
       fclose($handle);
     }
     return trim($text);
+  }
+
+  /**
+   * Adds a chunk to the pending text; the first non-blank line, once complete.
+   *
+   * @param string $chunk
+   *   The next decompressed chunk.
+   * @param string $text
+   *   The pending text of the line being read, updated here.
+   *
+   * @return string|null
+   *   The line, cut at FIRST_LINE_CAP, or NULL while it is still unfinished.
+   */
+  private static function scan(string $chunk, string &$text): ?string {
+    $parts = explode("\n", $chunk);
+    $tail = array_pop($parts);
+    foreach ($parts as $part) {
+      $text = trim($text . $part);
+      if ($text !== '') {
+        return substr($text, 0, self::FIRST_LINE_CAP);
+      }
+    }
+    $text = ltrim($text . $tail);
+    return strlen($text) >= self::FIRST_LINE_CAP ? substr($text, 0, self::FIRST_LINE_CAP) : NULL;
   }
 
   /**

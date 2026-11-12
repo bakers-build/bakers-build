@@ -188,7 +188,7 @@ final class TicketInspectorRows extends InspectorRows {
       'code' => $base === '' || $base === '—' ? 'Code' : 'Code · ' . $base,
       default => 'Relations · ' . array_sum(array_map(static fn(array $row): int => count($row['cells']) - 1, $filled)),
     };
-    if ($group === 'relations' && $ticket !== NULL && !$this->isEmpty($rows['sub_tickets'] ?? [])) {
+    if ($group === 'relations' && $ticket !== NULL && $ticket->getProjectId() !== NULL && $this->hasReadableChip($rows['sub_tickets'] ?? [])) {
       $filled = $this->withShowInList($filled, $rows['sub_tickets'], $ticket);
     }
     return [
@@ -212,10 +212,26 @@ final class TicketInspectorRows extends InspectorRows {
   }
 
   /**
+   * Whether a relation row links at least one ticket the reader may open.
+   *
+   * @param array<string, mixed> $row
+   *   The relation row; an unreadable ticket is a chip without a `url`.
+   */
+  private function hasReadableChip(array $row): bool {
+    foreach ($row['cells'] ?? [] as $key => $cell) {
+      if ($key !== 'label' && isset($cell['url'])) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
    * Puts the "Show in list →" row right under the sub-tickets row.
    *
    * It opens the project's ticket list on this ticket's direct sub-tickets;
-   * `closed=all` keeps the closed ones in.
+   * `closed=all` keeps the closed ones in. Only offered with a project and at
+   * least one sub-ticket the reader may open, so no empty list.
    *
    * @param array<int, array<string, mixed>> $filled
    *   The block's rows.

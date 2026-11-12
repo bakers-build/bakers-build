@@ -1385,6 +1385,28 @@ final class TicketDetailScreenTest extends KernelTestBase {
     self::assertSame($expected, $found[0]['url']);
     self::assertStringContainsString('parent=' . $this->ticket->getIdentifier(), $found[0]['url']);
     self::assertStringContainsString('closed=all', $found[0]['url']);
+
+    // A ticket without a project has no list to open.
+    $this->ticket->set('project_id', NULL);
+    self::assertSame([], $links($rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket)), 'No project, no link.');
+  }
+
+  /**
+   * A reader who opens none of the sub-tickets gets no link.
+   */
+  public function testShowInListNeedsOneReadableSubTicket(): void {
+    $this->enrichTheTicket();
+    $rows_service = $this->container->get('bb_core.ticket_inspector_rows');
+    $this->setUpCurrentUser(['uid' => 77]);
+    $block = $rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket);
+    $cells = [];
+    foreach ($block['#slots']['content']['#props']['items'] as $item) {
+      $cells = array_merge($cells, array_values($item['cells']));
+    }
+    $badges = array_filter($cells, static fn(array $cell): bool => ($cell['kind'] ?? '') === 'badge');
+    self::assertNotEmpty($badges);
+    self::assertSame([], array_filter($badges, static fn(array $cell): bool => isset($cell['url'])), 'The reader opens none of the related tickets.');
+    self::assertSame([], array_filter($cells, static fn(array $cell): bool => ($cell['kind'] ?? '') === 'link'), 'No readable sub-ticket, no link.');
   }
 
   /**
