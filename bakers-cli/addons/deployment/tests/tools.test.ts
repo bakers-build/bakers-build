@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ToolRequest } from '@bakers-build/conductor/contract';
 import { afterEach, expect, it, vi } from 'vitest';
+import { DrupalBbRemote } from '../../remote-drupal/src/index.js';
 import { tools as presetTools } from '../src/preset.js';
 import { deploymentTools } from '../src/tools.js';
 
@@ -35,8 +36,9 @@ it('reports the release range, resolved tickets and unknown identifiers using th
   const since = git('rev-parse', 'HEAD');
   git('commit', '--allow-empty', '-qm', 'feat: example\n\nref:SHOP-42');
   git('commit', '--allow-empty', '-qm', 'fix: unknown\n\nref:SHOP-99');
-  const resolve = vi.fn(async (_project: string, id: string) =>
-    id === 'SHOP-42' ? { uuid: 'ticket-42', title: 'Example' } : null,
+  const resolve = vi.fn(
+    async (_project: string | { uuid: string }, id: string) =>
+      id === 'SHOP-42' ? { uuid: 'ticket-42', title: 'Example' } : null,
   );
   const req: ToolRequest = {
     worktreePath: root,
@@ -58,9 +60,61 @@ it('reports the release range, resolved tickets and unknown identifiers using th
     unresolved: ['SHOP-99'],
   });
   expect(resolve.mock.calls).toEqual([
-    ['project-id', 'SHOP-99'],
-    ['project-id', 'SHOP-42'],
+    [{ uuid: 'project-id' }, 'SHOP-99'],
+    [{ uuid: 'project-id' }, 'SHOP-42'],
   ]);
+
+  const projectId = '07ab22a7-49ee-479d-8431-7202f5235898';
+  const records = [
+    {
+      id: 'foreign-99',
+      project: 'another-project',
+      identifier: 'SHOP-99',
+      title: 'Foreign',
+    },
+    {
+      id: 'own-42',
+      project: projectId,
+      identifier: 'SHOP-42',
+      title: 'Own ticket',
+    },
+  ];
+  const api = {
+    collection(type: string) {
+      if (type !== 'bb_ticket')
+        throw new Error('A bound project UUID must not be looked up by name');
+      const filters = new Map<string, string>();
+      return {
+        where(field: string, _operator: string, value: string) {
+          filters.set(field, value);
+          return this;
+        },
+        async first() {
+          const row = records.find(
+            (record) =>
+              record.identifier === filters.get('identifier') &&
+              record.project === filters.get('project_id.id'),
+          );
+          return row ? { id: row.id, attr: () => row.title } : null;
+        },
+      };
+    },
+  } as ConstructorParameters<typeof DrupalBbRemote>[0];
+  const realRemoteTools = deploymentTools(async () => new DrupalBbRemote(api));
+  expect(
+    JSON.parse(
+      (
+        await realRemoteTools.deployment_tickets!({
+          ...req,
+          ticket: { ...req.ticket!, projectId },
+        })
+      ).text,
+    ),
+  ).toEqual({
+    range: `${since}..HEAD`,
+    resolved: [{ identifier: 'SHOP-42', uuid: 'own-42', title: 'Own ticket' }],
+    unresolved: ['SHOP-99'],
+  });
   await expect(
     tools.deployment_tickets!({ ...req, ticket: undefined }),
   ).rejects.toThrow('project');

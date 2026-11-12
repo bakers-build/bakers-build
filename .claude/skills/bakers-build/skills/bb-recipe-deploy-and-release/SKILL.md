@@ -17,7 +17,7 @@ The ticket's `environments` entry is the target (`branch`, `base_url`), `base_br
    (the frame's forge operations), then the SHA of `origin/<base_branch>`;
    an existing `origin/<branch_name>` keeps its head.
 3. Compute the deployment ticket batch between the target branch and frozen SHA through the
-   frame's conductor operations table; report unresolved
+   frame's tool discovery and fallback; report unresolved
    identifiers.
 4. Read the SHA's pipeline (`forge_checks`, `ref` the SHA).
 5. Release environment: `pnpm --dir bakers-cli run release:version <SHA> --notes -` is the dry
@@ -46,16 +46,16 @@ own; `main` merges the frozen commit.
    `chore(release): x.y.z` with the approved version (other targets: `chore(deploy): <target
    branch>`); it targets the ticket's `target_branch`. Call `forge_checks` until `overall` is
    `success`, then `forge_merge` (target's merge rule; `main`: merge commit, source kept).
-   GitLab's manual gate operation follows the frame's conductor operations table before merge. The
+   GitLab's manual gate operation follows the frame's tool discovery and fallback before merge. The
    frame's merge never runs here; nothing merges back into `develop`.
 2. Pending, failed or refused: publish an honest `summary` and STOP.
 3. Watch the deploy of the merged SHA (`forge_checks`, `ref` that SHA), then expect HTTP 200
-   from `<base_url>/user/login` (deployed login smoke check in the frame's operations table).
+   from `<base_url>/user/login` (deployed login smoke check in the frame's tool discovery and fallback).
    Then call `bakers_ticket_update` on this ticket only, with
    `environments_add` (the target) and `referenced_tickets_add` (the batch): this ticket is the
    record of where its batch is deployed.
 4. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA, add its GitLab
-   release to `links` only after the release-read operation in the frame's operations table
+   release to `links` only after the release-read operation in the frame's tool discovery and fallback
    verifies it.
 
 ### bb-phase-transition
@@ -69,7 +69,7 @@ Review is mandatory.
 Verdict on the deployment: pipeline green on the merged SHA, the target responds, the batch is
 complete and recorded on this ticket. Release environment additionally: tag `vx.y.z` on the frozen
 SHA, its GitLab release linked in `links`, the CLI package `x.y.z` published on npm.
-Verify publication through the frame's conductor operations table.
+Verify publication through the frame's tool discovery and fallback.
 
 ### bb-phase-transition
 

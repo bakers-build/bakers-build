@@ -14,7 +14,7 @@ mapfile -d '' files < <(find .claude/skills/bakers-build -name '*.md' \
 hits="$(grep -nE "$pattern" "${files[@]}" WORKFLOW.md)" || status=$?
 if [ "${status:-0}" -gt 1 ]; then exit "$status"; fi
 if [ -n "$hits" ]; then
-  printf 'FAIL command lines; name operations from bb-workflow/references/tools-conductor.md:\n%s\n' "$hits"
+  printf 'FAIL command lines; describe the operation and discover its tool:\n%s\n' "$hits"
   exit 1
 fi
 printf 'PASS no unsupported run command lines in the skills or WORKFLOW.md\n'

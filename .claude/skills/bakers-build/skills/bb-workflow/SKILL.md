@@ -62,8 +62,8 @@ assigned writes/routes are theirs.
   a hit needs a human decision.
 - Before writing a ticket, comment or relationship, read [ticket writes](references/ticket-writes.md).
 - [Evidence and links](references/evidence.md); [local preview links](references/preview-links.md).
-- **Provision**: before a confirmed check needing a running environment, start `provision_up` in a
-  subagent ([conductor tools](references/tools-conductor.md)) with the `bb-phase-provision` profile
-  and use its base URL; other checks start nothing. `test_as` logins follow the
+- **Provision**: environment-dependent checks use the `bb-phase-provision` profile through
+  [tool discovery](references/tools.md#choose-an-operation). Delegate only that call to a subagent;
+  otherwise call directly. Use its returned base URL. `test_as` logins follow the
   `bb-phase-outtake` hint; a missing persona stays **missing**, never substituted.
 - Skill prose cites no ticket identifiers.

@@ -61,7 +61,7 @@ export function deploymentTools(
               remote ??= await resolveRemote(req.signal);
               req.signal.throwIfAborted();
               const ticket = await remote.resolveTicketByIdentifier(
-                project,
+                { uuid: project },
                 id,
               );
               req.signal.throwIfAborted();

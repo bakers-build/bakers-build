@@ -62,6 +62,6 @@ lore belong in repository docs.
 
 ## Size
 
-Skills name operations and link the [conductor table](tools-conductor.md#operations), whose fallback applies when no tool exists. Local credential-free worktree commands and repository-check rows are allowed; operator paths `bb-init`, `bb-init-project`, `bb-upgrade-project`, `bb-prepare-time` and `read-ticket-troubleshooting.md` are exempt. Only `tools.md` documents the MCP CLI fallback after tool search/load fails.
+Skills describe results and workflow decisions; use [tool discovery and fallback](tools.md#choose-an-operation). Tools describe themselves: omit copied catalogs, schemas and availability lists. Local credential-free worktree commands and repository-check rows are allowed; operator paths `bb-init`, `bb-init-project`, `bb-upgrade-project`, `bb-prepare-time` and `read-ticket-troubleshooting.md` are exempt. Only `tools.md` documents the MCP CLI fallback after tool search/load fails.
 
 Each `SKILL.md` and reference stays within 500 words (`tests/contract/skill-size.py`).
