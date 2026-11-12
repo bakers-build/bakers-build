@@ -13,7 +13,10 @@ const SCRIPT = fileURLToPath(
 
 describe('BB-267 commit-message convention', () => {
   it('the file contract over git-and-delivery + bb-workflow + merge-mr passes', () => {
-    const out = execFileSync('bash', [SCRIPT], { encoding: 'utf8' });
+    const out = execFileSync('bash', [SCRIPT], {
+      encoding: 'utf8',
+      env: { ...process.env, LC_ALL: 'C' },
+    });
     expect(out).toContain('all checks passed');
     expect(out).not.toContain('FAIL');
   });

@@ -6,17 +6,16 @@
   "skill": "bb-workflow",
   "references": [
     "bb-workflow/references/read-ticket.md",
-    "bb-workflow/references/intake.md",
+    "bb-workflow/references/tools.md",
     "bb-workflow/references/plan.md",
-    "bb-workflow/references/ensure-qualification.md",
     "bb-workflow/references/boundaries.md",
-    "bb-workflow/references/results.md",
-    "bb-workflow/references/publish-comment.md",
+    "bb-workflow/references/evidence.md",
     "bb-workflow/references/ticket-writes.md",
     "bb-workflow/references/outtake.md",
     "bb-workflow/references/outtake/plan.md",
-    "bb-workflow/references/origin-status.md",
-    "bb-workflow/references/transition-ticket.md"
+    "bb-workflow/references/transition-ticket.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/verify.md"
   ],
   "recipes": [
     "bb-recipe-probe"
@@ -89,6 +88,7 @@
     }
   ],
   "virtual_references": [
-    "bb-workflow/references/tools-conductor.md"
+    "bb-workflow/references/tools-conductor.md",
+    "bb-workflow/references/entry-guard.md"
   ]
 }
