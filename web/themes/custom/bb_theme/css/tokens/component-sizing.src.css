@@ -2,6 +2,8 @@
   --spacing-shell-offset: var(--drupal-displace-offset-top, 0px);
   --spacing-shell-height: calc(100dvh - var(--drupal-displace-offset-top, 0px));
   --spacing-row: 34px;
+  --spacing-row-md: 36px;
+  --spacing-row-lg: 44px;
   --spacing-control: 28px;
   --spacing-brand-compact-width: 200px;
   --spacing-zone-sm: var(--spacing-space-3);
@@ -12,5 +14,7 @@
 }
 [data-layout="cozy"] {
     --spacing-row: 40px;
+    --spacing-row-md: 42px;
+    --spacing-row-lg: 50px;
     --spacing-control: 36px;
 }

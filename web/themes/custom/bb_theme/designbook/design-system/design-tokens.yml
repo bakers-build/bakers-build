@@ -36,6 +36,30 @@ primitive:
     row-h:
       $value: 34px
       $type: dimension
+    row-h-md:
+      $value: 36px
+      $type: dimension
+      $description: Row height of a dense data table such as the My time week.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/96b34e1b9fb7053f
+          nodes:
+            - '72:4957'
+            - '72:4976'
+    row-h-lg:
+      $value: 44px
+      $type: dimension
+      $description: Row height of a roomy table such as Members.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/96b34e1b9fb7053f
+          nodes:
+            - '71:4553'
+            - '71:4559'
+            - '71:4595'
+            - '71:4600'
     control-h:
       $value: 28px
       $type: dimension
@@ -552,8 +576,7 @@ semantic:
     gate-band-ink:
       $type: color
       $value: '{primitive.style.color.rye}'
-      $description: >-
-        Addition (BAKERS-116). Text on the gate band, rye in both modes.
+      $description: Addition (BAKERS-116). Text on the gate band, rye in both modes.
   typography:
     page-title:
       $value:
@@ -895,6 +918,16 @@ component:
     padding-y:
       $value: '{primitive.layout.spacing.space-5}'
       $type: dimension
+    max-width:
+      $value: 960px
+      $type: dimension
+      $description: Maximum width of a settings section such as Members.
+      $extensions:
+        designbook:
+          provenance: observation
+          reference: 8c75dc05ca021b53/96b34e1b9fb7053f
+          nodes:
+            - '71:4494'
   grid:
     gap:
       $value: '{primitive.layout.spacing.space-5}'
@@ -907,6 +940,14 @@ component:
     height:
       $value: '{primitive.layout.row-h}'
       $type: dimension
+    height-md:
+      $value: '{primitive.layout.row-h-md}'
+      $type: dimension
+      $description: A dense data-table row (36px, 42px cozy).
+    height-lg:
+      $value: '{primitive.layout.row-h-lg}'
+      $type: dimension
+      $description: A roomy table row (44px, 50px cozy).
   control:
     height:
       $value: '{primitive.layout.control-h}'
@@ -985,6 +1026,28 @@ themes:
         row-h:
           $value: 40px
           $type: dimension
+        row-h-md:
+          $value: 42px
+          $type: dimension
+          $description: Cozy step after 36px.
+          $extensions:
+            designbook:
+              provenance: addition
+              reference: 8c75dc05ca021b53/96b34e1b9fb7053f
+              note: >-
+                Approved spec 2026-11-10: cozy keeps its +6px step on row
+                heights.
+        row-h-lg:
+          $value: 50px
+          $type: dimension
+          $description: Cozy step after 44px.
+          $extensions:
+            designbook:
+              provenance: addition
+              reference: 8c75dc05ca021b53/96b34e1b9fb7053f
+              note: >-
+                Approved spec 2026-11-10: cozy keeps its +6px step on row
+                heights.
         control-h:
           $value: 36px
           $type: dimension
