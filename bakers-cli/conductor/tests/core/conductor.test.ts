@@ -4759,37 +4759,37 @@ describe('Conductor — addon lifecycle hook listeners', () => {
 
 describe('qualification gate orchestration (the frame)', () => {
   const wf = readProjectWorkflow();
-  const guardLink = '[ensure qualification](ensure-qualification.md)';
+  const recoveryLink = '[return to qualification](return-to-qualification.md)';
 
-  it('unqualified path: plan and working invoke the guard in their read phase', () => {
+  it('unqualified path: plan and working disclose the shared recovery in read', () => {
     for (const state of ['plan.md', 'working.md']) {
-      const read = mdSection(readReference(state), 'read');
-      expect(read, `${state} read phase missing guard`).toContain(guardLink);
+      expect(mdSection(readReference(state), 'read')).toContain(recoveryLink);
     }
-    // Recovery and its stop condition belong to the shared guard, not the state files.
-    const guard = readReference('ensure-qualification.md');
-    expect(guard).toContain('returned_to_qualification');
-    expect(guard).toMatch(/then stop/);
-    expect(guard).toMatch(
+    const recovery = readReference('return-to-qualification.md');
+    expect(recovery).toContain('returned_to_qualification');
+    expect(recovery).toMatch(/then stop/);
+    expect(recovery).toMatch(
       /\[transition ticket\]\(transition-ticket\.md\).*destination `qualification`/,
     );
   });
 
-  it('qualified path: the state continues after the guard', () => {
+  it('qualified path: the inline check continues unchanged', () => {
     for (const state of ['plan.md', 'working.md']) {
       const read = mdSection(readReference(state), 'read');
-      const continuation = /[Cc]ontinu\w*\s+only\s+on\s+`qualified`/.exec(read);
-      expect(continuation).not.toBeNull();
-      expect(continuation?.index).toBeGreaterThan(read.indexOf(guardLink));
+      expect(read).toContain('`qualified`');
+      expect(read).toMatch(/continue unchanged/);
+      expect(read).toContain('acceptance_criteria');
     }
   });
 
-  it('guard exclusion: review and the recipe do not invoke the guard', () => {
+  it('guard exclusion: review and the recipe do not invoke recovery', () => {
     expect(mdSection(readSkill('bb-recipe-matt'), 'bb-state-review')).not.toBe(
       '',
     );
-    expect(readSkill('bb-recipe-matt')).not.toContain('ensure-qualification');
-    expect(readReference('review.md')).not.toContain('ensure-qualification');
+    expect(readSkill('bb-recipe-matt')).not.toContain(
+      'return-to-qualification',
+    );
+    expect(readReference('review.md')).not.toContain('return-to-qualification');
   });
 
   it('WORKFLOW.md is the entry line plus phase hints — no loader, no state sections', () => {

@@ -1,25 +1,18 @@
 # Ticket writes
 
-Read before writing a ticket, comment or relationship. Every write is a tool call
-([tools](tools.md)).
+Use [tools](tools.md). Descriptions/comments are Markdown source (`bb_rich`), not HTML; inspect
+format before sending. Type/recipe/labels are term names; verify resolved values. Links add only.
 
-## Handoffs and ticket text are Markdown
+## Publish a comment
 
-Pass Markdown source as a comment's `body` or a ticket's `description`; the tool stores it as
-`bb_rich`. Inspect headings, lists, links and tables before writing. Raw HTML is stripped. The
-comment type is its own argument, separate from the text. Verify the exact stored text on readback;
-[publish comment](publish-comment.md) confirms comments by their result.
+Require caller ticket/type, authorized action and populated readable Markdown body file.
+Caller owns content/timing. `bakers_comment_publish` receives ticket/type/body unchanged, including
+trailing newlines. Whitespace is no comment. Result id confirms without another read/search;
+retain it immediately. Mutate no other entity.
 
-## Validated writes and uncertain outcomes
+## Rejected or uncertain writes
 
-Arguments are validated against the tool's schema before sending; correct a rejection (exit 4)
-before retrying. Retain returned UUIDs immediately. Reconcile uncertain writes by UUID or uniquely
-matching context; never blindly repeat a create.
-
-Verify state readback. On definite rejection retain state and best-effort restore mapped origin
-status while authorized; on uncertain outcomes reconcile first. Report unreconciled mismatches.
-
-## References are named, not resolved
-
-Type, recipe and labels are term names; the tool resolves them in the ticket's workspace. Verify the
-resolved values on readback. Links are added, never replaced: the tool keeps existing links.
+Exit 4 sent nothing: fix schema before retry. Other failures report ticket/type/cause.
+Timeout/lost response may have written: reconcile by UUID/unique context, never blindly recreate.
+Verify state readback. Definite rejection retains state; best-effort restore mapped origin while
+authorized. Reconcile uncertainty first; report unresolved mismatches.

@@ -1,44 +1,53 @@
 # Plan
 
-Plan the confirmed ask. The recipe's slots supply the method; this flow supplies the frame around
-it. The method produces no implementation.
+## references
+
+always: read-ticket.md, tools.md, plan.md, boundaries.md, evidence.md, ticket-writes.md, outtake.md, outtake/plan.md, transition-ticket.md
+if entry guard fails: return-to-qualification.md
+if ticket is a bug: results.md
+if a browser path is selected: browser.md
+if reproduction needs runtime: verify.md, tools-conductor.md
+if ticket has an origin: origin-status.md
+if ticket read fails: read-ticket-troubleshooting.md
+if paginated lookups are needed: tools-lookup.md
+
+Read at the consuming phase, not upfront. [Read ticket](read-ticket.md) owns context and framing;
+its troubleshooting branch and tools' lookup branch load only when triggered.
 
 ## read
 
-Apply [ensure qualification](ensure-qualification.md); continue only on `qualified`.
+Use highest-handoff_version qualification. With recipe, type, entered state and handoff
+acceptance_criteria, emit only `qualified`, continue unchanged; otherwise execute
+[return to qualification](return-to-qualification.md) and stop.
 
 ## provision
 
-A bug whose reproduction needs a runtime applies the frame's *Provision* rule, so its RED observation runs on the worktree's site; otherwise none.
+Runtime-dependent bug reproduction uses the frame's Provision rule; otherwise none.
 
 ## work
 
-Apply [boundaries](boundaries.md). Give the method the ticket's acceptance criteria, repository
-boundaries and the project's hints, with this ticket as the tracker target. A selected browser path
-is prepared under [browser](browser.md) › *Paths*.
+Apply [boundaries](boundaries.md). Give recipe method acceptance criteria, repository boundaries,
+hints and ticket target. Prepare selected [browser paths](browser.md) only when needed.
+No implementation.
 
 ## validate
 
-none — a bug records a real RED observation of the reported condition before any fix, under
-[result records](results.md).
+For bugs record real pre-fix RED under [results](results.md); otherwise none.
 
 ## deliver
 
-Publish the method's result through [publish comment](publish-comment.md) as complete comments:
-`spec`, `plan` and `test`. A bug publishes the cause and observed evidence as `debug_diagnose`
-instead of `spec`.
-
-The `test` comment separates applicable project checks from the functional regression and records
-per check its type, rationale, command/path, expected RED and GREEN, and the evidence it will
-report. Use the approved seams and reuse suitable coverage.
+Publish complete `spec`, `plan`, `test` via [ticket writes](ticket-writes.md). Bugs publish cause
+and observations as `debug_diagnose` instead of spec. Test plan separates Project checks and
+Functional validation; per check include type, rationale, command/path, expected RED/GREEN and
+evidence to report. Use approved seams and reuse coverage.
 
 ## outtake
 
-Render through [the outtake](outtake.md), publish it as its own comment of type `summary`, and print it.
+Render [outtake](outtake.md), publish `summary`, print it.
 
 ## transition
 
-Obtain **one** approval covering the proposal (for a bug: cause, fix direction and verification
-plan); reuse approval already given for this scope. Without it, STOP in `plan`. With it, record the
-confirmed comment IDs, publish authorized [origin status](origin-status.md) for `working` and
-[transition](transition-ticket.md) once to `working`, with its readback. STOP.
+Obtain one approval of proposal (bugs: cause, fix direction, verification); reuse covering
+approval. Without approval stop in plan. Otherwise record confirmed comment IDs, publish
+authorized [origin status](origin-status.md) if origin exists, [transition](transition-ticket.md)
+once to working, verify readback and STOP.

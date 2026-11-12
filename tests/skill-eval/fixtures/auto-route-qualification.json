@@ -5,11 +5,10 @@
   "execution": "simulated-tools",
   "skill": "bb-workflow",
   "references": [
-    "bb-workflow/references/read-ticket.md",
     "bb-workflow/references/qualification.md"
   ],
   "virtual_references": [
-    "bb-workflow/references/intake.md",
+    "bb-workflow/references/read-ticket.md",
     "bb-label-auto/SKILL.md"
   ],
   "recipes": [

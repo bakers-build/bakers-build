@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""Skills call tracker operations as bakers tools, each named in the tools reference and served by Drupal."""
+"""Skills use served Drupal tool names without restating their schemas."""
 from pathlib import Path
 import re
 import sys
 
 repo = Path(__file__).resolve().parents[2]
 REFERENCE = 'bb-workflow/references/tools.md'
-# Lookup, setup and time tools live in a sibling so each stays within the word budget.
-TABLES = (REFERENCE, 'bb-workflow/references/tools-lookup.md')
 # Hidden compatibility is executable but never a maintained skill transport, and
 # neither is generic entity CRUD; the bare word dropsh stays legal for the library.
 RETIRED_CALL = re.compile(
@@ -18,11 +16,11 @@ TOOL = re.compile(r'\bbakers_[a-z_]+\b')
 
 
 def violations(skills, modules):
-    documented = {name for table in TABLES
-                  for name in re.findall(r'^\| [^|]+ \| `(bakers_[a-z_]+)` \|', (skills / table).read_text(), re.M)}
+    documented = {name for path in skills.rglob('*.md') for name in TOOL.findall(path.read_text())}
     served = {m for path in modules.glob('*/src/Plugin/tool/Tool/*.php')
               for m in re.findall(r"^\s+id: '(bakers_[a-z_]+)'", path.read_text(), re.M)}
-    errors = [f'{REFERENCE}: {name} is not a Drupal tool' for name in sorted(documented - served)]
+    assert documented, 'No tool names found'
+    errors = [f'{name} is not a Drupal tool' for name in sorted(documented - served)]
     for path in sorted(skills.rglob('*.md')):
         rel, text = path.relative_to(skills).as_posix(), path.read_text()
         for line_no, line in enumerate(text.splitlines(), 1):
@@ -30,8 +28,6 @@ def violations(skills, modules):
                 errors.append(f'{rel}:{line_no}: teaches the retired shell or /api/time instead of tools/auth')
             if re.search(r'`bakers tools\b|\bbakers tools\s+(?:tool_api__|<|--)', line) and rel != REFERENCE:
                 errors.append(f'{rel}:{line_no}: shows the tool transport; only {REFERENCE} does')
-            errors += [f'{rel}:{line_no}: {name} is not in {" or ".join(TABLES)}'
-                       for name in TOOL.findall(line) if name not in documented]
     return documented, errors
 
 
@@ -52,4 +48,4 @@ if __name__ == '__main__':
         print(f'FAIL {error}')
     if errors:
         sys.exit(1)
-    print(f'PASS {len(documented)} tools in the reference, all served; no skill teaches the retired shell, generic CRUD or /api/time')
+    print(f'PASS {len(documented)} tool names used by skills, all served; no skill teaches the retired shell, generic CRUD or /api/time')

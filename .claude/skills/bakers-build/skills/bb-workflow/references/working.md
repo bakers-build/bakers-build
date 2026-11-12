@@ -1,11 +1,29 @@
 # Working
 
+## references
+
+always: read-ticket.md, tools.md, working.md, boundaries.md, prior-art-build.md, forge.md, evidence.md, results.md, delivery.md, ticket-writes.md, transition-ticket.md, outtake.md, outtake/working.md, coding-gate.md
+if qualification entry guard fails: return-to-qualification.md
+if acceptance is absent for confirmed scope: acceptance.md
+if a check needs a running environment: verify.md, tools-conductor.md
+if a browser path is selected: browser.md
+if a preview is available: preview-links.md
+if hosting service is GitHub: github-delivery.md
+if ticket has an origin: origin-status.md
+if merge to done is explicitly authorized: merge.md, retrospective.md
+if ticket read fails: read-ticket-troubleshooting.md
+if paginated lookups are needed: tools-lookup.md
+
+Read each reference when its phase uses it. Lists describe the full path, not an upfront batch.
+
 Build the confirmed scope to GREEN. The recipe's slots supply the method; this flow supplies the
 frame around it.
 
 ## read
 
-Apply [ensure qualification](ensure-qualification.md); continue only on `qualified`. Resume the
+Use the latest qualification handoff (highest `handoff_version`). If recipe, type, entered state
+and handoff `acceptance_criteria` exist, emit only `qualified` and continue unchanged.
+Otherwise execute [return to qualification](return-to-qualification.md) and stop. Resume the
 confirmed scope and verification plan; publish [acceptance](acceptance.md) if absent for this scope.
 
 ## provision
@@ -38,7 +56,7 @@ blocker in the records.
 ## outtake
 
 Issue each `test_as` persona's login link through the `WORKFLOW.md` `bb-phase-outtake` hint and add it
-to the records. Publish the typed coding handoff through [publish comment](publish-comment.md):
+to the records. Publish the typed coding handoff through [publish comment](ticket-writes.md):
 confirmed scope IDs, base and head SHAs, MR, per-criterion evidence and the login links. Render it
 through [the outtake](outtake.md), publish that as its own comment of type `summary`, and print it.
 Both writes are owed even when no transition follows.

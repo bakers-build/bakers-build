@@ -7,7 +7,7 @@ description: Use when executing or authoring bakers.build lifecycle steps — th
 
 A state run passes seven phases in order: **read, provision, work, validate, deliver, outtake,
 transition**. Its state file holds one section per phase and is the only description of its flow.
-To author a recipe, runtime guide or hint, read [authoring](references/authoring.md).
+For authoring read [authoring](references/authoring.md).
 
 ## Slots
 
@@ -29,11 +29,11 @@ transitions. Beside it, read the matching **slots**; they supply the method insi
    | `qualification` | [qualification](references/qualification.md) |
    | every other state | the recipe's `bb-state-<state>` section, run in the state file of that name: [plan](references/plan.md), [working](references/working.md), [review](references/review.md) |
 
-   A state without a readable state file: stop and name it, reading no recipe.
+   Unreadable state file: stop and name it before reading a recipe.
 3. Resolve the recipe: `bb-recipe-<name>` from the ticket's `recipe` field, empty at qualification
    until [classify](references/classify.md) chooses; slots and the stop rule wait
    for it.
-4. Apply *Stop rule*, then render [the intake](references/intake.md) once and start the state
+4. Apply *Stop rule*, then render [read ticket](references/read-ticket.md) › *Frame the run* and start the state
    file's `## read`.
 
 ## Required skills
@@ -54,7 +54,7 @@ Substitute no method of your own.
 
 ## Rules
 
-- References route nothing, except [ensure qualification](references/ensure-qualification.md)
+- References route nothing, except [return to qualification](references/return-to-qualification.md)
   (recovery); `@bakers-build/bb-create-ticket` routes a new ticket once.
 - Before creation and every qualification, run [prior-art search](references/prior-art-search.md);
   a hit needs a human decision.

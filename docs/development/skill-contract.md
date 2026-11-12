@@ -38,11 +38,11 @@ A run is **state × phase**. Every state run passes seven phases in order: `read
 | `qualification` | `references/qualification.md` |
 | every other state | the recipe's `bb-state-<state>` section, run inside the state file of that name (`plan`, `working`, `review`) |
 
-It then resolves the recipe, renders the intake (`references/intake.md`) once and starts the state file's `## read`. A state without a state file stops the run and names the state.
+It then resolves the recipe, renders the intake (`references/read-ticket.md`) once and starts the state file's `## read`. A state without a state file stops the run and names the state.
 
 Every ticket runs the one workflow `bb_work`: `qualification → plan → working → review → done`. A deployment and a verification are tickets of type `deployment` and `verification` whose recipes, `bb-recipe-deploy-and-release` and `bb-recipe-verify`, say what `plan`, `working` and `review` mean for them.
 
-`plan`, `working` and `review` first apply `references/ensure-qualification.md` and continue only on `qualified`. Provisioning is lazy: the runtime is brought up before the first action that needs it, and skipped when nothing does.
+`plan` and `working` check the latest qualification inline and continue on `qualified`; an invalid handoff loads `references/return-to-qualification.md`. Provisioning is lazy: the runtime is brought up before the first action that needs it, and skipped when nothing does.
 
 ## Recipes
 
@@ -66,7 +66,7 @@ If the recipe, its state section, the ticket's type among the recipe's declared 
 
 ## References route nothing
 
-A reference produces one outcome and chooses no destination. Two exceptions exist: `references/ensure-qualification.md` may send a ticket back to `qualification`, and the `bb-create-ticket` skill owns the first routing of a new ticket. The global rules every run keeps live in `bb-workflow` and its references.
+A reference produces one outcome and chooses no destination. Two exceptions exist: `references/return-to-qualification.md` may send a ticket back to `qualification`, and the `bb-create-ticket` skill owns the first routing of a new ticket. The global rules every run keeps live in `bb-workflow` and its references.
 
 ## Handoff and transition order
 

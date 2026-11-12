@@ -38,7 +38,7 @@ slot names its own comment, check or merge, it replaces the state file's default
 verification, the browser surface, intake, outtake, measurement, merge and the state
 write — is a reference under `skills/bb-workflow/references/`, not a skill, and cannot be invoked.
 Each has one observable result and never chooses a destination; **a reference owns the command it
-performs**. `references/ensure-qualification.md` keeps its guard exception — its only route is the
+performs**. `references/return-to-qualification.md` keeps its guard exception — its only route is the
 recovery back to `qualification`. Project parameters are `WORKFLOW.md` hint tables, such as the
 origin-label table under `## bb-phase-transition`.
 

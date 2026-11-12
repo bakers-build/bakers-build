@@ -194,19 +194,19 @@ check 'AC-3 merge-mr says convention, never the word the skill guard forbids' \
 check 'AC-3 the recipe does not call merge-mr directly (single-sourced in Coding gate)' \
   no_has "$RECIPE" 'merge.md'
 check 'AC-3 the Coding gate merge-mr call names the ticket `identifier` field' \
-  hasre "$IMPL_FLAT" 'runs \[merge\]\(merge\.md\) with the ticket.s .identifier. field'
+  hasre "$IMPL_FLAT" '\[merge\]\(merge\.md\) using ticket.s .identifier. field'
 # BB-444: the review merge-mr call site moved out of review-ticket into the shared
 # bb-workflow › Review flow (review-ticket is the credential-less verdict helper and calls no
 # merge). Assert the flow's call site names the `identifier` field.
 check 'AC-3 the Review flow merge-mr call names the ticket `identifier` field' \
-  hasre "$IMPL_FLAT" 'run \[merge\]\(merge\.md\) with the ticket.s .identifier. field once'
+  hasre "$IMPL_FLAT" '\[merge\]\(merge\.md\) once, ticket .identifier. field'
 
 # --- AC-4 — shared coding context reaches the project convention ------------------------------
 
 check 'AC-4 coding context points at project commit and MR conventions' \
-  has "$IMPL_FLAT" 'Follow project commit and MR conventions'
+  has "$IMPL_FLAT" 'Commit scoped work under project conventions'
 check 'AC-4 coding context requires an explicit base_branch MR target' \
-  hasre "$IMPL_FLAT" '\*\*target\*\* = the ticket.{0,3}s `base_branch`'
+  hasre "$IMPL_FLAT" 'target is target_branch \(else base_branch\)'
 
 # --- D6 — the convention is compatible with the release-batch parser -----------------------------
 #

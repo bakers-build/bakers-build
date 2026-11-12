@@ -76,7 +76,7 @@ hasre() { printf '%s' "$1" | grep -E -- "$2" >/dev/null; }
 # renumbering the list or re-wrapping the prose leaves the region intact.
 impl_mr_region() {
   { awk '
-      /^Commit the scoped change/ { f = 1 }
+      /^Commit scoped work/ { f = 1 }
       f && /^## / { exit }
       f { print }
     ' "$IMPL" | flat; } 2>/dev/null || true
@@ -130,13 +130,13 @@ check 'the ## Merge section of merge-mr is non-empty' test -n "$MERGE_MR"
 # rather than reworded: the property is asserted from prose this contract's ticket can keep true.
 
 check 'AC-1 the MR region names base_branch as the target property' \
-  hasre "$IMPL_MR" '\*\*target\*\* = the ticket.{0,3}s `base_branch`'
+  hasre "$IMPL_MR" 'target is target_branch \(else base_branch\)'
 check 'AC-1 the MR region names squash commits as enabled' \
-  hasre "$IMPL_MR" '\*\*squash commits\*\* = enabled'
+  hasre "$IMPL_MR" 'Feature branches squash into one commit'
 check 'AC-1 the MR region names delete source branch as enabled' \
-  hasre "$IMPL_MR" '\*\*delete source branch\*\* = enabled'
+  hasre "$IMPL_MR" 'delete only the ticket.s own short-lived branch'
 check 'AC-1 the MR region says the properties are set on the MR itself, not left to a default' \
-  hasi "$IMPL_MR" 'never left to a client default'
+  hasi "$IMPL_MR" 'client defaults and project settings do not decide them'
 
 # --- AC 2 — that instruction names no client: the forge tools carry it ---------------------------
 #
@@ -146,9 +146,9 @@ check 'AC-1 the MR region says the properties are set on the MR itself, not left
 # says the properties travel explicitly with the merge.
 
 check 'AC-2 the MR region routes push and MR through the forge operations' \
-  hasi "$IMPL_MR" 'create or update its MR through the forge operations'
-check 'AC-2 the MR region says the tools send method and deletion explicitly at the merge' \
-  hasi "$IMPL_MR" 'send method and deletion explicitly at the merge'
+  hasi "$IMPL_MR" 'push and create/update its MR'
+check 'AC-2 the MR region requires explicit method and source deletion' \
+  hasi "$IMPL_MR" 'Send method and source deletion explicitly'
 
 # --- AC 3 — merge-mr states both as properties of the MERGE CALL ---------------------------------
 
@@ -217,17 +217,17 @@ check 'AC-3 unchanged: the merge result is still verified' \
 # but the branch must survive its own merge to be promoted.
 
 check 'AC-8 bb-workflow ties the deletion to the ticket own branch_name' \
-  hasre "$IMPL_MR" 'the source is this ticket.{0,3}s own `branch_name`'
-check 'AC-8 bb-workflow calls the deletion the only conditional property' \
-  hasi "$IMPL_MR" 'the only conditional property'
-check 'AC-8 bb-workflow names a long-lived or shared branch as failing the condition' \
-  hasi "$IMPL_MR" 'long-lived or shared branch'
+  hasre "$IMPL_MR" 'delete only the ticket.s own short-lived branch'
+check 'AC-8 bb-workflow makes deletion conditional' \
+  hasi "$IMPL_MR" 'delete only'
+check 'AC-8 bb-workflow retains shared and environment branches' \
+  hasi "$IMPL_MR" 'shared/environment branches'
 check 'AC-8 bb-workflow names a reused release branch as failing the condition' \
-  hasi "$IMPL_MR" 'release branch a later promote reuses'
+  hasi "$IMPL_MR" 'promotion branches reused later'
 check 'AC-8 bb-workflow names a branch other open MRs target as failing the condition' \
-  hasi "$IMPL_MR" 'other open MRs still target as their base'
+  hasi "$IMPL_MR" 'sources other open MRs target'
 check 'AC-8 bb-workflow says why it is nevertheless always set here' \
-  hasi "$IMPL_MR" "from the ticket's own branch"
+  hasi "$IMPL_MR" "ticket's own short-lived branch"
 
 check 'AC-8 merge-mr states the positive condition for deleting the source' \
   has "$MERGE_MR" "Delete only the merged ticket's own short-lived work branch."
@@ -268,9 +268,9 @@ check 'AC-8 merge-mr retains squash when source deletion is disabled' \
 # corrected direction is asserted, over this ticket's own block and nowhere else.
 
 check 'consistency: the MR region gives a squash reason that holds — the branch lands as one commit' \
-  hasi "$IMPL_MR" 'as one commit'
+  hasi "$IMPL_MR" 'into one commit'
 check 'consistency: the MR region says the squash is what discards the per-commit trailers' \
-  hasi "$IMPL_MR" 'Squash discards'
+  hasi "$MERGE_MR" 'Squash discards individual commit trailers'
 
 # --- The stated source agrees with the two skills ------------------------------------------------
 #
