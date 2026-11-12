@@ -45,6 +45,11 @@ final class WorkspaceReadScopeSubscriber implements EventSubscriberInterface {
    * workspace the account is only a guest of.
    */
   private const SET_TEMPLATE_WORKSPACES = 'template_workspaces';
+
+  /**
+   * Workspaces whose rank grants `view bb_invite`; a guest seat grants none.
+   */
+  private const SET_INVITE_WORKSPACES = 'invite_workspaces';
   /**
    * The one set that is not a flat id list but a map keyed by group type.
    *
@@ -231,6 +236,10 @@ final class WorkspaceReadScopeSubscriber implements EventSubscriberInterface {
       'bb_term' => [
         'conjunction' => 'OR',
         'terms' => [['workspace_id', self::SET_WORKSPACES]],
+      ],
+      'bb_invite' => [
+        'conjunction' => 'OR',
+        'terms' => [['workspace_id', self::SET_INVITE_WORKSPACES]],
       ],
       'bb_project' => [
         'conjunction' => 'OR',
@@ -502,6 +511,7 @@ final class WorkspaceReadScopeSubscriber implements EventSubscriberInterface {
       self::SET_PROJECTS => $this->readScope->projectIds($account),
       self::SET_PEOPLE => $this->readScope->peopleIds($account),
       self::SET_TEMPLATE_WORKSPACES => $this->workspacesGranting($account, 'view bb_ticket_template'),
+      self::SET_INVITE_WORKSPACES => $this->workspacesGranting($account, 'view bb_invite'),
       // A rule term naming a set that does not exist is a programming error,
       // and it must not degrade into an empty id list: guard 3 would read that
       // as "no scope" and falsify the query, which looks exactly like correct

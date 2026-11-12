@@ -174,11 +174,11 @@ describe('GitWorkspace run branches', () => {
     expect(ws.env).toBeUndefined();
   });
 
-  it('honours autoSetupMerge: true from the addon options', async () => {
+  it('honours auto_setup_merge: true from the addon options', async () => {
     mkdirSync(join(main, '.bakers'));
-    const ws = await gitWorkspace({ autoSetupMerge: true })
+    const ws = await gitWorkspace({ auto_setup_merge: true })
       .createWorkspace({
-        config_path: join(main, '.bakers', 'conductor.config.js'),
+        config_path: join(main, '.bakers', 'project.config.js'),
       } as never)
       .then((w) => w.ensure('BB-1', 'one'));
     expect(ws.env).toBeUndefined();

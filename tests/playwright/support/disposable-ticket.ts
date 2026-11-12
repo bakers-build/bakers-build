@@ -1,5 +1,6 @@
-// Disposable ticket (+ optional running run) shared by intervention and
-// canonical-run scenarios so a second WeakMap cannot drift from the first.
+// Disposable ticket (+ optional running run, or three failed runs that park it)
+// shared by intervention and canonical-run scenarios so a second WeakMap cannot
+// drift from the first.
 import type { Page } from '@playwright/test';
 import { php } from './drush';
 
@@ -31,7 +32,7 @@ export function createDisposableTicket(
   page: Page,
   workflow: string,
   state: string,
-  withRun: boolean,
+  runs: 'none' | 'running' | 'failed',
 ): DisposableTicket {
   const title = `Intervention ${workflow} ${state} ${Date.now()}`;
   const output = lastLine([
@@ -41,8 +42,13 @@ export function createDisposableTicket(
     `$t = $etm->getStorage("bb_ticket")->create(["project_id" => $p->id(), "title" => "${title}", "workflow" => "${workflow}", "state" => "${state}"]);`,
     '$t->save();',
     '$runUuid = ""; $runId = "";',
-    withRun
+    runs === 'running'
       ? '$c = current($etm->getStorage("bb_conductor")->loadMultiple()); if (!$c) { print "NO_CONDUCTOR"; return; } $r = $etm->getStorage("bb_run")->create(["ticket_id" => $t->id(), "conductor_id" => $c->id(), "state" => "running", "state_at_start" => "working", "started_at" => time()]); $r->save(); $runUuid = $r->uuid(); $runId = $r->id();'
+      : '',
+    // Assigned to a conductor whose owner reaches the project, so the stall
+    // reads "failing" rather than a conductor reason.
+    runs === 'failed'
+      ? '$c = NULL; foreach ($etm->getStorage("bb_conductor")->loadMultiple() as $candidate) { if (\\Drupal::service("bb_core.conductor_owner_access")->ownerHasAccess($candidate, (int) $p->id())) { $c = $candidate; break; } } if (!$c) { print "NO_CONDUCTOR"; return; } $t->set("conductor_id", $c->id())->save(); for ($i = 0; $i < 3; $i++) { $etm->getStorage("bb_run")->create(["ticket_id" => $t->id(), "conductor_id" => $c->id(), "state" => "failed", "state_at_start" => "working", "started_at" => time()])->save(); }'
       : '',
     'print $t->uuid() . "|" . $t->toUrl()->toString() . "|" . $runUuid . "|" . $runId . "|" . $t->getIdentifier() . "|" . $t->label();',
   ].join(' '));

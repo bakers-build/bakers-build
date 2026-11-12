@@ -379,6 +379,9 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
     if (!$this->crewAccess($group)->isAllowed()) {
       throw new AccessDeniedHttpException();
     }
+    if ($group !== NULL && $this->refuseChange($group, $form_state)) {
+      return;
+    }
     if ($group === NULL || $this->tenancyInvite->isTenancy($group) || $this->pressedPrefixed($form_state, [self::ADD]) === NULL) {
       // Only the add carries a field to validate. A removal or a role pick
       // must not be refused because the person control happens to be empty.
@@ -400,6 +403,30 @@ final class GroupMembersForm extends IslandFormBase implements TrustedCallbackIn
         ['@group' => $this->groupNoun($group)],
       ));
     }
+  }
+
+  /**
+   * Refuses a removal or role pick that leaves the workspace without a head.
+   *
+   * @return bool
+   *   TRUE when the pressed change was refused with a form error.
+   */
+  private function refuseChange(ContentEntityInterface $group, FormStateInterface $form_state): bool {
+    $change = $this->pressedPrefixed($form_state, [MemberItemBuilder::REMOVE_PREFIX, MemberItemBuilder::ROLE_PREFIX]);
+    if ($change === NULL) {
+      return FALSE;
+    }
+    [$prefix, $uid_key] = $change;
+    $value = $form_state->getUserInput()[$prefix . $uid_key] ?? '';
+    $reason = $this->membershipWriter->refusal(
+      $group,
+      (int) $uid_key,
+      $prefix === MemberItemBuilder::ROLE_PREFIX && is_scalar($value) ? (string) $value : NULL,
+    );
+    if ($reason !== NULL) {
+      $form_state->setErrorByName($prefix . $uid_key, $reason);
+    }
+    return $reason !== NULL;
   }
 
   /**

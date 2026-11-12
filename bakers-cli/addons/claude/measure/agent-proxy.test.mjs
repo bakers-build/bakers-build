@@ -284,14 +284,14 @@ test('startServer refuses a default log directory that git does not ignore', asy
 
 test('resolveLogDirectory requires a ticket identifier, not a UUID, and rejects traversal', () => {
   const cwd = tmpDir('cwd');
-  assert.throws(() => resolveLogDirectory({ cwd }), /BB_TICKET_IDENTIFIER/);
+  assert.throws(() => resolveLogDirectory({ cwd }), /BAKERS_TICKET_IDENTIFIER/);
   assert.throws(
     () =>
       resolveLogDirectory({
         cwd,
         ticketIdentifier: '22868b42-459a-4fc4-9f51-2ebc82ab3029',
       }),
-    /BB_TICKET_IDENTIFIER/,
+    /BAKERS_TICKET_IDENTIFIER/,
   );
   assert.throws(
     () =>

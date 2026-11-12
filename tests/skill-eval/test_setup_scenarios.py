@@ -73,7 +73,7 @@ class BranchParentScenario(Scenario):
     simulation = {'ticket': {'id': PARENT, 'identifier': 'EVAL-20', 'title': 'Parent', 'workflow': 'bb_work', 'state': 'working',
                              'branch_name': 'feat/eval-20-parent'},
                   'conductors': [{'uuid': '88888888-8888-4888-8888-000000000001', 'conductor_id': 'oven-1', 'label': 'Oven 1',
-                                  'active': True, 'status': 'idle'}]}
+                                  'active': True, 'status': 'idle', 'machine': None}]}
 
     def test_child_is_created_under_the_branch_ticket_and_assigned(self):
         matches = self.tool('ticket_search', {'branch_name': 'feat/eval-20-parent', 'project': PROJECT})['tickets']

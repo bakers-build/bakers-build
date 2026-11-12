@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-auth-basic/options.schema.json",
+  "title": "@bakers-build/addon-auth-basic options",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "basic": {
+      "type": "string",
+      "description": "Base64 of `user:password`, sent as `Authorization: Basic …` on every request; without it the addon adds nothing."
+    }
+  }
+}

@@ -74,6 +74,58 @@ final class MachineRegistrarTest extends KernelTestBase {
   }
 
   /**
+   * A second owner sharing a host_key never changes the first owner's address.
+   */
+  public function testConnectionUrlStaysWithItsOwner(): void {
+    $this->seedProjectChain('shared-host-project');
+    $registrar = $this->registrar();
+    $first = $this->createUser('shared-host-first');
+    $second = $this->createUser('shared-host-second');
+    $host = ['host_key' => 'shared-host', 'project' => 'shared-host-project'];
+    $first_attrs = $host + ['conductor_id' => 'shared-first', 'connection_url' => 'ssh://first@host:22'];
+    $second_attrs = $host + ['conductor_id' => 'shared-second', 'connection_url' => 'https://second.example'];
+    $mine = $registrar->heartbeat($first, $first_attrs)->getMachine();
+    $this->assertInstanceOf(BbMachineInterface::class, $mine);
+    $theirs = $registrar->heartbeat($second, $second_attrs)->getMachine();
+    $this->assertInstanceOf(BbMachineInterface::class, $theirs);
+    $this->assertNotSame($mine->id(), $theirs->id());
+    $registrar->heartbeat($second, ['connection_url' => NULL] + $second_attrs);
+    $reloaded = $this->container->get('entity_type.manager')->getStorage('bb_machine')->loadUnchanged($mine->id());
+    $this->assertInstanceOf(BbMachineInterface::class, $reloaded);
+    $this->assertSame('ssh://first@host:22', $reloaded->get('connection_url')->value);
+  }
+
+  /**
+   * Missing preserves, a valid address replaces, null clears, unsafe is 422.
+   */
+  public function testConnectionUrlRegistration(): void {
+    $this->seedProjectChain('connection-project');
+    $owner = $this->createUser('connection-owner');
+    $attrs = [
+      'conductor_id' => 'connection-conductor',
+      'host_key' => 'connection-host',
+      'project' => 'connection-project',
+    ];
+    $registrar = $this->registrar();
+    $machine = $registrar->heartbeat($owner, $attrs + ['connection_url' => 'ssh://user@host:22'])->getMachine();
+    $this->assertSame('ssh://user@host:22', $machine->get('connection_url')->value);
+    $machine = $registrar->heartbeat($owner, $attrs)->getMachine();
+    $this->assertSame('ssh://user@host:22', $machine->get('connection_url')->value);
+    $machine = $registrar->heartbeat($owner, $attrs + ['connection_url' => 'https://host/path'])->getMachine();
+    $this->assertSame('https://host/path', $machine->get('connection_url')->value);
+    try {
+      $registrar->heartbeat($owner, $attrs + ['connection_url' => 'javascript:alert(1)']);
+      $this->fail('Unsafe URL accepted.');
+    }
+    catch (UnprocessableEntityHttpException $exception) {
+      $this->assertSame(422, $exception->getStatusCode());
+    }
+    $this->assertSame('https://host/path', $registrar->heartbeat($owner, $attrs)->getMachine()->get('connection_url')->value);
+    $this->assertNull($registrar->heartbeat($owner, $attrs + ['connection_url' => NULL])->getMachine()->get('connection_url')->value);
+    $this->assertNull($registrar->heartbeat($owner, $attrs)->getMachine()->get('connection_url')->value);
+  }
+
+  /**
    * Capacity is never stored on the conductor entity.
    */
   public function testCapacityNotWrittenOnConductor(): void {

@@ -124,14 +124,14 @@ describe('loadTools', () => {
       await loadTools(provisionTools({ a: 'true', b: 'true' }))
     ).list();
     expect(tool.description).toBe(
-      "Bring this worktree's environment up with a configured profile (a, b); the project's command reuses a ready environment. Returns the command's output, including the base URL.",
+      "Bring this worktree's environment up with a configured profile (a, b); the project's command reuses a ready environment. Returns the command's output, including the base URL. The first call on a new worktree can take minutes; the call waits until the command ends, for up to 30 minutes. On a client timeout the command keeps running: call again with the same profile to join it and receive its result, without starting a second one.",
     );
     expect(tool.inputSchema).toMatchObject({
       properties: { profile: { type: 'string', enum: ['a', 'b'] } },
     });
     const [single] = (await loadTools(provisionTools('true'))).list();
     expect(single.description).toBe(
-      "Bring this worktree's environment up; the project's command reuses a ready environment. Returns the command's output, including the base URL.",
+      "Bring this worktree's environment up; the project's command reuses a ready environment. Returns the command's output, including the base URL. The first call on a new worktree can take minutes; the call waits until the command ends, for up to 30 minutes. On a client timeout the command keeps running: call again with the same profile to join it and receive its result, without starting a second one.",
     );
   });
 

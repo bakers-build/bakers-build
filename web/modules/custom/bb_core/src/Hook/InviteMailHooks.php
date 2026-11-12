@@ -51,6 +51,8 @@ final class InviteMailHooks {
     $message['body'][] = $this->t('Accept invitation: @url', [
       '@url' => $params['join_url'],
     ]);
+    // The names above are user text: only the join URL is a link.
+    $message['bb_links'] = [$params['join_url']];
     $message['body'][] = $this->t('The invitation expires in @days days.', [
       '@days' => $params['validity_days'],
     ]);

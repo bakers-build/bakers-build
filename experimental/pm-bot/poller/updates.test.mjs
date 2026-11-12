@@ -58,11 +58,13 @@ test('a run that ends failed, expired or cancelled in the same state posts the p
   }
 });
 
-test('a run that ends done in the same state posts the waiting line, unless a question or technical problem is open', () => {
+test('a run that ends done in the same state posts the waiting line, and no run in any end state posts while a question or technical problem is open', () => {
   const previous = { 'ACME-1': { ...seen, runs: { r1: 'running' } } };
   assert.deepEqual(texts(pass([ticket({ runs: [run('r1', 'done')] })], { previous })), [messages.runWaiting]);
   for (const label of ['Question', 'technical problem']) {
-    assert.deepEqual(pass([ticket({ labels: [label], runs: [run('r1', 'done')] })], { previous }).posts, []);
+    for (const end of ['done', 'failed', 'expired', 'cancelled']) {
+      assert.deepEqual(pass([ticket({ labels: [label], runs: [run('r1', end)] })], { previous }).posts, [], `${label}, ${end}`);
+    }
   }
 });
 

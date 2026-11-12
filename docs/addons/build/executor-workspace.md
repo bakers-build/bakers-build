@@ -46,7 +46,7 @@ Label each terminal with the branch and run id when you start it, so `cleanupRun
 
 ## Write a workspace
 
-Import `BbWorkspace`, `EnsuredWorkspace` and `WorkspacePlugin` from `@bakers-build/conductor/contract`. A workspace plugin has `kind: 'workspace'`, an `id`, `requiredModules` and an async `createWorkspace(config, deps?)` factory.
+Import `BbWorkspace`, `EnsuredWorkspace` and `WorkspacePlugin` from `@bakers-build/conductor/contract`. A workspace plugin has `kind: 'worktree'`, an `id`, `requiredModules` and an async `createWorkspace(config, deps?)` factory.
 
 Inspect `bakers-cli/addons/workspace-git/src/index.ts` for the shipped Git backend and reusable teardown helper. Its current [branch/base limitation](/addons/workspace-git#good-to-know) is not a model for implementing parent-base selection. `ensure` must validate reuse and branch/base selection; checking only whether a directory exists is insufficient. Never reset an existing branch just to attach a worktree.
 
@@ -73,15 +73,15 @@ export const executors: Preset['executors'] = (acc, opts) => [
 export const scopes: Preset['scopes'] = ['machine', 'project'];
 ```
 
-A workspace exports `workspaces` the same way. Declare `['project']` when the addon also has hook listeners.
+A workspace exports `worktrees` the same way. Declare `['project']` when the addon also has hook listeners.
 
-Then select it in `.bakers/conductor.config.js`, either by listing the addon or by naming the slot:
+Then select it in `.bakers/project.config.js`, either by listing the addon or by naming the slot:
 
 ```js
 addons: ['my-executor-addon'],
 // or, explicitly, with options:
-executor: { plugin: 'my-executor-addon', with: { command: 'codex' } },
-workspace: { plugin: '@bakers-build/addon-workspace-git' },
+executor: { use: 'my-executor-addon', with: { command: 'codex' } },
+worktree: { use: '@bakers-build/addon-workspace-git' },
 ```
 
 A machine may override the executor in `~/.bakers/machine.config.js`; the workspace always stays with the project. `bakers config check` shows which file the executor came from.

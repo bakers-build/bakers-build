@@ -23,10 +23,10 @@ addons: [
         use: '@bakers-build/addon-ports-cloudflare',
         with: {
           zone: 'preview.example.org',
-          accountId: '<account id>',
-          tunnelId: '<tunnel id>',
-          zoneId: '<zone id>',
-          apiToken: process.env.CF_API_TOKEN,
+          account_id: '<account id>',
+          tunnel_id: '<tunnel id>',
+          zone_id: '<zone id>',
+          api_token: process.env.CF_API_TOKEN,
         },
       },
     },
@@ -36,13 +36,7 @@ addons: [
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `zone` | string | required | Zone the public names are created in. |
-| `accountId` | string | required | Cloudflare account. |
-| `tunnelId` | string | required | Named tunnel. |
-| `zoneId` | string | required | Zone ID for DNS records. |
-| `apiToken` | string | required | API token. Rotating it alone is not an identity change. |
+<!-- @options @bakers-build/addon-ports-cloudflare -->
 
 ## Check it works
 

@@ -26,7 +26,7 @@ Outputs must be unused paths. Keep attempts under assets-ai/<ticket>/promptfoo/.
 async function bridge(operation, input, output, model, timeout) {
   // Importing replay never loads the generation process boundary.
   const { spawnSync } = await import('node:child_process');
-  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !key.startsWith('BB_')));
+  const env = Object.fromEntries(Object.entries(process.env).filter(([key]) => !/^(BB|BAKERS)_/.test(key)));
   const result = spawnSync('python3', ['-B', fileURLToPath(new URL('skill-worker.py', import.meta.url)),
     operation, '--input', input, '--output', output, '--model', model, '--timeout', String(timeout)],
   { encoding: 'utf8', env, timeout: (timeout + 30) * 1000, maxBuffer: 1024 * 1024 });

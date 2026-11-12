@@ -42,7 +42,7 @@ project.
 
 ## Example: one DDEV project per ticket
 
-**For a repository with an existing `.ddev/config.yaml`.** Merge these entries into `hooks` in `.bakers/conductor.config.js`:
+**For a repository with an existing `.ddev/config.yaml`.** Merge these entries into `hooks` in `.bakers/project.config.js`:
 
 ```js
 hooks: {
@@ -57,8 +57,8 @@ Create `scripts/prepare-ddev.sh`:
 
 ```sh
 set -eu
-: "${BB_ID:?bakers.build supplies the ticket UUID during dispatch}"
-printf 'name: bakers-%s\n' "$BB_ID" > .ddev/config.zz-bakers.local.yaml
+: "${BAKERS_ID:?bakers.build supplies the ticket UUID during dispatch}"
+printf 'name: bakers-%s\n' "$BAKERS_ID" > .ddev/config.zz-bakers.local.yaml
 ddev start
 ```
 

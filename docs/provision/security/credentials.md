@@ -23,8 +23,8 @@ After creation the dialog offers two ready snippets that reference the secret's 
 
 ::: details Per CLI
 ```sh
-export BB_CONSUMER_SECRET=<the secret>
-bakers config init --scope connection --auth-type client_credentials --client-id <client id> --secret-env BB_CONSUMER_SECRET
+export BAKERS_CONSUMER_SECRET=<the secret>
+bakers config init --scope connection --auth-type client_credentials --client-id <client id> --secret-env BAKERS_CONSUMER_SECRET
 ```
 :::
 
@@ -66,7 +66,7 @@ A conductor on a server can use a client-credentials connection issued by the in
 | Typical use | CI, scripts, a second agent | Unattended conductor on a worker server |
 | Where configured | Your CI secrets, `~/.bakers/connections/<id>.js` | The worker's connection file |
 
-Setting up a worker with such a connection: [Set up a worker server](/provision/worker-server) and [Connections](/configuration/connector/connections#client-credentials).
+Setting up a worker with such a connection: [Set up a worker server](/provision/worker-server) and [Connections](/configuration/connection#client-credentials).
 
 ## Scopes and permissions
 

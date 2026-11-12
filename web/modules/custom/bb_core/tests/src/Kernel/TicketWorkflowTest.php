@@ -182,7 +182,8 @@ final class TicketWorkflowTest extends KernelTestBase {
    * Cancelled is a terminal ticket state; expired/failed are terminal for runs.
    *
    * No ticket workflow may list cancelled as a from-state. bb_run must not
-   * expose any transition that leaves expired or failed.
+   * leave expired; failed leaves only through cancel_failed to cancelled, so a
+   * parked ticket can restart.
    */
   public function testCancelledHasNoOutgoingTransitions(): void {
     $manager = $this->container->get('plugin.manager.workflow');
@@ -206,19 +207,13 @@ final class TicketWorkflowTest extends KernelTestBase {
 
     $run = $manager->createInstance('bb_run');
     $this->assertInstanceOf(WorkflowInterface::class, $run);
-    foreach (['expired', 'failed'] as $terminal) {
-      $this->assertSame(
-        [],
+    $allowed = ['expired' => [], 'failed' => ['cancel_failed' => 'cancelled']];
+    foreach ($allowed as $terminal => $expected) {
+      $actual = array_map(
+        static fn ($transition) => $transition->getToState()->getId(),
         $run->getPossibleTransitions($terminal),
-        "bb_run must have no possible transitions from $terminal",
       );
-      foreach ($run->getTransitions() as $transition_id => $transition) {
-        $this->assertArrayNotHasKey(
-          $terminal,
-          $transition->getFromStates(),
-          "bb_run transition $transition_id must not leave $terminal",
-        );
-      }
+      $this->assertSame($expected, $actual, "bb_run may leave $terminal only through " . json_encode($expected));
     }
   }
 

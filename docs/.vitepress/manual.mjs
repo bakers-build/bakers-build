@@ -1,5 +1,5 @@
 // Shared navigation and rendered-page exclusions for VitePress and its checks.
-export const SRC_EXCLUDE = ["decisions/**", "bakers/**", "conductor/**", "development/**", "bakers-metrics.md", "node_modules/**"]
+export const SRC_EXCLUDE = ["decisions/**", "bakers/**", "conductor/**", "development/**", "drupal-updates/**", "bakers-metrics.md", "node_modules/**"]
 
 export const AREAS = [
   { label: "Get started", link: "/get-started/", icon: "guide" },
@@ -58,7 +58,6 @@ export const SIDEBAR = {
       ["Run agents securely", "/provision/security/"],
     ]),
     group("Machine setup", [
-      ["Set up a Coder workspace", "/provision/coder-workspace"],
       ["Set up a worker server", "/provision/worker-server"],
       ["Install Node.js", "/provision/node"],
     ]),
@@ -125,14 +124,12 @@ export const SIDEBAR = {
     ]),
     group("Clients and workspaces", [
       ["herdr", "/addons/herdr"],
-      ["herdr options", "/addons/herdr/options"],
       ["herdr-core", "/addons/herdr-core"],
-      ["herdr-core options", "/addons/herdr-core/options"],
       ["Orca", "/addons/orca"],
-      ["Orca options", "/addons/orca/options"],
       ["Git workspace", "/addons/workspace-git"],
       ["Conductor slots", "/addons/slots"],
       ["bakers.build server remote", "/addons/remote-drupal"],
+      ["Tailscale", "/addons/tailscale"],
     ]),
     group("Runtimes", [
       ["DDEV", "/addons/ddev"],
@@ -145,6 +142,11 @@ export const SIDEBAR = {
       ["Named Cloudflare tunnel", "/addons/ports-cloudflare"],
       ["Cloudflare Quick tunnel", "/addons/ports-cloudflare-quick"],
       ["frp tunnel", "/addons/ports-frp"],
+    ]),
+    group("Delivery", [
+      ["Forge", "/addons/forge"],
+      ["Forge for GitHub", "/addons/forge-github"],
+      ["Forge for GitLab", "/addons/forge-gitlab"],
     ]),
     group("Terminal UI", [
       ["Terminal UI", "/addons/bakers-ui"],
@@ -170,33 +172,36 @@ export const SIDEBAR = {
     ]),
   ],
   "/configuration/": [
-    group("File map", [
-      ["Files and precedence", "/configuration/files"],
-    ]),
-    group("Connector", [
-      ["Overview", "/configuration/"],
-      ["Connector", "/configuration/connector"],
-      ["Connections", "/configuration/connector/connections"],
-      ["Claude.ai connector limits and errors", "/configuration/connector/limits"],
-      ["Get emails about ticket activity", "/configuration/connector/notifications"],
-      ["Claude Project instructions (connector bundle)", "/configuration/connector/project-instructions"],
-    ]),
-    group("Machine", [
+    group("Configuration files", [
+      ["Files and precedence", "/configuration/"],
+      ["Connection", "/configuration/connection"],
       ["Machine", "/configuration/machine"],
-      ["Update bakers.build", "/configuration/machine/updates"],
-    ]),
-    group("Project", [
       ["Project", "/configuration/project"],
       ["Lifecycle hooks", "/configuration/project/hooks"],
-      ["Conductors", "/configuration/project/conductors"],
-      ["Conductor commands", "/configuration/project/conductor-commands"],
+      ["Conductors and variants", "/configuration/project/conductors"],
+    ]),
+    group("Guides", [
+      ["Update bakers.build", "/configuration/guides/updates"],
+      ["Switch to the bakers CLI", "/configuration/guides/switch-to-bakers"],
+      ["Get emails about ticket activity", "/configuration/guides/notifications"],
+      ["Claude.ai connector limits and errors", "/configuration/guides/connector-limits"],
+      ["Claude Project instructions (connector bundle)", "/configuration/guides/project-instructions"],
     ]),
     group("CLI reference", [
-      ["CLI commands", "/configuration/clients/cli"],
-      ["bakers tools", "/configuration/clients/tools"],
-      ["bakers auth", "/configuration/clients/auth"],
-      ["Switch to the bakers CLI", "/configuration/clients/switch-to-bakers"],
-      ["Troubleshooting", "/configuration/clients/troubleshooting"],
+      ["CLI commands", "/cli/"],
+      ["bakers conductor", "/cli/conductor"],
+      ["bakers tools", "/cli/tools"],
+      ["bakers auth", "/cli/auth"],
+      ["Troubleshooting", "/cli/troubleshooting"],
+    ]),
+  ],
+  "/cli/": [
+    group("CLI reference", [
+      ["CLI commands", "/cli/"],
+      ["bakers conductor", "/cli/conductor"],
+      ["bakers tools", "/cli/tools"],
+      ["bakers auth", "/cli/auth"],
+      ["Troubleshooting", "/cli/troubleshooting"],
     ]),
   ],
   "/self-hosting/": [

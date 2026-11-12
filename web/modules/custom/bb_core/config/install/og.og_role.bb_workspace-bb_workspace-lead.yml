@@ -3,8 +3,8 @@
 #
 # Administers one workspace: members, projects, groups, teams, environments,
 # the deletes, and OG's `update group` / `manage members`. The workspace owner
-# needs no rank: `group_manager_full_access` already grants owner_user_id
-# every permission. `create`/`delete any bb_workspace` stay off every rank;
+# holds this rank too: `group_manager_full_access` is off, so ownership alone
+# grants nothing. `create`/`delete any bb_workspace` stay off every rank;
 # a tenancy is an instance act (`administer bakers`).
 #
 # `register bakers conductor` is needed because every conductor re-registers

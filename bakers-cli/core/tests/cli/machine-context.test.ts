@@ -40,22 +40,36 @@ describe('machine-context (BB-201: ~/.bakers/machine.config.js)', () => {
     const p = join(tmp, 'machine.config.js');
     writeFileSync(
       p,
-      `export default { machine_id: '0B6F3C1E-9A2D-4E57-8C41-2F7D9E5A1B30', label: 'cw-laptop', max_parallel: 2 };\n`,
+      `export default { machine_id: '0B6F3C1E-9A2D-4E57-8C41-2F7D9E5A1B30', label: 'cw-laptop' };\n`,
     );
     const ctx = await readMachineContext(p);
     expect(ctx.machine_id).toBe('0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30');
     expect(ctx.label).toBe('cw-laptop');
-    expect(ctx.max_parallel).toBe(2);
   });
 
   it('readMachineContext preserves a literal tunnel boolean', async () => {
     const p = join(tmp, 'machine.config.js');
     writeFileSync(
       p,
-      `export default { machine_id: '${UUID}', label: 'cw-laptop', max_parallel: 2, tunnel: true };\n`,
+      `export default { machine_id: '${UUID}', label: 'cw-laptop', tunnel: true };\n`,
     );
     const ctx = await readMachineContext(p);
     expect(ctx.tunnel).toBe(true);
+  });
+
+  it.each([
+    undefined,
+    null,
+    'ssh://user@host:22',
+  ])('preserves connection_url %s distinctly', async (value) => {
+    const p = join(tmp, 'connection.config.js');
+    const data = {
+      machine_id: UUID,
+      label: 'host',
+      ...(value !== undefined ? { connection_url: value } : {}),
+    };
+    writeFileSync(p, `export default ${JSON.stringify(data)};`);
+    expect(await readMachineContext(p)).toEqual(data);
   });
 
   it('readMachineContext preserves an optional nested agent policy', async () => {
@@ -69,7 +83,6 @@ describe('machine-context (BB-201: ~/.bakers/machine.config.js)', () => {
           catalog: [{ harness: '@bakers-build/addon-pi', alias: 'k3-pi', with: { model: 'kimi-coding/k3' } }],
           enabled: ['opus', 'k3-pi'],
           disabled: ['codex'],
-          default_agent: 'opus',
           routes: { default: { '*': 'opus', coding: 'k3-pi' }, fast: { '*': 'opus' } },
         },
       };\n`,
@@ -87,7 +100,6 @@ describe('machine-context (BB-201: ~/.bakers/machine.config.js)', () => {
       ],
       enabled: ['opus', 'k3-pi'],
       disabled: ['codex'],
-      default_agent: 'opus',
       routes: {
         default: { '*': 'opus', coding: 'k3-pi' },
         fast: { '*': 'opus' },
@@ -95,38 +107,53 @@ describe('machine-context (BB-201: ~/.bakers/machine.config.js)', () => {
     });
   });
 
-  it('readMachineContext preserves the BB-676 named-tunnel ports block', async () => {
+  it.each([
+    ['agents.default_agent', "agents: { default_agent: 'opus' }"],
+    ['ports', "ports: { zone: 'preview.example' }"],
+    ['user_id', "user_id: 'cw'"],
+    ['max_parallel', 'max_parallel: 2'],
+  ])('readMachineContext rejects the old key %s as an unknown key', async (key, literal) => {
     const p = join(tmp, 'machine.config.js');
     writeFileSync(
       p,
-      `export default {
-        machine_id: '${UUID}',
-        label: 'cw-laptop',
-        ports: {
-          accountId: 'acc-1',
-          tunnelId: 'tun-1',
-          zoneId: 'zone-1',
-          zone: 'preview.example',
-          apiToken: 'secret-xyz',
-        },
-      };\n`,
+      `export default { machine_id: '${UUID}', label: 'l', ${literal} };\n`,
     );
-    const ctx = await readMachineContext(p);
-    expect(ctx.ports).toEqual({
-      accountId: 'acc-1',
-      tunnelId: 'tun-1',
-      zoneId: 'zone-1',
-      zone: 'preview.example',
-      apiToken: 'secret-xyz',
-    });
+    await expect(readMachineContext(p)).rejects.toThrow(`${key} unknown key`);
   });
 
-  it.each([
-    ['a user_id key', `machine_id: '${UUID}', user_id: 'cw'`],
-    ['schema_version 3', `schema_version: 3, machine_id: '${UUID}'`],
-  ])('readMachineContext rejects %s naming bakers init', async (_, body) => {
+  // BB-676's named tunnel is configured through the ports addon now; the
+  // machine keeps the entry as written.
+  it('readMachineContext preserves the named-tunnel ports addon entry', async () => {
     const p = join(tmp, 'machine.config.js');
-    writeFileSync(p, `export default { ${body} };\n`);
+    const entry = {
+      use: '@bakers-build/addon-ports',
+      with: {
+        transport: {
+          use: '@bakers-build/addon-ports-cloudflare',
+          with: {
+            account_id: 'acc-1',
+            tunnel_id: 'tun-1',
+            zone_id: 'zone-1',
+            zone: 'preview.example',
+            api_token: 'secret-xyz',
+          },
+        },
+      },
+    };
+    writeFileSync(
+      p,
+      `export default { machine_id: '${UUID}', label: 'cw-laptop', addons: [${JSON.stringify(entry)}] };\n`,
+    );
+    const ctx = await readMachineContext(p);
+    expect(ctx.addons).toEqual([entry]);
+  });
+
+  it('readMachineContext rejects schema_version 3 naming bakers init', async () => {
+    const p = join(tmp, 'machine.config.js');
+    writeFileSync(
+      p,
+      `export default { schema_version: 3, machine_id: '${UUID}' };\n`,
+    );
     await expect(readMachineContext(p)).rejects.toThrow(/bakers init/);
   });
 

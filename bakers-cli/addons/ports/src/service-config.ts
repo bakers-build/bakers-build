@@ -18,87 +18,29 @@ export interface ServiceRules {
   readonly allNode: boolean;
 }
 
-export interface WithFinding {
-  /** Relative to the entry's `with`: `services[1].key`, `all_node`, `foo`. */
-  readonly key: string;
-  readonly message: string;
-}
-
 export const DEFAULT_STORYBOOK: ServiceRule = {
   key: 'storybook',
   match: 'storybook',
 };
 
-const WITH_KEYS = new Set(['transport', 'services', 'all_node', 'claimers']);
-const ENTRY_KEYS = new Set(['key', 'match']);
-
 const isObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null && !Array.isArray(v);
 
-/** Every problem in a ports entry's `with`; `[]` when it is valid or absent. */
-export function checkWith(value: unknown): WithFinding[] {
-  if (value === undefined) return [];
-  if (!isObject(value)) return [{ key: '', message: 'must be an object' }];
-  const out: WithFinding[] = [];
-  for (const k of Object.keys(value))
-    if (!WITH_KEYS.has(k))
-      out.push({
-        key: k,
-        message:
-          'is not a ports setting (transport, services, all_node, claimers)',
-      });
-  const { transport, services, all_node, claimers } = value;
-  if (
-    claimers !== undefined &&
-    (!Array.isArray(claimers) ||
-      !claimers.every((c) => typeof c === 'string' && c !== ''))
-  )
-    out.push({ key: 'claimers', message: 'must be an array of package names' });
-  if (transport !== undefined) {
-    if (!isObject(transport))
-      out.push({ key: 'transport', message: 'must be an object' });
-    else if (typeof transport.use !== 'string' || transport.use === '')
-      out.push({
-        key: 'transport.use',
-        message: 'must name a transport package',
-      });
+/**
+ * The one rule options.schema.json cannot express: two `services` entries
+ * with the same key. Returns `services[i].key duplicates '<key>'`, or
+ * undefined. Types, unknown keys and the label pattern are the schema's.
+ */
+export function duplicateServiceKey(value: unknown): string | undefined {
+  const services = isObject(value) ? value.services : undefined;
+  if (!Array.isArray(services)) return undefined;
+  const seen = new Set<unknown>();
+  for (const [i, entry] of services.entries()) {
+    const key = isObject(entry) ? entry.key : undefined;
+    if (seen.has(key)) return `services[${i}].key duplicates '${key}'`;
+    seen.add(key);
   }
-  if (all_node !== undefined && typeof all_node !== 'boolean')
-    out.push({ key: 'all_node', message: 'must be true or false' });
-  if (services !== undefined) {
-    if (!Array.isArray(services))
-      out.push({ key: 'services', message: 'must be an array' });
-    else {
-      const seen = new Set<string>();
-      services.forEach((entry: unknown, i) => {
-        const at = `services[${i}]`;
-        if (!isObject(entry)) {
-          out.push({ key: at, message: 'must be { key, match }' });
-          return;
-        }
-        for (const k of Object.keys(entry))
-          if (!ENTRY_KEYS.has(k))
-            out.push({
-              key: `${at}.${k}`,
-              message: 'is not a service field (key, match)',
-            });
-        if (typeof entry.key !== 'string' || !LABEL_RE.test(entry.key))
-          out.push({
-            key: `${at}.key`,
-            message: 'must be a DNS-safe label (a-z, 0-9, -)',
-          });
-        else if (seen.has(entry.key))
-          out.push({ key: `${at}.key`, message: `duplicates '${entry.key}'` });
-        else seen.add(entry.key);
-        if (typeof entry.match !== 'string' || entry.match === '')
-          out.push({
-            key: `${at}.match`,
-            message: 'must be a non-empty string',
-          });
-      });
-    }
-  }
-  return out;
+  return undefined;
 }
 
 /**

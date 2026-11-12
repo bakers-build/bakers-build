@@ -173,7 +173,7 @@ final class WorklogScope {
     }
     $scopes = [];
     // The role on the membership, never hasGroupPermission(): OG's
-    // group_manager_full_access hands every permission to a team's owner.
+    // group_manager_full_access, when on, hands every permission to an owner.
     foreach ($this->entityTypeManager->getStorage('bb_team')->loadMultiple($team_ids) as $team) {
       if (!$team instanceof BbTeamInterface || !$this->rank->hasGroupRolePermission($account, self::PERMISSION, $team)) {
         continue;

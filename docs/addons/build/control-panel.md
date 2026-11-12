@@ -90,7 +90,7 @@ Handlers run outside the agent's shell sandbox. Review their code before enablin
 
 ## Enable in the project
 
-Append `'./addons/worktree-check'` to the existing `addons` array in `.bakers/conductor.config.js`. Keep its other entries and identity settings. The path resolves from that configuration file; this package requires no installation or compilation.
+Append `'./addons/worktree-check'` to the existing `addons` array in `.bakers/project.config.js`. Keep its other entries and identity settings. The path resolves from that configuration file; this package requires no installation or compilation.
 
 Commit the two files and the configuration change so ticket worktrees receive them. Run:
 
@@ -98,7 +98,7 @@ Commit the two files and the configuration change so ticket worktrees receive th
 bakers config check --scope project --online
 ```
 
-Restart the conductor with its normal [start/stop procedure](/configuration/project/conductor-commands). The conductor loads the package and registers the message definition with the server; its handler stays on the worker.
+Restart the conductor with its normal [start/stop procedure](/cli/conductor). The conductor loads the package and registers the message definition with the server; its handler stays on the worker.
 
 ## Call it from the ticket
 

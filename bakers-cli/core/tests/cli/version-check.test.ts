@@ -42,21 +42,21 @@ describe('version discovery', () => {
 });
 
 describe('default update-check cache path', () => {
-  const original = process.env.BB_HOME;
+  const original = process.env.BAKERS_HOME;
   afterEach(() => {
-    if (original === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = original;
+    if (original === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = original;
   });
 
-  it('lands under an overridden BB_HOME, not the OS home', () => {
-    process.env.BB_HOME = join(tmpdir(), 'bakers-home-update-check-probe');
+  it('lands under an overridden BAKERS_HOME, not the OS home', () => {
+    process.env.BAKERS_HOME = join(tmpdir(), 'bakers-home-update-check-probe');
     expect(defaultUpdateCachePath()).toBe(
       join(tmpdir(), 'bakers-home-update-check-probe', 'update-check.json'),
     );
   });
 
-  it('falls back to ~/.bakers when BB_HOME is unset', () => {
-    delete process.env.BB_HOME;
+  it('falls back to ~/.bakers when BAKERS_HOME is unset', () => {
+    delete process.env.BAKERS_HOME;
     expect(defaultUpdateCachePath()).toBe(
       join(homedir(), '.bakers', 'update-check.json'),
     );

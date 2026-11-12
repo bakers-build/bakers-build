@@ -9,10 +9,12 @@
     "./preset": "./dist/src/preset.js",
     "./core": "./dist/src/core.js",
     "./transport": "./dist/src/transport-contract.js",
-    "./node": "./dist/src/deps-node.js"
+    "./node": "./dist/src/deps-node.js",
+    "./options.schema.json": "./options.schema.json"
   },
   "files": [
-    "dist/src"
+    "dist/src",
+    "options.schema.json"
   ],
   "scripts": {
     "build": "tsc",

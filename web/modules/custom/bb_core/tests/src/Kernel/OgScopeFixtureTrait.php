@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\bb_core\Access\WorkspaceResolverInterface;
 use Drupal\Core\Config\FileStorage;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
@@ -172,6 +173,27 @@ trait OgScopeFixtureTrait {
     // membership written after a resolution would otherwise be invisible.
     $this->container->get('cache.static')->deleteAll();
     return $membership;
+  }
+
+  /**
+   * Seats an account on a new team of the project.
+   *
+   * Outside a project's teams a workspace contributor or guest holds no rank
+   * on it; only a workspace lead reaches every project of its workspace.
+   */
+  protected function seatOnProjectTeam(?ContentEntityInterface $project, UserInterface $account): void {
+    self::assertNotNull($project);
+    $workspace = $this->container->get(WorkspaceResolverInterface::class)->resolve($project);
+    self::assertNotNull($workspace);
+    $team = $this->container->get('entity_type.manager')->getStorage('bb_team')->create([
+      'name' => 'Team of ' . $project->label() . ' for ' . $account->getAccountName(),
+      'workspace_id' => $workspace->id(),
+      'owner_user_id' => $project->get('owner_user_id')->target_id,
+    ]);
+    $team->save();
+    $project->get('teams')->appendItem($team->id());
+    $project->save();
+    $this->addMembership($team, $account);
   }
 
 }

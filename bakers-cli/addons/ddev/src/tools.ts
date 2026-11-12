@@ -1,9 +1,13 @@
 // The ddev addon's agent tools, served by the conductor on the worktree bound
-// to the run — the worktree is the DDEV approot, so every call runs there.
+// to the run. Every call runs in the worktree and first checks that DDEV
+// resolves the worktree's own project: an unregistered worktree makes DDEV fall
+// back to the registered parent checkout, whose containers no run may touch.
 // Typed structurally against the conductor's tool contract, so this addon
 // needs no conductor dependency.
 
 import { spawn } from 'node:child_process';
+import { realpathSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 /** Output beyond this many characters is cut from the front. */
 export const OUTPUT_CAP = 64 * 1024;
@@ -23,6 +27,13 @@ export interface Request {
 export type Handler = (req: Request) => Promise<{ text: string }>;
 
 const tail = (s: string) => (s.length > OUTPUT_CAP ? s.slice(-OUTPUT_CAP) : s);
+const real = (path: string) => {
+  try {
+    return realpathSync(path);
+  } catch {
+    return resolve(path);
+  }
+};
 
 /** `ddev` with stdout and stderr interleaved, killed at the timeout. */
 export const nodeDdevRun: DdevRun = (args, { cwd, timeoutMs, signal }) =>
@@ -59,33 +70,46 @@ export function ddevTools(run: DdevRun): Record<string, Handler> {
     if (exitCode !== 0) throw new Error(text);
     return { exitCode, output, text };
   };
+  /** The described project, refused unless its approot is the worktree. */
+  const ownProject = async (req: Request) => {
+    const { output } = await ddev(req, ['describe', '-j']);
+    let raw: Record<string, unknown> | undefined;
+    try {
+      raw = JSON.parse(output.trim().split('\n').pop() ?? '').raw;
+    } catch {}
+    const approot = typeof raw?.approot === 'string' ? raw.approot : undefined;
+    if (!raw || !approot || real(approot) !== real(req.worktreePath)) {
+      throw new Error(
+        `DDEV resolves the project at ${approot ?? '(unknown)'}, not this worktree (${req.worktreePath}); run bash .ddev/worktree-post.sh in the worktree to register it.\n${tail(output)}`,
+      );
+    }
+    return raw;
+  };
   return {
     ddev_status: async (req) => {
-      const { output } = await ddev(req, ['describe', '-j']);
-      try {
-        const raw = JSON.parse(output.trim().split('\n').pop() ?? '').raw;
-        return {
-          text: JSON.stringify({
-            name: raw.name,
-            status: raw.status,
-            primary_url: raw.primary_url,
-            services: Object.fromEntries(
-              Object.entries(
-                (raw.services ?? {}) as Record<string, { status?: string }>,
-              ).map(([name, s]) => [name, s.status]),
-            ),
-          }),
-        };
-      } catch {
-        // An unexpected describe format still answers with what ddev said.
-        return { text: tail(output) };
-      }
+      const raw = await ownProject(req);
+      return {
+        text: JSON.stringify({
+          name: raw.name,
+          status: raw.status,
+          primary_url: raw.primary_url,
+          services: Object.fromEntries(
+            Object.entries(
+              (raw.services ?? {}) as Record<string, { status?: string }>,
+            ).map(([name, s]) => [name, s.status]),
+          ),
+        }),
+      };
     },
-    ddev_start: async (req) => ({
-      text: (await ddev(req, ['start'], START_TIMEOUT_MS)).text,
-    }),
-    ddev_exec: async (req) => ({
-      text: (await ddev(req, ['exec', String(req.args.command)])).text,
-    }),
+    ddev_start: async (req) => {
+      await ownProject(req);
+      return { text: (await ddev(req, ['start'], START_TIMEOUT_MS)).text };
+    },
+    ddev_exec: async (req) => {
+      await ownProject(req);
+      return {
+        text: (await ddev(req, ['exec', String(req.args.command)])).text,
+      };
+    },
   };
 }

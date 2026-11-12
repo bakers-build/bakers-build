@@ -166,7 +166,11 @@ async function main() {
     rows: options.rows,
     cwd: REPO_ROOT,
     // The logger's own bytes are not the renderer's — see verify-colors.mjs.
-    env: { ...process.env, TERM: 'xterm-256color', BB_CONDUCTOR_LOG: 'file' },
+    env: {
+      ...process.env,
+      TERM: 'xterm-256color',
+      BAKERS_CONDUCTOR_LOG: 'file',
+    },
   });
 
   let raw = '';

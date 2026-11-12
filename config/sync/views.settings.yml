@@ -1,5 +1,6 @@
 display_extenders:
   - display_builder
+  - ui_patterns
 sql_signature: false
 ui:
   show:

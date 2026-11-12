@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-ports-frp/options.schema.json",
+  "title": "@bakers-build/addon-ports-frp options",
+  "description": "The ports entry's with.transport.with for frp.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "zone",
+    "client_config_path",
+    "admin_port",
+    "admin_user",
+    "admin_password"
+  ],
+  "properties": {
+    "zone": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Domain of the public names."
+    },
+    "client_config_path": {
+      "type": "string",
+      "pattern": "^/",
+      "description": "Absolute path to the frpc JSON config; read only, never written."
+    },
+    "admin_port": {
+      "type": "integer",
+      "description": "Port of frpc's local admin API."
+    },
+    "admin_user": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Admin API user."
+    },
+    "admin_password": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Admin API password, not the frps token."
+    }
+  }
+}

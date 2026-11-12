@@ -21,11 +21,15 @@ After({ tags: '@feature:ticket-interventions or @feature:run-canonical' }, async
 });
 
 Given('a disposable {string} ticket in state {string}', async ({ page }, workflow: string, state: string) => {
-  createDisposableTicket(page, workflow, state, false);
+  createDisposableTicket(page, workflow, state, 'none');
 });
 
 Given('a disposable {string} ticket in state {string} with a running run', async ({ page }, workflow: string, state: string) => {
-  createDisposableTicket(page, workflow, state, true);
+  createDisposableTicket(page, workflow, state, 'running');
+});
+
+Given('a disposable {string} ticket in state {string} parked after repeated failed runs', async ({ page }, workflow: string, state: string) => {
+  createDisposableTicket(page, workflow, state, 'failed');
 });
 
 When('I visit the disposable ticket', async ({ page }) => {
@@ -112,6 +116,12 @@ Then('the ticket page offers no workflow step', async ({ page }) => {
 
 Then('the ticket page offers {string}', async ({ page }, name: string) => {
   await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
+});
+
+Then('the ticket page does not offer {string}', async ({ page }, name: string) => {
+  // Offered links are asserted visible first, so absence here is not a slow render.
+  await expect(page.locator('[data-canvas-region="inspector"]')).toContainText('Properties');
+  await expect(page.getByRole('link', { name, exact: true })).toHaveCount(0);
 });
 
 Then('the inspector names the stall {string}', async ({ page }, reason: string) => {

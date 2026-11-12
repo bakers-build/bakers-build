@@ -7,10 +7,12 @@
   "license": "UNLICENSED",
   "exports": {
     ".": "./dist/src/index.js",
-    "./preset": "./dist/src/preset.js"
+    "./preset": "./dist/src/preset.js",
+    "./options.schema.json": "./options.schema.json"
   },
   "files": [
-    "dist/src"
+    "dist/src",
+    "options.schema.json"
   ],
   "scripts": {
     "build": "tsc",

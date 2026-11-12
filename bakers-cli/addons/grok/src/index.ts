@@ -28,7 +28,7 @@ export type GrokReasoningEffort = 'high' | 'medium' | 'low';
 
 export interface GrokAgentOptions extends SecurityOptions {
   model?: string;
-  reasoningEffort?: GrokReasoningEffort | string;
+  reasoning_effort?: GrokReasoningEffort | string;
   effort?: string;
   args?: string[];
 }
@@ -234,7 +234,7 @@ export class GrokAgent implements BbAgent {
     this.model = cli.model;
     this.effort =
       cli.effort ??
-      validateOptionalString(options.reasoningEffort, 'reasoningEffort');
+      validateOptionalString(options.reasoning_effort, 'reasoning_effort');
     this.overrides = cli.overrides;
   }
 

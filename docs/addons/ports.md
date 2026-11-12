@@ -19,20 +19,17 @@ The `bakers ports` commands ship with the CLI. The addon entry adds the **Share 
    ],
    ```
 
-   It may also go in the project's `.bakers/conductor.config.js`; with both, machine settings take precedence and `services` merge by key ([merge rules](/addons/ports-services#options)). Restart the conductor after a change.
+   It may also go in the project's `.bakers/project.config.js`; with both, machine settings take precedence and `services` merge by key ([merge rules](/addons/ports-services#options)). Restart the conductor after a change.
 
 The conductor registers the addon; a **Share tunnels** message then appears in the message card of every ticket it works, in the web UI and in `bakers ui`. Anyone who may read the ticket may send it.
 
 ## Options
 
-| Option | Meaning |
-|---|---|
-| `transport.use` | The transport package. Required for `bakers ports up`, `down`, `reap` and the **Share tunnels** message. |
-| `transport.with` | The transport's own settings; see each transport's page and [Shared service tunnels](/configuration/machine#shared-service-tunnels-bakers-ports). |
-| `claimers` | Runtime claimer packages; see [Shared processes](/addons/ports-services). |
-| `services`, `all_node` | Which host processes are shared; see [Shared processes](/addons/ports-services). |
+<!-- @options @bakers-build/addon-ports -->
 
-Without a ports entry with `transport.use`, tunnel commands refuse with `bakers ports needs '@bakers-build/addon-ports' in addons[] …`; `bakers ports list` still works. Projects naming different transports are refused at runtime. A top-level `ports` key in the machine file is retired; `bakers config upgrade --scope machine` moves it into the entry.
+`services`, `all_node` and `claimers` are described in [Shared processes](/addons/ports-services); `transport.with` on each transport's page and in [Shared service tunnels](/configuration/machine#shared-service-tunnels-bakers-ports).
+
+Without a ports entry with `transport.use`, tunnel commands refuse with `bakers ports needs '@bakers-build/addon-ports' in addons[] …`; `bakers ports list` still works. Projects naming different transports are refused at runtime. A top-level `ports` key in the machine file fails as an unknown key; move it into the entry by hand.
 
 ## Check it works
 

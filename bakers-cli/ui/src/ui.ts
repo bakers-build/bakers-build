@@ -217,7 +217,7 @@ async function readCurrentBranch(cwd: string): Promise<string> {
  * with no `origin`, it yields '' and the ladder produces its named error.
  *
  * Revision 4 replaced the previous rung (an `import()` of the repo's engine
- * `conductor.config.js` plus a longest-prefix fallback over the then-still-alive
+ * `project.config.js` plus a longest-prefix fallback over the then-still-alive
  * local conductor registry) with this one read: neither could answer inside a
  * worktree (both keyed on `.bakers` DIRS, and a worktree has its own), the config
  * read needed a dynamic import of a possibly secret-bearing module, and the
@@ -235,7 +235,7 @@ async function readOriginRemoteUrl(cwd: string): Promise<string> {
 }
 
 /**
- * The explicit connection leg (AC-4, D2): `--config` → `$BB_CONFIG` →
+ * The explicit connection leg (AC-4, D2): `--config` → `$BAKERS_CONFIG` →
  * `$DROPSH_CONFIG`, first non-empty wins. The two env vars are read because
  * core's resolver already names all three as the explicit leg and the renderer's
  * launcher already honours a pre-set `$DROPSH_CONFIG` — so the path `bakers ui`
@@ -244,7 +244,7 @@ async function readOriginRemoteUrl(cwd: string): Promise<string> {
 function resolveExplicitConfig(flag?: string): string | undefined {
   for (const candidate of [
     flag,
-    process.env.BB_CONFIG,
+    process.env.BAKERS_CONFIG,
     process.env.DROPSH_CONFIG,
   ]) {
     if (candidate !== undefined && candidate.trim() !== '') return candidate;
@@ -351,7 +351,7 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
   // else. It is set on THIS process rather than only on the re-exec's `env`
   // argument, and that placement is the whole point: `reExecUnderBun` passes
   // `env: process.env`, so the Bun child inherits it for free, while the three
-  // paths that never re-exec (already under Bun, `$BB_UI_NO_BUN` on Node 26 +
+  // paths that never re-exec (already under Bun, `$BAKERS_UI_NO_BUN` on Node 26 +
   // --experimental-ffi, an injected `runUi`) load `@opentui/core` in THIS
   // process and would otherwise get the glibc default on Alpine. `@opentui/core`
   // reads the variable when it resolves its native asset — strictly later than
@@ -368,7 +368,7 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
   if (
     shouldReExecUnderBun({
       bunVersion: process.versions.bun,
-      noBun: process.env.BB_UI_NO_BUN,
+      noBun: process.env.BAKERS_UI_NO_BUN,
       printConfig: Boolean(deps.printConfig),
       injectedRenderer: deps.runUi !== undefined,
     })
@@ -377,7 +377,7 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
     if (bin === undefined) {
       fail(
         'bakers ui: could not resolve the bun runtime. `@bakers-build/addon-bakers-ui` ' +
-          'depends on it; reinstall, or set $BB_UI_NO_BUN=1 to run on Node ' +
+          'depends on it; reinstall, or set $BAKERS_UI_NO_BUN=1 to run on Node ' +
           '26+ with --experimental-ffi.',
       );
       return;
@@ -417,7 +417,7 @@ export async function cmdUi(deps: UiDeps = {}): Promise<void> {
   const rooting = resolveProjectRooting(cwd, homedir());
   const conductorPath = rooting.bakersDir
     ? (host.projectContext?.resolveConfigPath(cwd) ??
-      join(rooting.bakersDir, 'conductor.config.js'))
+      join(rooting.bakersDir, 'project.config.js'))
     : undefined;
   const workspaceSelector =
     deps.workspace ??

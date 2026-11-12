@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Access;
 use Drupal\Component\Plugin\Exception\ContextException;
 use Drupal\Core\Condition\ConditionAccessResolverTrait;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\Context\ContextHandlerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\BbFigureInterface;
@@ -27,6 +28,8 @@ final class FigureDisclosure {
     private readonly BbRankEntityFence $fence,
     private readonly FigureContextRepository $contextRepository,
     private readonly ContextHandlerInterface $contextHandler,
+    private readonly BbWorkspaceReadScopeInterface $readScope,
+    private readonly EntityTypeManagerInterface $entityTypeManager,
   ) {}
 
   /**
@@ -60,6 +63,46 @@ final class FigureDisclosure {
       return TRUE;
     }
     return $contextPermission || $userPermission;
+  }
+
+  /**
+   * The projects a figure about another person may show this account.
+   *
+   * Only projects the account may view and whose groups grant it the figure,
+   * so a person's work elsewhere stays out of sight. NULL when no bound
+   * applies: the account's own figures, a group context that bounds them
+   * already, or an instance administrator.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   The requesting account.
+   * @param \Drupal\bb_core\BbFigureInterface $figure
+   *   The figure configuration.
+   * @param array<string, EntityInterface> $entities
+   *   The named contexts.
+   *
+   * @return list<int>|null
+   *   The project ids, or NULL.
+   */
+  public function projectBound(AccountInterface $account, BbFigureInterface $figure, array $entities): ?array {
+    $target = $entities['user'] ?? NULL;
+    if (!$target instanceof UserInterface
+      || (int) $target->id() === (int) $account->id()
+      || array_intersect_key($entities, array_flip(['project', 'team', 'workspace'])) !== []) {
+      return NULL;
+    }
+    // Not hasSiteWidePermission(): every account holds the user figures
+    // site-wide for its own view, which discloses nobody else's.
+    if ($this->rankCapability->isInstanceAdmin($account)) {
+      return NULL;
+    }
+    $permission = 'view bakers figure ' . $figure->id();
+    $bound = [];
+    foreach ($this->entityTypeManager->getStorage('bb_project')->loadMultiple($this->readScope->projectIds($account)) as $id => $project) {
+      if ($this->hasPermissionInChain($account, $permission, $project)) {
+        $bound[] = (int) $id;
+      }
+    }
+    return $bound;
   }
 
   /**

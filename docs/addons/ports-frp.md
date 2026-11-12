@@ -17,10 +17,10 @@ addons: [
         use: '@bakers-build/addon-ports-frp',
         with: {
           zone: 'preview.example',
-          clientConfigPath: '/etc/frp/frpc.json',
-          adminPort: 7400,
-          adminUser: 'bakers',
-          adminPassword: '<local admin password>',
+          client_config_path: '/etc/frp/frpc.json',
+          admin_port: 7400,
+          admin_user: 'bakers',
+          admin_password: '<local admin password>',
         },
       },
     },
@@ -32,7 +32,7 @@ The operator provides:
 
 1. `frps` behind a wildcard TLS proxy for `*.<zone>`, for example Caddy.
 2. A running `frpc` with its own client `user` for this machine.
-3. A client config whose `includes` is exactly `<BB_HOME>/frp/routes.json`, with no inline `proxies`, `visitors` or `store`.
+3. A client config whose `includes` is exactly `<BAKERS_HOME>/frp/routes.json`, with no inline `proxies`, `visitors` or `store`.
 4. `webServer.addr` bound to `127.0.0.1`, and `transport.tls.enable: true` with a `trustedCaFile`.
 
 ## Client example
@@ -54,13 +54,7 @@ For a private Coder home (adapt paths for your host), create the includes direct
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `zone` | string | required | Domain of the public names. |
-| `clientConfigPath` | string | required | Absolute path to the frpc JSON config. Read only, never written. |
-| `adminPort` | integer | required | Port of frpc's local admin API. |
-| `adminUser` | string | required | Admin API user. |
-| `adminPassword` | string | required | Admin API password, not the frps token. |
+<!-- @options @bakers-build/addon-ports-frp -->
 
 ## Check it works
 
@@ -70,7 +64,7 @@ Use `bakers ports list`, then `bakers ports up <service-key>` with the conductor
 
 - The URL exposes the service publicly. Stop sharing with `bakers ports down <service-key>` when finished.
 
-- It writes only `<BB_HOME>/frp/routes.json`. It never starts `frpc`. It reads the client config to validate it, but does not use its server-auth token.
+- It writes only `<BAKERS_HOME>/frp/routes.json`. It never starts `frpc`. It reads the client config to validate it, but does not use its server-auth token.
 - A client config of the wrong shape is rejected before anything changes.
 - A service whose claim names a container address is proxied straight to that IP. An unreachable IP, for example on Docker Desktop, fails that service; OrbStack works.
 - An HTTPS origin is shared only when its rule allows skipping certificate checks, because frp's `http2https` plugin cannot verify it.

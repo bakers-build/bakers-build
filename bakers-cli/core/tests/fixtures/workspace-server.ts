@@ -10,7 +10,7 @@ export const firstWorkspace = '11111111-1111-4111-8111-111111111111';
 export const secondWorkspace = '22222222-2222-4222-8222-222222222222';
 export async function workspaceFixture() {
   const root = mkdtempSync(join(tmpdir(), 'bakers-workspace-'));
-  const config = join(root, '.bakers', 'bakers.config.js');
+  const config = join(root, '.bakers', 'connection.config.js');
   const stateDir = join(root, 'state');
   mkdirSync(dirname(config));
   const requests: string[] = [];

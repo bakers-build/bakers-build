@@ -38,15 +38,15 @@ const bases = [new URL('../../host/package.json', import.meta.url).href];
 
 function writeConductorConfig(body: string): string {
   const dir = mkdtempSync(join(tmpdir(), 'bakers-addons-cfg-'));
-  const file = join(dir, 'conductor.config.js');
+  const file = join(dir, 'project.config.js');
   writeFileSync(file, body);
   return file;
 }
 
 describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
-  it('wires remote/executor/workspace from addons[] and agents from the machine', async () => {
+  it('wires server/executor/worktree from addons[] and agents from the machine', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' },
+  project: { name: 'demo' },
   states: ['working'],
   addons: [
     '@bakers-build/addon-remote-drupal',
@@ -55,11 +55,11 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
 };
 `);
     const cfg = await loadConductorConfig(file);
-    expect(cfg.remote.kind).toBe('remote'); // drupalRemote via addon-remote-drupal
+    expect(cfg.remote.kind).toBe('server'); // drupalRemote via addon-remote-drupal
     expect(cfg.remote.id).toBe('drupal');
     expect(cfg.executor.kind).toBe('executor'); // herdr
     expect(cfg.executor.id).toBe('herdr');
-    expect(cfg.workspace.kind).toBe('workspace'); // herdr (SAME single entry)
+    expect(cfg.workspace.kind).toBe('worktree'); // herdr (SAME single entry)
     expect(cfg.workspace.id).toBe('herdr');
     // agent candidate list from the machine's agent_addons (codex)
     expect(cfg.agents.map((c) => ({ alias: c.alias, id: c.agent.id }))).toEqual(
@@ -73,9 +73,9 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
     );
   });
 
-  it('a herdr entry listed ONCE wires executor + workspace (retires herdrWorkspace export)', async () => {
+  it('a herdr entry listed ONCE wires executor + worktree (retires herdrWorkspace export)', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, states: ['working'],
+  project: { name: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
 `);
@@ -90,9 +90,9 @@ describe('loadConductorConfig — addons[] discovery (AC-2)', () => {
     // addon-remote-drupal would contribute the drupal remote; the explicit slot
     // overrides it.
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, states: ['working'],
+  project: { name: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
-  remote: { kind: 'remote', id: 'explicit-remote', requiredModules: [] },
+  server: { kind: 'server', id: 'explicit-remote', requiredModules: [] },
 };
 `);
     const cfg = await loadConductorConfig(file);
@@ -121,13 +121,13 @@ describe('loadConductorConfig — lifecycle hook listeners', () => {
       `export const addons = ['./child.mjs'];
 export const hooks = (acc) => [...acc, {
   id: 'parent',
-  after_create() {}, before_run() {}, async after_run() {}, after_done() {},
+  after_create() {}, before_run() {}, async after_run() {}, after_done() {}, before_conductor_start() {},
 }];`,
     );
     writeFileSync(
       file,
       `export default {
-  bakers: { project: 'demo' }, states: ['working'],
+  project: { name: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './parent.mjs', './parent.mjs'],
   hooks: { before_run: 'echo shell' },
 };
@@ -145,6 +145,7 @@ export const hooks = (acc) => [...acc, {
       'before_run',
       'after_run',
       'after_done',
+      'before_conductor_start',
     ] as const) {
       expect(typeof parent?.[slot]).toBe('function');
     }
@@ -153,7 +154,7 @@ export const hooks = (acc) => [...acc, {
 
   it('loads a listener preset whose before_run adds a launch environment key', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, states: ['working'],
+  project: { name: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './sidecar.mjs'],
 };
 `);
@@ -196,7 +197,7 @@ export const hooks = () => { throw new Error('machine hook accumulator ran'); };
     machine.agentAddons = ['@bakers-build/addon-codex', hooky];
     try {
       const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, states: ['working'],
+  project: { name: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
 `);
@@ -223,7 +224,7 @@ export const hooks = (acc, opts) => { if (opts?.probe) throw new Error('catalog 
     ];
     try {
       const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, states: ['working'],
+  project: { name: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
 };
 `);
@@ -238,6 +239,11 @@ export const hooks = (acc, opts) => { if (opts?.probe) throw new Error('catalog 
   });
 
   it.each([
+    [
+      'a non-callable start hook',
+      `export const hooks = (acc) => [...acc, { before_conductor_start: 'echo' }];`,
+      /before_conductor_start/,
+    ],
     [
       'a non-array accumulator result',
       `export const hooks = () => ({});`,
@@ -254,7 +260,7 @@ export const hooks = (acc, opts) => { if (opts?.probe) throw new Error('catalog 
     writeFileSync(
       file,
       `export default {
-  bakers: { project: 'demo' }, states: ['working'],
+  project: { name: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', './bad.mjs'],
 };
 `,
@@ -323,7 +329,7 @@ describe('addon inbox discovery (contract 2, BB-661)', () => {
 
   it('loadConductorConfig loads the discovered inbox and passes `with` to its handlers', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, states: ['working'],
+  project: { name: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', ${JSON.stringify(entry)}],
 };
 `);
@@ -336,7 +342,7 @@ describe('addon inbox discovery (contract 2, BB-661)', () => {
 
   it('loadConductorConfig collects a `tools` export into the tool registry', async () => {
     const file = writeConductorConfig(`export default {
-  bakers: { project: 'demo' }, states: ['working'],
+  project: { name: 'demo' }, states: ['working'],
   addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr', ${JSON.stringify(entry)}],
 };
 `);
@@ -366,7 +372,7 @@ describe('loadBbConfig — addons[] discovery (AC-2, connection surface)', () =>
     const root = mkdtempSync(join(tmpdir(), 'bakers-conn-'));
     mkdirSync(join(root, '.bakers'));
     writeFileSync(
-      join(root, '.bakers', 'bakers.config.js'),
+      join(root, '.bakers', 'connection.config.js'),
       `export default {
   site: { base_url: 'https://x.test' }, workspace_id: '00000000-0000-4000-8000-000000000000',
   addons: ['@bakers-build/addon-essentials'],
@@ -395,7 +401,7 @@ describe('loadBbConfig — addons[] discovery (AC-2, connection surface)', () =>
     const root = mkdtempSync(join(tmpdir(), 'bakers-conn-ui-'));
     mkdirSync(join(root, '.bakers'));
     writeFileSync(
-      join(root, '.bakers', 'bakers.config.js'),
+      join(root, '.bakers', 'connection.config.js'),
       `export default {
   site: { base_url: 'https://x.test' }, workspace_id: '00000000-0000-4000-8000-000000000000',
   addons: ['@bakers-build/addon-bakers-ui-artifacts'],
@@ -418,7 +424,7 @@ describe('loadBbConfig — addons[] discovery (AC-2, connection surface)', () =>
     const root = mkdtempSync(join(tmpdir(), 'bakers-conn-noui-'));
     mkdirSync(join(root, '.bakers'));
     writeFileSync(
-      join(root, '.bakers', 'bakers.config.js'),
+      join(root, '.bakers', 'connection.config.js'),
       `export default { site: { base_url: 'https://x.test' }, workspace_id: '00000000-0000-4000-8000-000000000000', plugins: [] };
 `,
     );
@@ -433,9 +439,9 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
   const conductorAddons = [
     // BB-224: the three impl addons that replaced `@bakers-build/core/builtins` +
     // the deleted `@bakers-build/core/plugins` barrel.
-    ['@bakers-build/addon-remote-drupal', ['remotes']],
-    ['@bakers-build/addon-workspace-git', ['workspaces']],
-    ['@bakers-build/addon-herdr', ['executors', 'workspaces']],
+    ['@bakers-build/addon-remote-drupal', ['servers']],
+    ['@bakers-build/addon-workspace-git', ['worktrees']],
+    ['@bakers-build/addon-herdr', ['executors', 'worktrees']],
     ['@bakers-build/addon-claude', ['agents']],
     ['@bakers-build/addon-codex', ['agents']],
     ['@bakers-build/addon-kimi', ['agents']],
@@ -471,7 +477,7 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
     ]);
   });
 
-  it('the fake fixture contributes a remote too (folded in from core)', async () => {
+  it('the fake fixture contributes a server too (folded in from core)', async () => {
     const fakeBase = pathToFileURL(
       join(import.meta.dirname, '..', '..', 'addons', 'fake', 'package.json'),
     ).href;
@@ -480,7 +486,7 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
       'conductor',
       [fakeBase],
     );
-    expect(out.remotes.length).toBeGreaterThan(0);
+    expect(out.servers.length).toBeGreaterThan(0);
   });
 
   it('essentials + bakers-ui contribute connection plugins', async () => {
@@ -539,7 +545,7 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
       bases,
     );
     expect(cmds.commands.map((c) => c.name)).toEqual([
-      'oven',
+      'conductor',
       'ui',
       'dropsh',
       'tools',
@@ -549,7 +555,7 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
     expect(cmds.commands.every((c) => c.describe.length > 0)).toBe(true);
   });
 
-  it('the fake fixture contributes executor + workspace via its preset', async () => {
+  it('the fake fixture contributes executor + worktree via its preset', async () => {
     // fake is workspace-only (never published) → resolve from its own dir.
     const fakeBase = pathToFileURL(
       join(import.meta.dirname, '..', '..', 'addons', 'fake', 'package.json'),
@@ -560,7 +566,7 @@ describe('AC-3: all shipped addons contribute via ./preset discovery', () => {
       [fakeBase],
     );
     expect(out.executors.length).toBeGreaterThan(0);
-    expect(out.workspaces.length).toBeGreaterThan(0);
+    expect(out.worktrees.length).toBeGreaterThan(0);
   });
 
   it('emptyContributions is the zero value', () => {

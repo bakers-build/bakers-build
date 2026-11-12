@@ -392,11 +392,11 @@ describe('killRunProcesses', () => {
   it('signals only same-uid processes carrying the run uuid, then kills survivors', async () => {
     const uid = process.getuid?.() ?? 0;
     const { probe, sent } = fakeProbe({
-      10: { uid, env: [`BB_RUN_UUID=${RUN}`, 'PATH=/bin'] },
-      20: { uid, env: [`BB_RUN_UUID=${RUN}`] },
-      30: { uid, env: ['BB_RUN_UUID=other'] },
-      40: { uid: uid + 1, env: [`BB_RUN_UUID=${RUN}`] },
-      50: { uid, env: [`X_BB_RUN_UUID=${RUN}`] },
+      10: { uid, env: [`BAKERS_RUN_UUID=${RUN}`, 'PATH=/bin'] },
+      20: { uid, env: [`BAKERS_RUN_UUID=${RUN}`] },
+      30: { uid, env: ['BAKERS_RUN_UUID=other'] },
+      40: { uid: uid + 1, env: [`BAKERS_RUN_UUID=${RUN}`] },
+      50: { uid, env: [`X_BAKERS_RUN_UUID=${RUN}`] },
     });
     const result = await killRunProcesses(RUN, probe, 0);
     expect(sent).toEqual([
@@ -422,7 +422,7 @@ describe('killRunProcesses', () => {
         const child = spawn('sleep', ['60'], {
           detached: true,
           stdio: 'ignore',
-          env: { ...process.env, BB_RUN_UUID: uuid },
+          env: { ...process.env, BAKERS_RUN_UUID: uuid },
         });
         child.unref();
         return child.pid as number;

@@ -309,6 +309,54 @@ importers:
         specifier: ^5.9.0
         version: 5.9.3
 
+  addons/forge:
+    devDependencies:
+      '@bakers-build/conductor':
+        specifier: workspace:^
+        version: link:../../conductor
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      '@bakers-build/message':
+        specifier: workspace:^
+        version: link:../../message
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
+
+  addons/forge-github:
+    devDependencies:
+      '@bakers-build/addon-forge':
+        specifier: workspace:^
+        version: link:../forge
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
+
+  addons/forge-gitlab:
+    devDependencies:
+      '@bakers-build/addon-forge':
+        specifier: workspace:^
+        version: link:../forge
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+      vitest:
+        specifier: ^4.1.0
+        version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
+
   addons/grok:
     devDependencies:
       '@bakers-build/conductor':
@@ -538,6 +586,18 @@ importers:
         specifier: ^4.1.0
         version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
 
+  addons/tailscale:
+    devDependencies:
+      '@bakers-build/conductor':
+        specifier: workspace:^
+        version: link:../../conductor
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
   addons/track:
     dependencies:
       '@dropsh/plugin-tool':
@@ -691,6 +751,15 @@ importers:
       '@bakers-build/addon-essentials':
         specifier: workspace:^
         version: link:../addons/essentials
+      '@bakers-build/addon-forge':
+        specifier: workspace:^
+        version: link:../addons/forge
+      '@bakers-build/addon-forge-github':
+        specifier: workspace:^
+        version: link:../addons/forge-github
+      '@bakers-build/addon-forge-gitlab':
+        specifier: workspace:^
+        version: link:../addons/forge-gitlab
       '@bakers-build/addon-grok':
         specifier: workspace:^
         version: link:../addons/grok
@@ -730,6 +799,9 @@ importers:
       '@bakers-build/addon-remote-drupal':
         specifier: workspace:^
         version: link:../addons/remote-drupal
+      '@bakers-build/addon-tailscale':
+        specifier: workspace:^
+        version: link:../addons/tailscale
       '@bakers-build/addon-track':
         specifier: workspace:^
         version: link:../addons/track

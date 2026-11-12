@@ -68,6 +68,7 @@ bb_core.claim_next:
     _jsonapi_resource_types: ['bb_run--bb_run']
   requirements:
     _permission: 'claim bakers tickets'
+    _csrf_request_header_token: 'TRUE'
 
 bb_core.heartbeat:
   path: '/%jsonapi%/bakers/heartbeat'
@@ -77,6 +78,7 @@ bb_core.heartbeat:
     _jsonapi_resource_types: ['bb_conductor--bb_conductor']
   requirements:
     _permission: 'register bakers conductor'
+    _csrf_request_header_token: 'TRUE'
 
 # POST only; the optional body is a bb_ticket document of overrides.
 # `_auth` is added by jsonapi_resources (all providers);
@@ -121,6 +123,7 @@ bb_core.ticket_claim:
     resource_type: 'bb_ticket--bb_ticket'
   requirements:
     _permission: 'claim bakers tickets'
+    _csrf_request_header_token: 'TRUE'
   options:
     parameters:
       bb_ticket:
@@ -139,6 +142,7 @@ bb_core.conductor_offline:
     resource_type: 'bb_conductor--bb_conductor'
   requirements:
     _entity_access: 'bb_conductor.update'
+    _csrf_request_header_token: 'TRUE'
   options:
     parameters:
       bb_conductor:

@@ -11,25 +11,25 @@ export { reconcileCloudflare } from './reconcile.js';
 
 /** The `@bakers-build/addon-ports` entry's `with.transport.with` for this transport. */
 export interface CloudflareSettings {
-  readonly accountId: string;
-  readonly tunnelId: string;
-  readonly zoneId: string;
+  readonly account_id: string;
+  readonly tunnel_id: string;
+  readonly zone_id: string;
   readonly zone: string;
-  readonly apiToken: string;
+  readonly api_token: string;
 }
 
 const REQUIRED_FIELDS = [
-  'accountId',
-  'tunnelId',
-  'zoneId',
+  'account_id',
+  'tunnel_id',
+  'zone_id',
   'zone',
-  'apiToken',
+  'api_token',
 ] as const;
 
-function validateSettings(settings: unknown): CloudflareSettings {
+function validateSettings(settings: unknown): CloudflareConfig {
   if (typeof settings !== 'object' || settings === null) {
     throw new Error(
-      "the @bakers-build/addon-ports entry's with.transport.with for 'cloudflare' must be an object with accountId/tunnelId/zoneId/zone/apiToken",
+      "the @bakers-build/addon-ports entry's with.transport.with for 'cloudflare' must be an object with account_id/tunnel_id/zone_id/zone/api_token",
     );
   }
   const obj = settings as Record<string, unknown>;
@@ -42,11 +42,11 @@ function validateSettings(settings: unknown): CloudflareSettings {
     );
   }
   return {
-    accountId: obj.accountId as string,
-    tunnelId: obj.tunnelId as string,
-    zoneId: obj.zoneId as string,
+    accountId: obj.account_id as string,
+    tunnelId: obj.tunnel_id as string,
+    zoneId: obj.zone_id as string,
     zone: obj.zone as string,
-    apiToken: obj.apiToken as string,
+    apiToken: obj.api_token as string,
   };
 }
 
@@ -80,7 +80,7 @@ function validateData(data: unknown): void {
 
 /**
  * Default export factory consumed by `@bakers-build/addon-ports`'s
- * `loadPortsTransport`. `identity` deliberately excludes `apiToken` — a
+ * `loadPortsTransport`. `identity` deliberately excludes `api_token` — a
  * rotated token with the same account/tunnel/zone is NOT an identity change.
  */
 export default async function createTransport(

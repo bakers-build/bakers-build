@@ -24,17 +24,9 @@ It publishes one alias, `pi`, which uses your locally configured pi model.
 
 ## Options
 
-| Option | Type | Default | Effect |
-|---|---|---|---|
-| `permissions` | `'system'` \| `'custom'` | `'system'` | How a run starts; see [Security](#security). |
-| `config` | object | none | Required with, and only valid with, `permissions: 'custom'`. |
-| `env_deny` | string[] | the [default list](/provision/security/execution#ticket-env-vars) | Ticket env var names (`*` globs) kept from the run. |
-| `model` | string | pi's own default | Passed as `--model`. |
-| `provider` | string | none | Passed as `--provider`. |
-| `thinking` | string | none | Passed as `--thinking`. |
-| `effort` | string | none | Same as `thinking`, and wins over it. |
-| `approve` | boolean | `false` | Passes `--approve`: trusts the worktree's project-local pi files. Grants no bakers.build access. |
-| `args` | string[] | `[]` | Extra arguments, each shell-quoted. |
+<!-- @options @bakers-build/addon-pi -->
+
+Without `env_deny`, the [default list](/provision/security/execution#ticket-env-vars) of ticket env vars is kept from the run.
 
 ## Security
 
@@ -67,7 +59,7 @@ bakers agents
 - pi has no tool-permission gate, so leave `approve` off unless a run needs project-local pi files.
 - `--session-dir`, `--approve`, `-a`, `--no-approve` and `-na` are reserved; putting them in `args` fails loading.
 - The addon starts `pi`; it does not install it or sign it in. The binary must be on `PATH`.
-- Listed in a conductor config, an agent addon is ignored with a warning.
+- Listed in a project config, an agent addon is ignored with a warning.
 - Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools`, not through MCP.
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).

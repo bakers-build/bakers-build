@@ -24,7 +24,7 @@ Continue with [ticket work](/get-started/daily-work/create-a-ticket). You can us
 Follow the path that matches what you have access to:
 
 - **An environment already prepared for you:** check access with your team, then [prepare your project](/get-started/connect-a-project) there.
-- **A Coder workspace:** [open the team's workspace](/provision/coder-workspace) and check its tools and sign-ins there.
+- **A Coder workspace:** open the team's workspace and check its tools and sign-ins there.
 - **A remote server you manage:** follow [worker server setup](/provision/worker-server), then connect your project on that server.
 - **Your own computer:** check and complete the local setup below.
 
@@ -69,7 +69,7 @@ change before applying it. Leave project tooling for project setup.
 
 The skill checks Git, host [Node.js ≥20.19 and npm](/provision/node), the agent and its [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites). Container Node does not supply the host CLI.
 
-It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connector/connections) explains storage. Correct existing settings are reused. Add the installed harness to the machine's `addons` using [Agents](/agents/guide); initialization alone does not supply an agent catalog.
+It guides CLI installation and creates only missing private machine/connection settings under `~/.bakers`. The machine's identity, a generated UUID plus a label, is separate from your account. You approve sign-in in your browser; session tokens stay in the private dropsh store. [Connections](/configuration/connection) explains storage. Correct existing settings are reused. Add the installed harness to the machine's `addons` using [Agents](/agents/guide); initialization alone does not supply an agent catalog.
 :::
 
 <span id="install-and-sign-in"></span>
@@ -94,6 +94,6 @@ Accept your workspace invitation at the server's `/user/login`. `Online: pending
 
 ### 3. Verify
 
-**Done when:** Git, Node/npm and the agent answer their checks, `bb-init` is available, authentication passes, and `bakers info` lists your workspace. Ask the AI to report each result. [Troubleshooting](/configuration/clients/troubleshooting) covers failures.
+**Done when:** Git, Node/npm and the agent answer their checks, `bb-init` is available, authentication passes, and `bakers info` lists your workspace. Ask the AI to report each result. [Troubleshooting](/cli/troubleshooting) covers failures.
 
 **Next:** [Prepare your project](/get-started/connect-a-project) in the chosen environment. Apply the local guide's commands there. You can reuse the same execution setup for more repositories.

@@ -240,7 +240,7 @@ export function workspacePlugin(opts: WorkspaceOptions = {}): DropSHPlugin {
       if (workspaceId === '') {
         throw new WorkspaceConfigError(
           `@bakers-build/addon-workspace: creating a "${ctx.entityType}" needs an ambient workspace, but none is configured. ` +
-            `Set the top-level \`${WORKSPACE_FIELD}: '<bb_workspace uuid>'\` in your connection config (.bakers/bakers.config.js).`,
+            `Set the top-level \`${WORKSPACE_FIELD}: '<bb_workspace uuid>'\` in your connection config (~/.bakers/connections/default.js).`,
         );
       }
 

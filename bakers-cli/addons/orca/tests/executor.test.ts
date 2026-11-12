@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import orcaExecutor, { OrcaExecutor } from '../src/index.js';
 import { fakeOrca } from './fakes.js';
 
-const INSTANT_WATCH = { timeoutMs: 0, pollMs: 1 } as const;
+const INSTANT_WATCH = { timeout_ms: 0, poll_ms: 1 } as const;
 
 /** The launch dir behind a typed `sh '<dir>/run.sh'` command. */
 function launchDir(args: string[]): string {
@@ -69,7 +69,7 @@ describe('OrcaExecutor.startRun', () => {
   it('runs the agent in an Orca terminal titled with the run token', async () => {
     const create = terminalCreate('started');
     const { orca, calls } = fakeOrca({ 'terminal create': create.handler });
-    const ex = new OrcaExecutor({ launchWatch: INSTANT_WATCH }, orca);
+    const ex = new OrcaExecutor({ launch_watch: INSTANT_WATCH }, orca);
     await expect(ex.startRun(input())).resolves.toEqual({
       sessionRef: 'feat/x',
     });
@@ -90,7 +90,7 @@ describe('OrcaExecutor.startRun', () => {
   it('renames the terminal so the run title survives the agent', async () => {
     const create = terminalCreate('started');
     const { orca, calls } = fakeOrca({ 'terminal create': create.handler });
-    const ex = new OrcaExecutor({ launchWatch: INSTANT_WATCH }, orca);
+    const ex = new OrcaExecutor({ launch_watch: INSTANT_WATCH }, orca);
     await ex.startRun(input());
     expect(calls).toContainEqual([
       'terminal',
@@ -110,7 +110,7 @@ describe('OrcaExecutor.startRun', () => {
         throw new Error('rename refused');
       },
     });
-    const ex = new OrcaExecutor({ launchWatch: INSTANT_WATCH }, orca);
+    const ex = new OrcaExecutor({ launch_watch: INSTANT_WATCH }, orca);
     await expect(ex.startRun(input())).rejects.toThrow(/rename refused/);
     expect(calls).toContainEqual(['terminal', 'close', '--terminal', 'term-1']);
     expect(existsSync(create.seen.dir as string)).toBe(false);
@@ -121,8 +121,8 @@ describe('OrcaExecutor.startRun', () => {
     const { orca, calls } = fakeOrca({ 'terminal create': create.handler });
     const ex = new OrcaExecutor(
       {
-        launchWatch: INSTANT_WATCH,
-        states: { coding: { tabLabel: '{identifier} build' } },
+        launch_watch: INSTANT_WATCH,
+        states: { coding: { tab_label: '{identifier} build' } },
       },
       orca,
     );
@@ -136,8 +136,10 @@ describe('OrcaExecutor.startRun', () => {
     const { orca, calls } = fakeOrca({ 'terminal create': create.handler });
     const ex = new OrcaExecutor(
       {
-        launchWatch: INSTANT_WATCH,
-        states: { coding: { tabLabel: '{identifier} [{state}] {titleSlug}' } },
+        launch_watch: INSTANT_WATCH,
+        states: {
+          coding: { tab_label: '{identifier} [{state}] {title_slug}' },
+        },
       },
       orca,
     );
@@ -148,7 +150,7 @@ describe('OrcaExecutor.startRun', () => {
 
   it('rejects a tab label without {identifier}', async () => {
     const ex = new OrcaExecutor(
-      { default: { tabLabel: '{title}' } },
+      { default: { tab_label: '{title}' } },
       fakeOrca().orca,
     );
     await expect(ex.startRun(input())).rejects.toThrow(/\{identifier\}/);
@@ -160,7 +162,7 @@ describe('OrcaExecutor.startRun', () => {
       'terminal create': create.handler,
       'terminal read': () => ({ terminal: { tail: ['command not found'] } }),
     });
-    const ex = new OrcaExecutor({ launchWatch: INSTANT_WATCH }, orca);
+    const ex = new OrcaExecutor({ launch_watch: INSTANT_WATCH }, orca);
     await expect(ex.startRun(input())).rejects.toThrow(
       /Launch failed: exit 1\ncommand not found/,
     );

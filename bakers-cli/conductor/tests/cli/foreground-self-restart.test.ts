@@ -33,23 +33,23 @@ const CHANGED = '/project/.bakers/conductor.config.local.js';
  * passing config check drains the loop like SIGTERM, keeps the conductor
  * online and replaces the process in place; a failing one keeps it running.
  */
-describe('bakers oven start --foreground self-restart', () => {
+describe('bakers conductor start --foreground self-restart', () => {
   let home: string;
-  const originalHome = process.env.BB_HOME;
-  const originalLog = process.env.BB_CONDUCTOR_LOG;
+  const originalHome = process.env.BAKERS_HOME;
+  const originalLog = process.env.BAKERS_CONDUCTOR_LOG;
 
   beforeEach(() => {
     home = mkdtempSync(join(tmpdir(), 'bakers-fg-restart-'));
-    process.env.BB_HOME = join(home, '.bakers');
-    process.env.BB_CONDUCTOR_LOG = 'file';
+    process.env.BAKERS_HOME = join(home, '.bakers');
+    process.env.BAKERS_CONDUCTOR_LOG = 'file';
   });
 
   afterEach(() => {
     rmSync(home, { recursive: true, force: true });
-    if (originalHome === undefined) delete process.env.BB_HOME;
-    else process.env.BB_HOME = originalHome;
-    if (originalLog === undefined) delete process.env.BB_CONDUCTOR_LOG;
-    else process.env.BB_CONDUCTOR_LOG = originalLog;
+    if (originalHome === undefined) delete process.env.BAKERS_HOME;
+    else process.env.BAKERS_HOME = originalHome;
+    if (originalLog === undefined) delete process.env.BAKERS_CONDUCTOR_LOG;
+    else process.env.BAKERS_CONDUCTOR_LOG = originalLog;
   });
 
   it('on a passing check, drains, writes no offline and re-execs itself', async () => {
@@ -210,7 +210,7 @@ describe('bakers oven start --foreground self-restart', () => {
           ...(injectExecve ? { execve: h.execve } : {}),
         };
         await buildConductorProgram(deps).parseAsync(
-          ['oven', 'start', '--foreground', '--no-update-check'],
+          ['conductor', 'start', '--foreground', '--no-update-check'],
           { from: 'user' },
         );
       },
@@ -233,7 +233,7 @@ describe('bakers oven start --foreground self-restart', () => {
       poll_interval_ms: 5,
       lease_seconds: 300,
       conductor_id: 'mid-fg',
-      config_path: join(home, 'conductor.config.js'),
+      config_path: join(home, 'project.config.js'),
       restart_on_change: true,
       watch_paths: { files: [CHANGED], dirs: [] },
       ...over,

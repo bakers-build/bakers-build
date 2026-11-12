@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-forge-gitlab/options.schema.json",
+  "title": "@bakers-build/addon-forge-gitlab options",
+  "description": "The forge entry's with.backend.with: a Project Access Token, or the conductor's glab login with auth 'glab'.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "project"
+  ],
+  "properties": {
+    "url": {
+      "type": "string",
+      "pattern": "^https?://",
+      "description": "The GitLab instance.",
+      "default": "https://gitlab.com"
+    },
+    "project": {
+      "type": "string",
+      "pattern": "/",
+      "description": "The project path, e.g. group/repo."
+    },
+    "auth": {
+      "const": "glab",
+      "description": "Use the conductor's own glab login instead of a token."
+    },
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The Project Access Token; machine config only."
+    },
+    "token_env": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Names the conductor environment variable that holds the credential."
+    }
+  }
+}

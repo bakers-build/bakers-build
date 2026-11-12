@@ -1,0 +1,33 @@
+{
+  "name": "@bakers-build/addon-forge-github",
+  "version": "0.1.0",
+  "description": "bakers.build forge backend for GitHub: a GitHub App installation token scoped to one repository. Implements @bakers-build/addon-forge's ForgeBackend contract.",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./dist/src/index.js",
+    "./options.schema.json": "./options.schema.json"
+  },
+  "files": [
+    "dist/src",
+    "options.schema.json"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --root ../.. addons/forge-github/tests"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@bakers-build/addon-forge": "workspace:^",
+    "@bakers-build/core": "workspace:^"
+  },
+  "devDependencies": {
+    "@bakers-build/addon-forge": "workspace:^",
+    "@bakers-build/core": "workspace:^",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.0"
+  }
+}

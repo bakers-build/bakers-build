@@ -6,12 +6,11 @@
 #   1. prereq check (pnpm, node >= 20.19)
 #   2. install conductor dependencies
 #   3. build conductor + workspace plugins
-#   4. repo-root node_modules resolution farm (so .bakers/conductor.config.js
+#   4. repo-root node_modules resolution farm (so .bakers/project.config.js
 #      resolves its bare @bakers-build/* and @dropsh/* imports)
 #   5. ~/.local/bin/bakers PATH shim (test-workspace-aware)
-#   6. .bakers/conductor.config.local.js scaffold (non-secret; secret from env)
-#   7. herdr run-session plugins (link the repo-local spiceedit plugin; best-effort)
-#   8. summary / next steps
+#   6. herdr run-session plugins (link the repo-local spiceedit plugin; best-effort)
+#   7. summary / next steps (`bakers config init` writes the private connection)
 #
 # See bakers-cli/README.md for the full explanation.
 set -euo pipefail
@@ -23,7 +22,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 CONDUCTOR_DIR=$(cd "$SCRIPT_DIR/.." && pwd)
 REPO_ROOT=$(cd "$CONDUCTOR_DIR/.." && pwd)
 
-SECRET_ENV="BB_CONSUMER_SECRET"
+SECRET_ENV="BAKERS_CONSUMER_SECRET"
 
 echo "==> bakers.build conductor setup"
 echo "    repo root: $REPO_ROOT"
@@ -64,7 +63,7 @@ echo "==> Installing conductor dependencies"
 
 # --- 3. build packages (core → conductor → addons → ui → bakers) ---------------
 # `bakers-cli/bin/bakers` runs the compiled @bakers-build/conductor dist, and
-# .bakers/conductor.config.js resolves the workspace packages whose exports point
+# .bakers/project.config.js resolves the workspace packages whose exports point
 # at dist/src. BB-215 reorg: the workspace is `core` (kernel) + `addons/*`
 # (mountables) + `host` (CLI) + `conductor` (run engine). Invoke tsc directly (not
 # `pnpm run build`) to stay fresh-tree-safe, same as the worktree `after_create` hook.
@@ -105,7 +104,7 @@ echo "==> Building @bakers-build/ui + @bakers-build/bakers"
 ( cd "$CONDUCTOR_DIR" && node_modules/.bin/tsc -p host/tsconfig.json )
 
 # --- 4. resolution farm -------------------------------------------------------
-# Node ESM resolves the bare imports in .bakers/conductor.config.js by walking UP
+# Node ESM resolves the bare imports in .bakers/project.config.js by walking UP
 # from .bakers/; a repo-root node_modules symlink farm is where it lands. This
 # reproduces the mechanism a nested worktree relies on today. Idempotent
 # (ln -sfn); node_modules/ is already gitignored. Each package is linked under
@@ -207,34 +206,7 @@ if [ -n "$node_bin_path" ]; then
   fi
 fi
 
-# --- 6. config scaffold -------------------------------------------------------
-# Write .bakers/conductor.config.local.js from the template. Idempotent: if it
-# already exists, leave it untouched. Interactive prompt for client_id; non-TTY
-# falls back to the default. It carries no identity (bakers init owns the
-# machine UUID). The secret is never written here —
-# the template reads it from $BB_CONSUMER_SECRET.
-echo "==> Scaffolding .bakers/conductor.config.local.js"
-BB_DIR="$REPO_ROOT/.bakers"
-LOCAL_CFG="$BB_DIR/conductor.config.local.js"
-TEMPLATE="$CONDUCTOR_DIR/templates/conductor.config.local.js"
-if [ -f "$LOCAL_CFG" ]; then
-  echo "    exists — leaving untouched"
-else
-  mkdir -p "$BB_DIR"
-  default_client_id="bakers-agent"
-  if [ -t 0 ]; then
-    printf '    oauth client_id [%s]: ' "$default_client_id" >&2
-    read -r client_id || client_id=""
-  else
-    echo "    non-interactive shell — writing defaults" >&2
-    client_id=""
-  fi
-  client_id="${client_id:-$default_client_id}"
-  sed -e "s|__CLIENT_ID__|$client_id|" "$TEMPLATE" > "$LOCAL_CFG"
-  echo "    wrote $LOCAL_CFG (client_id=$client_id)"
-fi
-
-# --- 7. herdr run-session plugins (spiceedit) ---------------------------------
+# --- 6. herdr run-session plugins (spiceedit) ---------------------------------
 # BB-58: in the review run-session the diff surface is hunk (BB-55) — opt-in,
 # agent-driven, in the human's interactive pane, not an executor-forced pane.
 # Clicking a changed file there opens a spiceedit overlay. spiceedit is exposed to
@@ -257,7 +229,7 @@ else
   echo "    herdr not on PATH — skipping (only needed for the herdr executor)."
 fi
 
-# --- 8. summary ---------------------------------------------------------------
+# --- 7. summary ---------------------------------------------------------------
 cat <<MSG
 
 ==> bakers.build conductor CLI ready.
@@ -265,11 +237,10 @@ cat <<MSG
 Next steps:
   1. Export your OAuth consumer secret (never committed):
        export $SECRET_ENV=<your consumer secret>
-  2. Authenticate:
-       bakers auth login
-  3. Verify:
-       bakers auth status
+  2. Write your private connection (~/.bakers/connections/default.js) and machine file:
+       bakers config init
+  3. Authenticate and verify:
+       bakers auth login && bakers auth status
 
-Edit .bakers/conductor.config.local.js to adjust client_id.
 Re-run this script (or: pnpm run bootstrap) any time — it is idempotent.
 MSG

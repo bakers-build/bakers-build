@@ -6,9 +6,11 @@ namespace Drupal\bb_core\Members;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\og\Entity\OgMembership;
 use Drupal\og\OgMembershipInterface;
 use Drupal\og\OgRoleInterface;
+use Drupal\user\EntityOwnerInterface;
 
 /**
  * Reads and writes a group's `og_membership` rows.
@@ -17,6 +19,11 @@ use Drupal\og\OgRoleInterface;
  * the form under phpmd's coupling ceiling.
  */
 final class MembershipWriter {
+
+  /**
+   * The rank that holds a workspace in charge, labelled Admin.
+   */
+  private const string LEAD = 'lead';
 
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
@@ -49,7 +56,7 @@ final class MembershipWriter {
    */
   public function remove(ContentEntityInterface $group, int $uid): void {
     $membership = $this->membershipOf($group, $uid);
-    if ($membership !== NULL) {
+    if ($membership !== NULL && $this->refusal($group, $uid) === NULL) {
       $membership->delete();
     }
   }
@@ -71,7 +78,7 @@ final class MembershipWriter {
    */
   public function writeRole(ContentEntityInterface $group, int $uid, string $value, array $roles): void {
     $membership = $this->membershipOf($group, $uid);
-    if ($membership === NULL || !isset($roles[$value])) {
+    if ($membership === NULL || !isset($roles[$value]) || $this->refusal($group, $uid, $value) !== NULL) {
       return;
     }
     $role = $roles[$value];
@@ -80,6 +87,51 @@ final class MembershipWriter {
     // keeping it would be storing a default that `getRoles()` prepends
     // anyway, and `OgMembership::preSave()` revokes it regardless.
     $membership->setRoles($standard ? [$role] : [])->save();
+  }
+
+  /**
+   * Why a removal, or a pick of `$value`, may not touch this member.
+   *
+   * A workspace keeps its owner and at least one admin (`lead`) in charge.
+   *
+   * @param \Drupal\Core\Entity\ContentEntityInterface $group
+   *   The group.
+   * @param int $uid
+   *   The member's account id.
+   * @param string|null $value
+   *   The picked role name, or NULL for a removal.
+   *
+   * @return \Drupal\Core\StringTranslation\TranslatableMarkup|null
+   *   The reason, or NULL when the change may go ahead.
+   */
+  public function refusal(ContentEntityInterface $group, int $uid, ?string $value = NULL): ?TranslatableMarkup {
+    $membership = $this->membershipOf($group, $uid);
+    if ($group->getEntityTypeId() !== 'bb_workspace' || $value === self::LEAD || $membership === NULL) {
+      return NULL;
+    }
+    if ($group instanceof EntityOwnerInterface && (int) $group->getOwnerId() === $uid) {
+      return new TranslatableMarkup('The owner of this workspace cannot be removed or demoted.');
+    }
+    $leads = array_filter($this->memberships($group), fn (OgMembershipInterface $seat): bool => $this->isLead($seat));
+    if ($this->isLead($membership) && count($leads) <= 1) {
+      return new TranslatableMarkup('The last admin of this workspace cannot be removed or demoted.');
+    }
+    return NULL;
+  }
+
+  /**
+   * Whether an active membership holds the lead rank.
+   */
+  private function isLead(OgMembershipInterface $membership): bool {
+    if (!$membership->isActive()) {
+      return FALSE;
+    }
+    foreach ($membership->getRoles() as $role) {
+      if ($role->getName() === self::LEAD) {
+        return TRUE;
+      }
+    }
+    return FALSE;
   }
 
   /**

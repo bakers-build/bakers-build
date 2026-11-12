@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-workspace-git/options.schema.json",
+  "title": "@bakers-build/addon-workspace-git options",
+  "type": "object",
+  "properties": {
+    "branch_prefix": {
+      "type": "string",
+      "description": "Prefix of every ticket branch.",
+      "default": "bakers/"
+    },
+    "branch_template": {
+      "type": "string",
+      "description": "Branch name template. Placeholders: {branch_prefix}, {key}, {identifier}, {title_slug}.",
+      "default": "{branch_prefix}{key}-{title_slug}"
+    },
+    "auto_setup_merge": {
+      "type": "boolean",
+      "description": "`false` sets `branch.autoSetupMerge=false` in the root repository before creating a worktree, so run branches have no upstream and push with `push.default=current`; `true` leaves Git alone but does not revert an earlier change.",
+      "default": false
+    }
+  },
+  "additionalProperties": false
+}

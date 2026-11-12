@@ -69,7 +69,7 @@ Return here after any changes. Before starting agents, install every skill the w
 
 ::: details What changes
 
-The skill resolves the server project, prepares `.bakers/conductor.config.js` and `WORKFLOW.md`, and checks ignores. Credentials and `*.local.js` overrides stay private. [Configuration](/configuration/) explains file ownership and precedence.
+The skill resolves the server project, prepares `.bakers/project.config.js` and `WORKFLOW.md`, and checks ignores. Credentials and a project `.bakers/connection.config.js` stay private. [Configuration](/configuration/) explains file ownership and precedence.
 :::
 
 ::: details Manual equivalent
@@ -79,13 +79,9 @@ After resolving the real server project:
 bakers config init --scope project --project <name> --workspace <name>
 ```
 
-Choose the project's [executor and workspace](/addons/slots), then approved hooks and [workflow rules](/skills-and-workflows/workflow-file). A named connection uses private `.bakers/connection.config.local.js`:
+Choose the project's [executor and worktree](/addons/slots), then approved hooks and [workflow rules](/skills-and-workflows/workflow-file). Select a named connection with `--connection team` or `BAKERS_CONNECTION=team`.
 
-```js
-export default { connection: 'team' };
-```
-
-Ignore `/assets-ai/`, `/.bakers/log.txt` and `/.bakers/*.local.js`. Commit the conductor file, WORKFLOW and README.
+Ignore `/assets-ai/`, `/.bakers/log.txt` and `/.bakers/connection.config.js`. Commit the project file, WORKFLOW and README.
 :::
 
 <span id="verify"></span>
@@ -96,13 +92,13 @@ Ignore `/assets-ai/`, `/.bakers/log.txt` and `/.bakers/*.local.js`. Commit the c
 Confirm that this checkout points to the intended project and is ready for a ticket.
 
 ```sh
-git check-ignore -v assets-ai/probe .bakers/log.txt .bakers/conductor.config.local.js .bakers/connection.config.local.js
+git check-ignore -v assets-ai/probe .bakers/log.txt .bakers/connection.config.js
 bakers config check --scope project --online
 bakers info
-bakers oven check
+bakers conductor check
 ```
 
-The online check verifies sign-in; confirm project access separately. `oven check` tests agent sandbox startup. Use your project's workflow checks to establish application readiness.
+The online check verifies sign-in; confirm project access separately. `conductor check` tests agent sandbox startup. Use your project's workflow checks to establish application readiness.
 
 **Done when:** project and account are correct, required skills are available, private files are ignored and the project's readiness checks pass.
 

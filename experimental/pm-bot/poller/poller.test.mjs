@@ -107,6 +107,34 @@ test('a technical problem is relayed into its thread exactly once, behind its ow
   assert.deepEqual(state().relayed, [note.id]);
 });
 
+test('a run cancelled by the freeze of a question posts only the question, no paused line', async (t) => {
+  const { s, slack, sent, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  const running = s.addRun(ticket);
+  await poller.pass();
+  const before = slack.posts().length;
+  frozenWithQuestion(s, ticket);
+  running.state = 'cancelled';
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(sent.map((p) => p.kind), ['question']);
+  assert.deepEqual(slack.posts().slice(before), []);
+});
+
+test('a run cancelled by the freeze of a technical problem posts only the technical-problem note, no paused line', async (t) => {
+  const { s, slack, sent, poller } = await setup(t);
+  const ticket = s.addTicket({ state: 'working', links: [thread()] });
+  const running = s.addRun(ticket);
+  await poller.pass();
+  const before = slack.posts().length;
+  frozenWithTechnicalProblem(s, ticket);
+  running.state = 'cancelled';
+  await poller.pass();
+  await poller.pass();
+  assert.deepEqual(sent.map((p) => p.kind), ['technical_problem']);
+  assert.deepEqual(slack.posts().slice(before), []);
+});
+
 test('a ticket labelled Question and technical problem gets only the technical-problem post', async (t) => {
   const { s, sent, poller } = await setup(t);
   const ticket = s.addTicket({ state: 'working', links: [thread()] });

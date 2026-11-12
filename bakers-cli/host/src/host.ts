@@ -24,12 +24,12 @@ import { registerUpdate } from './update.js';
 // ESLint-style resolved, LAZILY mounted command plugins (AC-2). The host
 // discovers + mounts; it hard-wires nothing. Only the invoked subcommand's module
 // is imported — `bakers --help` lists all four via describe-only stubs and imports
-// none; `bakers oven …` imports only the conductor module.
+// none; `bakers conductor …` imports only the conductor module.
 //
 // BB-215: the registry is DERIVED from the command surface — the command
 // addons' preset `commands` accumulators — rather than a hand-written list.
 // Those presets are LIGHT (they import no runtime, only return descriptors), so
-// composing them at boot keeps `bakers --help` import-light. `$BB_COMMANDS`
+// composing them at boot keeps `bakers --help` import-light. `$BAKERS_COMMANDS`
 // still overrides the whole registry. BB-224 (Finding 7) added the fourth
 // command surface, `@bakers-build/addon-deployment` (`bakers deployment …`), which the
 // `conductor` command plugin used to register as a side effect.
@@ -56,18 +56,18 @@ function composeCommandSurface(): CommandDescriptor[] {
   return acc;
 }
 
-/** The built-in command registry. `$BB_COMMANDS` (JSON array of descriptors)
+/** The built-in command registry. `$BAKERS_COMMANDS` (JSON array of descriptors)
  *  overrides it wholesale. */
 export const DEFAULT_COMMANDS: CommandDescriptor[] = composeCommandSurface();
 
-/** Resolve the registry: `$BB_COMMANDS` override else the built-in set. */
+/** Resolve the registry: `$BAKERS_COMMANDS` override else the built-in set. */
 export function resolveCommands(): CommandDescriptor[] {
-  const override = process.env.BB_COMMANDS;
+  const override = process.env.BAKERS_COMMANDS;
   if (override && override.trim() !== '') {
     const parsed = JSON.parse(override) as CommandDescriptor[];
     if (!Array.isArray(parsed)) {
       throw new Error(
-        '$BB_COMMANDS must be a JSON array of command descriptors',
+        '$BAKERS_COMMANDS must be a JSON array of command descriptors',
       );
     }
     return parsed;
@@ -157,14 +157,14 @@ function addStub(
 
 /** Best-effort describe text for a stub without importing the plugin. BB-215:
  *  the descriptor now carries its own `describe` (from the addon's preset); this
- *  falls back only for a `$BB_COMMANDS` entry that omits it. */
+ *  falls back only for a `$BAKERS_COMMANDS` entry that omits it. */
 function pluginDescribe(entry: CommandDescriptor): string {
   if (typeof entry.describe === 'string' && entry.describe.trim() !== '') {
     return entry.describe;
   }
   switch (entry.name) {
-    case 'oven':
-      return 'node-agent lifecycle + local registry';
+    case 'conductor':
+      return 'conductor lifecycle + local registry';
     case 'ui':
       return 'interactive terminal UI: dashboard, projects, tickets';
     case 'dropsh':
@@ -224,7 +224,7 @@ export async function buildHostProgram(
               await projectContext.writeBbWorkspaceSelection(
                 projectContext.bakersProjectOwner(configPath),
                 name,
-                `Set bakers.workspace in ${configPath} to switch manually.`,
+                `Set project.workspace in ${configPath} to switch manually.`,
               );
             },
           },
@@ -242,15 +242,15 @@ export async function buildHostProgram(
     .description('bakers.build conductor + client CLI')
     .option(
       '--conductor <name>',
-      'select a conductor by stem (conductor→conductor.config.js, else <name>.conductor.config.js; env $BB_CONDUCTOR)',
+      'select a conductor variant (default → project.config.js, else project.<name>.config.js; env $BAKERS_CONDUCTOR)',
     );
 
-  // The global --conductor flag threads into $BB_CONDUCTOR (flag wins over env)
+  // The global --conductor flag threads into $BAKERS_CONDUCTOR (flag wins over env)
   // so every command selects the named engine config without per-command wiring.
   program.hook('preAction', () => {
     const name = program.opts().conductor as string | undefined;
     if (typeof name === 'string' && name !== '') {
-      process.env.BB_CONDUCTOR = name;
+      process.env.BAKERS_CONDUCTOR = name;
     }
   });
 
@@ -283,8 +283,16 @@ export async function runHost(
   argv: string[],
   opts: { forceTarget?: string; bases?: string[] } = {},
 ): Promise<void> {
-  // Forward help to plugins that render their own complete option list.
+  // A hidden alias (`oven` for `conductor`) runs as its command: the argv
+  // names the command, so help, dispatch and the plugin see one name.
   const index = firstPositionalIndex(argv);
+  const at = argv[index] === 'help' ? index + 1 : index;
+  const canonical = resolveCommands().find((c) =>
+    c.aliases?.includes(argv[at] as string),
+  );
+  if (canonical)
+    argv = [...argv.slice(0, at), canonical.name, ...argv.slice(at + 1)];
+  // Forward help to plugins that render their own complete option list.
   if (
     argv[index] === 'help' &&
     resolveCommands().some((c) => c.forwardHelp && c.name === argv[index + 1])

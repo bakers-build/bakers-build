@@ -22,6 +22,7 @@ export {
   type AgentRunIdentity,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
+  CONDUCTOR_TOOL_TIMEOUT_MS,
   CONDUCTOR_TOOLS_SERVER,
   CONDUCTOR_URL_ENV,
   DEFAULT_ENV_DENY,
@@ -60,6 +61,7 @@ export {
 } from './plugins/agent-home.js';
 export type {
   BbExecutor,
+  ConductorStartContext,
   ExecutorCapabilities,
   HookContext,
   HookListener,
@@ -67,6 +69,7 @@ export type {
   HookListenerFn,
   HookName,
   HookResult,
+  MachineRegistrationData,
   OpenWorkspaceContext,
   SpawnedSession,
   SpawnRunInput,

@@ -8,7 +8,7 @@ Host ticket worktrees and agent terminals in Orca. The conductor still owns disp
 Read https://bakers.build/addons/orca.
 Use Orca as this project’s client. Check its local CLI/runtime, propose
 replacing the current client’s paired addon entry, and verify it with bakers
-oven check. Preserve environment hooks and explain the single-user boundary.
+conductor check. Preserve environment hooks and explain the single-user boundary.
 ```
 
 The reference below explains the commands and configuration changes.
@@ -25,19 +25,31 @@ The local runtime must answer. bakers.build does not start Orca itself. **Orca a
 
 ## Configuration
 
-Replace the herdr entry in `.bakers/conductor.config.js` with one Orca entry, supplying both executor and workspace:
+Replace the herdr entry in `.bakers/project.config.js` with one Orca entry, supplying both executor and workspace:
 
 ```js
 addons: [
   '@bakers-build/addon-remote-drupal',
-  { use: '@bakers-build/addon-orca', with: { worktreeDir: '.bakers-worktrees' } },
+  { use: '@bakers-build/addon-orca', with: { worktree_dir: '.bakers-worktrees' } },
 ],
 ```
 
-No `with` options are required. [Orca options](/addons/orca/options) owns defaults, terminal labels, adoption/launch timeouts and cleanup behavior.
+No `with` options are required. [Options](#options) owns defaults, terminal labels, adoption/launch timeouts and cleanup behavior.
+
+## Options
+
+<!-- @options @bakers-build/addon-orca -->
+
+`auto_setup_merge` behaves as in [workspace-git](/addons/workspace-git#options).
+
+The agent terminal title is set as the terminal's manual name (`orca terminal rename`). The agent can still change the title shown for the terminal itself; the run's terminal is found again by the renamed tab title in the Orca app, or by the terminal title with `orca serve`.
+
+## Worktree lifecycle
+
+Git creates the exact ticket branch; Orca adopts the worktree after the addon registers the repository. The executor registers it too, so it adopts a worktree from any workspace ([Conductor slots](/addons/slots)). `stopRun` does nothing; cleanup closes the terminal, including after an Orca restart. Removal uses `orca worktree rm`, falling back to Git when Orca does not know the worktree.
 
 ## Verify
 
-Run `bakers oven check`, then [a small ticket](/get-started/first-ticket). The Git worktree should appear in Orca and the agent should run in its terminal. Adoption waits up to 35 seconds by default. An unreachable-runtime error requires starting Orca and retrying dispatch.
+Run `bakers conductor check`, then [a small ticket](/get-started/first-ticket). The Git worktree should appear in Orca and the agent should run in its terminal. Adoption waits up to 35 seconds by default. An unreachable-runtime error requires starting Orca and retrying dispatch.
 
 Package source in a checkout: `bakers-cli/addons/orca`.

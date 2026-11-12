@@ -6,14 +6,16 @@
   "license": "MIT",
   "exports": {
     ".": "./dist/src/index.js",
-    "./preset": "./dist/src/preset.js"
+    "./preset": "./dist/src/preset.js",
+    "./options.schema.json": "./options.schema.json"
   },
   "files": [
     "dist/src",
     "measure/*.json",
     "measure/agent-proxy.mjs",
     "measure/claude-measure.mjs",
-    "trust/claude-trust.mjs"
+    "trust/claude-trust.mjs",
+    "options.schema.json"
   ],
   "scripts": {
     "build": "tsc",

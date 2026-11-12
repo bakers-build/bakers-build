@@ -7,6 +7,7 @@ import { createRequire } from 'node:module'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { AREAS, NAV, SIDEBAR, SRC_EXCLUDE } from './manual.mjs'
+import { addonOptions } from './addon-options.mjs'
 import { redirectPage } from '../scripts/redirects.mjs'
 import { thirdPartyLicenses } from '../scripts/third-party.mjs'
 const require = createRequire(import.meta.url)
@@ -78,6 +79,7 @@ export default withMermaid(
     // Code blocks on the landing's ink run-log surface (docs.css).
     markdown: {
       theme: 'github-dark',
+      config: (md) => md.use(addonOptions),
     },
     head: [
       ['link', { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],

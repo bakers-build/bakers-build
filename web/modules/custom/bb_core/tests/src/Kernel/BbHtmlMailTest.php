@@ -54,6 +54,9 @@ final class BbHtmlMailTest extends KernelTestBase {
       ->set('mail', 'noreply@example.com')
       ->save();
     $this->container->get('config.factory')->reset();
+    // Mails link only the site's own origin; the fixtures' URLs live there.
+    $this->container->get('router.request_context')->setScheme('https')->setHost('bakers.example.com')
+      ->setCompleteBaseUrl('https://bakers.example.com');
     // The product's rewritten bodies carry the login code; mirror that.
     $this->config('user.mail')
       ->set('password_reset.body', "Enter this code:\n\n[bakers:login-code]\n\nOr open [user:one-time-login-url]")
@@ -74,7 +77,8 @@ final class BbHtmlMailTest extends KernelTestBase {
     $url = 'https://bakers.example.com/user/login?destination=%2Facme%2Fjoin%2F7&x=1&y=(2)#frag';
     $result = $this->container->get('plugin.manager.mail')->mail('bb_core', 'invite', 'Invitee <invitee@example.com>', 'en', [
       'workspace_label' => '<script>alert(1)</script> Acme',
-      'inviter_label' => 'Eve',
+      // A name may carry the site's own URL; only the join URL is a link.
+      'inviter_label' => 'Eve https://bakers.example.com/user/logout',
       'validity_days' => 7,
       'join_url' => $url,
     ]);
@@ -179,7 +183,7 @@ final class BbHtmlMailTest extends KernelTestBase {
    * An unrelated module's trusted markup keeps its readable text and link.
    */
   public function testUnrelatedSenderMarkupKeepsTextAndLink(): void {
-    $url = 'https://docs.example.com/a?b=1&c=2#part';
+    $url = 'https://bakers.example.com/a?b=1&c=2#part';
     $this->container->get('plugin.manager.mail')->mail('mail_html_test', 'render_from_message_param', 'reader@example.com', 'en', [
       'message' => ['#markup' => Markup::create('<p>Read the <a href="' . htmlspecialchars($url) . '">guide</a>.</p>')],
     ]);
@@ -238,15 +242,15 @@ final class BbHtmlMailTest extends KernelTestBase {
       ['text' => 'See '],
       ['text' => 'https://example.com/wiki/A_(b)', 'url' => 'https://example.com/wiki/A_(b)'],
       ['text' => ', ('],
-      ['text' => 'http://example.com/x?y=1', 'url' => 'http://example.com/x?y=1'],
+      ['text' => 'https://example.com/x?y=1', 'url' => 'https://example.com/x?y=1'],
       ['text' => '). Not ftp://example.com or javascript:alert(1).'],
     ],
-    ], BbHtmlMail::paragraphs('See https://example.com/wiki/A_(b), (http://example.com/x?y=1). Not ftp://example.com or javascript:alert(1).'));
+    ], BbHtmlMail::paragraphs('See https://example.com/wiki/A_(b), (https://example.com/x?y=1). Not ftp://example.com or javascript:alert(1).', 'https://example.com'));
     self::assertSame(
       [[['text' => "one\ntwo"]], [['text' => 'three']]],
-      BbHtmlMail::paragraphs("one\ntwo\n\n  \nthree\n"),
+      BbHtmlMail::paragraphs("one\ntwo\n\n  \nthree\n", 'https://example.com'),
     );
-    self::assertSame([], BbHtmlMail::paragraphs(" \n "));
+    self::assertSame([], BbHtmlMail::paragraphs(" \n ", 'https://example.com'));
     self::assertSame(
       [
         [['text' => 'https://example.com/j', 'url' => 'https://example.com/j', 'action' => TRUE, 'label' => 'Join']],
@@ -255,11 +259,49 @@ final class BbHtmlMailTest extends KernelTestBase {
         [['text' => 'https://example.com/k', 'url' => 'https://example.com/k', 'action' => TRUE]],
         [['text' => 'See '], ['text' => 'https://example.com/m', 'url' => 'https://example.com/m']],
       ],
-      BbHtmlMail::paragraphs("Join: https://example.com/j\n\nOpen the page below:\nhttps://example.com/l\n\nhttps://example.com/k\n\nSee https://example.com/m"),
+      BbHtmlMail::paragraphs("Join: https://example.com/j\n\nOpen the page below:\nhttps://example.com/l\n\nhttps://example.com/k\n\nSee https://example.com/m", 'https://example.com'),
     );
     self::assertSame(
       [[['text' => 'Code:']], [['text' => '598701', 'code' => TRUE]], [['text' => 'Room 1234 is free']]],
-      BbHtmlMail::paragraphs("Code:\n\n 598701 \n\nRoom 1234 is free"),
+      BbHtmlMail::paragraphs("Code:\n\n 598701 \n\nRoom 1234 is free", 'https://example.com'),
+    );
+  }
+
+  /**
+   * Only the site's own URLs become links or buttons.
+   */
+  public function testOnlyTheSiteOwnUrlsBecomeLinks(): void {
+    $ticket = 'https://bakers.example.com/acme/ticket/7';
+    self::assertSame(
+      [
+        [['text' => 'BAKERS-7: Fix login']],
+        [['text' => 'Reset your password: https://evil.example/r']],
+        [['text' => 'Also https://bakers.example.com@evil.example/x, https://bakers.example.com.evil.example/y and http://bakers.example.com/z']],
+        [['text' => $ticket, 'url' => $ticket, 'action' => TRUE, 'label' => 'Open the ticket']],
+      ],
+      BbHtmlMail::paragraphs("BAKERS-7: Fix login\n\nReset your password: https://evil.example/r\n\nAlso https://bakers.example.com@evil.example/x, https://bakers.example.com.evil.example/y and http://bakers.example.com/z\n\nOpen the ticket: $ticket", 'https://bakers.example.com'),
+    );
+    // Browsers read `\` as `/`, so these lead to evil.example whatever
+    // parse_url() makes of the host.
+    $backslash = 'https://evil.example\@bakers.example.com/r';
+    $userinfo = 'https://evil:example@bakers.example.com/r';
+    self::assertSame(
+      [[['text' => "Reset your password: $backslash"]], [['text' => "Sign in: $userinfo"]]],
+      BbHtmlMail::paragraphs("Reset your password: $backslash\n\nSign in: $userinfo", 'https://bakers.example.com'),
+    );
+  }
+
+  /**
+   * A mail that names its links links nothing else, not even on the site.
+   */
+  public function testDeclaredLinksAreTheOnlyLinks(): void {
+    $ticket = 'https://bakers.example.com/acme/ticket/7';
+    self::assertSame(
+      [
+        [['text' => 'Reset your password: https://bakers.example.com/user/logout']],
+        [['text' => $ticket, 'url' => $ticket, 'action' => TRUE, 'label' => 'Open the ticket']],
+      ],
+      BbHtmlMail::paragraphs("Reset your password: https://bakers.example.com/user/logout\n\nOpen the ticket: $ticket", 'https://bakers.example.com', [$ticket]),
     );
   }
 
@@ -327,6 +369,7 @@ final class BbHtmlMailTest extends KernelTestBase {
       $logger,
       $this->container->get('renderer'),
       $this->container->get('extension.list.theme'),
+      $this->container->get('router.request_context'),
       $this->transport,
     );
     self::assertFalse($plugin->mail($plugin->format($this->message(['Hello']))));
@@ -337,7 +380,7 @@ final class BbHtmlMailTest extends KernelTestBase {
     $renderer->method('renderInIsolation')->willThrowException(new \RuntimeException('Template broke'));
     $logger = $this->createMock(LoggerInterface::class);
     $logger->expects(self::once())->method('log');
-    $plugin = new BbHtmlMail($logger, $renderer, $this->container->get('extension.list.theme'), $this->transport);
+    $plugin = new BbHtmlMail($logger, $renderer, $this->container->get('extension.list.theme'), $this->container->get('router.request_context'), $this->transport);
     self::assertFalse($plugin->mail($plugin->format($this->message(['Hello']))));
     self::assertSame(1, $this->attempts());
     self::assertSame([], $this->sent());

@@ -2,7 +2,7 @@
 
 `bakers ports`'s Quick Tunnel transport (`PortsTransport`): one managed
 `cloudflared tunnel --url …` process PER ROUTE, each in its own private
-directory under `BB_HOME`, with no shared cloudflared account/config.
+directory under `BAKERS_HOME`, with no shared cloudflared account/config.
 
 ## Quick Tunnel limitations (real cloudflared constraints — not enforced by this code, surfaced here so operators aren't surprised)
 

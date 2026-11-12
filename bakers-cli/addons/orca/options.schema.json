@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-orca/options.schema.json",
+  "title": "Orca executor + worktree options",
+  "type": "object",
+  "properties": {
+    "command": {
+      "type": "string",
+      "description": "Fallback agent command when the agent addons supply none.",
+      "default": "claude"
+    },
+    "open": {
+      "type": "object",
+      "description": "Overview terminal of a fresh worktree; when omitted it runs `bakers ui --ticket {identifier}` titled `{identifier} · {title}`, `{}` opens none. Templates expand {identifier}, {branch}, {title}, {worktree_path}.",
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Command of the overview terminal.",
+          "default": "bakers ui --ticket {identifier}"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the overview terminal.",
+          "default": "{identifier} · {title}"
+        }
+      },
+      "additionalProperties": false
+    },
+    "root": {
+      "type": "string",
+      "description": "Main clone path; derived from Git's common directory when omitted."
+    },
+    "default": {
+      "$ref": "#/$defs/state",
+      "description": "Agent terminal settings for every run; a `states` entry beats it."
+    },
+    "states": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/state"
+      },
+      "description": "Agent terminal settings per workflow state.",
+      "propertyNames": {
+        "title": "state"
+      }
+    },
+    "launch_watch": {
+      "type": "object",
+      "description": "Launch-watch windows: how long a start may take and how soon an agent exit counts as a failed launch.",
+      "properties": {
+        "timeout_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Window after start in which an immediate agent exit fails the launch; 0 skips it.",
+          "default": 4000
+        },
+        "start_timeout_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "How long the launch waits for the wrapper to report the start.",
+          "default": 60000
+        },
+        "poll_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Polling interval of both windows.",
+          "default": 50
+        }
+      },
+      "additionalProperties": false
+    },
+    "adopt_timeout_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How long to wait for Orca to adopt a new worktree.",
+      "default": 35000
+    },
+    "worktree_dir": {
+      "type": "string",
+      "description": "Directory for new worktrees, relative to `root` or absolute.",
+      "default": ".bakers-worktrees"
+    },
+    "base_branch": {
+      "type": "string",
+      "description": "Base ref for new branches; when omitted, the remote-tracking branch of the checked-out branch."
+    },
+    "auto_setup_merge": {
+      "type": "boolean",
+      "description": "`false` sets Git's `branch.autoSetupMerge=false` in the root repository, so run branches have no upstream and push with `push.default=current` (see workspace-git); `true` leaves Git alone.",
+      "default": false
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "state": {
+      "type": "object",
+      "properties": {
+        "tab_label": {
+          "type": "string",
+          "pattern": "\\{identifier\\}",
+          "description": "Agent terminal title; must contain {identifier}, also expands {state}, {title}, {title_slug}, {run_uuid}, {workspace_path}. ` #<run id>` is always appended.",
+          "default": "{identifier} · {state}"
+        }
+      },
+      "additionalProperties": false,
+      "description": "Agent terminal settings of a run."
+    }
+  }
+}

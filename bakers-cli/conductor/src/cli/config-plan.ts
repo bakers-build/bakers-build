@@ -63,10 +63,10 @@ export interface ConfigPlan {
   writes: ConfigWrite[];
   fingerprints: Map<string, string | null>;
 }
-// Every config file restarted at schema v1; no migration step exists.
+// Every config file is at schema v1; no migration step exists yet.
 const CURRENT = {
   machine: 1,
-  conductor: 1,
+  project: 1,
   connection: 1,
   'project-connection': 1,
 };
@@ -445,13 +445,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     }
     if (currentRoute === undefined)
       machineEditor.set('agents.routes.default', expression);
-    const catchAll = source.property('default_agent.*');
-    if (
-      catchAll?.staticallyDetermined &&
-      typeof catchAll.value === 'string' &&
-      !machineEditor.property('agents.default_agent')
-    )
-      machineEditor.set('agents.default_agent', JSON.stringify(catchAll.value));
     source.remove('default_agent');
   };
   const migrateCatalog = (
@@ -660,13 +653,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
     }
     source.remove('agent');
   };
-  const deriveMachineDefault = () => {
-    if (machineEditor.property('agents.default_agent')) return;
-    const catchAll = machineEditor.property('agents.routes.default.*');
-    if (catchAll?.staticallyDetermined && typeof catchAll.value === 'string')
-      machineEditor.set('agents.default_agent', JSON.stringify(catchAll.value));
-  };
-
   if (machine.selected && !protectedFile(machine)) {
     const oldAgents = machineEditor.property('agents');
     if (oldAgents?.nodeType === 'ArrayExpression') {
@@ -713,11 +699,9 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         routes,
       );
     migrateStateDefaults(machine, machineEditor);
-    deriveMachineDefault();
   }
   for (const file of files.filter(
-    (candidate) =>
-      candidate.selected && ['conductor', 'local'].includes(candidate.kind),
+    (candidate) => candidate.selected && candidate.kind === 'project',
   )) {
     const source = editors.get(file.path);
     if (!source || protectedFile(file)) continue;
@@ -743,8 +727,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         routes,
       );
     migrateStateDefaults(file, source);
-    if (file.kind === 'conductor') migrateCatalog(file, source);
-    deriveMachineDefault();
+    migrateCatalog(file, source);
   }
   for (const file of files) {
     if (protectedFile(file) || !file.selected) continue;
@@ -765,7 +748,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         fill(file, 'label', options.inputs?.label);
         editor(file).stamp(1);
       }
-      if (file.kind === 'conductor' || file.kind === 'local') {
+      if (file.kind === 'project') {
         if (
           (!e || e.text.trim() === 'export default {};') &&
           file.required &&
@@ -783,9 +766,9 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
           editors.set(file.path, e);
         }
         if (!e) continue;
-        if (file.kind === 'conductor') {
+        {
           e = editor(file);
-          fill(file, 'bakers.project', options.project);
+          fill(file, 'project.name', options.project);
           const canonical = new ConfigSourceEditor(
             renderCommittedConfig({
               project: options.project ?? 'project',
@@ -798,18 +781,18 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               .filter((value): value is string => typeof value === 'string'),
           );
           const providers: Record<string, string[]> = {
-            remote: [
+            server: [
               '@bakers-build/addon-remote-drupal',
               '@bakers-build/addon-fake',
             ],
             executor: ['@bakers-build/addon-herdr', '@bakers-build/addon-fake'],
-            workspace: [
+            worktree: [
               '@bakers-build/addon-herdr',
               '@bakers-build/addon-fake',
               '@bakers-build/addon-workspace-git',
             ],
           };
-          for (const slot of ['remote', 'executor', 'workspace']) {
+          for (const slot of ['server', 'executor', 'worktree']) {
             if (
               e.property(slot) ||
               providers[slot]?.some((provider) => addonPackages.has(provider))
@@ -820,9 +803,12 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
           if (
             options.operation === 'init' &&
             options.inputs?.workspace &&
-            !e.property('bakers.workspace')
+            !e.property('project.workspace')
           )
-            e.set('bakers.workspace', JSON.stringify(options.inputs.workspace));
+            e.set(
+              'project.workspace',
+              JSON.stringify(options.inputs.workspace),
+            );
           e.stamp(1);
         }
       }
@@ -926,7 +912,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       mode:
         before !== null
           ? statSync(file.path).mode & 0o777
-          : file.kind === 'project-connection' || file.kind === 'conductor'
+          : file.kind === 'project'
             ? 0o644
             : 0o600,
     });
@@ -934,8 +920,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       path: file.path,
       layer: file.layer,
       before_version: file.version.effective,
-      after_version:
-        after === null || file.kind === 'local' ? null : CURRENT[file.kind],
+      after_version: after === null ? null : CURRENT[file.kind],
       diff: `--- ${file.path}\n+++ ${file.path}\n${
         before === null
           ? ''

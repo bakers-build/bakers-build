@@ -240,9 +240,9 @@ Feature: The team screen's five tabs are routes inside one island
   Scenario: Adding a member re-renders only the members island
     Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
-    Then the members list has 3 rows
-    When I add the member "both-bakeries"
     Then the members list has 4 rows
+    When I add the member "both-bakeries"
+    Then the members list has 5 rows
     And the document was not reloaded
     And the rail was not part of the swap
     And the tab "Members" is current
@@ -274,9 +274,9 @@ Feature: The team screen's five tabs are routes inside one island
     Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew" tab "Members"
     When I add the member "both-bakeries"
-    Then the members list has 4 rows
+    Then the members list has 5 rows
     When I add the member "both-bakeries"
-    Then the members list has 4 rows
+    Then the members list has 5 rows
     And the document was not reloaded
 
   # BB-489 — THE ENTRY PATH IS THE SUBJECT, and that is the whole difference
@@ -300,13 +300,13 @@ Feature: The team screen's five tabs are routes inside one island
     And I visit the team "Platform Crew"
     When I click the tab "Members"
     Then the document was not reloaded
-    And the members list has 3 rows
+    And the members list has 4 rows
     When I add the member "both-bakeries"
-    Then the members list has 4 rows
+    Then the members list has 5 rows
     And the document was not reloaded
     And the rail was not part of the swap
     When I remove the member "both-bakeries"
-    Then the members list has 3 rows
+    Then the members list has 4 rows
 
   # THE SURFACE DOES NOT DIE AFTER ONE USE. Four actions in a row, each asserted
   # on its own first click, on a face entered by clicking the tab. A repair that
@@ -320,16 +320,16 @@ Feature: The team screen's five tabs are routes inside one island
     Given the team "Platform Crew" has no member "both-bakeries"
     And I visit the team "Platform Crew"
     When I click the tab "Members"
-    Then the members list has 3 rows
-    When I add the member "both-bakeries"
     Then the members list has 4 rows
+    When I add the member "both-bakeries"
+    Then the members list has 5 rows
     When I pick the role "lead" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Lead"
     When I pick the role "member" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Member"
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
-    And the members list has 3 rows
+    And the members list has 4 rows
     And the document was not reloaded
     And the rail was not part of the swap
 

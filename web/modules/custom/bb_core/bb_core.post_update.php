@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Ticket\BranchName;
 
 /**
  * Removes the environments past deploys stamped onto the tickets they carried.
@@ -46,4 +47,44 @@ function bb_core_post_update_clear_deployment_stamps(array &$sandbox): string {
   }
   $sandbox['#finished'] = $sandbox['total'] ? 1 - count($sandbox['ids']) / $sandbox['total'] : 1;
   return (string) t('Removed deployment environments from @count tickets.', ['@count' => $sandbox['changed']]);
+}
+
+/**
+ * Repairs stored branch names git would refuse.
+ *
+ * Covers tickets' `branch_name` and repositories' `default_branch` saved
+ * before both were validated. Names matching BranchName::PATTERN stay as they
+ * are. Every other name is rewritten; git refuses nearly all of them, but a
+ * non-ASCII name git would hold loses its link to that branch.
+ */
+function bb_core_post_update_valid_branch_names(): string {
+  $database = \Drupal::database();
+  $repaired = 0;
+  foreach (['bb_ticket' => 'branch_name', 'bb_project' => 'repository__default_branch'] as $table => $column) {
+    $rows = $database->select($table, 't')->fields('t', ['id', $column])->isNotNull($column)->execute()->fetchAllKeyed();
+    foreach ($rows as $id => $value) {
+      if ($value === '' || preg_match(BranchName::PATTERN, (string) $value)) {
+        continue;
+      }
+      $database->update($table)
+        ->fields([$column => BranchName::sanitize((string) $value) ?: NULL])
+        ->condition('id', $id)
+        ->execute();
+      $repaired++;
+    }
+  }
+  \Drupal::entityTypeManager()->getStorage('bb_ticket')->resetCache();
+  \Drupal::entityTypeManager()->getStorage('bb_project')->resetCache();
+  return sprintf('Repaired %d branch names git would refuse.', $repaired);
+}
+
+/**
+ * Installs the optional connection address without changing existing machines.
+ */
+function bb_core_post_update_machine_connection_url(): void {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+  if ($manager->getFieldStorageDefinition('connection_url', 'bb_machine') === NULL) {
+    $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('bb_machine')['connection_url'];
+    $manager->installFieldStorageDefinition('connection_url', 'bb_machine', 'bb_core', $definition);
+  }
 }
