@@ -64,8 +64,8 @@
   {% endif %}
   {% if deployed_to|default([]) %}
     <div class="flex flex-wrap gap-inline-xs mt-inline">
-      {% for environment in deployed_to %}
-        {{ include('bb_theme:badge', {label: environment, tone: 'neutral', attributes: create_attribute({'aria-label': 'Deployed to'|t ~ ' ' ~ environment})}, with_context = false) }}
+      {% for target in deployed_to %}
+        {{ include('bb_theme:badge', {label: target, tone: 'neutral', attributes: create_attribute({'aria-label': 'Deployed to'|t ~ ' ' ~ target})}, with_context = false) }}
       {% endfor %}
     </div>
   {% endif %}
