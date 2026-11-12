@@ -224,5 +224,8 @@
       "id": "blocked",
       "criterion": "The final answer reports the merge blocked by the pending manual job gate, raised for the developers as a technical problem, with no merge and no transition."
     }
+  ],
+  "virtual_references": [
+    "bb-workflow/references/retrospective.md"
   ]
 }

@@ -2,20 +2,22 @@
 
 ## references
 
-always: read-ticket.md, tools.md, plan.md, boundaries.md, evidence.md, ticket-writes.md, outtake.md, outtake/plan.md, transition-ticket.md
-if entry guard fails: return-to-qualification.md
-if ticket is a bug: results.md
-if a browser path is selected: browser.md
-if reproduction needs runtime: verify.md, tools-conductor.md
-if ticket has an origin: origin-status.md
+Read in order at the consuming step; skip unmet conditions.
+
+always: read-ticket.md, tools.md, plan.md, entry-guard.md
 if ticket read fails: read-ticket-troubleshooting.md
+if qualification entry guard fails: return-to-qualification.md
+if reproduction needs runtime: results.md, verify.md, tools-conductor.md
+always: boundaries.md
+if a browser path is selected: browser.md
+if recording checks: results.md
+always: evidence.md, ticket-writes.md, outtake.md, outtake/plan.md, transition-ticket.md
 if paginated lookups are needed: tools-lookup.md
+if ticket has an origin: origin-status.md
 
 ## read
 
-Use highest-handoff_version qualification. With recipe, type, entered state and handoff
-acceptance_criteria, emit only `qualified`, continue unchanged; otherwise execute
-[return to qualification](return-to-qualification.md) and stop.
+Apply [entry guard](entry-guard.md).
 
 ## provision
 

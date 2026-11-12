@@ -234,5 +234,8 @@
       "id": "merged-done",
       "criterion": "The final answer reports merge request 61 merged after a negative remote base check, and then the transition to done, without asking anyone."
     }
+  ],
+  "virtual_references": [
+    "bb-workflow/references/retrospective.md"
   ]
 }

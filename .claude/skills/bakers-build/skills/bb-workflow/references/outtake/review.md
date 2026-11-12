@@ -1,7 +1,5 @@
 # Outtake at review
 
-Read by [outtake](../outtake.md).
-
 - **Outcome** names the verdict, `OK` or `Not OK`.
 - **Problems**: every finding with `file:line`, its **What / Why / Fix**, and its cause.
 - **Success**: reused check IDs/original revisions separate from fresh results; passing ACs stay

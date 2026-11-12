@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enforce the 500-word budget (frontmatter and code included) on every SKILL.md and frame reference."""
+"""Enforce skill/reference word limits and per-state always-read byte budgets."""
 from pathlib import Path
 import re
 import sys
@@ -22,10 +22,10 @@ def state_budgets(root: Path, limits=STATE_LIMITS):
     totals = {}
     for state in limits:
         text = (references / f'{state}.md').read_text()
-        match = re.search(r'^always: (.+)$', text, re.M)
-        if not match:
+        matches = re.findall(r'^always: (.+)$', text, re.M)
+        if not matches:
             raise ValueError(f'{state}: missing always: reading list')
-        names = match[1].split(', ')
+        names = [name for group in matches for name in group.split(', ')]
         if len(names) != len(set(names)):
             raise ValueError(f'{state}: duplicate reference')
         totals[state] = sum((references / name).stat().st_size for name in names)
@@ -46,10 +46,11 @@ def budget_self_check():
         root = Path(directory)
         references = root / 'bb-workflow/references'
         references.mkdir(parents=True)
-        (references / 'plan.md').write_text('always: payload.md\n')
+        (references / 'plan.md').write_text('always: payload.md\nif recovery: unused.md\nalways: tail.md\n')
+        (references / 'tail.md').write_bytes(b'x')
         (references / 'payload.md').write_bytes(b'x' * 12001)
         totals = state_budgets(root, {'plan': 12000})
-        assert totals == {'plan': 12001}
+        assert totals == {'plan': 12002}
         assert exceeds_budget(totals, {'plan': 12000})
         assert not exceeds_budget({'plan': 12000}, {'plan': 12000})
         assert budget_report(totals, {'plan': 12000}) == 'plan 12.0/12 KB'

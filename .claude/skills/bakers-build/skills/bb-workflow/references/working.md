@@ -2,27 +2,31 @@
 
 ## references
 
-always: read-ticket.md, tools.md, working.md, boundaries.md, prior-art-build.md, forge.md, evidence.md, results.md, delivery.md, ticket-writes.md, transition-ticket.md, outtake.md, outtake/working.md, coding-gate.md
-if qualification entry guard fails: return-to-qualification.md
-if acceptance is absent for confirmed scope: acceptance.md
-if a check needs a running environment: verify.md, tools-conductor.md
-if a browser path is selected: browser.md
-if a preview is available: preview-links.md
-if ticket has an origin: origin-status.md
-if merge to done is explicitly authorized: merge.md, retrospective.md
+Read in order at the consuming step; skip unmet conditions.
+
+always: read-ticket.md, tools.md, working.md, entry-guard.md
 if ticket read fails: read-ticket-troubleshooting.md
+if qualification entry guard fails: return-to-qualification.md
+if acceptance is absent for confirmed scope: ticket-writes.md, acceptance.md
+if a check needs a running environment: results.md, verify.md, tools-conductor.md
+always: boundaries.md, prior-art-build.md, forge.md
+if forge tools absent at an operation: forge-fallback.md
 if paginated lookups are needed: tools-lookup.md
-if forge tools absent: forge-fallback.md
-if merging without tools: merge-fallback.md
+if a browser path is selected: browser.md
+always: evidence.md, results.md, delivery.md, ticket-writes.md, transition-ticket.md
+if a preview is available: preview-links.md
+always: outtake.md, outtake/working.md, coding-gate.md
+if asking for done/cancel confirmation: retrospective.md
 if named retrospective causes: retrospective-evidence.md
 if rating/reason supplied: retrospective-write.md
-if rating supplied: measurement.md
+if measurements supplied: measurement.md
+if merge to done is explicitly authorized: merge.md
+if merging without tools: merge-fallback.md
+if ticket has an origin: origin-status.md
 
 ## read
 
-Use highest-handoff_version qualification. Recipe, type, entered state and handoff
-acceptance_criteria present: emit `qualified`, continue unchanged. Otherwise execute
-[return to qualification](return-to-qualification.md) and stop.
+Apply [entry guard](entry-guard.md).
 Resume confirmed scope/test plan; publish [acceptance](acceptance.md) if absent for this scope.
 
 ## provision

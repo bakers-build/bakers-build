@@ -21,7 +21,7 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
 | `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person or a host, for a ticket or time proposals |
 
-Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, reading the ticket, publishing a comment, provisioning, verification, the browser surface, the intake and outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.
+Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, read-ticket (including the run frame), ticket-writes (including comment publication), provisioning, verification, the browser surface, outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.
 
 ## The grid
 
@@ -87,7 +87,9 @@ records. The summary gives brief successes, actionable problems and persona-spec
 ## Size and verification
 
 Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` permits 500 whitespace-separated words, including frontmatter and code.
-`python3 tests/contract/skill-size.py` enforces this in CI. Remove repetition instead of moving entire instructions elsewhere.
+`python3 tests/contract/skill-size.py` enforces this in CI, plus always-read byte limits of
+18/12/19/15 KB for qualification/plan/working/review. Ordered manifests interleave `always:`
+lines with conditional reads at their consuming steps; the guard sums every always-read file once. Remove repetition instead of moving entire instructions elsewhere.
 
 `python3 tests/contract/skill-references.py` is the one structure check: links resolve, retired skill names are absent, grid headings are valid, every state file has the seven phases, `WORKFLOW.md` holds only `## bb-phase-*` sections, recipes link no frame reference and call no other bakers.build skill, no skill declares an input, exactly the bundle's skills exist, no contributor-facing file requires a private keytec skill, and every project skill `WORKFLOW.md` names exists under `.claude/skills/`. No skill check asserts a sentence.
 

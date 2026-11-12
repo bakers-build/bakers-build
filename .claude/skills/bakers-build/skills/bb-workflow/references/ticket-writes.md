@@ -7,7 +7,7 @@ format before sending. Type/recipe/labels are term names; verify resolved values
 
 Require caller ticket/type, authorized action and populated readable Markdown body file.
 Caller owns content/timing. `bakers_comment_publish` receives ticket/type/body unchanged, including
-trailing newlines. Whitespace is no comment. Result id confirms without another read/search;
+trailing newlines. Reject a body containing only whitespace. Result id confirms without another read/search;
 retain it immediately. Mutate no other entity.
 
 ## Rejected or uncertain writes

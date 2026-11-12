@@ -20,9 +20,9 @@ Supply [remote base check](prior-art-build.md) context.
    After these preconditions and source-branch safety checks, immediately before the merge mutation,
    run the [remote base check](prior-art-build.md).
    `prior_art_hit` or an unresolved check error returns `blocked`.
-4. Merge call succeeds, followed by verified results below.
+4. Merge succeeds; verify the MR reports merged and its target advanced.
 
-Report the first failure and remedy.
+Report the first failure and remedy. The caller must not transition on `blocked`.
 
 Return merged or blocked with first failure/remedy and check evidence; an unreached base check is
 not_run. For stable promotion use project method/parent/tree rules; never squash when the release is

@@ -221,5 +221,8 @@
       "id": "asks-acceptance",
       "criterion": "The final answer reports a user question asking the user to accept the result, because the ticket carries no earlier acceptance, in place of a merge."
     }
+  ],
+  "virtual_references": [
+    "bb-workflow/references/retrospective.md"
   ]
 }

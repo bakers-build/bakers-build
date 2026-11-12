@@ -2,14 +2,18 @@
 
 ## references
 
-always: read-ticket.md, tools.md, qualification.md, prior-art-search.md, prior-art-build.md, forge.md, classify.md, ticket-writes.md, acceptance.md, results.md, agent-choice.md, outtake.md, outtake/qualification.md, evidence.md, transition-ticket.md
-if ticket has an origin: origin-status.md
-if cancellation is authorized: retrospective.md
-if agent override is confirmed: tools-lookup.md
+Read in order at the consuming step; skip unmet conditions.
+
+always: read-ticket.md, tools.md, qualification.md
 if ticket read fails: read-ticket-troubleshooting.md
-if paginated lookups are needed: tools-lookup.md
+always: prior-art-search.md
+if paginated lookups or agent overrides need resolution: tools-lookup.md
+always: prior-art-build.md, forge.md
 if forge tools absent: forge-fallback.md
+if asking for cancellation confirmation: retrospective.md
 if cancellation reason supplied: retrospective-write.md
+always: classify.md, ticket-writes.md, acceptance.md, results.md, agent-choice.md, outtake.md, outtake/qualification.md, evidence.md, transition-ticket.md
+if ticket has an origin: origin-status.md
 
 ## read
 
@@ -44,8 +48,8 @@ none
 
 Via [ticket writes](ticket-writes.md) publish qualification: Outcome, Acceptance, Out of scope,
 Handoff metadata. Include stable exhaustive AC IDs, role-named checkable conditions (confirmed
-seed word for word), wording tally, previous rewrites/assumptions. Tally is no implementation pass.
-Metadata: acceptance_criteria; out_of_scope (reasoned none valid); recipe/type/method reason;
+seed word for word), wording tally, previous rewrites/assumptions. The tally rates wording, not implementation.
+Metadata: acceptance_criteria; out_of_scope (explain if none); recipe/type/method reason;
 reproduction (bug condition else not_required); scenario_required (runtime browser path);
 test_as (personas/expected views or no login needed); searched terms, each prior-art outcome/
 evidence/SHA; monotonically increasing handoff_version superseding older ones.

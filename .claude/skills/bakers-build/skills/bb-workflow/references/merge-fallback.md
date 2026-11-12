@@ -17,11 +17,9 @@ For retained sources, send the deletion negative explicitly. A stored
 `force_remove_source_branch: true` overrides this negative: block until the branch owner decides
 to clear it before merge. For feature work keep squash enabled.
 
-The subject comes from the MR title, which carries no bakers.build reference: the validated title,
-verbatim. Squash discards individual commit trailers, so put `Merged-by: bakers.build` and
+Use the validated MR title verbatim as the subject. Squash discards individual commit trailers, so put `Merged-by: bakers.build` and
 final-line `ref:<identifier>` in the squash body; otherwise release measurement silently loses the
 ticket. The message goes on the squash commit, the one that represents the change.
 
-Verify that the MR reports merged and its target advanced.
 
 
