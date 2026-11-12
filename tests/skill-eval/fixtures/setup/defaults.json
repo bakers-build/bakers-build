@@ -138,7 +138,7 @@
       ]
     }
   },
-  "max_turns": 26,
+  "max_turns": 70,
   "observations": {
     "tools": "Git, Node 24, npm, bakers CLI, Claude Code and herdr-cli already installed; Claude signed in.",
     "skills": "Both setup skills, bb-create-project, bb-workflow and bb-recipe-superpowers are installed. Supplied local docs are loaded.",
