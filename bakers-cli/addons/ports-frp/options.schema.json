@@ -21,7 +21,7 @@
     "client_config_path": {
       "type": "string",
       "pattern": "^/",
-      "description": "Absolute path to the frpc JSON config; read only, never written."
+      "description": "Absolute path to the frpc JSON config, written in Set up; the addon only reads it."
     },
     "admin_port": {
       "type": "integer",
