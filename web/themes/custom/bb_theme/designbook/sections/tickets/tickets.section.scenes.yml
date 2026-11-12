@@ -1106,11 +1106,11 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-my-work-scenes--stats
                               active: false
-                filters:
+                main:
                   - component: bb_theme:filters
                     props:
-                      title: Filters
                       label: Time filters
+                      layout: bar
                     slots:
                       controls:
                         - component: bb_theme:segmented_control
@@ -1147,7 +1147,6 @@ scenes:
                                   - value: API home · API home
                                     label: API home · API home
                                     selected: false
-                main:
                   - component: bb_theme:active-filters
                     props:
                       label: Chosen period
@@ -1156,57 +1155,10 @@ scenes:
                         - field: Week
                           values:
                             - 2026-11-02 through 2026-11-08
-                  - component: bb_theme:week-strip
-                    props:
-                      label: Days of week 2026-11-02
-                      days:
-                        - weekday: Mon
-                          date: '02'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-02'
-                          active: false
-                          aria_label: Mon 2026-11-02, 0:00
-                        - weekday: Tue
-                          date: '03'
-                          total: '2:30'
-                          url: '?mode=day&date=2026-11-03'
-                          active: false
-                          aria_label: Tue 2026-11-03, 2:30
-                        - weekday: Wed
-                          date: '04'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-04'
-                          active: false
-                          aria_label: Wed 2026-11-04, 0:00
-                        - weekday: Thu
-                          date: '05'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-05'
-                          active: false
-                          aria_label: Thu 2026-11-05, 0:00
-                        - weekday: Fri
-                          date: '06'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-06'
-                          active: false
-                          aria_label: Fri 2026-11-06, 0:00
-                        - weekday: Sat
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-11-07'
-                          active: false
-                          aria_label: Sat 2026-11-07, 0:00
-                        - weekday: Sun
-                          date: '08'
-                          total: '2:00'
-                          url: '?mode=day&date=2026-11-08'
-                          active: false
-                          aria_label: Sun 2026-11-08, 2:00
-                      total_label: Week total
-                      total: '4:30'
                   - component: bb_theme:text
                     props:
-                      text: 'Total recorded time: 4:30'
+                      text: Week total 4:30
+                      align: end
                   - component: bb_theme:table
                     props:
                       columns:
@@ -1216,24 +1168,31 @@ scenes:
                         - key: '2026-11-02'
                           label: Mon 02
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-03'
                           label: Tue 03
                           num: true
+                          sublabel: '2:30'
                         - key: '2026-11-04'
                           label: Wed 04
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-05'
                           label: Thu 05
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-06'
                           label: Fri 06
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-07'
                           label: Sat 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-11-08'
                           label: Sun 08
                           num: true
+                          sublabel: '2:00'
                         - key: total
                           label: Total
                           num: true
@@ -1308,34 +1267,7 @@ scenes:
                             total:
                               kind: text
                               value: '0:30'
-                        - cells:
-                            label:
-                              kind: text
-                              value: Total
-                            '2026-11-02':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-03':
-                              kind: text
-                              value: '2:30'
-                            '2026-11-04':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-05':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-06':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-07':
-                              kind: text
-                              value: '0:00'
-                            '2026-11-08':
-                              kind: text
-                              value: '2:00'
-                            total:
-                              kind: text
-                              value: '4:30'
+                      row_height: md
   - name: my-time-empty
     group: Screens
     section: tickets

@@ -116,14 +116,16 @@ final class WorklogCalendar extends StylePluginBase {
     }
     $selection = $filter->selection();
     $days = $this->aggregates->secondsByDay($selection);
-    $period = $selection->mode === 'day' ? ($days[$selection->date] ?? 0) : array_sum($days);
+    $is_day = $selection->mode === 'day';
+    // Week mode carries the day totals in the table head and states the week
+    // total once; day mode keeps the strip as its day navigator.
     $calendar = [
       'scope' => $this->scopeSentence($filter),
-      'strip' => $this->strip($filter, $selection, $days),
+      'strip' => $is_day ? $this->strip($filter, $selection, $days) : NULL,
       'mode' => $selection->mode,
-      'total' => (string) $this->t('Total recorded time: @total', [
-        '@total' => WorklogFormLayout::formatDuration($period),
-      ]),
+      'total' => $is_day
+        ? (string) $this->t('Total recorded time: @total', ['@total' => WorklogFormLayout::formatDuration($days[$selection->date] ?? 0)])
+        : (string) $this->t('Week total @total', ['@total' => WorklogFormLayout::formatDuration(array_sum($days))]),
       'rows' => $selection->mode === 'day' ? $this->dayRows($filter) : [],
       'grid' => $selection->mode === 'week' && !$selection->isOwn() ? $this->weekGrid($filter, $selection, $days) : NULL,
       'week_form' => NULL,
@@ -132,7 +134,8 @@ final class WorklogCalendar extends StylePluginBase {
       'clear_filters' => $this->clearFiltersUrl($filter, $selection),
     ];
     $proposed = $this->aggregates->proposedSeconds($selection);
-    if ($proposed > 0) {
+    // In week mode the own timesheet carries proposals as a table row.
+    if ($proposed > 0 && $is_day) {
       $calendar['proposed_total'] = (string) $this->t('Proposed — not yet recorded: @total', [
         '@total' => WorklogFormLayout::formatDuration($proposed),
       ]);
@@ -404,7 +407,12 @@ final class WorklogCalendar extends StylePluginBase {
       ],
     ];
     foreach (array_keys($days) as $date) {
-      $columns[] = ['key' => $date, 'label' => (new \DateTimeImmutable($date))->format('D d'), 'num' => TRUE];
+      $columns[] = [
+        'key' => $date,
+        'label' => (new \DateTimeImmutable($date))->format('D d'),
+        'sublabel' => WorklogFormLayout::formatDuration($days[$date]),
+        'num' => TRUE,
+      ];
     }
     $columns[] = ['key' => 'total', 'label' => (string) $this->t('Total'), 'num' => TRUE];
     $rows = [];
@@ -416,15 +424,7 @@ final class WorklogCalendar extends StylePluginBase {
       $cells['total'] = ['kind' => 'text', 'value' => WorklogFormLayout::formatDuration($grid_row['total'])];
       $rows[] = ['cells' => $cells];
     }
-    if ($rows !== []) {
-      $cells = ['label' => ['kind' => 'text', 'value' => (string) $this->t('Total')]];
-      foreach ($days as $date => $seconds) {
-        $cells[$date] = ['kind' => 'text', 'value' => WorklogFormLayout::formatDuration($seconds)];
-      }
-      $cells['total'] = ['kind' => 'text', 'value' => WorklogFormLayout::formatDuration(array_sum($days))];
-      $rows[] = ['cells' => $cells];
-    }
-    return ['columns' => $columns, 'rows' => $rows];
+    return ['columns' => $columns, 'rows' => $rows, 'row_height' => 'md'];
   }
 
   /**

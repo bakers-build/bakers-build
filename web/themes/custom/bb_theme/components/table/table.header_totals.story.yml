@@ -1,0 +1,110 @@
+component: bb_theme:table
+name: Header totals
+props:
+  variant: ''
+  row_height: md
+  columns:
+    - key: label
+      label: Project
+      row_header: true
+    - key: '2026-11-02'
+      label: Mon 02
+      sublabel: '0:00'
+      num: true
+    - key: '2026-11-03'
+      label: Tue 03
+      sublabel: '2:30'
+      num: true
+    - key: '2026-11-04'
+      label: Wed 04
+      sublabel: '0:00'
+      num: true
+    - key: '2026-11-05'
+      label: Thu 05
+      sublabel: '0:00'
+      num: true
+    - key: '2026-11-06'
+      label: Fri 06
+      sublabel: '0:00'
+      num: true
+    - key: '2026-11-07'
+      label: Sat 07
+      sublabel: '0:00'
+      num: true
+    - key: '2026-11-08'
+      label: Sun 08
+      sublabel: '2:00'
+      num: true
+    - key: total
+      label: Total
+      num: true
+  rows:
+    - cells:
+        label:
+          kind: text
+          value: keytec · Time capture
+        '2026-11-02':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-03':
+          kind: text
+          value: '2:00'
+        '2026-11-04':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-05':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-06':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-07':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-08':
+          kind: text
+          value: '2:00'
+        total:
+          kind: text
+          value: '4:00'
+          emphasis: strong
+    - cells:
+        label:
+          kind: text
+          value: keytec · Time capture two
+        '2026-11-02':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-03':
+          kind: text
+          value: '0:30'
+        '2026-11-04':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-05':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-06':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-07':
+          kind: text
+          value: '-'
+          emphasis: faint
+        '2026-11-08':
+          kind: text
+          value: '-'
+          emphasis: faint
+        total:
+          kind: text
+          value: '0:30'
+          emphasis: strong

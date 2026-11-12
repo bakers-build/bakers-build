@@ -1,0 +1,9 @@
+component: bb_theme:form_input
+name: Small
+props:
+  size: sm
+  type: text
+  id: edit-name
+  name: name
+  placeholder: e.g. mk
+  autocomplete: username

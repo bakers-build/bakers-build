@@ -18,24 +18,10 @@ import { expect } from '@playwright/test';
 import { MEMBERS_ISLAND, markDocument, uidOf } from '../../support/shell';
 
 /**
- * ONE ITEM OF THE ROSTER, and it is a `<li>` because the roster is a LIST.
- *
- * It was `${MEMBERS_ISLAND} table tbody tr` until BB-435. The settings section
- * says in as many words that "A MEMBER LIST IS A LIST, NOT A TABLE", and that
- * ticket extended the rule to the project instead of letting the project
- * contradict it — so the surface renders `bb_theme:list` and there is no
- * `<table>`, no header row and no `<td>` left to select.
- *
- * THE DIRECT CHILD COMBINATOR AND NOT A BARE DESCENDANT `li`, because an item's
- * role control is an `option_list` whose option ROWS are `<li>` themselves,
- * nested inside a member row's own markup. A bare descendant `li` selector
- * would count the panel's rows as members too — measured on the Kernel side as
- * four "items" for two memberships. `bb_theme:list` renders no BEM class (the
- * theme forbids one), so the roster's own `<li>` is addressed structurally,
- * by being a DIRECT child of the list's own root element, rather than by a
- * class name.
+ * One row of the roster table. Direct children only, so the rows of a role
+ * picker's own option list are never counted as members.
  */
-const MEMBER_ITEM = `${MEMBERS_ISLAND} [data-component-id="bb_theme:list"] > li`;
+const MEMBER_ITEM = `${MEMBERS_ISLAND} table > tbody > tr`;
 
 /**
  * The public URL of a project, resolved by label rather than hardcoded.
@@ -266,55 +252,22 @@ Then(
   },
 );
 
-/**
- * THE LIST IS A LIST, asserted as the ABSENCE of the table it used to be.
- *
- * Presence of a `<ul>` is not enough on its own: a flex grid with fixed widths
- * is a table pretending not to be one, and the previous architecture really did
- * draw a `bb_theme:table` here with three column headers and a sortable one
- * among them. The two halves together are what make "not a table" checkable.
- */
-Then('the members list has no columns and no header row', async ({ page }) => {
-  const island = page.locator(MEMBERS_ISLAND);
-  await expect(island.locator('ul[role="list"]').first()).toBeAttached();
-  await expect(island.locator('table')).toHaveCount(0);
-  await expect(island.locator('thead')).toHaveCount(0);
-  await expect(island.locator('th')).toHaveCount(0);
-  await expect(island.locator('td')).toHaveCount(0);
-});
-
-/**
- * A roster is read person by person, so its cards get the comfortable density:
- * the gap between rows and each row's vertical padding are spacing role 3,
- * measured against the theme's own `--spacing` unit.
- */
-Then('consecutive member rows are separated comfortably', async ({ page }) => {
-  const list = page.locator(`${MEMBERS_ISLAND} ul[role="list"]`).first();
-  const metrics = await list.evaluate((ul) => {
-    const unit = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--spacing'));
-    const items = Array.from(ul.children) as HTMLElement[];
-    const gaps = items.slice(1).map((item, i) => item.getBoundingClientRect().top - items[i].getBoundingClientRect().bottom);
-    return { unit, count: items.length, gaps, padding: items.map((item) => parseFloat(getComputedStyle(item).paddingTop)) };
-  });
-  expect(metrics.count).toBeGreaterThan(1);
-  for (const gap of metrics.gaps) expect(Math.abs(gap - 3 * metrics.unit)).toBeLessThanOrEqual(1);
-  for (const padding of metrics.padding) expect(padding).toBeCloseTo(3 * metrics.unit, 0);
+/** The roster is a table whose header row names its columns, in order. */
+Then('the members table has the columns {string}', async ({ page }, columns: string) => {
+  const table = page.locator(`${MEMBERS_ISLAND} table`).first();
+  const names = columns.split(',').map((name) => name.trim());
+  await expect(table.getByRole('columnheader').filter({ hasText: /\S/ })).toHaveText(names);
+  await expect(page.locator(MEMBER_ITEM).first()).toBeVisible();
 });
 
 Then(
-  'the member {string} shows their initial and joined date on the left, role and remove control right-aligned',
+  'the member {string} shows their initial, role, joined date and remove control in their row',
   async ({ page }, account: string) => {
-    const item = page.locator(`${MEMBERS_ISLAND} li`).filter({ hasText: account }).first();
+    const item = memberItem(page, account);
     await expect(item).toBeVisible();
     await expect(item.locator('[data-person-mark]')).toHaveText(account.charAt(0).toUpperCase());
-    await expect(item.locator('[data-list-region="headline"] [data-cell="person"]')).toHaveCount(1);
-    await expect(item.locator('[data-list-region="meta"] [data-cell="joined"]')).toHaveText(/joined \d{1,2} [A-Z][a-z]{2}( \d{4})?$/);
-    const right = item.locator('[data-list-region="right"]');
-    expect(await right.locator('[data-cell]').evaluateAll((cells) => cells.map((cell) => cell.getAttribute('data-cell'))))
-      .toEqual(expect.arrayContaining(['role', 'remove']));
-    // Right-aligned: the controls end at the row's right edge.
-    const [rowBox, rightBox] = [(await item.boundingBox())!, (await right.boundingBox())!];
-    const padding = await item.evaluate((li) => parseFloat(getComputedStyle(li).paddingRight));
-    expect(Math.abs(rowBox.x + rowBox.width - padding - (rightBox.x + rightBox.width))).toBeLessThanOrEqual(2);
+    await expect(item.locator('[data-option-picker-trigger]').first()).toBeVisible();
+    await expect(item.getByText(/^\d{1,2} [A-Z][a-z]{2}( \d{4})?$/)).toBeVisible();
+    await expect(item.locator(`[data-bakers-member-uid="${uidOf(account)}"]`).first()).toBeVisible();
   },
 );

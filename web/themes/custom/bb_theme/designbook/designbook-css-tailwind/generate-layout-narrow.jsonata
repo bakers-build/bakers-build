@@ -1,0 +1,14 @@
+/** @config
+ {
+   "input": "../design-system/design-tokens.yml",
+   "output": "../../css/tokens/layout-narrow.src.css"
+ }
+ */
+
+(
+  /* --container-narrow sizes Tailwind's max-w-narrow. */
+  $node := $reduce($split("component.narrow.max-width", "."), function($a, $s) { $lookup($a, $s) }, $$);
+  $exists($node."$value")
+    ? "@theme static {\n  --container-narrow: " & $node."$value" & ";\n}\n"
+    : ""
+)

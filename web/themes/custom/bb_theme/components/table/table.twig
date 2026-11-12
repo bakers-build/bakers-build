@@ -378,6 +378,7 @@
     <span class="relative inline-flex flex-col items-end gap-inline-xs w-20 whitespace-normal text-left">
       {{- include('bb_theme:form_input', {
         type: 'text',
+        size: 'sm',
         id: input_id,
         name: c.name,
         value: c.value|default(''),
@@ -470,6 +471,11 @@
     'idle': 'bg-transparent'
   } %}
   {% set rail_classes = ['absolute', 'left-0', 'top-2', 'bottom-2', 'w-1', 'rounded-xs'] %}
+  {#- Row height: the default padded row, or a fixed dense (`md`) or roomy (`lg`)
+      row whose content is centred without vertical padding, so the row is
+      exactly that height. #}
+  {% set row_height_map = { 'default': 'h-row py-stack', 'md': 'h-row-md py-0', 'lg': 'h-row-lg py-0' } %}
+  {% set row_height_class = row_height_map[row_height|default('default')]|default('h-row py-stack') %}
   {#- LIVE SUMS: a timesheet's totals follow what the reader types, before the
       save, and after a refused save already on render. Each input names its
       totals (`sums`) and the seconds it held; each total shows its base plus
@@ -515,6 +521,8 @@
                 {%- endif -%}
               </a>
             {%- else %}{{ column.label }}{% endif -%}
+            {#- The space keeps label and sublabel apart in the header's text. #}
+            {%- if column.sublabel %} <span class="block text-body-strong text-text">{{ column.sublabel }}</span>{% endif -%}
           </th>
         {% endfor %}
       </tr>
@@ -534,7 +542,7 @@
             {#- A row-header column names its row for assistive technology and
                 stays at the left edge while the table scrolls sideways. #}
             {%- set cell_tag = column.row_header ? 'th' : 'td' -%}
-            <{{ cell_tag }}{% if column.row_header %} scope="row"{% endif %} class="h-row px-stack py-stack align-middle whitespace-nowrap border-b border-border-2 {{ loop.first ? 'relative pl-stack' : '' }} {{ column.num ? 'text-right tabular-nums' : '' }} {{ column.row_header ? 'sticky left-0 z-10 [&:has([data-option-picker-trigger][aria-expanded=true])]:z-20 bg-surface text-left font-normal' : '' }}">
+            <{{ cell_tag }}{% if column.row_header %} scope="row"{% endif %} class="{{ row_height_class }} px-stack align-middle whitespace-nowrap border-b border-border-2 {{ loop.first ? 'relative pl-stack' : '' }} {{ column.num ? 'text-right tabular-nums' : '' }} {{ column.row_header ? 'sticky left-0 z-10 [&:has([data-option-picker-trigger][aria-expanded=true])]:z-20 bg-surface text-left font-normal' : '' }}">
               {%- if loop.first %}<span class="{{ (rail_classes|merge([accent_map[row.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>{% endif -%}
               {%- if column.row_header and row.depth is defined -%}
                 {#- A TREE ROW: indented one step per level, its disclosure a plain
