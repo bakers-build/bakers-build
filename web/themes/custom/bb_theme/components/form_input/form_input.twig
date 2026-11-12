@@ -3,9 +3,10 @@
    carries no label or icon — those belong to the wrapping form_element.
    `type` is only emitted when given as a prop, so the form presenter can
    include this component with a passthrough `attributes` that already carries
-   the real input's type without producing a duplicate type attribute. #}
+   the real input's type without producing a duplicate type attribute.
+   `compact` is the 32 px field of a one-row toolbar (the Board filter bar). #}
 <input{{ (attributes ?: create_attribute()).addClass([
-    'input', 'w-full', 'h-[38px]', 'px-[11px]', 'bg-app', 'border', 'border-control-border',
+    'input', 'w-full', compact|default(false) ? 'h-8' : 'h-[38px]', 'px-[11px]', 'bg-app', 'border', 'border-control-border',
     'rounded-sm', 'text-text', 'text-body', 'focus:border-primary',
     'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring',
   ]) }}

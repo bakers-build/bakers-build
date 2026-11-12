@@ -1,0 +1,23 @@
+component: bb_theme:active-filters
+name: Counts
+props:
+  variant: ''
+  label: Active filters
+  facets:
+    - field: Priority
+      values:
+        - High
+      count: 5
+      remove_url: '?health=unhealthy'
+    - field: Unhealthy
+      count: 3
+      remove_url: '?priority[]=1'
+slots:
+  meta:
+    - type: component
+      component: bb_theme:text
+      props:
+        text: 3 of 44 open tickets
+        as: span
+        size: meta
+        tone: light

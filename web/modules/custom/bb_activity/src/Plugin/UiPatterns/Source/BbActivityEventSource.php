@@ -77,6 +77,15 @@ final class BbActivityEventSource extends SourcePluginBase implements ContainerF
 
   /**
    * {@inheritdoc}
+   *
+   * `compact` asks for the one-line row the project Overview lists.
+   */
+  public function defaultSettings(): array {
+    return ['compact' => FALSE] + parent::defaultSettings();
+  }
+
+  /**
+   * {@inheritdoc}
    */
   public function getPropValue(): mixed {
     $activity = $this->activity();
@@ -97,10 +106,13 @@ final class BbActivityEventSource extends SourcePluginBase implements ContainerF
       'statement' => $line['statement'],
       'detail' => $line['detail'] ?? '',
     ] + $this->when($activity, $cache) + $this->ticket($activity, $cache) + $this->runProps($activity, $line, $run, $cache);
+    if ($this->getSetting('compact')) {
+      $props['compact'] = TRUE;
+    }
     $build = [
       '#type' => 'component',
       '#component' => 'bb_theme:event',
-      '#props' => array_filter($props, static fn (string|array $value): bool => $value !== '' && $value !== []),
+      '#props' => array_filter($props, static fn (string|array|bool $value): bool => $value !== '' && $value !== []),
     ];
     $cache->applyTo($build);
     return $build;

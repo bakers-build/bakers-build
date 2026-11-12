@@ -33,6 +33,14 @@ props:
       type: boolean
       title: Compact
       description: Compact list usage; the existing message is preserved.
+    title:
+      type: string
+      title: Title
+      description: >-
+        A heading for a PAGE-LEVEL empty state that stands in for a whole screen
+        body, such as "No tickets yet" on the project Overview. With a title the
+        state uses the page layout (centred, dashed outline, large icon) and the
+        message reads as prose under the heading.
   required:
     - message
 thirdPartySettings:

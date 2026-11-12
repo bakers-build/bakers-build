@@ -564,8 +564,7 @@ semantic:
     gate-band-ink:
       $type: color
       $value: '{primitive.style.color.rye}'
-      $description: >-
-        Addition (BAKERS-116). Text on the gate band, rye in both modes.
+      $description: Addition (BAKERS-116). Text on the gate band, rye in both modes.
   typography:
     page-title:
       $value:
@@ -903,6 +902,16 @@ component:
     height:
       $value: calc(100dvh - var(--drupal-displace-offset-top, 0px))
       $type: dimension
+  board:
+    height:
+      $value: calc(100dvh - var(--drupal-displace-offset-top, 0px) - 16rem)
+      $type: dimension
+      $description: >-
+        Maximum height of the board column region: the viewport below the
+        toolbar minus 16rem for the page header, tabs, filter bar and active
+        filters above the board at the default density, so a long column scrolls
+        inside the region and its sticky column headers stay in view (BAKERS-55
+        AC-17).
   section:
     padding-y:
       $value: '{primitive.layout.spacing.space-5}'

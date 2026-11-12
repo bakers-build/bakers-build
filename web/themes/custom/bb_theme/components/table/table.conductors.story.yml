@@ -1,0 +1,77 @@
+component: bb_theme:table
+name: Conductors
+props:
+  variant: ''
+  columns:
+    - key: conductor
+      label: Conductor
+      row_header: true
+    - key: status
+      label: Status
+    - key: tickets
+      label: Active tickets
+      num: true
+    - key: load
+      label: Load
+    - key: heartbeat
+      label: Last heartbeat
+  rows:
+    - cells:
+        conductor:
+          kind: mono
+          value: cw-framework
+        status:
+          kind: badge
+          label: running
+          tone: running
+          dot: true
+        tickets:
+          kind: text
+          value: '5'
+        load:
+          kind: meter
+          share: 67
+          label: 2 / 3 parallel runs
+        heartbeat:
+          kind: time
+          label: 12 s ago
+          datetime: '2026-11-10T12:00:00Z'
+    - cells:
+        conductor:
+          kind: mono
+          value: sg-design
+        status:
+          kind: badge
+          label: online · idle
+          tone: idle
+          dot: true
+        tickets:
+          kind: text
+          value: '1'
+        load:
+          kind: meter
+          share: 0
+          label: 0 / 2 parallel runs
+        heartbeat:
+          kind: time
+          label: 2 min ago
+          datetime: '2026-11-10T11:58:00Z'
+    - cells:
+        conductor:
+          kind: mono
+          value: c-board
+        status:
+          kind: badge
+          label: offline
+          tone: offline
+          dot: true
+        tickets:
+          kind: text
+          value: '1'
+        load:
+          kind: meter
+          label: Unknown capacity
+        heartbeat:
+          kind: time
+          label: 3 h ago
+          datetime: '2026-11-10T09:00:00Z'

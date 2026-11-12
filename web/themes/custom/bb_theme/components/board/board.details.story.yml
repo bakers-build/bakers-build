@@ -1,0 +1,82 @@
+component: bb_theme:board
+name: Details
+props:
+  details: true
+  done_open: true
+  columns:
+    - name: Not assigned
+      dot: wait
+      cards:
+        - identifier: BB-281
+          title: >-
+            Runs dispatch to the wrong agent: three conductors with divergent
+            agent configs
+          status: idle
+          priority: p1
+          state: plan
+        - identifier: BB-307
+          title: >-
+            Expired runs are never closed: 1333 stand open because no path
+            closes them
+          status: idle
+          priority: p1
+          state: plan
+          run_count: 4
+          last_run_state: failed
+    - name: Intake
+      dot: attention
+      cards:
+        - identifier: BB-402
+          title: 'Board: persist the Details toggle per user'
+          status: idle
+          priority: p1
+          state: qualification
+          blocked_by:
+            - BB-348
+          assignee_name: Christian Wiedemann
+          assignee_initials: CW
+          assignee_color: attention
+    - name: Working
+      dot: running
+      cards:
+        - identifier: BB-393
+          title: Conductor reap leaks worktree DDEV environments
+          status: running
+          priority: p1
+          state: plan
+          run_count: 6
+          last_run_state: running
+          assignee_name: Christian Wiedemann
+          assignee_initials: CW
+          assignee_color: attention
+        - identifier: BB-365
+          title: Deployment tickets ignore every project whose key is not BB
+          status: running
+          priority: p1
+          state: review
+          run_count: 2
+          last_run_state: running
+          assignee_name: Sven Gruber
+          assignee_initials: SG
+          assignee_color: running
+    - name: Done
+      dot: idle
+      caption: last 7 days
+      cards:
+        - identifier: BB-371
+          title: Show the source ticket in the Related pane
+          status: idle
+          priority: p1
+          done_label: 2 days ago
+          done_datetime: '2026-11-08T10:00:00+00:00'
+          done_title: Sun, 8 Nov 2026, 10:00 UTC
+        - identifier: BB-366
+          title: Close expired runs from the reaper
+          status: idle
+          priority: p1
+          state: cancelled
+      toggles:
+        - label: Show older
+          url: '?done=show&done_older=1'
+        - label: Hide done
+          url: '?done=hide'

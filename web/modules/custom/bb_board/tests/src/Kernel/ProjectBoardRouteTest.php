@@ -115,9 +115,9 @@ final class ProjectBoardRouteTest extends KernelTestBase {
   }
 
   /**
-   * The shipped view is four paged columns attached to the Board page.
+   * The shipped view is paged columns attached to the Board page.
    */
-  public function testTheShippedViewIsFourPagedColumns(): void {
+  public function testTheShippedViewIsPagedColumns(): void {
     $view = View::load('project_board');
     self::assertNotNull($view);
     $default = $view->getDisplay('default');
@@ -137,17 +137,20 @@ final class ProjectBoardRouteTest extends KernelTestBase {
     // the same twice.
     self::assertArrayNotHasKey('board_conductor', $default['display_options']['filters']);
     self::assertSame('parent_id', $default['display_options']['filters']['board_parent']['expose']['identifier']);
-    foreach (['facets_state', 'facets_assignee_user_id', 'facets_priority', 'facets_work_state'] as $facet) {
+    foreach (['facets_state', 'facets_assignee_user_id', 'facets_priority'] as $facet) {
       self::assertArrayHasKey($facet, $default['display_options']['filters']);
     }
-    self::assertArrayNotHasKey('search_api_fulltext', $default['display_options']['filters']);
+    // The columns are the work states; Done is a column, not a filter.
+    self::assertArrayNotHasKey('facets_work_state', $default['display_options']['filters']);
     self::assertArrayNotHasKey('work_state', $default['display_options']['filters']);
+    self::assertSame('bb_ticket_search', $default['display_options']['filters']['bb_ticket_search']['plugin_id']);
+    self::assertSame('search', $default['display_options']['filters']['bb_ticket_search']['expose']['identifier']);
     $bef = $view->getDisplay('project_board')['display_options']['exposed_form']['options']['bef']['filter'] ?? [];
     self::assertArrayHasKey('board_parent', $bef);
     self::assertArrayHasKey('facets_state', $bef);
     self::assertArrayHasKey('facets_assignee_user_id', $bef);
     self::assertArrayHasKey('facets_priority', $bef);
-    self::assertArrayHasKey('facets_work_state', $bef);
+    self::assertArrayNotHasKey('facets_work_state', $bef);
     $page = $view->getDisplay('project_board');
     self::assertSame(
       '_workspace/%bb_workspace/project/%bb_project/board',
@@ -156,7 +159,7 @@ final class ProjectBoardRouteTest extends KernelTestBase {
     self::assertSame('some', $page['display_options']['pager']['type']);
     self::assertSame(1, $page['display_options']['pager']['options']['items_per_page']);
     $pagers = [];
-    foreach (['backlog', 'intake', 'working', 'done'] as $id) {
+    foreach (['backlog', 'intake', 'working', 'done', 'working_plan', 'working_working', 'working_review'] as $id) {
       $column = $view->getDisplay($id);
       self::assertSame('bb_board_column', $column['display_plugin']);
       self::assertSame('mini', $column['display_options']['pager']['type']);
@@ -168,7 +171,8 @@ final class ProjectBoardRouteTest extends KernelTestBase {
       );
       $pagers[] = $column['display_options']['pager']['options']['id'];
     }
-    self::assertSame([0, 1, 2, 3], $pagers);
+    // Every column pages on its own.
+    self::assertSame([0, 1, 2, 3, 4, 5, 6], $pagers);
     self::assertSame('Not assigned', $view->getDisplay('backlog')['display_options']['title']);
     self::assertSame('Not assigned', $view->getDisplay('backlog')['display_title']);
     $placement = [
@@ -183,7 +187,8 @@ final class ProjectBoardRouteTest extends KernelTestBase {
       self::assertArrayNotHasKey('closed', $filters);
       self::assertArrayNotHasKey('conductor_id', $filters);
       self::assertArrayNotHasKey('state', $filters);
-      self::assertArrayHasKey('facets_work_state', $filters);
+      self::assertArrayNotHasKey('facets_work_state', $filters);
+      self::assertSame('search', $filters['bb_ticket_search']['expose']['identifier']);
       self::assertFalse($filters['work_state']['exposed']);
       self::assertSame('=', $filters['work_state']['operator']);
       self::assertSame($value, $filters['work_state']['value']['value']);

@@ -1,0 +1,249 @@
+source:
+  kind: "storybook"
+  identity: "http://localhost:6006"
+  revision: null
+role: "actual"
+elements:
+  - id: "ov-metrics"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(1) > section:nth-of-type(1)"
+    states:
+      - name: "overview"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "ov-attention-head"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(1) > section:nth-of-type(2) > div:nth-of-type(1)"
+    states:
+      - name: "overview"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "ov-attention-list"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(1) > section:nth-of-type(2) > div:nth-of-type(2) > ul"
+    states:
+      - name: "overview"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "ov-epics"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(1) > section:nth-of-type(3)"
+    states:
+      - name: "overview"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "ov-activity"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(1) > section:nth-of-type(4)"
+    states:
+      - name: "overview"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "ov-inspector"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(2)"
+    states:
+      - name: "overview"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "flowing"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main"
+    states:
+      - name: "overview-flowing"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "board-toolbar"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(1)"
+    states:
+      - name: "board"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "board-chips"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(2)"
+    states:
+      - name: "board"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "board-not-assigned"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(3) > div > section:nth-of-type(1)"
+    states:
+      - name: "board"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "board-intake"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(3) > div > section:nth-of-type(2)"
+    states:
+      - name: "board"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "board-working"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(3) > div > section:nth-of-type(3)"
+    states:
+      - name: "board"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "board-done"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(3) > div > section:nth-of-type(4)"
+    states:
+      - name: "board"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "board-conductors"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(4)"
+    states:
+      - name: "board"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "details-toolbar"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(1)"
+    states:
+      - name: "board-details"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "details-working"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(3) > div > section:nth-of-type(3)"
+    states:
+      - name: "board-details"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "done-open-done"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(3) > div > section:nth-of-type(4)"
+    states:
+      - name: "board-done-open"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "empty-main"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(1)"
+    states:
+      - name: "overview-empty"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "empty-inspector"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(2)"
+    states:
+      - name: "overview-empty"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "unhealthy-toolbar"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(1)"
+    states:
+      - name: "board-unhealthy"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "unhealthy-chips"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(2)"
+    states:
+      - name: "board-unhealthy"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+  - id: "unhealthy-intake"
+    locator:
+      kind: "css"
+      value: "body > div:nth-of-type(5) > div > div:nth-of-type(2) > main > div > div:nth-of-type(2) > div > div > div:nth-of-type(3) > div > section:nth-of-type(2)"
+    states:
+      - name: "board-unhealthy"
+        session: "anonymous"
+    views:
+      - id: "desktop"
+        width: 1440
+        height: 1600
+assets_dir: "assets"

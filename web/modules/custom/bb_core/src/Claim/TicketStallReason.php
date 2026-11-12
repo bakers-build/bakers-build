@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Claim;
 
-use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Cache\CacheableMetadata;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Conductor\ConductorOwnerAccess;
+use Drupal\bb_core\Derive\TicketRunDeriver;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Time\BbDate;
@@ -28,18 +27,15 @@ final class TicketStallReason {
   /**
    * Constructs a TicketStallReason.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   The entity type manager, used to query the ticket's live runs.
-   * @param \Drupal\Component\Datetime\TimeInterface $time
-   *   The time service, used to evaluate claim leases.
+   * @param \Drupal\bb_core\Derive\TicketRunDeriver $runs
+   *   Answers whether a ticket carries a live run.
    * @param \Drupal\bb_core\Claim\FailedRunCircuitBreaker $circuitBreaker
    *   The failed-run circuit breaker, used for the failing label.
    * @param \Drupal\bb_core\Conductor\ConductorOwnerAccess $ownerAccess
    *   Whether the assigned conductor's owner may still work in the project.
    */
   public function __construct(
-    private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly TimeInterface $time,
+    private readonly TicketRunDeriver $runs,
     private readonly FailedRunCircuitBreaker $circuitBreaker,
     private readonly ConductorOwnerAccess $ownerAccess,
   ) {
@@ -126,7 +122,7 @@ final class TicketStallReason {
     if ($ticket->isFrozen()) {
       return 'frozen';
     }
-    if ($this->hasLiveRun($ticket)) {
+    if ($this->runs->hasLiveRun($ticket)) {
       return '';
     }
     if ($ticket->hasOpenBlockers()) {
@@ -153,27 +149,6 @@ final class TicketStallReason {
       return 'no conductor';
     }
     return $this->ownerAccess->ownerHasAccess($conductor, (int) $ticket->get('project_id')->target_id) ? '' : 'conductor no access';
-  }
-
-  /**
-   * Whether the ticket currently carries a live run.
-   *
-   * Matches TicketClaimService::countLiveRunsOnMachine: running is always
-   * live; claimed is live only with claim_expires_at 0 or still unexpired.
-   */
-  private function hasLiveRun(BbTicketInterface $ticket): bool {
-    $now = $this->time->getRequestTime();
-    $query = $this->entityTypeManager->getStorage('bb_run')->getQuery()
-      ->accessCheck(FALSE)
-      ->condition('ticket_id', $ticket->id());
-    $live = $query->orConditionGroup()
-      ->condition('state', 'running')
-      ->condition($query->andConditionGroup()
-        ->condition('state', 'claimed')
-        ->condition($query->orConditionGroup()
-          ->condition('claim_expires_at', 0)
-          ->condition('claim_expires_at', $now, '>=')));
-    return $query->condition($live)->range(0, 1)->execute() !== [];
   }
 
 }

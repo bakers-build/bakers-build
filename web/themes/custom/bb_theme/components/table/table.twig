@@ -417,6 +417,18 @@
       <span id="{{ input_id }}--error" class="text-meta text-state-attention-ink" role="alert">{{ c.error }}</span>
       {%- endif -%}
     </span>
+  {%- elseif c.kind == 'meter' -%}
+    {#- A load against a capacity: a bar filled to the caller's `share` (0 to
+        100) and the caller's words for it. Without a share the words stand
+        alone and faint - an unknown capacity is not zero. -#}
+    <span class="inline-flex items-center gap-inline">
+      {%- if c.share is defined and c.share is not null -%}
+      <svg class="block h-2 w-30 shrink-0 rounded-full overflow-hidden" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="100" height="6" class="fill-surface-3"></rect><rect width="{{ c.share }}" height="6" class="fill-state-running"></rect></svg>
+      <span class="text-meta text-text">{{ c.label }}</span>
+      {%- else -%}
+      <span class="text-meta text-text-light">{{ c.label }}</span>
+      {%- endif -%}
+    </span>
   {%- elseif c.kind == 'time' -%}
     {#- A point in time, already formatted by BbDate. #}
     {{ include('bb_theme:time', { label: c.label, datetime: c.datetime, title: c.title|default('') }, with_context = false) }}

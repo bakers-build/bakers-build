@@ -52,6 +52,7 @@ props:
       enum:
         - neutral
         - attention
+        - success
       title: Tone
       description: >-
         Which colour the leading hairline takes, and the ONLY thing a tone may
@@ -59,7 +60,11 @@ props:
         an aside beneath a control should mean. `attention` is for a note a
         reader must not skim past; it tints the rule and stops there, because an
         icon or a background here would be a status announcement for something
-        that has not happened.
+        that has not happened. `success` is the one exception and states an
+        outcome, not a consequence: "Everything is flowing". It sits on the
+        running tint with a leading running dot and no hairline, as the approved
+        reference draws it, and the lead is followed by the body without a
+        separator.
       default: neutral
 slots:
   body:

@@ -22,12 +22,18 @@
    and would beat the layered hover/focus variants. #}
 {% set tip_classes = 'absolute left-0 top-full z-10 mt-inline-xs w-max max-w-prose rounded-xs bg-text px-inline py-inline-xs text-meta text-surface opacity-0 pointer-events-none' %}
 {% set uid = 'stat-tile-' ~ random(1000000) %}
+{#- With a url the whole tile is the link target: a stretched anchor named
+    after the figure, beneath the tooltips (z-20) so they stay reachable. -#}
+{% if url|default('') is not empty %}
+  {% set tile_classes = tile_classes|merge(['relative', kpi ? 'hover:bg-surface-2' : 'hover:bg-surface-3']) %}
+{% endif %}
 <div{{ (attributes ?: create_attribute()).addClass(tile_classes).setAttribute('role', 'group').setAttribute('aria-label', tile_name) }}>
+  {% if url|default('') is not empty %}<a href="{{ url }}" class="absolute inset-0 z-10 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" aria-label="{{ tile_name }}"></a>{% endif %}
   {% if kpi %}
     <span class="flex items-center gap-1.5 text-label text-text-light">
       <span class="stat-tile__label">{{ label }}</span>
       {% if info %}
-        <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
+        <span class="relative z-20 inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
           <button type="button" class="inline-flex rounded-xs text-text-faint hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" aria-label="About {{ label }}" aria-describedby="{{ uid }}-info">
             {{- include('bb_theme:icon', { name: 'info-circle', size: 'xs' }, with_context = false) -}}
           </button>
@@ -37,7 +43,7 @@
     </span>
     <span class="flex items-baseline gap-1.5">
       {% if exact %}
-        <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
+        <span class="relative z-20 inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
           <span tabindex="0" aria-describedby="{{ uid }}-exact" class="stat-tile__value text-stat-value rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring {{ tone_map[tone]|default('text-title') }}">{{ value }}</span>
           <span id="{{ uid }}-exact" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ exact }}</span>
         </span>
@@ -54,7 +60,7 @@
           {{ comparison.delta }}
         </span>
         {% if comparison.exact %}
-          <span class="relative inline-flex gap-inline-xs group text-meta text-text-light" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
+          <span class="relative z-20 inline-flex gap-inline-xs group text-meta text-text-light" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
             {{ comparison.label }}
             <span tabindex="0" aria-describedby="{{ uid }}-previous" class="rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ comparison.value }}</span>
             <span id="{{ uid }}-previous" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ comparison.exact }}</span>
@@ -65,7 +71,7 @@
       </span>
     {% endif %}
     {% if detail and detail_exact %}
-      <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
+      <span class="relative z-20 inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
         <span tabindex="0" aria-describedby="{{ uid }}-detail" class="text-meta text-text-light rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ detail }}</span>
         <span id="{{ uid }}-detail" role="tooltip" class="{{ tip_classes }} group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ detail_exact }}</span>
       </span>

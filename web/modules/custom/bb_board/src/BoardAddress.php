@@ -5,25 +5,25 @@ declare(strict_types=1);
 namespace Drupal\bb_board;
 
 use Drupal\Component\Utility\UrlHelper;
+use Drupal\views\ViewExecutable;
 
 /**
- * The Project Board address: chosen facets, parent focus and work states.
+ * The Project Board address: chosen facets and the board toggles.
  *
- * Every link drops `page`, which holds all four column pagers, so a changed
- * selection never lands on a page that no longer exists. Work state chips
- * default to the three open columns; Done joins them only when chosen.
+ * Every link drops `page`, which holds every column pager, so a changed
+ * selection never lands on a page that no longer exists.
  */
 final class BoardAddress {
 
   /**
-   * Open work states: active on an address that does not name work_state.
+   * The work states of open tickets: every column but Done.
    */
   public const OPEN_WORK_STATES = ['not_assigned', 'intake', 'working'];
 
   /**
    * The exposed identifiers "Clear filters" removes; parent stays.
    */
-  private const CLEARABLE = ['state', 'assignee', 'priority', 'title', 'work_state'];
+  private const CLEARABLE = ['state', 'assignee', 'priority', 'search', 'health'];
 
   /**
    * Builds the address of one board request.
@@ -42,25 +42,20 @@ final class BoardAddress {
   ) {}
 
   /**
-   * Whether this address currently shows the Done column.
+   * The address of a board view's request.
    */
-  public function showsDone(): bool {
-    return in_array('done', $this->active('work_state'), TRUE);
+  public static function fromView(ViewExecutable $view): self {
+    $request = $view->getRequest();
+    return new self($request->getBaseUrl() . $request->getPathInfo(), $request->query->all(), $view->getExposedInput());
   }
 
   /**
    * The values of one exposed facet in the request.
    *
-   * Work state with no query key is the three open columns, so those chips
-   * render active without writing work_state into a first visit.
-   *
    * @return list<string>
    *   The active values, without the "nothing chosen" sentinels.
    */
   public function active(string $identifier): array {
-    if ($identifier === 'work_state' && !array_key_exists('work_state', $this->query)) {
-      return self::OPEN_WORK_STATES;
-    }
     $raw = $this->input[$identifier] ?? $this->query[$identifier] ?? [];
     $values = is_array($raw) ? $raw : [$raw];
     return array_values(array_filter(
@@ -70,27 +65,15 @@ final class BoardAddress {
   }
 
   /**
-   * The address with one facet value toggled.
-   *
-   * Parent is exclusive: picking another parent replaces the current one,
-   * picking the active parent clears it. Other identifiers accumulate.
+   * The address with one facet value toggled; chosen values accumulate.
    */
   public function toggle(string $identifier, string $value): string {
     $query = $this->query;
     unset($query['page'], $query[$identifier]);
-    if ($identifier === 'parent_id') {
-      if (!in_array($value, $this->active($identifier), TRUE)) {
-        $query[$identifier] = $value;
-      }
-      return $this->with($query);
-    }
     $values = $this->active($identifier);
     $values = in_array($value, $values, TRUE)
       ? array_values(array_diff($values, [$value]))
       : [...$values, $value];
-    if ($identifier === 'work_state' && $this->isOpenWorkStateDefault($values)) {
-      return $this->with($query);
-    }
     if ($values !== []) {
       $query[$identifier] = $values;
     }
@@ -98,33 +81,16 @@ final class BoardAddress {
   }
 
   /**
-   * Whether these work states are the three open columns, in any order.
-   *
-   * @param list<string> $values
-   *   The work_state values after a toggle.
-   */
-  private function isOpenWorkStateDefault(array $values): bool {
-    $expected = self::OPEN_WORK_STATES;
-    sort($expected);
-    $actual = $values;
-    sort($actual);
-    return $actual === $expected;
-  }
-
-  /**
    * The address with every filter but the parent cleared.
    *
    * NULL when nothing clearable is chosen, so the link never points at the
-   * current address. Dropping work_state restores the three open chips.
+   * current address.
    */
   public function clear(): ?string {
     $active = array_filter(
       array_intersect_key($this->query, array_flip(self::CLEARABLE)),
       static fn (mixed $value): bool => $value !== '' && $value !== 'All' && $value !== [],
     );
-    if (isset($active['work_state']) && $this->isOpenWorkStateDefault($this->active('work_state'))) {
-      unset($active['work_state']);
-    }
     if ($active === []) {
       return NULL;
     }
@@ -133,6 +99,52 @@ final class BoardAddress {
     if (is_string($parent) && $parent !== '') {
       $query['parent_id'] = $parent;
     }
+    return $this->with($query);
+  }
+
+  /**
+   * The address without one whole filter: its active chip's removal.
+   */
+  public function without(string $identifier): string {
+    return $this->with(array_diff_key($this->query, array_flip(['page', $identifier])));
+  }
+
+  /**
+   * The address with the Details toggle set to States (TRUE) or Phases.
+   */
+  public function withDetails(bool $on): string {
+    return $this->withParameter('details', $on ? 'states' : 'phases');
+  }
+
+  /**
+   * The address with the Done column open (TRUE) or closed.
+   *
+   * The older window belongs to an open column, so it is dropped.
+   */
+  public function withDone(bool $open): string {
+    return $this->withParameter('done', $open ? 'show' : 'hide', ['done_older']);
+  }
+
+  /**
+   * The address asking Done for tickets older than the 7-day window.
+   */
+  public function withOlder(): string {
+    return $this->withParameter('done_older', '1');
+  }
+
+  /**
+   * This request with one parameter set and the pager dropped.
+   *
+   * @param string $name
+   *   The parameter to set.
+   * @param string $value
+   *   Its value.
+   * @param list<string> $drop
+   *   Further parameters to remove.
+   */
+  private function withParameter(string $name, string $value, array $drop = []): string {
+    $query = array_diff_key($this->query, array_flip(['page', $name, ...$drop]));
+    $query[$name] = $value;
     return $this->with($query);
   }
 

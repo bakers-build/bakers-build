@@ -1,0 +1,11 @@
+component: bb_theme:progress
+name: Complete
+props:
+  identifier: BB-112
+  title: Board v2
+  url: '#'
+  percent: 100
+  done: 5
+  in_progress: 0
+  open: 0
+  total: 5
