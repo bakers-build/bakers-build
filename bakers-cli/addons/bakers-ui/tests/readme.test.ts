@@ -16,18 +16,21 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 const readme = readFileSync(join(here, '..', 'README.md'), 'utf8');
 
-// Check the published reference as well as the package README so their
-// behavioral contracts cannot drift. The reference lives in the repository's
-// shared docs source as two pages read as one; a missing file must fail instead
-// of skipping assertions.
-const reference = ['bakers-ui/reference.md', 'bakers-ui-keys.md']
-  .map((page) =>
-    readFileSync(
-      join(here, '..', '..', '..', '..', 'docs', 'addons', page),
-      'utf8',
-    ),
-  )
-  .join('\n');
+// The experimental keys page is excluded from public docs; its contracts remain
+// checked against the package README below.
+const reference = readFileSync(
+  join(
+    here,
+    '..',
+    '..',
+    '..',
+    '..',
+    'docs',
+    'addons',
+    'bakers-ui/reference.md',
+  ),
+  'utf8',
+);
 
 /**
  * The text of one Markdown section, heading included.
@@ -44,17 +47,10 @@ function section(doc: string, heading: string, until: RegExp): string {
   return heading + (end === -1 ? rest : rest.slice(0, end));
 }
 
-// The shared `Tab`/`Shift+Tab` note that follows each key table. Both documents
-// open it with the same sentence, so one anchor slices both; the stop is
-// `/\n##+ /` rather than `/\n## /` because the README's next heading is an `###`
-// and a `## `-only stop would swallow 200 lines of unrelated section.
-// Both are hard-wrapped prose at different column widths, so the slices are
-// whitespace-normalised: a claim must be asserted as a SENTENCE, not as a line
-// that happens to break where one document's wrapping put it.
+// Normalize the README tab note so assertions do not depend on line wrapping.
 const TAB_NOTE = '`Tab`/`Shift+Tab` mean two different things';
 const unwrap = (text: string): string => text.replace(/\s+/g, ' ');
 const readmeTabNote = unwrap(section(readme, TAB_NOTE, /\n##+ /));
-const referenceTabNote = unwrap(section(reference, TAB_NOTE, /\n##+ /));
 
 // BB-346 — the navigation section is where each document says WHERE a bar is
 // drawn and what a click on the ticket level reaches. Both documents carry the
@@ -75,64 +71,36 @@ const referenceNavSection = section(
 );
 const readmeNav = unwrap(readmeNavSection);
 const referenceNav = unwrap(referenceNavSection);
-const referenceDeepLinks = unwrap(
-  section(reference, '### Deep links are not a dead end', /\n### /),
-);
-
-// The ONE row of each key table that is the ticket screen's. The two documents
-// head their key table differently (`## Screens & keys` vs `## Keybindings`), so
-// the section is sliced first and the row looked up inside it — `| Ticket |`
-// does not match `| Tickets |`, and slicing first keeps
-// it from finding the level table's `| Ticket | Ticket detail | …` row instead.
+// Slice the ticket key row so another table cannot satisfy its assertions.
 const readmeTicketKeyRow = section(
   section(readme, '## Screens & keys', /\n##+ /),
   '| Ticket |',
   /\n/,
 );
-const referenceTicketKeyRow = section(
-  section(reference, '## Keybindings', /\n##+ /),
-  '| Ticket |',
-  /\n/,
-);
-
-// BB-376 AC-1 — the signal contract is a PUBLISHED contract: agents and hooks
-// write that path forever, so the reference and the in-package copy must agree on
-// it. Slice, then assert.
-const referenceRefresh = section(
-  reference,
-  '## Auto-refresh - the `.bakers/ui-refresh` signal',
-  /\n## /,
-);
+// The signal contract remains documented in the package README.
 const readmeRefresh = section(
   readme,
   '### Auto-refresh (`.bakers/ui-refresh`)',
   /\n## /,
 );
 
-it('both documents name the signal file and the touch recipe (BB-376 AC-1)', () => {
-  for (const doc of [referenceRefresh, readmeRefresh]) {
-    expect(doc).toContain('touch .bakers/ui-refresh');
-    expect(doc).toContain('300');
-  }
+it('the README names the signal file and the touch recipe (BB-376 AC-1)', () => {
+  expect(readmeRefresh).toContain('touch .bakers/ui-refresh');
+  expect(readmeRefresh).toContain('300');
 });
 
-it('both documents name the conductor as the writer', () => {
-  for (const doc of [referenceRefresh, readmeRefresh]) {
-    expect(doc).toContain('The conductor touches it');
-    expect(doc).not.toContain('writes it automatically yet');
-    expect(doc).not.toContain('nothing in bakers.build writes it');
-  }
+it('the README names the conductor as the writer', () => {
+  expect(readmeRefresh).toContain('The conductor touches it');
+  expect(readmeRefresh).not.toContain('writes it automatically yet');
+  expect(readmeRefresh).not.toContain('nothing in bakers.build writes it');
 });
 
-it('both documents state that a screen without reload is not reloaded', () => {
-  for (const doc of [referenceRefresh, readmeRefresh]) {
-    expect(doc).toContain('reload');
-  }
+it('the README states that a screen without reload is not reloaded', () => {
+  expect(readmeRefresh).toContain('reload');
 });
 
 it.each([
   ['README', readmeTabNote],
-  ['reference', referenceTabNote],
 ])('BB-309 B1: the %s attributes the suggestion walk to the PARENT FILTER only', (_name, note) => {
   // Both pickers are one-field autocompletes, but only the parent filter
   // passes a `KeyContext` carrying its field count
@@ -147,7 +115,6 @@ it.each([
 
 it.each([
   ['README', readmeTabNote],
-  ['reference', referenceTabNote],
 ])('BB-309 B1: the %s no longer claims the walk for BOTH single-field pickers', (_name, note) => {
   // Absence is asserted, not only the presence of the replacement: a document
   // can carry both, and the false sentence is the one a reader plans against.
@@ -157,7 +124,6 @@ it.each([
 
 it.each([
   ['README', readmeTabNote],
-  ['reference', referenceTabNote],
 ])('BB-309 B1: the %s names the Who picker as the one where the keys are field moves', (_name, note) => {
   // The gap is stated plainly rather than papered over — on the Who picker
   // both keys are field moves on a form with one field, i.e. inert.
@@ -283,7 +249,6 @@ it.each([
 
 it.each([
   ['README', readmeTicketKeyRow],
-  ['reference', referenceTicketKeyRow],
 ])('BB-346: the %s key table says Tab switches a SECTION on the ticket screen', (_name, row) => {
   // The screen's own status hint reads `Tab section`
   // (`Entity/ticket/Screen/ticket-detail.ts`), and a section is a mode of the
@@ -297,7 +262,6 @@ it.each([
 // windowed tickets on each entity's `created`. The TUI meta line already names
 // closed_date / created; both documents must match the shipped surface.
 const readmeKeys = section(readme, '## Screens & keys', /\n##+ /);
-const referenceKeys = section(reference, '## Keybindings', /\n##+ /);
 
 it.each([
   ['README', readmeNav],
@@ -347,25 +311,4 @@ it('the README key table makes member rosters navigable', () => {
   const row = section(readmeKeys, '| Workspace Members |', /\n/);
   expect(row).toMatch(/↑↓.*select|select/);
   expect(row).toMatch(/Enter.*open member/);
-});
-
-it('the reference key table makes member rosters navigable', () => {
-  const row = section(referenceKeys, '| Workspace Members |', /\n/);
-  expect(row).toMatch(/↑↓.*select|select/);
-  expect(row).toMatch(/Enter.*open member/);
-});
-
-it('the reference documents the project deep-link escape fallbacks', () => {
-  expect(referenceDeepLinks).toMatch(
-    /ticket, run, addon tab, or picker.*Esc.*opens \*\*My work\*\*/,
-  );
-  expect(referenceDeepLinks).toMatch(
-    /direct project deep link opens Overview.*Esc.*root-level project list/,
-  );
-  expect(referenceDeepLinks).toMatch(
-    /Other project tabs preserve the selected project.*registered project fallback/,
-  );
-  expect(referenceDeepLinks).not.toMatch(
-    /project.*empty history.*opens \*\*My work\*\*/,
-  );
 });

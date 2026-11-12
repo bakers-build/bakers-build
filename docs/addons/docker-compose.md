@@ -8,10 +8,6 @@ It is a support library. You do not enable it on its own; a runtime addon uses i
 
 Nothing to enable directly. Configure a runtime claimer such as [DDEV](/addons/ddev#enable-it), then run `bakers ports list` in the worktree.
 
-## Options
-
-No options.
-
 ## Check it works
 
 Running Compose services of a worktree, claimed by a runtime addon, appear in the ports list.

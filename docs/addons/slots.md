@@ -14,7 +14,6 @@ Each slot holds exactly one addon. To write your own, read [Write an executor or
 | [Orca](/addons/orca) | Orca terminals; opens a new worktree's overview terminal | Git worktrees adopted by Orca; removed with `orca worktree rm`, else Git |
 | [herdr-core](/addons/herdr-core) | herdr-core (`hc`) terminals | — |
 | [Git workspace](/addons/workspace-git) | — | Plain Git worktrees |
-| [Fake fixture](/addons/fake) | Test executor | Test workspace |
 
 ## Set both in the project
 

@@ -8,9 +8,9 @@ For employees who prepare their time with the `bb-prepare-time` skill.
 
 Nothing to enable. The command ships with the bakers.build CLI as `bakers track evidence`. The server must provide the `bb_track` worklog endpoint.
 
-## Options
+## Command
 
-No addon settings. `--from` and `--to` are required dates (`YYYY-MM-DD`). Optional `--timezone` uses an IANA name; `--config` and `--connection` select the signed-in connection.
+`--from` and `--to` are required dates (`YYYY-MM-DD`). Optional `--timezone` uses an IANA name; `--config` and `--connection` select the signed-in connection.
 
 ## Check it works
 

@@ -8,9 +8,9 @@ For release pipelines and the people who run them.
 
 Nothing to enable. The command ships with the bakers.build CLI as `bakers deployment tickets`.
 
-## Options
+## Command
 
-No addon settings. The command takes `--since <ref>` and `--to <ref>`; see [bakers deployment](/addons/deployment/reference).
+The command takes `--since <ref>` and `--to <ref>`; see [bakers deployment](/addons/deployment/reference).
 
 ## Check it works
 

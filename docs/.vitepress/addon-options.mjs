@@ -7,14 +7,14 @@ const REPO = new URL('../../', import.meta.url)
 const DIRECTIVE = /^<!-- @options (\S+) -->$/gm
 
 // A package name maps to its addon folder; a bakers.build schema URL to bakers-cli/core/schema/.
-export function loadSchema(ref) {
+export function loadSchema(ref, root = REPO) {
   const addon = ref.match(/^@bakers-build\/addon-([\w-]+)$/)
   const shared = ref.match(/^https:\/\/bakers\.build\/schema\/([\w-]+\.schema\.json)$/)
   const file = addon
     ? `bakers-cli/addons/${addon[1]}/options.schema.json`
     : shared && `bakers-cli/core/schema/${shared[1]}`
   if (!file) throw new Error(`addon-options: no schema for ${ref}`)
-  return JSON.parse(readFileSync(new URL(file, REPO), 'utf8'))
+  return JSON.parse(readFileSync(new URL(file, root), 'utf8'))
 }
 
 const code = (value) => `\`${typeof value === 'string' ? value : JSON.stringify(value)}\``
@@ -88,6 +88,7 @@ export function optionsTable(pkg, { page, load = loadSchema }) {
     const fallback = node.default === undefined ? '—' : code(node.default)
     return `| ${code(path)} | ${typeOf(node)} | ${fallback} | ${required} | ${cell(effect)} |`
   })
+  if (!lines.length) throw new Error(`${page}: ${pkg} has no options; remove its @options directive`)
   return [
     `*Generated from the \`options.schema.json\` of \`${pkg}\`; change the schema, not this table.*`,
     '',
@@ -106,26 +107,37 @@ export function addonOptions(md) {
   md.parse = (src, env) => parse(expandOptions(src, { page: env?.relativePath ?? 'unknown page' }), env)
 }
 
-// `missing`: pages of schema-bearing addons without their directive. `notGenerated`: addons
-// without a schema, then addon pages with a hand-written `## Options` that belong to no addon.
-export function addonCoverage() {
-  const addons = new URL('bakers-cli/addons/', REPO)
-  const docs = new URL('docs/addons/', REPO)
+// Public addons need schema-backed documentation; marked addons have no public pages.
+export function addonCoverage(root = REPO) {
+  const addons = new URL('bakers-cli/addons/', root)
+  const docs = new URL('docs/addons/', root)
   const names = readdirSync(addons).filter((name) => existsSync(new URL(`${name}/package.json`, addons))).sort()
-  const missing = []
-  const notGenerated = []
+  const failures = []
+  const load = (ref) => loadSchema(ref, root)
   for (const name of names) {
-    if (!existsSync(new URL(`${name}/options.schema.json`, addons))) {
-      notGenerated.push(name)
+    const { bakers } = JSON.parse(readFileSync(new URL(`${name}/package.json`, addons), 'utf8'))
+    const stability = bakers?.stability
+    if (stability !== undefined) {
+      if (!['internal', 'experimental'].includes(stability)) failures.push(`${name}: unknown stability ${JSON.stringify(stability)}`)
+      if (existsSync(new URL(`${name}.md`, docs)) || existsSync(new URL(`${name}/`, docs))) {
+        failures.push(`${name}: marked addon must not have a public page or page directory`)
+      }
       continue
     }
-    const page = `${name}.md`
-    const text = existsSync(new URL(page, docs)) ? readFileSync(new URL(page, docs), 'utf8') : ''
-    if (!text.includes(`<!-- @options @bakers-build/addon-${name} -->`)) missing.push(`addons/${page}`)
+    if (!existsSync(new URL(`${name}/options.schema.json`, addons))) {
+      failures.push(`${name}: missing options.schema.json`)
+      continue
+    }
+    const page = `addons/${name}.md`
+    const text = existsSync(new URL(`${name}.md`, docs)) ? readFileSync(new URL(`${name}.md`, docs), 'utf8') : ''
+    const pkg = `@bakers-build/addon-${name}`
+    const schema = load(pkg)
+    const hasOptions = rows(inline(schema, schema, load)).length > 0
+    const hasDirective = text.includes(`<!-- @options ${pkg} -->`)
+    if (hasOptions && !hasDirective) failures.push(`${page}: lacks <!-- @options ${pkg} -->`)
+    if (!hasOptions && (hasDirective || /^## Options\s*$/m.test(text))) {
+      failures.push(`${page}: addon has no options; remove its Options heading and directive`)
+    }
   }
-  for (const page of readdirSync(docs).filter((file) => file.endsWith('.md')).sort()) {
-    const text = readFileSync(new URL(page, docs), 'utf8')
-    if (!names.includes(page.slice(0, -3)) && /^## Options\s*$/m.test(text) && !text.includes('<!-- @options ')) notGenerated.push(page)
-  }
-  return { missing, notGenerated }
+  return { failures }
 }
