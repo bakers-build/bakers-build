@@ -541,3 +541,16 @@ it('refreshes private origin refs from host fetches without rewriting local bran
   expect(snapshot(main)).toEqual(before);
   expect(existsSync(join(record.path, 'objects/info/alternates'))).toBe(false);
 });
+
+it('transfers a legitimate commit after repack writes auxiliary bitmap metadata', () => {
+  const { main, record, local, commit } = fixture();
+  const tip = commit();
+  local('-c', 'repack.writeBitmaps=true', 'repack', '-adb');
+  expect(
+    readdirSync(join(record.path, 'objects/pack')).some((name) =>
+      name.endsWith('.bitmap'),
+    ),
+  ).toBe(true);
+  expect(() => transferIsolatedCommit(record, tip)).not.toThrow();
+  expect(git(main, 'rev-parse', 'ticket')).toBe(tip);
+});

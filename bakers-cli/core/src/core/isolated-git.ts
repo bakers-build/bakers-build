@@ -164,8 +164,7 @@ function copyObjects(source: string, target: string): void {
   };
   for (const name of readdirSync(source)) {
     if (name === 'info') continue; // Never import alternates or source-side configuration.
-    if (name !== 'pack' && !/^[a-f0-9]{2}$/.test(name))
-      throw new Error('isolated Git: invalid object directory');
+    if (name !== 'pack' && !/^[a-f0-9]{2}$/.test(name)) continue;
     const from = join(source, name);
     if (!lstatSync(from).isDirectory())
       throw new Error('isolated Git: invalid object directory');
@@ -175,7 +174,7 @@ function copyObjects(source: string, target: string): void {
         name === 'pack'
           ? /^pack-[a-f0-9]{40,64}\.(pack|idx|rev)$/.test(file)
           : /^[a-f0-9]{38}$|^[a-f0-9]{62}$/.test(file);
-      if (!valid) throw new Error('isolated Git: invalid object file');
+      if (!valid) continue; // Auxiliary indexes and retention markers are not objects.
       copy(join(from, file), join(target, name, file));
     }
   }
