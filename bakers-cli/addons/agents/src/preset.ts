@@ -1,7 +1,7 @@
 import type { AddonTools } from '@bakers-build/conductor/contract';
 import type { BbPreset } from '@bakers-build/core';
 
-export const scopes = ['machine', 'project'];
+export const scopes: BbPreset['scopes'] = ['machine', 'project'];
 
 export const tools: AddonTools = {
   contract: 1,

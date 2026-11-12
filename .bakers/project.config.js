@@ -104,8 +104,8 @@ export default {
   // { use: '@bakers-build/addon-ports', with: { transport: { use:
   // '@bakers-build/addon-ports-frp', with: { … } } } }, merged with this one.
   addons: [
-    '@bakers-build/addon-agents',
     '@bakers-build/addon-ddev',
+    '@bakers-build/addon-agents',
     '@bakers-build/addon-deployment',
     {
       use: '@bakers-build/addon-ports',
