@@ -91,6 +91,13 @@ props:
       description: >-
         Sprite symbol drawn before the text. A pill is icon plus text; the icon
         is what makes a row of pills scannable at a glance.
+    compact:
+      type: boolean
+      title: Compact facet
+      description: >-
+        A facet in a toolbar row: its label is read by assistive technology but
+        not shown, and the picker keeps its own width instead of filling the
+        row. Ignored outside the facet variant.
     prominent:
       type: boolean
       title: Prominent

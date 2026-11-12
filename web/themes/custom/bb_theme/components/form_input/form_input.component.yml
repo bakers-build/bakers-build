@@ -8,6 +8,15 @@ provider: bb_theme
 props:
   type: object
   properties:
+    size:
+      type: string
+      enum:
+        - default
+        - sm
+      title: Size
+      description: >-
+        `default` is the 38px form field; `sm` is the control height (28px), for
+        an input inside a dense table row such as a timesheet cell.
     type:
       type: string
       title: HTML input type

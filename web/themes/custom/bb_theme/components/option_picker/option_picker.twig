@@ -178,7 +178,9 @@
      'text-text', 'text-left', 'cursor-pointer', 'hover:bg-surface-3',
      'focus:border-primary', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring']
   : pill_classes|merge(pill_weight) %}
-<div{{ (attributes ?: create_attribute()).addClass(['relative', use_chips ? 'inline-flex flex-wrap items-center gap-1.5' : (is_facet ? 'block w-full' : 'inline-block')]) }}
+{#- A compact facet sits in a toolbar row: own width, label for assistive technology only. #}
+{% set is_compact = is_facet and compact %}
+<div{{ (attributes ?: create_attribute()).addClass(['relative', use_chips ? 'inline-flex flex-wrap items-center gap-1.5' : (is_facet and not is_compact ? 'block w-full' : 'inline-block')]) }}
   data-option-picker
   data-option-picker-label="{{ field_name }}"
   {%- if use_chips %} data-option-picker-selected-chips{% endif %}
@@ -197,7 +199,7 @@
   @click.outside="close()"
   @resize.window="reposition()"
   @scroll.window.capture="reposition()">
-  {% if is_facet %}<label for="{{ picker_id }}" class="block pb-1.5 text-label text-text-light">{{ field_name }}</label>{% endif %}
+  {% if is_facet %}<label for="{{ picker_id }}" class="{{ is_compact ? 'sr-only' : 'block pb-1.5 text-label text-text-light' }}">{{ field_name }}</label>{% endif %}
   {% set trigger_classes = is_facet ? ['flex', 'items-center', 'gap-inline', 'w-full', 'min-h-control', 'px-inline', 'py-inline', 'rounded-xs', 'border', 'border-control-border', 'bg-app', 'text-body', 'text-text', 'text-left', 'cursor-pointer', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'] : trigger_classes %}
   <button type="button"{{ create_attribute().addClass(trigger_classes) }}
     id="{{ picker_id }}"
