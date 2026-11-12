@@ -32,48 +32,58 @@
   {#- A group grows like a lane but never below its nested columns (no
       min-w-0: its minimum is their min-content). -#}
   {% set width = collapsed ? ['shrink-0', 'min-w-0'] : (group ? ['flex-1', 'shrink-0'] : ['flex-1', 'basis-60', 'min-w-60', 'shrink-0']) %}
-  {% set surface = nested
-    ? ['gap-inline', 'p-inline-xs', 'bg-surface-2', 'rounded-xs']
-    : (terminal
-      ? ['gap-inline', 'p-inline', 'border', 'border-dashed', 'border-border', 'rounded-md']
-      : ['gap-inline', 'p-inline', 'bg-surface-2', 'rounded-md']) %}
+  {#- The column stretches to the row's height, so its sticky header stays at
+      the top of the scroll region while a taller neighbour scrolls. It draws
+      nothing itself: the header carries the top of its surface and the body
+      the rest, so the surface still ends after the last card. A group's body
+      grows with the column, so its state headers stick below its header. -#}
+  {% set head = nested
+    ? ['bg-surface-2', 'rounded-t-xs']
+    : (terminal ? ['bg-surface', 'border-x', 'border-t', 'border-dashed', 'border-border', 'rounded-t-md'] : ['bg-surface-2', 'rounded-t-md']) %}
+  {% set body = nested
+    ? ['gap-inline', 'px-inline-xs', 'pb-inline-xs', 'bg-surface-2', 'rounded-b-xs']
+    : (terminal ? ['gap-inline', 'px-inline', 'pb-inline', 'border-x', 'border-b', 'border-dashed', 'border-border', 'rounded-b-md'] : ['gap-inline', 'px-inline', 'pb-inline', 'bg-surface-2', 'rounded-b-md']) %}
   {#- Tags are stripped before the test: debug comments around an empty
       Views result are not cards. -#}
   {% set has_content = c.content is defined and c.content|render|striptags('<img><svg><input>')|trim is not empty %}
-  <section{{ (c.attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'self-start']|merge(width)|merge(surface)).setAttribute('data-col', c.label).setAttribute('data-count', c.count|default(0)) }}>
+  <section{{ (c.attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'self-stretch']|merge(width)).setAttribute('data-col', c.label).setAttribute('data-count', c.count|default(0)) }}>
     {% if nested %}
-      <h3 class="flex items-baseline gap-inline m-0 px-inline-xs">
+      <h3 class="sticky top-row z-10 flex items-baseline gap-inline m-0 px-inline pt-inline-xs pb-inline {{ head|join(' ') }}">
         <span class="font-mono text-data text-text">{{ c.label }}</span>
         <span class="text-meta text-text-light">{{ c.count|default(0) }}</span>
       </h3>
     {% else %}
-      <h2 class="sticky top-0 z-10 flex flex-wrap items-center gap-x-inline gap-y-inline-xs m-0 p-inline-xs {{ terminal ? 'bg-surface' : 'bg-surface-2' }}">
-        <span class="size-2 shrink-0 rounded-full {{ dot_map[c.tone|default('neutral')]|default('bg-border') }}" aria-hidden="true"></span>
-        <span class="text-section-title text-title">{{ c.label }}</span>
-        <span class="text-meta text-text-light">{{ c.count|default(0) }}</span>
-        {% for hint in c.hints|default([]) %}
-          <span class="text-meta text-text-light"><span aria-hidden="true">· </span>{{ hint }}</span>
-        {% endfor %}
+      <h2 class="sticky top-0 z-10 flex items-center m-0 min-h-row px-inline {{ head|join(' ') }}">
+        <span class="flex flex-wrap items-center gap-x-inline gap-y-inline-xs px-inline-xs">
+          <span class="size-2 shrink-0 rounded-full {{ dot_map[c.tone|default('neutral')]|default('bg-border') }}" aria-hidden="true"></span>
+          <span class="text-section-title text-title">{{ c.label }}</span>
+          <span class="text-meta text-text-light">{{ c.count|default(0) }}</span>
+          {% for hint in c.hints|default([]) %}
+            <span class="text-meta text-text-light"><span aria-hidden="true">· </span>{{ hint }}</span>
+          {% endfor %}
+        </span>
       </h2>
     {% endif %}
-    {% if c.caption|default('') is not empty %}
-      <p class="m-0 px-inline-xs text-meta text-text-light">{{ c.caption }}</p>
-    {% endif %}
-    {% if not collapsed %}
-      {% if has_content %}
-        <div class="flex {{ group ? 'flex-row items-start' : 'flex-col min-w-0' }} gap-inline">{{ c.content }}</div>
-      {% elseif c.empty is defined and c.empty is not empty %}
-        <div class="px-inline py-group text-meta text-text-light">{{ c.empty }}</div>
+    <div class="flex flex-col {{ group ? 'flex-1' : '' }} pt-inline-xs {{ body|join(' ') }}">
+      {% if c.caption|default('') is not empty %}
+        <p class="m-0 px-inline-xs text-meta text-text-light">{{ c.caption }}</p>
       {% endif %}
-    {% endif %}
-    {% if c.pager is defined and c.pager is not empty %}{{ c.pager }}{% endif %}
-    {% if c.toggles|default([]) is not empty %}
-      <div class="flex flex-wrap gap-inline">
-        {% for toggle in c.toggles %}
-          {{ include('bb_theme:button', { label: toggle.label, href: toggle.url, variant: 'neutral' }, with_context = false) }}
-        {% endfor %}
-      </div>
-    {% endif %}
+      {% if not collapsed %}
+        {% if has_content %}
+          <div class="flex {{ group ? 'flex-1 flex-row' : 'flex-col min-w-0' }} gap-inline">{{ c.content }}</div>
+        {% elseif c.empty is defined and c.empty is not empty %}
+          <div class="px-inline py-group text-meta text-text-light">{{ c.empty }}</div>
+        {% endif %}
+      {% endif %}
+      {% if c.pager is defined and c.pager is not empty %}{{ c.pager }}{% endif %}
+      {% if c.toggles|default([]) is not empty %}
+        <div class="flex flex-wrap gap-inline">
+          {% for toggle in c.toggles %}
+            {{ include('bb_theme:button', { label: toggle.label, href: toggle.url, variant: 'neutral' }, with_context = false) }}
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
   </section>
 {% endmacro %}
 
@@ -85,7 +95,7 @@
   {% if toolbar is not empty %}<div class="min-w-0">{{ toolbar }}</div>{% endif %}
   {% if filters_active is not empty %}<div class="min-w-0">{{ filters_active }}</div>{% endif %}
   <div class="relative min-w-0 -mx-group max-h-board-height overflow-auto bg-surface focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" tabindex="0" role="region" aria-label="Board columns">
-    <div class="relative flex w-fit min-w-full items-start gap-group pb-inline">
+    <div class="relative flex w-fit min-w-full gap-group pb-inline">
       <span class="sticky left-0 z-20 w-px -mr-px shrink-0 self-stretch pointer-events-none bg-border before:absolute before:inset-y-0 before:right-full before:w-4 before:shadow-shadow-2 before:shadow-text-faint/40" aria-hidden="true"></span>
       <span class="absolute inset-y-0 left-0 z-30 w-group pointer-events-none bg-surface" aria-hidden="true"></span>
       {% if column_views is not empty %}
