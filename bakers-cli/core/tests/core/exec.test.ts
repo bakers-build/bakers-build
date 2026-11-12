@@ -1,4 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
 import {
   CommandRunner,
   ExecError,
@@ -29,6 +32,34 @@ function spyLogger(): { log: ConductorLogger; calls: LogCall[] } {
 }
 
 describe('CommandRunner', () => {
+  it('terminates a running child when cancelled', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'exec-cancel-'));
+    const ready = join(root, 'pid');
+    const controller = new AbortController();
+    const { log } = spyLogger();
+    const run = new CommandRunner(log).run(
+      'node',
+      [
+        '-e',
+        'require("node:fs").writeFileSync(process.argv[1], String(process.pid)); setInterval(() => {}, 1000)',
+        ready,
+      ],
+      { signal: controller.signal },
+    );
+    const rejected = expect(run).rejects.toThrow();
+    try {
+      let pid = 0;
+      await vi.waitFor(() => {
+        pid = Number(readFileSync(ready, 'utf8'));
+      });
+      controller.abort();
+      await rejected;
+      await vi.waitFor(() => expect(() => process.kill(pid, 0)).toThrow());
+    } finally {
+      controller.abort();
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
   it('returns stdout and logs debug on success', async () => {
     const { log, calls } = spyLogger();
     const out = await new CommandRunner(log).run('node', [

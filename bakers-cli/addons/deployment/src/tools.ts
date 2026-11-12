@@ -8,10 +8,13 @@ import {
 import { gatherBatch } from './deployment.js';
 
 export function deploymentTools(
-  remote: Pick<BbRemote, 'resolveTicketByIdentifier'>,
+  resolveRemote: (
+    signal: AbortSignal,
+  ) => Promise<Pick<BbRemote, 'resolveTicketByIdentifier'>>,
 ): Record<string, ToolHandler> {
   return {
     deployment_tickets: async (req) => {
+      req.signal.throwIfAborted();
       const project = req.ticket?.projectId;
       if (!project)
         throw new Error('deployment_tickets requires a run ticket project');
@@ -39,15 +42,31 @@ export function deploymentTools(
           `${since}..${to}`,
           '--',
         ],
-        { cwd: req.worktreePath, env: { GIT_NO_LAZY_FETCH: '1' } },
+        {
+          cwd: req.worktreePath,
+          env: { GIT_NO_LAZY_FETCH: '1' },
+          signal: req.signal,
+        },
       );
+      req.signal.throwIfAborted();
+      let remote: Pick<BbRemote, 'resolveTicketByIdentifier'> | undefined;
       return {
         text: JSON.stringify(
           await gatherBatch({
             sinceRef: since,
             toRef: to,
             gitLog,
-            resolve: (id) => remote.resolveTicketByIdentifier(project, id),
+            resolve: async (id) => {
+              req.signal.throwIfAborted();
+              remote ??= await resolveRemote(req.signal);
+              req.signal.throwIfAborted();
+              const ticket = await remote.resolveTicketByIdentifier(
+                project,
+                id,
+              );
+              req.signal.throwIfAborted();
+              return ticket;
+            },
           }),
         ),
       };
@@ -57,14 +76,11 @@ export function deploymentTools(
 
 // Resolve credentials in the conductor's cwd, never from the run's worktree.
 export function toolsFor(): Record<string, ToolHandler> {
-  let remote: Promise<DrupalBbRemote> | undefined;
-  return deploymentTools({
-    resolveTicketByIdentifier: async (project, id) => {
-      remote ??= loadBbConfig({ resolveBases: [process.cwd()] }).then(
-        async (connection) =>
-          new DrupalBbRemote(await createBbConnectionClient(connection)),
-      );
-      return (await remote).resolveTicketByIdentifier(project, id);
-    },
+  return deploymentTools(async (signal) => {
+    const connection = await loadBbConfig({ resolveBases: [process.cwd()] });
+    signal.throwIfAborted();
+    return new DrupalBbRemote(
+      await createBbConnectionClient(connection, { signal }),
+    );
   });
 }

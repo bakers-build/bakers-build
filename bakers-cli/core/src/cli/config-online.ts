@@ -26,6 +26,7 @@ export async function createBbConnectionContext(
     cwd?: string;
     profile?: string;
     auth?: AuthAdapter;
+    signal?: AbortSignal;
     /** Decorates the transport, e.g. to filter responses for agent reads. */
     wrapHttp?: (http: HttpClient) => HttpClient;
   } = {},
@@ -38,8 +39,25 @@ export async function createBbConnectionContext(
   // dropsh's client retries every request after a network failure; a
   // re-sent POST created the same entity up to four times. Reads keep the
   // retries; a write is sent once and its failure stays uncertain.
-  const reads = createHttpClient();
-  const writes = createHttpClient({ maxRetries: 0 });
+  const signal = options.signal;
+  const cancellable = signal
+    ? {
+        // dropsh retries aborted requests; a cancellable operation must stop immediately.
+        maxRetries: 0,
+        fetch: ((input, init) => {
+          signal.throwIfAborted();
+          return fetch(input, {
+            ...init,
+            signal: AbortSignal.any([
+              signal,
+              ...(init?.signal ? [init.signal] : []),
+            ]),
+          });
+        }) as typeof fetch,
+      }
+    : {};
+  const reads = createHttpClient(cancellable);
+  const writes = createHttpClient({ ...cancellable, maxRetries: 0 });
   const transport: HttpClient = options.http ?? {
     send: (request) =>
       (request.method === 'GET' ? reads : writes).send(request),
@@ -105,7 +123,12 @@ export async function createBbConnectionContext(
 }
 export async function createBbConnectionClient(
   connection: Pick<BbConnectionConfig, 'site' | 'plugins'>,
-  options: { stateDir?: string; http?: HttpClient; auth?: AuthAdapter } = {},
+  options: {
+    stateDir?: string;
+    http?: HttpClient;
+    auth?: AuthAdapter;
+    signal?: AbortSignal;
+  } = {},
 ): Promise<JsonApiClient> {
   return (await createBbConnectionContext(connection, options)).client;
 }

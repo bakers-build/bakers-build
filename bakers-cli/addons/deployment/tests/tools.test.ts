@@ -49,7 +49,9 @@ it('reports the release range, resolved tickets and unknown identifiers using th
     },
   };
   expect(presetTools.tools.deployment_tickets).toBeDefined();
-  const tools = deploymentTools({ resolveTicketByIdentifier: resolve });
+  const tools = deploymentTools(async () => ({
+    resolveTicketByIdentifier: resolve,
+  }));
   expect(JSON.parse((await tools.deployment_tickets!(req)).text)).toEqual({
     range: `${since}..HEAD`,
     resolved: [{ identifier: 'SHOP-42', uuid: 'ticket-42', title: 'Example' }],
@@ -65,4 +67,36 @@ it('reports the release range, resolved tickets and unknown identifiers using th
   await expect(
     tools.deployment_tickets!({ ...req, args: { since: '--all', to: 'HEAD' } }),
   ).rejects.toThrow('ref');
+
+  const cancelled = new AbortController();
+  cancelled.abort(new Error('Cancelled deployment lookup'));
+  resolve.mockClear();
+  await expect(
+    tools.deployment_tickets!({ ...req, signal: cancelled.signal }),
+  ).rejects.toThrow('Cancelled deployment lookup');
+  expect(resolve).not.toHaveBeenCalled();
+
+  const duringLookup = new AbortController();
+  resolve.mockImplementation(async () => {
+    duringLookup.abort(new Error('Cancelled during lookup'));
+    return null;
+  });
+  await expect(
+    tools.deployment_tickets!({ ...req, signal: duringLookup.signal }),
+  ).rejects.toThrow('Cancelled during lookup');
+  expect(resolve).toHaveBeenCalledTimes(1);
+
+  const pending = new AbortController();
+  const inFlight = deploymentTools(async (signal) => ({
+    resolveTicketByIdentifier: () =>
+      new Promise((_resolve, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason), {
+          once: true,
+        });
+        pending.abort(new Error('Cancelled in flight'));
+      }),
+  }));
+  await expect(
+    inFlight.deployment_tickets!({ ...req, signal: pending.signal }),
+  ).rejects.toThrow('Cancelled in flight');
 });
