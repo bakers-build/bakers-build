@@ -106,6 +106,7 @@ export default {
   addons: [
     '@bakers-build/addon-agents',
     '@bakers-build/addon-ddev',
+    '@bakers-build/addon-deployment',
     {
       use: '@bakers-build/addon-ports',
       with: {

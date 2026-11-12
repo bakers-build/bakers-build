@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Skills use served Drupal tool names without restating their schemas."""
+"""Named tracker tools exist in Drupal; skills use the shared discovery transport."""
 from pathlib import Path
 import re
 import sys
@@ -16,11 +16,9 @@ TOOL = re.compile(r'\bbakers_[a-z_]+\b')
 
 
 def violations(skills, modules):
-    documented = {name for path in skills.rglob('*.md') for name in TOOL.findall(path.read_text())}
     served = {m for path in modules.glob('*/src/Plugin/tool/Tool/*.php')
               for m in re.findall(r"^\s+id: '(bakers_[a-z_]+)'", path.read_text(), re.M)}
-    assert documented, 'No tool names found'
-    errors = [f'{name} is not a Drupal tool' for name in sorted(documented - served)]
+    errors = []
     for path in sorted(skills.rglob('*.md')):
         rel, text = path.relative_to(skills).as_posix(), path.read_text()
         for line_no, line in enumerate(text.splitlines(), 1):
@@ -28,7 +26,9 @@ def violations(skills, modules):
                 errors.append(f'{rel}:{line_no}: teaches the retired shell or /api/time instead of tools/auth')
             if re.search(r'`bakers tools\b|\bbakers tools\s+(?:tool_api__|<|--)', line) and rel != REFERENCE:
                 errors.append(f'{rel}:{line_no}: shows the tool transport; only {REFERENCE} does')
-    return documented, errors
+            errors += [f'{rel}:{line_no}: {name} is not a Drupal tool'
+                       for name in TOOL.findall(line) if name not in served]
+    return served, errors
 
 
 if __name__ == '__main__':
@@ -43,9 +43,9 @@ if __name__ == '__main__':
                     'a bb_ticket entity', '@dropsh/plugin-oauth2']:
         assert not RETIRED_CALL.search(command), command
     skills = Path(sys.argv[1]) if len(sys.argv) > 1 else repo / '.claude/skills/bakers-build/skills'
-    documented, errors = violations(skills, repo / 'web/modules/custom')
+    served, errors = violations(skills, repo / 'web/modules/custom')
     for error in errors:
         print(f'FAIL {error}')
     if errors:
         sys.exit(1)
-    print(f'PASS {len(documented)} tool names used by skills, all served; no skill teaches the retired shell, generic CRUD or /api/time')
+    print(f'PASS tool names checked against {len(served)} served definitions; no skill teaches the retired shell, generic CRUD or /api/time')

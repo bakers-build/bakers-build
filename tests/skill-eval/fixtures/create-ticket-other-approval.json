@@ -6,7 +6,6 @@
   "skill": "bb-create-ticket",
   "references": [
     "bb-workflow/references/tools.md",
-    "bb-workflow/references/tools-lookup.md",
     "bb-workflow/references/prior-art-search.md",
     "bb-workflow/references/classify.md",
     "bb-workflow/references/outtake.md",

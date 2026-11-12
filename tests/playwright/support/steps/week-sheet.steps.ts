@@ -2,9 +2,10 @@
 // Consumers: features/week-sheet.feature, features/time-proposal.feature,
 // features/manual-worklog.feature.
 import { randomUUID } from 'node:crypto';
-import { expect, type Locator, type Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { Given, Then, When } from '../../bdd.fixtures';
 import { php } from '../drush';
+import { openDialog, openInDialog } from '../dialog';
 import { callTool, type ToolResult } from '../mcp';
 import { safe } from '../picker';
 import { markDocument } from '../shell';
@@ -117,22 +118,6 @@ When('I open the proposed entry dated {string}', async ({ page }, date: string) 
 Then('I see the Submit action', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Submit', exact: true })).toBeVisible();
 });
-
-/** The open island dialog. */
-function openDialog(page: Page) {
-  return page.locator('dialog[data-dialog][open]');
-}
-
-/** Waits until htmx owns a dialog trigger, then opens it. */
-async function openInDialog(page: Page, trigger: Locator): Promise<void> {
-  await expect
-    .poll(() => trigger.evaluate((el: Element) => !!(el as unknown as Record<string, unknown>)['htmx-internal-data']), { timeout: 20000 })
-    .toBe(true);
-  const answered = page.waitForResponse((response) => response.url().includes('_wrapper_format=island_dialog'));
-  await trigger.click();
-  await answered;
-  await expect(openDialog(page)).toBeVisible();
-}
 
 Given(
   '{string} recorded {string} on {string} for project {string} described as {string}',

@@ -47,14 +47,14 @@ For authoring recipes, guides and hints, read `skills/bb-workflow/references/aut
 ## Setup and upgrades
 
 - `@bakers-build/bb-init-project` initializes or completes a selected machine, connection, project
-  or all configuration scope through `bakers config init` and `bakers config check`. It preserves
+  or all configuration scopes through initialization and validation. It preserves
   partial configurations and existing workflow policy; project setup composes an absent workflow.
 - `@bakers-build/bb-init` (`bakers:bb-init` in Claude Code) guides machine and user setup through the
   documentation. Its wizard explains workspace-manager and development-environment choices,
   checks the selected path, and helps with sign-in. Tool requirements and commands live in the
   documentation; the person installs tools. `@bakers-build/bb-init-project` calls it when a machine
   has no configured user.
-- `@bakers-build/bb-upgrade-project` migrates and repairs through `bakers config upgrade` and scoped checks,
+- `@bakers-build/bb-upgrade-project` migrates and repairs through configuration upgrades and scoped checks,
   preserving local policy and optional project connections. Package update is a separate action.
   Both skills distinguish local validity from online authentication readiness (workspace optional).
 

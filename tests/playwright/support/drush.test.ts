@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { Drush } from './drush';
+import { Drush, phpUnderLock, phpWithRetry } from './drush';
 
 vi.mock('node:child_process', () => ({ execSync: vi.fn() }));
 const exec = vi.mocked(execSync);
@@ -10,7 +10,36 @@ beforeEach(() => {
     vi.stubEnv('DDEV_DOCROOT', '');
     vi.stubEnv('DRUSH_CWD', '');
 });
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.useRealTimers();
+});
+
+it.each(['1412 Table definition has changed', 'Time data is being changed'])('retries a transient PHP failure: %s', async (message) => {
+    vi.stubEnv('DDEV_DOCROOT', '/var/www/html/web');
+    vi.useFakeTimers();
+    exec.mockImplementationOnce(() => { throw new Error(message); }).mockReturnValue('ready\n');
+    const result = message.startsWith('1412')
+        ? phpWithRetry('print "ready";', [message])
+        : phpUnderLock('print "ready";');
+    await vi.runAllTimersAsync();
+    await expect(result).resolves.toBe('ready');
+    expect(exec).toHaveBeenCalledTimes(2);
+});
+
+it.each([
+    ['1412 Table definition has changed', 5],
+    ['Permission denied', 1],
+])('propagates PHP failure after bounded attempts: %s', async (message, attempts) => {
+    vi.stubEnv('DDEV_DOCROOT', '/var/www/html/web');
+    vi.useFakeTimers();
+    const failure = new Error(message);
+    exec.mockImplementation(() => { throw failure; });
+    const result = expect(phpWithRetry('print "ready";', ['1412 Table definition has changed'])).rejects.toBe(failure);
+    await vi.runAllTimersAsync();
+    await result;
+    expect(exec).toHaveBeenCalledTimes(attempts);
+});
 
 it('runs native Drush inside DDEV and preserves shell arguments, cwd and UTF-8 output', () => {
     vi.stubEnv('DDEV_DOCROOT', '/var/www/html/web');

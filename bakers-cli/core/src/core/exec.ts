@@ -27,6 +27,7 @@ export class ExecError extends Error {
 }
 
 export interface ExecOpts {
+  signal?: AbortSignal;
   cwd?: string;
   env?: Record<string, string>;
   /**
