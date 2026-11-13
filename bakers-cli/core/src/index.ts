@@ -159,8 +159,8 @@ export {
   withoutGitDirs,
 } from './core/git-sandbox.js';
 export {
-  type IsolatedGit,
-  isolateGit,
+  refreshRunTarget,
+  runCloneTip,
   transferIsolatedCommit,
 } from './core/isolated-git.js';
 export {
@@ -186,6 +186,11 @@ export {
 } from './core/proc.js';
 export { protectedProjectPaths } from './core/protected-project-paths.js';
 export { normalizeRepoUrl } from './core/repo-url.js';
+export {
+  createRunClone,
+  type RunClone,
+  type RunCloneOptions,
+} from './core/run-clone.js';
 export { cliRootOf } from './core/runtime-paths.js';
 export { shellQuote } from './core/shell.js';
 export { DEFAULT_SLUG_MAX_LENGTH, slugify } from './core/slug.js';

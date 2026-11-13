@@ -13,15 +13,18 @@ import { expect, it } from 'vitest';
 it('removes sandbox settings only in the playground machine configuration', () => {
   const root = mkdtempSync(join(tmpdir(), 'playground-machine-'));
   try {
-    const scripts = join(root, 'scripts');
+    const scripts = join(root, '.bakers/scripts');
     const sourceHome = join(root, 'real-machine');
-    mkdirSync(scripts);
+    mkdirSync(scripts, { recursive: true });
     mkdirSync(sourceHome);
     const script = join(scripts, 'conductor-e2e.sh');
     writeFileSync(
       script,
       readFileSync(
-        new URL('../../../../scripts/conductor-e2e.sh', import.meta.url),
+        new URL(
+          '../../../../.bakers/scripts/conductor-e2e.sh',
+          import.meta.url,
+        ),
       ),
     );
     const machine = {

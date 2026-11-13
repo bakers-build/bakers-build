@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import {
   closeSync,
   constants,
+  existsSync,
   fstatSync,
   lstatSync,
   mkdirSync,
@@ -15,17 +16,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, posix, sep } from 'node:path';
-
-/** Host-owned record; never store this inside the run's writable mounts. */
-export interface IsolatedGit {
-  path: string;
-  workspace: string;
-  branch: string;
-  expected: string;
-  gitDir: string;
-  commonDir: string;
-  protectedPaths?: string[];
-}
+import type { RunClone } from './run-clone.js';
 
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, {
@@ -59,91 +50,6 @@ function normalizeProtectedPaths(paths: readonly string[]): string[] {
 function rejectGitlinks(entries: string): void {
   if (entries.split('\0').some((entry) => entry.startsWith('160000 ')))
     throw new Error('isolated Git: submodules are not supported');
-}
-
-/** Copy objects, never hardlink or borrow them from the parent's GC lifetime. */
-export function isolateGit(
-  workspace: string,
-  path: string,
-  branch: string,
-  protectedPaths: readonly string[] = ['.bakers'],
-): IsolatedGit {
-  const protectedRelativePaths = normalizeProtectedPaths(protectedPaths);
-  git(workspace, 'check-ref-format', `refs/heads/${branch}`);
-  if (git(workspace, 'symbolic-ref', 'HEAD') !== `refs/heads/${branch}`)
-    throw new Error(
-      'isolated Git: workspace is not on the intended ticket branch',
-    );
-  const expected = git(workspace, 'rev-parse', 'HEAD');
-  // Host status may execute nested Git config; host tools must not stage run-planted repositories.
-  rejectGitlinks(git(workspace, 'ls-files', '--stage', '-z'));
-  rejectGitlinks(git(workspace, 'ls-tree', '-r', '-z', expected));
-  const gitDir = git(
-    workspace,
-    'rev-parse',
-    '--path-format=absolute',
-    '--git-dir',
-  );
-  const commonDir = git(
-    workspace,
-    'rev-parse',
-    '--path-format=absolute',
-    '--git-common-dir',
-  );
-  if (gitDir === commonDir)
-    throw new Error('isolated Git requires a linked Git worktree');
-  git(
-    workspace,
-    'clone',
-    '--bare',
-    '--no-hardlinks',
-    '--dissociate',
-    '--template=',
-    commonDir,
-    path,
-  );
-  git(
-    workspace,
-    `--git-dir=${path}`,
-    'symbolic-ref',
-    'HEAD',
-    `refs/heads/${branch}`,
-  );
-  git(
-    workspace,
-    `--git-dir=${path}`,
-    'update-ref',
-    `refs/heads/${branch}`,
-    expected,
-  );
-  git(workspace, `--git-dir=${path}`, 'config', 'core.bare', 'false');
-  git(workspace, `--git-dir=${path}`, 'config', 'core.worktree', workspace);
-  git(workspace, `--git-dir=${path}`, 'read-tree', expected);
-  git(
-    workspace,
-    `--git-dir=${path}`,
-    'config',
-    'remote.origin.fetch',
-    '+refs/remotes/origin/*:refs/remotes/origin/*',
-  );
-  git(
-    workspace,
-    `--git-dir=${path}`,
-    'fetch',
-    '--no-tags',
-    '--no-write-fetch-head',
-    'origin',
-  );
-  mkdirSync(join(path, 'hooks'), { recursive: true });
-  return {
-    path: realpathSync(path),
-    workspace,
-    branch,
-    expected,
-    gitDir,
-    commonDir,
-    protectedPaths: protectedRelativePaths,
-  };
 }
 
 /** Read object bytes without following a run-planted symlink, including raced ancestors. */
@@ -180,13 +86,174 @@ function copyObjects(source: string, target: string): void {
   }
 }
 
-/** Import verified objects through clean metadata; update one ref with compare-and-swap. */
+// shortcut: /proc/self/fd pins directories against swapped symlinks, Linux only; use openat when another host OS runs isolating runtimes.
+/** Open `rel` below `root` one component at a time, never through a link the run planted. */
+function pinDir(root: string, rel: string, create = false): number {
+  const flags =
+    constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW;
+  let fd = openSync(root, flags);
+  for (const part of rel.split('/').filter(Boolean)) {
+    const next = `/proc/self/fd/${fd}/${part}`;
+    try {
+      if (part === '..') throw new Error('isolated Git: invalid path');
+      if (create && !existsSync(next)) mkdirSync(next);
+      const child = openSync(next, flags);
+      closeSync(fd);
+      fd = child;
+    } catch (err) {
+      closeSync(fd);
+      throw err;
+    }
+  }
+  return fd;
+}
+
+/** A small file below the run's Git directory; `undefined` when it does not exist. */
+function readRunFile(root: string, path: string): string | undefined {
+  let dir: number;
+  try {
+    dir = pinDir(root, posix.dirname(path));
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw err;
+  }
+  try {
+    const fd = openSync(
+      `/proc/self/fd/${dir}/${posix.basename(path)}`,
+      constants.O_RDONLY | constants.O_NOFOLLOW,
+    );
+    try {
+      if (!fstatSync(fd).isFile())
+        throw new Error(`isolated Git: ${path} is not a file`);
+      return readFileSync(fd, 'utf8');
+    } finally {
+      closeSync(fd);
+    }
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return undefined;
+    throw err;
+  } finally {
+    closeSync(dir);
+  }
+}
+
+const HASH = /^(?:[a-f0-9]{40}|[a-f0-9]{64})$/;
+
+/** The run's ticket branch tip, read as plain files: Git never runs under the run's config. */
+export function runCloneTip(record: RunClone): string {
+  const ref = `refs/heads/${record.branch}`;
+  if (readRunFile(record.gitDir, 'HEAD')?.trim() !== `ref: ${ref}`)
+    throw new Error('isolated Git: the run left its ticket branch');
+  const tip =
+    readRunFile(record.gitDir, ref)?.trim() ??
+    readRunFile(record.gitDir, 'packed-refs')
+      ?.split('\n')
+      .find((line) => line.endsWith(` ${ref}`))
+      ?.split(' ')[0];
+  if (!tip || !HASH.test(tip))
+    throw new Error('isolated Git: the run ticket branch has no readable tip');
+  return tip;
+}
+
+/** The parent's current target tip, the ref the run sees as `origin/<target>`. */
+function parentTarget(record: RunClone): string | undefined {
+  for (const ref of [
+    `refs/remotes/origin/${record.target}`,
+    `refs/heads/${record.target}`,
+  ]) {
+    try {
+      return git(
+        record.parentGitDir,
+        `--git-dir=${record.parentGitDir}`,
+        'rev-parse',
+        '--verify',
+        '--quiet',
+        `${ref}^{commit}`,
+      );
+    } catch {
+      // Try the next spelling.
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Give the run the parent's current `origin/<target>`: objects as one new pack,
+ * the ref as a plain file. Nothing here runs Git inside the run's directory.
+ */
+export function refreshRunTarget(record: RunClone): void {
+  if (!record.target) return;
+  const tip = parentTarget(record);
+  if (!tip) return;
+  const scratch = mkdtempSync(join(tmpdir(), 'bb-target-refresh-'));
+  try {
+    execFileSync(
+      'git',
+      [
+        `--git-dir=${record.parentGitDir}`,
+        'pack-objects',
+        '--quiet',
+        '--revs',
+        join(scratch, 'pack'),
+      ],
+      {
+        input: `${tip}\n^${record.expected}\n`,
+        stdio: ['pipe', 'ignore', 'pipe'],
+      },
+    );
+    const pack = pinDir(record.gitDir, 'objects/pack', true);
+    try {
+      for (const file of readdirSync(scratch)) {
+        try {
+          writeFileSync(
+            `/proc/self/fd/${pack}/${file}`,
+            readFileSync(join(scratch, file)),
+            { flag: 'wx', mode: 0o444 },
+          );
+        } catch (err) {
+          if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err;
+        }
+      }
+    } finally {
+      closeSync(pack);
+    }
+    const ref = `refs/remotes/origin/${record.target}`;
+    const dir = pinDir(record.gitDir, posix.dirname(ref), true);
+    try {
+      const fd = openSync(
+        `/proc/self/fd/${dir}/${posix.basename(ref)}`,
+        constants.O_WRONLY |
+          constants.O_CREAT |
+          constants.O_TRUNC |
+          constants.O_NOFOLLOW,
+        0o644,
+      );
+      try {
+        writeFileSync(fd, `${tip}\n`);
+      } finally {
+        closeSync(fd);
+      }
+    } finally {
+      closeSync(dir);
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+/**
+ * Import verified objects through clean metadata and fast-forward the ticket
+ * branch in the parent with compare-and-swap. Defaults to the run's branch tip.
+ */
 export function transferIsolatedCommit(
-  record: IsolatedGit,
-  commit: string,
-): void {
-  if (!/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(commit))
+  record: RunClone,
+  commit: string = runCloneTip(record),
+): string {
+  if (!HASH.test(commit))
     throw new Error('isolated Git: transfer requires a full commit hash');
+  if (commit === record.expected) return commit;
+  const parent = (...args: string[]) =>
+    git(record.parentGitDir, `--git-dir=${record.parentGitDir}`, ...args);
   const scratch = mkdtempSync(join(tmpdir(), 'bb-commit-transfer-'));
   try {
     git(
@@ -197,46 +264,40 @@ export function transferIsolatedCommit(
       `--object-format=${commit.length === 64 ? 'sha256' : 'sha1'}`,
       '-q',
     );
-    copyObjects(join(record.path, 'objects'), join(scratch, 'objects'));
+    // History the parent already holds is read from there, never from the run.
+    mkdirSync(join(scratch, 'objects/info'), { recursive: true });
+    writeFileSync(
+      join(scratch, 'objects/info/alternates'),
+      `${join(record.parentGitDir, 'objects')}\n`,
+    );
+    copyObjects(join(record.gitDir, 'objects'), join(scratch, 'objects'));
     git(scratch, 'fsck', '--strict', '--no-reflogs', '--no-dangling', commit);
     if (git(scratch, 'cat-file', '-t', commit) !== 'commit')
       throw new Error('isolated Git: transfer requires a commit');
     rejectGitlinks(git(scratch, 'ls-tree', '-r', '-z', commit));
     git(scratch, 'merge-base', '--is-ancestor', record.expected, commit);
-    const protectedPaths = normalizeProtectedPaths(
-      record.protectedPaths ?? [],
-    ).map((path) => `:(literal)${path}`);
-    for (const revision of git(
-      scratch,
-      'rev-list',
-      `${record.expected}..${commit}`,
-    )
-      .split('\n')
-      .filter(Boolean)) {
-      if (
-        git(
-          scratch,
-          'diff-tree',
-          '-m',
-          '-r',
-          '--root',
-          '--no-commit-id',
-          '--name-only',
-          '-z',
-          '--no-renames',
-          revision,
-          '--',
-          ...protectedPaths,
-        )
+    // Against the tip the run started from, so a merge of the target passes.
+    if (
+      git(
+        scratch,
+        'diff-tree',
+        '-r',
+        '--name-only',
+        '-z',
+        '--no-renames',
+        record.expected,
+        commit,
+        '--',
+        ...normalizeProtectedPaths(record.protectedPaths ?? []).map(
+          (path) => `:(literal)${path}`,
+        ),
       )
-        throw new Error(
-          `isolated Git: commit ${revision} changes a protected path`,
-        );
-    }
+    )
+      throw new Error(
+        `isolated Git: commit ${commit} changes a protected path`,
+      );
     // Only scratch's clean config is read; the run's hooks/config never reach host Git.
-    git(
-      record.workspace,
-      `--git-dir=${record.gitDir}`,
+    parent(
       '-c',
       'protocol.file.allow=always',
       'fetch',
@@ -245,14 +306,13 @@ export function transferIsolatedCommit(
       scratch,
       commit,
     );
-    git(
-      record.workspace,
-      `--git-dir=${record.gitDir}`,
+    parent(
       'update-ref',
       `refs/heads/${record.branch}`,
       commit,
       record.expected,
     );
+    return commit;
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
