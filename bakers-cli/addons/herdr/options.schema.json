@@ -107,10 +107,7 @@
       "type": "object",
       "properties": {
         "direction": {
-          "enum": [
-            "right",
-            "down"
-          ],
+          "enum": ["right", "down"],
           "description": "Where the split opens."
         },
         "command": {
@@ -122,10 +119,7 @@
           "description": "Focus this split after opening."
         }
       },
-      "required": [
-        "direction",
-        "command"
-      ],
+      "required": ["direction", "command"],
       "additionalProperties": false,
       "description": "One extra split; not the agent command."
     },
