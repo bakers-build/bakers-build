@@ -648,7 +648,10 @@ export default {
         "  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },\n",
         '',
       )
-      .replace("project: { name: 'demo' },", "project: { name: 'demo' }, addons: base,");
+      .replace(
+        "project: { name: 'demo' },",
+        "project: { name: 'demo' }, addons: base,",
+      );
     writeFileSync(w.engine, engine);
 
     const plan = service.planConfig(w);
