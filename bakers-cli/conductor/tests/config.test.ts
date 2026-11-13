@@ -1508,7 +1508,8 @@ export default {
     const binding = { worktreePath: dirname(file) };
     const result = await cfg.tools!.call('agents_catalog', {}, binding);
     const report = JSON.parse(result.text);
-    const operator = agentReport(cfg);
+    const { runtime: _runtime, ...operator } = agentReport(cfg);
+    expect(report).not.toHaveProperty('runtime');
     expect(report).toEqual({
       ...operator,
       agents: operator.agents.map(({ alias, description, harness, model }) => ({
