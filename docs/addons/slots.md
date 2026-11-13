@@ -58,6 +58,8 @@ The optional machine slot `runtime` decides where the agent runs: on the host, i
 executor starts it; a failure fails the run. Agent permissions stay unchanged; the runtime adds
 its own boundary around the configured agent command.
 
+[Write a runtime addon](/addons/build/runtime): wraps launches, not tools.
+
 ## Start hook
 
 The conductor's `hooks` listeners may define `before_conductor_start(machine,

@@ -7,6 +7,14 @@ description: Create personal keys or workspace service accounts for automation a
 
 Use your signed-in account to create a personal key for scripts, or ask a workspace administrator for a service account. A key acts with its account’s current permissions. The generated machine UUID identifies a host; it is not an authentication credential.
 
+## Put credentials at the operation boundary
+
+[Agent permissions](/provision/security/execution), [isolation](/agents/isolation) and account authorization control different things. A sandbox cannot reduce the server rights of a credential deliberately provided to a run.
+
+For operations exposed through [conductor tools](/provision/tools#work-across-permissions-and-isolation), keep the required credential with the integration. Forge tools can deliver work using the conductor's forge token; the agent needs permission to call the tool, not the token value. The tool still checks scope and authorization. A credential passed directly to an agent remains usable within its accessible environment.
+
+Give the worker only the project access it needs. Separate model-provider credentials from server/forge credentials, and inspect what a tool returns: secrets in results can enter model requests or transcripts. Tools that run worktree code also expose their execution authority to that code.
+
 ## Personal API keys
 
 Every signed-in user creates, lists and revokes their own keys under **Account → API keys**. No administrator is involved.

@@ -1,6 +1,8 @@
-# Security
+# Access and data
 
-Security spans account access, the worker host, project configuration and preview exposure. Keep agent-specific settings in [Agents execution security](/provision/security/execution).
+<span id="security"></span>
+
+Account authorization determines which server resources a person or service can access. [Agent permissions and isolation](/provision/security/) determine how work runs on a machine. Configure these independently; a workspace rank does not confine a process, and a sandbox does not change an account’s server rights.
 
 ## Credentials and access
 
@@ -52,9 +54,9 @@ Review, merge and deployment stay explicit human decisions, whatever your rank.
 
 ## Agent execution boundaries
 
-Runs default to `system` mode; Claude, Codex and Grok run in their OS sandbox only with `permissions: 'sandbox'`, which grants no global tools. Then verify [sandbox prerequisites](/provision/security/execution#sandbox-prerequisites) as the conductor user before dispatch. Config roots, provider credentials and readable paths need separate consideration; a worktree is not a full security boundary. Other harnesses do not acquire the same sandbox simply by running under bakers.build.
+Choose [agent permissions](/provision/security/execution) for allowed actions and [isolation](/agents/isolation) for process reach. Runs default to `system`; supported native sandbox mode must be selected explicitly. A worktree or application container alone is not an agent security boundary.
 
-[Execution security](/provision/security/execution) owns modes, allowlists, environment filtering and limitations. Package-specific flags stay with [agent addons](/addons/). Review commands from untrusted ticket text against the current scope. Hooks run with the worker's permissions; failures do not stop dispatch, so required readiness checks belong in `WORKFLOW.md`.
+[Conductor tools](/provision/tools#work-across-permissions-and-isolation) let restricted agents request operations without receiving every underlying credential. Their account access, execution rights and returned data need their own policy. Host tools and project hooks remain outside the agent boundary; inspect any editable worktree files they execute. Treat ticket text as task input, not authority to widen access.
 
 ## Public previews and ports
 

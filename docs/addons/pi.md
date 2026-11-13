@@ -30,6 +30,8 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
+[Isolation models](/agents/isolation): platform support.
+
 pi has no OS sandbox and no tool-permission gate: its tools run with the conductor user's own permissions. bakers.build therefore offers no `sandbox` or `yolo` for pi; both fail loading before pi starts.
 
 | `permissions` | Launch flags |
