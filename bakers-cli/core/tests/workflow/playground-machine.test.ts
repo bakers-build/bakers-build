@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, it } from 'vitest';
 
-it('removes sandbox settings only in the playground machine configuration', () => {
+it('removes sandbox settings and isolating runtimes only in the playground machine configuration', () => {
   const root = mkdtempSync(join(tmpdir(), 'playground-machine-'));
   try {
     const scripts = join(root, '.bakers/scripts');
@@ -32,6 +32,11 @@ it('removes sandbox settings only in the playground machine configuration', () =
       permissions: { mode: 'system' },
       addons: [
         { use: 'claude', with: { model: 'opus', sandbox: { network: false } } },
+        '@bakers-build/addon-runtime-bwrap',
+        {
+          use: '@bakers-build/addon-runtime-docker',
+          with: { network: 'host' },
+        },
       ],
       agents: {
         catalog: [{ alias: 'worker', with: { sandbox: {}, model: 'other' } }],

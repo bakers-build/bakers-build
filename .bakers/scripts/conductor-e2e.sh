@@ -15,7 +15,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd -P)"
 workspace="$root/workspaces/bakers-playground"
 bakers="$root/bakers-cli/bin/bakers"
 
-# Keep the playground's unsandboxed agents separate from the real machine policy.
+# Keep the playground's unsandboxed, host-runtime agents separate from the real machine policy.
 playground_home="$root/workspaces/.bakers-playground-home"
 mkdir -p "$playground_home"
 if [ "${BAKERS_HOME:-}" != "$playground_home" ]; then
@@ -28,7 +28,10 @@ const stripSandbox = value => Array.isArray(value) ? value.map(stripSandbox)
   : value && typeof value === 'object'
     ? Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'sandbox').map(([key, item]) => [key, stripSandbox(item)]))
     : value;
-export default stripSandbox(machine);
+// The playground runs on the host: its fixture hooks are not written for an isolating runtime.
+const isRuntime = entry => (typeof entry === 'string' ? entry : entry?.use ?? '').startsWith('@bakers-build/addon-runtime-');
+const playground = stripSandbox(machine);
+export default { ...playground, ...(playground.addons ? { addons: playground.addons.filter(entry => !isRuntime(entry)) } : {}) };
 `, { mode: 0o600 });
 JS
 ln -sfn "${BAKERS_HOME:-${HOME}/.bakers}/connections" "$playground_home/connections"
