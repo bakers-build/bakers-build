@@ -1,5 +1,5 @@
 import { hostname } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
 import { pathToFileURL } from 'node:url';
 import type { ConfigPlanOptions } from '@bakers-build/conductor/config';
@@ -11,10 +11,10 @@ import type {
 } from '@bakers-build/core';
 import {
   homeBbDir,
-  readConfigAddons,
+  inventoryConfig,
+  readAddonCapabilities,
   reportLoadedBbConfigFields,
   resolveBbConnectionSelection,
-  scopeAddons,
 } from '@bakers-build/core';
 import { type Command, Option } from 'commander';
 
@@ -49,6 +49,9 @@ interface ConfigOptions {
   authType?: 'client_credentials' | 'device';
   afterCreate?: string;
   afterDone?: string;
+  server?: string;
+  executor?: string;
+  worktree?: string;
 }
 
 /** Terminal-only input. Secret characters are never echoed. */
@@ -82,76 +85,45 @@ const SCOPE_FILE = {
   project: '.bakers/project.config.js',
 } as const;
 
-/**
- * Report each machine/project `addons[]` entry listed in a scope its addon
- * does not declare. Resolving an addon imports its preset, so an offline
- * check (which never imports source) only notes that it skipped this.
- */
-async function checkAddonScopes(
+/** Check declared scopes without evaluating the user's configuration. */
+function checkAddonScopes(
   report: ConfigReport,
-  online: boolean,
-  cwd: string,
-): Promise<void> {
-  const files = report.files.filter(
-    (f) =>
-      f.selected &&
-      f.state !== 'absent' &&
-      (f.kind === 'machine' || f.kind === 'project'),
-  );
-  if (files.length === 0) return;
-  const base = {
-    stage: 'schema' as const,
-    key: 'addons',
-    related: [],
-    statically_determined: false,
-    recheck: 'bakers config check --scope all --online',
-  };
-  if (!online) {
-    report.findings.push({
-      ...base,
-      code: 'addon_scope_skipped',
-      severity: 'info',
-      path: (files[0] as (typeof files)[number]).path,
-      expected: 'Each addon is listed only in a scope it declares.',
-      observed: null,
-      owner: (files[0] as (typeof files)[number]).layer,
-      remediation:
-        'Addon scopes are not checked offline; run bakers config check --online to resolve each addons[] entry.',
-    });
-    return;
+  planning: ConfigPlanOptions,
+): void {
+  const inventory = inventoryConfig(planning);
+  for (const file of report.files.filter(
+    (f) => f.selected && (f.kind === 'machine' || f.kind === 'project'),
+  )) {
+    const source = inventory.sources.get(file.path);
+    if (!source) continue;
+    for (const [key, property] of source.properties) {
+      if (
+        !/^addons\[\d+\](?:\.use)?$/.test(key) ||
+        typeof property.value !== 'string'
+      )
+        continue;
+      const spec = property.value;
+      const allowed = planning.capabilities?.[spec]?.scopes;
+      const scope = file.kind === 'machine' ? 'machine' : 'project';
+      if (!allowed || allowed.includes(scope)) continue;
+      const target = allowed.map((s) => SCOPE_FILE[s]).join(' or ');
+      report.findings.push({
+        stage: 'schema',
+        key: 'addons',
+        related: [],
+        statically_determined: true,
+        recheck: 'bakers config check --scope all',
+        code: 'addon_scope_not_allowed',
+        severity: 'error',
+        path: file.path,
+        expected: `'${spec}' may be configured only in ${target}.`,
+        observed: spec,
+        owner: scope,
+        remediation: `Move '${spec}' from addons[] of ${file.path} to addons[] of ${target}.`,
+      });
+      report.result = 'blocked';
+    }
   }
-  const hostBases = [import.meta.url];
-  const { findings } = await scopeAddons(
-    await Promise.all(
-      files.map(async (f) => ({
-        scope:
-          f.kind === 'machine' ? ('machine' as const) : ('project' as const),
-        path: f.path,
-        entries: await readConfigAddons(f.path),
-        bases: [
-          pathToFileURL(`${dirname(f.path)}/`).href,
-          ...(f.kind === 'machine' ? [] : [pathToFileURL(`${cwd}/`).href]),
-          ...hostBases,
-        ],
-      })),
-    ),
-    { unresolved: 'skip', logger: { warn: () => {} } as never },
-  );
-  for (const finding of findings) {
-    const allowed = finding.allowed.map((s) => SCOPE_FILE[s]).join(' or ');
-    report.findings.push({
-      ...base,
-      code: 'addon_scope_not_allowed',
-      severity: 'error',
-      path: finding.path,
-      expected: `'${finding.spec}' may be configured only in ${allowed}.`,
-      observed: finding.spec,
-      owner: finding.scope,
-      remediation: `Move '${finding.spec}' from addons[] of ${finding.path} to addons[] of ${allowed}.`,
-    });
-  }
-  if (findings.length > 0 && report.result !== 'failed')
-    report.result = 'blocked';
 }
 
 /** `, N values not checked`: a passing result never hides what it skipped. */
@@ -183,6 +155,8 @@ export function renderConfigReport(
       `Machine tunnel: ${tunnel === null ? 'unresolved' : tunnel} (from ${source})`,
     );
   }
+  for (const [slot, origin] of Object.entries(report.slot_sources ?? {}))
+    lines.push(`${slot[0]?.toUpperCase()}${slot.slice(1)}: ${origin}`);
   if (report.executor_source)
     lines.push(`Executor: from ${report.executor_source}`);
   if (report.connection_resolution) {
@@ -272,11 +246,14 @@ function buildConfigCommand(
         '--online',
         'authenticate and verify each selected workspace (project scopes); resolve addons[] entries to check their scopes',
       );
+    if (operation === 'init')
+      for (const slot of ['server', 'executor', 'worktree'])
+        command.option(`--${slot} <package>`, `project ${slot} addon`);
     if (operation !== 'check')
       command
         .option(
           '--dry-run',
-          'report planned changes without imports, network or writes',
+          'report planned changes without config evaluation, network or writes',
         )
         .addOption(
           new Option(
@@ -416,6 +393,39 @@ function buildConfigCommand(
         });
         planning.connectionPath = selectedConnection.path;
       }
+      planning.slots = {};
+      for (const slot of ['server', 'executor', 'worktree'] as const)
+        if (options[slot] !== undefined) planning.slots[slot] = options[slot];
+      // Static inventory supplies package names; only preset modules are imported.
+      const sources = inventoryConfig(planning).sources;
+      const projectBases = [
+        pathToFileURL(`${resolve(cwd, options.path ?? '.')}/`).href,
+        import.meta.url,
+      ];
+      planning.capabilities = {};
+      for (const [path, source] of sources) {
+        const specs = [...source.properties]
+          .filter(
+            ([key, property]) =>
+              /^addons\[\d+\](?:\.use)?$/.test(key) &&
+              typeof property.value === 'string',
+          )
+          .map(([, property]) => property.value as string);
+        Object.assign(
+          planning.capabilities,
+          await readAddonCapabilities(specs, [
+            pathToFileURL(`${dirname(path)}/`).href,
+            ...projectBases,
+          ]),
+        );
+      }
+      Object.assign(
+        planning.capabilities,
+        await readAddonCapabilities(
+          Object.values(planning.slots),
+          projectBases,
+        ),
+      );
       let plan = planConfig(planning);
       if (
         operation === 'init' &&
@@ -538,15 +548,17 @@ function buildConfigCommand(
           const current = planConfig({
             ...planning,
             operation: 'check',
+            slots: {},
           }).report;
           report.files = current.files;
           report.findings = current.findings;
           report.result = current.result;
           report.verification = current.verification;
+          if (current.slot_sources) report.slot_sources = current.slot_sources;
         }
       }
       if (!cancelled && operation === 'check')
-        await checkAddonScopes(report, options.online === true, cwd);
+        checkAddonScopes(report, planning);
       // A device-code connection authenticates from a session that sign-in
       // creates, and nothing has signed in yet when `init` has only just
       // written the file. Verifying here therefore reports

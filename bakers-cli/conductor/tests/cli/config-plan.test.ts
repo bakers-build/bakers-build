@@ -11,7 +11,15 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
-import * as service from '../../src/cli/config-plan.js';
+import * as configService from '../../src/cli/config-plan.js';
+import { capabilities } from './preset-capabilities.js';
+
+const service = {
+  ...configService,
+  planConfig: (options: Parameters<typeof configService.planConfig>[0] = {}) =>
+    configService.planConfig({ capabilities, ...options }),
+};
+
 import { ConfigSourceEditor } from '../../src/cli/config-source-edit.js';
 import {
   renderCommittedConfig,
@@ -1317,4 +1325,107 @@ it('still refuses to render a client-credentials connection without a secret', (
     },
   });
   expect(plan.writes.some((write) => write.path === w.connection)).toBe(false);
+});
+
+it('initializes herdr-core in addons with its nested Git worktree and no herdr slots', async () => {
+  const { readAddonCapabilities } = await import('@bakers-build/core');
+  const w = world();
+  rmSync(w.engine);
+  const executor = '@bakers-build/addon-herdr-core';
+  const capabilities = await readAddonCapabilities(
+    [executor],
+    [import.meta.url],
+  );
+  const plan = service.planConfig({
+    ...w,
+    operation: 'init',
+    scope: 'project',
+    project: 'demo',
+    slots: { executor },
+    capabilities,
+  });
+  const text =
+    plan.writes.find((write) => write.path === w.engine)?.after ?? '';
+  const source = new ConfigSourceEditor(text);
+  expect(source.property('executor')).toBeUndefined();
+  expect(source.property('worktree')).toBeUndefined();
+  expect(text).toContain(executor);
+  expect(text).not.toContain("use: '@bakers-build/addon-herdr'");
+  expect(plan.report.findings.filter((f) => f.key === 'worktree')).toEqual([]);
+});
+
+it('keeps existing project slots and addon entries when init gets an executor flag', async () => {
+  const { readAddonCapabilities } = await import('@bakers-build/core');
+  const w = world();
+  const executor = '@bakers-build/addon-herdr-core';
+  const capabilities = await readAddonCapabilities(
+    [executor],
+    [import.meta.url],
+  );
+  const plan = service.planConfig({
+    ...w,
+    operation: 'init',
+    scope: 'project',
+    slots: { executor },
+    capabilities,
+  });
+  const text =
+    plan.writes.find((write) => write.path === w.engine)?.after ??
+    readFileSync(w.engine, 'utf8');
+  expect(new ConfigSourceEditor(text).property('executor.use')?.value).toBe(
+    '@bakers-build/addon-herdr',
+  );
+  expect(text).not.toContain(executor);
+});
+
+it('requires a worktree selection for an executor that supplies none', async () => {
+  const { readAddonCapabilities } = await import('@bakers-build/core');
+  const w = world();
+  rmSync(w.engine);
+  const executor = join(w.cwd, 'executor.js');
+  writeFileSync(executor, 'export const executors = (acc) => acc;');
+  const capabilities = await readAddonCapabilities(
+    [executor],
+    [import.meta.url],
+  );
+  const plan = service.planConfig({
+    ...w,
+    project: 'demo',
+    operation: 'init',
+    scope: 'project',
+    slots: { executor },
+    capabilities,
+  });
+  expect(plan.report.findings).toContainEqual(
+    expect.objectContaining({
+      key: 'worktree',
+      expected: expect.stringContaining('pass --worktree'),
+    }),
+  );
+  expect(service.applyConfigPlan(plan).result).toBe('blocked');
+  expect(existsSync(w.engine)).toBe(false);
+});
+
+it('honors an explicit worktree flag alongside an executor with a nested worktree', async () => {
+  const { readAddonCapabilities } = await import('@bakers-build/core');
+  const w = world();
+  rmSync(w.engine);
+  const executor = '@bakers-build/addon-herdr-core';
+  const worktree = join(w.cwd, 'custom-worktree.js');
+  writeFileSync(worktree, 'export const worktrees = (acc) => acc;');
+  const capabilities = await readAddonCapabilities(
+    [executor, worktree],
+    [import.meta.url],
+  );
+  const plan = service.planConfig({
+    ...w,
+    project: 'demo',
+    operation: 'init',
+    scope: 'project',
+    slots: { executor, worktree },
+    capabilities,
+  });
+  expect(plan.writes.find((write) => write.path === w.engine)?.after).toContain(
+    worktree,
+  );
 });

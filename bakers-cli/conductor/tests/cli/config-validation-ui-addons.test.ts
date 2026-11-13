@@ -2,7 +2,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
-import * as service from '../../src/cli/config-plan.js';
+import * as configService from '../../src/cli/config-plan.js';
+import { capabilities } from './preset-capabilities.js';
+
+const service = {
+  ...configService,
+  planConfig: (options: Parameters<typeof configService.planConfig>[0] = {}) =>
+    configService.planConfig({ capabilities, ...options }),
+};
 
 const roots: string[] = [];
 const workspace = '11111111-1111-4111-8111-111111111111';

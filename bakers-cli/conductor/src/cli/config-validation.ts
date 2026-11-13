@@ -1,4 +1,5 @@
 import {
+  type AddonCapabilities,
   type ConfigFileReport,
   type ConfigFinding,
   type ConfigInventoryOptions,
@@ -9,53 +10,11 @@ import {
 } from '@bakers-build/core';
 import { ConfigSourceEditor } from './config-source-edit.js';
 
-/**
- * Known addons and the CONDUCTOR slots each fills. An empty list means "known
- * addon, fills no conductor slot" — a UI-only addon (BB-562) belongs in a
- * conductor `addons[]` but contributes a cockpit tab, not a slot. Listing it is
- * not cosmetic: an UNKNOWN specifier sets `addonsAreOpaque` below, which
- * downgrades a genuinely missing server/executor/worktree from
- * `missing_required_key` to `unknown_value`.
- */
-export const CONDUCTOR_ADDON_SLOTS: Record<string, string[]> = {
-  '@bakers-build/addon-remote-drupal': ['server'],
-  '@bakers-build/addon-herdr': ['executor', 'worktree'],
-  '@bakers-build/addon-orca': ['executor', 'worktree'],
-  '@bakers-build/addon-herdr-core': ['executor'],
-  '@bakers-build/addon-fake': ['server', 'executor', 'worktree'],
-  '@bakers-build/addon-workspace-git': ['worktree'],
-  '@bakers-build/addon-claude': ['agent'],
-  '@bakers-build/addon-codex': ['agent'],
-  '@bakers-build/addon-grok': ['agent'],
-  '@bakers-build/addon-kimi': ['agent'],
-  '@bakers-build/addon-opencode': ['agent'],
-  '@bakers-build/addon-pi': ['agent'],
-  '@bakers-build/addon-ports': [],
-  '@bakers-build/addon-ports-cloudflare': [],
-  '@bakers-build/addon-ports-cloudflare-quick': [],
-  '@bakers-build/addon-ports-frp': [],
-  '@bakers-build/addon-forge': [],
-  '@bakers-build/addon-forge-github': [],
-  '@bakers-build/addon-forge-gitlab': [],
-  '@bakers-build/addon-bakers-ui': [],
-  '@bakers-build/addon-bakers-ui-artifacts': [],
-  '@bakers-build/addon-agents': [],
-  '@bakers-build/addon-auth-basic': [],
-  '@bakers-build/addon-ddev': [],
-  '@bakers-build/addon-deployment': [],
-  '@bakers-build/addon-docker-compose': [],
-  '@bakers-build/addon-dropsh': [],
-  '@bakers-build/addon-essentials': [],
-  '@bakers-build/addon-info': [],
-  '@bakers-build/addon-name-refs': [],
-  '@bakers-build/addon-track': [],
-  '@bakers-build/addon-workspace': [],
-};
-
 function validateConductorSources(
   options: ConfigInventoryOptions,
   editors: Map<string, ConfigSourceEditor>,
   report: ConfigReport,
+  capabilities: AddonCapabilities,
 ) {
   const recheck = configRecheckCommand(
     (options.scope ?? 'all') as 'all',
@@ -94,6 +53,7 @@ function validateConductorSources(
     };
     const addon = editor.property('addons');
     const addonSlots = new Set<string>();
+    const origins: Record<string, string> = {};
     let addonsAreOpaque = false;
     if (addon) {
       if (addon.nodeType !== 'ArrayExpression') addonsAreOpaque = true;
@@ -105,13 +65,22 @@ function validateConductorSources(
             editor.property(`${entry}.use`)?.value;
           if (typeof specifier !== 'string') addonsAreOpaque = true;
           else {
-            const contributions = CONDUCTOR_ADDON_SLOTS[specifier];
+            const contributions = capabilities[specifier]?.slots;
             if (!contributions) addonsAreOpaque = true;
-            else for (const slot of contributions) addonSlots.add(slot);
+            else {
+              for (const slot of contributions) addonSlots.add(slot);
+              for (const contribution of capabilities[specifier]
+                ?.contributions ?? [])
+                origins[contribution.slot] =
+                  `${contribution.spec}${contribution.via ? ` (via ${contribution.via})` : ''}`;
+            }
           }
         }
     }
+    report.slot_sources = origins;
     for (const slot of ['server', 'executor', 'worktree']) {
+      const explicit = editor.property(`${slot}.use`)?.value;
+      if (typeof explicit === 'string') origins[slot] = explicit;
       if (editor.property(slot) || addonSlots.has(slot)) continue;
       add(
         addon && addonsAreOpaque ? 'unknown_value' : 'missing_required_key',
@@ -132,6 +101,7 @@ export function validateConfigSources(
   options: ConfigInventoryOptions,
   texts: Map<string, string | null>,
   files: ConfigFileReport[],
+  capabilities: AddonCapabilities = {},
 ): ConfigReport {
   const editors = new Map(
     [...texts]
@@ -236,7 +206,7 @@ export function validateConfigSources(
   const overlay = new Map(texts);
   for (const [path, e] of editors) overlay.set(path, e.text);
   const report = inventoryConfig({ ...options, sourceTexts: overlay }).report;
-  validateConductorSources(options, editors, report);
+  validateConductorSources(options, editors, report, capabilities);
   // Literal values resolved from generated wiring are not secrets stored in the committed file.
   report.findings = report.findings.filter(
     (f) =>

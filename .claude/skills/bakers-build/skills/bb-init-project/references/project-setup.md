@@ -46,7 +46,7 @@ The documentation owns configuration syntax and supported options; this matrix o
 
 | When | Decide | Read |
 |---|---|---|
-| Client unknown | Client, executor and worktree | [Clients](https://bakers.build/get-started/use-your-client), [slots](https://bakers.build/addons/slots) |
+| Client unknown | Client only | [Clients](https://bakers.build/get-started/use-your-client), [slots](https://bakers.build/addons/slots) |
 | Lifecycle commands unanswered | Each lifecycle command separately; none is a valid answer | [Hooks](https://bakers.build/provision/hooks) |
 | Tests or previews need an environment | Provisioning profiles, commands, then readiness checks | [Environment](https://bakers.build/provision/guide), [provision_up](https://bakers.build/configuration/project/hooks#provision-on-an-agent-s-request) |
 | Workflow needs skills or recipes | Installed skills, required plugins and pinned sources | [Marketplaces](https://bakers.build/configuration/project#agent-plugins), [skills](https://bakers.build/skills-and-workflows/skills) |
@@ -54,6 +54,11 @@ The documentation owns configuration syntax and supported options; this matrix o
 | Agent known | Project settings its agent guide recommends | [Agents](https://bakers.build/agents/), then the agent's guide |
 | Agents need repository delivery | Forge backend, repository, authentication and merge policy | [Forge](https://bakers.build/addons/forge), then its backend guide |
 | Preview needed | Local or public; if public, transport and service. The tunnel policy is a machine row: hand it to `@bakers-build/bb-init` | [Ports](https://bakers.build/addons/ports), [services](https://bakers.build/addons/ports-services) |
+
+For herdr-app, initialize with `--executor @bakers-build/addon-herdr-core`;
+its preset brings `@bakers-build/addon-workspace-git`. Use that pair without a separate
+workspace-addon question. For another client, resolve any missing executor/worktree choice
+from the slots guide.
 
 ## Persist the choices
 
