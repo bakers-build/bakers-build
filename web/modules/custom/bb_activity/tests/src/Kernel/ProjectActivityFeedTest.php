@@ -175,8 +175,8 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     $canvas = $display['third_party_settings']['display_builder']['sources'][0];
     $main = $canvas['source']['component']['slots']['main']['sources'];
     $ids = array_column($main, 'node_id');
-    self::assertSame('project_activities', $ids[3] ?? NULL, 'Activities follow metrics, Needs attention and Epics.');
-    self::assertSame('bb_entity_detail_activities', $main[3]['source_id']);
+    self::assertSame('project_activities', $ids[4] ?? NULL, 'Activities follow metrics, Needs attention, Epics and Deployments.');
+    self::assertSame('bb_entity_detail_activities', $main[4]['source_id']);
   }
 
   /**
