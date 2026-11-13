@@ -5,6 +5,8 @@ description: Recipe for tickets of type deployment — merge a frozen batch into
 
 # Deploy and release
 
+Writes follow `ticket-writes.md`.
+
 The ticket's `environments` entry is the target (`branch`, `base_url`), `base_branch` the source.
 `main` is the **release environment**.
 

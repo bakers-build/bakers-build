@@ -8,7 +8,7 @@ fitting `bb-recipe-*` skill and facts from the project's code, until the request
 changes, the acceptance criteria and what stays out. Only the requester's yes counts, never someone
 else's. One idea per ticket; a dropped idea moves the ticket to `cancelled`.
 
-On that yes, publish in this order:
+On that yes, apply [ticket writes](ticket-writes.md), then publish in this order:
 
 1. the `qualification`, with the fields of [qualification › outtake](qualification.md#outtake);
 2. for a `feature` or `chore`: the `spec`, closing with `Approved by <name> (<identity>).`, then the
