@@ -15,6 +15,7 @@ An agent program has its own tools, such as reading files or running shell comma
 | Provider | Example | Purpose |
 |---|---|---|
 | bakers.build | `provision_up(profile?)` | Prepare or reuse the worktree's application environment |
+| [Agents addon](/addons/agents) | `agents_catalog()` | Read the conductor's loaded agent catalog and routes without permissions |
 | [DDEV addon](/addons/ddev#agent-tools) | `ddev_status()`, `ddev_start()`, `ddev_exec(command)` | Inspect, start and work inside a DDEV project |
 | [Ports addon](/addons/ports) | `ports_up(service?)`, `ports_status()` | Share a preview and inspect its status |
 

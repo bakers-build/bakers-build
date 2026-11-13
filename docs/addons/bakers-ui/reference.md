@@ -2,7 +2,7 @@
 
 `bakers ui` is bakers.build's terminal cockpit: it opens on **My work**, your open assigned tickets, and adds projects, ticket lists, ticket and run detail and conductors, all against one control plane.
 
-This page covers how the cockpit connects and what each screen shows; deep links, auto-refresh and every key are on [bakers ui keys](/addons/bakers-ui-keys), and a first walk-through is in [Terminal UI](/addons/bakers-ui/usage).
+This page covers how the cockpit connects and what each screen shows; a first walk-through is in [Terminal UI](/addons/bakers-ui/usage).
 
 ## Synopsis
 
@@ -14,7 +14,7 @@ bakers ui [target] [--ticket <id>] [--project <id>] [--run <uuid>] [--here]
 
 | Option | Effect |
 |---|---|
-| `target`, `--ticket`, `--project`, `--run`, `--here` | Open one thing; at most one per call ([deep links](/addons/bakers-ui-keys#deep-links)) |
+| `target`, `--ticket`, `--project`, `--run`, `--here` | Open one thing; at most one per call ([deep links](#synopsis)) |
 | `--view <mode>` | How a ticket renders: `full`, `teaser` or `board_card` |
 | `--config <path>` | Connection file to use; wins over every other selector |
 | `--connection <id>` | Named connection from `~/.bakers/connections` |

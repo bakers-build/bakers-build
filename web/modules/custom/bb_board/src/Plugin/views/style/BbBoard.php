@@ -96,6 +96,10 @@ final class BbBoard extends StylePluginBase {
           $tickets,
           (string) $this->view->current_display,
         ),
+        '#cache' => [
+          'contexts' => ['user'],
+          'tags' => ['bb_ticket_list', 'bb_environment_list', 'og_membership_list'],
+        ],
       ],
     ];
   }

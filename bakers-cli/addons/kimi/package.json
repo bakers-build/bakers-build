@@ -25,5 +25,8 @@
     "@bakers-build/conductor": "workspace:^",
     "@bakers-build/core": "workspace:^",
     "typescript": "^5.9.0"
+  },
+  "bakers": {
+    "stability": "experimental"
   }
 }

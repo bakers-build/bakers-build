@@ -25,7 +25,7 @@ const NO_SIDEBAR = new Set(['index.md', 'landing.md', 'de/index.md'])
 function limitFor(rel) {
   if (AREA_INDEX.has(rel)) return 250
   // Detailed addon references keep the configuration tier after relocation.
-  if (/^addons\/[^/]+\//.test(rel) || rel === 'addons/bakers-ui-keys.md') return 1500
+  if (/^addons\/[^/]+\//.test(rel)) return 1500
   if (MAIN_AREAS.some((area) => rel.startsWith(area))) return 400
   if (REFERENCE_AREAS.some((area) => rel.startsWith(area))) return 1500
   return null
@@ -103,10 +103,8 @@ const publicRoutes = new Set(pages(DOCS)
   .map(rel => rel === 'index.md' ? '/manual' : rel === 'landing.md' ? '/' : route(rel)))
 for (const link of linked) requireNavigation(publicRoutes.has(link), `sidebar links missing or excluded page: ${link}`)
 for (const area of AREAS) requireNavigation(publicRoutes.has(area.link), `area links missing page: ${area.link}`)
-// Options tables of schema-bearing addons are rendered from options.schema.json (.vitepress/addon-options.mjs).
-const { missing, notGenerated } = addonCoverage()
-for (const page of missing) requireNavigation(false, `${page} lacks <!-- @options … -->, though its addon ships options.schema.json`)
-console.log(`Options not generated (no options.schema.json): ${notGenerated.join(', ')}`)
+const coverage = addonCoverage()
+for (const failure of coverage.failures) requireNavigation(false, failure)
 for (const rel of selected) {
   const markdown = readFileSync(join(DOCS, rel), 'utf8')
   const words = proseWords(markdown)

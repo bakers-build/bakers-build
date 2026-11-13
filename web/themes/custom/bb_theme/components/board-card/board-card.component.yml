@@ -30,6 +30,12 @@ libraryOverrides:
 props:
   type: object
   properties:
+    deployed_to:
+      type: array
+      title: Deployed to
+      description: Distinct target environments of closed deployments.
+      items:
+        type: string
     identifier:
       type: string
       title: Identifier

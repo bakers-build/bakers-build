@@ -62,6 +62,41 @@ final class ProjectOverviewTest extends KernelTestBase {
   private BbProjectInterface $project;
 
   /**
+   * Deployments list targets, created dates and a scoped ticket drill-down.
+   */
+  public function testDeploymentsSection(): void {
+    BbVocabulary::create(['id' => 'type', 'label' => 'Type'])->save();
+    $type = BbTerm::create(['vid' => 'type', 'name' => 'deployment']);
+    $type->save();
+    $ticket = $this->workTicket('Carried work');
+    $environments = $this->container->get('entity_type.manager')->getStorage('bb_environment')->loadByProperties(['name' => 'production']);
+    $environment = reset($environments);
+    self::assertInstanceOf(ContentEntityInterface::class, $environment);
+    $older = $this->workTicket('Older release', [
+      'ticket_type' => $type->id(),
+      'created' => 100,
+      'environments' => [$environment->id()],
+      'referenced_tickets' => [$ticket->id()],
+    ]);
+    $newer = $this->workTicket('Newer release', ['ticket_type' => $type->id(), 'created' => 200]);
+    $html = $this->renderMode('full');
+    self::assertStringContainsString('Deployments', $html);
+    self::assertStringContainsString('production', $html);
+    self::assertStringContainsString('1 ticket', $html);
+    self::assertStringContainsString('?deployment=' . $older->getIdentifier(), $html);
+    self::assertStringContainsString('href="' . $newer->toUrl()->toString() . '"', $html);
+    self::assertLessThan(strpos($html, 'Older release'), strpos($html, 'Newer release'));
+    self::assertStringContainsString('<time', $html);
+  }
+
+  /**
+   * The deployments section has its own empty state even without tickets.
+   */
+  public function testDeploymentsEmptyState(): void {
+    self::assertStringContainsString('No deployments in this project.', $this->renderMode('full'));
+  }
+
+  /**
    * {@inheritdoc}
    *
    * A failed run's error log is a private file; core registers the private
@@ -411,7 +446,10 @@ final class ProjectOverviewTest extends KernelTestBase {
     self::assertSame('overview_edit', $sources[1]['source']['component']['slots']['actions']['sources'][0]['node_id']);
     $main = $canvas['source']['component']['slots']['main']['sources'];
     self::assertSame(
-      ['overview_metrics', 'overview_attention', 'overview_epics', 'project_activities', 'overview_empty'],
+      [
+        'overview_metrics', 'overview_attention', 'overview_epics',
+        'overview_deployments', 'project_activities', 'overview_empty',
+      ],
       array_column($main, 'node_id'),
     );
   }

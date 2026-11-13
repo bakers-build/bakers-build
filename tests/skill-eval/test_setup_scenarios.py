@@ -96,7 +96,7 @@ class BranchParentScenario(Scenario):
 
 
 class TemplateRunScenario(Scenario):
-    """tools-lookup: run a ticket template with overrides; a workspace template needs a project."""
+    """Run a ticket template with overrides; a workspace template needs a project."""
     simulation = {'templates': [
         {'uuid': '99999999-9999-4999-8999-000000000001', 'title': 'Monthly report {{month}}', 'workflow': 'bb_work', 'project': PROJECT},
         {'uuid': '99999999-9999-4999-8999-000000000002', 'title': 'Workspace chore', 'workflow': 'bb_work', 'project': None},

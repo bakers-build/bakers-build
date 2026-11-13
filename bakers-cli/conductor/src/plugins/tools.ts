@@ -11,7 +11,17 @@ import {
   payloadSchema,
   validateArgs,
 } from '@bakers-build/message';
+import type { ConductorEngineConfig } from '../types.js';
 import type { Ticket } from './remote.js';
+
+export type AgentCatalog = Pick<
+  ConductorEngineConfig,
+  'agents' | 'enabled_agents' | 'disabled_agents' | 'default_agent' | 'routes'
+>;
+
+export interface ToolHost {
+  agentCatalog(): AgentCatalog;
+}
 
 export interface ToolDefinition {
   description: string;
@@ -46,7 +56,10 @@ export interface AddonTools {
   contract: 1;
   tools: Record<string, ToolDefinition>;
   /** Lazy: imported only when the conductor loads the addon. */
-  handlers: (options?: unknown) => Promise<Record<string, ToolHandler>>;
+  handlers: (
+    options?: unknown,
+    host?: ToolHost,
+  ) => Promise<Record<string, ToolHandler>>;
 }
 
 /** One `tools` export as discovery found it. */
@@ -247,6 +260,7 @@ const silent: ConductorLogger = {
  */
 export async function loadTools(
   found: readonly DiscoveredTools[],
+  host?: ToolHost,
 ): Promise<ToolRegistry> {
   const entries = new Map<
     string,
@@ -256,7 +270,7 @@ export async function loadTools(
     const fail = (msg: string) => new Error(`addon ${addon.name}: ${msg}`);
     if (addon.tools.contract !== 1)
       throw fail(`unsupported tools contract ${addon.tools.contract}`);
-    const handlers = await addon.tools.handlers(addon.options);
+    const handlers = await addon.tools.handlers(addon.options, host);
     for (const [name, def] of Object.entries(addon.tools.tools)) {
       const handler = handlers[name];
       if (typeof handler !== 'function')

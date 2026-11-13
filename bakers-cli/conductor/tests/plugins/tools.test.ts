@@ -45,6 +45,47 @@ const binding = { worktreePath: '/work/bb-1' };
 const here = { worktreePath: tmpdir() };
 
 describe('loadTools', () => {
+  it('lets addon handlers read the loaded catalog lazily', async () => {
+    let ready = false;
+    const registry = await loadTools(
+      [
+        {
+          name: 'catalog',
+          version: '1',
+          options: { label: 'loaded' },
+          tools: {
+            contract: 1,
+            tools: { catalog: { description: 'catalog' } },
+            handlers: async (options, host) => {
+              expect(options).toEqual({ label: 'loaded' });
+              return {
+                catalog: async () => ({
+                  text: host!.agentCatalog().default_agent,
+                }),
+              };
+            },
+          },
+        },
+      ],
+      {
+        agentCatalog: () => {
+          if (!ready) throw new Error('not ready');
+          return {
+            agents: [],
+            enabled_agents: ['loaded'],
+            disabled_agents: [],
+            default_agent: 'loaded',
+            routes: { default: { '*': 'loaded' } },
+          };
+        },
+      },
+    );
+    ready = true;
+    expect(await registry.call('catalog', {}, binding)).toEqual({
+      text: 'loaded',
+    });
+  });
+
   it("collects every addon's tools and calls them on the bound worktree", async () => {
     const registry = await loadTools([
       addon(

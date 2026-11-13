@@ -37,7 +37,7 @@
   "/advanced/cli/tools": "/cli/tools",
   "/advanced/cli/troubleshooting": "/cli/troubleshooting",
   "/advanced/cli/ui": "/addons/bakers-ui/reference",
-  "/advanced/cli/ui-keys": "/addons/bakers-ui-keys",
+  "/advanced/cli/ui-keys": "/addons/bakers-ui/reference",
   "/advanced/conductor-config": "/configuration/project",
   "/advanced/conductors": "/configuration/project/conductors",
   "/advanced/configuration/": "/configuration/",
@@ -54,7 +54,7 @@
   "/advanced/migration#preview-apply-check": "/configuration/",
   "/advanced/migration#read-a-finding-as-a-repair-instruction": "/configuration/",
   "/advanced/migration#scopes": "/configuration/",
-  "/configuration/addon-artifacts": "/addons/bakers-ui-artifacts",
+  "/configuration/addon-artifacts": "/addons/bakers-ui",
   "/configuration/addon-ports": "/addons/ports",
   "/configuration/addons": "/addons/configure",
   "/configuration/claude-connector": "/get-started/connector",
@@ -187,5 +187,12 @@
   "/writeback/oauth-setup": "/configuration/connection",
   "/addons/herdr/options": "/addons/herdr#options",
   "/addons/herdr-core/options": "/addons/herdr-core#options",
-  "/addons/orca/options": "/addons/orca#options"
+  "/addons/orca/options": "/addons/orca#options",
+  "/addons/remote-drupal": "/configuration/connection",
+  "/addons/fake": "/addons/catalog",
+  "/addons/info": "/cli/tools",
+  "/addons/auth-basic": "/configuration/connection",
+  "/addons/kimi": "/agents/",
+  "/addons/bakers-ui-artifacts": "/addons/bakers-ui",
+  "/addons/bakers-ui-keys": "/addons/bakers-ui/reference"
 }

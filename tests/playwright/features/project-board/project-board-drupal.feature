@@ -117,3 +117,17 @@ Feature: Project Board Drupal
     Given I am signed in as "fixture-api-machine"
     When I visit the project board for "bakers.build Platform"
     Then the project board denies access
+
+  @deployment-presentation
+  Scenario: Board badges appear only once the deployment is closed
+    Given a project world with these tickets:
+      | ticket     | state         |
+      | First work | qualification |
+    And the world has an open deployment to "develop" carrying "First work"
+    And the account "north-lead" is seated in the world as a lead
+    And I am signed in as "north-lead"
+    When I open the world project Board
+    Then the board card "First work" does not show the deployed badge "develop"
+    When the world deployment is closed
+    And I open the world project Board
+    Then the board card "First work" shows the deployed badge "develop"
