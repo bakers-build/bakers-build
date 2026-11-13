@@ -9,7 +9,9 @@ Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe
 `existing-config` install at the same revision. DDEV commands run through `ddev_exec`;
 a project web command runs by path
 (`ddev_exec(".ddev/commands/web/<cmd>")`), and `ddev_status`/`ddev_start` replace
-project inspection and startup. Never run `pnpm install` in a run: every `provision_up` profile
+project inspection and startup. Provisioning profiles use the fixed, protected `.bakers/provision.sh`
+entry point; their implementation is read from that file on each call.
+Never run `pnpm install` in a run: every setup profile
 installs the `bakers-cli` and `docs` dependencies first, `provision_up('deps')` installs them
 alone for work that needs no site, and a site profile's initialization installs and builds
 `web/themes/custom/bb_theme`. A docs preview for functional checks or manual review starts with
@@ -49,12 +51,12 @@ included in core tests. Ticket-specific functional checks apply separately.
 | When | Command |
 |---|---|
 | `docs/**` or documentation links | `cd docs && pnpm build && node --test scripts/manual.test.mjs scripts/marketplace.test.mjs scripts/addon-options.test.mjs` |
-| bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**`, `.bakers/scripts/**` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
+| bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**`, `.bakers/scripts/**`, `.bakers/provision.sh` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
 | bakers.build CLI source | `provision_up('deps')`, then `cd bakers-cli && pnpm -r run build` |
 | PHP implementation | PHP coding standards, mess detection and static analysis through `ddev_exec` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
-| `.ddev/**` | `bash tests/contract/ddev-provision.sh` |
+| `.ddev/**` or `.bakers/provision.sh` | `bash tests/contract/ddev-provision.sh` |
 | `.bakers/scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
 | `.gitlab-ci.yml` | `bash tests/config-sync/check-ci-wiring.sh`; GitLab CI lint through the [tool discovery and fallback](.claude/skills/bakers-build/skills/bb-workflow/references/tools.md#choose-an-operation) |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |

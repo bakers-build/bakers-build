@@ -6,13 +6,6 @@ export const runtime = { read_only: ['.ddev'] };
 
 export const tools = {
   contract: 1 as const,
-  prepare: async (binding: {
-    worktreePath: string;
-    protectedPaths?: readonly string[];
-  }) => {
-    const { prepareDdevProtection } = await import('./tools.js');
-    await prepareDdevProtection(binding);
-  },
   tools: {
     ddev_status: {
       description:

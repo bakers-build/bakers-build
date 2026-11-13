@@ -66,13 +66,18 @@ Lifecycle commands and listeners are best effort. Failures are logged (`lifecycl
 ```js
 hooks: {
   provision_up: {
-    test: 'sh .bakers/scripts/provision.sh test',
-    'test-fresh': 'sh .bakers/scripts/install.sh test',
+    test: 'sh .bakers/provision.sh test',
+    'test-fresh': 'sh .bakers/provision.sh test-fresh',
   },
 },
 ```
 
-Agents call it whenever a check needs the environment, so make the command cheap to repeat. It follows this contract:
+Agents call it whenever a check needs the environment, so make the command cheap to repeat.
+Keep profile dispatch and implementation in that fixed, protected script. Host-maintainer changes
+to its contents are read on the next invocation; existing profile commands in the conductor stay
+unchanged. Adding profile names still changes the tool's configured profile list.
+
+The script follows this contract:
 
 | The environment is | The command |
 |---|---|

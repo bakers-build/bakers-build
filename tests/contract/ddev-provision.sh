@@ -100,6 +100,7 @@ hook() {
   local tree="$work/app/wt"
   rm -rf "$tree"; mkdir -p "$tree/.bakers/scripts" "$tree/.ddev/commands/host"
   git -C "$tree" init -q; cp "$script" "$tree/.ddev/commands/host/"
+  cp "$root/.bakers/provision.sh" "$tree/.bakers/"
   printf '#!/bin/bash\n' > "$tree/.bakers/scripts/worktree-deps.sh"
   cp "$root/.bakers/scripts/ddev-own-project.sh" "$tree/.bakers/scripts/" 2>/dev/null || true
   local cmd
@@ -135,6 +136,69 @@ out="$(cd "$tree" && PATH="$work/bin:$PATH" bash .bakers/scripts/worktree-post.s
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ "$(cat "$STATE/calls")" = 'config --auto' ] || fail "calls: $(cat "$STATE/calls")"
 [ "$(cat "$tree/.ddev/config.yaml")" = "$(printf 'name: bakers\n# kept')" ] || fail 'config.yaml rewritten'
+
+# The fixed entry point dispatches only the declared profiles, preserving order and failure status.
+case=provision-dispatch
+provision_tree="$work/dispatch"
+mkdir -p "$provision_tree/.bakers/scripts" "$provision_tree/bin"
+cp "$root/.bakers/provision.sh" "$provision_tree/.bakers/"
+for name in worktree-deps ddev-own-project docs-preview conductor-e2e; do
+  cat > "$provision_tree/.bakers/scripts/$name.sh" <<'EOF'
+#!/bin/bash
+printf '%s%s\n' "$(basename "$0")" "${*:+ $*}" >> "$TRACE"
+[ "${FAIL_COMMAND:-}" != "$(basename "$0")" ] || exit 29
+EOF
+done
+cat > "$provision_tree/bin/ddev" <<'EOF'
+#!/bin/bash
+echo "ddev $*" >> "$TRACE"
+[ "${FAIL_COMMAND:-}" != ddev ] || exit 29
+EOF
+chmod +x "$provision_tree/bin/ddev"
+export TRACE="$provision_tree/trace"
+dispatch() {
+  : > "$TRACE"; rc=0
+  out="$(cd "$provision_tree" && PATH="$provision_tree/bin:$PATH" bash .bakers/provision.sh "$@" 2>&1)" || rc=$?
+}
+while IFS='|' read -r profile expected; do
+  case="provision-dispatch $profile"
+  command="$(cd "$root" && node --input-type=module -e 'console.log((await import("./.bakers/project.config.js")).default.hooks.provision_up[process.argv[1]])' "$profile")"
+  [ "$command" = "bash .bakers/provision.sh $profile" ] || fail "unstable entry point: $command"
+  dispatch "$profile"
+  [ "$rc" = 0 ] || fail "exit $rc: $out"
+  [ "$(paste -sd ';' "$TRACE")" = "$expected" ] || fail "calls: $(cat "$TRACE")"
+done <<'EOF'
+deps|worktree-deps.sh --all
+docs-preview|worktree-deps.sh --all;docs-preview.sh
+conductor-e2e|worktree-deps.sh --all;ddev-own-project.sh;ddev provision --provider recipe-test;conductor-e2e.sh
+conductor-e2e-stop|conductor-e2e.sh stop
+conductor-e2e-start|conductor-e2e.sh start
+recipe-test|worktree-deps.sh;ddev-own-project.sh;ddev provision --provider recipe-test
+existing-config|worktree-deps.sh;ddev-own-project.sh;ddev provision --provider existing-config
+existing-config-fresh|worktree-deps.sh;ddev-own-project.sh;ddev init --provider existing-config
+EOF
+case=provision-invalid-profile
+for profile in '' unknown 'recipe-test; touch bad'; do
+  dispatch "$profile"
+  [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid profile ran actions: $profile: $out"
+done
+dispatch
+[ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail 'missing profile ran actions'
+dispatch deps extra
+[ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail 'extra arguments ran actions'
+for failed in worktree-deps.sh ddev-own-project.sh ddev; do
+  case="provision-failure $failed"
+  export FAIL_COMMAND="$failed"
+  dispatch conductor-e2e
+  unset FAIL_COMMAND
+  [ "$rc" = 29 ] || fail "failure status lost: $rc: $out"
+  case "$failed" in
+    worktree-deps.sh) expected='worktree-deps.sh --all' ;;
+    ddev) expected='ddev provision --provider recipe-test' ;;
+    *) expected="$failed" ;;
+  esac
+  [ "$(tail -n1 "$TRACE")" = "$expected" ] || fail "continued after failure: $(cat "$TRACE")"
+done
 
 # Agents run Playwright through ddev_exec, so the web image's browsers must match the suite's lock.
 case=playwright-image
@@ -174,4 +238,4 @@ for token in KEYTEC_REGISTRY_TOKEN KEYTEC_REGISTRY_WRITE_TOKEN; do
 done
 
 [ "$failures" = 0 ] || exit 1
-echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, Playwright image, writable artifacts, container credentials'
+echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, provision dispatch, Playwright image, writable artifacts, container credentials'

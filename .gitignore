@@ -132,4 +132,3 @@ node_modules/
 
 # The PM bot env file: secrets.
 /experimental/pm-bot/.env
-/.ddev/docker-compose.bakers-protection.yaml

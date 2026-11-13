@@ -28,8 +28,6 @@ export interface ToolBinding {
   worktreePath: string;
   /** Set by the conductor's run grant, never accepted as a tool argument. */
   runUuid?: string;
-  /** Effective read-only project roots from the trusted run grant. */
-  protectedPaths?: readonly string[];
   /** The run's ticket; an operator call may know only its identifier. */
   ticket?: Partial<Ticket> & { identifier: string };
 }
@@ -48,8 +46,6 @@ export type ToolHandler = (request: ToolRequest) => Promise<ToolResult>;
 /** An addon preset's `tools` export. */
 export interface AddonTools {
   contract: 1;
-  /** Prepare host-owned infrastructure before a protected run receives tools. */
-  prepare?: (binding: ToolBinding) => Promise<void>;
   tools: Record<string, ToolDefinition>;
   /** Lazy: imported only when the conductor loads the addon. */
   handlers: (options?: unknown) => Promise<Record<string, ToolHandler>>;
@@ -73,7 +69,6 @@ export interface ListedTool {
 }
 
 export interface ToolRegistry {
-  prepare?: (binding: ToolBinding) => Promise<void>;
   list(): ListedTool[];
   call(
     name: string,
@@ -281,10 +276,6 @@ export async function loadTools(
   }
 
   const registry: ToolRegistry = {
-    prepare: async (binding) => {
-      if (binding.protectedPaths === undefined) return;
-      for (const addon of found) await addon.tools.prepare?.(binding);
-    },
     list: () =>
       [...entries].map(([name, { addon, def }]) => ({
         name,

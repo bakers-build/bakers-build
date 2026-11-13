@@ -1,0 +1,13 @@
+# Protect host entry points at their directory boundary, including DDEV's aliases.
+# Host-side configuration writes remain possible; normal project outputs stay writable.
+services:
+  web:
+    volumes:
+      - ../.bakers:/var/www/html/.bakers:ro
+      - .:/var/www/html/.ddev:ro
+      - .:/mnt/ddev_config:ro
+      - ../.git:/var/www/html/.git:ro
+  db:
+    volumes:
+      - .:/mnt/ddev_config:ro
+      - ./db_snapshots:/mnt/snapshots:ro

@@ -39,7 +39,7 @@ export default {
     after_done:
       'bash .bakers/scripts/docs-preview.sh stop; bash .bakers/scripts/conductor-e2e.sh teardown; bash .bakers/scripts/ddev-own-project.sh && ddev delete -Oy',
     // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
-    // a trusted `ddev` nor `pnpm install`. Every profile installs the
+    // a trusted `ddev` nor `pnpm install`. Setup profiles install the
     // bakers-cli and docs dependencies first; `deps` does only that.
     // bb_theme is installed and built by `ddev init` inside DDEV.
     // `ddev provision` reuses a ready site of that provider;
@@ -50,19 +50,14 @@ export default {
     // playground conductor from this worktree's build; `-stop` and `-start`
     // stop and restart it without a reset (.bakers/scripts/conductor-e2e.sh).
     provision_up: {
-      deps: 'bash .bakers/scripts/worktree-deps.sh --all',
-      'docs-preview':
-        'bash .bakers/scripts/worktree-deps.sh --all && bash .bakers/scripts/docs-preview.sh',
-      'conductor-e2e':
-        'bash .bakers/scripts/worktree-deps.sh --all && bash .bakers/scripts/ddev-own-project.sh && ddev provision --provider recipe-test && bash .bakers/scripts/conductor-e2e.sh',
-      'conductor-e2e-stop': 'bash .bakers/scripts/conductor-e2e.sh stop',
-      'conductor-e2e-start': 'bash .bakers/scripts/conductor-e2e.sh start',
-      'recipe-test':
-        'bash .bakers/scripts/worktree-deps.sh && bash .bakers/scripts/ddev-own-project.sh && ddev provision --provider recipe-test',
-      'existing-config':
-        'bash .bakers/scripts/worktree-deps.sh && bash .bakers/scripts/ddev-own-project.sh && ddev provision --provider existing-config',
-      'existing-config-fresh':
-        'bash .bakers/scripts/worktree-deps.sh && bash .bakers/scripts/ddev-own-project.sh && ddev init --provider existing-config',
+      deps: 'bash .bakers/provision.sh deps',
+      'docs-preview': 'bash .bakers/provision.sh docs-preview',
+      'conductor-e2e': 'bash .bakers/provision.sh conductor-e2e',
+      'conductor-e2e-stop': 'bash .bakers/provision.sh conductor-e2e-stop',
+      'conductor-e2e-start': 'bash .bakers/provision.sh conductor-e2e-start',
+      'recipe-test': 'bash .bakers/provision.sh recipe-test',
+      'existing-config': 'bash .bakers/provision.sh existing-config',
+      'existing-config-fresh': 'bash .bakers/provision.sh existing-config-fresh',
     },
   },
   // The agent plugins every run of this project gets, installed into a

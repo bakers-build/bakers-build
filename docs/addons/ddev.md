@@ -37,8 +37,8 @@ The addon provides these tools for the run's worktree, the DDEV approot. Claude 
 
 Answers carry the exit code and the last 64 KB of output; a non-zero exit is a tool error. The conductor's [`provision_up`](/provision/hooks#provision-on-an-agent-s-request) tool runs the DDEV script in [Set up DDEV](/addons/ddev/setup#provision-on-an-agent-s-request).
 
-Protected runs also receive DDEV read-only mounts; `ddev_exec` verifies them before execution.
-Package outputs stay writable. Direct project binds are required. See
+This repository protects `.bakers`, `.ddev` and host `.git` through
+`.ddev/docker-compose.protection.yaml`. Package outputs stay writable. See
 [DDEV protection and recovery](/provision/security/shared-settings#ddev-tool-protection).
 
 In `WORKFLOW.md`, a `ddev <cmd>` row runs as `ddev_exec("<cmd>")`:

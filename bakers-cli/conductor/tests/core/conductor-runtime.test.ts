@@ -4,7 +4,6 @@ import {
   readFileSync,
   rmSync,
   symlinkSync,
-  writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -35,7 +34,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
-import { loadTools, type ToolBinding } from '../../src/plugins/tools.js';
+import { loadTools } from '../../src/plugins/tools.js';
 import { TestConductor } from '../test-conductor.js';
 
 let CHECKOUT: string;
@@ -130,7 +129,6 @@ function setup(
   withTools = false,
   extension: Record<string, unknown> = {},
   instructions: string | null = null,
-  permissions: 'sandbox' | 'system' | 'yolo' = 'sandbox',
 ) {
   const order: string[] = [];
   const runtime =
@@ -185,7 +183,7 @@ function setup(
       {
         id: 'claude',
         alias: 'opus',
-        permissions,
+        permissions: 'sandbox',
         agent: selectedAgent,
       },
     ],
@@ -313,139 +311,6 @@ describe('runtime slot — launch wrapping', () => {
       installCommand: 'install-generic',
     });
     expect(rec.wraps[0]).not.toHaveProperty('agent');
-  });
-
-  it.each([
-    { isolates: true, permissions: 'yolo' as const, configured: true },
-    { isolates: false, permissions: 'sandbox' as const, configured: true },
-    { isolates: false, permissions: 'sandbox' as const, configured: false },
-    { isolates: false, permissions: 'system' as const, configured: true },
-    { isolates: false, permissions: 'yolo' as const, configured: true },
-  ])('binds effective protection to run tools: %j', async ({
-    isolates,
-    permissions,
-    configured,
-  }) => {
-    mkdirSync(join(worktree, '.ddev'));
-    const runtime: RuntimePlugin = {
-      ...recordingRuntime([], { wraps: [], cleanups: [] }),
-      isolates,
-      readOnly: {
-        entries: configured
-          ? [{ value: '.ddev/config.yaml', source: 'project' }]
-          : [],
-        removed: [],
-      },
-    };
-    // A nested configured path must protect its top-level directory.
-    writeFileSync(join(worktree, '.ddev/config.yaml'), 'name: test');
-    const s = setup(runtime, false, {}, null, permissions);
-    const preparations: ToolBinding[] = [];
-    s.config.tools = await loadTools([
-      {
-        name: 'probe',
-        version: '1',
-        tools: {
-          contract: 1,
-          prepare: async (binding) => {
-            expect(s.executor.started).toHaveLength(0);
-            expect(s.seen.tools).toBeUndefined();
-            expect(
-              JSON.parse(
-                readFileSync(join(CHECKOUT, 'endpoint.tools.json'), 'utf8'),
-              ).runs,
-            ).toEqual({});
-            await Promise.resolve();
-            preparations.push(binding);
-          },
-          tools: {
-            protection: { description: 'Read trusted protection' },
-            nested: { description: 'Delegate' },
-          },
-          handlers: async () => ({
-            protection: async (request) => ({
-              text: JSON.stringify(request.protectedPaths ?? null),
-            }),
-            nested: async (request) => request.callTool('protection'),
-          }),
-        },
-      },
-    ]);
-    await s.conductor.startTools(join(CHECKOUT, 'endpoint.json'));
-    await s.run(async () => {
-      const started = s.executor.started[0] as SpawnRunInput;
-      const client = new Client({ name: 'protection-test', version: '1' });
-      try {
-        await client.connect(
-          new StreamableHTTPClientTransport(new URL(s.seen.tools as string), {
-            requestInit: {
-              headers: {
-                authorization: `Bearer ${started.env.BAKERS_CONDUCTOR_TOKEN}`,
-              },
-            },
-          }),
-        );
-        const expected =
-          isolates || permissions === 'sandbox'
-            ? [
-                join(worktree, '.bakers'),
-                ...(configured ? [join(worktree, '.ddev')] : []),
-              ]
-            : null;
-        expect(preparations).toEqual(
-          expected === null
-            ? []
-            : [
-                {
-                  worktreePath: worktree,
-                  ticket: expect.objectContaining({ identifier: 'BB-1' }),
-                  runUuid: 'r-uuid',
-                  protectedPaths: expected,
-                },
-              ],
-        );
-        const forged = await client.callTool({
-          name: 'protection',
-          arguments: { protectedPaths: [] },
-        });
-        expect(forged.isError).toBe(true);
-        const result = await client.callTool({ name: 'nested', arguments: {} });
-        expect(result.content).toEqual([
-          { type: 'text', text: JSON.stringify(expected) },
-        ]);
-      } finally {
-        await client.close();
-      }
-    });
-  });
-
-  it('does not grant tools or launch when addon preparation fails', async () => {
-    const s = setup(recordingRuntime([], { wraps: [], cleanups: [] }));
-    const endpointFile = join(CHECKOUT, 'tools.json');
-    s.config.tools = await loadTools([
-      {
-        name: 'guard',
-        version: '1',
-        tools: {
-          contract: 1,
-          tools: {},
-          handlers: async () => ({}),
-          prepare: async () => {
-            throw new Error('guard unavailable');
-          },
-        },
-      },
-    ]);
-    await s.conductor.startTools(endpointFile);
-    await s.run();
-    expect(s.executor.started).toHaveLength(0);
-    expect(s.seen.tools).toBeUndefined();
-    expect(
-      s.logs.some((line) => String(line.obj.err).includes('guard unavailable')),
-    ).toBe(true);
-    expect(
-      JSON.parse(readFileSync(join(CHECKOUT, 'tools.tools.json'), 'utf8')).runs,
-    ).toEqual({});
   });
 
   it('passes built-in and configured protected paths to an isolating runtime', async () => {

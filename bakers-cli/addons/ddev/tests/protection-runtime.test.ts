@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import {
+  copyFileSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -9,9 +10,9 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, it } from 'vitest';
 import { stringify } from 'yaml';
-import { type DdevRun, ddevTools } from '../src/tools.js';
 
 const image = 'node:24-bookworm-slim';
 const available =
@@ -20,245 +21,144 @@ const available =
     timeout: 10_000,
   }).status === 0;
 if (process.env.BAKERS_TEST_DDEV_PROTECTION_REQUIRED === '1' && !available)
-  throw new Error(`Docker and cached ${image} are required`);
+  throw new Error(`Docker and cached ${image} required`);
 
 it.skipIf(!available)(
-  'protects real container writes through generated guards and refuses a writable alias before pinned exec',
-  async () => {
-    const root = mkdtempSync(join(tmpdir(), 'ddev-protection-runtime-'));
+  'the project Compose config protects host controls while package outputs and host writes work',
+  () => {
+    const root = mkdtempSync(join(tmpdir(), 'ddev-protection-'));
     const name = `bb-protection-${randomUUID()}`;
-    const volumeName = `${name}-external`;
-    let volumeCreated = false;
-    const base = join(root, 'compose.yaml');
-    const guard = join(root, '.ddev/docker-compose.bakers-protection.yaml');
-    const paths = ['.bakers', '.ddev', 'trusted'];
-    for (const path of paths) {
-      mkdirSync(join(root, path));
-      writeFileSync(join(root, path, 'existing'), 'original');
-    }
-    writeFileSync(join(root, '.git'), 'gitdir: /host/admin\n');
-    const config = {
-      services: {
-        web: {
-          image,
-          command: ['sleep', 'infinity'],
-          labels: { 'com.ddev.site-name': name },
-          volumes: [
-            { type: 'bind', source: root, target: '/var/www/html' },
-            {
-              type: 'bind',
-              source: join(root, 'trusted'),
-              target: '/trusted-alias',
-            },
-          ],
-        },
-      },
-    };
-    writeFileSync(base, stringify(config));
-    const compose = (args: string[], protectedMounts = true) => {
-      const result = spawnSync(
-        'docker',
-        [
-          'compose',
-          '-p',
-          name,
-          '-f',
-          base,
-          ...(protectedMounts ? ['-f', guard] : []),
-          ...args,
-        ],
-        { encoding: 'utf8', timeout: 30_000 },
-      );
+    const run = (args: string[]) => {
+      const result = spawnSync('docker', args, {
+        encoding: 'utf8',
+        timeout: 30_000,
+      });
       if (result.error) throw result.error;
       return {
-        exitCode: result.status ?? 124,
+        code: result.status,
         output: `${result.stdout}${result.stderr}`,
       };
     };
-    let running = false;
-    let composeOverride: string | undefined;
-    let starts = 0;
-    // DDEV's registration writes outside the sandbox; only its CLI orchestration is adapted.
-    const run: DdevRun = async (args) => {
-      if (args[0] === 'describe')
-        return {
-          exitCode: 0,
-          output: JSON.stringify({
-            raw: {
-              name,
-              approot: root,
-              status: running ? 'running' : 'stopped',
-            },
-          }),
-        };
-      if (args[0] === 'utility')
-        return compose(
-          [...(composeOverride ? ['-f', composeOverride] : []), 'config'],
-          false,
-        );
-      if (args[0] === 'start' || args[0] === 'restart') {
-        starts++;
-        const result = compose(['up', '-d', '--no-build', '--pull', 'never']);
-        running = result.exitCode === 0;
-        return result;
-      }
-      throw new Error(`Unexpected DDEV call ${args.join(' ')}`);
-    };
-    const tools = ddevTools(run);
-    const req = {
-      worktreePath: root,
-      protectedPaths: paths.map((path) => join(root, path)),
-      args: {},
-      signal: new AbortController().signal,
-    };
-    const exec = (command: string) =>
-      tools.ddev_exec({ ...req, args: { command } });
+    const composeArgs = [
+      'compose',
+      '-p',
+      name,
+      '-f',
+      join(root, '.ddev/base.yaml'),
+      '-f',
+      join(root, '.ddev/docker-compose.protection.yaml'),
+    ];
+    const command = (service: string, script: string) =>
+      run([...composeArgs, 'exec', '-T', service, 'bash', '-c', script]);
+    for (const folder of ['.bakers', '.ddev/db_snapshots'])
+      mkdirSync(join(root, folder), { recursive: true });
+    writeFileSync(
+      join(root, '.bakers/provision.sh'),
+      '#!/bin/bash\necho ready\n',
+    );
+    writeFileSync(join(root, '.ddev/existing'), 'original');
+    writeFileSync(join(root, '.git'), 'gitdir: /host/admin\n');
+    copyFileSync(
+      fileURLToPath(
+        new URL(
+          '../../../../.ddev/docker-compose.protection.yaml',
+          import.meta.url,
+        ),
+      ),
+      join(root, '.ddev/docker-compose.protection.yaml'),
+    );
+    writeFileSync(
+      join(root, '.ddev/base.yaml'),
+      stringify({
+        services: {
+          web: {
+            image,
+            command: ['sleep', 'infinity'],
+            volumes: [
+              { type: 'bind', source: root, target: '/var/www/html' },
+              {
+                type: 'bind',
+                source: join(root, '.ddev'),
+                target: '/mnt/ddev_config',
+              },
+            ],
+            working_dir: '/var/www/html',
+          },
+          db: {
+            image,
+            command: ['sleep', 'infinity'],
+            volumes: [
+              {
+                type: 'bind',
+                source: join(root, '.ddev'),
+                target: '/mnt/ddev_config',
+              },
+              {
+                type: 'bind',
+                source: join(root, '.ddev/db_snapshots'),
+                target: '/mnt/snapshots',
+              },
+            ],
+          },
+        },
+      }),
+    );
     try {
-      await tools.ddev_start(req);
-      expect(readFileSync(guard, 'utf8')).toContain('/trusted-alias');
-      for (const target of [
-        ...paths.map((path) => `/var/www/html/${path}`),
-        '/trusted-alias',
+      const started = run([
+        ...composeArgs,
+        'up',
+        '-d',
+        '--no-build',
+        '--pull',
+        'never',
+      ]);
+      expect(started.code, started.output).toBe(0);
+      for (const path of [
+        '/var/www/html/.bakers',
+        '/var/www/html/.ddev',
+        '/mnt/ddev_config',
       ]) {
-        for (const command of [
-          `touch ${target}/new`,
-          `echo changed > ${target}/existing`,
-          `rm ${target}/existing`,
-          `mv ${target}/existing ${target}/renamed`,
-          `mv ${target} ${target}-renamed`,
+        for (const script of [
+          `touch ${path}/new`,
+          `mv ${path} ${path}-renamed`,
         ])
-          await expect(exec(command)).rejects.toThrow(/exit [1-9]/);
+          expect(command('web', script).code, script).not.toBe(0);
       }
-      for (const command of [
-        'echo changed > .git',
+      for (const script of [
+        'echo changed >> .bakers/provision.sh',
+        'rm .bakers/provision.sh',
+        'mv .bakers/provision.sh .bakers/renamed',
+        'echo changed >> .git',
         'rm .git',
         'mv .git .git-renamed',
       ])
-        await expect(exec(command)).rejects.toThrow(/exit [1-9]/);
-      await expect(
-        exec(
-          'mkdir -p node_modules/demo && echo installed > node_modules/demo/index.js && echo lock > pnpm-lock.yaml && chmod -R a+rwX node_modules',
-        ),
-      ).resolves.toMatchObject({ text: 'exit 0\n' });
+        expect(command('web', script).code, script).not.toBe(0);
+      for (const path of ['/mnt/ddev_config', '/mnt/snapshots'])
+        expect(command('db', `touch ${path}/new`).code, path).not.toBe(0);
+      const install = command(
+        'web',
+        'mkdir -p node_modules/demo && echo installed > node_modules/demo/index.js && echo lock > pnpm-lock.yaml && chmod -R a+rwX node_modules',
+      );
+      expect(install.code, install.output).toBe(0);
       expect(readFileSync(join(root, 'pnpm-lock.yaml'), 'utf8')).toBe('lock\n');
-      for (const path of paths)
-        expect(readFileSync(join(root, path, 'existing'), 'utf8')).toBe(
-          'original',
-        );
+      writeFileSync(
+        join(root, '.bakers/provision.sh'),
+        '#!/bin/bash\necho updated\n',
+      );
+      const invoked = command('web', 'bash .bakers/provision.sh');
+      expect(invoked.code, invoked.output).toBe(0);
+      expect(invoked.output).toBe('updated\n');
+      expect(readFileSync(join(root, '.ddev/existing'), 'utf8')).toBe(
+        'original',
+      );
       expect(readFileSync(join(root, '.git'), 'utf8')).toBe(
         'gitdir: /host/admin\n',
       );
-      // Reapplying policy to an already running project preserves ordinary package output.
-      await tools.ddev_start(req);
-      await expect(exec('cat pnpm-lock.yaml')).resolves.toMatchObject({
-        text: 'exit 0\nlock\n',
-      });
-      const startsBeforeRejection = starts;
-      // Recreate with a writable alias while retaining the main mount's protection.
-      const bypass = join(root, 'bypass.yaml');
-      writeFileSync(
-        bypass,
-        stringify({
-          services: {
-            web: {
-              volumes: [
-                {
-                  type: 'bind',
-                  source: join(root, 'trusted'),
-                  target: '/bypass',
-                },
-              ],
-            },
-          },
-        }),
-      );
-      const result = compose([
-        '-f',
-        bypass,
-        'up',
-        '-d',
-        '--force-recreate',
-        '--no-build',
-        '--pull',
-        'never',
-      ]);
-      expect(result.exitCode, result.output).toBe(0);
-      await expect(exec('touch command-executed')).rejects.toThrow(
-        /writable alias/,
-      );
-      expect(() => readFileSync(join(root, 'command-executed'))).toThrow();
-      // External volume declarations hide the driver's host bind from Compose.
-      const created = spawnSync(
-        'docker',
-        [
-          'volume',
-          'create',
-          '--driver',
-          'local',
-          '--opt',
-          'type=none',
-          '--opt',
-          'o=bind',
-          '--opt',
-          `device=${join(root, 'trusted')}`,
-          volumeName,
-        ],
-        { encoding: 'utf8', timeout: 10_000 },
-      );
-      expect(created.status, created.stderr).toBe(0);
-      volumeCreated = true;
-      const volumeBypass = join(root, 'volume-bypass.yaml');
-      writeFileSync(
-        volumeBypass,
-        stringify({
-          services: {
-            web: {
-              volumes: [
-                {
-                  type: 'volume',
-                  source: 'external-bind',
-                  target: '/volume-bypass',
-                },
-              ],
-            },
-          },
-          volumes: { 'external-bind': { external: true, name: volumeName } },
-        }),
-      );
-      composeOverride = volumeBypass;
-      await expect(tools.ddev_start(req)).rejects.toThrow(
-        /custom volume drivers and options/,
-      );
-      expect(starts).toBe(startsBeforeRejection);
-      const recreated = compose([
-        '-f',
-        volumeBypass,
-        'up',
-        '-d',
-        '--force-recreate',
-        '--no-build',
-        '--pull',
-        'never',
-      ]);
-      expect(recreated.exitCode, recreated.output).toBe(0);
-      await expect(
-        exec('touch /volume-bypass/volume-command-executed'),
-      ).rejects.toThrow(/DDEV protection/);
-      expect(() =>
-        readFileSync(join(root, 'trusted/volume-command-executed')),
-      ).toThrow();
     } finally {
-      const result = compose(['down', '--remove-orphans'], false);
       try {
-        expect(result.exitCode, result.output).toBe(0);
+        const stopped = run([...composeArgs, 'down', '--remove-orphans']);
+        expect(stopped.code, stopped.output).toBe(0);
       } finally {
-        if (volumeCreated) {
-          const removed = spawnSync('docker', ['volume', 'rm', volumeName], {
-            encoding: 'utf8',
-            timeout: 10_000,
-          });
-          expect(removed.status, removed.stderr).toBe(0);
-        }
         rmSync(root, { recursive: true, force: true });
       }
     }
