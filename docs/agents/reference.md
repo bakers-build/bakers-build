@@ -51,7 +51,6 @@ Options go in the addon entry's `with` object (or a `catalog` entry). The addon 
 |---|---|
 | [Claude Code](/addons/claude) | Claude aliases, models, effort, measurement and reserved arguments |
 | [Codex](/addons/codex) | Codex aliases, models, effort and reserved arguments |
-| [Kimi](/addons/kimi) | Kimi model and arguments |
 | [OpenCode](/addons/opencode) | OpenCode model and arguments |
 | [Pi](/addons/pi) | Provider, model, thinking and local-file approval |
 | [Grok](/addons/grok) | Model pins, reasoning effort and reserved arguments |

@@ -7,7 +7,6 @@ Step order; skip unmet conditions.
 always: read-ticket.md, tools.md, review.md
 if read fails: read-ticket-troubleshooting.md
 if needed comments missing: comment-context.md
-if runtime needed: tools-conductor.md
 always: boundaries.md, ../../bb-verdict/SKILL.md
 if executing checks: verify.md
 if browser selected: browser.md
@@ -21,7 +20,6 @@ if rating/reason supplied: retrospective-write.md
 if merge is authorized: merge.md, prior-art-build.md, forge.md
 if forge tools absent: forge-fallback.md
 if merging without tools: merge-fallback.md
-if paginating: tools-lookup.md
 if origin exists: origin-status.md
 always: transition-ticket.md
 

@@ -42,6 +42,13 @@ third_party_settings:
                         entity: entity
                     node_id: overview_epics
                   -
+                    source_id: bb_project_overview
+                    source:
+                      section: deployments
+                      context_mapping:
+                        entity: entity
+                    node_id: overview_deployments
+                  -
                     source_id: bb_entity_detail_activities
                     source:
                       context_mapping:

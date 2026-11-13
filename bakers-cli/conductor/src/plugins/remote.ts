@@ -474,11 +474,11 @@ export interface BbRemote {
   appendRunNote(runUuid: string, note: string): Promise<void>;
   /**
    * Resolve a ticket identifier (e.g. "BB-134") to its uuid+title within a
-   * project, or null when no such ticket exists. Used by the
+   * project (name or explicit UUID), or null when no such ticket exists. Used by the
    * `bakers deployment tickets` helper to turn commit-message identifiers into tickets.
    */
   resolveTicketByIdentifier(
-    project: string,
+    project: string | { uuid: string },
     identifier: string,
   ): Promise<{ uuid: string; title: string } | null>;
   /**

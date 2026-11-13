@@ -131,6 +131,7 @@ export function removeWorld(): void {
       '$del("bb_run", ["ticket_id" => $tickets]);',
       '$del("bb_ticket", ["id" => $tickets]);',
       '$del("bb_conductor", ["project_id" => $projects]);',
+      '$del("bb_environment", ["project_id" => $projects]);',
       '$del("bb_project", ["id" => $projects]);',
       `$del("bb_machine", ["owner_user_id" => ${ids.lead}]);`,
       `$del("bb_group", ["workspace_id" => ${ids.workspace}]);`,

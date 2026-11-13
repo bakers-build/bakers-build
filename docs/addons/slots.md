@@ -1,10 +1,9 @@
 # Conductor slots
 
-A conductor fills two slots for the work on a ticket. The **workspace** owns the ticket's Git worktree, and the **executor** hosts the agent's terminal in it. The conductor owns lifecycle hooks. They share the worktree path and branch.
-
-Each slot holds exactly one addon. To write your own, read [Write an executor or a workspace](/addons/build/executor-workspace).
-
-Choose through [Use your client](/get-started/use-your-client).
+The **workspace** owns a ticket's Git worktree; the **executor** hosts its agent terminal.
+The conductor owns lifecycle hooks. Each slot holds one addon.
+[Use your client](/get-started/use-your-client) explains the choices;
+[Write an executor or a workspace](/addons/build/executor-workspace) covers custom addons.
 
 ## Which addon fills which slot
 
@@ -14,7 +13,6 @@ Choose through [Use your client](/get-started/use-your-client).
 | [Orca](/addons/orca) | Orca terminals; opens a new worktree's overview terminal | Git worktrees adopted by Orca; removed with `orca worktree rm`, else Git |
 | [herdr-core](/addons/herdr-core) | herdr-core (`hc`) terminals | — |
 | [Git workspace](/addons/workspace-git) | — | Plain Git worktrees |
-| [Fake fixture](/addons/fake) | Test executor | Test workspace |
 
 ## Set both in the project
 
@@ -44,7 +42,7 @@ herdr-core nests workspace-git. Checks report
 
 ## Choose the executor per machine
 
-`~/.bakers/machine.config.js` may set its own `executor` slot, which wins for every project on that machine. There is no equivalent explicit machine `worktree` or `server` override; addon contributions still follow the scope and selection rules.
+A machine's explicit `executor` wins for every project. Machine `worktree` and `server` overrides are unsupported.
 
 ```js
 // Add to the existing ~/.bakers/machine.config.js:
@@ -52,6 +50,13 @@ executor: { use: '@bakers-build/addon-herdr-core' },
 ```
 
 The executor resolves in this order: the machine's `executor`, the project's `executor`, then the last executor discovered from `addons`. `bakers config check` prints `Executor: from <file>` for an explicit slot. Choosing an executor per ticket or run is not supported.
+
+## Runtime: where a run starts
+
+The optional machine slot `runtime` decides where the agent runs: on the host, in a
+[Docker container](/addons/runtime-docker), or a [Bubblewrap sandbox](/addons/runtime-bwrap). It rewrites the launch before the
+executor starts it; a failure fails the run. Agent permissions stay unchanged; the runtime adds
+its own boundary around the configured agent command.
 
 ## Start hook
 

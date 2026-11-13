@@ -192,6 +192,7 @@ describe('GitHub migration checks', () => {
       'compose_render',
       'pm_bot',
       'conductor',
+      'runtime_bwrap',
       'tui',
       'tui_musl',
       'web_ui',
@@ -229,6 +230,20 @@ describe('GitHub migration checks', () => {
     expect(report_failure).toBeDefined();
     expect(workflow.jobs.required.if).toBe('always()');
     expect(workflow.jobs.required.steps[0].run).toContain('success');
+  });
+
+  it('requires a real Bubblewrap lifecycle probe outside the unit-test container', () => {
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    const job = workflow.jobs.runtime_bwrap;
+    expect(job).toBeDefined();
+    expect(job.container).toBeUndefined();
+    expect(job.env.BAKERS_TEST_BWRAP_REQUIRED).toBe('1');
+    expect(workflow.jobs.required.needs).toContain('runtime_bwrap');
+    const commands = job.steps
+      .map((step: { run?: string }) => step.run ?? '')
+      .join('\n');
+    expect(commands).toContain('bubblewrap');
+    expect(commands).toContain('conductor/tests/core/conductor-bwrap.test.ts');
   });
 
   it('runs the self-host lifecycle on a disposable WarpBuild runner and names no old runner in any workflow', () => {

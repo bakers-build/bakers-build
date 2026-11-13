@@ -222,12 +222,12 @@ Given(/^the ticket is assigned to the (first|second) conductor$/, async ({}, whi
 });
 
 Then('the Activities list the ticket {string}', async ({ page }, text: string) => {
-  await expect(activityRows(page).filter({ hasText: `${requireTicket().ident} ${text}` })).toHaveCount(1, { timeout: 10000 });
+  await expect(activityRows(page).filter({ hasText: requireTicket().ident }).filter({ hasText: text })).toHaveCount(1, { timeout: 10000 });
 });
 
 Then('the Activities do not list the ticket {string}', async ({ page }, text: string) => {
   await expect(activityRows(page).first().or(page.locator('#entity-detail-activities [data-component-id="bb_theme:empty-state"]'))).toBeVisible();
-  await expect(activityRows(page).filter({ hasText: `${requireTicket().ident} ${text}` })).toHaveCount(0);
+  await expect(activityRows(page).filter({ hasText: requireTicket().ident }).filter({ hasText: text })).toHaveCount(0);
 });
 
 // Seeded fixtures: access checks only, nothing is written.

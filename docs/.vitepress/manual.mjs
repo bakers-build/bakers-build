@@ -118,7 +118,6 @@ export const SIDEBAR = {
       ["Claude", "/addons/claude"],
       ["Codex", "/addons/codex"],
       ["Grok", "/addons/grok"],
-      ["Kimi", "/addons/kimi"],
       ["OpenCode", "/addons/opencode"],
       ["Pi", "/addons/pi"],
     ]),
@@ -128,8 +127,9 @@ export const SIDEBAR = {
       ["Orca", "/addons/orca"],
       ["Git workspace", "/addons/workspace-git"],
       ["Conductor slots", "/addons/slots"],
-      ["bakers.build server remote", "/addons/remote-drupal"],
       ["Tailscale", "/addons/tailscale"],
+      ["Docker runtime", "/addons/runtime-docker"],
+      ["Bubblewrap runtime", "/addons/runtime-bwrap"],
     ]),
     group("Runtimes", [
       ["DDEV", "/addons/ddev"],
@@ -154,21 +154,12 @@ export const SIDEBAR = {
       ["Add a screen as a tab", "/addons/bakers-ui/tabs"],
       ["Tickets in the terminal", "/addons/bakers-ui/tickets"],
       ["Use the terminal UI", "/addons/bakers-ui/usage"],
-      ["bakers ui keys", "/addons/bakers-ui-keys"],
-      ["Artifacts", "/addons/bakers-ui-artifacts"],
     ]),
     group("Commands and time", [
       ["Agent catalog", "/addons/agents"],
-      ["Project info", "/addons/info"],
       ["Deployment tickets", "/addons/deployment"],
       ["bakers deployment", "/addons/deployment/reference"],
       ["Time evidence", "/addons/track"],
-    ]),
-    group("Connection support", [
-      ["HTTP Basic sign-in", "/addons/auth-basic"],
-    ]),
-    group("Internal test fixture", [
-      ["Fake conductor fixture", "/addons/fake"],
     ]),
   ],
   "/configuration/": [

@@ -323,6 +323,7 @@ export async function readAddonCapabilities(
           executor: 'executors',
           worktree: 'worktrees',
           agent: 'agents',
+          runtime: 'runtimes',
         } as const))
           if (typeof child[key] === 'function')
             contributions.push({

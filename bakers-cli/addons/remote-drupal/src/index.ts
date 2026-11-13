@@ -989,13 +989,16 @@ export class DrupalBbRemote implements BbRemote {
   }
 
   async resolveTicketByIdentifier(
-    project: string,
+    project: string | { uuid: string },
     identifier: string,
   ): Promise<{ uuid: string; title: string } | null> {
     // Scope by the project uuid: identifiers (bakers.build-nnn) are unique per project,
     // not globally, so a bare identifier filter could match another project's
     // ticket in a multi-project instance.
-    const projectId = await this.projectUuid(project);
+    const projectId =
+      typeof project === 'string'
+        ? await this.projectUuid(project)
+        : project.uuid;
     const t = await this.api
       .collection('bb_ticket')
       .where('identifier', '=', identifier)

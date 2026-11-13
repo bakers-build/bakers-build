@@ -143,7 +143,7 @@ check 'AC-1 the MR region says the properties are set on the MR itself, not left
 # --- AC 2 — that instruction names no client: the forge tools carry it ---------------------------
 #
 # The MR is opened and merged through `bb-workflow/references/forge.md`'s tools, which send the
-# target, method and deletion themselves; `skill-forge-commands.sh` keeps client command lines out
+# target, method and deletion themselves; `skill-command-forms.sh` keeps client command lines out
 # of the skills. What stays checkable here is that the region routes through those operations and
 # says the properties travel explicitly with the merge.
 

@@ -6,6 +6,7 @@ namespace Drupal\bb_board;
 
 use Drupal\bb_board\Plugin\views\display\BbBoardColumn;
 use Drupal\bb_core\Derive\TicketRunDeriver;
+use Drupal\bb_core\Deployment\DeploymentLookup;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Link\LinkKind;
 use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
@@ -30,6 +31,7 @@ final class ProjectBoard {
     private readonly BbDate $date,
     private readonly ReferenceCounter $referenceCounter,
     private readonly EntityTypeManagerInterface $entityTypeManager,
+    private readonly DeploymentLookup $deploymentLookup,
   ) {}
 
   /**
@@ -51,6 +53,7 @@ final class ProjectBoard {
       'runs' => $this->referenceCounter->count('bb_run', 'ticket_id', $ids),
       'states' => $this->deriver->latestRunStates($ids),
       'blockers' => $this->blockerIdentifiers($tickets),
+      'deployments' => $this->deploymentLookup->deployedEnvironmentsMultiple(array_values($tickets)),
     ];
     $cards = [];
     foreach ($tickets as $ticket) {
@@ -108,7 +111,7 @@ final class ProjectBoard {
    * @param string $display
    *   The Views display id. Running status is painted only on the Working
    *   column and its Details columns.
-   * @param array{runs: array<int|string, int>, states: array<int, string>, blockers: array<int, array{visible: list<string>, hidden: bool}>} $batch
+   * @param array{runs: array<int|string, int>, states: array<int, string>, blockers: array<int, array{visible: list<string>, hidden: bool}>, deployments: array<int, list<string>>} $batch
    *   Run counts, newest run states and blockers of the whole column.
    *
    * @return array<string, mixed>
@@ -150,6 +153,9 @@ final class ProjectBoard {
     }
     if (in_array($priority, [1, 2, 3], TRUE)) {
       $card['priority'] = 'p' . $priority;
+    }
+    if (($batch['deployments'][$id] ?? []) !== []) {
+      $card['deployed_to'] = $batch['deployments'][$id];
     }
     return $card + $this->doneFacts($ticket);
   }

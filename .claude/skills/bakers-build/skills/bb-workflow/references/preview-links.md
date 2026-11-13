@@ -2,17 +2,13 @@
 
 Read before sharing the URL of a local service.
 
-1. Read `printenv BAKERS_TUNNEL`: `1`/`true` enables, `0`/`false` disables. If absent, read
-   `machine_policy.tunnel` using `bakers config check --scope machine --format json`.
-2. Enabled: share an addon-claimed key (e.g. `web`, `mailpit` — never a raw port); a dimmed
-   "no addon" row of `bakers ports list` cannot be shared. With the conductor's ports tools
-   ([tools](tools-conductor.md)), share through `ports_up(<service-key>)` (every eligible key without one), read state with
-   `ports_status` and take links down with `ports_down`; `bakers ports list` still lists the keys.
-   Without the tools (a measured run, or a run without a conductor tool server), run
-   `bakers ports list`, then `bakers ports up <service-key>` in the service worktree. Use the
-   returned public origin, preserve path/query/fragment, verify links and redirects. For multiple
-   aliased hosts, pass the full per-host key the list shows (e.g. `web-admin-example-test`) — no
-   `--host` flag. bakers.build shares whatever is claimed; the project owns public-hostname login.
+1. Read the run-provided `BAKERS_TUNNEL`: `1`/`true` enables, `0`/`false` disables.
+   Absent or unrecognized means policy unknown.
+2. Enabled: inspect tunnels, share addon-claimed services and remove tunnels through the
+   [tool discovery and fallback](tools.md#choose-an-operation). Use only an addon-claimed service key,
+   never a raw port. Use the returned public origin and preserve path/query/fragment; verify
+   links and redirects. For multiple aliased hosts, use the full per-host service key.
+   The project owns public-hostname login. Apply the shared fallback when tools are unavailable.
 3. Disabled: share locally. Unknown policy or failure: state the reason and label the URL
    **local-only**.
 

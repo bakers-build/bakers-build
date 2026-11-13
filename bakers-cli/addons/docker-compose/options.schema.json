@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://bakers.build/schema/addon-docker-compose/options.schema.json",
+  "type": "object",
+  "additionalProperties": false
+}

@@ -474,15 +474,16 @@ export function resolveSecurityOptions(
   if (mode === 'custom' && input.config === undefined) {
     throw new Error("permissions: 'custom' requires config");
   }
-  if (mode !== 'sandbox' && input.sandbox !== undefined) {
+  const entrySandbox = input.sandbox;
+  if (mode !== 'sandbox' && entrySandbox !== undefined) {
     throw new Error(
       `sandbox is only valid with permissions: 'sandbox' (the ${modeSource} layer sets '${mode}')`,
     );
   }
   const given =
-    input.sandbox === undefined
+    entrySandbox === undefined
       ? {}
-      : validatePlainObject(input.sandbox, 'sandbox');
+      : validatePlainObject(entrySandbox, 'sandbox');
   const sandbox = { ...defaults };
   const report: SecurityReport = {
     mode: { value: mode, source: modeSource },
