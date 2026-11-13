@@ -2,7 +2,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
-import * as service from '../../src/cli/config-plan.js';
+import * as configService from '../../src/cli/config-plan.js';
+import { capabilities } from './preset-capabilities.js';
+
+const service = {
+  ...configService,
+  planConfig: (options: Parameters<typeof configService.planConfig>[0] = {}) =>
+    configService.planConfig({ capabilities, ...options }),
+};
 
 const roots: string[] = [];
 const workspace = '11111111-1111-4111-8111-111111111111';
@@ -79,4 +86,43 @@ it('one Orca addon entry fills both the executor and the workspace slot', () => 
     ['server', 'executor', 'worktree'].includes(f.key ?? ''),
   );
   expect(slots).toEqual([]);
+});
+
+it('resolves herdr-core and its nested workspace from preset-derived capabilities', () => {
+  const w = world();
+  writeFileSync(
+    w.engine,
+    `export default { project: { name: 'demo' }, server: { use: '@bakers-build/addon-remote-drupal' }, addons: ['@bakers-build/addon-herdr-core'] };`,
+  );
+  const report = service.planConfig({
+    ...w,
+    operation: 'check',
+    scope: 'project',
+  }).report;
+  expect(
+    report.findings.filter((f) =>
+      ['executor', 'worktree'].includes(f.key ?? ''),
+    ),
+  ).toEqual([]);
+  expect(report.slot_sources?.worktree).toBe(
+    '@bakers-build/addon-workspace-git (via @bakers-build/addon-herdr-core)',
+  );
+});
+
+it('keeps an unresolvable addon opaque when checking missing slots', () => {
+  const w = world();
+  writeFileSync(
+    w.engine,
+    `export default { project: { name: 'demo' }, addons: ['@nope/missing'] };`,
+  );
+  const report = service.planConfig({
+    ...w,
+    operation: 'check',
+    scope: 'project',
+  }).report;
+  expect(
+    report.findings
+      .filter((f) => ['server', 'executor', 'worktree'].includes(f.key ?? ''))
+      .map((f) => f.code),
+  ).toEqual(['unknown_value', 'unknown_value', 'unknown_value']);
 });

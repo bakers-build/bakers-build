@@ -325,6 +325,8 @@ export async function discoverAddons(
   bases: string[],
   opts: {
     logger?: ConductorLogger;
+    /** Already expanded by scopeAddons. */
+    expandNested?: boolean;
     globals?: unknown;
     /** Like `globals`, but seen only by the `agents` accumulators (the
      *  conductor's shared run security). */
@@ -390,7 +392,11 @@ export async function discoverAddons(
       }
       visited.add(dedupKey);
       // Depth-first: meta-addon children apply BEFORE the declaring preset.
-      if (Array.isArray(preset.addons) && preset.addons.length > 0) {
+      if (
+        opts.expandNested !== false &&
+        Array.isArray(preset.addons) &&
+        preset.addons.length > 0
+      ) {
         await walk(preset.addons, listBases);
       }
       if (surface === 'conductor' && preset.runtime !== undefined) {

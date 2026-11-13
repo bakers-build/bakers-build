@@ -5,6 +5,8 @@ description: Use when an idea or intake should become a bakers.build ticket, spe
 
 # Create a ticket
 
+Before any ticket write, apply [ticket writes](../bb-workflow/references/ticket-writes.md).
+
 Your user's profile says whether to specify and which questions you answer; ask the requester only
 the rest. The host may add a conversation link, a conductor and the wish to specify.
 

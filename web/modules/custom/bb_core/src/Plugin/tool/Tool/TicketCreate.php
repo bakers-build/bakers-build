@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Plugin\tool\Tool;
 
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\TicketWriteBudget;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
@@ -167,6 +168,7 @@ final class TicketCreate extends ToolBase {
       throw new \InvalidArgumentException('You may not create tickets.');
     }
     $project = $this->readableProject($values['project']);
+    TicketWriteBudget::check($values['description'] ?? '');
     $fields = [
       'title' => $values['title'],
       'workflow' => $values['workflow'],

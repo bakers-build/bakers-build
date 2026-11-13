@@ -1,5 +1,5 @@
 export const DEFAULT_CONDUCTOR_AGENT_ADDONS =
-  "[{ use: '@bakers-build/addon-herdr' }, { use: '@bakers-build/addon-claude', alias: 'opus' }]";
+  "[{ use: '@bakers-build/addon-herdr' }]";
 
 export type ConnectionAuthType =
   | 'oauth2_client_credentials'

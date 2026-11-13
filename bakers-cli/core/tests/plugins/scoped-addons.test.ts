@@ -7,6 +7,7 @@ import {
   type AddonEntry,
   type AddonScopeInput,
   discoverScoped,
+  readAddonCapabilities,
   readEffectiveAddon,
   scopeAddons,
 } from '../../src/index.js';
@@ -58,6 +59,75 @@ beforeEach(() => {
 });
 
 describe('scopeAddons', () => {
+  it('expands nested addons before the parent once, with their origin', async () => {
+    const child = addon('child.js', REMOTE);
+    const parent = addon(
+      'parent.js',
+      `${REMOTE}\nexport const addons = [${JSON.stringify(child)}];`,
+    );
+    const { addons } = await scopeAddons([project([parent, child])], {
+      logger,
+    });
+    expect(addons.map((a) => a.entry)).toEqual([child, parent]);
+    const nested = await scopeAddons([project([parent])]);
+    expect(nested.addons[0]).toMatchObject({ via: parent });
+    const out = await discoverScoped(addons, 'conductor', { logger });
+    expect(out.servers).toHaveLength(2);
+    expect(warnings).toEqual([]);
+  });
+
+  it('rejects cycles with the complete chain', async () => {
+    const a = join(pkgDir, 'a.js');
+    const b = addon('b.js', `export const addons = [${JSON.stringify(a)}];`);
+    addon('a.js', `export const addons = [${JSON.stringify(b)}];`);
+    await expect(scopeAddons([project([a])])).rejects.toThrow(
+      `${a} -> ${b} -> ${a}`,
+    );
+  });
+
+  it('silently skips nested project-only addons in machine scope', async () => {
+    const child = addon(
+      'child.js',
+      `${REMOTE}\nexport const scopes = ['project'];`,
+    );
+    const parent = addon(
+      'parent.js',
+      `export const addons = [${JSON.stringify(child)}];`,
+    );
+    const result = await scopeAddons([machine([parent])], { logger });
+    expect(result.addons.map((a) => a.entry)).toEqual([parent]);
+    expect(result.findings).toEqual([]);
+    expect(warnings).toEqual([]);
+  });
+
+  it('names the parent of an unresolved child and retains the scope error policy', async () => {
+    const parent = addon('parent.js', `export const addons = ['@nope/child'];`);
+    await expect(scopeAddons([project([parent])])).rejects.toThrow(
+      `via ${parent}`,
+    );
+    const result = await scopeAddons([machine([parent])], { logger });
+    expect(result.addons.map((a) => a.entry)).toEqual([parent]);
+    expect(warnings[0]).toContain(`via ${parent}`);
+  });
+
+  it('loads the project-only partner when its parent is effective in both scopes', async () => {
+    const child = addon(
+      'child.js',
+      `${REMOTE}\nexport const scopes = ['project'];`,
+    );
+    const parent = addon(
+      'parent.js',
+      `export const addons = [${JSON.stringify(child)}];`,
+    );
+    const result = await scopeAddons([machine([parent]), project([parent])]);
+    expect(
+      result.addons.map((a) =>
+        typeof a.entry === 'string' ? a.entry : a.entry.use,
+      ),
+    ).toEqual([parent, child]);
+    expect(result.addons[1]?.scope).toBe('project');
+  });
+
   it('machine with replaces project with', async () => {
     const spec = addon('both.js', REMOTE);
     const { addons } = await scopeAddons([
@@ -210,4 +280,29 @@ describe('readEffectiveAddon', () => {
     });
     expect(found).toBeUndefined();
   });
+});
+
+it('reads slots and nested origins from presets without running accumulators', async () => {
+  const child = addon(
+    'workspace.js',
+    `export const scopes = ['project']; export const worktrees = () => { throw Error('must not run'); };`,
+  );
+  const parent = addon(
+    'executor.js',
+    `export const executors = () => []; export const addons = [${JSON.stringify(child)}];`,
+  );
+  const result = await readAddonCapabilities(
+    [parent, '@nope/missing'],
+    [import.meta.url],
+  );
+  expect(result[parent]).toMatchObject({
+    slots: ['worktree', 'executor'],
+    scopes: ['machine', 'project'],
+  });
+  expect(result[parent]?.contributions).toContainEqual({
+    slot: 'worktree',
+    spec: child,
+    via: parent,
+  });
+  expect(result['@nope/missing']).toBeUndefined();
 });

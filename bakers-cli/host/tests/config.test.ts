@@ -1290,27 +1290,80 @@ it('config check reports an invalid addon option at addons[0].with.services[0].k
   expect(found[0].expected).toContain('DNS-safe label');
   expect(report.result).toBe('blocked');
 });
-it('offline check skips the scope check with an info finding', async () => {
+it('offline check validates declared addon scopes without evaluating config', async () => {
   seed();
   writeFileSync(
     join(home, '.bakers/machine.config.js'),
-    "export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',addons:['@bakers-build/addon-herdr']};",
+    "throw Error('must not evaluate'); export default {schema_version:1,machine_id:'0b6f3c1e-9a2d-4e57-8c41-2f7d9e5a1b30',label:'operator',addons:['@bakers-build/addon-herdr']};",
   );
   const report = await run(['check', '--scope', 'machine', '--format', 'json']);
-  expect(
-    report.findings.some(
-      (f: { code: string }) => f.code === 'addon_scope_not_allowed',
-    ),
-  ).toBe(false);
-  const scoped = report.findings.filter(
-    (f: { code: string }) => f.code === 'addon_scope_skipped',
+  expect(report.findings).toContainEqual(
+    expect.objectContaining({
+      code: 'addon_scope_not_allowed',
+      severity: 'error',
+    }),
   );
-  expect(scoped).toHaveLength(1);
   expect(
     report.findings.some(
-      (f: { code: string }) => f.code === 'addon_with_invalid',
+      (f: { code: string }) => f.code === 'addon_scope_skipped',
     ),
   ).toBe(false);
-  expect(scoped[0].severity).toBe('info');
-  expect(scoped[0].remediation).toContain('--online');
+});
+
+it('initializes herdr-core with its nested Git worktree using real preset declarations', async () => {
+  seed();
+  const report = await run([
+    'init',
+    '--scope',
+    'project',
+    '--project',
+    'demo',
+    '--executor',
+    '@bakers-build/addon-herdr-core',
+    '--format',
+    'json',
+    '--yes',
+  ]);
+  const source = readFileSync(join(cwd, '.bakers/project.config.js'), 'utf8');
+  expect(source).toContain('@bakers-build/addon-herdr-core');
+  expect(source).not.toContain("use: '@bakers-build/addon-herdr'");
+  expect(
+    report.findings.filter((f: { key: string }) => f.key === 'worktree'),
+  ).toEqual([]);
+  const checked = await run([
+    'check',
+    '--scope',
+    'project',
+    '--format',
+    'text',
+  ]);
+  expect(checked).toContain(
+    'Worktree: @bakers-build/addon-workspace-git (via @bakers-build/addon-herdr-core)',
+  );
+});
+
+it.each([
+  ['--executor', '@nope/missing', 'cannot resolve'],
+  [
+    '--executor',
+    '@bakers-build/addon-workspace-git',
+    'contributes no executor',
+  ],
+  ['--executor', '@bakers-build/addon-claude', 'does not allow project scope'],
+])('rejects invalid slot selection %s %s before writing', async (flag, spec, message) => {
+  seed();
+  await expect(
+    run([
+      'init',
+      '--scope',
+      'project',
+      '--project',
+      'demo',
+      flag,
+      spec,
+      '--format',
+      'json',
+    ]),
+  ).rejects.toThrow(message);
+  expect(existsSync(join(cwd, '.bakers/project.config.js'))).toBe(false);
 });

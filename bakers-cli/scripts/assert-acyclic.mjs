@@ -98,8 +98,12 @@ const PERMITTED_SIBLINGS = {
     '@bakers-build/addon-workspace-git',
   ],
   // herdr-core reuses herdr's 0600 launch wrapper and its watch
-  // (`addon-herdr/shared`).
-  '@bakers-build/addon-herdr-core': ['@bakers-build/addon-herdr'],
+  // (`addon-herdr/shared`), and depends on `addon-workspace-git` only so a
+  // standalone install resolves the partner its preset nests by name.
+  '@bakers-build/addon-herdr-core': [
+    '@bakers-build/addon-herdr',
+    '@bakers-build/addon-workspace-git',
+  ],
   // BB-403 added `addon-name-refs` on the same footing `addon-workspace`
   // used to carry: an essentials child, so the single non-auth `plugins[]`
   // entry every committed config already carries stays exactly as it is.
