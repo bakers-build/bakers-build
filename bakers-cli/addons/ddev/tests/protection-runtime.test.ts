@@ -148,6 +148,12 @@ it.skipIf(!available)(
       expect(readFileSync(join(root, '.git'), 'utf8')).toBe(
         'gitdir: /host/admin\n',
       );
+      // Reapplying policy to an already running project preserves ordinary package output.
+      await tools.ddev_start(req);
+      await expect(exec('cat pnpm-lock.yaml')).resolves.toMatchObject({
+        text: 'exit 0\nlock\n',
+      });
+      const startsBeforeRejection = starts;
       // Recreate with a writable alias while retaining the main mount's protection.
       const bypass = join(root, 'bypass.yaml');
       writeFileSync(
@@ -223,7 +229,7 @@ it.skipIf(!available)(
       await expect(tools.ddev_start(req)).rejects.toThrow(
         /custom volume drivers and options/,
       );
-      expect(starts).toBe(1);
+      expect(starts).toBe(startsBeforeRejection);
       const recreated = compose([
         '-f',
         volumeBypass,
