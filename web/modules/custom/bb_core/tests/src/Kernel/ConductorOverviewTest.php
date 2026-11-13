@@ -956,6 +956,8 @@ final class ConductorOverviewTest extends KernelTestBase {
     }
     $request->server->set('REQUEST_TIME', $now);
     $request->server->set('REQUEST_TIME_FLOAT', (float) $now);
+    // Saves in setUp() build the date service on the real clock; rebuild it.
+    $this->container->set('bb_core.date', NULL);
     $this->container->set('datetime.time', new class($now) implements TimeInterface {
 
       /**
