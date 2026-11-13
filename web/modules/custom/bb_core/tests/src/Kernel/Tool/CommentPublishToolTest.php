@@ -37,6 +37,41 @@ final class CommentPublishToolTest extends BakersToolTestBase {
   }
 
   /**
+   * Each type accepts its byte limit and refuses the next byte atomically.
+   */
+  public function testCommentByteBudgets(): void {
+    $ticket = $this->ticket('TL-budget');
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_comment');
+    $budgets = [
+      'qualification' => 4096,
+      'test' => 4096,
+      'debug_diagnose' => 4096,
+      'spec' => 6144,
+      'plan' => 6144,
+      'coding' => 6144,
+      'review' => 6144,
+      'acceptance' => 3072,
+      'summary' => 3072,
+      'retro' => 3072,
+      'comment' => 8192,
+      'custom' => 8192,
+      'description' => 8192,
+    ];
+    foreach ($budgets as $type => $limit) {
+      $body = str_repeat('é', intdiv($limit, 2));
+      $values = ['ticket' => $ticket->uuid(), 'type' => $type, 'body' => $body];
+      $out = $this->outputs($this->runTool('bakers_comment_publish', $values));
+      $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_comment', $out['id']);
+      self::assertInstanceOf(BbCommentInterface::class, $stored);
+      self::assertSame($body, $stored->get('body')->value);
+      $before = $storage->getQuery()->accessCheck(FALSE)->count()->execute();
+      $values['body'] .= 'x';
+      $this->assertFailure($this->runTool('bakers_comment_publish', $values), sprintf('%s is %d UTF-8 bytes; limit %d', $type, $limit + 1, $limit));
+      self::assertSame($before, $storage->getQuery()->accessCheck(FALSE)->count()->execute());
+    }
+  }
+
+  /**
    * The ticket also resolves by UUID.
    */
   public function testTicketByUuid(): void {

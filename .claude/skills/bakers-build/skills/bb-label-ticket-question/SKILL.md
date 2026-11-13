@@ -5,6 +5,8 @@ description: "Use when a ticket labelled `ticket-question` runs, in any state: r
 
 # Ticket question
 
+Before any ticket write, apply [ticket writes](../bb-workflow/references/ticket-writes.md).
+
 When the run needs a human, it reaches them only through the ticket: publish the comments below,
 then add their label and set `frozen: true` in one `bakers_ticket_update`, and end the run. Every point where the frame waits for a human counts:
 the approval of a qualification or of a spec, plan and test proposal, the coding-gate choice, the
@@ -15,7 +17,7 @@ A **user question** is one `comment` headed `# Question` with each question numb
 choices, the recommended choice marked per question, and last the line "Answer in a comment, then
 remove the label *Question* and unfreeze the ticket."; label `Question`.
 
-A **technical problem** is one comment headed `# Error` with the error and its output, or
+A **technical problem** is one comment headed `# Error` with the error and relevant excerpt, or
 `# Architecture` with the change and its reason, then this note as a second comment; label
 `technical problem`.
 

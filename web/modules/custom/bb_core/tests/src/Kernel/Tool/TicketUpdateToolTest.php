@@ -197,6 +197,31 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * An oversized update keeps the description, title and labels unchanged.
+   */
+  public function testDescriptionByteBudget(): void {
+    $ticket = $this->ticket('TU-budget');
+    $body = str_repeat('é', 3072);
+    $values = ['ticket' => $ticket->uuid(), 'description' => $body];
+    $out = $this->outputs($this->runTool('bakers_ticket_update', $values));
+    self::assertSame($body, $out['description']);
+    $values['description'] .= 'x';
+    $values['title'] = 'Must not change';
+    $values['labels_add'] = ['oversized-update'];
+    $this->assertFailure($this->runTool('bakers_ticket_update', $values), 'description is 6145 UTF-8 bytes; limit 6144');
+    $stored = $this->reload($ticket);
+    self::assertSame($body, $stored->get('description')->value);
+    self::assertSame('TU-budget', $stored->label());
+    self::assertTrue($stored->get('labels')->isEmpty());
+    self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'oversized-update']));
+    $cleared = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->uuid(),
+      'description' => '',
+    ]));
+    self::assertNull($cleared['description']);
+  }
+
+  /**
    * A field left out of the call keeps its value.
    */
   public function testAbsentFieldIsKept(): void {

@@ -15,6 +15,27 @@ root="$(cd "$(dirname "$0")/.." && pwd -P)"
 workspace="$root/workspaces/bakers-playground"
 bakers="$root/bakers-cli/bin/bakers"
 
+# Keep the playground's unsandboxed agents separate from the real machine policy.
+playground_home="$root/workspaces/.bakers-playground-home"
+mkdir -p "$playground_home"
+if [ "${BAKERS_HOME:-}" != "$playground_home" ]; then
+node --input-type=module - "${BAKERS_HOME:-${HOME}/.bakers}/machine.config.js" "$playground_home/machine.config.js" <<'JS'
+import { writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+const [source, target] = process.argv.slice(2);
+writeFileSync(target, `import machine from ${JSON.stringify(pathToFileURL(source).href)};
+const stripSandbox = value => Array.isArray(value) ? value.map(stripSandbox)
+  : value && typeof value === 'object'
+    ? Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'sandbox').map(([key, item]) => [key, stripSandbox(item)]))
+    : value;
+export default stripSandbox(machine);
+`, { mode: 0o600 });
+JS
+ln -sfn "${BAKERS_HOME:-${HOME}/.bakers}/connections" "$playground_home/connections"
+ln -sfn "$workspace/node_modules" "$playground_home/node_modules"
+fi
+export BAKERS_HOME="$playground_home"
+
 teardown() {
   [ -d "$workspace" ] || return 0
   bash "$root/scripts/teardown-test-project.sh"
