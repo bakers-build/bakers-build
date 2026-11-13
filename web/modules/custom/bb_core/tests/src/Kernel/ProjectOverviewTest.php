@@ -558,12 +558,13 @@ final class ProjectOverviewTest extends KernelTestBase {
     if (!BbVocabulary::load('label')) {
       BbVocabulary::create(['id' => 'label', 'label' => 'label'])->save();
     }
-    $term = BbTerm::create([
-      'vid' => 'label',
-      'name' => $label,
-      'workspace_id' => $this->workspace()->id(),
-    ]);
-    $term->save();
+    $values = ['vid' => 'label', 'name' => $label, 'workspace_id' => $this->workspace()->id()];
+    $matches = $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties($values);
+    $term = reset($matches);
+    if (!$term instanceof BbTerm) {
+      $term = BbTerm::create($values);
+      $term->save();
+    }
     return $this->workTicket($title, ['labels' => [$term->id()]]);
   }
 

@@ -506,7 +506,7 @@ final class ProjectOverviewSource extends SourcePluginBase implements ContainerF
    *   A `list` item.
    */
   private function attentionItem(AttentionItem $item): array {
-    $tone = $item->severity === 'red' ? 'critical' : 'attention';
+    $tone = $item->severity === 'critical' ? 'critical' : 'attention';
     $row = $this->ticketItem($item->ticket);
     $row['accent'] = $tone;
     $row['cells']['workflow'] = [

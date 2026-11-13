@@ -11,6 +11,8 @@ use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Entity\EntityStorageInterface;
+use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityAccessControlHandler;
@@ -92,6 +94,10 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
       // reaches vid and workspace_id through getEntity().
       ->addConstraint('BbTermUniqueNameInWorkspace');
 
+    $fields['key'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Key'))
+      ->addConstraint('BbTermUniqueNameInWorkspace', ['message' => 'A term key %name already exists in this workspace and vocabulary.']);
+
     $fields['description'] = BaseFieldDefinition::create('string_long')
       ->setLabel(new TranslatableMarkup('Description'))
       ->setDisplayConfigurable('form', TRUE)
@@ -127,6 +133,20 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition();
 
     return $fields;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function preSave(EntityStorageInterface $storage): void {
+    parent::preSave($storage);
+    if ($this->isNew() && $this->bundle() === 'label' && $this->get('key')->isEmpty()) {
+      $this->set('key', preg_replace('/[^a-z0-9]+/', '_', mb_strtolower(trim((string) $this->label()))));
+    }
+    $violations = $this->get('key')->validate();
+    if ($violations->count() > 0) {
+      throw new EntityStorageException((string) $violations->get(0)->getMessage());
+    }
   }
 
   /**

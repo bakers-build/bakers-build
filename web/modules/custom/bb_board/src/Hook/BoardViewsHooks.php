@@ -68,14 +68,7 @@ final class BoardViewsHooks {
     if (!$this->health->requested($view)) {
       return;
     }
-    $ids = $this->health->unhealthyIds($view);
-    if ($ids === []) {
-      $query->abort();
-      return;
-    }
-    // The indexed entity id, as the parent filter: search_api_db drops
-    // search_api_id from the facet queries.
-    $query->createAndAddConditionGroup()->addCondition('ticket_id', $ids, 'IN');
+    $query->createAndAddConditionGroup()->addCondition('health', ['warning', 'critical'], 'IN');
   }
 
   /**

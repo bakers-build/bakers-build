@@ -26,6 +26,6 @@ services:
   # The Board's Unhealthy filter: one rule, one attention set per request.
   bb_board.health:
     class: Drupal\bb_board\BoardHealth
-    arguments: ['@entity_type.manager', '@bb_core.project_health']
+    arguments: ['@entity_type.manager']
   Drupal\bb_board\BoardHealth:
     alias: bb_board.health

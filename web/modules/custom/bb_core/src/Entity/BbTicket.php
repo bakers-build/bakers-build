@@ -444,6 +444,20 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
    */
   private static function relationFields(): array {
     $fields = [];
+    $fields['health'] = BaseFieldDefinition::create('list_string')
+      ->setLabel(new TranslatableMarkup('Health'))
+      ->setReadOnly(TRUE)
+      ->setSetting('allowed_values', ['healthy' => 'Healthy', 'warning' => 'Warning', 'critical' => 'Critical']);
+    $fields['health_reason'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Health reason'))
+      ->setReadOnly(TRUE);
+    $fields['health_moved'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(new TranslatableMarkup('Last real movement'))
+      ->setReadOnly(TRUE);
+    $fields['health_checked'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(new TranslatableMarkup('Health evaluated'))
+      ->setReadOnly(TRUE);
+
     $fields['parent_id'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Parent ticket'))
       ->setSetting('target_type', 'bb_ticket')

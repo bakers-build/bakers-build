@@ -288,8 +288,7 @@ final class BbBoardSummary extends AreaPluginBase {
     }
     $chips = [...$chips, ...$this->facetChips($summary, $focus['aggregations'] ?? NULL)];
     if ($this->health->requested($this->view)) {
-      $ids = $this->health->unhealthyIds($this->view);
-      $chips[] = $this->chip((string) $this->t('Unhealthy'), [], $this->count($ids)['total'] ?? NULL, BoardHealth::PARAMETER);
+      $chips[] = $this->chip((string) $this->t('Unhealthy'), [], $this->count(health: BoardHealth::VALUE)['total'] ?? NULL, BoardHealth::PARAMETER);
     }
     $summary['chips'] = $chips;
     return $summary;
@@ -335,15 +334,17 @@ final class BbBoardSummary extends AreaPluginBase {
    *   Only these tickets, NULL for no such limit.
    * @param string $search
    *   A search line.
+   * @param string|null $health
+   *   Unhealthy for the stored health filter; NULL for no health filter.
    *
    * @return array{total: int, aggregations: array<string, mixed>}|null
    *   See ProjectBoardSummary::focus().
    */
-  private function count(?array $ids = NULL, string $search = ''): ?array {
+  private function count(?array $ids = NULL, string $search = '', ?string $health = NULL): ?array {
     $project = $this->health->project($this->view);
     $scope = $this->scope();
     $within = ($scope['mode'] ?? 'project') === 'project' ? NULL : array_values(array_map('intval', $scope['ticket_ids'] ?? []));
-    return $project === NULL ? ['total' => 0, 'aggregations' => []] : $this->rows->focus($project, $within, $ids, $search);
+    return $project === NULL ? ['total' => 0, 'aggregations' => []] : $this->rows->focus($project, $within, $ids, $search, $health);
   }
 
   /**

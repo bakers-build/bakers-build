@@ -67,9 +67,13 @@ final class BbTermUniqueNameInWorkspaceConstraintValidator extends ConstraintVal
       return;
     }
 
+    $field = $items->getName();
+    if (!is_string($field)) {
+      return;
+    }
     $query = $this->entityTypeManager->getStorage('bb_term')->getQuery()
       ->accessCheck(FALSE)
-      ->condition('name', $name)
+      ->condition($field, $name)
       ->condition('workspace_id', $workspace_id)
       ->condition('vid', $entity->bundle())
       ->range(0, 1);

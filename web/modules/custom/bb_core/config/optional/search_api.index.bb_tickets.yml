@@ -58,6 +58,22 @@ field_settings:
     dependencies:
       module:
         - bb_core
+  health:
+    label: Health
+    datasource_id: 'entity:bb_ticket'
+    property_path: health
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  health_moved:
+    label: 'Last real movement'
+    datasource_id: 'entity:bb_ticket'
+    property_path: health_moved
+    type: date
+    dependencies:
+      module:
+        - bb_core
   group_id:
     label: Group
     datasource_id: 'entity:bb_ticket'

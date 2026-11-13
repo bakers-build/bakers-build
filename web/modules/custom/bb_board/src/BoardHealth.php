@@ -6,11 +6,10 @@ namespace Drupal\bb_board;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
-use Drupal\bb_core\Project\ProjectHealth;
 use Drupal\views\ViewExecutable;
 
 /**
- * The Board's Unhealthy filter: one rule and one attention set per request.
+ * The Board's Unhealthy filter: one stored health condition.
  *
  * The query alter that narrows every display and the summary that shows its
  * chip both ask here, so they can never disagree.
@@ -27,16 +26,8 @@ final class BoardHealth {
    */
   public const VALUE = 'unhealthy';
 
-  /**
-   * The attention set per project id.
-   *
-   * @var array<string, list<int>>
-   */
-  private array $ids = [];
-
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
-    private readonly ProjectHealth $health,
   ) {}
 
   /**
@@ -54,17 +45,6 @@ final class BoardHealth {
   public function project(ViewExecutable $view): ?BbProjectInterface {
     $project = $this->entityTypeManager->getStorage('bb_project')->load($view->argument['project_id']->argument ?? 0);
     return $project instanceof BbProjectInterface ? $project : NULL;
-  }
-
-  /**
-   * The attention set of the board's project; empty without a project.
-   *
-   * @return list<int>
-   *   Ticket ids.
-   */
-  public function unhealthyIds(ViewExecutable $view): array {
-    $project = $this->project($view);
-    return $this->ids[(string) $project?->id()] ??= $project === NULL ? [] : $this->health->unhealthyIds($project);
   }
 
 }

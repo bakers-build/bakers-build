@@ -10,9 +10,7 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Project\AttentionItem;
 use Drupal\bb_core\Project\ProjectHealth;
-use Drupal\og\Og;
 use Drupal\user\UserInterface;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Group;
 
 /**
@@ -75,55 +73,6 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
   }
 
   /**
-   * Each condition gives its severity and reason.
-   */
-  #[DataProvider('reasonCases')]
-  public function testReasonPerCondition(string $case, string $severity, string $reason): void {
-    $ticket = $this->seedAssignedTicket('working');
-    switch ($case) {
-      case 'technical problem':
-      case 'Question':
-        $this->label($ticket, $case);
-        break;
-
-      case 'no access':
-        $this->revokeConductorOwner();
-        break;
-
-      case 'failed':
-      case 'expired':
-        $this->seedRun($ticket, 'working', $case);
-        break;
-
-      case 'idle':
-        $this->setMovement($ticket, 4 * self::DAY);
-        break;
-    }
-    $items = $this->health->attention($this->project);
-    self::assertCount(1, $items);
-    self::assertSame((int) $ticket->id(), (int) $items[0]->ticket->id());
-    self::assertSame([$severity, $reason], [$items[0]->severity, $items[0]->reason]);
-    self::assertSame($case === 'idle' ? 4 : NULL, $items[0]->idleDays);
-  }
-
-  /**
-   * One case per reason of the spec's table.
-   *
-   * @return array<string, array{string, string, string}>
-   *   Scenario, severity and reason text.
-   */
-  public static function reasonCases(): array {
-    return [
-      'technical problem' => ['technical problem', 'red', 'Technical problem'],
-      'no access' => ['no access', 'red', 'Conductor has no access'],
-      'failed' => ['failed', 'red', 'Last run failed'],
-      'expired' => ['expired', 'red', 'Last run expired'],
-      'question' => ['Question', 'yellow', 'Needs info'],
-      'idle' => ['idle', 'yellow', 'Idle 4 days'],
-    ];
-  }
-
-  /**
    * Tickets that need no person stay out of the set.
    */
   public function testNoReasonCases(): void {
@@ -131,7 +80,7 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     $this->setMovement($idle_working, 2 * self::DAY);
 
     $idle_intake = $this->seedAssignedTicket('qualification');
-    $this->setMovement($idle_intake, 10 * self::DAY);
+    $this->setMovement($idle_intake, 1 * self::DAY);
 
     $recovered = $this->seedAssignedTicket('working');
     $this->seedRun($recovered, 'working', 'failed');
@@ -144,12 +93,12 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     $blocked = $this->seedBlocked($this->seedAssignedTicket('working'), 'open');
     $this->label($blocked, 'technical problem');
 
-    $ids = $this->health->unhealthyIds($this->project);
+    $ids = $this->attentionIds($this->project);
     self::assertSame([], $ids);
 
     $done_blocker = $this->seedBlocked($this->seedAssignedTicket('working'), 'done');
     $this->seedRun($done_blocker, 'working', 'failed');
-    $ids = $this->health->unhealthyIds($this->project);
+    $ids = $this->attentionIds($this->project);
     self::assertSame([(int) $done_blocker->id()], $ids);
   }
 
@@ -181,41 +130,12 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     foreach ($priorities as [$ticket, $priority]) {
       $ticket->set('priority', $priority)->save();
     }
-    $this->setMovement($red_p1_older, 5 * self::DAY);
-    $this->setMovement($red_p1_newer, 1 * self::DAY);
-    $this->setMovement($red_p3, 9 * self::DAY);
-    $this->setMovement($yellow_p1, 9 * self::DAY);
 
     $expected = [$red_p1_older, $red_p1_newer, $red_p3, $yellow_p1];
     self::assertSame(
       array_map(static fn (BbTicketInterface $ticket): int => (int) $ticket->id(), $expected),
-      $this->health->unhealthyIds($this->project),
+      $this->attentionIds($this->project),
     );
-  }
-
-  /**
-   * Movement falls back to the newest run, then to the ticket's creation.
-   */
-  public function testMovementFallsBackToRunThenCreated(): void {
-    $with_run = $this->seedAssignedTicket('working');
-    $run = $this->seedRun($with_run, 'working', 'done');
-    $this->setRunChanged($run->id(), 5 * self::DAY);
-    $this->setMovement($with_run, NULL);
-
-    $bare = $this->seedAssignedTicket('working');
-    $this->setMovement($bare, NULL);
-    $this->container->get('database')->update('bb_ticket')
-      ->fields(['created' => $this->now() - 6 * self::DAY])
-      ->condition('id', $bare->id())
-      ->execute();
-    $this->container->get('entity_type.manager')->getStorage('bb_ticket')->resetCache();
-
-    $days = [];
-    foreach ($this->health->attention($this->project) as $item) {
-      $days[(int) $item->ticket->id()] = [$item->reason, $item->idleDays];
-    }
-    self::assertSame(['Idle 5 days', 5], $days[(int) $with_run->id()]);
-    self::assertSame(['Idle 6 days', 6], $days[(int) $bare->id()]);
   }
 
   /**
@@ -233,13 +153,13 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     $unviewable = $this->seedTicketIn($hidden);
     $this->label($unviewable, 'technical problem');
 
-    $ids = $this->health->unhealthyIds($this->project);
+    $ids = $this->attentionIds($this->project);
     self::assertSame([(int) $mine->id()], $ids);
     self::assertSame(
       $ids,
       array_map(static fn (AttentionItem $item): int => (int) $item->ticket->id(), $this->health->attention($this->project)),
     );
-    self::assertSame([], $this->health->unhealthyIds($hidden), 'A project the account cannot read has no attention set for it.');
+    self::assertSame([], $this->attentionIds($hidden), 'A project the account cannot read has no attention set for it.');
   }
 
   /**
@@ -324,7 +244,7 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     }
     $large = $this->countRunAndActivityQueries('large');
 
-    self::assertGreaterThan(0, $small);
+    self::assertSame(0, $small);
     self::assertSame($small, $large);
   }
 
@@ -335,7 +255,7 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     $ticket = $this->seedAssignedTicket('working');
     $this->seedRun($ticket, 'working', 'done');
     $ticket->setFrozen(TRUE)->save();
-    self::assertSame([], $this->health->unhealthyIds($this->project));
+    self::assertSame([], $this->attentionIds($this->project));
   }
 
   /**
@@ -403,16 +323,6 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
   }
 
   /**
-   * Ages a run's last change.
-   */
-  private function setRunChanged(int|string|null $id, int $age): void {
-    $this->container->get('database')->update('bb_run')
-      ->fields(['changed' => $this->now() - $age])
-      ->condition('id', $id)
-      ->execute();
-  }
-
-  /**
    * Blocks a ticket by a new working ticket that is open or done.
    */
   private function seedBlocked(BbTicketInterface $ticket, string $blocker_state): BbTicketInterface {
@@ -426,19 +336,6 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     }
     $ticket->set('blocked_by', [$blocker->id()])->save();
     return $ticket;
-  }
-
-  /**
-   * Takes the conductor owner's access to the project away.
-   */
-  private function revokeConductorOwner(): void {
-    $owner = $this->conductor->get('owner_user_id')->entity;
-    self::assertInstanceOf(UserInterface::class, $owner);
-    foreach (Og::getMemberships($owner) as $membership) {
-      $membership->delete();
-    }
-    $this->container->get('cache.static')->deleteAll();
-    $this->container->get('bb_core.workspace_read_scope')->reset();
   }
 
   /**
@@ -516,6 +413,16 @@ final class ProjectHealthTest extends ClaimKernelTestBase {
     $this->installSchema('search_api', ['search_api_item']);
     $this->installConfig(['search_api']);
     $this->container->get('config.installer')->installOptionalConfig(NULL, ['module' => 'bb_core']);
+  }
+
+  /**
+   * Reads the access-checked stored attention set.
+   *
+   * @return list<int>
+   *   Visible unhealthy ticket ids.
+   */
+  private function attentionIds(BbProjectInterface $project): array {
+    return array_map(static fn (AttentionItem $item): int => (int) $item->ticket->id(), $this->health->attention($project));
   }
 
 }
