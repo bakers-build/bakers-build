@@ -25,12 +25,10 @@ none
 
 ## work
 
-1. [Prior-art search](prior-art-search.md): run ticket searches/probes before any Git call,
-   sequentially. On hit publish/transition nothing: report prior_art_hit, identifier/title/state/
-   assignee/MR or merge; ask continue/combine/close. Close uses [transition](transition-ticket.md)
-   to cancelled, never closed field.
-2. [Remote base check](prior-art-build.md): same hit stop. Error stops publication with remote,
-   terms/paths and failing command/status. Retain both negative checks and checked revision.
+1. [Prior-art search](prior-art-search.md) before Git. On hit publish/transition nothing; report
+   candidate and ask continue/combine/close. Close uses [transition](transition-ticket.md), not closed.
+2. [Remote base check](prior-art-build.md): stop on hit or error; retain both searches' evidence
+   and checked revision for the handoff.
 3. [Classify](classify.md).
 4. [Acceptance](acceptance.md) › Gate each criterion, published in handoff, not separate acceptance.
    Name [test personas](results.md).
