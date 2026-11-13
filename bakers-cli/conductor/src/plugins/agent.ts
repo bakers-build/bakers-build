@@ -252,6 +252,8 @@ export interface BbAgent extends AgentRuntimeInfo {
     tools?: { url: string },
     env?: Readonly<Record<string, string>>,
     args?: readonly string[],
+    /** The workspace is a run clone: grant `<workspace>/.git`, ask Git nothing. */
+    isolatedGit?: boolean,
   ): string;
   /**
    * Locate and read this agent's run transcript for a run that executed in

@@ -10,6 +10,7 @@ web/themes/custom/*/dist/
 
 # DDEV / local dev runtime
 .ddev/
+tests/artifacts/bakers/
 .idea/
 .vscode/
 

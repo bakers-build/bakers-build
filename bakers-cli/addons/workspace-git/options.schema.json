@@ -18,6 +18,11 @@
       "type": "boolean",
       "description": "`false` sets `branch.autoSetupMerge=false` in the root repository before creating a worktree, so run branches have no upstream and push with `push.default=current`; `true` leaves Git alone but does not revert an earlier change.",
       "default": false
+    },
+    "shared": {
+      "type": "boolean",
+      "default": false,
+      "description": "Isolating runtimes only: run clones borrow the parent repository's objects (git clone --shared) instead of copying them. Faster and smaller, but never prune or repack the parent with -d while a run is open."
     }
   },
   "additionalProperties": false

@@ -17,7 +17,7 @@ the outer container's security policy must allow nested namespaces. This externa
 not require `socat` itself. Agent permissions remain unchanged; native sandbox mode additionally
 needs its own tools and support for nested namespaces.
 
-Runs require linked Git worktrees; the main checkout is refused. Programs come from the host's
+The workspace must provide a run clone: the [Git workspace](/addons/workspace-git#isolated-runs) or [herdr](/addons/herdr#isolated-runs). Programs come from the host's
 system directories and executable search paths. Additional tool resources can be granted through
 `readPaths`; each grant exposes that path to the agent.
 
@@ -32,19 +32,23 @@ and its own `/proc`, `/dev` and temporary directory. The operator's home, SSH ke
 and Docker socket are absent. Only explicitly selected environment variables reach the process;
 credential values are absent from the launcher command and plan file.
 
-The agent prepares its configuration and declares required read and write paths. Claude copies
-settings and the selected login into the private home, exposes plugins read-only and writes its
-transcript to the existing worktree transcript directory. An explicit API key or OAuth token
-takes precedence over the stored login.
+The agent prepares its configuration and grants. Claude copies settings and login into the
+private home, mounts plugins read-only, and writes its transcript to the worktree transcript directory.
+Explicit API credentials override stored login.
 
-The worktree and required Git data retain host paths. Git control files are read-only; cleanup
-quarantines unsafe indexed submodule metadata before host Git resumes. Cleanup stops the
-launcher and removes the private home.
+The workspace is a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket
+branch at the worktree path, made at every run start. The run's Git directory, kept in the
+conductor's cache, is mounted as `.git`; the parent repository is absent. The workspace option
+`shared` adds the parent's `objects` read-only. `.bakers/` and the project's
+[`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) paths are read-only.
+
+Commit inside the run: only checked commits come back, as
+[isolated Git delivery](/provision/security/shared-settings#isolated-git-delivery) describes.
+Cleanup stops the launcher and removes the home.
 
 ## Boundaries
 
 Networking is shared with the Coder environment, including localhost. There is no egress
 allowlist in this backend. Resource limits remain those of the outer environment.
 
-Conductor tools and project hooks execute on the host, outside this sandbox; runs can edit
-worktree scripts those tools execute. Use the conductor's forge tools for delivery.
+Install dependencies and build inside the run. The DDEV web container is as untrusted as the run; bakers checks only a host command's entry point.

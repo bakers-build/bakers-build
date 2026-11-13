@@ -1508,7 +1508,8 @@ export default {
     const binding = { worktreePath: dirname(file) };
     const result = await cfg.tools!.call('agents_catalog', {}, binding);
     const report = JSON.parse(result.text);
-    const operator = agentReport(cfg);
+    const { runtime: _runtime, ...operator } = agentReport(cfg);
+    expect(report).not.toHaveProperty('runtime');
     expect(report).toEqual({
       ...operator,
       agents: operator.agents.map(({ alias, description, harness, model }) => ({
@@ -2097,5 +2098,47 @@ export default {
     expect(opencode?.launchCommand('task')).not.toMatch(
       /effort|thinking|variant/,
     );
+  });
+});
+
+describe('protected paths and host commands', () => {
+  const isolating = `export const runtimes = acc => [...acc, { kind: 'runtime', id: 'test', isolates: true, requiredModules: [] }];`;
+  const load = (body: string, runtime = true) => {
+    const path = writeDescriptorConfig(
+      `${body}${runtime ? " addons: ['./runtime.js']," : ''}`,
+    );
+    writeFileSync(join(dirname(path), 'runtime.js'), isolating);
+    return loadConductorConfig(path);
+  };
+
+  it('keeps the project list of protected paths', async () => {
+    const config = await load(`runtime: { read_only: ['.ddev', '.github'] },`);
+    expect(config.readOnly).toEqual(['.ddev', '.github']);
+    expect(config.runtime?.isolates).toBe(true);
+  });
+
+  it('refuses a host command outside a protected path under an isolating runtime', async () => {
+    await expect(
+      load(`hooks: { before_run: 'pnpm install' },`),
+    ).rejects.toThrow(/hooks\.before_run.*protected path/);
+    await expect(
+      load(
+        `runtime: { read_only: ['.ddev'] }, hooks: { provision_up: { up: 'bash scripts/up.sh' } },`,
+      ),
+    ).rejects.toThrow(/hooks\.provision_up\.up/);
+  });
+
+  it('accepts host commands that start in a protected path and serves provision_exec', async () => {
+    const config = await load(
+      `runtime: { read_only: ['.ddev'] }, hooks: { before_run: 'bash .bakers/scripts/deps.sh', provision_up: { deps: 'bash .bakers/provision.sh deps' }, provision_exec: { drush: 'bash .ddev/exec.sh drush' } },`,
+    );
+    expect(config.tools?.list().map((tool) => tool.name)).toEqual(
+      expect.arrayContaining(['provision_up', 'provision_exec']),
+    );
+  });
+
+  it('leaves host commands unchecked under runtime-host', async () => {
+    const config = await load(`hooks: { before_run: 'pnpm install' },`, false);
+    expect(config.runtime?.isolates ?? false).toBe(false);
   });
 });

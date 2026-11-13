@@ -1,7 +1,7 @@
 # The e2e machine identity's SECOND workspace membership (BB-472).
 #
 # `fixture-agent` (the `client_credentials` identity behind
-# `scripts/setup-test-project.sh`'s generated playground connection) was, before
+# `.bakers/scripts/setup-test-project.sh`'s generated playground connection) was, before
 # this fixture, a member of exactly the default workspace only — reached
 # implicitly through the workspace `app` role `bb_core_bb_conductor_insert()`
 # grants the owner of the seeded conductors, not through an explicit

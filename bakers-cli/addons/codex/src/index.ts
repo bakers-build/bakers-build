@@ -273,7 +273,11 @@ export class CodexAgent implements BbAgent {
   }
 
   /** The launch flags a security mode owns (`docs/addons/codex.md`). */
-  private securityFlags(workspacePath: string, withTools: boolean): string[] {
+  private securityFlags(
+    workspacePath: string,
+    withTools: boolean,
+    isolatedGit: boolean,
+  ): string[] {
     const { mode, sandbox, config } = this.security;
     if (mode === 'system') return [];
     if (mode === 'yolo') {
@@ -290,7 +294,7 @@ export class CodexAgent implements BbAgent {
         `${key}=${typeof value === 'string' ? value : JSON.stringify(value)}`,
       ]);
     if (mode === 'custom') return pairs(Object.entries(config ?? {}));
-    const git = gitSandboxPaths(workspacePath);
+    const git = gitSandboxPaths(workspacePath, isolatedGit);
     const roots = this.allowWrite.map(
       (dir) =>
         `${JSON.stringify(dir.startsWith('~/') ? join(this.home, dir.slice(2)) : dir)} = true`,
@@ -346,12 +350,17 @@ export class CodexAgent implements BbAgent {
     tools?: { url: string },
     env: Readonly<Record<string, string>> = {},
     pluginArgs: readonly string[] = [],
+    isolatedGit = false,
   ): string {
     // Quote at assembly; a plain word has nothing for the shell to expand.
     const word = (t: string) => (/^[\w./=-]+$/.test(t) ? t : shellQuote(t));
     const parts = [
       'codex',
-      ...this.securityFlags(workspacePath, tools !== undefined).map(word),
+      ...this.securityFlags(
+        workspacePath,
+        tools !== undefined,
+        isolatedGit,
+      ).map(word),
     ];
     for (const arg of pluginArgs)
       if (!parts.includes(arg)) parts.push(word(arg));

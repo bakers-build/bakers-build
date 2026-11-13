@@ -31,16 +31,18 @@ export default {
   // The project bootstrap validates env and registers the worktree's DDEV
   // project before its sentinel, then prepares the local test workspace. It
   // starts no DDEV; hook failures remain best-effort. Every hook that acts on a
-  // DDEV project first runs scripts/ddev-own-project.sh, which refuses the
+  // DDEV project first runs .bakers/scripts/ddev-own-project.sh, which refuses the
   // parent checkout an unregistered worktree falls back to.
   hooks: {
-    after_create: 'bash .ddev/worktree-post.sh',
-    before_run: 'bash scripts/worktree-deps.sh',
+    after_create: 'bash .bakers/scripts/worktree-post.sh',
+    before_run: 'bash .bakers/scripts/worktree-deps.sh',
     after_done:
-      'bash scripts/docs-preview.sh stop; bash scripts/conductor-e2e.sh teardown; bash scripts/ddev-own-project.sh && ddev delete -Oy',
+      'bash .bakers/scripts/docs-preview.sh stop; bash .bakers/scripts/conductor-e2e.sh teardown; bash .bakers/scripts/ddev-own-project.sh && ddev delete -Oy',
     // The `provision_up(profile)` agent tool, so a sandboxed run needs neither
-    // a trusted `ddev` nor `pnpm install`. Every profile installs the
-    // bakers-cli and docs dependencies first; `deps` does only that.
+    // a trusted `ddev` nor `pnpm install`. Setup profiles install the
+    // bakers-cli and docs dependencies first; `deps` does only that. Under an
+    // isolating runtime the host installs nothing: the run installs in its
+    // own container (.bakers/scripts/worktree-deps.sh).
     // bb_theme is installed and built by `ddev init` inside DDEV.
     // `ddev provision` reuses a ready site of that provider;
     // `existing-config-fresh` always reinstalls. `docs-preview` builds docs/
@@ -48,23 +50,30 @@ export default {
     // service claims it for `ports_up docs`; a repeat call replaces it.
     // `conductor-e2e` resets the recipe-test playground and starts a detached
     // playground conductor from this worktree's build; `-stop` and `-start`
-    // stop and restart it without a reset (scripts/conductor-e2e.sh).
+    // stop and restart it without a reset (.bakers/scripts/conductor-e2e.sh).
+    // It runs the run's CLI build on the host: the one known exception to
+    // "the host runs only protected code" (docs/decisions/run-isolation.md).
     provision_up: {
-      deps: 'bash scripts/worktree-deps.sh --all',
-      'docs-preview':
-        'bash scripts/worktree-deps.sh --all && bash scripts/docs-preview.sh',
-      'conductor-e2e':
-        'bash scripts/worktree-deps.sh --all && bash scripts/ddev-own-project.sh && ddev provision --provider recipe-test && bash scripts/conductor-e2e.sh',
-      'conductor-e2e-stop': 'bash scripts/conductor-e2e.sh stop',
-      'conductor-e2e-start': 'bash scripts/conductor-e2e.sh start',
-      'recipe-test':
-        'bash scripts/worktree-deps.sh && bash scripts/ddev-own-project.sh && ddev provision --provider recipe-test',
-      'existing-config':
-        'bash scripts/worktree-deps.sh && bash scripts/ddev-own-project.sh && ddev provision --provider existing-config',
-      'existing-config-fresh':
-        'bash scripts/worktree-deps.sh && bash scripts/ddev-own-project.sh && ddev init --provider existing-config',
+      deps: 'bash .bakers/provision.sh deps',
+      'docs-preview': 'bash .bakers/provision.sh docs-preview',
+      'conductor-e2e': 'bash .bakers/provision.sh conductor-e2e',
+      'conductor-e2e-stop': 'bash .bakers/provision.sh conductor-e2e-stop',
+      'conductor-e2e-start': 'bash .bakers/provision.sh conductor-e2e-start',
+      'recipe-test': 'bash .bakers/provision.sh recipe-test',
+      'existing-config': 'bash .bakers/provision.sh existing-config',
+      'existing-config-fresh': 'bash .bakers/provision.sh existing-config-fresh',
+    },
+    // The `provision_exec(key, args)` agent tool: `web` runs the argv in the
+    // DDEV web container, e.g. ['drush', 'uli'] or
+    // ['.ddev/commands/web/phpcs']. The arguments never pass a host shell.
+    provision_exec: {
+      web: 'bash .bakers/provision.sh exec web',
     },
   },
+  // Under an isolating runtime a run sees these read-only and cannot change
+  // them in a commit: the host runs code only from here. A change to one is
+  // made and merged by a maintainer outside the run.
+  runtime: { read_only: ['.bakers', '.ddev', '.github'] },
   // The agent plugins every run of this project gets, installed into a
   // per-declaration agent home (~/.cache/bakers/agent-homes/<harness>/<hash>):
   // the skills WORKFLOW.md bb-phase-work and the recipes require. The bakers
@@ -97,8 +106,9 @@ export default {
     },
   ],
   server: { use: '@bakers-build/addon-remote-drupal' },
-  // addon-ddev serves the `ddev_status`, `ddev_start` and `ddev_exec` agent
-  // tools, so runs reach DDEV only through the conductor, never directly.
+  // addon-ddev serves the `ddev_status` and `ddev_start` agent tools, so runs
+  // reach DDEV only through the conductor, never directly; commands in the
+  // web container run through `provision_exec('web', …)`.
   // Preview links: the project names its services; each machine adds the
   // transport in its own ~/.bakers/machine.config.js ports entry, e.g.
   // { use: '@bakers-build/addon-ports', with: { transport: { use:

@@ -113,6 +113,17 @@
               }
             }
           ]
+        },
+        "provision_exec": {
+          "description": "Commands by key, offered to runs as provision_exec(key, args). Arguments follow the command as argv, never through a shell.",
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z0-9_-]+$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       },
       "additionalProperties": false
@@ -151,6 +162,9 @@
     "select_agent": {
       "function": true,
       "description": "Function choosing the agent for a ticket; replaces the shipped selection."
+    },
+    "runtime": {
+      "$ref": "#/$defs/runtime"
     }
   },
   "required": [
@@ -257,6 +271,20 @@
         ],
         "additionalProperties": false
       }
+    },
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "read_only": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(?:(?!/)(?!.*(?:^|/)\\.{1,2}(?:/|$))(?!.*//)(?!.*?/$)[^\\\\:\\u0000$]+)$"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "description": "Under an isolating runtime: worktree-relative paths the run sees read-only and may not change in a commit. Host commands must start in one of them. .bakers is always protected."
     }
   }
 }

@@ -104,7 +104,7 @@ Installation, unit checks and discovery require only Node/npm. Browser execution
   not CI. `playwright.bdd.config.ts` resolves it through `resolve-base-url.ts`,
   in this order:
 
-  1. `node scripts/setup-worktree.mjs` writes this worktree's public identity and
+  1. `node .bakers/scripts/setup-worktree.mjs` writes this worktree's public identity and
      derived URL into gitignored `.env.ddev` without starting DDEV.
   2. The file URL (or its name-derived URL) wins over ambient `DDEV_PRIMARY_URL`.
      An explicit `PLAYWRIGHT_BASE_URL` is still the highest-priority override.

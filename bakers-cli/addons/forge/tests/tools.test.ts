@@ -1,12 +1,15 @@
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { ToolRequest } from '@bakers-build/conductor/contract';
+import { createRunClone, loadRunClone, saveRunClone } from '@bakers-build/core';
 import { validateArgs } from '@bakers-build/message';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { ForgeBackend, ForgeCheck, ForgePr } from '../src/backend.js';
 import { mergeRule } from '../src/config.js';
 import { tools as presetTools } from '../src/preset.js';
 import { FORGE_TOOL_DEFINITIONS } from '../src/tool-definitions.js';
 import { FORGE_NEEDS_RUN, forgeTools, toolsFor } from '../src/tools.js';
-import { git, gitFixture } from './git-fixture.js';
+import { git, gitFixture, markerRan } from './git-fixture.js';
 
 const SECRET = 'tok-SECRET-123';
 
@@ -411,5 +414,125 @@ describe('forge tools', () => {
       (e: Error) => e.message,
     );
     expect(err).toBe('401 for token [redacted]');
+  });
+});
+
+describe('forge tools for a run clone', () => {
+  const ident = ['-c', 'user.name=t', '-c', 'user.email=t@example.test'];
+  let cacheHome: string | undefined;
+  afterEach(() => {
+    if (cacheHome === undefined) delete process.env.XDG_CACHE_HOME;
+    else process.env.XDG_CACHE_HOME = cacheHome;
+  });
+
+  /** The fixture's clone is the parent repository; the run works in its own clone of the ticket branch. */
+  function cloned() {
+    const f = gitFixture();
+    // The parent is the operator's own repository: drop the fixture's planted
+    // config there, so the marker proves only what the run's directory caused.
+    for (const key of [
+      'core.hooksPath',
+      'core.fsmonitor',
+      'core.sshCommand',
+      'remote.origin.pushurl',
+      `url.file://${f.evil}.insteadOf`,
+    ])
+      git(f.clone, 'config', '--unset', key);
+    rmSync(join(f.clone, '.git/hooks'), { recursive: true });
+    cacheHome = process.env.XDG_CACHE_HOME;
+    process.env.XDG_CACHE_HOME = join(f.root, 'cache');
+    const workspace = join(f.root, 'run-workspace');
+    const record = createRunClone({
+      parent: f.clone,
+      workspace,
+      branch: RUN.branchName,
+      target: 'next',
+    });
+    saveRunClone({ ...record, protectedPaths: ['.bakers'] });
+    const run = (...args: string[]) =>
+      git(
+        workspace,
+        `--git-dir=${record.gitDir}`,
+        `--work-tree=${workspace}`,
+        ...args,
+      );
+    const commit = (path: string) => {
+      mkdirSync(join(workspace, path, '..'), { recursive: true });
+      writeFileSync(join(workspace, path), 'run work');
+      run('add', '-A');
+      run(...ident, 'commit', '-qm', path);
+      return run('rev-parse', 'HEAD');
+    };
+    // What a run could plant in its own Git directory.
+    const plant = () => {
+      const touch = `sh -c 'echo ran >> ${f.marker}'`;
+      writeFileSync(
+        join(record.gitDir, 'config'),
+        `[core]\n\tfsmonitor = ${touch}\n\thooksPath = ${join(record.gitDir, 'hooks')}\n\tsshCommand = ${touch}\n`,
+      );
+      mkdirSync(join(record.gitDir, 'hooks'), { recursive: true });
+      for (const hook of ['reference-transaction', 'pre-push', 'post-update'])
+        writeFileSync(
+          join(record.gitDir, 'hooks', hook),
+          `#!/bin/sh\necho ran >> ${f.marker}\n`,
+          { mode: 0o755 },
+        );
+    };
+    const { backend } = fakeBackend({ remote: f.remote });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    return { f, workspace, record, run, commit, plant, tools };
+  }
+
+  it('forge_fetch fetches into the parent and refreshes the run origin refs without the run config', async () => {
+    const { f, workspace, record, run, plant, tools } = cloned();
+    const seed = join(f.root, 'seed');
+    git(seed, 'checkout', '-q', 'next');
+    const moved = f.commit(seed, 'moved-target');
+    git(seed, 'push', '-q', `file://${f.remote}`, 'next');
+    const ticket = run('rev-parse', 'HEAD');
+    plant();
+
+    const result = JSON.parse(
+      (await tools.forge_fetch!(request({}, workspace))).text,
+    );
+
+    expect(result.fetched).toContainEqual({ name: 'next', sha: moved });
+    expect(git(f.clone, 'rev-parse', 'origin/next')).toBe(moved);
+    rmSync(join(record.gitDir, 'config'));
+    rmSync(join(record.gitDir, 'hooks'), { recursive: true });
+    expect(run('rev-parse', 'origin/next')).toBe(moved);
+    expect(run('cat-file', '-t', moved)).toBe('commit');
+    expect(run('rev-parse', 'HEAD')).toBe(ticket);
+    expect(markerRan(f)).toBe(false);
+  });
+
+  it('forge_push transfers the run commits to the parent branch, then pushes it', async () => {
+    const { f, workspace, record, run, commit, plant, tools } = cloned();
+    const tip = commit('feature.txt');
+    plant();
+
+    const result = JSON.parse(
+      (await tools.forge_push!(request({}, workspace))).text,
+    );
+
+    expect(result).toEqual({ branch: RUN.branchName, sha: tip });
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(tip);
+    expect(f.remoteSha(RUN.branchName)).toBe(tip);
+    expect(loadRunClone(workspace)?.expected).toBe(tip);
+    rmSync(join(record.gitDir, 'config'));
+    expect(run('rev-parse', `origin/${RUN.branchName}`)).toBe(tip);
+    expect(markerRan(f)).toBe(false);
+  });
+
+  it('forge_push rejects a commit that changes a protected path and pushes nothing', async () => {
+    const { f, workspace, record, commit, tools } = cloned();
+    commit('.bakers/provision.sh');
+
+    await expect(tools.forge_push!(request({}, workspace))).rejects.toThrow(
+      /protected path/,
+    );
+
+    expect(git(f.clone, 'rev-parse', RUN.branchName)).toBe(record.expected);
+    expect(f.remoteSha(RUN.branchName)).toBeUndefined();
   });
 });

@@ -2,7 +2,7 @@
 # =============================================================================
 # teardown-test-project.sh — give back everything setup-test-project.sh created.
 #
-#   scripts/teardown-test-project.sh [--project <name>] [--keep-clone]
+#   .bakers/scripts/teardown-test-project.sh [--project <name>] [--keep-clone]
 #
 #     --project <name>  the bb_project whose tickets and runs are purged. It must
 #                       match the name `setup` ran with, because the purge is scoped

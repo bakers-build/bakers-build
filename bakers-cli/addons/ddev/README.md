@@ -39,7 +39,7 @@ Linux only (inherits `@bakers-build/addon-docker-compose`'s constraint); nothing
 
 ## Agent tools
 
-`./preset` exports `tools` (`src/tools.ts`): `ddev_status`, `ddev_start` and `ddev_exec(command)`,
+`./preset` exports `tools` (`src/tools.ts`): `ddev_status` and `ddev_start`,
 run with `cwd` = the run's bound worktree. Each first runs `ddev describe -j` and refuses unless
 its `approot` is that worktree, so an unregistered worktree never reaches the parent checkout's
 project. Listed in a conductor's `addons[]`, the conductor serves

@@ -29,9 +29,7 @@ const opts: DockerOptions = {
   runNetwork: 'bb-runtime-abc',
 };
 const where: HostPaths = {
-  gitCommonDir: '/w/main/.git',
-  gitDir: '/w/main/.git/worktrees/tree',
-  gitLink: '/w/tree/.git',
+  runGitDir: '/cache/run.git',
   runHome: '/h/run',
   cliRoot: '/opt/cli',
   uid: 1000,
@@ -44,6 +42,35 @@ const envFlags = (argv: string[]) =>
   argv.flatMap((a, i) => (a === '-e' ? [argv[i + 1] as string] : []));
 
 describe('dockerArgs', () => {
+  it('mounts the run Git directory as .git and nothing of the parent repository', () => {
+    const mounts = volumes(dockerArgs(launch, opts, where).argv);
+    expect(mounts).toContain('/cache/run.git:/w/tree/.git');
+    expect(mounts.filter((mount) => mount.includes('/w/main'))).toEqual([]);
+  });
+  it('mounts the parent objects read-only only for a shared clone', () => {
+    const mounts = volumes(
+      dockerArgs(launch, opts, {
+        ...where,
+        sharedObjects: '/w/main/.git/objects',
+      }).argv,
+    );
+    expect(mounts.filter((mount) => mount.includes('/w/main'))).toEqual([
+      '/w/main/.git/objects:/w/main/.git/objects:ro',
+    ]);
+  });
+  it('mounts protected paths read-only over the writable workspace', () => {
+    const mounts = volumes(
+      dockerArgs(
+        { ...launch, readPaths: ['/w/tree/.bakers', '/w/tree/.ddev'] },
+        opts,
+        where,
+      ).argv,
+    );
+    expect(
+      mounts.indexOf('/w/tree/.bakers:/w/tree/.bakers:ro'),
+    ).toBeGreaterThan(mounts.indexOf('/w/tree:/w/tree'));
+    expect(mounts).toContain('/w/tree/.ddev:/w/tree/.ddev:ro');
+  });
   it('starts one named, labelled container', () => {
     const { argv } = dockerArgs(launch, opts, where);
     expect(argv.slice(0, 12)).toEqual([
@@ -67,17 +94,7 @@ describe('dockerArgs', () => {
   it('mounts exactly the allowed paths', () => {
     expect(volumes(dockerArgs(launch, opts, where).argv)).toEqual([
       '/w/tree:/w/tree',
-      '/w/tree/.git:/w/tree/.git:ro',
-      '/w/main/.git:/w/main/.git',
-      '/w/main/.git/hooks:/w/main/.git/hooks:ro',
-      '/w/main/.git/config:/w/main/.git/config:ro',
-      '/w/main/.git/config.worktree:/w/main/.git/config.worktree:ro',
-      '/w/main/.git/modules:/w/main/.git/modules:ro',
-      '/w/main/.git/worktrees:/w/main/.git/worktrees:ro',
-      '/w/main/.git/worktrees/tree:/w/main/.git/worktrees/tree',
-      '/w/main/.git/worktrees/tree/commondir:/w/main/.git/worktrees/tree/commondir:ro',
-      '/w/main/.git/worktrees/tree/gitdir:/w/main/.git/worktrees/tree/gitdir:ro',
-      '/w/main/.git/worktrees/tree/config.worktree:/w/main/.git/worktrees/tree/config.worktree:ro',
+      '/cache/run.git:/w/tree/.git',
       '/opt/cli:/opt/cli:ro',
       '/h/run:/h/run',
       '/home/op/.agent/p:/home/op/.agent/p:ro',
@@ -137,28 +154,6 @@ describe('dockerArgs', () => {
     const { argv } = dockerArgs(launch, { ...opts, docker: 'podman' }, where);
     expect(argv[0]).toBe('podman');
     expect(argv).toContain('--userns=keep-id');
-  });
-
-  it('protects the Git files of a main checkout', () => {
-    const { gitLink: _, ...main } = where;
-    const v = volumes(
-      dockerArgs({ ...launch, workspacePath: '/w/main' }, opts, {
-        ...main,
-        gitDir: '/w/main/.git',
-      }).argv,
-    );
-    expect(
-      v.filter(
-        (m) =>
-          m === '/w/main/.git/config.worktree:/w/main/.git/config.worktree:ro',
-      ),
-    ).toHaveLength(1);
-    expect(v).toContain('/w/main/.git/worktrees:/w/main/.git/worktrees:ro');
-    expect(
-      v.some((m) =>
-        /commondir|gitdir|\/w\/main\/\.git:\/w\/main\/\.git:ro/.test(m),
-      ),
-    ).toBe(false);
   });
 
   it('adds operator mounts read-only', () => {

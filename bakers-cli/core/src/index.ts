@@ -153,12 +153,16 @@ export {
   exec,
   setDefaultCommandRunner,
 } from './core/exec.js';
-export { quarantinePlanted } from './core/git-quarantine.js';
 export {
   type GitSandboxPaths,
   gitSandboxPaths,
   withoutGitDirs,
 } from './core/git-sandbox.js';
+export {
+  refreshRunTarget,
+  runCloneTip,
+  transferIsolatedCommit,
+} from './core/isolated-git.js';
 export {
   type ConductorLiveness,
   type ConductorLivenessInput,
@@ -180,7 +184,17 @@ export {
   type VerifyProcessInput,
   verifyConductorProcess,
 } from './core/proc.js';
+export { protectedProjectPaths } from './core/protected-project-paths.js';
 export { normalizeRepoUrl } from './core/repo-url.js';
+export {
+  createRunClone,
+  loadRunClone,
+  type RunClone,
+  type RunCloneOptions,
+  removeRunClone,
+  runCloneGitDir,
+  saveRunClone,
+} from './core/run-clone.js';
 export { cliRootOf } from './core/runtime-paths.js';
 export { shellQuote } from './core/shell.js';
 export { DEFAULT_SLUG_MAX_LENGTH, slugify } from './core/slug.js';

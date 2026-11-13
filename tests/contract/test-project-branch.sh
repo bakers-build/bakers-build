@@ -8,7 +8,7 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 die() { echo "$*" >&2; exit 1; }
 say() { :; }
 for name in test_branch_name workspace_has_branch select_workspace_branch parent_branch_for seed_fixture_origin; do
-  body="$(awk -v fn="$name" '$0 == fn "() {" { inside=1 } inside { print } inside && /^}/ { exit }' "$ROOT/scripts/setup-test-project.sh")"
+  body="$(awk -v fn="$name" '$0 == fn "() {" { inside=1 } inside { print } inside && /^}/ { exit }' "$ROOT/.bakers/scripts/setup-test-project.sh")"
   [ -n "$body" ] || fail "missing $name"
   eval "$body"
 done

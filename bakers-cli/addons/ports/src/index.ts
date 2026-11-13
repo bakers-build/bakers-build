@@ -18,7 +18,7 @@ import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import type { BbCommandHost, BbCommandPlugin } from '@bakers-build/core';
-import { homeBbDir } from '@bakers-build/core';
+import { homeBbDir, loadRunClone } from '@bakers-build/core';
 import type { Command } from 'commander';
 import { servicesToShare, shareAll } from './claim-share.js';
 import type { ClaimedDiscovery, ClaimedService, TunnelRule } from './claims.js';
@@ -233,7 +233,10 @@ export function shouldKeepTunnelRecord(
   });
 }
 
+/** The worktree's branch; a run clone has no Git on the host, so its record answers. */
 export function currentBranch(worktree: string): string | null {
+  const clone = loadRunClone(worktree);
+  if (clone) return clone.branch;
   try {
     return execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
       cwd: worktree,

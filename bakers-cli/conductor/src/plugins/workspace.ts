@@ -1,3 +1,4 @@
+import type { RunClone } from '@bakers-build/core';
 import type { WorktreeTeardown } from './executor.js';
 
 export interface EnsuredWorkspace {
@@ -17,6 +18,12 @@ export interface EnsuredWorkspace {
    * keys still win.
    */
   env?: Record<string, string>;
+  /**
+   * Set when the workspace is a fresh clone for an isolated run instead of a
+   * linked worktree: its Git directory lies outside `path`, which has no
+   * `.git` on the host.
+   */
+  clone?: RunClone;
 }
 
 export interface BbWorkspace {
