@@ -101,6 +101,8 @@ function runBootstrap(worktree: string): BootstrapResult {
     cwd: worktree,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
+    // Inside an isolated agent run the conductor's variable must not steer the script.
+    env: { ...process.env, BAKERS_RUNTIME_ISOLATES: '0' },
   });
   return {
     status: r.status ?? -1,

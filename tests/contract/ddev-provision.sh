@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Run inside an agent run, the conductor's own variables must not steer the scripts under test.
+unset BAKERS_WORKTREE_PATH BAKERS_RUNTIME_ISOLATES BAKERS_BRANCH_NAME WORKSPACE_ROOT
 
 # `.ddev/commands/host/provision` reuses a ready site, starts a stopped one and installs a missing
 # or different one. A fake `ddev` on PATH logs its calls; a local HTTP server stands in for the site.
@@ -234,7 +236,7 @@ grep -q '^pnpm install' "$TRACE" || fail 'runtime-host no longer installs'
 case=own-project-without-git
 plain="$work/plain"; mkdir -p "$plain"
 arrange running - 200; export APPROOT="$plain"; rc=0
-out="$(cd "$plain" && GIT_CEILING_DIRECTORIES="$work" BAKERS_WORKTREE_PATH="$plain" PATH="$work/bin:$PATH" bash "$root/.bakers/scripts/ddev-own-project.sh" 2>&1)" || rc=$?
+out="$(cd "$plain" && GIT_CEILING_DIRECTORIES="$work" BAKERS_RUNTIME_ISOLATES=1 BAKERS_WORKTREE_PATH="$plain" PATH="$work/bin:$PATH" bash "$root/.bakers/scripts/ddev-own-project.sh" 2>&1)" || rc=$?
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 
 # The site containers are as untrusted as a run: what the host executes or reads is read-only there.

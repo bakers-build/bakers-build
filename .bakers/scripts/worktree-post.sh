@@ -13,8 +13,12 @@ if [ -f "${SENTINEL}" ]; then
   exit 0
 fi
 
-# The conductor names the parent checkout in WORKSPACE_ROOT: an isolated run's workspace has no Git.
-PARENT_PATH="${WORKSPACE_ROOT:-$(git worktree list --porcelain | sed -n '1s/^worktree //p')}"
+# An isolated run's workspace has no Git: the conductor names the parent checkout in WORKSPACE_ROOT.
+if [ "${BAKERS_RUNTIME_ISOLATES:-0}" = 1 ]; then
+  PARENT_PATH="${WORKSPACE_ROOT}"
+else
+  PARENT_PATH=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+fi
 mkdir -p .bakers
 # The connection is private (~/.bakers/connections/) and needs no copy; the retired
 # conductor.config.local.js and its worktree-local base_url rewrite are gone.

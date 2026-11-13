@@ -66,11 +66,14 @@ Place new host-executed hook and provisioning scripts, including their host-side
 `.bakers/scripts/` and point every caller there. `.bakers/` is always read-only during isolated
 runs. For existing scripts elsewhere, explain the proposed move and affected callers, then obtain
 consent before moving them; general project-write authorization alone is not migration consent.
-If a required host-read or host-executed path cannot move, check the selected addons' default
-`runtime.read_only` declarations first. Ask for a project `runtime.read_only` addition only for
-an uncovered path, preserving inherited protections with `'$inherit'`. A declined or unanswered
-move stays unresolved; report the path and protection gap. Nested entries protect their entire
-top-level project folder against ancestor renames; explain this scope when obtaining consent.
+List every other path the host executes or reads as trusted (such as `.ddev` or `.github`) in the
+project's `runtime.read_only`: the list is the project's alone, with no addon default. Under an
+isolating runtime each hook, `provision_up` and `provision_exec` command must start with a script
+in a listed path, and that script calls only protected code; anything the run can write, such as
+a dependency install or a build, belongs in a container. Offer `provision_exec` keys for commands
+agents run in the project's containers. A declined or unanswered move stays unresolved; report
+the path and protection gap. Nested entries protect their entire top-level project folder against
+ancestor renames; explain this scope when obtaining consent.
 See [hook protection](https://bakers.build/provision/hooks#protect-host-executed-files).
 
 Use [addon ownership](https://bakers.build/addons/configure), the linked configuration guides and current CLI help. Initialization supplies a starting

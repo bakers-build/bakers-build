@@ -5,8 +5,9 @@
  * Creates a playground ticket and hands it to the playground conductor.
  *
  * Run inside the control plane, from a sandboxed run as
- * `ddev_exec("drush php:script scripts/e2e/playground-ticket.php --
- * <conductor_id> <title> [<state>]")`; `.bakers/scripts/conductor-e2e.sh` prints the
+ * `provision_exec('web', ['drush', 'php:script',
+ * 'scripts/e2e/playground-ticket.php', '--', '<conductor_id>', '<title>',
+ * '<state>'])`; `.bakers/scripts/conductor-e2e.sh` prints the
  * line with the conductor_id filled in. The ticket is a `bb_work` chore with
  * recipe `matt` in the conductor's project, default state `working`. Prints
  * the ticket identifier. Teardown purges it with the conductor's other work.

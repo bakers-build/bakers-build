@@ -54,7 +54,7 @@ start() {
 Playground conductor: $id
   log      $workspace/.bakers/log.txt
   config   $workspace/.bakers/project.config.js, $workspace/.bakers/connection.config.js
-  ticket   ddev_exec("drush php:script scripts/e2e/playground-ticket.php -- $id '<title>' [<state>]")
+  ticket   provision_exec('web', ['drush', 'php:script', 'scripts/e2e/playground-ticket.php', '--', '$id', '<title>', '<state>'])
   stop     provision_up('conductor-e2e-stop'); start again: provision_up('conductor-e2e-start')
 EOF
 }

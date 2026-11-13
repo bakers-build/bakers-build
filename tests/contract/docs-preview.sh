@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Run inside an agent run, the conductor's own variables must not steer the scripts under test.
+unset BAKERS_WORKTREE_PATH BAKERS_RUNTIME_ISOLATES BAKERS_BRANCH_NAME WORKSPACE_ROOT
 
 # `.bakers/scripts/docs-preview.sh` (the `provision_up('docs-preview')` profile) builds docs/ and serves the
 # built site detached, one preview per worktree, on 127.0.0.1 only. A fake `pnpm` on PATH writes a

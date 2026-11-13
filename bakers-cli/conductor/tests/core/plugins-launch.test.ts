@@ -186,7 +186,7 @@ describe('conductor: a run starts with the project plugins installed', () => {
     const worktree = mkdtempSync(join(tmpdir(), 'bakers-plugins-launch-'));
     writeFileSync(
       join(worktree, 'WORKFLOW.md'),
-      '## bb-phase-work\n\n### Checks\n\n| Check | `command` for `ddev_exec` |\n|---|---|\n| PHPCS | `.ddev/commands/web/phpcs` |\n',
+      '## bb-phase-work\n\n### Checks\n\n| Check | `args` for `provision_exec` |\n|---|---|\n| PHPCS | `.ddev/commands/web/phpcs` |\n',
     );
     const agent = baseAgent([], {
       installPlugins: async (_m, _home) => ({

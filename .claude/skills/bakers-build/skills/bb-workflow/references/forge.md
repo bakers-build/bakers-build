@@ -9,6 +9,6 @@ Scope: ticket branch/suffixes; target_branch else base_branch, or ticket branch 
 - forge_checks: poll to completion.
 - forge_merge: only at explicitly authorized done.
 
-With `runtime_transfer_commit`, refresh private origin refs after fetch; transfer the intended full hash before push. Deliver protected-file changes outside the run.
+Run clone: commit before ending; forge_push transfers checked commits. Read-only merge failure: report it, a maintainer merges outside the run.
 
 Tools enforce ownership, target, Conventional Commits title, checks, project merge method, safe deletion and squash trailer. Correct refusals before retrying. Without forge tools, read [fallback](forge-fallback.md).
