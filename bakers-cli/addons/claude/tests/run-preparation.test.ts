@@ -46,9 +46,9 @@ it('prepares a private home and exposes only plugins and this worktree transcrip
   expect(
     JSON.parse(readFileSync(join(config, '.claude.json'), 'utf8')),
   ).toEqual({ hasCompletedOnboarding: true });
-  expect(readFileSync(join(config, 'settings.json'), 'utf8')).toBe(
-    '{"enabled":true}',
-  );
+  expect(
+    JSON.parse(readFileSync(join(config, 'settings.json'), 'utf8')),
+  ).toEqual({ enabled: true, skipDangerousModePermissionPrompt: true });
 });
 
 it('uses a private login copy when no run credential is supplied', () => {
