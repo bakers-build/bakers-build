@@ -769,6 +769,8 @@ display:
                 icon: ''
                 searchable: false
                 open_states: true
+              facets_deployment:
+                plugin_id: bef_hidden
               facets_parent:
                 plugin_id: bb_option_picker
                 clear_label: 'Any parent'
@@ -3421,6 +3423,56 @@ display:
                 weights:
                   build: 5
                 settings: {  }
+        facets_deployment:
+          id: facets_deployment
+          table: search_api_index_bb_tickets
+          field: facets_deployment_identifiers
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: facets_filter
+          operator: '='
+          value: ''
+          group: 1
+          exposed: true
+          expose:
+            operator_id: ''
+            label: Deployment
+            description: ''
+            use_operator: false
+            operator: ''
+            operator_limit_selection: false
+            operator_list: {  }
+            identifier: deployment
+            required: false
+            remember: false
+            multiple: false
+            remember_roles:
+              authenticated: authenticated
+          is_grouped: false
+          group_info:
+            label: ''
+            description: ''
+            identifier: ''
+            optional: true
+            widget: select
+            multiple: false
+            remember: false
+            default_group: All
+            default_group_multiple: {  }
+            group_items: {  }
+          hierarchy: false
+          label_display: visible
+          facet:
+            query_operator: or
+            hard_limit: 0
+            min_count: 1
+            missing: false
+            missing_label: null
+            show_numbers: true
+            show_only_one_result: false
+            depends_on_exposed_filter: ''
+            processor_configs: {  }
         facets_parent:
           id: facets_parent
           table: search_api_index_bb_tickets

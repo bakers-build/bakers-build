@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\ui_patterns\SourcePluginBase;
 use Drupal\Core\Cache\Cache;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -24,6 +25,44 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
 final class BbTicketDetailHeaderSourceTest extends KernelTestBase {
+
+  /**
+   * The header renders completed deployment targets as accessible plain badges.
+   */
+  public function testClosedDeploymentBadges(): void {
+    $this->installEntitySchema('bb_environment');
+    $viewer = $this->createUser(['administer bakers']);
+    self::assertInstanceOf(UserInterface::class, $viewer);
+    $this->container->get('current_user')->setAccount($viewer);
+    $etm = $this->container->get('entity_type.manager');
+    $type = $etm->getStorage('bb_term')->create(['vid' => 'type', 'name' => 'deployment']);
+    $type->save();
+    $environment = $etm->getStorage('bb_environment')->create(['name' => 'develop', 'project_id' => $this->projectId]);
+    $environment->save();
+    $ticket = $this->createTicket();
+    $deployment = $this->createTicket([
+      'ticket_type' => $type->id(),
+      'environments' => [$environment->id()],
+      'referenced_tickets' => [$ticket->id()],
+    ]);
+    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')->getDefinition('slot')['schema'];
+    $source = $this->container->get('plugin.manager.ui_patterns_source')->createInstance(
+      'bb_ticket_detail_header',
+      SourcePluginBase::buildConfiguration('content', $definition, [], []),
+    );
+    self::assertInstanceOf(BbTicketDetailHeaderSource::class, $source);
+    $source->setContextValue('entity', $ticket);
+    $this->container->get('theme_installer')->install(['bb_theme']);
+    $renderer = $this->container->get('renderer');
+    $build = $source->getPropValue();
+    self::assertStringNotContainsString('Deployed to develop', (string) $renderer->renderInIsolation($build));
+    $deployment->set('closed', TRUE)->save();
+    $build = $source->getPropValue();
+    $html = (string) $renderer->renderInIsolation($build);
+    self::assertStringContainsString('Deployed to develop', $html);
+    self::assertStringContainsString('data-badge-label>develop', $html);
+    self::assertStringNotContainsString('<a ', $html);
+  }
 
   use UserCreationTrait;
 

@@ -1,11 +1,11 @@
 # Addons
 
-An **addon** adds functionality to bakers.build. It can connect an agent, such as [Claude](/addons/claude), or a terminal application, such as [herdr](/addons/herdr); give agents more tools, such as [Ports](/addons/ports) for sharing a preview; or add an operation to a ticket, such as the [Artifacts](/addons/bakers-ui-artifacts) tab. Every shipped addon, the agent addons included, is open source and free.
+An **addon** adds functionality to bakers.build. It can connect an agent, such as [Claude](/addons/claude), or a terminal application, such as [herdr](/addons/herdr); give agents more tools, such as [Ports](/addons/ports) for sharing a preview. Every shipped addon, the agent addons included, is open source and free.
 
 Addons are JavaScript packages. You enable one by listing it in the `addons` array of your configuration:
 
 ```js
-addons: ['@bakers-build/addon-bakers-ui-artifacts'],
+addons: ['@bakers-build/addon-ports'],
 ```
 
 ## Choose your task

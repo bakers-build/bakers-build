@@ -19,10 +19,6 @@ addons: [
 ],
 ```
 
-## Options
-
-No options. A non-empty `with` is rejected.
-
 ## Check it works
 
 Use `bakers ports list`, then `bakers ports up <service-key>` with the conductor running. Sharing returns a `https://<random>.trycloudflare.com` URL that serves it.

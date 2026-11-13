@@ -176,7 +176,7 @@ export default {
 
 Never paste a real secret into a ticket, a document or a committed file. A `client_secret` read from `process.env` works at run time; `bakers config check` then reports the value as not checked. The plugin also offers `oauth2_password`; use it only where the operator explicitly enables that grant.
 
-Other profiles of one host: `bakers auth use <id>` switches the active profile and `--auth-profile <id>` overrides it for one command. Inline HTTP Basic ([`@bakers-build/addon-auth-basic`](/addons/auth-basic)) exists for servers configured for it.
+Other profiles of one host: `bakers auth use <id>` switches the active profile and `--auth-profile <id>` overrides it for one command.
 
 ## Chat connector
 

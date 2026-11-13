@@ -7,6 +7,7 @@ namespace Drupal\Tests\bb_board\Kernel;
 use Drupal\Tests\bb_core\Kernel\ClaimKernelTestBase;
 use Drupal\bb_board\ProjectBoard;
 use Drupal\bb_core\Entity\BbProjectInterface;
+use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\user\UserInterface;
@@ -19,6 +20,39 @@ use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
 final class ProjectBoardCardsTest extends ClaimKernelTestBase {
+
+  /**
+   * Cards name distinct completed targets, and omit planned deployments.
+   */
+  public function testClosedDeploymentEnvironments(): void {
+    $this->installEntitySchema('bb_environment');
+    $etm = $this->container->get('entity_type.manager');
+    $ticket = $this->seedAssignedTicket('working');
+    $type = $etm->getStorage('bb_term')->create(['vid' => 'type', 'name' => 'deployment']);
+    $type->save();
+    $ids = [];
+    foreach (['develop', 'production'] as $name) {
+      $environment = $etm->getStorage('bb_environment')->create([
+        'name' => $name,
+        'project_id' => $ticket->getProject()->id(),
+      ]);
+      $environment->save();
+      $ids[] = $environment->id();
+    }
+    $deployment = $etm->getStorage('bb_ticket')->create([
+      'title' => 'Release',
+      'workflow' => 'bb_work',
+      'ticket_type' => $type->id(),
+      'project_id' => $ticket->getProject()->id(),
+      'environments' => $ids,
+      'referenced_tickets' => [$ticket->id()],
+    ]);
+    self::assertInstanceOf(BbTicketInterface::class, $deployment);
+    $deployment->save();
+    self::assertArrayNotHasKey('deployed_to', $this->cards([$ticket])[0]);
+    $deployment->set('closed', TRUE)->save();
+    self::assertSame(['develop', 'production'], $this->cards([$ticket])[0]['deployed_to'] ?? []);
+  }
 
   /**
    * {@inheritdoc}
@@ -164,6 +198,7 @@ final class ProjectBoardCardsTest extends ClaimKernelTestBase {
       $this->container->get('bb_core.date'),
       $this->container->get('bb_core.reference_counter'),
       $this->container->get('entity_type.manager'),
+      $this->container->get('bb_core.deployment_lookup'),
     );
     $reloaded = [];
     foreach ($tickets as $ticket) {
