@@ -113,8 +113,8 @@ to the base repository failed with HTTP 403.
 `registry-rehearsal.yml` runs only on the dedicated `ci/ghcr-rehearsal` branch or
 explicit manual dispatch. It grants `packages: write` only to its image-gate job;
 PR checks retain read-only permissions. After the full Docker/PHPUnit/browser/config
-sequence passes, the same PHP, nginx, docs and PM bot images are pushed to private
-`ghcr.io/bakers-build/bakers-rehearsal-{php,nginx,docs,pm-bot}` packages with SHA/run tags.
+sequence passes, the same PHP, nginx and docs images are pushed to private
+`ghcr.io/bakers-build/bakers-rehearsal-{php,nginx,docs}` packages with SHA/run tags.
 The script rejects existing non-private packages before login, verifies visibility
 after publication, pulls by digest and checks the image ID against the tested image.
 Evidence is retained in `gate-reports/registry.txt`. No `latest`/`next` tags or
@@ -138,8 +138,10 @@ Before enabling it:
 1. Resolve the open GitLab MR backlog; keep customer branches private. Merge the reviewed changes
    through the normal working/review gates. Update the Bakers project repository/default to GitHub
    and `next` only after those branches have a safe destination.
-2. Set the canonical GHCR packages `bakers-build/php`, `bakers-build/nginx`, `bakers-build/docs`, `bakers-build/pm-bot`
+2. Set the canonical GHCR packages `bakers-build/php`, `bakers-build/nginx`, `bakers-build/docs`
    public in Package settings and verify anonymous pulls. The rehearsal packages stay private.
+   The PM bot image is published by `bakers-build/hermes-bot` as `ghcr.io/bakers-build/hermes-bot`;
+   the old `bakers-build/pm-bot` package keeps its tags.
 3. Protect GitHub's `release` environment for `next` and `main` and transfer npm/Komodo credentials
    into that environment. Update the versioned infra Resource Sync to GitHub/`next`, run the sync,
    and verify the standard stacks keep their identities, data volumes and secrets.

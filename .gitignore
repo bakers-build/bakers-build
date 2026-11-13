@@ -128,6 +128,3 @@ node_modules/
 
 # Restricted local publication-audit evidence.
 /.bakers/private-audit/
-
-# The PM bot env file: secrets.
-/experimental/pm-bot/.env

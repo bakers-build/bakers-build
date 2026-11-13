@@ -460,26 +460,6 @@ jobs:
         run: |-
           bash tests/contract/mr-title.test.sh
           if [ "$EVENT" = pull_request ]; then bash tests/contract/mr-title.sh "$PR_TITLE"; fi
-  pm_bot:
-    runs-on: ${{ fromJSON(vars.RUNNER_CHECKS || '"warp-ubuntu-latest-x64-2x"') }}
-    if: *checks
-    container: node:22
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Prepare container workspace
-        run: |
-          git config --global --add safe.directory "$PWD"
-          echo "CI_PROJECT_DIR=$PWD" >> "$GITHUB_ENV"
-      - name: Existing validation gates
-        run: |-
-          set -eu
-          apt-get update && apt-get install -y --no-install-recommends python3 python3-yaml
-          node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'
-          bash tests/contract/pm-bot.sh
   image_gate:
     # Its own, larger runner: PHPUnit and the browser suite run with the parallelism set in the gate script.
     runs-on: ${{ fromJSON(vars.RUNNER_IMAGE_GATE || '"warp-ubuntu-latest-x64-16x"') }}
@@ -563,7 +543,6 @@ jobs:
       - config_sync
       - composer_audit
       - compose_render
-      - pm_bot
       - conductor
       - runtime_bwrap
       - tui

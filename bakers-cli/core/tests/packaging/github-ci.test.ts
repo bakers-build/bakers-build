@@ -116,7 +116,6 @@ describe('GitHub migration checks', () => {
     'conductor',
     'tui',
     'web_ui',
-    'pm_bot',
     'release_rehearsal',
   ])('%s prepares the mounted checkout for container Git and path consumers', (name) => {
     const workflow = parse(read('.github/workflows/checks.yml'));
@@ -190,7 +189,6 @@ describe('GitHub migration checks', () => {
       'config_sync',
       'composer_audit',
       'compose_render',
-      'pm_bot',
       'conductor',
       'runtime_bwrap',
       'tui',
@@ -508,6 +506,17 @@ describe('GitHub migration checks', () => {
     });
   });
 
+  it('runs no PM bot job on GitHub or GitLab', () => {
+    const checks = parse(read('.github/workflows/checks.yml'));
+    expect(Object.keys(checks.jobs)).not.toContain('pm_bot');
+    expect(checks.jobs.required.needs).not.toContain('pm_bot');
+    expect(
+      Object.keys(parse(read('.gitlab-ci.yml'))).filter((key) =>
+        key.includes('pm_bot'),
+      ),
+    ).toEqual([]);
+  });
+
   it('retains the existing validation commands', () => {
     const old = parse(read('.gitlab-ci.yml'));
     const workflow = parse(read('.github/workflows/checks.yml'));
@@ -518,7 +527,6 @@ describe('GitHub migration checks', () => {
       'docs_pages',
       'config_sync',
       'compose_render',
-      'pm_bot',
       'conductor',
       'tui',
       'tui_musl',
