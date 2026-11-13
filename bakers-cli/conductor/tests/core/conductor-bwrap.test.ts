@@ -274,6 +274,10 @@ it.skipIf(!available)(
       // The commit stays in the run's clone until the run ends.
       expect(git('rev-parse', 'HEAD')).toBe(parentTip);
       expect(git('rev-parse', 'agent-run')).toBe(parentTip);
+      // The fixture agent attacked the parent's Git data and .bakers: both are untouched.
+      expect(existsSync(join(main, '.git/probe'))).toBe(false);
+      expect(readFileSync(join(main, '.bakers/keep'), 'utf8')).toBe('');
+      expect(readFileSync(join(ws, '.bakers/keep'), 'utf8')).toBe('');
       // On the host only the stub: no objects, so nothing of the run's Git.
       expect(existsSync(join(ws, '.git', 'objects', 'pack'))).toBe(false);
       expect(existsSync(join(ws, '.git', 'hooks'))).toBe(false);

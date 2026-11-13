@@ -233,7 +233,9 @@ container; only checked commits come back.
 1. **A fresh run clone.** At every isolated run start the workspace (Git workspace or herdr) clones
    the ticket branch at the stable worktree path. The Git directory lives in the conductor's cache
    (`$XDG_CACHE_HOME/bakers/run-git/<hash>.git`) and is mounted as `.git` only inside the run. On
-   the host the workspace's `.git` is an empty placeholder; the host never runs Git there, and the
+   the host the workspace's `.git` is a stub the host rewrites at every run start (`HEAD` on the
+   ticket branch, no objects), so host tools there name the ticket branch instead of finding the
+   parent checkout above; the conductor itself runs no Git there. The
    parent repository is not mounted in the run. The clone carries the target branch as
    `origin/<target>`; nothing is merged. Tracked files are reset, untracked files removed, ignored
    files (`node_modules`, `vendor`) kept. Uncommitted work does not reach the next run. herdr shows
