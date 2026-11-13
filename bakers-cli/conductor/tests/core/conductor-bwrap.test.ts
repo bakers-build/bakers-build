@@ -274,7 +274,9 @@ it.skipIf(!available)(
       // The commit stays in the run's clone until the run ends.
       expect(git('rev-parse', 'HEAD')).toBe(parentTip);
       expect(git('rev-parse', 'agent-run')).toBe(parentTip);
-      expect(existsSync(join(ws, '.git', 'HEAD'))).toBe(false);
+      // On the host only the stub: no objects, so nothing of the run's Git.
+      expect(existsSync(join(ws, '.git', 'objects', 'pack'))).toBe(false);
+      expect(existsSync(join(ws, '.git', 'hooks'))).toBe(false);
       expect(existsSync(join(root, 'runtime', uuid))).toBe(true);
       remote.setRunLogStorageAllowed(uuid, true);
       remote.markDone(uuid);

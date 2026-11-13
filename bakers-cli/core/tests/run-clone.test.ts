@@ -79,11 +79,16 @@ function fixture() {
   return { root, parent, workspace, gitDir, create, run };
 }
 
-it('clones the ticket branch with its Git directory outside the workspace, an empty .git placeholder and the target as an unmerged ref', () => {
+it('clones the ticket branch with its Git directory outside the workspace, a host stub that names the branch, and the target as an unmerged ref', () => {
   const { parent, workspace, gitDir, create, run } = fixture();
   const record = create();
 
-  expect(readdirSync(join(workspace, '.git'))).toEqual([]);
+  expect(readdirSync(join(workspace, '.git')).sort()).toEqual([
+    'HEAD',
+    'config',
+    'objects',
+    'refs',
+  ]);
   expect(readFileSync(join(workspace, 'dir/tracked'), 'utf8')).toBe('ticket');
   expect(run('symbolic-ref', 'HEAD')).toBe('refs/heads/ticket');
   expect(run('rev-parse', 'HEAD')).toBe(git(parent, 'rev-parse', 'ticket'));
@@ -95,6 +100,9 @@ it('clones the ticket branch with its Git directory outside the workspace, an em
   expect(existsSync(join(workspace, 'target-only'))).toBe(false);
   expect(run('status', '--porcelain')).toBe('');
   expect(record).toMatchObject({ gitDir, workspace, branch: 'ticket' });
+  // Host tools in the workspace see the ticket branch, not the parent checkout above.
+  expect(git(workspace, 'branch', '--show-current')).toBe('ticket');
+  expect(git(workspace, 'rev-parse', '--show-toplevel')).toBe(workspace);
 });
 
 it('copies objects into independent inodes without alternates by default', () => {
@@ -159,7 +167,12 @@ it('does not write through a symlink the previous run planted over a tracked dir
 
   expect(readdirSync(outside)).toEqual([]);
   expect(readFileSync(join(workspace, 'dir/tracked'), 'utf8')).toBe('ticket');
-  expect(readdirSync(join(workspace, '.git'))).toEqual([]);
+  expect(readdirSync(join(workspace, '.git')).sort()).toEqual([
+    'HEAD',
+    'config',
+    'objects',
+    'refs',
+  ]);
 });
 
 it('refuses a branch the parent does not have', () => {
@@ -191,15 +204,26 @@ it('stores the clone outside the workspace by default and finds it again by work
   expect(existsSync(record.gitDir)).toBe(false);
 });
 
-it('keeps the empty .git placeholder in place so mounts over it survive a refresh', () => {
+it('keeps the .git stub directory in place so mounts over it survive a refresh, and rewrites its content', () => {
   const { workspace, create } = fixture();
   create();
   const before = statSync(join(workspace, '.git')).ino;
   create();
   expect(statSync(join(workspace, '.git')).ino).toBe(before);
   writeFileSync(join(workspace, '.git/HEAD'), 'ref: refs/heads/planted\n');
+  writeFileSync(join(workspace, '.git/config'), '[core]\n\tfsmonitor = x\n');
+  mkdirSync(join(workspace, '.git/hooks'));
   create();
-  expect(readdirSync(join(workspace, '.git'))).toEqual([]);
+  expect(readFileSync(join(workspace, '.git/config'), 'utf8')).not.toContain(
+    'fsmonitor',
+  );
+  expect(git(workspace, 'branch', '--show-current')).toBe('ticket');
+  expect(readdirSync(join(workspace, '.git')).sort()).toEqual([
+    'HEAD',
+    'config',
+    'objects',
+    'refs',
+  ]);
 });
 
 it('saves the previous run commits before starting fresh, and sets a refused Git directory aside', () => {

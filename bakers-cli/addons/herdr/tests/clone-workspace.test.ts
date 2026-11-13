@@ -104,7 +104,12 @@ it('ensures a run clone and a plain herdr workspace instead of a herdr worktree'
     target: 'next',
     shared: false,
   });
-  expect(readdirSync(join(path, '.git'))).toEqual([]);
+  expect(readdirSync(join(path, '.git')).sort()).toEqual([
+    'HEAD',
+    'config',
+    'objects',
+    'refs',
+  ]);
   expect(git(root, 'rev-parse', BRANCH)).toBe(
     git(root, 'rev-parse', 'origin/next'),
   );

@@ -176,7 +176,9 @@ console.log(JSON.stringify({commit}));
       expect(snapshot(common)).toEqual(before);
       expect(snapshot(sibling)).toEqual(siblingBefore);
       expect(git(main, 'rev-parse', 'ticket')).toBe(base);
-      expect(existsSync(join(tree, '.git', 'HEAD'))).toBe(false);
+      // On the host only the stub: no objects, so nothing of the run's Git.
+      expect(existsSync(join(tree, '.git', 'objects', 'pack'))).toBe(false);
+      expect(existsSync(join(tree, '.git', 'hooks'))).toBe(false);
       expect(readFileSync(join(tree, 'work.txt'), 'utf8')).toBe(
         'run-local edit',
       );

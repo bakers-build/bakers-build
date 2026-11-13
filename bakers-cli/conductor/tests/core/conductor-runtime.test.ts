@@ -305,7 +305,12 @@ describe('runtime slot — launch wrapping', () => {
     expect(launch.workspacePath).toBe(worktree);
     expect(launch.gitDir).toBe(runCloneGitDir(worktree));
     expect(launch).not.toHaveProperty('sharedObjects');
-    expect(readdirSync(join(worktree, '.git'))).toEqual([]);
+    expect(readdirSync(join(worktree, '.git')).sort()).toEqual([
+      'HEAD',
+      'config',
+      'objects',
+      'refs',
+    ]);
     expect(launch.run).toEqual({ uuid: 'r-uuid', id: 7 });
     expect(launch.harness).toBe('claude');
     expect(launch.env.BAKERS_CONDUCTOR_TOKEN).toMatch(/.+/);
@@ -621,7 +626,12 @@ describe('runtime slot — finalise cleanup', () => {
     expect(git(parent, 'rev-parse', BRANCH)).toBe(tip);
     expect(git(parent, 'rev-parse', 'main')).toBe(other);
     expect(loadRunClone(worktree)?.expected).toBe(tip);
-    expect(readdirSync(join(worktree, '.git'))).toEqual([]);
+    expect(readdirSync(join(worktree, '.git')).sort()).toEqual([
+      'HEAD',
+      'config',
+      'objects',
+      'refs',
+    ]);
     expect(f.logs).not.toContain(
       'run commits not transferred to the ticket branch',
     );

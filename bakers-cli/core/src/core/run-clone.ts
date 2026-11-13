@@ -18,7 +18,8 @@ import { UI_REFRESH_FILE } from './ui-refresh.js';
 export interface RunClone {
   /**
    * The run's Git directory, outside the workspace; mounted as `.git` only
-   * inside the run. On the host `<workspace>/.git` is an empty directory.
+   * inside the run. On the host `<workspace>/.git` is a host-written stub
+   * without objects that only names the ticket branch.
    */
   gitDir: string;
   workspace: string;
@@ -200,15 +201,25 @@ export function createRunClone(options: RunCloneOptions): RunClone {
   }
 
   mkdirSync(workspace, { recursive: true });
-  // An empty `.git` stays: the run's and the site containers' mounts sit on
-  // it, and removing it would detach them. Anything else there was planted;
-  // rm removes a link itself, never its target.
-  const placeholder = join(workspace, '.git');
-  const present = lstatSync(placeholder, { throwIfNoEntry: false });
-  if (!present?.isDirectory() || readdirSync(placeholder).length > 0) {
-    rmSync(placeholder, { recursive: true, force: true });
-    mkdirSync(placeholder);
+  // On the host `.git` is a stub the host writes: just enough for host tools
+  // (herdr, `bakers ui --here`) to name the ticket branch instead of finding
+  // the parent checkout above. The directory itself stays, because the run's
+  // and the site containers' mounts sit on it; whatever is inside is replaced,
+  // and rm removes a planted link itself, never its target.
+  const stub = join(workspace, '.git');
+  if (!lstatSync(stub, { throwIfNoEntry: false })?.isDirectory()) {
+    rmSync(stub, { recursive: true, force: true });
+    mkdirSync(stub);
   }
+  for (const entry of readdirSync(stub))
+    rmSync(join(stub, entry), { recursive: true, force: true });
+  mkdirSync(join(stub, 'objects'));
+  mkdirSync(join(stub, 'refs'));
+  writeFileSync(join(stub, 'HEAD'), `ref: refs/heads/${branch}\n`);
+  writeFileSync(
+    join(stub, 'config'),
+    `[core]\n\trepositoryformatversion = 0\n\tbare = false\n${url ? `[remote "origin"]\n\turl = ${url}\n` : ''}`,
+  );
   const tree = (...args: string[]) =>
     git(['--git-dir', gitDir, '--work-tree', workspace, ...args], workspace);
   // Index first, so clean removes only untracked files and reset rewrites only changed ones.
