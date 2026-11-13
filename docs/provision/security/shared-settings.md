@@ -74,6 +74,11 @@ Place host scripts in `.bakers/scripts/`. A maintainer applies, commits and deli
 changes outside the isolated run, including target-branch merges that modify them. There is no
 per-ticket write bypass. Host-generated DDEV files remain writable from host provisioning.
 
+These mounts constrain the agent process, not conductor tools. In particular, `ddev_exec` runs in
+a separate container with a writable project mount: it can write protected files and the host
+`.git` pointer. Do not treat an isolating runtime as a security boundary while granting that tool.
+Host package lifecycle scripts, docs configuration and CLI builds also remain outside the boundary.
+
 ## Isolated Git delivery
 
 Docker and Bubblewrap use independent Git metadata with copied objects, preserving worktree paths.
