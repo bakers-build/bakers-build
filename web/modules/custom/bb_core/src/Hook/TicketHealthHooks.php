@@ -8,6 +8,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
+use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTermInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
@@ -128,6 +129,24 @@ final class TicketHealthHooks {
       ->condition('owner_user_id', $membership->getOwnerId())->execute();
     if ($conductors !== []) {
       $this->refreshMatching('conductor_id', $conductors);
+    }
+  }
+
+  /**
+   * A project's teams or group decide which conductor owners may work in it.
+   */
+  #[Hook('bb_project_update', order: new OrderAfter(classesAndMethods: [
+    [ProjectReadScopeHooks::class, 'projectWrite'],
+  ]))]
+  public function projectUpdate(BbProjectInterface $project): void {
+    // Kernel tests may save projects without the ticket table.
+    if ($this->installedSchema->getLastInstalledDefinition('bb_ticket') === NULL) {
+      return;
+    }
+    $original = $project->getOriginal();
+    if ($original === NULL || !$project->get('teams')->equals($original->get('teams'))
+      || !$project->get('group_id')->equals($original->get('group_id'))) {
+      $this->refreshMatching('project_id', $project->id());
     }
   }
 

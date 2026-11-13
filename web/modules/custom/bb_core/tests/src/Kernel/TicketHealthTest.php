@@ -354,10 +354,38 @@ final class TicketHealthTest extends ClaimKernelTestBase {
     $ticket = $this->seedAssignedTicket('working');
     $owner = $this->conductor->get('owner_user_id')->entity;
     self::assertInstanceOf(UserInterface::class, $owner);
+    $project = $ticket->get('project_id')->entity;
+    self::assertInstanceOf(BbProjectInterface::class, $project);
+    $workspace = $this->container->get('bb_core.workspace_resolver')->resolve($project);
+    $team = $project->get('teams')->entity;
     foreach (Og::getMemberships($owner) as $membership) {
       $membership->delete();
     }
     self::assertSame('no_access', $this->reloadTicket($ticket)->get('health_reason')->value);
+
+    $this->addMembership($team, $owner);
+    $this->addMembership($workspace, $owner, ['contributor']);
+    self::assertSame('healthy', $this->reloadTicket($ticket)->get('health')->value);
+
+    $this->addMembership($workspace, $owner, ['guest']);
+    self::assertSame('no_access', $this->reloadTicket($ticket)->get('health_reason')->value);
+  }
+
+  /**
+   * Removing the owner's team from the project revokes access at once.
+   */
+  public function testProjectTeamChangeRecomputes(): void {
+    $ticket = $this->seedAssignedTicket('working');
+    $project = $ticket->get('project_id')->entity;
+    self::assertInstanceOf(BbProjectInterface::class, $project);
+    $teams = $project->get('teams')->getValue();
+
+    $project->set('teams', [])->save();
+    self::assertSame('critical', $this->reloadTicket($ticket)->get('health')->value);
+    self::assertSame('no_access', $this->reloadTicket($ticket)->get('health_reason')->value);
+
+    $project->set('teams', $teams)->save();
+    self::assertSame('healthy', $this->reloadTicket($ticket)->get('health')->value);
   }
 
   /**
