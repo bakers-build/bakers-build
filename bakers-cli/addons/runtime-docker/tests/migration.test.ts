@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createRunClone } from '@bakers-build/core';
 import { afterEach, expect, it } from 'vitest';
 import { dockerRuntime } from '../src/backend.js';
 
@@ -38,7 +39,13 @@ function fixture(options = {}) {
     });
   git('init', '-q', '-b', 'main');
   git('commit', '-q', '--allow-empty', '-m', 'base');
-  git('worktree', 'add', '-q', '-b', 'ticket', ws);
+  git('branch', 'ticket');
+  const { gitDir } = createRunClone({
+    parent: join(root, 'main'),
+    workspace: ws,
+    gitDir: join(root, 'storage/run.git'),
+    branch: 'ticket',
+  });
   const runtime = dockerRuntime(options, {
     exec: async (file, args) => {
       calls.push([file, ...args]);
@@ -72,7 +79,7 @@ function fixture(options = {}) {
     },
   };
   const run = { uuid: 'neutral-run', id: 1 };
-  return { root, ws, common, calls, runtime, metadata, run };
+  return { root, ws, common, gitDir, calls, runtime, metadata, run };
 }
 
 it('uses neutral installation and prepared paths without an agent-specific adapter', async () => {
@@ -133,20 +140,21 @@ it('checks an operator image without requiring installation or model API metadat
   expect(depsExec.some((args) => args[1] === 'build')).toBe(false);
 });
 
-it('refuses prepared grants that reopen protected Git metadata or the host home', async () => {
+it('refuses prepared grants that reopen the run Git directory or the host home', async () => {
   const f = fixture();
   const context = await f.runtime.prepareRun!(f.run, f.metadata);
   const input = {
     command: 'true',
     env: {},
     workspacePath: f.ws,
+    gitDir: f.gitDir,
     run: f.run,
     harness: 'generic',
     ...f.metadata,
     ...context,
   };
   await expect(
-    f.runtime.wrap({ ...input, writePaths: [f.common] }),
+    f.runtime.wrap({ ...input, writePaths: [f.gitDir] }),
   ).rejects.toThrow(/protected/);
   await expect(
     f.runtime.wrap({ ...input, writePaths: [join(context.homePath, '..')] }),

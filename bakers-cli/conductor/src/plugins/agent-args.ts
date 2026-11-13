@@ -425,31 +425,6 @@ function validatePlainObject(
   return value as Record<string, unknown>;
 }
 
-/** Resolve replacement lists, retaining the source of inherited entries. */
-export function resolveLayeredList<S extends string>(
-  defaults: readonly string[],
-  layers: readonly { source: S; list: readonly string[] }[],
-): { entries: { value: string; source: S | 'default' }[]; removed: string[] } {
-  let entries: { value: string; source: S | 'default' }[] = defaults.map(
-    (value) => ({ value, source: 'default' }),
-  );
-  for (const { source, list } of layers) {
-    const next = list.flatMap((value) =>
-      value === INHERIT ? entries : [{ value, source }],
-    );
-    entries = next.filter(
-      (entry, index) =>
-        next.findIndex((other) => other.value === entry.value) === index,
-    );
-  }
-  return {
-    entries,
-    removed: defaults.filter(
-      (value) => !entries.some((entry) => entry.value === value),
-    ),
-  };
-}
-
 /**
  * Validate the permission options an agent addon takes in `with` and resolve
  * them over the harness defaults and the shared project and machine layers
@@ -516,6 +491,9 @@ export function resolveSecurityOptions(
     not_applied: [],
   };
   for (const key of SHARED_LIST_KEYS) {
+    let entries: { value: string; source: SecuritySource }[] = defaults[
+      key
+    ].map((value) => ({ value, source: 'default' }));
     const stack: { source: SecuritySource; list: string[] }[] = [];
     for (const { source, block } of layers) {
       const list = block.sandbox?.[key];
@@ -534,8 +512,19 @@ export function resolveSecurityOptions(
         source: 'agent',
         list: validateStringList(given[key], `sandbox.${key}`),
       });
-    report.sandbox[key] = resolveLayeredList(defaults[key], stack);
-    sandbox[key] = report.sandbox[key].entries.map((entry) => entry.value);
+    for (const { source, list } of stack) {
+      const next = list.flatMap((value) =>
+        value === INHERIT ? entries : [{ value, source }],
+      );
+      entries = next.filter(
+        (e, i) => next.findIndex((o) => o.value === e.value) === i,
+      );
+    }
+    sandbox[key] = entries.map((e) => e.value);
+    report.sandbox[key] = {
+      entries,
+      removed: defaults[key].filter((d) => !sandbox[key].includes(d)),
+    };
   }
   for (const [key, value] of Object.entries(given)) {
     if (key === 'mcp_servers') {
@@ -562,76 +551,4 @@ export function resolveSecurityOptions(
           : validateStringList(input.env_deny, 'env_deny'),
     },
   };
-}
-
-export const SHARED_RUNTIME_KEY = 'shared_runtime';
-export interface SharedRuntime {
-  read_only?: string[];
-}
-export type RuntimeSource = 'default' | SharedLayer | 'runtime';
-export interface SharedRuntimeLayers {
-  default?: SharedRuntime | undefined;
-  project?: SharedRuntime | undefined;
-  machine?: SharedRuntime | undefined;
-}
-export interface RuntimeReport {
-  entries: { value: string; source: RuntimeSource }[];
-  removed: string[];
-}
-
-export function validateSharedRuntime(
-  value: unknown,
-  layer: RuntimeSource,
-): SharedRuntime | undefined {
-  if (value === undefined) return undefined;
-  const block = validatePlainObject(value, `${layer} runtime`);
-  for (const key of Object.keys(block))
-    if (key !== 'read_only')
-      throw new Error(`${layer} runtime: unknown key ${key}`);
-  if (block.read_only === undefined) return {};
-  const list = validateStringList(
-    block.read_only,
-    `${layer} runtime.read_only`,
-  );
-  for (const path of list) {
-    if (path === INHERIT && layer !== 'default') continue;
-    if (
-      !path ||
-      path.startsWith('/') ||
-      path.includes('\\') ||
-      path.includes(':') ||
-      path.includes('$') ||
-      path.split('/').some((part) => part === '..' || part === '.' || !part)
-    )
-      throw new Error(
-        `${layer} runtime.read_only: invalid worktree-relative path ${JSON.stringify(path)}`,
-      );
-  }
-  return { read_only: list };
-}
-
-export function resolveRuntimeOptions(input: {
-  shared_runtime?: unknown;
-  read_only?: unknown;
-}): RuntimeReport {
-  const shared =
-    input.shared_runtime === undefined
-      ? {}
-      : validatePlainObject(input.shared_runtime, SHARED_RUNTIME_KEY);
-  for (const key of Object.keys(shared))
-    if (!['default', 'project', 'machine'].includes(key))
-      throw new Error(`${SHARED_RUNTIME_KEY}: unknown key ${key}`);
-  const defaults =
-    validateSharedRuntime(shared.default, 'default')?.read_only ?? [];
-  const layers: { source: RuntimeSource; list: string[] }[] = [];
-  for (const source of ['project', 'machine'] as const) {
-    const list = validateSharedRuntime(shared[source], source)?.read_only;
-    if (list !== undefined) layers.push({ source, list });
-  }
-  const entry = validateSharedRuntime(
-    { read_only: input.read_only },
-    'runtime',
-  )?.read_only;
-  if (entry !== undefined) layers.push({ source: 'runtime', list: entry });
-  return resolveLayeredList(defaults, layers);
 }

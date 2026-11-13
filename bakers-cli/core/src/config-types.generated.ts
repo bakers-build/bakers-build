@@ -73,6 +73,10 @@ export interface ProjectConfig {
     provision_up?: string | {
       [key: string]: string;
     };
+    /** Commands by key, offered to runs as provision_exec(key, args). Arguments follow the command as argv, never through a shell. */
+    provision_exec?: {
+      [key: string]: string;
+    };
   };
   /** Agent plugin marketplaces every run of this project installs. */
   marketplaces?: Array<{
@@ -134,9 +138,6 @@ export interface MachineConfig {
       allow_write?: Array<string>;
       trusted_commands?: Array<string>;
     };
-  };
-  runtime?: {
-    read_only?: Array<string>;
   };
   /** This machine's executor; overrides every project's. */
   executor?: { kind: string; [key: string]: unknown } | {

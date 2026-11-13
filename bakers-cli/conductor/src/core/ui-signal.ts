@@ -41,10 +41,13 @@ function ensureExcluded(dir: string): void {
   }
 }
 
-/** Touch `<dir>/.bakers/ui-refresh` so a `bakers ui` there reloads. Never throws. */
-export function signalUi(dir: string): void {
+/**
+ * Touch `<dir>/.bakers/ui-refresh` so a `bakers ui` there reloads. Never throws.
+ * `exclude: false` runs no Git in `dir`.
+ */
+export function signalUi(dir: string, exclude = true): void {
   const bakersDir = configHomeOf(dir);
   if (!existsSync(bakersDir)) return;
-  ensureExcluded(dir);
+  if (exclude) ensureExcluded(dir);
   bumpUiRefresh(bakersDir);
 }

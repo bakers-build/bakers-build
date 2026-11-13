@@ -1,12 +1,8 @@
-import type {
-  AgentCatalog,
-  ConductorEngineConfig,
-} from '@bakers-build/conductor/contract';
-import { resolveRuntimeOptions } from '@bakers-build/conductor/contract';
+import type { AgentCatalog } from '@bakers-build/conductor/contract';
 
 /** Sandbox-safe catalog; permission entries can contain personal machine paths. */
 export function catalogReport(config: AgentCatalog) {
-  const { runtime: _runtime, ...report } = agentReport(config);
+  const report = agentReport(config);
   return {
     ...report,
     agents: report.agents.map(
@@ -16,24 +12,8 @@ export function catalogReport(config: AgentCatalog) {
 }
 
 /** Report the already-resolved catalog; no agent launch or connection I/O. */
-export function agentReport(
-  config: AgentCatalog &
-    Pick<ConductorEngineConfig, 'runtime' | 'sharedRuntime'>,
-) {
-  const runtime =
-    config.runtime?.readOnly ??
-    resolveRuntimeOptions({ shared_runtime: config.sharedRuntime });
+export function agentReport(config: AgentCatalog) {
   return {
-    runtime: {
-      read_only: [{ value: '.bakers', source: 'builtin' }, ...runtime.entries],
-      protected_roots: [
-        ...new Set([
-          '.bakers',
-          ...runtime.entries.map((entry) => entry.value.split('/')[0]),
-        ]),
-      ],
-      removed: runtime.removed,
-    },
     agents: config.agents.map((c) => ({
       alias: c.alias,
       description: c.description ?? '',

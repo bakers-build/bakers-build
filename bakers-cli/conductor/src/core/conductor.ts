@@ -3,10 +3,13 @@ import { basename, dirname, join } from 'node:path';
 import {
   type ConductorLogger,
   killRunProcesses,
+  loadRunClone,
   type MachineContext,
   protectedProjectPaths,
+  saveRunClone,
   shellQuote,
   stemForConfigFile,
+  transferIsolatedCommit,
 } from '@bakers-build/core';
 import type { PluginLaunch } from '../plugins/agent.js';
 import {
@@ -17,7 +20,6 @@ import {
   matchesEnvDeny,
   type RunEnvPolicy,
 } from '../plugins/agent.js';
-import { resolveRuntimeOptions } from '../plugins/agent-args.js';
 import { homeKey, homePath } from '../plugins/agent-home.js';
 import type {
   BbExecutor,
@@ -383,60 +385,9 @@ export class Conductor {
   async startTools(endpointFile?: string): Promise<void> {
     const { siteTools } = this.remote;
     const runtime = await this.runtime();
-    if (
-      (!this.config.tools && !siteTools && !runtime.transferCommit) ||
-      this.toolServer
-    )
-      return;
+    if ((!this.config.tools && !siteTools) || this.toolServer) return;
     const hosts = (await runtime.toolServerHosts?.()) ?? [];
-    const addonRegistry = this.config.tools ?? (await loadTools([]));
-    const transferRegistry = await loadTools(
-      runtime.transferCommit
-        ? [
-            {
-              name: 'runtime',
-              version: '1',
-              tools: {
-                contract: 1,
-                tools: {
-                  runtime_transfer_commit: {
-                    description:
-                      'Explicitly transfer a full run-local commit hash to this ticket branch. Source config/hooks and other refs are never imported. The run Git cache is retained for recovery.',
-                    input: {
-                      type: 'object',
-                      required: ['commit'],
-                      properties: { commit: { type: 'string', minLength: 40 } },
-                    },
-                  },
-                },
-                handlers: async () => ({
-                  runtime_transfer_commit: async ({ runUuid, args }) => {
-                    if (!runUuid)
-                      throw new Error(
-                        'Commit transfer requires a run-bound grant',
-                      );
-                    await runtime.transferCommit?.(
-                      runUuid,
-                      args.commit as string,
-                    );
-                    return {
-                      text: 'Commit transferred to the authorized ticket branch.',
-                    };
-                  },
-                }),
-              },
-            },
-          ]
-        : [],
-    );
-    if (
-      addonRegistry
-        .list()
-        .some((tool) =>
-          transferRegistry.list().some((other) => other.name === tool.name),
-        )
-    )
-      throw new Error('runtime tool conflicts with an addon tool');
+    const registry = this.config.tools ?? (await loadTools([]));
     // Runs closed while no server ran (`oven once`, a crash) lose their grant here.
     const openRuns = await this.remote.fetchActiveRuns(this.id).then(
       (runs) => runs.map((r) => r.runUuid),
@@ -449,13 +400,7 @@ export class Conductor {
       },
     );
     this.toolServer = await startToolServer({
-      registry: {
-        list: () => [...addonRegistry.list(), ...transferRegistry.list()],
-        call: (name, ...args) =>
-          transferRegistry.list().some((tool) => tool.name === name)
-            ? transferRegistry.call(name, ...args)
-            : addonRegistry.call(name, ...args),
-      },
+      registry,
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
@@ -493,7 +438,8 @@ export class Conductor {
   /** Tell an open `bakers ui` in the checkout (and the run's worktree) to reload. */
   private signalUi(worktree?: string): void {
     signalUi(this.checkoutRoot);
-    if (worktree) signalUi(worktree);
+    // A run clone keeps its own exclude; the host runs no Git in its workspace.
+    if (worktree) signalUi(worktree, !loadRunClone(worktree));
   }
 
   async stopTools(): Promise<void> {
@@ -792,6 +738,7 @@ export class Conductor {
       }
       // The transcript is captured, so killing the PTY is safe (BB-171).
       if (branch) await this.closeRunTab(branch, r.runUuid, r.runId);
+      await this.transferRunCommits(r.worktreePath, r.runUuid);
       // BB-599: `after_run` fires at run end — after the worker is gone,
       // before the durable close. A failed close write repeats it next tick,
       // which is why listeners must be idempotent.
@@ -817,6 +764,30 @@ export class Conductor {
       this.logger.warn(
         { run: r.runUuid, err: String(err) },
         'run finalise failed',
+      );
+    }
+  }
+
+  /**
+   * Bring an isolated run's commits to the ticket branch in the parent
+   * repository. Best-effort: a refused transfer is logged and leaves the run's
+   * Git directory in place until the next run of the ticket starts.
+   */
+  private async transferRunCommits(
+    worktreePath: string | undefined,
+    runUuid: string,
+  ): Promise<void> {
+    const clone = worktreePath ? loadRunClone(worktreePath) : undefined;
+    if (!clone) return;
+    try {
+      await this.serialGit(async () => {
+        const tip = transferIsolatedCommit(clone);
+        saveRunClone({ ...clone, expected: tip });
+      });
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, branch: clone.branch, err: String(err) },
+        'run commits not transferred to the ticket branch',
       );
     }
   }
@@ -1259,7 +1230,10 @@ export class Conductor {
       if (!t.baseBranch) throw new Error('ticket has no base branch');
       // Under the git lock: workspace.ensure fetches the same ref into this repo.
       const values = await this.serialGit(() =>
-        measureMrChanges(t.worktreePath, t.baseBranch),
+        // A run clone has no Git on the host: measure its branch in the parent.
+        loadRunClone(t.worktreePath)
+          ? measureMrChanges(this.checkoutRoot, t.baseBranch, t.branchName)
+          : measureMrChanges(t.worktreePath, t.baseBranch),
       );
       await this.remote.replaceTicketMetrics(
         t.ticketUuid,
@@ -1491,6 +1465,8 @@ export class Conductor {
       ...(state ? { BAKERS_STATE: state } : {}),
       ...(runUuid ? { BAKERS_RUN_UUID: runUuid } : {}),
       BAKERS_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
+      // Host scripts skip what an isolated run does in its own container.
+      BAKERS_RUNTIME_ISOLATES: this.config.runtime?.isolates ? '1' : '0',
       WORKSPACE_ROOT: this.checkoutRoot,
       ...(t.issueUrl ? { TICKET_URL: t.issueUrl } : {}),
       ...(t.projectName ? { BAKERS_PROJECT: t.projectName } : {}),
@@ -1649,6 +1625,13 @@ export class Conductor {
       this.workspace.ensure(t.identifier, t.branchName, baseRef),
     );
     at.worktree = ws.path;
+    // The transfer checks the project's list; the record is the host's alone.
+    if (ws.clone)
+      saveRunClone({
+        ...ws.clone,
+        protectedPaths: this.config.readOnly ?? [],
+      });
+    env.BAKERS_WORKTREE_PATH = ws.path;
     // The backend's own vars (Git config) join the run env; core keys still win.
     for (const [key, value] of Object.entries(ws.env ?? {})) {
       if (!isReservedEnvKey(key)) env[key] = value;
@@ -1780,12 +1763,13 @@ export class Conductor {
           ticketUuid: t.uuid,
         })
       : '';
-    if (prompt && runtime.transferCommit)
+    if (prompt && ws.clone)
       prompt +=
-        '\n\nRuntime context: Git commits and refs are private to this run. ' +
-        'After forge_fetch, run git fetch origin to refresh private remote-tracking refs; ' +
-        'before forge_push, call runtime_transfer_commit with the intended full commit hash. ' +
-        'Commits changing protected files require a maintainer outside the isolated run.';
+        '\n\nRuntime context: this run works in a fresh clone of the ticket branch. ' +
+        'Commit before you end: uncommitted work is not carried over. ' +
+        'forge_fetch refreshes the origin refs and forge_push transfers and pushes your commits. ' +
+        `Read-only here: ${['.bakers', ...(this.config.readOnly ?? [])].filter((path, index, all) => all.indexOf(path) === index).join(', ')}. ` +
+        'If merging the target fails on one of them, report it: a maintainer merges the target outside the run.';
     // BB-473 review round 2 (Critical 1): pinning the run's own UUID
     // unconditionally makes a re-dispatch of the same run — an existing,
     // supported path (see the cleanupRun comment above) — fail to launch,
@@ -1857,16 +1841,14 @@ export class Conductor {
       : undefined;
     if (preparation) Object.assign(env, preparation.env);
     const isolates = this.config.runtime?.isolates === true;
-    const runtimePaths =
-      this.config.runtime?.readOnly ??
-      resolveRuntimeOptions({ shared_runtime: this.config.sharedRuntime });
-    const protectedPaths =
-      isolates || chosen.permissions === 'sandbox'
-        ? protectedProjectPaths(
-            ws.path,
-            runtimePaths.entries.map((entry) => entry.value),
-          )
-        : [];
+    // An isolated run without its own clone would share the parent's Git data.
+    if (isolates && !ws.clone)
+      throw new Error(
+        'the runtime isolates runs, but the workspace provides no run clone',
+      );
+    const protectedPaths = isolates
+      ? protectedProjectPaths(ws.path, this.config.readOnly ?? [])
+      : [];
     const command = chosen.agent.launchCommand(
       prompt,
       identity,
@@ -1874,7 +1856,6 @@ export class Conductor {
       toolsUrl ? { url: toolsUrl } : undefined,
       env,
       plugins.args,
-      protectedPaths,
       isolates,
     );
     // Read after launchCommand: a warning may depend on what this launch got.
@@ -1906,7 +1887,14 @@ export class Conductor {
       command,
       env: runEnv,
       workspacePath: ws.path,
-      ticketBranch: t.branchName,
+      ...(ws.clone
+        ? {
+            gitDir: ws.clone.gitDir,
+            ...(ws.clone.shared
+              ? { sharedObjects: join(ws.clone.parentGitDir, 'objects') }
+              : {}),
+          }
+        : {}),
       run: { uuid: run.runUuid, id: run.runId },
       harness: chosen.agent.id,
       ...agentInfo,

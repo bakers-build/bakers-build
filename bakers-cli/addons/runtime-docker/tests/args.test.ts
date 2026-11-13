@@ -29,10 +29,7 @@ const opts: DockerOptions = {
   runNetwork: 'bb-runtime-abc',
 };
 const where: HostPaths = {
-  gitCommonDir: '/w/main/.git',
-  privateGitDir: '/cache/run.git',
-  gitDir: '/w/main/.git/worktrees/tree',
-  gitLink: '/w/tree/.git',
+  runGitDir: '/cache/run.git',
   runHome: '/h/run',
   cliRoot: '/opt/cli',
   uid: 1000,
@@ -45,14 +42,34 @@ const envFlags = (argv: string[]) =>
   argv.flatMap((a, i) => (a === '-e' ? [argv[i + 1] as string] : []));
 
 describe('dockerArgs', () => {
-  it('keeps host Git read-only and writable metadata private', () => {
+  it('mounts the run Git directory as .git and nothing of the parent repository', () => {
+    const mounts = volumes(dockerArgs(launch, opts, where).argv);
+    expect(mounts).toContain('/cache/run.git:/w/tree/.git');
+    expect(mounts.filter((mount) => mount.includes('/w/main'))).toEqual([]);
+  });
+  it('mounts the parent objects read-only only for a shared clone', () => {
     const mounts = volumes(
-      dockerArgs(launch, opts, { ...where, privateGitDir: '/cache/run.git' })
-        .argv,
+      dockerArgs(launch, opts, {
+        ...where,
+        sharedObjects: '/w/main/.git/objects',
+      }).argv,
     );
-    expect(mounts).toContain('/cache/run.git:/w/main/.git/worktrees/tree');
-    expect(mounts).not.toContain('/w/main/.git:/w/main/.git');
-    expect(mounts).toContain('/w/main/.git:/w/main/.git:ro');
+    expect(mounts.filter((mount) => mount.includes('/w/main'))).toEqual([
+      '/w/main/.git/objects:/w/main/.git/objects:ro',
+    ]);
+  });
+  it('mounts protected paths read-only over the writable workspace', () => {
+    const mounts = volumes(
+      dockerArgs(
+        { ...launch, readPaths: ['/w/tree/.bakers', '/w/tree/.ddev'] },
+        opts,
+        where,
+      ).argv,
+    );
+    expect(
+      mounts.indexOf('/w/tree/.bakers:/w/tree/.bakers:ro'),
+    ).toBeGreaterThan(mounts.indexOf('/w/tree:/w/tree'));
+    expect(mounts).toContain('/w/tree/.ddev:/w/tree/.ddev:ro');
   });
   it('starts one named, labelled container', () => {
     const { argv } = dockerArgs(launch, opts, where);
@@ -77,9 +94,7 @@ describe('dockerArgs', () => {
   it('mounts exactly the allowed paths', () => {
     expect(volumes(dockerArgs(launch, opts, where).argv)).toEqual([
       '/w/tree:/w/tree',
-      '/w/tree/.git:/w/tree/.git:ro',
-      '/w/main/.git:/w/main/.git:ro',
-      '/cache/run.git:/w/main/.git/worktrees/tree',
+      '/cache/run.git:/w/tree/.git',
       '/opt/cli:/opt/cli:ro',
       '/h/run:/h/run',
       '/home/op/.agent/p:/home/op/.agent/p:ro',

@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process';
 import {
   accessSync,
   constants,
@@ -12,24 +11,17 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type {
   BbRuntime,
   RuntimeLaunch,
   RuntimeRun,
 } from '@bakers-build/conductor/contract';
-import {
-  type IsolatedGit,
-  isolateGit,
-  shellQuote,
-  transferIsolatedCommit,
-} from '@bakers-build/core';
+import { shellQuote } from '@bakers-build/core';
 
 export interface BwrapOptions {
   readPaths?: string[];
-  read_only?: string[];
-  shared_runtime?: unknown;
 }
 export interface BwrapDeps {
   cachePath: string;
@@ -91,13 +83,17 @@ function argv(
   input: RuntimeLaunch,
   options: BwrapOptions,
   deps: BwrapDeps,
-  privateGit: IsolatedGit,
 ): string[] {
   const ws = resolve(input.workspacePath);
+  const gitDir = input.gitDir;
+  if (gitDir && within(realpathSync(gitDir), realpathSync(ws)))
+    throw new Error(
+      'runtime-bwrap: the run Git directory must stay outside the workspace',
+    );
   const protectedPaths = [
-    privateGit.commonDir,
     resolve(deps.cachePath),
-    privateGit.gitDir,
+    ...(gitDir ? [gitDir] : []),
+    ...(input.sharedObjects ? [input.sharedObjects] : []),
     join(ws, '.git'),
     deps.cliRoot,
     ...(options.readPaths ?? []),
@@ -142,7 +138,7 @@ function argv(
     ...SYSTEM.filter(existsSync),
     ...softwarePaths(deps.env),
     deps.cliRoot,
-    privateGit.commonDir,
+    ...(input.sharedObjects ? [input.sharedObjects] : []),
     ...(options.readPaths ?? []),
     ...(input.readPaths ?? []),
   ])
@@ -153,8 +149,7 @@ function argv(
     ...(input.writePaths ?? []),
   ])
     mount(path, true);
-  for (const path of [join(ws, '.git'), deps.cliRoot].filter(existsSync))
-    mount(path, false);
+  mount(deps.cliRoot, false);
   const bindings = [...mounts].sort(
     ([a], [b]) =>
       a.split(sep).length - b.split(sep).length || a.localeCompare(b),
@@ -181,9 +176,8 @@ function argv(
       path,
       path,
     ]),
-    '--bind',
-    privateGit.path,
-    privateGit.gitDir,
+    // The only Git the run sees; bwrap creates the empty mount point on the host.
+    ...(gitDir ? ['--bind', gitDir, join(ws, '.git')] : []),
     '--chdir',
     ws,
     '--',
@@ -229,38 +223,12 @@ export function bwrapRuntime(
         throw new Error(
           'runtime-bwrap: private state must stay outside the worktree',
         );
-      const recordPath = `${homePath}.git.json`;
-      const branch =
-        input.ticketBranch ??
-        execFileSync(
-          'git',
-          ['-C', input.workspacePath, 'symbolic-ref', '--short', 'HEAD'],
-          { encoding: 'utf8' },
-        ).trim();
-      const privateGit: IsolatedGit = existsSync(recordPath)
-        ? JSON.parse(readFileSync(recordPath, 'utf8'))
-        : isolateGit(
-            input.workspacePath,
-            `${homePath}.git`,
-            branch,
-            [...(input.readPaths ?? []), ...(options.readPaths ?? [])]
-              .filter((path) => within(path, input.workspacePath))
-              .map((path) => relative(input.workspacePath, path)),
-          );
-      if (
-        privateGit.workspace !== input.workspacePath ||
-        privateGit.branch !== branch
-      )
-        throw new Error(
-          'runtime-bwrap: private Git record does not match this launch',
-        );
-      writeFileSync(recordPath, JSON.stringify(privateGit), { mode: 0o600 });
       const planPath = `${homePath}.launch.json`;
       writeFileSync(
         planPath,
         JSON.stringify({
           bwrap: deps.bwrapPath ?? '/usr/bin/bwrap',
-          argv: argv(input, options, deps, privateGit),
+          argv: argv(input, options, deps),
           envKeys: Object.keys(env),
           workspacePath: input.workspacePath,
         }),
@@ -272,14 +240,6 @@ export function bwrapRuntime(
           .join(' '),
         env,
       };
-    },
-    async transferCommit(runUuid, commit) {
-      const path = `${pathOf({ uuid: runUuid, id: 0 })}.git.json`;
-      const record: IsolatedGit = JSON.parse(readFileSync(path, 'utf8'));
-      transferIsolatedCommit(record, commit);
-      writeFileSync(path, JSON.stringify({ ...record, expected: commit }), {
-        mode: 0o600,
-      });
     },
     async cleanup(run) {
       const homePath = pathOf(run);

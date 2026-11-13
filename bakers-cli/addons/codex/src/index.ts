@@ -276,7 +276,6 @@ export class CodexAgent implements BbAgent {
   private securityFlags(
     workspacePath: string,
     withTools: boolean,
-    readOnlyPaths: readonly string[],
     isolatedGit: boolean,
   ): string[] {
     const { mode, sandbox, config } = this.security;
@@ -310,9 +309,7 @@ export class CodexAgent implements BbAgent {
           (name) => `${JSON.stringify(path + name)} = "write"`,
         ),
       ),
-      ...[...git.protect, ...readOnlyPaths].map(
-        (path) => `${JSON.stringify(path)} = "read"`,
-      ),
+      ...git.protect.map((path) => `${JSON.stringify(path)} = "read"`),
     ];
     const profile = `{ extends = ":workspace", filesystem = { ${filesystem.join(', ')} }, workspace_roots = { ${roots.join(', ')} }, network = { enabled = ${sandbox.network.length > 0} } }`;
     const flags = [
@@ -353,7 +350,6 @@ export class CodexAgent implements BbAgent {
     tools?: { url: string },
     env: Readonly<Record<string, string>> = {},
     pluginArgs: readonly string[] = [],
-    readOnlyPaths: readonly string[] = [],
     isolatedGit = false,
   ): string {
     // Quote at assembly; a plain word has nothing for the shell to expand.
@@ -363,7 +359,6 @@ export class CodexAgent implements BbAgent {
       ...this.securityFlags(
         workspacePath,
         tools !== undefined,
-        readOnlyPaths,
         isolatedGit,
       ).map(word),
     ];

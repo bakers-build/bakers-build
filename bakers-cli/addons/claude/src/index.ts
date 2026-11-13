@@ -88,7 +88,6 @@ function securityFlags(
   { mode, sandbox, config }: ResolvedSecurity,
   workspacePath: string | undefined,
   pluginsOn = false,
-  readOnlyPaths: readonly string[] = [],
   isolatedGit = false,
 ): string[] {
   if (mode === 'system') return [];
@@ -112,7 +111,7 @@ function securityFlags(
       filesystem: {
         denyRead: sandbox.deny_read,
         allowWrite: [...sandbox.allow_write, ...git.write],
-        denyWrite: [...git.protect, ...readOnlyPaths],
+        denyWrite: git.protect,
       },
       network: { allowedDomains: sandbox.network },
     },
@@ -132,19 +131,10 @@ function securityFlags(
       ],
       // Claude reads a single leading `/` as relative to the settings file;
       // the plain rule covers a file entry, `/**` a directory's contents.
-      deny: [
-        ...readOnlyPaths.flatMap((path) => {
-          const rule = path.startsWith('/') ? `/${path}` : path;
-          return ['Edit', 'Write'].flatMap((tool) => [
-            `${tool}(${rule})`,
-            `${tool}(${rule}/**)`,
-          ]);
-        }),
-        ...sandbox.deny_read.flatMap((path) => {
-          const rule = path.startsWith('/') ? `/${path}` : path;
-          return [`Read(${rule})`, `Read(${rule}/**)`];
-        }),
-      ],
+      deny: sandbox.deny_read.flatMap((path) => {
+        const rule = path.startsWith('/') ? `/${path}` : path;
+        return [`Read(${rule})`, `Read(${rule}/**)`];
+      }),
     },
   };
   return [
@@ -338,7 +328,6 @@ export class ClaudeAgent implements BbAgent {
     tools?: { url: string },
     _env?: Readonly<Record<string, string>>,
     pluginArgs: readonly string[] = [],
-    readOnlyPaths: readonly string[] = [],
     isolatedGit = false,
   ): string {
     if (prompt === '') {
@@ -374,7 +363,6 @@ export class ClaudeAgent implements BbAgent {
           this.security,
           workspacePath,
           this.pluginsOn,
-          readOnlyPaths,
           isolatedGit,
         ),
         ...this.mcpFlags(tools),

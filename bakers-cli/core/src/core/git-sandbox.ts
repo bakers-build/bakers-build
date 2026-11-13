@@ -39,7 +39,6 @@ function revParse(workspacePath: string, option: string): string | null {
 }
 
 /**
- * With an isolated runtime, only the private overlay at the original git dir is writable.
  * The Git paths to grant a sandboxed run in `workspacePath`. A linked worktree
  * gets its own git dir and the shared objects, refs and reflogs, never the
  * shared dir itself, so its config, hooks and lock files stay unwritable.
@@ -50,9 +49,10 @@ export function gitSandboxPaths(
   workspacePath: string,
   isolated = false,
 ): GitSandboxPaths {
+  // A run clone: its Git directory is mounted there, and the host asks Git nothing.
+  if (isolated) return { write: [join(workspacePath, '.git')], protect: [] };
   const gitDir = revParse(workspacePath, '--git-dir');
   if (gitDir === null) return { write: [], protect: [] };
-  if (isolated) return { write: [gitDir], protect: [] };
   const common = revParse(workspacePath, '--git-common-dir') ?? gitDir;
   const shared =
     common === gitDir ? [] : SHARED_WRITES.map((name) => join(common, name));

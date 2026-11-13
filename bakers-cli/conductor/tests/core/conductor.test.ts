@@ -1136,6 +1136,8 @@ describe('Conductor', () => {
       BAKERS_STATE: 'todo',
       BAKERS_RUN_UUID: 'r-1',
       BAKERS_TUNNEL: '0',
+      BAKERS_RUNTIME_ISOLATES: '0',
+      BAKERS_WORKTREE_PATH: '/fake/BB-1',
       WORKSPACE_ROOT: CHECKOUT,
       TICKET_URL: 'https://issues/1',
     });

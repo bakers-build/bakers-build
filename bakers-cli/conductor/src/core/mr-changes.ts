@@ -51,17 +51,25 @@ export function mrChangesRows(v: MrChanges, recorded: number): TicketMetric[] {
  * Measures the ticket branch checked out in `worktreePath` against the merge
  * base with `origin/<baseBranch>` — the diff the merge request's Changes tab
  * shows. `HEAD`, not the remote branch: a merge deletes the remote branch.
+ * With `branch`, `worktreePath` is the parent repository and the local branch
+ * is measured: an isolated run's workspace has no Git on the host.
  */
 export async function measureMrChanges(
   worktreePath: string,
   baseBranch: string,
+  branch?: string,
 ): Promise<MrChanges> {
   await exec('git', ['fetch', 'origin', '--', baseBranch], {
     cwd: worktreePath,
   });
   const out = await exec(
     'git',
-    ['diff', '--numstat', '-M', `origin/${baseBranch}...HEAD`],
+    [
+      'diff',
+      '--numstat',
+      '-M',
+      `origin/${baseBranch}...${branch ? `refs/heads/${branch}` : 'HEAD'}`,
+    ],
     { cwd: worktreePath },
   );
   return parseNumstat(out);

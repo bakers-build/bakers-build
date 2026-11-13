@@ -19,31 +19,6 @@ const candidate = (alias?: string): AgentCandidate => ({
 });
 
 describe('agent catalog report', () => {
-  it('shows the top-level roots protected for nested path selections', () => {
-    const report = agentReport({
-      agents: [],
-      enabled_agents: [],
-      disabled_agents: [],
-      default_agent: '',
-      routes: {},
-      sharedRuntime: { project: { read_only: ['scripts/host.sh'] } },
-    });
-    expect(report.runtime.protected_roots).toEqual(['.bakers', 'scripts']);
-  });
-  it('reports effective runtime paths and source layers', () => {
-    const report = agentReport({
-      agents: [],
-      enabled_agents: [],
-      disabled_agents: [],
-      default_agent: '',
-      routes: {},
-      sharedRuntime: { default: { read_only: ['.ddev'] } },
-    });
-    expect(report.runtime.read_only).toEqual([
-      { value: '.bakers', source: 'builtin' },
-      { value: '.ddev', source: 'default' },
-    ]);
-  });
   it('exports a parameterless tool returning the loaded catalog without permissions', async () => {
     const agent = candidate('fast');
     const permissions = {
@@ -107,11 +82,6 @@ describe('agent catalog report', () => {
       },
     });
     expect(report).toEqual({
-      runtime: {
-        read_only: [{ value: '.bakers', source: 'builtin' }],
-        protected_roots: ['.bakers'],
-        removed: [],
-      },
       agents: [
         {
           alias: 'fast',

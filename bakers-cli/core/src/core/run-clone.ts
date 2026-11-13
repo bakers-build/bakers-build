@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { UI_REFRESH_FILE } from './ui-refresh.js';
 
 /** Host-owned record of one isolated run's clone; never store it where the run can write. */
 export interface RunClone {
@@ -133,6 +134,9 @@ export function createRunClone(options: RunCloneOptions): RunClone {
   ]);
   const run = (...args: string[]) => git(['--git-dir', gitDir, ...args]);
   run('config', 'core.bare', 'false');
+  // The conductor's reload signal is not the run's untracked work.
+  mkdirSync(join(gitDir, 'info'), { recursive: true });
+  writeFileSync(join(gitDir, 'info/exclude'), `/.bakers/${UI_REFRESH_FILE}\n`);
   run('config', 'remote.origin.fetch', '+refs/heads/*:refs/remotes/origin/*');
   // The parent path means nothing inside the run; forge tools do the real fetch and push.
   const url = tryGit([

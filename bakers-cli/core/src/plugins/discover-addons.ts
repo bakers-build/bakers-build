@@ -91,7 +91,6 @@ export function normalizeEntry(entry: AddonEntry): {
 
 /** Does an imported module look like a preset (any accumulator fn or `addons`)? */
 function isPresetShaped(mod: Record<string, unknown>): boolean {
-  if (mod.runtime !== undefined) return true;
   if (Array.isArray(mod.addons)) return true;
   if (typeof mod.inbox === 'object' && mod.inbox !== null) return true;
   if (typeof mod.tools === 'object' && mod.tools !== null) return true;
@@ -270,7 +269,6 @@ async function applyPreset(
   acc: DiscoveredContributions,
   only?: Array<keyof DiscoveredContributions>,
   agentOpts: unknown = opts,
-  runtimeOpts: unknown = opts,
 ): Promise<void> {
   // `only` NARROWS, never widens: a key the surface does not run stays unrun.
   const keys = only
@@ -282,8 +280,7 @@ async function applyPreset(
       | undefined;
     if (typeof fn !== 'function') continue;
     const before = key === 'agents' ? acc.agents.length : 0;
-    const keyOpts =
-      key === 'agents' ? agentOpts : key === 'runtimes' ? runtimeOpts : opts;
+    const keyOpts = key === 'agents' ? agentOpts : opts;
     // biome-ignore lint/suspicious/noExplicitAny: heterogeneous per-key arrays
     (acc as any)[key] = await fn((acc as any)[key], keyOpts);
     if (key === 'agents' && alias !== undefined) {
@@ -331,7 +328,6 @@ export async function discoverAddons(
     /** Like `globals`, but seen only by the `agents` accumulators (the
      *  conductor's shared run security). */
     agentGlobals?: unknown;
-    runtimeGlobals?: unknown;
     /** Narrow the surface's accumulators to this subset (intersection only). */
     only?: Array<keyof DiscoveredContributions>;
     /** `skip` warns and drops an addon that does not RESOLVE; import errors still throw. */
@@ -399,25 +395,6 @@ export async function discoverAddons(
       ) {
         await walk(preset.addons, listBases);
       }
-      if (surface === 'conductor' && preset.runtime !== undefined) {
-        const declaration = preset.runtime;
-        if (
-          typeof declaration !== 'object' ||
-          declaration === null ||
-          Array.isArray(declaration) ||
-          Object.keys(declaration).some((key) => key !== 'read_only') ||
-          (declaration.read_only !== undefined &&
-            (!Array.isArray(declaration.read_only) ||
-              declaration.read_only.some((path) => typeof path !== 'string')))
-        )
-          throw new Error(`addon '${spec}': invalid runtime declaration`);
-        acc.runtimeReadOnly = [
-          ...new Set([
-            ...acc.runtimeReadOnly,
-            ...(declaration.read_only ?? []),
-          ]),
-        ];
-      }
       const presetOpts = mergeGlobals(opts.globals, withOpts);
       await applyPreset(
         preset,
@@ -428,7 +405,6 @@ export async function discoverAddons(
         acc,
         opts.only,
         mergeGlobals(opts.agentGlobals, presetOpts),
-        mergeGlobals(opts.runtimeGlobals, presetOpts),
       );
       if (
         surface === 'conductor' &&

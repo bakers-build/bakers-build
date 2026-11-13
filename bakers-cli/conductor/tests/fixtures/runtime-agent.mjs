@@ -55,21 +55,14 @@ try {
     '-qm',
     'fake agent completed',
   ]);
-  const commit = execFileSync('git', ['rev-parse', 'HEAD'], {
-    encoding: 'utf8',
-  }).trim();
-  const transfer = await client.callTool({
-    name: 'runtime_transfer_commit',
-    arguments: { commit },
-  });
-  assert.notEqual(transfer.isError, true, JSON.stringify(transfer.content));
+  // The parent repository is not in the sandbox; the host transfers at run end.
+  assert.equal(existsSync(config.parentGit), false);
   writeFileSync(
     process.env.FAKE_AGENT_TRANSCRIPT,
     JSON.stringify({
       ticketRead: true,
       isolated: true,
       committed: true,
-      transferred: true,
     }),
   );
 } finally {

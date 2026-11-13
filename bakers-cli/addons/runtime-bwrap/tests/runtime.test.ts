@@ -12,12 +12,18 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { protectedProjectPaths } from '@bakers-build/core';
+import {
+  createRunClone,
+  protectedProjectPaths,
+  type RunClone,
+  runCloneTip,
+} from '@bakers-build/core';
 import { afterEach, beforeEach, expect, it } from 'vitest';
 import { bwrapRuntime } from '../src/backend.js';
 
 let root: string;
 let ws: string;
+let clone: RunClone;
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, stdio: 'pipe' }).toString().trim();
 beforeEach(() => {
@@ -39,7 +45,13 @@ beforeEach(() => {
     '-m',
     'base',
   );
-  git(main, 'worktree', 'add', '-q', ws, '-b', 'run');
+  git(main, 'branch', 'run');
+  clone = createRunClone({
+    parent: main,
+    workspace: ws,
+    gitDir: join(root, 'storage/run.git'),
+    branch: 'run',
+  });
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 function snapshot(path: string): Record<string, string> {
@@ -73,6 +85,7 @@ it('creates a private home, keeps secrets out of argv, and records namespace/pro
     command: 'true',
     env: { MODEL_TOKEN: 'test-secret' },
     workspacePath: ws,
+    gitDir: clone.gitDir,
     run,
     harness: 'any',
     ...context,
@@ -93,22 +106,10 @@ it('creates a private home, keeps secrets out of argv, and records namespace/pro
   expect(existsSync(context.homePath)).toBe(false);
 });
 
-it('rejects invalid run names and refuses a main checkout', async () => {
-  const runtime = make();
+it('rejects invalid run names', async () => {
   await expect(
-    runtime.prepareRun!({ uuid: '../escape', id: 1 }),
+    make().prepareRun!({ uuid: '../escape', id: 1 }),
   ).rejects.toThrow(/uuid/);
-  const context = await runtime.prepareRun!(run);
-  await expect(
-    runtime.wrap({
-      command: 'true',
-      env: {},
-      workspacePath: join(root, 'main'),
-      run,
-      harness: 'any',
-      ...context,
-    }),
-  ).rejects.toThrow(/linked Git worktree/);
 });
 
 const canBwrap =
@@ -141,10 +142,13 @@ it.skipIf(!canBwrap)(
     const main = join(root, 'main');
     const sibling = join(root, 'sibling');
     git(main, 'worktree', 'add', '-qb', 'sibling', sibling);
+    const siblingGit = join(root, 'storage/sibling.git');
+    git(root, 'init', '-q', '--bare', siblingGit);
     const parentBranch = git(main, 'symbolic-ref', '--short', 'HEAD');
     const parentCommit = git(main, 'rev-parse', 'HEAD');
     const parentBefore = snapshot(join(main, '.git'));
     const siblingBefore = snapshot(sibling);
+    const siblingGitBefore = snapshot(siblingGit);
     const attackPaths = [
       join(main, '.git/refs/heads', parentBranch),
       join(main, '.git/index'),
@@ -158,6 +162,7 @@ it.skipIf(!canBwrap)(
       join(main, '.git/config'),
       join(main, '.git/hooks/pre-commit'),
       join(main, '.git/worktrees/sibling/gitdir'),
+      join(siblingGit, 'config'),
     ];
     const command = `set -eu
 test "$HOME" = '${context.homePath}'
@@ -166,6 +171,9 @@ test ! -e /var/run/docker.sock
 test ! -e /home/cw/.ssh
 test ! -e /home/cw/.bakers
 test ! -e /proc/${process.pid}
+test ! -e '${join(main, '.git')}'
+test ! -e '${siblingGit}'
+test -d .git
 test -z "\${HOST_SECRET:-}"
 test "$MODEL_TOKEN" = test-secret
 test "$(cat '${join(ws, '.ddev/generated.yaml')}')" = generated
@@ -192,6 +200,7 @@ echo isolated`;
       command,
       env: { MODEL_TOKEN: 'test-secret' },
       workspacePath: ws,
+      gitDir: clone.gitDir,
       readPaths: protectedDirs,
       run,
       harness: 'any',
@@ -212,20 +221,13 @@ echo isolated`;
     );
     expect(snapshot(join(main, '.git'))).toEqual(parentBefore);
     expect(snapshot(sibling)).toEqual(siblingBefore);
-    expect(git(ws, 'log', '-1', '--format=%s')).toBe('base');
-    const record = JSON.parse(
-      readFileSync(join(root, 'cache/test-run.git.json'), 'utf8'),
-    );
-    const commit = git(ws, `--git-dir=${record.path}`, 'rev-parse', 'HEAD');
-    expect(git(ws, `--git-dir=${record.path}`, 'rev-parse', parentBranch)).toBe(
-      commit,
-    );
-    expect(git(ws, `--git-dir=${record.path}`, 'rev-parse', 'sibling')).toBe(
-      commit,
-    );
-    await runtime.transferCommit!(run.uuid, commit);
-    expect(git(ws, 'log', '-1', '--format=%s')).toBe('run');
-    expect(git(main, 'rev-parse', parentBranch)).toBe(parentCommit);
+    expect(snapshot(siblingGit)).toEqual(siblingGitBefore);
+    // The run's commit and its ref games exist only in its own Git directory.
+    const local = (...args: string[]) =>
+      git(root, `--git-dir=${clone.gitDir}`, ...args);
+    expect(local('log', '-1', '--format=%s')).toBe('run');
+    expect(local('rev-parse', 'sibling')).toBe(runCloneTip(clone));
+    expect(git(main, 'rev-parse', 'run')).toBe(parentCommit);
     expect(git(main, 'rev-parse', 'sibling')).toBe(parentCommit);
     expect(readFileSync(join(root, 'main/.git/config'), 'utf8')).toBe(
       hostConfig,
@@ -234,13 +236,14 @@ echo isolated`;
   },
 );
 
-it('rejects relative grants and writable aliases of protected Git metadata', async () => {
+it('rejects relative grants and writable aliases of the run Git directory', async () => {
   const runtime = make();
   const context = await runtime.prepareRun!(run);
   const input = {
     command: 'true',
     env: {},
     workspacePath: ws,
+    gitDir: clone.gitDir,
     run,
     harness: 'any',
     ...context,
@@ -249,7 +252,7 @@ it('rejects relative grants and writable aliases of protected Git metadata', asy
     runtime.wrap({ ...input, readPaths: ['relative'] }),
   ).rejects.toThrow(/relative/);
   const alias = join(root, 'git-alias');
-  symlinkSync(join(root, 'main/.git'), alias);
+  symlinkSync(clone.gitDir, alias);
   await expect(runtime.wrap({ ...input, writePaths: [alias] })).rejects.toThrow(
     /protected/,
   );
@@ -265,6 +268,7 @@ it.skipIf(!canBwrap)(
       command: 'echo ready > ready; exec sleep 60',
       env: {},
       workspacePath: ws,
+      gitDir: clone.gitDir,
       run,
       harness: 'any',
       ...context,
@@ -288,7 +292,18 @@ it.skipIf(!canBwrap)(
   },
 );
 
-it('overlays private metadata while host refs and requested paths stay read-only', async () => {
+const mountsOf = () => {
+  const plan = JSON.parse(
+    readFileSync(join(root, 'cache/test-run.launch.json'), 'utf8'),
+  );
+  const mounts: string[][] = [];
+  for (let index = 0; index < plan.argv.length; index++)
+    if (['--bind', '--ro-bind'].includes(plan.argv[index]))
+      mounts.push(plan.argv.slice(index, index + 3));
+  return mounts;
+};
+
+it('mounts the run Git directory as .git, no parent Git, and protected paths read-only', async () => {
   const runtime = make();
   const context = await runtime.prepareRun!(run);
   const readPath = join(ws, 'protected');
@@ -297,87 +312,65 @@ it('overlays private metadata while host refs and requested paths stay read-only
     command: 'true',
     env: {},
     workspacePath: ws,
+    gitDir: clone.gitDir,
     run,
     harness: 'any',
     readPaths: [readPath],
     ...context,
   });
-  const record = JSON.parse(
-    readFileSync(join(root, 'cache/test-run.git.json'), 'utf8'),
-  );
-  const plan = JSON.parse(
-    readFileSync(join(root, 'cache/test-run.launch.json'), 'utf8'),
-  );
-  const mounts: string[][] = [];
-  for (let index = 0; index < plan.argv.length; index++)
-    if (['--bind', '--ro-bind'].includes(plan.argv[index]))
-      mounts.push(plan.argv.slice(index, index + 3));
-  expect(record.path).toBe(join(root, 'cache/test-run.git'));
-  expect(record.path.startsWith(`${context.homePath}/`)).toBe(false);
-  expect(mounts).toContainEqual(['--bind', record.path, record.gitDir]);
-  expect(mounts).toContainEqual([
-    '--ro-bind',
-    join(ws, '.git'),
-    join(ws, '.git'),
-  ]);
+  const mounts = mountsOf();
+  expect(mounts).toContainEqual(['--bind', clone.gitDir, join(ws, '.git')]);
   expect(mounts).toContainEqual(['--ro-bind', readPath, readPath]);
-  expect(mounts).toContainEqual([
-    '--ro-bind',
-    record.commonDir,
-    record.commonDir,
-  ]);
+  const parentGit = join(root, 'main/.git');
   expect(
     mounts.some(
-      ([mode, source]) =>
-        mode === '--bind' &&
-        (source === record.commonDir ||
-          source.startsWith(`${record.commonDir}/`)),
+      ([, source]) =>
+        source === parentGit || source.startsWith(`${parentGit}/`),
     ),
   ).toBe(false);
-  expect(
-    mounts.findIndex(([, , target]) => target === readPath),
-  ).toBeGreaterThan(mounts.findIndex(([, , target]) => target === ws));
+  const at = (target: string) =>
+    mounts.findIndex(([, , mounted]) => mounted === target);
+  expect(at(readPath)).toBeGreaterThan(at(ws));
+  expect(at(join(ws, '.git'))).toBeGreaterThan(at(ws));
   await runtime.cleanup(run);
 });
-it('transfers local commits through the runtime capability into only the ticket branch', async () => {
-  const main = join(root, 'main');
-  git(main, 'branch', 'sibling');
-  const refs = git(main, 'show-ref');
+
+it('mounts the parent objects read-only only for a shared clone', async () => {
   const runtime = make();
   const context = await runtime.prepareRun!(run);
+  const objects = join(root, 'main/.git/objects');
   await runtime.wrap({
     command: 'true',
     env: {},
     workspacePath: ws,
-    ticketBranch: 'run',
+    gitDir: clone.gitDir,
+    sharedObjects: objects,
     run,
     harness: 'any',
     ...context,
   });
-  const recordPath = join(root, 'cache/test-run.git.json');
-  const record = JSON.parse(readFileSync(recordPath, 'utf8'));
-  const local = (...args: string[]) =>
-    git(ws, `--git-dir=${record.path}`, ...args);
-  writeFileSync(join(ws, 'local.txt'), 'local');
-  local('add', 'local.txt');
-  local(
-    '-c',
-    'user.name=test',
-    '-c',
-    'user.email=test@test',
-    'commit',
-    '-qm',
-    'private',
-  );
-  const commit = local('rev-parse', 'HEAD');
-  local('update-ref', 'refs/heads/sibling', commit);
-  expect(git(main, 'show-ref')).toBe(refs);
-  await runtime.transferCommit!(run.uuid, commit);
-  expect(git(main, 'rev-parse', 'run')).toBe(commit);
-  expect(git(main, 'rev-parse', 'sibling')).toBe(record.expected);
-  expect(git(main, 'rev-parse', 'HEAD')).toBe(record.expected);
-  expect(JSON.parse(readFileSync(recordPath, 'utf8')).expected).toBe(commit);
+  expect(mountsOf()).toContainEqual(['--ro-bind', objects, objects]);
+  expect(
+    mountsOf().filter(([, source]) => source.includes('main/.git')),
+  ).toEqual([['--ro-bind', objects, objects]]);
   await runtime.cleanup(run);
+});
+
+it('refuses a run Git directory inside the workspace', async () => {
+  const runtime = make();
+  const context = await runtime.prepareRun!(run);
+  mkdirSync(join(ws, 'inside.git'));
+  await expect(
+    runtime.wrap({
+      command: 'true',
+      env: {},
+      workspacePath: ws,
+      gitDir: join(ws, 'inside.git'),
+      run,
+      harness: 'any',
+      ...context,
+    }),
+  ).rejects.toThrow(/outside the workspace/);
 });
 
 it.runIf(canBwrap)(
@@ -394,6 +387,7 @@ it.runIf(canBwrap)(
           'if mv scripts moved 2>/dev/null; then exit 71; fi; if echo attack > scripts/host.sh 2>/dev/null; then exit 72; fi; test "$(cat scripts/host.sh)" = trusted',
         env: {},
         workspacePath: ws,
+        gitDir: clone.gitDir,
         run,
         harness: 'any',
         ...context,

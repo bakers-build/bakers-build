@@ -13,7 +13,11 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { shellQuote } from '@bakers-build/core';
+import {
+  createRunClone,
+  shellQuote,
+  transferIsolatedCommit,
+} from '@bakers-build/core';
 import { expect, it } from 'vitest';
 import { dockerRuntime, realExec } from '../src/backend.js';
 
@@ -51,7 +55,7 @@ function snapshot(root: string): Record<string, string> {
 }
 
 it.skipIf(!available())(
-  'isolates real Docker Git and host scripts, then transfers only the ticket commit',
+  'isolates real Docker Git and host scripts; only the ticket commit reaches the parent',
   async () => {
     const root = mkdtempSync(join(tmpdir(), 'bb-docker-isolation-'));
     const main = join(root, 'main');
@@ -97,7 +101,16 @@ it.skipIf(!available())(
       writeFileSync(join(main, 'work.txt'), 'before');
       git(main, 'add', '.');
       git(main, 'commit', '-qm', 'base');
-      git(main, 'worktree', 'add', '-qb', 'ticket', tree);
+      git(main, 'branch', 'ticket');
+      const clone = {
+        ...createRunClone({
+          parent: main,
+          workspace: tree,
+          gitDir: join(root, 'storage/run.git'),
+          branch: 'ticket',
+        }),
+        protectedPaths: ['.bakers', '.ddev'],
+      };
       git(main, 'worktree', 'add', '-qb', 'sibling', sibling);
       const base = git(main, 'rev-parse', 'HEAD');
       const context = await runtime.prepareRun!(run, {});
@@ -106,16 +119,12 @@ const fs = require('node:fs'), cp = require('node:child_process'), assert = requ
 const git = (...args) => cp.execFileSync('git', args, {encoding:'utf8'}).trim();
 const deny = fn => assert.throws(fn);
 const common = ${JSON.stringify(common)};
-assert.equal(fs.existsSync(common + '/config'), true);
+// The parent repository is not in the container at all.
+assert.equal(fs.existsSync(common), false);
 deny(() => fs.writeFileSync('.git', 'gitdir: /tmp/attack'));
 deny(() => fs.unlinkSync('.git'));
 deny(() => fs.renameSync('.git', '.git-moved'));
 assert.equal(fs.existsSync(${JSON.stringify(join(sibling, '.git'))}), false);
-for (const file of [common + '/config', common + '/refs/heads/main', common + '/refs/heads/sibling', common + '/objects/planted']) {
-  deny(() => fs.writeFileSync(file, 'attack'));
-  deny(() => fs.unlinkSync(file));
-  deny(() => fs.renameSync(file, file + '-moved'));
-}
 deny(() => cp.execFileSync('git', ['--git-dir=' + common, 'update-ref', 'refs/heads/main', 'HEAD'], {stdio:'pipe'}));
 for (const [dir, name] of [['.bakers', 'host.sh'], ['.ddev', 'config.yaml']]) {
   deny(() => fs.writeFileSync(dir + '/' + name, 'attack'));
@@ -145,7 +154,7 @@ console.log(JSON.stringify({commit}));
         command: `node -e ${shellQuote(script)}`,
         env: {},
         workspacePath: tree,
-        ticketBranch: 'ticket',
+        gitDir: clone.gitDir,
         run,
         harness: 'test',
         readPaths: [join(tree, '.bakers'), join(tree, '.ddev')],
@@ -166,7 +175,8 @@ console.log(JSON.stringify({commit}));
       const { commit } = JSON.parse(output.trim());
       expect(snapshot(common)).toEqual(before);
       expect(snapshot(sibling)).toEqual(siblingBefore);
-      expect(git(tree, 'rev-parse', 'HEAD')).toBe(base);
+      expect(git(main, 'rev-parse', 'ticket')).toBe(base);
+      expect(existsSync(join(tree, '.git', 'HEAD'))).toBe(false);
       expect(readFileSync(join(tree, 'work.txt'), 'utf8')).toBe(
         'run-local edit',
       );
@@ -176,8 +186,8 @@ console.log(JSON.stringify({commit}));
       expect(readFileSync(join(tree, '.ddev/config.yaml'), 'utf8')).toBe(
         'trusted ddev',
       );
-      await runtime.transferCommit!(run.uuid, commit);
-      expect(git(tree, 'rev-parse', 'HEAD')).toBe(commit);
+      expect(transferIsolatedCommit(clone)).toBe(commit);
+      expect(git(main, 'rev-parse', 'ticket')).toBe(commit);
       expect(git(main, 'rev-parse', 'HEAD')).toBe(base);
       expect(git(sibling, 'rev-parse', 'HEAD')).toBe(base);
       expect(

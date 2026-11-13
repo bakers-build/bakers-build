@@ -3,10 +3,7 @@ import { accessSync, constants, existsSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import {
-  type RuntimePlugin,
-  resolveRuntimeOptions,
-} from '@bakers-build/conductor/contract';
+import type { RuntimePlugin } from '@bakers-build/conductor/contract';
 import { cliRootOf } from '@bakers-build/core';
 import { type BwrapOptions, bwrapRuntime } from './backend.js';
 
@@ -24,7 +21,6 @@ export function runtimeBwrap(options: BwrapOptions = {}): RuntimePlugin {
     kind: 'runtime',
     id: 'bwrap',
     isolates: true,
-    readOnly: resolveRuntimeOptions(options),
     requiredModules: [],
     createRuntime: async () => {
       if (process.platform !== 'linux')

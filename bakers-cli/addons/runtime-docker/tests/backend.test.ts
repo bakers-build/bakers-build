@@ -9,7 +9,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { AgentRuntimeInfo } from '@bakers-build/conductor/contract';
-import type { ConductorLogger } from '@bakers-build/core';
+import { type ConductorLogger, createRunClone } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type BackendDeps, dockerRuntime, shortHash } from '../src/backend.js';
 
@@ -19,6 +19,7 @@ let root: string;
 let ws: string;
 let common: string;
 let cache: string;
+let runGit: string;
 let calls: Call[];
 let warnings: string[];
 
@@ -64,7 +65,13 @@ beforeEach(() => {
     });
   git('init', '-q', '-b', 'main');
   git('commit', '-q', '--allow-empty', '-m', 'base');
-  git('worktree', 'add', '-q', '-b', 'ticket', ws);
+  git('branch', 'ticket');
+  runGit = createRunClone({
+    parent: main,
+    workspace: ws,
+    gitDir: join(root, 'storage/run.git'),
+    branch: 'ticket',
+  }).gitDir;
   mkdirSync(join(root, 'transcripts'));
   // The conductor supplies a home already created by prepareRun.
   mkdirSync(join(cache, 'bakers/runtime/r-uuid'), { recursive: true });
@@ -99,6 +106,7 @@ const launch = (over: Record<string, unknown> = {}) => ({
   command: 'agent --go',
   env: { BAKERS_CONDUCTOR_TOKEN: 'tok' },
   workspacePath: ws,
+  gitDir: runGit,
   run: { uuid: 'r-uuid', id: 7 },
   harness: 'fake',
   ...agent(),
@@ -117,7 +125,6 @@ describe('runtime-docker wrap', () => {
     const out = await dockerRuntime({}, deps()).wrap(launch());
     const home = join(cache, 'bakers/runtime/r-uuid');
     expect(existsSync(home)).toBe(true);
-    expect(existsSync(join(`${home}.git`, 'objects'))).toBe(true);
     expect(out.command).toMatch(/^'?docker'? 'run'/);
     expect(out.command).toContain(`'${home}:${home}'`);
     expect(out.command).toContain(
@@ -137,21 +144,30 @@ describe('runtime-docker wrap', () => {
     );
   });
 
-  it('mounts independent Git metadata and read-only host refs', async () => {
+  it('mounts the run Git directory as .git and no parent Git', async () => {
     const before = readFileSync(join(common, 'config'), 'utf8');
     const out = await dockerRuntime({}, deps()).wrap(launch());
-    const gitDir = join(common, 'worktrees/tree');
-    const privateGit = join(cache, 'bakers/runtime/r-uuid.git');
-    expect(existsSync(join(privateGit, 'objects'))).toBe(true);
-    expect(existsSync(join(privateGit, 'index'))).toBe(true);
-    expect(existsSync(join(privateGit, 'commondir'))).toBe(false);
-    expect(out.command).toContain(`'${privateGit}:${gitDir}'`);
-    expect(out.command).toContain(
-      `'${join(ws, '.git')}:${join(ws, '.git')}:ro'`,
-    );
-    expect(out.command).not.toContain(`'${common}:${common}'`);
-    expect(out.command).toContain(`'${common}:${common}:ro'`);
+    expect(out.command).toContain(`'${runGit}:${join(ws, '.git')}'`);
+    expect(out.command).not.toContain(common);
     expect(readFileSync(join(common, 'config'), 'utf8')).toBe(before);
+    expect(calls.filter(([file]) => file === 'git')).toEqual([]);
+  });
+
+  it('mounts the parent objects read-only for a shared clone', async () => {
+    const objects = join(common, 'objects');
+    const out = await dockerRuntime({}, deps()).wrap(
+      launch({ sharedObjects: objects }),
+    );
+    expect(out.command).toContain(`'${objects}:${objects}:ro'`);
+  });
+
+  it('refuses a run Git directory inside the workspace', async () => {
+    mkdirSync(join(ws, 'inside.git'));
+    await expect(
+      dockerRuntime({}, deps()).wrap(
+        launch({ gitDir: join(ws, 'inside.git') }),
+      ),
+    ).rejects.toThrow(/outside the workspace/);
   });
 
   it('refuses a run uuid that is not a plain name', async () => {
@@ -272,7 +288,7 @@ describe('runtime-docker cleanup', () => {
     expect(warnings).toContain('runtime container cleanup failed');
   });
 
-  it('keeps the workspace record and home when container removal fails', async () => {
+  it('keeps the home when container removal fails', async () => {
     const d = deps();
     const exec = d.exec;
     d.exec = async (file, args) => {
@@ -283,9 +299,6 @@ describe('runtime-docker cleanup', () => {
     const runtime = dockerRuntime({}, d);
     await runtime.wrap(launch());
     await runtime.cleanup({ uuid: 'r-uuid', id: 7 });
-    expect(
-      existsSync(join(cache, 'bakers/runtime/r-uuid.workspace.json')),
-    ).toBe(true);
     expect(existsSync(join(cache, 'bakers/runtime/r-uuid'))).toBe(true);
   });
 

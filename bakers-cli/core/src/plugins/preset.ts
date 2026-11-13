@@ -93,7 +93,6 @@ export type AddonEntry =
  * the conductor accumulators.
  */
 export interface DiscoveredContributions {
-  runtimeReadOnly: string[];
   commands: CommandDescriptor[];
   /** Opaque: `RemotePlugin[]` on the conductor surface. */
   servers: unknown[];
@@ -183,7 +182,6 @@ export const SURFACE_KEYS: Record<
  */
 export interface BbPreset<O = unknown> {
   /** Children load as if listed in the same scope, depth-first BEFORE this preset. */
-  runtime?: { read_only?: string[] };
   addons?: AddonEntry[];
 
   /** The config scopes this addon may be listed in; absent means both. */
@@ -257,6 +255,5 @@ export function emptyContributions(): DiscoveredContributions {
     uiEntries: [],
     addonInbox: [],
     addonTools: [],
-    runtimeReadOnly: [],
   };
 }

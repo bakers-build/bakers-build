@@ -20,16 +20,14 @@ import {
 } from '@bakers-build/core';
 import { readBbProjectSelection } from './cli/project-context.js';
 import {
-  resolveRuntimeOptions,
   SHARED_SECURITY_KEY,
   type SharedLayer,
-  type SharedRuntimeLayers,
   type SharedSecurity,
-  validateSharedRuntime,
   validateSharedSecurity,
 } from './plugins/agent-args.js';
 import { validateMarketplaces } from './plugins/agent-home.js';
 import type { HookListener, HookName } from './plugins/executor.js';
+import { assertProtectedEntryPoints } from './plugins/host-commands.js';
 import { type LoadedInbox, loadInbox } from './plugins/message.js';
 import type {
   AgentCandidate,
@@ -501,56 +499,20 @@ export async function loadConductorConfig(
       bases: addonBases,
     },
   ]);
-  const declarations = await discoverScoped(effectiveAddons, 'conductor', {
-    only: [],
-  });
-  const runtimeBlock = (
-    value: unknown,
-    layer: 'project' | 'machine',
-    path: string,
-  ) => {
-    try {
-      return validateSharedRuntime(value, layer);
-    } catch (error) {
-      throw new Error(`${path}: ${(error as Error).message}`);
-    }
-  };
-  const sharedRuntime: SharedRuntimeLayers = {
-    default: { read_only: declarations.runtimeReadOnly },
-    project: runtimeBlock(config.runtime, 'project', configPath),
-    machine: runtimeBlock(machineCtx.runtime, 'machine', machineContextPath()),
-  };
-  let inherited = resolveRuntimeOptions({
-    shared_runtime: { default: sharedRuntime.default },
-  }).entries.map((entry) => entry.value);
-  for (const layer of ['project', 'machine'] as const) {
-    const block = sharedRuntime[layer];
-    if (block?.read_only === undefined) continue;
-    const report = resolveRuntimeOptions({
-      shared_runtime: { default: { read_only: inherited }, [layer]: block },
-    });
-    if (report.removed.length)
-      console.warn(
-        `warning: ${layer === 'project' ? configPath : machineContextPath()} ${layer} runtime.read_only drops inherited paths: ${report.removed.join(', ')}`,
-      );
-    inherited = report.entries.map((entry) => entry.value);
-  }
   const discovered = narrowConductorContributions(
-    await discoverScoped(effectiveAddons, 'conductor', {
-      agentGlobals,
-      runtimeGlobals: { shared_runtime: sharedRuntime },
-    }),
+    await discoverScoped(effectiveAddons, 'conductor', { agentGlobals }),
   );
   const wired = resolveConductorSlots(discovered);
-  if (wired.runtime?.readOnly) {
-    const removed = inherited.filter(
-      (path) =>
-        !wired.runtime?.readOnly?.entries.some((entry) => entry.value === path),
-    );
-    if (removed.length)
-      console.warn(
-        `warning: ${configPath} runtime entry runtime.read_only drops inherited paths: ${removed.join(', ')}`,
-      );
+  // The schema has checked the shape; the list is the project's alone.
+  const readOnly = (config.runtime as { read_only?: string[] } | undefined)
+    ?.read_only;
+  const isolates = wired.runtime?.isolates === true;
+  if (isolates) {
+    try {
+      assertProtectedEntryPoints(config.hooks, readOnly ?? []);
+    } catch (error) {
+      throw new Error(`${configPath}: ${(error as Error).message}`);
+    }
   }
   const hookListeners = validateHookListeners(discovered.hooks);
   // Unlike the inbox, a broken or ambiguous tool set stops the conductor.
@@ -558,7 +520,12 @@ export async function loadConductorConfig(
   const provisioning = provisionRuns();
   const toolSets = [
     ...discovered.addonTools,
-    ...provisionTools(config.hooks?.provision_up, provisioning),
+    ...provisionTools(config.hooks?.provision_up, provisioning, {
+      ...(config.hooks?.provision_exec
+        ? { exec: config.hooks.provision_exec }
+        : {}),
+      isolates,
+    }),
   ];
   let agentCatalog: AgentCatalog | undefined;
   const tools =
@@ -785,7 +752,7 @@ export async function loadConductorConfig(
       : {}),
     workspace,
     ...(wired.runtime ? { runtime: wired.runtime } : {}),
-    sharedRuntime,
+    ...(readOnly ? { readOnly } : {}),
     marketplaces,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),

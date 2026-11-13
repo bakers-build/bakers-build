@@ -2101,58 +2101,44 @@ export default {
   });
 });
 
-describe('runtime config layers', () => {
-  it('keeps addon defaults and shared project/machine layers and warns for each removal', async () => {
+describe('protected paths and host commands', () => {
+  const isolating = `export const runtimes = acc => [...acc, { kind: 'runtime', id: 'test', isolates: true, requiredModules: [] }];`;
+  const load = (body: string, runtime = true) => {
     const path = writeDescriptorConfig(
-      `runtime: { read_only: ['scripts'] }, addons: ['./paths.js'],`,
+      `${body}${runtime ? " addons: ['./runtime.js']," : ''}`,
     );
-    writeFileSync(
-      join(dirname(path), 'paths.js'),
-      `export const runtime = { read_only: ['.ddev'] };`,
-    );
-    writeFileSync(
-      join(process.env.HOME as string, '.bakers/machine.config.js'),
-      machineSource(
-        `export default { addons: ['@bakers-build/addon-codex'], runtime: { read_only: [] } };`,
-      ),
-    );
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      const config = await loadConductorConfig(path);
-      expect(config.sharedRuntime).toEqual({
-        default: { read_only: ['.ddev'] },
-        project: { read_only: ['scripts'] },
-        machine: { read_only: [] },
-      });
-      expect(warn.mock.calls.flat().join('\n')).toMatch(
-        /project.*runtime.read_only.*\.ddev/,
-      );
-      expect(warn.mock.calls.flat().join('\n')).toMatch(
-        /machine.*runtime.read_only.*scripts/,
-      );
-    } finally {
-      warn.mockRestore();
-    }
-  });
-});
+    writeFileSync(join(dirname(path), 'runtime.js'), isolating);
+    return loadConductorConfig(path);
+  };
 
-describe('runtime entry loosening', () => {
-  it('warns when the runtime entry removes a project path', async () => {
-    const path = writeDescriptorConfig(
-      `runtime: { read_only: ['scripts'] }, addons: ['./runtime.js'],`,
+  it('keeps the project list of protected paths', async () => {
+    const config = await load(`runtime: { read_only: ['.ddev', '.github'] },`);
+    expect(config.readOnly).toEqual(['.ddev', '.github']);
+    expect(config.runtime?.isolates).toBe(true);
+  });
+
+  it('refuses a host command outside a protected path under an isolating runtime', async () => {
+    await expect(
+      load(`hooks: { before_run: 'pnpm install' },`),
+    ).rejects.toThrow(/hooks\.before_run.*protected path/);
+    await expect(
+      load(
+        `runtime: { read_only: ['.ddev'] }, hooks: { provision_up: { up: 'bash scripts/up.sh' } },`,
+      ),
+    ).rejects.toThrow(/hooks\.provision_up\.up/);
+  });
+
+  it('accepts host commands that start in a protected path and serves provision_exec', async () => {
+    const config = await load(
+      `runtime: { read_only: ['.ddev'] }, hooks: { before_run: 'bash .bakers/scripts/deps.sh', provision_up: { deps: 'bash .bakers/provision.sh deps' }, provision_exec: { drush: 'bash .ddev/exec.sh drush' } },`,
     );
-    writeFileSync(
-      join(dirname(path), 'runtime.js'),
-      `export const runtimes = acc => [...acc, { kind: 'runtime', id: 'test', readOnly: { entries: [], removed: [] } }];`,
+    expect(config.tools?.list().map((tool) => tool.name)).toEqual(
+      expect.arrayContaining(['provision_up', 'provision_exec']),
     );
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    try {
-      await loadConductorConfig(path);
-      expect(warn.mock.calls.flat().join('\n')).toMatch(
-        /runtime entry.*runtime.read_only.*scripts/,
-      );
-    } finally {
-      warn.mockRestore();
-    }
+  });
+
+  it('leaves host commands unchecked under runtime-host', async () => {
+    const config = await load(`hooks: { before_run: 'pnpm install' },`, false);
+    expect(config.runtime?.isolates ?? false).toBe(false);
   });
 });

@@ -29,21 +29,6 @@ describe('encodeClaudeProjectDir', () => {
 });
 
 describe('ClaudeAgent.launchCommand', () => {
-  it('denies editing and shell writes to protected host files in sandbox mode', () => {
-    const command = new ClaudeAgent({ permissions: 'sandbox' }).launchCommand(
-      'x',
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      [],
-      ['/project/.bakers'],
-    );
-    expect(command).toContain('Edit(//project/.bakers/**)');
-    expect(command).toContain('Write(//project/.bakers/**)');
-    expect(command).toContain('denyWrite');
-    expect(command).toContain('/project/.bakers');
-  });
   it('includes the prompt, --model and the skip-permissions flag', () => {
     const agent = new ClaudeAgent({
       model: 'claude-opus-4-8',
@@ -602,27 +587,6 @@ describe('ClaudeAgent permissions: sandbox', () => {
         JSON.parse(flagValue(launch(worktree), '--mcp-config')).mcpServers,
       ).toHaveProperty('bakers');
       const own = join(common, 'worktrees', 'work');
-      const isolated = JSON.parse(
-        flagValue(
-          captureArgv(
-            'claude',
-            new ClaudeAgent({ permissions: 'sandbox' }).launchCommand(
-              'x',
-              undefined,
-              worktree,
-              undefined,
-              undefined,
-              [],
-              [],
-              true,
-            ),
-          ),
-          '--settings',
-        ),
-      ).sandbox.filesystem;
-      expect(isolated.allowWrite).toEqual([own]);
-      expect(isolated.denyWrite).toEqual([]);
-
       expect(filesystem(worktree).allowWrite).toEqual([
         '/srv/cache',
         own,

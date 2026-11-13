@@ -23,7 +23,7 @@ import {
   type ConductorFileConfig,
   emptyAgentFootprint,
 } from '@bakers-build/conductor/contract';
-import { shellQuote } from '@bakers-build/core';
+import { createRunClone, shellQuote } from '@bakers-build/core';
 import { expect, it } from 'vitest';
 import { bwrapRuntime } from '../../../addons/runtime-bwrap/src/backend.js';
 import { TestConductor } from '../test-conductor.js';
@@ -84,9 +84,22 @@ it.skipIf(!available)(
       '-qm',
       'base',
     );
-    git('worktree', 'add', '-q', ws, '-b', 'agent-run');
-    mkdirSync(join(ws, '.bakers'));
+    mkdirSync(join(main, '.bakers'));
+    writeFileSync(join(main, '.bakers/keep'), '');
+    git('add', '.');
+    git(
+      '-c',
+      'user.name=Fixture',
+      '-c',
+      'user.email=fixture@example.test',
+      'commit',
+      '-qm',
+      'project',
+    );
+    git('branch', 'agent-run');
     const parentTip = git('rev-parse', 'HEAD');
+    const cacheHome = process.env.XDG_CACHE_HOME;
+    process.env.XDG_CACHE_HOME = join(root, 'cache');
     const runtime = bwrapRuntime(
       {},
       {
@@ -184,6 +197,7 @@ it.skipIf(!available)(
           JSON.stringify({
             home: context.homePath,
             hostSecret,
+            parentGit: join(main, '.git'),
             hostPid: process.pid,
           }),
         );
@@ -231,7 +245,16 @@ it.skipIf(!available)(
       remote,
       executor,
       {
-        ensure: async () => ({ path: ws, instructions: null, created: false }),
+        ensure: async () => ({
+          path: ws,
+          instructions: null,
+          created: false,
+          clone: createRunClone({
+            parent: main,
+            workspace: ws,
+            branch: 'agent-run',
+          }),
+        }),
       },
       [{ id: 'fake-agent', permissions: 'yolo', agent }],
       log,
@@ -246,18 +269,21 @@ it.skipIf(!available)(
         ticketRead: true,
         isolated: true,
         committed: true,
-        transferred: true,
       });
       expect(calls).toEqual(['tool_api__bakers_ticket_read']);
+      // The commit stays in the run's clone until the run ends.
       expect(git('rev-parse', 'HEAD')).toBe(parentTip);
-      expect(git('-C', ws, 'log', '-1', '--format=%s')).toBe(
-        'fake agent completed',
-      );
+      expect(git('rev-parse', 'agent-run')).toBe(parentTip);
+      expect(existsSync(join(ws, '.git', 'HEAD'))).toBe(false);
       expect(existsSync(join(root, 'runtime', uuid))).toBe(true);
       remote.setRunLogStorageAllowed(uuid, true);
       remote.markDone(uuid);
       await conductor.tick();
       expect(remote.calls.finalizeRun).toHaveLength(1);
+      expect(git('log', '-1', '--format=%s', 'agent-run')).toBe(
+        'fake agent completed',
+      );
+      expect(git('rev-parse', 'HEAD')).toBe(parentTip);
       expect(remote.calls.finalizeRun[0]).toMatchObject({
         runUuid: uuid,
         log: readFileSync(transcript, 'utf8'),
@@ -275,6 +301,8 @@ it.skipIf(!available)(
     } finally {
       await conductor.stopTools();
       await runtime.cleanup({ uuid, id: 1 });
+      if (cacheHome === undefined) delete process.env.XDG_CACHE_HOME;
+      else process.env.XDG_CACHE_HOME = cacheHome;
       rmSync(root, { recursive: true, force: true });
     }
   },

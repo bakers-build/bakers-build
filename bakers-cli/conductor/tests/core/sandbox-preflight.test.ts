@@ -77,7 +77,23 @@ function setup(agent: BbAgent, runtime?: RuntimePlugin) {
   const ensure = workspace.ensure.bind(workspace);
   workspace.ensure = async (...args) => {
     ensured += 1;
-    return { ...(await ensure(...args)), path: worktree };
+    return {
+      ...(await ensure(...args)),
+      path: worktree,
+      // An isolating runtime dispatches only into a run clone.
+      ...(runtime?.isolates
+        ? {
+            clone: {
+              gitDir: join(root, 'run.git'),
+              workspace: worktree,
+              parentGitDir: join(root, 'parent.git'),
+              branch: 'bb-1',
+              expected: '',
+              shared: false,
+            },
+          }
+        : {}),
+    };
   };
   const executor = new FakeExecutor({ outcome: 'exited' });
   const config: ConductorFileConfig = {

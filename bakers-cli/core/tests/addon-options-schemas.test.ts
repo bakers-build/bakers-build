@@ -163,16 +163,3 @@ describe('addon options schemas', () => {
     expect(v('forge-gitlab')({ project: 'g/r', auth: 'glab' })).toBe(true);
   });
 });
-
-it.each([
-  'runtime-docker',
-  'runtime-bwrap',
-])('%s validates relative read_only paths', (addon) => {
-  const ajv = new Ajv2020({ strict: false });
-  const validate = ajv.compile(load(`addons/${addon}/options.schema.json`));
-  expect(
-    validate({ read_only: ['$inherit', '.ddev', 'scripts/start.sh'] }),
-  ).toBe(true);
-  for (const path of ['/etc', '../x', 'a/../x', '', '.'])
-    expect(validate({ read_only: [path] })).toBe(false);
-});

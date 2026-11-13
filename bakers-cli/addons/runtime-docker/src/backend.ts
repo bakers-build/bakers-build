@@ -18,13 +18,7 @@ import type {
   BbRuntime,
   RuntimeLaunch,
 } from '@bakers-build/conductor/contract';
-import {
-  type ConductorLogger,
-  type IsolatedGit,
-  isolateGit,
-  shellQuote,
-  transferIsolatedCommit,
-} from '@bakers-build/core';
+import { type ConductorLogger, shellQuote } from '@bakers-build/core';
 import {
   API_KEY_PLACEHOLDER,
   type DockerOptions,
@@ -38,8 +32,6 @@ const EGRESS_NETWORK = 'bb-runtime-egress';
 export interface RuntimeDockerOptions {
   /** The container CLI; `podman` works too. */
   docker?: string;
-  read_only?: string[];
-  shared_runtime?: unknown;
   /** An operator image; never built. Default: the shipped image. */
   image?: string;
   /** Extra host paths mounted read-only. */
@@ -100,8 +92,6 @@ export function dockerRuntime(
       );
     return join(cacheHome, 'bakers/runtime', uuid);
   };
-  // Beside the run home, never mounted: cleanup trusts it to find the worktree.
-  const recordOf = (uuid: string) => `${runHomeOf(uuid)}.workspace.json`;
   // One image per agent install; built once each.
   const imagesReady = new Map<string, Promise<void>>();
 
@@ -186,17 +176,6 @@ export function dockerRuntime(
     await deps.exec(docker, ['network', 'connect', opts.runNetwork, proxyName]);
   };
 
-  const git = async (ws: string, flag: string) =>
-    (
-      await deps.exec('git', [
-        '-C',
-        ws,
-        'rev-parse',
-        '--path-format=absolute',
-        flag,
-      ])
-    ).stdout.trim();
-
   const credentialsFor = (agent: AgentRuntimeInfo) => {
     const api = agent.modelApi;
     if (allowlist && !api)
@@ -275,14 +254,16 @@ export function dockerRuntime(
         await proxyReady.ready;
       }
       const ws = launch.workspacePath;
-      const gitCommonDir = await git(ws, '--git-common-dir');
-      const gitDir = await git(ws, '--git-dir');
-      const gitLink = join(ws, '.git');
+      const runGitDir = launch.gitDir;
       const within = (path: string, root: string) =>
         path === root || path.startsWith(root + sep);
       if (within(realpathSync(dirname(runHome)), realpathSync(ws)))
         throw new Error(
           'runtime-docker: private state must stay outside the worktree',
+        );
+      if (runGitDir && within(realpathSync(runGitDir), realpathSync(ws)))
+        throw new Error(
+          'runtime-docker: the run Git directory must stay outside the workspace',
         );
       const canonical = (path: string) =>
         existsSync(path) ? realpathSync(path) : resolve(path);
@@ -302,9 +283,10 @@ export function dockerRuntime(
           if (
             write &&
             [
-              gitCommonDir,
+              ...(runGitDir ? [runGitDir] : []),
+              ...(launch.sharedObjects ? [launch.sharedObjects] : []),
               dirname(runHome),
-              gitLink,
+              join(ws, '.git'),
               deps.cliRoot,
               ...(launch.readPaths ?? []),
               ...opts.mounts,
@@ -318,31 +300,6 @@ export function dockerRuntime(
         }
       }
 
-      const recordPath = recordOf(launch.run.uuid);
-      const branch =
-        launch.ticketBranch ??
-        (
-          await deps.exec('git', ['-C', ws, 'symbolic-ref', '--short', 'HEAD'])
-        ).stdout.trim();
-      const privateGit: IsolatedGit = existsSync(recordPath)
-        ? JSON.parse(readFileSync(recordPath, 'utf8'))
-        : isolateGit(
-            ws,
-            `${runHome}.git`,
-            branch,
-            [...(launch.readPaths ?? []), ...opts.mounts]
-              .filter((path) => within(path, ws))
-              .map((path) => relative(ws, path)),
-          );
-      if (
-        privateGit.workspace !== ws ||
-        privateGit.branch !== branch ||
-        privateGit.gitDir !== gitDir
-      )
-        throw new Error(
-          'runtime-docker: private Git record does not match this launch',
-        );
-      writeFileSync(recordPath, JSON.stringify(privateGit), { mode: 0o600 });
       // The CLI build is mounted read-only; this puts the conductor's own CLI on PATH.
       if (deps.bakersEntry) {
         mkdirSync(join(runHome, 'bin'), { recursive: true });
@@ -360,11 +317,9 @@ export function dockerRuntime(
         { ...launch, env },
         { ...opts, image },
         {
-          gitCommonDir,
-          gitDir,
-          privateGitDir: privateGit.path,
-          ...(statSync(gitLink, { throwIfNoEntry: false })?.isFile()
-            ? { gitLink }
+          ...(runGitDir ? { runGitDir } : {}),
+          ...(launch.sharedObjects
+            ? { sharedObjects: launch.sharedObjects }
             : {}),
           runHome,
           cliRoot: deps.cliRoot,
@@ -373,19 +328,6 @@ export function dockerRuntime(
         },
       );
       return { command: argv.map(shellQuote).join(' '), env: runEnv };
-    },
-    async transferCommit(runUuid, commit) {
-      const path = recordOf(runUuid);
-      const record: IsolatedGit = JSON.parse(readFileSync(path, 'utf8'));
-      transferIsolatedCommit(record, commit);
-      writeFileSync(
-        path,
-        JSON.stringify({
-          ...record,
-          expected: commit,
-        }),
-        { mode: 0o600 },
-      );
     },
     async cleanup(r) {
       if (!plainName(r.uuid)) {
@@ -413,7 +355,6 @@ export function dockerRuntime(
         );
         return;
       }
-      // Private Git and its host-owned record remain available for delivery/recovery.
       rmSync(runHomeOf(r.uuid), { recursive: true, force: true });
     },
   };

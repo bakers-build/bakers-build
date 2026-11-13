@@ -99,5 +99,3 @@ bakers agents
 
 More: [Choose agents and models](/agents/guide), [Machines](/agents/reference#harnesses).
 
-
-See [protected host paths](/provision/security/shared-settings#host-executed-paths).

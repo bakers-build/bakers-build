@@ -23,10 +23,19 @@ export interface ToolHost {
   agentCatalog(): AgentCatalog;
 }
 
+/** A message input whose properties may also be lists of strings (argv). */
+export type ToolInput = Omit<MessageInput, 'properties'> & {
+  properties: Record<
+    string,
+    | MessageInput['properties'][string]
+    | { type: 'array'; items: { type: 'string' }; description?: string }
+  >;
+};
+
 export interface ToolDefinition {
   description: string;
   /** Absent means a parameterless tool. Unknown arguments are refused. */
-  input?: MessageInput;
+  input?: ToolInput;
 }
 
 export interface ToolResult {
@@ -102,7 +111,11 @@ type ShellResult = { exitCode: number; output: string };
 /** Provisioning runs the conductor owns, one per worktree and command. */
 export interface ProvisionRuns {
   /** Joins the running command of this worktree, or starts it. */
-  run(worktreePath: string, command: string): Promise<ShellResult>;
+  run(
+    worktreePath: string,
+    command: string,
+    env?: Record<string, string>,
+  ): Promise<ShellResult>;
   /** Kills the runs of one worktree, or all; resolves once they closed. */
   stop(worktreePath?: string): Promise<void>;
 }
@@ -113,12 +126,12 @@ export function provisionRuns(timeoutMs = PROVISION_TIMEOUT_MS): ProvisionRuns {
     { worktreePath: string; abort: AbortController; done: Promise<ShellResult> }
   >();
   return {
-    run(worktreePath, command) {
+    run(worktreePath, command, env) {
       const key = JSON.stringify([worktreePath, command]);
       const current = running.get(key);
       if (current) return current.done;
       const abort = new AbortController();
-      const done = shell(command, worktreePath, abort.signal, timeoutMs);
+      const done = shell(command, worktreePath, abort.signal, timeoutMs, env);
       running.set(key, { worktreePath, abort, done });
       const forget = () => running.delete(key);
       done.then(forget, forget);
@@ -134,18 +147,30 @@ export function provisionRuns(timeoutMs = PROVISION_TIMEOUT_MS): ProvisionRuns {
   };
 }
 
+export interface ProvisionOptions {
+  /** `hooks.provision_exec`: commands by key. */
+  exec?: Record<string, string>;
+  /** Whether the runtime isolates runs; exported to every host command. */
+  isolates?: boolean;
+}
+
 /**
- * The core `provision_up(profile?)` tool, offered only when the hook is set.
- * The agent picks when and which configured profile, never the command. The
- * command outlives its caller: the call's signal is ignored on purpose.
+ * The core `provision_up(profile?)` and `provision_exec(key, args?)` tools,
+ * each offered only when its hook is set. The agent picks when, which
+ * configured profile or key, and the arguments, never the command. A
+ * `provision_up` command outlives its caller: the call's signal is ignored on
+ * purpose.
  */
 export function provisionTools(
   hook: ProvisionHook | undefined,
   runs: ProvisionRuns = provisionRuns(),
+  options: ProvisionOptions = {},
 ): DiscoveredTools[] {
-  if (hook === undefined) return [];
+  const exec = options.exec ?? {};
+  if (hook === undefined && Object.keys(exec).length === 0) return [];
   const profiles = typeof hook === 'string' ? undefined : hook;
   if (
+    hook !== undefined &&
     typeof hook !== 'string' &&
     (typeof hook !== 'object' ||
       hook === null ||
@@ -162,39 +187,69 @@ export function provisionTools(
     // The input schema's enum has already refused an unknown profile.
     return profiles[String(profile)] as string;
   };
+  // What a host script needs instead of asking Git in a workspace without one.
+  const envFor = (worktreePath: string) => ({
+    BAKERS_WORKTREE_PATH: worktreePath,
+    BAKERS_RUNTIME_ISOLATES: options.isolates ? '1' : '0',
+  });
+  const report = ({ exitCode, output }: ShellResult) => {
+    const text = `exit ${exitCode}\n${output}`;
+    if (exitCode !== 0) throw new Error(text);
+    return { text };
+  };
+  const tools: Record<string, ToolDefinition> = {};
+  const handlers: Record<string, ToolHandler> = {};
+  if (hook !== undefined) {
+    tools.provision_up = {
+      description: `Bring this worktree's environment up${profiles ? ` with a configured profile (${keys})` : ''}; the project's command reuses a ready environment. Returns the command's output, including the base URL. The first call on a new worktree can take minutes; the call waits until the command ends, for up to 30 minutes. On a client timeout the command keeps running: call again with the same profile to join it and receive its result, without starting a second one.`,
+      input: {
+        type: 'object',
+        properties: {
+          profile: profiles
+            ? { type: 'string', enum: Object.keys(profiles) }
+            : { type: 'string' },
+        },
+      },
+    };
+    // shortcut: inherits the conductor's env, not the run's BAKERS_* env; pass it through the binding once a hook needs it.
+    handlers.provision_up = async (req) =>
+      report(
+        await runs.run(
+          req.worktreePath,
+          commandFor(req.args.profile),
+          envFor(req.worktreePath),
+        ),
+      );
+  }
+  if (Object.keys(exec).length > 0) {
+    tools.provision_exec = {
+      description: `Run one of the project's configured commands (${Object.keys(exec).join(', ')}) for this worktree, such as a command in its site container. \`args\` reach the command as separate arguments after \`--\`, never through a shell. Returns the exit code and the output tail.`,
+      input: {
+        type: 'object',
+        required: ['key'],
+        properties: {
+          key: { type: 'string', enum: Object.keys(exec) },
+          args: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    };
+    handlers.provision_exec = async (req) =>
+      report(
+        await shell(
+          `${exec[String(req.args.key)]} -- "$@"`,
+          req.worktreePath,
+          req.signal,
+          PROVISION_TIMEOUT_MS,
+          envFor(req.worktreePath),
+          (req.args.args as string[] | undefined) ?? [],
+        ),
+      );
+  }
   return [
     {
       name: 'conductor',
       version: '1',
-      tools: {
-        contract: 1,
-        tools: {
-          provision_up: {
-            description: `Bring this worktree's environment up${profiles ? ` with a configured profile (${keys})` : ''}; the project's command reuses a ready environment. Returns the command's output, including the base URL. The first call on a new worktree can take minutes; the call waits until the command ends, for up to 30 minutes. On a client timeout the command keeps running: call again with the same profile to join it and receive its result, without starting a second one.`,
-            input: {
-              type: 'object',
-              properties: {
-                profile: profiles
-                  ? { type: 'string', enum: Object.keys(profiles) }
-                  : { type: 'string' },
-              },
-            },
-          },
-        },
-        handlers: async () => ({
-          provision_up: async (req) => {
-            const command = commandFor(req.args.profile);
-            // shortcut: inherits the conductor's env, not the run's BAKERS_* env; pass it through the binding once a hook needs it.
-            const { exitCode, output } = await runs.run(
-              req.worktreePath,
-              command,
-            );
-            const text = `exit ${exitCode}\n${output}`;
-            if (exitCode !== 0) throw new Error(text);
-            return { text };
-          },
-        }),
-      },
+      tools: { contract: 1, tools, handlers: async () => handlers },
     },
   ];
 }
@@ -208,10 +263,14 @@ function shell(
   cwd: string,
   signal: AbortSignal,
   timeoutMs: number,
+  env: Record<string, string> = {},
+  args: readonly string[] = [],
 ): Promise<ShellResult> {
   return new Promise((done, fail) => {
-    const child = spawn('sh', ['-c', command], {
+    // `args` become "$@": positional parameters, never shell text.
+    const child = spawn('sh', ['-c', command, 'sh', ...args], {
       cwd,
+      env: { ...process.env, ...env },
       detached: true,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -295,12 +354,15 @@ export async function loadTools(
         name,
         addon,
         description: def.description,
-        inputSchema: payloadSchema(def.input),
+        inputSchema: payloadSchema(def.input as MessageInput | undefined),
       })),
     call: async (name, args, binding, options = {}) => {
       const entry = entries.get(name);
       if (!entry) throw new Error(`unknown tool ${name}`);
-      const valid = validateArgs(entry.def.input, args);
+      const valid = validateArgs(
+        entry.def.input as MessageInput | undefined,
+        args,
+      );
       if (!valid.ok)
         throw new Error(
           `${name}: invalid arguments: ${valid.errors.join('; ')}`,

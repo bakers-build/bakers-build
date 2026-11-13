@@ -87,6 +87,8 @@ export interface ConductorSettings {
     on_resume?: string;
     /** Never runs on its own: offered to runs as the `provision_up(profile?)` tool. */
     provision_up?: ProvisionHook;
+    /** Never runs on its own: offered to runs as the `provision_exec(key, args?)` tool. */
+    provision_exec?: Record<string, string>;
   };
   /** Control-plane site settings used for dropsh and agent env. */
   site: { base_url: string; jsonapi_prefix: string };
@@ -118,7 +120,8 @@ export interface ConductorFileConfig extends ConductorSettings {
   workspace: WorkspacePlugin;
   /** Where agent processes run (the `runtime` slot); absent means on the host. */
   runtime?: RuntimePlugin;
-  sharedRuntime?: import('./plugins/agent-args.js').SharedRuntimeLayers;
+  /** The project's `runtime.read_only`: paths an isolated run sees read-only. */
+  readOnly?: string[];
   /** The project's agent plugin marketplaces; empty when it declares none. */
   marketplaces: MarketplaceDeclaration[];
   /**
