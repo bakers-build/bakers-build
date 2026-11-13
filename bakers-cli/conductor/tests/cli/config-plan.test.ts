@@ -10,7 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as configService from '../../src/cli/config-plan.js';
 import { capabilities } from './preset-capabilities.js';
 
@@ -205,7 +205,12 @@ function world() {
 function connectionText(secret = 'private-value') {
   return `// @bakers-schema-version 1\nexport default { schema_version: 1, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: '${secret}' } }] };\n`;
 }
+// A run's BAKERS_PROJECT would override the project name the fixtures write.
+beforeEach(() => {
+  vi.stubEnv('BAKERS_PROJECT', undefined);
+});
 afterEach(() => {
+  vi.unstubAllEnvs();
   for (const root of roots.splice(0))
     rmSync(root, { recursive: true, force: true });
 });
@@ -631,6 +636,28 @@ export default {
 
     expect(plan.report.findings).toContainEqual(
       expect.objectContaining({ code: 'unknown_value', key: 'addons' }),
+    );
+    expect(service.applyConfigPlan(plan).result).toBe('blocked');
+    expect(readFileSync(w.engine, 'utf8')).toBe(engine);
+  });
+  it('refuses to add herdr to a non-literal addons value', () => {
+    const w = world();
+    const engine = engineText()
+      .replace("  executor: { use: '@bakers-build/addon-herdr' },\n", '')
+      .replace(
+        "  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },\n",
+        '',
+      )
+      .replace("project: { name: 'demo' },", "project: { name: 'demo' }, addons: base,");
+    writeFileSync(w.engine, engine);
+
+    const plan = service.planConfig(w);
+
+    expect(plan.report.findings).toContainEqual(
+      expect.objectContaining({
+        code: 'unsupported_source_shape',
+        key: 'addons',
+      }),
     );
     expect(service.applyConfigPlan(plan).result).toBe('blocked');
     expect(readFileSync(w.engine, 'utf8')).toBe(engine);

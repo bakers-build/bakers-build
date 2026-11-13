@@ -453,12 +453,17 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
 async function cmdCheck(deps: BbCliDeps): Promise<void> {
   const config = await resolveConfig(deps);
   const sources = config.slot_sources ?? {};
-  for (const [slot, plugin, source] of [
-    ['server', config.remote, sources.server],
-    ['executor', config.executor, sources.executor],
-    ['worktree', config.workspace, sources.worktree],
-  ] as const)
-    console.log(`${slot}: ${plugin.id}${source ? ` (${source})` : ''}`);
+  const packages = config.slot_packages ?? {};
+  for (const [slot, plugin] of [
+    ['server', config.remote],
+    ['executor', config.executor],
+    ['worktree', config.workspace],
+  ] as const) {
+    const source = sources[slot];
+    console.log(
+      `${slot}: ${packages[slot] ?? plugin.id}${source ? ` (${source})` : ''}`,
+    );
+  }
   const warning = runtimeSandboxWarning(config.runtime?.id);
   if (warning) console.warn(`warning: ${warning}`);
   for (const agent of deps.agents ?? (await selectAgents(config))) {

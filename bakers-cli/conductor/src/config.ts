@@ -262,6 +262,17 @@ function requirePlugin<T>(value: unknown, kind: string): T {
  * "unknown command dropsh" breakage after the @bakers → @bakers-ai scope rename).
  * Mirror of dropsh 0.4.1 `loadNamedPlugin` / `resolveSlot`.
  */
+/** The `use` package of each slot value that is a descriptor. */
+function packagesOf(
+  slots: Partial<Record<keyof SlotSources, unknown>>,
+): Partial<Record<keyof SlotSources, string>> {
+  return Object.fromEntries(
+    Object.entries(slots).flatMap(([slot, value]) =>
+      isPluginDescriptor(value) ? [[slot, value.use]] : [],
+    ),
+  );
+}
+
 function isPluginDescriptor(
   entry: unknown,
 ): entry is Record<string, unknown> & { use: string } {
@@ -546,6 +557,11 @@ export async function loadConductorConfig(
           : 'addons',
     worktree: config.worktree !== undefined ? 'slot' : 'addons',
   };
+  const slotPackages = packagesOf({
+    server: config.server,
+    executor: machineCtx.executor ?? config.executor,
+    worktree: config.worktree,
+  });
   // The machine may run its own installed tool: its explicit executor wins
   // over the project's, which wins over the one discovered from addons[].
   const executor =
@@ -732,6 +748,7 @@ export async function loadConductorConfig(
   return {
     ...(remote ? { remote } : {}),
     slot_sources: slotSources,
+    slot_packages: slotPackages,
     executor,
     agents: candidates,
     enabled_agents: enabledAgents,
@@ -800,6 +817,9 @@ export async function composeConductorConfig(
     Partial<Pick<BbConnectionConfig, 'server'>>,
 ): Promise<ConductorFileConfig> {
   // The project's server wins, then the connection's, then the Drupal default.
+  const descriptor = engine.remote
+    ? undefined
+    : (connection.server ?? { use: DEFAULT_SERVER_ADDON });
   const [remote, server] = engine.remote
     ? [engine.remote, engine.slot_sources?.server ?? 'slot']
     : connection.server !== undefined
@@ -823,6 +843,10 @@ export async function composeConductorConfig(
     ...engine,
     remote,
     slot_sources: { ...engine.slot_sources, server },
+    slot_packages: {
+      ...engine.slot_packages,
+      ...packagesOf({ server: descriptor }),
+    },
     site: connection.site,
     ...(connection.plugins.length > 0 ? { plugins: connection.plugins } : {}),
   };

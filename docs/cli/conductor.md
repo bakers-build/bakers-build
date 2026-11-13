@@ -34,7 +34,7 @@ BAKERS_LOG_LEVEL=debug bakers conductor once
 |---|---|---|
 | `start` | `--foreground`, `--no-update-check`, `--force`, `--adopt <uuid>`, `--new`, `--dry-run` | Start the conductor loop |
 | `once` | none | Run one conductor cycle, then exit |
-| `check` | none | Print the server, executor and worktree with where each came from (`slot`, `addons`, `machine`, `connection`, `default`), then check that every enabled agent can start its sandbox |
+| `check` | none | Print the server, executor and worktree, each as the package a `use` descriptor named (the addon id for one found in `addons`) with where it came from (`slot`, `addons`, `machine`, `connection`, `default`), then check that every enabled agent can start its sandbox |
 | `status` | none | One line for this checkout's conductor |
 | `ls` | none | One line per conductor the control plane holds for you |
 | `stop` | `--now` | Stop the conductor: graceful by default, hard kill with `--now` |

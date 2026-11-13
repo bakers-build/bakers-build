@@ -823,6 +823,18 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               .filter((value): value is string => typeof value === 'string'),
           );
           const existingPackages = [...addonPackages];
+          // Text is spliced into addons, so only a literal array can take it.
+          const literalAddons = () => {
+            const addons = e?.property('addons');
+            if (!addons || addons.nodeType === 'ArrayExpression') return true;
+            problem(
+              file,
+              'unsupported_source_shape',
+              'addons',
+              'A literal addons array is required to add a slot provider.',
+            );
+            return false;
+          };
           for (const [slot, spec] of selectedSlots) {
             if (
               e.property(slot) ||
@@ -831,16 +843,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               )
             )
               continue;
-            const addons = e.property('addons');
-            if (addons && addons.nodeType !== 'ArrayExpression') {
-              problem(
-                file,
-                'unsupported_source_shape',
-                'addons',
-                'A literal addons array is required to add a slot provider.',
-              );
-              continue;
-            }
+            if (!literalAddons()) continue;
             if (!addonPackages.has(spec)) {
               const expression = e.expression('addons') ?? '[]';
               const before = expression.slice(0, -1).trimEnd();
@@ -869,6 +872,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
           for (const slot of ['executor', 'worktree']) {
             if (supplied(slot)) continue;
             if (slot === 'worktree' && options.slots?.executor) continue;
+            if (!literalAddons()) break;
             const expression = e.expression('addons') ?? '[]';
             const before = expression.slice(0, -1).trimEnd();
             e.set(

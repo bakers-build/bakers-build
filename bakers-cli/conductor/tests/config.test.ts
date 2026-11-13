@@ -613,6 +613,9 @@ describe('the server comes from the project, else the connection, else the defau
     const config = await serve(NO_SERVER);
     expect(config.remote.id).toBe('drupal');
     expect(config.slot_sources?.server).toBe('default');
+    expect(config.slot_packages?.server).toBe(
+      '@bakers-build/addon-remote-drupal',
+    );
   });
 
   it('serves through the server the connection names', async () => {

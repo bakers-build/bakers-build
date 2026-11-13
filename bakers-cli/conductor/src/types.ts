@@ -101,6 +101,8 @@ export interface ConductorSettings {
   watch_paths?: { files: string[]; dirs: string[] };
   /** Where each slot's plugin came from, for `bakers conductor check`. */
   slot_sources?: Partial<SlotSources>;
+  /** The package each slot named with `use`; addon-discovered slots have none. */
+  slot_packages?: Partial<Record<keyof SlotSources, string>>;
 }
 
 /** Where a resolved server, executor or worktree plugin came from. */

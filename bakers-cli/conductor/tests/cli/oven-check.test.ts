@@ -46,9 +46,10 @@ const MISSING: SandboxPreflight = {
 const LINE =
   'sandbox unavailable: claude: socat not found — install it with sudo apt-get install -y socat (see https://bakers.build/docs/advanced/run-security#sandbox-prerequisites)';
 
-// Fake plugins all carry id 'fake'; makeConfig sets where each came from.
+// Fake plugins all carry id 'fake'; makeConfig sets where each came from and
+// the server's package, which check prints in place of the id.
 const SLOTS = [
-  'server: fake (default)',
+  'server: @bakers-build/addon-remote-drupal (default)',
   'executor: fake (addons)',
   'worktree: fake (slot)',
 ];
@@ -170,6 +171,7 @@ describe('bakers conductor check / start sandbox report', () => {
       agent: [],
       workspace: fakeWorkspace(),
       slot_sources: { server: 'default', executor: 'addons', worktree: 'slot' },
+      slot_packages: { server: '@bakers-build/addon-remote-drupal' },
       label: 'check test',
       project: 'bakers',
       states: ['working'],
