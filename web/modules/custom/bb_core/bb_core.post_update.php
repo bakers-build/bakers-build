@@ -8,6 +8,8 @@
 declare(strict_types=1);
 
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Entity\BbTerm;
+use Drupal\bb_core\Entity\BbTermInterface;
 use Drupal\bb_core\Ticket\BranchName;
 
 /**
@@ -87,4 +89,59 @@ function bb_core_post_update_machine_connection_url(): void {
     $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions('bb_machine')['connection_url'];
     $manager->installFieldStorageDefinition('connection_url', 'bb_machine', 'bb_core', $definition);
   }
+}
+
+/**
+ * Installs health fields before any label or ticket backfill can save entities.
+ */
+function bb_core_post_update_ticket_health_1_fields(): void {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+  $fields = [
+    'bb_term' => ['key'],
+    'bb_run' => ['state_changed'],
+    'bb_ticket' => ['health', 'health_reason', 'health_moved', 'health_checked'],
+  ];
+  foreach ($fields as $type => $names) {
+    $definitions = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions($type);
+    foreach ($names as $name) {
+      if ($manager->getFieldStorageDefinition($name, $type) === NULL) {
+        $manager->installFieldStorageDefinition($name, $type, 'bb_core', $definitions[$name]);
+      }
+    }
+  }
+  // shortcut: old runs use changed until their next state transition.
+  \Drupal::database()->update('bb_run')->expression('state_changed', 'changed')->isNull('state_changed')->execute();
+}
+
+/**
+ * Gives existing labels stable identities in bounded batches.
+ */
+function bb_core_post_update_ticket_health_2_labels(array &$sandbox): void {
+  $storage = \Drupal::entityTypeManager()->getStorage('bb_term');
+  $ids = $storage->getQuery()->accessCheck(FALSE)->condition('vid', 'label')
+    ->condition('id', $sandbox['last'] ?? 0, '>')->sort('id')->range(0, 100)->execute();
+  foreach ($storage->loadMultiple($ids) as $term) {
+    if (!$term instanceof BbTermInterface || !$term->get('key')->isEmpty()) {
+      continue;
+    }
+    $key = BbTerm::keyOf((string) $term->label());
+    $duplicates = $storage->getQuery()->accessCheck(FALSE)->condition('vid', 'label')
+      ->condition('workspace_id', $term->get('workspace_id')->target_id)->condition('key', $key)->execute();
+    $term->set('key', $duplicates === [] ? $key : $key . '_' . $term->id())->save();
+  }
+  $sandbox['last'] = $ids === [] ? ($sandbox['last'] ?? 0) : max($ids);
+  $sandbox['#finished'] = $ids === [] ? 1 : 0.5;
+}
+
+/**
+ * Evaluates all open tickets once, leaving closed tickets without health.
+ */
+function bb_core_post_update_ticket_health_3_tickets(array &$sandbox): void {
+  $storage = \Drupal::entityTypeManager()->getStorage('bb_ticket');
+  $ids = $storage->getQuery()->accessCheck(FALSE)->condition('closed', 0)
+    ->condition('id', $sandbox['last'] ?? 0, '>')->sort('id')->range(0, 100)->execute();
+  $tickets = array_filter($storage->loadMultiple($ids), static fn ($entity): bool => $entity instanceof BbTicketInterface);
+  \Drupal::service('bb_core.ticket_health')->refresh($tickets);
+  $sandbox['last'] = $ids === [] ? ($sandbox['last'] ?? 0) : max($ids);
+  $sandbox['#finished'] = $ids === [] ? 1 : 0.5;
 }

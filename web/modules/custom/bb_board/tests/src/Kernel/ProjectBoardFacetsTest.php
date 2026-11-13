@@ -389,7 +389,7 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     // The tickets on the owner-less conductor stay unhealthy: "Conductor has
     // no access". Every other ticket's conductor is owned by an admin.
     $this->ownConductorsByAnAdmin(FALSE);
-    $unhealthy = [$this->parent, $this->critical, $this->leaf];
+    $unhealthy = [$this->critical, $this->leaf];
     $expected = array_map(static fn (BbTicketInterface $ticket): string => $ticket->getIdentifier(), $unhealthy);
     sort($expected);
     self::assertEqualsCanonicalizing(
@@ -401,17 +401,17 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     $working = $this->identifiers($this->execute('working', $input));
     sort($working);
     self::assertSame($expected, $working);
-    // States: the review sub-column keeps the one unhealthy review ticket.
-    self::assertSame([$this->parent->getIdentifier()], $this->identifiers($this->execute('working_review', $input)));
+    // The only review candidate is a parent and remains healthy.
+    self::assertSame([], $this->identifiers($this->execute('working_review', $input)));
     foreach (['backlog', 'intake', 'done', 'working_plan', 'working_working'] as $display) {
       self::assertSame(0, (int) $this->execute($display, $input)->total_rows, $display);
     }
     $this->request($input);
     $summary = $this->summary($input);
-    self::assertSame(3, $summary['total']);
-    self::assertSame([['Unhealthy', [], 3]], $this->chips($summary));
+    self::assertSame(2, $summary['total']);
+    self::assertSame([['Unhealthy', [], 2]], $this->chips($summary));
     self::assertStringNotContainsString('health', $summary['chips'][0]['remove_url']);
-    self::assertStringContainsString('Unhealthy · 3', $this->text($this->renderSummary($this->execute('project_board', $input))));
+    self::assertStringContainsString('Unhealthy · 2', $this->text($this->renderSummary($this->execute('project_board', $input))));
 
     self::assertSame(19, $this->summary(['health' => 'something-else'])['total'], 'Only "unhealthy" filters.');
 
@@ -496,7 +496,7 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     $summary = $this->summaryOf($this->execute('project_board', $input, $key));
     self::assertSame(1, $summary['total']);
     self::assertSame(19, $summary['open']);
-    self::assertSame([['Priority', ['High'], 1], ['Unhealthy', [], 3]], $this->chips($summary));
+    self::assertSame([['Priority', ['High'], 1], ['Unhealthy', [], 2]], $this->chips($summary));
     self::assertSame(1, (int) $this->execute('working', $input, $key)->total_rows);
   }
 
@@ -648,8 +648,12 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
       $conductors[] = $this->ownerless;
     }
     foreach ($conductors as $conductor) {
-      $conductor->set('owner_user_id', $admin->id())->save();
+      $conductor->set('owner_user_id', $admin->id())->set('status', 'online')->save();
     }
+    // Only fixtures reassign an owner, so no save hook recomputes health.
+    $tickets = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->loadByProperties(['closed' => 0]);
+    $this->container->get('bb_core.ticket_health')->refresh(array_values(array_filter($tickets, static fn ($ticket): bool => $ticket instanceof BbTicketInterface)));
+    $this->index();
   }
 
   /**
@@ -660,7 +664,7 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
    */
   private function unhealthyIds(): array {
     $this->container->get('current_user')->setAccount($this->reader);
-    return $this->container->get('bb_core.project_health')->unhealthyIds($this->project);
+    return array_map(static fn ($item): int => (int) $item->ticket->id(), $this->container->get('bb_core.project_health')->attention($this->project));
   }
 
   /**

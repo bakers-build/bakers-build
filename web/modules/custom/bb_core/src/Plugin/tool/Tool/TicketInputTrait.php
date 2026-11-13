@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Plugin\tool\Tool;
 
+use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 use Drupal\Component\Uuid\Uuid;
@@ -104,6 +105,11 @@ trait TicketInputTrait {
   protected function term(?BbWorkspaceInterface $workspace, string $vid, string $name): ContentEntityInterface {
     $storage = $this->entities()->getStorage('bb_term');
     $ids = $this->termIds($workspace, $vid, [$name]);
+    if (!$ids && $vid === 'label' && $workspace !== NULL) {
+      // A renamed label keeps the key its old name maps to; reuse it.
+      $ids = $storage->getQuery()->accessCheck(TRUE)->condition('vid', 'label')
+        ->condition('workspace_id', $workspace->id())->condition('key', BbTerm::keyOf($name))->range(0, 1)->execute();
+    }
     if ($ids) {
       $term = $storage->load(reset($ids));
       assert($term instanceof ContentEntityInterface);

@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Derive;
 
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\Query\QueryInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
@@ -125,16 +126,30 @@ final class TicketRunDeriver {
     $query = $this->entityTypeManager->getStorage('bb_run')->getAggregateQuery()
       ->accessCheck(FALSE)
       ->condition('ticket_id', $ticketIds, 'IN');
-    $live = $query->orConditionGroup()
+    /** @var array<int, array<string, int|string>> $rows */
+    $rows = $this->live($query)->groupBy('ticket_id')->execute();
+    return array_values(array_map(static fn (array $row): int => (int) $row['ticket_id'], $rows));
+  }
+
+  /**
+   * Narrows a run query to live runs: running, or claimed within its lease.
+   *
+   * @param T $query
+   *   A bb_run entity or aggregate query.
+   *
+   * @return T
+   *   The same query.
+   *
+   * @template T of \Drupal\Core\Entity\Query\QueryInterface
+   */
+  public function live(QueryInterface $query): QueryInterface {
+    return $query->condition($query->orConditionGroup()
       ->condition('state', 'running')
       ->condition($query->andConditionGroup()
         ->condition('state', 'claimed')
         ->condition($query->orConditionGroup()
           ->condition('claim_expires_at', 0)
-          ->condition('claim_expires_at', $this->time->getRequestTime(), '>=')));
-    /** @var array<int, array<string, int|string>> $rows */
-    $rows = $query->condition($live)->groupBy('ticket_id')->execute();
-    return array_values(array_map(static fn (array $row): int => (int) $row['ticket_id'], $rows));
+          ->condition('claim_expires_at', $this->time->getRequestTime(), '>='))));
   }
 
   /**
