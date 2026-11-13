@@ -7,7 +7,7 @@ description: The committed .bakers/project.config.js - project identity, engine 
 
 `.bakers/project.config.js` is the committed file that names a bakers.build project and wires the engine that works its tickets: the server, the executor and the worktree.
 
-It holds no credentials and no agent policy. The server and sign-in come from the [connection](/configuration/connection), host identity and agents from the [machine](/configuration/machine). `bakers config init --scope project --project <name>` writes the file; `bakers config check --scope project` validates it offline without loading plugins.
+It holds no credentials and no agent policy. The server and sign-in come from the [connection](/configuration/connection), host identity and agents from the [machine](/configuration/machine). `bakers config init --scope project --project <name>` writes the file; `bakers config check --scope project` validates it offline by reading addon presets.
 
 ## The generated file
 
@@ -64,6 +64,11 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `select_agent` | Function `(candidates, ticket) => candidate` that replaces the shipped agent choice. Prefer [machine routes](/agents/guide). |
 
 Unknown keys fail.
+
+Offline checks import addon preset modules to read their contributions, scopes and nested
+addons; they make no server connection and do not evaluate your configuration file.
+Keep preset imports free of side effects. An unresolved package remains opaque and
+missing slots are reported as `unknown_value` until its preset can be read.
 
 ## Slot descriptors
 

@@ -387,6 +387,9 @@ importers:
 
   addons/herdr-core:
     dependencies:
+      '@bakers-build/addon-workspace-git':
+        specifier: workspace:^
+        version: link:../workspace-git
       '@bakers-build/addon-herdr':
         specifier: workspace:^
         version: link:../herdr

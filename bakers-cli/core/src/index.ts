@@ -216,10 +216,13 @@ export {
   SURFACE_KEYS,
 } from './plugins/preset.js';
 export {
+  type AddonCapabilities,
+  type AddonCapability,
   type AddonScopeFinding,
   type AddonScopeInput,
   discoverScoped,
   type EffectiveAddon,
+  readAddonCapabilities,
   readConfigAddons,
   readEffectiveAddon,
   scopeAddons,
