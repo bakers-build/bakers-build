@@ -504,6 +504,9 @@ jobs:
           persist-credentials: false
       - name: Build and test the same images
         run: bash scripts/ci/github-image-gate.sh
+        env:
+          # Read-only workflow token: GitHub throttles anonymous composer downloads from shared runners.
+          COMPOSER_AUTH: '{"github-oauth":{"github.com":"${{ github.token }}"}}'
       - name: Export tested runtime images
         if: ${{ github.event_name == 'push' }}
         run: bash scripts/ci/github-image-export.sh
