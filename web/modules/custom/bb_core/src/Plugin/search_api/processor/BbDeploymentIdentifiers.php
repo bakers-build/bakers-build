@@ -54,12 +54,18 @@ final class BbDeploymentIdentifiers extends ProcessorPluginBase implements Conta
    * A known identifier must not disclose an unreadable deployment's batch.
    */
   private function checkDeploymentConditions(ConditionGroupInterface $group): void {
-    foreach ($group->getConditions() as $condition) {
+    $conditions = &$group->getConditions();
+    foreach ($conditions as $key => $condition) {
       if ($condition instanceof ConditionGroupInterface) {
         $this->checkDeploymentConditions($condition);
       }
       elseif ($condition->getField() === 'deployment_identifiers') {
-        $values = (array) $condition->getValue();
+        $values = array_filter((array) $condition->getValue(), static fn ($value): bool => $value !== '' && $value !== NULL);
+        // The empty hidden form field submits '' when nothing is chosen.
+        if ($values === []) {
+          unset($conditions[$key]);
+          continue;
+        }
         $storage = $this->entityTypeManager->getStorage('bb_ticket');
         $ids = $storage->getQuery()->accessCheck(TRUE)
           ->condition('ticket_type.entity.name', 'deployment')
