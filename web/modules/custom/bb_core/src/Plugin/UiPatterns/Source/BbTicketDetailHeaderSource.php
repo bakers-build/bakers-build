@@ -12,6 +12,8 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Deployment\DeploymentLookup;
+use Drupal\Core\Template\Attribute;
 use Drupal\bb_core\Ticket\TicketLinkGroups;
 use Drupal\bb_core\Time\BbDate;
 use Drupal\state_machine\Plugin\Workflow\WorkflowInterface;
@@ -42,11 +44,17 @@ final class BbTicketDetailHeaderSource extends SourcePluginBase implements Conta
   protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
+   * Reads the ticket's completed deployment targets.
+   */
+  protected DeploymentLookup $deploymentLookup;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): static {
     $instance = parent::create($container, $configuration, $plugin_id, $plugin_definition);
     $instance->entityTypeManager = $container->get('entity_type.manager');
+    $instance->deploymentLookup = $container->get('bb_core.deployment_lookup');
     return $instance;
   }
 
@@ -64,7 +72,7 @@ final class BbTicketDetailHeaderSource extends SourcePluginBase implements Conta
   public function alterComponent(array $element): array {
     $element = parent::alterComponent($element);
     $metadata = CacheableMetadata::createFromRenderArray($element)
-      ->addCacheTags(['bb_comment_list', 'bb_run_list', 'og_membership_list'])
+      ->addCacheTags(['bb_comment_list', 'bb_run_list', 'bb_ticket_list', 'bb_environment_list', 'og_membership_list'])
       ->addCacheContexts(['user']);
     $ticket = $this->ticket();
     if ($ticket !== NULL) {
@@ -173,6 +181,20 @@ final class BbTicketDetailHeaderSource extends SourcePluginBase implements Conta
   private function flow(BbTicketInterface $ticket): array {
     $stall = $this->stallBadge($ticket);
     $state = $this->stateFlow($ticket);
+    $environments = $this->deploymentLookup->deployedEnvironments($ticket);
+    if ($environments !== []) {
+      $flow = ['stall' => $stall];
+      foreach ($environments as $delta => $environment) {
+        $flow['deployment_' . $delta] = [
+          '#type' => 'component',
+          '#component' => 'bb_theme:badge',
+          '#props' => ['label' => $environment, 'tone' => 'neutral'],
+          '#attributes' => new Attribute(['aria-label' => (string) $this->t('Deployed to @environment', ['@environment' => $environment])]),
+        ];
+      }
+      $flow['state'] = $state;
+      return $flow;
+    }
     if ($stall === []) {
       return $state;
     }

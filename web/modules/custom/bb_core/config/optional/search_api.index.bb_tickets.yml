@@ -102,6 +102,10 @@ field_settings:
     dependencies:
       module:
         - bb_core
+  deployment_identifiers:
+    label: 'Deployment identifiers'
+    property_path: deployment_identifiers
+    type: string
   parent_identifier:
     label: 'Parent identifier'
     datasource_id: 'entity:bb_ticket'
@@ -203,6 +207,7 @@ datasource_settings:
       default: true
       selected: {  }
 processor_settings:
+  bb_deployment_identifiers: {  }
   add_url: {  }
   aggregated_field: {  }
   custom_value: {  }

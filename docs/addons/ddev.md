@@ -51,10 +51,6 @@ Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `ddev_ex
 
 A sandboxed agent that calls `ddev` from its shell needs it among the trusted commands, for example `trusted_commands: ['$inherit', 'ddev']` in a [shared `permissions` block](/provision/security/shared-settings).
 
-## Options
-
-No options.
-
 ## Check it works
 
 In a worktree with a running DDEV project, the ports list shows `web` and services such as `mailpit`.

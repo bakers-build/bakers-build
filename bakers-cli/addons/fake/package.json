@@ -28,5 +28,8 @@
     "@bakers-build/core": "workspace:^",
     "@bakers-build/message": "workspace:^",
     "typescript": "^5.9.0"
+  },
+  "bakers": {
+    "stability": "internal"
   }
 }
