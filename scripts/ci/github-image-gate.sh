@@ -7,8 +7,11 @@ mkdir -p gate-reports
 images=(php php-test nginx docs)
 labels=()
 if [ -n "${CI_RELEASE_VERSION:-}" ]; then labels+=(--label "org.opencontainers.image.version=$CI_RELEASE_VERSION"); fi
+# Authenticates composer's GitHub downloads in the php stages (Dockerfile); the token stays out of layers.
+secrets=()
+if [ -n "${COMPOSER_AUTH:-}" ]; then secrets+=(--secret id=composer_auth,env=COMPOSER_AUTH); fi
 for image in "${images[@]}"; do
-  docker build "${labels[@]}" --target "$image" --label "org.opencontainers.image.revision=$revision" \
+  docker build "${labels[@]}" "${secrets[@]}" --target "$image" --label "org.opencontainers.image.revision=$revision" \
     --build-arg "CI_COMMIT_REF_NAME=$source_ref" --build-arg "CI_COMMIT_SHORT_SHA=${revision:0:8}" \
     -t "bakers-gate/$image:local" .
 done
