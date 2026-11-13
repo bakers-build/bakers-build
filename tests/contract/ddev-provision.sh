@@ -200,7 +200,59 @@ for failed in worktree-deps.sh ddev-own-project.sh ddev; do
   [ "$(tail -n1 "$TRACE")" = "$expected" ] || fail "continued after failure: $(cat "$TRACE")"
 done
 
-# Agents run Playwright through ddev_exec, so the web image's browsers must match the suite's lock.
+# provision_exec keys: `exec web -- <argv>` reaches `ddev exec --raw` with the argv unchanged.
+case=provision-exec
+cat > "$provision_tree/bin/ddev" <<'EOF'
+#!/bin/bash
+echo "ddev $# $*" >> "$TRACE"
+EOF
+command="$(cd "$root" && node --input-type=module -e 'console.log((await import("./.bakers/project.config.js")).default.hooks.provision_exec.web)')"
+[ "$command" = 'bash .bakers/provision.sh exec web' ] || fail "unstable entry point: $command"
+dispatch exec web -- drush uli '--name=north lead' '$(touch planted); id'
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 7 exec --raw -- drush uli --name=north lead $(touch planted); id' ] || fail "calls: $(cat "$TRACE")"
+[ ! -e "$provision_tree/planted" ] || fail 'an argument ran through a shell'
+for args in 'exec' 'exec web' 'exec web --' 'exec other -- true' 'exec web drush'; do
+  # shellcheck disable=SC2086
+  dispatch $args
+  [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid exec ran actions: $args: $out"
+done
+
+# Under an isolating runtime the host installs nothing: the run could have rewritten package.json.
+case=isolated-deps
+deps_tree="$work/deps"
+mkdir -p "$deps_tree/bakers-cli" "$deps_tree/bin"
+touch "$deps_tree/bakers-cli/pnpm-lock.yaml" "$deps_tree/bakers-cli/package.json"
+printf '#!/bin/bash\necho "pnpm $*" >> "$TRACE"\n' > "$deps_tree/bin/pnpm"; chmod +x "$deps_tree/bin/pnpm"
+: > "$TRACE"; rc=0
+(cd "$deps_tree" && BAKERS_RUNTIME_ISOLATES=1 PATH="$deps_tree/bin:$PATH" bash "$root/.bakers/scripts/worktree-deps.sh" --all >/dev/null 2>&1) || rc=$?
+[ "$rc" = 0 ] && [ ! -s "$TRACE" ] || fail "installed on the host: exit $rc: $(cat "$TRACE")"
+(cd "$deps_tree" && BAKERS_RUNTIME_ISOLATES=0 PATH="$deps_tree/bin:$PATH" bash "$root/.bakers/scripts/worktree-deps.sh" >/dev/null 2>&1) || rc=$?
+grep -q '^pnpm install' "$TRACE" || fail 'runtime-host no longer installs'
+
+# An isolated run's workspace has no Git: the own-project check takes the worktree from the conductor.
+case=own-project-without-git
+plain="$work/plain"; mkdir -p "$plain"
+arrange running - 200; export APPROOT="$plain"; rc=0
+out="$(cd "$plain" && GIT_CEILING_DIRECTORIES="$work" BAKERS_WORKTREE_PATH="$plain" PATH="$work/bin:$PATH" bash "$root/.bakers/scripts/ddev-own-project.sh" 2>&1)" || rc=$?
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+
+# The site containers are as untrusted as a run: what the host executes or reads is read-only there.
+case=compose-protection
+protection="$root/.ddev/docker-compose.protection.yaml"
+for mount in '../.bakers:/var/www/html/.bakers:ro' '../.github:/var/www/html/.github:ro' '.:/var/www/html/.ddev:ro' '../.git:/var/www/html/.git:ro'; do
+  grep -qF -- "- $mount" "$protection" || fail "missing read-only mount $mount"
+done
+node --input-type=module -e '
+const { runtime } = (await import(process.argv[1])).default;
+if (JSON.stringify(runtime.read_only) !== JSON.stringify([".bakers", ".ddev", ".github"])) process.exit(1);
+' "$root/.bakers/project.config.js" || fail 'project.config.js does not list .bakers, .ddev and .github as runtime.read_only'
+for path in .ddev/config.worktree.yaml .ddev/.gitignore; do
+  git -C "$root" check-ignore -q "$path" || fail "host-written $path is not ignored"
+done
+[ -z "$(git -C "$root" ls-files .ddev/.gitignore .ddev/config.worktree.yaml)" ] || fail 'a host-written DDEV file is tracked'
+
+# Agents run Playwright through provision_exec, so the web image's browsers must match the suite's lock.
 case=playwright-image
 locked="$(node -p 'require(process.argv[1]).packages["node_modules/@playwright/test"].version' "$root/tests/playwright/package-lock.json")"
 image="$root/.ddev/web-build/Dockerfile.playwright"
@@ -238,4 +290,4 @@ for token in KEYTEC_REGISTRY_TOKEN KEYTEC_REGISTRY_WRITE_TOKEN; do
 done
 
 [ "$failures" = 0 ] || exit 1
-echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, provision dispatch, Playwright image, writable artifacts, container credentials'
+echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, provision dispatch, provision exec, isolated deps, own project without Git, Compose protection, Playwright image, writable artifacts, container credentials'

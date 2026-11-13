@@ -1135,6 +1135,7 @@ describe('Conductor', () => {
       BAKERS_TICKET_IDENTIFIER: 'BB-1',
       BAKERS_STATE: 'todo',
       BAKERS_RUN_UUID: 'r-1',
+      BAKERS_BRANCH_NAME: 'bakers/bb-1',
       BAKERS_TUNNEL: '0',
       BAKERS_RUNTIME_ISOLATES: '0',
       BAKERS_WORKTREE_PATH: '/fake/BB-1',

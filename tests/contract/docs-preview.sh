@@ -95,5 +95,46 @@ case=build-fails; run wt1; touch "$work/wt1/build-fails"; run wt1
 grep -qF 'build broke' <<<"$out" || fail "no build output: $out"
 [ "$(previews wt1)" = 0 ] || fail "$(previews wt1) previews after a failed build"
 
+# Under an isolating runtime the build runs in the web container (a fake `ddev` runs it here) and
+# the host serves only the built files, on 127.0.0.1, never following a link out of them.
+cat > "$work/bin/ddev" <<'EOF'
+#!/bin/bash
+echo "$*" >> "$DDEV_CALLS"
+case "$1" in
+  describe) printf '{"raw":{"approot":"%s"}}\n' "$BAKERS_WORKTREE_PATH" ;;
+  # exec --raw --dir /var/www/html/<dir> -- <argv>: the container's project root is the worktree.
+  exec) cd "$BAKERS_WORKTREE_PATH${4#/var/www/html}" && shift 5 && exec "$@" ;;
+esac
+EOF
+chmod +x "$work/bin/ddev"
+export DDEV_CALLS="$work/ddev-calls"
+isolated() {
+  rc=0
+  out="$(cd "$work/$1" && BAKERS_RUNTIME_ISOLATES=1 BAKERS_WORKTREE_PATH="$work/$1" PATH="$work/bin:$PATH" bash .bakers/scripts/docs-preview.sh ${2:-} 2>&1)" || rc=$?
+  url="$(grep -oE 'http://127\.0\.0\.1:[0-9]+/' <<<"$out" | head -1 || true)"
+}
+served() {
+  local docs p n=0
+  docs="$(cd "$work/$1/docs" && pwd -P)"
+  for p in $(pgrep -f 'docs-preview-serve.mjs' || true); do
+    [ "$(readlink "/proc/$p/cwd" 2>/dev/null)" = "$docs" ] && n=$((n + 1))
+  done
+  echo "$n"
+}
+case=isolated; worktree wt3
+cp "$root/.bakers/scripts/docs-preview-serve.mjs" "$root/.bakers/scripts/ddev-own-project.sh" "$work/wt3/.bakers/scripts/"
+: > "$DDEV_CALLS"; isolated wt3
+[ "$rc" = 0 ] || fail "exit $rc: $out; calls: $(cat "$DDEV_CALLS")"
+grep -qF "exec --raw --dir /var/www/html/docs -- bash -c pnpm install" "$DDEV_CALLS" || fail "build did not run through ddev exec: $(cat "$DDEV_CALLS")"
+[ "$(body "$url")" = 'wt3 build 1' ] || fail "serves '$(body "$url")'"
+[ "$(served wt3)" = 1 ] && [ "$(previews wt3)" = 0 ] || fail "host runs $(previews wt3) vitepress and $(served wt3) static servers"
+echo 'host secret' > "$work/secret"; ln -s "$work/secret" "$work/wt3/docs/.vitepress/dist/leak.txt"
+[ "$(curl -s --max-time 2 -o /dev/null -w '%{http_code}' "${url}leak.txt")" = 404 ] || fail 'followed a link out of the built site'
+[ "$(curl -s --max-time 2 -o /dev/null -w '%{http_code}' --path-as-is "${url}../../../secret")" = 404 ] || fail 'served a path above the built site'
+isolated wt3
+[ "$(body "$url")" = 'wt3 build 2' ] && [ "$(served wt3)" = 1 ] || fail "rebuild serves '$(body "$url")' from $(served wt3) servers"
+isolated wt3 stop
+[ "$rc" = 0 ] && [ "$(served wt3)" = 0 ] || fail "stop left $(served wt3) servers: $out"
+
 [ "$failures" = 0 ] || exit 1
 echo 'docs-preview: all cases pass'

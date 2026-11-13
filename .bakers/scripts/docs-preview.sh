@@ -2,20 +2,23 @@
 # provision_up('docs-preview'): build docs/ and serve the built site detached, outside the agent
 # sandbox, so `ports_up docs` can share it. One preview per worktree: a call replaces it with a new
 # build. `stop` (the after_done hook) ends it.
+# Under an isolating runtime (BAKERS_RUNTIME_ISOLATES=1) the run can write docs/, so its build runs
+# in the DDEV web container and the host serves only the built files.
 set -euo pipefail
 
 scripts="$(cd "$(dirname "$0")" && pwd -P)"
 docs="$(cd "$scripts/../../docs" && pwd -P)"
 log="$docs/.vitepress/cache/preview.log"
 
-# This worktree's preview: a `vitepress … preview` process whose cwd is docs/, the identity the
-# ports addon's `docs` service matches. No pid file to go stale.
+# This worktree's preview: a process whose cwd is docs/ and whose command names vitepress, the
+# identity the ports addon's `docs` service matches: `vitepress … preview`, or the static server
+# on `.vitepress/dist`. No pid file to go stale.
 previews() {
   local p cmd
   for p in /proc/[0-9]*; do
     [ "$(readlink "$p/cwd" 2>/dev/null)" = "$docs" ] || continue
     cmd="$(tr '\0' ' ' < "$p/cmdline" 2>/dev/null)" || continue
-    [[ "$cmd" == *vitepress*' preview '* ]] && echo "${p#/proc/}"
+    [[ "$cmd" == *vitepress*' preview '* || "$cmd" == *docs-preview-serve.mjs' .vitepress/dist '* ]] && echo "${p#/proc/}"
   done
   return 0
 }
@@ -41,13 +44,20 @@ fi
 # Stop first: the build empties dist/, which a running preview serves.
 stop
 cd "$docs"
-pnpm build
+if [ "${BAKERS_RUNTIME_ISOLATES:-0}" = 1 ]; then
+  (cd "$scripts/../.." && bash .bakers/scripts/ddev-own-project.sh)
+  ddev exec --raw --dir /var/www/html/docs -- bash -c 'pnpm install --config.minimumReleaseAge=0 && pnpm build'
+  serve=(node "$scripts/docs-preview-serve.mjs" .vitepress/dist)
+else
+  pnpm build
+  # The loopback preload binds it to 127.0.0.1, which vitepress' --host does not.
+  serve=(node --import "$scripts/docs-preview-loopback.mjs" node_modules/vitepress/bin/vitepress.js preview)
+fi
 port="$(node -e 'const s = require("node:net").createServer().listen(0, "127.0.0.1", () => { console.log(s.address().port); s.close(); });')"
 mkdir -p "${log%/*}"
 # Detached and holding none of the caller's pipes, so the provision_up call returns and the
-# preview outlives it. The loopback preload binds it to 127.0.0.1, which vitepress' --host does not.
-setsid node --import "$scripts/docs-preview-loopback.mjs" node_modules/vitepress/bin/vitepress.js \
-  preview --port "$port" </dev/null >"$log" 2>&1 &
+# preview outlives it.
+setsid "${serve[@]}" --port "$port" </dev/null >"$log" 2>&1 &
 pid=$!
 
 url="http://127.0.0.1:$port/"

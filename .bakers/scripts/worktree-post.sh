@@ -13,7 +13,8 @@ if [ -f "${SENTINEL}" ]; then
   exit 0
 fi
 
-PARENT_PATH=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+# The conductor names the parent checkout in WORKSPACE_ROOT: an isolated run's workspace has no Git.
+PARENT_PATH="${WORKSPACE_ROOT:-$(git worktree list --porcelain | sed -n '1s/^worktree //p')}"
 mkdir -p .bakers
 # The connection is private (~/.bakers/connections/) and needs no copy; the retired
 # conductor.config.local.js and its worktree-local base_url rewrite are gone.

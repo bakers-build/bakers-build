@@ -1465,6 +1465,8 @@ export class Conductor {
       ...(t.identifier ? { BAKERS_TICKET_IDENTIFIER: t.identifier } : {}),
       ...(state ? { BAKERS_STATE: state } : {}),
       ...(runUuid ? { BAKERS_RUN_UUID: runUuid } : {}),
+      // A host script names the worktree's DDEV project after it without asking Git.
+      ...(t.branchName ? { BAKERS_BRANCH_NAME: t.branchName } : {}),
       BAKERS_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
       // Host scripts skip what an isolated run does in its own container.
       BAKERS_RUNTIME_ISOLATES: this.config.runtime?.isolates ? '1' : '0',
