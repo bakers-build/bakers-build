@@ -487,6 +487,22 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A name whose key a renamed label holds attaches that label, in any case.
+   */
+  public function testAddResolvesTakenKeyToExistingLabel(): void {
+    $this->term('label', 'Question')->set('name', 'Info')->save();
+    foreach (['TU-21' => 'Question', 'TU-22' => 'QUESTION', 'TU-23' => 'question'] as $identifier => $name) {
+      $out = $this->outputs($this->runTool('bakers_ticket_update', [
+        'ticket' => $this->ticket($identifier)->getIdentifier(),
+        'labels_add' => [$name],
+      ]));
+      self::assertSame(['Info'], $out['labels'], $name);
+    }
+    $terms = $this->container->get('entity_type.manager')->getStorage('bb_term');
+    self::assertCount(1, $terms->loadByProperties(['vid' => 'label', 'key' => 'question']));
+  }
+
+  /**
    * A refused update leaves neither the ticket change nor a new label behind.
    */
   public function testRefusedUpdateCreatesNoLabel(): void {

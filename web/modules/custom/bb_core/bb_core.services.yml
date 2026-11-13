@@ -423,7 +423,7 @@ services:
     alias: bb_core.ticket_run_deriver
   bb_core.project_health:
     class: Drupal\bb_core\Project\ProjectHealth
-    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_run_deriver', '@bb_core.conductor_owner_access']
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_health']
   Drupal\bb_core\Project\ProjectHealth:
     alias: bb_core.project_health
   # Request-cached counts of referencing entities (a project's tickets, a
@@ -542,3 +542,9 @@ services:
     class: Drupal\bb_core\Entity\EntityDeleteRules
     autowire: true
   Drupal\bb_core\Entity\EntityDeleteRules: '@bb_core.entity_delete_rules'
+
+  bb_core.ticket_health:
+    class: Drupal\bb_core\Ticket\TicketHealth
+    arguments: ['@entity_type.manager', '@datetime.time', '@bb_core.ticket_run_deriver', '@bb_core.conductor_owner_access']
+  Drupal\bb_core\Ticket\TicketHealth:
+    alias: bb_core.ticket_health

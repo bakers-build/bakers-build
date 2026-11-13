@@ -10,6 +10,7 @@ use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_board\BoardAddress;
 use Drupal\bb_board\BoardHealth;
+use Drupal\bb_core\Ticket\TicketHealth;
 use Drupal\bb_board\BoardPreferences;
 use Drupal\search_api\Plugin\views\query\SearchApiQuery;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
@@ -68,14 +69,7 @@ final class BoardViewsHooks {
     if (!$this->health->requested($view)) {
       return;
     }
-    $ids = $this->health->unhealthyIds($view);
-    if ($ids === []) {
-      $query->abort();
-      return;
-    }
-    // The indexed entity id, as the parent filter: search_api_db drops
-    // search_api_id from the facet queries.
-    $query->createAndAddConditionGroup()->addCondition('ticket_id', $ids, 'IN');
+    $query->createAndAddConditionGroup()->addCondition('health', TicketHealth::UNHEALTHY, 'IN');
   }
 
   /**

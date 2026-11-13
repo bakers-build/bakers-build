@@ -17,7 +17,7 @@ final readonly class AttentionItem {
    * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
    *   The ticket.
    * @param string $severity
-   *   The severity: `red` or `yellow`.
+   *   The severity: `critical` or `warning`.
    * @param string $reason
    *   The reason text.
    * @param int|null $idleDays

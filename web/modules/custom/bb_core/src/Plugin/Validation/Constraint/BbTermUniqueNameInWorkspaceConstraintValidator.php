@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Plugin\Validation\Constraint;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTermInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
@@ -67,9 +68,22 @@ final class BbTermUniqueNameInWorkspaceConstraintValidator extends ConstraintVal
       return;
     }
 
-    $query = $this->entityTypeManager->getStorage('bb_term')->getQuery()
+    $field = $items->getName();
+    if (!is_string($field)) {
+      return;
+    }
+    $this->checkScope($entity, $field, $name, (int) $workspace_id, $constraint);
+  }
+
+  /**
+   * Reports a taken name or key, or a new label whose derived key is taken.
+   */
+  private function checkScope(BbTermInterface $entity, string $field, string $name, int $workspace_id, BbTermUniqueNameInWorkspaceConstraint $constraint): void {
+    $storage = $this->entityTypeManager->getStorage('bb_term');
+    $query = $storage->getQuery()
       ->accessCheck(FALSE)
-      ->condition('name', $name)
+      // Keys are stored lowercase, so a key compares lowercase.
+      ->condition($field, $field === 'key' ? mb_strtolower($name) : $name)
       ->condition('workspace_id', $workspace_id)
       ->condition('vid', $entity->bundle())
       ->range(0, 1);
@@ -78,6 +92,15 @@ final class BbTermUniqueNameInWorkspaceConstraintValidator extends ConstraintVal
     }
     if ($query->execute() !== []) {
       $this->context->addViolation($constraint->message, ['%name' => $name]);
+      return;
+    }
+    // A new label's key comes from its name; a taken key means it exists.
+    if ($field === 'name' && $entity->isNew() && $entity->bundle() === 'label' && $entity->get('key')->isEmpty()) {
+      $key = BbTerm::keyOf($name);
+      $existing = $storage->loadByProperties(['vid' => 'label', 'workspace_id' => $workspace_id, 'key' => $key]);
+      if ($existing !== []) {
+        $this->context->addViolation($constraint->keyMessage, ['%name' => $name, '%label' => reset($existing)->label()]);
+      }
     }
   }
 

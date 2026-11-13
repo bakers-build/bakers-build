@@ -147,6 +147,10 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
       ->setLabel(new TranslatableMarkup('Claim expires at'))
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayOptions('form', ['type' => 'datetime_timestamp', 'weight' => 5]);
+    $fields['state_changed'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(new TranslatableMarkup('Last run state change'))
+      ->setReadOnly(TRUE);
+
     $fields['state_at_start'] = BaseFieldDefinition::create('string')
       ->setLabel(new TranslatableMarkup('Ticket state at start'))
       ->setDisplayConfigurable('form', TRUE)

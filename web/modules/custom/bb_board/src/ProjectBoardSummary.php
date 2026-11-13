@@ -12,8 +12,10 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
 use Drupal\bb_core\Ticket\TicketSearchResolver;
 use Drupal\bb_core\Workflow\TypeWorkflows;
+use Drupal\bb_core\Ticket\TicketHealth;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\SearchApiException;
+use Drupal\search_api\Query\QueryInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -196,28 +198,24 @@ final class ProjectBoardSummary {
    *   Only these tickets, NULL for no such limit.
    * @param string $search
    *   A search line, in the board search's grammar.
+   * @param bool $unhealthy
+   *   Only tickets whose stored health is not healthy.
    *
    * @return array{total: int, aggregations: array<string, mixed>}|null
    *   The count, with per-facet counts for the plain focus; NULL when the
    *   search failed.
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
    */
-  public function focus(BbProjectInterface $project, ?array $within, ?array $ids = NULL, string $search = ''): ?array {
-    $plain = $ids === NULL && $search === '';
+  public function focus(BbProjectInterface $project, ?array $within, ?array $ids = NULL, string $search = '', bool $unhealthy = FALSE): ?array {
+    $plain = [$ids, $search, $unhealthy] === [NULL, '', FALSE];
     $ids = $within === NULL ? $ids : array_values(array_intersect($ids ?? $within, $within));
     if ($ids === []) {
       return ['total' => 0, 'aggregations' => []];
     }
-    $query = Index::load('bb_tickets')?->query();
+    $query = $this->focusQuery($project, $ids, $search, $unhealthy);
     if ($query === NULL) {
       return NULL;
-    }
-    $query->addCondition('project_id', $project->id());
-    $query->addCondition('work_state', BoardAddress::OPEN_WORK_STATES, 'IN');
-    if ($ids !== NULL) {
-      $query->addCondition('ticket_id', $ids, 'IN');
-    }
-    if ($search !== '') {
-      $this->resolver->apply($query, $this->resolver->resolve($search, $project));
     }
     if ($plain) {
       $query->setOption('search_api_facets', BbBoardSummary::aggregations());
@@ -234,6 +232,37 @@ final class ProjectBoardSummary {
       'total' => (int) $results->getResultCount(),
       'aggregations' => $results->getExtraData('search_api_facets', []),
     ];
+  }
+
+  /**
+   * Builds the focus query from its stored-field and search conditions.
+   *
+   * @param \Drupal\bb_core\Entity\BbProjectInterface $project
+   *   The project.
+   * @param list<int>|null $ids
+   *   Optional parent or ticket restriction.
+   * @param string $search
+   *   Search expression.
+   * @param bool $unhealthy
+   *   Only tickets whose stored health is not healthy.
+   */
+  private function focusQuery(BbProjectInterface $project, ?array $ids, string $search, bool $unhealthy): ?QueryInterface {
+    $query = Index::load('bb_tickets')?->query();
+    if ($query === NULL) {
+      return NULL;
+    }
+    $query->addCondition('project_id', $project->id());
+    $query->addCondition('work_state', BoardAddress::OPEN_WORK_STATES, 'IN');
+    if ($ids !== NULL) {
+      $query->addCondition('ticket_id', $ids, 'IN');
+    }
+    if ($unhealthy) {
+      $query->addCondition('health', TicketHealth::UNHEALTHY, 'IN');
+    }
+    if ($search !== '') {
+      $this->resolver->apply($query, $this->resolver->resolve($search, $project));
+    }
+    return $query;
   }
 
   /**
