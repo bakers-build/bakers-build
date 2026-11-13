@@ -88,6 +88,7 @@ function securityFlags(
   { mode, sandbox, config }: ResolvedSecurity,
   workspacePath: string | undefined,
   pluginsOn = false,
+  isolatedGit = false,
 ): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
@@ -96,7 +97,7 @@ function securityFlags(
   const git =
     workspacePath === undefined
       ? { write: [], protect: [] }
-      : gitSandboxPaths(workspacePath);
+      : gitSandboxPaths(workspacePath, isolatedGit);
   const settings = {
     sandbox: {
       enabled: true,
@@ -327,6 +328,7 @@ export class ClaudeAgent implements BbAgent {
     tools?: { url: string },
     _env?: Readonly<Record<string, string>>,
     pluginArgs: readonly string[] = [],
+    isolatedGit = false,
   ): string {
     if (prompt === '') {
       return 'claude';
@@ -357,7 +359,12 @@ export class ClaudeAgent implements BbAgent {
     // The flags are constants; only their generated values need quoting.
     parts.push(
       ...[
-        ...securityFlags(this.security, workspacePath, this.pluginsOn),
+        ...securityFlags(
+          this.security,
+          workspacePath,
+          this.pluginsOn,
+          isolatedGit,
+        ),
         ...this.mcpFlags(tools),
       ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );

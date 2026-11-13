@@ -1,7 +1,10 @@
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
+  ensureRunClone,
   loadInstructions,
   runBranchGit,
+  targetOf,
   type WorktreeGitExec,
 } from '@bakers-build/addon-workspace-git';
 import type {
@@ -17,7 +20,7 @@ import { exec } from '@bakers-build/core';
 import { isRecord, parseJson } from './pane-layout.js';
 import { deriveHerdrRoot, type RootGitExec } from './root-anchor.js';
 import { resolveBaseRef } from './shared.js';
-import { removeHerdrWorktree } from './worktrees.js';
+import { openCloneWorkspace, removeHerdrWorktree } from './worktrees.js';
 
 export type HerdrExec = (args: string[]) => Promise<string>;
 export type GitExec = (args: string[]) => Promise<string>;
@@ -46,6 +49,10 @@ export interface HerdrWorkspaceOptions {
    * in `root`, and give runs `push.default=current`. `true` leaves Git alone.
    */
   autoSetupMerge?: boolean;
+  /** The runtime isolates: a fresh run clone per ensure instead of a herdr worktree. */
+  clone?: boolean;
+  /** Run clones borrow the root's objects (`git clone --shared`). */
+  shared?: boolean;
 }
 
 const defaultExec: HerdrExec = (args) => exec('herdr', args);
@@ -140,6 +147,13 @@ export class HerdrWorkspace implements BbWorkspace {
       ? {}
       : { env: await runBranchGit(this.root, this.logger) };
 
+    if (this.options.clone) {
+      return {
+        ...(await this.ensureClone(branch, baseRefOverride)),
+        ...extra,
+      };
+    }
+
     const worktrees = parseWorktreeList(
       await this.execHerdr(['worktree', 'list', '--cwd', this.root, '--json']),
     );
@@ -220,6 +234,55 @@ export class HerdrWorkspace implements BbWorkspace {
   }
 
   /**
+   * The isolating-runtime variant: a fresh run clone at the worktree's stable
+   * path, shown in a plain herdr workspace. The parent keeps the ticket
+   * branch; no linked worktree and no `.git` exist on the host.
+   */
+  private async ensureClone(
+    branch: string,
+    baseRefOverride: string | undefined,
+  ): Promise<EnsuredWorkspace> {
+    const path = resolve(this.root, this.worktreeDir, branch);
+    const created = !existsSync(path);
+    // Fetches the base, so the clone carries the current target.
+    const baseRef = await resolveBaseRef(this.root, this.execGit, {
+      ...(this.options.baseBranch
+        ? { baseBranch: this.options.baseBranch }
+        : {}),
+      ...(baseRefOverride !== undefined ? { override: baseRefOverride } : {}),
+    });
+    try {
+      await this.execGit([
+        '-C',
+        this.root,
+        'rev-parse',
+        '--verify',
+        '--quiet',
+        `refs/heads/${branch}`,
+      ]);
+    } catch {
+      await this.execGit([
+        '-C',
+        this.root,
+        'branch',
+        '--no-track',
+        branch,
+        ...(baseRef !== undefined ? [baseRef] : []),
+      ]);
+    }
+    const target = targetOf(baseRefOverride ?? baseRef);
+    const clone = ensureRunClone({
+      parent: this.root,
+      workspace: path,
+      branch,
+      ...(target ? { target } : {}),
+      shared: this.options.shared ?? false,
+    });
+    await openCloneWorkspace(this.execHerdr, branch, path);
+    return { path, instructions: loadInstructions(path), created, clone };
+  }
+
+  /**
    * Tear down the branch's worktree and its herdr workspace
    * (`herdr worktree remove --force`); a worktree herdr no longer tracks is
    * torn down with git alone. See {@link removeHerdrWorktree}.
@@ -248,6 +311,8 @@ export function herdrWorkspace(
     worktree_dir?: string;
     base_branch?: string;
     auto_setup_merge?: boolean;
+    /** Isolating runtimes: run clones borrow the root's objects. */
+    shared?: boolean;
     /** Overrideable git exec for root derivation (tests). */
     execGit?: RootGitExec;
     /** Overrideable herdr exec (tests) — sibling of `execGit`. */
@@ -272,6 +337,8 @@ export function herdrWorkspace(
         ...(opts.execHerdr ? { execHerdr: opts.execHerdr } : {}),
         ...(opts.auto_setup_merge ? { autoSetupMerge: true } : {}),
         ...(deps?.logger ? { logger: deps.logger } : {}),
+        clone: config.runtime?.isolates === true,
+        ...(opts.shared ? { shared: true } : {}),
       });
     },
   };

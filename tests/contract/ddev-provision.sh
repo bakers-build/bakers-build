@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Run inside an agent run, the conductor's own variables must not steer the scripts under test.
+unset BAKERS_WORKTREE_PATH BAKERS_RUNTIME_ISOLATES BAKERS_BRANCH_NAME WORKSPACE_ROOT
 
 # `.ddev/commands/host/provision` reuses a ready site, starts a stopped one and installs a missing
 # or different one. A fake `ddev` on PATH logs its calls; a local HTTP server stands in for the site.
@@ -98,10 +100,11 @@ out="$(cd "$work/app" && PATH="$work/bin:$PATH" bash "$script" 2>&1)" || rc=$?
 # nested in the ready site $work/app, where deps are stubbed; sets $out and $rc.
 hook() {
   local tree="$work/app/wt"
-  rm -rf "$tree"; mkdir -p "$tree/scripts" "$tree/.ddev/commands/host"
+  rm -rf "$tree"; mkdir -p "$tree/.bakers/scripts" "$tree/.ddev/commands/host"
   git -C "$tree" init -q; cp "$script" "$tree/.ddev/commands/host/"
-  printf '#!/bin/bash\n' > "$tree/scripts/worktree-deps.sh"
-  cp "$root/scripts/ddev-own-project.sh" "$tree/scripts/" 2>/dev/null || true
+  cp "$root/.bakers/provision.sh" "$tree/.bakers/"
+  printf '#!/bin/bash\n' > "$tree/.bakers/scripts/worktree-deps.sh"
+  cp "$root/.bakers/scripts/ddev-own-project.sh" "$tree/.bakers/scripts/" 2>/dev/null || true
   local cmd
   cmd="$(cd "$root" && node --input-type=module -e '
 const { hooks } = (await import("./.bakers/project.config.js")).default;
@@ -127,22 +130,168 @@ case=parent-project-delete; arrange running - 200; hook after_done -
 
 # A new worktree registers its own project on creation and keeps the tracked config.yaml.
 case=register; tree="$work/register"
-mkdir -p "$tree/scripts" "$tree/.ddev" "$tree/.bakers"
-cp "$root/scripts/setup-worktree.mjs" "$tree/scripts/"; cp "$root/.ddev/worktree-post.sh" "$tree/.ddev/"
+mkdir -p "$tree/.bakers/scripts" "$tree/.ddev" "$tree/.bakers"
+cp "$root/.bakers/scripts/setup-worktree.mjs" "$tree/.bakers/scripts/"; cp "$root/.bakers/scripts/worktree-post.sh" "$tree/.bakers/scripts/"
 printf 'name: bakers\n# kept\n' > "$tree/.ddev/config.yaml"; touch "$tree/.bakers/.worktree-post-done"
 git -C "$tree" init -q; STATE="$work/state"; : > "$STATE/calls"; rc=0
-out="$(cd "$tree" && PATH="$work/bin:$PATH" bash .ddev/worktree-post.sh 2>&1)" || rc=$?
+out="$(cd "$tree" && PATH="$work/bin:$PATH" bash .bakers/scripts/worktree-post.sh 2>&1)" || rc=$?
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ "$(cat "$STATE/calls")" = 'config --auto' ] || fail "calls: $(cat "$STATE/calls")"
 [ "$(cat "$tree/.ddev/config.yaml")" = "$(printf 'name: bakers\n# kept')" ] || fail 'config.yaml rewritten'
 
-# Agents run Playwright through ddev_exec, so the web image's browsers must match the suite's lock.
+# Under an isolating runtime the bootstrap builds nothing on the host: the run owns bakers-cli/.
+case=register-isolated; rm "$tree/.bakers/.worktree-post-done"
+printf '#!/bin/bash\necho "setup $*" >> "%s"\n' "$work/setup-calls" > "$tree/.bakers/scripts/setup-test-project.sh"
+: > "$work/setup-calls"; rc=0
+out="$(cd "$tree" && BAKERS_RUNTIME_ISOLATES=1 WORKSPACE_ROOT="$work" PATH="$work/bin:$PATH" bash .bakers/scripts/worktree-post.sh 2>&1)" || rc=$?
+[ "$rc" = 0 ] && [ ! -s "$work/setup-calls" ] || fail "exit $rc, host setup ran: $(cat "$work/setup-calls"): $out"
+rm "$tree/.bakers/.worktree-post-done"; rc=0
+out="$(cd "$tree" && PATH="$work/bin:$PATH" bash .bakers/scripts/worktree-post.sh 2>&1)" || rc=$?
+[ "$rc" = 0 ] && grep -qx 'setup --workspace-only' "$work/setup-calls" || fail "exit $rc, runtime-host no longer sets the playground up: $out"
+
+# The fixed entry point dispatches only the declared profiles, preserving order and failure status.
+case=provision-dispatch
+provision_tree="$work/dispatch"
+mkdir -p "$provision_tree/.bakers/scripts" "$provision_tree/bin"
+cp "$root/.bakers/provision.sh" "$provision_tree/.bakers/"
+for name in worktree-deps ddev-own-project docs-preview conductor-e2e; do
+  cat > "$provision_tree/.bakers/scripts/$name.sh" <<'EOF'
+#!/bin/bash
+printf '%s%s\n' "$(basename "$0")" "${*:+ $*}" >> "$TRACE"
+[ "${FAIL_COMMAND:-}" != "$(basename "$0")" ] || exit 29
+EOF
+done
+cat > "$provision_tree/bin/ddev" <<'EOF'
+#!/bin/bash
+echo "ddev $*" >> "$TRACE"
+[ "${FAIL_COMMAND:-}" != ddev ] || exit 29
+EOF
+chmod +x "$provision_tree/bin/ddev"
+export TRACE="$provision_tree/trace"
+dispatch() {
+  : > "$TRACE"; rc=0
+  out="$(cd "$provision_tree" && PATH="$provision_tree/bin:$PATH" bash .bakers/provision.sh "$@" 2>&1)" || rc=$?
+}
+while IFS='|' read -r profile expected; do
+  case="provision-dispatch $profile"
+  command="$(cd "$root" && node --input-type=module -e 'console.log((await import("./.bakers/project.config.js")).default.hooks.provision_up[process.argv[1]])' "$profile")"
+  [ "$command" = "bash .bakers/provision.sh $profile" ] || fail "unstable entry point: $command"
+  dispatch "$profile"
+  [ "$rc" = 0 ] || fail "exit $rc: $out"
+  [ "$(paste -sd ';' "$TRACE")" = "$expected" ] || fail "calls: $(cat "$TRACE")"
+done <<'EOF'
+deps|worktree-deps.sh --all
+docs-preview|worktree-deps.sh --all;docs-preview.sh
+conductor-e2e|worktree-deps.sh --all;ddev-own-project.sh;ddev provision --provider recipe-test;conductor-e2e.sh
+conductor-e2e-stop|conductor-e2e.sh stop
+conductor-e2e-start|conductor-e2e.sh start
+recipe-test|worktree-deps.sh;ddev-own-project.sh;ddev provision --provider recipe-test
+existing-config|worktree-deps.sh;ddev-own-project.sh;ddev provision --provider existing-config
+existing-config-fresh|worktree-deps.sh;ddev-own-project.sh;ddev init --provider existing-config
+EOF
+case=provision-invalid-profile
+for profile in '' unknown 'recipe-test; touch bad'; do
+  dispatch "$profile"
+  [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid profile ran actions: $profile: $out"
+done
+dispatch
+[ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail 'missing profile ran actions'
+dispatch deps extra
+[ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail 'extra arguments ran actions'
+for failed in worktree-deps.sh ddev-own-project.sh ddev; do
+  case="provision-failure $failed"
+  export FAIL_COMMAND="$failed"
+  dispatch conductor-e2e
+  unset FAIL_COMMAND
+  [ "$rc" = 29 ] || fail "failure status lost: $rc: $out"
+  case "$failed" in
+    worktree-deps.sh) expected='worktree-deps.sh --all' ;;
+    ddev) expected='ddev provision --provider recipe-test' ;;
+    *) expected="$failed" ;;
+  esac
+  [ "$(tail -n1 "$TRACE")" = "$expected" ] || fail "continued after failure: $(cat "$TRACE")"
+done
+
+# provision_exec keys: `exec web -- <argv>` reaches `ddev exec --raw` with the argv unchanged.
+case=provision-exec
+cat > "$provision_tree/bin/ddev" <<'EOF'
+#!/bin/bash
+echo "ddev $# $*" >> "$TRACE"
+EOF
+command="$(cd "$root" && node --input-type=module -e 'console.log((await import("./.bakers/project.config.js")).default.hooks.provision_exec.web)')"
+[ "$command" = 'bash .bakers/provision.sh exec web' ] || fail "unstable entry point: $command"
+dispatch exec web -- drush uli '--name=north lead' '$(touch planted); id'
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 7 exec --raw -- drush uli --name=north lead $(touch planted); id' ] || fail "calls: $(cat "$TRACE")"
+[ ! -e "$provision_tree/planted" ] || fail 'an argument ran through a shell'
+for args in 'exec' 'exec web' 'exec web --' 'exec other -- true' 'exec web drush'; do
+  # shellcheck disable=SC2086
+  dispatch $args
+  [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid exec ran actions: $args: $out"
+done
+
+# Under an isolating runtime the host installs nothing: the run could have rewritten package.json.
+case=isolated-deps
+deps_tree="$work/deps"
+mkdir -p "$deps_tree/bakers-cli" "$deps_tree/bin"
+touch "$deps_tree/bakers-cli/pnpm-lock.yaml" "$deps_tree/bakers-cli/package.json"
+printf '#!/bin/bash\necho "pnpm $*" >> "$TRACE"\n' > "$deps_tree/bin/pnpm"; chmod +x "$deps_tree/bin/pnpm"
+: > "$TRACE"; rc=0
+(cd "$deps_tree" && BAKERS_RUNTIME_ISOLATES=1 PATH="$deps_tree/bin:$PATH" bash "$root/.bakers/scripts/worktree-deps.sh" --all >/dev/null 2>&1) || rc=$?
+[ "$rc" = 0 ] && [ ! -s "$TRACE" ] || fail "installed on the host: exit $rc: $(cat "$TRACE")"
+(cd "$deps_tree" && BAKERS_RUNTIME_ISOLATES=0 PATH="$deps_tree/bin:$PATH" bash "$root/.bakers/scripts/worktree-deps.sh" >/dev/null 2>&1) || rc=$?
+grep -q '^pnpm install' "$TRACE" || fail 'runtime-host no longer installs'
+
+# An isolated run's workspace has no Git: the own-project check takes the worktree from the conductor.
+case=own-project-without-git
+plain="$work/plain"; mkdir -p "$plain"
+arrange running - 200; export APPROOT="$plain"; rc=0
+out="$(cd "$plain" && GIT_CEILING_DIRECTORIES="$work" BAKERS_RUNTIME_ISOLATES=1 BAKERS_WORKTREE_PATH="$plain" PATH="$work/bin:$PATH" bash "$root/.bakers/scripts/ddev-own-project.sh" 2>&1)" || rc=$?
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+
+# The site containers are as untrusted as a run: what the host executes or reads is read-only there.
+case=compose-protection
+protection="$root/.ddev/docker-compose.protection.yaml"
+for mount in '../.bakers:/var/www/html/.bakers:ro' '../.github:/var/www/html/.github:ro' '.:/var/www/html/.ddev:ro' '../.git:/var/www/html/.git:ro'; do
+  grep -qF -- "- $mount" "$protection" || fail "missing read-only mount $mount"
+done
+node --input-type=module -e '
+const { runtime } = (await import(process.argv[1])).default;
+if (JSON.stringify(runtime.read_only) !== JSON.stringify([".bakers", ".ddev", ".github"])) process.exit(1);
+' "$root/.bakers/project.config.js" || fail 'project.config.js does not list .bakers, .ddev and .github as runtime.read_only'
+for path in .ddev/config.worktree.yaml .ddev/.gitignore; do
+  git -C "$root" check-ignore -q "$path" || fail "host-written $path is not ignored"
+done
+[ -z "$(git -C "$root" ls-files .ddev/.gitignore .ddev/config.worktree.yaml)" ] || fail 'a host-written DDEV file is tracked'
+
+# Agents run Playwright through provision_exec, so the web image's browsers must match the suite's lock.
 case=playwright-image
 locked="$(node -p 'require(process.argv[1]).packages["node_modules/@playwright/test"].version' "$root/tests/playwright/package-lock.json")"
 image="$root/.ddev/web-build/Dockerfile.playwright"
 grep -qF "playwright@$locked " "$image" 2>/dev/null || fail "$image does not install playwright@$locked"
 grep -qE '@playwright/cli@[0-9]+\.[0-9]+\.[0-9]+ ' "$image" 2>/dev/null || fail "$image does not pin @playwright/cli"
 grep -qF "cd tests/playwright && npm ci" "$root/.ddev/commands/host/init" || fail 'init does not install the Playwright suite'
+
+# Install output and seeded fixture files must remain writable with .ddev mounted read-only.
+case=container-artifacts
+artifact_root="$work/artifacts-project"
+mkdir -p "$artifact_root/.ddev" "$work/install-bin"
+printf '#!/bin/bash\necho install-output\n' > "$work/install-bin/drush"
+printf '#!/bin/bash\nexit 0\n' > "$work/install-bin/sudo"
+printf '#!/bin/bash\necho seed-output\nexit 23\n' > "$work/seed.sh"
+chmod +x "$work/install-bin/"*
+sed "s@/var/www/html@$artifact_root@g" "$root/.ddev/providers/recipe-install.sh" > "$work/recipe-install.sh"
+rc=0
+out="$(PATH="$work/install-bin:$PATH" bash "$work/recipe-install.sh" recipe-test "$work/seed.sh" 2>&1)" || rc=$?
+[ "$rc" = 23 ] || fail "seed failure lost: exit $rc: $out"
+grep -q seed-output <<<"$out" || fail "seed output lost: $out"
+[ -f "$artifact_root/tests/artifacts/bakers/init-recipe-test.log" ] || fail 'install log is outside writable artifacts directory'
+[ ! -d "$artifact_root/.ddev/.bakers-test" ] || fail 'container install wrote into .ddev'
+grep -qxF '/tests/artifacts/bakers/' "$root/.gitignore" || fail 'runtime artifacts are not gitignored'
+grep -qxF 'tests/artifacts/bakers/' "$root/.dockerignore" || fail 'runtime artifacts enter Docker build contexts'
+for entry in .ddev/commands/web/bakers-init-test .ddev/commands/web/bakers-test-integration .ddev/providers/existing-config.yaml bakers-cli/vitest.config.integration.ts scripts/ci/github-image-gate.sh; do
+  grep -qF 'tests/artifacts/bakers' "$root/$entry" || fail "$entry does not use writable runtime artifacts"
+done
 
 # That test code is untrusted: the web container gets no SSH agent and no registry token.
 case=container-credentials
@@ -153,4 +302,4 @@ for token in KEYTEC_REGISTRY_TOKEN KEYTEC_REGISTRY_WRITE_TOKEN; do
 done
 
 [ "$failures" = 0 ] || exit 1
-echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, Playwright image, container credentials'
+echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, provision dispatch, provision exec, isolated deps, own project without Git, Compose protection, Playwright image, writable artifacts, container credentials'

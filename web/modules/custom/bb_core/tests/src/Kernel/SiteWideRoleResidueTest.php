@@ -91,7 +91,7 @@ final class SiteWideRoleResidueTest extends KernelTestBase {
     // `prepare-deployment` tells the agent in so many words to "create the
     // environment"; without this the POST is a 403 and the skill cannot finish.
     'create bb_environment',
-    // `scripts/setup-test-project.sh` documents `bakers dropsh create
+    // `.bakers/scripts/setup-test-project.sh` documents `bakers dropsh create
     // bb_group`, and `.bakers/bakers.config.js` fills a workspace_id into that
     // create payload.
     'create bb_group',

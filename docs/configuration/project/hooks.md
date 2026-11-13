@@ -9,16 +9,16 @@ All six lifecycle keys are optional shell command strings. An omitted or empty c
 ```js
 // Fragment inside the exported project configuration.
 hooks: {
-  after_create: 'sh scripts/prepare.sh',
-  before_run: 'sh scripts/refresh.sh',
-  after_run: 'sh scripts/stop-sidecar.sh',
-  after_done: 'sh scripts/cleanup.sh',
-  on_freeze: 'sh scripts/pause.sh',
-  on_resume: 'sh scripts/resume.sh',
+  after_create: 'sh .bakers/scripts/prepare.sh',
+  before_run: 'sh .bakers/scripts/refresh.sh',
+  after_run: 'sh .bakers/scripts/stop-sidecar.sh',
+  after_done: 'sh .bakers/scripts/cleanup.sh',
+  on_freeze: 'sh .bakers/scripts/pause.sh',
+  on_resume: 'sh .bakers/scripts/resume.sh',
 },
 ```
 
-These scripts are examples you must supply. Commands run through `sh -c` in the ticket worktree with the conductor user's permissions. Tools must be on that process's `PATH`. Keep long-running servers out of blocking hooks. Hooks execute worktree code outside the agent sandbox: review that code before giving it credentials or host access.
+These scripts are examples you must supply under `.bakers/scripts/`, including host-side helpers. Under an isolating runtime, every hook and provision command must begin with a script in a protected path, or the config fails to load; see [protect host-executed files](/provision/hooks#protect-host-executed-files). Commands run through `sh -c` in the ticket worktree with the conductor user's permissions. Tools must be on that process's `PATH`. Keep long-running servers out of blocking hooks. Hooks execute worktree code outside the agent sandbox: review that code before giving it credentials or host access.
 
 A selected variant is a complete file, not an overlay. Local values apply only through explicit JavaScript imports. The herdr addon's former `with.hooks` option is rejected; move commands to the top level. Addon listeners run before the project command, awaited in addon discovery order (children first). Listener failures do not skip later listeners or the command.
 
@@ -48,6 +48,9 @@ The successful preparation record survives conductor restarts and is cleared dur
 | `BAKERS_RUN_UUID` | Current run UUID; unset for freeze hooks |
 | `BAKERS_TUNNEL` | `1` if the machine allows preview tunnels, else `0` |
 | `WORKSPACE_ROOT` | Checkout root; the working directory is the ticket worktree |
+| `BAKERS_WORKTREE_PATH` | The ticket worktree; set for every hook, including `after_done`, and for provision commands |
+| `BAKERS_RUNTIME_ISOLATES` | `1` under an isolating runtime, else `0`; also set for provision commands |
+| `BAKERS_BRANCH_NAME` | Ticket branch, when known |
 | `TICKET_URL` | Origin issue URL, when there is one |
 | `BAKERS_PROJECT`, `BAKERS_PROJECT_ID` | Project name and UUID, when known |
 | `BAKERS_WORKSPACE`, `BAKERS_WORKSPACE_ID` | Ticket workspace name and UUID, when known |
@@ -66,13 +69,18 @@ Lifecycle commands and listeners are best effort. Failures are logged (`lifecycl
 ```js
 hooks: {
   provision_up: {
-    test: 'sh scripts/provision.sh test',
-    'test-fresh': 'sh scripts/install.sh test',
+    test: 'sh .bakers/provision.sh test',
+    'test-fresh': 'sh .bakers/provision.sh test-fresh',
   },
 },
 ```
 
-Agents call it whenever a check needs the environment, so make the command cheap to repeat. It follows this contract:
+Agents call it whenever a check needs the environment, so make the command cheap to repeat.
+Keep profile dispatch and implementation in that fixed, protected script. Host-maintainer changes
+to its contents are read on the next invocation; existing profile commands in the conductor stay
+unchanged. Adding profile names still changes the tool's configured profile list.
+
+The script follows this contract:
 
 | The environment is | The command |
 |---|---|
@@ -83,9 +91,19 @@ Agents call it whenever a check needs the environment, so make the command cheap
 
 The base URL *answers* when it returns an HTTP status below 500, so a site that fails with 500 is not ready. A profile that must start from a clean install every time, such as a disposable import check, gets its own key whose command always reinstalls (`test-fresh` above). The conductor runs the command as configured and checks nothing itself; a command that always reinstalls still works, it is only slower. A runtime addon's page may show one implementation.
 
-It runs through `sh -c` in the run's worktree with the inherited conductor environment, without injecting the run's `BAKERS_*` or ticket variables. It outlives cancellation of the calling agent. Overlapping calls for the same worktree and command share the running process, even when different profile names select that command. A call after completion starts it again; different commands can run concurrently, so scripts must protect shared resources.
+It runs through `sh -c` in the run's worktree with the inherited conductor environment plus `BAKERS_WORKTREE_PATH` and `BAKERS_RUNTIME_ISOLATES`, without injecting the run's other `BAKERS_*` or ticket variables. It outlives cancellation of the calling agent. Overlapping calls for the same worktree and command share the running process, even when different profile names select that command. A call after completion starts it again; different commands can run concurrently, so scripts must protect shared resources.
 
 At 30 minutes, ticket teardown or conductor shutdown, the conductor sends `SIGTERM` to the process group. It does not escalate to `SIGKILL`; commands must handle termination. The result retains the tail of combined stdout/stderr, capped at 65,536 string characters. A non-zero exit is a tool error. Unlike lifecycle hooks, the caller sees this failure directly. No profile runs automatically, and the conductor neither checks application health nor validates the printed URL.
+
+## Run a configured command
+
+`hooks.provision_exec` maps keys (letters, digits, `_`, `-`) to command strings and offers the tool `provision_exec(key, args?)`. The agent picks a key and passes `args`, a list of strings. They reach the command as separate arguments after `--`, never through a shell; an unknown key is refused. The result carries the exit code and the output tail, and a non-zero exit is a tool error.
+
+```js
+hooks: { provision_exec: { web: 'bash .bakers/provision.sh exec web' } },
+```
+
+With a script that runs its arguments in a site container, `provision_exec('web', ['drush', 'uli'])` runs `drush uli` there. The command runs on the host like `provision_up`, with the same environment and limit.
 
 ## Verify
 

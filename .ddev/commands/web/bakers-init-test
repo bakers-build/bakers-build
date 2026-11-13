@@ -4,5 +4,5 @@
 
 set -euo pipefail
 source /var/www/html/.ddev/commands/web/lib/bakers-auth-lib.sh
-ARTIFACT_DIR=/var/www/html/.ddev/.bakers-test BASE_URL="$(bb_base_url)" \
+ARTIFACT_DIR=/var/www/html/tests/artifacts/bakers BASE_URL="$(bb_base_url)" \
   exec bash /var/www/html/scripts/e2e/seed-test-world.sh

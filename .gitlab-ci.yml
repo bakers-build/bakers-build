@@ -776,7 +776,7 @@ e2e:
     - |
       runner="$COMPOSE_PROJECT_NAME-runner"
       mkdir -p e2e-reports
-      for path in tests/playwright/junit-playwright.xml tests/playwright/playwright-report tests/playwright/test-results .ddev/.bakers-test/junit-integration.xml; do
+      for path in tests/playwright/junit-playwright.xml tests/playwright/playwright-report tests/playwright/test-results tests/artifacts/bakers/junit-integration.xml; do
         docker cp "$runner:/repo/$path" e2e-reports/ 2>/dev/null || true
       done
       docker compose logs --no-color > e2e-reports/stack.log 2>&1 || true

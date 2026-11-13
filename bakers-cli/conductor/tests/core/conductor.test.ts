@@ -1135,7 +1135,10 @@ describe('Conductor', () => {
       BAKERS_TICKET_IDENTIFIER: 'BB-1',
       BAKERS_STATE: 'todo',
       BAKERS_RUN_UUID: 'r-1',
+      BAKERS_BRANCH_NAME: 'bakers/bb-1',
       BAKERS_TUNNEL: '0',
+      BAKERS_RUNTIME_ISOLATES: '0',
+      BAKERS_WORKTREE_PATH: '/fake/BB-1',
       WORKSPACE_ROOT: CHECKOUT,
       TICKET_URL: 'https://issues/1',
     });
@@ -4682,7 +4685,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
     return remote;
   }
 
-  it('after_done runs listeners with the current ticket context before the shell hook, whose env stays inherited', async () => {
+  it('after_done runs listeners with the current ticket context before the shell hook, whose inherited env gains only the worktree path', async () => {
     const events: string[] = [];
     const seen: Array<{
       id: string;
@@ -4711,7 +4714,9 @@ describe('Conductor — addon lifecycle hook listeners', () => {
       ticket: { identifier: 'BB-1' },
     });
     expect(seen[0]?.ctx.env.TICKET_ONLY).toBe('1');
-    expect(executor.shellEnv.after_done).toBeUndefined();
+    expect(executor.shellEnv.after_done).toEqual({
+      BAKERS_WORKTREE_PATH: PRESENT_WORKTREE,
+    });
     expect(remote.calls.markCleanedUp).toEqual(['t-1']);
   });
 

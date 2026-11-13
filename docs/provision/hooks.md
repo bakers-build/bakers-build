@@ -7,10 +7,10 @@ Use hooks to prepare a ticket worktree, refresh it before a run or release its r
 1. Merge one hook into `.bakers/project.config.js`, keeping the other settings:
 
    ```js
-   hooks: { after_create: 'sh scripts/prepare.sh' },
+   hooks: { after_create: 'sh .bakers/scripts/prepare.sh' },
    ```
 
-   Supply `scripts/prepare.sh`; the example does not create it. See the [Node.js example](/provision/node-project) for a locked dependency install, or [Compose](/provision/docker-compose) for service setup and scoped cleanup.
+   Supply `.bakers/scripts/prepare.sh`; the example does not create it. See the [Node.js example](/provision/node-project) for a locked dependency install, or [Compose](/provision/docker-compose) for service setup and scoped cleanup.
 
 2. Run the command twice in a disposable worktree. It should prepare missing resources and preserve resources that are already ready. Keep long-running servers out of blocking setup commands.
 
@@ -34,7 +34,7 @@ See [failure and retry behavior](/configuration/project/hooks#failure-behavior) 
 
 ## Provision on an agent's request
 
-Configure [`provision_up`](/configuration/project/hooks#provision-on-an-agent-s-request) when checks need a running environment. It is an explicit tool call, not an automatic lifecycle event. Your script owns reuse, readiness and the returned URL.
+Configure [`provision_up`](/configuration/project/hooks#provision-on-an-agent-s-request) when checks need a running environment. It is an explicit tool call, not an automatic lifecycle event. Your script owns reuse, readiness and the returned URL. [`provision_exec`](/configuration/project/hooks#run-a-configured-command) runs a configured command with the agent's arguments, for example in a site container.
 
 ## Add a listener from an addon
 
@@ -43,3 +43,22 @@ Addon authors use the existing [hook listener contract](/addons/build/contracts#
 ## Clean up a preview
 
 `after_done: 'bakers ports down mailpit'` closes a tunnel opened for that service. It does not stop the application. [Ports](/addons/ports) owns service sharing and tunnel cleanup.
+
+## Protect host-executed files
+
+Under an isolating runtime, the host runs only code from protected paths: `.bakers/` and the
+project's [`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) list. Every
+lifecycle hook and every `provision_up` or `provision_exec` command must begin with a script inside
+one of them: the command's first word, or the word after `bash`, `sh` or `node`.
+
+```js
+hooks: { before_run: 'bash .bakers/provision.sh deps' },
+```
+
+Otherwise the config fails to load with an error naming the hook. Only that entry point is checked.
+The script should call only protected code and run anything the run can write, such as dependency
+installs and builds, in a container. Host scripts read `BAKERS_WORKTREE_PATH` and
+`BAKERS_RUNTIME_ISOLATES` instead of asking Git: an isolated workspace has no Git on the host.
+
+A maintainer makes and delivers changes to protected files outside the isolated run. The host
+runtime has no such check and no such protection.

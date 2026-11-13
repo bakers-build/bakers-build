@@ -1,6 +1,6 @@
 /**
  * BB-237 layer-3 ground truth: a REAL dispatch that provisions a REAL
- * worktree with the REAL `.ddev/worktree-post.sh`, and the ordering that makes
+ * worktree with the REAL `.bakers/scripts/worktree-post.sh`, and the ordering that makes
  * the whole ticket work.
  *
  * WHAT NOTHING ELSE COVERS. `conductor/tests/core/worktree-bootstrap.test.ts`
@@ -12,7 +12,7 @@
  * — and it is asserted here by observing `existsSync(sentinel)` AT the moment
  * `openWorkspace` fires, not by checking that two calls happened in order.
  * `worktree-lifecycle.test.ts` drives a real dispatch but configures
- * `after_create: 'bash .ddev/worktree-post.sh'`, asserts nothing about the hook's
+ * `after_create: 'bash .bakers/scripts/worktree-post.sh'`, asserts nothing about the hook's
  * outcome, has no failure case, and says nothing about the pane.
  *
  * DELIBERATELY CHEAP — no Drupal control plane, no DDEV, seconds not minutes:
@@ -68,7 +68,7 @@ function repoRoot(): string {
 }
 
 /** The REAL bootstrap, by absolute path — this is the script under test. */
-const BOOTSTRAP = join(repoRoot(), '.ddev/worktree-post.sh');
+const BOOTSTRAP = join(repoRoot(), '.bakers/scripts/worktree-post.sh');
 
 function git(cwd: string, args: string[]): string {
   return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' });
@@ -106,7 +106,7 @@ function makeConfig(configPath: string): ConductorFileConfig {
  * A throwaway parent repo shaped like a bakers checkout as far as the bootstrap
  * cares: a `.bakers/conductor.config.local.js` to copy, and a committed
  * `.env.ddev` so the worktree checkout carries the URL the script resolves.
- * (In production `.env.ddev` is gitignored and written by `bash .ddev/worktree-post.sh`;
+ * (In production `.env.ddev` is gitignored and written by `bash .bakers/scripts/worktree-post.sh`;
  * committing it here is what makes the resolved URL deterministic without DDEV.)
  * Carries NO `bakers-cli/package.json`, so the script skips the pnpm build.
  */
@@ -127,11 +127,11 @@ async function makeParentRepo(slug: string): Promise<string> {
     `DDEV_WORKTREE_NAME=bb-237-int\nPLAYWRIGHT_BASE_URL=${WORKTREE_URL}\n`,
     'utf8',
   );
-  await mkdir(join(repo, 'scripts'), { recursive: true });
+  await mkdir(join(repo, '.bakers/scripts'), { recursive: true });
   await mkdir(join(repo, '.ddev'), { recursive: true });
   await writeFile(
-    join(repo, 'scripts/setup-worktree.mjs'),
-    readFileSync(join(repoRoot(), 'scripts/setup-worktree.mjs')),
+    join(repo, '.bakers/scripts/setup-worktree.mjs'),
+    readFileSync(join(repoRoot(), '.bakers/scripts/setup-worktree.mjs')),
   );
   await writeFile(join(repo, '.ddev/config.yaml'), 'name: bakers\n');
   await writeFile(join(repo, 'README.md'), 'x\n');

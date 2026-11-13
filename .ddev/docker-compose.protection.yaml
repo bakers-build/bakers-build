@@ -1,0 +1,17 @@
+# Protect what the host executes or trusts at its directory boundary, including DDEV's aliases:
+# code in these containers is as untrusted as an agent run. Host-side configuration writes remain
+# possible; normal project outputs stay writable. `.git` is an empty placeholder in an isolated
+# run's workspace (its Git directory lives with the conductor); read-only here, nothing can turn
+# it into a repository that host tools would read.
+services:
+  web:
+    volumes:
+      - ../.bakers:/var/www/html/.bakers:ro
+      - ../.github:/var/www/html/.github:ro
+      - .:/var/www/html/.ddev:ro
+      - .:/mnt/ddev_config:ro
+      - ../.git:/var/www/html/.git:ro
+  db:
+    volumes:
+      - .:/mnt/ddev_config:ro
+      - ./db_snapshots:/mnt/snapshots:ro

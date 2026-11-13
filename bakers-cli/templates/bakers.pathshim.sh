@@ -8,7 +8,7 @@
 #   1. A TEST-SETUP WORKSPACE — a `.bakers-testbuild` marker file at or above the
 #      physical working directory, holding the absolute path of the bakers
 #      checkout that created the workspace (written by
-#      scripts/setup-test-project.sh). That checkout's OWN build is then
+#      .bakers/scripts/setup-test-project.sh). That checkout's OWN build is then
 #      authoritative: the compiled `bakers-cli/conductor/dist/src/index.js` is
 #      required, and a missing/broken build FAILS LOUDLY (exit 1) with a build
 #      hint;

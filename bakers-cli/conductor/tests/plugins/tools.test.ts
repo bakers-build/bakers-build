@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, realpath } from 'node:fs/promises';
+import { mkdtemp, readFile, realpath, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -319,5 +319,61 @@ describe('loadTools', () => {
     expect(await registry.call('runtime_login', {}, binding)).toEqual({
       text: 'status /work/bb-1',
     });
+  });
+});
+
+describe('provision_exec', () => {
+  const exec = (commands: Record<string, string>, isolates = false) =>
+    loadTools(
+      provisionTools(undefined, undefined, { exec: commands, isolates }),
+    );
+
+  it('runs the configured command with the arguments as literal argv after --', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'bb-provision-exec-'));
+    await writeFile(
+      join(dir, 'show.sh'),
+      'for arg in "$@"; do echo "<$arg>"; done\n',
+    );
+    const registry = await exec({ show: 'sh show.sh' });
+    expect(registry.list().map((t) => t.name)).toEqual(['provision_exec']);
+    const { text } = await registry.call(
+      'provision_exec',
+      { key: 'show', args: ['$(touch planted)', '--service=db', 'a b', ';id'] },
+      { worktreePath: dir },
+    );
+    expect(text).toBe(
+      'exit 0\n<-->\n<$(touch planted)>\n<--service=db>\n<a b>\n<;id>\n',
+    );
+    await expect(stat(join(dir, 'planted'))).rejects.toThrow();
+  });
+
+  it('refuses an unknown key and reports a failing command', async () => {
+    const registry = await exec({ ok: 'true', fail: 'echo broken; exit 3' });
+    await expect(
+      registry.call('provision_exec', { key: 'other' }, here),
+    ).rejects.toThrow(/key: must be equal to one of the allowed values/);
+    await expect(
+      registry.call('provision_exec', { key: 'fail' }, here),
+    ).rejects.toThrow(/exit 3\nbroken/);
+  });
+
+  it('tells host commands the worktree path and whether the runtime isolates', async () => {
+    const dir = await realpath(
+      await mkdtemp(join(tmpdir(), 'bb-provision-env-')),
+    );
+    const show = 'echo "$BAKERS_WORKTREE_PATH $BAKERS_RUNTIME_ISOLATES"';
+    for (const isolates of [true, false]) {
+      const registry = await loadTools(
+        provisionTools({ up: show }, undefined, { exec: { show }, isolates }),
+      );
+      const expected = `exit 0\n${dir} ${isolates ? 1 : 0}\n`;
+      const binding = { worktreePath: dir };
+      expect(
+        (await registry.call('provision_up', { profile: 'up' }, binding)).text,
+      ).toBe(expected);
+      expect(
+        (await registry.call('provision_exec', { key: 'show' }, binding)).text,
+      ).toBe(`${expected.trimEnd()} --\n`);
+    }
   });
 });

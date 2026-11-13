@@ -45,7 +45,12 @@ function revParse(workspacePath: string, option: string): string | null {
  * Only existing paths are named: a sandbox mounts over a missing protected
  * path by creating an empty placeholder in the real repository.
  */
-export function gitSandboxPaths(workspacePath: string): GitSandboxPaths {
+export function gitSandboxPaths(
+  workspacePath: string,
+  isolated = false,
+): GitSandboxPaths {
+  // A run clone: its Git directory is mounted there, and the host asks Git nothing.
+  if (isolated) return { write: [join(workspacePath, '.git')], protect: [] };
   const gitDir = revParse(workspacePath, '--git-dir');
   if (gitDir === null) return { write: [], protect: [] };
   const common = revParse(workspacePath, '--git-common-dir') ?? gitDir;

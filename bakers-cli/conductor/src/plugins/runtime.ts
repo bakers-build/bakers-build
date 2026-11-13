@@ -19,6 +19,10 @@ export interface RuntimeLaunch extends AgentRuntimeInfo {
   env: Record<string, string>;
   workspacePath: string;
   run: RuntimeRun;
+  /** The run clone's Git directory, mounted as `<workspace>/.git`; absent: the run has no Git. */
+  gitDir?: string;
+  /** A `shared` clone's parent object store, mounted read-only at its own path. */
+  sharedObjects?: string;
   /** The harness id of the chosen agent (`claude`, `codex`, …). */
   harness: string;
   homePath?: string;

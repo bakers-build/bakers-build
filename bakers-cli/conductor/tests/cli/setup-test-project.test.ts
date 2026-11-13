@@ -21,7 +21,7 @@ afterEach(() => {
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'bakers-setup-'));
   roots.push(root);
-  mkdirSync(join(root, 'scripts'));
+  mkdirSync(join(root, '.bakers/scripts'), { recursive: true });
   mkdirSync(join(root, '.ddev'));
   mkdirSync(join(root, 'bin'));
   writeFileSync(join(root, '.ddev/config.yaml'), 'name: isolated\n');
@@ -32,8 +32,8 @@ describe('test workspace setup', () => {
     const root = fixture();
     execFileSync('git', ['init', '-q', root]);
     cpSync(
-      resolve('../scripts/setup-test-project.sh'),
-      join(root, 'scripts/setup-test-project.sh'),
+      resolve('../.bakers/scripts/setup-test-project.sh'),
+      join(root, '.bakers/scripts/setup-test-project.sh'),
     );
     writeFileSync(
       join(root, 'bin/ddev'),
@@ -49,15 +49,19 @@ esac
 `,
       { mode: 0o755 },
     );
-    const result = spawnSync('bash', ['scripts/setup-test-project.sh'], {
-      cwd: root,
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        PATH: `${root}/bin:${process.env.PATH}`,
-        TRACE: join(root, 'trace'),
+    const result = spawnSync(
+      'bash',
+      ['.bakers/scripts/setup-test-project.sh'],
+      {
+        cwd: root,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${root}/bin:${process.env.PATH}`,
+          TRACE: join(root, 'trace'),
+        },
       },
-    });
+    );
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain('No data was changed');
     expect(result.stderr).toContain('ddev init --provider recipe-test');
@@ -74,7 +78,9 @@ esac
       writeFileSync(join(root, path), text, { mode: 0o755 });
     };
     execFileSync('git', ['init', '-qb', 'develop', root]);
-    cpSync(resolve('../scripts'), join(root, 'scripts'), { recursive: true });
+    cpSync(resolve('../.bakers/scripts'), join(root, '.bakers/scripts'), {
+      recursive: true,
+    });
     cpSync(
       resolve('../tests/fixtures/bakers-playground'),
       join(root, 'tests/fixtures/bakers-playground'),
@@ -97,6 +103,8 @@ esac
         'remote-drupal',
         'essentials',
         'ports',
+        'runtime-bwrap',
+        'runtime-docker',
       ].map((n) => `addons/${n}`),
     ]) {
       mkdirSync(join(root, 'bakers-cli', unit, 'src'), { recursive: true });
@@ -117,7 +125,7 @@ esac
   function setupWorkspace(root: string) {
     return spawnSync(
       'bash',
-      ['scripts/setup-test-project.sh', '--workspace-only'],
+      ['.bakers/scripts/setup-test-project.sh', '--workspace-only'],
       {
         cwd: root,
         encoding: 'utf8',
@@ -157,7 +165,7 @@ esac
         env: { ...process.env, ...gitEnv },
       }).trim();
     // A clone seeded before the migration has no helper of its own.
-    git('rm', '-q', 'scripts/setup-worktree.mjs');
+    git('rm', '-q', '.bakers/scripts/setup-worktree.mjs');
     git('commit', '-qm', 'local work');
     const head = git('rev-parse', 'HEAD');
     rmSync(join(workspace, '.env.ddev'));

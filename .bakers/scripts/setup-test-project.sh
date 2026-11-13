@@ -3,9 +3,9 @@
 # setup-test-project.sh — bring up the environment a hand-driven Conductor run
 #                         needs, and nothing more.
 #
-#   scripts/setup-test-project.sh [--project <name>] [--workspace-only]
+#   .bakers/scripts/setup-test-project.sh [--project <name>] [--workspace-only]
 #                                 [--fixture-repo <url>]
-#   scripts/teardown-test-project.sh          # gives it all back
+#   .bakers/scripts/teardown-test-project.sh          # gives it all back
 #
 #     --project <name>  the bb_project of the recipe-test world to wire up. With
 #                       this machine and the default variant it keys the
@@ -122,7 +122,7 @@ set -euo pipefail
 PROJECT='bakers-e2e-project'
 # `--workspace-only` — see the header. Default 'no': a hand-driven run does all nine
 # steps, and the reduced mode is opted INTO by the one caller that must not
-# re-provision the world (.ddev/worktree-post.sh).
+# re-provision the world (.bakers/scripts/worktree-post.sh).
 WORKSPACE_ONLY='no'
 WORKSPACE_RELPATH='workspaces/bakers-playground'
 # Empty means the local bare repository seeded from FIXTURE_TREE_RELPATH (step 3).
@@ -460,7 +460,7 @@ else
     || die "'ddev describe' could not describe the checkout at ${ROOT}. A full run reads
        the control plane it is about to write to, so this is fatal here; 'ddev start' in
        the checkout, or run with --workspace-only, which needs no running DDEV."
-  ( cd "${ROOT}" && node scripts/setup-worktree.mjs )
+  ( cd "${ROOT}" && node .bakers/scripts/setup-worktree.mjs )
   CP_NAME="$(sed -n 's/^DDEV_WORKTREE_NAME=//p' "${ROOT}/.env.ddev" | tail -1)"
   CP_STATUS='not described'
   RAW_URL="https://${CP_NAME}.ddev.site"
@@ -640,14 +640,14 @@ if [ ! -e "${WORKSPACE}/.ddev/config.worktree.yaml" ]; then
   printf 'name: %s\n' "${WS_DDEV}" >"${WORKSPACE}/.ddev/config.worktree.yaml"
 fi
 # The checkout's helper, not the clone's: a clone seeded before the migration has none.
-( cd "${WORKSPACE}" && node "${ROOT}/scripts/setup-worktree.mjs" )
+( cd "${WORKSPACE}" && node "${ROOT}/.bakers/scripts/setup-worktree.mjs" )
 WS_DDEV="$(sed -n 's/^DDEV_WORKTREE_NAME=//p' "${WORKSPACE}/.env.ddev" | tail -1)"
 # DECLARED, NOT STARTED (BB-390). The workspace runs no Drupal of its own; its
 # DDEV exists purely so a skill under test can issue a real `ddev` command, which in
 # practice it never does. Writing the overlay costs nothing and is the only thing
 # giving the workspace a DDEV name that is unique per checkout, so it stays; the
 # `ddev start` is what this script stopped paying for on every setup and on every
-# `bash .ddev/worktree-post.sh`. Start it by hand if a run needs it:
+# `bash .bakers/scripts/worktree-post.sh`. Start it by hand if a run needs it:
 #   cd ${WORKSPACE_RELPATH} && ddev start
 say "${WORKSPACE} (ddev project '${WS_DDEV}' declared, NOT started)"
 say "  start it only if a skill under test needs it: cd ${WORKSPACE_RELPATH} && ddev start"
@@ -677,11 +677,11 @@ Q_WS_BRANCH="$(php_str "${WS_BRANCH}")"
 # READING the clone's branch above is a local git read and always runs — the summary
 # reports it, and `--workspace-only` still wants it reported. What that mode skips is
 # THE WRITE: the project repo entry is control-plane state a hand-driven run sets up
-# once, and `bash .ddev/worktree-post.sh` has no business touching the world on every worktree
+# once, and `bash .bakers/scripts/worktree-post.sh` has no business touching the world on every worktree
 # it creates.
 if [ "${WORKSPACE_ONLY}" = 'yes' ]; then
   say "--workspace-only: the clone works on '${WS_BRANCH}'; the project repo entry is"
-  say "  NOT written (run 'scripts/setup-test-project.sh' without the flag for that)"
+  say "  NOT written (run '.bakers/scripts/setup-test-project.sh' without the flag for that)"
 else
   repo_state="$(cp_drush php:eval "
   \$p = \\Drupal::entityTypeManager()
@@ -744,7 +744,7 @@ assert_current() {
 # in it like the rest: an unbuilt kernel fails at import time in the workspace,
 # which reads as a config problem.
 # Every executor and workspace addon a playground config may select is linked.
-LINKED_ADDONS=(herdr herdr-core workspace-git claude codex remote-drupal essentials ports)
+LINKED_ADDONS=(herdr herdr-core workspace-git claude codex remote-drupal essentials ports runtime-bwrap runtime-docker)
 BUILD_UNITS=(
   "${BB_CLI}/host/src|${BB_CLI}/host/dist/src/host.js|the bakers host"
   "${BB_CLI}/conductor/src|${BB_CLI}/conductor/dist/src/index.js|the conductor"
@@ -757,7 +757,7 @@ done
 # BUILD WHEN NEEDED (BB-390). The assertions below used to be the whole of this
 # step, which made a missing or stale build a STOP SIGN where an action was
 # available: every worktree had to be built by hand (or by an unconditional build in
-# `bash .ddev/worktree-post.sh`, paid for whether or not the ticket touches the CLI) before
+# `bash .bakers/scripts/worktree-post.sh`, paid for whether or not the ticket touches the CLI) before
 # this script would run at all. So the same probe now triggers the build instead of
 # refusing. What does NOT change is that a build which FAILS is fatal, and that the
 # assertions still run afterwards — they are what keeps a green skill test from being
@@ -920,7 +920,7 @@ mkdir -p "${WORKSPACE}/.bakers"
 # no default scopes, and silently inherit that default when there is one.
 cat >"${WORKSPACE}/.bakers/connection.config.js" <<JS
 // @bakers-schema-version 1
-// GENERATED by scripts/setup-test-project.sh — do not commit
+// GENERATED by .bakers/scripts/setup-test-project.sh — do not commit
 // The CONNECTION surface (BB-201): a dropsh-shaped { site, plugins } read by
 // 'bakers ui', 'bakers tools', 'bakers auth', and the conductor's auth.
 //
@@ -992,7 +992,7 @@ say "  → its addons, after_create hook and state slice are reviewed in that re
 # -----------------------------------------------------------------------------
 # `--workspace-only` ENDS HERE. Steps 8 and 9 are the two remaining control-plane
 # actions — repairing the OAuth2 keys and minting a session token — and both belong
-# to a hand-driven run that is about to drive a conductor. `bash .ddev/worktree-post.sh`
+# to a hand-driven run that is about to drive a conductor. `bash .bakers/scripts/worktree-post.sh`
 # creates worktrees; it has no business logging a profile in on every one of them.
 # The closing text is its own, because the three next steps printed below assume the
 # repo entry and the session this mode deliberately did not create.
@@ -1014,9 +1014,9 @@ workspace ready (--workspace-only)
 To drive a real run from here, provision the world and mint a session — that is the
 same script without the flag:
 
-  scripts/setup-test-project.sh${PROJECT:+ --project ${PROJECT}}
+  .bakers/scripts/setup-test-project.sh${PROJECT:+ --project ${PROJECT}}
 
-When you are done: scripts/teardown-test-project.sh
+When you are done: .bakers/scripts/teardown-test-project.sh
 =============================================================================
 WS_SUMMARY
   exit 0
@@ -1168,6 +1168,6 @@ The ticket is yours. Three steps, and the last one spends real agent money.
      even when it is released or terminal, and the symptom is a ticket that is
      silently never picked up again.
 
-When you are done: scripts/teardown-test-project.sh
+When you are done: .bakers/scripts/teardown-test-project.sh
 =============================================================================
 SUMMARY

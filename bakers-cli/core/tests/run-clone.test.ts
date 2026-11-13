@@ -1,0 +1,287 @@
+import { execFileSync } from 'node:child_process';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, expect, it } from 'vitest';
+import {
+  createRunClone,
+  loadRunClone,
+  removeRunClone,
+  runCloneGitDir,
+  saveRunClone,
+} from '../src/core/run-clone.js';
+
+const roots: string[] = [];
+afterEach(() =>
+  roots.splice(0).forEach((root) => {
+    rmSync(root, { recursive: true, force: true });
+  }),
+);
+const git = (cwd: string, ...args: string[]) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8', stdio: 'pipe' }).trim();
+const commit = (cwd: string, message: string) =>
+  git(
+    cwd,
+    '-c',
+    'user.name=test',
+    '-c',
+    'user.email=test@test',
+    'commit',
+    '-qm',
+    message,
+  );
+
+/** A parent with `ticket` one commit ahead of the base and `origin/next` one commit beside it. */
+function fixture() {
+  const root = mkdtempSync(join(tmpdir(), 'bb-run-clone-'));
+  roots.push(root);
+  const parent = join(root, 'parent');
+  mkdirSync(parent);
+  git(parent, 'init', '-q', '-b', 'main');
+  writeFileSync(join(parent, '.gitignore'), 'node_modules/\n');
+  writeFileSync(join(parent, 'file'), 'base');
+  git(parent, 'add', '.');
+  commit(parent, 'base');
+  git(parent, 'checkout', '-qb', 'target-work');
+  writeFileSync(join(parent, 'target-only'), 'target');
+  git(parent, 'add', '.');
+  commit(parent, 'target');
+  git(parent, 'update-ref', 'refs/remotes/origin/next', 'HEAD');
+  git(parent, 'checkout', '-qb', 'ticket', 'main');
+  mkdirSync(join(parent, 'dir'));
+  writeFileSync(join(parent, 'dir/tracked'), 'ticket');
+  git(parent, 'add', '.');
+  commit(parent, 'ticket');
+  git(parent, 'checkout', '-q', 'main');
+  const workspace = join(root, 'workspace');
+  const gitDir = join(root, 'storage/run.git');
+  const create = (shared = false) =>
+    createRunClone({
+      parent,
+      workspace,
+      gitDir,
+      branch: 'ticket',
+      target: 'next',
+      shared,
+    });
+  const run = (...args: string[]) =>
+    git(workspace, `--git-dir=${gitDir}`, `--work-tree=${workspace}`, ...args);
+  return { root, parent, workspace, gitDir, create, run };
+}
+
+it('clones the ticket branch with its Git directory outside the workspace, a host stub that names the branch, and the target as an unmerged ref', () => {
+  const { parent, workspace, gitDir, create, run } = fixture();
+  const record = create();
+
+  expect(readdirSync(join(workspace, '.git')).sort()).toEqual([
+    'HEAD',
+    'config',
+    'objects',
+    'refs',
+  ]);
+  expect(readFileSync(join(workspace, 'dir/tracked'), 'utf8')).toBe('ticket');
+  expect(run('symbolic-ref', 'HEAD')).toBe('refs/heads/ticket');
+  expect(run('rev-parse', 'HEAD')).toBe(git(parent, 'rev-parse', 'ticket'));
+  expect(record.expected).toBe(git(parent, 'rev-parse', 'ticket'));
+  expect(run('rev-parse', 'origin/next')).toBe(
+    git(parent, 'rev-parse', 'origin/next'),
+  );
+  // Nothing is merged: the target's file is absent and the tree is clean.
+  expect(existsSync(join(workspace, 'target-only'))).toBe(false);
+  expect(run('status', '--porcelain')).toBe('');
+  expect(record).toMatchObject({ gitDir, workspace, branch: 'ticket' });
+  // Host tools in the workspace see the ticket branch, not the parent checkout above.
+  expect(git(workspace, 'branch', '--show-current')).toBe('ticket');
+  expect(git(workspace, 'rev-parse', '--show-toplevel')).toBe(workspace);
+});
+
+it('copies objects into independent inodes without alternates by default', () => {
+  const { gitDir, create } = fixture();
+  create();
+  expect(existsSync(join(gitDir, 'objects/info/alternates'))).toBe(false);
+  const files = readdirSync(join(gitDir, 'objects'), {
+    recursive: true,
+    withFileTypes: true,
+  }).filter((entry) => entry.isFile());
+  expect(files.length).toBeGreaterThan(0);
+  for (const entry of files)
+    expect(statSync(join(entry.parentPath, entry.name)).nlink).toBe(1);
+});
+
+it('borrows the parent objects through alternates when shared', () => {
+  const { parent, gitDir, create, run } = fixture();
+  create(true);
+  expect(
+    readFileSync(join(gitDir, 'objects/info/alternates'), 'utf8').trim(),
+  ).toBe(join(parent, '.git/objects'));
+  expect(run('status', '--porcelain')).toBe('');
+});
+
+it('starts every run fresh: drops run refs, config and uncommitted work, keeps ignored files', () => {
+  const { root, workspace, gitDir, create, run } = fixture();
+  create();
+  run('update-ref', 'refs/heads/planted', 'HEAD');
+  run('config', 'core.fsmonitor', `touch ${join(root, 'executed')}`);
+  writeFileSync(join(workspace, 'file'), 'edited');
+  writeFileSync(join(workspace, 'untracked'), 'left over');
+  mkdirSync(join(workspace, 'node_modules'));
+  writeFileSync(join(workspace, 'node_modules/kept'), 'installed');
+
+  create();
+
+  expect(run('for-each-ref', '--format=%(refname)', 'refs/heads')).toBe(
+    'refs/heads/ticket',
+  );
+  expect(readFileSync(join(gitDir, 'config'), 'utf8')).not.toContain(
+    'fsmonitor',
+  );
+  expect(readFileSync(join(workspace, 'file'), 'utf8')).toBe('base');
+  expect(existsSync(join(workspace, 'untracked'))).toBe(false);
+  expect(readFileSync(join(workspace, 'node_modules/kept'), 'utf8')).toBe(
+    'installed',
+  );
+  expect(existsSync(join(root, 'executed'))).toBe(false);
+});
+
+it('does not write through a symlink the previous run planted over a tracked directory', () => {
+  const { root, workspace, create } = fixture();
+  create();
+  const outside = join(root, 'outside');
+  mkdirSync(outside);
+  rmSync(join(workspace, 'dir'), { recursive: true });
+  symlinkSync(outside, join(workspace, 'dir'));
+  rmSync(join(workspace, '.git'), { recursive: true });
+  symlinkSync(outside, join(workspace, '.git'));
+
+  create();
+
+  expect(readdirSync(outside)).toEqual([]);
+  expect(readFileSync(join(workspace, 'dir/tracked'), 'utf8')).toBe('ticket');
+  expect(readdirSync(join(workspace, '.git')).sort()).toEqual([
+    'HEAD',
+    'config',
+    'objects',
+    'refs',
+  ]);
+});
+
+it('refuses a branch the parent does not have', () => {
+  const { parent, workspace, gitDir } = fixture();
+  expect(() =>
+    createRunClone({ parent, workspace, gitDir, branch: 'missing' }),
+  ).toThrow();
+});
+
+it('stores the clone outside the workspace by default and finds it again by workspace path', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  expect(loadRunClone(workspace, env)).toBeUndefined();
+
+  const record = createRunClone({ parent, workspace, branch: 'ticket', env });
+
+  expect(record.gitDir).toBe(runCloneGitDir(workspace, env));
+  expect(record.gitDir.startsWith(join(root, 'cache/bakers/run-git/'))).toBe(
+    true,
+  );
+  expect(loadRunClone(workspace, env)).toEqual(record);
+  saveRunClone({ ...record, expected: 'moved', protectedPaths: ['.ddev'] });
+  expect(loadRunClone(workspace, env)).toMatchObject({
+    expected: 'moved',
+    protectedPaths: ['.ddev'],
+  });
+  removeRunClone(workspace, env);
+  expect(loadRunClone(workspace, env)).toBeUndefined();
+  expect(existsSync(record.gitDir)).toBe(false);
+});
+
+it('keeps the .git stub directory in place so mounts over it survive a refresh, and rewrites its content', () => {
+  const { workspace, create } = fixture();
+  create();
+  const before = statSync(join(workspace, '.git')).ino;
+  create();
+  expect(statSync(join(workspace, '.git')).ino).toBe(before);
+  writeFileSync(join(workspace, '.git/HEAD'), 'ref: refs/heads/planted\n');
+  writeFileSync(join(workspace, '.git/config'), '[core]\n\tfsmonitor = x\n');
+  mkdirSync(join(workspace, '.git/hooks'));
+  create();
+  expect(readFileSync(join(workspace, '.git/config'), 'utf8')).not.toContain(
+    'fsmonitor',
+  );
+  expect(git(workspace, 'branch', '--show-current')).toBe('ticket');
+  expect(readdirSync(join(workspace, '.git')).sort()).toEqual([
+    'HEAD',
+    'config',
+    'objects',
+    'refs',
+  ]);
+});
+
+it('saves the previous run commits before starting fresh, and sets a refused Git directory aside', () => {
+  const { parent, workspace, gitDir, create, run } = fixture();
+  create();
+  writeFileSync(join(workspace, 'file'), 'run work');
+  run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qam', 'work');
+  const tip = run('rev-parse', 'HEAD');
+
+  const next = create();
+
+  // The run ended without a transfer: its commits reach the branch first.
+  expect(git(parent, 'rev-parse', 'ticket')).toBe(tip);
+  expect(next.expected).toBe(tip);
+  expect(existsSync(`${gitDir}.unsaved`)).toBe(false);
+
+  mkdirSync(join(workspace, '.bakers'));
+  writeFileSync(join(workspace, '.bakers/planted'), 'x');
+  run('add', '-A');
+  run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'planted');
+  const refused = run('rev-parse', 'HEAD');
+
+  create();
+
+  expect(git(parent, 'rev-parse', 'ticket')).toBe(tip);
+  expect(
+    git(
+      parent,
+      `--git-dir=${gitDir}.unsaved`,
+      'rev-parse',
+      'refs/heads/ticket',
+    ),
+  ).toBe(refused);
+});
+
+it('refuses a linked worktree with uncommitted work and keeps it untouched', () => {
+  const { parent, workspace, create } = fixture();
+  git(parent, 'worktree', 'add', '-q', workspace, 'ticket');
+  writeFileSync(join(workspace, 'new.txt'), 'uncommitted');
+
+  expect(create).toThrow(/uncommitted work/);
+
+  expect(readFileSync(join(workspace, 'new.txt'), 'utf8')).toBe('uncommitted');
+  expect(readFileSync(join(workspace, '.git'), 'utf8')).toMatch(/^gitdir: /);
+});
+
+it('turns a clean linked worktree into a run clone and drops the parent worktree entry', () => {
+  const { parent, workspace, create } = fixture();
+  git(parent, 'worktree', 'add', '-q', workspace, 'ticket');
+  mkdirSync(join(workspace, 'node_modules'));
+  writeFileSync(join(workspace, 'node_modules/kept'), 'ignored');
+
+  const record = create();
+
+  expect(record.expected).toBe(git(parent, 'rev-parse', 'ticket'));
+  expect(statSync(join(workspace, '.git')).isDirectory()).toBe(true);
+  expect(existsSync(join(workspace, 'node_modules/kept'))).toBe(true);
+  expect(git(parent, 'worktree', 'list', '--porcelain')).not.toContain(
+    workspace,
+  );
+});

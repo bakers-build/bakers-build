@@ -27,6 +27,7 @@ import {
 } from './plugins/agent-args.js';
 import { validateMarketplaces } from './plugins/agent-home.js';
 import type { HookListener, HookName } from './plugins/executor.js';
+import { assertProtectedEntryPoints } from './plugins/host-commands.js';
 import { type LoadedInbox, loadInbox } from './plugins/message.js';
 import type {
   AgentCandidate,
@@ -182,6 +183,7 @@ type RawConfig = {
   select_agent?: unknown;
   addons?: unknown;
   permissions?: unknown;
+  runtime?: unknown;
   server?: unknown;
   executor?: unknown;
   worktree?: unknown;
@@ -516,13 +518,29 @@ export async function loadConductorConfig(
     await discoverScoped(effectiveAddons, 'conductor', { agentGlobals }),
   );
   const wired = resolveConductorSlots(discovered);
+  // The schema has checked the shape; the list is the project's alone.
+  const readOnly = (config.runtime as { read_only?: string[] } | undefined)
+    ?.read_only;
+  const isolates = wired.runtime?.isolates === true;
+  if (isolates) {
+    try {
+      assertProtectedEntryPoints(config.hooks, readOnly ?? []);
+    } catch (error) {
+      throw new Error(`${configPath}: ${(error as Error).message}`);
+    }
+  }
   const hookListeners = validateHookListeners(discovered.hooks);
   // Unlike the inbox, a broken or ambiguous tool set stops the conductor.
   // Tools load first so inbox bindings can be checked against them.
   const provisioning = provisionRuns();
   const toolSets = [
     ...discovered.addonTools,
-    ...provisionTools(config.hooks?.provision_up, provisioning),
+    ...provisionTools(config.hooks?.provision_up, provisioning, {
+      ...(config.hooks?.provision_exec
+        ? { exec: config.hooks.provision_exec }
+        : {}),
+      isolates,
+    }),
   ];
   let agentCatalog: AgentCatalog | undefined;
   const tools =
@@ -764,6 +782,7 @@ export async function loadConductorConfig(
       : {}),
     workspace,
     ...(wired.runtime ? { runtime: wired.runtime } : {}),
+    ...(readOnly ? { readOnly } : {}),
     marketplaces,
     hookListeners,
     ...(inboxAddons.length > 0 ? { inboxAddons } : {}),

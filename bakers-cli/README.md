@@ -182,7 +182,7 @@ different jobs:
   `bakers-cli/templates/bakers.pathshim.sh`), installed ahead of the npm global on `PATH`.
   It resolves in **two tiers** (BB-390): (1) inside a **skill-test workspace** — a
   `.bakers-testbuild` marker file at or above the physical working directory, written by
-  `scripts/setup-test-project.sh` and holding the absolute path of the checkout that
+  `.bakers/scripts/setup-test-project.sh` and holding the absolute path of the checkout that
   created the workspace — it runs *that* checkout's built `bakers-cli/bin/bakers`; a marker
   naming an unbuilt checkout fails loudly with a build hint instead of falling through to
   a different `bakers`. (2) **Everywhere else** — *inside a plain bakers checkout included* —

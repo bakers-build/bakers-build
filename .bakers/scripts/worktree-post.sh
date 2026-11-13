@@ -1,7 +1,7 @@
 #!/bin/bash
 # Prepare local identity before the sentinel; bootstrap only after successful setup.
 set -euo pipefail
-node scripts/setup-worktree.mjs
+node .bakers/scripts/setup-worktree.mjs
 # Register this worktree's own DDEV project (no containers start); unregistered, DDEV falls back
 # to the parent checkout. `ddev config` rewrites config.yaml, so the tracked file is kept.
 cp .ddev/config.yaml .ddev/config.yaml.keep
@@ -13,7 +13,12 @@ if [ -f "${SENTINEL}" ]; then
   exit 0
 fi
 
-PARENT_PATH=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+# An isolated run's workspace has no Git: the conductor names the parent checkout in WORKSPACE_ROOT.
+if [ "${BAKERS_RUNTIME_ISOLATES:-0}" = 1 ]; then
+  PARENT_PATH="${WORKSPACE_ROOT}"
+else
+  PARENT_PATH=$(git worktree list --porcelain | sed -n '1s/^worktree //p')
+fi
 mkdir -p .bakers
 # The connection is private (~/.bakers/connections/) and needs no copy; the retired
 # conductor.config.local.js and its worktree-local base_url rewrite are gone.
@@ -22,8 +27,9 @@ if [ ! -f .bakers/audience.local.md ] && [ -f "${PARENT_PATH}/.bakers/audience.l
 fi
 
 # setup-test-project is the single owner of the conditional CLI build; this mode stays cold.
-if [ -f scripts/setup-test-project.sh ]; then
-  bash scripts/setup-test-project.sh --workspace-only
+# Not under an isolating runtime: its conditional build would run the run's package.json on the host.
+if [ -f .bakers/scripts/setup-test-project.sh ] && [ "${BAKERS_RUNTIME_ISOLATES:-0}" != 1 ]; then
+  bash .bakers/scripts/setup-test-project.sh --workspace-only
 fi
 touch "${SENTINEL}"
 echo "==> bakers worktree bootstrap complete"
