@@ -1,6 +1,8 @@
 import type { AgentCandidate } from '@bakers-build/conductor/contract';
 import { describe, expect, it } from 'vitest';
 import { agentReport } from '../src/agents.js';
+import { catalogReport } from '../src/index.js';
+import * as preset from '../src/preset.js';
 
 const candidate = (alias?: string): AgentCandidate => ({
   alias,
@@ -42,6 +44,57 @@ describe('agent catalog report', () => {
       { value: '.ddev', source: 'default' },
     ]);
   });
+  it('exports a parameterless tool returning the loaded catalog without permissions', async () => {
+    const agent = candidate('fast');
+    const permissions = {
+      mode: { value: 'system', source: 'machine' },
+      sandbox: {
+        allow_write: {
+          entries: [{ value: '/home/operator/private', source: 'machine' }],
+          removed: [],
+        },
+      },
+    };
+    const catalog = {
+      agents: [
+        {
+          ...agent,
+          agent: { ...agent.agent, permissions: permissions as never },
+        },
+        candidate('careful'),
+      ],
+      enabled_agents: ['fast'],
+      disabled_agents: ['careful'],
+      default_agent: 'fast',
+      routes: { default: { '*': 'fast' }, careful: { '*': 'careful' } },
+    };
+    expect(preset.scopes).toEqual(['machine', 'project']);
+    expect(preset.tools.contract).toBe(1);
+    expect(preset.tools.tools.agents_catalog).toEqual({
+      description: expect.stringMatching(/catalog/i),
+    });
+    const handlers = await preset.tools.handlers(undefined, {
+      agentCatalog: () => catalog,
+    });
+    const report = JSON.parse(
+      (await handlers.agents_catalog({} as never)).text,
+    );
+    expect(report).toEqual({
+      agents: ['fast', 'careful'].map((alias) => ({
+        alias,
+        description: 'Implementation',
+        harness: 'test-harness',
+        model: 'model-test',
+      })),
+      enabled_agents: ['fast'],
+      disabled_agents: ['careful'],
+      default_agent: 'fast',
+      routes: { default: { '*': 'fast' }, careful: { '*': 'careful' } },
+    });
+    expect(catalogReport(catalog)).toEqual(report);
+    expect(agentReport(catalog).agents[0].permissions).toEqual(permissions);
+  });
+
   it('projects the normalized effective policy without retired keys', () => {
     const report = agentReport({
       agents: [candidate('fast')],
