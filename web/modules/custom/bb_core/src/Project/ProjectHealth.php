@@ -34,8 +34,7 @@ final class ProjectHealth {
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
     $ids = $storage->getQuery()->accessCheck(TRUE)
       ->condition('project_id', $project->id())->condition('closed', 0)
-      ->condition('health', ['critical', 'warning'], 'IN')
-      ->sort('health')->sort('priority')->sort('health_moved')->sort('identifier')->execute();
+      ->condition('health', TicketHealth::UNHEALTHY, 'IN')->execute();
     $rows = [];
     foreach ($storage->loadMultiple($ids) as $ticket) {
       if (!$ticket instanceof BbTicketInterface) {

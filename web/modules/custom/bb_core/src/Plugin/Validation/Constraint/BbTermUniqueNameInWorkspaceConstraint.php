@@ -34,4 +34,13 @@ final class BbTermUniqueNameInWorkspaceConstraint extends SymfonyConstraint {
    */
   public string $message = 'A term named %name already exists in this workspace and vocabulary.';
 
+  /**
+   * Violation message when a new label's name maps to a taken label key.
+   *
+   * Names the existing label in the writer's own workspace, so it can be used.
+   *
+   * @var string
+   */
+  public string $keyMessage = 'The label %label already stands for %name; use it instead.';
+
 }

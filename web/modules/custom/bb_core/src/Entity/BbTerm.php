@@ -12,7 +12,6 @@ use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Entity\EntityStorageInterface;
-use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityAccessControlHandler;
@@ -140,13 +139,23 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
    */
   public function preSave(EntityStorageInterface $storage): void {
     parent::preSave($storage);
-    if ($this->isNew() && $this->bundle() === 'label' && $this->get('key')->isEmpty()) {
-      $this->set('key', preg_replace('/[^a-z0-9]+/', '_', mb_strtolower(trim((string) $this->label()))));
+    if (!$this->get('key')->isEmpty()) {
+      $this->set('key', mb_strtolower((string) $this->get('key')->value));
     }
-    $violations = $this->get('key')->validate();
-    if ($violations->count() > 0) {
-      throw new EntityStorageException((string) $violations->get(0)->getMessage());
+    elseif ($this->isNew() && $this->bundle() === 'label') {
+      $this->set('key', self::keyOf((string) $this->label()));
+      // An unvalidated save of a clashing name keeps no key, never fails.
+      if ($this->get('key')->validate()->count() > 0) {
+        $this->set('key', NULL);
+      }
     }
+  }
+
+  /**
+   * The stable, lowercase label identity derived from a name.
+   */
+  public static function keyOf(string $name): string {
+    return (string) preg_replace('/[^a-z0-9]+/', '_', mb_strtolower(trim($name)));
   }
 
   /**

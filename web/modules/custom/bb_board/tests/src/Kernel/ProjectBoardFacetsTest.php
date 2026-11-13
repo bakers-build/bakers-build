@@ -650,6 +650,9 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     foreach ($conductors as $conductor) {
       $conductor->set('owner_user_id', $admin->id())->set('status', 'online')->save();
     }
+    // Only fixtures reassign an owner, so no save hook recomputes health.
+    $tickets = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->loadByProperties(['closed' => 0]);
+    $this->container->get('bb_core.ticket_health')->refresh(array_values(array_filter($tickets, static fn ($ticket): bool => $ticket instanceof BbTicketInterface)));
     $this->index();
   }
 

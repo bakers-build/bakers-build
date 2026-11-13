@@ -10,6 +10,7 @@ use Drupal\Core\Hook\Attribute\Hook;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\bb_board\BoardAddress;
 use Drupal\bb_board\BoardHealth;
+use Drupal\bb_core\Ticket\TicketHealth;
 use Drupal\bb_board\BoardPreferences;
 use Drupal\search_api\Plugin\views\query\SearchApiQuery;
 use Drupal\views\Plugin\views\query\QueryPluginBase;
@@ -68,7 +69,7 @@ final class BoardViewsHooks {
     if (!$this->health->requested($view)) {
       return;
     }
-    $query->createAndAddConditionGroup()->addCondition('health', ['warning', 'critical'], 'IN');
+    $query->createAndAddConditionGroup()->addCondition('health', TicketHealth::UNHEALTHY, 'IN');
   }
 
   /**

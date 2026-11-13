@@ -23,6 +23,8 @@ final class TicketHealth {
 
   public const STALL_AFTER = 21600;
 
+  public const UNHEALTHY = ['warning', 'critical'];
+
   /**
    * Health-only saves must never create movement or recursively refresh.
    */
@@ -140,10 +142,7 @@ final class TicketHealth {
   private function liveFacts(array $ids, array &$facts): void {
     $storage = $this->entityTypeManager->getStorage('bb_run');
     $now = $this->time->getRequestTime();
-    $query = $storage->getQuery()->accessCheck(FALSE)->condition('ticket_id', $ids, 'IN');
-    $query->condition($query->orConditionGroup()->condition('state', 'running')
-      ->condition($query->andConditionGroup()->condition('state', 'claimed')
-        ->condition($query->orConditionGroup()->condition('claim_expires_at', 0)->condition('claim_expires_at', $now, '>='))));
+    $query = $this->runs->live($storage->getQuery()->accessCheck(FALSE)->condition('ticket_id', $ids, 'IN'));
     foreach ($storage->loadMultiple($query->execute()) as $run) {
       if (!$run instanceof BbRunInterface) {
         continue;
@@ -260,15 +259,17 @@ final class TicketHealth {
    *   Whether the persisted health changed.
    */
   public function apply(BbTicketInterface $ticket, array $result): bool {
-    $changed = $ticket->get('health')->value !== $result['health']
-      || $ticket->get('health_reason')->value !== $result['reason']
-      || ($result['health'] !== 'healthy' && (int) $ticket->get('health_moved')->value !== $result['moved']);
-    if ($changed || $ticket->get('health_moved')->isEmpty()) {
+    $state = $ticket->get('health')->value !== $result['health'] || $ticket->get('health_reason')->value !== $result['reason'];
+    $moved = ($result['health'] !== 'healthy' && (int) $ticket->get('health_moved')->value !== $result['moved'])
+      || $ticket->get('health_moved')->isEmpty();
+    if ($state) {
       $ticket->set('health', $result['health'])->set('health_reason', $result['reason'])
-        ->set('health_moved', $result['moved'])->set('health_checked', $this->time->getRequestTime());
-      return TRUE;
+        ->set('health_checked', $this->time->getRequestTime());
     }
-    return FALSE;
+    if ($state || $moved) {
+      $ticket->set('health_moved', $result['moved']);
+    }
+    return $state || $moved;
   }
 
   /**

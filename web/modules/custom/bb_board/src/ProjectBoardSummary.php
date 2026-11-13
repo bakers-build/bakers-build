@@ -12,6 +12,7 @@ use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Plugin\Field\FieldFormatter\PersonIdentityTrait;
 use Drupal\bb_core\Ticket\TicketSearchResolver;
 use Drupal\bb_core\Workflow\TypeWorkflows;
+use Drupal\bb_core\Ticket\TicketHealth;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\SearchApiException;
 use Drupal\search_api\Query\QueryInterface;
@@ -197,20 +198,22 @@ final class ProjectBoardSummary {
    *   Only these tickets, NULL for no such limit.
    * @param string $search
    *   A search line, in the board search's grammar.
-   * @param string|null $health
-   *   Unhealthy for the stored health filter; NULL for no health filter.
+   * @param bool $unhealthy
+   *   Only tickets whose stored health is not healthy.
    *
    * @return array{total: int, aggregations: array<string, mixed>}|null
    *   The count, with per-facet counts for the plain focus; NULL when the
    *   search failed.
+   *
+   * @SuppressWarnings("PHPMD.BooleanArgumentFlag")
    */
-  public function focus(BbProjectInterface $project, ?array $within, ?array $ids = NULL, string $search = '', ?string $health = NULL): ?array {
-    $plain = [$ids, $search, $health] === [NULL, '', NULL];
+  public function focus(BbProjectInterface $project, ?array $within, ?array $ids = NULL, string $search = '', bool $unhealthy = FALSE): ?array {
+    $plain = [$ids, $search, $unhealthy] === [NULL, '', FALSE];
     $ids = $within === NULL ? $ids : array_values(array_intersect($ids ?? $within, $within));
     if ($ids === []) {
       return ['total' => 0, 'aggregations' => []];
     }
-    $query = $this->focusQuery($project, $ids, $search, $health);
+    $query = $this->focusQuery($project, $ids, $search, $unhealthy);
     if ($query === NULL) {
       return NULL;
     }
@@ -240,10 +243,10 @@ final class ProjectBoardSummary {
    *   Optional parent or ticket restriction.
    * @param string $search
    *   Search expression.
-   * @param string|null $health
-   *   Optional unhealthy filter.
+   * @param bool $unhealthy
+   *   Only tickets whose stored health is not healthy.
    */
-  private function focusQuery(BbProjectInterface $project, ?array $ids, string $search, ?string $health): ?QueryInterface {
+  private function focusQuery(BbProjectInterface $project, ?array $ids, string $search, bool $unhealthy): ?QueryInterface {
     $query = Index::load('bb_tickets')?->query();
     if ($query === NULL) {
       return NULL;
@@ -253,8 +256,8 @@ final class ProjectBoardSummary {
     if ($ids !== NULL) {
       $query->addCondition('ticket_id', $ids, 'IN');
     }
-    if ($health !== NULL) {
-      $query->addCondition('health', ['warning', 'critical'], 'IN');
+    if ($unhealthy) {
+      $query->addCondition('health', TicketHealth::UNHEALTHY, 'IN');
     }
     if ($search !== '') {
       $this->resolver->apply($query, $this->resolver->resolve($search, $project));

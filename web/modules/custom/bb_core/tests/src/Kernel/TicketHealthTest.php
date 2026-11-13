@@ -10,7 +10,6 @@ use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\bb_core\Entity\BbTermInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
-use Drupal\Core\Entity\EntityStorageException;
 use Drupal\user\UserInterface;
 use Drupal\og\Og;
 
@@ -123,6 +122,33 @@ final class TicketHealthTest extends ClaimKernelTestBase {
   }
 
   /**
+   * Ending a blocker or a parent relationship re-evaluates the other ticket.
+   */
+  public function testRelationshipEndsReevaluate(): void {
+    $blocker = $this->seedAssignedTicket('working');
+    $blocked = $this->seedAssignedTicket('working');
+    $blocked->set('blocked_by', [$blocker->id()])->save();
+    $detached = $this->seedAssignedTicket('working');
+    $deleted = $this->seedAssignedTicket('working');
+    $children = [];
+    foreach ([$detached, $deleted] as $parent) {
+      $child = $this->seedAssignedTicket('working');
+      $child->set('parent_id', $parent->id())->save();
+      $children[] = $child;
+    }
+    $this->conductor->set('status', 'offline')->save();
+    foreach ([$blocked, $detached, $deleted] as $exempt) {
+      self::assertSame('healthy', $this->reloadTicket($exempt)->get('health')->value);
+    }
+    $this->reloadTicket($blocker)->set('closed', TRUE)->save();
+    self::assertSame('conductor_offline', $this->reloadTicket($blocked)->get('health_reason')->value);
+    $this->reloadTicket($children[0])->set('parent_id', NULL)->save();
+    self::assertSame('conductor_offline', $this->reloadTicket($detached)->get('health_reason')->value);
+    $this->reloadTicket($children[1])->delete();
+    self::assertSame('conductor_offline', $this->reloadTicket($deleted)->get('health_reason')->value);
+  }
+
+  /**
    * Time-based changes are hourly, and refresh is otherwise write-free.
    */
   public function testCronStallAndNoopRefresh(): void {
@@ -144,6 +170,24 @@ final class TicketHealthTest extends ClaimKernelTestBase {
     $run = $this->reloadRun($run);
     $run->set('state', 'done')->save();
     self::assertSame('healthy', $this->reloadTicket($ticket)->get('health')->value);
+  }
+
+  /**
+   * Cron leaves healthy tickets alone that moved within the last two days.
+   */
+  public function testCronSkipsRecentlyMovedHealthyTickets(): void {
+    $old = $this->seedAssignedTicket('working');
+    $this->clock += 2 * 86400 + 1;
+    $recent = $this->seedAssignedTicket('working');
+    // A status no save announces; only an evaluated ticket can notice it.
+    $this->container->get('database')->update('bb_conductor')->fields(['status' => 'offline'])
+      ->condition('id', $this->conductor->id())->execute();
+    // Cron runs in its own request, without this request's loaded entities.
+    $this->container->get('entity_type.manager')->getStorage('bb_conductor')->resetCache();
+    $this->container->get('entity_type.manager')->getStorage('bb_ticket')->resetCache();
+    $this->container->get('module_handler')->invokeAll('cron');
+    self::assertSame('conductor_offline', $this->reloadTicket($old)->get('health_reason')->value);
+    self::assertSame('healthy', $this->reloadTicket($recent)->get('health')->value);
   }
 
   /**
@@ -233,6 +277,41 @@ final class TicketHealthTest extends ClaimKernelTestBase {
   }
 
   /**
+   * Movement alone updates an unhealthy ticket without re-dating its check.
+   */
+  public function testMovementKeepsEvaluationTime(): void {
+    $ticket = $this->seedAssignedTicket('working');
+    $ticket->set('labels', [$this->label('Question')->id()])->save();
+    $checked = $this->reloadTicket($ticket)->get('health_checked')->value;
+    $this->clock += 3600;
+    $this->container->get('entity_type.manager')->getStorage('bb_activity')->create([
+      'ticket_id' => $ticket->id(),
+      'kind' => 'test',
+      'created' => $this->clock,
+    ])->save();
+    $ticket = $this->reloadTicket($ticket);
+    self::assertSame('needs_info', $ticket->get('health_reason')->value);
+    self::assertSame((string) $this->clock, (string) $ticket->get('health_moved')->value);
+    self::assertSame($checked, $ticket->get('health_checked')->value);
+  }
+
+  /**
+   * Creates a label in the conductor's workspace.
+   */
+  private function label(string $name, array $values = []): BbTermInterface {
+    $project = $this->conductor->get('project_id')->entity;
+    self::assertInstanceOf(BbProjectInterface::class, $project);
+    $term = $this->container->get('entity_type.manager')->getStorage('bb_term')->create($values + [
+      'vid' => 'label',
+      'workspace_id' => $project->getGroup()?->getWorkspace()?->id(),
+      'name' => $name,
+    ]);
+    self::assertInstanceOf(BbTermInterface::class, $term);
+    $term->save();
+    return $term;
+  }
+
+  /**
    * The upgrade is repeatable and fills old label identities and open health.
    */
   public function testBackfill(): void {
@@ -278,7 +357,6 @@ final class TicketHealthTest extends ClaimKernelTestBase {
     foreach (Og::getMemberships($owner) as $membership) {
       $membership->delete();
     }
-    $this->container->get('bb_core.ticket_health')->refresh([$this->reloadTicket($ticket)]);
     self::assertSame('no_access', $this->reloadTicket($ticket)->get('health_reason')->value);
   }
 
@@ -286,13 +364,31 @@ final class TicketHealthTest extends ClaimKernelTestBase {
    * A label identity cannot be reused in the same workspace and vocabulary.
    */
   public function testUniqueLabelKey(): void {
-    $project = $this->conductor->get('project_id')->entity;
-    self::assertInstanceOf(BbProjectInterface::class, $project);
-    $values = ['vid' => 'label', 'workspace_id' => $project->getGroup()?->getWorkspace()?->id(), 'key' => 'question'];
+    $this->label('Question')->set('name', 'Info')->save();
     $storage = $this->container->get('entity_type.manager')->getStorage('bb_term');
-    $storage->create($values + ['name' => 'Question'])->save();
-    $this->expectException(EntityStorageException::class);
-    $storage->create($values + ['name' => 'Other name'])->save();
+    $values = ['vid' => 'label', 'workspace_id' => $this->label('Other')->get('workspace_id')->target_id];
+    $clash = $storage->create($values + ['name' => 'Question']);
+    self::assertInstanceOf(BbTermInterface::class, $clash);
+    $violations = $clash->get('name')->validate();
+    self::assertCount(1, $violations);
+    self::assertStringContainsString('Info', strip_tags((string) $violations->get(0)->getMessage()));
+    $spare = $storage->create($values + ['name' => 'Spare', 'key' => 'QUESTION']);
+    self::assertInstanceOf(BbTermInterface::class, $spare);
+    self::assertCount(1, $spare->get('key')->validate());
+    // An unvalidated save still succeeds and leaves the key with its owner.
+    $clash->save();
+    self::assertCount(1, $storage->loadByProperties(['vid' => 'label', 'key' => 'question']));
+  }
+
+  /**
+   * An explicit key is stored lowercase and drives its rule.
+   */
+  public function testExplicitKeyIsLowercase(): void {
+    $label = $this->label('Broken', ['key' => 'Technical_Problem']);
+    self::assertSame('technical_problem', $label->get('key')->value);
+    $ticket = $this->seedAssignedTicket('working');
+    $ticket->set('labels', [$label->id()])->save();
+    self::assertSame('technical_problem', $this->reloadTicket($ticket)->get('health_reason')->value);
   }
 
   /**

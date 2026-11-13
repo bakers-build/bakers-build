@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Entity\BbTerm;
 use Drupal\bb_core\Entity\BbTermInterface;
 use Drupal\bb_core\Ticket\BranchName;
 
@@ -123,7 +124,7 @@ function bb_core_post_update_ticket_health_2_labels(array &$sandbox): void {
     if (!$term instanceof BbTermInterface || !$term->get('key')->isEmpty()) {
       continue;
     }
-    $key = preg_replace('/[^a-z0-9]+/', '_', mb_strtolower(trim((string) $term->label())));
+    $key = BbTerm::keyOf((string) $term->label());
     $duplicates = $storage->getQuery()->accessCheck(FALSE)->condition('vid', 'label')
       ->condition('workspace_id', $term->get('workspace_id')->target_id)->condition('key', $key)->execute();
     $term->set('key', $duplicates === [] ? $key : $key . '_' . $term->id())->save();

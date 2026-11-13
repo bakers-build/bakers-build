@@ -11,9 +11,14 @@ use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTermInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Hook\Attribute\Hook;
+use Drupal\Core\Hook\Order\OrderAfter;
+use Drupal\Core\Entity\EntityLastInstalledSchemaRepositoryInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Drupal\og\OgMembershipInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Ticket\TicketHealth;
+use Drupal\bb_core\Derive\TicketRunDeriver;
 
 /**
  * Maintains stored health at entity write boundaries.
@@ -25,6 +30,9 @@ final class TicketHealthHooks {
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly TimeInterface $time,
     private readonly StateInterface $state,
+    private readonly TicketRunDeriver $runs,
+    #[Autowire(service: 'entity.last_installed_schema.repository')]
+    private readonly EntityLastInstalledSchemaRepositoryInterface $installedSchema,
   ) {}
 
   /**
@@ -94,9 +102,32 @@ final class TicketHealthHooks {
    */
   #[Hook('bb_conductor_update')]
   public function conductorUpdate(BbConductorInterface $conductor): void {
-    if ($conductor->get('status')->value !== $conductor->getOriginal()?->get('status')->value
-      || $conductor->get('owner_user_id')->target_id !== $conductor->getOriginal()?->get('owner_user_id')->target_id) {
+    if ($conductor->get('status')->value !== $conductor->getOriginal()?->get('status')->value) {
       $this->refreshMatching('conductor_id', $conductor->id());
+    }
+  }
+
+  /**
+   * A membership or rank change can grant or revoke a conductor owner's access.
+   */
+  #[Hook('og_membership_insert', order: new OrderAfter(classesAndMethods: [
+    [WorkspaceMembershipHooks::class, 'ogMembershipInsert'],
+  ]))]
+  #[Hook('og_membership_update', order: new OrderAfter(classesAndMethods: [
+    [WorkspaceMembershipHooks::class, 'ogMembershipUpdate'],
+  ]))]
+  #[Hook('og_membership_delete', order: new OrderAfter(classesAndMethods: [
+    [WorkspaceMembershipHooks::class, 'ogMembershipDelete'],
+  ]))]
+  public function membershipChanged(OgMembershipInterface $membership): void {
+    // Kernel tests may create memberships without the conductor table.
+    if ($this->installedSchema->getLastInstalledDefinition('bb_conductor') === NULL) {
+      return;
+    }
+    $conductors = $this->entityTypeManager->getStorage('bb_conductor')->getQuery()->accessCheck(FALSE)
+      ->condition('owner_user_id', $membership->getOwnerId())->execute();
+    if ($conductors !== []) {
+      $this->refreshMatching('conductor_id', $conductors);
     }
   }
 
@@ -113,9 +144,9 @@ final class TicketHealthHooks {
   /**
    * Refreshes open tickets referencing a changed fact.
    */
-  private function refreshMatching(string $field, int|string|null $id): void {
+  private function refreshMatching(string $field, int|string|array|null $id): void {
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
-    $ids = $storage->getQuery()->accessCheck(FALSE)->condition('closed', 0)->condition($field, $id)->execute();
+    $ids = $storage->getQuery()->accessCheck(FALSE)->condition('closed', 0)->condition($field, $id, is_array($id) ? 'IN' : '=')->execute();
     $this->refreshIds($ids);
   }
 
@@ -137,20 +168,11 @@ final class TicketHealthHooks {
       ->condition($query->andConditionGroup()->condition('health', 'healthy')->condition('health_moved', $now - 2 * 86400, '<'))
       ->notExists('health')
       ->condition('health_reason', 'run_stalled');
-    $run_storage = $this->entityTypeManager->getStorage('bb_run');
-    $run_query = $run_storage->getQuery()->accessCheck(FALSE)->condition('changed', $now - TicketHealth::STALL_AFTER, '<');
-    $run_query->condition($run_query->orConditionGroup()->condition('state', 'running')->condition($run_query->andConditionGroup()
-      ->condition('state', 'claimed')->condition($run_query->orConditionGroup()->condition('claim_expires_at', 0)->condition('claim_expires_at', $now, '>='))));
-    $run_ids = $run_query->execute();
-    $ticket_ids = [];
-    foreach ($run_storage->loadMultiple($run_ids) as $run) {
-      if (!$run instanceof BbRunInterface) {
-        continue;
-      }
-      $ticket_ids[] = (int) $run->get('ticket_id')->target_id;
-    }
-    if ($ticket_ids !== []) {
-      $due->condition('id', array_unique($ticket_ids), 'IN');
+    /** @var array<int, array<string, int|string>> $rows */
+    $rows = $this->runs->live($this->entityTypeManager->getStorage('bb_run')->getAggregateQuery()->accessCheck(FALSE)
+      ->condition('changed', $now - TicketHealth::STALL_AFTER, '<'))->groupBy('ticket_id')->execute();
+    if ($rows !== []) {
+      $due->condition('id', array_column($rows, 'ticket_id'), 'IN');
     }
     $ids = $query->condition($due)->execute();
     foreach (array_chunk($ids, 100) as $batch) {
