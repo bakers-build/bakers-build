@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -34,13 +34,22 @@ const probe: MarketplaceDeclaration = {
 };
 
 beforeEach(() => vi.stubEnv('XDG_CACHE_HOME', '/cache'));
-afterEach(() => vi.unstubAllEnvs());
+const workspaces: string[] = [];
+afterEach(() => {
+  vi.unstubAllEnvs();
+  for (const path of workspaces.splice(0))
+    rmSync(path, { recursive: true, force: true });
+});
 
 class RecordingWorkspace implements BbWorkspace {
   constructor(private readonly path?: string) {}
   async ensure(identifier: string): Promise<EnsuredWorkspace> {
+    const path =
+      this.path ?? mkdtempSync(join(tmpdir(), `bakers-plugins-${identifier}-`));
+    mkdirSync(join(path, '.bakers'), { recursive: true });
+    workspaces.push(path);
     return {
-      path: this.path ?? `/fake/${identifier}`,
+      path,
       instructions: null,
       created: true,
     };
