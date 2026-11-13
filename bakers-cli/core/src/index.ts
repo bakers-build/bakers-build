@@ -188,8 +188,12 @@ export { protectedProjectPaths } from './core/protected-project-paths.js';
 export { normalizeRepoUrl } from './core/repo-url.js';
 export {
   createRunClone,
+  loadRunClone,
   type RunClone,
   type RunCloneOptions,
+  removeRunClone,
+  runCloneGitDir,
+  saveRunClone,
 } from './core/run-clone.js';
 export { cliRootOf } from './core/runtime-paths.js';
 export { shellQuote } from './core/shell.js';

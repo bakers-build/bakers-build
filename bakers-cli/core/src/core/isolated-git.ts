@@ -155,12 +155,9 @@ export function runCloneTip(record: RunClone): string {
   return tip;
 }
 
-/** The parent's current target tip, the ref the run sees as `origin/<target>`. */
-function parentTarget(record: RunClone): string | undefined {
-  for (const ref of [
-    `refs/remotes/origin/${record.target}`,
-    `refs/heads/${record.target}`,
-  ]) {
+/** The parent's tip of a branch as the run sees it under `origin/`. */
+function parentOrigin(record: RunClone, branch: string): string | undefined {
+  for (const ref of [`refs/remotes/origin/${branch}`, `refs/heads/${branch}`]) {
     try {
       return git(
         record.parentGitDir,
@@ -177,14 +174,43 @@ function parentTarget(record: RunClone): string | undefined {
   return undefined;
 }
 
+/** One ref of the run's clone, written as a plain file below pinned directories. */
+function writeRunRef(record: RunClone, ref: string, tip: string): void {
+  const dir = pinDir(record.gitDir, posix.dirname(ref), true);
+  try {
+    const fd = openSync(
+      `/proc/self/fd/${dir}/${posix.basename(ref)}`,
+      constants.O_WRONLY |
+        constants.O_CREAT |
+        constants.O_TRUNC |
+        constants.O_NOFOLLOW,
+      0o644,
+    );
+    try {
+      writeFileSync(fd, `${tip}\n`);
+    } finally {
+      closeSync(fd);
+    }
+  } finally {
+    closeSync(dir);
+  }
+}
+
 /**
- * Give the run the parent's current `origin/<target>`: objects as one new pack,
- * the ref as a plain file. Nothing here runs Git inside the run's directory.
+ * Give the run the parent's current `origin/<branch>` refs (default: its
+ * target): objects as one new pack, each ref as a plain file. Nothing here
+ * runs Git inside the run's directory.
  */
-export function refreshRunTarget(record: RunClone): void {
-  if (!record.target) return;
-  const tip = parentTarget(record);
-  if (!tip) return;
+export function refreshRunTarget(
+  record: RunClone,
+  branches: readonly string[] = record.target ? [record.target] : [],
+): void {
+  const tips = branches.flatMap((branch) => {
+    git(record.parentGitDir, 'check-ref-format', `refs/heads/${branch}`);
+    const tip = parentOrigin(record, branch);
+    return tip ? [{ branch, tip }] : [];
+  });
+  if (tips.length === 0) return;
   const scratch = mkdtempSync(join(tmpdir(), 'bb-target-refresh-'));
   try {
     execFileSync(
@@ -197,7 +223,7 @@ export function refreshRunTarget(record: RunClone): void {
         join(scratch, 'pack'),
       ],
       {
-        input: `${tip}\n^${record.expected}\n`,
+        input: `${tips.map(({ tip }) => tip).join('\n')}\n^${record.expected}\n`,
         stdio: ['pipe', 'ignore', 'pipe'],
       },
     );
@@ -217,25 +243,8 @@ export function refreshRunTarget(record: RunClone): void {
     } finally {
       closeSync(pack);
     }
-    const ref = `refs/remotes/origin/${record.target}`;
-    const dir = pinDir(record.gitDir, posix.dirname(ref), true);
-    try {
-      const fd = openSync(
-        `/proc/self/fd/${dir}/${posix.basename(ref)}`,
-        constants.O_WRONLY |
-          constants.O_CREAT |
-          constants.O_TRUNC |
-          constants.O_NOFOLLOW,
-        0o644,
-      );
-      try {
-        writeFileSync(fd, `${tip}\n`);
-      } finally {
-        closeSync(fd);
-      }
-    } finally {
-      closeSync(dir);
-    }
+    for (const { branch, tip } of tips)
+      writeRunRef(record, `refs/remotes/origin/${branch}`, tip);
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }

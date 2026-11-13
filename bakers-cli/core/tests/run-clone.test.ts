@@ -13,7 +13,13 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
-import { createRunClone } from '../src/core/run-clone.js';
+import {
+  createRunClone,
+  loadRunClone,
+  removeRunClone,
+  runCloneGitDir,
+  saveRunClone,
+} from '../src/core/run-clone.js';
 
 const roots: string[] = [];
 afterEach(() =>
@@ -160,4 +166,26 @@ it('refuses a branch the parent does not have', () => {
   expect(() =>
     createRunClone({ parent, workspace, gitDir, branch: 'missing' }),
   ).toThrow();
+});
+
+it('stores the clone outside the workspace by default and finds it again by workspace path', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  expect(loadRunClone(workspace, env)).toBeUndefined();
+
+  const record = createRunClone({ parent, workspace, branch: 'ticket', env });
+
+  expect(record.gitDir).toBe(runCloneGitDir(workspace, env));
+  expect(record.gitDir.startsWith(join(root, 'cache/bakers/run-git/'))).toBe(
+    true,
+  );
+  expect(loadRunClone(workspace, env)).toEqual(record);
+  saveRunClone({ ...record, expected: 'moved', protectedPaths: ['.ddev'] });
+  expect(loadRunClone(workspace, env)).toMatchObject({
+    expected: 'moved',
+    protectedPaths: ['.ddev'],
+  });
+  removeRunClone(workspace, env);
+  expect(loadRunClone(workspace, env)).toBeUndefined();
+  expect(existsSync(record.gitDir)).toBe(false);
 });

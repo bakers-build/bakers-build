@@ -1,6 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { createHash } from 'node:crypto';
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 
 /** Host-owned record of one isolated run's clone; never store it where the run can write. */
 export interface RunClone {
@@ -22,12 +24,51 @@ export interface RunCloneOptions {
   parent: string;
   /** Stable per-ticket directory; refreshed in place. */
   workspace: string;
-  gitDir: string;
+  /** Default: {@link runCloneGitDir}, in the conductor's cache. */
+  gitDir?: string;
+  env?: Env;
   branch: string;
   /** Carried as `origin/<target>`; nothing is merged. */
   target?: string;
   /** Borrow the parent's objects through alternates instead of copying them. */
   shared?: boolean;
+}
+
+type Env = Record<string, string | undefined>;
+
+/** Where a workspace's run Git directory lives: the conductor's cache, never the workspace. */
+export function runCloneGitDir(workspace: string, env: Env = process.env) {
+  const cache = env.XDG_CACHE_HOME || join(env.HOME || homedir(), '.cache');
+  const key = createHash('sha256').update(resolve(workspace)).digest('hex');
+  return join(cache, 'bakers/run-git', `${key.slice(0, 16)}.git`);
+}
+
+const recordOf = (gitDir: string) => `${gitDir}.json`;
+
+export function saveRunClone(record: RunClone): void {
+  writeFileSync(recordOf(record.gitDir), JSON.stringify(record), {
+    mode: 0o600,
+  });
+}
+
+/** The record of the workspace's current run clone; `undefined` for a linked worktree. */
+export function loadRunClone(
+  workspace: string,
+  env: Env = process.env,
+): RunClone | undefined {
+  try {
+    return JSON.parse(
+      readFileSync(recordOf(runCloneGitDir(workspace, env)), 'utf8'),
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+export function removeRunClone(workspace: string, env: Env = process.env) {
+  const gitDir = runCloneGitDir(workspace, env);
+  rmSync(gitDir, { recursive: true, force: true });
+  rmSync(recordOf(gitDir), { force: true });
 }
 
 const git = (args: string[], cwd?: string) =>
@@ -51,7 +92,8 @@ const tryGit = (args: string[]) => {
  * workspace keeps only ignored files.
  */
 export function createRunClone(options: RunCloneOptions): RunClone {
-  const { workspace, gitDir, branch, target, shared = false } = options;
+  const { workspace, branch, target, shared = false } = options;
+  const gitDir = options.gitDir ?? runCloneGitDir(workspace, options.env);
   const parentGitDir = git(
     ['rev-parse', '--path-format=absolute', '--git-common-dir'],
     options.parent,
@@ -136,7 +178,7 @@ export function createRunClone(options: RunCloneOptions): RunClone {
   tree('read-tree', 'HEAD');
   tree('clean', '-ffdq');
   tree('reset', '--hard', '--quiet');
-  return {
+  const record: RunClone = {
     gitDir,
     workspace,
     parentGitDir,
@@ -145,4 +187,6 @@ export function createRunClone(options: RunCloneOptions): RunClone {
     ...(target ? { target } : {}),
     shared,
   };
+  saveRunClone(record);
+  return record;
 }
