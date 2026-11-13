@@ -744,7 +744,7 @@ assert_current() {
 # in it like the rest: an unbuilt kernel fails at import time in the workspace,
 # which reads as a config problem.
 # Every executor and workspace addon a playground config may select is linked.
-LINKED_ADDONS=(herdr herdr-core workspace-git claude codex remote-drupal essentials ports)
+LINKED_ADDONS=(herdr herdr-core workspace-git claude codex remote-drupal essentials ports runtime-bwrap runtime-docker)
 BUILD_UNITS=(
   "${BB_CLI}/host/src|${BB_CLI}/host/dist/src/host.js|the bakers host"
   "${BB_CLI}/conductor/src|${BB_CLI}/conductor/dist/src/index.js|the conductor"
