@@ -45,8 +45,8 @@ ddev exec 'cd web/themes/custom/bb_theme && pnpm install --frozen-lockfile && pn
 ddev exec 'cd tests/playwright && npm ci --no-audit --no-fund'
 case "$provider" in
   existing-config)
-    mkdir -p .ddev/.bakers-test
-    ddev drush site:install --existing-config -y 2>&1 | tee .ddev/.bakers-test/init-existing-config.log
+    mkdir -p tests/artifacts/bakers
+    ddev drush site:install --existing-config -y 2>&1 | tee tests/artifacts/bakers/init-existing-config.log
     ;;
   recipe)
     ddev exec bash /var/www/html/.ddev/providers/recipe-install.sh recipe /var/www/html/.ddev/commands/web/bakers-init-playground

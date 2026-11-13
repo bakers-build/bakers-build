@@ -9,7 +9,7 @@ export default defineConfig({
           'default',
           [
             'junit',
-            { outputFile: '../.ddev/.bakers-test/junit-integration.xml' },
+            { outputFile: '../tests/artifacts/bakers/junit-integration.xml' },
           ],
         ]
       : ['default'],

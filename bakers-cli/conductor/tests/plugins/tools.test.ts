@@ -7,6 +7,7 @@ import {
   loadTools,
   provisionRuns,
   provisionTools,
+  type ToolBinding,
   type ToolHandler,
 } from '../../src/plugins/tools.js';
 
@@ -45,6 +46,45 @@ const binding = { worktreePath: '/work/bb-1' };
 const here = { worktreePath: tmpdir() };
 
 describe('loadTools', () => {
+  it('prepares protected bindings in addon order without preparing trusted host calls', async () => {
+    const calls: ToolBinding[] = [];
+    const first = addon('first', {});
+    first.tools.prepare = async (value) => {
+      await Promise.resolve();
+      calls.push(value);
+    };
+    const second = addon('second', {});
+    second.tools.prepare = async (value) => {
+      expect(calls).toEqual([value]);
+      calls.push(value);
+    };
+    const registry = await loadTools([first, second]);
+    await registry.prepare?.(binding);
+    expect(calls).toEqual([]);
+    const protectedBinding = {
+      ...binding,
+      runUuid: 'run-1',
+      protectedPaths: [],
+    };
+    await registry.prepare?.(protectedBinding);
+    expect(calls).toEqual([protectedBinding, protectedBinding]);
+  });
+
+  it('stops preparation on the first addon failure', async () => {
+    const first = addon('first', {});
+    first.tools.prepare = async () => {
+      throw new Error('guard unavailable');
+    };
+    const second = addon('second', {});
+    second.tools.prepare = async () => {
+      throw new Error('must not run');
+    };
+    const registry = await loadTools([first, second]);
+    await expect(
+      registry.prepare?.({ ...binding, protectedPaths: [] }),
+    ).rejects.toThrow('guard unavailable');
+  });
+
   it("collects every addon's tools and calls them on the bound worktree", async () => {
     const registry = await loadTools([
       addon(

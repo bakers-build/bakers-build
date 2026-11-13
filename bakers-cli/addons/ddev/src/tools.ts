@@ -6,8 +6,22 @@
 // needs no conductor dependency.
 
 import { spawn } from 'node:child_process';
-import { realpathSync } from 'node:fs';
-import { resolve } from 'node:path';
+import {
+  existsSync,
+  readFileSync,
+  realpathSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { join, resolve } from 'node:path';
+import { parse } from 'yaml';
+import {
+  type DdevContainer,
+  ddevProtectedPaths,
+  ddevProtectionCompose,
+  protectedDdevWeb,
+} from './protection.js';
 
 /** Output beyond this many characters is cut from the front. */
 export const OUTPUT_CAP = 64 * 1024;
@@ -21,6 +35,7 @@ export type DdevRun = (
 
 export interface Request {
   worktreePath: string;
+  protectedPaths?: readonly string[];
   args: Record<string, unknown>;
   signal: AbortSignal;
 }
@@ -36,30 +51,98 @@ const real = (path: string) => {
 };
 
 /** `ddev` with stdout and stderr interleaved, killed at the timeout. */
-export const nodeDdevRun: DdevRun = (args, { cwd, timeoutMs, signal }) =>
-  new Promise((done, fail) => {
-    const child = spawn('ddev', args, {
-      cwd,
-      signal,
-      timeout: timeoutMs,
-      stdio: ['ignore', 'pipe', 'pipe'],
+const commandRun =
+  (command: string): DdevRun =>
+  (args, { cwd, timeoutMs, signal }) =>
+    new Promise((done, fail) => {
+      const child = spawn(command, args, {
+        cwd,
+        signal,
+        timeout: timeoutMs,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      let output = '';
+      const collect = (chunk: Buffer) => {
+        output = tail(output + chunk.toString('utf8'));
+      };
+      child.stdout.on('data', collect);
+      child.stderr.on('data', collect);
+      child.on('error', fail);
+      child.on('close', (code, sig) =>
+        done({
+          exitCode: code ?? 124,
+          output: sig ? `${output}\n(killed: ${sig})` : output,
+        }),
+      );
     });
-    let output = '';
-    const collect = (chunk: Buffer) => {
-      output = tail(output + chunk.toString('utf8'));
-    };
-    child.stdout.on('data', collect);
-    child.stderr.on('data', collect);
-    child.on('error', fail);
-    child.on('close', (code, sig) =>
-      done({
-        exitCode: code ?? 124,
-        output: sig ? `${output}\n(killed: ${sig})` : output,
-      }),
-    );
-  });
+export const nodeDdevRun = commandRun('ddev');
+const nodeDockerRun = commandRun('docker');
 
-export function ddevTools(run: DdevRun): Record<string, Handler> {
+function ddevOperations(run: DdevRun, docker: DdevRun) {
+  const dockerCall = async (req: Request, args: string[]) => {
+    const result = await docker(args, {
+      cwd: req.worktreePath,
+      timeoutMs: TIMEOUT_MS,
+      signal: req.signal,
+    });
+    if (result.exitCode)
+      throw new Error(
+        `DDEV protection: docker exit ${result.exitCode}\n${tail(result.output)}`,
+      );
+    return result.output;
+  };
+  const checkVolumes = async (req: Request, names: string[]) => {
+    if (!names.length) return;
+    const volumes = JSON.parse(
+      await dockerCall(req, ['volume', 'inspect', ...new Set(names)]),
+    ) as { Driver: string; Options?: Record<string, unknown> | null }[];
+    if (
+      !Array.isArray(volumes) ||
+      volumes.length !== new Set(names).size ||
+      volumes.some(
+        (volume) =>
+          volume.Driver !== 'local' || Object.keys(volume.Options ?? {}).length,
+      )
+    )
+      throw new Error(
+        'DDEV protection: custom volume drivers and options are unsupported',
+      );
+  };
+  const checkedWeb = async (
+    req: Request,
+    project: string,
+    paths: readonly string[],
+  ) => {
+    const ids = (
+      await dockerCall(req, [
+        'ps',
+        '-aq',
+        '--filter',
+        `label=com.ddev.site-name=${project}`,
+      ])
+    )
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!ids.length)
+      throw new Error(
+        'DDEV protection: project containers missing; call ddev_start',
+      );
+    const containers = JSON.parse(
+      await dockerCall(req, ['inspect', ...ids]),
+    ) as DdevContainer[];
+    const volumes = containers.flatMap((container) =>
+      container.Mounts.filter((mount) => mount.Type === 'volume').map(
+        (mount) => {
+          if (!mount.Name)
+            throw new Error('DDEV protection: unresolved volume name');
+          return mount.Name;
+        },
+      ),
+    );
+    await checkVolumes(req, volumes);
+    return protectedDdevWeb(containers, project, req.worktreePath, paths);
+  };
   const ddev = async (req: Request, args: string[], timeoutMs = TIMEOUT_MS) => {
     const { exitCode, output } = await run(args, {
       cwd: req.worktreePath,
@@ -85,7 +168,68 @@ export function ddevTools(run: DdevRun): Record<string, Handler> {
     }
     return raw;
   };
-  return {
+  const prepare = async (req: Request) => {
+    if (req.protectedPaths === undefined) return;
+    const raw = await ownProject(req);
+    const file = join(
+      req.worktreePath,
+      '.ddev',
+      'docker-compose.bakers-protection.yaml',
+    );
+    // Stop existing writers before replacing their mount policy or reading launch files.
+    const ids = (
+      await dockerCall(req, [
+        'ps',
+        '-q',
+        '--filter',
+        `label=com.ddev.site-name=${String(raw.name)}`,
+      ])
+    )
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (ids.length) await dockerCall(req, ['stop', ...ids]);
+    const paths = ddevProtectedPaths(req.worktreePath, req.protectedPaths);
+    const previous = existsSync(file) ? readFileSync(file, 'utf8') : undefined;
+    rmSync(file, { force: true });
+    try {
+      const composed = (await ddev(req, ['utility', 'compose-config'])).output;
+      const config = parse(composed) as {
+        volumes?: Record<string, { name?: string }>;
+      };
+      const names = Object.values(config.volumes ?? {}).map((volume) => {
+        if (!volume.name)
+          throw new Error('DDEV protection: unresolved volume name');
+        return volume.name;
+      });
+      if (names.length) {
+        const existing = new Set(
+          (await dockerCall(req, ['volume', 'ls', '--format', '{{.Name}}']))
+            .trim()
+            .split(/\s+/),
+        );
+        await checkVolumes(
+          req,
+          names.filter((name) => existing.has(name)),
+        );
+      }
+      writeFileSync(
+        `${file}.tmp`,
+        ddevProtectionCompose(composed, paths, req.worktreePath),
+      );
+      renameSync(`${file}.tmp`, file);
+    } catch (error) {
+      if (previous !== undefined) writeFileSync(file, previous);
+      throw error;
+    } finally {
+      rmSync(`${file}.tmp`, { force: true });
+    }
+    if (ids.length) {
+      await ddev(req, ['start'], START_TIMEOUT_MS);
+      await checkedWeb(req, String(raw.name), paths);
+    }
+  };
+  const tools: Record<string, Handler> = {
     ddev_status: async (req) => {
       const raw = await ownProject(req);
       return {
@@ -102,14 +246,60 @@ export function ddevTools(run: DdevRun): Record<string, Handler> {
       };
     },
     ddev_start: async (req) => {
-      await ownProject(req);
-      return { text: (await ddev(req, ['start'], START_TIMEOUT_MS)).text };
+      const raw = await ownProject(req);
+      if (req.protectedPaths === undefined)
+        return { text: (await ddev(req, ['start'], START_TIMEOUT_MS)).text };
+      await prepare(req);
+      const paths = ddevProtectedPaths(req.worktreePath, req.protectedPaths);
+      const result = await ddev(req, ['start'], START_TIMEOUT_MS);
+      await checkedWeb(req, String(raw.name), paths);
+      return { text: result.text };
     },
     ddev_exec: async (req) => {
-      await ownProject(req);
+      const raw = await ownProject(req);
+      if (req.protectedPaths !== undefined) {
+        const paths = ddevProtectedPaths(req.worktreePath, req.protectedPaths);
+        const id = await checkedWeb(req, String(raw.name), paths);
+        // Pin the inspected ID so a concurrent recreation cannot switch the execution target.
+        const result = await docker(
+          [
+            'exec',
+            '--workdir',
+            '/var/www/html',
+            id,
+            'bash',
+            '-c',
+            String(req.args.command),
+          ],
+          { cwd: req.worktreePath, timeoutMs: TIMEOUT_MS, signal: req.signal },
+        );
+        const text = `exit ${result.exitCode}\n${tail(result.output)}`;
+        if (result.exitCode) throw new Error(text);
+        return { text };
+      }
       return {
         text: (await ddev(req, ['exec', String(req.args.command)])).text,
       };
     },
   };
+  return { tools, prepare };
+}
+
+export function ddevTools(
+  run: DdevRun,
+  docker: DdevRun = nodeDockerRun,
+): Record<string, Handler> {
+  return ddevOperations(run, docker).tools;
+}
+
+export async function prepareDdevProtection(binding: {
+  worktreePath: string;
+  protectedPaths?: readonly string[];
+}) {
+  if (binding.protectedPaths === undefined) return;
+  await ddevOperations(nodeDdevRun, nodeDockerRun).prepare({
+    ...binding,
+    args: {},
+    signal: new AbortController().signal,
+  });
 }

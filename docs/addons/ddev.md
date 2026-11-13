@@ -2,7 +2,7 @@
 
 **Runs a project on DDEV: finds a worktree's DDEV services for Ports and gives agents tools for its DDEV project.**
 
-DDEV is one runtime option for your project; bakers.build does not require it. The addon finds services and serves tools; it does not provision. Your repository's scripts prepare each ticket worktree through [lifecycle hooks](/provision/hooks), as in [Set up DDEV](/addons/ddev/setup).
+DDEV is optional. The addon discovers services and serves tools; repository [lifecycle hooks](/provision/hooks) handle provisioning. See [Set up DDEV](/addons/ddev/setup).
 
 ## Enable it
 
@@ -23,7 +23,7 @@ addons: [
 
 The addon declares `.ddev` in the default `runtime.read_only` list, protecting its host commands and configuration during isolated runs. See [host-executed files](/provision/hooks#protect-host-executed-files).
 
-Ports does not find DDEV services on its own. An installation that shared them before `claimers` existed must add this entry.
+Existing Ports installations also need this claimer entry.
 
 ## Agent tools
 
@@ -36,6 +36,10 @@ The addon provides these tools for the run's worktree, the DDEV approot. Claude 
 | `ddev_exec(command)` | Runs `command` in the web container, up to 5 minutes. |
 
 Answers carry the exit code and the last 64 KB of output; a non-zero exit is a tool error. The conductor's [`provision_up`](/provision/hooks#provision-on-an-agent-s-request) tool runs the DDEV script in [Set up DDEV](/addons/ddev/setup#provision-on-an-agent-s-request).
+
+Protected runs also receive DDEV read-only mounts; `ddev_exec` verifies them before execution.
+Package outputs stay writable. Direct project binds are required. See
+[DDEV protection and recovery](/provision/security/shared-settings#ddev-tool-protection).
 
 In `WORKFLOW.md`, a `ddev <cmd>` row runs as `ddev_exec("<cmd>")`:
 

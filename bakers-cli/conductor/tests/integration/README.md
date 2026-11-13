@@ -84,7 +84,7 @@ herdr worktree → conductor teardown) on the **host**.
 
 ```bash
 ddev init --provider recipe-test       # seed the bb_e2e world once
-source .ddev/.bakers-test/env            # BB_E2E_BASE_URL + BB_E2E_BASIC
+source tests/artifacts/bakers/env            # BB_E2E_BASE_URL + BB_E2E_BASIC
 # If base_url is container-internal, override to the host-reachable ddev URL:
 #   export BB_E2E_BASE_URL="https://<project>.ddev.site"
 cd bakers-cli && pnpm test:integration worktree-lifecycle

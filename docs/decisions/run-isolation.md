@@ -228,9 +228,13 @@ operators remove them only after delivery. No shared objects or writable hardlin
 GC dependency. Submodules/gitlinks are refused at startup and transfer: their run-edited metadata
 could otherwise execute through concurrent host Git. Built-in host forge tools do not stage files;
 custom host hooks that stage or execute arbitrary run-controlled code remain outside this guarantee.
-The same limit applies to conductor tools outside the agent mounts: a real `ddev_exec` probe wrote
-a temporary `.bakers` file and found the host `.git` pointer writable in DDEV's project mount.
-Granting that tool defeats the agent boundary; protecting the tool's execution environment remains open.
+A real `ddev_exec` probe exposed another writable project mount. DDEV now prepares read-only
+overlays at every bind alias across its services before a protected tool grant is issued.
+Its control directories and host `.git` are mandatory; ordinary package outputs stay writable.
+Running containers are stopped and recreated; stopped projects stay stopped until requested.
+Daemon inspection refuses writable aliases, writable host binds outside the worktree, host sockets
+and unsafe privileges. Execution pins the inspected web container ID. Generated mount policy
+persists for provisioning starts; host-generated DDEV files remain writable from the host.
 The old per-file shared-metadata protective overlays and post-run quarantine helper are removed: the run
 cannot write the host index, and gitlink-bearing starts/transfers are rejected before exposure.
 

@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-ARTIFACT_DIR=/var/www/html/.ddev/.bakers-test
+ARTIFACT_DIR=/var/www/html/tests/artifacts/bakers
 ENV_FILE="${ARTIFACT_DIR}/env"
 CONDUCTOR_DIR=/var/www/html/bakers-cli
 

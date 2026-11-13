@@ -42,7 +42,11 @@ import {
   runtimeSandboxWarning,
   sandboxFailures,
 } from '../plugins/sandbox-preflight.js';
-import { loadTools, type ToolBinding } from '../plugins/tools.js';
+import {
+  loadTools,
+  type ToolBinding,
+  type ToolRegistry,
+} from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
 import { ActionQueue } from './action-queue.js';
@@ -280,6 +284,7 @@ export class Conductor {
 
   /** The local MCP server for addon tools; only the serve process runs one. */
   private toolServer: ToolServer | undefined;
+  private toolRegistry: ToolRegistry | undefined;
 
   /** Where runs execute; created once, on first use. */
   private runtimeOnce: Promise<BbRuntime> | undefined;
@@ -448,14 +453,19 @@ export class Conductor {
         return undefined;
       },
     );
-    this.toolServer = await startToolServer({
-      registry: {
-        list: () => [...addonRegistry.list(), ...transferRegistry.list()],
-        call: (name, ...args) =>
-          transferRegistry.list().some((tool) => tool.name === name)
-            ? transferRegistry.call(name, ...args)
-            : addonRegistry.call(name, ...args),
+    this.toolRegistry = {
+      prepare: async (binding) => {
+        await addonRegistry.prepare?.(binding);
+        await transferRegistry.prepare?.(binding);
       },
+      list: () => [...addonRegistry.list(), ...transferRegistry.list()],
+      call: (name, ...args) =>
+        transferRegistry.list().some((tool) => tool.name === name)
+          ? transferRegistry.call(name, ...args)
+          : addonRegistry.call(name, ...args),
+    };
+    this.toolServer = await startToolServer({
+      registry: this.toolRegistry,
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
@@ -502,18 +512,19 @@ export class Conductor {
     await this.config.provisioning?.stop();
     await this.remote.siteTools?.close();
     this.toolServer = undefined;
+    this.toolRegistry = undefined;
   }
 
   /** A fresh token for this run's worktree; a re-dispatch replaces the old one. */
-  private issueRunTools(
+  private async issueRunTools(
     runUuid: string,
     binding: ToolBinding,
-  ): { url: string; token: string } | undefined {
+  ): Promise<{ url: string; token: string } | undefined> {
     if (!this.toolServer) return undefined;
-    const token = this.toolServer.issueRunToken(runUuid, {
-      ...binding,
-      runUuid,
-    });
+    const runBinding = { ...binding, runUuid };
+    if (runBinding.protectedPaths !== undefined)
+      await this.toolRegistry?.prepare?.(runBinding);
+    const token = this.toolServer.issueRunToken(runUuid, runBinding);
     return { url: this.toolServer.url, token };
   }
 
@@ -1826,9 +1837,26 @@ export class Conductor {
     // field's accepted formats and the PATCH would be rejected (review round
     // 4, Critical 1).
     const dispatchedAt = Math.floor(Date.now() / 1000);
+    const isolates = this.config.runtime?.isolates === true;
+    const runtimePaths =
+      this.config.runtime?.readOnly ??
+      resolveRuntimeOptions({ shared_runtime: this.config.sharedRuntime });
+    const protectedPaths =
+      isolates || chosen.permissions === 'sandbox'
+        ? protectedProjectPaths(
+            ws.path,
+            runtimePaths.entries.map((entry) => entry.value),
+          )
+        : [];
     const tools = chosen.agent.withoutConductorTools
       ? undefined
-      : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
+      : await this.issueRunTools(run.runUuid, {
+          worktreePath: ws.path,
+          ticket: t,
+          ...(isolates || chosen.permissions === 'sandbox'
+            ? { protectedPaths }
+            : {}),
+        });
     const toolsUrl = tools
       ? (runtime.toolsUrl?.(tools.url) ?? tools.url)
       : undefined;
@@ -1856,17 +1884,6 @@ export class Conductor {
         })
       : undefined;
     if (preparation) Object.assign(env, preparation.env);
-    const isolates = this.config.runtime?.isolates === true;
-    const runtimePaths =
-      this.config.runtime?.readOnly ??
-      resolveRuntimeOptions({ shared_runtime: this.config.sharedRuntime });
-    const protectedPaths =
-      isolates || chosen.permissions === 'sandbox'
-        ? protectedProjectPaths(
-            ws.path,
-            runtimePaths.entries.map((entry) => entry.value),
-          )
-        : [];
     const command = chosen.agent.launchCommand(
       prompt,
       identity,

@@ -144,6 +144,27 @@ grep -qF "playwright@$locked " "$image" 2>/dev/null || fail "$image does not ins
 grep -qE '@playwright/cli@[0-9]+\.[0-9]+\.[0-9]+ ' "$image" 2>/dev/null || fail "$image does not pin @playwright/cli"
 grep -qF "cd tests/playwright && npm ci" "$root/.ddev/commands/host/init" || fail 'init does not install the Playwright suite'
 
+# Install output and seeded fixture files must remain writable with .ddev mounted read-only.
+case=container-artifacts
+artifact_root="$work/artifacts-project"
+mkdir -p "$artifact_root/.ddev" "$work/install-bin"
+printf '#!/bin/bash\necho install-output\n' > "$work/install-bin/drush"
+printf '#!/bin/bash\nexit 0\n' > "$work/install-bin/sudo"
+printf '#!/bin/bash\necho seed-output\nexit 23\n' > "$work/seed.sh"
+chmod +x "$work/install-bin/"*
+sed "s@/var/www/html@$artifact_root@g" "$root/.ddev/providers/recipe-install.sh" > "$work/recipe-install.sh"
+rc=0
+out="$(PATH="$work/install-bin:$PATH" bash "$work/recipe-install.sh" recipe-test "$work/seed.sh" 2>&1)" || rc=$?
+[ "$rc" = 23 ] || fail "seed failure lost: exit $rc: $out"
+grep -q seed-output <<<"$out" || fail "seed output lost: $out"
+[ -f "$artifact_root/tests/artifacts/bakers/init-recipe-test.log" ] || fail 'install log is outside writable artifacts directory'
+[ ! -d "$artifact_root/.ddev/.bakers-test" ] || fail 'container install wrote into .ddev'
+grep -qxF '/tests/artifacts/bakers/' "$root/.gitignore" || fail 'runtime artifacts are not gitignored'
+grep -qxF 'tests/artifacts/bakers/' "$root/.dockerignore" || fail 'runtime artifacts enter Docker build contexts'
+for entry in .ddev/commands/web/bakers-init-test .ddev/commands/web/bakers-test-integration .ddev/providers/existing-config.yaml bakers-cli/vitest.config.integration.ts scripts/ci/github-image-gate.sh; do
+  grep -qF 'tests/artifacts/bakers' "$root/$entry" || fail "$entry does not use writable runtime artifacts"
+done
+
 # That test code is untrusted: the web container gets no SSH agent and no registry token.
 case=container-credentials
 config="$root/.ddev/config.yaml"
@@ -153,4 +174,4 @@ for token in KEYTEC_REGISTRY_TOKEN KEYTEC_REGISTRY_WRITE_TOKEN; do
 done
 
 [ "$failures" = 0 ] || exit 1
-echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, Playwright image, container credentials'
+echo 'PASS ddev provision: ready, stopped, missing, other profile, init failure, URL 500, no provider, parent project, registration, Playwright image, writable artifacts, container credentials'

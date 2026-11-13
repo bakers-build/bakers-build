@@ -74,10 +74,30 @@ Place host scripts in `.bakers/scripts/`. A maintainer applies, commits and deli
 changes outside the isolated run, including target-branch merges that modify them. There is no
 per-ticket write bypass. Host-generated DDEV files remain writable from host provisioning.
 
-These mounts constrain the agent process, not conductor tools. In particular, `ddev_exec` runs in
-a separate container with a writable project mount: it can write protected files and the host
-`.git` pointer. Do not treat an isolating runtime as a security boundary while granting that tool.
-Host package lifecycle scripts, docs configuration and CLI builds also remain outside the boundary.
+Conductor tools need their own boundary. Before issuing a protected run's tool grant, the DDEV
+addon prepares read-only mounts for these paths, its `.bakers`/`.ddev` controls and the host `.git`.
+This also covers DDEV starts from provisioning scripts. `ddev_exec` verifies daemon mounts and
+executes in the inspected container ID; missing protection denies execution. Normal package/build
+files remain writable. Host package lifecycle scripts, docs configuration and CLI builds remain
+outside this boundary.
+
+### DDEV tool protection
+
+DDEV protects its `.bakers`/`.ddev` controls and host `.git`. Removing `.ddev` from a runtime layer
+prevents protected tool grants: otherwise agent code could rewrite DDEV's host launch configuration.
+Every bind alias and service receives protection. Container-generated logs and
+test artifacts belong outside protected folders; this repository uses `tests/artifacts/bakers`.
+Git commands belong in the agent's private Git workspace.
+
+Unsafe privileges, host sockets, writable host binds outside the worktree and missing protection
+fail closed. Direct project binds are required; Mutagen/volume-copy layouts are unsupported.
+Custom volume drivers/options, including existing external bind-backed volumes, device passthrough
+and inherited volumes are unsupported.
+Preparation recreates running containers and leaves stopped projects stopped. The generated
+`.ddev/docker-compose.bakers-protection.yaml` persists after the run. A maintainer can remove it
+and recreate containers outside the run to restore ordinary DDEV mounts. Trusted host/operator
+calls do not prepare a new policy. Host provisioning still writes DDEV files, but container
+package scripts cannot write them.
 
 ## Isolated Git delivery
 
