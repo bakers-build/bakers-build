@@ -42,8 +42,8 @@ afterEach(() => {
 });
 
 it('a UI-only addon does not make a conductor config opaque', () => {
-  // A project config that names a UI addon and NO server must still report
-  // the missing server as missing_required_key, not downgrade it to
+  // A project config that names a UI addon and NO worktree must still report
+  // the missing worktree as missing_required_key, not downgrade it to
   // unknown_value — the whitelist is what keeps that diagnosis sharp.
   const w = world();
   writeFileSync(
@@ -51,8 +51,7 @@ it('a UI-only addon does not make a conductor config opaque', () => {
     `export default {
   project: { name: 'demo' },
   executor: { use: '@bakers-build/addon-herdr' },
-  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
-  addons: ['@bakers-build/addon-bakers-ui-artifacts', '@bakers-build/addon-herdr'],
+  addons: ['@bakers-build/addon-bakers-ui-artifacts'],
 };\n`,
   );
 
@@ -62,8 +61,8 @@ it('a UI-only addon does not make a conductor config opaque', () => {
     scope: 'project',
   });
 
-  const server = plan.report.findings.find((f) => f.key === 'server');
-  expect(server?.code).toBe('missing_required_key');
+  const worktree = plan.report.findings.find((f) => f.key === 'worktree');
+  expect(worktree?.code).toBe('missing_required_key');
 });
 
 it('one Orca addon entry fills both the executor and the workspace slot', () => {
@@ -124,5 +123,5 @@ it('keeps an unresolvable addon opaque when checking missing slots', () => {
     report.findings
       .filter((f) => ['server', 'executor', 'worktree'].includes(f.key ?? ''))
       .map((f) => f.code),
-  ).toEqual(['unknown_value', 'unknown_value', 'unknown_value']);
+  ).toEqual(['unknown_value', 'unknown_value']);
 });

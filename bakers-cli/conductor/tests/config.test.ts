@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { agentReport } from '@bakers-build/addon-agents';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  composeConductorConfig,
   configStems,
   DEFAULT_AGENT_PROMPT,
   listConductorConfigFiles,
@@ -590,6 +591,52 @@ describe('loadConductorConfig', () => {
     await expect(loadConductorConfig(path)).rejects.toThrow(
       `${path}: max_parallel unknown key`,
     );
+  });
+});
+
+describe('the server comes from the project, else the connection, else the default', () => {
+  const NO_SERVER = VALID.replace("  server: slot('server'),\n", '');
+  const connection = (server?: unknown) => ({
+    site: { base_url: 'http://web', jsonapi_prefix: '/jsonapi' },
+    plugins: [],
+    config_path: join(tmpdir(), 'connections', 'default.js'),
+    ...(server !== undefined ? { server } : {}),
+  });
+  const connServer = { kind: 'server', id: 'conn', requiredModules: [] };
+  const serve = async (project: string, server?: unknown) =>
+    composeConductorConfig(
+      await loadConductorConfig(writeConfig(project)),
+      connection(server),
+    );
+
+  it('serves a project config that names no server through the Drupal addon', async () => {
+    const config = await serve(NO_SERVER);
+    expect(config.remote.id).toBe('drupal');
+    expect(config.slot_sources?.server).toBe('default');
+  });
+
+  it('serves through the server the connection names', async () => {
+    const config = await serve(NO_SERVER, connServer);
+    expect(config.remote.id).toBe('conn');
+    expect(config.slot_sources?.server).toBe('connection');
+  });
+
+  it('keeps the project server slot over the connection', async () => {
+    const config = await serve(VALID, connServer);
+    expect(config.remote.id).toBe('server');
+    expect(config.slot_sources?.server).toBe('slot');
+  });
+
+  it('keeps a server addon in the project addons over the connection', async () => {
+    const config = await serve(
+      NO_SERVER.replace(
+        'export default {',
+        "export default {\n  addons: ['@bakers-build/addon-remote-drupal'],",
+      ),
+      connServer,
+    );
+    expect(config.remote.id).toBe('drupal');
+    expect(config.slot_sources?.server).toBe('addons');
   });
 });
 

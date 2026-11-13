@@ -212,7 +212,7 @@ async function resolveConfig(
         ? { workspaceSelector: engine.bakers.workspace }
         : {}),
     });
-    return composeConductorConfig(engine, connection);
+    return await composeConductorConfig(engine, connection);
   }
   const unscoped = await loadReadyBbConnection(host, {
     workspaceIdOverride: '',
@@ -224,7 +224,7 @@ async function resolveConfig(
     workspaceSelector: context.workspaceId,
   });
   return {
-    ...composeConductorConfig(engine, connection),
+    ...(await composeConductorConfig(engine, connection)),
     resolved_bakers: context,
   };
 }
@@ -452,6 +452,13 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
 /** `bakers conductor check`: whether each enabled agent can start its sandbox. */
 async function cmdCheck(deps: BbCliDeps): Promise<void> {
   const config = await resolveConfig(deps);
+  const sources = config.slot_sources ?? {};
+  for (const [slot, plugin, source] of [
+    ['server', config.remote, sources.server],
+    ['executor', config.executor, sources.executor],
+    ['worktree', config.workspace, sources.worktree],
+  ] as const)
+    console.log(`${slot}: ${plugin.id}${source ? ` (${source})` : ''}`);
   const warning = runtimeSandboxWarning(config.runtime?.id);
   if (warning) console.warn(`warning: ${warning}`);
   for (const agent of deps.agents ?? (await selectAgents(config))) {

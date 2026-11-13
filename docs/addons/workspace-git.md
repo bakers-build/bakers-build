@@ -10,7 +10,6 @@ Add the package to `addons` in the project's `.bakers/project.config.js`, next t
 
 ```js
 addons: [
-  '@bakers-build/addon-remote-drupal',
   '@bakers-build/addon-herdr-core',
   { use: '@bakers-build/addon-workspace-git', with: { branch_prefix: 'bakers/' } },
 ],

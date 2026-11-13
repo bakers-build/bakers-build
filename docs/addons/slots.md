@@ -30,7 +30,7 @@ When several listed addons contribute the same slot, the last one wins, with a w
 `config init --scope project --executor @bakers-build/addon-herdr-core` selects
 herdr-core with Git workspace. `--server`, `--executor`, `--worktree` accept package
 names contributing that slot in project scope, filling missing entries. An executor
-without a workspace needs `--worktree`. No flags preserves the herdr template.
+without a workspace needs `--worktree`. Without flags it writes only herdr; the [connection](/configuration/connection) supplies the server unless the project names one.
 
 Presets may export `addons: ['package-name']`: children load before parents in the
 same scope, at any depth. Resolved presets and aliases are deduplicated; cycles

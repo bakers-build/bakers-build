@@ -29,7 +29,6 @@ Replace the herdr entry in `.bakers/project.config.js` with one Orca entry, supp
 
 ```js
 addons: [
-  '@bakers-build/addon-remote-drupal',
   { use: '@bakers-build/addon-orca', with: { worktree_dir: '.bakers-worktrees' } },
 ],
 ```

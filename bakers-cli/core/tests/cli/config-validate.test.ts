@@ -89,6 +89,21 @@ describe('validateConfig: one schema per file kind', () => {
     ).toEqual(['invalid_value site.base_url', 'unknown_key plugins[0].wiht']);
   });
 
+  it('accepts a connection that names its server and a project that names none', () => {
+    expect(
+      validateConfig('connection', {
+        site: { base_url: 'https://x.example' },
+        server: { use: '@bakers-build/addon-remote-drupal' },
+      }),
+    ).toEqual([]);
+    expect(
+      validateConfig('project', {
+        project: { name: 'demo' },
+        addons: ['@bakers-build/addon-herdr'],
+      }),
+    ).toEqual([]);
+  });
+
   it('rejects an old name as an unknown key', () => {
     expect(
       codes(

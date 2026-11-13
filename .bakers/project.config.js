@@ -3,10 +3,10 @@
 // connection and its credentials are private (~/.bakers/connections/), the
 // agents and their policy belong to each machine (~/.bakers/machine.config.js).
 //
-// The slots are `{ use, export?, with? }` descriptors naming the published
-// package; the loader resolves each name (config dir → cwd → CLI install).
-// `@bakers-build/addon-herdr` default-exports the executor, so the worktree
-// slot names `export: 'herdrWorkspace'` (BB-139).
+// Each addon in `addons` fills its slots through its preset; the loader
+// resolves each name (config dir → cwd → CLI install). herdr supplies the
+// executor and the worktree. The server comes from the connection, by default
+// @bakers-build/addon-remote-drupal.
 
 /** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
@@ -96,7 +96,6 @@ export default {
       plugins: ['superpowers'],
     },
   ],
-  server: { use: '@bakers-build/addon-remote-drupal' },
   // addon-ddev serves the `ddev_status`, `ddev_start` and `ddev_exec` agent
   // tools, so runs reach DDEV only through the conductor, never directly.
   // Preview links: the project names its services; each machine adds the
@@ -104,6 +103,27 @@ export default {
   // { use: '@bakers-build/addon-ports', with: { transport: { use:
   // '@bakers-build/addon-ports-frp', with: { … } } } }, merged with this one.
   addons: [
+    // Layout per workflow state: project = workspace, run = tab.
+    // No hard-wired diff pane for `review`: the review diff surface is hunk
+    // (BB-55) — agent-driven + opt-in in the human's interactive pane
+    // (see .claude/skills/bakers-build/reference/hunk-review-surface.md), not an
+    // executor-forced `git diff` pane. Clicking a changed file in that hunk
+    // pane opens it editable in a spiceedit overlay (see bakers-cli/README.md
+    // + herdr/spiceedit).
+    //
+    // No `with.open`: the addon's shipped default (BB-234,
+    // `bakers ui --ticket {identifier}`) is what this repo wants. It carried a
+    // sentinel wait loop until BB-237 fixed the ordering that made one
+    // necessary; the leftover override was then byte-identical to the default and
+    // was deleted, so bakers cannot silently stop following it if it ever changes.
+    //
+    // BB-390 removed what used to be noted here: the ~/.local/bin/bakers shim no
+    // longer hard-requires this checkout's own build inside a bakers worktree, so the
+    // pane command does NOT depend on `after_create` having built anything. Inside a
+    // bakers worktree a bare `bakers` is the globally installed CLI; the branch build is
+    // selected only inside a `.bakers-testbuild` workspace, and reached by explicit
+    // path (`./bakers-cli/bin/bakers`) anywhere else.
+    '@bakers-build/addon-herdr',
     '@bakers-build/addon-ddev',
     '@bakers-build/addon-agents',
     '@bakers-build/addon-deployment',
@@ -132,33 +152,4 @@ export default {
       },
     },
   ],
-  // Layout per workflow state: project = workspace, run = tab.
-  // No hard-wired diff pane for `review`: the review diff surface is hunk
-  // (BB-55) — agent-driven + opt-in in the human's interactive pane
-  // (see .claude/skills/bakers-build/reference/hunk-review-surface.md), not an
-  // executor-forced `git diff` pane. Clicking a changed file in that hunk
-  // pane opens it editable in a spiceedit overlay (see bakers-cli/README.md
-  // + herdr/spiceedit).
-  executor: { use: '@bakers-build/addon-herdr' },
-  // Agents are a per-machine concern: the harness packages live in
-  // ~/.bakers/machine.config.js `addons[]` and the selection policy under
-  // `agents`. The conductor config declares no agents — only the
-  // server/executor/worktree engine wiring.
-  // BB-139: the herdr workspace ships in @bakers-build/addon-herdr now (the former
-  // plugin-herdr-workspace was merged in). That package default-exports the
-  // EXECUTOR, so the worktree slot names export: 'herdrWorkspace'.
-  //
-  // No `with.open`: the addon's shipped default (BB-234,
-  // `bakers ui --ticket {identifier}`) is what this repo wants. It carried a
-  // sentinel wait loop until BB-237 fixed the ordering that made one
-  // necessary; the leftover override was then byte-identical to the default and
-  // was deleted, so bakers cannot silently stop following it if it ever changes.
-  //
-  // BB-390 removed what used to be noted here: the ~/.local/bin/bakers shim no
-  // longer hard-requires this checkout's own build inside a bakers worktree, so the
-  // pane command does NOT depend on `after_create` having built anything. Inside a
-  // bakers worktree a bare `bakers` is the globally installed CLI; the branch build is
-  // selected only inside a `.bakers-testbuild` workspace, and reached by explicit
-  // path (`./bakers-cli/bin/bakers`) anywhere else.
-  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
 };

@@ -39,6 +39,7 @@ export default {
 | `plugins[].plugin`, `plugins[].export`, `plugins[].with`, `plugins[].options` | A descriptor's package name, the named export to load (default export when absent), and its options: `with`, or `options` when `with` is absent. Other keys in a descriptor fail. |
 | `addons` | Optional package entries: a name or `{ use, alias?, with? }`. Contributions are appended after `plugins`. UI addons add tabs to `bakers ui`; see [Addons](/addons/configure). An entry that cannot be resolved is an error here. |
 | `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
+| `server` | Optional conductor server slot for this connection: `{ use, export?, with? }`, or a constructed plugin with `kind: 'server'`. Default `@bakers-build/addon-remote-drupal`. A project `server` slot or a server addon in the project's `addons` wins over it. |
 
 Unknown keys fail. The top-level values are passed to every plugin as base options; an entry's own `with` wins. There is no merge of arbitrary plugins across files.
 

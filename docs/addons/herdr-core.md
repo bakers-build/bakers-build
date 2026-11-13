@@ -35,7 +35,6 @@ Existing projects can list it in `.bakers/project.config.js`:
 
 ```js
 addons: [
-  '@bakers-build/addon-remote-drupal',
   '@bakers-build/addon-herdr-core',
 ],
 ```

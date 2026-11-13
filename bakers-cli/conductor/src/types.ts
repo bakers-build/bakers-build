@@ -99,6 +99,21 @@ export interface ConductorSettings {
   restart_on_change?: boolean;
   /** The files and addon build dirs this config was loaded from. */
   watch_paths?: { files: string[]; dirs: string[] };
+  /** Where each slot's plugin came from, for `bakers conductor check`. */
+  slot_sources?: Partial<SlotSources>;
+}
+
+/** Where a resolved server, executor or worktree plugin came from. */
+export type SlotSource =
+  | 'machine'
+  | 'slot'
+  | 'addons'
+  | 'connection'
+  | 'default';
+export interface SlotSources {
+  server: SlotSource;
+  executor: SlotSource;
+  worktree: SlotSource;
 }
 
 /** Whole project.config.js (dropsh-superset): site + named plugin slots. */
@@ -149,5 +164,8 @@ export interface ConductorFileConfig extends ConductorSettings {
  */
 export type ConductorEngineConfig = Omit<
   ConductorFileConfig,
-  'site' | 'plugins'
->;
+  'site' | 'plugins' | 'remote'
+> & {
+  /** Absent when the project names no server; the connection or the default fills it. */
+  remote?: RemotePlugin;
+};
