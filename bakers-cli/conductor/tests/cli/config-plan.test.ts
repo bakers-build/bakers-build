@@ -229,8 +229,10 @@ describe('offline scoped configuration plan and apply', () => {
     // The run budget is a backend setting.
     expect(machine).not.toContain('max_parallel');
     expect(conductor).toContain(
-      "addons: [{ use: '@bakers-build/addon-herdr' }, { use: '@bakers-build/addon-claude', alias: 'opus' }]",
+      "addons: [{ use: '@bakers-build/addon-herdr' }]",
     );
+    // addon-claude is machine-scoped; a project config may not list it.
+    expect(conductor).not.toContain('@bakers-build/addon-claude');
     expect(conductor).not.toMatch(
       /^\s*(?:agent|agents|default_agent|agent_routes):/m,
     );
