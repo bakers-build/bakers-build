@@ -22,8 +22,8 @@
          scale — MariaDB's `decimal(x,4)` returns '0.8000', sqlite '0.8' — so
          the two bb_metric round-trip assertions compare numerically; pinning
          the string would pin the test database. NOTE: this element does NOT
-         force, so an exported SIMPLETEST_DB still wins (that is how .gitlab-ci.yml
-         overrides it per job).
+         force, so an exported SIMPLETEST_DB still wins (that is how
+         scripts/ci/github-image-gate.sh overrides it).
 
          Historical measurement: BB-488 re-measured the then-221-class unit-kernel suite on the CI
          `parallel` runner tag (16 cores, ~29GB RAM available): 18:21 real at

@@ -60,7 +60,7 @@ included in core tests. Ticket-specific functional checks apply separately.
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
 | `.ddev/**` or `.bakers/provision.sh` | `bash tests/contract/ddev-provision.sh` |
 | `.bakers/scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
-| `.gitlab-ci.yml` | `bash tests/config-sync/check-ci-wiring.sh`; GitLab CI lint through the [tool discovery and fallback](.claude/skills/bakers-build/skills/bb-workflow/references/tools.md#choose-an-operation) |
+| `.github/workflows/**` | `bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |
 | Web UI implementation, or `tests/contract/**` | `bash tests/contract/token-discipline.sh && bash tests/contract/time-format.sh && bash tests/contract/run-detail-overlay.sh && bash tests/contract/island-links.sh && node tests/contract/appearance.mjs && node tests/contract/icon-storybook.mjs && node tests/contract/period-range.mjs` |
@@ -78,10 +78,6 @@ after the merge, before the develop deployment. PRs into `main` run it, and `req
 the PR; fix it on the branch and require green checks on the new revision. Protected `next` accepts
 squashed feature PRs. Stable `main` accepts merge commits only from this repository's `next`,
 preserving its tree and second parent.
-
-For a project still using GitLab, request the newest MR pipeline's manual gate operation after fast checks
-through the [tool discovery and fallback](.claude/skills/bakers-build/skills/bb-workflow/references/tools.md#choose-an-operation).
-Its `build`, `phpunit`, `e2e` and `config_install` jobs must all succeed before merging.
 
 Local runs are for debugging, never a substitute for the CI gate
 ([testing](docs/bakers/testing.md)).

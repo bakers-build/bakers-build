@@ -1,4 +1,3 @@
-# Migration rehearsal only. GitLab retains publication and deployment ownership.
 name: GitHub checks
 on:
   push:
