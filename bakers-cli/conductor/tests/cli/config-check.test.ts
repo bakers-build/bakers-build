@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { planConfig } from '../../src/cli/config-plan.js';
 import { loadConductorConfig } from '../../src/config.js';
+import { capabilities } from './preset-capabilities.js';
 
 const roots: string[] = [];
 afterEach(() => {
@@ -31,8 +32,14 @@ function project(source: string) {
     "// @bakers-schema-version 1\nexport default { schema_version: 1, site: { base_url: 'https://example.test' }, plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: 'secret' } }] };\n",
   );
   const check = () =>
-    planConfig({ operation: 'check', scope: 'project', home, cwd, path: cwd })
-      .report;
+    planConfig({
+      capabilities,
+      operation: 'check',
+      scope: 'project',
+      home,
+      cwd,
+      path: cwd,
+    }).report;
   return { path, check };
 }
 

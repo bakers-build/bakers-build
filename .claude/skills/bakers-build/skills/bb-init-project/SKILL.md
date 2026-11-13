@@ -42,7 +42,8 @@ requires shared-setup authorization. Obtain missing scope authorization before s
 ## Apply and verify
 
 Run `bakers config init --scope <scope>` with selected inputs/paths; project/all includes
-`--project <resolved-name>` and `--path`. CLI fills/migrates supported partial layers while
+`--project <resolved-name>` and `--path`; herdr-app adds
+`--executor @bakers-build/addon-herdr-core` (Git workspace comes with it). CLI fills/migrates partial layers while
 preserving custom values. Select a named connection using the current help and
 [connection guide](https://bakers.build/configuration/connection). Reconcile generated files with
 the documented choices from project setup, including settings without CLI flags.
@@ -54,5 +55,6 @@ inapplicable; other scopes require authentication, not a workspace. Offline chec
 
 For project/all, read the configured project and confirm its `WORKFLOW.md` starts with the entry
 line and names only installed skills.
-Report written paths, scope, local validation, online readiness and remaining actions separately.
+Report paths, scope, resolved executor and worktree (herdr-app: `@bakers-build/addon-workspace-git`),
+local validation, online readiness and remaining actions separately.
 Stop after setup; do not start ticket work.

@@ -132,6 +132,8 @@ export interface ConfigReport {
    * is then discovered from `addons[]`).
    */
   executor_source?: string;
+  /** Resolved project slot package names, including nested preset origins. */
+  slot_sources?: Record<string, string>;
   verification: {
     offline: { status: 'passed' | 'blocked' | 'incomplete' };
     online: {
