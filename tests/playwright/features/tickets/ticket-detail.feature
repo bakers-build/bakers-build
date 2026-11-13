@@ -238,3 +238,17 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     When I request the ticket "BB-142" in the workspace "other"
     Then the response status is 404
     And the error screen is 404 with the "signpost-missing" signpost
+
+  @deployment-presentation @feature:project-overview
+  Scenario: Ticket header badges appear only once the deployment is closed
+    Given a project world with these tickets:
+      | ticket     | state         |
+      | First work | qualification |
+    And the world has an open deployment to "develop" carrying "First work"
+    And the account "north-lead" is seated in the world as a lead
+    And I am signed in as "north-lead"
+    When I open the world ticket "First work"
+    Then the ticket header does not show the deployed badge "develop"
+    When the world deployment is closed
+    And I open the world ticket "First work"
+    Then the ticket header shows the deployed badge "develop"
