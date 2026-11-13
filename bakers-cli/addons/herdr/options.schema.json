@@ -94,11 +94,6 @@
       "type": "boolean",
       "description": "`false` sets Git's `branch.autoSetupMerge=false` in the root repository, so run branches have no upstream and push with `push.default=current` (see workspace-git); `true` leaves Git alone.",
       "default": false
-    },
-    "shared": {
-      "type": "boolean",
-      "default": false,
-      "description": "Isolating runtimes only: run clones borrow the parent repository's objects (git clone --shared) instead of copying them. Faster and smaller, but never prune or repack the parent with -d while a run is open."
     }
   },
   "additionalProperties": false,
@@ -107,7 +102,10 @@
       "type": "object",
       "properties": {
         "direction": {
-          "enum": ["right", "down"],
+          "enum": [
+            "right",
+            "down"
+          ],
           "description": "Where the split opens."
         },
         "command": {
@@ -119,7 +117,10 @@
           "description": "Focus this split after opening."
         }
       },
-      "required": ["direction", "command"],
+      "required": [
+        "direction",
+        "command"
+      ],
       "additionalProperties": false,
       "description": "One extra split; not the agent command."
     },

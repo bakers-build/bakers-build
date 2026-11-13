@@ -27,7 +27,8 @@ if [ ! -f .bakers/audience.local.md ] && [ -f "${PARENT_PATH}/.bakers/audience.l
 fi
 
 # setup-test-project is the single owner of the conditional CLI build; this mode stays cold.
-if [ -f .bakers/scripts/setup-test-project.sh ]; then
+# Not under an isolating runtime: its conditional build would run the run's package.json on the host.
+if [ -f .bakers/scripts/setup-test-project.sh ] && [ "${BAKERS_RUNTIME_ISOLATES:-0}" != 1 ]; then
   bash .bakers/scripts/setup-test-project.sh --workspace-only
 fi
 touch "${SENTINEL}"

@@ -181,6 +181,16 @@ export class GitWorkspace implements BbWorkspace {
         await this.runGit(['-C', this.root, 'branch', branch], this.root);
       }
       const target = targetOf(baseRef);
+      if (target && baseRef?.startsWith('origin/')) {
+        try {
+          await this.runGit(
+            ['-C', this.root, 'fetch', '--quiet', 'origin', '--', target],
+            this.root,
+          );
+        } catch {
+          // Offline or no remote: the clone carries the target as last fetched.
+        }
+      }
       const clone = ensureRunClone({
         parent: this.root,
         workspace: path,

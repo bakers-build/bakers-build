@@ -3,9 +3,10 @@
 //   node docs-preview-serve.mjs <dir> --port <port>
 import { createReadStream, realpathSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, join, sep } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
 
-const root = realpathSync(process.argv[2]);
+// Not resolved: a linked root, like any link out of it, then matches no real path below.
+const root = resolve(process.argv[2]);
 const port = Number(process.argv[process.argv.indexOf('--port') + 1]);
 const types = {
   '.html': 'text/html; charset=utf-8',

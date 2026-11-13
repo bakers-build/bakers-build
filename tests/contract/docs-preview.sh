@@ -138,5 +138,20 @@ isolated wt3
 isolated wt3 stop
 [ "$rc" = 0 ] && [ "$(served wt3)" = 0 ] || fail "stop left $(served wt3) servers: $out"
 
+# The run owns docs/: a link it plants as the log or as the built site leads nowhere on the host.
+export XDG_CACHE_HOME="$work/cache"
+case=isolated-log-link; echo keep > "$work/victim"
+mkdir -p "$work/wt3/docs/.vitepress/cache"; ln -sf "$work/victim" "$work/wt3/docs/.vitepress/cache/preview.log"
+isolated wt3
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(cat "$work/victim")" = keep ] || fail "wrote the log through a link: '$(cat "$work/victim")'"
+isolated wt3 stop
+
+case=isolated-dist-link; mkdir -p "$work/outside"
+rm -rf "$work/wt3/docs/.vitepress/dist"; ln -s "$work/outside" "$work/wt3/docs/.vitepress/dist"
+isolated wt3
+[ "$rc" != 0 ] || fail "served a linked dist: '$(body "$url")'"
+[ "$(served wt3)" = 0 ] || fail "$(served wt3) servers left on a linked dist"
+
 [ "$failures" = 0 ] || exit 1
 echo 'docs-preview: all cases pass'

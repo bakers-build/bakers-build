@@ -9,7 +9,9 @@
     "transport": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["use"],
+      "required": [
+        "use"
+      ],
       "properties": {
         "use": {
           "type": "string",
@@ -27,7 +29,10 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["key", "match"],
+        "required": [
+          "key",
+          "match"
+        ],
         "properties": {
           "key": {
             "type": "string",

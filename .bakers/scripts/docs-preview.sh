@@ -9,6 +9,11 @@ set -euo pipefail
 scripts="$(cd "$(dirname "$0")" && pwd -P)"
 docs="$(cd "$scripts/../../docs" && pwd -P)"
 log="$docs/.vitepress/cache/preview.log"
+if [ "${BAKERS_RUNTIME_ISOLATES:-0}" = 1 ]; then
+  # The run can plant links in docs/: the host follows none, and logs outside the workspace.
+  [ "$docs" = "$(cd "$scripts/../.." && pwd -P)/docs" ] || { echo 'docs/ is a link' >&2; exit 1; }
+  log="${XDG_CACHE_HOME:-$HOME/.cache}/bakers/docs-preview/$(printf %s "$docs" | sha256sum | cut -c1-16).log"
+fi
 
 # This worktree's preview: a process whose cwd is docs/ and whose command names vitepress, the
 # identity the ports addon's `docs` service matches: `vitepress … preview`, or the static server

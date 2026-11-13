@@ -144,3 +144,28 @@ it('clones only under an isolating runtime', async () => {
   expect(ws.clone).toBeUndefined();
   expect(readFileSync(join(ws.path, '.git'), 'utf8')).toMatch(/^gitdir: /);
 });
+
+it('fetches the target, so the clone carries where the remote moved it', async () => {
+  const remote = join(base, 'remote.git');
+  git(base, 'clone', '-q', '--bare', root, remote);
+  git(root, 'remote', 'add', 'origin', remote);
+  git(root, 'push', '-q', 'origin', 'main:next');
+  const scratch = join(base, 'scratch');
+  git(base, 'clone', '-q', '--branch', 'next', remote, scratch);
+  writeFileSync(join(scratch, 'moved'), 'yes');
+  git(scratch, 'add', '.');
+  git(scratch, ...ident, 'commit', '-qm', 'moved');
+  git(scratch, 'push', '-q', 'origin', 'next');
+  const moved = git(scratch, 'rev-parse', 'HEAD');
+
+  const ws = await new GitWorkspace({ root, clone: true }).ensure(
+    'GL-9',
+    'Title',
+    'origin/next',
+  );
+
+  expect(
+    git(root, `--git-dir=${ws.clone?.gitDir}`, 'rev-parse', 'origin/next'),
+  ).toBe(moved);
+  expect(git(root, 'rev-parse', 'bakers/GL-9-title')).not.toBe(moved);
+});

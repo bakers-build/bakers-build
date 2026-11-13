@@ -139,6 +139,16 @@ out="$(cd "$tree" && PATH="$work/bin:$PATH" bash .bakers/scripts/worktree-post.s
 [ "$(cat "$STATE/calls")" = 'config --auto' ] || fail "calls: $(cat "$STATE/calls")"
 [ "$(cat "$tree/.ddev/config.yaml")" = "$(printf 'name: bakers\n# kept')" ] || fail 'config.yaml rewritten'
 
+# Under an isolating runtime the bootstrap builds nothing on the host: the run owns bakers-cli/.
+case=register-isolated; rm "$tree/.bakers/.worktree-post-done"
+printf '#!/bin/bash\necho "setup $*" >> "%s"\n' "$work/setup-calls" > "$tree/.bakers/scripts/setup-test-project.sh"
+: > "$work/setup-calls"; rc=0
+out="$(cd "$tree" && BAKERS_RUNTIME_ISOLATES=1 WORKSPACE_ROOT="$work" PATH="$work/bin:$PATH" bash .bakers/scripts/worktree-post.sh 2>&1)" || rc=$?
+[ "$rc" = 0 ] && [ ! -s "$work/setup-calls" ] || fail "exit $rc, host setup ran: $(cat "$work/setup-calls"): $out"
+rm "$tree/.bakers/.worktree-post-done"; rc=0
+out="$(cd "$tree" && PATH="$work/bin:$PATH" bash .bakers/scripts/worktree-post.sh 2>&1)" || rc=$?
+[ "$rc" = 0 ] && grep -qx 'setup --workspace-only' "$work/setup-calls" || fail "exit $rc, runtime-host no longer sets the playground up: $out"
+
 # The fixed entry point dispatches only the declared profiles, preserving order and failure status.
 case=provision-dispatch
 provision_tree="$work/dispatch"

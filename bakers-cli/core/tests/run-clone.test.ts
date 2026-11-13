@@ -258,3 +258,30 @@ it('saves the previous run commits before starting fresh, and sets a refused Git
     ),
   ).toBe(refused);
 });
+
+it('refuses a linked worktree with uncommitted work and keeps it untouched', () => {
+  const { parent, workspace, create } = fixture();
+  git(parent, 'worktree', 'add', '-q', workspace, 'ticket');
+  writeFileSync(join(workspace, 'new.txt'), 'uncommitted');
+
+  expect(create).toThrow(/uncommitted work/);
+
+  expect(readFileSync(join(workspace, 'new.txt'), 'utf8')).toBe('uncommitted');
+  expect(readFileSync(join(workspace, '.git'), 'utf8')).toMatch(/^gitdir: /);
+});
+
+it('turns a clean linked worktree into a run clone and drops the parent worktree entry', () => {
+  const { parent, workspace, create } = fixture();
+  git(parent, 'worktree', 'add', '-q', workspace, 'ticket');
+  mkdirSync(join(workspace, 'node_modules'));
+  writeFileSync(join(workspace, 'node_modules/kept'), 'ignored');
+
+  const record = create();
+
+  expect(record.expected).toBe(git(parent, 'rev-parse', 'ticket'));
+  expect(statSync(join(workspace, '.git')).isDirectory()).toBe(true);
+  expect(existsSync(join(workspace, 'node_modules/kept'))).toBe(true);
+  expect(git(parent, 'worktree', 'list', '--porcelain')).not.toContain(
+    workspace,
+  );
+});

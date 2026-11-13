@@ -295,3 +295,19 @@ it('does not write the target ref through a symlinked refs directory', () => {
   expect(() => refreshRunTarget(record)).toThrow();
   expect(existsSync(join(outside, 'next'))).toBe(false);
 });
+
+it('refuses a FIFO planted as an object or as the branch ref instead of waiting on it', () => {
+  const { record, commit } = fixture();
+  const tip = commit();
+  mkdirSync(join(record.gitDir, 'objects/aa'), { recursive: true });
+  execFileSync('mkfifo', [join(record.gitDir, 'objects/aa', 'b'.repeat(38))]);
+
+  expect(() => transferIsolatedCommit(record, tip)).toThrow(
+    /escaped its private store/,
+  );
+
+  const ref = join(record.gitDir, 'refs/heads/ticket');
+  rmSync(ref);
+  execFileSync('mkfifo', [ref]);
+  expect(() => runCloneTip(record)).toThrow(/is not a file/);
+});

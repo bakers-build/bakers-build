@@ -58,7 +58,11 @@ function copyObjects(source: string, target: string): void {
     throw new Error('isolated Git: invalid object store');
   const root = source;
   const copy = (from: string, to: string) => {
-    const fd = openSync(from, constants.O_RDONLY | constants.O_NOFOLLOW);
+    // O_NONBLOCK: a FIFO the run planted must fail the isFile check, not block the open.
+    const fd = openSync(
+      from,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+    );
     try {
       const actual = realpathSync(`/proc/self/fd/${fd}`);
       if (!actual.startsWith(root + sep) || !fstatSync(fd).isFile())
@@ -120,7 +124,7 @@ function readRunFile(root: string, path: string): string | undefined {
   try {
     const fd = openSync(
       `/proc/self/fd/${dir}/${posix.basename(path)}`,
-      constants.O_RDONLY | constants.O_NOFOLLOW,
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
     );
     try {
       if (!fstatSync(fd).isFile())

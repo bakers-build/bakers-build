@@ -117,6 +117,22 @@ export function createRunClone(options: RunCloneOptions): RunClone {
   const parent = (...args: string[]) =>
     git(['--git-dir', parentGitDir, ...args]);
   git(['check-ref-format', `refs/heads/${branch}`]);
+  // A linked worktree from before isolation: the refresh below would delete
+  // its uncommitted work, and the parent would keep a stale worktree entry.
+  const link = join(workspace, '.git');
+  if (lstatSync(link, { throwIfNoEntry: false })?.isFile()) {
+    const admin = readFileSync(link, 'utf8')
+      .replace(/^gitdir: /, '')
+      .trim();
+    if (dirname(admin) !== join(parentGitDir, 'worktrees'))
+      throw new Error(`run clone: ${workspace} belongs to another repository`);
+    if (git(['status', '--porcelain'], workspace))
+      throw new Error(
+        `run clone: ${workspace} is a linked worktree with uncommitted work; commit or remove it, then dispatch again`,
+      );
+    rmSync(admin, { recursive: true, force: true });
+    rmSync(link);
+  }
   // A run that ended without its transfer (a crash, a re-dispatch) still
   // holds commits: bring them over, or set its Git directory aside when the
   // transfer refuses them, so starting fresh never destroys work.
