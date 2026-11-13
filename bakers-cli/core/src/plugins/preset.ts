@@ -181,7 +181,7 @@ export const SURFACE_KEYS: Record<
  * (override semantics — the user config participates as the final preset).
  */
 export interface BbPreset<O = unknown> {
-  /** Meta-addon composition: children apply depth-first BEFORE this preset. */
+  /** Children load as if listed in the same scope, depth-first BEFORE this preset. */
   addons?: AddonEntry[];
 
   /** The config scopes this addon may be listed in; absent means both. */

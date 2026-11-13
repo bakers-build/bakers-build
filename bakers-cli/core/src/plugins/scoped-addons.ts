@@ -171,6 +171,14 @@ export async function scopeAddons(
         if (winner.via && !via) {
           const { via: _via, ...explicit } = winner;
           addons[at] = { ...explicit, entry };
+        } else if (
+          !winner.via &&
+          !via &&
+          alias === undefined &&
+          typeof loaded.preset.agents === 'function'
+        ) {
+          // Legacy priority-only variants share a package but have separate options.
+          addons.push({ ...winner, entry });
         }
         return;
       }

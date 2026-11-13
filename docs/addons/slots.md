@@ -66,4 +66,4 @@ project shell-hook slot. See [the start contract](/addons/build/contracts#before
 
 ## Migrating an addon
 
-For custom implementations, follow the [executor/workspace migration notes](/addons/build/executor-workspace#migrating-an-addon). For configuration changes, keep lifecycle `hooks` at project level and move a legacy workspace `open` layout to the executor.
+For custom implementations, follow the [executor/workspace migration notes](/addons/build/executor-workspace#migrating-an-addon).

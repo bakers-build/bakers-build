@@ -87,3 +87,42 @@ it('one Orca addon entry fills both the executor and the workspace slot', () => 
   );
   expect(slots).toEqual([]);
 });
+
+it('resolves herdr-core and its nested workspace from preset-derived capabilities', () => {
+  const w = world();
+  writeFileSync(
+    w.engine,
+    `export default { project: { name: 'demo' }, server: { use: '@bakers-build/addon-remote-drupal' }, addons: ['@bakers-build/addon-herdr-core'] };`,
+  );
+  const report = service.planConfig({
+    ...w,
+    operation: 'check',
+    scope: 'project',
+  }).report;
+  expect(
+    report.findings.filter((f) =>
+      ['executor', 'worktree'].includes(f.key ?? ''),
+    ),
+  ).toEqual([]);
+  expect(report.slot_sources?.worktree).toBe(
+    '@bakers-build/addon-workspace-git (via @bakers-build/addon-herdr-core)',
+  );
+});
+
+it('keeps an unresolvable addon opaque when checking missing slots', () => {
+  const w = world();
+  writeFileSync(
+    w.engine,
+    `export default { project: { name: 'demo' }, addons: ['@nope/missing'] };`,
+  );
+  const report = service.planConfig({
+    ...w,
+    operation: 'check',
+    scope: 'project',
+  }).report;
+  expect(
+    report.findings
+      .filter((f) => ['server', 'executor', 'worktree'].includes(f.key ?? ''))
+      .map((f) => f.code),
+  ).toEqual(['unknown_value', 'unknown_value', 'unknown_value']);
+});

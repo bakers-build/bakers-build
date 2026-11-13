@@ -10,6 +10,7 @@ import type {
   ConfigReport,
 } from '@bakers-build/core';
 import {
+  finalizeConfigReport,
   homeBbDir,
   inventoryConfig,
   readAddonCapabilities,
@@ -121,7 +122,7 @@ function checkAddonScopes(
         owner: scope,
         remediation: `Move '${spec}' from addons[] of ${file.path} to addons[] of ${target}.`,
       });
-      report.result = 'blocked';
+      finalizeConfigReport(report);
     }
   }
 }
