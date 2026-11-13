@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -103,7 +104,7 @@ it('ensures a run clone and a plain herdr workspace instead of a herdr worktree'
     target: 'next',
     shared: false,
   });
-  expect(existsSync(join(path, '.git'))).toBe(false);
+  expect(readdirSync(join(path, '.git'))).toEqual([]);
   expect(git(root, 'rev-parse', BRANCH)).toBe(
     git(root, 'rev-parse', 'origin/next'),
   );

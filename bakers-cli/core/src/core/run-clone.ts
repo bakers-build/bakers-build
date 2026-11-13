@@ -1,13 +1,23 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  lstatSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { UI_REFRESH_FILE } from './ui-refresh.js';
 
 /** Host-owned record of one isolated run's clone; never store it where the run can write. */
 export interface RunClone {
-  /** The run's Git directory, outside the workspace; mounted as `.git` only inside the run. */
+  /**
+   * The run's Git directory, outside the workspace; mounted as `.git` only
+   * inside the run. On the host `<workspace>/.git` is an empty directory.
+   */
   gitDir: string;
   workspace: string;
   /** The parent repository's common Git directory. */
@@ -174,8 +184,15 @@ export function createRunClone(options: RunCloneOptions): RunClone {
   }
 
   mkdirSync(workspace, { recursive: true });
-  // Removes a planted link itself, never its target.
-  rmSync(join(workspace, '.git'), { recursive: true, force: true });
+  // An empty `.git` stays: the run's and the site containers' mounts sit on
+  // it, and removing it would detach them. Anything else there was planted;
+  // rm removes a link itself, never its target.
+  const placeholder = join(workspace, '.git');
+  const present = lstatSync(placeholder, { throwIfNoEntry: false });
+  if (!present?.isDirectory() || readdirSync(placeholder).length > 0) {
+    rmSync(placeholder, { recursive: true, force: true });
+    mkdirSync(placeholder);
+  }
   const tree = (...args: string[]) =>
     git(['--git-dir', gitDir, '--work-tree', workspace, ...args], workspace);
   // Index first, so clean removes only untracked files and reset rewrites only changed ones.

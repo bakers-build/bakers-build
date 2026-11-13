@@ -4,6 +4,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -49,7 +50,7 @@ it('creates a run clone instead of a linked worktree and refreshes it on every e
   expect(first.created).toBe(true);
   expect(first.path).toBe(join(`${root}-worktrees`, 'GL-9'));
   expect(first.instructions?.text).toBe('rules');
-  expect(existsSync(join(first.path, '.git'))).toBe(false);
+  expect(readdirSync(join(first.path, '.git'))).toEqual([]);
   expect(first.clone).toMatchObject({
     workspace: first.path,
     branch: 'bakers/GL-9-title',

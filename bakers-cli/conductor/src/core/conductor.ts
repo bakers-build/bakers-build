@@ -1020,11 +1020,12 @@ export class Conductor {
         });
       }
     }
+    // Host scripts take the worktree from here: a run clone has no Git to ask.
     const shell = await this.runHook(
       name,
       cwd,
       { ticket: ticketRef },
-      shellEnv,
+      { ...shellEnv, BAKERS_WORKTREE_PATH: cwd },
     );
     if (failed.length === 0) return shell;
     const error = `hook listener failed: ${failed.join(', ')}`;

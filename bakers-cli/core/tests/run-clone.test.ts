@@ -79,11 +79,11 @@ function fixture() {
   return { root, parent, workspace, gitDir, create, run };
 }
 
-it('clones the ticket branch with its Git directory outside the workspace and the target as an unmerged ref', () => {
+it('clones the ticket branch with its Git directory outside the workspace, an empty .git placeholder and the target as an unmerged ref', () => {
   const { parent, workspace, gitDir, create, run } = fixture();
   const record = create();
 
-  expect(existsSync(join(workspace, '.git'))).toBe(false);
+  expect(readdirSync(join(workspace, '.git'))).toEqual([]);
   expect(readFileSync(join(workspace, 'dir/tracked'), 'utf8')).toBe('ticket');
   expect(run('symbolic-ref', 'HEAD')).toBe('refs/heads/ticket');
   expect(run('rev-parse', 'HEAD')).toBe(git(parent, 'rev-parse', 'ticket'));
@@ -152,13 +152,14 @@ it('does not write through a symlink the previous run planted over a tracked dir
   mkdirSync(outside);
   rmSync(join(workspace, 'dir'), { recursive: true });
   symlinkSync(outside, join(workspace, 'dir'));
+  rmSync(join(workspace, '.git'), { recursive: true });
   symlinkSync(outside, join(workspace, '.git'));
 
   create();
 
   expect(readdirSync(outside)).toEqual([]);
   expect(readFileSync(join(workspace, 'dir/tracked'), 'utf8')).toBe('ticket');
-  expect(existsSync(join(workspace, '.git'))).toBe(false);
+  expect(readdirSync(join(workspace, '.git'))).toEqual([]);
 });
 
 it('refuses a branch the parent does not have', () => {
@@ -188,4 +189,15 @@ it('stores the clone outside the workspace by default and finds it again by work
   removeRunClone(workspace, env);
   expect(loadRunClone(workspace, env)).toBeUndefined();
   expect(existsSync(record.gitDir)).toBe(false);
+});
+
+it('keeps the empty .git placeholder in place so mounts over it survive a refresh', () => {
+  const { workspace, create } = fixture();
+  create();
+  const before = statSync(join(workspace, '.git')).ino;
+  create();
+  expect(statSync(join(workspace, '.git')).ino).toBe(before);
+  writeFileSync(join(workspace, '.git/HEAD'), 'ref: refs/heads/planted\n');
+  create();
+  expect(readdirSync(join(workspace, '.git'))).toEqual([]);
 });
