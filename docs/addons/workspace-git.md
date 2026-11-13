@@ -22,6 +22,12 @@ addons: [
 
 With `auto_setup_merge: false`, the setting applies to everyone who uses that repository: `git switch <remote branch>` no longer sets an upstream either. If the first write meets a `config.lock` held by a sandbox, the conductor logs a warning with the repair command. To undo it after switching to `true`, run `git config --unset branch.autoSetupMerge`.
 
+## Isolated runs
+
+Under an isolating runtime ([Docker](/addons/runtime-docker), [Bubblewrap](/addons/runtime-bwrap)) every run start replaces the worktree with a fresh clone of the ticket branch at the same path. Tracked files are reset and untracked files removed; ignored files such as `node_modules` stay. Commit before a run ends: uncommitted work is not carried over. On the host, the workspace's `.git` is an empty placeholder.
+
+`shared: true` borrows the parent repository's objects instead of copying them. While a run is open, never prune the parent or run `git repack -d` or `git gc --prune` there: the clone can lose objects it needs. See [run clones](/provision/security/shared-settings#isolated-git-delivery).
+
 ## Check it works
 
 A dispatched ticket gets a worktree in `<checkout>-worktrees/` on a branch that matches your template.

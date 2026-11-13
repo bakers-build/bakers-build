@@ -34,7 +34,7 @@ See [failure and retry behavior](/configuration/project/hooks#failure-behavior) 
 
 ## Provision on an agent's request
 
-Configure [`provision_up`](/configuration/project/hooks#provision-on-an-agent-s-request) when checks need a running environment. It is an explicit tool call, not an automatic lifecycle event. Your script owns reuse, readiness and the returned URL.
+Configure [`provision_up`](/configuration/project/hooks#provision-on-an-agent-s-request) when checks need a running environment. It is an explicit tool call, not an automatic lifecycle event. Your script owns reuse, readiness and the returned URL. [`provision_exec`](/configuration/project/hooks#run-a-configured-command) runs a configured command with the agent's arguments, for example in a site container.
 
 ## Add a listener from an addon
 
@@ -46,14 +46,19 @@ Addon authors use the existing [hook listener contract](/addons/build/contracts#
 
 ## Protect host-executed files
 
-Keep hook and provisioning scripts and their host-side helpers in `.bakers/scripts/`. The
-runtime always protects `.bakers/`. DDEV's addon also protects `.ddev/` by default. For a required
-host-read or host-executed path that cannot move and is not covered by an addon, extend
-`runtime.read_only` with `['$inherit', 'path']`; see [shared runtime settings](/provision/security/shared-settings).
-An existing script move needs maintainer consent and updates to every caller.
+Under an isolating runtime, the host runs only code from protected paths: `.bakers/` and the
+project's [`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) list. Every
+lifecycle hook and every `provision_up` or `provision_exec` command must begin with a script inside
+one of them: the command's first word, or the word after `bash`, `sh` or `node`.
 
-To change a protected file, have a maintainer apply and deliver the change outside the isolated
-run. This also applies when a target-branch merge changes protected files. Protection of a
-wrapper does not protect application code it executes: dependency lifecycle scripts, docs build
-configuration and CLI sources remain a host-execution gap. Host runs in `yolo` or `system`, and
-host agents other than Claude or Codex in `sandbox`, cannot enforce this boundary.
+```js
+hooks: { before_run: 'bash .bakers/provision.sh deps' },
+```
+
+Otherwise the config fails to load with an error naming the hook. Only that entry point is checked.
+The script should call only protected code and run anything the run can write, such as dependency
+installs and builds, in a container. Host scripts read `BAKERS_WORKTREE_PATH` and
+`BAKERS_RUNTIME_ISOLATES` instead of asking Git: an isolated workspace has no Git on the host.
+
+A maintainer makes and delivers changes to protected files outside the isolated run. The host
+runtime has no such check and no such protection.

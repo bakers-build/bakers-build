@@ -20,11 +20,9 @@ starting each run in a container at host paths. Machine scope:
 
 Container `bb-run-<run uuid>`, under your uid, mounts:
 
-- the worktree, with its `.git` pointer read-only. Independent per-run Git metadata replaces
-  the linked worktree's admin directory inside the container. Parent and sibling Git metadata
-  is never mounted writable; commits and refs stay private until explicit transfer;
-- `.bakers/` and effective `runtime.read_only` paths, read-only. DDEV contributes `.ddev`
-  automatically. Host provisioning still writes generated files there;
+- the workspace: a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket branch at the worktree path, made at every run start;
+- the run's Git directory as `.git`. It lives in the conductor's cache; the parent repository is not mounted. The workspace option `shared` adds the parent's `objects`, read-only;
+- `.bakers/` and the project's [`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) paths, read-only;
 - the bakers CLI build, read-only. The runtime refuses to start when that build's root would
   contain your home directory;
 - `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` at its host path;
@@ -33,19 +31,18 @@ Container `bb-run-<run uuid>`, under your uid, mounts:
 No `~/.ssh`, `~/.bakers`, Docker socket or harness login (`.credentials.json`). Secrets use `-e KEY`, never values in argv.
 Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
-See [prerequisites](/provision/security/shared-settings#verify). Transfer commits first with `runtime_transfer_commit`, then push with `forge_push`. Cleanup removes the container and home, retaining private Git for recovery.
+See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes the container and home.
 
 ## Delivery and limits
 
-`runtime_transfer_commit` imports a full commit hash through clean metadata, advancing only
-the ticket branch if its previous tip matches. No source config/hooks are imported. Gitlinks/submodules
-are refused. Cleanup retains private Git for recovery; remove it only after delivery.
-See [transfer, index reconciliation and cache paths](/provision/security/shared-settings#isolated-git-delivery).
+Commit inside the run: the next run starts from a fresh clone, so uncommitted work is lost. At
+run end and inside `forge_push`, the host checks the run's commits and moves the ticket branch
+in the parent repository. A commit that changes a protected path is rejected; a maintainer
+makes such changes outside the run. Submodules are refused. Install dependencies and build
+inside the run.
 
-A maintainer changes protected files outside the isolated run. See
-[shared runtime paths](/provision/security/shared-settings#host-executed-paths).
-Host tools still execute unprotected repository code: package lifecycle scripts, docs
-configuration and CLI builds. Protecting their launch scripts does not isolate that code.
+The DDEV web container is as untrusted as the run. bakers checks only a host command's entry
+point, not what that script calls. See [residual risks](/provision/security/shared-settings#isolated-git-delivery).
 
 ## Allowlist mode
 

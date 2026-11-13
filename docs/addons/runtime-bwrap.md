@@ -17,7 +17,7 @@ the outer container's security policy must allow nested namespaces. This externa
 not require `socat` itself. Agent permissions remain unchanged; native sandbox mode additionally
 needs its own tools and support for nested namespaces.
 
-Runs require linked Git worktrees; the main checkout is refused. Programs come from the host's
+The workspace must provide a run clone: the [Git workspace](/addons/workspace-git#isolated-runs) or [herdr](/addons/herdr#isolated-runs). Programs come from the host's
 system directories and executable search paths. Additional tool resources can be granted through
 `readPaths`; each grant exposes that path to the agent.
 
@@ -36,20 +36,20 @@ The agent prepares its configuration and grants. Claude copies settings and logi
 private home, mounts plugins read-only, and writes its transcript to the worktree transcript directory.
 Explicit API credentials override stored login.
 
-The worktree keeps its host path, but independent private Git metadata replaces its admin
-directory inside the run. The `.git` pointer is read-only; parent and sibling Git metadata is
-not writable. `.bakers/` and effective `runtime.read_only` paths are read-only; DDEV contributes
-`.ddev`. Host provisioning can still write generated files under these mounts.
+The workspace is a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket
+branch at the worktree path, made at every run start. The run's Git directory, kept in the
+conductor's cache, is mounted as `.git`; the parent repository is absent. The workspace option
+`shared` adds the parent's `objects` read-only. `.bakers/` and the project's
+[`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) paths are read-only.
 
-Commit locally, then call `runtime_transfer_commit` with the full hash before forge delivery.
-Only the ticket branch advances, checking its previous tip; source config/hooks are never imported.
-Gitlinks/submodules are refused. Cleanup stops the launcher, removes the home, and retains private
-Git for recovery. See [transfer, index reconciliation and cache paths](/provision/security/shared-settings#isolated-git-delivery).
-A maintainer delivers protected-file changes outside the run.
+Commit inside the run: uncommitted work does not reach the next run. At run end and inside
+`forge_push`, the host checks the run's commits and moves the ticket branch in the parent
+repository. A commit that changes a protected path is rejected; a maintainer delivers such
+changes outside the run. Submodules are refused. Cleanup stops the launcher and removes the home.
 
 ## Boundaries
 
 Networking is shared with the Coder environment, including localhost. There is no egress
 allowlist in this backend. Resource limits remain those of the outer environment.
 
-Host tools still execute unprotected repository code, including package lifecycle scripts, docs configuration and CLI builds. Protecting launch scripts alone does not isolate that code.
+Install dependencies and build inside the run. The DDEV web container is as untrusted as the run; bakers checks only a host command's entry point.

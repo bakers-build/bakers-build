@@ -6,7 +6,7 @@ Tools make functions available to agents and other callers: check an environment
 
 A tool has a name, a description and defined input parameters. The caller chooses a tool and supplies its inputs; the implementation performs the operation and returns a result or an error.
 
-For example, `ddev_status()` reports an environment's status. `ddev_exec(command)` accepts a command to run inside its web container. The tool's implementation determines what it can do.
+For example, `ddev_status()` reports an environment's status. `provision_exec(key, args)` runs a command your project configured, with the arguments you pass. The tool's implementation determines what it can do.
 
 ## Where tools come from
 
@@ -14,12 +14,12 @@ An agent program has its own tools, such as reading files or running shell comma
 
 | Provider | Example | Purpose |
 |---|---|---|
-| bakers.build | `provision_up(profile?)` | Prepare or reuse the worktree's application environment |
+| bakers.build | `provision_up(profile?)`, `provision_exec(key, args?)` | Prepare or reuse the worktree's application environment; run a configured command, for example in its site container |
 | [Agents addon](/addons/agents) | `agents_catalog()` | Read the conductor's loaded agent catalog and routes without permissions |
-| [DDEV addon](/addons/ddev#agent-tools) | `ddev_status()`, `ddev_start()`, `ddev_exec(command)` | Inspect, start and work inside a DDEV project |
+| [DDEV addon](/addons/ddev#agent-tools) | `ddev_status()`, `ddev_start()` | Inspect and start a DDEV project |
 | [Ports addon](/addons/ports) | `ports_up(service?)`, `ports_status()` | Share a preview and inspect its status |
 
-Enable the addons you need in their supported [configuration scope](/addons/configure). `provision_up` becomes available when you configure its hook.
+Enable the addons you need in their supported [configuration scope](/addons/configure). `provision_up` and `provision_exec` become available when you configure their [hooks](/configuration/project/hooks#provision-on-an-agent-s-request).
 
 ## Call tools from an agent
 

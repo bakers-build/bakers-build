@@ -21,7 +21,7 @@ addons: [
 ],
 ```
 
-The addon declares `.ddev` in the default `runtime.read_only` list, protecting its host commands and configuration during isolated runs. See [host-executed files](/provision/hooks#protect-host-executed-files).
+For isolated runs, list `.ddev` in the project's `runtime.read_only` and protect it in DDEV's own containers too. See [host-executed files](/provision/hooks#protect-host-executed-files).
 
 Existing Ports installations also need this claimer entry.
 
@@ -33,20 +33,25 @@ The addon provides these tools for the run's worktree, the DDEV approot. Claude 
 |---|---|
 | `ddev_status()` | `ddev describe` as a summary: name, status, primary URL, services. |
 | `ddev_start()` | `ddev start`, up to 10 minutes. |
-| `ddev_exec(command)` | Runs `command` in the web container, up to 5 minutes. |
 
 Answers carry the exit code and the last 64 KB of output; a non-zero exit is a tool error. The conductor's [`provision_up`](/provision/hooks#provision-on-an-agent-s-request) tool runs the DDEV script in [Set up DDEV](/addons/ddev/setup#provision-on-an-agent-s-request).
 
-This repository protects `.bakers`, `.ddev` and host `.git` through
-`.ddev/docker-compose.protection.yaml`. Package outputs stay writable. See
-[DDEV protection and recovery](/provision/security/shared-settings#ddev-tool-protection).
+Commands in the web container go through the conductor's [`provision_exec`](/configuration/project/hooks#run-a-configured-command) tool, with a key your project configures:
 
-In `WORKFLOW.md`, a `ddev <cmd>` row runs as `ddev_exec("<cmd>")`:
+```js
+hooks: { provision_exec: { web: 'bash .bakers/provision.sh exec web' } },
+```
+
+This repository protects `.bakers`, `.github`, `.ddev` and the `.git` placeholder through
+`.ddev/docker-compose.protection.yaml`. See
+[DDEV protection](/provision/security/shared-settings#ddev-tool-protection).
+
+In `WORKFLOW.md`, say how a `ddev <cmd>` row runs:
 
 ```md
 ## bb-phase-provision
 
-Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `ddev_exec("<cmd>")`.
+Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `provision_exec('web', [...])`.
 
 ## bb-phase-validate
 

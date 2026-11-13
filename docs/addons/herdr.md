@@ -74,6 +74,8 @@ addons: [
 
 `auto_setup_merge` behaves as in [workspace-git](/addons/workspace-git#options).
 
+<span id="isolated-runs"></span>Under an isolating runtime, each run gets a fresh [run clone](/addons/workspace-git#isolated-runs) in a plain herdr workspace labelled with the branch, not a herdr worktree. `shared` has the same garbage-collection requirement as there.
+
 A `panes` array replaces the previous one. The open layout runs once, after `after_create`, for a freshly created worktree; the executor applies it, also to a worktree another workspace made ([Conductor slots](/addons/slots)). Top-level `states` chooses what is served, while `with.states` only lays out panes.
 
 The agent command is executed by non-interactive `/bin/sh`, so the harness binary must resolve through `PATH`. A shell alias or function is not loaded.

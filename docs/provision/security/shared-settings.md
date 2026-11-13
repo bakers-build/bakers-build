@@ -34,7 +34,7 @@ Shared lists apply only while an agent's effective mode is `sandbox`. Codex and 
 
 ## No global tools
 
-When no layer sets `mode`, runs use `system`. A `sandbox` run trusts no command by default: no harness exempts `bakers`, `git` or any other command from its sandbox. Whatever a run needs beyond its worktree comes through tools the conductor serves for an addon, such as `provision_up`, `ddev_exec` and `ports_up`. Configure [Forge](/addons/forge) and its backend for repository delivery through conductor tools; sandbox mode does not enable them automatically.
+When no layer sets `mode`, runs use `system`. A `sandbox` run trusts no command by default: no harness exempts `bakers`, `git` or any other command from its sandbox. Whatever a run needs beyond its worktree comes through tools the conductor serves for an addon, such as `provision_up`, `provision_exec` and `ports_up`. Configure [Forge](/addons/forge) and its backend for repository delivery through conductor tools; sandbox mode does not enable them automatically.
 
 Without Forge, shell-based delivery needs an explicitly supported permission path for the selected harness. Where supported, trusted commands run with your full rights; do not add broad command exemptions merely to work around missing Forge configuration. Keep the Forge credentials with the conductor.
 
@@ -52,69 +52,79 @@ permissions; an unavailable sandbox can still cause a run to fail and consume re
 
 ## Host-executed paths
 
-`runtime: { read_only: ['$inherit', 'host-tools'] }` is available in project and machine config.
-Its layers are addon defaults → project → machine → runtime entry `with.read_only`.
-`bakers agents` reports effective runtime paths with source layers alongside permissions.
-A set list replaces; `'$inherit'` inserts inherited entries and deduplicates them. Dropping inherited
-paths warns at every load. Invalid lists fail loading; missing, redirected or escaping paths fail
-dispatch. `.bakers/` is always protected outside these layers. DDEV declares `.ddev` automatically.
-Nested entries protect their entire top-level project folder: protecting only a file would allow
-renaming its writable ancestor and replacing the original path. Symlinks and hardlinked files
-inside protected trees fail dispatch; only regular files and directories are accepted.
-`bakers agents` shows the actual `protected_roots`.
-Other addons can export `runtime: { read_only: [...] }` from their preset.
+Under an isolating runtime ([Docker](/addons/runtime-docker), [Bubblewrap](/addons/runtime-bwrap)) one
+principle holds: on the host, only code from protected paths runs; everything else runs in a
+container; only checked commits come back.
 
-Docker and Bubblewrap mount these paths read-only. Host-runtime Claude/Codex sandbox mode also
-protects them: Claude denies Bash writes and Edit/Write tools; Codex adds read-only filesystem
-overrides. Other agents and host `system`/`yolo` modes cannot enforce this protection. Commands explicitly
-exempted from a native harness sandbox retain their configured host rights; an isolating runtime
-still enforces its outer read-only mounts.
+The protected paths come from the project alone, in `.bakers/project.config.js`:
 
-Place host scripts in `.bakers/scripts/`. A maintainer applies, commits and delivers protected-file
-changes outside the isolated run, including target-branch merges that modify them. There is no
-per-ticket write bypass. Host-generated DDEV files remain writable from host provisioning.
+```js
+runtime: { read_only: ['.ddev', '.github'] },
+```
 
-Conductor tools run outside the agent's mounts. Configure their execution environments separately.
-Host package lifecycle scripts, docs configuration and CLI builds remain outside this boundary.
+Paths are relative to the worktree, and `.bakers` is always protected in addition. A listed path
+must exist; otherwise dispatch fails. Symlinks and hardlinked files inside a protected tree also
+fail dispatch. There is no machine-level key, no addon default and no runtime-entry option.
+bakers.build mounts these paths read-only in the run's container.
+
+Every project hook and every `hooks.provision_up` or `hooks.provision_exec` command must begin with
+a script in a protected path; otherwise the config fails to load. See
+[the entry-point rule](/provision/hooks#protect-host-executed-files). The run installs dependencies
+and builds in its own container, not on the host.
+
+A legitimate change to a protected path is made and delivered by a maintainer outside an isolated
+run. If the target branch changed a protected path, merging it fails inside the run as read-only.
+The run reports that; a maintainer merges the target into the ticket branch once, outside the run,
+and the next run starts from that state.
 
 ### DDEV tool protection
 
-This repository uses ordinary DDEV Compose configuration in `.ddev/docker-compose.protection.yaml`.
-It mounts `.bakers`, `.ddev` and host `.git` read-only, including DDEV's configuration aliases in
-the web and database containers. Mount the whole `.bakers` directory: protecting only
-`provision.sh` leaves writable ancestors that can be renamed/replaced.
+Your project's own containers must protect the same paths: bakers.build does not propagate
+`runtime.read_only` into them. This repository uses ordinary DDEV Compose configuration in
+`.ddev/docker-compose.protection.yaml`. It mounts `.bakers`, `.github`, `.ddev` and the empty
+`.git` placeholder read-only into the web container. Mount whole directories: protecting only one
+file leaves a writable ancestor that can be renamed and replaced. Apply Compose changes by
+recreating the containers.
 
-`.bakers/provision.sh` is the fixed entry point for provisioning profiles. Its implementation is
-read on every call. Host edits stay visible through the read-only directory mount; normal package
-and build outputs remain writable. Container logs/test artifacts live in `tests/artifacts/bakers`.
-Git commands belong in the agent's private Git workspace.
-
-Apply Compose changes by recreating DDEV containers. This is project policy, with no extra addon
-inspector or automatic propagation of `runtime.read_only` into DDEV. Protect additional paths,
-services and aliases explicitly in Compose, and retain `.ddev` in agent protection so a run cannot
-rewrite that policy. Host provisioning can still generate DDEV files.
+Host-side DDEV and provisioning can still write generated, ignored files there, such as
+`.ddev/config.worktree.yaml` and DDEV's `.ddev/.gitignore`.
 
 ## Isolated Git delivery
 
-Docker and Bubblewrap use independent Git metadata with copied objects, preserving worktree paths.
-Gitlinks/submodules are refused because nested Git configuration can execute on the host.
-The host Git store is mounted read-only. After `forge_fetch`, run `git fetch origin` to refresh
-private remote-tracking refs; private local branches remain independent. Agent launches include
-this delivery context. Commit normally inside the run, then explicitly call `runtime_transfer_commit` with a full hash
-before forge push. The destination is the ticket branch from the host-owned launch record.
-The host verifies objects, ancestry and every incoming commit's protected-path changes through clean
-metadata; source config/hooks and unrelated refs are never imported. Concurrent host branch movement
-fails safely. Git plumbing cannot bypass protected-file delivery rules.
+At every isolated run start, the [Git workspace](/addons/workspace-git#isolated-runs) or
+[herdr](/addons/herdr) creates a fresh **run clone** of the ticket branch at the stable worktree
+path. Its Git directory lives in the conductor's cache, at
+`$XDG_CACHE_HOME/bakers/run-git/<hash>.git` (default `~/.cache`), and is mounted as `.git` only
+inside the run's container. On the host, the workspace's `.git` is an empty placeholder directory
+and the host never runs Git there. The parent repository is not mounted in the run.
 
-Transfer updates the branch, leaving the host index separate. After the run stops, preserve any
-host-side staged changes, then use `git reset --mixed HEAD` in the ticket worktree to reconcile
-its index without discarding working files.
+The clone carries the ticket's target branch as `origin/<target>`; nothing is merged. Tracked files
+are reset and untracked files removed; ignored files such as `node_modules` and `vendor` are kept.
+Uncommitted work is not carried over to the next run, so a run must commit before it ends.
 
-Cleanup retains private Git and its host-owned record for recovery. Docker stores them at
-`$XDG_CACHE_HOME/bakers/runtime/<run uuid>.git` and `.workspace.json`; Bubblewrap uses
-`<cache>/<run uuid>.git` and `.git.json`. Remove each matching pair only after delivery/recovery.
-There is no automatic cache GC or dependency on parent object retention.
+At run end, and inside `forge_push`, the host transfers the run's commits to the ticket branch in
+the parent repository:
 
-The first/repeat metadata-copy measurements here were 0.244/0.074 seconds and 56 MB per run,
-versus 0.010/0.009 seconds and 100 KB locally with shared objects. These are cache observations,
-not cold-cache or end-to-end startup guarantees. Independent objects avoid parent GC dependencies.
+- objects are copied without following links and checked with `git fsck`;
+- the commit must descend from the tip the run started from, and the branch moves only if it still
+  has that tip;
+- a commit that changes a protected path, compared with that starting tip, is rejected;
+- submodules are refused, and the run's Git config and hooks never execute on the host.
+
+`forge_fetch` fetches into the parent repository and refreshes the run's `origin/*` refs; the agent
+merges `origin/<target>` itself. `forge_push` transfers, then pushes. Only the ticket branch is
+transferred, not other branches created in the clone.
+
+With the workspace option `shared: true`, the clone borrows the parent's objects and the parent's
+`objects` directory is mounted read-only in the run. While a run is open, do not prune the parent
+repository or run `git repack -d` or `git gc --prune` there: the clone can lose objects it needs.
+
+Measured on ext4 with 16 CPUs and 5918 tracked files, three runs each: an independent clone took
+1.81 s without an existing copy and 0.90 s with one, using 140 MB; `shared` took 0.45 s and 114 MB;
+a linked worktree took 0.43 s and 113 MB. Startup is not equivalent to a worktree's.
+
+**Residual risks.** The DDEV web container is as untrusted as the run, and all DDEV projects share
+the `ddev-global-cache` volume. bakers.build checks only the entry point of a host command, not
+what that script calls. The host runtime, in any permission mode including `sandbox`, has none of
+this protection: it keeps linked worktrees and host installs. Reasoning: the decision record
+`docs/decisions/run-isolation.md`.

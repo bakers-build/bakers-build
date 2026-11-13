@@ -201,3 +201,36 @@ it('keeps the empty .git placeholder in place so mounts over it survive a refres
   create();
   expect(readdirSync(join(workspace, '.git'))).toEqual([]);
 });
+
+it('saves the previous run commits before starting fresh, and sets a refused Git directory aside', () => {
+  const { parent, workspace, gitDir, create, run } = fixture();
+  create();
+  writeFileSync(join(workspace, 'file'), 'run work');
+  run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qam', 'work');
+  const tip = run('rev-parse', 'HEAD');
+
+  const next = create();
+
+  // The run ended without a transfer: its commits reach the branch first.
+  expect(git(parent, 'rev-parse', 'ticket')).toBe(tip);
+  expect(next.expected).toBe(tip);
+  expect(existsSync(`${gitDir}.unsaved`)).toBe(false);
+
+  mkdirSync(join(workspace, '.bakers'));
+  writeFileSync(join(workspace, '.bakers/planted'), 'x');
+  run('add', '-A');
+  run('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', 'planted');
+  const refused = run('rev-parse', 'HEAD');
+
+  create();
+
+  expect(git(parent, 'rev-parse', 'ticket')).toBe(tip);
+  expect(
+    git(
+      parent,
+      `--git-dir=${gitDir}.unsaved`,
+      'rev-parse',
+      'refs/heads/ticket',
+    ),
+  ).toBe(refused);
+});

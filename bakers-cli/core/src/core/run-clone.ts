@@ -5,11 +5,13 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { transferIsolatedCommit } from './isolated-git.js';
 import { UI_REFRESH_FILE } from './ui-refresh.js';
 
 /** Host-owned record of one isolated run's clone; never store it where the run can write. */
@@ -67,10 +69,12 @@ export function loadRunClone(
   workspace: string,
   env: Env = process.env,
 ): RunClone | undefined {
+  return loadRecord(runCloneGitDir(workspace, env));
+}
+
+function loadRecord(gitDir: string): RunClone | undefined {
   try {
-    return JSON.parse(
-      readFileSync(recordOf(runCloneGitDir(workspace, env)), 'utf8'),
-    );
+    return JSON.parse(readFileSync(recordOf(gitDir), 'utf8'));
   } catch {
     return undefined;
   }
@@ -112,6 +116,18 @@ export function createRunClone(options: RunCloneOptions): RunClone {
   const parent = (...args: string[]) =>
     git(['--git-dir', parentGitDir, ...args]);
   git(['check-ref-format', `refs/heads/${branch}`]);
+  // A run that ended without its transfer (a crash, a re-dispatch) still
+  // holds commits: bring them over, or set its Git directory aside when the
+  // transfer refuses them, so starting fresh never destroys work.
+  const previous = loadRecord(gitDir);
+  if (previous) {
+    try {
+      transferIsolatedCommit(previous);
+    } catch {
+      rmSync(`${gitDir}.unsaved`, { recursive: true, force: true });
+      renameSync(gitDir, `${gitDir}.unsaved`);
+    }
+  }
   const expected = parent(
     'rev-parse',
     '--verify',
