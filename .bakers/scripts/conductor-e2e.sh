@@ -20,10 +20,12 @@ playground_home="$root/workspaces/.bakers-playground-home"
 mkdir -p "$playground_home"
 if [ "${BAKERS_HOME:-}" != "$playground_home" ]; then
 node --input-type=module - "${BAKERS_HOME:-${HOME}/.bakers}/machine.config.js" "$playground_home/machine.config.js" "$root/workspaces/.playground-isolated" <<'JS'
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 const [source, target, marker] = process.argv.slice(2);
 const keep_runtime = existsSync(marker);
+// Each line of the marker is a host path the Bubblewrap runtime exposes read-only in playground runs.
+const expose = keep_runtime ? readFileSync(marker, 'utf8').split('\n').map(line => line.trim()).filter(Boolean) : [];
 writeFileSync(target, `import machine from ${JSON.stringify(pathToFileURL(source).href)};
 const stripSandbox = value => Array.isArray(value) ? value.map(stripSandbox)
   : value && typeof value === 'object'
@@ -32,7 +34,12 @@ const stripSandbox = value => Array.isArray(value) ? value.map(stripSandbox)
 // The playground runs on the host unless workspaces/.playground-isolated asks for the machine's runtime.
 const isRuntime = entry => (typeof entry === 'string' ? entry : entry?.use ?? '').startsWith('@bakers-build/addon-runtime-');
 const playground = stripSandbox(machine);
-export default ${keep_runtime} || !playground.addons ? playground : { ...playground, addons: playground.addons.filter(entry => !isRuntime(entry)) };
+const expose = ${JSON.stringify(expose)};
+const nameOf = entry => typeof entry === 'string' ? entry : entry?.use ?? '';
+const exposed = entry => !expose.length || nameOf(entry) !== '@bakers-build/addon-runtime-bwrap' ? entry
+  : { use: nameOf(entry), with: { ...(entry.with ?? {}), readPaths: [...(entry.with?.readPaths ?? []), ...expose] } };
+export default !playground.addons ? playground
+  : { ...playground, addons: ${keep_runtime} ? playground.addons.map(exposed) : playground.addons.filter(entry => !isRuntime(entry)) };
 `, { mode: 0o600 });
 JS
 ln -sfn "${BAKERS_HOME:-${HOME}/.bakers}/connections" "$playground_home/connections"

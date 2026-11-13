@@ -73,7 +73,10 @@ it('removes sandbox settings and isolating runtimes only in the playground machi
     });
     expect(readFileSync(source, 'utf8')).toBe(original);
     // The marker keeps the machine's runtime for an isolated playground.
-    writeFileSync(join(root, 'workspaces/.playground-isolated'), '');
+    writeFileSync(
+      join(root, 'workspaces/.playground-isolated'),
+      '/opt/host-hooks\n',
+    );
     execFileSync('bash', [script, 'teardown'], {
       env: { ...process.env, BAKERS_HOME: sourceHome },
     });
@@ -89,7 +92,15 @@ it('removes sandbox settings and isolating runtimes only in the playground machi
         { encoding: 'utf8' },
       ),
     );
-    expect(isolated).toContain('@bakers-build/addon-runtime-bwrap');
+    // Its lines are host paths the Bubblewrap runtime exposes read-only.
+    expect(isolated).toContainEqual({
+      use: '@bakers-build/addon-runtime-bwrap',
+      with: { readPaths: ['/opt/host-hooks'] },
+    });
+    expect(isolated).toContainEqual({
+      use: '@bakers-build/addon-runtime-docker',
+      with: { network: 'host' },
+    });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
