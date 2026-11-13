@@ -103,6 +103,8 @@ esac
         'remote-drupal',
         'essentials',
         'ports',
+        'runtime-bwrap',
+        'runtime-docker',
       ].map((n) => `addons/${n}`),
     ]) {
       mkdirSync(join(root, 'bakers-cli', unit, 'src'), { recursive: true });
