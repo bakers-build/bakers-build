@@ -25,23 +25,6 @@
 // thing that otherwise wins over anything a project links — is NOT copied, for the same
 // reason WORKFLOW.md is not: it is a committed file of this repo, so the worktree checks
 // it out itself. Only the host-dependent halves are injected here.
-const parentSetupHook = [
-  'parent=$(git worktree list --porcelain | head -1 | cut -c 10-)',
-  ['mkdir -p .claude', 'ln -sfn "$parent/.claude/skills" .claude/skills'].join(' && '),
-  ['mkdir -p .bakers', 'cp -f "$parent/.bakers/connection.config.js" .bakers/connection.config.js'].join(' && '),
-  'exclude=$(git rev-parse --git-path info/exclude)',
-  'for p in .bakers/connection.config.js .claude/skills; do grep -qxF "$p" "$exclude" || echo "$p" >> "$exclude"; done',
-  // Last: independent skill/client setup survives an observable env setup failure.
-  'node .bakers/scripts/setup-worktree.mjs',
-].join('; ');
-
-// NO `states` KEY, and that is the point rather than an omission: an absent or empty
-// list makes the conductor serve EVERY claimable state of its project. A
-// narrowed slice is what made one live run unrecoverable — the agent legitimately
-// routed the ticket back to `qualification`, the slice did not serve it, and the
-// ticket could never be claimed again. This rule used to live in the generated config
-// and was lost the moment generation stopped; it belongs here, with the file that now
-// decides it.
 /** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
   schema_version: 1,
@@ -68,5 +51,6 @@ export default {
     '@bakers-build/addon-herdr',
   ],
   // The conductor runs lifecycle hooks; addon-herdr rejects `with.hooks`.
-  hooks: { after_create: parentSetupHook },
+  // A script in `.bakers/`, so an isolating runtime accepts it as a host command.
+  hooks: { after_create: 'bash .bakers/scripts/after-create.sh' },
 };

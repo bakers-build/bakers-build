@@ -72,6 +72,24 @@ it('removes sandbox settings and isolating runtimes only in the playground machi
       agents: { catalog: [{ alias: 'worker', with: { model: 'other' } }] },
     });
     expect(readFileSync(source, 'utf8')).toBe(original);
+    // The marker keeps the machine's runtime for an isolated playground.
+    writeFileSync(join(root, 'workspaces/.playground-isolated'), '');
+    execFileSync('bash', [script, 'teardown'], {
+      env: { ...process.env, BAKERS_HOME: sourceHome },
+    });
+    const isolated = JSON.parse(
+      execFileSync(
+        process.execPath,
+        [
+          '--input-type=module',
+          '-e',
+          'const {default: m} = await import(process.argv[1]); console.log(JSON.stringify(m.addons));',
+          join(testHome, 'machine.config.js'),
+        ],
+        { encoding: 'utf8' },
+      ),
+    );
+    expect(isolated).toContain('@bakers-build/addon-runtime-bwrap');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

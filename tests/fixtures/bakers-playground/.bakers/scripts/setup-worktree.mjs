@@ -116,11 +116,18 @@ function setup() {
     if (!base) throw new Error('Missing DDEV name in .ddev/config.yaml');
     const git = (...args) =>
       execFileSync('git', args, { encoding: 'utf8' }).trim();
+    // An isolated run's workspace has no Git: the conductor names its branch.
+    const isolated = process.env.BAKERS_RUNTIME_ISOLATES === '1';
     const linked =
+      isolated ||
       resolve(git('rev-parse', '--git-dir')) !==
-      resolve(git('rev-parse', '--git-common-dir'));
+        resolve(git('rev-parse', '--git-common-dir'));
     if (linked) {
-      const branch = git('branch', '--show-current')
+      const branch = (
+        isolated
+          ? (process.env.BAKERS_BRANCH_NAME ?? '')
+          : git('branch', '--show-current')
+      )
         .toLowerCase()
         .replace(/[^a-z0-9-]+/g, '-');
       const prefix = `${base}-${branch || 'wt'}`

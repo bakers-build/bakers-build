@@ -19,19 +19,20 @@ bakers="$root/bakers-cli/bin/bakers"
 playground_home="$root/workspaces/.bakers-playground-home"
 mkdir -p "$playground_home"
 if [ "${BAKERS_HOME:-}" != "$playground_home" ]; then
-node --input-type=module - "${BAKERS_HOME:-${HOME}/.bakers}/machine.config.js" "$playground_home/machine.config.js" <<'JS'
-import { writeFileSync } from 'node:fs';
+node --input-type=module - "${BAKERS_HOME:-${HOME}/.bakers}/machine.config.js" "$playground_home/machine.config.js" "$root/workspaces/.playground-isolated" <<'JS'
+import { existsSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-const [source, target] = process.argv.slice(2);
+const [source, target, marker] = process.argv.slice(2);
+const keep_runtime = existsSync(marker);
 writeFileSync(target, `import machine from ${JSON.stringify(pathToFileURL(source).href)};
 const stripSandbox = value => Array.isArray(value) ? value.map(stripSandbox)
   : value && typeof value === 'object'
     ? Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'sandbox').map(([key, item]) => [key, stripSandbox(item)]))
     : value;
-// The playground runs on the host: its fixture hooks are not written for an isolating runtime.
+// The playground runs on the host unless workspaces/.playground-isolated asks for the machine's runtime.
 const isRuntime = entry => (typeof entry === 'string' ? entry : entry?.use ?? '').startsWith('@bakers-build/addon-runtime-');
 const playground = stripSandbox(machine);
-export default { ...playground, ...(playground.addons ? { addons: playground.addons.filter(entry => !isRuntime(entry)) } : {}) };
+export default ${keep_runtime} || !playground.addons ? playground : { ...playground, addons: playground.addons.filter(entry => !isRuntime(entry)) };
 `, { mode: 0o600 });
 JS
 ln -sfn "${BAKERS_HOME:-${HOME}/.bakers}/connections" "$playground_home/connections"
