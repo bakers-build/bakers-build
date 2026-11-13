@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import * as presetModule from '../src/preset.js';
 import { type DdevRun, ddevTools, OUTPUT_CAP } from '../src/tools.js';
+
+const preset = { ...presetModule, tools: presetModule.tools.tools };
 
 const describeJson = (approot = '/work/bb-7') =>
   JSON.stringify({
@@ -59,26 +62,21 @@ describe('ddev tools', () => {
     ]);
   });
 
-  it('ddev_exec runs the command in the web container', async () => {
-    const { tools, calls } = fake({ exitCode: 0, output: 'http://login' });
-    const result = await tools.ddev_exec(
-      req({ command: 'drush uli --name north-lead' }),
-    );
-    expect(result.text).toBe('exit 0\nhttp://login');
-    expect(calls).toEqual([
-      describeCall,
-      {
-        args: ['exec', 'drush uli --name north-lead'],
-        cwd: '/work/bb-7',
-        timeoutMs: 300_000,
-      },
+  it('serves no ddev_exec: site commands run through provision_exec', async () => {
+    const { tools } = fake({ exitCode: 0, output: '' });
+    expect(Object.keys(tools).sort()).toEqual(['ddev_start', 'ddev_status']);
+    expect(Object.keys(preset.tools).sort()).toEqual([
+      'ddev_start',
+      'ddev_status',
     ]);
+    // The project lists `.ddev` itself; the addon declares no protected path.
+    expect(presetModule).not.toHaveProperty('runtime');
   });
 
   it('fails with the exit code and keeps only the output tail', async () => {
     const big = `${'a'.repeat(OUTPUT_CAP)}TAIL`;
-    const { tools } = fake({ exitCode: 2, output: big });
-    const error = await tools.ddev_exec(req({ command: 'false' })).then(
+    const { tools } = fake({ exitCode: 2, output: big }, describeJson());
+    const error = await tools.ddev_start(req()).then(
       () => undefined,
       (err: Error) => err,
     );
@@ -91,7 +89,6 @@ describe('ddev tools', () => {
   it.each([
     ['ddev_status', {}],
     ['ddev_start', {}],
-    ['ddev_exec', { command: 'drush cr' }],
   ])('%s refuses a project other than the worktree', async (tool, args) => {
     const { tools, calls } = fake(
       { exitCode: 0, output: 'ran' },

@@ -105,11 +105,5 @@ export function ddevTools(run: DdevRun): Record<string, Handler> {
       await ownProject(req);
       return { text: (await ddev(req, ['start'], START_TIMEOUT_MS)).text };
     },
-    ddev_exec: async (req) => {
-      await ownProject(req);
-      return {
-        text: (await ddev(req, ['exec', String(req.args.command)])).text,
-      };
-    },
   };
 }
