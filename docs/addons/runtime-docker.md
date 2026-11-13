@@ -35,11 +35,9 @@ See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes
 
 ## Delivery and limits
 
-Commit inside the run: the next run starts from a fresh clone, so uncommitted work is lost. At
-run end and inside `forge_push`, the host checks the run's commits and moves the ticket branch
-in the parent repository. A commit that changes a protected path is rejected; a maintainer
-makes such changes outside the run. Submodules are refused. Install dependencies and build
-inside the run.
+Commit inside the run: only checked commits come back, as
+[isolated Git delivery](/provision/security/shared-settings#isolated-git-delivery) describes.
+Install dependencies and build inside the run.
 
 The DDEV web container is as untrusted as the run. bakers checks only a host command's entry
 point, not what that script calls. See [residual risks](/provision/security/shared-settings#isolated-git-delivery).

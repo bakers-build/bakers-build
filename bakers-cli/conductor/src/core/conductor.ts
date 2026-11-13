@@ -456,10 +456,7 @@ export class Conductor {
     binding: ToolBinding,
   ): { url: string; token: string } | undefined {
     if (!this.toolServer) return undefined;
-    const token = this.toolServer.issueRunToken(runUuid, {
-      ...binding,
-      runUuid,
-    });
+    const token = this.toolServer.issueRunToken(runUuid, binding);
     return { url: this.toolServer.url, token };
   }
 

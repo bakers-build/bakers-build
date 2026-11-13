@@ -296,13 +296,16 @@ mounted read-only in the run. While a run is open, the parent must not be pruned
 
 This repository's `conductor-e2e` provision profile builds the run's CLI and starts it as a
 conductor on the host. By maintainer decision it stays, as the one documented exception to "the
-host runs only protected code".
+host runs only protected code". The exception includes its teardown in `after_done`, which stops
+a playground with the run's CLI, and the run-writable marker `workspaces/.playground-isolated`,
+which names host paths that playground runs see read-only.
 
 ### Residual risks
 
 - The DDEV web container is as untrusted as the run, and all DDEV projects share the
   `ddev-global-cache` volume.
-- bakers checks only the entry point of a host command, not what that script calls.
+- bakers checks only the entry point of a host command: not what that script calls, and of a
+  chained command only its first.
 - `runtime-host`, including sandbox mode, gets none of this protection.
 - Only the ticket branch is transferred; other branches created in a run clone are not.
 

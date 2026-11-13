@@ -3,14 +3,12 @@ import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
-  readFileSync,
   realpathSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type {
   AgentModelApi,

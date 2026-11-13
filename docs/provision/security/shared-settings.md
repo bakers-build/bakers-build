@@ -101,6 +101,8 @@ the ticket branch and holds no objects. The parent repository is not mounted in 
 The clone carries the ticket's target branch as `origin/<target>`; nothing is merged. Tracked files
 are reset and untracked files removed; ignored files such as `node_modules` and `vendor` are kept.
 Uncommitted work is not carried over to the next run, so a run must commit before it ends.
+A linked worktree left from the host runtime is converted at its first isolated run; with
+uncommitted or untracked work it is refused instead, until that work is committed or removed.
 
 At run end, and inside `forge_push`, the host transfers the run's commits to the ticket branch in
 the parent repository:
@@ -124,7 +126,7 @@ Measured on ext4 with 16 CPUs and 5918 tracked files, three runs each: an indepe
 a linked worktree took 0.43 s and 113 MB. Startup is not equivalent to a worktree's.
 
 **Residual risks.** The DDEV web container is as untrusted as the run, and all DDEV projects share
-the `ddev-global-cache` volume. bakers.build checks only the entry point of a host command, not
-what that script calls. The host runtime, in any permission mode including `sandbox`, has none of
+the `ddev-global-cache` volume. bakers.build checks only the entry point of a host command: not
+what that script calls, and of a chain (`a.sh; b`) only its first command. The host runtime, in any permission mode including `sandbox`, has none of
 this protection: it keeps linked worktrees and host installs. Reasoning: the decision record
 `docs/decisions/run-isolation.md`.

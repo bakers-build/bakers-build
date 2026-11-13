@@ -45,8 +45,6 @@ export interface ToolResult {
 /** The worktree a call acts on — fixed by the session, never by the tool. */
 export interface ToolBinding {
   worktreePath: string;
-  /** Set by the conductor's run grant, never accepted as a tool argument. */
-  runUuid?: string;
   /** The run's ticket; an operator call may know only its identifier. */
   ticket?: Partial<Ticket> & { identifier: string };
 }

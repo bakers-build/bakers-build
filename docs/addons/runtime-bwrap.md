@@ -42,10 +42,9 @@ conductor's cache, is mounted as `.git`; the parent repository is absent. The wo
 `shared` adds the parent's `objects` read-only. `.bakers/` and the project's
 [`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) paths are read-only.
 
-Commit inside the run: uncommitted work does not reach the next run. At run end and inside
-`forge_push`, the host checks the run's commits and moves the ticket branch in the parent
-repository. A commit that changes a protected path is rejected; a maintainer delivers such
-changes outside the run. Submodules are refused. Cleanup stops the launcher and removes the home.
+Commit inside the run: only checked commits come back, as
+[isolated Git delivery](/provision/security/shared-settings#isolated-git-delivery) describes.
+Cleanup stops the launcher and removes the home.
 
 ## Boundaries
 
