@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\Logger\RfcLogLevel;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
@@ -138,13 +139,38 @@ final class RunWordingTest extends KernelTestBase {
   }
 
   /**
-   * An unreadable error log reads as no reason instead of throwing.
+   * An error log whose file is gone counts as no log at all.
    */
-  public function testFailureReasonOfMissingLogFileIsTheNoReasonCopy(): void {
+  public function testFailureReasonOfMissingLogFileSaysNoLogWasRecorded(): void {
     $run = $this->failedRun('Error: boom');
     $file = $run->get('error_log_file')->entity;
     self::assertInstanceOf(FileInterface::class, $file);
     unlink((string) $file->getFileUri());
+    self::assertFalse($run->hasLog('error_log'));
+    self::assertSame('No reason and no log were recorded.', $run->failureReason());
+  }
+
+  /**
+   * Without any log the reason points to no log.
+   */
+  public function testFailureReasonWithoutAnyLog(): void {
+    $run = $this->failedRun('');
+    self::assertFalse($run->hasLog('log'));
+    self::assertFalse($run->hasLog('error_log'));
+    self::assertSame('No reason and no log were recorded.', $run->failureReason());
+  }
+
+  /**
+   * With a run log but no error log the reason points to the log.
+   */
+  public function testFailureReasonWithRunLogOnly(): void {
+    $run = $this->createRunInWorkspace();
+    $run->set('state', 'failed')->set('log', "step 1
+step 2
+")->save();
+    $run = $this->reload($run);
+    self::assertTrue($run->hasLog('log'));
+    self::assertFalse($run->hasLog('error_log'));
     self::assertSame(
       'No reason was recorded. Open the log for details.',
       $run->failureReason(),
@@ -152,13 +178,23 @@ final class RunWordingTest extends KernelTestBase {
   }
 
   /**
-   * Without an error log the reason says so.
+   * One render reads an unreadable error log once and warns once.
    */
-  public function testFailureReasonWithoutErrorLog(): void {
-    self::assertSame(
-      'No reason was recorded. Open the log for details.',
-      $this->failedRun('')->failureReason(),
-    );
+  public function testUnreadableErrorLogWarnsOncePerRender(): void {
+    $run = $this->failedRun('Error: boom');
+    $file = $run->get('error_log_file')->entity;
+    self::assertInstanceOf(FileInterface::class, $file);
+    // Not gzip: the existing file cannot be inflated.
+    file_put_contents((string) $file->getFileUri(), 'not gzip');
+    $recorder = new RecordingLogger('bb_core');
+    $this->container->get('logger.factory')->addLogger($recorder);
+
+    // What the run row and the inspector call during one render.
+    $run->failureReason();
+    $run->failureLine();
+
+    $warnings = array_filter($recorder->records, static fn (array $record): bool => $record['level'] === RfcLogLevel::WARNING);
+    self::assertCount(1, $warnings);
   }
 
   /**
