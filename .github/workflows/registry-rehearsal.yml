@@ -80,10 +80,10 @@ jobs:
       - name: Verify stable metadata and layer identity across retries
         run: |
           bash scripts/ci/github-image-label.sh
-          for image in php nginx docs pm-bot; do docker image inspect "bakers-gate/$image:local" --format '{{.Id}}'; done > first-ids
+          for image in php nginx docs; do docker image inspect "bakers-gate/$image:local" --format '{{.Id}}'; done > first-ids
           bash scripts/ci/github-image-import.sh
           bash scripts/ci/github-image-label.sh
-          for image in php nginx docs pm-bot; do docker image inspect "bakers-gate/$image:local" --format '{{.Id}}'; done > second-ids
+          for image in php nginx docs; do docker image inspect "bakers-gate/$image:local" --format '{{.Id}}'; done > second-ids
           diff -u first-ids second-ids
       - uses: actions/upload-artifact@v4
         if: always()

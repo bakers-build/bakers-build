@@ -99,7 +99,6 @@ describe('GitHub migration checks', () => {
     'conductor',
     'tui',
     'web_ui',
-    'pm_bot',
     'release_rehearsal',
   ])('%s prepares the mounted checkout for container Git and path consumers', (name) => {
     const workflow = parse(read('.github/workflows/checks.yml'));
@@ -173,7 +172,6 @@ describe('GitHub migration checks', () => {
       'config_sync',
       'composer_audit',
       'compose_render',
-      'pm_bot',
       'conductor',
       'runtime_bwrap',
       'tui',
@@ -491,6 +489,12 @@ describe('GitHub migration checks', () => {
     });
   });
 
+  it('runs no PM bot job on GitHub', () => {
+    const checks = parse(read('.github/workflows/checks.yml'));
+    expect(Object.keys(checks.jobs)).not.toContain('pm_bot');
+    expect(checks.jobs.required.needs).not.toContain('pm_bot');
+  });
+
   // The commands that do the validating in each job; install and setup lines are not pinned.
   const VALIDATION_COMMANDS: Record<string, string[]> = {
     phpcs: [
@@ -511,10 +515,6 @@ describe('GitHub migration checks', () => {
       'bash tests/config-sync/check-ci-wiring.sh',
     ],
     compose_render: ['bash tests/contract/compose.sh'],
-    pm_bot: [
-      "node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=junit-pm-bot.xml 'experimental/pm-bot/**/*.test.mjs'",
-      'bash tests/contract/pm-bot.sh',
-    ],
     conductor: [
       'pnpm run build:all',
       'pnpm run typecheck',
