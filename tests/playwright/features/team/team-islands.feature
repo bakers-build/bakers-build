@@ -375,13 +375,11 @@ Feature: The team screen's five tabs are routes inside one island
     Then the remove control names "Revokes their access."
     And no remove control names "no access is revoked"
 
-  # BB-435 — CRITERION 5 on this call site. The team roster was a
-  # `bb_theme:table` with three column headers; the settings section says a
-  # member list is a LIST, and the rule now reaches both screens rather than one.
-  Scenario: The team member list is a list and not a table
+  # The roster is a table: Name, Role and Joined line up from row to row. A
+  # team's own roster has no Team column, because every row is that team.
+  Scenario: The team member list is a table with Name, Role and Joined columns
     When I visit the team "Platform Crew" tab "Members"
-    Then the members list has no columns and no header row
-    And consecutive member rows are separated comfortably
+    Then the members table has the columns "Name, Role, Joined"
 
   # BB-435 — CRITERION 9 on this call site, REWRITTEN BY BB-456. This used to
   # assert an absence: a team granted no permissions, so an item carried its
@@ -403,7 +401,7 @@ Feature: The team screen's five tabs are routes inside one island
     And I visit the team "Platform Crew" tab "Members"
     When I add the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Member"
-    And the member "both-bakeries" shows their initial and joined date on the left, role and remove control right-aligned
+    And the member "both-bakeries" shows their initial, role, joined date and remove control in their row
     When I pick the role "lead" for the member "both-bakeries"
     Then the member "both-bakeries" shows the role "Lead"
     And the document was not reloaded

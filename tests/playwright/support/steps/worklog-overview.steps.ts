@@ -50,22 +50,22 @@ Then('I see the My time action', async ({ page }) => {
 
 When('I open My time from My work', async ({ page }) => {
   await page.getByRole('link', { name: 'My time', exact: true }).click();
-  await expect(page.getByText(/Total recorded time:/)).toBeVisible();
+  await expect(page.getByText(/Week total|Total recorded time:/).first()).toBeVisible();
   await markDocument(page);
 });
 
 Then('I see the My time overview', async ({ page }) => {
-  await expect(page.getByText(/Total recorded time:/)).toBeVisible();
-  await expect(page.locator('[data-canvas-region="filters"]')).toBeVisible();
-  await expect(page.getByText('Filters', { exact: true })).toBeVisible();
-  await expect(page.getByRole('search')).toHaveCount(0);
-  const period = page.getByRole('group', { name: 'Period', exact: true });
+  await expect(page.getByText(/Week total|Total recorded time:/).first()).toBeVisible();
+  // The period controls form one toolbar above the rows; there is no rail.
+  await expect(page.locator('[data-canvas-region="filters"]')).toHaveCount(0);
+  const toolbar = page.getByRole('main').getByRole('search');
+  await expect(toolbar).toBeVisible();
+  const period = toolbar.getByRole('group', { name: 'Period', exact: true });
   await expect(period.getByRole('link', { name: 'Day', exact: true })).toBeVisible();
   await expect(period.getByRole('link', { name: 'Week', exact: true })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: /^Days of week / }).getByRole('link')).toHaveCount(7);
-  await expect(page.getByRole('link', { name: 'Previous', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Today', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Next', exact: true })).toBeVisible();
+  await expect(toolbar.getByRole('link', { name: 'Previous', exact: true })).toBeVisible();
+  await expect(toolbar.getByRole('link', { name: 'Today', exact: true })).toBeVisible();
+  await expect(toolbar.getByRole('link', { name: 'Next', exact: true })).toBeVisible();
 });
 
 Then('the My time heading describes recorded hours', async ({ page }) => {
@@ -129,7 +129,7 @@ Then('the address does not include {string}', async ({ page }, fragment: string)
 });
 
 Then('the overview total is {string}', async ({ page }, total: string) => {
-  await expect(page.getByText(new RegExp(`Total recorded time:\\s*${total.replace(':', '\\:')}`))).toBeVisible();
+  await expect(page.getByRole('main')).toContainText(new RegExp(`(Total recorded time:|Week total)\\s*${total.replace(':', '\\:')}`));
 });
 
 Then('the overview shows {int} rows', async ({ page }, count: number) => {

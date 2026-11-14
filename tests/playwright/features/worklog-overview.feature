@@ -48,8 +48,8 @@ Feature: Employees review their own time in a workspace by day and week
     And the overview shows 2 rows
     When I visit "/bakers/time?mode=week&date=2026-11-03"
     Then the overview total is "4:30"
-    And the week strip shows "2:30" for "Tue 2026-11-03"
-    And the week strip shows "2:00" for "Sun 2026-11-08"
+    And the day column "Tue 03" header shows "2:30"
+    And the day column "Sun 08" header shows "2:00"
     And the week total is "4:30"
     And the week grid row "Bread · Time capture" shows "2:00" on "Tue 03"
     And the week grid row "Bread · Time capture" shows "2:00" on "Sun 08"

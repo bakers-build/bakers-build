@@ -193,9 +193,11 @@ final class WorklogPeriod extends FilterPluginBase {
         ],
       ],
     ];
+    // The toolbar row names its fields for assistive technology only.
     $form['date'] = [
       '#type' => 'date',
       '#title' => $this->t('Date'),
+      '#title_display' => 'invisible',
       '#default_value' => $selection->date,
     ];
     if ($this->context() !== 'project') {
@@ -330,6 +332,7 @@ final class WorklogPeriod extends FilterPluginBase {
       '#component' => 'bb_theme:option_picker',
       '#props' => [
         'variant' => 'facet',
+        'compact' => TRUE,
         'label' => (string) $label,
         'id' => 'filter-' . $key,
         'icon' => $icon,

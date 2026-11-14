@@ -1,5 +1,5 @@
 {# The `bb_worklog_calendar` style hands over the time calendar as `rows`:
-   scope sentence, a clear-filters address, week strip props, the period total, an own proposed total
+   scope sentence, a clear-filters address, day-mode week strip props, the period or week total, a day-mode proposed total
    and proposal bar, and either day list items, week grid table props or the
    employee's editable week form. This file only maps that data into
    components; it emits no markup of its own.
@@ -10,8 +10,10 @@
 {% if rows.clear_filters %}
   {{ include('bb_theme:button', { label: 'Clear filters'|t, href: rows.clear_filters, variant: 'ghost' }, with_context = false) }}
 {% endif %}
-{{ include('bb_theme:week-strip', rows.strip, with_context = false) }}
-{{ include('bb_theme:text', { text: rows.total, as: 'p', size: 'body' }, with_context = false) }}
+{% if rows.strip %}
+  {{ include('bb_theme:week-strip', rows.strip, with_context = false) }}
+{% endif %}
+{{ include('bb_theme:text', { text: rows.total, as: 'p', size: 'body', align: rows.mode == 'week' ? 'end' : 'start' }, with_context = false) }}
 {% if rows.proposed_total %}
   {{ include('bb_theme:text', { text: rows.proposed_total, as: 'p', tone: 'faint' }, with_context = false) }}
 {% endif %}

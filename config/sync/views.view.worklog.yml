@@ -189,7 +189,7 @@ display:
                   variant_id: null
                   props: {  }
                   slots:
-                    filters:
+                    main:
                       sources:
                         -
                           source_id: component
@@ -198,10 +198,10 @@ display:
                               component_id: 'bb_theme:filters'
                               variant_id: null
                               props:
-                                title:
-                                  source_id: textfield
+                                layout:
+                                  source_id: select
                                   source:
-                                    value: Filters
+                                    value: bar
                                 label:
                                   source_id: textfield
                                   source:
@@ -214,8 +214,6 @@ display:
                                       source: {  }
                                       node_id: worklog_exposed
                           node_id: worklog_filters
-                    main:
-                      sources:
                         -
                           source_id: component
                           source:
@@ -311,7 +309,7 @@ display:
                   variant_id: null
                   props: {  }
                   slots:
-                    filters:
+                    main:
                       sources:
                         -
                           source_id: component
@@ -320,10 +318,10 @@ display:
                               component_id: 'bb_theme:filters'
                               variant_id: null
                               props:
-                                title:
-                                  source_id: textfield
+                                layout:
+                                  source_id: select
                                   source:
-                                    value: Filters
+                                    value: bar
                                 label:
                                   source_id: textfield
                                   source:
@@ -336,8 +334,6 @@ display:
                                       source: {  }
                                       node_id: worklog_exposed
                           node_id: worklog_filters
-                    main:
-                      sources:
                         -
                           source_id: component
                           source:
@@ -435,7 +431,7 @@ display:
                   variant_id: null
                   props: {  }
                   slots:
-                    filters:
+                    main:
                       sources:
                         -
                           source_id: component
@@ -444,10 +440,10 @@ display:
                               component_id: 'bb_theme:filters'
                               variant_id: null
                               props:
-                                title:
-                                  source_id: textfield
+                                layout:
+                                  source_id: select
                                   source:
-                                    value: Filters
+                                    value: bar
                                 label:
                                   source_id: textfield
                                   source:
@@ -460,8 +456,6 @@ display:
                                       source: {  }
                                       node_id: worklog_exposed
                           node_id: worklog_filters
-                    main:
-                      sources:
                         -
                           source_id: component
                           source:
@@ -559,7 +553,7 @@ display:
                   variant_id: null
                   props: {  }
                   slots:
-                    filters:
+                    main:
                       sources:
                         -
                           source_id: component
@@ -568,10 +562,10 @@ display:
                               component_id: 'bb_theme:filters'
                               variant_id: null
                               props:
-                                title:
-                                  source_id: textfield
+                                layout:
+                                  source_id: select
                                   source:
-                                    value: Filters
+                                    value: bar
                                 label:
                                   source_id: textfield
                                   source:
@@ -584,8 +578,6 @@ display:
                                       source: {  }
                                       node_id: worklog_exposed
                           node_id: worklog_filters
-                    main:
-                      sources:
                         -
                           source_id: component
                           source:

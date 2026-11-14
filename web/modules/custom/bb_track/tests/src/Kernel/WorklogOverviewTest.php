@@ -27,6 +27,7 @@ use Drupal\views\ViewExecutable;
 use Drupal\views\Views;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
@@ -731,9 +732,37 @@ final class WorklogOverviewTest extends KernelTestBase {
     $this->proposedRow($this->employee, '2026-10-06', 7200);
     $markup = $this->renderView($this->overview($this->employee, ['mode' => 'week', 'date' => '2026-10-05']));
     self::assertSame('1:00', $this->total($this->overview($this->employee, ['mode' => 'week', 'date' => '2026-10-05'])));
-    self::assertMatchesRegularExpression('/Proposed — not yet recorded:\s*2:00/', $markup);
+    // Week mode carries the proposal as its own table row, not a sentence.
+    self::assertStringNotContainsString('Proposed — not yet recorded:', $markup);
+    self::assertContains(
+      'Proposed — not yet recorded',
+      (new Crawler($markup))->filter('table tbody th[scope="row"]')->each(static fn (Crawler $th): string => trim($th->text())),
+    );
     $day = $this->overview($this->employee, ['mode' => 'day', 'date' => '2026-10-06']);
     self::assertSame('0:00', $this->total($day));
+  }
+
+  /**
+   * The team grid's day headers carry the day totals; no Total row repeats.
+   */
+  public function testTeamGridHeaderCarriesDayTotals(): void {
+    $w = $this->createTeamWorld();
+    $this->teamEntry('M', 'P1', ['work_date' => '2026-12-08', 'duration_seconds' => 3600]);
+    $this->teamEntry('M', 'P1', ['work_date' => '2026-12-10', 'duration_seconds' => 1800]);
+    $team = $this->calendar(
+      'team',
+      $w['L'],
+      ['bb_team' => $w['T1'], 'bb_workspace' => $w['W1']],
+      ['mode' => 'week', 'date' => '2026-12-08'],
+    );
+    $page = new Crawler($this->renderDisplay($team, 'team'));
+
+    self::assertSame(
+      ['Mon 07 0:00', 'Tue 08 1:00', 'Wed 09 0:00', 'Thu 10 0:30', 'Fri 11 0:00', 'Sat 12 0:00', 'Sun 13 0:00'],
+      array_slice($page->filter('table thead th')->each(static fn (Crawler $th): string => trim((string) preg_replace('/\s+/', ' ', $th->text()))), 1, 7),
+    );
+    self::assertNotContains('Total', $page->filter('table tbody th[scope="row"]')->each(static fn (Crawler $th): string => trim($th->text())));
+    self::assertSame(1, preg_match_all('/Week total\s*1:30/', $page->text()));
   }
 
   /**
@@ -751,7 +780,7 @@ final class WorklogOverviewTest extends KernelTestBase {
       ['mode' => 'week', 'date' => '2026-12-08'],
     );
     $markup = $this->renderDisplay($team, 'team');
-    self::assertMatchesRegularExpression('/Total recorded time:\s*1:00/', $markup);
+    self::assertMatchesRegularExpression('/Week total\s*1:00/', $markup);
     self::assertStringNotContainsString('Proposed', $markup);
     self::assertStringNotContainsString('bb-track-week-form', $markup);
   }
@@ -819,7 +848,9 @@ final class WorklogOverviewTest extends KernelTestBase {
     $row = $this->proposedRow($this->employee, '2026-08-04', 7200);
     $uuid = $row->get('submission_id')->entity->uuid();
     $markup = $this->renderView($this->overview($this->employee, ['mode' => 'week', 'submission' => $uuid]));
-    self::assertStringContainsString('Days of week 2026-08-03', $markup);
+    $days = (new Crawler($markup))->filter('table thead th')->each(static fn (Crawler $th): string => trim((string) preg_replace('/\s+/', ' ', $th->text())));
+    self::assertStringStartsWith('Mon 03', $days[1], 'The proposal opens the week of 2026-08-03.');
+    self::assertStringStartsWith('Sun 09', $days[7]);
     self::assertStringContainsString('value="2:00"', $markup);
     // Rows of other projects stay out of the proposal's week.
     self::assertStringNotContainsString('value="1:00"', $markup);
@@ -1249,9 +1280,12 @@ final class WorklogOverviewTest extends KernelTestBase {
    */
   private function total(ViewExecutable $view): string {
     $markup = $this->renderView($view);
-    self::assertSame(1, preg_match('/Total recorded time:\s*(\d+:\d{2})/', $markup, $matches));
-    self::assertArrayHasKey(1, $matches);
-    return $matches[1];
+    // Day mode states the period total; week mode shows the week total once.
+    if (preg_match('/Total recorded time:\s*(\d+:\d{2})/', $markup, $matches) === 1) {
+      return $matches[1];
+    }
+    self::assertSame(1, preg_match_all('/Week total\s*(\d+:\d{2})/', $markup, $matches));
+    return $matches[1][0];
   }
 
   /**

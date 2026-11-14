@@ -105,6 +105,13 @@ props:
             description: >-
               Right-aligned and tabular, for a column of numbers or durations
               that is read down rather than across.
+          sublabel:
+            type: string
+            title: Header sublabel
+            description: >-
+              A second header line under `label`, aligned like the column: the
+              recorded total of a day above that day's hours in a week grid.
+              Absent renders the label alone, as before.
           row_header:
             type: boolean
             title: Row header
@@ -114,6 +121,19 @@ props:
               scope="row">`), so a screen reader announces every other cell of
               the row with it, and it stays in view at the left edge when the
               table scrolls sideways.
+    row_height:
+      type: string
+      enum:
+        - default
+        - md
+        - lg
+      title: Row height
+      description: >-
+        Height of a single-line body row. `default` is the `row` token (34px)
+        every table has had; `md` is the dense data-table row (36px) of a
+        timesheet such as My time; `lg` is the roomy row (44px) of a people
+        table such as Members. Cozy density adds 6px to each. Absent means
+        `default`, so no existing table changes.
     rows:
       type: array
       title: Rows

@@ -24,7 +24,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\Yaml\Yaml;
 
 /**
- * My time uses the ticket-list canvas: left filters, summary chips, no search.
+ * My time on the ticket-list canvas: a toolbar above the rows, no search.
  */
 #[Group('bb_track')]
 #[RunTestsInSeparateProcesses]
@@ -156,34 +156,76 @@ final class WorklogCanvasTest extends KernelTestBase {
       $html,
       'The display builder tree did not reach the view; this is the bare Views output.',
     );
-    self::assertStringContainsString('data-canvas-region="filters"', $html);
+    self::assertStringNotContainsString('data-canvas-region="filters"', $html, 'The controls left the rail for the toolbar.');
     self::assertStringContainsString('data-canvas-region="main"', $html);
   }
 
   /**
-   * Period controls sit in the left rail; My time has no description search.
+   * The period controls form one toolbar above the table; there is no search.
    */
-  public function testFiltersSitInTheLeftRailAndThereIsNoSearch(): void {
+  public function testControlsSitInToolbarAboveTable(): void {
     $crawler = new Crawler($this->screen([
       'mode' => 'week',
       'date' => '2026-10-06',
     ]));
 
-    $filters = $crawler->filter('[data-canvas-region="filters"]');
-    self::assertCount(1, $filters, 'The filters rail is missing.');
-    self::assertStringContainsString('Filters', $filters->text());
-    self::assertCount(1, $filters->filter('input[name="mode"][value="week"]'));
-    self::assertCount(1, $filters->filter('a[href*="mode=day"]:contains("Day")'));
-    self::assertCount(1, $filters->filter('[aria-current="page"]:contains("Week")'));
-    self::assertCount(1, $filters->filter('input[name="date"]'));
-    self::assertCount(1, $filters->filter('[data-option-picker-variant="facet"] input[type="radio"][name="project"]'));
-    self::assertCount(0, $filters->filter('[name="title"]'));
-    self::assertCount(0, $crawler->filter('[role="search"]'));
+    self::assertCount(0, $crawler->filter('[data-canvas-region="filters"]'), 'The filters rail is gone.');
+    $toolbar = $crawler->filter('[data-canvas-region="main"] [role="search"]');
+    self::assertCount(1, $toolbar, 'The toolbar is missing from main.');
+    self::assertCount(1, $toolbar->filter('input[name="mode"][value="week"]'));
+    self::assertCount(1, $toolbar->filter('a[href*="mode=day"]:contains("Day")'));
+    self::assertCount(1, $toolbar->filter('[aria-current="page"]:contains("Week")'));
+    self::assertCount(1, $toolbar->filter('input[name="date"]'));
+    self::assertCount(1, $toolbar->filter('[data-option-picker-variant="facet"] input[type="radio"][name="project"]'));
     self::assertCount(0, $crawler->filter('[name="title"]'));
+    $main = $crawler->filter('[data-canvas-region="main"]')->html();
+    self::assertLessThan(strpos($main, '<table'), strpos($main, 'role="search"'), 'The toolbar sits above the table.');
   }
 
   /**
-   * The calendar renders a week strip, day rows, a week grid and empty state.
+   * Each day column header carries that day's recorded total, 0:00 included.
+   */
+  public function testWeekHeaderCarriesDayTotals(): void {
+    $this->createRecorded($this->employee, ['work_date' => '2026-10-06', 'duration_seconds' => 5400]);
+    $this->createRecorded($this->employee, ['work_date' => '2026-10-11', 'duration_seconds' => 1800]);
+
+    $week = new Crawler($this->screen(['mode' => 'week', 'date' => '2026-10-06']));
+
+    self::assertSame(
+      [
+        'Project',
+        'Mon 05 0:00',
+        'Tue 06 1:30',
+        'Wed 07 0:00',
+        'Thu 08 0:00',
+        'Fri 09 0:00',
+        'Sat 10 0:00',
+        'Sun 11 0:30',
+        'Total',
+      ],
+      $week->filter('table thead th')->each(static fn (Crawler $th): string => trim((string) preg_replace('/\s+/', ' ', $th->text()))),
+    );
+  }
+
+  /**
+   * The week total appears once; no strip, sentence or totals row repeats it.
+   */
+  public function testWeekTotalOnce(): void {
+    $this->createRecorded($this->employee, ['work_date' => '2026-10-06', 'duration_seconds' => 5400]);
+    $this->createRecorded($this->employee, ['work_date' => '2026-10-11', 'duration_seconds' => 1800]);
+
+    $html = $this->screen(['mode' => 'week', 'date' => '2026-10-06']);
+    $week = new Crawler($html);
+
+    self::assertSame(1, substr_count($html, 'Week total'));
+    self::assertMatchesRegularExpression('/Week total\s*2:00/', $week->text());
+    self::assertStringNotContainsString('Total recorded time', $week->text());
+    self::assertCount(0, $week->filter('nav[aria-label^="Days of week"]'), 'Week mode has no strip.');
+    self::assertNotContains('Recorded', $week->filter('table tbody th[scope="row"]')->each(static fn (Crawler $th): string => trim($th->text())));
+  }
+
+  /**
+   * Day mode keeps its strip and rows; the week grid and its empty state.
    */
   public function testCalendarRendersStripRowsAndGrid(): void {
     $this->createRecorded($this->employee, [
@@ -215,16 +257,14 @@ final class WorklogCanvasTest extends KernelTestBase {
     self::assertCount(1, $week->filter('table'));
     // The label cell is the row header, so every value is announced with it.
     self::assertSame('Customer P · PRJP', trim($week->filter('table tbody tr')->first()->filter('th[scope="row"]')->text()));
-    // The employee's own week is the editable timesheet: inputs, then totals.
-    self::assertSame('Recorded', trim($week->filter('table tbody tr')->last()->filter('th[scope="row"]')->text()));
+    // The employee's own week is the editable timesheet: one input per day.
     self::assertSame(['1:30', '0:30'], array_values(array_filter($week->filter('table tbody tr')->first()->filter('input[type="text"]')->each(static fn (Crawler $input): string => (string) $input->attr('value')))));
-    self::assertStringContainsString('Total recorded time: 2:00', $week->text());
+    self::assertMatchesRegularExpression('/Week total\s*2:00/', $week->text());
     self::assertStringNotContainsString('Tuesday work', $week->text());
 
     $empty = new Crawler($this->screen(['mode' => 'week', 'date' => '2026-08-03']));
     self::assertStringContainsString('No time entries for this period.', $empty->text());
-    self::assertStringContainsString('Total recorded time: 0:00', $empty->text());
-    self::assertCount(7, $empty->filter('nav[aria-label="Days of week 2026-08-03"] a'));
+    self::assertMatchesRegularExpression('/Week total\s*0:00/', $empty->text());
   }
 
   /**

@@ -97,18 +97,11 @@ Then('the rail was part of the swap', async ({ page }) => {
 });
 
 /**
- * How many members the roster shows.
- *
- * THE SELECTOR IS A LIST ITEM SINCE BB-435, and it was
- * `${MEMBERS_ISLAND} table tbody tr`: the roster is `bb_theme:list` now, so
- * there is no `<table>` left to select. A DIRECT CHILD `li` of the list's own
- * root and not a bare descendant `li`, because an item's role control is an
- * `option_list` whose option ROWS are `<li>` themselves, nested one level
- * deeper — a bare descendant selector would count the panel's rows as members
- * too. `bb_theme:list` renders no BEM class to select on instead.
+ * How many members the roster shows: the roster table's body rows, direct
+ * children only, so a role picker's own option rows are never counted.
  */
 Then('the members list has {int} rows', async ({ page }, count: number) => {
-  await expect(page.locator(`${MEMBERS_ISLAND} [data-component-id="bb_theme:list"] > li`)).toHaveCount(count);
+  await expect(page.locator(`${MEMBERS_ISLAND} table > tbody > tr`)).toHaveCount(count);
 });
 
 // One step for the whole affordance, because a scenario that filled the field

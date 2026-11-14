@@ -1,0 +1,9 @@
+{# The time calendar's period controls: Day/Week, the date, the pickers and
+   Previous · Today · Next share one toolbar row above the rows. #}
+{{ include('bb_theme:zone', {
+  attributes: attributes,
+  direction: 'row',
+  gap: 'sm',
+  inset: 'none',
+  content: form,
+}, with_context = false) }}

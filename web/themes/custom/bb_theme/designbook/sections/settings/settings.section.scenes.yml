@@ -323,19 +323,17 @@ scenes:
     group: Screens
     section: settings
     docs: >-
-      THE WORKSPACE MEMBERS FACE: pending invitations and the roster. Inviting
-      is a DIALOG opened by the primary **Invite members** action on the Members
-      zone, not a zone of this face; `action-pattern.md` names the exception and
-      its reason. After a successful invite the dialog closes, the face
-      re-renders and a status `message` reports who was invited and who was
-      skipped (already a member, already invited). The pending list names each
-      invitation's role and team; Revoke stays the item's one control.
-
-      BOTH LISTS ARE `layout: cards` with `spacing: comfortable`, and each item
-      is a patterned row (BB-638) — `headline: [person]`, `meta: [joined,
-      team]`, `right: [state, role, transfer, remove]` — so the person and the
-      joined date sit on the left and the role or state, transfer and remove are
-      right-aligned, as GroupMembersForm::listZone() renders it.
+      THE WORKSPACE MEMBERS FACE: pending invitations and the roster, each a
+      headed `table` with 44px rows (`row_height: lg`) in a zone capped at the
+      narrow measure (960px). Inviting is a DIALOG opened by the primary
+      **Invite members** action on the Members zone, not a zone of this face;
+      `action-pattern.md` names the exception and its reason. After a successful
+      invite the dialog closes, the face re-renders and a status `message`, in a
+      narrow zone of its own, reports who was invited and who was skipped. The
+      invitations table reads Email, Team, Role, Status (a neutral Invited, a
+      critical Expired) and the Invited date, with Revoke as the row action; the
+      roster reads Name, Team, Role and Joined, with transfer and remove as the
+      row actions, as GroupMembersForm::listZone() renders it.
     items:
       - scene: design-system:shell
         with:
@@ -349,84 +347,102 @@ scenes:
                       title: Members
                       description: keytec · who belongs to this workspace and in which role
                 main:
-                  - component: bb_theme:message
-                    props:
-                      status: status
-                    slots:
-                      body: >-
-                        Invited 2 people. Skipped: sven.gruber@keytec.example
-                        (already a member).
                   - component: bb_theme:zone
+                    props:
+                      inset: none
+                      measure: narrow
+                    slots:
+                      content:
+                        - component: bb_theme:message
+                          props:
+                            status: status
+                          slots:
+                            body: >-
+                              Invited 2 people. Skipped:
+                              sven.gruber@keytec.example (already a member).
+                  - component: bb_theme:zone
+                    props:
+                      inset: none
+                      measure: narrow
                     slots:
                       heading: Pending invitations
                       content:
-                        - component: bb_theme:list
+                        - component: bb_theme:table
                           props:
-                            layout: cards
-                            spacing: comfortable
-                            pattern:
-                              headline:
-                                - person
-                              meta:
-                                - joined
-                                - team
-                              right:
-                                - state
-                                - role
-                                - transfer
-                                - remove
-                            items:
+                            row_height: lg
+                            columns:
+                              - key: person
+                                label: Email
+                              - key: team
+                                label: Team
+                              - key: role
+                                label: Role
+                              - key: state
+                                label: Status
+                              - key: joined
+                                label: Invited
+                              - key: controls
+                                label: ''
+                            rows:
                               - cells:
                                   person:
                                     kind: text
                                     value: lena.fischer@keytec.example
                                     emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: Platform crew
                                   role:
                                     kind: badge
                                     label: Contributor
                                     tone: neutral
-                                  team:
-                                    kind: text
-                                    value: Platform crew
                                   state:
                                     kind: badge
                                     label: Invited
-                                    tone: wait
+                                    tone: neutral
                                   joined:
-                                    kind: mono
-                                    value: invited 2026-10-02
-                                  remove:
-                                    kind: rendered
-                                    markup: Revoke
+                                    kind: text
+                                    value: 31 Oct
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
                                     label: >-
                                       Revoke invitation for
                                       lena.fischer@keytec.example
+                                    icon: x-circle
+                                    icon_only: true
                               - cells:
                                   person:
                                     kind: text
                                     value: m.vandijk@northwind.example
                                     emphasis: strong
+                                  team:
+                                    kind: text
+                                    value: '-'
+                                    emphasis: faint
                                   role:
                                     kind: badge
                                     label: Member
                                     tone: neutral
-                                  team:
-                                    kind: text
-                                    value: No team
                                   state:
                                     kind: badge
                                     label: Expired
                                     tone: critical
                                   joined:
-                                    kind: mono
-                                    value: invited 2026-09-18
-                                  remove:
-                                    kind: rendered
-                                    markup: Revoke
+                                    kind: text
+                                    value: 17 Oct
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
                                     label: >-
                                       Revoke invitation for
                                       m.vandijk@northwind.example
+                                    icon: x-circle
+                                    icon_only: true
                   - component: bb_theme:zone
+                    props:
+                      inset: none
+                      measure: narrow
                     slots:
                       heading: Members
                       actions:
@@ -437,22 +453,21 @@ scenes:
                           href: >-
                             /?path=/story/designbook-sections-settings-scenes--workspace-invite
                       content:
-                        - component: bb_theme:list
+                        - component: bb_theme:table
                           props:
-                            layout: cards
-                            spacing: comfortable
-                            pattern:
-                              headline:
-                                - person
-                              meta:
-                                - joined
-                                - team
-                              right:
-                                - state
-                                - role
-                                - transfer
-                                - remove
-                            items:
+                            row_height: lg
+                            columns:
+                              - key: person
+                                label: Name
+                              - key: team
+                                label: Team
+                              - key: role
+                                label: Role
+                              - key: joined
+                                label: Joined
+                              - key: controls
+                                label: ''
+                            rows:
                               - cells:
                                   person:
                                     kind: person
@@ -460,12 +475,16 @@ scenes:
                                     initials: CW
                                     color: unassigned
                                     mail: christian.wiedemann@keytec.example
+                                  team:
+                                    kind: text
+                                    value: Platform crew
                                   role:
-                                    kind: rendered
-                                    markup: Admin
+                                    kind: text
+                                    value: Admin
                                   joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
+                                    kind: text
+                                    value: 6 Jan
+                                    emphasis: faint
                               - cells:
                                   person:
                                     kind: person
@@ -473,18 +492,23 @@ scenes:
                                     initials: SG
                                     color: running
                                     mail: sven.gruber@keytec.example
+                                  team:
+                                    kind: text
+                                    value: Design crew
                                   role:
-                                    kind: rendered
-                                    markup: Member
+                                    kind: text
+                                    value: Member
                                   joined:
-                                    kind: mono
-                                    value: joined 2026-01-06
-                                  remove:
-                                    kind: rendered
-                                    markup: Remove
+                                    kind: text
+                                    value: 6 Jan
+                                    emphasis: faint
+                                  controls:
+                                    kind: action
                                     label: >-
                                       Remove Sven Gruber from the workspace.
                                       Revokes their access.
+                                    icon: x-circle
+                                    icon_only: true
   - name: workspace-invite
     group: Screens
     section: settings
@@ -1443,11 +1467,11 @@ scenes:
                               url: >-
                                 /?path=/story/designbook-sections-settings-scenes--team
                               active: false
-                filters:
+                main:
                   - component: bb_theme:filters
                     props:
-                      title: Filters
                       label: Time filters
+                      layout: bar
                     slots:
                       controls:
                         - component: bb_theme:segmented_control
@@ -1511,58 +1535,10 @@ scenes:
                                   - value: api-member
                                     label: api-member
                                     selected: false
-                main:
-                  - component: bb_theme:week-strip
-                    props:
-                      label: Days of week 2026-12-07
-                      days:
-                        - weekday: Mon
-                          date: '07'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-07'
-                          active: false
-                          aria_label: Mon 2026-12-07, 0:00
-                        - weekday: Tue
-                          date: '08'
-                          total: '2:45'
-                          url: '?mode=day&date=2026-12-08'
-                          active: false
-                          aria_label: Tue 2026-12-08, 2:45
-                        - weekday: Wed
-                          date: '09'
-                          total: '1:00'
-                          url: '?mode=day&date=2026-12-09'
-                          active: false
-                          aria_label: Wed 2026-12-09, 1:00
-                        - weekday: Thu
-                          date: '10'
-                          total: '2:00'
-                          url: '?mode=day&date=2026-12-10'
-                          active: false
-                          aria_label: Thu 2026-12-10, 2:00
-                        - weekday: Fri
-                          date: '11'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-11'
-                          active: false
-                          aria_label: Fri 2026-12-11, 0:00
-                        - weekday: Sat
-                          date: '12'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-12'
-                          active: false
-                          aria_label: Sat 2026-12-12, 0:00
-                        - weekday: Sun
-                          date: '13'
-                          total: '0:00'
-                          url: '?mode=day&date=2026-12-13'
-                          active: false
-                          aria_label: Sun 2026-12-13, 0:00
-                      total_label: Week total
-                      total: '5:45'
                   - component: bb_theme:text
                     props:
-                      text: 'Total recorded time: 5:45'
+                      text: Week total 5:45
+                      align: end
                   - component: bb_theme:table
                     props:
                       columns:
@@ -1572,24 +1548,31 @@ scenes:
                         - key: '2026-12-07'
                           label: Mon 07
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-08'
                           label: Tue 08
                           num: true
+                          sublabel: '2:45'
                         - key: '2026-12-09'
                           label: Wed 09
                           num: true
+                          sublabel: '1:00'
                         - key: '2026-12-10'
                           label: Thu 10
                           num: true
+                          sublabel: '2:00'
                         - key: '2026-12-11'
                           label: Fri 11
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-12'
                           label: Sat 12
                           num: true
+                          sublabel: '0:00'
                         - key: '2026-12-13'
                           label: Sun 13
                           num: true
+                          sublabel: '0:00'
                         - key: total
                           label: Total
                           num: true
@@ -1734,31 +1717,4 @@ scenes:
                             total:
                               kind: text
                               value: '3:30'
-                        - cells:
-                            label:
-                              kind: text
-                              value: Total
-                            '2026-12-07':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-08':
-                              kind: text
-                              value: '2:45'
-                            '2026-12-09':
-                              kind: text
-                              value: '1:00'
-                            '2026-12-10':
-                              kind: text
-                              value: '2:00'
-                            '2026-12-11':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-12':
-                              kind: text
-                              value: '0:00'
-                            '2026-12-13':
-                              kind: text
-                              value: '0:00'
-                            total:
-                              kind: text
-                              value: '5:45'
+                      row_height: md

@@ -18,6 +18,8 @@
     "  --spacing-shell-height: " & $$.component.shell.height."$value" & ";",
     "  --spacing-board-height: " & $$.component.board.height."$value" & ";",
     "  --spacing-row: " & $normalizeCssValue($base."row-h"."$value") & ";",
+    "  --spacing-row-md: " & $normalizeCssValue($base."row-h-md"."$value") & ";",
+    "  --spacing-row-lg: " & $normalizeCssValue($base."row-h-lg"."$value") & ";",
     "  --spacing-control: " & $normalizeCssValue($base."control-h"."$value") & ";",
     "  --spacing-list-row: " & $normalizeCssValue($base."line-row-h"."$value") & ";"
   ];
@@ -39,6 +41,8 @@
   $baseLines := $append($append($append($append($baseLines, $brandLines), $zoneLines), $stateLines), $plainLines);
   $cozyLines := [
     "    --spacing-row: " & $normalizeCssValue($cozy."row-h"."$value") & ";",
+    "    --spacing-row-md: " & $normalizeCssValue($cozy."row-h-md"."$value") & ";",
+    "    --spacing-row-lg: " & $normalizeCssValue($cozy."row-h-lg"."$value") & ";",
     "    --spacing-control: " & $normalizeCssValue($cozy."control-h"."$value") & ";",
     "    --spacing-list-row: " & $normalizeCssValue($cozy."line-row-h"."$value") & ";"
   ];
