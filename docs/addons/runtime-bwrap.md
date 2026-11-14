@@ -20,8 +20,8 @@ not require `socat` itself. Agent permissions remain unchanged; native sandbox m
 needs its own tools and support for nested namespaces.
 
 The workspace must provide a run clone: the [Git workspace](/addons/workspace-git#isolated-runs) or [herdr](/addons/herdr#isolated-runs). Programs come from the host's
-system directories and executable search paths. Additional tool resources can be granted through
-`readPaths`; each grant exposes that path to the agent.
+system directories and executable search paths. Tool resources and user-hook scripts, which are not copied and otherwise fail open, are granted
+only through `readPaths`: each grant exposes that path to the agent.
 
 ## Options
 

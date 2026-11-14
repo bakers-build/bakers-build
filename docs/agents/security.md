@@ -48,7 +48,7 @@ An addon can supply a runtime, tools or both. A runtime starts at dispatch; a to
 2. Expose the operations it needs as configured conductor tools: prepare an environment, run checks, access the forge or share a preview.
 3. Let the integration hold the required credentials and execute the operation in its intended environment.
 
-`provision_up(profile)` prepares the application while the agent's shell stays restricted. Forge tools push and prepare a PR without giving the agent the forge token. `provision_exec('web', [...])` runs the project's configured command, for example in a site container, whose mounts and credentials then determine its reach.
+`provision_up(profile)` prepares the application while the agent's shell stays restricted. Forge tools push and prepare a PR without giving the agent the forge token. `provision_exec('phpcs')` runs one fixed command the project configured, for example in a site container, whose mounts and credentials then determine its reach.
 
 Tools have their **own authority**: permission rules decide whether a call is allowed, the tool validates its inputs, and its environment determines what it can do. A host command that loads agent-editable code runs it with host rights. Under an isolating runtime, bakers requires every host command to start in a protected path but checks only that entry point; review what it calls.
 

@@ -32,6 +32,10 @@ Container `bb-run-<run uuid>`, under your uid, mounts:
 - with `network: host` and no API credential, the host's Claude login file, read-write inside the run home, so a token refresh reaches the host and every other run.
 
 No `~/.ssh`, `~/.bakers` or Docker socket. Secrets use `-e KEY`, never values in argv.
+
+Hook scripts are not copied; unreachable ones fail open. Grant them via `mounts`; automatic mounts
+expose host files.
+
 Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
 See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes the container and home.

@@ -11,7 +11,7 @@ import {
   payloadSchema,
   validateArgs,
 } from '@bakers-build/message';
-import type { ConductorEngineConfig } from '../types.js';
+import type { ConductorEngineConfig, ProvisionExecCommand } from '../types.js';
 import type { Ticket } from './remote.js';
 
 export type AgentCatalog = Pick<
@@ -147,7 +147,7 @@ export function provisionRuns(timeoutMs = PROVISION_TIMEOUT_MS): ProvisionRuns {
 
 export interface ProvisionOptions {
   /** `hooks.provision_exec`: commands by key. */
-  exec?: Record<string, string>;
+  exec?: Record<string, ProvisionExecCommand>;
   /** Whether the runtime isolates runs; exported to every host command. */
   isolates?: boolean;
 }
@@ -220,8 +220,11 @@ export function provisionTools(
       );
   }
   if (Object.keys(exec).length > 0) {
+    const withArgs = Object.keys(exec).filter(
+      (key) => typeof exec[key] === 'object' && exec[key].args === true,
+    );
     tools.provision_exec = {
-      description: `Run one of the project's configured commands (${Object.keys(exec).join(', ')}) for this worktree, such as a command in its site container. \`args\` reach the command as separate arguments after \`--\`, never through a shell. Returns the exit code and the output tail.`,
+      description: `Run one of the project's configured commands (${Object.keys(exec).join(', ')}) for this worktree, such as a command in its site container. Each key is a fixed command; only ${withArgs.length ? withArgs.join(', ') : 'none'} also take \`args\`, passed as separate arguments after \`--\`, never through a shell. Returns the exit code and the output tail.`,
       input: {
         type: 'object',
         required: ['key'],
@@ -231,17 +234,37 @@ export function provisionTools(
         },
       },
     };
-    handlers.provision_exec = async (req) =>
-      report(
+    handlers.provision_exec = async (req) => {
+      const key = String(req.args.key);
+      const entry = exec[key] as ProvisionExecCommand;
+      const args = (req.args.args as string[] | undefined) ?? [];
+      // A plain key is the whole command: the run cannot widen it.
+      if (typeof entry === 'string' || entry.args !== true) {
+        if (args.length > 0)
+          throw new Error(`provision_exec: ${key} takes no arguments`);
+        const command = typeof entry === 'string' ? entry : entry.command;
+        return report(
+          await shell(
+            command,
+            req.worktreePath,
+            req.signal,
+            PROVISION_TIMEOUT_MS,
+            envFor(req.worktreePath),
+            [],
+          ),
+        );
+      }
+      return report(
         await shell(
-          `${exec[String(req.args.key)]} -- "$@"`,
+          `${entry.command} -- "$@"`,
           req.worktreePath,
           req.signal,
           PROVISION_TIMEOUT_MS,
           envFor(req.worktreePath),
-          (req.args.args as string[] | undefined) ?? [],
+          args,
         ),
       );
+    };
   }
   return [
     {
