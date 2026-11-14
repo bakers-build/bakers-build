@@ -11,6 +11,8 @@ import {
   type ForgeBackendFactory,
   type ForgePr,
   requestJson,
+  requestText,
+  tail,
 } from '@bakers-build/addon-forge/backend';
 
 interface Mr {
@@ -77,9 +79,14 @@ const factory: ForgeBackendFactory = async (raw, context) => {
   const project = `${base}/api/v4/projects/${encodeURIComponent(s.project)}`;
   const api = async (
     path: string,
-    init: { method?: string; body?: unknown } = {},
+    init: {
+      method?: string;
+      body?: unknown;
+      allow404?: boolean;
+      text?: boolean;
+    } = {},
   ) =>
-    requestJson(doFetch, `${project}${path}`, {
+    (init.text ? requestText : requestJson)(doFetch, `${project}${path}`, {
       method: init.method ?? 'GET',
       // Bearer takes access tokens and the OAuth token a `glab` login holds.
       headers: {
@@ -87,6 +94,7 @@ const factory: ForgeBackendFactory = async (raw, context) => {
         'content-type': 'application/json',
       },
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+      ...(init.allow404 ? { allow404: true } : {}),
     });
   const mr = async (iid: number) => (await api(`/merge_requests/${iid}`)) as Mr;
   const q = encodeURIComponent;
@@ -139,22 +147,49 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       )) as {
         id: number;
         status: string;
+        started_at?: string | null;
+        created_at?: string | null;
       }[];
       if (!pipeline)
-        return [{ name: 'pipeline', status: 'missing', required: true }];
+        return [
+          {
+            name: 'pipeline',
+            status: 'missing',
+            required: true,
+            conclusion: null,
+            run_id: null,
+            job_id: null,
+            run_started_at: null,
+          },
+        ];
       const jobs = (await api(
         `/pipelines/${pipeline.id}/jobs?per_page=100`,
       )) as {
+        id: number;
         name: string;
         status: string;
         allow_failure: boolean;
       }[];
+      const run = {
+        run_id: pipeline.id,
+        run_started_at: pipeline.started_at ?? pipeline.created_at ?? null,
+      };
       return [
-        { name: 'pipeline', status: statusOf(pipeline.status), required: true },
+        {
+          name: 'pipeline',
+          status: statusOf(pipeline.status),
+          required: true,
+          conclusion: pipeline.status,
+          job_id: null,
+          ...run,
+        },
         ...jobs.map((j) => ({
           name: j.name,
           status: statusOf(j.status),
           required: !j.allow_failure,
+          conclusion: j.status,
+          job_id: j.id,
+          ...run,
         })),
       ];
     },
@@ -187,6 +222,15 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       });
     },
     isMerged: async (pr) => (await mr(pr.number)).state === 'merged',
+    jobLog: async (jobId, maxBytes) => {
+      const log = (await api(`/jobs/${jobId}/trace`, {
+        allow404: true,
+        text: true,
+      })) as string | undefined;
+      if (log === undefined)
+        throw new Error(`job ${jobId} is not a job of ${s.project}`);
+      return tail(log, maxBytes);
+    },
   };
   return backend;
 };

@@ -25,6 +25,13 @@ export interface ForgeCheck {
   readonly status: CheckStatus;
   /** Required by the base branch's rules (GitHub) or not allowed to fail (GitLab). */
   readonly required: boolean;
+  /** The forge's own verdict (`cancelled`, `skipped`, `timed_out`, ...); null while running. */
+  readonly conclusion: string | null;
+  /** GitHub Actions run / GitLab pipeline; null for a commit status. */
+  readonly run_id: number | null;
+  /** The id `forge_job_log` reads; null when the row is no job. */
+  readonly job_id: number | null;
+  readonly run_started_at: string | null;
 }
 
 export interface ForgeMerge {
@@ -52,13 +59,29 @@ export interface ForgeBackend {
     input: { title: string; body: string },
   ): Promise<ForgePr>;
   openPrsWithBase(base: string): Promise<ForgePr[]>;
-  /** Checks on `ref` (a SHA or branch), `required` as `base`'s rules say. */
-  checks(ref: string, base: string): Promise<ForgeCheck[]>;
+  /**
+   * Checks on `ref` (a SHA or branch), `required` as `base`'s rules say. Only
+   * the newest run per workflow unless `allRuns`, where the forge has several.
+   */
+  checks(
+    ref: string,
+    base: string,
+    opts?: { allRuns?: boolean },
+  ): Promise<ForgeCheck[]>;
   /** A conflict or a not yet computed mergeability is a reason. */
   mergeBlocker(pr: ForgePr): Promise<string | undefined>;
   /** Merges with every option sent explicitly; deletes the source when asked. */
   merge(pr: ForgePr, options: ForgeMerge): Promise<void>;
   isMerged(pr: ForgePr): Promise<boolean>;
+  /** The [tail] of a job's log; refuses a job outside the repository. */
+  jobLog(jobId: number, maxBytes: number): Promise<LogTail>;
+}
+
+export interface LogTail {
+  readonly text: string;
+  /** The whole log's size. */
+  readonly bytes: number;
+  readonly truncated: boolean;
 }
 
 export type ForgeBackendFactory = (
@@ -77,6 +100,7 @@ const METHODS = [
   'mergeBlocker',
   'merge',
   'isMerged',
+  'jobLog',
 ] as const;
 
 /** Reject a factory result that is not a `ForgeBackend`. */
@@ -122,12 +146,12 @@ export function cliToken(
   };
 }
 
-/** JSON over HTTP for backends: throws status and body text on failure. */
-export async function requestJson(
+/** Text over HTTP for backends: throws status and body text on failure. */
+export async function requestText(
   doFetch: typeof fetch,
   url: string,
   init: RequestInit & { allow404?: boolean },
-): Promise<unknown> {
+): Promise<string | undefined> {
   const res = await doFetch(url, init);
   if (res.status === 404 && init.allow404) return undefined;
   const text = await res.text();
@@ -135,5 +159,36 @@ export async function requestJson(
     throw new Error(
       `${init.method ?? 'GET'} ${new URL(url).pathname} answered ${res.status}: ${text.slice(0, 500)}`,
     );
+  return text;
+}
+
+/** JSON over HTTP for backends: throws status and body text on failure. */
+export async function requestJson(
+  doFetch: typeof fetch,
+  url: string,
+  init: RequestInit & { allow404?: boolean },
+): Promise<unknown> {
+  const text = await requestText(doFetch, url, init);
   return text ? JSON.parse(text) : undefined;
+}
+
+/**
+ * The last `maxBytes` bytes of `log`, from the first whole line in them; when
+ * the last line alone is longer, from the first whole character.
+ */
+export function tail(log: string, maxBytes: number): LogTail {
+  const buf = Buffer.from(log);
+  if (buf.length <= maxBytes)
+    return { text: log, bytes: buf.length, truncated: false };
+  let start = buf.length - maxBytes;
+  const newline = buf.indexOf(0x0a, start - 1);
+  if (newline !== -1 && newline < buf.length - 1) start = newline + 1;
+  else
+    while (start < buf.length && (buf.readUInt8(start) & 0xc0) === 0x80)
+      start++;
+  return {
+    text: buf.subarray(start).toString(),
+    bytes: buf.length,
+    truncated: true,
+  };
 }

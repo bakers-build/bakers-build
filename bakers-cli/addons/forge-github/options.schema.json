@@ -5,9 +5,7 @@
   "description": "The forge entry's with.backend.with: a GitHub App, or the conductor's gh login with auth 'gh'.",
   "type": "object",
   "additionalProperties": false,
-  "required": [
-    "repository"
-  ],
+  "required": ["repository"],
   "properties": {
     "repository": {
       "type": "string",
@@ -19,18 +17,12 @@
       "description": "Use the conductor's own gh login instead of a GitHub App."
     },
     "app_id": {
-      "type": [
-        "integer",
-        "string"
-      ],
+      "type": ["integer", "string"],
       "minLength": 1,
       "description": "The GitHub App's ID; required unless `auth` is set."
     },
     "installation_id": {
-      "type": [
-        "integer",
-        "string"
-      ],
+      "type": ["integer", "string"],
       "minLength": 1,
       "description": "The App's installation on the repository; required unless `auth` is set."
     },
@@ -46,14 +38,9 @@
     }
   },
   "if": {
-    "required": [
-      "auth"
-    ]
+    "required": ["auth"]
   },
   "else": {
-    "required": [
-      "app_id",
-      "installation_id"
-    ]
+    "required": ["app_id", "installation_id"]
   }
 }

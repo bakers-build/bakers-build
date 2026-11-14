@@ -38,8 +38,11 @@ Without a `forge` entry no tool is served. An entry without `backend.use` stops 
 | `forge_fetch` | Fetches `base_branch`, the ticket branch and the parent branches named in `branches`. | Read only; no tags. |
 | `forge_push` | Pushes an owned branch. | Fast-forward, or `force_with_lease`; bare force does not exist. |
 | `forge_pr_upsert` | Opens or updates the PR/MR into the derived base. | Refuses a non-Conventional Commits title before any request. |
-| `forge_checks` | Lists checks with status, `required` and `overall`. | Read only. |
-| `forge_merge` | Merges an owned branch's PR/MR. | Correct target, valid title, no conflict, required checks green. |
+| `forge_checks` | Lists checks with raw `conclusion`, `run_id`, `job_id` and `overall`; newest runs unless `all_runs`. | Read only. |
+| `forge_job_log` | Returns a job's log tail, 16 KiB by default. | Read only. |
+| `forge_merge` | Merges an owned branch's PR/MR. | Correct target, valid title, no conflict, `overall` is `success`. |
+
+`overall` is `success` only when every required check, including one named `required`, is green; none required gives `no_required_checks`.
 
 Human approval stays the workflow's merge gate.
 

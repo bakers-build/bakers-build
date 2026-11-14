@@ -60,14 +60,27 @@ function ownedBranch(req: ToolRequest, run: Run): string {
   return branch;
 }
 
+export const LOG_DEFAULT_BYTES = 16_384;
+export const LOG_MAX_BYTES = 262_144;
+
 const json = (value: unknown): ToolResult => ({
   text: JSON.stringify(value, null, 2),
 });
 
-/** Failure first, then pending, over the required checks. */
-export function overall(checks: readonly ForgeCheck[]): ForgeCheck['status'] {
-  const required = checks.filter((c) => c.required);
-  if (required.some((c) => c.status === 'failure')) return 'failure';
+export type Overall = 'success' | 'failure' | 'pending' | 'no_required_checks';
+
+/** Required by the forge, or the aggregate check a workflow names `required`. */
+export const isRequired = (c: ForgeCheck): boolean =>
+  c.required || c.name === 'required';
+
+const isRed = (c: ForgeCheck): boolean =>
+  c.status === 'failure' || c.conclusion === 'skipped';
+
+/** Failure first, then pending, over the required checks; none required is never green. */
+export function overall(checks: readonly ForgeCheck[]): Overall {
+  const required = checks.filter(isRequired);
+  if (required.length === 0) return 'no_required_checks';
+  if (required.some(isRed)) return 'failure';
   if (required.some((c) => c.status !== 'success')) return 'pending';
   return 'success';
 }
@@ -175,7 +188,9 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         ref = pr?.headSha ?? branch;
         base = pr?.base ?? derivedBase(branch, run);
       }
-      const checks = await b.checks(ref, base);
+      const checks = await b.checks(ref, base, {
+        allRuns: req.args.all_runs === true,
+      });
       return json({ ref, base, overall: overall(checks), checks });
     },
 
@@ -200,12 +215,16 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const blocker = await b.mergeBlocker(pr);
       if (blocker) throw new Error(`PR/MR ${pr.url} cannot merge: ${blocker}`);
       const checks = await b.checks(pr.headSha, pr.base);
+      if (overall(checks) === 'no_required_checks')
+        throw new Error(
+          `PR/MR ${pr.url} cannot merge: no required checks reported`,
+        );
       const notGreen = checks.filter(
-        (c) => c.required && c.status !== 'success',
+        (c) => isRequired(c) && (isRed(c) || c.status !== 'success'),
       );
       if (notGreen.length > 0)
         throw new Error(
-          `PR/MR ${pr.url} has required checks that are not green: ${notGreen.map((c) => `${c.name} (${c.status})`).join(', ')}`,
+          `PR/MR ${pr.url} has required checks that are not green: ${notGreen.map((c) => `${c.name} (${c.conclusion ?? c.status})`).join(', ')}`,
         );
       const rule = mergeRule(deps.settings, base);
       const dependents = (await b.openPrsWithBase(branch)).filter(
@@ -231,6 +250,26 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         ...(dependents.length > 0
           ? { source_kept_for: dependents.map((p) => p.url) }
           : {}),
+      });
+    },
+
+    forge_job_log: async (req) => {
+      runOf(req);
+      const jobId = req.args.job_id;
+      if (typeof jobId !== 'number' || !Number.isInteger(jobId) || jobId <= 0)
+        throw new Error('job_id must be a job_id from forge_checks');
+      const asked = req.args.max_bytes;
+      const maxBytes =
+        typeof asked === 'number' && asked >= 1
+          ? Math.min(Math.floor(asked), LOG_MAX_BYTES)
+          : LOG_DEFAULT_BYTES;
+      const log = await (await backend()).jobLog(jobId, maxBytes);
+      return json({
+        job_id: jobId,
+        bytes: log.bytes,
+        truncated: log.truncated,
+        max_bytes: maxBytes,
+        log: log.text,
       });
     },
   };

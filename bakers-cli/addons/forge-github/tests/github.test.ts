@@ -46,9 +46,8 @@ function fakeFetch(routes: Record<string, Route>, expiresInMs = 3_600_000) {
     const route = routes[`${method} ${url.pathname}`];
     if (!route) return new Response('not found', { status: 404 });
     const out = route(url, init);
-    return out === undefined
-      ? new Response(null, { status: 204 })
-      : Response.json(out);
+    if (out === undefined) return new Response(null, { status: 204 });
+    return typeof out === 'string' ? new Response(out) : Response.json(out);
   }) as typeof fetch;
   return { doFetch, calls, mints: () => mint };
 }
@@ -63,6 +62,34 @@ const PULL = {
   merged: false,
   mergeable: true,
 };
+
+const NO_RUN = { run_id: null, job_id: null, run_started_at: null };
+
+/** A check run of suite `suite` on commit `abc`. */
+const cr = (
+  id: number,
+  name: string,
+  status: string,
+  conclusion: string | null,
+  suite = 100,
+  app = 'github-actions',
+) => ({
+  id,
+  name,
+  status,
+  conclusion,
+  head_sha: 'abc',
+  check_suite: { id: suite },
+  app: { slug: app },
+});
+
+/** A workflow run owning check suite `suite`. */
+const run = (id: number, workflow: number, suite: number, started: string) => ({
+  id,
+  workflow_id: workflow,
+  check_suite_id: suite,
+  run_started_at: started,
+});
 
 describe('forge-github', () => {
   it('rejects incomplete settings without echoing a key', async () => {
@@ -224,9 +251,9 @@ describe('forge-github', () => {
     const f = fakeFetch({
       'GET /repos/acme/shop/commits/abc/check-runs': () => ({
         check_runs: [
-          { name: 'required', status: 'completed', conclusion: 'success' },
-          { name: 'lint', status: 'in_progress', conclusion: null },
-          { name: 'optional', status: 'completed', conclusion: 'failure' },
+          cr(11, 'required', 'completed', 'success'),
+          cr(12, 'lint', 'in_progress', null),
+          cr(13, 'optional', 'completed', 'cancelled'),
         ],
       }),
       'GET /repos/acme/shop/commits/abc/status': () => ({
@@ -249,19 +276,156 @@ describe('forge-github', () => {
           required_status_checks: { contexts: ['lint', 'ci/legacy'] },
         },
       }),
+      'GET /repos/acme/shop/actions/runs': () => ({
+        workflow_runs: [run(900, 1, 100, '2026-11-14T10:00:00Z')],
+      }),
     });
     const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
     const checks = await b.checks('abc', 'next');
+    const inRun = { run_id: 900, run_started_at: '2026-11-14T10:00:00Z' };
     expect(checks).toEqual([
-      { name: 'required', status: 'success', required: true },
-      { name: 'lint', status: 'pending', required: true },
-      { name: 'optional', status: 'failure', required: false },
-      { name: 'ci/legacy', status: 'success', required: true },
-      { name: 'e2e', status: 'missing', required: true },
+      {
+        name: 'required',
+        status: 'success',
+        required: true,
+        conclusion: 'success',
+        job_id: 11,
+        ...inRun,
+      },
+      {
+        name: 'lint',
+        status: 'pending',
+        required: true,
+        conclusion: null,
+        job_id: 12,
+        ...inRun,
+      },
+      {
+        name: 'optional',
+        status: 'failure',
+        required: false,
+        conclusion: 'cancelled',
+        job_id: 13,
+        ...inRun,
+      },
+      {
+        name: 'ci/legacy',
+        status: 'success',
+        required: true,
+        conclusion: 'success',
+        ...NO_RUN,
+      },
+      {
+        name: 'e2e',
+        status: 'missing',
+        required: true,
+        conclusion: null,
+        ...NO_RUN,
+      },
     ]);
     expect(
       f.calls.filter((c) => c.method !== 'GET' && !c.path.startsWith('/app/')),
     ).toEqual([]);
+  });
+
+  it('keeps only the newest run per workflow and the newest attempt per job, unless all runs are asked for', async () => {
+    const f = fakeFetch({
+      'GET /repos/acme/shop/commits/feat%2Fbb-7-work/check-runs': () => ({
+        check_runs: [
+          cr(21, 'build', 'completed', 'cancelled', 100),
+          cr(22, 'required', 'completed', 'cancelled', 100),
+          cr(31, 'build', 'completed', 'failure', 200),
+          cr(32, 'required', 'completed', 'failure', 200),
+          cr(33, 'build', 'completed', 'success', 200),
+          cr(41, 'docs', 'completed', 'success', 300),
+          cr(51, 'external', 'completed', 'success', 999, 'other-ci'),
+          // An earlier attempt whose suite the runs list no longer names.
+          cr(15, 'required', 'completed', 'failure', 50),
+        ],
+      }),
+      'GET /repos/acme/shop/commits/feat%2Fbb-7-work/status': () => ({
+        statuses: [],
+      }),
+      'GET /repos/acme/shop/actions/runs': (url) => {
+        expect(url.searchParams.get('head_sha')).toBe('abc');
+        return {
+          workflow_runs: [
+            run(1, 7, 100, '2026-11-14T10:00:00Z'),
+            run(2, 7, 200, '2026-11-14T10:05:00Z'),
+            run(3, 8, 300, '2026-11-14T09:00:00Z'),
+          ],
+        };
+      },
+    });
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    const pick = (rows: Awaited<ReturnType<typeof b.checks>>) =>
+      rows.map((r) => [r.name, r.run_id, r.job_id, r.conclusion]);
+
+    expect(pick(await b.checks('feat/bb-7-work', 'next'))).toEqual([
+      ['required', 2, 32, 'failure'],
+      ['build', 2, 33, 'success'],
+      ['docs', 3, 41, 'success'],
+      ['external', null, null, 'success'],
+    ]);
+    expect(
+      pick(await b.checks('feat/bb-7-work', 'next', { allRuns: true })),
+    ).toEqual([
+      ['build', 1, 21, 'cancelled'],
+      ['required', 1, 22, 'cancelled'],
+      ['build', 2, 31, 'failure'],
+      ['required', 2, 32, 'failure'],
+      ['build', 2, 33, 'success'],
+      ['docs', 3, 41, 'success'],
+      ['external', null, null, 'success'],
+      ['required', null, null, 'failure'],
+    ]);
+  });
+
+  it('refuses a commit with more check runs than one page rather than judge a partial list', async () => {
+    const f = fakeFetch({
+      'GET /repos/acme/shop/commits/abc/check-runs': () => ({
+        total_count: 101,
+        check_runs: [cr(1, 'build', 'completed', 'success')],
+      }),
+      'GET /repos/acme/shop/commits/abc/status': () => ({ statuses: [] }),
+    });
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    await expect(b.checks('abc', 'next')).rejects.toThrow(/101 check runs/);
+  });
+
+  it('reads the tail of a job log of the repository and refuses another job', async () => {
+    const f = fakeFetch({
+      'GET /repos/acme/shop/actions/jobs/9/logs': () => 'x'.repeat(30),
+    });
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    expect(await b.jobLog(9, 10)).toEqual({
+      text: 'x'.repeat(10),
+      bytes: 30,
+      truncated: true,
+    });
+    await expect(b.jobLog(8, 10)).rejects.toThrow(
+      'job 8 is not a job of acme/shop',
+    );
+  });
+
+  it('asks for no workflow runs when the commit has no check runs', async () => {
+    const f = fakeFetch({
+      'GET /repos/acme/shop/commits/abc/check-runs': () => ({ check_runs: [] }),
+      'GET /repos/acme/shop/commits/abc/status': () => ({
+        statuses: [{ context: 'ci/legacy', state: 'failure' }],
+      }),
+    });
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    expect(await b.checks('abc', 'next')).toEqual([
+      {
+        name: 'ci/legacy',
+        status: 'failure',
+        required: false,
+        conclusion: 'failure',
+        ...NO_RUN,
+      },
+    ]);
+    expect(f.calls.some((c) => c.path.includes('/actions/runs'))).toBe(false);
   });
 
   it('reports conflicts and uncomputed mergeability, merges with the method sent explicitly and deletes only when asked', async () => {
