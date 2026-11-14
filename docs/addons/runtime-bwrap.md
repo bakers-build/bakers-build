@@ -41,7 +41,7 @@ its transcript to the worktree transcript directory. Explicit API credentials ov
 
 The workspace is a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket
 branch at the worktree path, made at every run start. The run's Git directory, kept in the
-conductor's cache, is mounted as `.git`; the parent repository is absent. The workspace option
+conductor's cache, is mounted as `.git`; the parent repository is absent. The option
 `shared` adds the parent's `objects` read-only. `.bakers/` and the project's
 [`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) paths are read-only.
 

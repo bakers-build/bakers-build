@@ -37,6 +37,8 @@ export interface RuntimeDockerOptions {
   network?: 'host' | 'allowlist';
   /** Allowlist mode: hosts the run may reach, exact or `*.suffix`. */
   allow?: string[];
+  /** Run clones borrow the parent's objects (`git clone --shared`). */
+  shared?: boolean;
 }
 
 export interface BackendDeps {
