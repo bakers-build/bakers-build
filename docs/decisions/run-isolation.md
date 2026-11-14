@@ -238,7 +238,10 @@ container; only checked commits come back.
    parent checkout above; the conductor itself runs no Git there. Under herdr the host also registers the stub as
    a linked worktree of the parent (`<parent .git>/worktrees/run-<hash>`, removed with the clone),
    so host Git there works on the parent repository like in any linked worktree; the run never sees
-   the stub, because its own Git directory is mounted over it. The
+   the stub, because its own Git directory is mounted over it. The run writes that work tree, so the
+   stub's `config.worktree` sets `core.hooksPath=/dev/null` and `core.fsmonitor=false` (the parent
+   gets `extensions.worktreeConfig`): a parent `core.hooksPath` relative to the work tree runs no
+   file of the run. The stub's index follows the branch tip at run start and after each transfer. The
    parent repository is not mounted in the run. The clone carries the target branch as
    `origin/<target>`; nothing is merged. Tracked files are reset, untracked files removed, ignored
    files (`node_modules`, `vendor`) kept. Uncommitted work does not reach the next run. herdr opens

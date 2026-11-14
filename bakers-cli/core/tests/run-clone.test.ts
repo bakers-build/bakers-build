@@ -13,6 +13,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, expect, it } from 'vitest';
+import { transferIsolatedCommit } from '../src/core/isolated-git.js';
 import {
   createRunClone,
   loadRunClone,
@@ -308,4 +309,72 @@ it('registers the run clone as a linked worktree of the parent on the ticket bra
 
   removeRunClone(workspace, env);
   expect(list()).not.toContain(workspace);
+});
+
+it('runs no hook the run wrote when the host commits in a registered run clone', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  git(parent, 'config', 'core.hooksPath', '.husky');
+  registerRunCloneWorktree(
+    createRunClone({ parent, workspace, branch: 'ticket', env }),
+  );
+  const marker = join(root, 'hook-ran');
+  mkdirSync(join(workspace, '.husky'));
+  writeFileSync(
+    join(workspace, '.husky/pre-commit'),
+    `#!/bin/sh\ntouch ${marker}\n`,
+    { mode: 0o755 },
+  );
+
+  writeFileSync(join(workspace, 'file'), 'host change');
+  git(workspace, 'add', 'file');
+  commit(workspace, 'host commit');
+
+  expect(existsSync(marker)).toBe(false);
+});
+
+it('keeps host Git clean in a registered run clone after the run transfers a commit', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  const record = createRunClone({ parent, workspace, branch: 'ticket', env });
+  registerRunCloneWorktree(record);
+  const run = (...args: string[]) =>
+    git(
+      workspace,
+      '--git-dir',
+      record.gitDir,
+      '--work-tree',
+      workspace,
+      ...args,
+    );
+  writeFileSync(join(workspace, 'file'), 'changed by the run');
+  writeFileSync(join(workspace, 'added'), 'new');
+  run('add', '.');
+  run(
+    '-c',
+    'user.name=test',
+    '-c',
+    'user.email=test@test',
+    'commit',
+    '-qm',
+    'run',
+  );
+
+  transferIsolatedCommit(record);
+
+  expect(git(parent, 'rev-parse', 'ticket')).toBe(run('rev-parse', 'HEAD'));
+  expect(git(workspace, 'status', '--porcelain')).toBe('');
+});
+
+it('registers a run clone whose host index is locked', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  const record = createRunClone({ parent, workspace, branch: 'ticket', env });
+  writeFileSync(join(workspace, '.git/index.lock'), '');
+
+  registerRunCloneWorktree(record);
+
+  expect(git(parent, 'worktree', 'list', '--porcelain')).toContain(
+    `worktree ${workspace}`,
+  );
 });

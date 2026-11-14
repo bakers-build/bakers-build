@@ -11,7 +11,10 @@ import {
 } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
-import { transferIsolatedCommit } from './isolated-git.js';
+import {
+  refreshRunCloneIndex,
+  transferIsolatedCommit,
+} from './isolated-git.js';
 import { UI_REFRESH_FILE } from './ui-refresh.js';
 
 /** Host-owned record of one isolated run's clone; never store it where the run can write. */
@@ -100,8 +103,20 @@ export function registerRunCloneWorktree(record: RunClone): void {
   writeFileSync(join(admin, 'gitdir'), `${stub}\n`);
   writeFileSync(join(stub, 'commondir'), `${record.parentGitDir}\n`);
   writeFileSync(join(stub, 'gitdir'), `${stub}\n`);
-  // Without an index, host Git there would stage every tracked file as deleted.
-  git(['--git-dir', stub, 'read-tree', 'HEAD']);
+  // The run writes this work tree: a parent `core.hooksPath` relative to it
+  // (husky) must not make host Git there run the run's files.
+  const extension = [
+    '--git-dir',
+    record.parentGitDir,
+    'config',
+    'extensions.worktreeConfig',
+  ];
+  if (tryGit(extension) !== 'true') git([...extension, 'true']);
+  writeFileSync(
+    join(stub, 'config.worktree'),
+    '[core]\n\thooksPath = /dev/null\n\tfsmonitor = false\n',
+  );
+  refreshRunCloneIndex(record);
 }
 
 export function removeRunClone(workspace: string, env: Env = process.env) {

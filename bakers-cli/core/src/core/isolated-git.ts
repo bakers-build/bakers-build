@@ -25,6 +25,22 @@ const git = (cwd: string, ...args: string[]) =>
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
 
+/**
+ * Set a registered run clone's host index to its branch tip, so host Git there
+ * shows no changes. Best effort: the index only feeds host status, and a host
+ * Git holding its lock must not fail a run start or a transfer.
+ */
+export function refreshRunCloneIndex({ workspace }: RunClone): void {
+  const stub = join(workspace, '.git');
+  // Only a registered stub links to the parent; a plain one has no HEAD commit.
+  if (!existsSync(join(stub, 'commondir'))) return;
+  try {
+    git(workspace, '--git-dir', stub, 'read-tree', 'HEAD');
+  } catch {
+    // Stale index, see above.
+  }
+}
+
 function normalizeProtectedPaths(paths: readonly string[]): string[] {
   return [
     ...new Set(
@@ -326,6 +342,7 @@ export function transferIsolatedCommit(
       commit,
       record.expected,
     );
+    refreshRunCloneIndex(record);
     return commit;
   } finally {
     rmSync(scratch, { recursive: true, force: true });
