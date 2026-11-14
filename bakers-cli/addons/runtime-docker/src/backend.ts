@@ -265,9 +265,16 @@ export function dockerRuntime(
         );
       const canonical = (path: string) =>
         existsSync(path) ? realpathSync(path) : resolve(path);
+      const binds = launch.bindPaths ?? [];
+      for (const { target } of binds)
+        if (target.includes(':') || !within(resolve(target), resolve(runHome)))
+          throw new Error(
+            `runtime-docker: shared file target outside the run home ${target}`,
+          );
       for (const [paths, write] of [
         [launch.readPaths ?? [], false],
         [launch.writePaths ?? [], true],
+        [binds.map(({ source }) => source), true],
       ] as const) {
         for (const path of paths) {
           if (!isAbsolute(path) || path.includes(':') || !existsSync(path))

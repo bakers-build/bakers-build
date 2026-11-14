@@ -345,6 +345,9 @@ describe('runtime slot — launch wrapping', () => {
             env: { AGENT_HOME: context.homePath },
             readPaths: ['/shared/plugins'],
             writePaths: ['/shared/transcripts'],
+            bindPaths: [
+              { source: '/host/login', target: '/private/run/login' },
+            ],
           };
         },
       },
@@ -354,6 +357,7 @@ describe('runtime slot — launch wrapping', () => {
       homePath: '/private/run',
       readPaths: ['/shared/plugins', join(worktree, '.bakers')],
       writePaths: ['/shared/transcripts'],
+      bindPaths: [{ source: '/host/login', target: '/private/run/login' }],
       env: {
         AGENT_HOME: '/private/run',
         MODEL_KEY: 'placeholder',

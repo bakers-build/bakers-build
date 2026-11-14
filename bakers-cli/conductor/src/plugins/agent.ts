@@ -166,6 +166,14 @@ export interface AgentRunPreparation {
   env: Record<string, string>;
   readPaths: string[];
   writePaths: string[];
+  /** Host files mounted read-write over a target inside the run home. */
+  bindPaths?: RunBind[];
+}
+
+/** One host file the run shares, mounted over `target` in the run home. */
+export interface RunBind {
+  source: string;
+  target: string;
 }
 
 /** Model API facts used by credential relays, independent of an execution backend. */

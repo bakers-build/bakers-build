@@ -7,6 +7,7 @@ import {
   readdirSync,
   readFileSync,
   readlinkSync,
+  renameSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -20,6 +21,11 @@ const probe = {
   ref: 'vA',
   plugins: ['probe-plugin'],
 };
+
+const login = (expiresAt: number) =>
+  JSON.stringify({
+    claudeAiOauth: { accessToken: `a${expiresAt}`, expiresAt },
+  });
 
 let root: string;
 let user: string;
@@ -97,6 +103,32 @@ describe('ClaudeAgent.installPlugins', () => {
     // The user's own agent home is untouched.
     expect(readdirSync(join(user, '.claude'))).toEqual(['.credentials.json']);
     expect(existsSync(join(user, '.claude.json'))).toBe(false);
+  });
+
+  it('keeps a token refreshed inside the home as the host login and relinks on the next use', async () => {
+    const agent = await agentFor();
+    const home = join(root, 'home');
+    const host = join(user, '.claude', '.credentials.json');
+    await agent.installPlugins([probe], home);
+    // Claude Code refreshes by writing a temp file and renaming it over the path.
+    writeFileSync(join(home, 'tmp'), login(3000));
+    renameSync(join(home, 'tmp'), join(home, '.credentials.json'));
+    expect((await agent.installPlugins([probe], home)).home).toBe('reused');
+    expect(readlinkSync(join(home, '.credentials.json'))).toBe(host);
+    expect(readFileSync(host, 'utf8')).toBe(login(3000));
+  });
+
+  it('a home drifted before the host login was renewed uses the renewed login on its next use', async () => {
+    const agent = await agentFor();
+    const home = join(root, 'home');
+    const host = join(user, '.claude', '.credentials.json');
+    await agent.installPlugins([probe], home);
+    rmSync(join(home, '.credentials.json'));
+    writeFileSync(join(home, '.credentials.json'), login(2000));
+    writeFileSync(host, login(3000));
+    await agent.installPlugins([probe], home);
+    expect(readlinkSync(join(home, '.credentials.json'))).toBe(host);
+    expect(readFileSync(host, 'utf8')).toBe(login(3000));
   });
 
   it('fails, naming the missing credential file, when Claude keeps no file login', async () => {

@@ -407,3 +407,60 @@ it.runIf(canBwrap)(
     }
   },
 );
+
+it('mounts a shared host file read-write over its target in the run home, after the home', async () => {
+  const runtime = make();
+  const context = await runtime.prepareRun!(run);
+  const source = join(root, 'login.json');
+  const target = join(context.homePath, '.claude/.credentials.json');
+  writeFileSync(source, '{}');
+  mkdirSync(join(context.homePath, '.claude'));
+  writeFileSync(target, '');
+  await runtime.wrap({
+    command: 'true',
+    env: {},
+    workspacePath: ws,
+    gitDir: clone.gitDir,
+    run,
+    harness: 'any',
+    bindPaths: [{ source, target }],
+    ...context,
+  });
+  const mounts = mountsOf();
+  const at = (mounted: string) =>
+    mounts.findIndex(([, , point]) => point === mounted);
+  expect(mounts[at(target)]).toEqual(['--bind', source, target]);
+  expect(at(target)).toBeGreaterThan(at(context.homePath));
+  await runtime.cleanup(run);
+});
+
+it('refuses a shared file targeted outside the run home or sourced from a protected path', async () => {
+  const runtime = make();
+  const context = await runtime.prepareRun!(run);
+  const source = join(root, 'login.json');
+  writeFileSync(source, '{}');
+  const input = {
+    command: 'true',
+    env: {},
+    workspacePath: ws,
+    gitDir: clone.gitDir,
+    run,
+    harness: 'any',
+    ...context,
+  };
+  await expect(
+    runtime.wrap({
+      ...input,
+      bindPaths: [{ source, target: join(ws, 'login.json') }],
+    }),
+  ).rejects.toThrow(/outside the run home/);
+  await expect(
+    runtime.wrap({
+      ...input,
+      bindPaths: [
+        { source: clone.gitDir, target: join(context.homePath, 'git') },
+      ],
+    }),
+  ).rejects.toThrow(/protected/);
+  await runtime.cleanup(run);
+});

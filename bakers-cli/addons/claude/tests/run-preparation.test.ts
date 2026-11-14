@@ -5,6 +5,7 @@ import {
   readFileSync,
   realpathSync,
   rmSync,
+  symlinkSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -51,11 +52,21 @@ it('prepares a private home and exposes only plugins and this worktree transcrip
   ).toEqual({ enabled: true, skipDangerousModePermissionPrompt: true });
 });
 
-it('uses a private login copy when no run credential is supplied', () => {
-  prepareClaudeRun({ homePath, workspacePath: '/w/tree', env: {} }, source, {});
+it('mounts the shared host login instead of a private copy when no run credential is supplied', () => {
+  const host = join(root, 'host.json');
+  writeFileSync(host, '{"token":"login"}', { mode: 0o600 });
+  rmSync(join(source, '.credentials.json'));
+  symlinkSync(host, join(source, '.credentials.json'));
+  const out = prepareClaudeRun(
+    { homePath, workspacePath: '/w/tree', env: {} },
+    source,
+    {},
+  );
   const login = join(homePath, '.claude/.credentials.json');
-  expect(readFileSync(login, 'utf8')).toBe('{"token":"login"}');
-  expect(realpathSync(login)).toBe(login);
+  expect(readFileSync(login, 'utf8')).toBe('');
+  expect(out.bindPaths).toEqual([
+    { source: realpathSync(host), target: login },
+  ]);
 });
 
 it('uses explicit run credentials without copying the host login or OAuth token', () => {

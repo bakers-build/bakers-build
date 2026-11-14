@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRunClone } from '@bakers-build/core';
@@ -169,4 +169,56 @@ it('refuses prepared grants that reopen the run Git directory or the host home',
   await expect(
     f.runtime.wrap({ ...input, readPaths: [f.root] }),
   ).rejects.toThrow(/broad/);
+});
+
+it('mounts a shared host file read-write over its target, after the run home', async () => {
+  const f = fixture();
+  const context = await f.runtime.prepareRun!(f.run, f.metadata);
+  const source = join(f.root, 'login.json');
+  const target = join(context.homePath, '.claude/.credentials.json');
+  writeFileSync(source, '{}');
+  const out = await f.runtime.wrap({
+    command: 'true',
+    env: {},
+    workspacePath: f.ws,
+    run: f.run,
+    harness: 'generic',
+    ...f.metadata,
+    ...context,
+    bindPaths: [{ source, target }],
+  });
+  const home = out.command.indexOf(`${context.homePath}:${context.homePath}`);
+  const shared = out.command.indexOf(`${source}:${target}`);
+  expect(home).toBeGreaterThan(-1);
+  expect(shared).toBeGreaterThan(home);
+  expect(out.command).not.toContain(`${source}:${target}:ro`);
+});
+
+it('refuses a shared file targeted outside the run home or sourced from a protected path', async () => {
+  const f = fixture();
+  const context = await f.runtime.prepareRun!(f.run, f.metadata);
+  const source = join(f.root, 'login.json');
+  writeFileSync(source, '{}');
+  const input = {
+    command: 'true',
+    env: {},
+    workspacePath: f.ws,
+    gitDir: f.gitDir,
+    run: f.run,
+    harness: 'generic',
+    ...f.metadata,
+    ...context,
+  };
+  await expect(
+    f.runtime.wrap({
+      ...input,
+      bindPaths: [{ source, target: join(f.ws, 'login.json') }],
+    }),
+  ).rejects.toThrow(/outside the run home/);
+  await expect(
+    f.runtime.wrap({
+      ...input,
+      bindPaths: [{ source: f.gitDir, target: join(context.homePath, 'g') }],
+    }),
+  ).rejects.toThrow(/protected/);
 });
