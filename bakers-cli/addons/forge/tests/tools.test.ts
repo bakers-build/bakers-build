@@ -58,9 +58,11 @@ function fakeBackend(options: {
       prs.push(pr);
       return pr;
     },
-    updatePr: async (pr, { title }) => {
-      calls.push(`update:${pr.number}:${title}`);
-      return { ...pr, title };
+    updatePr: async (pr, { title, base }) => {
+      calls.push(`update:${pr.number}->${base}:${title}`);
+      const updated = { ...pr, title, base };
+      prs[prs.findIndex((p) => p.number === pr.number)] = updated;
+      return updated;
     },
     openPrsWithBase: async (base) => prs.filter((p) => p.base === base),
     checks: async (ref, base, opts) => {
@@ -251,7 +253,7 @@ describe('forge tools', () => {
     expect(calls.filter((c) => c.startsWith('create'))).toEqual([
       'create:feat/bb-7-work-2->feat/bb-7-work:feat: x',
     ]);
-    expect(calls).toContain('update:1:feat(cli)!: y');
+    expect(calls).toContain('update:1->feat/bb-7-work:feat(cli)!: y');
   });
 
   it("a deployment run opens and merges its branch into target_branch by that target's rule", async () => {
@@ -335,6 +337,25 @@ describe('forge tools', () => {
       ),
     ).rejects.toThrow(/targets 'next', but .* merges into 'main'/);
     expect(calls.some((c) => c.startsWith('merge:'))).toBe(false);
+  });
+
+  it('forge_pr_upsert retargets a PR still open into the old target, then forge_merge merges it', async () => {
+    const { backend, calls } = fakeBackend({ prs: [pr()], checks: green });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const server = async () => ({ ...RUN, targetBranch: 'main' });
+    const updated = JSON.parse(
+      (
+        await tools.forge_pr_upsert!(
+          request({ title: 'feat: x' }, '/nonexistent', RUN, server),
+        )
+      ).text,
+    );
+    expect(updated).toMatchObject({ target: 'main', created: false });
+    expect(calls).toContain('update:1->main:feat: x');
+    const merged = JSON.parse(
+      (await tools.forge_merge!(request({}, '/nonexistent', RUN, server))).text,
+    );
+    expect(merged.into).toBe('main');
   });
 
   it('forge_pr_upsert and forge_merge refuse when the current ticket cannot be read, sending nothing', async () => {

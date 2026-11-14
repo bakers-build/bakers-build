@@ -56,8 +56,8 @@ own; `main` merges the frozen commit.
 2. Pending, failed or refused: publish an honest `summary`; STOP.
 3. Watch the deploy of the merged SHA (`forge_checks`, `ref` that SHA), then expect HTTP 200
    from `<base_url>/user/login` (the frame's deployed login smoke check). Then
-   `bakers_ticket_update` this ticket only with `environments_add` (the target) and
-   `referenced_tickets_add` (the batch), recording where the batch is deployed.
+   `bakers_ticket_update` this ticket only with `referenced_tickets_add` (the batch); with the
+   plan's environment it records where the batch is deployed.
 4. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA, link its GitLab
    release in `links` once the frame's release-read operation verifies it.
 

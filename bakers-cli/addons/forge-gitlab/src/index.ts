@@ -125,11 +125,11 @@ const factory: ForgeBackendFactory = async (raw, context) => {
           },
         })) as Mr,
       ),
-    updatePr: async (pr, { title, body }) =>
+    updatePr: async (pr, { title, body, base }) =>
       prOf(
         (await api(`/merge_requests/${pr.number}`, {
           method: 'PUT',
-          body: { title, description: body },
+          body: { title, description: body, target_branch: base },
         })) as Mr,
       ),
     openPrsWithBase: async (target) =>

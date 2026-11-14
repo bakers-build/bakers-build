@@ -54,9 +54,10 @@ export interface ForgeBackend {
     title: string;
     body: string;
   }): Promise<ForgePr>;
+  /** Also retargets the PR to `base`, which may have moved since it opened. */
   updatePr(
     pr: ForgePr,
-    input: { title: string; body: string },
+    input: { title: string; body: string; base: string },
   ): Promise<ForgePr>;
   openPrsWithBase(base: string): Promise<ForgePr[]>;
   /**

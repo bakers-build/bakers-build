@@ -64,17 +64,16 @@ async function currentBase(
   run: Run,
 ): Promise<string> {
   if (branch !== run.branchName) return derivedBase(branch, run);
-  let target: string | undefined;
-  try {
-    if (!req.currentTicket) throw new Error('no server read for this call');
-    const t = await req.currentTicket();
-    target = t.targetBranch ?? t.baseBranch;
-    if (!target) throw new Error('no target_branch or base_branch returned');
-  } catch (err) {
-    throw new Error(
-      `forge: the ticket's current target_branch could not be read from the server (${err instanceof Error ? err.message : String(err)}); nothing was sent`,
+  const refuse = (why: string) =>
+    new Error(
+      `forge: the ticket's current target_branch could not be read from the server (${why}); nothing was sent`,
     );
-  }
+  if (!req.currentTicket) throw refuse('no server read for this call');
+  const t = await req.currentTicket().catch((err: unknown) => {
+    throw refuse(err instanceof Error ? err.message : String(err));
+  });
+  const target = t.targetBranch ?? t.baseBranch;
+  if (!target) throw refuse('no target_branch or base_branch returned');
   return target;
 }
 
@@ -186,7 +185,7 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const b = await backend();
       const open = await b.findOpenPr(branch);
       const pr = open
-        ? await b.updatePr(open, { title, body })
+        ? await b.updatePr(open, { title, body, base })
         : await b.createPr({
             head: branch,
             base,

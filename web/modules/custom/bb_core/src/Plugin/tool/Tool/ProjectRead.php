@@ -140,8 +140,9 @@ final class ProjectRead extends ToolBase {
    */
   protected function doExecute(array $values): ExecutableResult {
     $project = $this->readableProject($values['project']);
+    $field = $project->get('environments');
     $environments = array_filter(
-      $project->get('environments')->referencedEntities(),
+      $field->access('view', $this->currentUser) ? $field->referencedEntities() : [],
       fn ($environment) => $environment->access('view', $this->currentUser),
     );
     return ExecutableResult::success(new TranslatableMarkup('Project read.'), $this->projectOutput($project) + [

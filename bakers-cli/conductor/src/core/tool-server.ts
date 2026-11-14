@@ -31,8 +31,8 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { CONDUCTOR_TOOLS_SERVER } from '../plugins/agent.js';
-import type { SiteToolClient, Ticket } from '../plugins/remote.js';
-import type { ToolBinding, ToolRegistry } from '../plugins/tools.js';
+import type { SiteToolClient } from '../plugins/remote.js';
+import type { RunTicket, ToolBinding, ToolRegistry } from '../plugins/tools.js';
 import { SITE_TOOLS, SITE_WRITE_TOOLS, siteToolProxy } from './site-tools.js';
 
 export interface ToolServer {
@@ -68,9 +68,7 @@ export interface ToolServerOptions {
   /** Further addresses to listen on, on the same port (a runtime's container network). */
   hosts?: string[];
   /** Reads a ticket from the server; run calls get it as `currentTicket`. */
-  readTicket?: (
-    uuid: string,
-  ) => Promise<Partial<Ticket> & { identifier: string }>;
+  readTicket?: (uuid: string) => Promise<RunTicket>;
 }
 
 const newToken = () => randomBytes(32).toString('hex');
