@@ -74,4 +74,4 @@ Use these guides for the implementation or documentation your change touches.
 - [Architecture](architecture.md) — Find the component that owns the behavior you want to change.
 - [Write the docs](write-docs.md) — Follow the page rules and run the site checks.
 
-Every `develop` pipeline that deploys dev2 also publishes the site to GitLab Pages, so a merged documentation change is public after that pipeline; it is not a release claim.
+The site ships in the `docs` image that `release.yml` deploys, so a merged documentation change is public after the next deployment; it is not a release claim.

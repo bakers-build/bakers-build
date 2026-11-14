@@ -25,6 +25,6 @@ Follow the [Orca addon setup](/addons/orca), then start a ticket. Open its adopt
 
 ## Hermes
 
-Use the experimental [Slack bot/MCP setup](https://github.com/bakers-build/bakers-build/blob/next/experimental/pm-bot/README.md). Mention the bot in its main channel; follow the public request channel it opens and clarify your request. Later, ask for status or answer a relayed question there. It acts with a service account and offers no execution terminal or project-file editing. There is no Hermes addon.
+Hermes is an experimental Slack bot that uses bakers.build through MCP. Mention the bot in its main channel; follow the public request channel it opens and clarify your request. Later, ask for status or answer a relayed question there. It acts with a service account and offers no execution terminal or project-file editing. There is no Hermes addon.
 
 You can also [follow tickets on the website](/get-started/daily-work/follow-a-ticket), [connect another chat](/get-started/connector), or use the [bakers ui cockpit](/addons/bakers-ui/usage).

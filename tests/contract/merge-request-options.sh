@@ -281,8 +281,8 @@ check 'consistency: the MR region says the squash is what discards the per-commi
 # second option — which is exactly the shape of the drift the whole ticket is about. The checks are
 # deliberately few: `WORKFLOW.md` is the source of the RULE, not a second copy of the client forms.
 
-check 'source: WORKFLOW.md states the MR targets the ticket base_branch' \
-  hasi "$WF_FLAT" "targets the ticket's \`base_branch\`"
+check 'source: WORKFLOW.md states the MR targets the ticket computed target_branch' \
+  hasi "$WF_FLAT" "ticket's computed \`<target_branch>\`"
 check 'source: WORKFLOW.md names squash commits as enabled on the MR' \
   hasi "$WF_FLAT" '**squash commits**'
 check 'source: WORKFLOW.md names delete source branch as enabled on the MR' \

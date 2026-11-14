@@ -1,9 +1,8 @@
 import {
-  chmodSync,
-  copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -11,6 +10,7 @@ import { join } from 'node:path';
 import type {
   AgentRunContext,
   AgentRunPreparation,
+  RunBind,
 } from '@bakers-build/conductor/contract';
 
 export function encodeClaudeProjectDir(cwd: string): string {
@@ -42,13 +42,19 @@ export function prepareClaudeRun(
   const keys = ['CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY'];
   const env: Record<string, string> = { CLAUDE_CONFIG_DIR: config };
   const supplied = keys.some((key) => context.env[key]);
+  const bindPaths: RunBind[] = [];
   if (!supplied) {
     const key = keys.find((name) => hostEnv[name]);
     if (key) env[key] = hostEnv[key] as string;
     else if (existsSync(join(source, '.credentials.json'))) {
+      // The run shares the host's login file, never a copy: a refresh in one
+      // copy rotates the token and logs every other copy out.
       const login = join(config, '.credentials.json');
-      copyFileSync(join(source, '.credentials.json'), login);
-      chmodSync(login, 0o600);
+      writeFileSync(login, '', { mode: 0o600 });
+      bindPaths.push({
+        source: realpathSync(join(source, '.credentials.json')),
+        target: login,
+      });
     }
   }
   const apiKey = context.env.ANTHROPIC_API_KEY ?? env.ANTHROPIC_API_KEY;
@@ -79,5 +85,10 @@ export function prepareClaudeRun(
   mkdirSync(transcripts, { recursive: true });
   mkdirSync(join(config, 'projects'), { recursive: true });
   symlinkSync(transcripts, join(config, 'projects', key));
-  return { env, readPaths, writePaths: [transcripts] };
+  return {
+    env,
+    readPaths,
+    writePaths: [transcripts],
+    ...(bindPaths.length ? { bindPaths } : {}),
+  };
 }

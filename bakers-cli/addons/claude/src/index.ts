@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { existsSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -39,6 +39,7 @@ import {
   shellQuote,
   withoutGitDirs,
 } from '@bakers-build/core';
+import { shareLogin } from './credentials.js';
 import { parseClaudeTranscript } from './footprint.js';
 import { encodeClaudeProjectDir, prepareClaudeRun } from './run.js';
 import { claudeInstallCommand, claudeModelApi } from './setup.js';
@@ -273,13 +274,12 @@ export class ClaudeAgent implements BbAgent {
     marketplaces: readonly MarketplaceDeclaration[],
     home: string,
   ): Promise<PluginLaunch> {
+    const credentials = join(this.home, '.claude', '.credentials.json');
     const outcome = await ensureHome(home, async (dir) => {
-      const credentials = join(this.home, '.claude', '.credentials.json');
       if (!existsSync(credentials))
         throw new Error(
           `claude: no credential file at ${credentials} (a keychain login cannot be shared with an agent home); log in with a file-based credential`,
         );
-      symlinkSync(credentials, join(dir, '.credentials.json'));
       for (const { url, ref, plugins } of marketplaces) {
         const added = await claudeJson(dir, url, [
           'plugin',
@@ -305,6 +305,8 @@ export class ClaudeAgent implements BbAgent {
         { mode: 0o600 },
       );
     });
+    // Every use: a token refresh inside the home replaced the link with a copy.
+    shareLogin(credentials, join(home, '.credentials.json'));
     return { env: { CLAUDE_CONFIG_DIR: home }, args: [], home: outcome };
   }
 

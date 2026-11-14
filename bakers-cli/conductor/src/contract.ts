@@ -33,6 +33,7 @@ export {
   emptyAgentFootprint,
   matchesEnvDeny,
   type PluginLaunch,
+  type RunBind,
   type RunEnvPolicy,
 } from './plugins/agent.js';
 export {

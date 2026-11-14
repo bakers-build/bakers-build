@@ -9,7 +9,7 @@ timestamp=$(git show -s --format=%ct "$CI_SOURCE_SHA")
 [[ "$timestamp" =~ ^[0-9]+$ ]]
 labels=(--label "org.opencontainers.image.revision=$CI_SOURCE_SHA")
 if [ -n "$version" ]; then labels+=(--label "org.opencontainers.image.version=$version"); fi
-for image in php nginx docs pm-bot; do
+for image in php nginx docs; do
   docker tag "bakers-gate/$image:local" "bakers-verified/$image:source"
   printf 'FROM bakers-verified/%s:source\n' "$image" | \
     docker build --network=none --pull=false --provenance=false --sbom=false --build-arg "SOURCE_DATE_EPOCH=$timestamp" \

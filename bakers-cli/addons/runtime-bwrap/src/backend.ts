@@ -105,7 +105,16 @@ function argv(
     ...(options.readPaths ?? []),
     ...(input.readPaths ?? []),
   ];
-  for (const path of input.writePaths ?? []) {
+  const binds = input.bindPaths ?? [];
+  for (const { target } of binds)
+    if (!within(resolve(target), resolve(input.homePath as string)))
+      throw new Error(
+        `runtime-bwrap: shared file target outside the run home ${target}`,
+      );
+  for (const path of [
+    ...(input.writePaths ?? []),
+    ...binds.map(({ source }) => source),
+  ]) {
     if (
       !isAbsolute(path) ||
       protectedPaths.some(
@@ -123,7 +132,7 @@ function argv(
       throw new Error(`runtime-bwrap: protected write path ${path}`);
   }
   const mounts = new Map<string, boolean>();
-  const mount = (path: string, write: boolean) => {
+  const check = (path: string) => {
     if (
       !isAbsolute(path) ||
       path === '/' ||
@@ -138,8 +147,12 @@ function argv(
       (deps.env.HOME && within(realpathSync(deps.env.HOME), actual))
     )
       throw new Error(`runtime-bwrap: refusing broad path ${path}`);
+  };
+  const mount = (path: string, write: boolean) => {
+    check(path);
     mounts.set(path, write);
   };
+  for (const { source } of binds) check(source);
   for (const path of [
     ...SYSTEM.filter(existsSync),
     ...softwarePaths(deps.env),
@@ -184,6 +197,8 @@ function argv(
     ]),
     // The only Git the run sees; bwrap creates the empty mount point on the host.
     ...(gitDir ? ['--bind', gitDir, join(ws, '.git')] : []),
+    // Shared host files over their placeholders, after the run home is mounted.
+    ...binds.flatMap(({ source, target }) => ['--bind', source, target]),
     '--chdir',
     ws,
     '--',

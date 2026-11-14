@@ -215,7 +215,7 @@ export function refreshRunTarget(
     return tip ? [{ branch, tip }] : [];
   });
   if (tips.length === 0) return;
-  // pack-objects renames its temp pack from the parent's object store: same filesystem, or EXDEV.
+  // pack-objects renames its pack from the parent's objects dir; /tmp may be another filesystem (EXDEV).
   const scratch = mkdtempSync(join(record.parentGitDir, 'bb-target-refresh-'));
   try {
     execFileSync(

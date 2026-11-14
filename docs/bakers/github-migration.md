@@ -1,8 +1,7 @@
 # GitHub migration
 
 GitHub is public with `next` as its default branch and `main` as stable. Both have active PR,
-required-check and history-protection rules. GitLab still owns publication and live deployment
-until the explicit handover below; private customer branches remain there.
+required-check and history-protection rules.
 
 ## Checks
 
@@ -14,7 +13,7 @@ also require a merge commit for `main`, preserving the frozen release second par
 These rules are active on both GitHub branches.
 
 The PHP, CLI, renderer (glibc and musl), theme/Storybook, configuration, compose, docs,
-skill-version and title checks retain the existing GitLab commands. The image gate builds
+skill-version and title checks run the validation commands. The image gate builds
 PHP, PHP-test, nginx, docs and the browser runner once. PHPUnit runs inside PHP-test;
 recipe/browser/integration checks use those local images, followed by a separate
 existing-config database. The Docker socket belongs only to the disposable job machine.
@@ -28,11 +27,11 @@ required-check enforcement is considered verified.
 
 The package rehearsal builds and verifies the existing complete package set and calculates
 Conventional Commit release notes. No-change ranges produce no release notes. GitHub runs
-use GitHub commit links; the GitLab path retains its current behavior.
+use GitHub commit links.
 
 ## Next version allocation
 
-After disabling and draining the GitLab next publisher, capture immutable published versions
+Before allocating a next version, capture immutable published versions
 for **every package** discovered by `prepare-publish.mjs`. Flatten their version lists into
 one JSON array. A missing package query is a failed snapshot, not an empty package.
 
@@ -48,14 +47,13 @@ lock are prerequisites; a concurrent writer invalidates the allocation.
 
 Before enabling publication, reconcile every package from any partial attempt, verify exact
 candidate/artifact identity and deployment evidence, and serialize the whole publication.
-Keep GitLab `latest` and production unchanged. Do not add a second active next publisher.
+Do not add a second active next publisher.
 
 ## Remaining external evidence
 
 A cleared candidate, real PR and separate fork PR, required-check rejection, package/GHCR
-rights, transferable tested-image identity and explicit publisher handover remain necessary.
-Consumer URL/default changes wait for reachable target repositories. License/history gates
-also apply to later GitLab integrations. Existing GitLab customer connectors are unchanged.
+rights, transferable tested-image identity and setting `RELEASE_OWNER` to `github` remain necessary.
+Consumer URL/default changes wait for reachable target repositories.
 
 ## Runner selection
 
@@ -113,8 +111,8 @@ to the base repository failed with HTTP 403.
 `registry-rehearsal.yml` runs only on the dedicated `ci/ghcr-rehearsal` branch or
 explicit manual dispatch. It grants `packages: write` only to its image-gate job;
 PR checks retain read-only permissions. After the full Docker/PHPUnit/browser/config
-sequence passes, the same PHP, nginx, docs and PM bot images are pushed to private
-`ghcr.io/bakers-build/bakers-rehearsal-{php,nginx,docs,pm-bot}` packages with SHA/run tags.
+sequence passes, the same PHP, nginx and docs images are pushed to private
+`ghcr.io/bakers-build/bakers-rehearsal-{php,nginx,docs}` packages with SHA/run tags.
 The script rejects existing non-private packages before login, verifies visibility
 after publication, pulls by digest and checks the image ID against the tested image.
 Evidence is retained in `gate-reports/registry.txt`. No `latest`/`next` tags or
@@ -135,21 +133,18 @@ parent and publish GitHub release notes and versioned/latest images.
 
 Before enabling it:
 
-1. Resolve the open GitLab MR backlog; keep customer branches private. Merge the reviewed changes
-   through the normal working/review gates. Update the Bakers project repository/default to GitHub
-   and `next` only after those branches have a safe destination.
-2. Set the canonical GHCR packages `bakers-build/php`, `bakers-build/nginx`, `bakers-build/docs`, `bakers-build/pm-bot`
+1. Set the canonical GHCR packages `bakers-build/php`, `bakers-build/nginx`, `bakers-build/docs`
    public in Package settings and verify anonymous pulls. The rehearsal packages stay private.
-3. Protect GitHub's `release` environment for `next` and `main` and transfer npm/Komodo credentials
+   The PM bot image is published by `bakers-build/hermes-bot` as `ghcr.io/bakers-build/hermes-bot`;
+   the old `bakers-build/pm-bot` package keeps its tags.
+2. Protect GitHub's `release` environment for `next` and `main` and transfer npm/Komodo credentials
    into that environment. Update the versioned infra Resource Sync to GitHub/`next`, run the sync,
    and verify the standard stacks keep their identities, data volumes and secrets.
-4. Install the GitLab `RELEASE_OWNER` guards, set its variable to `github`, and drain all existing
-   publication/deployment runs. Capture current production image digests and npm channel values.
-   Only then set GitHub's owner variable. Do not activate both publishers.
-5. Verify the first next deployment and full package set. Stable production changes only through
+3. Capture current production image digests and npm channel values, then set GitHub's owner
+   variable.
+4. Verify the first next deployment and full package set. Stable production changes only through
    an explicit `next` → `main` promotion; do not relabel a next candidate as the old stable image.
 
-Rollback disables and drains GitHub first, then restores the recorded Komodo source/image digests
-and GitLab ownership. Never move a published version backwards or overwrite immutable npm versions.
+Rollback disables and drains GitHub first, then restores the recorded Komodo source/image digests. Never move a published version backwards or overwrite immutable npm versions.
 A failed partial npm attempt is resumed with its saved plan, not a freshly allocated version.
 Public repository approval does not close outstanding third-party image/license provenance items.

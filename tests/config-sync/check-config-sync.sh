@@ -4,7 +4,7 @@
 #   bash tests/config-sync/check-config-sync.sh
 #
 # This suite is deliberately outside tests/contract: it is wired into its own
-# GitLab job and runs both the live green tree and a committed red fixture.
+# `config_sync` job in .github/workflows/checks.yml and runs both the live green tree and a committed red fixture.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
