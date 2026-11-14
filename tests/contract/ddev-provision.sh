@@ -212,19 +212,33 @@ for failed in worktree-deps.sh ddev-own-project.sh ddev; do
   [ "$(tail -n1 "$TRACE")" = "$expected" ] || fail "continued after failure: $(cat "$TRACE")"
 done
 
-# provision_exec keys: `exec web -- <argv>` reaches `ddev exec --raw` with the argv unchanged.
+# provision_exec keys: each key is one fixed command in the web container; keys that take args pass
+# only checked arguments, unchanged and never through a shell.
 case=provision-exec
 cat > "$provision_tree/bin/ddev" <<'EOF'
 #!/bin/bash
 echo "ddev $# $*" >> "$TRACE"
 EOF
-command="$(cd "$root" && node --input-type=module -e 'console.log((await import("./.bakers/project.config.js")).default.hooks.provision_exec.web)')"
-[ "$command" = 'bash .bakers/provision.sh exec web' ] || fail "unstable entry point: $command"
-dispatch exec web -- drush uli '--name=north lead' '$(touch planted); id'
+entries="$(cd "$root" && node --input-type=module -e 'const e = (await import("./.bakers/project.config.js")).default.hooks.provision_exec; for (const [k, v] of Object.entries(e)) console.log(`${k}|${typeof v === "string" ? v : `${v.command}|args=${v.args}`}`)')"
+[ "$entries" = "$(printf '%s\n' \
+  'phpcs|bash .bakers/provision.sh exec phpcs' \
+  'phpmd|bash .bakers/provision.sh exec phpmd' \
+  'phpstan|bash .bakers/provision.sh exec phpstan' \
+  'uli|bash .bakers/provision.sh exec uli|args=true' \
+  'playwright|bash .bakers/provision.sh exec playwright|args=true' \
+  'playwright-cli|bash .bakers/provision.sh exec playwright-cli|args=true' \
+  'playground-ticket|bash .bakers/provision.sh exec playground-ticket|args=true')" ] || fail "unstable entry points: $entries"
+dispatch exec phpcs
 [ "$rc" = 0 ] || fail "exit $rc: $out"
-[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 7 exec --raw -- drush uli --name=north lead $(touch planted); id' ] || fail "calls: $(cat "$TRACE")"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 4 exec --raw -- .ddev/commands/web/phpcs' ] || fail "calls: $(cat "$TRACE")"
+dispatch exec uli -- north-lead https://x.ddev.site
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 9 exec --raw -- drush uli --name north-lead --uri https://x.ddev.site' ] || fail "calls: $(cat "$TRACE")"
+dispatch exec playground-ticket -- c1 '$(touch planted); id' working
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 10 exec --raw -- drush php:script scripts/e2e/playground-ticket.php -- c1 $(touch planted); id working' ] || fail "calls: $(cat "$TRACE")"
 [ ! -e "$provision_tree/planted" ] || fail 'an argument ran through a shell'
-for args in 'exec' 'exec web' 'exec web --' 'exec other -- true' 'exec web drush'; do
+for args in 'exec' 'exec web -- drush uli' 'exec other' 'exec phpcs -- x' 'exec phpcs x' 'exec uli' 'exec uli -- --name=admin' 'exec uli -- a;id' 'exec playwright -- --config=/x' 'exec playground-ticket -- c1 --eval'; do
   # shellcheck disable=SC2086
   dispatch $args
   [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid exec ran actions: $args: $out"
