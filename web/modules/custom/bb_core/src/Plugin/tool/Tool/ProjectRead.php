@@ -23,7 +23,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_project_read',
   label: new TranslatableMarkup('Read a project'),
-  description: new TranslatableMarkup('Returns one readable project by key or UUID: name, description, group, teams, repository and coder config. Environment variables are never returned.'),
+  description: new TranslatableMarkup('Returns one readable project by key or UUID: name, description, group, teams, repository, coder config and its viewable environments (name, branch, base URL); bakers_ticket_update environments_add takes such a name. Environment variables are never returned.'),
   operation: ToolOperation::Read,
   permission: 'view bb_project',
   input_definitions: [
@@ -101,6 +101,33 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('The coder configuration map; null when unset or not viewable.'),
       nullable: TRUE,
     ),
+    'environments' => new ListOutputDefinition(
+      label: new TranslatableMarkup('Environments'),
+      description: new TranslatableMarkup('The project’s environments the caller may view, by name.'),
+      item_definition: new MapOutputDefinition(
+        label: new TranslatableMarkup('Environment'),
+        description: new TranslatableMarkup('One environment.'),
+        property_definitions: [
+          'name' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Name'),
+            description: new TranslatableMarkup('The environment name.'),
+          ),
+          'branch' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Branch'),
+            description: new TranslatableMarkup('The branch it deploys; a ticket with this environment targets it.'),
+            nullable: TRUE,
+          ),
+          'base_url' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Base URL'),
+            description: new TranslatableMarkup('The environment URL.'),
+            nullable: TRUE,
+          ),
+        ],
+      ),
+    ),
   ],
 )]
 final class ProjectRead extends ToolBase {
@@ -112,7 +139,19 @@ final class ProjectRead extends ToolBase {
    * {@inheritdoc}
    */
   protected function doExecute(array $values): ExecutableResult {
-    return ExecutableResult::success(new TranslatableMarkup('Project read.'), $this->projectOutput($this->readableProject($values['project'])));
+    $project = $this->readableProject($values['project']);
+    $field = $project->get('environments');
+    $environments = array_filter(
+      $field->access('view', $this->currentUser) ? $field->referencedEntities() : [],
+      fn ($environment) => $environment->access('view', $this->currentUser),
+    );
+    return ExecutableResult::success(new TranslatableMarkup('Project read.'), $this->projectOutput($project) + [
+      'environments' => array_values(array_map(static fn ($environment) => [
+        'name' => (string) $environment->label(),
+        'branch' => $environment->get('branch')->value,
+        'base_url' => $environment->get('base_url')->value,
+      ], $environments)),
+    ]);
   }
 
   /**

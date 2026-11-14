@@ -154,9 +154,15 @@ describe('forge-gitlab', () => {
       title: 'feat: x',
       description: 'd',
     });
-    expect((await b.updatePr(PR, { title: 'feat: y', body: '' })).title).toBe(
-      'feat: y',
-    );
+    expect(
+      (await b.updatePr(PR, { title: 'feat: y', body: '', base: 'main' }))
+        .title,
+    ).toBe('feat: y');
+    expect(f.calls.find((c) => c.method === 'PUT')?.body).toEqual({
+      title: 'feat: y',
+      description: '',
+      target_branch: 'main',
+    });
     expect(await b.openPrsWithBase('develop')).toHaveLength(1);
     expect(f.calls.every((c) => c.token === 'glpat-SECRET')).toBe(true);
   });

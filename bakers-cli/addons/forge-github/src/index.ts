@@ -209,11 +209,11 @@ const factory: ForgeBackendFactory = async (raw, context) => {
           body: { head, base, title, body },
         })) as Pull,
       ),
-    updatePr: async (pr, { title, body }) =>
+    updatePr: async (pr, { title, body, base }) =>
       prOf(
         (await api(`/pulls/${pr.number}`, {
           method: 'PATCH',
-          body: { title, body },
+          body: { title, body, base },
         })) as Pull,
       ),
     openPrsWithBase: async (base) =>
