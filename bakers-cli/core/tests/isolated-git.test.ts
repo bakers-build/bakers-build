@@ -5,6 +5,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -29,8 +30,8 @@ const git = (cwd: string, ...args: string[]) =>
 const ident = ['-c', 'user.name=test', '-c', 'user.email=test@test'];
 
 /** Parent with `ticket`, a `sibling` branch and `origin/next` one commit ahead of the base. */
-function fixture(shared = false) {
-  const root = mkdtempSync(join(tmpdir(), 'bb-transfer-'));
+function fixture(shared = false, base = tmpdir()) {
+  const root = mkdtempSync(join(base, 'bb-transfer-'));
   roots.push(root);
   const parent = join(root, 'parent');
   mkdirSync(join(parent, '.bakers'), { recursive: true });
@@ -284,6 +285,22 @@ it('refreshes the run target ref from the parent without running the run-owned c
   expect(run('rev-parse', 'refs/heads/ticket')).toBe(ticket);
   expect(existsSync(join(root, 'executed'))).toBe(false);
 });
+
+it.skipIf(statSync(tmpdir()).dev === statSync(import.meta.dirname).dev)(
+  'refreshes the run target when the repository and the temp dir are on different filesystems',
+  () => {
+    const { parent, record, run } = fixture(false, import.meta.dirname);
+    writeFileSync(join(parent, 'newer'), 'newer');
+    git(parent, 'checkout', '-q', '--detach', 'origin/next');
+    git(parent, 'add', '.');
+    git(parent, ...ident, 'commit', '-qm', 'newer target');
+    git(parent, 'update-ref', 'refs/remotes/origin/next', 'HEAD');
+
+    refreshRunTarget(record);
+
+    expect(run('show', 'origin/next:newer')).toBe('newer');
+  },
+);
 
 it('does not write the target ref through a symlinked refs directory', () => {
   const { root, parent, record } = fixture();
