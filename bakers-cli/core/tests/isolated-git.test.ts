@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   rmSync,
   symlinkSync,
@@ -294,6 +295,25 @@ it('does not write the target ref through a symlinked refs directory', () => {
   symlinkSync(outside, join(record.gitDir, 'refs/remotes/origin'));
   expect(() => refreshRunTarget(record)).toThrow();
   expect(existsSync(join(outside, 'next'))).toBe(false);
+  expect(refreshScratches(record.parentGitDir)).toEqual([]);
+});
+
+const refreshScratches = (gitDir: string) =>
+  readdirSync(gitDir).filter((name) => name.startsWith('bb-target-refresh-'));
+
+// Git renames the pack beside its base name; a system temp dir on another filesystem fails with EXDEV.
+it('refreshes the run target without using the system temp directory', () => {
+  const { root, record, run } = fixture();
+  const previous = process.env.TMPDIR;
+  process.env.TMPDIR = join(root, 'no-such-dir');
+  try {
+    refreshRunTarget(record);
+  } finally {
+    if (previous === undefined) delete process.env.TMPDIR;
+    else process.env.TMPDIR = previous;
+  }
+  expect(run('show', 'origin/next:target-only')).toBe('target');
+  expect(refreshScratches(record.parentGitDir)).toEqual([]);
 });
 
 it('refuses a FIFO planted as an object or as the branch ref instead of waiting on it', () => {
