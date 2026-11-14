@@ -414,3 +414,10 @@ Feature: The team screen's five tabs are routes inside one island
     Then the member "both-bakeries" shows the role "Member"
     When I remove the member "both-bakeries"
     Then the members list has no member "both-bakeries"
+
+  # Only the ticket's folded Details move above the body on a phone; an
+  # inspector without a disclosure stays after the main content (BAKERS-57).
+  Scenario: A team page keeps its body before the inspector on a phone
+    Given I view the page 390 pixels wide
+    And I visit the team "Platform Crew"
+    Then the main region comes before the inspector

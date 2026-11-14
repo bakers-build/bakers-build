@@ -87,8 +87,15 @@ Feature: Workspace leads read the Insights of their workspace
     And I tick "Statistics demo" in the filter
     Then the address carries "filter[project][]="
     And the filter sheet is open
+    And the filters button reads "Filters · 1"
     When I close the open filter
     And I click button "Show results"
     Then the filter sheet is closed
     And the active filters read "Project is Statistics demo"
     And the filters button reads "Filters · 1"
+
+  Scenario: The desktop period control keeps its one-line width
+    Given I am logged in as the account "north-lead"
+    And the viewport is 1440 pixels wide
+    When I open the Insights of workspace "bakers"
+    Then the Insights period control fits on one line

@@ -27,3 +27,10 @@ Then('the ticket details show without a disclosure', async ({ page }) => {
   await expect(disclosure(page)).toBeHidden();
   await expect(assignee(page)).toBeVisible();
 });
+
+// Only a folded (labelled) inspector moves above the body on a phone.
+Then('the main region comes before the inspector', async ({ page }) => {
+  const main = (await page.locator('[data-canvas-region="main"]').boundingBox())!;
+  const inspector = (await page.locator('[data-canvas-region="inspector"]').boundingBox())!;
+  expect(main.y).toBeLessThan(inspector.y);
+});

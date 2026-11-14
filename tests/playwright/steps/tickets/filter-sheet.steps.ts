@@ -57,3 +57,18 @@ When('I close the open filter', async ({ page }) => {
   await page.locator('[data-option-picker-trigger][aria-expanded="true"]').first().click();
   await expect(page.locator('[data-option-picker-panel]:visible')).toHaveCount(0);
 });
+
+// Escape closes a native modal dialog; unapplied ticks must not survive it.
+When('I dismiss the filter sheet', async ({ page }) => {
+  await page.keyboard.press('Escape');
+  await expect(sheet(page)).toBeHidden();
+});
+
+Then('{string} is not ticked in the {string} facet', async ({ page }, label: string, facet: string) => {
+  await expect((await facetRow(page, facet, label)).locator('input')).not.toBeChecked();
+});
+
+Then('the Insights period control fits on one line', async ({ page }) => {
+  const box = (await page.locator('#insights-period').boundingBox())!;
+  expect(box.height, `period control is ${box.height}px tall`).toBeLessThanOrEqual(48);
+});

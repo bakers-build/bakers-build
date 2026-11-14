@@ -152,3 +152,19 @@ Feature: Project Board Drupal
     When I click button "Show results"
     Then the Board shows the active filter "Priority is High · 2"
     And the filters button reads "Filters · 1"
+
+  Scenario: A dismissed Board sheet drops the ticks it did not apply
+    Given a project world with these tickets:
+      | ticket        | state         | conductor | priority |
+      | Urgent fix    | working       | Oven A    | 1        |
+      | Routine chore | qualification | Oven A    | 3        |
+    And I am signed in as the world's lead
+    And the viewport is 390 pixels wide
+    When I open the world project Board
+    And I open the filter sheet
+    And I tick "High" in the "Priority" facet
+    And I close the open filter
+    And I dismiss the filter sheet
+    Then the Board shows no active filter
+    When I open the filter sheet
+    Then "High" is not ticked in the "Priority" facet
