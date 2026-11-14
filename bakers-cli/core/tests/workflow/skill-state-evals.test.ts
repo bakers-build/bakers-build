@@ -527,6 +527,94 @@ describe('bb-label-auto profile', () => {
       'auto-merge',
     ]);
   });
+  it('runs the auto-review and auto-accept skills only beside their own label', async () => {
+    const { validate } = await loadProfile(fixture({ stop: 'question' }));
+    const q = {
+      ...fixture({ stop: 'question' }),
+      skill: 'bb-label-auto-review',
+    };
+    expect(() => validate(q)).toThrow(/auto-review/);
+    const labelled = {
+      ...q.simulation.ticket,
+      labels: ['auto-review', 'ticket-question'],
+    };
+    expect(() =>
+      validate({ ...q, simulation: { ...q.simulation, ticket: labelled } }),
+    ).not.toThrow();
+    expect(() => validate({ ...q, skill: 'bb-label-other' })).toThrow();
+  });
+  const mergeOf = async (id: string): Promise<Row> => {
+    const f = await loadFixture(id);
+    const argv = f.simulation.commands.glab.find(
+      (r: { argv: string[] }) => r.argv[2] === 'merge',
+    ).argv;
+    return { tool: 'glab', arguments: { argv }, result: ok('Merged MR 61\n') };
+  };
+  const reviewer = comment(
+    'comment',
+    `# Question\n\n1. Confirm the verdict OK and authorize the merge (recommended)\n2. Reject\n\n${answer}`,
+  );
+  it('auto-review moves a GREEN working pass to review without asking', async () => {
+    const handedOff = [readTicket(), comment('coding'), summary];
+    const id = 'label-auto-review-working';
+    expect(
+      await judge(id, 'Moved.', [...handedOff, transition('review')]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...handedOff, shown, asked])).toEqual([
+      'auto-question',
+      'auto-no-stop',
+      'auto-transition',
+    ]);
+  });
+  it('auto-review stops an OK verdict for the reviewer and merges nothing', async () => {
+    const id = 'label-auto-review-ok';
+    const passed = [readTicket(), verdict('OK'), summary];
+    expect(await judge(id, 'Asked.', [...passed, reviewer, asked])).toEqual([]);
+    expect(
+      await judge(id, 'Merged.', [
+        ...passed,
+        await mergeOf(id),
+        transition('done'),
+      ]),
+    ).toEqual(['auto-question', 'auto-transition', 'auto-merge']);
+  });
+  it('auto-accept asks for the acceptance at a GREEN working pass', async () => {
+    const handedOff = [readTicket(), comment('coding'), summary];
+    const id = 'label-auto-accept-working';
+    expect(await judge(id, 'Asked.', [...handedOff, shown, asked])).toEqual([]);
+    expect(
+      await judge(id, 'Moved.', [...handedOff, transition('review')]),
+    ).toEqual(['auto-question', 'auto-transition', 'auto-link']);
+  });
+  it('auto-accept merges an accepted OK verdict on its own', async () => {
+    const id = 'label-auto-accept-review-ok';
+    const passed = [readTicket(), verdict('OK'), summary];
+    expect(
+      await judge(id, 'Merged.', [
+        ...passed,
+        await mergeOf(id),
+        transition('done'),
+      ]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...passed, reviewer, asked])).toEqual([
+      'auto-question',
+      'auto-no-stop',
+      'auto-transition',
+      'auto-merge',
+    ]);
+  });
+  it('auto-accept stops an OK verdict with a planned risky change for the reviewer', async () => {
+    const id = 'label-auto-accept-review-risky';
+    const passed = [readTicket(), verdict('OK'), summary];
+    expect(await judge(id, 'Asked.', [...passed, reviewer, asked])).toEqual([]);
+    expect(
+      await judge(id, 'Merged.', [
+        ...passed,
+        await mergeOf(id),
+        transition('done'),
+      ]),
+    ).toEqual(['auto-question', 'auto-transition', 'auto-merge']);
+  });
 });
 
 describe('classify profile', () => {

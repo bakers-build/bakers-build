@@ -1,21 +1,25 @@
 import { arg, callRecovery, calls, check, commonChecks, succeeded, tool, uuid, validateTools, writes } from '../call-utils.mjs';
 import { nonempty, requireValue } from '../validation.mjs';
 
-// A auto run: where it stops (user question, technical problem, transition or not at
+// An auto, auto-review or auto-accept run: where it stops (user question, technical problem, transition or not at
 // all), that a technical problem never reaches the user, that only done merges, and that nothing
 // follows the stop.
 const STOPS = ['none', 'question', 'technical-problem', 'transition'];
+const SKILLS = ['bb-label-auto', 'bb-label-auto-review', 'bb-label-auto-accept'];
 // The user reads only this note; the error and its output go into an earlier comment.
 const NOTE = '# Technical problem\n\nPlease contact the developers.';
 
 export function validate(f) {
-  validateTools(f, 'bb-label-auto');
+  requireValue(SKILLS.includes(f.skill), `Expected skill as one of ${SKILLS.join(', ')}`);
+  validateTools(f, f.skill);
   const e = f.expect;
+  const label = f.skill.slice('bb-label-'.length);
+  requireValue(f.simulation.ticket?.labels?.includes(label), `Expected the ${label} label on the ticket`);
   requireValue(uuid(f.input.ticket_uuid) && f.simulation.ticket?.id === f.input.ticket_uuid, 'Expected the simulated ticket');
   requireValue(STOPS.includes(e?.stop), `Expected expect.stop as one of ${STOPS.join(', ')}`);
   // The question, technical problem and freeze forms live in the ticket-question skill.
   requireValue(f.simulation.ticket.labels?.includes('ticket-question') && f.references?.includes('bb-label-ticket-question/SKILL.md'),
-    'Expected the ticket-question label and skill beside auto');
+    `Expected the ticket-question label and skill beside ${label}`);
   requireValue((e.stop === 'transition') === ['working', 'review', 'done'].includes(e.state) && (e.stop === 'transition' || e.state === undefined),
     'Expected expect.state working, review or done exactly for a transition');
   requireValue((e.stop === 'technical-problem') === nonempty(e.cause), 'Expected expect.cause exactly for a technical problem');

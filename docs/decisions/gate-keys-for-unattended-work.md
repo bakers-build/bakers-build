@@ -1,10 +1,9 @@
 # Gate keys for unattended work
 
-- **Status:** Proposed 2026-11-14. Awaits the requester's confirmation; implementation follows in
-  separate tickets.
+- **Status:** Accepted 2026-11-14 and implemented (section 8).
 - **Scope:** which human waits a run passes on its own, chosen per ticket by a label; how a run reads
   that at each state and how the ticket records who passed each wait. Not in scope: enforcing who may
-  set a label, and the implementation itself.
+  set a label, and the label terms in each workspace.
 
 ## Recommendation
 
@@ -109,7 +108,7 @@ Today's behavior stays the default. A starter is whoever creates the ticket and 
 | Starter | feature | bug | chore | epic | deployment | verification | own type |
 |---|---|---|---|---|---|---|---|
 | Person (UI, CLI, `bb-create-ticket`) | none | none | none | none | none | none | none |
-| Host hand-over of a specified ticket | `auto` | does not occur | `auto` | does not occur | does not occur | does not occur | does not occur |
+| Host hand-over of a specified ticket | `auto` | `auto` | `auto` | does not occur | does not occur | does not occur | does not occur |
 | CI failure script | does not occur | `auto` | does not occur | does not occur | does not occur | does not occur | does not occur |
 | Verification regression bug | does not occur | none | does not occur | does not occur | does not occur | does not occur | does not occur |
 
@@ -142,14 +141,15 @@ decides it itself and asks only what is the user's to decide.
 
 - The label on the ticket is the procedure; the run reads it at every state through the frame, as
   it reads `bb-label-<label>` today.
-- No new comment type. A person's decision is their `comment`. Each handoff (`coding`, `review`,
-  `summary`) carries `### Gates`, one line per gate passed since the last handoff:
+- No new comment type. A person's decision is their `comment`. Under a label, each handoff
+  (`coding`, `review`, `summary`) carries `### Gates`, one line per gate passed since the last
+  handoff; without a label every gate is a person's comment already:
 
   ```markdown
   ### Gates
 
   - plan: passed — by run (auto-review) — recommendation approve, followed yes
-  - verdict: rejected — by cw (comment 1a2b…) — recommendation OK, followed no (risky migration)
+  - verdict: rejected — by <person> (comment <id>) — recommendation OK, followed no (risky migration)
   ```
 
 - A metric on `followed: no` is optional and a follow-up.
@@ -168,25 +168,27 @@ decides it itself and asks only what is the user's to decide.
 ## 8. Changes and migration
 
 `auto` keeps its meaning: existing `auto` tickets and `scripts/ci/github-failure-ticket.sh` need no
-migration. Follow-up tickets change:
+migration. The implementation changed:
 
-- **Frame**: `bb-workflow/SKILL.md`, new `references/gates.md`, `plan.md`, `coding-gate.md`,
-  `review.md`, `qualification.md`, `read-ticket.md`, `ticket-writes.md`, `outtake.md` and
-  `outtake/*.md` (`### Gates`), `agent-choice.md`, `prior-art-search.md`.
-- **Labels**: `bb-label-auto` (risk-list wording shared with the new skills), new
+- **Frame**: `bb-workflow/SKILL.md` (the *Stop rule* covers a missing `## bb-gates` row of an own
+  type) and new `references/gates.md` (catalog, gate sets, recipe rows, risk list, `### Gates`
+  record), reached through the label skills' links. The state files and the waits
+  (`coding-gate.md`, `review.md`, `agent-choice.md`, `prior-art-search.md`, `ticket-writes.md`,
+  `outtake.md`) keep their text: a label skill passes them, as `bb-label-auto` did before, and the
+  per-state read budgets stay as they are.
+- **Labels**: `bb-label-auto` (passes every gate; risk list moved to `gates.md`), new
   `bb-label-auto-review` and `bb-label-auto-accept`; `bb-label-ticket-question` unchanged.
-- **Recipes**: `bb-recipe-matt`, `bb-recipe-superpowers`, `bb-recipe-deploy-and-release`,
-  `bb-recipe-verify` (`## bb-gates`).
+- **Recipes**: `## bb-gates` in `bb-recipe-matt`, `bb-recipe-superpowers`,
+  `bb-recipe-deploy-and-release` (its repeated tool-discovery phrase stated once, to stay within
+  500 words), `bb-recipe-verify` and the test recipes.
 - **Docs**: `docs/skills-and-workflows/types-recipes-labels.md`, `recipes.md`, `workflow-file.md`,
-  `docs/development/skill-contract.md`, `docs/development/test-skill-tools.md`,
-  `docs/bakers/development-skills.md` (skill count), `docs/bakers/github-migration.md`,
-  `.claude/skills/bakers-build/README.md`.
-- **Tests**: `tests/contract/skill-references.py`, `tests/skill-eval/fixtures/auto-*`,
-  `label-route-probe.json`, `tests/skill-eval/profiles/bb-label-auto.mjs`,
-  `create-ticket-handover.mjs`, `bakers-cli/core/tests/workflow/skill-state-evals.test.ts`,
-  `skill-tool-calls.test.ts`, `bakers-cli/core/tests/packaging/github-failure-ticket.test.ts`;
-  new skill-eval fixtures for the two labels.
-- **Data**: label terms `auto-review` and `auto-accept` in each workspace; label-permission
-  enforcement in `bb_core`.
-
-Open for follow-up: whether a contract test parses recipe headings and would reject `## bb-gates`.
+  `docs/development/skill-contract.md`, `docs/bakers/development-skills.md` (skill count, bundle
+  0.71.0), `.claude/skills/bakers-build/README.md`. `docs/bakers/github-migration.md` and
+  `docs/development/test-skill-tools.md` describe `auto` only and stay as they are.
+- **Tests**: `tests/contract/skill-references.py` accepts `## bb-gates` and requires a row per
+  declared type; the `bb-label-auto` skill-eval profile also serves the two new label skills, with
+  the fixtures `label-auto-review-*` and `label-auto-accept-*` and their cases in
+  `bakers-cli/core/tests/workflow/skill-state-evals.test.ts`; the simulated ticket read in
+  `tests/skill-eval/tool-server.py` returns `reviewers`, as the real tool does.
+- **Follow-up**: label terms `auto-review` and `auto-accept` in each workspace; label-permission
+  enforcement in `bb_core`; an optional metric on `followed: no`.

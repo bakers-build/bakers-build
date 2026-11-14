@@ -1243,6 +1243,35 @@
             },
             "title": "Links"
           },
+          "reviewers": {
+            "type": "array",
+            "description": "The readable reviewers.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "The display name.",
+                  "title": "Name"
+                },
+                "mail": {
+                  "oneOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The e-mail address, null without mail view access.",
+                  "title": "Mail"
+                }
+              },
+              "description": "The saved account.",
+              "title": "Reviewer"
+            },
+            "title": "Reviewers"
+          },
           "project": {
             "oneOf": [
               {
