@@ -7,8 +7,11 @@ mkdir -p gate-reports
 images=(php php-test nginx docs)
 labels=()
 if [ -n "${CI_RELEASE_VERSION:-}" ]; then labels+=(--label "org.opencontainers.image.version=$CI_RELEASE_VERSION"); fi
+# Authenticates composer's GitHub downloads in the php stages (Dockerfile); the token stays out of layers.
+secrets=()
+if [ -n "${COMPOSER_AUTH:-}" ]; then secrets+=(--secret id=composer_auth,env=COMPOSER_AUTH); fi
 for image in "${images[@]}"; do
-  docker build "${labels[@]}" --target "$image" --label "org.opencontainers.image.revision=$revision" \
+  docker build "${labels[@]}" "${secrets[@]}" --target "$image" --label "org.opencontainers.image.revision=$revision" \
     --build-arg "CI_COMMIT_REF_NAME=$source_ref" --build-arg "CI_COMMIT_SHORT_SHA=${revision:0:8}" \
     -t "bakers-gate/$image:local" .
 done
@@ -48,7 +51,7 @@ done
 GATE_RUN_LOG_STORAGE=1 docker compose up -d --no-build --wait --no-deps --force-recreate php nginx
 docker compose run --name github-integration --no-deps runner \
   bash /repo/scripts/e2e/run-integration.sh /bakers-test/env || status=1
-docker cp github-integration:/repo/.ddev/.bakers-test/junit-integration.xml gate-reports/ || true
+docker cp github-integration:/repo/tests/artifacts/bakers/junit-integration.xml gate-reports/ || true
 cleanup
 if [ "$status" != 0 ]; then exit "$status"; fi
 # A separate database proves config/sync without importing it into the recipe world.

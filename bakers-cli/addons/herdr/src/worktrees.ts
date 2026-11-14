@@ -1,11 +1,12 @@
 import { existsSync } from 'node:fs';
 import {
   removeGitWorktree,
+  removeRunCloneWorkspace,
   restoreWritable,
   type WorktreeGitExec,
 } from '@bakers-build/addon-workspace-git';
 import type { WorktreeTeardown } from '@bakers-build/conductor/contract';
-import type { ConductorLogger } from '@bakers-build/core';
+import { type ConductorLogger, loadRunClone } from '@bakers-build/core';
 import { type HerdrExec, isRecord, parseJson } from './pane-layout.js';
 import { parseWorkspaceList } from './workspace-list.js';
 
@@ -101,6 +102,59 @@ export async function listWorktrees(
     );
   }
   return parseWorktreeList(output);
+}
+
+/**
+ * A run clone is no Git worktree on the host, so herdr lists none for it: its
+ * plain workspace is found by its label, the ticket branch.
+ */
+export async function cloneWorkspaceId(
+  execHerdr: HerdrExec,
+  branch: string,
+): Promise<string | null> {
+  return (
+    parseWorkspaceList(await execHerdr(['workspace', 'list'])).find(
+      (workspace) => workspace.label === branch,
+    )?.workspaceId ?? null
+  );
+}
+
+/** The run clone's herdr workspace, created at `path` when none is open. */
+export async function openCloneWorkspace(
+  execHerdr: HerdrExec,
+  branch: string,
+  path: string,
+): Promise<string> {
+  const open = await cloneWorkspaceId(execHerdr, branch);
+  if (open) return open;
+  const output = await execHerdr([
+    'workspace',
+    'create',
+    '--cwd',
+    path,
+    '--label',
+    branch,
+    '--no-focus',
+  ]);
+  let created: unknown;
+  try {
+    const parsed = parseJson(output, 'workspace create');
+    created = isRecord(parsed)
+      ? (parsed.result as { workspace?: { workspace_id?: unknown } })?.workspace
+          ?.workspace_id
+      : undefined;
+  } catch {
+    // Not JSON: fall back to the list below.
+  }
+  const id =
+    typeof created === 'string' && created
+      ? created
+      : await cloneWorkspaceId(execHerdr, branch);
+  if (!id)
+    throw new Error(
+      `herdr workspace create did not yield a workspace for ${path} (branch ${branch}): ${output.trim()}`,
+    );
+  return id;
 }
 
 /** What the herdr worktree teardown needs. */
@@ -202,6 +256,14 @@ export async function removeHerdrWorktree(
       'refusing to tear down the main checkout',
     );
     return 'unverified';
+  }
+  if (worktreePath && loadRunClone(worktreePath)) {
+    const open = await cloneWorkspaceId(execHerdr, branch);
+    if (open) {
+      if (!(await ensureFocusSafeToRemove(deps, open))) return 'unverified';
+      await execHerdr(['workspace', 'close', open]);
+    }
+    return removeRunCloneWorkspace(worktreePath) ?? 'unverified';
   }
   const entry = resolveWorktreeEntry(
     await listWorktrees(execHerdr, root),

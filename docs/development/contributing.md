@@ -11,7 +11,7 @@ Prepare a checkout to change bakers.build, run the checks that fit your change, 
    cd bakers-cli && pnpm install && pnpm -r run build
    ```
 
-3. For Drupal work, prepare identity with `node scripts/setup-worktree.mjs`, then explicitly
+3. For Drupal work, prepare identity with `node .bakers/scripts/setup-worktree.mjs`, then explicitly
    provision a disposable site with `ddev init --provider recipe-test`. Initialization reinstalls
    that local database. Worktree setup itself leaves DDEV stopped. The project owns these scripts
    and its three QA wrappers; no keytec DDEV addon or keytec-ai configuration tool is needed.
@@ -74,4 +74,4 @@ Use these guides for the implementation or documentation your change touches.
 - [Architecture](architecture.md) — Find the component that owns the behavior you want to change.
 - [Write the docs](write-docs.md) — Follow the page rules and run the site checks.
 
-Every `develop` pipeline that deploys dev2 also publishes the site to GitLab Pages, so a merged documentation change is public after that pipeline; it is not a release claim.
+The site ships in the `docs` image that `release.yml` deploys, so a merged documentation change is public after the next deployment; it is not a release claim.

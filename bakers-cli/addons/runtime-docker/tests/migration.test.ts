@@ -1,6 +1,8 @@
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { createRunClone } from '@bakers-build/core';
 import { afterEach, expect, it } from 'vitest';
 import { dockerRuntime } from '../src/backend.js';
 
@@ -16,22 +18,39 @@ function fixture(options = {}) {
     common = join(root, 'main/.git');
   const calls: string[][] = [];
   for (const path of [
-    ws,
-    common,
-    join(common, 'worktrees/tree'),
+    join(root, 'main'),
     join(root, 'plugins'),
     join(root, 'transcripts'),
   ])
     mkdirSync(path, { recursive: true });
+  const git = (...args: string[]) =>
+    execFileSync('git', args, {
+      cwd: join(root, 'main'),
+      env: {
+        ...process.env,
+        GIT_CONFIG_GLOBAL: '/dev/null',
+        GIT_CONFIG_NOSYSTEM: '1',
+        GIT_AUTHOR_NAME: 'test',
+        GIT_AUTHOR_EMAIL: 'test@example.com',
+        GIT_COMMITTER_NAME: 'test',
+        GIT_COMMITTER_EMAIL: 'test@example.com',
+      },
+      stdio: 'pipe',
+    });
+  git('init', '-q', '-b', 'main');
+  git('commit', '-q', '--allow-empty', '-m', 'base');
+  git('branch', 'ticket');
+  const { gitDir } = createRunClone({
+    parent: join(root, 'main'),
+    workspace: ws,
+    gitDir: join(root, 'storage/run.git'),
+    branch: 'ticket',
+  });
   const runtime = dockerRuntime(options, {
     exec: async (file, args) => {
       calls.push([file, ...args]);
       if (file === 'git')
-        return {
-          stdout: args.includes('--git-common-dir')
-            ? common
-            : join(common, 'worktrees/tree'),
-        };
+        return { stdout: execFileSync(file, args, { encoding: 'utf8' }) };
       if (args[0] === 'image') throw new Error('missing image');
       if (args[0] === 'network' && args.includes('--format'))
         return { stdout: '172.20.0.1' };
@@ -60,7 +79,7 @@ function fixture(options = {}) {
     },
   };
   const run = { uuid: 'neutral-run', id: 1 };
-  return { root, ws, common, calls, runtime, metadata, run };
+  return { root, ws, common, gitDir, calls, runtime, metadata, run };
 }
 
 it('uses neutral installation and prepared paths without an agent-specific adapter', async () => {
@@ -121,20 +140,31 @@ it('checks an operator image without requiring installation or model API metadat
   expect(depsExec.some((args) => args[1] === 'build')).toBe(false);
 });
 
-it('refuses prepared grants that reopen protected Git metadata or the host home', async () => {
+it('refuses prepared grants that reopen the run Git directory or the host home', async () => {
   const f = fixture();
   const context = await f.runtime.prepareRun!(f.run, f.metadata);
   const input = {
     command: 'true',
     env: {},
     workspacePath: f.ws,
+    gitDir: f.gitDir,
     run: f.run,
     harness: 'generic',
     ...f.metadata,
     ...context,
   };
   await expect(
-    f.runtime.wrap({ ...input, writePaths: [f.common] }),
+    f.runtime.wrap({ ...input, writePaths: [f.gitDir] }),
+  ).rejects.toThrow(/protected/);
+  await expect(
+    f.runtime.wrap({ ...input, writePaths: [join(context.homePath, '..')] }),
+  ).rejects.toThrow(/protected/);
+  await expect(
+    f.runtime.wrap({
+      ...input,
+      readPaths: [join(f.root, 'plugins')],
+      writePaths: [join(f.root, 'plugins')],
+    }),
   ).rejects.toThrow(/protected/);
   await expect(
     f.runtime.wrap({ ...input, readPaths: [f.root] }),

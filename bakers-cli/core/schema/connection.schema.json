@@ -46,6 +46,10 @@
         "else": { "type": "object" }
       }
     },
+    "server": {
+      "$ref": "project.schema.json#/$defs/slot",
+      "description": "Conductor server slot for this connection; a project server slot or server addon wins. Default @bakers-build/addon-remote-drupal."
+    },
     "addons": {
       "type": "array",
       "description": "Connection addons, such as auth providers.",

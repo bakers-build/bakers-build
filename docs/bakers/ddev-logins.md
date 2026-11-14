@@ -9,8 +9,8 @@ worktree, against the base URL the reviewer can reach:
 ddev drush uli --name north-lead --uri <reachable base url>
 ```
 
-In a run with the conductor's tools, run the same command through `ddev_exec` (`drush uli --name
-north-lead --uri <url>`) and take a tunnel URL from `ports_status`.
+In a run with the conductor's tools, run the same command through `provision_exec('web', ['drush',
+'uli', '--name', 'north-lead', '--uri', '<url>'])` and take a tunnel URL from `ports_status`.
 
 Use the worktree's local URL, or its live tunnel URL when `bakers ports status` shows one; a link to
 a host the reviewer cannot reach is no access. Check once that the persona exists

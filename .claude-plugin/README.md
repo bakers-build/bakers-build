@@ -32,8 +32,8 @@ for existing registrations, verification and updates.
 - **`bakers`** — the repo-agnostic ticket-workflow engine (`/bakers`). Reads the target repo's
   `WORKFLOW.md` and `.bakers/project.config.js` at runtime, so it works from any bakers.build project.
 
-**Not shipped:** the manual skill-testing wiring, `scripts/setup-test-project.sh` and
-`scripts/teardown-test-project.sh`. Neither is a skill — they are two shell scripts, and they stay
+**Not shipped:** the manual skill-testing wiring, `.bakers/scripts/setup-test-project.sh` and
+`.bakers/scripts/teardown-test-project.sh`. Neither is a skill — they are two shell scripts, and they stay
 repo-local because they drive this checkout's own DDEV control plane and clone the fixture project
 committed under `tests/fixtures/bakers-playground`.
 

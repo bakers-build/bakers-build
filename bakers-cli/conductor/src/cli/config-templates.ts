@@ -1,5 +1,6 @@
-export const DEFAULT_CONDUCTOR_AGENT_ADDONS =
-  "[{ use: '@bakers-build/addon-herdr' }]";
+/** Supplies the executor and the worktree slot through its preset. */
+export const DEFAULT_SLOT_ADDON = '@bakers-build/addon-herdr';
+export const DEFAULT_CONDUCTOR_AGENT_ADDONS = `['${DEFAULT_SLOT_ADDON}']`;
 
 export type ConnectionAuthType =
   | 'oauth2_client_credentials'
@@ -81,10 +82,9 @@ export function renderCommittedConfig(inputs: {
 // everyone. A conductor is this machine (machine.config.js) + this project +
 // the variant (project.<name>.config.js). Connections are private files.
 //
-// The slots are \`{ use, export?, with? }\` descriptors naming the published
-// package; the loader resolves each name (config dir → cwd → CLI install).
-// \`@bakers-build/addon-herdr\` default-exports the executor, so the worktree
-// slot names \`export: 'herdrWorkspace'\`.
+// Each addon in \`addons\` fills its slots through its preset: herdr supplies
+// the executor and the worktree. The server comes from the connection,
+// by default @bakers-build/addon-remote-drupal.
 
 /** @type {import('@bakers-build/core').ProjectConfig} */
 export default {
@@ -109,10 +109,7 @@ ${
     .filter(Boolean)
     .join(', ')} },\n`
     : ''
-}  server: { use: '@bakers-build/addon-remote-drupal' },
-  executor: { use: '@bakers-build/addon-herdr' },
-  addons: ${DEFAULT_CONDUCTOR_AGENT_ADDONS},
-  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },
+}  addons: ${DEFAULT_CONDUCTOR_AGENT_ADDONS},
 };
 `;
 }

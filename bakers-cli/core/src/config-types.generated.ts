@@ -73,6 +73,10 @@ export interface ProjectConfig {
     provision_up?: string | {
       [key: string]: string;
     };
+    /** Commands by key, offered to runs as provision_exec(key, args). Arguments follow the command as argv, never through a shell. */
+    provision_exec?: {
+      [key: string]: string;
+    };
   };
   /** Agent plugin marketplaces every run of this project installs. */
   marketplaces?: Array<{
@@ -84,6 +88,9 @@ export interface ProjectConfig {
   }>;
   /** Function choosing the agent for a ticket; replaces the shipped selection. */
   select_agent?: (...args: never[]) => unknown;
+  runtime?: {
+    read_only?: Array<string>;
+  };
 }
 
 /** This machine's private configuration: ~/.bakers/machine.config.js. */
@@ -157,6 +164,13 @@ export interface ConnectionConfig {
   plugins?: Array<unknown | {
     [key: string]: unknown;
   }>;
+  /** Conductor server slot for this connection; a project server slot or server addon wins. Default @bakers-build/addon-remote-drupal. */
+  server?: { kind: string; [key: string]: unknown } | {
+    use: string;
+    export?: string;
+    /** Options passed to the factory. */
+    with?: unknown;
+  };
   /** Connection addons, such as auth providers. */
   addons?: Array<string | {
     use: string;

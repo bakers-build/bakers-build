@@ -36,7 +36,7 @@ export function resolveBaseURLFrom(env: NodeJS.ProcessEnv, envDdev: string): str
         return validURL(env.DDEV_PRIMARY_URL);
     }
     throw new Error(
-        'No baseURL: run `node scripts/setup-worktree.mjs` to write .env.ddev (DDEV_WORKTREE_NAME / PLAYWRIGHT_BASE_URL), run inside the DDEV web container where DDEV_PRIMARY_URL is set, or pass PLAYWRIGHT_BASE_URL to override both.',
+        'No baseURL: run `node .bakers/scripts/setup-worktree.mjs` to write .env.ddev (DDEV_WORKTREE_NAME / PLAYWRIGHT_BASE_URL), run inside the DDEV web container where DDEV_PRIMARY_URL is set, or pass PLAYWRIGHT_BASE_URL to override both.',
     );
 }
 

@@ -20,8 +20,8 @@ afterEach(() => {
     rmSync(root, { recursive: true, force: true });
 });
 const scripts = [
-  'scripts/setup-worktree.mjs',
-  'tests/fixtures/bakers-playground/scripts/setup-worktree.mjs',
+  '.bakers/scripts/setup-worktree.mjs',
+  'tests/fixtures/bakers-playground/.bakers/scripts/setup-worktree.mjs',
 ];
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), 'bakers-env-'));

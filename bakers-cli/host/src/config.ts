@@ -291,7 +291,7 @@ function buildConfigCommand(
     command.action(async (options: ConfigOptions) => {
       if (hiddenScope !== undefined && options.scope === undefined)
         options.scope = hiddenScope;
-      const { applyConfigPlan, planConfig } = await import(
+      const { applyConfigPlan, planConfig, DEFAULT_SLOT_ADDON } = await import(
         '@bakers-build/conductor/config'
       );
       if (options.projectConnection !== undefined)
@@ -423,7 +423,7 @@ function buildConfigCommand(
       Object.assign(
         planning.capabilities,
         await readAddonCapabilities(
-          Object.values(planning.slots),
+          [...Object.values(planning.slots), DEFAULT_SLOT_ADDON],
           projectBases,
         ),
       );

@@ -36,7 +36,6 @@ List the package once in `.bakers/project.config.js`; one entry supplies both ex
 
 ```js
 addons: [
-  '@bakers-build/addon-remote-drupal',
   {
     use: '@bakers-build/addon-herdr',
     with: {
@@ -55,7 +54,6 @@ These optional `with` values control worktrees and terminal layouts. Merge the e
 
 ```js
 addons: [
-  '@bakers-build/addon-remote-drupal',
   {
     use: '@bakers-build/addon-herdr',
     with: {
@@ -73,6 +71,8 @@ addons: [
 <!-- @options @bakers-build/addon-herdr -->
 
 `auto_setup_merge` behaves as in [workspace-git](/addons/workspace-git#options).
+
+<span id="isolated-runs"></span>Under an isolating runtime, each run gets a fresh [run clone](/addons/workspace-git#isolated-runs) in a plain herdr workspace labelled with the branch, not a herdr worktree. `shared` has the same garbage-collection requirement as there.
 
 A `panes` array replaces the previous one. The open layout runs once, after `after_create`, for a freshly created worktree; the executor applies it, also to a worktree another workspace made ([Conductor slots](/addons/slots)). Top-level `states` chooses what is served, while `with.states` only lays out panes.
 

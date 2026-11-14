@@ -10,7 +10,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 cd "${DDEV_APPROOT:-$(pwd)}"
-node scripts/setup-worktree.mjs
+node .bakers/scripts/setup-worktree.mjs
 # Check the registry before startup: an existing name must belong to this exact root.
 ddev list -j | node --input-type=module -e '
 import { readFileSync, realpathSync } from "node:fs";

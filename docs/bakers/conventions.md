@@ -36,7 +36,7 @@ Never hand-patch a live server with `drush`. Fix config in both `config/sync/**`
 recipe `config/**`; entity displays, form displays and page layouts live in exactly those two
 places and never in a module's `config/install` or `config/optional`. Test the recipe first,
 check `config/sync` last at the same revision, and always name the `ddev init` provider
-(`WORKFLOW.md` › *provision*). Environment preparation is `node scripts/setup-worktree.mjs`;
+(`WORKFLOW.md` › *provision*). Environment preparation is `node .bakers/scripts/setup-worktree.mjs`;
 explicit `ddev init` reinstalls the selected database. Reuse/bootstrap preserves existing data.
 Project-owned QA wrappers require Composer dependencies, not addon installation or repair.
 
@@ -58,7 +58,7 @@ under `tests/contract/` runs in CI, and a script nothing in CI runs is not commi
 ## `bakers ui` for a human: playground, herdr tab, always
 
 The repository checkout commits no connection, so `bakers ui` there uses your default connection
-(`~/.bakers/connections/default.js`), a live tenant. Run `scripts/setup-test-project.sh`, then
+(`~/.bakers/connections/default.js`), a live tenant. Run `.bakers/scripts/setup-test-project.sh`, then
 `./bakers-cli/bin/bakers ui --config workspaces/bakers-playground/.bakers/connection.config.js` inside a tab
 from `herdr tab create`. Never piped, never captured frames, never a live tenant.
 

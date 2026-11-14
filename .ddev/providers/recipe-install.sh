@@ -3,8 +3,8 @@
 set -u
 LABEL="${1:?provider label required}"
 SEED_CMD="${2:?seed command path required}"
-LOG="/var/www/html/.ddev/.bakers-test/init-${LABEL}.log"
-mkdir -p /var/www/html/.ddev/.bakers-test
+LOG="/var/www/html/tests/artifacts/bakers/init-${LABEL}.log"
+mkdir -p /var/www/html/tests/artifacts/bakers
 (
   set -ex
   # Fresh checkouts can have a read-only sites/default directory.

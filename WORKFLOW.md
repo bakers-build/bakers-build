@@ -6,18 +6,22 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe-test` site;
 `config/sync` validation uses `provision_up('existing-config-fresh')` afterwards, a fresh
-`existing-config` install at the same revision. DDEV commands run through `ddev_exec`;
-a project web command runs by path
-(`ddev_exec(".ddev/commands/web/<cmd>")`), and `ddev_status`/`ddev_start` replace
-project inspection and startup. Never run `pnpm install` in a run: every `provision_up` profile
-installs the `bakers-cli` and `docs` dependencies first, `provision_up('deps')` installs them
-alone for work that needs no site, and a site profile's initialization installs and builds
+`existing-config` install at the same revision. Commands in the web container run through
+`provision_exec('web', [<argv>])`; a project web command runs by path
+(`provision_exec('web', ['.ddev/commands/web/<cmd>'])`), and `ddev_status`/`ddev_start` replace
+project inspection and startup. Provisioning profiles use the fixed, protected `.bakers/provision.sh`
+entry point; their implementation is read from that file on each call.
+Under an isolating runtime (`BAKERS_RUNTIME_ISOLATES=1`) the run installs and builds itself:
+`cd bakers-cli && pnpm install`, likewise in `docs`; the host installs nothing. Otherwise never run
+`pnpm install` in a run: every setup profile
+installs the `bakers-cli` and `docs` dependencies first, and `provision_up('deps')` installs them
+alone for work that needs no site. A site profile's initialization installs and builds
 `web/themes/custom/bb_theme`. A docs preview for functional checks or manual review starts with
 `provision_up('docs-preview')`, which builds and serves `docs/`, and is shared with `ports_up docs`;
 never run `vitepress preview` in a run. The Playwright suite and `playwright-cli` run through
-`ddev_exec`. A server an agent starts in the
+`provision_exec('web', …)`. A server an agent starts in the
 sandbox, such as Storybook, is reachable only within that same command. Skill and conductor
-behavior is tested in the playground workspace that `scripts/setup-test-project.sh` sets up; a
+behavior is tested in the playground workspace that `.bakers/scripts/setup-test-project.sh` sets up; a
 sandboxed run starts a playground conductor with `provision_up('conductor-e2e')` and stops or
 restarts it through `provision_up` with the `conductor-e2e-stop` and `conductor-e2e-start` profiles. Core tests, Playwright, conductor and skill-behavior
 setup: [testing](docs/bakers/testing.md#setup).
@@ -49,14 +53,14 @@ included in core tests. Ticket-specific functional checks apply separately.
 | When | Command |
 |---|---|
 | `docs/**` or documentation links | `cd docs && pnpm build && node --test scripts/manual.test.mjs scripts/marketplace.test.mjs scripts/addon-options.test.mjs` |
-| bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
-| bakers.build CLI source | `provision_up('deps')`, then `cd bakers-cli && pnpm -r run build` |
-| PHP implementation | PHP coding standards, mess detection and static analysis through `ddev_exec` |
+| bakers.build CLI, bakers.build skills, `WORKFLOW.md`, `scripts/**`, `.bakers/scripts/**`, `.bakers/provision.sh` or `tests/contract/**` | `cd bakers-cli && pnpm --filter @bakers-build/core test && pnpm lint` |
+| bakers.build CLI source | Dependencies installed (see provision), then `cd bakers-cli && pnpm -r run build` |
+| PHP implementation | PHP coding standards, mess detection and static analysis through `provision_exec('web', …)` |
 | Config in `config/sync/**` or a module's/recipe's `config/install`, `config/optional`, `config/` | `bash tests/config-sync/check-config-sync.sh` |
 | `docker-compose*.yml`, `docker/**`, `komodo/**` | `bash tests/contract/compose.sh` |
-| `.ddev/**` | `bash tests/contract/ddev-provision.sh` |
-| `scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
-| `.gitlab-ci.yml` | `bash tests/config-sync/check-ci-wiring.sh`; GitLab CI lint through the [tool discovery and fallback](.claude/skills/bakers-build/skills/bb-workflow/references/tools.md#choose-an-operation) |
+| `.ddev/**` or `.bakers/provision.sh` | `bash tests/contract/ddev-provision.sh` |
+| `.bakers/scripts/docs-preview*` | `bash tests/contract/docs-preview.sh` |
+| `.github/workflows/**` | `bash tests/config-sync/check-ci-wiring.sh` |
 | Web UI implementation | `cd web/themes/custom/bb_theme && pnpm run build && pnpm exec storybook build` |
 | Web UI implementation | `bash tests/contract/layout-components.sh` |
 | Web UI implementation, or `tests/contract/**` | `bash tests/contract/token-discipline.sh && bash tests/contract/time-format.sh && bash tests/contract/run-detail-overlay.sh && bash tests/contract/island-links.sh && node tests/contract/appearance.mjs && node tests/contract/icon-storybook.mjs && node tests/contract/period-range.mjs` |
@@ -74,10 +78,6 @@ after the merge, before the develop deployment. PRs into `main` run it, and `req
 the PR; fix it on the branch and require green checks on the new revision. Protected `next` accepts
 squashed feature PRs. Stable `main` accepts merge commits only from this repository's `next`,
 preserving its tree and second parent.
-
-For a project still using GitLab, request the newest MR pipeline's manual gate operation after fast checks
-through the [tool discovery and fallback](.claude/skills/bakers-build/skills/bb-workflow/references/tools.md#choose-an-operation).
-Its `build`, `phpunit`, `e2e` and `config_install` jobs must all succeed before merging.
 
 Local runs are for debugging, never a substitute for the CI gate
 ([testing](docs/bakers/testing.md)).

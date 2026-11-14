@@ -16,8 +16,9 @@ use Symfony\Component\HttpFoundation\Request;
  *
  * Deliberately BrowserTestBase-free and deliberately a KERNEL test, for two
  * measured reasons rather than taste. The confirmed test plan asks for HTTP
- * assertions without a browser; and `.gitlab-ci.yml` runs only
- * bb_core/tests/src/{Unit,Kernel} plus two other Kernel directories, so the
+ * assertions without a browser; and CI (`scripts/ci/github-image-gate.sh`)
+ * runs only bb_core/tests/src/{Unit,Kernel} plus two other Kernel
+ * directories, so the
  * same file under tests/src/Functional would never run in CI and would gate
  * nothing. Requests go through the real http_kernel, so the router, the param
  * converters, the access checks and the exception subscriber all participate —

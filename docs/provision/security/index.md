@@ -32,7 +32,7 @@ With `provision_up`, the agent selects a configured profile and the project scri
 
 The script still runs with the execution user's permissions. Review its configuration and any worktree code it executes: a fixed tool argument does not make an editable script a security boundary. The project script must check readiness and return failures.
 
-Addon tools need the same consideration. `ddev_status()` reports status, while `ddev_exec(command)` runs commands in the web container. Its mounts, credentials and network access determine what those commands can reach.
+Addon tools need the same consideration. `ddev_status()` reports status, while `provision_exec('web', [...])` can run commands in a site container. That container's mounts, credentials and network access determine what those commands can reach.
 
 <span id="configure-and-verify"></span>
 
@@ -40,7 +40,7 @@ Addon tools need the same consideration. `ddev_status()` reports status, while `
 
 Use [shared settings](/provision/security/shared-settings) for machine and project policy, and the [agent entry](/agents/reference#run-security) for harness-specific settings. Machine values replace project values key by key; the agent entry can replace both. Unsupported shared keys may be ignored with a warning.
 
-Run `bakers agents` to inspect effective settings and `bakers conductor check` to check supported sandbox prerequisites. Scope [credentials](/provision/security/credentials) to the work. For untrusted workloads, use a dedicated container or VM with limited credentials; the harness sandbox is not complete host isolation.
+Run `bakers agents` to inspect effective settings and `bakers conductor check` to check supported sandbox prerequisites. Scope [credentials](/provision/security/credentials) to the work. For untrusted workloads, use a dedicated container or VM with limited credentials, or an [isolating runtime](/provision/security/shared-settings#isolated-git-delivery); the harness sandbox is not complete host isolation.
 
 [Execution security](/provision/security/execution) covers exact limits and environment filtering. [Access and data](/provision/security/access-and-data) explains account permissions, stored information and public previews.
 

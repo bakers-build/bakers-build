@@ -11,24 +11,35 @@
 # edits its config directly. Every ticket the conductor claims starts a paid agent run.
 set -euo pipefail
 
-root="$(cd "$(dirname "$0")/.." && pwd -P)"
+root="$(cd "$(dirname "$0")/../.." && pwd -P)"
 workspace="$root/workspaces/bakers-playground"
 bakers="$root/bakers-cli/bin/bakers"
 
-# Keep the playground's unsandboxed agents separate from the real machine policy.
+# Keep the playground's unsandboxed, host-runtime agents separate from the real machine policy.
 playground_home="$root/workspaces/.bakers-playground-home"
 mkdir -p "$playground_home"
 if [ "${BAKERS_HOME:-}" != "$playground_home" ]; then
-node --input-type=module - "${BAKERS_HOME:-${HOME}/.bakers}/machine.config.js" "$playground_home/machine.config.js" <<'JS'
-import { writeFileSync } from 'node:fs';
+node --input-type=module - "${BAKERS_HOME:-${HOME}/.bakers}/machine.config.js" "$playground_home/machine.config.js" "$root/workspaces/.playground-isolated" <<'JS'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-const [source, target] = process.argv.slice(2);
+const [source, target, marker] = process.argv.slice(2);
+const keep_runtime = existsSync(marker);
+// Each line of the marker is a host path the Bubblewrap runtime exposes read-only in playground runs.
+const expose = keep_runtime ? readFileSync(marker, 'utf8').split('\n').map(line => line.trim()).filter(Boolean) : [];
 writeFileSync(target, `import machine from ${JSON.stringify(pathToFileURL(source).href)};
 const stripSandbox = value => Array.isArray(value) ? value.map(stripSandbox)
   : value && typeof value === 'object'
     ? Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'sandbox').map(([key, item]) => [key, stripSandbox(item)]))
     : value;
-export default stripSandbox(machine);
+// The playground runs on the host unless workspaces/.playground-isolated asks for the machine's runtime.
+const isRuntime = entry => (typeof entry === 'string' ? entry : entry?.use ?? '').startsWith('@bakers-build/addon-runtime-');
+const playground = stripSandbox(machine);
+const expose = ${JSON.stringify(expose)};
+const nameOf = entry => typeof entry === 'string' ? entry : entry?.use ?? '';
+const exposed = entry => !expose.length || nameOf(entry) !== '@bakers-build/addon-runtime-bwrap' ? entry
+  : { use: nameOf(entry), with: { ...(entry.with ?? {}), readPaths: [...(entry.with?.readPaths ?? []), ...expose] } };
+export default !playground.addons ? playground
+  : { ...playground, addons: ${keep_runtime} ? playground.addons.map(exposed) : playground.addons.filter(entry => !isRuntime(entry)) };
 `, { mode: 0o600 });
 JS
 ln -sfn "${BAKERS_HOME:-${HOME}/.bakers}/connections" "$playground_home/connections"
@@ -38,7 +49,7 @@ export BAKERS_HOME="$playground_home"
 
 teardown() {
   [ -d "$workspace" ] || return 0
-  bash "$root/scripts/teardown-test-project.sh"
+  bash "$root/.bakers/scripts/teardown-test-project.sh"
 }
 
 # start: `conductor start` returns once the detached conductor's first heartbeat arrived.
@@ -54,7 +65,7 @@ start() {
 Playground conductor: $id
   log      $workspace/.bakers/log.txt
   config   $workspace/.bakers/project.config.js, $workspace/.bakers/connection.config.js
-  ticket   ddev_exec("drush php:script scripts/e2e/playground-ticket.php -- $id '<title>' [<state>]")
+  ticket   provision_exec('web', ['drush', 'php:script', 'scripts/e2e/playground-ticket.php', '--', '$id', '<title>', '<state>'])
   stop     provision_up('conductor-e2e-stop'); start again: provision_up('conductor-e2e-start')
 EOF
 }
@@ -71,7 +82,7 @@ teardown
 (cd "$root/bakers-cli" && pnpm -r run build)
 # setup-test-project.sh refuses any control plane whose host is not *.ddev.site before any write,
 # so the gate below is lowered on this worktree's local site only. The source build reports 0.0.1.
-bash "$root/scripts/setup-test-project.sh"
+bash "$root/.bakers/scripts/setup-test-project.sh"
 (cd "$root" && ddev drush cset -y bb_core.settings min_client_version 0.0.1)
 # No `conductor once` first: its fresh heartbeat makes `conductor start` report "already running" and start
 # nothing. `conductor start` registers a missing conductor itself.

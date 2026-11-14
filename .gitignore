@@ -54,6 +54,7 @@ node_modules/
 /.ddev/.bakers-keytec/
 /.ddev/.bakers-playground/
 /.ddev/.bakers-test/
+/tests/artifacts/bakers/
 # Legacy local environment files may contain private settings; keep them ignored.
 /.ddev/.env
 /.ddev/.env.web
@@ -95,6 +96,9 @@ node_modules/
 .bakers/local-ddev.bakers.config.js
 .pnpm-store
 /.env.ddev
+# Written on the host by worktree setup and by DDEV; never part of a run's work.
+/.ddev/config.worktree.yaml
+/.ddev/.gitignore
 /.env
 
 # Transient run artifacts: reports, logs, screenshots, throwaway probe scripts.

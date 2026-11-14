@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Behavioural contract for scripts/setup-test-project.sh and
-# scripts/teardown-test-project.sh: their --help windows, the control-plane
+# Behavioural contract for .bakers/scripts/setup-test-project.sh and
+# .bakers/scripts/teardown-test-project.sh: their --help windows, the control-plane
 # guard, value escaping, the key probe and the guarded deletes.
 #
 #   bash tests/contract/test-project-guard.sh
@@ -62,10 +62,10 @@ with_fn() {
 
 # === 2. The surviving wiring: two shell scripts, and no harness ==============
 
-SETUP="$ROOT/scripts/setup-test-project.sh"
-TEARDOWN="$ROOT/scripts/teardown-test-project.sh"
-[ -x "${SETUP}" ] || fail "scripts/setup-test-project.sh is missing or not executable"
-[ -x "${TEARDOWN}" ] || fail "scripts/teardown-test-project.sh is missing or not executable"
+SETUP="$ROOT/.bakers/scripts/setup-test-project.sh"
+TEARDOWN="$ROOT/.bakers/scripts/teardown-test-project.sh"
+[ -x "${SETUP}" ] || fail ".bakers/scripts/setup-test-project.sh is missing or not executable"
+[ -x "${TEARDOWN}" ] || fail ".bakers/scripts/teardown-test-project.sh is missing or not executable"
 
 setup_help="$(bash "${SETUP}" --help)" || fail "setup-test-project.sh --help failed"
 teardown_help="$(bash "${TEARDOWN}" --help)" || fail "teardown-test-project.sh --help failed"
@@ -129,7 +129,7 @@ chmod +x "${STUB_DIR}/ddev"
 
 # `if`, not `cmd && fail`: whether `set -e` aborts on a failing left-hand side of an
 # AND-list is exactly the kind of subtlety a gate must not depend on.
-if guard_out="$(cd "$ROOT" && PATH="${STUB_DIR}:$PATH" bash scripts/setup-test-project.sh 2>&1)"; then
+if guard_out="$(cd "$ROOT" && PATH="${STUB_DIR}:$PATH" bash .bakers/scripts/setup-test-project.sh 2>&1)"; then
   fail "setup did NOT refuse a remote control plane"
 fi
 if grep -q 'STUB-VIOLATION' <<<"${guard_out}"; then
@@ -144,7 +144,7 @@ grep -q 'No entity was created' <<<"${guard_out}" \
 # host must get PAST it. The stub then blocks the next ddev call, which is the proof
 # the guard let the run continue.
 sed -i 's|https://develop.dev.bakers.build|https://stub.ddev.site|' "${STUB_DIR}/ddev"
-local_out="$(cd "$ROOT" && PATH="${STUB_DIR}:$PATH" bash scripts/setup-test-project.sh 2>&1 || true)"
+local_out="$(cd "$ROOT" && PATH="${STUB_DIR}:$PATH" bash .bakers/scripts/setup-test-project.sh 2>&1 || true)"
 grep -q 'http://stub.ddev.site' <<<"${local_out}" \
   || fail "setup refused a local .ddev.site control plane, which the guard must allow"
 pass "the guard refuses a remote control plane before any write, and allows a local one"
@@ -223,7 +223,7 @@ recorded_argv() { tr '\0' '\n' <"${REC_DIR}/argv" 2>/dev/null || true; }
 
 record_stub
 if ( cd "$ROOT" && PATH="${REC_DIR}:$PATH" \
-     bash scripts/setup-test-project.sh --project "o'brien" >/dev/null 2>&1 ); then
+     bash .bakers/scripts/setup-test-project.sh --project "o'brien" >/dev/null 2>&1 ); then
   fail "setup accepted a --project carrying a quote"
 fi
 [ ! -e "${REC_DIR}/argv" ] \
@@ -235,7 +235,7 @@ fi
 # empty PHP literal and quietly probe for a project called ''.
 record_stub
 ( cd "$ROOT" && PATH="${REC_DIR}:$PATH" \
-  bash scripts/setup-test-project.sh --project 'bakers-e2e-project' >/dev/null 2>&1 ) || true
+  bash .bakers/scripts/setup-test-project.sh --project 'bakers-e2e-project' >/dev/null 2>&1 ) || true
 recorded="$(recorded_argv)"
 grep -q 'php:eval' <<<"${recorded}" \
   || fail "the recording stub never saw a php:eval — setup's call order changed"
@@ -424,10 +424,10 @@ pass "both --help windows print their whole header and nothing but it"
 WF="$ROOT/docs/bakers/testing.md"
 
 # It must name the scripts rather than a skill …
-grep -q 'scripts/setup-test-project.sh' "${WF}" \
-  || fail "docs/bakers/testing.md does not name scripts/setup-test-project.sh"
-grep -q 'scripts/teardown-test-project.sh' "${WF}" \
-  || fail "docs/bakers/testing.md does not name scripts/teardown-test-project.sh"
+grep -q '.bakers/scripts/setup-test-project.sh' "${WF}" \
+  || fail "docs/bakers/testing.md does not name .bakers/scripts/setup-test-project.sh"
+grep -q '.bakers/scripts/teardown-test-project.sh' "${WF}" \
+  || fail "docs/bakers/testing.md does not name .bakers/scripts/teardown-test-project.sh"
 pass "the testing docs name both scripts"
 
 # === 9. What only a live run found, guarded ==================================

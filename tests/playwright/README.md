@@ -104,7 +104,7 @@ Installation, unit checks and discovery require only Node/npm. Browser execution
   not CI. `playwright.bdd.config.ts` resolves it through `resolve-base-url.ts`,
   in this order:
 
-  1. `node scripts/setup-worktree.mjs` writes this worktree's public identity and
+  1. `node .bakers/scripts/setup-worktree.mjs` writes this worktree's public identity and
      derived URL into gitignored `.env.ddev` without starting DDEV.
   2. The file URL (or its name-derived URL) wins over ambient `DDEV_PRIMARY_URL`.
      An explicit `PLAYWRIGHT_BASE_URL` is still the highest-priority override.
@@ -178,9 +178,9 @@ mechanism is fine.
 
 ## CI
 
-The suite runs in the `e2e` job of the merge gate (`.gitlab-ci.yml`), against a compose stack of
-the gate's own `php`, `nginx` and `mcp` images with MariaDB and Mailpit — the images that ship,
-not a DDEV site. There is **no `ddev bakers-test-e2e` wrapper**; the job invokes `npm test`
+The suite runs in the `image_gate` job of `.github/workflows/checks.yml`
+(`scripts/ci/github-image-gate.sh`), against a compose stack of the gate's own `php` and `nginx`
+images with MariaDB and Mailpit — the images that ship, not a DDEV site. There is **no `ddev bakers-test-e2e` wrapper**; the job invokes `npm test`
 directly.
 
 It runs in the **e2e runner image** (`docker/e2e/Dockerfile`): the official Playwright image
@@ -189,27 +189,23 @@ as `http://nginx` and Mailpit as `http://mailpit:8025` on the stack network
 (`PLAYWRIGHT_BASE_URL`, `MAILPIT_BASE_URL`); its `drush` (`docker/e2e/drush`) runs drush in the
 stack's php container, which is where the Drush helpers' snippets execute.
 
-**Two shards**, `--shard=<i>/2` with six workers each, every shard on its own stack. Playwright
-splits by spec file, and a feature file is one spec file (see `fullyParallel` in the config), so
-a feature never spans two shards.
+One run with six workers on one stack. Playwright splits work by spec file, and a feature file is
+one spec file (see `fullyParallel` in the config), so a feature never spans two workers.
 
 **Ordering is a correctness constraint, not a preference.** The world is created first
-(`scripts/e2e/seed-test-world.sh` after the recipe install), and shard 1 runs the conductor
-integration suite (`scripts/e2e/run-integration.sh`) only after the browser suite, because it
-mutates the bb_e2e seed so the conductor can claim a ticket.
+(`scripts/e2e/seed-test-world.sh` after the recipe install), and the conductor integration suite
+(`scripts/e2e/run-integration.sh`) runs only after the browser suite, because it mutates the bb_e2e seed so the conductor can claim a ticket.
 `ddev bakers-test-functional` is now an alias for the `@functional` BDD subset. CI runs
 the full suite, including these contracts, with `--retries=1`: only failed tests retry once.
 Local runs default to zero retries. Tests passing on retry appear as flaky in the HTML report;
 failed-attempt traces are retained, and a second failure still fails CI.
 
-Results surface in the MR two ways:
+Results land in `gate-reports/`, uploaded as the job's *image-gate-evidence* artifact:
 
-- **JUnit** (`e2e-reports/junit-playwright.xml`, one per shard) → the MR "Tests" widget. It is
-  its own file on purpose: a report shared between two suites has already been overwritten once
-  in this repository, which is how a suite's evidence disappears with nothing going red.
-- **`playwright-report/`, `test-results/` and the stack's container log** → `e2e-reports/`,
-  exposed as the job's *e2e reports* artifact. A browser failure is close to undiagnosable from
-  a JUnit line alone, so the artifact is the only durable copy a reviewer can open.
+- **JUnit** (`junit-playwright.xml`). It is its own file on purpose: a report shared between two
+  suites has already been overwritten once in this repository, which is how a suite's evidence disappears with nothing going red.
+- **`playwright-report/`, `test-results/` and the stack's container log**. A browser failure is
+  close to undiagnosable from a JUnit line alone, so the artifact is the only durable copy a reviewer can open.
 
 ## Writing scenarios: a navigating scenario clicks TWICE
 

@@ -8,7 +8,14 @@
 # `--all` (the `provision_up('deps')` profile) also installs packages not yet installed.
 # Not bb_theme: `ddev init` installs and builds it inside DDEV; a host install would
 # relink the same node_modules from a second store.
+# Under an isolating runtime (BAKERS_RUNTIME_ISOLATES=1) nothing is installed here: the run can
+# write package.json, whose lifecycle scripts would run on the host. The run installs in its container.
 set -uo pipefail
+
+if [ "${BAKERS_RUNTIME_ISOLATES:-0}" = 1 ]; then
+  echo "Isolated run: dependencies are installed inside the run, not on the host." >&2
+  exit 0
+fi
 
 all=false
 [ "${1:-}" = "--all" ] && all=true

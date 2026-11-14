@@ -8,7 +8,7 @@ import type {
   SpawnRunInput,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { exec, shellQuote, slugify } from '@bakers-build/core';
+import { exec, loadRunClone, shellQuote, slugify } from '@bakers-build/core';
 import {
   type HerdrExecutorOptions,
   type ResolvedConfig,
@@ -37,7 +37,9 @@ import {
 import { AGENT_SHELL_ENV, envArgs } from './panes.js';
 import { deriveHerdrRoot } from './root-anchor.js';
 import {
+  cloneWorkspaceId,
   listWorktrees,
+  openCloneWorkspace,
   resolveWorktreeEntry,
   type WorktreeEntry,
 } from './worktrees.js';
@@ -233,14 +235,15 @@ export class HerdrExecutor implements BbExecutor {
         ctx.branch,
         path,
       );
-      if (entry?.open_workspace_id) {
+      // A run clone is no herdr worktree: its plain workspace is opened by label.
+      const open =
+        entry?.open_workspace_id ??
+        (loadRunClone(path)
+          ? await openCloneWorkspace(this.execHerdr, ctx.branch, path)
+          : undefined);
+      if (open) {
         root = parseFirstPane(
-          await this.execHerdr([
-            'pane',
-            'list',
-            '--workspace',
-            entry.open_workspace_id,
-          ]),
+          await this.execHerdr(['pane', 'list', '--workspace', open]),
         );
       } else {
         root = parseRootPane(
@@ -282,6 +285,13 @@ export class HerdrExecutor implements BbExecutor {
     //    branch is mutable (a coding agent may switch/rename it) and herdr
     //    reports `null` for a detached HEAD, so a branch match is unreliable.
     let workspaceId = await this.findOpenWorkspace(branchName, workspacePath);
+    // A run clone is no herdr worktree: its plain workspace is opened by label.
+    if (!workspaceId && loadRunClone(workspacePath))
+      workspaceId = await openCloneWorkspace(
+        this.execHerdr,
+        branchName,
+        workspacePath,
+      );
 
     // 2. Open workspace if not already open. Reattach from the PARENT repo
     //    root, never the linked worktree path: herdr rejects an open whose
@@ -426,7 +436,11 @@ export class HerdrExecutor implements BbExecutor {
    * The branch worktree is untouched (that is `HerdrWorkspace.remove`).
    */
   async cleanupRun(branch: string, runId: number): Promise<void> {
-    const workspaceId = await this.findWorkspaceByBranch(branch);
+    // A branch without a herdr worktree may be a run clone, found by its label.
+    const entry = await this.findWorktreeByBranch(branch);
+    const workspaceId = entry
+      ? (entry.open_workspace_id ?? null)
+      : await cloneWorkspaceId(this.execHerdr, branch);
     if (!workspaceId) {
       return;
     }

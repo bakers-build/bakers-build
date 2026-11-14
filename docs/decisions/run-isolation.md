@@ -138,13 +138,13 @@ exist only there; the built backend's checks are in the ticket's test plan.
 
 1. `docker build -t bakers-run-isolation:spike experimental/run-isolation`
 2. Start time: `time docker run --rm bakers-run-isolation:spike true` twice (cold after the build, warm).
-3. Playground: `bash scripts/conductor-e2e.sh`, then `bash scripts/conductor-e2e.sh stop`.
+3. Playground: `bash .bakers/scripts/conductor-e2e.sh`, then `bash .bakers/scripts/conductor-e2e.sh stop`.
 4. `cp experimental/run-isolation/isolation-docker.mjs workspaces/bakers-playground/.bakers/`
 5. In `workspaces/bakers-playground/.bakers/conductor.config.js` set
    `executor: { plugin: './isolation-docker.mjs', with: { inner: '@bakers-build/addon-herdr', mounts: ['<absolute worktree>/bakers-cli'] } }`.
    The relative `plugin` path resolves from the config directory (ESLint-style resolution).
 6. Run Claude in `system` mode for this conductor (the claude addon's security setting).
-7. `export CLAUDE_CODE_OAUTH_TOKEN=<token from claude setup-token>`, then `bash scripts/conductor-e2e.sh start`.
+7. `export CLAUDE_CODE_OAUTH_TOKEN=<token from claude setup-token>`, then `bash .bakers/scripts/conductor-e2e.sh start`.
 8. Create a playground ticket in `plan`:
    `ddev drush php:script scripts/e2e/playground-ticket.php -- <conductor id> 'Isolation probe' plan`.
    Its description asks the agent to report, as a comment, the output of: the `bakers_ticket_read`
@@ -200,20 +200,115 @@ Status after the build:
    `executor.startRun` and `cleanupRun`; the configured agent permissions remain unchanged.
 2. **`runtime-docker` backend** — built: configurable `docker` command (Podman), a shipped image,
    `.git/hooks` and `.git/config` read-only. Read-only binds cannot stop the run from creating a
-   nested repository whose own config runs a command under host Git (`core.fsmonitor`), so cleanup
-   checks index gitlinks after container removal, quarantining unprotected `.git` metadata with a
-   unique suffix. Symlinked paths and failed inspections or renames remove the gitlink from the
-   index instead. A failed scan or index update quarantines the whole index intact for recovery;
-   unrelated nested clones stay untouched. Host Git remains unsafe until cleanup
-   finishes. Plugin sync cost is still to be measured in a real
-   run.
+   nested repository whose config host Git might execute. This historical cleanup-based
+   quarantine is replaced by the run clone below.
+
 3. **Egress allowlist** — built as `runtime-docker`'s `network: 'allowlist'` mode, with one proxy
    sidecar per conductor that adds the model credential. Verified design on Linux; macOS documented,
    not run.
 4. **Push from the host** — no code needed: `forge_push` runs in the conductor with the forge
    credential, and the run holds none.
 5. **`runtime-sbx`** — evaluated in section 6; not adopted.
-6. **Host tools stay outside the boundary** — decided: conductor tools and project hooks that run
-   worktree files on the host (`provision_up`, `ddev_start`, `ddev_exec`, `before_run`,
-   `after_run`) execute what the run may have edited. This is documented as a limit. Gating
-   them under an isolating runtime is a follow-up.
+6. **Host-executed code and Git** — decided and built; see the next section.
+
+## Run clone and protected paths
+
+Accepted 2026-11-13. It replaces an earlier cut that protected a layered list of paths
+(`runtime.read_only` from addon defaults, project, machine and runtime entry) and mounted private
+Git metadata over a linked worktree.
+
+**Principle.** On the host, only code from protected paths runs; everything else runs in a
+container; only checked commits come back.
+
+### Why the list-based cut was rejected
+
+- **A path list can never be complete.** The host still executed repository code the run can
+  write: `pnpm install` lifecycle scripts, the docs build configuration, CLI builds. Protecting a
+  launch script does not protect what it calls.
+- **A linked worktree must write the shared Git directory.** Its objects, refs and index live with
+  the parent repository, so the run needed write access to data host Git reads and executes.
+
+### What was chosen
+
+1. **A fresh run clone.** At every isolated run start the workspace (Git workspace or herdr) clones
+   the ticket branch at the stable worktree path. The Git directory lives in the conductor's cache
+   (`$XDG_CACHE_HOME/bakers/run-git/<hash>.git`) and is mounted as `.git` only inside the run. On
+   the host the workspace's `.git` is a stub the host rewrites at every run start (`HEAD` on the
+   ticket branch, no objects), so host tools there name the ticket branch instead of finding the
+   parent checkout above; the conductor itself runs no Git there. The
+   parent repository is not mounted in the run. The clone carries the target branch as
+   `origin/<target>`; nothing is merged. Tracked files are reset, untracked files removed, ignored
+   files (`node_modules`, `vendor`) kept. Uncommitted work does not reach the next run. herdr shows
+   the clone in a plain workspace labelled with the branch.
+2. **Protected paths from the project only.** `runtime: { read_only: [...] }` in
+   `.bakers/project.config.js`, plus the fixed `.bakers`. No machine key, addon default, `'$inherit'`
+   or runtime-entry option. bakers mounts them read-only in the run; the project protects them in
+   its own containers (here `.ddev/docker-compose.protection.yaml`).
+3. **Host commands start in a protected path.** Under an isolating runtime every project hook and
+   every `provision_up` or `provision_exec` command must begin with a script in a protected path,
+   or the config fails to load. Only the entry point is checked.
+4. **A controlled return path.** At run end and inside `forge_push` the host copies the run's
+   objects without following links, checks them with `git fsck`, requires the commit to descend
+   from the tip the run started from, updates the ticket branch with a compare-and-swap and rejects
+   a commit that changes a protected path. Submodules are refused. The run's Git config and hooks
+   never execute on the host. There is no separate transfer tool.
+5. **`provision_exec(key, args)`** replaces `ddev_exec`: the project configures the command, the
+   agent passes only arguments, and they never pass a shell.
+6. **Install and build inside the run.** In this repository the `before_run` hook and the provision
+   profiles skip the host install, and the docs preview is built in the DDEV web container while
+   the host serves only the built files.
+
+A change to a protected path, including a target-branch merge that brings one, is made by a
+maintainer outside the run. `runtime-host` is unchanged: linked worktrees, host install, no clone,
+no read-only mounts, no entry-point check.
+
+### Rejected alternatives
+
+| Alternative | Why not |
+|---|---|
+| File permissions (`chmod`) | The run and the DDEV containers use the same UID as the host user. |
+| `chattr +i` | Needs root and breaks checkouts. |
+| Hash checks before execution | The reference must live outside the run, and check-then-execute leaves a race. |
+| Overlay filesystems | The parent repository changes while runs are open. |
+| Reflink copies | `cp --reflink=always` is unsupported on the host's ext4. |
+| Jujutsu or GitButler workspaces | They share the repository store, like worktrees. |
+| DDEV inside the agent container | Needs the Docker socket, a privileged container or nested Docker. |
+
+### Cost
+
+Measured on ext4 with 16 CPUs, this repository with 5918 tracked files, three runs each. "Cold"
+means no existing copy, not a cold disk cache.
+
+| Variant | Time | Size |
+|---|---|---|
+| Independent clone (default) | 1.81 s cold, 0.90 s warm | 140 MB, of which 27 MB Git data |
+| `shared: true` | 0.45 s | 114 MB, of which 1 MB Git data |
+| Linked worktree (`runtime-host`) | 0.43 s | 113 MB |
+
+No worktree-equivalent startup is promised for the default.
+
+**`shared` requirement.** `shared: true` on the workspace addon uses `git clone --shared`: the
+clone borrows the parent's objects through alternates, and the parent's `objects` directory is
+mounted read-only in the run. While a run is open, the parent must not be pruned or repacked with
+`git repack -d` or `git gc --prune`, or the clone can lose objects it needs.
+
+### Known exception
+
+This repository's `conductor-e2e` provision profile builds the run's CLI and starts it as a
+conductor on the host. By maintainer decision it stays, as the one documented exception to "the
+host runs only protected code". The exception includes its teardown in `after_done`, which stops
+a playground with the run's CLI, and the run-writable marker `workspaces/.playground-isolated`,
+which names host paths that playground runs see read-only.
+
+### Residual risks
+
+- The DDEV web container is as untrusted as the run, and all DDEV projects share the
+  `ddev-global-cache` volume.
+- bakers checks only the entry point of a host command: not what that script calls, and of a
+  chained command only its first.
+- `runtime-host`, including sandbox mode, gets none of this protection.
+- Only the ticket branch is transferred; other branches created in a run clone are not.
+
+### Follow-up
+
+A merge gate (required review) for changes to protected paths.

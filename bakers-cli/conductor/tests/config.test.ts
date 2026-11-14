@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { agentReport } from '@bakers-build/addon-agents';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  composeConductorConfig,
   configStems,
   DEFAULT_AGENT_PROMPT,
   listConductorConfigFiles,
@@ -590,6 +591,55 @@ describe('loadConductorConfig', () => {
     await expect(loadConductorConfig(path)).rejects.toThrow(
       `${path}: max_parallel unknown key`,
     );
+  });
+});
+
+describe('the server comes from the project, else the connection, else the default', () => {
+  const NO_SERVER = VALID.replace("  server: slot('server'),\n", '');
+  const connection = (server?: unknown) => ({
+    site: { base_url: 'http://web', jsonapi_prefix: '/jsonapi' },
+    plugins: [],
+    config_path: join(tmpdir(), 'connections', 'default.js'),
+    ...(server !== undefined ? { server } : {}),
+  });
+  const connServer = { kind: 'server', id: 'conn', requiredModules: [] };
+  const serve = async (project: string, server?: unknown) =>
+    composeConductorConfig(
+      await loadConductorConfig(writeConfig(project)),
+      connection(server),
+    );
+
+  it('serves a project config that names no server through the Drupal addon', async () => {
+    const config = await serve(NO_SERVER);
+    expect(config.remote.id).toBe('drupal');
+    expect(config.slot_sources?.server).toBe('default');
+    expect(config.slot_packages?.server).toBe(
+      '@bakers-build/addon-remote-drupal',
+    );
+  });
+
+  it('serves through the server the connection names', async () => {
+    const config = await serve(NO_SERVER, connServer);
+    expect(config.remote.id).toBe('conn');
+    expect(config.slot_sources?.server).toBe('connection');
+  });
+
+  it('keeps the project server slot over the connection', async () => {
+    const config = await serve(VALID, connServer);
+    expect(config.remote.id).toBe('server');
+    expect(config.slot_sources?.server).toBe('slot');
+  });
+
+  it('keeps a server addon in the project addons over the connection', async () => {
+    const config = await serve(
+      NO_SERVER.replace(
+        'export default {',
+        "export default {\n  addons: ['@bakers-build/addon-remote-drupal'],",
+      ),
+      connServer,
+    );
+    expect(config.remote.id).toBe('drupal');
+    expect(config.slot_sources?.server).toBe('addons');
   });
 });
 
@@ -1508,7 +1558,8 @@ export default {
     const binding = { worktreePath: dirname(file) };
     const result = await cfg.tools!.call('agents_catalog', {}, binding);
     const report = JSON.parse(result.text);
-    const operator = agentReport(cfg);
+    const { runtime: _runtime, ...operator } = agentReport(cfg);
+    expect(report).not.toHaveProperty('runtime');
     expect(report).toEqual({
       ...operator,
       agents: operator.agents.map(({ alias, description, harness, model }) => ({
@@ -2097,5 +2148,47 @@ export default {
     expect(opencode?.launchCommand('task')).not.toMatch(
       /effort|thinking|variant/,
     );
+  });
+});
+
+describe('protected paths and host commands', () => {
+  const isolating = `export const runtimes = acc => [...acc, { kind: 'runtime', id: 'test', isolates: true, requiredModules: [] }];`;
+  const load = (body: string, runtime = true) => {
+    const path = writeDescriptorConfig(
+      `${body}${runtime ? " addons: ['./runtime.js']," : ''}`,
+    );
+    writeFileSync(join(dirname(path), 'runtime.js'), isolating);
+    return loadConductorConfig(path);
+  };
+
+  it('keeps the project list of protected paths', async () => {
+    const config = await load(`runtime: { read_only: ['.ddev', '.github'] },`);
+    expect(config.readOnly).toEqual(['.ddev', '.github']);
+    expect(config.runtime?.isolates).toBe(true);
+  });
+
+  it('refuses a host command outside a protected path under an isolating runtime', async () => {
+    await expect(
+      load(`hooks: { before_run: 'pnpm install' },`),
+    ).rejects.toThrow(/hooks\.before_run.*protected path/);
+    await expect(
+      load(
+        `runtime: { read_only: ['.ddev'] }, hooks: { provision_up: { up: 'bash scripts/up.sh' } },`,
+      ),
+    ).rejects.toThrow(/hooks\.provision_up\.up/);
+  });
+
+  it('accepts host commands that start in a protected path and serves provision_exec', async () => {
+    const config = await load(
+      `runtime: { read_only: ['.ddev'] }, hooks: { before_run: 'bash .bakers/scripts/deps.sh', provision_up: { deps: 'bash .bakers/provision.sh deps' }, provision_exec: { drush: 'bash .ddev/exec.sh drush' } },`,
+    );
+    expect(config.tools?.list().map((tool) => tool.name)).toEqual(
+      expect.arrayContaining(['provision_up', 'provision_exec']),
+    );
+  });
+
+  it('leaves host commands unchecked under runtime-host', async () => {
+    const config = await load(`hooks: { before_run: 'pnpm install' },`, false);
+    expect(config.runtime?.isolates ?? false).toBe(false);
   });
 });

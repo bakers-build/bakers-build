@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import type { RuntimeLaunch } from '@bakers-build/conductor/contract';
 
 export interface DockerOptions {
@@ -16,11 +15,10 @@ export interface DockerOptions {
 
 /** Host facts the launch depends on, resolved by the backend. */
 export interface HostPaths {
-  gitCommonDir: string;
-  /** The worktree's own Git dir; the common dir itself for a main checkout. */
-  gitDir: string;
-  /** `<worktree>/.git` when it is a gitlink file. */
-  gitLink?: string;
+  /** The run clone's Git directory, mounted as `<workspace>/.git`. */
+  runGitDir?: string;
+  /** A `shared` clone's parent object store, mounted read-only at its own path. */
+  sharedObjects?: string;
   /** The per-run home, mounted at its host path. */
   runHome: string;
   /** The bakers CLI build, mounted read-only at its host path. */
@@ -83,9 +81,6 @@ export function dockerArgs(
       // Allowlist mode keeps the model credential in the proxy only.
       !(allowlist && credentials.includes(k)),
   );
-  const common = where.gitCommonDir;
-  const gitDir = where.gitDir;
-  const linked = gitDir !== common;
   const ro = (path: string) => bind(path, path, ':ro');
   const argv = [
     opts.docker,
@@ -104,25 +99,9 @@ export function dockerArgs(
     ...computed.flatMap((c) => ['-e', c]),
     ...forwarded.flatMap((k) => ['-e', k]),
     ...bind(ws),
-    ...(where.gitLink ? bind(where.gitLink, undefined, ':ro') : []),
-    ...bind(common),
-    // The run must not plant a hook, rewrite Git config or repoint a worktree's
-    // Git dir: host git in these repos would run what the run chose.
-    ...ro(join(common, 'hooks')),
-    ...ro(join(common, 'config')),
-    // Read by host git in the main checkout once `extensions.worktreeConfig` is on.
-    ...ro(join(common, 'config.worktree')),
-    ...ro(join(common, 'modules')),
-    ...ro(join(common, 'worktrees')),
-    ...(linked
-      ? [
-          // Docker mounts by depth, so this reopens only the run's own Git dir.
-          ...bind(gitDir),
-          ...ro(join(gitDir, 'commondir')),
-          ...ro(join(gitDir, 'gitdir')),
-          ...ro(join(gitDir, 'config.worktree')),
-        ]
-      : []),
+    // The only Git the run sees; the parent repository is not mounted.
+    ...(where.runGitDir ? bind(where.runGitDir, `${ws}/.git`) : []),
+    ...(where.sharedObjects ? ro(where.sharedObjects) : []),
     ...bind(where.cliRoot, undefined, ':ro'),
     ...opts.mounts.flatMap((m) => bind(m, m, ':ro')),
     ...bind(where.runHome),

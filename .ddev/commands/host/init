@@ -15,7 +15,7 @@ case "$provider" in existing-config|recipe|recipe-test) ;; *) echo 'Unsupported 
 cd "${DDEV_APPROOT:-$(pwd)}"
 # Any reinstall invalidates `ddev provision`'s record of the installed provider.
 rm -f .ddev/.bakers-test/profile
-node scripts/setup-worktree.mjs
+node .bakers/scripts/setup-worktree.mjs
 # Check the registry before startup: an existing name must belong to this exact root.
 ddev list -j | node --input-type=module -e '
 import { readFileSync, realpathSync } from "node:fs";
@@ -45,8 +45,8 @@ ddev exec 'cd web/themes/custom/bb_theme && pnpm install --frozen-lockfile && pn
 ddev exec 'cd tests/playwright && npm ci --no-audit --no-fund'
 case "$provider" in
   existing-config)
-    mkdir -p .ddev/.bakers-test
-    ddev drush site:install --existing-config -y 2>&1 | tee .ddev/.bakers-test/init-existing-config.log
+    mkdir -p tests/artifacts/bakers
+    ddev drush site:install --existing-config -y 2>&1 | tee tests/artifacts/bakers/init-existing-config.log
     ;;
   recipe)
     ddev exec bash /var/www/html/.ddev/providers/recipe-install.sh recipe /var/www/html/.ddev/commands/web/bakers-init-playground

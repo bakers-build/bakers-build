@@ -32,11 +32,15 @@ import {
 } from './config-source-edit.js';
 import {
   type ConnectionAuthType,
+  DEFAULT_SLOT_ADDON,
   renderCommittedConfig,
   renderGlobalConnection,
   renderHostMachine,
 } from './config-templates.js';
 import { validateConfigSources } from './config-validation.js';
+
+// The host reads this addon's capabilities before a fresh project file exists.
+export { DEFAULT_SLOT_ADDON } from './config-templates.js';
 
 export interface ConfigPlanOptions extends ConfigInventoryOptions {
   capabilities?: AddonCapabilities;
@@ -788,7 +792,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               ),
             );
             if (options.slots?.executor) {
-              const defaultExecutor = e.property('executor.use')?.value;
               const entries = Array.from(
                 { length: e.property('addons')?.arrayLength ?? 0 },
                 (_, index) => `addons[${index}]`,
@@ -799,13 +802,11 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
                   .filter(
                     (key) =>
                       (e?.property(`${key}.use`)?.value ??
-                        e?.property(key)?.value) !== defaultExecutor,
+                        e?.property(key)?.value) !== DEFAULT_SLOT_ADDON,
                   )
                   .map((key) => e?.expression(key))
                   .join(', ')}]`,
               );
-              e.remove('executor');
-              e.remove('worktree');
             }
             for (const slot of contributed) e.remove(slot);
           }
@@ -815,11 +816,6 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         {
           e = editor(file);
           fill(file, 'project.name', options.project);
-          const canonical = new ConfigSourceEditor(
-            renderCommittedConfig({
-              project: options.project ?? 'project',
-            }),
-          );
           const addonPackages = new Set(
             [...e.source.properties]
               .filter(([key]) => /^addons\[\d+\](?:\.use)?$/.test(key))
@@ -827,6 +823,18 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               .filter((value): value is string => typeof value === 'string'),
           );
           const existingPackages = [...addonPackages];
+          // Text is spliced into addons, so only a literal array can take it.
+          const literalAddons = () => {
+            const addons = e?.property('addons');
+            if (!addons || addons.nodeType === 'ArrayExpression') return true;
+            problem(
+              file,
+              'unsupported_source_shape',
+              'addons',
+              'A literal addons array is required to add a slot provider.',
+            );
+            return false;
+          };
           for (const [slot, spec] of selectedSlots) {
             if (
               e.property(slot) ||
@@ -835,16 +843,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               )
             )
               continue;
-            const addons = e.property('addons');
-            if (addons && addons.nodeType !== 'ArrayExpression') {
-              problem(
-                file,
-                'unsupported_source_shape',
-                'addons',
-                'A literal addons array is required to add a slot provider.',
-              );
-              continue;
-            }
+            if (!literalAddons()) continue;
             if (!addonPackages.has(spec)) {
               const expression = e.expression('addons') ?? '[]';
               const before = expression.slice(0, -1).trimEnd();
@@ -857,8 +856,10 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
           }
           const supplied = (slot: string) =>
             e?.property(slot) ||
-            [...addonPackages].some((pkg) =>
-              capabilities[pkg]?.slots.includes(slot),
+            [...addonPackages].some(
+              (pkg) =>
+                capabilities[pkg]?.slots.includes(slot) ??
+                pkg === DEFAULT_SLOT_ADDON,
             );
           if (options.slots?.executor && !supplied('worktree'))
             problem(
@@ -867,16 +868,18 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
               'worktree',
               'The selected executor supplies no worktree; pass --worktree <package>.',
             );
-          for (const slot of ['server', 'executor', 'worktree']) {
-            if (
-              e.property(slot) ||
-              [...addonPackages].some((provider) =>
-                capabilities[provider]?.slots.includes(slot),
-              )
-            )
-              continue;
+          // The server comes from the connection; herdr fills a missing executor or worktree.
+          for (const slot of ['executor', 'worktree']) {
+            if (supplied(slot)) continue;
             if (slot === 'worktree' && options.slots?.executor) continue;
-            e.set(slot, canonical.expression(slot) as string);
+            if (!literalAddons()) break;
+            const expression = e.expression('addons') ?? '[]';
+            const before = expression.slice(0, -1).trimEnd();
+            e.set(
+              'addons',
+              `${before}${before.endsWith('[') || before.endsWith(',') ? '' : ','} '${DEFAULT_SLOT_ADDON}']`,
+            );
+            addonPackages.add(DEFAULT_SLOT_ADDON);
           }
           if (
             options.operation === 'init' &&

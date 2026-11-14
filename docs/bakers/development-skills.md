@@ -46,7 +46,7 @@ the intervening Grok and brand changes do not implement this migration.
 
 Other affected consumers are `.claude-plugin/verify-marketplace.sh`,
 `tests/contract/skill-references.py`, `.claude-plugin/README.md`, the Bakers bundle README,
-`docs/skills-and-workflows/write-workflow-md.md`, `scripts/setup-test-project.sh`, and
+`docs/skills-and-workflows/write-workflow-md.md`, `.bakers/scripts/setup-test-project.sh`, and
 `tests/fixtures/bakers-playground/{WORKFLOW.md,.claude/settings.json,.ddev/commands/host/}`.
 The fixture now uses `## bb-phase-validate`, covered by the existing reference contract.
 Setup's Codex discovery assumptions must not be presented as verified native behavior. Keep its frozen-plugin opt-out and branch

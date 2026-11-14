@@ -3,14 +3,12 @@ import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
-  readFileSync,
   realpathSync,
   rmSync,
-  statSync,
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import type {
   AgentModelApi,
@@ -18,11 +16,7 @@ import type {
   BbRuntime,
   RuntimeLaunch,
 } from '@bakers-build/conductor/contract';
-import {
-  type ConductorLogger,
-  quarantinePlanted,
-  shellQuote,
-} from '@bakers-build/core';
+import { type ConductorLogger, shellQuote } from '@bakers-build/core';
 import {
   API_KEY_PLACEHOLDER,
   type DockerOptions,
@@ -65,8 +59,6 @@ export interface BackendDeps {
 export const shortHash = (text: string) =>
   createHash('sha256').update(text).digest('hex').slice(0, 12);
 
-export { quarantinePlanted } from '@bakers-build/core';
-
 const run = promisify(execFile);
 export const realExec: BackendDeps['exec'] = (file, args) => run(file, args);
 
@@ -98,8 +90,6 @@ export function dockerRuntime(
       );
     return join(cacheHome, 'bakers/runtime', uuid);
   };
-  // Beside the run home, never mounted: cleanup trusts it to find the worktree.
-  const recordOf = (uuid: string) => `${runHomeOf(uuid)}.workspace.json`;
   // One image per agent install; built once each.
   const imagesReady = new Map<string, Promise<void>>();
 
@@ -184,17 +174,6 @@ export function dockerRuntime(
     await deps.exec(docker, ['network', 'connect', opts.runNetwork, proxyName]);
   };
 
-  const git = async (ws: string, flag: string) =>
-    (
-      await deps.exec('git', [
-        '-C',
-        ws,
-        'rev-parse',
-        '--path-format=absolute',
-        flag,
-      ])
-    ).stdout.trim();
-
   const credentialsFor = (agent: AgentRuntimeInfo) => {
     const api = agent.modelApi;
     if (allowlist && !api)
@@ -273,11 +252,17 @@ export function dockerRuntime(
         await proxyReady.ready;
       }
       const ws = launch.workspacePath;
-      const gitCommonDir = await git(ws, '--git-common-dir');
-      const gitDir = await git(ws, '--git-dir');
-      const gitLink = join(ws, '.git');
+      const runGitDir = launch.gitDir;
       const within = (path: string, root: string) =>
         path === root || path.startsWith(root + sep);
+      if (within(realpathSync(dirname(runHome)), realpathSync(ws)))
+        throw new Error(
+          'runtime-docker: private state must stay outside the worktree',
+        );
+      if (runGitDir && within(realpathSync(runGitDir), realpathSync(ws)))
+        throw new Error(
+          'runtime-docker: the run Git directory must stay outside the workspace',
+        );
       const canonical = (path: string) =>
         existsSync(path) ? realpathSync(path) : resolve(path);
       for (const [paths, write] of [
@@ -295,7 +280,15 @@ export function dockerRuntime(
             throw new Error(`runtime-docker: refusing broad path ${path}`);
           if (
             write &&
-            [gitCommonDir, gitLink, deps.cliRoot].some(
+            [
+              ...(runGitDir ? [runGitDir] : []),
+              ...(launch.sharedObjects ? [launch.sharedObjects] : []),
+              dirname(runHome),
+              join(ws, '.git'),
+              deps.cliRoot,
+              ...(launch.readPaths ?? []),
+              ...opts.mounts,
+            ].some(
               (root) =>
                 within(actual, canonical(root)) ||
                 within(canonical(root), actual),
@@ -305,18 +298,6 @@ export function dockerRuntime(
         }
       }
 
-      // Bound read-only, so each must exist before docker would create it as root.
-      for (const d of ['hooks', 'modules', 'worktrees'])
-        mkdirSync(join(gitCommonDir, d), { recursive: true });
-      for (const dir of new Set([gitCommonDir, gitDir])) {
-        const worktreeConfig = join(dir, 'config.worktree');
-        if (!existsSync(worktreeConfig)) writeFileSync(worktreeConfig, '');
-      }
-      mkdirSync(runHome, { recursive: true });
-      writeFileSync(
-        recordOf(launch.run.uuid),
-        JSON.stringify({ workspace: ws, gitCommonDir }),
-      );
       // The CLI build is mounted read-only; this puts the conductor's own CLI on PATH.
       if (deps.bakersEntry) {
         mkdirSync(join(runHome, 'bin'), { recursive: true });
@@ -334,10 +315,9 @@ export function dockerRuntime(
         { ...launch, env },
         { ...opts, image },
         {
-          gitCommonDir,
-          gitDir,
-          ...(statSync(gitLink, { throwIfNoEntry: false })?.isFile()
-            ? { gitLink }
+          ...(runGitDir ? { runGitDir } : {}),
+          ...(launch.sharedObjects
+            ? { sharedObjects: launch.sharedObjects }
             : {}),
           runHome,
           cliRoot: deps.cliRoot,
@@ -372,31 +352,6 @@ export function dockerRuntime(
           'runtime container cleanup failed',
         );
         return;
-      }
-      // After the container is gone, so the run cannot plant anything behind the scan.
-      const record = recordOf(r.uuid);
-      if (existsSync(record)) {
-        try {
-          const { workspace, gitCommonDir } = JSON.parse(
-            readFileSync(record, 'utf8'),
-          );
-          const moved = await quarantinePlanted(
-            workspace,
-            gitCommonDir,
-            deps.exec,
-          );
-          if (moved.length > 0)
-            deps.logger.warn(
-              { run: r.uuid, moved },
-              'runtime quarantined repositories the run planted',
-            );
-          rmSync(record);
-        } catch (err) {
-          deps.logger.error(
-            { run: r.uuid, err: String(err) },
-            'runtime quarantine failed: host git in the worktree may run what the run planted',
-          );
-        }
       }
       rmSync(runHomeOf(r.uuid), { recursive: true, force: true });
     },
