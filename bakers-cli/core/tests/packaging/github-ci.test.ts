@@ -242,6 +242,13 @@ describe('GitHub migration checks', () => {
       );
   });
 
+  it('lets a new PR revision cancel its old run, but never a later push cancel a branch run', () => {
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    expect(workflow.concurrency['cancel-in-progress']).toBe(
+      "${{ github.event_name == 'pull_request' }}",
+    );
+  });
+
   it('runs the after-merge jobs on every push, dispatch and PR into main, never on PRs into next', () => {
     const workflow = parse(read('.github/workflows/checks.yml'));
     const gate = workflow.jobs.image_gate.if;
