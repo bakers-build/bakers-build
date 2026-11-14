@@ -155,6 +155,55 @@ final class TicketReadToolTest extends BakersToolTestBase {
   }
 
   /**
+   * `types` returns the newest `newest` readable comments per named type.
+   */
+  public function testTypesSelectNewestPerType(): void {
+    $ticket = $this->ticket('TR-9');
+    $qualification = $this->comment($ticket, 'qualification', 1000);
+    $this->comment($ticket, 'spec', 1100);
+    $plans = [$this->comment($ticket, 'plan', 1200)];
+    $newestQualification = $this->comment($ticket, 'qualification', 2000);
+    $this->comment($ticket, 'spec', 2100);
+    $plans[] = $this->comment($ticket, 'plan', 2200);
+    $plans[] = $this->comment($ticket, 'plan', 3200);
+    $read = fn (array $values): array => $this->outputs($this->runTool('bakers_ticket_read', [
+      'ticket' => $ticket->getIdentifier(),
+    ] + $values));
+    $ids = static fn (array $out): array => array_column($out['comments'], 'id');
+    $facets = $read([])['comment_facets'];
+
+    $out = $read(['types' => ['qualification', 'plan'], 'newest' => 1]);
+    self::assertSame([$newestQualification->uuid(), $plans[2]->uuid()], $ids($out));
+    self::assertSame($facets, $out['comment_facets']);
+    self::assertSame([$plans[2]->uuid()], $ids($read(['types' => ['plan', 'no_such_type'], 'newest' => 1])));
+    self::assertSame([$plans[1]->uuid(), $plans[2]->uuid()], $ids($read(['types' => ['plan']])));
+    self::assertSame(array_map(static fn ($plan): string => $plan->uuid(), $plans), $ids($read(['types' => ['plan'], 'newest' => 5])));
+    self::assertSame($ids($read([])), $ids($read(['types' => []])));
+    self::assertSame([$qualification->uuid(), $newestQualification->uuid()], $ids($read(['types' => ['qualification'], 'newest' => 3])));
+  }
+
+  /**
+   * A newer comment of a named type the caller cannot view never displaces.
+   */
+  public function testTypesSkipUnreadableComments(): void {
+    $other = $this->account('other', ['skill_user']);
+    $ticket = $this->ticket('TR-10', ['reviewers' => [$other->id()]]);
+    $plan = $this->comment($ticket, 'plan', 1000);
+    $this->container->get('entity_type.manager')->getStorage('bb_comment_type')
+      ->create(['id' => 'review', 'label' => 'Review'])
+      ->save();
+    $this->container->get('entity_type.bundle.info')->clearCachedBundles();
+    $this->comment($ticket, 'plan', 2000, ['bundle' => 'review', 'author' => $other->id()]);
+
+    $out = $this->outputs($this->runTool('bakers_ticket_read', [
+      'ticket' => $ticket->getIdentifier(),
+      'types' => ['plan'],
+      'newest' => 1,
+    ]));
+    self::assertSame([$plan->uuid()], array_column($out['comments'], 'id'));
+  }
+
+  /**
    * A negative `newest` is an input error.
    */
   public function testNegativeNewestFails(): void {
