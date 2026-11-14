@@ -75,16 +75,9 @@ export {
  * ticket content into a single typed pane line overran the PTY canonical line
  * cap and truncated the dispatch command. Instead the prompt is a bounded,
  * constant-size pointer and the agent reads the ticket at run start. That read
- * returns the newest comments and facets over all of them; a state fetches the
- * older comments it needs through `bakers_comment_read` (bb-workflow's
- * read-ticket.md).
- *
- * That read goes through the bakers tool `bakers_ticket_read`, the same path
- * every skill step uses, so the run does not read its ticket twice in two
- * formats. The prompt names both transports because the agent has not loaded
- * a skill yet: the MCP tool, else `bakers tools`, which itself goes to the
- * run's conductor (run token, no site credential) inside a run and to the site
- * outside one; why a CLI call must run alone lives in bb-workflow's tools.md.
+ * goes through `bakers_ticket_read`, the same path every skill step uses. The
+ * prompt names no tool or arguments: the loaded skill (bb-workflow's
+ * read-ticket.md) owns which comment types the state's first read loads.
  *
  * herdr no longer types this into the pane: the launch command goes to a file
  * that a short `sh '<file>'` line runs (BB-635), so its length is not bound
@@ -117,7 +110,7 @@ export const DEFAULT_AGENT_PROMPT =
   `You are working ticket {identifier}, current state: {state}. Read ./WORKFLOW.md first and ` +
   `load the bakers.build entry skill named there. ` +
   `Do not call ticket or service tools before reading both files. ` +
-  `Read the ticket with the bakers tool bakers_ticket_read, arguments {"ticket":"{ticket_uuid}"}. ` +
+  `Read ticket {ticket_uuid} as the loaded skill says. ` +
   `Follow the loaded skill for tool discovery, transport and fallback, ` +
   `and execute only that skill's {state} section. ` +
   `Do not start or prepare a later state. ` +

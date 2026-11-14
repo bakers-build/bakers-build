@@ -155,7 +155,7 @@ final class TicketReadToolTest extends BakersToolTestBase {
   }
 
   /**
-   * `types` returns the newest `newest` readable comments per named type.
+   * Types select the newest `newest` readable comments per named type.
    */
   public function testTypesSelectNewestPerType(): void {
     $ticket = $this->ticket('TR-9');
@@ -177,13 +177,15 @@ final class TicketReadToolTest extends BakersToolTestBase {
     self::assertSame($facets, $out['comment_facets']);
     self::assertSame([$plans[2]->uuid()], $ids($read(['types' => ['plan', 'no_such_type'], 'newest' => 1])));
     self::assertSame([$plans[1]->uuid(), $plans[2]->uuid()], $ids($read(['types' => ['plan']])));
-    self::assertSame(array_map(static fn ($plan): string => $plan->uuid(), $plans), $ids($read(['types' => ['plan'], 'newest' => 5])));
+    $allPlans = array_map(static fn ($plan): string => $plan->uuid(), $plans);
+    self::assertSame($allPlans, $ids($read(['types' => ['plan'], 'newest' => 5])));
     self::assertSame($ids($read([])), $ids($read(['types' => []])));
-    self::assertSame([$qualification->uuid(), $newestQualification->uuid()], $ids($read(['types' => ['qualification'], 'newest' => 3])));
+    $qualifications = [$qualification->uuid(), $newestQualification->uuid()];
+    self::assertSame($qualifications, $ids($read(['types' => ['qualification'], 'newest' => 3])));
   }
 
   /**
-   * A newer comment of a named type the caller cannot view never displaces.
+   * Never returns a newer comment of a named type the caller cannot view.
    */
   public function testTypesSkipUnreadableComments(): void {
     $other = $this->account('other', ['skill_user']);
