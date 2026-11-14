@@ -542,13 +542,11 @@ describe('GitHub migration checks', () => {
     ],
   };
 
-  it.each(Object.entries(VALIDATION_COMMANDS))(
-    '%s runs its validation commands',
-    (name, expected) => {
-      const commands = parse(read('.github/workflows/checks.yml'))
-        .jobs[name].steps.map((step: { run?: string }) => step.run ?? '')
-        .join('\n');
-      for (const command of expected) expect(commands).toContain(command);
-    },
-  );
+  it.each(Object.entries(VALIDATION_COMMANDS))('%s runs its validation commands', (name, expected) => {
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    const commands = workflow.jobs[name].steps
+      .map((step: { run?: string }) => step.run ?? '')
+      .join('\n');
+    for (const command of expected) expect(commands).toContain(command);
+  });
 });

@@ -122,11 +122,8 @@ describe('BB-326 runtime packaging', () => {
 
   it('the spike is gone and CI has no spike job', () => {
     expect(existsSync(`${CLI_ROOT}spikes`)).toBe(false);
-    expect(readFileSync(
-        `${REPO_ROOT}.github/workflows/checks.yml`,
-        'utf8',
-      )).not.toContain(
-      'tui_spike',
-    );
+    expect(
+      readFileSync(`${REPO_ROOT}.github/workflows/checks.yml`, 'utf8'),
+    ).not.toContain('tui_spike');
   });
 });
