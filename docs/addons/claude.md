@@ -36,9 +36,7 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
-[Isolation models](/agents/isolation): platform support.
-
-Default: `system`. A [runtime](/addons/runtime-docker) preserves the configured permissions. See [Execution security](/provision/security/execution) for boundaries, environment filtering and isolation risks.
+Default: `system`. A [runtime](/addons/runtime-docker) preserves the configured permissions. [Execution security](/provision/security/execution) covers environment filtering; [isolation models](/agents/isolation) compare boundaries per platform.
 
 | `permissions` | Launch flags |
 |---|---|
