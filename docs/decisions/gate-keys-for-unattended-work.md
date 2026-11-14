@@ -93,6 +93,10 @@ A label says which gates the run passes on its own. It stays fixed for the ticke
   *unplanned* risky change stays a technical problem that ends the run.
 - **Recipe gates** (`<recipe>:<gate>`) wait for a person under `auto-review` and `auto-accept`;
   `auto` passes them.
+- **`auto-review` decides open content choices**: a choice the criteria leave to the user, such as
+  what the result looks like, is no `criterion` under this label. The run decides it, records it
+  under `Decisions` and leaves it to the reviewer at `verdict`; the requester confirmed this in
+  review.
 - **Deployment and verification**: `auto-review` and `auto-accept` do not apply; a run that finds
   one stops with a question. `auto` keeps today's behavior.
 - **`auto-review` without a reviewer** stops with a question at the first state that finds it.
@@ -141,9 +145,9 @@ decides it itself and asks only what is the user's to decide.
 
 - The label on the ticket is the procedure; the run reads it at every state through the frame, as
   it reads `bb-label-<label>` today.
-- No new comment type. A person's decision is their `comment`. Under a label, each handoff
-  (`coding`, `review`, `summary`) carries `### Gates`, one line per gate passed since the last
-  handoff; without a label every gate is a person's comment already:
+- No new comment type. A person's decision is their `comment`. With or without a label, each
+  handoff (`coding`, `review`, `summary`) carries `### Gates`, one line per gate passed or rejected
+  since the last handoff:
 
   ```markdown
   ### Gates
@@ -172,10 +176,11 @@ migration. The implementation changed:
 
 - **Frame**: `bb-workflow/SKILL.md` (the *Stop rule* covers a missing `## bb-gates` row of an own
   type) and new `references/gates.md` (catalog, gate sets, recipe rows, risk list, `### Gates`
-  record), reached through the label skills' links. The state files and the waits
-  (`coding-gate.md`, `review.md`, `agent-choice.md`, `prior-art-search.md`, `ticket-writes.md`,
-  `outtake.md`) keep their text: a label skill passes them, as `bb-label-auto` did before, and the
-  per-state read budgets stay as they are.
+  record). `ticket-writes.md`, read in every state, links the `### Gates` record for every
+  handoff; a duplicated sentence there and the reading-list line in `qualification.md` were trimmed
+  to keep the per-state read budgets. The waits (`coding-gate.md`, `review.md`, `agent-choice.md`,
+  `prior-art-search.md`, `outtake.md`) keep their text: a label skill passes them, as
+  `bb-label-auto` did before.
 - **Labels**: `bb-label-auto` (passes every gate; risk list moved to `gates.md`), new
   `bb-label-auto-review` and `bb-label-auto-accept`; `bb-label-ticket-question` unchanged.
 - **Recipes**: `## bb-gates` in `bb-recipe-matt`, `bb-recipe-superpowers`,
@@ -185,8 +190,8 @@ migration. The implementation changed:
   `docs/development/skill-contract.md`, `docs/bakers/development-skills.md` (skill count, bundle
   0.71.0), `.claude/skills/bakers-build/README.md`. `docs/bakers/github-migration.md` and
   `docs/development/test-skill-tools.md` describe `auto` only and stay as they are.
-- **Tests**: `tests/contract/skill-references.py` accepts `## bb-gates` and requires a row per
-  declared type; the `bb-label-auto` skill-eval profile also serves the two new label skills, with
+- **Tests**: `tests/contract/skill-references.py` accepts `## bb-gates`, requires a row per
+  declared type and requires each state's always-read references to link the `### Gates` record; the `bb-label-auto` skill-eval profile also serves the two new label skills, with
   the fixtures `label-auto-review-*` and `label-auto-accept-*` and their cases in
   `bakers-cli/core/tests/workflow/skill-state-evals.test.ts`; the simulated ticket read in
   `tests/skill-eval/tool-server.py` returns `reviewers`, as the real tool does.

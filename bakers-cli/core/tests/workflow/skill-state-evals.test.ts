@@ -845,6 +845,27 @@ Do these criteria fit?
       ),
     ).toEqual(['all-criteria', 'asks-fit']);
   });
+  it('records the passed gates under ### Gates without a label', async () => {
+    const out = `### 🎯 Outcome
+EVAL-42 review: Not OK.
+
+### Gates
+- verdict: passed — by rita (comment 77777777) — recommendation Not OK, followed yes
+
+### 🧪 Manual review
+MR 42, no login needed.
+
+### ➡️ Next action
+Fix AC-2 in working.
+`;
+    expect(await judge('outtake-gates-unlabelled', out)).toEqual([]);
+    expect(
+      await judge(
+        'outtake-gates-unlabelled',
+        out.replace(/### Gates\n.*\n/, ''),
+      ),
+    ).toEqual(['gates']);
+  });
   it('shows an unrecorded value as not recorded and keeps a missing persona', async () => {
     const out = working
       .replace(`🔗 [north-guest login](${guest})`, 'north-guest: missing')

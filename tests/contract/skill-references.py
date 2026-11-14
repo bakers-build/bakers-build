@@ -106,6 +106,10 @@ def check(scan):
             errors.append((f'{state}.md', f'phase headings {found}'))
         if not (references / 'outtake' / f'{state}.md').is_file():
             errors.append((f'outtake/{state}.md', 'missing'))
+        # Every handoff carries `### Gates`, labelled or not, so each state's always-read set links its rule.
+        always = re.findall(r'^always: (.+)$', (references / f'{state}.md').read_text(), re.M)
+        if not any('gates.md#record' in (references / n).read_text() for g in always for n in g.split(', ')):
+            errors.append((f'{state}.md', 'no always-read link to gates.md#record'))
     frame = (installed / 'bb-workflow/SKILL.md').read_text()
     errors += [('bb-workflow/SKILL.md', h) for h in headings(frame, 2) if h[3:] in PHASES]
     errors += [('bb-workflow/SKILL.md', f'no link to {f}') for f in [*STATES, 'read-ticket']

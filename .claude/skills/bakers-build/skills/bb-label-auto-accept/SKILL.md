@@ -10,7 +10,7 @@ The label `auto-accept` passes every [gate](../bb-workflow/references/gates.md) 
 [risk list](../bb-workflow/references/gates.md#risk-list), `verdict`. It authorizes every
 transition, its origin status and, once `result` and any due `verdict` are passed, the merge.
 Decide technical questions yourself and record each decision with its reason under `Decisions` in
-the handoff, and each passed gate under `### Gates`.
+the handoff.
 
 Stop with a question at the first state that finds the ticket of type `deployment` or
 `verification`: the label does not apply there. A `criterion` waits for a person. An unplanned

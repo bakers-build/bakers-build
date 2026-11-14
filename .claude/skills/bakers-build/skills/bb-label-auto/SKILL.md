@@ -7,7 +7,7 @@ description: "Use when a ticket labelled `auto` runs, in any state: carry it to 
 
 The label `auto` passes every [gate](../bb-workflow/references/gates.md) on its own, recipe gates
 included, except the user question and acceptance below, and authorizes every transition, its origin
-status and the merge. Record each passed gate under `### Gates` in the handoff. Decide technical
+status and the merge. Decide technical
 questions yourself and record each decision with its reason under `Decisions` in the handoff.
 
 Ask the user only what is theirs to decide: a choice the confirmed acceptance criteria leave open,

@@ -2,7 +2,7 @@ import { check, criterionRows, outtakeChecks, visibleMarkdown } from '../outtake
 import { requireValue } from '../validation.mjs';
 
 const KEYS = ['ac_ids', 'question', 'criteria', 'logins', 'mr', 'markers', 'absent', 'problems', 'next_fix', 'missing',
-  'not_recorded', 'verdict', 'findings'];
+  'not_recorded', 'verdict', 'findings', 'gates'];
 const part = (text, heading) => text.split(new RegExp(`^#{1,6}\\s+${heading}\\s*$`, 'm'))[1]?.split(/^#{1,6}\s/m)[0] ?? '';
 
 // One state's outtake rendered from its handoff: the skeleton plus what this fixture's handoff demands.
@@ -41,5 +41,7 @@ export function checkOutput(f, output) {
     'Next action is the fix and offers no move to review');
   if (e.verdict) add('verdict', part(text, '🎯 Outcome').includes(e.verdict), 'Outcome names the verdict');
   if (e.findings) add('findings', e.findings.every(loc => text.includes(loc)), 'Every finding appears with its file:line');
+  if (e.gates) add('gates', e.gates.every(g => new RegExp(`^\\s*[-*]\\s*\`?${g}\`?:`, 'm').test(part(text, 'Gates'))),
+    'Every passed or rejected gate has its line under ### Gates');
   return checks;
 }

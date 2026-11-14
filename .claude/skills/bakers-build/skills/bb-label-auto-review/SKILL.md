@@ -9,7 +9,7 @@ The label `auto-review` passes every [gate](../bb-workflow/references/gates.md) 
 `verdict`, `merge` and recipe gates (`<recipe>:<gate>`): the ticket's reviewer passes `verdict` and
 `merge`, a person the recipe gates. It authorizes the transitions up to `review` and their origin
 status. Decide technical questions yourself and record each decision with its reason under
-`Decisions` in the handoff, and each passed gate under `### Gates`.
+`Decisions` in the handoff.
 
 Stop with a question at the first state that finds the ticket:
 
