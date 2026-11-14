@@ -4,15 +4,10 @@
   "title": "@bakers-build/addon-workspace-git options",
   "type": "object",
   "properties": {
-    "branch_prefix": {
+    "worktree_dir": {
       "type": "string",
-      "description": "Prefix of every ticket branch.",
-      "default": "bakers/"
-    },
-    "branch_template": {
-      "type": "string",
-      "description": "Branch name template. Placeholders: {branch_prefix}, {key}, {identifier}, {title_slug}.",
-      "default": "{branch_prefix}{key}-{title_slug}"
+      "description": "Directory of new worktrees, relative to the repository root or absolute; a ticket checks out at `<worktree_dir>/<branch_name>`.",
+      "default": ".bakers-worktrees"
     },
     "auto_setup_merge": {
       "type": "boolean",

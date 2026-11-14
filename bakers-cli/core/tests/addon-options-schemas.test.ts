@@ -127,8 +127,7 @@ const cases: [addon: string, good: Record<string, unknown>][] = [
   [
     'workspace-git',
     {
-      branch_prefix: 'wt/',
-      branch_template: '{branch_prefix}{key}',
+      worktree_dir: '.bakers-worktrees',
       auto_setup_merge: true,
     },
   ],
@@ -161,5 +160,14 @@ describe('addon options schemas', () => {
     expect(v('forge-github')({ repository: 'a/b' })).toBe(false);
     expect(v('forge-github')({ repository: 'a/b', auth: 'glab' })).toBe(false);
     expect(v('forge-gitlab')({ project: 'g/r', auth: 'glab' })).toBe(true);
+  });
+
+  it('workspace-git rejects the removed branch template keys', () => {
+    const validate =
+      ajv.getSchema(
+        'https://bakers.build/schema/addon-workspace-git/options.schema.json',
+      ) ?? ajv.compile(load('addons/workspace-git/options.schema.json'));
+    expect(validate({ branch_prefix: 'x' })).toBe(false);
+    expect(validate({ branch_template: '{key}' })).toBe(false);
   });
 });

@@ -138,7 +138,7 @@ describe('GitWorkspace run branches', () => {
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
   it('turns off branch.autoSetupMerge before creating a worktree', async () => {
-    await new GitWorkspace({ root: main }).ensure('BB-1', 'one');
+    await new GitWorkspace({ root: main }).ensure('BB-1', 'feat/bb-1');
     expect(git(main, 'config', '--get', 'branch.autoSetupMerge')).toBe('false');
   });
 
@@ -153,7 +153,7 @@ describe('GitWorkspace run branches', () => {
     };
     const ws = await new GitWorkspace({ root: main, logger }).ensure(
       'BB-1',
-      'one',
+      'feat/bb-1',
     );
     expect(warnings).toEqual([
       expect.stringContaining(
@@ -167,7 +167,7 @@ describe('GitWorkspace run branches', () => {
     const ws = await new GitWorkspace({
       root: main,
       autoSetupMerge: true,
-    }).ensure('BB-1', 'one');
+    }).ensure('BB-1', 'feat/bb-1');
     expect(() =>
       git(main, 'config', '--get', 'branch.autoSetupMerge'),
     ).toThrow();
@@ -180,12 +180,15 @@ describe('GitWorkspace run branches', () => {
       .createWorkspace({
         config_path: join(main, '.bakers', 'project.config.js'),
       } as never)
-      .then((w) => w.ensure('BB-1', 'one'));
+      .then((w) => w.ensure('BB-1', 'feat/bb-1'));
     expect(ws.env).toBeUndefined();
   });
 
   it('lets a plain git push create the same-name remote branch while the shared config.lock is held', async () => {
-    const ws = await new GitWorkspace({ root: main }).ensure('BB-1', 'one');
+    const ws = await new GitWorkspace({ root: main }).ensure(
+      'BB-1',
+      'feat/bb-1',
+    );
     const branch = git(ws.path, 'symbolic-ref', '--short', 'HEAD');
     // An old run branch that tracks the base must still push to its own name.
     git(main, 'branch', '--set-upstream-to=origin/next', branch);
