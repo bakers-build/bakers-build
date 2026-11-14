@@ -36,15 +36,25 @@ describe.skipIf(
   let dir = '';
   afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
-  it('a setsid agent receives every pane resize, keeps its tty and its exit code', async () => {
+  /** Runs `agent.sh` behind the forwarder in a pty, resizes it twice, returns the exit code. */
+  async function resizeTwice(
+    agent: string[],
+    env: NodeJS.ProcessEnv = process.env,
+  ): Promise<number | null> {
     dir = mkdtempSync(join(tmpdir(), 'hc-winch-'));
-    const agent = join(dir, 'agent.sh');
-    writeFileSync(agent, AGENT);
-    const run = [process.execPath, forwarder, 'setsid', 'sh', agent, dir]
+    writeFileSync(join(dir, 'agent.sh'), AGENT);
+    const run = [
+      process.execPath,
+      forwarder,
+      ...agent,
+      join(dir, 'agent.sh'),
+      dir,
+    ]
       .map(shellQuote)
       .join(' ');
     const child = spawn('script', ['-qec', run, '/dev/null'], {
       stdio: 'ignore',
+      env,
     });
     const exited = new Promise<number | null>((resolve) =>
       child.on('exit', resolve),
@@ -62,8 +72,22 @@ describe.skipIf(
       await vi.waitFor(() => expect(read(join(dir, 'winch'))).toBe(String(n)));
     }
     writeFileSync(join(dir, 'stop'), '');
+    return exited;
+  }
 
-    expect(await exited).toBe(7);
+  it('a setsid agent receives every pane resize, keeps its tty and its exit code', async () => {
+    expect(await resizeTwice(['setsid', 'sh'])).toBe(7);
     expect(read(join(dir, 'tty'))).toBe('yes');
+  });
+
+  it('keeps running and still signals its child when ps fails', async () => {
+    const bin = mkdtempSync(join(tmpdir(), 'hc-nops-'));
+    try {
+      writeFileSync(join(bin, 'ps'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+      const env = { ...process.env, PATH: `${bin}:${process.env.PATH}` };
+      expect(await resizeTwice(['sh'], env)).toBe(7);
+    } finally {
+      rmSync(bin, { recursive: true, force: true });
+    }
   });
 });

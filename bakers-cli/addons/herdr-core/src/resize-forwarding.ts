@@ -40,8 +40,14 @@ function descendants(root: number): number[] {
 
 process.on('SIGWINCH', () => {
   if (child.pid === undefined) return;
+  let pids = [child.pid];
+  try {
+    pids = [child.pid, ...descendants(child.pid)];
+  } catch {
+    // No usable `ps`: the child alone still hears the resize; never end the run over it.
+  }
   // The foreground group already got one; a second SIGWINCH only redraws again.
-  for (const pid of [child.pid, ...descendants(child.pid)]) {
+  for (const pid of pids) {
     try {
       process.kill(pid, 'SIGWINCH');
     } catch {

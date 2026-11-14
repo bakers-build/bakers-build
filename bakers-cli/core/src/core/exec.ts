@@ -65,7 +65,11 @@ export class CommandRunner {
         ...rest,
         ...(childEnv ? { env: childEnv } : {}),
       });
-      if (input !== undefined) pending.child.stdin?.end(input);
+      if (input !== undefined) {
+        // A child that exits before reading gives EPIPE; its exit status rejects below.
+        pending.child.stdin?.on('error', () => {});
+        pending.child.stdin?.end(input);
+      }
       const { stdout } = await pending;
       this.logger.debug({ file, args: logArgs, cwd: opts.cwd }, 'exec ok');
       return stdout;

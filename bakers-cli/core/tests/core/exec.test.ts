@@ -39,6 +39,16 @@ describe('CommandRunner', () => {
     ).resolves.toBe('hello\n');
   });
 
+  it('rejects, without crashing, when the child exits before reading its input', async () => {
+    const { log } = spyLogger();
+    // Larger than a pipe buffer, so the write hits a closed pipe (EPIPE).
+    await expect(
+      new CommandRunner(log).run('sh', ['-c', 'exit 3'], {
+        input: 'x'.repeat(1 << 20),
+      }),
+    ).rejects.toBeInstanceOf(ExecError);
+  });
+
   it('terminates a running child when cancelled', async () => {
     const root = mkdtempSync(join(tmpdir(), 'exec-cancel-'));
     const ready = join(root, 'pid');
