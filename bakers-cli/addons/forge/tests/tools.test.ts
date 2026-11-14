@@ -58,9 +58,11 @@ function fakeBackend(options: {
       prs.push(pr);
       return pr;
     },
-    updatePr: async (pr, { title }) => {
-      calls.push(`update:${pr.number}:${title}`);
-      return { ...pr, title };
+    updatePr: async (pr, { title, base }) => {
+      calls.push(`update:${pr.number}->${base}:${title}`);
+      const updated = { ...pr, title, base };
+      prs[prs.findIndex((p) => p.number === pr.number)] = updated;
+      return updated;
     },
     openPrsWithBase: async (base) => prs.filter((p) => p.base === base),
     checks: async (ref, base, opts) => {
@@ -92,10 +94,13 @@ function request(
   args: Record<string, unknown>,
   worktreePath = '/nonexistent',
   ticket: ToolRequest['ticket'] = RUN,
+  // The server copy at call time; by default it matches the run copy.
+  current: ToolRequest['currentTicket'] | null = async () => ticket!,
 ): ToolRequest {
   return {
     worktreePath,
     ...(ticket ? { ticket } : {}),
+    ...(current ? { currentTicket: current } : {}),
     args,
     signal: new AbortController().signal,
     logger: { debug() {}, info() {}, warn() {}, error() {} },
@@ -248,7 +253,7 @@ describe('forge tools', () => {
     expect(calls.filter((c) => c.startsWith('create'))).toEqual([
       'create:feat/bb-7-work-2->feat/bb-7-work:feat: x',
     ]);
-    expect(calls).toContain('update:1:feat(cli)!: y');
+    expect(calls).toContain('update:1->feat/bb-7-work:feat(cli)!: y');
   });
 
   it("a deployment run opens and merges its branch into target_branch by that target's rule", async () => {
@@ -286,6 +291,93 @@ describe('forge tools', () => {
     expect(calls).toContain(
       'merge:1:merge:false:chore(release): 1.2.3\nMerged-by: bakers.build\nref:BB-9',
     );
+  });
+
+  it("opens and merges into the ticket's target_branch as the server returns it at call time, not the run copy", async () => {
+    // The run started without an environment; `prod` (branch main) was added mid-run.
+    const atStart = {
+      identifier: 'BB-9',
+      branchName: 'release/bb-9',
+      baseBranch: 'next',
+      targetBranch: 'next',
+    };
+    const server = async () => ({ ...atStart, targetBranch: 'main' });
+    const { backend, calls } = fakeBackend({ checks: green });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const opened = JSON.parse(
+      (
+        await tools.forge_pr_upsert!(
+          request(
+            { title: 'chore(release): 1.2.3' },
+            '/nonexistent',
+            atStart,
+            server,
+          ),
+        )
+      ).text,
+    );
+    expect(opened).toMatchObject({ target: 'main', created: true });
+    expect(calls).toContain('create:release/bb-9->main:chore(release): 1.2.3');
+    const merged = JSON.parse(
+      (await tools.forge_merge!(request({}, '/nonexistent', atStart, server)))
+        .text,
+    );
+    expect(merged.into).toBe('main');
+  });
+
+  it("forge_merge refuses a PR into the run copy's target once the server target moved", async () => {
+    const { backend, calls } = fakeBackend({ prs: [pr()], checks: green });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    await expect(
+      tools.forge_merge!(
+        request({}, '/nonexistent', RUN, async () => ({
+          ...RUN,
+          targetBranch: 'main',
+        })),
+      ),
+    ).rejects.toThrow(/targets 'next', but .* merges into 'main'/);
+    expect(calls.some((c) => c.startsWith('merge:'))).toBe(false);
+  });
+
+  it('forge_pr_upsert retargets a PR still open into the old target, then forge_merge merges it', async () => {
+    const { backend, calls } = fakeBackend({ prs: [pr()], checks: green });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const server = async () => ({ ...RUN, targetBranch: 'main' });
+    const updated = JSON.parse(
+      (
+        await tools.forge_pr_upsert!(
+          request({ title: 'feat: x' }, '/nonexistent', RUN, server),
+        )
+      ).text,
+    );
+    expect(updated).toMatchObject({ target: 'main', created: false });
+    expect(calls).toContain('update:1->main:feat: x');
+    const merged = JSON.parse(
+      (await tools.forge_merge!(request({}, '/nonexistent', RUN, server))).text,
+    );
+    expect(merged.into).toBe('main');
+  });
+
+  it('forge_pr_upsert and forge_merge refuse when the current ticket cannot be read, sending nothing', async () => {
+    for (const current of [
+      async () => {
+        throw new Error('HTTP 503');
+      },
+      null,
+    ]) {
+      const { backend, calls } = fakeBackend({ prs: [pr()], checks: green });
+      const tools = forgeTools({ backend: async () => backend, settings: {} });
+      for (const call of [
+        tools.forge_pr_upsert!(
+          request({ title: 'feat: x' }, '/nonexistent', RUN, current),
+        ),
+        tools.forge_merge!(request({}, '/nonexistent', RUN, current)),
+      ])
+        await expect(call).rejects.toThrow(
+          /current target_branch could not be read from the server.*nothing was sent/,
+        );
+      expect(calls).toEqual([]);
+    }
   });
 
   it('forge_checks reports rows, required flags and the overall status of the PR head', async () => {

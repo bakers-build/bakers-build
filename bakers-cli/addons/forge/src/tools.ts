@@ -53,6 +53,30 @@ function runOf(req: ToolRequest): Run {
   };
 }
 
+/**
+ * Where `branch` merges: a variant into the ticket branch, the ticket branch into
+ * the ticket's current target as the server returns it now. A failed read refuses;
+ * the run copy may predate an environment added during the run.
+ */
+async function currentBase(
+  req: ToolRequest,
+  branch: string,
+  run: Run,
+): Promise<string> {
+  if (branch !== run.branchName) return derivedBase(branch, run);
+  const refuse = (why: string) =>
+    new Error(
+      `forge: the ticket's current target_branch could not be read from the server (${why}); nothing was sent`,
+    );
+  if (!req.currentTicket) throw refuse('no server read for this call');
+  const t = await req.currentTicket().catch((err: unknown) => {
+    throw refuse(err instanceof Error ? err.message : String(err));
+  });
+  const target = t.targetBranch ?? t.baseBranch;
+  if (!target) throw refuse('no target_branch or base_branch returned');
+  return target;
+}
+
 function ownedBranch(req: ToolRequest, run: Run): string {
   const branch = (req.args.branch as string | undefined) ?? run.branchName;
   if (!isOwned(branch, run.branchName))
@@ -157,13 +181,14 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const run = runOf(req);
       const branch = ownedBranch(req, run);
       const body = (req.args.body as string | undefined) ?? '';
+      const base = await currentBase(req, branch, run);
       const b = await backend();
       const open = await b.findOpenPr(branch);
       const pr = open
-        ? await b.updatePr(open, { title, body })
+        ? await b.updatePr(open, { title, body, base })
         : await b.createPr({
             head: branch,
-            base: derivedBase(branch, run),
+            base,
             title,
             body,
           });
@@ -197,7 +222,7 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
     forge_merge: async (req) => {
       const run = runOf(req);
       const branch = ownedBranch(req, run);
-      const base = derivedBase(branch, run);
+      const base = await currentBase(req, branch, run);
       const b = await backend();
       const pr = await b.findOpenPr(branch);
       if (!pr)

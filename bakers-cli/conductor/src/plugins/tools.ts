@@ -42,11 +42,16 @@ export interface ToolResult {
   text: string;
 }
 
+/** A ticket as a run knows it; an operator call may know only its identifier. */
+export type RunTicket = Partial<Ticket> & { identifier: string };
+
 /** The worktree a call acts on — fixed by the session, never by the tool. */
 export interface ToolBinding {
   worktreePath: string;
-  /** The run's ticket; an operator call may know only its identifier. */
-  ticket?: Partial<Ticket> & { identifier: string };
+  /** The run's ticket. */
+  ticket?: RunTicket;
+  /** Reads the run's ticket from the server at call time; never persisted. */
+  currentTicket?: () => Promise<RunTicket>;
 }
 
 export interface ToolRequest extends ToolBinding {

@@ -17,6 +17,15 @@ final class ProjectReadToolTest extends BakersToolTestBase {
   use ForeignWorkspaceTrait;
 
   /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    parent::setUp();
+    $this->installEntitySchema('bb_environment');
+    user_role_grant_permissions('skill_user', ['view bb_environment']);
+  }
+
+  /**
    * Key and UUID read the same values; env_vars stays out.
    */
   public function testReadsByKeyOrUuid(): void {
@@ -38,11 +47,35 @@ final class ProjectReadToolTest extends BakersToolTestBase {
         'branch_convention' => NULL,
       ],
       'coder_config' => ['image' => 'php:8.4'],
+      'environments' => [],
     ];
     self::assertSame($expected, $this->outputs($this->runTool('bakers_project_read', ['project' => 'TOOLPROJEC'])));
     $by_uuid = $this->outputs($this->runTool('bakers_project_read', ['project' => $this->project->uuid()]));
     self::assertSame($expected, $by_uuid);
     self::assertStringNotContainsString('hunter2', serialize($by_uuid));
+  }
+
+  /**
+   * The project's environments are listed by name; another project's are not.
+   */
+  public function testListsProjectEnvironments(): void {
+    $this->entity('bb_environment', [
+      'name' => 'prod',
+      'project_id' => $this->project->id(),
+      'branch' => 'main',
+      'base_url' => 'https://bakers.example.com',
+    ]);
+    $this->entity('bb_environment', ['name' => 'develop', 'project_id' => $this->project->id(), 'branch' => 'next']);
+    $other = $this->entity('bb_project', [
+      'name' => 'other-project',
+      'group_id' => $this->project->get('group_id')->target_id,
+    ]);
+    $this->entity('bb_environment', ['name' => 'foreign', 'project_id' => $other->id(), 'branch' => 'main']);
+    $out = $this->outputs($this->runTool('bakers_project_read', ['project' => 'TOOLPROJEC']));
+    self::assertSame([
+      ['name' => 'develop', 'branch' => 'next', 'base_url' => NULL],
+      ['name' => 'prod', 'branch' => 'main', 'base_url' => 'https://bakers.example.com'],
+    ], $out['environments']);
   }
 
   /**
