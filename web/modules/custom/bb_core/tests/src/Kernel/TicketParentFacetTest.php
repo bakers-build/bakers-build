@@ -126,6 +126,38 @@ final class TicketParentFacetTest extends KernelTestBase {
   }
 
   /**
+   * The deploy hook fills a parent field added to an indexed site, no cron.
+   */
+  public function testDeployHookIndexesTheParentFieldWithoutCron(): void {
+    $key = $this->key('Parent ticket');
+    // The site before the field: every ticket indexed without it.
+    $index = Index::load('bb_tickets');
+    self::assertNotNull($index);
+    $field = $index->getField('parent_identifier');
+    self::assertNotNull($field);
+    $index->removeField('parent_identifier');
+    $index->save();
+    $index->indexItems();
+    // The config import adds it back; the stored items still lack it.
+    $index = Index::load('bb_tickets');
+    self::assertNotNull($index);
+    $index->addField($field);
+    $index->save();
+    self::assertSame([], $this->rows(['parent' => $key]), 'Before the hook the filter finds nothing.');
+    $this->container->get('account_switcher')->switchBack();
+
+    $this->container->get('module_handler')->loadInclude('bb_core', 'php', 'bb_core.deploy');
+    $sandbox = [];
+    $passes = 0;
+    do {
+      bb_core_deploy_index_ticket_parents($sandbox);
+    } while (($sandbox['#finished'] ?? 1) < 1 && ++$passes < 20);
+    self::assertEquals(1, $sandbox['#finished'] ?? 1);
+
+    self::assertSame(['Child ticket'], $this->rows(['parent' => $key]));
+  }
+
+  /**
    * The parent filter holds one value: a pick submits one radio.
    *
    * The `or` facet keeps offering the other parents while one is chosen, so
