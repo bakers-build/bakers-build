@@ -32,9 +32,10 @@ and its own `/proc`, `/dev` and temporary directory. The operator's home, SSH ke
 and Docker socket are absent. Only explicitly selected environment variables reach the process;
 credential values are absent from the launcher command and plan file.
 
-The agent prepares its configuration and grants. Claude copies settings and login into the
-private home, mounts plugins read-only, and writes its transcript to the worktree transcript directory.
-Explicit API credentials override stored login.
+The agent prepares its configuration and grants. Claude copies settings into the private home,
+mounts the host's login file (`~/.claude/.credentials.json`) read-write in place of a copy, so a
+token refresh in any run reaches the host and every other run, mounts plugins read-only, and writes
+its transcript to the worktree transcript directory. Explicit API credentials override stored login.
 
 The workspace is a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket
 branch at the worktree path, made at every run start. The run's Git directory, kept in the

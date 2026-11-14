@@ -1906,6 +1906,9 @@ export class Conductor {
               ...(isolates ? protectedPaths : []),
             ],
             writePaths: preparation?.writePaths ?? [],
+            ...(preparation?.bindPaths?.length
+              ? { bindPaths: preparation.bindPaths }
+              : {}),
           }
         : {}),
       ...(isolates && !runtimeContext ? { readPaths: protectedPaths } : {}),

@@ -107,6 +107,10 @@ export function dockerArgs(
     ...bind(where.runHome),
     ...(input.readPaths ?? []).flatMap((path) => ro(path)),
     ...(input.writePaths ?? []).flatMap((path) => bind(path)),
+    // Shared host files over their placeholders in the run home.
+    ...(input.bindPaths ?? []).flatMap(({ source, target }) =>
+      bind(source, target),
+    ),
     '-w',
     ws,
     opts.image,

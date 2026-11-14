@@ -4,7 +4,7 @@
 
 import type { ConductorLogger } from '@bakers-build/core';
 import type { ConductorFileConfig } from '../types.js';
-import type { AgentRuntimeInfo } from './agent.js';
+import type { AgentRuntimeInfo, RunBind } from './agent.js';
 
 /** The run a launch belongs to. */
 export interface RuntimeRun {
@@ -28,6 +28,8 @@ export interface RuntimeLaunch extends AgentRuntimeInfo {
   homePath?: string;
   readPaths?: string[];
   writePaths?: string[];
+  /** Mounted read-write after the home; each target lies inside `homePath`. */
+  bindPaths?: RunBind[];
 }
 
 export interface BbRuntime {

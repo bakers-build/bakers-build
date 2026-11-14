@@ -26,9 +26,10 @@ Container `bb-run-<run uuid>`, under your uid, mounts:
 - the bakers CLI build, read-only. The runtime refuses to start when that build's root would
   contain your home directory;
 - `$XDG_CACHE_HOME/bakers/runtime/<run uuid>` at its host path;
-- the read/write paths from neutral agent preparation: Claude plugins read-only and the worktree transcript directory writable. Docker has no Claude-specific adapter.
+- the read/write paths from neutral agent preparation: Claude plugins read-only and the worktree transcript directory writable. Docker has no Claude-specific adapter;
+- with `network: host` and no API credential, the host's Claude login file, read-write inside the run home, so a token refresh reaches the host and every other run.
 
-No `~/.ssh`, `~/.bakers`, Docker socket or harness login (`.credentials.json`). Secrets use `-e KEY`, never values in argv.
+No `~/.ssh`, `~/.bakers` or Docker socket. Secrets use `-e KEY`, never values in argv.
 Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
 See [prerequisites](/provision/security/shared-settings#verify). Cleanup removes the container and home.
