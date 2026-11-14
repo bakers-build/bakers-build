@@ -78,16 +78,17 @@ Feature: The team screen's five tabs are routes inside one island
     And the tab "Overview" is current
     And the tab body shows the Projects relation
 
-  # The row is plain links with a thin underline on the current one. On a narrow
-  # viewport it wraps onto further lines instead of scrolling or hiding tabs
-  # behind a menu, so every destination stays visible and one tap away.
+  # The row is plain links with a thin underline on the current one. On a phone
+  # it stays one line and scrolls inside itself (BAKERS-57, requester decision
+  # 2026-11-14), so a long row never pushes the content down and the page never
+  # scrolls sideways; the current tab is scrolled into view.
   # The viewport is narrow BEFORE the page loads, as on a phone: the rail opens
   # only from 768px up and remembers its state, so shrinking an already loaded
   # desktop page keeps a 232px rail and leaves the row about 50px.
-  Scenario Outline: The tab row wraps on a narrow viewport and keeps every tab visible
+  Scenario Outline: The tab row scrolls inside itself on a narrow viewport
     Given I view the page <width> pixels wide
     And I visit the team "Platform Crew"
-    Then every tab fits within the viewport
+    Then the tab row is one line that scrolls inside itself
     And exactly one tab is marked as the current page
     When I click the tab "Members"
     Then the document was not reloaded
@@ -95,7 +96,8 @@ Feature: The team screen's five tabs are routes inside one island
     When I click the tab "Runs"
     Then the document was not reloaded
     And the tab "Runs" is current
-    And every tab fits within the viewport
+    And the current tab is in view
+    And the tab row is one line that scrolls inside itself
     And the tab row rests on the header rule
 
     Examples:

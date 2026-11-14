@@ -91,7 +91,10 @@ final class ListingToolbarHooks {
       if ($identifier === '' || in_array($identifier, self::ELEMENTS, TRUE)) {
         continue;
       }
-      $values = array_filter((array) ($input[$identifier] ?? []), static fn ($value): bool => !in_array($value, ['', '0', 'All', NULL], TRUE));
+      $values = array_filter(
+        (array) ($input[$identifier] ?? []),
+        static fn ($value): bool => !in_array($value, ['', '0', 'All', NULL], TRUE),
+      );
       $count += $values === [] ? 0 : 1;
     }
     return $count;

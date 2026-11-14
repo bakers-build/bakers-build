@@ -175,7 +175,7 @@ final class InsightsPage {
                 'range' => ['#type' => 'component', '#component' => 'bb_theme:period-range', '#props' => $props],
               ],
               'controls' => $this->formBuilder->getForm(InsightsFilterForm::class, $scope, $filters, $this->pageUrl($scope)),
-              // Present even when empty, so the first tick has a target to fill.
+              // Present even when empty: the first tick needs a target.
               'actions' => ['#type' => 'container', '#attributes' => ['id' => 'insights-clear']] + $this->clearLink($scope, $filters),
             ],
           ],
@@ -203,7 +203,12 @@ final class InsightsPage {
     if ($chosen === []) {
       return [];
     }
-    $labels = ['epic' => $this->t('Epic'), 'project' => $this->t('Project'), 'team' => $this->t('Team'), 'user' => $this->t('Person')];
+    $labels = [
+      'epic' => $this->t('Epic'),
+      'project' => $this->t('Project'),
+      'team' => $this->t('Team'),
+      'user' => $this->t('Person'),
+    ];
     $entries = InsightsFilterForm::entries($this->options, $scope, $filters);
     $facets = [];
     foreach ($chosen as $key => $uuids) {

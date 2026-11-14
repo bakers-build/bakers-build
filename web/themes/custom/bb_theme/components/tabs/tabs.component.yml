@@ -7,9 +7,10 @@ description: >-
   Horizontal entity tabs, rendered inside `page_header`'s `tabs` slot (IA D12,
   BB-378 D7). Switches the subject of the page inside one entity place — not
   app-level navigation (that is the rail). Each item is a `tab`, a lightweight
-  destination link; exactly one is active and carries a thin underline. The row
-  wraps on narrow viewports. Used on project, team, group, user (View/Edit), My
-  work and settings rows.
+  destination link; exactly one is active and carries a thin underline. From md
+  up the row wraps; below md it stays on one line and scrolls sideways inside
+  itself, opening on the current tab (BAKERS-57). Used on project, team, group,
+  user (View/Edit), My work and settings rows.
 provider: bb_theme
 props:
   type: object

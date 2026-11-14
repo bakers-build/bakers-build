@@ -37,7 +37,7 @@ final class ViewActiveFilterCountSource extends SourcePluginBase {
       $variables = $this->getContextValue('ui_patterns_views:variables');
     }
     catch (\Throwable) {
-      // Outside a rendered view (the Display Builder preview) nothing is chosen.
+      // Outside a rendered view (Display Builder's preview) nothing is chosen.
       return 0;
     }
     return is_array($variables) ? (int) ($variables['bb_active_count'] ?? 0) : 0;
