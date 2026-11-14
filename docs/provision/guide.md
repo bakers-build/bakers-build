@@ -48,7 +48,7 @@ Runtime addons can add tools or discover services, but enabling an addon alone d
 
 ## Check tools and access
 
-Review the [available tools](/provision/tools) and [security context](/provision/security/) before the first run. `provision_up` and addon tools can execute outside the agent sandbox; their scripts and permissions must be trusted. Neither application containers nor worktrees automatically isolate the agent.
+Review the [available tools](/provision/tools) and [security context](/agents/security) before the first run. `provision_up` and addon tools can execute outside the agent sandbox; their scripts and permissions must be trusted. Neither application containers nor worktrees automatically isolate the agent.
 
 <span id="verify-and-isolate"></span>
 

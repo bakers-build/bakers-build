@@ -55,7 +55,6 @@ export const SIDEBAR = {
     ]),
     group("Tools and access", [
       ["Tools and integrations", "/provision/tools"],
-      ["Run agents securely", "/provision/security/"],
     ]),
     group("Machine setup", [
       ["Set up a worker server", "/provision/worker-server"],
@@ -72,8 +71,10 @@ export const SIDEBAR = {
       ["Add lifecycle hooks", "/provision/hooks"],
     ]),
     group("Security", [
-      ["Execution limits", "/provision/security/execution"],
-      ["Machine and project policy", "/provision/security/shared-settings"],
+      ["Permissions and isolation", "/agents/security"],
+      ["Agent permissions", "/provision/security/execution"],
+      ["Isolation models", "/agents/isolation"],
+      ["Configure permissions", "/provision/security/shared-settings"],
       ["Access and data", "/provision/security/access-and-data"],
       ["API keys and service accounts", "/provision/security/credentials"],
     ]),
@@ -83,6 +84,8 @@ export const SIDEBAR = {
       ["Overview", "/agents/"],
       ["Configure and select agents", "/agents/guide"],
       ["Agent policy reference", "/agents/reference"],
+      ["Permissions and isolation", "/agents/security"],
+      ["Isolation models", "/agents/isolation"],
     ]),
   ],
   "/skills-and-workflows/": [
@@ -113,6 +116,7 @@ export const SIDEBAR = {
       ["Messages", "/addons/build/actions"],
       ["Addon API reference", "/addons/build/contracts"],
       ["Executor and workspace API", "/addons/build/executor-workspace"],
+      ["Write a runtime addon", "/addons/build/runtime"],
     ]),
     group("Agents", [
       ["Claude", "/addons/claude"],
