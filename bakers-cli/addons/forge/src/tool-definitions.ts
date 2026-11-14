@@ -58,6 +58,11 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
       properties: {
         branch,
         ref: { type: 'string', description: 'any branch or SHA, read only' },
+        all_runs: {
+          type: 'boolean',
+          description:
+            'every run on the commit; default: only the newest run per workflow',
+        },
       },
     },
   },

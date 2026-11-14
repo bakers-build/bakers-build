@@ -185,7 +185,9 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         ref = pr?.headSha ?? branch;
         base = pr?.base ?? derivedBase(branch, run);
       }
-      const checks = await b.checks(ref, base);
+      const checks = await b.checks(ref, base, {
+        allRuns: req.args.all_runs === true,
+      });
       return json({ ref, base, overall: overall(checks), checks });
     },
 

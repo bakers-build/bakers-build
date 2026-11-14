@@ -108,6 +108,15 @@ function stateStatus(state: string): CheckStatus {
   return state === 'pending' ? 'pending' : 'failure';
 }
 
+interface WorkflowRun {
+  id: number;
+  workflow_id: number;
+  check_suite_id: number;
+  run_started_at: string;
+}
+
+const NO_RUN = { run_id: null, job_id: null, run_started_at: null } as const;
+
 const basic = (token: string) =>
   Buffer.from(`x-access-token:${token}`).toString('base64');
 
@@ -208,15 +217,18 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       )
         .filter((p) => p.base.ref === base)
         .map(prOf),
-    checks: async (ref, base) => {
+    checks: async (ref, base, opts = {}) => {
       const at = encodeURIComponent(ref);
       const b = encodeURIComponent(base);
       const [runs, status, rules, branch] = await Promise.all([
-        api(`/commits/${at}/check-runs?per_page=100`) as Promise<{
+        api(`/commits/${at}/check-runs?filter=all&per_page=100`) as Promise<{
           check_runs: {
+            id: number;
             name: string;
             status: string;
             conclusion: string | null;
+            head_sha: string;
+            check_suite?: { id: number } | null;
           }[];
         }>,
         api(`/commits/${at}/status`) as Promise<{
@@ -243,21 +255,67 @@ const factory: ForgeBackendFactory = async (raw, context) => {
           .map((c) => c.context),
         ...(branch?.protection?.required_status_checks?.contexts ?? []),
       ]);
+      // `ref` may be a branch: the runs lookup needs the commit the check runs report.
+      const sha = runs.check_runs[0]?.head_sha;
+      const workflowRuns = sha
+        ? (
+            (await api(
+              `/actions/runs?head_sha=${encodeURIComponent(sha)}&per_page=100`,
+            )) as { workflow_runs: WorkflowRun[] }
+          ).workflow_runs
+        : [];
+      const bySuite = new Map(workflowRuns.map((w) => [w.check_suite_id, w]));
+      const newest = new Map<number, WorkflowRun>();
+      for (const w of workflowRuns) {
+        const kept = newest.get(w.workflow_id);
+        if (
+          !kept ||
+          w.run_started_at > kept.run_started_at ||
+          (w.run_started_at === kept.run_started_at && w.id > kept.id)
+        )
+          newest.set(w.workflow_id, w);
+      }
+      let jobs = runs.check_runs.map((r) => ({
+        r,
+        w: r.check_suite ? bySuite.get(r.check_suite.id) : undefined,
+      }));
+      if (!opts.allRuns) {
+        jobs = jobs.filter(({ w }) => !w || newest.get(w.workflow_id) === w);
+        // A re-run attempt is a newer check run of the same name in the same run.
+        const latest = new Map<string, number>();
+        const key = (j: (typeof jobs)[number]) => `${j.w?.id ?? ''}\0${j.r.name}`;
+        for (const j of jobs)
+          latest.set(key(j), Math.max(latest.get(key(j)) ?? 0, j.r.id));
+        jobs = jobs.filter((j) => latest.get(key(j)) === j.r.id);
+      }
       const rows: ForgeCheck[] = [
-        ...runs.check_runs.map((r) => ({
+        ...jobs.map(({ r, w }) => ({
           name: r.name,
           status: runStatus(r),
           required: required.has(r.name),
+          conclusion: r.conclusion,
+          run_id: w?.id ?? null,
+          // An Actions job's id is its check run's id.
+          job_id: w ? r.id : null,
+          run_started_at: w?.run_started_at ?? null,
         })),
         ...status.statuses.map((st) => ({
           name: st.context,
           status: stateStatus(st.state),
           required: required.has(st.context),
+          conclusion: st.state,
+          ...NO_RUN,
         })),
       ];
       for (const name of required)
         if (!rows.some((r) => r.name === name))
-          rows.push({ name, status: 'missing', required: true });
+          rows.push({
+            name,
+            status: 'missing',
+            required: true,
+            conclusion: null,
+            ...NO_RUN,
+          });
       return rows;
     },
     mergeBlocker: async (pr) => {

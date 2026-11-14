@@ -59,8 +59,15 @@ export interface ForgeBackend {
     input: { title: string; body: string },
   ): Promise<ForgePr>;
   openPrsWithBase(base: string): Promise<ForgePr[]>;
-  /** Checks on `ref` (a SHA or branch), `required` as `base`'s rules say. */
-  checks(ref: string, base: string): Promise<ForgeCheck[]>;
+  /**
+   * Checks on `ref` (a SHA or branch), `required` as `base`'s rules say. Only
+   * the newest run per workflow unless `allRuns`, where the forge has several.
+   */
+  checks(
+    ref: string,
+    base: string,
+    opts?: { allRuns?: boolean },
+  ): Promise<ForgeCheck[]>;
   /** A conflict or a not yet computed mergeability is a reason. */
   mergeBlocker(pr: ForgePr): Promise<string | undefined>;
   /** Merges with every option sent explicitly; deletes the source when asked. */

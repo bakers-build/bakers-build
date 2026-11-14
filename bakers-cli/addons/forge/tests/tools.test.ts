@@ -57,8 +57,8 @@ function fakeBackend(options: {
       return { ...pr, title };
     },
     openPrsWithBase: async (base) => prs.filter((p) => p.base === base),
-    checks: async (ref, base) => {
-      calls.push(`checks:${ref}:${base}`);
+    checks: async (ref, base, opts) => {
+      calls.push(`checks:${ref}:${base}${opts?.allRuns ? ':all' : ''}`);
       return options.checks ?? [];
     },
     mergeBlocker: async () => options.blocker,
@@ -291,6 +291,8 @@ describe('forge tools', () => {
       (await tools.forge_checks!(request({ ref: 'main' }))).text,
     );
     expect(any.ref).toBe('main');
+    await tools.forge_checks!(request({ all_runs: true }));
+    expect(calls).toContain('checks:abc:next:all');
   });
 
   it('forge_merge refuses: not owned, no PR, wrong target, bad title, conflict, required check not green', async () => {
