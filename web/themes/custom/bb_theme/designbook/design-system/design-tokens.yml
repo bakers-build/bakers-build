@@ -75,6 +75,17 @@ primitive:
             Intake decision 2026-11-11 from the approved BAKERS-56 spec (D15): a
             list line row is 56px for a one-line title at compact density; the
             reference states the same value for a two-line list row.
+    touch-h:
+      $value: 44px
+      $type: dimension
+      $description: Minimum touch-target box on phones.
+      $extensions:
+        designbook:
+          provenance: addition
+          note: >-
+            Reference-free intake decision 2026-11-14 (BAKERS-57, plan Task 3):
+            44px is a physical minimum touch target, so it has no cozy override
+            and does not take the +6px cozy step.
     radius:
       '5':
         $value: 5px
@@ -964,6 +975,13 @@ component:
     height:
       $value: '{primitive.layout.control-h}'
       $type: dimension
+  touch:
+    target:
+      $value: '{primitive.layout.touch-h}'
+      $type: dimension
+      $description: >-
+        Minimum height and width of a tappable control on phones (44px in every
+        density).
   list:
     row:
       height:

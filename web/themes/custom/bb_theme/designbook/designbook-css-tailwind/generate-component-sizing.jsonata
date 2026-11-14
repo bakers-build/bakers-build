@@ -21,7 +21,9 @@
     "  --spacing-row-md: " & $normalizeCssValue($base."row-h-md"."$value") & ";",
     "  --spacing-row-lg: " & $normalizeCssValue($base."row-h-lg"."$value") & ";",
     "  --spacing-control: " & $normalizeCssValue($base."control-h"."$value") & ";",
-    "  --spacing-list-row: " & $normalizeCssValue($base."line-row-h"."$value") & ";"
+    "  --spacing-list-row: " & $normalizeCssValue($base."line-row-h"."$value") & ";",
+    /* Touch-target minimum: a physical size, so no cozy override. */
+    "  --spacing-touch: " & $normalizeCssValue($base."touch-h"."$value") & ";"
   ];
   /* Compact brand geometry: fixed component values, so no cozy override. */
   $brandLines := $each($$.component.brand.compact, function($v, $k) {
