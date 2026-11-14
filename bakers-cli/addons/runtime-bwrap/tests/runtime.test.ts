@@ -335,6 +335,58 @@ it('mounts the run Git directory as .git, no parent Git, and protected paths rea
   await runtime.cleanup(run);
 });
 
+it.skipIf(!existsSync('/etc/alternatives'))(
+  'mounts the host alternatives read-only so links like /usr/bin/awk resolve',
+  async () => {
+    const runtime = make();
+    const context = await runtime.prepareRun!(run);
+    await runtime.wrap({
+      command: 'true',
+      env: {},
+      workspacePath: ws,
+      gitDir: clone.gitDir,
+      run,
+      harness: 'any',
+      ...context,
+    });
+    expect(mountsOf()).toContainEqual([
+      '--ro-bind',
+      '/etc/alternatives',
+      '/etc/alternatives',
+    ]);
+    await runtime.cleanup(run);
+  },
+);
+
+it('mounts the whole package of a linked program so it can load its own modules', async () => {
+  const pkg = join(root, 'node/lib/node_modules/@scope/tool');
+  mkdirSync(join(pkg, 'bin'), { recursive: true });
+  writeFileSync(join(pkg, 'bin/cli.js'), '', { mode: 0o755 });
+  const bin = join(root, 'node/bin');
+  mkdirSync(bin);
+  symlinkSync(join(pkg, 'bin/cli.js'), join(bin, 'tool'));
+  const runtime = bwrapRuntime(
+    { readPaths: [] },
+    {
+      cachePath: join(root, 'cache'),
+      cliRoot: join(root, 'cli'),
+      env: { ...process.env, PATH: bin },
+    },
+  );
+  const context = await runtime.prepareRun!(run);
+  await runtime.wrap({
+    command: 'true',
+    env: {},
+    workspacePath: ws,
+    gitDir: clone.gitDir,
+    run,
+    harness: 'any',
+    ...context,
+  });
+  expect(mountsOf()).toContainEqual(['--ro-bind', pkg, pkg]);
+  await runtime.cleanup(run);
+});
+
 it('mounts the parent objects read-only only for a shared clone', async () => {
   const runtime = make();
   const context = await runtime.prepareRun!(run);

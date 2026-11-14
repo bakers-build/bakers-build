@@ -29,7 +29,10 @@ describe('assertProtectedEntryPoints', () => {
           before_run: 'bash .bakers/scripts/worktree-deps.sh',
           after_done: 'bash .bakers/scripts/docs-preview.sh stop; ddev delete',
           provision_up: { deps: 'bash .bakers/provision.sh deps' },
-          provision_exec: { drush: 'bash .bakers/provision.sh exec drush' },
+          provision_exec: {
+            phpcs: 'bash .bakers/provision.sh exec phpcs',
+            uli: { command: 'bash .bakers/provision.sh exec uli', args: true },
+          },
         },
         protectedPaths,
       ),
@@ -43,6 +46,10 @@ describe('assertProtectedEntryPoints', () => {
     [{ provision_up: 'bash scripts/up.sh' }, /hooks\.provision_up/],
     [{ provision_up: { a: 'make up' } }, /hooks\.provision_up\.a/],
     [{ provision_exec: { t: 'ddev exec' } }, /hooks\.provision_exec\.t/],
+    [
+      { provision_exec: { t: { command: 'ddev exec', args: true } } },
+      /hooks\.provision_exec\.t/,
+    ],
     [{ on_freeze: 'bash .bakers/../scripts/x.sh' }, /hooks\.on_freeze/],
     [{ on_resume: 'bash /tmp/x.sh' }, /hooks\.on_resume/],
     [{ after_run: 'bash .bakersx/x.sh' }, /hooks\.after_run/],

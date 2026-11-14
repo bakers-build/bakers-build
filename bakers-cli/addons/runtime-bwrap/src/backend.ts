@@ -46,6 +46,8 @@ const SYSTEM = [
   '/etc/group',
   '/etc/nsswitch.conf',
   '/etc/localtime',
+  // Debian alternatives: /usr/bin/awk and friends are links into it.
+  '/etc/alternatives',
 ];
 const launcher = fileURLToPath(
   new URL(
@@ -69,7 +71,11 @@ function softwarePaths(env: BwrapDeps['env']): string[] {
           const target = realpathSync(entry);
           if (lstatSync(target).isFile()) {
             accessSync(target, constants.X_OK);
-            paths.push(target);
+            // A Node program such as npm loads its own modules: mount its package, not one file.
+            const pkg = /^(.*\/node_modules\/(?:@[^/]+\/)?[^/]+)\//.exec(
+              target,
+            );
+            paths.push(pkg?.[1] ?? target);
           }
         }
       } catch {

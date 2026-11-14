@@ -115,14 +115,33 @@
           ]
         },
         "provision_exec": {
-          "description": "Commands by key, offered to runs as provision_exec(key, args). Arguments follow the command as argv, never through a shell.",
+          "description": "Commands by key, offered to runs as provision_exec(key, args). A string is a fixed command that takes no arguments; { command, args: true } also passes the run's arguments as argv after --, never through a shell.",
           "type": "object",
           "propertyNames": {
             "pattern": "^[A-Za-z0-9_-]+$"
           },
           "additionalProperties": {
-            "type": "string",
-            "minLength": 1
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "required": ["command"],
+                "properties": {
+                  "command": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "args": {
+                    "description": "Pass the run's arguments to the command.",
+                    "type": "boolean"
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
           }
         }
       },
