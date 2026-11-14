@@ -481,7 +481,8 @@ final class RunCanonicalViewTest extends KernelTestBase {
     $item = $source->getPropValue()[0];
     self::assertSame('dispatch exploded', $item['detail']);
     self::assertArrayNotHasKey('log', $item['cells']);
-    $operations = $this->container->get('module_handler')->invokeAll('entity_operation', [$this->run, new CacheableMetadata()]);
+    $operations = $this->container->get('module_handler')
+      ->invokeAll('entity_operation', [$this->run, new CacheableMetadata()]);
     self::assertArrayNotHasKey('log', $operations);
     self::assertArrayNotHasKey('error_log', $operations);
   }
