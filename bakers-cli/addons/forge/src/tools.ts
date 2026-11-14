@@ -64,10 +64,20 @@ const json = (value: unknown): ToolResult => ({
   text: JSON.stringify(value, null, 2),
 });
 
-/** Failure first, then pending, over the required checks. */
-export function overall(checks: readonly ForgeCheck[]): ForgeCheck['status'] {
-  const required = checks.filter((c) => c.required);
-  if (required.some((c) => c.status === 'failure')) return 'failure';
+export type Overall = 'success' | 'failure' | 'pending' | 'no_required_checks';
+
+/** Required by the forge, or the aggregate check a workflow names `required`. */
+export const isRequired = (c: ForgeCheck): boolean =>
+  c.required || c.name === 'required';
+
+const isRed = (c: ForgeCheck): boolean =>
+  c.status === 'failure' || c.conclusion === 'skipped';
+
+/** Failure first, then pending, over the required checks; none required is never green. */
+export function overall(checks: readonly ForgeCheck[]): Overall {
+  const required = checks.filter(isRequired);
+  if (required.length === 0) return 'no_required_checks';
+  if (required.some(isRed)) return 'failure';
   if (required.some((c) => c.status !== 'success')) return 'pending';
   return 'success';
 }
@@ -200,12 +210,16 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const blocker = await b.mergeBlocker(pr);
       if (blocker) throw new Error(`PR/MR ${pr.url} cannot merge: ${blocker}`);
       const checks = await b.checks(pr.headSha, pr.base);
+      if (overall(checks) === 'no_required_checks')
+        throw new Error(
+          `PR/MR ${pr.url} cannot merge: no required checks reported`,
+        );
       const notGreen = checks.filter(
-        (c) => c.required && c.status !== 'success',
+        (c) => isRequired(c) && (isRed(c) || c.status !== 'success'),
       );
       if (notGreen.length > 0)
         throw new Error(
-          `PR/MR ${pr.url} has required checks that are not green: ${notGreen.map((c) => `${c.name} (${c.status})`).join(', ')}`,
+          `PR/MR ${pr.url} has required checks that are not green: ${notGreen.map((c) => `${c.name} (${c.conclusion ?? c.status})`).join(', ')}`,
         );
       const rule = mergeRule(deps.settings, base);
       const dependents = (await b.openPrsWithBase(branch)).filter(

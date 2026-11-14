@@ -25,6 +25,13 @@ export interface ForgeCheck {
   readonly status: CheckStatus;
   /** Required by the base branch's rules (GitHub) or not allowed to fail (GitLab). */
   readonly required: boolean;
+  /** The forge's own verdict (`cancelled`, `skipped`, `timed_out`, ...); null while running. */
+  readonly conclusion: string | null;
+  /** GitHub Actions run / GitLab pipeline; null for a commit status. */
+  readonly run_id: number | null;
+  /** The id `forge_job_log` reads; null when the row is no job. */
+  readonly job_id: number | null;
+  readonly run_started_at: string | null;
 }
 
 export interface ForgeMerge {

@@ -8,7 +8,12 @@ import type { ForgeBackend, ForgeCheck, ForgePr } from '../src/backend.js';
 import { mergeRule } from '../src/config.js';
 import { tools as presetTools } from '../src/preset.js';
 import { FORGE_TOOL_DEFINITIONS } from '../src/tool-definitions.js';
-import { FORGE_NEEDS_RUN, forgeTools, toolsFor } from '../src/tools.js';
+import {
+  FORGE_NEEDS_RUN,
+  forgeTools,
+  overall,
+  toolsFor,
+} from '../src/tools.js';
 import { git, gitFixture, markerRan } from './git-fixture.js';
 
 const SECRET = 'tok-SECRET-123';
@@ -98,9 +103,25 @@ const pr = (over: Partial<ForgePr> = {}): ForgePr => ({
   ...over,
 });
 
+const row = (
+  name: string,
+  status: ForgeCheck['status'],
+  required: boolean,
+  over: Partial<ForgeCheck> = {},
+): ForgeCheck => ({
+  name,
+  status,
+  required,
+  conclusion: null,
+  run_id: null,
+  job_id: null,
+  run_started_at: null,
+  ...over,
+});
+
 const green: ForgeCheck[] = [
-  { name: 'required', status: 'success', required: true },
-  { name: 'optional', status: 'failure', required: false },
+  row('required', 'success', true),
+  row('optional', 'failure', false),
 ];
 
 describe('forge tools', () => {
@@ -259,7 +280,7 @@ describe('forge tools', () => {
   it('forge_checks reports rows, required flags and the overall status of the PR head', async () => {
     const { backend, calls } = fakeBackend({
       prs: [pr()],
-      checks: [...green, { name: 'e2e', status: 'pending', required: true }],
+      checks: [...green, row('e2e', 'pending', true)],
     });
     const tools = forgeTools({ backend: async () => backend, settings: {} });
     const out = JSON.parse((await tools.forge_checks!(request({}))).text);
@@ -290,7 +311,7 @@ describe('forge tools', () => {
       [
         {
           prs: [pr()],
-          checks: [{ name: 'required', status: 'pending', required: true }],
+          checks: [row('required', 'pending', true)],
         },
         {},
         /required \(pending\)/,
@@ -298,7 +319,7 @@ describe('forge tools', () => {
       [
         {
           prs: [pr()],
-          checks: [{ name: 'required', status: 'failure', required: true }],
+          checks: [row('required', 'failure', true)],
         },
         {},
         /required \(failure\)/,
@@ -306,10 +327,34 @@ describe('forge tools', () => {
       [
         {
           prs: [pr()],
-          checks: [{ name: 'required', status: 'missing', required: true }],
+          checks: [row('required', 'missing', true)],
         },
         {},
         /required \(missing\)/,
+      ],
+      [
+        {
+          prs: [pr()],
+          checks: [row('required', 'success', true, { conclusion: 'skipped' })],
+        },
+        {},
+        /required \(skipped\)/,
+      ],
+      [
+        { prs: [pr()], checks: [row('build', 'failure', false)] },
+        {},
+        /no required checks reported/,
+      ],
+      [
+        {
+          prs: [pr()],
+          checks: [
+            row('ci', 'success', true),
+            row('required', 'failure', false, { conclusion: 'failure' }),
+          ],
+        },
+        {},
+        /required \(failure\)/,
       ],
     ];
     for (const [options, args, error] of cases) {
@@ -414,6 +459,33 @@ describe('forge tools', () => {
       (e: Error) => e.message,
     );
     expect(err).toBe('401 for token [redacted]');
+  });
+});
+
+describe('overall', () => {
+  it.each([
+    ['failure', row('ci', 'failure', true, { conclusion: 'failure' }), 'failure'],
+    ['cancelled', row('ci', 'failure', true, { conclusion: 'cancelled' }), 'failure'],
+    ['timed_out', row('ci', 'failure', true, { conclusion: 'timed_out' }), 'failure'],
+    ['skipped', row('ci', 'success', true, { conclusion: 'skipped' }), 'failure'],
+    ['pending', row('ci', 'pending', true), 'pending'],
+    ['missing', row('ci', 'missing', true), 'pending'],
+  ] as const)('a required %s check is never success', (_, check, want) => {
+    expect(overall([row('lint', 'success', true), check])).toBe(want);
+  });
+
+  it('reports no_required_checks, not success, when no check is required', () => {
+    expect(overall([])).toBe('no_required_checks');
+    expect(overall([row('build', 'success', false)])).toBe('no_required_checks');
+  });
+
+  it('counts a check named required as required even when unflagged', () => {
+    expect(overall([row('required', 'failure', false)])).toBe('failure');
+    expect(overall([row('required', 'success', false)])).toBe('success');
+  });
+
+  it('is success when every required check is green, whatever the others say', () => {
+    expect(overall(green)).toBe('success');
   });
 });
 
