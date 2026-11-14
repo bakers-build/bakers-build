@@ -185,8 +185,14 @@ async function runChild(args: string[]): Promise<string | undefined> {
     });
     return undefined;
   } catch (err) {
-    const { stderr, message } = err as { stderr?: string; message: string };
-    return stderr?.trim().split('\n').slice(-20).join('\n') || message;
+    const { stderr, stdout, message } = err as {
+      stderr?: string;
+      stdout?: string;
+      message: string;
+    };
+    // `config upgrade` reports a blocked migration on stdout, not stderr.
+    const output = stderr?.trim() || stdout?.trim();
+    return output?.split('\n').slice(-20).join('\n') || message;
   }
 }
 
