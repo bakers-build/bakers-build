@@ -59,11 +59,37 @@ final class BbRunAccessControlHandler extends EntityAccessControlHandler {
   ];
 
   /**
+   * The fields that carry a log's content, file reference or checksum.
+   *
+   * The `*_bytes` sizes stay readable: rows use them to tell whether a log
+   * exists.
+   */
+  private const LOG_FIELDS = [
+    'log',
+    'error_log',
+    'log_file',
+    'error_log_file',
+    'log_sha256',
+    'error_log_sha256',
+  ];
+
+  /**
    * Grants view and update access to the conductor that owns the run entity.
    *
    * {@inheritdoc}
    */
   protected function checkAccess(EntityInterface $entity, $operation, AccountInterface $account): AccessResultInterface {
+    if ($operation === 'view_log') {
+      // Logs may carry paths and tool output: reading them follows managing
+      // the run (admin, owner, ticket editor), not viewing it.
+      $admin = AccessResult::allowedIfHasPermission($account, (string) $this->entityType->getAdminPermission());
+      if ($admin->isAllowed()) {
+        return $admin;
+      }
+      return $this->ownerAccess($entity, 'view', $account)
+        ?? $this->ticketEditorAccess($entity, 'update', $account)
+        ?? AccessResult::neutral()->cachePerUser()->addCacheableDependency($admin)->addCacheableDependency($entity);
+    }
     $result = parent::checkAccess($entity, $operation, $account);
     if ($result->isAllowed()) {
       return $result;
@@ -109,10 +135,17 @@ final class BbRunAccessControlHandler extends EntityAccessControlHandler {
    * {@inheritdoc}
    */
   protected function checkFieldAccess($operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items = NULL): AccessResultInterface {
+    $run = $items?->getEntity();
+    if ($operation === 'view' && $run instanceof BbRunInterface
+      && in_array($field_definition->getName(), self::LOG_FIELDS, TRUE)) {
+      $log_access = $run->access('view_log', $account, TRUE);
+      return $log_access->isAllowed()
+        ? parent::checkFieldAccess($operation, $field_definition, $account, $items)
+        : AccessResult::forbidden('Reading a run log needs the right to manage the run.')->addCacheableDependency($log_access);
+    }
     if ($operation !== 'edit' || $account->hasPermission('administer bakers')) {
       return parent::checkFieldAccess($operation, $field_definition, $account, $items);
     }
-    $run = $items?->getEntity();
     // A ticket editor cancels a run they do not own. Only the state field,
     // and only on the strength of ticket update access, is delegated. This
     // check runs regardless of `register bakers conductor`: that permission is

@@ -24,6 +24,7 @@ permissions:
   - 'view bb_comment'
   - 'view bb_group'
   - 'view bb_project'
+  - 'view bb_run'
   - 'view bb_team'
   - 'view bb_term'
   - 'view bb_ticket'
