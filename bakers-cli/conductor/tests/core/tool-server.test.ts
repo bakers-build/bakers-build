@@ -88,6 +88,69 @@ describe('conductor tool server', () => {
     await client.close();
   });
 
+  it("gives a run call a reader of its ticket's current server copy, never persisted", async () => {
+    const home = mkdtempSync(join(tmpdir(), 'bb-tool-current-'));
+    const reads: string[] = [];
+    server = await startToolServer({
+      registry: await loadTools([
+        {
+          name: 'demo',
+          version: '1.0.0',
+          tools: {
+            contract: 1,
+            tools: { current: { description: 'Current ticket' } },
+            handlers: async () => ({
+              current: async (req) => ({
+                text: req.currentTicket
+                  ? JSON.stringify(await req.currentTicket())
+                  : 'none',
+              }),
+            }),
+          },
+        },
+      ]),
+      endpointFile: join(home, 'c1.json'),
+      readTicket: async (uuid) => {
+        reads.push(uuid);
+        return { identifier: 'BB-9', uuid, targetBranch: 'main' };
+      },
+    });
+    const run = await connect(
+      server.url,
+      server.issueRunToken('run-1', {
+        worktreePath: '/work/bb-9',
+        ticket: { identifier: 'BB-9', uuid: 't-9', targetBranch: 'next' },
+      }),
+    );
+    const result = await run.callTool({ name: 'current', arguments: {} });
+    expect(result.content).toEqual([
+      {
+        type: 'text',
+        text: JSON.stringify({
+          identifier: 'BB-9',
+          uuid: 't-9',
+          targetBranch: 'main',
+        }),
+      },
+    ]);
+    expect(reads).toEqual(['t-9']);
+    const noUuid = await connect(
+      server.url,
+      server.issueRunToken('run-2', {
+        worktreePath: '/work/bb-1',
+        ticket: { identifier: 'BB-1' },
+      }),
+    );
+    expect(
+      (await noUuid.callTool({ name: 'current', arguments: {} })).content,
+    ).toEqual([{ type: 'text', text: 'none' }]);
+    expect(readFileSync(join(home, 'c1.tools.json'), 'utf8')).not.toContain(
+      'currentTicket',
+    );
+    await run.close();
+    await noUuid.close();
+  });
+
   it('refuses a worktree argument and reports handler errors as isError', async () => {
     server = await startToolServer({ registry: await registry() });
     const client = await connect(

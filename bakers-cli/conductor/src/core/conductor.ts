@@ -408,6 +408,7 @@ export class Conductor {
       ...(siteTools ? { siteTools } : {}),
       ...(hosts.length > 0 ? { hosts } : {}),
       onSiteWrite: (b) => this.signalUi(b.worktreePath),
+      readTicket: (uuid) => this.remote.getTicket(uuid),
     });
     this.logger.info(
       { conductorId: this.config.conductor_id, url: this.toolServer.url },

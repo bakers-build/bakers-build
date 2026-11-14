@@ -2,7 +2,7 @@
 
 **Five conductor tools through which a sandboxed run fetches, pushes, opens its PR/MR, reads checks and merges, while the token stays with the conductor.**
 
-For operators who run agents in `sandbox` permissions without trusting `git`, `gh` or `glab`. Background: the decision record `docs/decisions/sandbox-forge-tools.md`.
+For operators who run agents in `sandbox` permissions without trusting `git`, `gh` or `glab`. Background: decision record `docs/decisions/sandbox-forge-tools.md`.
 
 ## Enable it
 
@@ -44,11 +44,11 @@ Without a `forge` entry no tool is served. An entry without `backend.use` stops 
 
 `overall` is `success` only when every required check, including one named `required`, is green; none required gives `no_required_checks`.
 
-Human approval stays the workflow's merge gate.
+Human approval stays the merge gate.
 
 ## Ownership and merge
 
-Tools take the ticket, `branch_name`, `base_branch` and `target_branch` from the calling run; a call without a run is refused. A run owns `<branch_name>` and `<branch_name>-<suffix>`. The ticket branch merges into `target_branch` (a deployment's environment branch, else `base_branch`), a variant into the ticket branch. The merge sends method and source deletion explicitly, ends the body with `Merged-by: bakers.build` and `ref:<identifier>`, and keeps a source another open PR/MR targets.
+Tools take the ticket, `branch_name` and `base_branch` from the calling run; a call without a run is refused. A run owns `<branch_name>` and `<branch_name>-<suffix>`. A variant merges into the ticket branch, the ticket branch into the server's current `target_branch` (else `base_branch`); a failed read refuses. The merge sends method and source deletion explicitly, ends the body with `Merged-by: bakers.build` and `ref:<identifier>`, and keeps a source another open PR/MR targets.
 
 ## Isolation
 

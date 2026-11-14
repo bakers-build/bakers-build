@@ -31,7 +31,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { CONDUCTOR_TOOLS_SERVER } from '../plugins/agent.js';
-import type { SiteToolClient } from '../plugins/remote.js';
+import type { SiteToolClient, Ticket } from '../plugins/remote.js';
 import type { ToolBinding, ToolRegistry } from '../plugins/tools.js';
 import { SITE_TOOLS, SITE_WRITE_TOOLS, siteToolProxy } from './site-tools.js';
 
@@ -67,6 +67,10 @@ export interface ToolServerOptions {
   openRuns?: string[];
   /** Further addresses to listen on, on the same port (a runtime's container network). */
   hosts?: string[];
+  /** Reads a ticket from the server; run calls get it as `currentTicket`. */
+  readTicket?: (
+    uuid: string,
+  ) => Promise<Partial<Ticket> & { identifier: string }>;
 }
 
 const newToken = () => randomBytes(32).toString('hex');
@@ -198,10 +202,15 @@ export async function startToolServer(
           }
           return result;
         }
+        const uuid = binding.ticket?.uuid;
+        const { readTicket } = options;
         const result = await registry.call(
           request.params.name,
           request.params.arguments,
-          binding,
+          // Added per call, so the persisted grant never holds it.
+          readTicket && uuid
+            ? { ...binding, currentTicket: () => readTicket(uuid) }
+            : binding,
           { signal: extra.signal, ...(logger ? { logger } : {}) },
         );
         return { content: [{ type: 'text', text: result.text }] };

@@ -47,6 +47,8 @@ export interface ToolBinding {
   worktreePath: string;
   /** The run's ticket; an operator call may know only its identifier. */
   ticket?: Partial<Ticket> & { identifier: string };
+  /** Reads the run's ticket from the server at call time; never persisted. */
+  currentTicket?: () => Promise<Partial<Ticket> & { identifier: string }>;
 }
 
 export interface ToolRequest extends ToolBinding {
