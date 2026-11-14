@@ -8,6 +8,12 @@ description: Recipe for tickets of type verification — re-verify a subject tic
 The ticket's `parent_id` is the subject, its one `environments` entry the target (`base_url`), and
 its `referenced_tickets` collects the regressions it files.
 
+## bb-gates
+
+| Type | Gates |
+|---|---|
+| verification | default |
+
 ## bb-state-plan
 
 ### bb-phase-work
