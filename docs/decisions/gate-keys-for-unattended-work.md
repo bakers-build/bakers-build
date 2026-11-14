@@ -85,8 +85,8 @@ A label says which gates the run passes on its own. It stays fixed for the ticke
 | Label | A person passes | The run passes |
 |---|---|---|
 | none | every gate | none; it does the work between gates |
-| `human-review` | `verdict` and `merge`, as the ticket's reviewer | every other gate, up to the published verdict |
-| `human-accept` | `result`; also `verdict`, as the reviewer, when a planned change touches the risk list | every other gate; merges after acceptance |
+| `human-review` | `verdict` and `merge`, as the ticket's reviewer; `criterion` | every other gate, up to the published verdict |
+| `human-accept` | `result`; `criterion`; also `verdict`, as the reviewer, when a planned change touches the risk list | every other gate; merges after acceptance |
 | `auto` | only a user question on what the criteria leave open, and `result` when that happened (unchanged) | everything else, `criterion` and merge included |
 
 - **Risk list** (from `bb-label-auto`): a dependency, the data model, a public interface,
@@ -98,16 +98,21 @@ A label says which gates the run passes on its own. It stays fixed for the ticke
   what the result looks like, is no `criterion` under this label. The run decides it, records it
   under `Decisions` and leaves it to the reviewer at `verdict`; the requester confirmed this in
   review.
+- **Who decides a `criterion`** under `human-review` and `human-accept`: the ticket's assignee, or
+  the reviewer when the assignee is a bot. The requester chose this in working. Nothing marks a
+  user as a bot yet, so every assignee counts as a person until the follow-up flag exists.
 - **Deployment and verification**: `human-review` and `human-accept` do not apply; a run that finds
-  one stops with a question. `auto` keeps today's behavior.
+  one stops and asks for `auto` or no label. `auto` keeps today's behavior.
+- **Label rules** (one label, deployment and verification, who decides a `criterion`) are written
+  once, in `gates.md` › *Label rules*; the label skills link to them.
 - **`human-review` without a reviewer** stops with a question at the first state that finds it.
 - **One label per ticket**: `auto` beside one `human-*` label is read as that `human-*` label
   alone; `human-review` beside `human-accept` stops with a question asking which applies. The
   requester chose the names in review: the earlier `auto-` names read as the run reviewing
   or accepting.
 - **`ticket-question`** stays a modifier on any label: it decides where the run asks, never which
-  gates it passes. No rule is derived from the assignee, because an empty assignee becomes the
-  conductor's owner.
+  gates it passes. No gate set is derived from the assignee, because an empty assignee becomes the
+  conductor's owner; the assignee only names who decides a `criterion`.
 - The recipient profile decides no gate.
 
 ## 4. Defaults by starter and type
@@ -143,8 +148,9 @@ for a person. Questions go to the session, or to the ticket under `ticket-questi
 | done | reached only after an authorized merge | after the reviewer's merge authorization | after acceptance (and the reviewer's verdict when due) | after the merge |
 
 Under every label: a failed check or `Not OK` verdict goes back to `working` when coding can fix
-it; a technical problem ends the run; a `criterion` waits for a person, except under `auto`, which
-decides it itself and asks only what is the user's to decide.
+it; a technical problem ends the run; a `criterion` waits for a person (under a `human-*` label
+the assignee, or the reviewer when the assignee is a bot), except under `auto`, which decides it
+itself and asks only what is the user's to decide.
 
 ## 6. Visibility and recording
 
@@ -199,10 +205,11 @@ migration. The implementation changed:
   declared type and requires each state's always-read references to link the `### Gates` record; the `bb-label-auto` skill-eval profile also serves the two new label skills, with
   the fixtures `label-human-review-*` and `label-human-accept-*` and their cases in
   `bakers-cli/core/tests/workflow/skill-state-evals.test.ts`; the simulated ticket read in
-  `tests/skill-eval/tool-server.py` returns `reviewers`, as the real tool does. The `state-outtake`
+  `tests/skill-eval/tool-server.py` returns `reviewers` and `assignee`, as the real tool does. The `state-outtake`
   profile gains a `gates` check with the fixture `outtake-gates-unlabelled` and its case in
   `tests/skill-eval/cli-contract.mjs` and `contract-fixture.json`. The existing `auto` review-state
   fixtures are renamed `auto-in-review-*` and `auto-content-decision-accepted`, so that no name
   reads like a former label; their behaviour is unchanged.
 - **Follow-up**: label terms `human-review` and `human-accept` in each workspace; label-permission
-  enforcement in `bb_core`; an optional metric on `followed: no`.
+  enforcement in `bb_core`; a bot flag on the user, so the label rules can tell a bot assignee; an
+  optional metric on `followed: no`.

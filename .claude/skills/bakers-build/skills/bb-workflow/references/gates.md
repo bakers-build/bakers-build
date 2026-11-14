@@ -1,7 +1,7 @@
 # Gates
 
 A **gate** is a named human wait of this frame. Without a label a person passes every gate; a
-`bb-label-<label>` skill names the gates its run passes on its own. Every other gate waits for a
+`bb-label-<label>` skill says which gates its run passes on its own. Every other gate waits for a
 person, in the session or, under `ticket-question`, through the ticket.
 
 | Gate | State | A person… |
@@ -29,6 +29,17 @@ A recipe's `## bb-gates` holds one `| <type> | <gates> |` row per declared type.
 it writes `default`, or `default` plus added gates; it removes none. For its own type the row lists
 every gate; a missing row fails the *Stop rule*. A recipe gate reads "a person confirms <what> in
 <state>/<phase>" and is named `<recipe>:<gate>`; only `auto` passes it on its own.
+
+## Label rules
+
+Apply them before any label skill:
+
+- `auto` beside one `human-*` label: follow that `human-*` skill alone.
+- `human-review` beside `human-accept`: stop with a question asking which applies.
+- Type `deployment` or `verification` with a `human-*` label: stop with a question asking for
+  `auto` or no label.
+- Under a `human-*` label the assignee decides a `criterion`; the reviewer does when the assignee
+  is a bot. Nothing marks a bot yet: every assignee counts as a person.
 
 ## Risk list
 

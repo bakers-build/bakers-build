@@ -605,6 +605,17 @@ describe('bb-label-auto profile', () => {
       'auto-merge',
     ]);
   });
+  it.each([
+    'label-human-review-criterion',
+    'label-human-accept-criterion',
+  ])('%s stops a criterion for a person and moves nothing', async (id) => {
+    const read = [readTicket()];
+    expect(await judge(id, 'Asked.', [...read, shown, asked])).toEqual([]);
+    expect(await judge(id, 'Moved.', [...read, transition('review')])).toEqual([
+      'auto-question',
+      'auto-transition',
+    ]);
+  });
   it('human-accept stops an OK verdict with a planned risky change for the reviewer', async () => {
     const id = 'label-human-accept-review-risky';
     const passed = [readTicket(), verdict('OK'), summary];

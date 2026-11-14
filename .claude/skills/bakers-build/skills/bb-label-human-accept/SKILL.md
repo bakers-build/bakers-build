@@ -5,17 +5,17 @@ description: "Use when a ticket labelled `human-accept` runs, in any state: carr
 
 # Human accept
 
+Apply the [label rules](../bb-workflow/references/gates.md#label-rules) first.
+
 The label `human-accept` passes every [gate](../bb-workflow/references/gates.md) on its own except
-`result`, recipe gates (`<recipe>:<gate>`) and, when a planned change touches the
+`result`, `criterion`, recipe gates (`<recipe>:<gate>`) and, when a planned change touches the
 [risk list](../bb-workflow/references/gates.md#risk-list), `verdict`. It authorizes every
 transition, its origin status and, once `result` and any due `verdict` are passed, the merge.
 Decide technical questions yourself and record each decision with its reason under `Decisions` in
 the handoff.
 
-Stop with a question at the first state that finds the ticket of type `deployment` or
-`verification`, where the label does not apply, or also labelled `human-review`: ask which label
-applies. A `criterion` waits for a person. An unplanned
-risky change ends the run as a technical problem.
+A `criterion` stops with a question for the person the label rules name. An unplanned risky change
+ends the run as a technical problem.
 
 | State | The run |
 |---|---|

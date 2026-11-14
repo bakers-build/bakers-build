@@ -5,19 +5,16 @@ description: "Use when a ticket labelled `human-review` runs, in any state: carr
 
 # Human review
 
+Apply the [label rules](../bb-workflow/references/gates.md#label-rules) first.
+
 The label `human-review` passes every [gate](../bb-workflow/references/gates.md) on its own except
-`verdict`, `merge` and recipe gates (`<recipe>:<gate>`): the ticket's reviewer passes `verdict` and
-`merge`, a person the recipe gates. It authorizes the transitions up to `review` and their origin
+`verdict`, `merge`, `criterion` and recipe gates (`<recipe>:<gate>`): the ticket's reviewer passes
+`verdict` and `merge`, a person passes the recipe gates. It authorizes the transitions up to `review` and their origin
 status. Decide technical questions yourself and record each decision with its reason under
 `Decisions` in the handoff.
 
-Stop with a question at the first state that finds the ticket:
-
-- of type `deployment` or `verification`: the label does not apply there;
-- without a reviewer: name the missing reviewer;
-- also labelled `human-accept`: ask which label applies.
-
-A `criterion` the run cannot decide waits for a person. A choice the confirmed criteria leave to
+Stop with a question naming the missing reviewer at the first state that finds the ticket without
+one. A `criterion` stops with a question for the person the label rules name. A choice the confirmed criteria leave to
 the user, such as what the result looks like, is no `criterion` here: decide it, record it under
 `Decisions`, and leave it to the reviewer at `verdict`; this label asks no acceptance (`result`).
 An unplanned risky change ends the run as a technical problem
