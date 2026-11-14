@@ -333,6 +333,53 @@ it('runs no hook the run wrote when the host commits in a registered run clone',
   expect(existsSync(marker)).toBe(false);
 });
 
+it('runs no filter or diff driver the run wrote when the host reads status and diff in a registered run clone', () => {
+  const { root, parent, workspace, create } = fixture();
+  const marker = join(root, 'driver-ran');
+  for (const [key, value] of [
+    ['filter.x.clean', './driver.sh'],
+    ['filter.x.smudge', './driver.sh'],
+    ['filter.x.process', './driver.sh'],
+    ['filter.x.required', 'true'],
+    ['diff.x.textconv', './driver.sh'],
+    ['diff.y.command', './driver.sh'],
+    ['diff.external', './driver.sh'],
+    ['merge.x.driver', './driver.sh'],
+  ])
+    git(parent, 'config', key, value);
+  registerRunCloneWorktree(create());
+  writeFileSync(
+    join(workspace, 'driver.sh'),
+    `#!/bin/sh\ntouch ${marker}\ncat "$@"\n`,
+    { mode: 0o755 },
+  );
+  for (const [attribute, file] of [
+    ['filter=x', 'filtered'],
+    ['diff=x', 'converted'],
+    ['diff=y', 'external'],
+  ]) {
+    writeFileSync(join(workspace, file), 'run change');
+    git(workspace, 'add', file);
+    writeFileSync(join(workspace, file), 'second run change');
+    writeFileSync(join(workspace, '.gitattributes'), `${file} ${attribute}\n`, {
+      flag: 'a',
+    });
+  }
+  writeFileSync(join(workspace, 'file'), 'run change');
+
+  expect(git(workspace, 'status', '--porcelain')).toContain('M file');
+  expect(git(workspace, 'diff', '--no-ext-diff')).toContain(
+    '+second run change',
+  );
+  // Git has no pass-through value for an external diff: it fails closed.
+  expect(() => git(workspace, 'diff')).toThrow(/external diff died/);
+  git(workspace, 'checkout', '--', 'filtered');
+
+  expect(existsSync(marker)).toBe(false);
+  expect(git(workspace, 'config', 'merge.x.driver')).toBe('false');
+  expect(git(parent, 'config', 'filter.x.clean')).toBe('./driver.sh');
+});
+
 it('keeps host Git clean in a registered run clone after the run transfers a commit', () => {
   const { root, parent, workspace } = fixture();
   const env = { XDG_CACHE_HOME: join(root, 'cache') };

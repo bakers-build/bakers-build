@@ -241,7 +241,14 @@ container; only checked commits come back.
    the stub, because its own Git directory is mounted over it. The run writes that work tree, so the
    stub's `config.worktree` sets `core.hooksPath=/dev/null` and `core.fsmonitor=false` (the parent
    gets `extensions.worktreeConfig`): a parent `core.hooksPath` relative to the work tree runs no
-   file of the run. The stub's index follows the branch tip at run start and after each transfer. The
+   file of the run. It also switches off every filter, diff and merge driver the parent's own config
+   names (`filter.*`, `diff.*.textconv`, `diff.*.command`, `diff.external`, `merge.*.driver`), as
+   read at registration: the run picks their paths through `.gitattributes`, and a plain
+   `git status` or `git diff` would run them. Git has no pass-through for an external diff, so with
+   one configured `git diff` fails there until called with `--no-ext-diff`. **Residual:** other
+   command-valued settings of the parent (`core.pager`, aliases, `core.editor`, `core.sshCommand`,
+   credential helpers) stay in effect; one with a path relative to the work tree runs a file of
+   the run when a person calls Git there. The stub's index follows the branch tip at run start and after each transfer. The
    parent repository is not mounted in the run. The clone carries the target branch as
    `origin/<target>`; nothing is merged. Tracked files are reset, untracked files removed, ignored
    files (`node_modules`, `vendor`) kept. Uncommitted work does not reach the next run. herdr opens

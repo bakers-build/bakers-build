@@ -112,11 +112,41 @@ export function registerRunCloneWorktree(record: RunClone): void {
     'extensions.worktreeConfig',
   ];
   if (tryGit(extension) !== 'true') git([...extension, 'true']);
+  const override = join(stub, 'config.worktree');
   writeFileSync(
-    join(stub, 'config.worktree'),
+    override,
     '[core]\n\thooksPath = /dev/null\n\tfsmonitor = false\n',
   );
+  // Likewise the parent's filter, diff and merge drivers: the run chooses
+  // their paths through `.gitattributes`, and a plain status or diff runs them.
+  const keys =
+    tryGit([
+      '--git-dir',
+      record.parentGitDir,
+      'config',
+      '--local',
+      '--includes',
+      '--name-only',
+      '--list',
+      '-z',
+    ]) ?? '';
+  for (const key of new Set(keys.split('\0'))) {
+    const value = driverOff(key);
+    if (value !== undefined) git(['config', '--file', override, key, value]);
+  }
   refreshRunCloneIndex(record);
+}
+
+/** The value that switches a command-valued driver key off; `undefined` for any other key. */
+function driverOff(key: string): string | undefined {
+  if (key === 'diff.external') return '';
+  const name = /^(filter|diff|merge)\..+\.([^.]+)$/.exec(key);
+  if (!name) return undefined;
+  return {
+    filter: { clean: '', smudge: '', process: '', required: 'false' },
+    diff: { textconv: 'cat', command: '' },
+    merge: { driver: 'false' },
+  }[name[1] as 'filter' | 'diff' | 'merge'][name[2]] as string | undefined;
 }
 
 export function removeRunClone(workspace: string, env: Env = process.env) {
