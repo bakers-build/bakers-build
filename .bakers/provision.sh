@@ -26,6 +26,26 @@ if [ "${1:-}" = exec ]; then
       [ "$#" = 0 ] || usage
       web ".ddev/commands/web/$key"
       ;;
+    phpunit|phpunit-mariadb)
+      # <test path>…: explicit paths, never --filter or --group (they can pass on no tests).
+      [ "$#" -ge 1 ] || usage
+      safe "$@"
+      if [ "$key" = phpunit-mariadb ]; then
+        web env SIMPLETEST_DB=mysql://db:db@db/db ./vendor/bin/phpunit --configuration=phpunit.xml "$@"
+      else
+        web ./vendor/bin/phpunit --configuration=phpunit.xml "$@"
+      fi
+      ;;
+    paratest)
+      # <suite> or one <path>: a value with a slash is a path.
+      [ "$#" = 1 ] || usage
+      safe "$1"
+      if [[ "$1" == */* ]]; then
+        web ./vendor/bin/paratest --configuration=phpunit.xml --processes 4 "$1"
+      else
+        web ./vendor/bin/paratest --configuration=phpunit.xml --processes 4 --testsuite "$1"
+      fi
+      ;;
     uli)
       # <persona> [<uri>]
       [ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
