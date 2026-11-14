@@ -224,6 +224,9 @@ entries="$(cd "$root" && node --input-type=module -e 'const e = (await import(".
   'phpcs|bash .bakers/provision.sh exec phpcs' \
   'phpmd|bash .bakers/provision.sh exec phpmd' \
   'phpstan|bash .bakers/provision.sh exec phpstan' \
+  'phpunit|bash .bakers/provision.sh exec phpunit|args=true' \
+  'phpunit-mariadb|bash .bakers/provision.sh exec phpunit-mariadb|args=true' \
+  'paratest|bash .bakers/provision.sh exec paratest|args=true' \
   'uli|bash .bakers/provision.sh exec uli|args=true' \
   'playwright|bash .bakers/provision.sh exec playwright|args=true' \
   'playwright-cli|bash .bakers/provision.sh exec playwright-cli|args=true' \
@@ -231,6 +234,18 @@ entries="$(cd "$root" && node --input-type=module -e 'const e = (await import(".
 dispatch exec phpcs
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 4 exec --raw -- .ddev/commands/web/phpcs' ] || fail "calls: $(cat "$TRACE")"
+dispatch exec phpunit -- web/modules/custom/a/tests/ATest.php web/modules/custom/b/tests/BTest.php
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 7 exec --raw -- ./vendor/bin/phpunit --configuration=phpunit.xml web/modules/custom/a/tests/ATest.php web/modules/custom/b/tests/BTest.php' ] || fail "calls: $(cat "$TRACE")"
+dispatch exec phpunit-mariadb -- web/modules/custom/a/tests/ATest.php
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 8 exec --raw -- env SIMPLETEST_DB=mysql://db:db@db/db ./vendor/bin/phpunit --configuration=phpunit.xml web/modules/custom/a/tests/ATest.php' ] || fail "calls: $(cat "$TRACE")"
+dispatch exec paratest -- unit-kernel
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 9 exec --raw -- ./vendor/bin/paratest --configuration=phpunit.xml --processes 4 --testsuite unit-kernel' ] || fail "calls: $(cat "$TRACE")"
+dispatch exec paratest -- web/modules/custom/a/tests
+[ "$rc" = 0 ] || fail "exit $rc: $out"
+[ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 8 exec --raw -- ./vendor/bin/paratest --configuration=phpunit.xml --processes 4 web/modules/custom/a/tests' ] || fail "calls: $(cat "$TRACE")"
 dispatch exec uli -- north-lead https://x.ddev.site
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 9 exec --raw -- drush uli --name north-lead --uri https://x.ddev.site' ] || fail "calls: $(cat "$TRACE")"
@@ -238,7 +253,7 @@ dispatch exec playground-ticket -- c1 '$(touch planted); id' working
 [ "$rc" = 0 ] || fail "exit $rc: $out"
 [ "$(paste -sd ';' "$TRACE")" = 'ddev-own-project.sh;ddev 10 exec --raw -- drush php:script scripts/e2e/playground-ticket.php -- c1 $(touch planted); id working' ] || fail "calls: $(cat "$TRACE")"
 [ ! -e "$provision_tree/planted" ] || fail 'an argument ran through a shell'
-for args in 'exec' 'exec web -- drush uli' 'exec other' 'exec phpcs -- x' 'exec phpcs x' 'exec uli' 'exec uli -- --name=admin' 'exec uli -- a;id' 'exec playwright -- --config=/x' 'exec playground-ticket -- c1 --eval'; do
+for args in 'exec' 'exec web -- drush uli' 'exec other' 'exec phpcs -- x' 'exec phpcs x' 'exec uli' 'exec uli -- --name=admin' 'exec uli -- a;id' 'exec playwright -- --config=/x' 'exec playground-ticket -- c1 --eval' 'exec phpunit' 'exec phpunit -- --filter=X' 'exec phpunit-mariadb -- a;id' 'exec paratest' 'exec paratest -- a b' 'exec paratest -- --processes=99'; do
   # shellcheck disable=SC2086
   dispatch $args
   [ "$rc" != 0 ] && [ ! -s "$TRACE" ] || fail "invalid exec ran actions: $args: $out"
