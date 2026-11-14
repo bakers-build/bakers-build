@@ -668,12 +668,12 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
   }
 
   /**
-   * The negative control: a guest is refused Runs but admitted to Stats.
+   * The negative control: a guest is refused Conductors but admitted to Stats.
    *
    * Without it, the order assertion above would also pass against a tab row
    * that always renders all six regardless of rank.
    */
-  public function testGuestReachesStatsButNotRuns(): void {
+  public function testGuestReachesStatsButNotConductors(): void {
     // Verified through a direct request rather than `plugin.manager.menu
     // .local_task` (as `testProjectTabRowMatchesTheAgreedOrder` uses):
     // `LocalTaskManager::getTasksBuild()` resolves each tab's access through
@@ -685,8 +685,8 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     // the route behind it is provably 403 either way (the main gate test
     // above), so this negative control asserts the guarantee that actually
     // holds: reachability, not link visibility.
-    [$status] = $this->requestAs($this->pathFor('view.runs.project_runs'), $this->accounts['guest']);
-    self::assertSame(403, $status, 'A guest must not reach view.runs.project_runs.');
+    [$status] = $this->requestAs($this->pathFor('view.conductors.project_list'), $this->accounts['guest']);
+    self::assertSame(403, $status, 'A guest must not reach view.conductors.project_list.');
 
     // STATS IS DELIBERATELY NOT IN THAT LIST ANY MORE. It used to be, on the
     // premise that a guest could read no figure and should therefore be offered
@@ -1049,9 +1049,9 @@ final class WebUiSitemapStructureTest extends KernelTestBase {
     'bb_core.my_work.stats' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     // Insights carries the workspace figures, disclosed to the lead alone.
     'bb_core.workspace.insights' => ['lead' => 200, 'contributor' => 403, 'guest' => 403],
-    // Guest carries no `view bb_run` in any shipped workspace rank.
-    'view.runs.project_runs' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],
-    'view.runs.team_runs' => ['lead' => 200, 'contributor' => 200, 'guest' => 403],
+    // A guest reads runs, not their logs.
+    'view.runs.project_runs' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
+    'view.runs.team_runs' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'entity.bb_team.canonical' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'bb_core.bb_team.members' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],
     'view.project_board.project_board' => ['lead' => 200, 'contributor' => 200, 'guest' => 200],

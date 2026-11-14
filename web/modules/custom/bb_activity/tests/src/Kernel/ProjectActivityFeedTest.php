@@ -19,6 +19,7 @@ use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
+use Drupal\og\OgRoleInterface;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -247,8 +248,13 @@ final class ProjectActivityFeedTest extends KernelTestBase {
     ]);
     $ticket->getState()->applyTransitionById('to_working');
     $ticket->save();
-    // A workspace guest reads tickets but not runs.
+    // A reader of tickets but not runs: no shipped role is one any more, so
+    // the guest role loses run view for this test.
     $this->installOgScopeFixture();
+    $guest_role = $this->container->get('entity_type.manager')->getStorage('og_role')
+      ->load('bb_workspace-bb_workspace-guest');
+    self::assertInstanceOf(OgRoleInterface::class, $guest_role);
+    $guest_role->revokePermission('view bb_run')->save();
     $member = $this->createUser();
     self::assertInstanceOf(UserInterface::class, $member);
     $entity_type_manager = $this->container->get('entity_type.manager');
