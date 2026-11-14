@@ -185,20 +185,22 @@
           {% if avatar is not empty %}</div>{% endif %}
           {#- THE RIGHT BLOCK IS A SMALL COLUMN: the `right` cells on top and the
               `right_meta` line beneath them, right-aligned and faint like a caption.
-              It still flows beneath the left block on a narrow viewport. -#}
+              It still flows beneath the left block on a narrow viewport. A cell
+              wraps its own children too: one multi-value field (a badge per
+              conductor) must wrap, not shrink each badge until its label is cut. -#}
           {% if right is not empty or right_meta is not empty %}
             <div class="ml-auto flex min-w-0 max-w-full flex-col items-end gap-inline-xs">
               {% if right is not empty %}
                 <div data-list-region="right" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline">
                   {% for key in right %}
-                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-inline-xs text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
+                    <span class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline-xs wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
                   {% endfor %}
                 </div>
               {% endif %}
               {% if right_meta is not empty %}
                 <div data-list-region="right_meta" class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-x-stack gap-y-inline-xs text-meta text-text-faint">
                   {% for key in right_meta %}
-                    <span class="flex min-w-0 max-w-full items-center wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="mr-inline-xs text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
+                    <span class="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-inline-xs wrap-anywhere *:min-w-0" data-cell="{{ key }}">{% if captions[key]|default('') %}<span data-cell-label class="text-meta text-text-faint">{{ captions[key] }}</span>{% endif %}{{ cells.cell(item.cells[key]) }}</span>
                   {% endfor %}
                 </div>
               {% endif %}
