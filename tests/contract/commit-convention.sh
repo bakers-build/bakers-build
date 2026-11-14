@@ -145,10 +145,10 @@ check 'AC-1 WORKFLOW.md carries a NON-bakers.build worked example (SHOP-42 -> re
 
 # --- AC-2 — WORKFLOW.md states the merge-request rule --------------------------------------------
 
-check 'AC-2 WORKFLOW.md: a PR title and description carry no bakers.build reference' \
-  hasre "$WF_FLAT" 'pull request title and description carry \*\*no bakers.build reference\*\*'
-check 'AC-2 WORKFLOW.md states that rule holds without exception' \
-  hasi "$WF_FLAT" 'without exception'
+# The rule lives in the bb-workflow delivery reference; it states it unconditionally, so the former
+# GitLab-section "without exception" wording has no counterpart to bind.
+check 'AC-2 delivery: an MR title and description carry no bakers.build reference' \
+  has "$IMPL_FLAT" 'MR title/description carry no bakers.build reference.'
 # The explicit MR target is bound by AC-4 (`target is target_branch (else base_branch)`).
 check 'AC-2 WORKFLOW.md no longer hardcodes develop as the MR target' \
   absent "$WF_FLAT" 'merge request against `develop`'

@@ -52,7 +52,7 @@ Do not add a second active next publisher.
 ## Remaining external evidence
 
 A cleared candidate, real PR and separate fork PR, required-check rejection, package/GHCR
-rights, transferable tested-image identity and explicit publisher handover remain necessary.
+rights, transferable tested-image identity and setting `RELEASE_OWNER` to `github` remain necessary.
 Consumer URL/default changes wait for reachable target repositories.
 
 ## Runner selection

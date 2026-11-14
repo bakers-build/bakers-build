@@ -542,7 +542,9 @@ describe('GitHub migration checks', () => {
     ],
   };
 
-  it.each(Object.entries(VALIDATION_COMMANDS))('%s runs its validation commands', (name, expected) => {
+  it.each(
+    Object.entries(VALIDATION_COMMANDS),
+  )('%s runs its validation commands', (name, expected) => {
     const workflow = parse(read('.github/workflows/checks.yml'));
     const commands = workflow.jobs[name].steps
       .map((step: { run?: string }) => step.run ?? '')
