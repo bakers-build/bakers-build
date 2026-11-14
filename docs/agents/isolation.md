@@ -1,22 +1,11 @@
 ---
 title: Isolation models
-description: Compare native agent sandboxes, outer runtimes and operator-provided boundaries, with support and known limits by agent and platform.
+description: Detail page comparing native agent sandboxes, outer runtimes and operator-provided boundaries, with support and known limits by agent and platform.
 ---
 
 # Isolation models
 
-## Model, addon, runtime or tool?
-
-These describe different things:
-
-| Concept | Meaning | Example |
-|---|---|---|
-| **Isolation model** | The boundary you want | A container per agent run |
-| **Addon** | A configured JavaScript package contributing capabilities to Bakers | `@bakers-build/addon-runtime-docker` |
-| **Runtime** | The implementation that wraps the agent launch, selected in the `runtime` slot | The Docker runtime supplied by that addon |
-| **Tool** | An operation the agent calls with inputs and receives a result from | `provision_up(profile)` |
-
-An addon can supply a runtime, tools or other capabilities; these are not synonyms. Harnesses also provide built-in file/shell tools, independently of Bakers addons. A runtime starts automatically during dispatch. A tool is called during work and may execute outside that runtime. See [addons](/addons/build/contracts), [runtime slots](/addons/slots#runtime-where-a-run-starts) and [tools](/provision/tools#work-across-permissions-and-isolation).
+This page compares isolation boundaries in detail. How they combine with agent permissions and tools, and what the terms mean, is explained in [Agent permissions and isolation](/provision/security/).
 
 ## Status words
 
@@ -27,19 +16,11 @@ An addon can supply a runtime, tools or other capabilities; these are not synony
 - **Unverified**: no live evidence for that combination; preflight/unit tests do not prove isolation.
 
 <span id="isolation-models-1"></span>
-
-## Separation and permissions
-
-These help organize and control work, but do not enclose the whole agent process:
-
-| Mechanism | What it does | How to configure it |
-|---|---|---|
-| Worktree and agent home | Separates files/settings/plugins; no OS boundary. Cached homes are keyed by harness/marketplace, not private per run. | [Git workspace addon](/addons/workspace-git) and agent marketplaces |
-| Agent/tool permissions | Harness rules allow/refuse/prompt for actions. Pi has no built-in permission gate. | [Agent permissions](/provision/security/execution); no outer runtime selected by this setting |
+<span id="separation-and-permissions"></span>
 
 ## Isolation boundaries
 
-The model names below describe boundaries, not addon packages or callable tools. Activation is in the next table.
+The model names below describe boundaries, not addon packages or callable tools. Activation is in the next table. A Git worktree and the agent home separate files and settings but are no OS boundary; [agent permissions](/provision/security/execution) restrict actions inside whichever boundary you choose.
 
 | Model | What is inside | Kernel | Bakers status | Main limit |
 |---|---|---|---|---|

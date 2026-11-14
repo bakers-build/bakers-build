@@ -55,7 +55,7 @@ export const SIDEBAR = {
     ]),
     group("Tools and access", [
       ["Tools and integrations", "/provision/tools"],
-      ["Run agents securely", "/provision/security/"],
+      ["Permissions and isolation", "/provision/security/"],
     ]),
     group("Machine setup", [
       ["Set up a worker server", "/provision/worker-server"],
