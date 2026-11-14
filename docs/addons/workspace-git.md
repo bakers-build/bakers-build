@@ -11,7 +11,7 @@ Add the package to `addons` in the project's `.bakers/project.config.js`, next t
 ```js
 addons: [
   '@bakers-build/addon-herdr-core',
-  { use: '@bakers-build/addon-workspace-git', with: { branch_prefix: 'bakers/' } },
+  { use: '@bakers-build/addon-workspace-git', with: { worktree_dir: '.bakers-worktrees' } },
 ],
 ```
 
@@ -29,13 +29,14 @@ Under an isolating runtime ([Docker](/addons/runtime-docker), [Bubblewrap](/addo
 
 ## Check it works
 
-A dispatched ticket gets a worktree in `<checkout>-worktrees/` on a branch that matches your template.
+A dispatched ticket gets a worktree at `<checkout>/.bakers-worktrees/<branch_name>`, on its own branch.
 
 ## Good to know
 
-- This backend currently ignores the requested `baseRef` and derives its branch through the template. Creation uses the root checkout’s HEAD with `git worktree add --force -B`, which can reset an existing same-name branch. Use unique branch names; choose herdr or Orca when exact ticket branches and parent-base selection are required.
-
-- Worktrees are created next to the checkout, in `<root>-worktrees`.
+- An existing ticket branch is checked out as it is, never reset. A new one starts at the root checkout's HEAD and ignores `baseRef`; choose herdr or Orca when parent-base selection is required.
+- The default `worktree_dir` lies inside the checkout: add `/.bakers-worktrees/` to its `.gitignore`.
+- A branch's existing worktree, such as an old `<checkout>-worktrees/<key>`, stays in use. An old run clone is recreated at the new path; its commits stay in the parent.
+- Setting the removed `branch_prefix` or `branch_template` fails validation.
 - The package also loads `WORKFLOW.md` from the worktree as run instructions, when the file exists.
 - Listing [herdr](/addons/herdr) or [Orca](/addons/orca) in `addons` as well adds their workspace, and the last one listed wins with a warning. To run their executor on Git worktrees, set an explicit `executor` slot instead; see [Conductor slots](/addons/slots).
 - When a ticket is done, the conductor removes its worktree with Git, whatever the executor.

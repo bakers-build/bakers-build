@@ -29,6 +29,7 @@ beforeEach(() => {
   mkdirSync(join(root, 'locked'), { recursive: true });
   git(root, 'init', '-q', '-b', 'main');
   writeFileSync(join(root, 'WORKFLOW.md'), 'rules');
+  writeFileSync(join(root, '.gitignore'), '/.bakers-worktrees/\n');
   writeFileSync(join(root, 'locked/settings.php'), 'one');
   git(root, 'add', '.');
   git(root, ...ident, 'commit', '-qm', 'base');
@@ -45,10 +46,16 @@ afterEach(() => {
 it('creates a run clone instead of a linked worktree and refreshes it on every ensure', async () => {
   const workspace = new GitWorkspace({ root, clone: true });
 
-  const first = await workspace.ensure('GL-9', 'Title', 'origin/next');
+  const first = await workspace.ensure(
+    'HERDRAPP-1',
+    'feat/herdrapp-1-x',
+    'origin/next',
+  );
 
   expect(first.created).toBe(true);
-  expect(first.path).toBe(join(`${root}-worktrees`, 'GL-9'));
+  expect(first.path).toBe(join(root, '.bakers-worktrees', 'feat/herdrapp-1-x'));
+  expect(existsSync(`${root}-worktrees`)).toBe(false);
+  expect(git(root, 'branch', '--list', 'bakers/*')).toBe('');
   expect(first.instructions?.text).toBe('rules');
   expect(readdirSync(join(first.path, '.git')).sort()).toEqual([
     'HEAD',
@@ -58,32 +65,41 @@ it('creates a run clone instead of a linked worktree and refreshes it on every e
   ]);
   expect(first.clone).toMatchObject({
     workspace: first.path,
-    branch: 'bakers/GL-9-title',
+    branch: 'feat/herdrapp-1-x',
     target: 'next',
     shared: false,
     expected: git(root, 'rev-parse', 'main'),
   });
-  expect(git(root, 'worktree', 'list', '--porcelain')).not.toContain('GL-9');
-  expect(git(root, 'rev-parse', 'bakers/GL-9-title')).toBe(
+  expect(git(root, 'worktree', 'list', '--porcelain')).not.toContain(
+    'herdrapp',
+  );
+  expect(git(root, 'rev-parse', 'feat/herdrapp-1-x')).toBe(
     git(root, 'rev-parse', 'main'),
   );
 
   writeFileSync(join(first.path, 'left-over'), 'uncommitted');
-  const second = await workspace.ensure('GL-9', 'Title', 'origin/next');
+  const second = await workspace.ensure(
+    'HERDRAPP-1',
+    'feat/herdrapp-1-x',
+    'origin/next',
+  );
   expect(second.created).toBe(false);
   expect(existsSync(join(second.path, 'left-over'))).toBe(false);
   expect(second.clone?.gitDir).toBe(first.clone?.gitDir);
 });
 
 it('keeps the ticket branch where it is when it already exists', async () => {
-  git(root, 'checkout', '-qb', 'bakers/GL-9');
+  git(root, 'checkout', '-qb', 'feat/gl-9');
   writeFileSync(join(root, 'work'), 'done');
   git(root, 'add', '.');
   git(root, ...ident, 'commit', '-qm', 'work');
   const tip = git(root, 'rev-parse', 'HEAD');
   git(root, 'checkout', '-q', 'main');
 
-  const ws = await new GitWorkspace({ root, clone: true }).ensure('GL-9');
+  const ws = await new GitWorkspace({ root, clone: true }).ensure(
+    'GL-9',
+    'feat/gl-9',
+  );
 
   expect(ws.clone?.expected).toBe(tip);
   expect(readFileSync(join(ws.path, 'work'), 'utf8')).toBe('done');
@@ -92,21 +108,22 @@ it('keeps the ticket branch where it is when it already exists', async () => {
 it('borrows the parent objects with the shared option', async () => {
   const ws = await new GitWorkspace({ root, clone: true, shared: true }).ensure(
     'GL-9',
+    'feat/gl-9',
   );
   expect(ws.clone?.shared).toBe(true);
 });
 
 it('refreshes a tree the site hardened read-only', async () => {
   const workspace = new GitWorkspace({ root, clone: true });
-  const first = await workspace.ensure('GL-9');
+  const first = await workspace.ensure('GL-9', 'feat/gl-9');
   chmodSync(join(first.path, 'locked/settings.php'), 0o444);
   chmodSync(join(first.path, 'locked'), 0o555);
   writeFileSync(join(root, 'locked/settings.php'), 'two');
   git(root, 'add', '.');
   git(root, ...ident, 'commit', '-qm', 'changed');
-  git(root, 'branch', '-f', 'bakers/GL-9');
+  git(root, 'branch', '-f', 'feat/gl-9');
 
-  const second = await workspace.ensure('GL-9');
+  const second = await workspace.ensure('GL-9', 'feat/gl-9');
 
   expect(readFileSync(join(second.path, 'locked/settings.php'), 'utf8')).toBe(
     'two',
@@ -115,15 +132,15 @@ it('refreshes a tree the site hardened read-only', async () => {
 
 it('removes the clone directory and its Git directory', async () => {
   const workspace = new GitWorkspace({ root, clone: true });
-  const ws = await workspace.ensure('GL-9');
+  const ws = await workspace.ensure('GL-9', 'feat/gl-9');
   chmodSync(join(ws.path, 'locked'), 0o555);
 
-  expect(await workspace.remove('bakers/GL-9', ws.path)).toBe('removed');
+  expect(await workspace.remove('feat/gl-9', ws.path)).toBe('removed');
 
   expect(existsSync(ws.path)).toBe(false);
   expect(existsSync(ws.clone?.gitDir as string)).toBe(false);
   expect(loadRunClone(ws.path)).toBeUndefined();
-  expect(await workspace.remove('bakers/GL-9', ws.path)).toBe('already_absent');
+  expect(await workspace.remove('feat/gl-9', ws.path)).toBe('already_absent');
 });
 
 it('clones only under an isolating runtime', async () => {
@@ -136,11 +153,13 @@ it('clones only under an isolating runtime', async () => {
   const isolated = await gitWorkspace({ shared: true }).createWorkspace(
     config(true),
   );
-  expect((await isolated.ensure('GL-1')).clone?.shared).toBe(true);
-  const host = await gitWorkspace({ shared: true }).createWorkspace(
-    config(false),
-  );
-  const ws = await host.ensure('GL-2');
+  expect((await isolated.ensure('GL-1', 'feat/gl-1')).clone?.shared).toBe(true);
+  const host = await gitWorkspace({
+    shared: true,
+    worktree_dir: 'wt',
+  }).createWorkspace(config(false));
+  const ws = await host.ensure('GL-2', 'feat/gl-2');
+  expect(ws.path).toBe(join(root, 'wt', 'feat/gl-2'));
   expect(ws.clone).toBeUndefined();
   expect(readFileSync(join(ws.path, '.git'), 'utf8')).toMatch(/^gitdir: /);
 });
@@ -164,7 +183,9 @@ it('takes shared from the isolating runtime, the workspace option as fallback', 
     const ws = await gitWorkspace(
       workspace === undefined ? {} : { shared: workspace },
     ).createWorkspace(config);
-    expect((await ws.ensure(`GL-${10 + i}`)).clone?.shared).toBe(expected);
+    expect(
+      (await ws.ensure(`GL-${10 + i}`, `feat/gl-${10 + i}`)).clone?.shared,
+    ).toBe(expected);
   }
 });
 
@@ -193,12 +214,12 @@ it('fetches the target, so the clone carries where the remote moved it', async (
 
   const ws = await new GitWorkspace({ root, clone: true }).ensure(
     'GL-9',
-    'Title',
+    'feat/gl-9',
     'origin/next',
   );
 
   expect(
     git(root, `--git-dir=${ws.clone?.gitDir}`, 'rev-parse', 'origin/next'),
   ).toBe(moved);
-  expect(git(root, 'rev-parse', 'bakers/GL-9-title')).not.toBe(moved);
+  expect(git(root, 'rev-parse', 'feat/gl-9')).not.toBe(moved);
 });
