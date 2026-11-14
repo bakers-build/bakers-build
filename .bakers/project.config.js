@@ -63,11 +63,17 @@ export default {
       'existing-config': 'bash .bakers/provision.sh existing-config',
       'existing-config-fresh': 'bash .bakers/provision.sh existing-config-fresh',
     },
-    // The `provision_exec(key, args)` agent tool: `web` runs the argv in the
-    // DDEV web container, e.g. ['drush', 'uli'] or
-    // ['.ddev/commands/web/phpcs']. The arguments never pass a host shell.
+    // The `provision_exec(key, args?)` agent tool: each key is one fixed
+    // command in the DDEV web container. Only keys with `args: true` take
+    // arguments, which .bakers/provision.sh validates; none reaches a shell.
     provision_exec: {
-      web: 'bash .bakers/provision.sh exec web',
+      phpcs: 'bash .bakers/provision.sh exec phpcs',
+      phpmd: 'bash .bakers/provision.sh exec phpmd',
+      phpstan: 'bash .bakers/provision.sh exec phpstan',
+      uli: { command: 'bash .bakers/provision.sh exec uli', args: true },
+      playwright: { command: 'bash .bakers/provision.sh exec playwright', args: true },
+      'playwright-cli': { command: 'bash .bakers/provision.sh exec playwright-cli', args: true },
+      'playground-ticket': { command: 'bash .bakers/provision.sh exec playground-ticket', args: true },
     },
   },
   // Under an isolating runtime a run sees these read-only and cannot change
