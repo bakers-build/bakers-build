@@ -16,19 +16,39 @@
    short panel to its content). #}
 {%- set rows_content %}{% block rows %}{% if rows %}{{ rows }}{% endif %}{% endblock %}{% endset %}
 {%- set footer_content %}{% block footer %}{% if footer %}{{ footer }}{% endif %}{% endblock %}{% endset %}
+{#- With a `label`, below `lg` the rail is a disclosure, closed by default: the
+    button toggles the rows-and-footer container, which is hidden below `lg`
+    while closed. From `lg` up there is no button and the content always shows.
+    Without a `label` the markup is exactly what it was. -#}
+{%- set body_id = 'inspector-body-' ~ random() %}
 {%- if surface|default(false) %}
-<aside{{ (attributes ?: create_attribute()).addClass(['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'shrink-0', 'p-group', 'bg-surface', 'border', 'border-border-2', 'rounded-sm']) }}>
+  {%- set body %}
   <div class="flex flex-col divide-y divide-border-2 *:py-group *:first:pt-0 *:last:pb-0">{{ rows_content }}</div>
   {%- if footer_content|trim is not empty %}
   <div class="flex flex-col items-start gap-inline mt-group pt-group border-t border-border-2">{{ footer_content }}</div>
   {%- endif %}
-</aside>
+  {%- endset %}
+  {%- set aside_classes = ['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'shrink-0', 'p-group', 'bg-surface', 'border', 'border-border-2', 'rounded-sm'] %}
+  {%- set body_classes = 'flex flex-col' %}
 {%- else %}
-<aside{{ (attributes ?: create_attribute()).addClass(['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'gap-inline-xs', 'shrink-0']) }}>
+  {%- set body %}
   {{ rows_content }}
   {#- The intervention footer, after a divider; absent when empty. #}
   {%- if footer_content|trim is not empty %}
   <div class="flex flex-col items-start gap-inline mt-inline pt-stack border-t border-border-2">{{ footer_content }}</div>
   {%- endif %}
-</aside>
+  {%- endset %}
+  {%- set aside_classes = ['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'gap-inline-xs', 'shrink-0'] %}
+  {%- set body_classes = 'flex flex-col gap-inline-xs' %}
 {%- endif %}
+<aside{{ (attributes ?: create_attribute()).addClass(aside_classes) }}{% if label %} x-data="{ open: false }"{% endif %}>
+  {%- if label %}
+  <button type="button" class="lg:hidden flex w-full min-h-touch items-center justify-between gap-inline text-body-strong text-title cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" aria-controls="{{ body_id }}" aria-expanded="false" x-bind:aria-expanded="open ? 'true' : 'false'" x-on:click="open = !open">
+    <span>{{ label }}</span>
+    <span class="inline-flex shrink-0 transition-transform duration-150" x-bind:class="{ 'rotate-180': open }">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'sm' }, with_context = false) }}</span>
+  </button>
+  <div id="{{ body_id }}" class="max-lg:hidden {{ body_classes }}" x-bind:class="{ 'max-lg:hidden': !open }">{{ body }}</div>
+  {%- else %}
+  {{ body }}
+  {%- endif %}
+</aside>

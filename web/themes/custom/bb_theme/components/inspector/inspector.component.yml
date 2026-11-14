@@ -11,7 +11,15 @@ description: >-
   it scrolls past. It is deliberately NOT a scroll container — no `overflow-y:
   auto` — because that would make it a scrolling ancestor of the four
   inline-edit pickers a `meta_row` can hold, and an absolutely positioned picker
-  panel cannot escape a scrolling ancestor (D3, BB-332 R9).
+  panel cannot escape a scrolling ancestor (D3, BB-332 R9). BELOW `lg`, WITH A
+  `label`, THE INSPECTOR IS A DISCLOSURE (BAKERS-57), closed by default: a
+  full-width `<button type="button">` of at least the 44px touch target shows
+  the label and a chevron, carries `aria-expanded` and `aria-controls` pointing
+  at the rows-and-footer container, and toggles it through Alpine (`x-data="{
+  open: false }"`); the container is hidden below `lg` while closed. From `lg`
+  up there is no button and the content always shows, sticky as before. Without
+  a `label` nothing changes at any width. Both the plain and the `surface` rail
+  get it.
 provider: bb_theme
 props:
   type: object
@@ -27,6 +35,14 @@ props:
         divider. Rows inside a block should use `list` layout `plain`, which
         draws no line of its own, so no line ever doubles. Without it the rail
         renders exactly as before.
+    label:
+      type: string
+      title: Disclosure label
+      description: >-
+        Optional. When set, below `lg` the rail collapses behind a full-width
+        disclosure button showing this label (e.g. `Details`), closed by
+        default; from `lg` up it is ignored and the rail shows as before. Empty
+        leaves the rail unchanged at every width.
 slots:
   rows:
     title: Rows

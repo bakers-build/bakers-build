@@ -21,7 +21,10 @@
    the single-column collapse below `lg` is `flex-col` reverting to `flex-row`
    at `lg` rather than a grid template swap — the aside widths apply only from
    `lg` up (`lg:w-48`/`lg:w-80`), so a narrow viewport gets full-width stacked
-   regions in document order exactly as it did before.
+   regions in document order, except that `inspector` carries
+   `max-lg:order-first`: on a phone the record's properties (normally a closed
+   `inspector` disclosure) come before `main`. Order only, never a scroll
+   container (BAKERS-57).
 
    `main` is not conditional. It is the region that carries the route, so a
    canvas without it is a screen without a subject, and an author who forgot to
@@ -96,7 +99,7 @@
     {% endif %}
     <div data-canvas-region="main" class="w-full lg:w-auto flex-1 min-w-0 flex flex-col gap-section">{{ main_content }}</div>
     {% if has_inspector %}
-      <div data-canvas-region="inspector" class="w-full lg:w-80 lg:shrink-0 min-w-0 self-start lg:sticky lg:top-0 flex flex-col gap-group">{{ inspector_content }}</div>
+      <div data-canvas-region="inspector" class="max-lg:order-first w-full lg:w-80 lg:shrink-0 min-w-0 self-start lg:sticky lg:top-0 flex flex-col gap-group">{{ inspector_content }}</div>
     {% endif %}
   </div>
 </div>
