@@ -23,7 +23,7 @@ starting each run in a container at host paths. Machine scope:
 Container `bb-run-<run uuid>`, under your uid, mounts:
 
 - the workspace: a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket branch at the worktree path, made at every run start;
-- the run's Git directory as `.git`. It lives in the conductor's cache; the parent repository is not mounted. The workspace option `shared` adds the parent's `objects`, read-only;
+- the run's Git directory as `.git`. It lives in the conductor's cache; the parent repository is not mounted. The option `shared` adds the parent's `objects`, read-only;
 - `.bakers/` and the project's [`runtime.read_only`](/provision/security/shared-settings#host-executed-paths) paths, read-only;
 - the bakers CLI build, read-only. The runtime refuses to start when that build's root would
   contain your home directory;

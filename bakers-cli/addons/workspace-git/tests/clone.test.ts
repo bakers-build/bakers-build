@@ -164,6 +164,39 @@ it('clones only under an isolating runtime', async () => {
   expect(readFileSync(join(ws.path, '.git'), 'utf8')).toMatch(/^gitdir: /);
 });
 
+it('takes shared from the isolating runtime, the workspace option as fallback', async () => {
+  mkdirSync(join(root, '.bakers'));
+  const cases: [boolean | undefined, boolean | undefined, boolean][] = [
+    [true, undefined, true],
+    [undefined, true, true],
+    [false, true, false],
+    [undefined, undefined, false],
+  ];
+  for (const [i, [runtime, workspace, expected]] of cases.entries()) {
+    const config = {
+      config_path: join(root, '.bakers/project.config.js'),
+      runtime: {
+        isolates: true,
+        ...(runtime === undefined ? {} : { shared: runtime }),
+      },
+    } as unknown as ConductorFileConfig;
+    const ws = await gitWorkspace(
+      workspace === undefined ? {} : { shared: workspace },
+    ).createWorkspace(config);
+    expect((await ws.ensure(`GL-${10 + i}`)).clone?.shared).toBe(expected);
+  }
+});
+
+it('marks the workspace shared option deprecated in favor of the runtime', () => {
+  const schema = JSON.parse(
+    readFileSync(new URL('../options.schema.json', import.meta.url), 'utf8'),
+  );
+  expect(schema.properties.shared.deprecated).toBe(true);
+  expect(schema.properties.shared.description).toMatch(
+    /runtime-bwrap.*runtime-docker/,
+  );
+});
+
 it('fetches the target, so the clone carries where the remote moved it', async () => {
   const remote = join(base, 'remote.git');
   git(base, 'clone', '-q', '--bare', root, remote);

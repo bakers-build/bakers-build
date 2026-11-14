@@ -24,3 +24,21 @@ it.skipIf(process.platform !== 'linux')(
     );
   },
 );
+
+it('hands the shared clone option to the workspace only when set', async () => {
+  expect(runtimes!([], { shared: true })[0]?.shared).toBe(true);
+  expect(runtimes!([], { shared: false })[0]?.shared).toBe(false);
+  expect(runtimes!([], {})[0]?.shared).toBeUndefined();
+  const { readFileSync } = await import('node:fs');
+  const schema = JSON.parse(
+    readFileSync(new URL('../options.schema.json', import.meta.url), 'utf8'),
+  );
+  expect(Object.keys(schema.properties).sort()).toEqual([
+    'readPaths',
+    'shared',
+  ]);
+  expect(schema.properties.shared).toMatchObject({
+    type: 'boolean',
+    default: false,
+  });
+});

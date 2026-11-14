@@ -17,7 +17,8 @@
     "shared": {
       "type": "boolean",
       "default": false,
-      "description": "Isolating runtimes only: run clones borrow the parent repository's objects (git clone --shared) instead of copying them. Faster and smaller, but never prune or repack the parent with -d while a run is open."
+      "description": "Deprecated: set shared on the isolating runtime (runtime-bwrap, runtime-docker) instead; a value set there wins. Run clones borrow the parent repository's objects (git clone --shared) instead of copying them.",
+      "deprecated": true
     }
   },
   "additionalProperties": false

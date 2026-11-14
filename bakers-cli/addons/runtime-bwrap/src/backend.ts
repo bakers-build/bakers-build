@@ -22,6 +22,8 @@ import { shellQuote } from '@bakers-build/core';
 
 export interface BwrapOptions {
   readPaths?: string[];
+  /** Run clones borrow the parent's objects (`git clone --shared`). */
+  shared?: boolean;
 }
 export interface BwrapDeps {
   cachePath: string;

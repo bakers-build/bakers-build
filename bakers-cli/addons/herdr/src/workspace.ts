@@ -338,7 +338,8 @@ export function herdrWorkspace(
         ...(opts.auto_setup_merge ? { autoSetupMerge: true } : {}),
         ...(deps?.logger ? { logger: deps.logger } : {}),
         clone: config.runtime?.isolates === true,
-        ...(opts.shared ? { shared: true } : {}),
+        // A runtime's `shared` wins; the workspace option is the deprecated fallback.
+        shared: config.runtime?.shared ?? opts.shared ?? false,
       });
     },
   };

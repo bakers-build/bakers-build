@@ -13,6 +13,28 @@ describe('runtime-docker preset', () => {
     expect(scopes).toEqual(['machine']);
   });
 
+  it('hands the shared clone option to the workspace only when set', async () => {
+    expect((await runtimes?.([], { shared: true }))?.[0]?.shared).toBe(true);
+    expect((await runtimes?.([], { shared: false }))?.[0]?.shared).toBe(false);
+    expect((await runtimes?.([], {}))?.[0]?.shared).toBeUndefined();
+    const { readFileSync } = await import('node:fs');
+    const schema = JSON.parse(
+      readFileSync(new URL('../options.schema.json', import.meta.url), 'utf8'),
+    );
+    expect(Object.keys(schema.properties).sort()).toEqual([
+      'allow',
+      'docker',
+      'image',
+      'mounts',
+      'network',
+      'shared',
+    ]);
+    expect(schema.properties.shared).toMatchObject({
+      type: 'boolean',
+      default: false,
+    });
+  });
+
   it('resolves the CLI build and the shipped image directory', async () => {
     const { pluginPaths } = await import('../src/index.js');
     const { cliRoot, packageDir } = pluginPaths();
