@@ -685,3 +685,48 @@ Feature: The ticket list is the nav home
     # only Brood child 1 has a sub-ticket of its own.
     When I open this list for the parent "Brood parent"
     Then the ticket listing lists exactly the tickets "Brood child 1"
+
+  # THE PHONE FILTER SHEET. Below `lg` the facets aside shows only its
+  # dialog, opened by one "Filters · N" button whose N is the number of facets
+  # with a chosen value — the same set the chips show — and the chips stay
+  # outside the sheet. Inside the sheet a tick does not auto-submit (BEF's
+  # breakpoint is `lg`), so the sheet stays open until "Show results".
+  Scenario: The filters sit behind one button on a phone
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 390 pixels wide
+    When I visit "/bakers/tickets?state[]=working&priority[]=2"
+    Then the filters button reads "Filters · 2"
+    And the facets are hidden behind the filters button
+    And the active filters read "State is Working"
+    And the active filters read "Priority is Medium"
+
+  Scenario: The filter sheet keeps a tick until Show results
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 390 pixels wide
+    When I visit the full ticket list of the "bakers" workspace
+    Then the filters button reads "Filters"
+    When I open the filter sheet
+    Then the filter sheet holds the "State" facet
+    When I tick "Working" in the "State" facet
+    Then the filter sheet is open
+    And the address does not carry "state[]=working"
+    When I click button "Show results"
+    Then the address carries "state[]=working"
+    And the filter sheet is closed
+    And the active filters read "State is Working"
+    And the filters button reads "Filters · 1"
+
+  Scenario: The filter count follows the chips
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 390 pixels wide
+    When I visit "/bakers/tickets?state[]=working&priority[]=2"
+    And I remove the "State" chip
+    Then the address does not carry "state[]=working"
+    And the filters button reads "Filters · 1"
+
+  Scenario: Desktop keeps the filters aside
+    Given I am signed in as a member of the "bakers" workspace
+    And the viewport is 1440 pixels wide
+    When I visit the full ticket list of the "bakers" workspace
+    Then there is no filters button
+    And the facets sit in the filters aside, not above the ticket listing

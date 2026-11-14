@@ -28,7 +28,16 @@ description: >-
   scoped to a workspace or a team — are all wiring, and wiring is out of scope
   for the whole 327 tree. Ad-hoc filter state lives in the URL in that model,
   which is likewise a wiring decision; the shape is agreed here so the ticket
-  that adds the query has nothing to restructure.
+  that adds the query has nothing to restructure. BELOW `lg` THE PANEL IS A
+  BOTTOM SHEET (BAKERS-57): an opener button (`lg:hidden`, at least the 44px
+  touch target) reading the `title`, or `title · N` when `active_count` is N >
+  0, opens a native `<dialog>` with `showModal()`; the dialog holds the same
+  collapsible and controls plus a primary "Show results" footer that calls
+  `requestSubmit()` on the form inside the dialog and closes it, because Better
+  Exposed Filters auto-submits only from `lg` up. There is ONE DOM: the aside is
+  `display: contents` below `lg` and the dialog is `display: contents` from `lg`
+  up, so the exposed form's fields exist once and the desktop aside is exactly
+  what it was. `bar` and `toolbar` are unchanged.
 provider: bb_theme
 props:
   type: object
@@ -81,6 +90,23 @@ props:
         `bar`, but no surface and no border, one centred row of at least 36 px
         (wrapping only when narrow) whose first control (the search) is 240 px
         wide, and a trailing `actions` group pushed to the right.
+    active_count:
+      type: integer
+      title: Active facet count
+      default: 0
+      description: >-
+        The number of facets with a chosen value. Shown on the phone opener as
+        `title · N` when above 0, so a closed sheet still states that the list
+        is narrowed. `panel` only.
+    sheet_open:
+      type: boolean
+      title: Sheet open
+      default: false
+      description: >-
+        Render the phone sheet's `<dialog>` with its `open` attribute, so the
+        open state is reviewable in Storybook (which promotes an open dialog to
+        a modal). Callers on a page leave it false; the opener opens the sheet.
+        `panel` only.
 slots:
   controls:
     title: Controls

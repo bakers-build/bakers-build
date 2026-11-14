@@ -77,18 +77,41 @@
   {%- endif %}
 </div>
 {% else %}
+{#- Below `lg` the panel is a bottom sheet behind an opener; from `lg` up the
+    aside is what it always was. ONE DOM: the aside is `display: contents` below
+    `lg` and the dialog is `display: contents` from `lg` up, so the exposed
+    form's fields exist once and never submit twice.
+    The sheet is a native <dialog> opened with showModal(): the browser gives it
+    the top layer, Escape, focus handling and `closedby`, it needs no Drupal
+    behaviour, and it works the same in Storybook. -#}
 <aside{{ (attributes ?: create_attribute()).addClass([
-    'p-stack', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
+    'max-lg:contents', 'p-stack', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
   ]) }}
-  {%- if label %} aria-label="{{ label }}"{% endif %}>
-  {% embed 'bb_theme:collapsible' with {
-    open: not collapsed,
-    attributes: create_attribute(),
-  } %}
-    {% block label %}<span class="text-body-strong text-title">{{ title }}</span>{% endblock %}
-    {% block content %}
-      <div class="flex flex-col items-stretch gap-group">{{ filters_controls }}</div>
-    {% endblock %}
-  {% endembed %}
+  {%- if label %} aria-label="{{ label }}"{% endif %} x-data>
+  {{ include('bb_theme:button', {
+    variant: 'neutral',
+    type: 'button',
+    label: active_count|default(0) > 0 ? title ~ ' · ' ~ active_count : title,
+    attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden'], 'x-on:click': '$refs.sheet.showModal()' }),
+  }, with_context = false) }}
+  <dialog x-ref="sheet" aria-label="{{ title }}" closedby="any"{% if sheet_open %} open{% endif %} class="max-lg:w-full max-lg:max-w-full max-lg:max-h-5/6 max-lg:top-auto max-lg:p-stack max-lg:bg-app max-lg:text-text max-lg:border-0 max-lg:rounded-t-sm max-lg:overflow-y-auto lg:contents lg:text-inherit">
+    {% embed 'bb_theme:collapsible' with {
+      open: not collapsed,
+      attributes: create_attribute(),
+    } %}
+      {% block label %}<span class="text-body-strong text-title">{{ title }}</span>{% endblock %}
+      {% block content %}
+        <div class="flex flex-col items-stretch gap-group">{{ filters_controls }}</div>
+      {% endblock %}
+    {% endembed %}
+    <div class="lg:hidden pt-stack">
+      {{ include('bb_theme:button', {
+        variant: 'primary',
+        type: 'button',
+        label: 'Show results'|t,
+        attributes: create_attribute({ class: ['w-full', 'min-h-touch'], 'x-on:click': "$refs.sheet.querySelector('form')?.requestSubmit(); $refs.sheet.close()" }),
+      }, with_context = false) }}
+    </div>
+  </dialog>
 </aside>
 {% endif %}
