@@ -12,7 +12,7 @@ Drupal checks run on `provision_up('recipe-test')`, which reuses a ready `recipe
 project inspection and startup. Provisioning profiles use the fixed, protected `.bakers/provision.sh`
 entry point; their implementation is read from that file on each call.
 Under an isolating runtime (`BAKERS_RUNTIME_ISOLATES=1`) the run installs and builds itself:
-`cd bakers-cli && pnpm install`, likewise in `docs`; the host installs nothing. Otherwise never run
+`cd bakers-cli && pnpm install`, likewise in `docs`, and `npm ci` in `tests/skill-eval` for the core tests; the host installs nothing. Otherwise never run
 `pnpm install` in a run: every setup profile
 installs the `bakers-cli` and `docs` dependencies first, and `provision_up('deps')` installs them
 alone for work that needs no site. A site profile's initialization installs and builds
