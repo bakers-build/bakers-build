@@ -20,7 +20,7 @@ As you prepare the project, decide which operations agents need and what they ma
 
 <DocQuickLinks aria-label="Tools and security" :items="[
   { label: 'Tools and integrations', text: 'Make operations available to agents, CLI commands and UI actions.', link: '/provision/tools' },
-  { label: 'Permissions and isolation', text: 'How permissions, isolation boundaries and tools such as provision_up fit together.', link: '/provision/security/' }
+  { label: 'Permissions and isolation', text: 'How permissions, isolation boundaries and tools such as provision_up fit together.', link: '/agents/security' }
 ]" />
 
 ## Environment examples

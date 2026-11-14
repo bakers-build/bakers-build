@@ -11,7 +11,7 @@ An **agent** is the coding agent that works a ticket on your worker machine, wit
 
 <DocTiles :tiles="[
   { title: 'Agents and agent routes', text: 'Name agent configurations as aliases, map workflow states to them with routes, and pick one per ticket with an agent: label.', link: '/agents/guide', icon: 'git-branch', meta: 'Configure and select →' },
-  { title: 'Permissions and isolation', text: 'How permissions, sandboxes, runtimes and tools fit together, with detail pages for each and support per agent and platform.', link: '/provision/security/', icon: 'layers', meta: 'Choose a boundary →' },
+  { title: 'Permissions and isolation', text: 'How permissions, sandboxes, runtimes and tools fit together, with detail pages for each and support per agent and platform.', link: '/agents/security', icon: 'layers', meta: 'Choose a boundary →' },
   { title: 'Tools', text: 'See which operations agents can call through addons, and how they cross the isolation boundary.', link: '/provision/tools', icon: 'plug', meta: 'Understand tools →' }
 ]" />
 

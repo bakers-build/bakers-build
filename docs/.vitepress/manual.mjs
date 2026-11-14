@@ -55,7 +55,7 @@ export const SIDEBAR = {
     ]),
     group("Tools and access", [
       ["Tools and integrations", "/provision/tools"],
-      ["Permissions and isolation", "/provision/security/"],
+      ["Permissions and isolation", "/agents/security"],
     ]),
     group("Machine setup", [
       ["Set up a worker server", "/provision/worker-server"],
@@ -72,7 +72,7 @@ export const SIDEBAR = {
       ["Add lifecycle hooks", "/provision/hooks"],
     ]),
     group("Security", [
-      ["Permissions and isolation", "/provision/security/"],
+      ["Permissions and isolation", "/agents/security"],
       ["Agent permissions", "/provision/security/execution"],
       ["Isolation models", "/agents/isolation"],
       ["Tools across boundaries", "/provision/tools"],
@@ -86,6 +86,7 @@ export const SIDEBAR = {
       ["Overview", "/agents/"],
       ["Configure and select agents", "/agents/guide"],
       ["Agent policy reference", "/agents/reference"],
+      ["Permissions and isolation", "/agents/security"],
       ["Isolation models", "/agents/isolation"],
     ]),
   ],

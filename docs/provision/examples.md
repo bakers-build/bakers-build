@@ -28,6 +28,6 @@ The [Node.js project example](/provision/node-project) uses the repository's pac
 
 Apply the same [worktree requirements](/provision/guide#make-the-project-worktree-compatible) to your own stack. Provide repeatable setup, a readiness check and cleanup scoped to one ticket. Add an addon only when you need additional tools or integration.
 
-**Verify:** prepare two worktrees, repeat setup, and check both applications. Cleaning up one must leave the other working. Choose [security boundaries](/provision/security/) for the agent as well as for the application.
+**Verify:** prepare two worktrees, repeat setup, and check both applications. Cleaning up one must leave the other working. Choose [security boundaries](/agents/security) for the agent as well as for the application.
 
 **Next:** return to [project preparation](/provision/guide#check-tools-and-access) to review access and verify independence, then connect the checkout.

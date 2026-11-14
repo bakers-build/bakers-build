@@ -25,7 +25,7 @@ The path of one ticket:
 2. A **conductor**, bound to your project checkout on a **worker machine** (your computer or a remote worker), claims an eligible ticket: in a state it serves, not frozen or blocked, with machine capacity free. See [which tickets it takes](/configuration/project/conductors#which-tickets-it-takes) and [where agents run](/provision/machine).
 3. The conductor starts a coding **agent**, Claude Code or Codex under your own sign-in ([Agents](/agents/)).
 4. The agent writes a spec and plan into the ticket and waits for your approval before implementing ([Workflows and states](/skills-and-workflows/states)).
-5. Each attempt is a **run** in its own **worktree**, a separate Git checkout. The agent implements and checks the change within the permissions set in [Agent permissions and isolation](/provision/security/).
+5. Each attempt is a **run** in its own **worktree**, a separate Git checkout. The agent implements and checks the change within the permissions set in [Agent permissions and isolation](/agents/security).
 6. An agent reviews the change, then you review the result: a summary in the ticket and a merge request ([Accept results](/skills-and-workflows/accept-results)).
 7. You authorize the merge.
 

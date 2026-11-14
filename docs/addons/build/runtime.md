@@ -5,7 +5,7 @@ description: Implement and register an outer agent execution backend through the
 
 # Write a runtime addon
 
-A **runtime addon** is a package contributing an implementation of the conductor's `runtime` slot. It wraps the agent launch before the executor starts it. A **tool** is a callable operation exposed to the agent; contributing a runtime does not itself create a tool. Review [how permissions, isolation and tools fit together](/provision/security/) and the [isolation models](/agents/isolation) before choosing what to implement.
+A **runtime addon** is a package contributing an implementation of the conductor's `runtime` slot. It wraps the agent launch before the executor starts it. A **tool** is a callable operation exposed to the agent; contributing a runtime does not itself create a tool. Review [how permissions, isolation and tools fit together](/agents/security) and the [isolation models](/agents/isolation) before choosing what to implement.
 
 Use a runtime when you need another **per-run execution environment**. An operator-provided container around the whole conductor needs no runtime addon. Agent permission rules belong to the harness integration; an executor owns the terminal, and a workspace owns the worktree.
 

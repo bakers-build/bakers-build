@@ -2,7 +2,7 @@
 
 <span id="security"></span>
 
-Account authorization determines which server resources a person or service can access. [Agent permissions and isolation](/provision/security/) determine how work runs on a machine. Configure these independently; a workspace rank does not confine a process, and a sandbox does not change an account’s server rights.
+Account authorization determines which server resources a person or service can access. [Agent permissions and isolation](/agents/security) determine how work runs on a machine. Configure these independently; a workspace rank does not confine a process, and a sandbox does not change an account’s server rights.
 
 ## Credentials and access
 

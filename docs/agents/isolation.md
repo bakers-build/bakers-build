@@ -5,7 +5,7 @@ description: Detail page comparing native agent sandboxes, outer runtimes and op
 
 # Isolation models
 
-This page compares isolation boundaries in detail. How they combine with agent permissions and tools, and what the terms mean, is explained in [Agent permissions and isolation](/provision/security/).
+This page compares isolation boundaries in detail. How they combine with agent permissions and tools, and what the terms mean, is explained in [Agent permissions and isolation](/agents/security).
 
 ## Status words
 

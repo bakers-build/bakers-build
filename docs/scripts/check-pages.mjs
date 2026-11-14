@@ -92,10 +92,11 @@ for (const slug of ['connector', 'connect-a-project', 'first-ticket']) {
     `missing setup entry: ${slug}`,
   )
 }
-for (const slug of ['machine', 'guide', 'tools', 'security/', 'examples']) {
+// The security overview lives under Agents but stays on the provision path.
+for (const link of ['/provision/machine', '/provision/guide', '/provision/tools', '/agents/security', '/provision/examples']) {
   requireNavigation(
-    sidebarLinks(SIDEBAR['/provision/'] ?? []).includes(`/provision/${slug}`),
-    `missing provision entry: ${slug}`,
+    sidebarLinks(SIDEBAR['/provision/'] ?? []).includes(link),
+    `missing provision entry: ${link}`,
   )
 }
 const publicRoutes = new Set(pages(DOCS)
