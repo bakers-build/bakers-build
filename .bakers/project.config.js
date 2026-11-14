@@ -113,6 +113,7 @@ export default {
   // { use: '@bakers-build/addon-ports', with: { transport: { use:
   // '@bakers-build/addon-ports-frp', with: { … } } } }, merged with this one.
   addons: [
+    '@bakers-build/addon-ddev',
     // Layout per workflow state: project = workspace, run = tab.
     // No hard-wired diff pane for `review`: the review diff surface is hunk
     // (BB-55) — agent-driven + opt-in in the human's interactive pane
@@ -134,7 +135,6 @@ export default {
     // selected only inside a `.bakers-testbuild` workspace, and reached by explicit
     // path (`./bakers-cli/bin/bakers`) anywhere else.
     '@bakers-build/addon-herdr',
-    '@bakers-build/addon-ddev',
     '@bakers-build/addon-agents',
     '@bakers-build/addon-deployment',
     {
