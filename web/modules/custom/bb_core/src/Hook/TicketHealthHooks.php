@@ -41,7 +41,7 @@ final class TicketHealthHooks {
    */
   #[Hook('bb_ticket_presave')]
   public function ticketPresave(BbTicketInterface $ticket): void {
-    if ($this->health->refreshing) {
+    if ($this->health->refreshing || !$this->installed('bb_run')) {
       return;
     }
     $original = $ticket->getOriginal();
@@ -164,6 +164,9 @@ final class TicketHealthHooks {
    * Refreshes open tickets referencing a changed fact.
    */
   private function refreshMatching(string $field, int|string|array|null $id): void {
+    if (!$this->installed('bb_ticket')) {
+      return;
+    }
     $storage = $this->entityTypeManager->getStorage('bb_ticket');
     $ids = $storage->getQuery()->accessCheck(FALSE)->condition('closed', 0)->condition($field, $id, is_array($id) ? 'IN' : '=')->execute();
     $this->refreshIds($ids);
@@ -207,9 +210,19 @@ final class TicketHealthHooks {
    *   Ticket ids.
    */
   private function refreshIds(array $ids): void {
+    if (!$this->installed('bb_run')) {
+      return;
+    }
     $tickets = array_filter($this->entityTypeManager->getStorage('bb_ticket')->loadMultiple($ids),
       static fn ($entity): bool => $entity instanceof BbTicketInterface);
     $this->health->refresh($tickets);
+  }
+
+  /**
+   * Kernel tests may write entities without the tables health reads.
+   */
+  private function installed(string $entity_type_id): bool {
+    return $this->installedSchema->getLastInstalledDefinition($entity_type_id) !== NULL;
   }
 
 }
