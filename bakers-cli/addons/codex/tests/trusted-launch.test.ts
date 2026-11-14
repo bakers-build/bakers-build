@@ -90,7 +90,7 @@ describe('Codex sandbox.trusted_commands', () => {
       'prefix_rule(pattern=["ddev"], decision="allow"',
     );
     expect(ownRule(seen.rules)).toContain(
-      'prefix_rule(pattern=["git", "push"], decision="allow"',
+      'prefix_rule(pattern=["git","push"], decision="allow"',
     );
     expect(seen.rules['default.rules']).toContain('["make"]');
     // The run keeps its sandbox and never prompts; no shared daemon serves another home's rules.
@@ -123,6 +123,19 @@ describe('Codex sandbox.trusted_commands', () => {
       join(f.root, 'operator'),
     ).launchCommand('work');
     expect(without).toMatch(/^codex -a never /);
+  });
+
+  it('reads a Claude-style trailing * as the same prefix', async () => {
+    const f = await fixture();
+    const seen = JSON.parse(
+      (await execute(f.command(['ddev *', 'git push *']), f.options)).stdout,
+    );
+    expect(ownRule(seen.rules)).toContain(
+      'prefix_rule(pattern=["ddev"], decision="allow"',
+    );
+    expect(ownRule(seen.rules)).toContain(
+      'prefix_rule(pattern=["git","push"], decision="allow"',
+    );
   });
 
   it('passes on the exit status', async () => {
@@ -168,7 +181,10 @@ describe('Codex sandbox.trusted_commands', () => {
   it.each([
     '',
     ' ',
-    'ddev *',
+    '*',
+    'dd*',
+    'ddev * x',
+    'ddev * *',
     'dd?v',
     'git push; rm -rf /',
     "ddev 'init'",

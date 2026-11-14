@@ -164,18 +164,21 @@ const COMMAND_TOKEN = /^[A-Za-z0-9_./@%+=:,-]+$/;
 
 /**
  * Codex `prefix_rule`s allowing each entry, a literal command prefix of
- * whitespace-separated argv tokens (`'ddev'`, `'git push'`). Throws on any
- * entry Codex would not match literally, so none silently widens.
+ * whitespace-separated argv tokens (`'ddev'`, `'git push'`, or `'ddev *'` as
+ * written for Claude). Throws on any entry Codex would not match literally,
+ * so none silently widens.
  */
 export function trustedCommandRules(entries: readonly string[]): string {
   return entries
     .map((entry) => {
       const tokens = entry.trim().split(/\s+/);
+      // A Claude-style trailing ` *` means the same prefix; no other wildcard.
+      if (tokens.length > 1 && tokens.at(-1) === '*') tokens.pop();
       if (entry.trim() === '' || !tokens.every((t) => COMMAND_TOKEN.test(t)))
         throw new Error(
           `sandbox.trusted_commands: ${JSON.stringify(entry)} is not a literal command prefix such as 'ddev' or 'git push'; Codex has no wildcards, quoting or shell syntax`,
         );
-      return `prefix_rule(pattern=${JSON.stringify(tokens).replaceAll('","', '", "')}, decision="allow", justification="bakers.build sandbox.trusted_commands")\n`;
+      return `prefix_rule(pattern=${JSON.stringify(tokens)}, decision="allow", justification="bakers.build sandbox.trusted_commands")\n`;
     })
     .join('');
 }
