@@ -1,0 +1,145 @@
+# Many badges in ONE right cell, as the addon overview renders one per conductor
+# and version. They wrap; none shrinks until its label is cut.
+component: bb_theme:list
+name: Pattern many badges
+props:
+  layout: lines
+  pattern:
+    headline:
+      - label
+      - name
+    meta:
+      - versions
+      - contract
+    right:
+      - conductors
+    right_meta:
+      - installed
+    captions:
+      versions: Versions
+      contract: Contract
+  items:
+    - cells:
+        label:
+          kind: text
+          value: Codex agent
+          emphasis: strong
+        name:
+          kind: mono
+          value: codex
+        versions:
+          kind: mono
+          value: 1.4.2, 1.3.0
+        contract:
+          kind: mono
+          value: '3'
+        conductors:
+          kind: rendered
+          markup:
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: APX build runner 1.4.2
+                tone: running
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: APX build runner 1.3.0
+                tone: offline
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: backend-ci-west 1.4.2
+                tone: running
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: backend-ci-west 1.3.0
+                tone: offline
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: BDX conductor north 1.4.2
+                tone: running
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: BDX conductor north 1.3.0
+                tone: offline
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: cw-framework laptop 1.4.2
+                tone: running
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: cw-framework laptop 1.3.0
+                tone: offline
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: docs preview host 1.4.2
+                tone: running
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: docs preview host 1.3.0
+                tone: offline
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: edge-runner-frankfurt 1.4.2
+                tone: running
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: edge-runner-frankfurt 1.3.0
+                tone: offline
+                dot: true
+        installed:
+          kind: text
+          value: 12 installs
+    - cells:
+        label:
+          kind: text
+          value: Claude agent
+          emphasis: strong
+        name:
+          kind: mono
+          value: claude
+        versions:
+          kind: mono
+          value: 2.0.0
+        contract:
+          kind: mono
+          value: '3'
+        conductors:
+          kind: rendered
+          markup:
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: APX build runner 1.4.2
+                tone: running
+                dot: true
+            - type: component
+              component: bb_theme:badge
+              props:
+                label: APX build runner 1.3.0
+                tone: offline
+                dot: true
+        installed:
+          kind: text
+          value: 2 installs
