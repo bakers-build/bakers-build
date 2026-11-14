@@ -39,46 +39,22 @@ by branch or commit, not by its ticket number.
 
 ## GitHub pull requests
 
-GitHub's default branch is `next`; `main` is stable. Open the PR from `<branch_name>` into the
+GitHub's default branch is `next`; `main` is stable. A pull request title and description carry
+**no bakers.build reference**, without exception: the PR is the customer-facing artifact and the
+bakers.build identifier belongs in the commit trailer only. Open the PR from `<branch_name>` into the
 ticket's computed `<target_branch>` (a deployment's environment branch, otherwise
 `<base_branch>`) through the forge tools (`bb-workflow` ›
 `references/forge.md`). Feature PRs squash-merge with the title
-as subject and final-line `ref:<identifier>` in the body. GitHub has no per-PR squash/deletion
-preferences: send the merge method explicitly and delete only an eligible short-lived source
-branch after verified success. Preserve shared branches and branches targeted by other PRs.
+as subject and final-line `ref:<identifier>` in the body, because a squash discards the branch
+commits' own trailers. GitHub has no per-PR squash/deletion preferences: the merge sends
+**squash commits** and the **delete source branch** decision explicitly, deleting only after
+verified success and only when the source is the ticket's own short-lived work branch, never a
+shared branch, a release branch a later promote reuses, or a branch other PRs still target.
+`bb-workflow` › `references/delivery.md` and `references/merge.md` own that rule operationally.
 
 Only this repository's `next`, or its `release/*` branch at a commit of `next`, promotes into
 `main`, by merge commit preserving the candidate
 tree and second parent. Keep both branches. The frozen second parent identifies the release.
-The GitLab-specific client instructions below apply only to repositories still hosted there.
-
-## GitLab merge requests
-
-a merge request title and description carry **no bakers.build reference**,
-without exception: the MR is the customer-facing artifact and the bakers.build identifier belongs in
-the commit trailer only. Work lands through a merge request, squash-merged, targeting the
-ticket's computed **`base_branch`** — the direct parent's branch for a sub-ticket, otherwise the
-project's default branch, which for the legacy GitLab repository is `develop`. The forge tools
-derive that target from the run; without them the coding step passes it explicitly
-(`glab mr create --target-branch <base_branch>`), because left implicit glab targets the
-repository default and a sub-ticket lands beside its parent's work instead of on top of it.
-Because a squash collapses the branch's commits into one message — discarding their trailers —
-`bb-workflow` › `references/merge.md` writes `ref:<identifier>` into the squash commit's body
-itself, the commit that represents the change; left to GitLab's default template it would carry
-only the MR title, which by the rule above carries no reference at all. How that merge request is **opened** is
-equally not left to the client: it targets the ticket's `base_branch` as above and carries
-**squash commits** and **delete source branch** both enabled — the deletion only because the
-source is the ticket's own short-lived work branch, never for a long-lived or shared branch, a
-release branch a later promote reuses, or a branch other open MRs still target as their base.
-`bb-workflow` › `references/delivery.md` and `references/merge.md` own that rule operationally, and the forge tools
-send each property explicitly, because none of them is a value a client supplies on its own: `squash` and `remove_source_branch` are written onto the MR when it is created, and a
-merge call that omits `squash` or `should_remove_source_branch` inherits whatever the MR already
-stores — including the `force_remove_source_branch` a forge project setting puts there — so a
-property left unstated is decided somewhere else entirely.
-
-`main` is the exception: it is never squashed. Only a release branch reaches it, by merge commit,
-so the `release` job tags the merge's second parent, the frozen `develop` commit, which `develop`
-contains ([deployment](../addons/deployment/reference.md)).
 
 ## Ticket identifiers by surface
 
