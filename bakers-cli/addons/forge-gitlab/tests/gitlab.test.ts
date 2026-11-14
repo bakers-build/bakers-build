@@ -162,21 +162,32 @@ describe('forge-gitlab', () => {
 
   it('requires the pipeline and every job that may not fail, and writes nothing', async () => {
     const f = fakeFetch({
-      'GET /pipelines': () => [{ id: 77, status: 'running' }],
+      'GET /pipelines': () => [
+        {
+          id: 77,
+          status: 'running',
+          started_at: '2026-11-14T10:00:00Z',
+          created_at: '2026-11-14T09:59:00Z',
+        },
+      ],
       'GET /pipelines/77/jobs': () => [
-        { name: 'lint', status: 'success', allow_failure: false },
-        { name: 'gate', status: 'manual', allow_failure: false },
-        { name: 'flaky', status: 'failed', allow_failure: true },
-        { name: 'e2e', status: 'failed', allow_failure: false },
+        { id: 1, name: 'lint', status: 'success', allow_failure: false },
+        { id: 2, name: 'gate', status: 'manual', allow_failure: false },
+        { id: 3, name: 'flaky', status: 'failed', allow_failure: true },
+        { id: 4, name: 'e2e', status: 'canceled', allow_failure: false },
+        { id: 5, name: 'docs', status: 'skipped', allow_failure: false },
       ],
     });
     const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    const run = { run_id: 77, run_started_at: '2026-11-14T10:00:00Z' };
     expect(await b.checks('a'.repeat(40), 'develop')).toEqual([
-      { name: 'pipeline', status: 'pending', required: true },
-      { name: 'lint', status: 'success', required: true },
-      { name: 'gate', status: 'pending', required: true },
-      { name: 'flaky', status: 'failure', required: false },
-      { name: 'e2e', status: 'failure', required: true },
+      { name: 'pipeline', status: 'pending', required: true, conclusion: 'running', job_id: null, ...run },
+      { name: 'lint', status: 'success', required: true, conclusion: 'success', job_id: 1, ...run },
+      { name: 'gate', status: 'pending', required: true, conclusion: 'manual', job_id: 2, ...run },
+      { name: 'flaky', status: 'failure', required: false, conclusion: 'failed', job_id: 3, ...run },
+      { name: 'e2e', status: 'failure', required: true, conclusion: 'canceled', job_id: 4, ...run },
+      // overall() fails a required check whose conclusion is skipped.
+      { name: 'docs', status: 'success', required: true, conclusion: 'skipped', job_id: 5, ...run },
     ]);
     expect(f.calls[0]!.path).toContain(`sha=${'a'.repeat(40)}`);
     expect(f.calls.every((c) => c.method === 'GET')).toBe(true);
@@ -184,7 +195,15 @@ describe('forge-gitlab', () => {
     const none = fakeFetch({ 'GET /pipelines': () => [] });
     const empty = await factory(SETTINGS, { home: '/h', fetch: none.doFetch });
     expect(await empty.checks('feat/bb-7-work', 'develop')).toEqual([
-      { name: 'pipeline', status: 'missing', required: true },
+      {
+        name: 'pipeline',
+        status: 'missing',
+        required: true,
+        conclusion: null,
+        run_id: null,
+        job_id: null,
+        run_started_at: null,
+      },
     ]);
     expect(none.calls[0]!.path).toContain('ref=feat%2Fbb-7-work');
   });
