@@ -241,9 +241,15 @@ describe('forge-github', () => {
       title: 'feat: x',
       body: 'b',
     });
-    expect((await b.updatePr(pr!, { title: 'feat: y', body: '' })).title).toBe(
-      'feat: y',
-    );
+    expect(
+      (await b.updatePr(pr!, { title: 'feat: y', body: '', base: 'main' }))
+        .title,
+    ).toBe('feat: y');
+    expect(f.calls.find((c) => c.method === 'PATCH')?.body).toEqual({
+      title: 'feat: y',
+      body: '',
+      base: 'main',
+    });
     expect(await b.openPrsWithBase('next')).toHaveLength(1);
   });
 

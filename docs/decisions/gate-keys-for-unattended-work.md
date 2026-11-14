@@ -103,7 +103,7 @@ A label says which gates the run passes on its own. It stays fixed for the ticke
 - **`human-review` without a reviewer** stops with a question at the first state that finds it.
 - **One label per ticket**: `auto` beside one `human-*` label is read as that `human-*` label
   alone; `human-review` beside `human-accept` stops with a question asking which applies. The
-  requester chose the names in review: `auto-review` and `auto-accept` read as the run reviewing
+  requester chose the names in review: the earlier `auto-` names read as the run reviewing
   or accepting.
 - **`ticket-question`** stays a modifier on any label: it decides where the run asks, never which
   gates it passes. No rule is derived from the assignee, because an empty assignee becomes the
@@ -193,7 +193,7 @@ migration. The implementation changed:
   500 words), `bb-recipe-verify` and the test recipes.
 - **Docs**: `docs/skills-and-workflows/types-recipes-labels.md`, `recipes.md`, `workflow-file.md`,
   `docs/development/skill-contract.md`, `docs/bakers/development-skills.md` (skill count, bundle
-  0.71.0), `.claude/skills/bakers-build/README.md`. `docs/bakers/github-migration.md` and
+  0.72.0), `.claude/skills/bakers-build/README.md`. `docs/bakers/github-migration.md` and
   `docs/development/test-skill-tools.md` describe `auto` only and stay as they are.
 - **Tests**: `tests/contract/skill-references.py` accepts `## bb-gates`, requires a row per
   declared type and requires each state's always-read references to link the `### Gates` record; the `bb-label-auto` skill-eval profile also serves the two new label skills, with
