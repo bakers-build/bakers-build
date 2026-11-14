@@ -199,6 +199,10 @@ migration. The implementation changed:
   declared type and requires each state's always-read references to link the `### Gates` record; the `bb-label-auto` skill-eval profile also serves the two new label skills, with
   the fixtures `label-human-review-*` and `label-human-accept-*` and their cases in
   `bakers-cli/core/tests/workflow/skill-state-evals.test.ts`; the simulated ticket read in
-  `tests/skill-eval/tool-server.py` returns `reviewers`, as the real tool does.
+  `tests/skill-eval/tool-server.py` returns `reviewers`, as the real tool does. The `state-outtake`
+  profile gains a `gates` check with the fixture `outtake-gates-unlabelled` and its case in
+  `tests/skill-eval/cli-contract.mjs` and `contract-fixture.json`. The existing `auto` review-state
+  fixtures are renamed `auto-in-review-*` and `auto-content-decision-accepted`, so that no name
+  reads like a former label; their behaviour is unchanged.
 - **Follow-up**: label terms `human-review` and `human-accept` in each workspace; label-permission
   enforcement in `bb_core`; an optional metric on `followed: no`.
