@@ -1,4 +1,5 @@
 import { rmSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import {
   type LaunchScript,
   type LaunchWatchOptions,
@@ -19,8 +20,11 @@ import {
   shellQuote,
 } from '@bakers-build/core';
 
-/** Runs `hc <args>`; resolves with stdout, rejects on a non-zero exit. */
-export type HcExec = (args: string[]) => Promise<string>;
+/**
+ * Runs `hc <args>` with optional stdin; resolves with stdout, rejects on a
+ * non-zero exit.
+ */
+export type HcExec = (args: string[], input?: string) => Promise<string>;
 
 export interface HerdrCoreExecutorOptions {
   /** Fallback agent command when the conductor supplies none. Default `claude`. */
@@ -29,7 +33,7 @@ export interface HerdrCoreExecutorOptions {
   launch_watch?: Omit<LaunchWatchOptions, 'readPane'>;
 }
 
-/** The oldest `hc` whose `run --bg --no-parent --outlive-parent` this addon uses. */
+/** The oldest `hc` whose `terminal.run` (`no_parent`, `outlive_parent`, `size`) this addon uses. */
 export const MIN_HC_VERSION = '0.1.18';
 
 /** `hc` is not on PATH. */
@@ -43,9 +47,9 @@ export class HcNotFound extends Error {
 }
 
 /** The real CLI, resolved through PATH. */
-export const defaultHc: HcExec = async (args) => {
+export const defaultHc: HcExec = async (args, input) => {
   try {
-    return await exec('hc', args);
+    return await exec('hc', args, input === undefined ? {} : { input });
   } catch (err) {
     const cause = (err instanceof ExecError ? err.cause : err) as {
       code?: unknown;
@@ -54,6 +58,11 @@ export const defaultHc: HcExec = async (args) => {
     throw err;
   }
 };
+
+/** Built beside this module; forwards pane resizes to a sandboxed agent. */
+const RESIZE_FORWARDER = fileURLToPath(
+  new URL('./resize-forwarding.js', import.meta.url),
+);
 
 const noopLogger: ConductorLogger = {
   debug() {},
@@ -145,25 +154,21 @@ export class HerdrCoreExecutor implements BbExecutor {
     try {
       // The run's env travels inside the 0600 launch script, never in argv.
       launch = writeLaunchScript(this.commandFor(input));
-      await this.hc([
-        'run',
-        '--bg',
-        '--no-parent',
-        '--outlive-parent',
-        '--cwd',
-        input.workspacePath,
-        '--name',
+      // hc's CLI cannot set the start size, its API can: hc's headless default
+      // (200x120) rewraps the agent's first draw in any smaller pane.
+      await this.terminalRun({
+        argv: [process.execPath, RESIZE_FORWARDER, 'sh', launch.wrapPath],
+        cwd: input.workspacePath,
         name,
-        '--label',
-        `bakers.branch=${input.ticket.branchName}`,
-        '--label',
-        `bakers.run=${input.run.id}`,
-        '--label',
-        `bakers.ticket=${input.ticket.identifier}`,
-        '--json',
-        'sh',
-        launch.wrapPath,
-      ]);
+        labels: {
+          'bakers.branch': input.ticket.branchName,
+          'bakers.run': String(input.run.id),
+          'bakers.ticket': input.ticket.identifier,
+        },
+        no_parent: true,
+        outlive_parent: true,
+        size: { cols: 80, rows: 24 },
+      });
       started = true;
       await watchLaunch(launch, {
         ...(this.options.launch_watch ?? {}),
@@ -211,6 +216,25 @@ export class HerdrCoreExecutor implements BbExecutor {
       this.logger.warn(
         { branch, runId, err: String(err) },
         'herdr-core cleanup failed (best-effort)',
+      );
+    }
+  }
+
+  /**
+   * One `terminal.run` over `hc connect`, the background start (`run --bg`).
+   * hc answers an error with exit 0, so the reply decides.
+   */
+  private async terminalRun(params: object): Promise<void> {
+    const reply = JSON.parse(
+      await this.hc(
+        ['connect', '--json'],
+        `${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'terminal.run', params })}\n`,
+      ),
+    ) as { error?: { message?: string; data?: { kind?: string } } };
+    if (reply.error) {
+      const kind = reply.error.data?.kind ?? 'error';
+      throw new Error(
+        `hc terminal.run failed (${kind}): ${reply.error.message ?? 'no message'}`,
       );
     }
   }
