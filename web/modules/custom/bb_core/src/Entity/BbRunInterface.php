@@ -129,8 +129,8 @@ interface BbRunInterface extends BbContentEntityInterface {
    * One-line reason a failed run failed, or NULL for any other state.
    *
    * The first non-empty error-log line without a leading "Error: ", cut at 140
-   * characters; a failed run with no or an unreadable error log gets the
-   * no-reason copy. Never throws.
+   * characters. Without such a line a failed run gets the no-reason copy,
+   * which points to the log only when hasLog() finds one. Never throws.
    */
   public function failureReason(): ?string;
 
@@ -138,8 +138,17 @@ interface BbRunInterface extends BbContentEntityInterface {
    * The failure reason before it is cut, for the full line on hover.
    *
    * The first non-empty error-log line without a leading "Error: ", or the
-   * no-reason copy; NULL for any state but failed. Never throws.
+   * no-reason copy; NULL for any state but failed. Read once per loaded
+   * entity until it is saved again. Never throws.
    */
   public function failureLine(): ?string;
+
+  /**
+   * Whether the given log is stored: its size is set and its file exists.
+   *
+   * @param string $kind
+   *   `log` or `error_log`; anything else is FALSE.
+   */
+  public function hasLog(string $kind): bool;
 
 }
