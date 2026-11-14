@@ -229,6 +229,7 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       const b = encodeURIComponent(base);
       const [runs, status, rules, branch] = await Promise.all([
         api(`/commits/${at}/check-runs?filter=all&per_page=100`) as Promise<{
+          total_count?: number;
           check_runs: {
             id: number;
             name: string;
@@ -236,6 +237,7 @@ const factory: ForgeBackendFactory = async (raw, context) => {
             conclusion: string | null;
             head_sha: string;
             check_suite?: { id: number } | null;
+            app?: { slug: string } | null;
           }[];
         }>,
         api(`/commits/${at}/status`) as Promise<{
@@ -262,6 +264,11 @@ const factory: ForgeBackendFactory = async (raw, context) => {
           .map((c) => c.context),
         ...(branch?.protection?.required_status_checks?.contexts ?? []),
       ]);
+      // shortcut: one page only; a partial list could hide a newer attempt, so refuse it; paginate when this trips.
+      if ((runs.total_count ?? 0) > runs.check_runs.length)
+        throw new Error(
+          `${ref} has ${runs.total_count} check runs, more than the ${runs.check_runs.length} one page holds; the result would be partial`,
+        );
       // `ref` may be a branch: the runs lookup needs the commit the check runs report.
       const sha = runs.check_runs[0]?.head_sha;
       const workflowRuns = sha
@@ -287,7 +294,12 @@ const factory: ForgeBackendFactory = async (raw, context) => {
         w: r.check_suite ? bySuite.get(r.check_suite.id) : undefined,
       }));
       if (!opts.allRuns) {
-        jobs = jobs.filter(({ w }) => !w || newest.get(w.workflow_id) === w);
+        // An Actions check run without a listed run belongs to an earlier attempt.
+        jobs = jobs.filter(({ r, w }) =>
+          w
+            ? newest.get(w.workflow_id) === w
+            : r.app?.slug !== 'github-actions',
+        );
         // A re-run attempt is a newer check run of the same name in the same run.
         const latest = new Map<string, number>();
         const key = (j: (typeof jobs)[number]) =>

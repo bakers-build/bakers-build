@@ -72,6 +72,7 @@ const cr = (
   status: string,
   conclusion: string | null,
   suite = 100,
+  app = 'github-actions',
 ) => ({
   id,
   name,
@@ -79,6 +80,7 @@ const cr = (
   conclusion,
   head_sha: 'abc',
   check_suite: { id: suite },
+  app: { slug: app },
 });
 
 /** A workflow run owning check suite `suite`. */
@@ -336,7 +338,9 @@ describe('forge-github', () => {
           cr(32, 'required', 'completed', 'failure', 200),
           cr(33, 'build', 'completed', 'success', 200),
           cr(41, 'docs', 'completed', 'success', 300),
-          cr(51, 'external', 'completed', 'success', 999),
+          cr(51, 'external', 'completed', 'success', 999, 'other-ci'),
+          // An earlier attempt whose suite the runs list no longer names.
+          cr(15, 'required', 'completed', 'failure', 50),
         ],
       }),
       'GET /repos/acme/shop/commits/feat%2Fbb-7-work/status': () => ({
@@ -373,7 +377,20 @@ describe('forge-github', () => {
       ['build', 2, 33, 'success'],
       ['docs', 3, 41, 'success'],
       ['external', null, null, 'success'],
+      ['required', null, null, 'failure'],
     ]);
+  });
+
+  it('refuses a commit with more check runs than one page rather than judge a partial list', async () => {
+    const f = fakeFetch({
+      'GET /repos/acme/shop/commits/abc/check-runs': () => ({
+        total_count: 101,
+        check_runs: [cr(1, 'build', 'completed', 'success')],
+      }),
+      'GET /repos/acme/shop/commits/abc/status': () => ({ statuses: [] }),
+    });
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    await expect(b.checks('abc', 'next')).rejects.toThrow(/101 check runs/);
   });
 
   it('reads the tail of a job log of the repository and refuses another job', async () => {
