@@ -36,10 +36,10 @@ The addon provides these tools for the run's worktree, the DDEV approot. Claude 
 
 Answers carry the exit code and the last 64 KB of output; a non-zero exit is a tool error. The conductor's [`provision_up`](/provision/hooks#provision-on-an-agent-s-request) tool runs the DDEV script in [Set up DDEV](/addons/ddev/setup#provision-on-an-agent-s-request).
 
-Commands in the web container go through the conductor's [`provision_exec`](/configuration/project/hooks#run-a-configured-command) tool, with a key your project configures:
+Commands in the web container go through the conductor's [`provision_exec`](/configuration/project/hooks#run-a-configured-command) tool, with one fixed key per command your project configures:
 
 ```js
-hooks: { provision_exec: { web: 'bash .bakers/provision.sh exec web' } },
+hooks: { provision_exec: { phpcs: 'bash .bakers/provision.sh exec phpcs' } },
 ```
 
 This repository protects `.bakers`, `.github`, `.ddev` and the `.git` placeholder through

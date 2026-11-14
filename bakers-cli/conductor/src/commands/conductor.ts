@@ -1086,7 +1086,16 @@ async function cmdStartBody(
   // is what tells a genuine new heartbeat apart from the killed conductor's
   // stale-but-still-in-window one.
   const priorLastSeen = existing?.lastSeen;
-  if (existing && classify(existing) === 'online') {
+  const probe = deps.procProbe ?? defaultProcProbe();
+  // A record online by heartbeat whose pid is provably gone or recycled on
+  // this host (same proof as `ls`) is offline: its offline write was lost.
+  const recordOnline =
+    existing !== undefined && classify(existing) === 'online';
+  if (recordOnline && classify(existing, thisHostKey, probe) !== 'online') {
+    console.log(
+      `conductor ${id}: recorded pid ${existing.lastPid} is not running here; starting`,
+    );
+  } else if (recordOnline) {
     if (!force) {
       const age = heartbeatAgeSeconds(existing);
       console.log(
@@ -1096,7 +1105,6 @@ async function cmdStartBody(
       return;
     }
 
-    const probe = deps.procProbe ?? defaultProcProbe();
     const stopOutcome = signalVerifiedProcess({
       pid: existing.lastPid,
       hostKey: existing.hostKey,

@@ -1,12 +1,27 @@
 # Tools and integrations
 
-Tools make functions available to agents and other callers: check an environment, run a test, prepare an application or share a preview. They connect your project tooling to the people and agents working on tickets.
+Tools let a restricted agent perform the work it needs without granting its shell general host access. The agent requests an operation with named inputs; the conductor or integration executes it and returns a result or error.
 
-## What a tool does
+## Work across permissions and isolation
 
-A tool has a name, a description and defined input parameters. The caller chooses a tool and supplies its inputs; the implementation performs the operation and returns a result or an error.
+[Agent permissions](/provision/security/execution) govern which actions the harness allows. [Isolation](/agents/isolation) limits the environment visible to the agent process. Configure both, then supply tools for operations that need a different environment or credential.
 
-For example, `ddev_status()` reports an environment's status. `provision_exec(key, args?)` runs a command your project configured; only keys that allow arguments take `args`. The tool's implementation determines what it can do.
+| Required operation | Tool path | What stays outside the agent's shell |
+|---|---|---|
+| Prepare or reuse the application | `provision_up(profile)` | The configured provisioning command and its host access |
+| Push, prepare a PR, inspect checks | [Forge tools](/addons/forge) | The conductor's forge credential |
+| Run application checks | `provision_exec(key, args?)` | The project-configured command, for example in the web container with that container's mounts and rights |
+| Share a preview | `ports_up(service)` | The configured tunnel integration |
+
+For example, an agent can edit its worktree, request the `test` provisioning profile, run application checks through `provision_exec` and prepare a PR through Forge. It needs access to those tools, not a blanket `docker`, `git` or `bakers` shell exemption. The selected tool must be available and permitted by the harness; isolation alone grants no tool access.
+
+The tool is an explicit path **across** a boundary, not an extension of the agent sandbox. Review three things:
+
+- **Call authorization:** which operations and inputs the integration accepts for this run, ticket and project.
+- **Execution authority:** where the implementation runs, which files it mounts and which credentials it holds. Keep credentials with the integration when the agent does not need their values.
+- **Returned data and editable code:** results enter the agent/model context. A host-side tool loading agent-editable scripts can execute that code with host rights.
+
+A fixed tool name or profile does not itself make execution safe. `ddev_status()` is a status query; a `provision_exec` key that takes `args` passes the agent's arguments to its command, which for a site container can mean any command there; prefer fixed keys. Their authority differs. Scope the tool implementation and its environment to the intended job.
 
 ## Where tools come from
 
@@ -48,6 +63,6 @@ See [addon tools](/addons/build/tools) and [UI actions and messages](/addons/bui
 
 The first call on a new worktree can take minutes, and the call waits until the command ends, for up to 30 minutes. Agent harnesses cut MCP tool calls by default: Claude Code's HTTP MCP client after 60 seconds (the server entry's `timeout`, else `MCP_TOOL_TIMEOUT`), Codex after the server's `tool_timeout_sec` (60 seconds by default). bakers.build sets both for its `bakers` server at launch, past the 30-minute provision limit. The limit is the harness's, not the conductor's: a harness launched another way still cuts the call. After a client timeout the command keeps running; a new call with the same profile joins it and returns its result instead of starting the command again.
 
-The command runs outside the agent sandbox. This can let an agent prepare its environment while its own shell remains restricted. The script still runs with the execution user's rights, including any code it loads from the worktree. See [the security boundary](/provision/security/#provision-up-and-addon-tools) and the [full provisioning contract](/configuration/project/hooks#provision-on-an-agent-s-request).
+The command runs outside the agent sandbox with the execution user's rights, including any worktree code it loads. The profile must check readiness and return failures; it is not a containment boundary. See [the security boundary](/agents/security#provision-up-and-addon-tools) and the [full provisioning contract](/configuration/project/hooks#provision-on-an-agent-s-request).
 
-**Next:** [choose the agent's security context](/provision/security/), then return to [project verification](/provision/guide#verify-independent-operation).
+**Next:** choose both [agent permissions and isolation](/agents/security), then [verify the project](/provision/guide#verify-independent-operation).

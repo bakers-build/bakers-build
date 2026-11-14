@@ -1,5 +1,7 @@
 # Docker runtime
 
+**Experimental**, unreleased on `next` (13 November 2026). Review [limits](/agents/isolation#experimental-runtimes-known-limits).
+
 `@bakers-build/addon-runtime-docker` fills the [`runtime` slot](/addons/slots#runtime-where-a-run-starts),
 starting each run in a container at host paths. Machine scope:
 
@@ -31,8 +33,8 @@ Container `bb-run-<run uuid>`, under your uid, mounts:
 
 No `~/.ssh`, `~/.bakers` or Docker socket. Secrets use `-e KEY`, never values in argv.
 
-Hook scripts are not copied; an unreachable one fails open. Mount its directory with `mounts`, never
-automatically: each mount exposes host files.
+Hook scripts are not copied; unreachable ones fail open. Grant them via `mounts`; automatic mounts
+expose host files.
 
 Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.
