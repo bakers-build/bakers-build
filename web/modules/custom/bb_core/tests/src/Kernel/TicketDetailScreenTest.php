@@ -1677,7 +1677,7 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $this->setCurrentUser($guest);
     $item = $this->rowItem($newest);
     self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
-    self::assertSame(['Log'], $this->actionLabels($item), 'A guest sees the reason and no intervention.');
+    self::assertSame([], $this->actionLabels($item), 'A guest sees the reason, no intervention and no log.');
   }
 
   /**

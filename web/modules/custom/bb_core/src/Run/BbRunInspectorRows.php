@@ -214,6 +214,9 @@ final class BbRunInspectorRows extends InspectorRows {
    *   The zone, or empty when neither log is captured.
    */
   public function downloads(BbRunInterface $run): array {
+    if (!$run->access('view_log')) {
+      return [];
+    }
     $links = [];
     foreach (['log' => 'Run log', 'error_log' => 'Error log'] as $kind => $title) {
       $bytes = $run->get($kind . '_bytes')->value;

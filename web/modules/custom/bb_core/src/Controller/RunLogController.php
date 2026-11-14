@@ -12,13 +12,13 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Serves a run log to a user who may view the run.
+ * Serves a run log to a user who may read the run's logs.
  *
- * Authorization is the route's `_entity_access: bb_run.view` requirement and
- * nothing else, so there is no second permission vocabulary that could drift
- * from the first. Files on disk are gzip (or leftover plaintext `.log`); this
- * gate is the only thing protecting them. Downloads negotiate gzip vs
- * identity of the decoded plaintext.
+ * Authorization is the route's `_entity_access: bb_run.view_log` requirement
+ * and nothing else, so there is no second permission vocabulary that could
+ * drift from the first. Files on disk are gzip (or leftover plaintext
+ * `.log`); this gate is the only thing protecting them. Downloads negotiate
+ * gzip vs identity of the decoded plaintext.
  */
 final class RunLogController extends ControllerBase {
 
