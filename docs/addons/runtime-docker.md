@@ -29,9 +29,8 @@ Container `bb-run-<run uuid>`, under your uid, mounts:
 - the read/write paths from neutral agent preparation: Claude plugins read-only and the worktree transcript directory writable. Docker has no Claude-specific adapter.
 
 No `~/.ssh`, `~/.bakers`, Docker socket or harness login (`.credentials.json`). Secrets use `-e KEY`, never values in argv.
-User hooks are copied with the Claude settings, their scripts are not. An unreachable hook script
-fails open: its tool still runs. Mount its directory with `mounts`; hook paths are never mounted
-automatically, as each mount exposes host files.
+Hook scripts are not copied; an unreachable one fails open. Mount its directory with `mounts`, never
+automatically: each mount exposes host files.
 
 Permissions stay unchanged. Check and startup warn: sandbox preflight probes only the host.
 The shipped image lacks `bwrap`/`socat`; unavailable sandboxes fail closed and consume retries.

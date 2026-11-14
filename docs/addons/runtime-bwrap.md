@@ -18,8 +18,8 @@ not require `socat` itself. Agent permissions remain unchanged; native sandbox m
 needs its own tools and support for nested namespaces.
 
 The workspace must provide a run clone: the [Git workspace](/addons/workspace-git#isolated-runs) or [herdr](/addons/herdr#isolated-runs). Programs come from the host's
-system directories and executable search paths. Additional tool resources can be granted through
-`readPaths`; each grant exposes that path to the agent.
+system directories and executable search paths. Tool resources and user-hook scripts, which are not copied and otherwise fail open, are granted
+only through `readPaths`: each grant exposes that path to the agent.
 
 ## Options
 
@@ -35,10 +35,6 @@ credential values are absent from the launcher command and plan file.
 The agent prepares its configuration and grants. Claude copies settings and login into the
 private home, mounts plugins read-only, and writes its transcript to the worktree transcript directory.
 Explicit API credentials override stored login.
-
-User hooks are copied with the settings, their scripts are not. An unreachable hook script fails
-open: its tool still runs. Grant its directory with `readPaths`; hook paths are never mounted
-automatically, as each grant exposes host files.
 
 The workspace is a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket
 branch at the worktree path, made at every run start. The run's Git directory, kept in the
