@@ -25,7 +25,10 @@ description: >-
   RENDERS FIRST (BAKERS-57): `max-lg:order-first` on that flex item puts the
   record's properties (normally a closed `inspector` disclosure) above `main` on
   a phone; from `lg` up the order is unchanged. Order only, no overflow and no
-  scroll container.
+  scroll container. Below `lg` the `filters` region is also `display: contents`
+  (`max-lg:contents`), so a `filters` panel whose only phone content is its
+  closed sheet dialog (`opener: false`) adds no empty flex item and no gap; from
+  `lg` up the region is unchanged.
 provider: bb_theme
 slots:
   header:

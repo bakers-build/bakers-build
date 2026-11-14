@@ -2992,9 +2992,14 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Ticket facets'
-                                active_count:
-                                  source_id: bb_view_filter_count
-                                  source: {  }
+                                sheet_id:
+                                  source_id: textfield
+                                  source:
+                                    value: ticket-filters
+                                opener:
+                                  source_id: checkbox
+                                  source:
+                                    value: false
                               slots:
                                 controls:
                                   sources:
@@ -3025,6 +3030,13 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Search and sort'
+                                sheet_for:
+                                  source_id: textfield
+                                  source:
+                                    value: ticket-filters
+                                active_count:
+                                  source_id: bb_view_filter_count
+                                  source: {  }
                               slots:
                                 controls:
                                   sources:
@@ -3128,9 +3140,14 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Ticket facets'
-                                active_count:
-                                  source_id: bb_view_filter_count
-                                  source: {  }
+                                sheet_id:
+                                  source_id: textfield
+                                  source:
+                                    value: ticket-filters
+                                opener:
+                                  source_id: checkbox
+                                  source:
+                                    value: false
                               slots:
                                 controls:
                                   sources:
@@ -3156,6 +3173,13 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Search and sort'
+                                sheet_for:
+                                  source_id: textfield
+                                  source:
+                                    value: ticket-filters
+                                active_count:
+                                  source_id: bb_view_filter_count
+                                  source: {  }
                               slots:
                                 controls:
                                   sources:
@@ -3994,9 +4018,14 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Ticket facets'
-                                active_count:
-                                  source_id: bb_view_filter_count
-                                  source: {  }
+                                sheet_id:
+                                  source_id: textfield
+                                  source:
+                                    value: ticket-filters
+                                opener:
+                                  source_id: checkbox
+                                  source:
+                                    value: false
                               slots:
                                 controls:
                                   sources:
@@ -4027,6 +4056,13 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Search and sort'
+                                sheet_for:
+                                  source_id: textfield
+                                  source:
+                                    value: ticket-filters
+                                active_count:
+                                  source_id: bb_view_filter_count
+                                  source: {  }
                               slots:
                                 controls:
                                   sources:
@@ -4908,9 +4944,14 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Ticket facets'
-                                active_count:
-                                  source_id: bb_view_filter_count
-                                  source: {  }
+                                sheet_id:
+                                  source_id: textfield
+                                  source:
+                                    value: ticket-filters
+                                opener:
+                                  source_id: checkbox
+                                  source:
+                                    value: false
                               slots:
                                 controls:
                                   sources:
@@ -4936,6 +4977,13 @@ display:
                                   source_id: textfield
                                   source:
                                     value: 'Search and sort'
+                                sheet_for:
+                                  source_id: textfield
+                                  source:
+                                    value: ticket-filters
+                                active_count:
+                                  source_id: bb_view_filter_count
+                                  source: {  }
                               slots:
                                 controls:
                                   sources:

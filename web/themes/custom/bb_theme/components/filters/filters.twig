@@ -48,32 +48,82 @@
    so it reads as a surface on the `bg-surface` main area. #}
 {% set filters_controls %}{% block controls %}{{ controls }}{% endblock %}{% endset %}
 {% set filters_actions %}{% block actions %}{{ actions }}{% endblock %}{% endset %}
+{% set filters_pinned %}{% block pinned %}{{ pinned }}{% endblock %}{% endset %}
+{% set has_pinned = filters_pinned|trim is not empty %}
+{% set opener_label = active_count|default(0) > 0 ? 'Filters'|t ~ ' · ' ~ active_count : 'Filters'|t %}
 {#- The bar and the toolbar submit their own fields: a select on change, a
-    text field 500ms after the last keystroke, never the same value twice. -#}
-{% set send_attributes %}x-data="{ send(field) { if (field.form && field.dataset.sent !== field.value) { field.dataset.sent = field.value; field.form.requestSubmit(); } } }" @change="['search', 'text'].includes($event.target.type) || send($event.target)" @input.debounce.500ms="['search', 'text'].includes($event.target.type) && send($event.target)" @keydown.enter="['search', 'text'].includes($event.target.type) && ($event.target.dataset.sent = $event.target.value)"{% endset %}
+    text field 500ms after the last keystroke, never the same value twice.
+    A field inside an open dialog never submits: in the phone sheet, ticks wait for "Show results".
+    A form with its own htmx trigger (Insights) applies itself; submitting it here would reload the page. -#}
+{% set send_attributes %}x-data="{ send(field) { if (field.form && !field.closest('dialog[open]') && !['hx-get', 'data-hx-get', 'hx-trigger', 'data-hx-trigger'].some((name) => field.form.hasAttribute(name)) && field.dataset.sent !== field.value) { field.dataset.sent = field.value; field.form.requestSubmit(); } } }" @change="['search', 'text'].includes($event.target.type) || send($event.target)" @input.debounce.500ms="['search', 'text'].includes($event.target.type) && send($event.target)" @keydown.enter="['search', 'text'].includes($event.target.type) && ($event.target.dataset.sent = $event.target.value)"{% endset %}
 {% if layout|default('panel') == 'bar' %}
+{#- With `sheet_for` the bar is the phone row above a panel whose own opener is
+    off: below `lg` it drops its surface and adds a "Filters · N" opener for
+    that panel's dialog. The opener comes AFTER the controls in the DOM so the
+    `*:first` rules still reach the search; order alone moves it to the front
+    and the search onto its own row. From `lg` up the bar is unchanged. -#}
 <div{{ (attributes ?: create_attribute()).addClass([
-    'flex', 'flex-row', 'flex-wrap', 'items-center', 'gap-inline', 'p-inline-xs', 'bg-app', 'rounded-sm',
+    'flex', 'flex-row', 'flex-wrap', 'items-center', 'gap-inline',
     '*:first:flex-1', '*:first:basis-40', '*:first:min-w-0', '*:not-first:shrink-0', '*:not-first:max-w-full',
     '[&_label]:sr-only', '[&_input]:h-control', '[&_select]:h-control',
-  ]) }} role="search"
+  ]|merge(sheet_for ? ['lg:p-inline-xs', 'lg:bg-app', 'lg:rounded-sm', 'max-lg:*:first:order-last', 'max-lg:*:first:basis-full'] : ['p-inline-xs', 'bg-app', 'rounded-sm'])) }} role="search"
   {%- if label %} aria-label="{{ label }}"{% endif %}
   {{ send_attributes }}>
   {{- filters_controls -}}
+  {%- if sheet_for %}
+  {{ include('bb_theme:button', {
+    variant: 'neutral',
+    type: 'button',
+    label: opener_label,
+    attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden', 'max-lg:order-first'], 'x-on:click': "document.getElementById('" ~ sheet_for ~ "').showModal()" }),
+  }, with_context = false) }}
+  {%- endif %}
 </div>
 {% elseif layout == 'toolbar' %}
 {#- The board filter bar: no surface, one centred row of at least 36 px that
     wraps only when narrow. The controls group leads with the search (240 px);
     `actions` is a second group the row pushes to the right end
-    (justify-between, no outer margin). -#}
+    (justify-between, no outer margin). `pinned` (the search) takes those
+    240 px ahead of the controls, which then fill the row.
+    With `sheet`, below `lg` the row keeps only `pinned` and a "Filters · N"
+    opener; `controls` and `actions` sit in a native <dialog> sheet, the
+    panel's, which is `display: contents` from `lg` up, so one DOM serves both
+    and the fields exist once. "Show results" submits the enclosing form. -#}
+{% set controls_classes = ['flex', 'flex-wrap', 'items-center', 'gap-inline', 'min-w-0']
+  |merge(has_pinned ? [sheet ? 'lg:flex-1' : 'flex-1'] : ['*:first:w-60', '*:first:shrink-0'])
+  |merge(sheet ? ['max-lg:flex-col', 'max-lg:items-stretch'] : []) %}
+{% set actions_classes = ['flex', 'flex-wrap', 'items-center', 'gap-inline']|merge(sheet ? ['max-lg:pt-stack'] : []) %}
 <div{{ (attributes ?: create_attribute()).addClass([
     'flex', 'flex-row', 'flex-wrap', 'items-center', 'justify-between', 'gap-inline', 'min-h-9', 'min-w-0',
   ]) }} role="search"
   {%- if label %} aria-label="{{ label }}"{% endif %}
   {{ send_attributes }}>
-  <div class="flex flex-wrap items-center gap-inline min-w-0 *:first:w-60 *:first:shrink-0">{{ filters_controls }}</div>
+  {%- if has_pinned %}
+  <div class="flex min-w-0 {{ sheet ? 'flex-1 lg:flex-none lg:w-60' : 'w-60 shrink-0' }}">{{ filters_pinned }}</div>
+  {%- endif %}
+  {%- if sheet %}
+  {{ include('bb_theme:button', {
+    variant: 'neutral',
+    type: 'button',
+    label: opener_label,
+    attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden'], 'x-on:click': '$refs.sheet.showModal()' }),
+  }, with_context = false) }}
+  <dialog x-ref="sheet" aria-label="{{ 'Filters'|t }}" closedby="any" class="max-lg:w-full max-lg:max-w-full max-lg:max-h-5/6 max-lg:top-auto max-lg:p-stack max-lg:bg-app max-lg:text-text max-lg:border-0 max-lg:rounded-t-sm max-lg:overflow-y-auto lg:contents lg:text-inherit">
+  {%- endif %}
+  <div class="{{ controls_classes|join(' ') }}">{{ filters_controls }}</div>
   {%- if filters_actions|striptags|trim is not empty %}
-  <div class="flex flex-wrap items-center gap-inline">{{ filters_actions }}</div>
+  <div class="{{ actions_classes|join(' ') }}">{{ filters_actions }}</div>
+  {%- endif %}
+  {%- if sheet %}
+    <div class="lg:hidden pt-stack">
+      {{ include('bb_theme:button', {
+        variant: 'primary',
+        type: 'button',
+        label: 'Show results'|t,
+        attributes: create_attribute({ class: ['w-full', 'min-h-touch'], 'x-on:click': "($el.closest('form') ?? $refs.sheet.querySelector('form'))?.requestSubmit(); $refs.sheet.close()" }),
+      }, with_context = false) }}
+    </div>
+  </dialog>
   {%- endif %}
 </div>
 {% else %}
@@ -83,18 +133,21 @@
     form's fields exist once and never submit twice.
     The sheet is a native <dialog> opened with showModal(): the browser gives it
     the top layer, Escape, focus handling and `closedby`, it needs no Drupal
-    behaviour, and it works the same in Storybook. -#}
+    behaviour, and it works the same in Storybook. With `opener: false` the
+    panel shows nothing below `lg` until a bar opens its dialog by `sheet_id`. -#}
 <aside{{ (attributes ?: create_attribute()).addClass([
     'max-lg:contents', 'p-stack', 'bg-app', 'border', 'border-border-2', 'rounded-sm',
   ]) }}
   {%- if label %} aria-label="{{ label }}"{% endif %} x-data>
+  {%- if opener is not same as(false) %}
   {{ include('bb_theme:button', {
     variant: 'neutral',
     type: 'button',
     label: active_count|default(0) > 0 ? title ~ ' · ' ~ active_count : title,
     attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden'], 'x-on:click': '$refs.sheet.showModal()' }),
   }, with_context = false) }}
-  <dialog x-ref="sheet" aria-label="{{ title }}" closedby="any"{% if sheet_open %} open{% endif %} class="max-lg:w-full max-lg:max-w-full max-lg:max-h-5/6 max-lg:top-auto max-lg:p-stack max-lg:bg-app max-lg:text-text max-lg:border-0 max-lg:rounded-t-sm max-lg:overflow-y-auto lg:contents lg:text-inherit">
+  {%- endif %}
+  <dialog x-ref="sheet"{% if sheet_id %} id="{{ sheet_id }}"{% endif %} aria-label="{{ title }}" closedby="any"{% if sheet_open %} open{% endif %} class="max-lg:w-full max-lg:max-w-full max-lg:max-h-5/6 max-lg:top-auto max-lg:p-stack max-lg:bg-app max-lg:text-text max-lg:border-0 max-lg:rounded-t-sm max-lg:overflow-y-auto lg:contents lg:text-inherit">
     {% embed 'bb_theme:collapsible' with {
       open: not collapsed,
       attributes: create_attribute(),

@@ -41,6 +41,7 @@ final class InsightsFilterForm extends FormBase {
   public const OOB_IDS = [
     'insights-period',
     'insights-clear',
+    'insights-chips',
   ];
 
   public function __construct(private readonly InsightsFilterOptions $options) {}

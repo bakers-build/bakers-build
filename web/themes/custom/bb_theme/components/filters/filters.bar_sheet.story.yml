@@ -1,0 +1,55 @@
+component: bb_theme:filters
+name: Bar / Phone sheet opener
+props:
+  layout: bar
+  label: Search tickets
+  sheet_for: story-filters-sheet
+  active_count: 2
+slots:
+  controls:
+    - type: component
+      component: bb_theme:zone
+      props:
+        inset: none
+        gap: sm
+      slots:
+        content:
+          - type: component
+            component: bb_theme:form_label
+            props:
+              for: story-sheet-search-title
+            slots:
+              title: Title
+          - type: component
+            component: bb_theme:form_input
+            props:
+              type: search
+              id: story-sheet-search-title
+              name: title
+              value: ''
+    - type: component
+      component: bb_theme:zone
+      props:
+        inset: none
+        gap: sm
+      slots:
+        content:
+          - type: component
+            component: bb_theme:form_label
+            props:
+              for: story-sheet-sort
+            slots:
+              title: Sort by
+          - type: component
+            component: bb_theme:form_select
+            props:
+              id: story-sheet-sort
+              name: sort_bef_combine
+              options:
+                - value: changed_DESC
+                  label: Updated, newest first
+                  selected: true
+                - value: changed_ASC
+                  label: Updated, oldest first
+                - value: priority_ASC
+                  label: Priority, highest first

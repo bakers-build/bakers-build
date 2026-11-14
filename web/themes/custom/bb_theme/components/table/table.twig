@@ -463,7 +463,7 @@
     {%- set tip_id = 'table-exact-' ~ random(1000000) -%}
     <span class="relative inline-flex group" x-data="{ dismissed: false }" @keydown.escape="dismissed = true" @mouseleave="dismissed = false" @focusout="dismissed = false">
       <span tabindex="0" aria-describedby="{{ tip_id }}" class="{{ emphasis_map[c.emphasis]|default('text-text') }} rounded-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring">{{ c.value }}</span>
-      <span id="{{ tip_id }}" role="tooltip" class="absolute right-0 bottom-full z-10 mb-inline-xs w-max max-w-prose whitespace-normal text-left rounded-xs bg-text px-inline py-inline-xs text-meta font-normal text-surface opacity-0 pointer-events-none group-hover:opacity-100 group-focus-within:opacity-100" :class="{ '!opacity-0': dismissed }">{{ c.exact }}</span>
+      <span id="{{ tip_id }}" role="tooltip" class="absolute right-0 bottom-full z-10 mb-inline-xs w-max max-w-prose whitespace-normal text-left rounded-xs bg-text px-inline py-inline-xs text-meta font-normal text-surface pointer-events-none not-group-hover:not-group-focus-within:hidden" :class="{ '!hidden': dismissed }">{{ c.exact }}</span>
     </span>
   {%- else -%}
     {#- `sum` names a live total this value shows, `seconds` its stored base;

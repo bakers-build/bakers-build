@@ -51,3 +51,9 @@ Then('the filter sheet is closed', async ({ page }) => {
   await expect(sheet(page)).toBeHidden();
 });
 
+// A picker's open panel overlays the sheet's footer; closing it is what a
+// person does before pressing "Show results".
+When('I close the open filter', async ({ page }) => {
+  await page.locator('[data-option-picker-trigger][aria-expanded="true"]').first().click();
+  await expect(page.locator('[data-option-picker-panel]:visible')).toHaveCount(0);
+});

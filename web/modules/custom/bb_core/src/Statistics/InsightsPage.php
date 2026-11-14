@@ -149,22 +149,78 @@ final class InsightsPage {
         $props['params'][] = ['name' => 'filter[' . $key . '][]', 'value' => $uuid];
       }
     }
+    $chosen = array_intersect_key($filters, array_flip(self::entityFilters($scope)));
     return [
       '#type' => 'component',
       '#component' => 'bb_theme:zone',
-      '#props' => ['inset' => 'lg', 'direction' => 'row', 'gap' => 'sm'],
+      '#props' => ['inset' => 'lg', 'gap' => 'sm'],
       '#slots' => [
         'content' => [
-          // Wrapped, so a filter tick can refresh the hidden filter inputs.
-          'period' => [
-            '#type' => 'container',
-            '#attributes' => ['id' => 'insights-period'],
-            'range' => ['#type' => 'component', '#component' => 'bb_theme:period-range', '#props' => $props],
+          // The standard filters toolbar: below `lg` the period stays in the
+          // row and the pickers sit behind the "Filters · N" sheet.
+          'bar' => [
+            '#type' => 'component',
+            '#component' => 'bb_theme:filters',
+            '#props' => [
+              'layout' => 'toolbar',
+              'label' => (string) $this->t('Insights filters'),
+              'sheet' => TRUE,
+              'active_count' => count($chosen),
+            ],
+            '#slots' => [
+              // Wrapped, so a filter tick can refresh the hidden filter inputs.
+              'pinned' => [
+                '#type' => 'container',
+                '#attributes' => ['id' => 'insights-period'],
+                'range' => ['#type' => 'component', '#component' => 'bb_theme:period-range', '#props' => $props],
+              ],
+              'controls' => $this->formBuilder->getForm(InsightsFilterForm::class, $scope, $filters, $this->pageUrl($scope)),
+              // Present even when empty, so the first tick has a target to fill.
+              'actions' => ['#type' => 'container', '#attributes' => ['id' => 'insights-clear']] + $this->clearLink($scope, $filters),
+            ],
           ],
-          'filters' => $this->formBuilder->getForm(InsightsFilterForm::class, $scope, $filters, $this->pageUrl($scope)),
-          // Present even when empty, so the first tick has a target to fill.
-          'clear' => ['#type' => 'container', '#attributes' => ['id' => 'insights-clear']] + $this->clearLink($scope, $filters),
+          // Present even when empty, so a tick has a target to refresh.
+          'chips' => ['#type' => 'container', '#attributes' => ['id' => 'insights-chips']] + $this->chips($scope, $filters, $chosen),
         ],
+      ],
+    ];
+  }
+
+  /**
+   * The chosen entity filters as removable chips, one per filter.
+   *
+   * @param \Drupal\bb_core\Entity\BbWorkspaceInterface|\Drupal\bb_core\Entity\BbProjectInterface $scope
+   *   The workspace or project.
+   * @param array<string, string|list<string>> $filters
+   *   The accepted filters.
+   * @param array<string, string|list<string>> $chosen
+   *   The accepted entity filters.
+   *
+   * @return array<string, array<string, mixed>>
+   *   The chips render array keyed `strip`, or nothing.
+   */
+  private function chips(BbWorkspaceInterface|BbProjectInterface $scope, array $filters, array $chosen): array {
+    if ($chosen === []) {
+      return [];
+    }
+    $labels = ['epic' => $this->t('Epic'), 'project' => $this->t('Project'), 'team' => $this->t('Team'), 'user' => $this->t('Person')];
+    $entries = InsightsFilterForm::entries($this->options, $scope, $filters);
+    $facets = [];
+    foreach ($chosen as $key => $uuids) {
+      $names = array_column($entries[$key] ?? [], 'label', 'value');
+      $rest = array_diff_key($filters, [$key => TRUE]);
+      $facets[] = [
+        'field' => (string) ($labels[$key] ?? $key),
+        'values' => array_values(array_map(static fn (string $uuid): string => (string) ($names[$uuid] ?? $uuid), (array) $uuids)),
+        'remove_url' => $this->url($scope, ['query' => $rest === [] ? [] : ['filter' => $rest]])->toString(),
+      ];
+    }
+    return [
+      'strip' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:active-filters',
+        '#variant' => 'inline',
+        '#props' => ['label' => (string) $this->t('Active filters'), 'facets' => $facets],
       ],
     ];
   }

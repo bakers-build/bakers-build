@@ -210,10 +210,15 @@ final class WorklogPeriod extends FilterPluginBase {
       $form['person'] = $this->picker($selection, 'person', $this->t('Person'), 'user', $this->t('Everyone'));
     }
     foreach (['previous' => $this->t('Previous'), 'today' => $this->t('Today'), 'next' => $this->t('Next')] as $direction => $label) {
+      // The shared button, so paging gets the 44px touch target on phones.
       $form[$direction] = [
-        '#type' => 'link',
-        '#title' => $label,
-        '#url' => $this->navigationUrl($selection, $direction),
+        '#type' => 'component',
+        '#component' => 'bb_theme:button',
+        '#props' => [
+          'label' => (string) $label,
+          'href' => $this->navigationUrl($selection, $direction)->toString(),
+          'variant' => 'ghost',
+        ],
       ];
     }
     $form['page'] = [
