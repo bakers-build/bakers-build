@@ -5,8 +5,7 @@ description: Recipe for tickets of type deployment — merge a frozen batch into
 
 # Deploy and release
 
-Writes follow `ticket-writes.md`; every tool operation below follows the frame's tool discovery
-and fallback.
+Writes follow `ticket-writes.md`; tool operations follow the frame's tool discovery and fallback.
 
 The ticket's `environments` entry is the target (`branch`, `base_url`), `base_branch` the source.
 `main` is the **release environment**.
@@ -29,13 +28,7 @@ The ticket's `environments` entry is the target (`branch`, `base_url`), `base_br
 2. Freeze the candidate once: `forge_fetch`, target in `branches`,
    then the SHA of `origin/<base_branch>`;
    an existing `origin/<branch_name>` keeps its head.
-<<<<<<< HEAD
-3. Compute the deployment ticket batch between the target branch and frozen SHA; report unresolved
-   identifiers.
-=======
-3. Compute the ticket batch between target branch and frozen SHA (frame's tool discovery and
-   fallback); report unresolved identifiers.
->>>>>>> origin/next
+3. Compute the ticket batch between target and frozen SHA; report unresolved identifiers.
 4. Read the SHA's pipeline (`forge_checks`, `ref` the SHA).
 5. Release environment: `pnpm --dir bakers-cli run release:version <SHA> --notes -` is the dry
    run: next version and notes since the last reachable `v*` tag. Empty output: stop.
@@ -63,19 +56,8 @@ own; `main` merges the frozen commit.
    `chore(release): x.y.z` with the approved version (other targets: `chore(deploy): <target
    branch>`), into `target_branch`. Call `forge_checks` until `overall` is
    `success`, then `forge_merge` (target's merge rule; `main`: merge commit, source kept).
-<<<<<<< HEAD
-   GitLab's manual gate operation runs before merge. The frame's merge never runs here; nothing merges back into `develop`.
-2. Pending, failed or refused: publish an honest `summary` and STOP.
-3. Watch the deploy of the merged SHA (`forge_checks`, `ref` that SHA), then expect HTTP 200
-   from `<base_url>/user/login` (deployed login smoke check).
-   Then call `bakers_ticket_update` on this ticket only, with
-   `environments_add` (the target) and `referenced_tickets_add` (the batch): this ticket is the
-   record of where its batch is deployed.
-4. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA, add its GitLab
-   release to `links` only after the release-read operation verifies it.
-=======
-   GitLab's manual gate operation follows the frame's tool discovery and fallback before merge. The
-   frame's merge never runs here; nothing merges back into `develop`.
+   GitLab's manual gate runs first. The frame's merge never runs here; nothing merges back into
+   `develop`.
 2. Pending, failed or refused: publish an honest `summary`; STOP.
 3. Watch the deploy of the merged SHA (`forge_checks`, `ref` that SHA), then expect HTTP 200
    from `<base_url>/user/login` (the frame's deployed login smoke check). Then
@@ -83,7 +65,6 @@ own; `main` merges the frozen commit.
    plan's environment it records where the batch is deployed.
 4. Release environment: once the `release` job tagged `vx.y.z` on the frozen SHA, link its GitLab
    release in `links` once the frame's release-read operation verifies it.
->>>>>>> origin/next
 
 ### bb-phase-transition
 
@@ -95,8 +76,7 @@ Review is mandatory.
 
 Verdict on the deployment: pipeline green on the merged SHA, the target responds, the batch is
 complete and recorded on this ticket. Release environment additionally: tag `vx.y.z` on the frozen
-SHA, its GitLab release linked in `links`, the CLI package `x.y.z` published on npm (verify
-publication).
+SHA, its GitLab release linked in `links`, the CLI package `x.y.z` published on npm (verified).
 
 ### bb-phase-transition
 
