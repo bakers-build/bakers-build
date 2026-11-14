@@ -119,6 +119,7 @@ export {
   fetchUpdateNotice,
   printVersionLine,
   REGISTRY_LATEST_URL,
+  readCliVersion,
   resolveCliVersion,
   UNKNOWN_VERSION,
   UPDATE_CHECK_TTL_MS,

@@ -1161,14 +1161,16 @@ describe('bakers conductor start update prompt', () => {
     };
   }
 
-  it('yes: runs update then migration, prints rerun, and skips startup', async () => {
+  it('yes: runs update then migration, then continues on the new binary without a second check', async () => {
     const commands: string[][] = [];
     const asked: string[] = [];
     const logs: string[] = [];
     const logSpy = vi.spyOn(console, 'log').mockImplementation((m) => {
       logs.push(String(m));
     });
+    const execve = vi.fn();
     const { deps, spawnConductor } = promptDeps({
+      execve,
       env: { ...process.env, CI: '', BAKERS_CONDUCTOR: 'portal' },
       askUpdate: async (question) => {
         asked.push(question);
@@ -1194,9 +1196,21 @@ describe('bakers conductor start update prompt', () => {
     expect(logs.join('\n')).toContain(
       'bakers update and configuration migration completed.',
     );
-    expect(logs.join('\n')).toContain(
-      'bakers --conductor portal conductor start --force',
-    );
+    expect(logs.join('\n')).not.toMatch(/rerun/i);
+    expect(execve).toHaveBeenCalledTimes(1);
+    const [file, args, env] = execve.mock.calls[0] as [
+      string,
+      string[],
+      NodeJS.ProcessEnv,
+    ];
+    expect(file).toBe(process.execPath);
+    expect(args).toEqual([
+      process.execPath,
+      ...process.execArgv,
+      ...process.argv.slice(1),
+      '--no-update-check',
+    ]);
+    expect(env.BAKERS_CONDUCTOR).toBe('portal');
     expect(logs).not.toContain('LOOP_STARTED');
     expect(spawnConductor.spawned).toHaveLength(0);
   });

@@ -51,7 +51,7 @@ By default `start` launches the loop as a detached background process: it has it
 - When the control plane does not know this conductor's id yet but this machine, project and variant already have a conductor under another id (for example from before the upgrade), `start` asks once in a terminal whether to take it over, or which one when there are several; it keeps its tickets and runs. Without a terminal it stops and names `--adopt <uuid>` (take it over) and `--new` (register another conductor); the two cannot be combined.
 - `--force` turns "already running" into a restart: a verified `SIGTERM`, a grace period, then `SIGKILL`, then the normal start. It fails rather than starting a second conductor when the running one cannot be verified or stopped.
 
-An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. The procedure, decline window, rerun and failure behaviour are in [Update bakers.build](/configuration/guides/updates).
+An interactive plain start (TTY stdin and stdout, empty `CI`, no `--foreground`) offers to install a newer release and migrate configuration before any lifecycle work. After the install and migration the start continues on the new release. The procedure, decline window and failure behaviour are in [Update bakers.build](/configuration/guides/updates).
 
 A start on a machine where an enabled agent cannot start its sandbox prints `warning: sandbox unavailable: <agent>: <cause> — <fix>` and still starts; the loop then claims nothing until the cause is fixed (see `check`).
 
@@ -63,6 +63,12 @@ A running conductor (the detached default and `--foreground`) restarts itself wh
 - the check fails: the log shows `config check failed; keeping the running conductor` with the error, and the next change checks again.
 
 Set `restart_on_change: false` in `project.config.js` to switch it off. It needs Node 22.15 or later (`process.execve`); on an older Node the conductor logs one warning and does not watch. Rebuilding addons from source is not part of it.
+
+#### Restart after an upgrade
+
+A running conductor rereads the installed CLI version on every poll. When two polls in a row read the same new version, whatever installed it, it runs `bakers config upgrade --scope all --yes` with the new release, then the config check, then restarts in place as above, adopting its running sessions. The log shows `CLI version changed <old> → <new>`, then `config check passed; restarting conductor`.
+
+A failed step is logged as `config upgrade failed` or `config check failed` with the error and the recovery commands (`config upgrade --scope all --yes`, then `oven start --force`); the conductor stays on the old release until a newer one appears. With `restart_on_change: false`, or on Node older than 22.15, it only logs the restart command.
 
 ### check
 
