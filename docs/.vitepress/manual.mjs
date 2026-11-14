@@ -121,6 +121,7 @@ export const SIDEBAR = {
     group("Agents", [
       ["Claude", "/addons/claude"],
       ["Codex", "/addons/codex"],
+      ["Codex trusted commands", "/addons/codex/trusted-commands"],
       ["Grok", "/addons/grok"],
       ["OpenCode", "/addons/opencode"],
       ["Pi", "/addons/pi"],

@@ -35,7 +35,7 @@ Shared lists apply only while an agent's effective mode is `sandbox`. A shared v
 | Harness | Shared mode | Shared `allow_write` | Shared `deny_read` / `trusted_commands` | Direct-entry restrictions |
 |---|---|---|---|---|
 | Claude | Applied; entry overrides | Applied in sandbox mode | Applied in sandbox mode | `sandbox` object requires sandbox mode; `custom` requires `config` |
-| Codex | Applied; entry overrides | Applied in sandbox mode | Skipped with a warning | Nonempty `deny_read` / `trusted_commands` rejected; network is empty/off or nonempty/all hosts |
+| Codex | Applied; entry overrides | Applied in sandbox mode | `trusted_commands` applied; `deny_read` skipped with a warning | Nonempty `deny_read` rejected; network is empty/off or nonempty/all hosts |
 | Grok | Applied; entry overrides | Applied in sandbox mode through managed profiles | Skipped with a warning | Nonempty read-deny/trusted-command lists, restricted network, selective MCP grants and `custom` rejected |
 | OpenCode | Ignored; entry defaults to `system` | Ignored | Ignored | `sandbox` and `custom` rejected |
 | Pi | Ignored; entry defaults to `system` | Ignored | Ignored | `sandbox` and `yolo` rejected; `custom` accepts explicit extensions |
