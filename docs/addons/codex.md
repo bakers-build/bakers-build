@@ -46,7 +46,8 @@ Runs default to `system`; `permissions: 'sandbox'` starts the OS sandbox. [Execu
 | `allow_write` | `[]` | Extra workspace roots, `~/` expanded; `.git` is dropped ([Git metadata](/provision/security/execution#git-metadata-in-codex-and-claude-sandboxes)) |
 | `network` | `['*']` | network on when not empty; Codex has no host list, so any non-empty value allows every host |
 | `mcp_servers` | `{}` | the names of servers from your Codex config that stay enabled; [`bakers`](/addons/build/tools) is added at launch |
-| `trusted_commands`, `deny_read` | `[]` | Codex has no equivalent; a non-empty list fails loading rather than promise a protection Codex does not give |
+| `trusted_commands` | `[]` | One Codex `prefix_rule` with `decision="allow"` per entry, outside the sandbox without a prompt; see [Trusted commands](/addons/codex/trusted-commands) |
+| `deny_read` | `[]` | Codex has no equivalent; a non-empty list fails loading rather than promise a protection Codex does not give |
 
 Needs Codex 0.166.0+. Writable: Git directories, not config or hooks; read-only: `.agents`, `.codex`, `.aws`.
 

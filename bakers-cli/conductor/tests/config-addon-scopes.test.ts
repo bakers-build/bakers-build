@@ -213,11 +213,9 @@ describe('shared run permissions from the machine and project config', () => {
     expect(permissions('opus')?.sandbox.allow_write.entries).toEqual([
       { value: '/srv/cache', source: 'machine' },
     ]);
-    expect(permissions('codex')?.not_applied).toContainEqual({
-      key: 'trusted_commands',
-      source: 'project',
-      reason: 'unsupported',
-    });
+    expect(permissions('codex')?.sandbox.trusted_commands.entries).toEqual([
+      { value: 'make', source: 'project' },
+    ]);
     const loosening = warnings.filter((w) => w.includes('loosens'));
     expect(loosening).toHaveLength(1);
     expect(loosening[0]).toContain('trusted_commands');
@@ -226,9 +224,6 @@ describe('shared run permissions from the machine and project config', () => {
     const skipped = warnings.filter((w) => w.includes('not applied'));
     expect(skipped).toEqual([
       expect.stringContaining('codex: project permissions.sandbox.deny_read'),
-      expect.stringContaining(
-        'codex: project permissions.sandbox.trusted_commands',
-      ),
     ]);
   });
 
