@@ -19,6 +19,8 @@
 {#- With a `label`, below `lg` the rail is a disclosure, closed by default: the
     button toggles the rows-and-footer container, which is hidden below `lg`
     while closed. From `lg` up there is no button and the content always shows.
+    The root then carries `data-inspector-disclosure`, so `canvas` can put
+    only a disclosure inspector first on a phone.
     Without a `label` the markup is exactly what it was. -#}
 {%- set body_id = 'inspector-body-' ~ random() %}
 {%- if surface|default(false) %}
@@ -41,7 +43,7 @@
   {%- set aside_classes = ['inspector', 'sticky', 'top-0', 'self-start', 'w-full', 'flex', 'flex-col', 'gap-inline-xs', 'shrink-0'] %}
   {%- set body_classes = 'flex flex-col gap-inline-xs' %}
 {%- endif %}
-<aside{{ (attributes ?: create_attribute()).addClass(aside_classes) }}{% if label %} x-data="{ open: false }"{% endif %}>
+<aside{{ (attributes ?: create_attribute()).addClass(aside_classes) }}{% if label %} data-inspector-disclosure x-data="{ open: false }"{% endif %}>
   {%- if label %}
   <button type="button" class="lg:hidden flex w-full min-h-touch items-center justify-between gap-inline text-body-strong text-title cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" aria-controls="{{ body_id }}" aria-expanded="false" x-bind:aria-expanded="open ? 'true' : 'false'" x-on:click="open = !open">
     <span>{{ label }}</span>

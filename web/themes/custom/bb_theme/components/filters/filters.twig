@@ -56,6 +56,26 @@
     A field inside an open dialog never submits: in the phone sheet, ticks wait for "Show results".
     A form with its own htmx trigger (Insights) applies itself; submitting it here would reload the page. -#}
 {% set send_attributes %}x-data="{ send(field) { if (field.form && !field.closest('dialog[open]') && !['hx-get', 'data-hx-get', 'hx-trigger', 'data-hx-trigger'].some((name) => field.form.hasAttribute(name)) && field.dataset.sent !== field.value) { field.dataset.sent = field.value; field.form.requestSubmit(); } } }" @change="['search', 'text'].includes($event.target.type) || send($event.target)" @input.debounce.500ms="['search', 'text'].includes($event.target.type) && send($event.target)" @keydown.enter="['search', 'text'].includes($event.target.type) && ($event.target.dataset.sent = $event.target.value)"{% endset %}
+{#- Every phone sheet: a change while it is open marks it dirty, "Show results"
+    marks it applied, and closing it any other way (Close, Escape, an outside
+    tap) reloads the page, so unapplied ticks never wait in the form for the
+    next search keystroke to submit them. Close is visible because Safari has
+    no `closedby` and a phone has no Escape key. -#}
+{% set sheet_state %}x-on:change="$el.open && ($el.dataset.dirty = '1')" x-on:close="$el.dataset.dirty && !$el.dataset.applied && location.reload(); delete $el.dataset.dirty; delete $el.dataset.applied"{% endset %}
+{% set sheet_close %}
+    <div class="lg:hidden flex justify-end">
+      {{ include('bb_theme:button', {
+        variant: 'ghost',
+        type: 'button',
+        label: 'Close'|t,
+        icon_only: true,
+        icon: include('bb_theme:icon', { name: 'x-circle', size: 'md' }, with_context = false),
+        attributes: create_attribute({ class: ['min-h-touch', 'min-w-touch'], 'x-on:click': '$refs.sheet.close()' }),
+      }, with_context = false) }}
+    </div>
+{% endset %}
+{% set show_results = "$refs.sheet.dataset.applied = '1'; " %}
+{% set opener_attr = opener_id ? { id: opener_id } : {} %}
 {% if layout|default('panel') == 'bar' %}
 {#- With `sheet_for` the bar is the phone row above a panel whose own opener is
     off: below `lg` it drops its surface and adds a "Filters · N" opener for
@@ -75,7 +95,7 @@
     variant: 'neutral',
     type: 'button',
     label: opener_label,
-    attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden', 'max-lg:order-first'], 'x-on:click': "document.getElementById('" ~ sheet_for ~ "').showModal()" }),
+    attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden', 'max-lg:order-first'], 'data-sheet': sheet_for, 'x-on:click': 'document.getElementById($el.dataset.sheet)?.showModal()' }|merge(opener_attr)),
   }, with_context = false) }}
   {%- endif %}
 </div>
@@ -84,7 +104,8 @@
     wraps only when narrow. The controls group leads with the search (240 px);
     `actions` is a second group the row pushes to the right end
     (justify-between, no outer margin). `pinned` (the search) takes those
-    240 px ahead of the controls, which then fill the row.
+    240 px ahead of the controls, which then fill the row; with
+    `pinned_width: auto` it keeps its natural width (Insights' period control).
     With `sheet`, below `lg` the row keeps only `pinned` and a "Filters · N"
     opener; `controls` and `actions` sit in a native <dialog> sheet, the
     panel's, which is `display: contents` from `lg` up, so one DOM serves both
@@ -99,16 +120,18 @@
   {%- if label %} aria-label="{{ label }}"{% endif %}
   {{ send_attributes }}>
   {%- if has_pinned %}
-  <div class="flex min-w-0 {{ sheet ? 'flex-1 lg:flex-none lg:w-60' : 'w-60 shrink-0' }}">{{ filters_pinned }}</div>
+  {%- set pinned_search = pinned_width|default('search') == 'search' %}
+  <div class="flex min-w-0 {{ sheet ? 'flex-1 lg:flex-none' ~ (pinned_search ? ' lg:w-60' : '') : (pinned_search ? 'w-60 shrink-0' : 'shrink-0') }}">{{ filters_pinned }}</div>
   {%- endif %}
   {%- if sheet %}
   {{ include('bb_theme:button', {
     variant: 'neutral',
     type: 'button',
     label: opener_label,
-    attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden'], 'x-on:click': '$refs.sheet.showModal()' }),
+    attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden'], 'x-on:click': '$refs.sheet.showModal()' }|merge(opener_attr)),
   }, with_context = false) }}
-  <dialog x-ref="sheet" aria-label="{{ 'Filters'|t }}" closedby="any" class="max-lg:w-full max-lg:max-w-full max-lg:max-h-5/6 max-lg:top-auto max-lg:p-stack max-lg:bg-app max-lg:text-text max-lg:border-0 max-lg:rounded-t-sm max-lg:overflow-y-auto lg:contents lg:text-inherit">
+  <dialog x-ref="sheet" aria-label="{{ 'Filters'|t }}" closedby="any" {{ sheet_state }} class="max-lg:w-full max-lg:max-w-full max-lg:max-h-5/6 max-lg:top-auto max-lg:p-stack max-lg:bg-app max-lg:text-text max-lg:border-0 max-lg:rounded-t-sm max-lg:overflow-y-auto lg:contents lg:text-inherit">
+  {{- sheet_close }}
   {%- endif %}
   <div class="{{ controls_classes|join(' ') }}">{{ filters_controls }}</div>
   {%- if filters_actions|striptags|trim is not empty %}
@@ -120,7 +143,7 @@
         variant: 'primary',
         type: 'button',
         label: 'Show results'|t,
-        attributes: create_attribute({ class: ['w-full', 'min-h-touch'], 'x-on:click': "($el.closest('form') ?? $refs.sheet.querySelector('form'))?.requestSubmit(); $refs.sheet.close()" }),
+        attributes: create_attribute({ class: ['w-full', 'min-h-touch'], 'x-on:click': show_results ~ "($el.closest('form') ?? $refs.sheet.querySelector('form'))?.requestSubmit(); $refs.sheet.close()" }),
       }, with_context = false) }}
     </div>
   </dialog>
@@ -144,10 +167,11 @@
     variant: 'neutral',
     type: 'button',
     label: active_count|default(0) > 0 ? title ~ ' · ' ~ active_count : title,
-    attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden'], 'x-on:click': '$refs.sheet.showModal()' }),
+    attributes: create_attribute({ class: ['min-h-touch', 'lg:hidden'], 'x-on:click': '$refs.sheet.showModal()' }|merge(opener_attr)),
   }, with_context = false) }}
   {%- endif %}
-  <dialog x-ref="sheet"{% if sheet_id %} id="{{ sheet_id }}"{% endif %} aria-label="{{ title }}" closedby="any"{% if sheet_open %} open{% endif %} class="max-lg:w-full max-lg:max-w-full max-lg:max-h-5/6 max-lg:top-auto max-lg:p-stack max-lg:bg-app max-lg:text-text max-lg:border-0 max-lg:rounded-t-sm max-lg:overflow-y-auto lg:contents lg:text-inherit">
+  <dialog x-ref="sheet"{% if sheet_id %} id="{{ sheet_id }}"{% endif %} aria-label="{{ title }}" closedby="any"{% if sheet_open %} open{% endif %} {{ sheet_state }} class="max-lg:w-full max-lg:max-w-full max-lg:max-h-5/6 max-lg:top-auto max-lg:p-stack max-lg:bg-app max-lg:text-text max-lg:border-0 max-lg:rounded-t-sm max-lg:overflow-y-auto lg:contents lg:text-inherit">
+    {{- sheet_close }}
     {% embed 'bb_theme:collapsible' with {
       open: not collapsed,
       attributes: create_attribute(),
@@ -162,7 +186,7 @@
         variant: 'primary',
         type: 'button',
         label: 'Show results'|t,
-        attributes: create_attribute({ class: ['w-full', 'min-h-touch'], 'x-on:click': "$refs.sheet.querySelector('form')?.requestSubmit(); $refs.sheet.close()" }),
+        attributes: create_attribute({ class: ['w-full', 'min-h-touch'], 'x-on:click': show_results ~ "$refs.sheet.querySelector('form')?.requestSubmit(); $refs.sheet.close()" }),
       }, with_context = false) }}
     </div>
   </dialog>

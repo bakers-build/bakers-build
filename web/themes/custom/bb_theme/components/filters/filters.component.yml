@@ -49,9 +49,16 @@ description: >-
   moves `controls` and `actions` into a native `<dialog>` sheet styled like the
   panel's, whose "Show results" footer calls `requestSubmit()` on the enclosing
   form; from `lg` up that dialog is `display: contents` and the row reads
-  `pinned` (240px), `controls`, `actions`, as before. Inside an open dialog the
-  bar and toolbar never self-submit: ticks wait for "Show results". Without
-  `sheet_for` / `sheet`, `bar` and `toolbar` are unchanged.
+  `pinned` (240px, or its natural width with `pinned_width: auto`),
+  `controls`, `actions`, as before. Inside an open dialog the bar and toolbar
+  never self-submit: ticks wait for "Show results". EVERY SHEET has a visible
+  icon-only "Close" control in its top-right (at least the 44px touch target),
+  because Safari ignores `closedby` and a phone has no Escape key, and a
+  change made while it is open marks it dirty: closing it without "Show
+  results" (Close, Escape, an outside tap) reloads the page, so the form, the
+  pickers and the chips show the applied state again and no unapplied tick is
+  submitted by the next search keystroke. Without `sheet_for` / `sheet`, `bar`
+  and `toolbar` are unchanged.
 provider: bb_theme
 props:
   type: object
@@ -156,6 +163,25 @@ props:
         the row and move `controls` and `actions` into a native `<dialog>` sheet
         with a "Show results" footer that submits the enclosing form. From `lg`
         up the toolbar looks as without it. `toolbar` only.
+    pinned_width:
+      type: string
+      enum:
+        - search
+        - auto
+      default: search
+      title: Pinned width
+      description: >-
+        `search` (default) gives `pinned` the 240px search width (`lg:w-60`
+        with `sheet`, `w-60` without). `auto` lets `pinned` keep its natural
+        width from `lg` up, for a control wider than a search field (Insights'
+        period control). `toolbar` only.
+    opener_id:
+      type: string
+      title: Opener id
+      description: >-
+        The `id` of the phone "Filters" / "Filters · N" opener button (toolbar
+        with `sheet`, bar with `sheet_for`, panel), so a caller can refresh its
+        text out of band through htmx.
 slots:
   controls:
     title: Controls

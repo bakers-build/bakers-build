@@ -22,8 +22,10 @@
    at `lg` rather than a grid template swap — the aside widths apply only from
    `lg` up (`lg:w-48`/`lg:w-80`), so a narrow viewport gets full-width stacked
    regions in document order, except that `inspector` carries
-   `max-lg:order-first`: on a phone the record's properties (normally a closed
-   `inspector` disclosure) come before `main`. Order only, never a scroll
+   `max-lg:has-data-inspector-disclosure:order-first`: on a phone a closed
+   `inspector` disclosure (a `label`ed one, which carries
+   `data-inspector-disclosure`) comes before `main`; any other inspector, a
+   full property panel, stays after it. Order only, never a scroll
    container (BAKERS-57). Below `lg` the `filters` region is `display:
    contents`, so a panel whose only phone content is its closed sheet dialog
    adds no empty flex item and no gap; its opener, when it has one, is the
@@ -104,7 +106,7 @@
     {% endif %}
     <div data-canvas-region="main" class="w-full lg:w-auto flex-1 min-w-0 flex flex-col gap-group lg:gap-section">{{ main_content }}</div>
     {% if has_inspector %}
-      <div data-canvas-region="inspector" class="max-lg:order-first w-full lg:w-80 lg:shrink-0 min-w-0 self-start lg:sticky lg:top-0 flex flex-col gap-group">{{ inspector_content }}</div>
+      <div data-canvas-region="inspector" class="max-lg:has-data-inspector-disclosure:order-first w-full lg:w-80 lg:shrink-0 min-w-0 self-start lg:sticky lg:top-0 flex flex-col gap-group">{{ inspector_content }}</div>
     {% endif %}
   </div>
 </div>

@@ -165,6 +165,6 @@ Feature: Project Board Drupal
     And I tick "High" in the "Priority" facet
     And I close the open filter
     And I dismiss the filter sheet
-    Then the Board shows no active filter
+    Then the filters button reads "Filters"
     When I open the filter sheet
     Then "High" is not ticked in the "Priority" facet

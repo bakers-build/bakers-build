@@ -17,7 +17,9 @@ description: >-
   the label and a chevron, carries `aria-expanded` and `aria-controls` pointing
   at the rows-and-footer container, and toggles it through Alpine (`x-data="{
   open: false }"`); the container is hidden below `lg` while closed. From `lg`
-  up there is no button and the content always shows, sticky as before. Without
+  up there is no button and the content always shows, sticky as before. The
+  root then carries `data-inspector-disclosure`, which `canvas` reads to put
+  only a disclosure inspector before `main` on a phone. Without
   a `label` nothing changes at any width. Both the plain and the `surface` rail
   get it.
 provider: bb_theme

@@ -1,7 +1,9 @@
 {# The time calendar's period controls: Day/Week, the date, the pickers and
    Previous · Today · Next share one toolbar row above the rows. #}
+{#- Below md the paging links (Previous · Today · Next) get the 44px touch
+    target; desktop keeps them as text links. -#}
 {{ include('bb_theme:zone', {
-  attributes: attributes,
+  attributes: attributes.addClass(['max-md:[&_a]:inline-flex', 'max-md:[&_a]:items-center', 'max-md:[&_a]:min-h-touch']),
   direction: 'row',
   gap: 'sm',
   inset: 'none',

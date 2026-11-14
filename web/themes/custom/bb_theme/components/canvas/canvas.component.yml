@@ -21,10 +21,12 @@ description: >-
   THE TWO-REGION CASE — a header, a main region and an inspector, with no
   `filters` aside — so the reference render is the one that shows the 236px
   track dropping out of the grid template rather than rendering an empty gutter;
-  `with_filters` is the three-region render. BELOW `lg` THE `inspector` REGION
-  RENDERS FIRST (BAKERS-57): `max-lg:order-first` on that flex item puts the
-  record's properties (normally a closed `inspector` disclosure) above `main` on
-  a phone; from `lg` up the order is unchanged. Order only, no overflow and no
+  `with_filters` is the three-region render. BELOW `lg` A DISCLOSURE
+  `inspector` RENDERS FIRST (BAKERS-57):
+  `max-lg:has-data-inspector-disclosure:order-first` on that flex item puts a
+  closed `inspector` disclosure (one with a `label`, which carries
+  `data-inspector-disclosure`) above `main` on a phone; any other inspector, a
+  full property panel, stays after `main`. From `lg` up the order is unchanged. Order only, no overflow and no
   scroll container. Below `lg` the `filters` region is also `display: contents`
   (`max-lg:contents`), so a `filters` panel whose only phone content is its
   closed sheet dialog (`opener: false`) adds no empty flex item and no gap; from
