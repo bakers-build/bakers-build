@@ -58,7 +58,7 @@ The machine's executor wins for every project on that machine; the project keeps
 
 ## Run lifecycle
 
-`startRun` runs `hc run --bg --no-parent --outlive-parent` in the worktree. Its terminal name holds at most 32 characters of `a-z0-9-_`. The run's environment travels in a private launch script, never in the command line. `stopRun` does nothing. Cleanup finds the run's terminals by their branch and run labels, ends a live one with `hc kill` and removes it with `hc rm`; a sibling run's terminal is left alone. Run state reaches bakers.build through the agent and the server, as with herdr.
+`startRun` starts a background terminal in the worktree through hc's `terminal.run` API (`hc connect`), with `no_parent` and `outlive_parent`. The terminal starts at 80x24 so that any pane fits the agent's first draw; hc's CLI cannot set a start size. The launch script runs behind a small Node forwarder that passes every pane resize (`SIGWINCH`) on to all its descendants, so an agent in its own session, as under bwrap's `--new-session`, still redraws. Its terminal name holds at most 32 characters of `a-z0-9-_`. The run's environment travels in a private launch script, never in the command line. `stopRun` does nothing. Cleanup finds the run's terminals by their branch and run labels, ends a live one with `hc kill` and removes it with `hc rm`; a sibling run's terminal is left alone. Run state reaches bakers.build through the agent and the server, as with herdr.
 
 herdr-core has no workspace of its own and opens no layout. Remote machines (`hc run --on`) are not used.
 

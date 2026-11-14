@@ -38,6 +38,8 @@ export interface ExecOpts {
    * secret to the log.
    */
   redactArgs?: (args: string[]) => string[];
+  /** Written to the child's stdin, which is then closed. */
+  input?: string;
 }
 
 export class CommandRunner {
@@ -53,16 +55,18 @@ export class CommandRunner {
     // for logging only; the real args are still executed verbatim.
     const logArgs = opts.redactArgs ? opts.redactArgs(args) : args;
     try {
-      const { env, redactArgs: _redact, ...rest } = opts;
+      const { env, redactArgs: _redact, input, ...rest } = opts;
       // Merge over process.env, never replace it: a caller-supplied env adds/
       // overrides keys but the child still inherits PATH etc. Values may be
       // sensitive (BB-99) — never log them; only cwd is logged below.
       const childEnv = env ? { ...process.env, ...env } : undefined;
-      const { stdout } = await execFileAsync(file, args, {
+      const pending = execFileAsync(file, args, {
         encoding: 'utf8',
         ...rest,
         ...(childEnv ? { env: childEnv } : {}),
       });
+      if (input !== undefined) pending.child.stdin?.end(input);
+      const { stdout } = await pending;
       this.logger.debug({ file, args: logArgs, cwd: opts.cwd }, 'exec ok');
       return stdout;
     } catch (err) {

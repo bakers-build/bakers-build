@@ -32,6 +32,13 @@ function spyLogger(): { log: ConductorLogger; calls: LogCall[] } {
 }
 
 describe('CommandRunner', () => {
+  it('writes input to the child stdin and closes it', async () => {
+    const { log } = spyLogger();
+    await expect(
+      new CommandRunner(log).run('cat', [], { input: 'hello\n' }),
+    ).resolves.toBe('hello\n');
+  });
+
   it('terminates a running child when cancelled', async () => {
     const root = mkdtempSync(join(tmpdir(), 'exec-cancel-'));
     const ready = join(root, 'pid');
