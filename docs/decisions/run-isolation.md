@@ -235,11 +235,14 @@ container; only checked commits come back.
    (`$XDG_CACHE_HOME/bakers/run-git/<hash>.git`) and is mounted as `.git` only inside the run. On
    the host the workspace's `.git` is a stub the host rewrites at every run start (`HEAD` on the
    ticket branch, no objects), so host tools there name the ticket branch instead of finding the
-   parent checkout above; the conductor itself runs no Git there. The
+   parent checkout above; the conductor itself runs no Git there. Under herdr the host also registers the stub as
+   a linked worktree of the parent (`<parent .git>/worktrees/run-<hash>`, removed with the clone),
+   so host Git there works on the parent repository like in any linked worktree; the run never sees
+   the stub, because its own Git directory is mounted over it. The
    parent repository is not mounted in the run. The clone carries the target branch as
    `origin/<target>`; nothing is merged. Tracked files are reset, untracked files removed, ignored
-   files (`node_modules`, `vendor`) kept. Uncommitted work does not reach the next run. herdr shows
-   the clone in a plain workspace labelled with the branch.
+   files (`node_modules`, `vendor`) kept. Uncommitted work does not reach the next run. herdr opens
+   the clone with `herdr worktree open` and shows it under its repository.
 2. **Protected paths from the project only.** `runtime: { read_only: [...] }` in
    `.bakers/project.config.js`, plus the fixed `.bakers`. No machine key, addon default, `'$inherit'`
    or runtime-entry option. bakers mounts them read-only in the run; the project protects them in

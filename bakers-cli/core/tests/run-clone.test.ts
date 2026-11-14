@@ -16,6 +16,7 @@ import { afterEach, expect, it } from 'vitest';
 import {
   createRunClone,
   loadRunClone,
+  registerRunCloneWorktree,
   removeRunClone,
   runCloneGitDir,
   saveRunClone,
@@ -284,4 +285,25 @@ it('turns a clean linked worktree into a run clone and drops the parent worktree
   expect(git(parent, 'worktree', 'list', '--porcelain')).not.toContain(
     workspace,
   );
+});
+
+it('registers the run clone as a linked worktree of the parent on the ticket branch until it is removed', () => {
+  const { root, parent, workspace } = fixture();
+  const env = { XDG_CACHE_HOME: join(root, 'cache') };
+  const list = () => git(parent, 'worktree', 'list', '--porcelain');
+
+  registerRunCloneWorktree(
+    createRunClone({ parent, workspace, branch: 'ticket', env }),
+  );
+
+  expect(list()).toContain(
+    `worktree ${workspace}\nHEAD ${git(parent, 'rev-parse', 'ticket')}\nbranch refs/heads/ticket`,
+  );
+  git(parent, 'worktree', 'prune');
+  expect(list()).toContain(`worktree ${workspace}`);
+  // Host Git in the workspace sees the parent repository on the ticket branch.
+  expect(git(workspace, 'rev-parse', '--abbrev-ref', 'HEAD')).toBe('ticket');
+
+  removeRunClone(workspace, env);
+  expect(list()).not.toContain(workspace);
 });

@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import { transferIsolatedCommit } from './isolated-git.js';
 import { UI_REFRESH_FILE } from './ui-refresh.js';
 
@@ -81,8 +81,31 @@ function loadRecord(gitDir: string): RunClone | undefined {
   }
 }
 
+/** The parent's worktree entry for a run clone; named after its Git directory, so it never clashes. */
+const adminOf = ({ parentGitDir, gitDir }: RunClone) =>
+  join(parentGitDir, 'worktrees', `run-${basename(gitDir, '.git')}`);
+
+/**
+ * Register the run clone as a linked worktree of the parent on the host, so
+ * herdr groups its workspace under the repository. The run never sees this:
+ * its own Git directory is mounted over the stub. Repeat after every
+ * {@link createRunClone}, which empties the stub.
+ */
+export function registerRunCloneWorktree(record: RunClone): void {
+  const admin = adminOf(record);
+  const stub = join(record.workspace, '.git');
+  mkdirSync(admin, { recursive: true });
+  writeFileSync(join(admin, 'HEAD'), `ref: refs/heads/${record.branch}\n`);
+  writeFileSync(join(admin, 'commondir'), '../..\n');
+  writeFileSync(join(admin, 'gitdir'), `${stub}\n`);
+  writeFileSync(join(stub, 'commondir'), `${record.parentGitDir}\n`);
+  writeFileSync(join(stub, 'gitdir'), `${stub}\n`);
+}
+
 export function removeRunClone(workspace: string, env: Env = process.env) {
   const gitDir = runCloneGitDir(workspace, env);
+  const record = loadRecord(gitDir);
+  if (record) rmSync(adminOf(record), { recursive: true, force: true });
   rmSync(gitDir, { recursive: true, force: true });
   rmSync(recordOf(gitDir), { force: true });
 }
