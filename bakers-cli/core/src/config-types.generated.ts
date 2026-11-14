@@ -164,6 +164,13 @@ export interface ConnectionConfig {
   plugins?: Array<unknown | {
     [key: string]: unknown;
   }>;
+  /** Conductor server slot for this connection; a project server slot or server addon wins. Default @bakers-build/addon-remote-drupal. */
+  server?: { kind: string; [key: string]: unknown } | {
+    use: string;
+    export?: string;
+    /** Options passed to the factory. */
+    with?: unknown;
+  };
   /** Connection addons, such as auth providers. */
   addons?: Array<string | {
     use: string;

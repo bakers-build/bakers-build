@@ -10,7 +10,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as configService from '../../src/cli/config-plan.js';
 import { capabilities } from './preset-capabilities.js';
 
@@ -205,7 +205,12 @@ function world() {
 function connectionText(secret = 'private-value') {
   return `// @bakers-schema-version 1\nexport default { schema_version: 1, site: { base_url: 'https://example.test' }, workspace_id: '${workspace}', plugins: [{ plugin: '@dropsh/plugin-oauth2', with: { id: 'bakers', default: true, scope: 'bb:session', client_id: 'client', client_secret: '${secret}' } }] };\n`;
 }
+// A run's BAKERS_PROJECT would override the project name the fixtures write.
+beforeEach(() => {
+  vi.stubEnv('BAKERS_PROJECT', undefined);
+});
 afterEach(() => {
+  vi.unstubAllEnvs();
   for (const root of roots.splice(0))
     rmSync(root, { recursive: true, force: true });
 });
@@ -228,9 +233,8 @@ describe('offline scoped configuration plan and apply', () => {
     expect(machine).not.toMatch(/^\s*agents:/m);
     // The run budget is a backend setting.
     expect(machine).not.toContain('max_parallel');
-    expect(conductor).toContain(
-      "addons: [{ use: '@bakers-build/addon-herdr' }]",
-    );
+    expect(conductor).toContain("addons: ['@bakers-build/addon-herdr']");
+    expect(conductor).not.toMatch(/^\s*(?:server|executor|worktree):/m);
     // addon-claude is machine-scoped; a project config may not list it.
     expect(conductor).not.toContain('@bakers-build/addon-claude');
     expect(conductor).not.toMatch(
@@ -636,6 +640,31 @@ export default {
     expect(service.applyConfigPlan(plan).result).toBe('blocked');
     expect(readFileSync(w.engine, 'utf8')).toBe(engine);
   });
+  it('refuses to add herdr to a non-literal addons value', () => {
+    const w = world();
+    const engine = engineText()
+      .replace("  executor: { use: '@bakers-build/addon-herdr' },\n", '')
+      .replace(
+        "  worktree: { use: '@bakers-build/addon-herdr', export: 'herdrWorkspace' },\n",
+        '',
+      )
+      .replace(
+        "project: { name: 'demo' },",
+        "project: { name: 'demo' }, addons: base,",
+      );
+    writeFileSync(w.engine, engine);
+
+    const plan = service.planConfig(w);
+
+    expect(plan.report.findings).toContainEqual(
+      expect.objectContaining({
+        code: 'unsupported_source_shape',
+        key: 'addons',
+      }),
+    );
+    expect(service.applyConfigPlan(plan).result).toBe('blocked');
+    expect(readFileSync(w.engine, 'utf8')).toBe(engine);
+  });
   it.each([
     'machine',
   ])('blocks mixed ownership movement in %s scope before any write', (scope) => {
@@ -799,7 +828,6 @@ it('check reports actual missing keys and never plans a repair', () => {
 });
 it.each([
   'project',
-  'server',
   'executor',
   // 'agent' is intentionally absent: agents are owned by machine.config.js;
   // a project config with no agent slot is valid.
@@ -824,6 +852,20 @@ it.each([
         finding.code === 'missing_required_key' && finding.key === key,
     ),
   ).toBe(true);
+});
+it('check accepts a project config that names no server', () => {
+  const w = world();
+  writeFileSync(w.engine, engineText().replace(/^ {2}server:.*\n/m, ''));
+  const plan = service.planConfig({
+    ...w,
+    operation: 'check',
+    scope: 'project',
+  });
+  expect(plan.report.findings.filter((f) => f.key === 'server')).toEqual([]);
+  // A repair run does not write a server back either.
+  const repaired = service.planConfig({ ...w, project: 'demo' });
+  const after = repaired.writes.find((x) => x.path === w.engine)?.after ?? '';
+  expect(after).not.toMatch(/^\s*server:/m);
 });
 it.each([
   {
@@ -1089,8 +1131,25 @@ it('project init creates only the committed engine config', () => {
     project: 'demo',
     workspace: 'Engineering',
   });
-  expect(written).toContain("use: '@bakers-build/addon-herdr'");
+  expect(written).toContain("addons: ['@bakers-build/addon-herdr']");
   expect(existsSync(join(w.cwd, '.bakers/connection.config.js'))).toBe(false);
+});
+it('project init names herdr once in addons and no server, executor or worktree', () => {
+  const w = world();
+  rmSync(w.engine);
+  const plan = service.planConfig({
+    ...w,
+    operation: 'init',
+    scope: 'project',
+    project: 'demo',
+    machinePath: w.machine,
+  });
+  expect(plan.report.result).toBe('ok');
+  service.applyConfigPlan(plan);
+  const source = new ConfigSourceEditor(readFileSync(w.engine, 'utf8'));
+  for (const slot of ['server', 'executor', 'worktree'])
+    expect(source.property(slot)).toBeUndefined();
+  expect(source.expression('addons')).toBe("['@bakers-build/addon-herdr']");
 });
 it('project init accepts an omitted workspace name', () => {
   const w = world();
@@ -1268,7 +1327,7 @@ it.each([
         ? { workspace_id: workspace }
         : {
             project: { name: 'demo' },
-            server: { use: '@bakers-build/addon-remote-drupal' },
+            addons: ['@bakers-build/addon-herdr'],
           },
   );
   if (layer === 'machine') expect(config.machine_id).toMatch(UUID_PATTERN);
@@ -1352,7 +1411,7 @@ it('initializes herdr-core in addons with its nested Git worktree and no herdr s
   expect(source.property('executor')).toBeUndefined();
   expect(source.property('worktree')).toBeUndefined();
   expect(text).toContain(executor);
-  expect(text).not.toContain("use: '@bakers-build/addon-herdr'");
+  expect(text).not.toContain("'@bakers-build/addon-herdr'");
   expect(plan.report.findings.filter((f) => f.key === 'worktree')).toEqual([]);
 });
 

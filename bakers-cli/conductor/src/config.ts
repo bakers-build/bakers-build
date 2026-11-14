@@ -47,7 +47,11 @@ import {
   provisionRuns,
   provisionTools,
 } from './plugins/tools.js';
-import type { ConductorEngineConfig, ConductorFileConfig } from './types.js';
+import type {
+  ConductorEngineConfig,
+  ConductorFileConfig,
+  SlotSources,
+} from './types.js';
 
 // BB-201: the `.bakers/` walk-up + connection resolution moved to `@bakers-build/core`
 // (`resolveConfigPath` / `resolveBbConfigPath` / `findBbDir`). Re-export the
@@ -260,6 +264,17 @@ function requirePlugin<T>(value: unknown, kind: string): T {
  * "unknown command dropsh" breakage after the @bakers → @bakers-ai scope rename).
  * Mirror of dropsh 0.4.1 `loadNamedPlugin` / `resolveSlot`.
  */
+/** The `use` package of each slot value that is a descriptor. */
+function packagesOf(
+  slots: Partial<Record<keyof SlotSources, unknown>>,
+): Partial<Record<keyof SlotSources, string>> {
+  return Object.fromEntries(
+    Object.entries(slots).flatMap(([slot, value]) =>
+      isPluginDescriptor(value) ? [[slot, value.use]] : [],
+    ),
+  );
+}
+
 function isPluginDescriptor(
   entry: unknown,
 ): entry is Record<string, unknown> & { use: string } {
@@ -543,15 +558,28 @@ export async function loadConductorConfig(
     new Set(tools?.list().map((t) => t.name)),
   );
 
+  // No server here is fine: composeConductorConfig takes the connection's or the default.
   const remote =
     config.server !== undefined
       ? await resolveSlot<RemotePlugin>(config.server, 'server', configPath)
       : wired.remote;
-  if (!remote) {
-    throw new Error(
-      'project config resolves no server — name a server addon in addons[] or set the server slot',
-    );
-  }
+  const slotSources: Partial<SlotSources> = {
+    ...(remote
+      ? { server: config.server !== undefined ? 'slot' : 'addons' }
+      : {}),
+    executor:
+      machineCtx.executor !== undefined
+        ? 'machine'
+        : config.executor !== undefined
+          ? 'slot'
+          : 'addons',
+    worktree: config.worktree !== undefined ? 'slot' : 'addons',
+  };
+  const slotPackages = packagesOf({
+    server: config.server,
+    executor: machineCtx.executor ?? config.executor,
+    worktree: config.worktree,
+  });
   // The machine may run its own installed tool: its explicit executor wins
   // over the project's, which wins over the one discovered from addons[].
   const executor =
@@ -736,7 +764,9 @@ export async function loadConductorConfig(
     routes,
   };
   return {
-    remote,
+    ...(remote ? { remote } : {}),
+    slot_sources: slotSources,
+    slot_packages: slotPackages,
     executor,
     agents: candidates,
     enabled_agents: enabledAgents,
@@ -800,16 +830,49 @@ export async function loadConductorConfig(
  * `selectRemote` read them exactly as before — the fields just arrive from
  * connection file now.
  */
-export function composeConductorConfig(
+export async function composeConductorConfig(
   engine: ConductorEngineConfig,
-  connection: Pick<BbConnectionConfig, 'site' | 'plugins'>,
-): ConductorFileConfig {
+  connection: Pick<BbConnectionConfig, 'site' | 'plugins' | 'config_path'> &
+    Partial<Pick<BbConnectionConfig, 'server'>>,
+): Promise<ConductorFileConfig> {
+  // The project's server wins, then the connection's, then the Drupal default.
+  const descriptor = engine.remote
+    ? undefined
+    : (connection.server ?? { use: DEFAULT_SERVER_ADDON });
+  const [remote, server] = engine.remote
+    ? [engine.remote, engine.slot_sources?.server ?? 'slot']
+    : connection.server !== undefined
+      ? [
+          await resolveSlot<RemotePlugin>(
+            connection.server,
+            'server',
+            connection.config_path,
+          ),
+          'connection' as const,
+        ]
+      : [
+          await resolveSlot<RemotePlugin>(
+            { use: DEFAULT_SERVER_ADDON },
+            'server',
+            engine.config_path,
+          ),
+          'default' as const,
+        ];
   return {
     ...engine,
+    remote,
+    slot_sources: { ...engine.slot_sources, server },
+    slot_packages: {
+      ...engine.slot_packages,
+      ...packagesOf({ server: descriptor }),
+    },
     site: connection.site,
     ...(connection.plugins.length > 0 ? { plugins: connection.plugins } : {}),
   };
 }
+
+/** The server a connection gets when neither it nor the project names one. */
+export const DEFAULT_SERVER_ADDON = '@bakers-build/addon-remote-drupal';
 
 /**
  * The conductor variants in a `.bakers/` dir (`conductor` for

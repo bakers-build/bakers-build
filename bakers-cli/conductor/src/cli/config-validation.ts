@@ -81,6 +81,8 @@ function validateConductorSources(
     for (const slot of ['server', 'executor', 'worktree']) {
       const explicit = editor.property(`${slot}.use`)?.value;
       if (typeof explicit === 'string') origins[slot] = explicit;
+      // Without one here, the conductor takes the connection's server or the default.
+      if (slot === 'server') continue;
       if (editor.property(slot) || addonSlots.has(slot)) continue;
       add(
         addon && addonsAreOpaque ? 'unknown_value' : 'missing_required_key',

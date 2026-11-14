@@ -36,7 +36,6 @@ List the package once in `.bakers/project.config.js`; one entry supplies both ex
 
 ```js
 addons: [
-  '@bakers-build/addon-remote-drupal',
   {
     use: '@bakers-build/addon-herdr',
     with: {
@@ -55,7 +54,6 @@ These optional `with` values control worktrees and terminal layouts. Merge the e
 
 ```js
 addons: [
-  '@bakers-build/addon-remote-drupal',
   {
     use: '@bakers-build/addon-herdr',
     with: {

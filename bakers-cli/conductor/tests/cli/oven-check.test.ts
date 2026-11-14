@@ -46,6 +46,14 @@ const MISSING: SandboxPreflight = {
 const LINE =
   'sandbox unavailable: claude: socat not found — install it with sudo apt-get install -y socat (see https://bakers.build/docs/advanced/run-security#sandbox-prerequisites)';
 
+// Fake plugins all carry id 'fake'; makeConfig sets where each came from and
+// the server's package, which check prints in place of the id.
+const SLOTS = [
+  'server: @bakers-build/addon-remote-drupal (default)',
+  'executor: fake (addons)',
+  'worktree: fake (slot)',
+];
+
 describe('bakers conductor check / start sandbox report', () => {
   let home: string;
   let out: string[];
@@ -76,13 +84,13 @@ describe('bakers conductor check / start sandbox report', () => {
       ['check'],
       [agent('claude', MISSING), agent('codex', { ok: true })],
     );
-    expect(out).toEqual([LINE, 'codex: sandbox ok']);
+    expect(out).toEqual([...SLOTS, LINE, 'codex: sandbox ok']);
     expect(process.exitCode).toBe(1);
   });
 
   it('check exits 0 when every agent can start its sandbox', async () => {
     await run(['check'], [agent('claude', { ok: true })]);
-    expect(out).toEqual(['claude: sandbox ok']);
+    expect(out).toEqual([...SLOTS, 'claude: sandbox ok']);
     expect(process.exitCode).toBeUndefined();
   });
 
@@ -121,6 +129,7 @@ describe('bakers conductor check / start sandbox report', () => {
       ],
     );
     expect(out).toEqual([
+      ...SLOTS,
       LINE.replace('claude:', 'claude-fast:'),
       'claude-deep: sandbox ok',
     ]);
@@ -161,6 +170,8 @@ describe('bakers conductor check / start sandbox report', () => {
       executor: fakeExecutor(),
       agent: [],
       workspace: fakeWorkspace(),
+      slot_sources: { server: 'default', executor: 'addons', worktree: 'slot' },
+      slot_packages: { server: '@bakers-build/addon-remote-drupal' },
       label: 'check test',
       project: 'bakers',
       states: ['working'],

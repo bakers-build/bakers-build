@@ -105,6 +105,23 @@ describe('loadBbConfig — connection loader (site + plugins only)', () => {
     expect(cfg.config_path).toBe(join(d, 'connection.config.js'));
   });
 
+  it('passes the server the connection names to the conductor', async () => {
+    const d = bakersDir();
+    writeFileSync(
+      join(d, 'connection.config.js'),
+      `export default {
+        site: { base_url: 'https://x.test' }, workspace_id: '00000000-0000-4000-8000-000000000000',
+        plugins: [],
+        server: { use: '@example/server', with: { region: 'eu' } },
+      };\n`,
+    );
+    const cfg = await loadBbConfig(host, { cwd: tmp });
+    expect(cfg.server).toEqual({
+      use: '@example/server',
+      with: { region: 'eu' },
+    });
+  });
+
   it('lets a caller clear a legacy global workspace for accessible project lookup', async () => {
     const d = bakersDir();
     writeFileSync(

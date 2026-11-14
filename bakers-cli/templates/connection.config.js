@@ -36,6 +36,9 @@ export default {
   // scoped by construction; leave it out and pick from the UI's own picker.
   // Read the uuid with: bakers tools tool_api__bakers_workspace_list
   // workspace_id: '<bb_workspace uuid>',
+  // The conductor's server for this connection; default (when no project
+  // names one either) is the Drupal control plane:
+  // server: { use: '@bakers-build/addon-remote-drupal' },
   addons: [
     // Auth: oauth2 (preferred) — ONE provider on ONE scope. For inline HTTP
     // Basic instead: { use: '@bakers-build/addon-auth-basic', with: { basic } }.
