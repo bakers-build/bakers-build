@@ -15,7 +15,7 @@ This guide targets the current `next` contract alongside the Experimental Docker
 
 Import `RuntimePlugin`, `BbRuntime` and `RuntimeLaunch` from `@bakers-build/conductor/contract`. In a source checkout, the authoritative types are in `bakers-cli/conductor/src/plugins/runtime.ts`.
 
-A `RuntimePlugin` has `kind: 'runtime'`, `id`, `isolates`, `requiredModules` and `createRuntime(config, { logger })`. The factory returns a `BbRuntime`. Validate options, platform and backend prerequisites; reject unavailable isolation rather than returning a host launcher. `isolates: true` makes the conductor require a [run clone](/provision/security/shared-settings#isolated-git-delivery) from the workspace, protect `.bakers/` and the project's `runtime.read_only` paths, check host command entry points and transfer only checked commits back; your backend must still enforce the boundary itself.
+A `RuntimePlugin` has `kind: 'runtime'`, `id`, `isolates`, an optional `shared`, `requiredModules` and `createRuntime(config, { logger })`. The factory returns a `BbRuntime`. Validate options, platform and backend prerequisites; reject unavailable isolation rather than returning a host launcher. `isolates: true` makes the conductor require a [run clone](/provision/security/shared-settings#isolated-git-delivery) from the workspace, protect `.bakers/` and the project's `runtime.read_only` paths, check host command entry points and transfer only checked commits back; your backend must still enforce the boundary itself. A set `shared` makes the workspaces' run clones borrow the parent's objects, or not, ahead of their own deprecated `shared` option; leave it undefined to let the workspace decide.
 
 | Member | Your responsibility |
 |---|---|

@@ -21,6 +21,7 @@ export function runtimeBwrap(options: BwrapOptions = {}): RuntimePlugin {
     kind: 'runtime',
     id: 'bwrap',
     isolates: true,
+    ...(options.shared !== undefined ? { shared: options.shared } : {}),
     requiredModules: [],
     createRuntime: async () => {
       if (process.platform !== 'linux')

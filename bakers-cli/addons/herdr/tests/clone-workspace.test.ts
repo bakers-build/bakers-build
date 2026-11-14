@@ -154,6 +154,41 @@ it('reads shared from the herdr addon options and clones only under an isolating
   );
 });
 
+it('takes shared from the isolating runtime, the workspace option as fallback', async () => {
+  const cases: [boolean | undefined, boolean | undefined, boolean][] = [
+    [true, undefined, true],
+    [undefined, true, true],
+    [false, true, false],
+    [undefined, undefined, false],
+  ];
+  for (const [i, [runtime, workspace, expected]] of cases.entries()) {
+    const config = {
+      config_path: join(root, '.bakers/project.config.js'),
+      runtime: {
+        isolates: true,
+        ...(runtime === undefined ? {} : { shared: runtime }),
+      },
+    } as unknown as ConductorFileConfig;
+    const ws = await herdrWorkspace({
+      ...(workspace === undefined ? {} : { shared: workspace }),
+      execHerdr: fakeHerdr().exec,
+    }).createWorkspace(config);
+    expect(
+      (await ws.ensure(`BB-${10 + i}`, `feat/bb-${10 + i}`)).clone?.shared,
+    ).toBe(expected);
+  }
+});
+
+it('marks the workspace shared option deprecated in favor of the runtime', () => {
+  const schema = JSON.parse(
+    readFileSync(new URL('../options.schema.json', import.meta.url), 'utf8'),
+  );
+  expect(schema.properties.shared.deprecated).toBe(true);
+  expect(schema.properties.shared.description).toMatch(
+    /runtime-bwrap.*runtime-docker/,
+  );
+});
+
 it('closes the plain workspace and removes the clone on teardown', async () => {
   const herdr = fakeHerdr();
   const workspace = new HerdrWorkspace({

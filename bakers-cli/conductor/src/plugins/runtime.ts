@@ -56,6 +56,8 @@ export interface RuntimePlugin {
   readonly id: string;
   /** True when runs are isolated from the host; agent permissions remain unchanged. */
   readonly isolates: boolean;
+  /** Run clones borrow the parent's objects (`git clone --shared`); undefined = the workspace decides. */
+  readonly shared?: boolean;
   readonly requiredModules: string[];
   createRuntime(
     config: ConductorFileConfig,

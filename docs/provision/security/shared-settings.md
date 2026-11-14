@@ -132,7 +132,7 @@ the parent repository:
 merges `origin/<target>` itself. `forge_push` transfers, then pushes. Only the ticket branch is
 transferred, not other branches created in the clone.
 
-With the workspace option `shared: true`, the clone borrows the parent's objects and the parent's
+With the runtime option `shared: true`, the clone borrows the parent's objects and the parent's
 `objects` directory is mounted read-only in the run. While a run is open, do not prune the parent
 repository or run `git repack -d` or `git gc --prune` there: the clone can lose objects it needs.
 
