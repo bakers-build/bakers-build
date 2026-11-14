@@ -158,7 +158,7 @@ itself and asks only what is the user's to decide.
   it reads `bb-label-<label>` today.
 - No new comment type. A person's decision is their `comment`. With or without a label, each
   handoff (`coding`, `review`, `summary`) carries `### Gates`, one line per gate passed or rejected
-  since the last handoff:
+  since the last handoff; the heading is left out when there is none:
 
   ```markdown
   ### Gates
