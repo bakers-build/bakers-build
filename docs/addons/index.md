@@ -25,7 +25,7 @@ Addons run code on the worker machine. Understand their operations and review ac
 
 <DocQuickLinks aria-label="Addon tools and access" :items="[
   { label: 'Tools and integrations', text: 'See how addon operations reach agents and external clients.', link: '/provision/tools' },
-  { label: 'Run agents securely', text: 'Review the access granted to addons and their tools.', link: '/provision/security/' }
+  { label: 'Permissions and isolation', text: 'How permissions, isolation and tools limit what addons and agents can reach.', link: '/agents/security' }
 ]" />
 
 ## Enable an existing addon
