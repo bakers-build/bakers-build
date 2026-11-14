@@ -38,11 +38,11 @@ Without a `forge` entry no tool is served. An entry without `backend.use` stops 
 | `forge_fetch` | Fetches `base_branch`, the ticket branch and the parent branches named in `branches`. | Read only; no tags. |
 | `forge_push` | Pushes an owned branch. | Fast-forward, or `force_with_lease`; bare force does not exist. |
 | `forge_pr_upsert` | Opens or updates the PR/MR into the derived base. | Refuses a non-Conventional Commits title before any request. |
-| `forge_checks` | Lists checks with status, `required`, the forge's raw `conclusion`, `run_id`, `job_id` and `run_started_at`, plus `overall`. Only the newest run per workflow unless `all_runs`. | Read only. |
-| `forge_job_log` | Returns the end of one job's log, by a `job_id` from `forge_checks`: 16 KiB by default, `max_bytes` up to 256 KiB, from a whole line. | Read only; jobs of the configured repository only. |
+| `forge_checks` | Lists checks with raw `conclusion`, `run_id`, `job_id` and `overall`; newest runs unless `all_runs`. | Read only. |
+| `forge_job_log` | Returns a job's log tail, 16 KiB by default. | Read only. |
 | `forge_merge` | Merges an owned branch's PR/MR. | Correct target, valid title, no conflict, `overall` is `success`. |
 
-`overall` is `success` only when every required check is green. A check is required when the forge says so (rulesets, branch protection, a GitLab job that may not fail) or when it is named `required`. A failed, cancelled, timed-out, skipped, pending or missing required check makes it `failure` or `pending`. When no check is required, `overall` is `no_required_checks`, and `forge_merge` refuses.
+`overall` is `success` only when every required check, including one named `required`, is green; none required gives `no_required_checks`.
 
 Human approval stays the workflow's merge gate.
 
