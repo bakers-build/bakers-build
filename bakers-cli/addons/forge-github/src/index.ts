@@ -12,6 +12,8 @@ import {
   type ForgeCheck,
   type ForgePr,
   requestJson,
+  requestText,
+  tail,
 } from '@bakers-build/addon-forge/backend';
 
 const API = 'https://api.github.com';
@@ -166,9 +168,14 @@ const factory: ForgeBackendFactory = async (raw, context) => {
 
   const api = async (
     path: string,
-    init: { method?: string; body?: unknown; allow404?: boolean } = {},
+    init: {
+      method?: string;
+      body?: unknown;
+      allow404?: boolean;
+      text?: boolean;
+    } = {},
   ) =>
-    requestJson(doFetch, `${repo}${path}`, {
+    (init.text ? requestText : requestJson)(doFetch, `${repo}${path}`, {
       method: init.method ?? 'GET',
       headers: {
         authorization: `Bearer ${await accessToken()}`,
@@ -283,7 +290,8 @@ const factory: ForgeBackendFactory = async (raw, context) => {
         jobs = jobs.filter(({ w }) => !w || newest.get(w.workflow_id) === w);
         // A re-run attempt is a newer check run of the same name in the same run.
         const latest = new Map<string, number>();
-        const key = (j: (typeof jobs)[number]) => `${j.w?.id ?? ''}\0${j.r.name}`;
+        const key = (j: (typeof jobs)[number]) =>
+          `${j.w?.id ?? ''}\0${j.r.name}`;
         for (const j of jobs)
           latest.set(key(j), Math.max(latest.get(key(j)) ?? 0, j.r.id));
         jobs = jobs.filter((j) => latest.get(key(j)) === j.r.id);
@@ -343,6 +351,16 @@ const factory: ForgeBackendFactory = async (raw, context) => {
         );
     },
     isMerged: async (pr) => (await pull(pr.number)).merged === true,
+    // The API redirects to a signed download URL; fetch follows it.
+    jobLog: async (jobId, maxBytes) => {
+      const log = (await api(`/actions/jobs/${jobId}/logs`, {
+        allow404: true,
+        text: true,
+      })) as string | undefined;
+      if (log === undefined)
+        throw new Error(`job ${jobId} is not a job of ${s.repository}`);
+      return tail(log, maxBytes);
+    },
   };
   return backend;
 };

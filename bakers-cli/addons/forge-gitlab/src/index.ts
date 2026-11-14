@@ -11,6 +11,8 @@ import {
   type ForgeBackendFactory,
   type ForgePr,
   requestJson,
+  requestText,
+  tail,
 } from '@bakers-build/addon-forge/backend';
 
 interface Mr {
@@ -77,9 +79,14 @@ const factory: ForgeBackendFactory = async (raw, context) => {
   const project = `${base}/api/v4/projects/${encodeURIComponent(s.project)}`;
   const api = async (
     path: string,
-    init: { method?: string; body?: unknown } = {},
+    init: {
+      method?: string;
+      body?: unknown;
+      allow404?: boolean;
+      text?: boolean;
+    } = {},
   ) =>
-    requestJson(doFetch, `${project}${path}`, {
+    (init.text ? requestText : requestJson)(doFetch, `${project}${path}`, {
       method: init.method ?? 'GET',
       // Bearer takes access tokens and the OAuth token a `glab` login holds.
       headers: {
@@ -87,6 +94,7 @@ const factory: ForgeBackendFactory = async (raw, context) => {
         'content-type': 'application/json',
       },
       ...(init.body === undefined ? {} : { body: JSON.stringify(init.body) }),
+      ...(init.allow404 ? { allow404: true } : {}),
     });
   const mr = async (iid: number) => (await api(`/merge_requests/${iid}`)) as Mr;
   const q = encodeURIComponent;
@@ -214,6 +222,15 @@ const factory: ForgeBackendFactory = async (raw, context) => {
       });
     },
     isMerged: async (pr) => (await mr(pr.number)).state === 'merged',
+    jobLog: async (jobId, maxBytes) => {
+      const log = (await api(`/jobs/${jobId}/trace`, {
+        allow404: true,
+        text: true,
+      })) as string | undefined;
+      if (log === undefined)
+        throw new Error(`job ${jobId} is not a job of ${s.project}`);
+      return tail(log, maxBytes);
+    },
   };
   return backend;
 };

@@ -73,6 +73,15 @@ export interface ForgeBackend {
   /** Merges with every option sent explicitly; deletes the source when asked. */
   merge(pr: ForgePr, options: ForgeMerge): Promise<void>;
   isMerged(pr: ForgePr): Promise<boolean>;
+  /** The [tail] of a job's log; refuses a job outside the repository. */
+  jobLog(jobId: number, maxBytes: number): Promise<LogTail>;
+}
+
+export interface LogTail {
+  readonly text: string;
+  /** The whole log's size. */
+  readonly bytes: number;
+  readonly truncated: boolean;
 }
 
 export type ForgeBackendFactory = (
@@ -91,6 +100,7 @@ const METHODS = [
   'mergeBlocker',
   'merge',
   'isMerged',
+  'jobLog',
 ] as const;
 
 /** Reject a factory result that is not a `ForgeBackend`. */
@@ -136,12 +146,12 @@ export function cliToken(
   };
 }
 
-/** JSON over HTTP for backends: throws status and body text on failure. */
-export async function requestJson(
+/** Text over HTTP for backends: throws status and body text on failure. */
+export async function requestText(
   doFetch: typeof fetch,
   url: string,
   init: RequestInit & { allow404?: boolean },
-): Promise<unknown> {
+): Promise<string | undefined> {
   const res = await doFetch(url, init);
   if (res.status === 404 && init.allow404) return undefined;
   const text = await res.text();
@@ -149,5 +159,36 @@ export async function requestJson(
     throw new Error(
       `${init.method ?? 'GET'} ${new URL(url).pathname} answered ${res.status}: ${text.slice(0, 500)}`,
     );
+  return text;
+}
+
+/** JSON over HTTP for backends: throws status and body text on failure. */
+export async function requestJson(
+  doFetch: typeof fetch,
+  url: string,
+  init: RequestInit & { allow404?: boolean },
+): Promise<unknown> {
+  const text = await requestText(doFetch, url, init);
   return text ? JSON.parse(text) : undefined;
+}
+
+/**
+ * The last `maxBytes` bytes of `log`, from the first whole line in them; when
+ * the last line alone is longer, from the first whole character.
+ */
+export function tail(log: string, maxBytes: number): LogTail {
+  const buf = Buffer.from(log);
+  if (buf.length <= maxBytes)
+    return { text: log, bytes: buf.length, truncated: false };
+  let start = buf.length - maxBytes;
+  const newline = buf.indexOf(0x0a, start - 1);
+  if (newline !== -1 && newline < buf.length - 1) start = newline + 1;
+  else
+    while (start < buf.length && (buf.readUInt8(start) & 0xc0) === 0x80)
+      start++;
+  return {
+    text: buf.subarray(start).toString(),
+    bytes: buf.length,
+    truncated: true,
+  };
 }

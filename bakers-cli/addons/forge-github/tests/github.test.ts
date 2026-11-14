@@ -46,9 +46,8 @@ function fakeFetch(routes: Record<string, Route>, expiresInMs = 3_600_000) {
     const route = routes[`${method} ${url.pathname}`];
     if (!route) return new Response('not found', { status: 404 });
     const out = route(url, init);
-    return out === undefined
-      ? new Response(null, { status: 204 })
-      : Response.json(out);
+    if (out === undefined) return new Response(null, { status: 204 });
+    return typeof out === 'string' ? new Response(out) : Response.json(out);
   }) as typeof fetch;
   return { doFetch, calls, mints: () => mint };
 }
@@ -73,7 +72,14 @@ const cr = (
   status: string,
   conclusion: string | null,
   suite = 100,
-) => ({ id, name, status, conclusion, head_sha: 'abc', check_suite: { id: suite } });
+) => ({
+  id,
+  name,
+  status,
+  conclusion,
+  head_sha: 'abc',
+  check_suite: { id: suite },
+});
 
 /** A workflow run owning check suite `suite`. */
 const run = (id: number, workflow: number, suite: number, started: string) => ({
@@ -276,11 +282,44 @@ describe('forge-github', () => {
     const checks = await b.checks('abc', 'next');
     const inRun = { run_id: 900, run_started_at: '2026-11-14T10:00:00Z' };
     expect(checks).toEqual([
-      { name: 'required', status: 'success', required: true, conclusion: 'success', job_id: 11, ...inRun },
-      { name: 'lint', status: 'pending', required: true, conclusion: null, job_id: 12, ...inRun },
-      { name: 'optional', status: 'failure', required: false, conclusion: 'cancelled', job_id: 13, ...inRun },
-      { name: 'ci/legacy', status: 'success', required: true, conclusion: 'success', ...NO_RUN },
-      { name: 'e2e', status: 'missing', required: true, conclusion: null, ...NO_RUN },
+      {
+        name: 'required',
+        status: 'success',
+        required: true,
+        conclusion: 'success',
+        job_id: 11,
+        ...inRun,
+      },
+      {
+        name: 'lint',
+        status: 'pending',
+        required: true,
+        conclusion: null,
+        job_id: 12,
+        ...inRun,
+      },
+      {
+        name: 'optional',
+        status: 'failure',
+        required: false,
+        conclusion: 'cancelled',
+        job_id: 13,
+        ...inRun,
+      },
+      {
+        name: 'ci/legacy',
+        status: 'success',
+        required: true,
+        conclusion: 'success',
+        ...NO_RUN,
+      },
+      {
+        name: 'e2e',
+        status: 'missing',
+        required: true,
+        conclusion: null,
+        ...NO_RUN,
+      },
     ]);
     expect(
       f.calls.filter((c) => c.method !== 'GET' && !c.path.startsWith('/app/')),
@@ -337,6 +376,21 @@ describe('forge-github', () => {
     ]);
   });
 
+  it('reads the tail of a job log of the repository and refuses another job', async () => {
+    const f = fakeFetch({
+      'GET /repos/acme/shop/actions/jobs/9/logs': () => 'x'.repeat(30),
+    });
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    expect(await b.jobLog(9, 10)).toEqual({
+      text: 'x'.repeat(10),
+      bytes: 30,
+      truncated: true,
+    });
+    await expect(b.jobLog(8, 10)).rejects.toThrow(
+      'job 8 is not a job of acme/shop',
+    );
+  });
+
   it('asks for no workflow runs when the commit has no check runs', async () => {
     const f = fakeFetch({
       'GET /repos/acme/shop/commits/abc/check-runs': () => ({ check_runs: [] }),
@@ -346,7 +400,13 @@ describe('forge-github', () => {
     });
     const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
     expect(await b.checks('abc', 'next')).toEqual([
-      { name: 'ci/legacy', status: 'failure', required: false, conclusion: 'failure', ...NO_RUN },
+      {
+        name: 'ci/legacy',
+        status: 'failure',
+        required: false,
+        conclusion: 'failure',
+        ...NO_RUN,
+      },
     ]);
     expect(f.calls.some((c) => c.path.includes('/actions/runs'))).toBe(false);
   });

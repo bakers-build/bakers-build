@@ -30,7 +30,8 @@ function fakeFetch(routes: Record<string, Route>) {
     });
     const route = routes[`${method} ${url.pathname.replace(P, '')}`];
     if (!route) return new Response('not found', { status: 404 });
-    return Response.json(route(url));
+    const out = route(url);
+    return typeof out === 'string' ? new Response(out) : Response.json(out);
   }) as typeof fetch;
   return { doFetch, calls };
 }
@@ -181,13 +182,55 @@ describe('forge-gitlab', () => {
     const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
     const run = { run_id: 77, run_started_at: '2026-11-14T10:00:00Z' };
     expect(await b.checks('a'.repeat(40), 'develop')).toEqual([
-      { name: 'pipeline', status: 'pending', required: true, conclusion: 'running', job_id: null, ...run },
-      { name: 'lint', status: 'success', required: true, conclusion: 'success', job_id: 1, ...run },
-      { name: 'gate', status: 'pending', required: true, conclusion: 'manual', job_id: 2, ...run },
-      { name: 'flaky', status: 'failure', required: false, conclusion: 'failed', job_id: 3, ...run },
-      { name: 'e2e', status: 'failure', required: true, conclusion: 'canceled', job_id: 4, ...run },
+      {
+        name: 'pipeline',
+        status: 'pending',
+        required: true,
+        conclusion: 'running',
+        job_id: null,
+        ...run,
+      },
+      {
+        name: 'lint',
+        status: 'success',
+        required: true,
+        conclusion: 'success',
+        job_id: 1,
+        ...run,
+      },
+      {
+        name: 'gate',
+        status: 'pending',
+        required: true,
+        conclusion: 'manual',
+        job_id: 2,
+        ...run,
+      },
+      {
+        name: 'flaky',
+        status: 'failure',
+        required: false,
+        conclusion: 'failed',
+        job_id: 3,
+        ...run,
+      },
+      {
+        name: 'e2e',
+        status: 'failure',
+        required: true,
+        conclusion: 'canceled',
+        job_id: 4,
+        ...run,
+      },
       // overall() fails a required check whose conclusion is skipped.
-      { name: 'docs', status: 'success', required: true, conclusion: 'skipped', job_id: 5, ...run },
+      {
+        name: 'docs',
+        status: 'success',
+        required: true,
+        conclusion: 'skipped',
+        job_id: 5,
+        ...run,
+      },
     ]);
     expect(f.calls[0]!.path).toContain(`sha=${'a'.repeat(40)}`);
     expect(f.calls.every((c) => c.method === 'GET')).toBe(true);
@@ -206,6 +249,19 @@ describe('forge-gitlab', () => {
       },
     ]);
     expect(none.calls[0]!.path).toContain('ref=feat%2Fbb-7-work');
+  });
+
+  it('reads the tail of a job trace and refuses a job outside the project', async () => {
+    const f = fakeFetch({ 'GET /jobs/9/trace': () => 'one\ntwo\n' });
+    const b = await factory(SETTINGS, { home: '/h', fetch: f.doFetch });
+    expect(await b.jobLog(9, 100)).toEqual({
+      text: 'one\ntwo\n',
+      bytes: 8,
+      truncated: false,
+    });
+    await expect(b.jobLog(8, 100)).rejects.toThrow(
+      'job 8 is not a job of acme/shop',
+    );
   });
 
   it('blocks on conflicts, sends squash and source deletion explicitly, and blocks a stored force_remove_source_branch it must not honour', async () => {

@@ -60,6 +60,9 @@ function ownedBranch(req: ToolRequest, run: Run): string {
   return branch;
 }
 
+export const LOG_DEFAULT_BYTES = 16_384;
+export const LOG_MAX_BYTES = 262_144;
+
 const json = (value: unknown): ToolResult => ({
   text: JSON.stringify(value, null, 2),
 });
@@ -247,6 +250,26 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         ...(dependents.length > 0
           ? { source_kept_for: dependents.map((p) => p.url) }
           : {}),
+      });
+    },
+
+    forge_job_log: async (req) => {
+      runOf(req);
+      const jobId = req.args.job_id;
+      if (typeof jobId !== 'number' || !Number.isInteger(jobId) || jobId <= 0)
+        throw new Error('job_id must be a job_id from forge_checks');
+      const asked = req.args.max_bytes;
+      const maxBytes =
+        typeof asked === 'number' && asked >= 1
+          ? Math.min(Math.floor(asked), LOG_MAX_BYTES)
+          : LOG_DEFAULT_BYTES;
+      const log = await (await backend()).jobLog(jobId, maxBytes);
+      return json({
+        job_id: jobId,
+        bytes: log.bytes,
+        truncated: log.truncated,
+        max_bytes: maxBytes,
+        log: log.text,
       });
     },
   };

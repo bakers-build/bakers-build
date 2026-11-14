@@ -66,6 +66,22 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
       },
     },
   },
+  forge_job_log: {
+    description:
+      "The end of one job's log, by a job_id from forge_checks, read with the conductor's token; read only. Starts at a whole line; truncated says whether earlier lines were cut.",
+    input: {
+      type: 'object',
+      properties: {
+        job_id: { type: 'integer', minimum: 1 },
+        max_bytes: {
+          type: 'integer',
+          minimum: 1,
+          description: 'bytes from the end; default 16384, at most 262144',
+        },
+      },
+      required: ['job_id'],
+    },
+  },
   forge_merge: {
     description:
       "Merge the open PR/MR of an owned branch into its base, once it is conflict free and every required check is green. Human approval is the workflow's merge gate, not this tool's.",
