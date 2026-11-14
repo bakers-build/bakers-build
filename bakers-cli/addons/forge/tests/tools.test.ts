@@ -4,11 +4,21 @@ import type { ToolRequest } from '@bakers-build/conductor/contract';
 import { createRunClone, loadRunClone, saveRunClone } from '@bakers-build/core';
 import { validateArgs } from '@bakers-build/message';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { ForgeBackend, ForgeCheck, ForgePr } from '../src/backend.js';
+import {
+  type ForgeBackend,
+  type ForgeCheck,
+  type ForgePr,
+  tail,
+} from '../src/backend.js';
 import { mergeRule } from '../src/config.js';
 import { tools as presetTools } from '../src/preset.js';
 import { FORGE_TOOL_DEFINITIONS } from '../src/tool-definitions.js';
-import { FORGE_NEEDS_RUN, forgeTools, toolsFor } from '../src/tools.js';
+import {
+  FORGE_NEEDS_RUN,
+  forgeTools,
+  overall,
+  toolsFor,
+} from '../src/tools.js';
 import { git, gitFixture, markerRan } from './git-fixture.js';
 
 const SECRET = 'tok-SECRET-123';
@@ -19,6 +29,7 @@ function fakeBackend(options: {
   checks?: ForgeCheck[];
   blocker?: string;
   failWith?: string;
+  log?: string;
 }) {
   const calls: string[] = [];
   const prs = [...(options.prs ?? [])];
@@ -52,8 +63,8 @@ function fakeBackend(options: {
       return { ...pr, title };
     },
     openPrsWithBase: async (base) => prs.filter((p) => p.base === base),
-    checks: async (ref, base) => {
-      calls.push(`checks:${ref}:${base}`);
+    checks: async (ref, base, opts) => {
+      calls.push(`checks:${ref}:${base}${opts?.allRuns ? ':all' : ''}`);
       return options.checks ?? [];
     },
     mergeBlocker: async () => options.blocker,
@@ -63,6 +74,10 @@ function fakeBackend(options: {
       );
     },
     isMerged: async () => true,
+    jobLog: async (jobId, maxBytes) => {
+      calls.push(`log:${jobId}:${maxBytes}`);
+      return tail(options.log ?? '', maxBytes);
+    },
   };
   return { backend, calls };
 }
@@ -98,16 +113,33 @@ const pr = (over: Partial<ForgePr> = {}): ForgePr => ({
   ...over,
 });
 
+const row = (
+  name: string,
+  status: ForgeCheck['status'],
+  required: boolean,
+  over: Partial<ForgeCheck> = {},
+): ForgeCheck => ({
+  name,
+  status,
+  required,
+  conclusion: null,
+  run_id: null,
+  job_id: null,
+  run_started_at: null,
+  ...over,
+});
+
 const green: ForgeCheck[] = [
-  { name: 'required', status: 'success', required: true },
-  { name: 'optional', status: 'failure', required: false },
+  row('required', 'success', true),
+  row('optional', 'failure', false),
 ];
 
 describe('forge tools', () => {
-  it('serves the five tools through the preset', () => {
+  it('serves the six tools through the preset', () => {
     expect(Object.keys(presetTools!.tools).sort()).toEqual([
       'forge_checks',
       'forge_fetch',
+      'forge_job_log',
       'forge_merge',
       'forge_pr_upsert',
       'forge_push',
@@ -259,7 +291,7 @@ describe('forge tools', () => {
   it('forge_checks reports rows, required flags and the overall status of the PR head', async () => {
     const { backend, calls } = fakeBackend({
       prs: [pr()],
-      checks: [...green, { name: 'e2e', status: 'pending', required: true }],
+      checks: [...green, row('e2e', 'pending', true)],
     });
     const tools = forgeTools({ backend: async () => backend, settings: {} });
     const out = JSON.parse((await tools.forge_checks!(request({}))).text);
@@ -270,6 +302,8 @@ describe('forge tools', () => {
       (await tools.forge_checks!(request({ ref: 'main' }))).text,
     );
     expect(any.ref).toBe('main');
+    await tools.forge_checks!(request({ all_runs: true }));
+    expect(calls).toContain('checks:abc:next:all');
   });
 
   it('forge_merge refuses: not owned, no PR, wrong target, bad title, conflict, required check not green', async () => {
@@ -290,7 +324,7 @@ describe('forge tools', () => {
       [
         {
           prs: [pr()],
-          checks: [{ name: 'required', status: 'pending', required: true }],
+          checks: [row('required', 'pending', true)],
         },
         {},
         /required \(pending\)/,
@@ -298,7 +332,7 @@ describe('forge tools', () => {
       [
         {
           prs: [pr()],
-          checks: [{ name: 'required', status: 'failure', required: true }],
+          checks: [row('required', 'failure', true)],
         },
         {},
         /required \(failure\)/,
@@ -306,10 +340,34 @@ describe('forge tools', () => {
       [
         {
           prs: [pr()],
-          checks: [{ name: 'required', status: 'missing', required: true }],
+          checks: [row('required', 'missing', true)],
         },
         {},
         /required \(missing\)/,
+      ],
+      [
+        {
+          prs: [pr()],
+          checks: [row('required', 'success', true, { conclusion: 'skipped' })],
+        },
+        {},
+        /required \(skipped\)/,
+      ],
+      [
+        { prs: [pr()], checks: [row('build', 'failure', false)] },
+        {},
+        /no required checks reported/,
+      ],
+      [
+        {
+          prs: [pr()],
+          checks: [
+            row('ci', 'success', true),
+            row('required', 'failure', false, { conclusion: 'failure' }),
+          ],
+        },
+        {},
+        /required \(failure\)/,
       ],
     ];
     for (const [options, args, error] of cases) {
@@ -414,6 +472,126 @@ describe('forge tools', () => {
       (e: Error) => e.message,
     );
     expect(err).toBe('401 for token [redacted]');
+  });
+});
+
+describe('forge_job_log', () => {
+  it('reads 16384 bytes by default, clamps a larger ask to 262144 and reports it', async () => {
+    const { backend, calls } = fakeBackend({ log: 'step 1\nexit code 2\n' });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const first = JSON.parse(
+      (await tools.forge_job_log!(request({ job_id: 9 }))).text,
+    );
+    expect(first).toEqual({
+      job_id: 9,
+      bytes: 19,
+      truncated: false,
+      max_bytes: 16384,
+      log: 'step 1\nexit code 2\n',
+    });
+    const big = JSON.parse(
+      (await tools.forge_job_log!(request({ job_id: 9, max_bytes: 1e7 }))).text,
+    );
+    expect(big.max_bytes).toBe(262144);
+    expect(calls).toEqual(['log:9:16384', 'log:9:262144']);
+  });
+
+  it('refuses a job_id that is no positive integer before asking the forge', async () => {
+    const { backend, calls } = fakeBackend({});
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    for (const job_id of [undefined, 0, -3, 1.5, '9'])
+      await expect(tools.forge_job_log!(request({ job_id }))).rejects.toThrow(
+        /job_id/,
+      );
+    expect(calls).toEqual([]);
+  });
+
+  it('redacts a token inside the log', async () => {
+    const { backend } = fakeBackend({ log: `curl -H "token ${SECRET}"\n` });
+    const tools = forgeTools({ backend: async () => backend, settings: {} });
+    const text = (await tools.forge_job_log!(request({ job_id: 9 }))).text;
+    expect(text).toContain('[redacted]');
+    expect(text).not.toContain(SECRET);
+  });
+});
+
+describe('tail', () => {
+  it('keeps a log within the limit unchanged', () => {
+    expect(tail('a\nb\n', 10)).toEqual({
+      text: 'a\nb\n',
+      bytes: 4,
+      truncated: false,
+    });
+  });
+
+  it('keeps the last bytes from the first whole line', () => {
+    expect(tail('first line\nsecond\nthird\n', 14)).toEqual({
+      text: 'second\nthird\n',
+      bytes: 24,
+      truncated: true,
+    });
+  });
+
+  it('keeps a whole line that starts exactly at the cut', () => {
+    expect(tail('first line\nsecond\nthird\n', 13).text).toBe(
+      'second\nthird\n',
+    );
+  });
+
+  it('returns nothing rather than half a character', () => {
+    expect(tail('a€', 1)).toEqual({ text: '', bytes: 4, truncated: true });
+  });
+
+  it('never starts inside a multi-byte character', () => {
+    const out = tail('äöü€€€', 7);
+    expect(out.truncated).toBe(true);
+    expect(out.text).toBe('€€');
+    expect(Buffer.byteLength(out.text)).toBeLessThanOrEqual(7);
+  });
+});
+
+describe('overall', () => {
+  it.each([
+    [
+      'failure',
+      row('ci', 'failure', true, { conclusion: 'failure' }),
+      'failure',
+    ],
+    [
+      'cancelled',
+      row('ci', 'failure', true, { conclusion: 'cancelled' }),
+      'failure',
+    ],
+    [
+      'timed_out',
+      row('ci', 'failure', true, { conclusion: 'timed_out' }),
+      'failure',
+    ],
+    [
+      'skipped',
+      row('ci', 'success', true, { conclusion: 'skipped' }),
+      'failure',
+    ],
+    ['pending', row('ci', 'pending', true), 'pending'],
+    ['missing', row('ci', 'missing', true), 'pending'],
+  ] as const)('a required %s check is never success', (_, check, want) => {
+    expect(overall([row('lint', 'success', true), check])).toBe(want);
+  });
+
+  it('reports no_required_checks, not success, when no check is required', () => {
+    expect(overall([])).toBe('no_required_checks');
+    expect(overall([row('build', 'success', false)])).toBe(
+      'no_required_checks',
+    );
+  });
+
+  it('counts a check named required as required even when unflagged', () => {
+    expect(overall([row('required', 'failure', false)])).toBe('failure');
+    expect(overall([row('required', 'success', false)])).toBe('success');
+  });
+
+  it('is success when every required check is green, whatever the others say', () => {
+    expect(overall(green)).toBe('success');
   });
 });
 

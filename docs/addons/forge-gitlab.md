@@ -48,7 +48,7 @@ The conductor reads the token with `glab config get token --host <host>` and rea
 
 ## Check it works
 
-Start the conductor and let a run call `forge_checks` with `ref` set to the default branch: it lists the newest pipeline's jobs without writing anything.
+Start the conductor and let a run call `forge_checks` with `ref` set to the default branch: it lists the newest pipeline's jobs without writing anything. `run_id` is the pipeline, `job_id` the job, and `forge_job_log` reads that job's trace.
 
 ## Good to know
 

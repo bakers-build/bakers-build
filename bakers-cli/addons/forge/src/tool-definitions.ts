@@ -52,18 +52,39 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   },
   forge_checks: {
     description:
-      "Status of each check or pipeline job, and whether it is required, on the head of an owned branch's PR/MR, or on any `ref` (branch or SHA); read only, one shot.",
+      "Status of each check or pipeline job on the head of an owned branch's PR/MR, or on any `ref` (branch or SHA); read only, one shot. Each row: status, required, the forge's raw conclusion (cancelled, skipped, timed_out, ...), run_id, job_id (for forge_job_log), run_started_at. overall is success only when every required check (flagged, or named required) is green; else failure, pending or no_required_checks.",
     input: {
       type: 'object',
       properties: {
         branch,
         ref: { type: 'string', description: 'any branch or SHA, read only' },
+        all_runs: {
+          type: 'boolean',
+          description:
+            'every run on the commit; default: only the newest run per workflow',
+        },
       },
+    },
+  },
+  forge_job_log: {
+    description:
+      "The end of one job's log, by a job_id from forge_checks, read with the conductor's token; read only. Starts at a whole line; truncated says whether earlier lines were cut.",
+    input: {
+      type: 'object',
+      properties: {
+        job_id: { type: 'integer', minimum: 1 },
+        max_bytes: {
+          type: 'integer',
+          minimum: 1,
+          description: 'bytes from the end; default 16384, at most 262144',
+        },
+      },
+      required: ['job_id'],
     },
   },
   forge_merge: {
     description:
-      "Merge the open PR/MR of an owned branch into its base, once it is conflict free and every required check is green. Human approval is the workflow's merge gate, not this tool's.",
+      "Merge the open PR/MR of an owned branch into its base, once it is conflict free and overall is success. Human approval is the workflow's merge gate, not this tool's.",
     input: { type: 'object', properties: { branch } },
   },
 };

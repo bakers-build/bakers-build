@@ -12,6 +12,7 @@ Create a GitHub App in the organization or account that owns the repository and 
 |---|---|
 | Contents | Read and write |
 | Pull requests | Read and write |
+| Actions | Read |
 | Checks | Read |
 | Commit statuses | Read |
 | Metadata | Read |
@@ -55,6 +56,7 @@ Start the conductor and let a run call `forge_checks` with `ref: 'main'`: it lis
 
 ## Good to know
 
+- `run_id`, `job_id` and `run_started_at` come from the workflow runs of the commit (Actions: Read); a check outside GitHub Actions and a commit status carry `null`. `forge_job_log` reads a job's log the same way.
 - Required checks come from the base branch's rulesets and its branch protection; a required check that has not reported yet counts as `missing`, which blocks the merge.
 - The source branch is deleted after a verified merge, and only when the merge rule asks for it and no open PR targets it.
 
