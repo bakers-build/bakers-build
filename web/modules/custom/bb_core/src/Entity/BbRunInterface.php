@@ -146,8 +146,8 @@ interface BbRunInterface extends BbContentEntityInterface {
   /**
    * Whether the given log is stored: its size is set and its file exists.
    *
-   * @param string $kind
-   *   `log` or `error_log`; anything else is FALSE.
+   * @param 'log'|'error_log' $kind
+   *   Which log.
    */
   public function hasLog(string $kind): bool;
 

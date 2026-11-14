@@ -481,7 +481,7 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
    * {@inheritdoc}
    */
   public function hasLog(string $kind): bool {
-    if (!in_array($kind, ['log', 'error_log'], TRUE) || (string) ($this->get($kind . '_bytes')->value ?? '') === '') {
+    if ((string) ($this->get($kind . '_bytes')->value ?? '') === '') {
       return FALSE;
     }
     $file = $this->get($kind . '_file')->entity;
@@ -492,10 +492,12 @@ final class BbRun extends BbContentEntityBase implements BbRunInterface, EntityO
    * The first error-log line without "Error: ", or the no-reason copy.
    */
   private function readFailureLine(): string {
-    $file = $this->get('error_log_file')->entity;
     $line = '';
     try {
-      if ($file instanceof FileInterface && $this->hasLog('error_log')) {
+      if ($this->hasLog('error_log')) {
+        $file = $this->get('error_log_file')->entity;
+        // hasLog() loaded it.
+        assert($file instanceof FileInterface);
         $line = \Drupal::service(RunLogStore::class)->firstLine($file, $this);
       }
     }
