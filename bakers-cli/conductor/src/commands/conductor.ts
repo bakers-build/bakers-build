@@ -1089,15 +1089,13 @@ async function cmdStartBody(
   const probe = deps.procProbe ?? defaultProcProbe();
   // A record online by heartbeat whose pid is provably gone or recycled on
   // this host (same proof as `ls`) is offline: its offline write was lost.
-  if (
-    existing &&
-    classify(existing) === 'online' &&
-    classify(existing, thisHostKey, probe) !== 'online'
-  ) {
+  const recordOnline =
+    existing !== undefined && classify(existing) === 'online';
+  if (recordOnline && classify(existing, thisHostKey, probe) !== 'online') {
     console.log(
       `conductor ${id}: recorded pid ${existing.lastPid} is not running here; starting`,
     );
-  } else if (existing && classify(existing) === 'online') {
+  } else if (recordOnline) {
     if (!force) {
       const age = heartbeatAgeSeconds(existing);
       console.log(

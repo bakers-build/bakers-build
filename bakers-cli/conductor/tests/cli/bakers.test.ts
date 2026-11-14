@@ -597,10 +597,12 @@ describe('bakers conductor start --force (BB-450 D10)', () => {
       ['another host', staleRow({ hostKey: 'other-host' }), dead()],
       ['no recorded pid', staleRow({ lastPid: undefined }), dead()],
       ['an unsupported platform', staleRow(), { ...dead(), supported: false }],
+      ['a live conductor of this id', staleRow(), fakeProcProbe(4242)],
     ])('refuses as today on %s while the heartbeat is fresh', async (_n, row, probe) => {
       const { lines, spawned } = await startWith([], row, probe);
       expect(lines.some((l) => l.includes('already running'))).toBe(true);
       expect(spawned).toBe(0);
+      expect(probe.sentSignals).toEqual([]);
     });
   });
 
