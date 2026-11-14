@@ -137,8 +137,9 @@ final class BbRunAccessControlHandler extends EntityAccessControlHandler {
   protected function checkFieldAccess($operation, FieldDefinitionInterface $field_definition, AccountInterface $account, ?FieldItemListInterface $items = NULL): AccessResultInterface {
     $run = $items?->getEntity();
     if ($operation === 'view') {
-      return $this->logFieldViewAccess($run, $field_definition, $account)
-        ?? parent::checkFieldAccess($operation, $field_definition, $account, $items);
+      $log_access = $this->logFieldViewAccess($run, $field_definition, $account);
+      $result = parent::checkFieldAccess($operation, $field_definition, $account, $items);
+      return $log_access === NULL ? $result : $log_access->orIf($result);
     }
     if ($operation !== 'edit' || $account->hasPermission('administer bakers')) {
       return parent::checkFieldAccess($operation, $field_definition, $account, $items);
@@ -175,16 +176,19 @@ final class BbRunAccessControlHandler extends EntityAccessControlHandler {
   }
 
   /**
-   * Forbids viewing a log field to a reader who may not read the run's logs.
+   * A log field's view verdict: forbidden, or neutral, with its cacheability.
+   *
+   * NULL for any other field.
    */
   private function logFieldViewAccess(?EntityInterface $run, FieldDefinitionInterface $field_definition, AccountInterface $account): ?AccessResultInterface {
     if (!$run instanceof BbRunInterface || !in_array($field_definition->getName(), self::LOG_FIELDS, TRUE)) {
       return NULL;
     }
     $log_access = $run->access('view_log', $account, TRUE);
-    return $log_access->isAllowed()
-      ? NULL
-      : AccessResult::forbidden('Reading a run log needs the right to manage the run.')->addCacheableDependency($log_access);
+    return ($log_access->isAllowed()
+      ? AccessResult::neutral()
+      : AccessResult::forbidden('Reading a run log needs the right to manage the run.'))
+      ->addCacheableDependency($log_access);
   }
 
   /**

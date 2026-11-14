@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel\RunLog;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
@@ -102,6 +103,20 @@ final class RunLogAccessTest extends KernelTestBase {
     }
     $this->assertTrue($run->get('log_bytes')->access('view', $viewer));
     $this->assertTrue($run->get('state')->access('view', $viewer));
+  }
+
+  /**
+   * An allowed log field varies with the ticket edit right that allowed it.
+   */
+  public function testAllowedLogFieldCarriesTheTicketCacheTag(): void {
+    $editor = $this->createUserWithPermissions('ticket-editor', [
+      'view bb_ticket', 'view bb_run', 'update any bb_ticket',
+    ]);
+    $run = $this->createRun($this->createUserWithPermissions('run-owner', ['register bakers conductor']));
+
+    $access = $run->get('log_file')->access('view', $editor, TRUE);
+    $this->assertTrue($access->isAllowed());
+    $this->assertContains('bb_ticket:' . $run->get('ticket_id')->target_id, CacheableMetadata::createFromObject($access)->getCacheTags());
   }
 
   /**

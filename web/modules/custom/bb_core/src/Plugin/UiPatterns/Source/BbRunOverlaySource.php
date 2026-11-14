@@ -60,17 +60,18 @@ final class BbRunOverlaySource extends SourcePluginBase implements ContainerFact
     if ($run === NULL) {
       return [];
     }
+    $log_access = $run->access('view_log', NULL, TRUE);
     $build = array_filter([
       'hero' => $this->hero($run),
       'origin' => $this->origin($run),
-      'log' => $this->errorLog($run),
+      'log' => $log_access->isAllowed() ? $this->errorLog($run) : [],
       'measurements' => $this->measurements($run),
       'timeline' => $this->timeline($run),
     ]);
     CacheableMetadata::createFromRenderArray($build)
       ->addCacheableDependency($run)
       // The error log shows only to a reader who may read the run's logs.
-      ->addCacheContexts(['user'])
+      ->addCacheableDependency($log_access)
       ->applyTo($build);
     return $build;
   }
@@ -134,9 +135,6 @@ final class BbRunOverlaySource extends SourcePluginBase implements ContainerFact
    *   The log-viewer, or empty.
    */
   private function errorLog(BbRunInterface $run): array {
-    if (!$run->access('view_log')) {
-      return [];
-    }
     $text = $run->readErrorLog();
     if ($text === NULL || $text === '') {
       return [];

@@ -488,6 +488,25 @@ final class RunCanonicalViewTest extends KernelTestBase {
   }
 
   /**
+   * The overlay varies with everything that decides who may read its log.
+   */
+  public function testOverlayCarriesTheLogAccessCacheability(): void {
+    $this->run->set('error_log', 'dispatch exploded')->save();
+    $editor = $this->createUser(['view bb_ticket', 'view bb_run', 'update any bb_ticket']);
+    self::assertInstanceOf(UserInterface::class, $editor);
+    $this->setCurrentUser($editor);
+    $access = CacheableMetadata::createFromObject($this->run->access('view_log', NULL, TRUE));
+    self::assertNotSame([], $access->getCacheTags());
+
+    $build = $this->container->get('entity_type.manager')->getViewBuilder('bb_run')->view($this->run, 'overlay');
+    $this->container->get('renderer')->renderInIsolation($build);
+    $cache = CacheableMetadata::createFromRenderArray($build);
+    foreach ($access->getCacheTags() as $tag) {
+      self::assertContains($tag, $cache->getCacheTags());
+    }
+  }
+
+  /**
    * Replaces the log store so any read during render fails the test.
    */
   private function forbidRunLogReads(): void {
