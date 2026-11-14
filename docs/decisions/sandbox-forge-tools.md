@@ -19,8 +19,9 @@ holds no key and no token. Every operation that needs the network or a credentia
 | `forge_fetch` | Fetches the parents into the local clone: the ticket's `base_branch` and the branches of parent-linked tickets. The agent then rebases or pulls locally with `git`, offline. | Read only. |
 | `forge_push` | Pushes an owned branch. | Owned branches only. Hooks and repository config are disabled. `--force-with-lease` is allowed, bare `--force` never. |
 | `forge_pr_upsert` | Creates the PR/MR, or updates its title and description. | Rejects a title that is not a Conventional Commits subject right away. |
-| `forge_checks` | Reads the status of checks and pipelines. | Read only. |
-| `forge_merge` | Merges the PR/MR of an owned branch into its `base_branch`, or a variant branch into the ticket branch. | Owned branches only, and only with green required checks. |
+| `forge_checks` | Reads the status of checks and pipelines, with run, job and raw conclusion. | Read only. |
+| `forge_job_log` | Reads the end of one job's log. | Read only, jobs of the configured repository only. |
+| `forge_merge` | Merges the PR/MR of an owned branch into its `base_branch`, or a variant branch into the ticket branch. | Owned branches only, and only with green required checks; no required check blocks too. |
 
 **Owned branches** are the ticket's `branch_name` and `<branch_name>-<suffix>` (variants). The tool
 refuses every other name. Neither GitHub nor GitLab can limit a token to a branch pattern, so the
