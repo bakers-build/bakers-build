@@ -8,7 +8,7 @@ Ask AI to check [skills](/skills-and-workflows/skills).
 
 ## Setup
 
-[Install Claude](https://docs.claude.com/en/docs/claude-code/setup), authenticate as the conductor user and put its binary on `PATH`.
+[Install Claude](https://docs.claude.com/en/docs/claude-code/setup), authenticate as the conductor user and put its binary on `PATH`, also for non-interactive shells.
 
 ## Enable it
 
@@ -62,7 +62,7 @@ Default: `system`. A [runtime](/addons/runtime-docker) preserves the configured 
 ## Isolated runtimes
 
 [Docker](/addons/runtime-docker) gives Claude a private home without its login; plugins are read-only and transcripts stay on the host. Export
-`CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY`; allowlist mode keeps it in the proxy. [Bubblewrap](/addons/runtime-bwrap) can copy the login into its private home.
+`CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`) or `ANTHROPIC_API_KEY`; allowlist mode keeps it in the proxy. [Bubblewrap](/addons/runtime-bwrap) can copy the login into its private home. Its settings carry `skipDangerousModePermissionPrompt`, so `yolo` skips the bypass dialog.
 
 ## Deny unused tools
 
@@ -90,7 +90,6 @@ bakers agents
 
 ## Good to know
 
-- Install and authenticate `claude` yourself; non-interactive shells need its binary on `PATH`.
 - bakers.build owns `--session-id`, `--dangerously-skip-permissions`, `--allow-dangerously-skip-permissions`, `--permission-mode`, `--settings`, `--setting-sources`, `--strict-mcp-config` and `--mcp-config`. Putting them in `args` fails loading.
 - `skip_permissions` and `security` fail loading; use `permissions` (`'yolo'` for the old bypass).
 - With `measure: true`, the wrapper folds the generated or `custom` settings into its state-group settings; permission lists are joined.

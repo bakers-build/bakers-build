@@ -26,8 +26,15 @@ export function prepareClaudeRun(
   const source = context.env.CLAUDE_CONFIG_DIR ?? configDir;
   const config = join(context.homePath, '.claude');
   mkdirSync(config, { recursive: true });
-  if (existsSync(join(source, 'settings.json')))
-    copyFileSync(join(source, 'settings.json'), join(config, 'settings.json'));
+  // Bypass consent is a user setting. A new private home has none, so a
+  // `yolo` run would stop at Claude Code's bypass permissions dialog.
+  const settings = existsSync(join(source, 'settings.json'))
+    ? JSON.parse(readFileSync(join(source, 'settings.json'), 'utf8'))
+    : {};
+  writeFileSync(
+    join(config, 'settings.json'),
+    JSON.stringify({ ...settings, skipDangerousModePermissionPrompt: true }),
+  );
   const state = existsSync(join(source, '.claude.json'))
     ? JSON.parse(readFileSync(join(source, '.claude.json'), 'utf8'))
     : {};
