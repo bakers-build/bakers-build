@@ -44,7 +44,7 @@ rejected since the last handoff; omit the heading when there is none:
 ```markdown
 ### Gates
 
-- plan: passed — by run (auto-review) — recommendation approve, followed yes
+- plan: passed — by run (human-review) — recommendation approve, followed yes
 - verdict: rejected — by <person> (comment <id>) — recommendation OK, followed no (<reason>)
 ```
 

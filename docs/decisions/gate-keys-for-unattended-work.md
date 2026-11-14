@@ -8,8 +8,8 @@
 ## Recommendation
 
 Name the human waits the `bb-workflow` frame already has as **gates**, and let a ticket label say
-which gates the run passes on its own. Three labels cover the needed procedures: `auto-review`
-(a person reviews and merges), `auto-accept` (a person accepts the result) and `auto` (unchanged,
+which gates the run passes on its own. Three labels cover the needed procedures: `human-review`
+(a person reviews and merges), `human-accept` (a person accepts the result) and `auto` (unchanged,
 everything). Without a label, every gate waits for a person, as today. The frame defines the gates
 and the default gate set for each shipped type; a recipe adds gates or declares the gates of its own
 types. Every handoff records in a `### Gates` block who passed each gate and whether the run's
@@ -69,7 +69,7 @@ Default gate sets, defined by the frame in a new `bb-workflow/references/gates.m
 | deployment | qualification, plan (release and version), coding, merge |
 | verification | qualification, plan (the verified set), coding |
 
-`result` is in no default set; `auto-accept` adds it (section 3), and `auto` adds it only when
+`result` is in no default set; `human-accept` adds it (section 3), and `auto` adds it only when
 something was the user's to decide, as today.
 
 A recipe has a `## bb-gates` section, one row per type it declares. For a shipped type it may only
@@ -79,27 +79,32 @@ named `<recipe>:<gate>`.
 
 ## 3. Labels
 
-A label says which gates the run passes on its own. It stays fixed for the ticket's life.
+A label says which gates the run passes on its own. It stays fixed for the ticket's life. A
+`human-*` label names the person's step and carries the ticket as `auto` does up to that step.
 
 | Label | A person passes | The run passes |
 |---|---|---|
 | none | every gate | none; it does the work between gates |
-| `auto-review` | `verdict` and `merge`, as the ticket's reviewer | every other gate, up to the published verdict |
-| `auto-accept` | `result`; also `verdict`, as the reviewer, when a planned change touches the risk list | every other gate; merges after acceptance |
+| `human-review` | `verdict` and `merge`, as the ticket's reviewer | every other gate, up to the published verdict |
+| `human-accept` | `result`; also `verdict`, as the reviewer, when a planned change touches the risk list | every other gate; merges after acceptance |
 | `auto` | only a user question on what the criteria leave open, and `result` when that happened (unchanged) | everything else, `criterion` and merge included |
 
 - **Risk list** (from `bb-label-auto`): a dependency, the data model, a public interface,
   authentication, permissions, build, CI or deployment configuration. Under every label an
   *unplanned* risky change stays a technical problem that ends the run.
-- **Recipe gates** (`<recipe>:<gate>`) wait for a person under `auto-review` and `auto-accept`;
+- **Recipe gates** (`<recipe>:<gate>`) wait for a person under `human-review` and `human-accept`;
   `auto` passes them.
-- **`auto-review` decides open content choices**: a choice the criteria leave to the user, such as
+- **`human-review` decides open content choices**: a choice the criteria leave to the user, such as
   what the result looks like, is no `criterion` under this label. The run decides it, records it
   under `Decisions` and leaves it to the reviewer at `verdict`; the requester confirmed this in
   review.
-- **Deployment and verification**: `auto-review` and `auto-accept` do not apply; a run that finds
+- **Deployment and verification**: `human-review` and `human-accept` do not apply; a run that finds
   one stops with a question. `auto` keeps today's behavior.
-- **`auto-review` without a reviewer** stops with a question at the first state that finds it.
+- **`human-review` without a reviewer** stops with a question at the first state that finds it.
+- **One label per ticket**: `auto` beside one `human-*` label is read as that `human-*` label
+  alone; `human-review` beside `human-accept` stops with a question asking which applies. The
+  requester chose the names in review: `auto-review` and `auto-accept` read as the run reviewing
+  or accepting.
 - **`ticket-question`** stays a modifier on any label: it decides where the run asks, never which
   gates it passes. No rule is derived from the assignee, because an empty assignee becomes the
   conductor's owner.
@@ -120,8 +125,8 @@ Today's behavior stays the default. A starter is whoever creates the ticket and 
   carries its own label, set by its own starter.
 - **Override** on one ticket: add, change or remove the label (`bakers_ticket_update` or the UI).
   The new label applies from the next run; a running run keeps the label it started with.
-- **Who may set which label**: Contributor and Lead may set `auto-review`; only a Lead may set
-  `auto-accept` and `auto`. Nothing enforces this yet (`labels` is a plain reference field);
+- **Who may set which label**: Contributor and Lead may set `human-review`; only a Lead may set
+  `human-accept` and `auto`. Nothing enforces this yet (`labels` is a plain reference field);
   enforcement in `bb_core` is a follow-up.
 
 ## 5. What a run may do, per label and state
@@ -129,7 +134,7 @@ Today's behavior stays the default. A starter is whoever creates the ticket and 
 "Alone" means the run passes the gate and moves on; "stop" means it publishes its handoff and waits
 for a person. Questions go to the session, or to the ticket under `ticket-question`.
 
-| State | none | `auto-review` | `auto-accept` | `auto` |
+| State | none | `human-review` | `human-accept` | `auto` |
 |---|---|---|---|---|
 | qualification | stop for `qualification`; ask on a prior-art hit and agent choice | alone; transition to plan | alone; transition to plan | alone; transition to plan |
 | plan | stop for `plan`/`diagnosis` | alone; transition to working | alone; record whether the plan touches the risk list; transition to working | alone; transition to working |
@@ -152,7 +157,7 @@ decides it itself and asks only what is the user's to decide.
   ```markdown
   ### Gates
 
-  - plan: passed — by run (auto-review) — recommendation approve, followed yes
+  - plan: passed — by run (human-review) — recommendation approve, followed yes
   - verdict: rejected — by <person> (comment <id>) — recommendation OK, followed no (risky migration)
   ```
 
@@ -163,7 +168,7 @@ decides it itself and asks only what is the user's to decide.
 | Alternative | Why not |
 |---|---|
 | A label per stage, swapped as the ticket moves | fragile: every transition must rewrite labels, and a lost write changes the procedure |
-| One `procedure:<name>` label keyed by starter | the ticket has no starter field; use-case labels (`auto-review`, `auto-accept`) say more than procedure names |
+| One `procedure:<name>` label keyed by starter | the ticket has no starter field; use-case labels (`human-review`, `human-accept`) say more than procedure names |
 | A `WORKFLOW.md` mapping from (starter, type) to a procedure, or a combination with labels | breaks the skill contract (`WORKFLOW.md` contributes only `## bb-phase-<phase>`), and a label would mean different things in different projects |
 | Gates decided by the recipient profile | the profile is self-declared and carries no authority today |
 | Story points or `time_estimate` as a merge condition | the run sets its own estimate, so it would decide its own merge |
@@ -182,7 +187,7 @@ migration. The implementation changed:
   `prior-art-search.md`, `outtake.md`) keep their text: a label skill passes them, as
   `bb-label-auto` did before.
 - **Labels**: `bb-label-auto` (passes every gate; risk list moved to `gates.md`), new
-  `bb-label-auto-review` and `bb-label-auto-accept`; `bb-label-ticket-question` unchanged.
+  `bb-label-human-review` and `bb-label-human-accept`; `bb-label-ticket-question` unchanged.
 - **Recipes**: `## bb-gates` in `bb-recipe-matt`, `bb-recipe-superpowers`,
   `bb-recipe-deploy-and-release` (its repeated tool-discovery phrase stated once, to stay within
   500 words), `bb-recipe-verify` and the test recipes.
@@ -192,8 +197,8 @@ migration. The implementation changed:
   `docs/development/test-skill-tools.md` describe `auto` only and stay as they are.
 - **Tests**: `tests/contract/skill-references.py` accepts `## bb-gates`, requires a row per
   declared type and requires each state's always-read references to link the `### Gates` record; the `bb-label-auto` skill-eval profile also serves the two new label skills, with
-  the fixtures `label-auto-review-*` and `label-auto-accept-*` and their cases in
+  the fixtures `label-human-review-*` and `label-human-accept-*` and their cases in
   `bakers-cli/core/tests/workflow/skill-state-evals.test.ts`; the simulated ticket read in
   `tests/skill-eval/tool-server.py` returns `reviewers`, as the real tool does.
-- **Follow-up**: label terms `auto-review` and `auto-accept` in each workspace; label-permission
+- **Follow-up**: label terms `human-review` and `human-accept` in each workspace; label-permission
   enforcement in `bb_core`; an optional metric on `followed: no`.

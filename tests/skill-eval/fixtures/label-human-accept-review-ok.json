@@ -1,9 +1,9 @@
 {
-  "id": "label-auto-accept-review-ok",
+  "id": "label-human-accept-review-ok",
   "synthetic": true,
   "profile": "bb-label-auto",
   "execution": "simulated-tools",
-  "skill": "bb-label-auto-accept",
+  "skill": "bb-label-human-accept",
   "references": [
     "bb-workflow/SKILL.md",
     "bb-workflow/references/gates.md",
@@ -52,7 +52,7 @@
       "type": "feature",
       "recipe": "probe",
       "labels": [
-        "auto-accept",
+        "human-accept",
         "ticket-question"
       ],
       "links": [

@@ -5,6 +5,8 @@ description: "Use when a ticket labelled `auto` runs, in any state: carry it to 
 
 # Auto
 
+Beside `human-review` or `human-accept`, follow that label's skill alone and skip this one.
+
 The label `auto` passes every [gate](../bb-workflow/references/gates.md) on its own, recipe gates
 included, except the user question and acceptance below, and authorizes every transition, its origin
 status and the merge. Decide technical

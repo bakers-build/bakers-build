@@ -367,7 +367,7 @@ describe('bb-label-auto profile', () => {
         verdict('Not OK'),
         transition('done'),
       ]),
-    ).toEqual(['auto-review-status']);
+    ).toEqual(['auto-verdict-status']);
     // Any other run merges nothing; an undeclared command leaves the call surface too.
     expect(
       await judge(notOk, 'Back.', [
@@ -439,9 +439,11 @@ describe('bb-label-auto profile', () => {
   });
   it('a third Not OK still goes back to working', async () => {
     // Two earlier Not OK verdicts: no loop limit, so no technical problem.
-    expect(await judge('auto-review-third-not-ok', 'Back.', back)).toEqual([]);
+    expect(await judge('auto-in-review-third-not-ok', 'Back.', back)).toEqual(
+      [],
+    );
     expect(
-      await judge('auto-review-third-not-ok', 'Stopped.', [
+      await judge('auto-in-review-third-not-ok', 'Stopped.', [
         ...back.slice(0, 3),
         problem,
         reported,
@@ -506,7 +508,7 @@ describe('bb-label-auto profile', () => {
     ).toEqual(['auto-decision']);
   });
   it('merges an OK verdict whose handoff holds no acceptance due', async () => {
-    const id = 'auto-review-ok-no-acceptance-due';
+    const id = 'auto-in-review-ok-no-acceptance-due';
     const f = await loadFixture(id);
     const argv = f.simulation.commands.glab.find(
       (r: { argv: string[] }) => r.argv[2] === 'merge',
@@ -527,16 +529,16 @@ describe('bb-label-auto profile', () => {
       'auto-merge',
     ]);
   });
-  it('runs the auto-review and auto-accept skills only beside their own label', async () => {
+  it('runs the human-review and human-accept skills only beside their own label', async () => {
     const { validate } = await loadProfile(fixture({ stop: 'question' }));
     const q = {
       ...fixture({ stop: 'question' }),
-      skill: 'bb-label-auto-review',
+      skill: 'bb-label-human-review',
     };
-    expect(() => validate(q)).toThrow(/auto-review/);
+    expect(() => validate(q)).toThrow(/human-review/);
     const labelled = {
       ...q.simulation.ticket,
-      labels: ['auto-review', 'ticket-question'],
+      labels: ['human-review', 'ticket-question'],
     };
     expect(() =>
       validate({ ...q, simulation: { ...q.simulation, ticket: labelled } }),
@@ -554,9 +556,9 @@ describe('bb-label-auto profile', () => {
     'comment',
     `# Question\n\n1. Confirm the verdict OK and authorize the merge (recommended)\n2. Reject\n\n${answer}`,
   );
-  it('auto-review moves a GREEN working pass to review without asking', async () => {
+  it('human-review moves a GREEN working pass to review without asking', async () => {
     const handedOff = [readTicket(), comment('coding'), summary];
-    const id = 'label-auto-review-working';
+    const id = 'label-human-review-working';
     expect(
       await judge(id, 'Moved.', [...handedOff, transition('review')]),
     ).toEqual([]);
@@ -566,8 +568,8 @@ describe('bb-label-auto profile', () => {
       'auto-transition',
     ]);
   });
-  it('auto-review stops an OK verdict for the reviewer and merges nothing', async () => {
-    const id = 'label-auto-review-ok';
+  it('human-review stops an OK verdict for the reviewer and merges nothing', async () => {
+    const id = 'label-human-review-ok';
     const passed = [readTicket(), verdict('OK'), summary];
     expect(await judge(id, 'Asked.', [...passed, reviewer, asked])).toEqual([]);
     expect(
@@ -578,16 +580,16 @@ describe('bb-label-auto profile', () => {
       ]),
     ).toEqual(['auto-question', 'auto-transition', 'auto-merge']);
   });
-  it('auto-accept asks for the acceptance at a GREEN working pass', async () => {
+  it('human-accept asks for the acceptance at a GREEN working pass', async () => {
     const handedOff = [readTicket(), comment('coding'), summary];
-    const id = 'label-auto-accept-working';
+    const id = 'label-human-accept-working';
     expect(await judge(id, 'Asked.', [...handedOff, shown, asked])).toEqual([]);
     expect(
       await judge(id, 'Moved.', [...handedOff, transition('review')]),
     ).toEqual(['auto-question', 'auto-transition', 'auto-link']);
   });
-  it('auto-accept merges an accepted OK verdict on its own', async () => {
-    const id = 'label-auto-accept-review-ok';
+  it('human-accept merges an accepted OK verdict on its own', async () => {
+    const id = 'label-human-accept-review-ok';
     const passed = [readTicket(), verdict('OK'), summary];
     expect(
       await judge(id, 'Merged.', [
@@ -603,8 +605,8 @@ describe('bb-label-auto profile', () => {
       'auto-merge',
     ]);
   });
-  it('auto-accept stops an OK verdict with a planned risky change for the reviewer', async () => {
-    const id = 'label-auto-accept-review-risky';
+  it('human-accept stops an OK verdict with a planned risky change for the reviewer', async () => {
+    const id = 'label-human-accept-review-risky';
     const passed = [readTicket(), verdict('OK'), summary];
     expect(await judge(id, 'Asked.', [...passed, reviewer, asked])).toEqual([]);
     expect(

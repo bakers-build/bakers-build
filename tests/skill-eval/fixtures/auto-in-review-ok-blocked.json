@@ -1,5 +1,5 @@
 {
-  "id": "auto-review-ok-blocked",
+  "id": "auto-in-review-ok-blocked",
   "synthetic": true,
   "profile": "bb-label-auto",
   "execution": "simulated-tools",

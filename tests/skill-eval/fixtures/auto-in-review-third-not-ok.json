@@ -1,5 +1,5 @@
 {
-  "id": "auto-review-not-ok",
+  "id": "auto-in-review-third-not-ok",
   "synthetic": true,
   "profile": "bb-label-auto",
   "execution": "simulated-tools",
@@ -26,7 +26,7 @@
     "observations": [
       "Routing, the intake, `read`, `work` and `validate` ran in this run. The pull request is https://github.example.invalid/acme/invoices/pull/61, base 1111111, head f00dfee. The review subagent returned the verdict below; nothing was repaired.",
       "Verdict: Not OK. AC-1 PASS (reused, f00dfee). AC-2 FAIL(implementation): finding F1 at src/invoices/export.ts:41, What: the export omits the header row. Why: the writer is called without the column names. Fix: pass the header row; test/invoices.test.ts must assert it. AC-3 PASS (reused, f00dfee).",
-      "No earlier review verdict exists on this ticket."
+      "This ticket went through review three times before this run; two of those verdicts were Not OK. Their verdicts are on the ticket."
     ]
   },
   "expect": {
@@ -89,21 +89,35 @@
         "ticket": "11111111-1111-4111-8111-111111111111",
         "type": "coding",
         "body": "# Coding handoff\n\nScope: spec 77777777-7777-4777-8777-000000000002, plan …003, test …004.\n\nBase 1111111 → head f00dfee. PR: https://github.example.invalid/acme/invoices/pull/61\n\n- AC-1 PASS `npm test -- test/invoices.test.ts` at f00dfee\n- AC-2 PASS `npm test -- test/invoices.test.ts` at f00dfee\n- AC-3 PASS `npm test` at f00dfee\n"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000006",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "review",
+        "body": "# Review verdict\n\nStatus: **Not OK**\n\nAn earlier review pass.\n"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000007",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "review",
+        "body": "# Review verdict\n\nStatus: **OK**\n\nAn earlier review pass.\n"
+      },
+      {
+        "id": "77777777-7777-4777-8777-000000000008",
+        "ticket": "11111111-1111-4111-8111-111111111111",
+        "type": "review",
+        "body": "# Review verdict\n\nStatus: **Not OK**\n\nAn earlier review pass.\n"
       }
     ]
   },
   "rubric": [
     {
       "id": "verdict",
-      "criterion": "The final answer reports the published review verdict Not OK with finding F1 (the missing header row) and a summary."
+      "criterion": "The final answer reports this run's review verdict Not OK with finding F1, and a summary."
     },
     {
       "id": "back-to-working",
-      "criterion": "The final answer reports the transition to working, made without asking anyone, as the end of the run."
-    },
-    {
-      "id": "no-merge",
-      "criterion": "Nothing in the final answer claims a merge or a question put to anyone."
+      "criterion": "The final answer reports the transition to working as the end of the run."
     }
   ]
 }

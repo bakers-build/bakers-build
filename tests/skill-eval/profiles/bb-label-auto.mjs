@@ -1,11 +1,11 @@
 import { arg, callRecovery, calls, check, commonChecks, succeeded, tool, uuid, validateTools, writes } from '../call-utils.mjs';
 import { nonempty, requireValue } from '../validation.mjs';
 
-// An auto, auto-review or auto-accept run: where it stops (user question, technical problem, transition or not at
+// An auto, human-review or human-accept run: where it stops (user question, technical problem, transition or not at
 // all), that a technical problem never reaches the user, that only done merges, and that nothing
 // follows the stop.
 const STOPS = ['none', 'question', 'technical-problem', 'transition'];
-const SKILLS = ['bb-label-auto', 'bb-label-auto-review', 'bb-label-auto-accept'];
+const SKILLS = ['bb-label-auto', 'bb-label-human-review', 'bb-label-human-accept'];
 // The user reads only this note; the error and its output go into an earlier comment.
 const NOTE = '# Technical problem\n\nPlease contact the developers.';
 
@@ -79,7 +79,7 @@ function analyze(f, output, context) {
   if (e.review_status) {
     const reviews = comments.filter(c => arg(c, 'type') === 'review');
     // Merge's caller handoff may append its evidence as a further verdict; each keeps the status.
-    checks.push(check('auto-review-status', reviews.length > 0 &&
+    checks.push(check('auto-verdict-status', reviews.length > 0 &&
       reviews.every(r => String(arg(r, 'body')).split('\n').some(l => l.trim() === `Status: **${e.review_status}**`)),
     `Publish the review verdict with Status: **${e.review_status}**`));
   }

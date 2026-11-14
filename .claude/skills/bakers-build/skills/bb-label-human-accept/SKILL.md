@@ -1,11 +1,11 @@
 ---
-name: bb-label-auto-accept
-description: "Use when a ticket labelled `auto-accept` runs, in any state: carry it to done on your own once a person accepts the result; a planned risky change also needs the reviewer's verdict."
+name: bb-label-human-accept
+description: "Use when a ticket labelled `human-accept` runs, in any state: carry it to done on your own once a person accepts the result; a planned risky change also needs the reviewer's verdict."
 ---
 
-# Auto accept
+# Human accept
 
-The label `auto-accept` passes every [gate](../bb-workflow/references/gates.md) on its own except
+The label `human-accept` passes every [gate](../bb-workflow/references/gates.md) on its own except
 `result`, recipe gates (`<recipe>:<gate>`) and, when a planned change touches the
 [risk list](../bb-workflow/references/gates.md#risk-list), `verdict`. It authorizes every
 transition, its origin status and, once `result` and any due `verdict` are passed, the merge.
@@ -13,7 +13,8 @@ Decide technical questions yourself and record each decision with its reason und
 the handoff.
 
 Stop with a question at the first state that finds the ticket of type `deployment` or
-`verification`: the label does not apply there. A `criterion` waits for a person. An unplanned
+`verification`, where the label does not apply, or also labelled `human-review`: ask which label
+applies. A `criterion` waits for a person. An unplanned
 risky change ends the run as a technical problem.
 
 | State | The run |

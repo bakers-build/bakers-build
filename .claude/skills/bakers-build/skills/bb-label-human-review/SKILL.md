@@ -1,11 +1,11 @@
 ---
-name: bb-label-auto-review
-description: "Use when a ticket labelled `auto-review` runs, in any state: carry it to a published review verdict on your own; the reviewer confirms it and authorizes the merge."
+name: bb-label-human-review
+description: "Use when a ticket labelled `human-review` runs, in any state: carry it to a published review verdict on your own; the reviewer confirms it and authorizes the merge."
 ---
 
-# Auto review
+# Human review
 
-The label `auto-review` passes every [gate](../bb-workflow/references/gates.md) on its own except
+The label `human-review` passes every [gate](../bb-workflow/references/gates.md) on its own except
 `verdict`, `merge` and recipe gates (`<recipe>:<gate>`): the ticket's reviewer passes `verdict` and
 `merge`, a person the recipe gates. It authorizes the transitions up to `review` and their origin
 status. Decide technical questions yourself and record each decision with its reason under
@@ -14,7 +14,8 @@ status. Decide technical questions yourself and record each decision with its re
 Stop with a question at the first state that finds the ticket:
 
 - of type `deployment` or `verification`: the label does not apply there;
-- without a reviewer: name the missing reviewer.
+- without a reviewer: name the missing reviewer;
+- also labelled `human-accept`: ask which label applies.
 
 A `criterion` the run cannot decide waits for a person. A choice the confirmed criteria leave to
 the user, such as what the result looks like, is no `criterion` here: decide it, record it under
