@@ -286,13 +286,14 @@ final class BbRunRowSource extends SourcePluginBase implements ContainerFactoryP
     $logBytes = $run->get('log_bytes')->value;
     $errorLogBytes = $run->get('error_log_bytes')->value;
     $kind = $logBytes !== NULL && $logBytes !== '' ? 'log' : ($errorLogBytes !== NULL && $errorLogBytes !== '' ? 'error_log' : NULL);
-    if ($kind === NULL) {
+    // The row already varies per user, so the log gate needs no own context.
+    if ($kind === NULL || !$run->access('view_log')) {
       return NULL;
     }
     // `run_log_download_api`, never the
     // workspace-prefixed route: this row has no resolved workspace slug in
-    // hand, only the run entity, and the API route's gate — `bb_run.view`
-    // — is identical.
+    // hand, only the run entity, and the API route's gate —
+    // `bb_run.view_log` — is identical.
     return [
       'kind' => 'action',
       'label' => (string) $this->t('Log'),

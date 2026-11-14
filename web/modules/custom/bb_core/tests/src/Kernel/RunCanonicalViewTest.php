@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Component\Serialization\Yaml;
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Datetime\Entity\DateFormat;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Routing\RouteObjectInterface;
@@ -448,6 +449,41 @@ final class RunCanonicalViewTest extends KernelTestBase {
       'data-component-id="bb_theme:log-viewer"',
       $this->renderMode('full'),
     );
+  }
+
+  /**
+   * A run viewer who may not edit the ticket reads the reason, never a log.
+   */
+  public function testRunViewerSeesTheReasonButNoLog(): void {
+    $this->run->set('state', 'failed')
+      ->set('log', 'transcript body')
+      ->set('error_log', "Error: dispatch exploded\nstack trace")
+      ->save();
+    $viewer = $this->createUser(['view bb_ticket', 'view bb_run']);
+    self::assertInstanceOf(UserInterface::class, $viewer);
+    $this->setCurrentUser($viewer);
+    self::assertTrue($this->run->access('view'));
+
+    $status = $this->renderBuild($this->inspector()->status($this->run));
+    self::assertStringContainsString('dispatch exploded', $status);
+    self::assertSame([], $this->buttonLabels($status));
+    self::assertSame([], $this->inspector()->downloads($this->run));
+    $overlay = $this->renderMode('overlay');
+    self::assertStringNotContainsString('data-component-id="bb_theme:log-viewer"', $overlay);
+    self::assertStringNotContainsString('stack trace', $overlay);
+
+    $definition = $this->container->get('plugin.manager.ui_patterns_prop_type')
+      ->getDefinition('unknown')['schema'] ?? ['type' => 'array'];
+    $source = $this->container->get('plugin.manager.ui_patterns_source')
+      ->createInstance('bb_run_row', SourcePluginBase::buildConfiguration('items', $definition, ['source' => []], []));
+    self::assertInstanceOf(BbRunRowSource::class, $source);
+    $source->setContextValue('entity', $this->run);
+    $item = $source->getPropValue()[0];
+    self::assertSame('dispatch exploded', $item['detail']);
+    self::assertArrayNotHasKey('log', $item['cells']);
+    $operations = $this->container->get('module_handler')->invokeAll('entity_operation', [$this->run, new CacheableMetadata()]);
+    self::assertArrayNotHasKey('log', $operations);
+    self::assertArrayNotHasKey('error_log', $operations);
   }
 
   /**
