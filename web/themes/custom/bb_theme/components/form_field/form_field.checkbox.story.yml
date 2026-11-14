@@ -1,0 +1,25 @@
+component: bb_theme:form_field
+name: Checkbox
+props:
+  type: checkbox
+  name: has_children
+  title_display: after
+  label_display: after
+  description_display: after
+slots:
+  children:
+    - type: component
+      component: bb_theme:form_check
+      props:
+        type: checkbox
+        id: edit-has-children
+        name: has_children
+        value: '1'
+  label:
+    - type: component
+      component: bb_theme:form_label
+      props:
+        title: Has sub-tickets
+        for: edit-has-children
+        title_display: after
+        inline: true

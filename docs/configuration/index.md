@@ -41,7 +41,7 @@ export default {
 export default {
   schema_version: 1,
   project: { name: 'demo', workspace: 'Engineering' },
-  addons: ['@bakers-build/addon-remote-drupal', '@bakers-build/addon-herdr'],
+  addons: ['@bakers-build/addon-herdr'],
 };
 ```
 

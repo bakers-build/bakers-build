@@ -832,3 +832,39 @@ describe('ports up/down/status/reap through the conductor (AC5, AC6)', () => {
     }
   });
 });
+
+describe('currentBranch for a run clone', () => {
+  it('answers from the clone record and runs no Git in the workspace', async () => {
+    const { mkdtempSync, mkdirSync, rmSync, writeFileSync } = await import(
+      'node:fs'
+    );
+    const { tmpdir } = await import('node:os');
+    const { join } = await import('node:path');
+    const { runCloneGitDir, saveRunClone } = await import('@bakers-build/core');
+    const { currentBranch } = await import('../src/index.js');
+    const root = mkdtempSync(join(tmpdir(), 'ports-clone-'));
+    const cache = process.env.XDG_CACHE_HOME;
+    process.env.XDG_CACHE_HOME = join(root, 'cache');
+    try {
+      const workspace = join(root, 'workspace');
+      // A planted repository pointer a host Git call would follow.
+      mkdirSync(workspace);
+      writeFileSync(join(workspace, '.git'), 'gitdir: /nonexistent\n');
+      const gitDir = runCloneGitDir(workspace);
+      mkdirSync(join(gitDir, '..'), { recursive: true });
+      saveRunClone({
+        gitDir,
+        workspace,
+        parentGitDir: join(root, 'parent/.git'),
+        branch: 'feat/bb-7-work',
+        expected: '',
+        shared: false,
+      });
+      expect(currentBranch(workspace)).toBe('feat/bb-7-work');
+    } finally {
+      if (cache === undefined) delete process.env.XDG_CACHE_HOME;
+      else process.env.XDG_CACHE_HOME = cache;
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});

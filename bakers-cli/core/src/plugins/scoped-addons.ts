@@ -44,6 +44,8 @@ export interface EffectiveAddon {
   bases: string[];
   /** The resolved preset module path. */
   key: string;
+  /** The preset that brought this addon into the scope. */
+  via?: string;
 }
 
 /** An entry listed in a scope its addon does not declare. */
@@ -89,79 +91,119 @@ export async function scopeAddons(
   };
   const addons: EffectiveAddon[] = [];
   const findings: AddonScopeFinding[] = [];
-  const machineAt = new Map<string, number>();
+  const effectiveAt = new Map<string, number>();
   const ordered = [
     ...inputs.filter((i) => i.scope === 'machine'),
     ...inputs.filter((i) => i.scope !== 'machine'),
   ];
-  for (const input of ordered) {
-    for (const entry of input.entries) {
-      const { spec, alias } = normalizeEntry(entry);
-      if (isRetiredAddon(spec)) {
-        // discoverAddons warns once and skips it.
-        addons.push({
-          entry,
-          scope: input.scope,
-          path: input.path,
-          bases: input.bases,
-          key: spec,
-        });
-        continue;
-      }
-      let loaded: { preset: BbPreset; key: string };
-      try {
-        loaded = await loadAddonPreset(spec, input.bases, warn);
-      } catch (error) {
-        const soft = input.scope === 'machine' || opts.unresolved === 'skip';
-        if (soft && error instanceof AddonUnresolvedError) {
-          warn(
-            `addons[] in ${input.path}: cannot resolve addon '${spec}' — it is ` +
-              'skipped; install it where that config can resolve it.',
-          );
-          continue;
-        }
-        throw error;
-      }
-      const allowed = loaded.preset.scopes ?? ALL_SCOPES;
-      if (!allowed.includes(input.scope)) {
-        findings.push({
-          code: 'addon_scope_not_allowed',
-          spec,
-          path: input.path,
-          scope: input.scope,
-          allowed,
-        });
-        warn(
-          `addons[] in ${input.path}: addon '${spec}' is not loaded — it may ` +
-            `be configured only in ${allowed.map((s) => SCOPE_FILE[s]).join(' or ')}.`,
-        );
-        continue;
-      }
-      const match = `${loaded.key}\0${alias ?? ''}`;
-      const at = input.scope === 'project' ? machineAt.get(match) : undefined;
-      if (at !== undefined) {
-        const winner = addons[at] as EffectiveAddon;
-        const project = entryWith(entry);
-        const machine = entryWith(winner.entry);
-        const merged = loaded.preset.mergeWith
-          ? loaded.preset.mergeWith(project, machine)
-          : machine !== undefined
-            ? machine
-            : project;
-        addons[at] = { ...winner, entry: withReplaced(winner.entry, merged) };
-        continue;
-      }
-      if (input.scope === 'machine' && !machineAt.has(match))
-        machineAt.set(match, addons.length);
+  const walk = async (
+    input: AddonScopeInput,
+    entry: AddonEntry,
+    chain: Array<{ key: string; spec: string }> = [],
+  ): Promise<void> => {
+    const { spec, alias } = normalizeEntry(entry);
+    if (isRetiredAddon(spec)) {
+      // discoverAddons warns once and skips it.
       addons.push({
         entry,
         scope: input.scope,
         path: input.path,
         bases: input.bases,
-        key: loaded.key,
+        key: spec,
       });
+      return;
     }
-  }
+    let loaded: { preset: BbPreset; key: string };
+    try {
+      loaded = await loadAddonPreset(spec, input.bases, warn);
+    } catch (error) {
+      const parent = chain.at(-1)?.spec;
+      if (parent && error instanceof AddonUnresolvedError)
+        error.message += ` (via ${parent})`;
+      const soft = input.scope === 'machine' || opts.unresolved === 'skip';
+      if (soft && error instanceof AddonUnresolvedError) {
+        warn(
+          `addons[] in ${input.path}: cannot resolve addon '${spec}'${parent ? ` (via ${parent})` : ''} — it is ` +
+            'skipped; install it where that config can resolve it.',
+        );
+        return;
+      }
+      throw error;
+    }
+    if (chain.some((parent) => parent.key === loaded.key))
+      throw new Error(
+        `Addon cycle: ${[...chain.map((p) => p.spec), spec].join(' -> ')}`,
+      );
+    const via = chain.at(-1)?.spec;
+    const allowed = loaded.preset.scopes ?? ALL_SCOPES;
+    if (!allowed.includes(input.scope)) {
+      if (via) return;
+      findings.push({
+        code: 'addon_scope_not_allowed',
+        spec,
+        path: input.path,
+        scope: input.scope,
+        allowed,
+      });
+      warn(
+        `addons[] in ${input.path}: addon '${spec}' is not loaded — it may ` +
+          `be configured only in ${allowed.map((s) => SCOPE_FILE[s]).join(' or ')}.`,
+      );
+      return;
+    }
+    for (const child of loaded.preset.addons ?? [])
+      await walk(
+        {
+          ...input,
+          bases: [
+            pathToFileURL(`${dirname(loaded.key)}/`).href,
+            ...input.bases,
+          ],
+        },
+        child,
+        [...chain, { key: loaded.key, spec }],
+      );
+    const match = `${loaded.key}\0${alias ?? ''}`;
+    const at = effectiveAt.get(match);
+    if (at !== undefined) {
+      const winner = addons[at] as EffectiveAddon;
+      if (winner.scope === input.scope) {
+        if (winner.via && !via) {
+          const { via: _via, ...explicit } = winner;
+          addons[at] = { ...explicit, entry };
+        } else if (
+          !winner.via &&
+          !via &&
+          alias === undefined &&
+          typeof loaded.preset.agents === 'function'
+        ) {
+          // Legacy priority-only variants share a package but have separate options.
+          addons.push({ ...winner, entry });
+        }
+        return;
+      }
+      const project = entryWith(entry);
+      const machine = entryWith(winner.entry);
+      const merged = loaded.preset.mergeWith
+        ? loaded.preset.mergeWith(project, machine)
+        : machine !== undefined
+          ? machine
+          : project;
+      addons[at] = { ...winner, entry: withReplaced(winner.entry, merged) };
+      return;
+    }
+    effectiveAt.set(match, addons.length);
+    addons.push({
+      entry,
+      scope: input.scope,
+      path: input.path,
+      bases: input.bases,
+      key: loaded.key,
+      ...(via ? { via } : {}),
+    });
+  };
+  for (const input of ordered)
+    for (const entry of input.entries) await walk(input, entry);
   return { addons, findings };
 }
 
@@ -178,7 +220,7 @@ export function discoverScoped(
     addons.map((a) => a.entry),
     surface,
     addons[0]?.bases ?? [],
-    { ...opts, entryBases: addons.map((a) => a.bases) },
+    { ...opts, expandNested: false, entryBases: addons.map((a) => a.bases) },
   );
 }
 
@@ -254,5 +296,59 @@ export async function readEffectiveAddon(
       (e) => (typeof e === 'string' ? e : e?.use) === spec,
     );
   const { addons } = await scopeAddons(inputs, { unresolved: 'skip' });
-  return addons[0];
+  return addons.find((a) => normalizeEntry(a.entry).spec === spec);
+}
+
+/** Preset declarations used by synchronous config planning; no accumulators run. */
+export interface AddonCapability {
+  scopes: AddonScope[];
+  slots: string[];
+  contributions: Array<{ slot: string; spec: string; via?: string }>;
+}
+export type AddonCapabilities = Record<string, AddonCapability | undefined>;
+
+export async function readAddonCapabilities(
+  specs: string[],
+  bases: string[],
+  scope: AddonScope = 'project',
+): Promise<AddonCapabilities> {
+  const result: AddonCapabilities = {};
+  for (const spec of new Set(specs)) {
+    try {
+      const { preset } = await loadAddonPreset(spec, bases);
+      const scopes = preset.scopes ?? ALL_SCOPES;
+      const { addons } = await scopeAddons(
+        scopes.includes(scope)
+          ? [{ scope, path: '<capabilities>', entries: [spec], bases }]
+          : [],
+      );
+      const contributions: AddonCapability['contributions'] = [];
+      for (const addon of addons) {
+        const name = normalizeEntry(addon.entry).spec;
+        const { preset: child } = await loadAddonPreset(name, addon.bases);
+        for (const [slot, key] of Object.entries({
+          server: 'servers',
+          executor: 'executors',
+          worktree: 'worktrees',
+          agent: 'agents',
+          runtime: 'runtimes',
+        } as const))
+          if (typeof child[key] === 'function')
+            contributions.push({
+              slot,
+              spec: name,
+              ...(addon.via ? { via: addon.via } : {}),
+            });
+      }
+      result[spec] = {
+        scopes,
+        slots: [...new Set(contributions.map((c) => c.slot))],
+        contributions,
+      };
+    } catch (error) {
+      if (!(error instanceof AddonUnresolvedError)) throw error;
+      result[spec] = undefined;
+    }
+  }
+  return result;
 }

@@ -21,15 +21,20 @@ After({ tags: '@feature:ticket-interventions or @feature:run-canonical' }, async
 });
 
 Given('a disposable {string} ticket in state {string}', async ({ page }, workflow: string, state: string) => {
-  createDisposableTicket(page, workflow, state, 'none');
+  createDisposableTicket(page, workflow, state, null);
 });
 
 Given('a disposable {string} ticket in state {string} with a running run', async ({ page }, workflow: string, state: string) => {
-  createDisposableTicket(page, workflow, state, 'running');
+  createDisposableTicket(page, workflow, state, { state: 'running' });
 });
 
+Given('a disposable {string} ticket in state {string} whose last {int} runs failed with {string}', async ({ page }, workflow: string, state: string, count: number, reason: string) => {
+  createDisposableTicket(page, workflow, state, { state: 'failed', count, reason });
+});
+
+// Three failed runs in a row trip the failed-run circuit breaker.
 Given('a disposable {string} ticket in state {string} parked after repeated failed runs', async ({ page }, workflow: string, state: string) => {
-  createDisposableTicket(page, workflow, state, 'failed');
+  createDisposableTicket(page, workflow, state, { state: 'failed', count: 3, reason: 'ddev start failed' });
 });
 
 When('I visit the disposable ticket', async ({ page }) => {
@@ -43,9 +48,35 @@ When('I open {string}', async ({ page }, name: string) => {
 
 When('I open {string} on the disposable run\'s own row', async ({ page }, name: string) => {
   const { run } = subject(page);
-  // The run row's `cancel` cell, and the link in it names this run.
-  await page.locator('[data-cell="cancel"]').getByRole('link', { name, exact: true })
+  // The action on the run's own row, and the link names this run.
+  await page.locator('[data-list-item]').getByRole('link', { name, exact: true })
     .and(page.locator(`[href*="run=${run}"]`)).click();
+});
+
+Then('the disposable run\'s row says why it failed: {string}', async ({ page }, reason: string) => {
+  const { run } = subject(page);
+  const row = page.locator('[data-list-item]').filter({ has: page.locator(`[href*="run=${run}"]`) });
+  await expect(row.locator('[data-cell="state"]')).toContainText('failed');
+  await expect(row.locator('[data-list-detail]')).toHaveText(reason);
+});
+
+Then('the disposable run\'s row offers {string}', async ({ page }, name: string) => {
+  const { run } = subject(page);
+  const row = page.locator('[data-list-item]').filter({ has: page.locator(`[href*="run=${run}"]`) });
+  await expect(row.getByRole('link', { name, exact: true })).toBeVisible();
+});
+
+When('the ticket\'s conductor claims the disposable ticket on its next check', async ({ page }) => {
+  const { ticket } = subject(page);
+  // What the conductor's poll does: claim the ticket it is assigned.
+  expect(lastLine(
+    `$t = \\Drupal::service("entity.repository")->loadEntityByUuid("bb_ticket", "${ticket}"); print \\Drupal::service("bb_core.ticket_claim")->claim($t, $t->getConductor())->getRunState();`,
+  )).toBe('claimed');
+});
+
+Then('the newest run in Run history is {string}', async ({ page }, state: string) => {
+  const history = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Run history', exact: true }) });
+  await expect(history.locator('[data-list-item]').first().locator('[data-cell="state"]')).toContainText(state);
 });
 
 Then('the dialog names the disposable run and that the conductor may start another run', async ({ page }) => {
@@ -138,7 +169,7 @@ Then('the Properties block offers no picker', async ({ page }) => {
 });
 
 Then('the ticket page offers no intervention', async ({ page }) => {
-  for (const name of ['Freeze ticket', 'Unfreeze ticket', 'Cancel ticket', 'Cancel run', 'More settings']) {
+  for (const name of ['Freeze ticket', 'Unfreeze ticket', 'Cancel ticket', 'Cancel run', 'Retry', 'Re-dispatch', 'More settings']) {
     await expect(page.getByRole('link', { name, exact: true })).toHaveCount(0);
   }
 });

@@ -55,7 +55,6 @@ export const SIDEBAR = {
     ]),
     group("Tools and access", [
       ["Tools and integrations", "/provision/tools"],
-      ["Run agents securely", "/provision/security/"],
     ]),
     group("Machine setup", [
       ["Set up a worker server", "/provision/worker-server"],
@@ -72,8 +71,10 @@ export const SIDEBAR = {
       ["Add lifecycle hooks", "/provision/hooks"],
     ]),
     group("Security", [
-      ["Execution limits", "/provision/security/execution"],
-      ["Machine and project policy", "/provision/security/shared-settings"],
+      ["Permissions and isolation", "/agents/security"],
+      ["Agent permissions", "/provision/security/execution"],
+      ["Isolation models", "/agents/isolation"],
+      ["Configure permissions", "/provision/security/shared-settings"],
       ["Access and data", "/provision/security/access-and-data"],
       ["API keys and service accounts", "/provision/security/credentials"],
     ]),
@@ -83,6 +84,8 @@ export const SIDEBAR = {
       ["Overview", "/agents/"],
       ["Configure and select agents", "/agents/guide"],
       ["Agent policy reference", "/agents/reference"],
+      ["Permissions and isolation", "/agents/security"],
+      ["Isolation models", "/agents/isolation"],
     ]),
   ],
   "/skills-and-workflows/": [
@@ -113,12 +116,12 @@ export const SIDEBAR = {
       ["Messages", "/addons/build/actions"],
       ["Addon API reference", "/addons/build/contracts"],
       ["Executor and workspace API", "/addons/build/executor-workspace"],
+      ["Write a runtime addon", "/addons/build/runtime"],
     ]),
     group("Agents", [
       ["Claude", "/addons/claude"],
       ["Codex", "/addons/codex"],
       ["Grok", "/addons/grok"],
-      ["Kimi", "/addons/kimi"],
       ["OpenCode", "/addons/opencode"],
       ["Pi", "/addons/pi"],
     ]),
@@ -128,8 +131,9 @@ export const SIDEBAR = {
       ["Orca", "/addons/orca"],
       ["Git workspace", "/addons/workspace-git"],
       ["Conductor slots", "/addons/slots"],
-      ["bakers.build server remote", "/addons/remote-drupal"],
       ["Tailscale", "/addons/tailscale"],
+      ["Docker runtime", "/addons/runtime-docker"],
+      ["Bubblewrap runtime", "/addons/runtime-bwrap"],
     ]),
     group("Runtimes", [
       ["DDEV", "/addons/ddev"],
@@ -154,21 +158,12 @@ export const SIDEBAR = {
       ["Add a screen as a tab", "/addons/bakers-ui/tabs"],
       ["Tickets in the terminal", "/addons/bakers-ui/tickets"],
       ["Use the terminal UI", "/addons/bakers-ui/usage"],
-      ["bakers ui keys", "/addons/bakers-ui-keys"],
-      ["Artifacts", "/addons/bakers-ui-artifacts"],
     ]),
     group("Commands and time", [
       ["Agent catalog", "/addons/agents"],
-      ["Project info", "/addons/info"],
       ["Deployment tickets", "/addons/deployment"],
       ["bakers deployment", "/addons/deployment/reference"],
       ["Time evidence", "/addons/track"],
-    ]),
-    group("Connection support", [
-      ["HTTP Basic sign-in", "/addons/auth-basic"],
-    ]),
-    group("Internal test fixture", [
-      ["Fake conductor fixture", "/addons/fake"],
     ]),
   ],
   "/configuration/": [

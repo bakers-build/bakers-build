@@ -16,7 +16,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * Project Overview stocks: epics.
+ * Project Overview stocks: epics, their progress and whether tickets exist.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -32,8 +32,8 @@ final class ProjectOverviewTicketsTest extends KernelTestBase {
   protected static $modules = [
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
-    'field', 'og',
-    'link', 'text', 'bb_core',
+    'field', 'og', 'filter',
+    'link', 'text', 'search_api', 'search_api_db', 'bb_core',
   ];
 
   /**
@@ -97,6 +97,73 @@ final class ProjectOverviewTicketsTest extends KernelTestBase {
   }
 
   /**
+   * Epic progress counts direct children by the Board's work state.
+   *
+   * Done is `done`, in progress `working`, open `not_assigned` plus `intake`;
+   * a grandchild belongs to its own parent, not the epic.
+   */
+  public function testEpicProgressCountsDirectChildrenByWorkState(): void {
+    $this->installIndex();
+    $conductor = $this->conductor();
+    $epic = $this->workTicket('Epic', ['ticket_type' => $this->type('epic')]);
+    $empty = $this->workTicket('Empty epic', ['ticket_type' => $this->type('epic')]);
+    $this->workTicket('Done one', ['parent_id' => $epic->id(), 'closed' => TRUE]);
+    $this->workTicket('Done two', ['parent_id' => $epic->id(), 'closed' => TRUE]);
+    $working = $this->workTicket('Working', [
+      'parent_id' => $epic->id(),
+      'conductor_id' => $conductor,
+      'state' => 'plan',
+    ]);
+    $this->workTicket('Intake', ['parent_id' => $epic->id(), 'conductor_id' => $conductor]);
+    $this->workTicket('Not assigned', ['parent_id' => $epic->id()]);
+    $this->workTicket('Grandchild', ['parent_id' => $working->id(), 'closed' => TRUE]);
+    $this->indexTickets();
+
+    self::assertSame([
+      (int) $epic->id() => ['done' => 2, 'in_progress' => 1, 'open' => 2, 'total' => 5],
+      (int) $empty->id() => ['done' => 0, 'in_progress' => 0, 'open' => 0, 'total' => 0],
+    ], $this->service()->epicProgress([$epic, $empty]));
+    self::assertSame([], $this->service()->epicProgress([]));
+  }
+
+  /**
+   * Epic progress counts only the children the viewer may view.
+   */
+  public function testEpicProgressFollowsTicketViewAccess(): void {
+    $this->installIndex();
+    $epic = $this->workTicket('Epic', ['ticket_type' => $this->type('epic')]);
+    $this->workTicket('Child', ['parent_id' => $epic->id()]);
+    $this->indexTickets();
+
+    $outsider = $this->createUser([], 'progress-outsider');
+    self::assertInstanceOf(UserInterface::class, $outsider);
+    $this->setCurrentUser($outsider);
+
+    self::assertSame(
+      [(int) $epic->id() => ['done' => 0, 'in_progress' => 0, 'open' => 0, 'total' => 0]],
+      $this->service()->epicProgress([$epic]),
+    );
+  }
+
+  /**
+   * A project has tickets only when the viewer may view one of them.
+   */
+  public function testHasTicketsFollowsTicketViewAccess(): void {
+    self::assertFalse($this->service()->hasTickets($this->project));
+    $this->workTicket('Visible');
+    self::assertTrue($this->service()->hasTickets($this->project));
+
+    $outsider = $this->createUser([], 'tickets-outsider');
+    self::assertInstanceOf(UserInterface::class, $outsider);
+    $this->setCurrentUser($outsider);
+    $this->container->get('entity_type.manager')
+      ->getAccessControlHandler('bb_ticket')
+      ->resetCache();
+
+    self::assertFalse($this->service()->hasTickets($this->project));
+  }
+
+  /**
    * The Overview stocks service.
    */
   private function service(): ProjectOverviewTickets {
@@ -132,6 +199,39 @@ final class ProjectOverviewTicketsTest extends KernelTestBase {
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
     $ticket->save();
     return $ticket;
+  }
+
+  /**
+   * The id of a conductor of the fixture project.
+   */
+  private function conductor(): int|string|null {
+    $conductor = $this->container->get('entity_type.manager')->getStorage('bb_conductor')->create([
+      'conductor_id' => 'progress-conductor',
+      'label' => 'progress-conductor',
+      'owner_user_id' => 1,
+      'status' => 'online',
+      'project_id' => $this->project->id(),
+      'states' => ['plan'],
+    ]);
+    $conductor->save();
+    return $conductor->id();
+  }
+
+  /**
+   * Installs the ticket index, so saved tickets are tracked.
+   */
+  private function installIndex(): void {
+    $this->installEntitySchema('search_api_task');
+    $this->installSchema('search_api', ['search_api_item']);
+    $this->installConfig(['search_api']);
+    $this->container->get('config.installer')->installOptionalConfig(NULL, ['module' => 'bb_core']);
+  }
+
+  /**
+   * Indexes the tracked tickets.
+   */
+  private function indexTickets(): void {
+    $this->container->get('entity_type.manager')->getStorage('search_api_index')->load('bb_tickets')->indexItems();
   }
 
   /**

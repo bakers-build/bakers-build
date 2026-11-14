@@ -30,6 +30,7 @@
     "typescript": "^5.9.0"
   },
   "dependencies": {
-    "@bakers-build/addon-herdr": "workspace:^"
+    "@bakers-build/addon-herdr": "workspace:^",
+    "@bakers-build/addon-workspace-git": "workspace:^"
   }
 }

@@ -4,9 +4,50 @@ name: Board
 status: stable
 group: Data Display
 description: >-
-  A board that owns its columns and cards. Optional operational controls filter
-  by lane, limit Done to the 10, 25 or 50 most recently closed cards from the
-  Done column, and split Working by exact workflow state.
+  A board: its controls, the active filters, ONE bounded scroll region of
+  columns, and the conductors below it. The board owns its columns: a column is
+  DATA (`columns`, Designbook) or a rendered Views column display
+  (`column_views`, the project Board), and both draw their chrome through the
+  `column()` macro this template declares - there is no column component,
+  because a column is an item of the board exactly as a row is an item of a
+  table (D2/D3; tests/contract/data-display-components.sh B1).
+
+
+  THE COLUMN MACRO. `{% import 'bb_theme:board' as board %}{{ board.column(c)
+  }}` draws one column from a hash `c`: `label` (column name, or the exact state
+  key when nested), `count`, `tone` (running | attention | wait | idle |
+  neutral: the header dot), `caption` ("last 7 days"), `hints` (list of strings
+  such as "empty: review"), `toggles` (a list of {label, url}: "Show done";
+  "Show older" and "Hide done"), `collapsed` (header, caption and toggles only),
+  `group` (a panel whose content is a row of nested columns; its count is the
+  sum), `nested` (a state sub-column inside a group: mono label, count, no dot),
+  `terminal` (the Done column: dashed outline, no fill), `content` (rendered
+  cards, or nested columns for a group), `empty` (what an empty column says,
+  such as "No ticket matches these filters."), `pager` and `attributes`. The
+  header sticks to the top of the scroll region; an empty column keeps its
+  header and count. This is the same address `list` uses for `table`'s `cell()`:
+  a component id resolves in Drupal and in Storybook alike.
+
+
+  THE COLUMN AREA IS THE ONLY SIDEWAYS SCROLL REGION. It is bounded to the
+  viewport below the board chrome (`max-h-board-height`, the
+  `component.board.height` token) and scrolls both ways, so a long column
+  scrolls inside it and the column headers stick to its top while the page
+  header, the toolbar, the active filters and the conductors stay put. Columns
+  keep at least 240 px at the default density. Native scrolling only: Shift +
+  mouse wheel scrolls the region sideways without any script, and no scrollbar
+  is drawn. The region reaches 16 px into the page gutters on both sides. While
+  columns are cut off on a side, a hairline sticks to that edge and casts the
+  shadow-2 token in the `text-faint` colour over the cut-off columns (it
+  contrasts with every surface in both modes: a shade in light mode, a glow in
+  dark mode); a cover of the page surface at each end of the row hides hairline
+  and shadow once that end is in view.
+
+
+  `details` and `done_open` are the real Details and Done preferences: on the
+  data columns they split Working by state and open Done. The story-only
+  operational mode (Owner select, Done 10/25/50, client-side filtering) is gone
+  (BAKERS-55 Decision 23).
 provider: bb_theme
 props:
   type: object
@@ -15,10 +56,10 @@ props:
       type: array
       title: Columns
       description: >-
-        The columns, in render order, as DATA — never rendered column
-        components, which is what the removed `columns` slot used to take. The
-        order is the board's: a card does not choose a column, it is placed in
-        one.
+        The columns, in render order, as DATA - never rendered column
+        components. Each renders through the `column()` macro of this template.
+        A column named Working splits by state with `details`; a column named
+        Done collapses unless `done_open`.
       items:
         type: object
         properties:
@@ -29,18 +70,19 @@ props:
           count:
             type: integer
             title: Card count
-            description: Legacy count; operational boards derive the visible count.
+            description: Displayed count; defaults to the number of cards.
           dot:
             type: string
             enum:
               - running
               - attention
+              - wait
+              - idle
             title: Header tone
             description: >-
-              Present where the phase itself has a status worth showing; the
-              header badge then carries the tone and a dot. Absent, the header
-              is the name alone — a dot with nothing to say is worse than no
-              dot.
+              Tone of the column header dot: wait for Not assigned, attention
+              for Intake, running for Working, idle for Done. The name always
+              says what the column is, so the dot never carries meaning alone.
           cards:
             type: array
             title: Cards
@@ -120,78 +162,103 @@ props:
                     - lease
                     - offline
                   title: Assignee avatar colour key
-                assignee_id:
-                  type: string
-                  title: Assignee ID; empty means unassigned
-                lane_id:
-                  type: string
-                  title: Owner lane ID; empty means unassigned
-                closed_date:
-                  type: string
-                  title: ISO 8601 closing timestamp; empty means unavailable
-                blocked:
+                blocked_by:
+                  type: array
+                  items:
+                    type: string
+                  title: Blocked by
+                  description: >-
+                    Identifiers of the open blockers the reader may view,
+                    rendered in mono after "Blocked by". Replaces the former
+                    `blocked` flag, which counted closed blockers too.
+                blocked_hidden:
                   type: boolean
                   default: false
-    controls_enabled:
+                  title: Hidden blocker
+                  description: >-
+                    The ticket has an open blocker the reader may not view. With
+                    an empty `blocked_by` the marker reads "Blocked by" alone
+                    and names nothing, so no identifier leaks across access.
+                run_count:
+                  type: integer
+                  title: Run count
+                  description: >-
+                    How many runs the ticket has. Zero or absent renders no run
+                    line.
+                last_run_state:
+                  type: string
+                  enum:
+                    - claimed
+                    - running
+                    - done
+                    - expired
+                    - failed
+                    - cancelled
+                  title: Newest run state
+                  description: >-
+                    The state of the newest run. `failed` and `expired` turn the
+                    run line red.
+          caption:
+            type: string
+            title: Caption
+            description: Meta line under the header, such as "last 7 days".
+          toggles:
+            type: array
+            title: Toggle links
+            description: >-
+              Links that change what the column shows: "Show done" when Done is
+              closed, "Show older" and "Hide done" when it is open, "Hide done"
+              once older tickets show. Links, so they work without JavaScript.
+            items:
+              type: object
+              properties:
+                label:
+                  type: string
+                url:
+                  type: string
+              required:
+                - label
+                - url
+    details:
       type: boolean
       default: false
-      title: Operational controls
-    details_default:
+      title: Details
+      description: >-
+        States instead of Phases: the data column named Working becomes a group
+        with one nested column per state plan, working and review that has
+        cards, and the hint "empty: <state>" for each that has none. Its count
+        stays the sum.
+    done_open:
       type: boolean
       default: false
-      title: Initial Details state
+      title: Done open
       description: >-
-        True for developer contexts (including dual roles), false for PM
-        contexts.
-    as_of:
-      type: string
-      title: Clock for closing-date filters
-      description: >-
-        ISO 8601 timestamp used to exclude future closing dates; defaults to the
-        current time.
-    filter_title:
-      type: string
-      title: Filter label
-      description: >-
-        Visible label of the operational people filter. The Project Board
-        preview passes the Drupal control's label; other stories may omit it and
-        keep the generic default.
-    filter_options:
-      type: object
-      title: Filter choices
-      properties:
-        lanes:
-          type: array
-          items:
-            type: object
-            required:
-              - value
-              - label
-            properties:
-              value:
-                type: string
-              label:
-                type: string
+        Shows the cards of the data column named Done; closed, that column keeps
+        only its header, caption and toggles.
 slots:
   empty:
     title: Empty
     description: >-
-      What a column with no cards shows — a sentence that names WHAT is absent
-      over what period, which is a thing a screen knows and a board does not.
-      ONE slot rather than one per column, exactly as `table` and `list` have
-      one: a slot per column would be a slot per item again, which is the escape
-      hatch the container exists to close.
+      What an empty data column says: the caller's sentence. Without it the
+      column keeps only its header and count.
   toolbar:
     title: Toolbar
-    description: >-
-      Exposed people filter. When filled, the board does not paint its own
-      select. Designbook stories leave this empty and keep the Alpine control.
+    description: 'The filter bar above the columns: `bb_theme:filters` with layout toolbar.'
   column_views:
     title: Column views
     description: >-
-      Four paged column displays. When filled, the board does not iterate the
-      columns prop. Designbook stories leave this empty and keep the data
-      columns.
+      The paged Views column displays, each drawn through `board.column()`. When
+      filled, the data `columns` are not rendered.
+  filters_active:
+    title: Filters Active
+    description: >-
+      The active filter chips with their counts and "N of M open tickets":
+      `bb_theme:active-filters`.
+  conductors:
+    title: Conductors
+    description: >-
+      The Active conductors section below the columns, not affected by ticket
+      filters.
 thirdPartySettings:
   sdcStorybook:
     disableBasicStory: true

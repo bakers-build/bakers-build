@@ -9,7 +9,7 @@
  * its own styling classes — so the input keeps working while the look comes
  * from the component (single source of truth). Submit, checkbox and radio have
  * their own theme-suggestion overrides; hidden inputs fall here but carry no
- * visual.
+ * visual. An element with `#compact` set renders the 32 px toolbar field.
  *
  * @see web/themes/custom/bb_theme/components/form_input/form_input.twig
  */
@@ -18,4 +18,5 @@
   attributes: attributes,
   disabled: attributes.offsetExists('disabled'),
   readonly: attributes.offsetExists('readonly'),
+  compact: element['#compact']|default(false),
 }, with_context = false) }}{{ children }}

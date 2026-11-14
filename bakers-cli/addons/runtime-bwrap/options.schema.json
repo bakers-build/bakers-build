@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "@bakers-build/addon-runtime-bwrap options",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "readPaths": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^/" },
+      "default": [],
+      "description": "Additional absolute host paths exposed read-only for coding tools. Never grant the host root or the operator home."
+    }
+  }
+}

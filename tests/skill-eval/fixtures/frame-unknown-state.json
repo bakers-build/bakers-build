@@ -4,11 +4,10 @@
   "profile": "frame-routing",
   "execution": "simulated-tools",
   "skill": "bb-workflow",
-  "references": [
-    "bb-workflow/references/read-ticket.md"
-  ],
+  "references": [],
   "virtual_references": [
-    "bb-workflow/references/intake.md"
+    "bb-workflow/references/read-ticket.md",
+    "bb-workflow/references/tools.md"
   ],
   "recipes": [
     "bb-recipe-probe"

@@ -24,23 +24,6 @@ const AFTER_MERGE_RUNNER = `\${{ fromJSON(vars.RUNNER_AFTER_MERGE || '"warp-ubun
 const IMAGE_GATE_RUNNER = `\${{ fromJSON(vars.RUNNER_IMAGE_GATE || '"warp-ubuntu-latest-x64-16x"') }}`;
 
 describe('GitHub migration checks', () => {
-  it('disables every GitLab publisher and deploy job before GitHub takes ownership', () => {
-    const old = parse(read('.gitlab-ci.yml'));
-    for (const job of [
-      'promote',
-      'release_images',
-      'publish:npm',
-      'publish:npm:next',
-      'deploy',
-      'release',
-    ]) {
-      expect(old[job].rules[0]).toEqual({
-        if: '$RELEASE_OWNER == "github"',
-        when: 'never',
-      });
-    }
-  });
-
   it('publishes only successful same-repository branch pushes after exclusive handover', () => {
     const workflow = parse(read('.github/workflows/release.yml'));
     expect(workflow.on.workflow_run.branches).toEqual(['next', 'main']);
@@ -116,7 +99,6 @@ describe('GitHub migration checks', () => {
     'conductor',
     'tui',
     'web_ui',
-    'pm_bot',
     'release_rehearsal',
   ])('%s prepares the mounted checkout for container Git and path consumers', (name) => {
     const workflow = parse(read('.github/workflows/checks.yml'));
@@ -190,8 +172,8 @@ describe('GitHub migration checks', () => {
       'config_sync',
       'composer_audit',
       'compose_render',
-      'pm_bot',
       'conductor',
+      'runtime_bwrap',
       'tui',
       'tui_musl',
       'web_ui',
@@ -231,6 +213,20 @@ describe('GitHub migration checks', () => {
     expect(workflow.jobs.required.steps[0].run).toContain('success');
   });
 
+  it('requires a real Bubblewrap lifecycle probe outside the unit-test container', () => {
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    const job = workflow.jobs.runtime_bwrap;
+    expect(job).toBeDefined();
+    expect(job.container).toBeUndefined();
+    expect(job.env.BAKERS_TEST_BWRAP_REQUIRED).toBe('1');
+    expect(workflow.jobs.required.needs).toContain('runtime_bwrap');
+    const commands = job.steps
+      .map((step: { run?: string }) => step.run ?? '')
+      .join('\n');
+    expect(commands).toContain('bubblewrap');
+    expect(commands).toContain('conductor/tests/core/conductor-bwrap.test.ts');
+  });
+
   it('runs the self-host lifecycle on a disposable WarpBuild runner and names no old runner in any workflow', () => {
     const workflow = parse(read('.github/workflows/self-host-lifecycle.yml'));
     expect(workflow.jobs.lifecycle['runs-on']).toBe(
@@ -244,6 +240,13 @@ describe('GitHub migration checks', () => {
       expect(read(`.github/workflows/${file}`), file).not.toMatch(
         /github-runner-1|blacksmith/,
       );
+  });
+
+  it('lets a new PR revision cancel its old run, but never a later push cancel a branch run', () => {
+    const workflow = parse(read('.github/workflows/checks.yml'));
+    expect(workflow.concurrency['cancel-in-progress']).toBe(
+      "${{ github.event_name == 'pull_request' }}",
+    );
   });
 
   it('runs the after-merge jobs on every push, dispatch and PR into main, never on PRs into next', () => {
@@ -493,31 +496,66 @@ describe('GitHub migration checks', () => {
     });
   });
 
-  it('retains the existing validation commands', () => {
-    const old = parse(read('.gitlab-ci.yml'));
+  it('runs no PM bot job on GitHub', () => {
+    const checks = parse(read('.github/workflows/checks.yml'));
+    expect(Object.keys(checks.jobs)).not.toContain('pm_bot');
+    expect(checks.jobs.required.needs).not.toContain('pm_bot');
+  });
+
+  // The commands that do the validating in each job; install and setup lines are not pinned.
+  const VALIDATION_COMMANDS: Record<string, string[]> = {
+    phpcs: [
+      './vendor/bin/phpcs -d memory_limit=512M --standard=phpcs.xml.dist',
+    ],
+    phpmd: [
+      "php -d error_reporting='E_ALL & ~E_DEPRECATED' ./vendor/bin/phpmd web/modules/custom,web/themes/custom text phpmd.xml.dist --exclude 'tests/*,**/tests/*,**/node_modules/*'",
+    ],
+    phpstan: [
+      './vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit 1G',
+    ],
+    docs_pages: [
+      'node docs/scripts/check-pages.mjs',
+      'node --test docs/scripts/manual.test.mjs docs/scripts/marketplace.test.mjs docs/scripts/third-party.test.mjs docs/scripts/config-fields.test.mjs',
+    ],
+    config_sync: [
+      'bash tests/config-sync/check-config-sync.sh',
+      'bash tests/config-sync/check-ci-wiring.sh',
+    ],
+    compose_render: ['bash tests/contract/compose.sh'],
+    conductor: [
+      'pnpm run build:all',
+      'pnpm run typecheck',
+      'pnpm run lint',
+      'pnpm run test:vitest',
+    ],
+    tui: ['pnpm run build:all', 'pnpm run test:tui'],
+    tui_musl: [
+      'pnpm run build:all',
+      'node bin/bakers ui --print-config',
+      'OPENTUI_LIBC=musl pnpm run test:tui',
+    ],
+    web_ui: [
+      'pnpm run build',
+      'pnpm exec storybook build',
+      'bash tests/contract/layout-components.sh',
+      'bash tests/contract/data-display-components.sh',
+      'bash tests/contract/token-discipline.sh',
+      'bash tests/contract/time-format.sh',
+      'bash tests/contract/run-detail-overlay.sh',
+      'bash tests/contract/island-links.sh',
+      'node tests/contract/appearance.mjs',
+      'node tests/contract/period-range.mjs',
+      'node tests/contract/icon-storybook.mjs',
+    ],
+  };
+
+  it.each(
+    Object.entries(VALIDATION_COMMANDS),
+  )('%s runs its validation commands', (name, expected) => {
     const workflow = parse(read('.github/workflows/checks.yml'));
-    for (const name of [
-      'phpcs',
-      'phpmd',
-      'phpstan',
-      'docs_pages',
-      'config_sync',
-      'compose_render',
-      'pm_bot',
-      'conductor',
-      'tui',
-      'tui_musl',
-      'web_ui',
-    ]) {
-      const commands = workflow.jobs[name].steps
-        .map((step: { run?: string }) => step.run ?? '')
-        .join('\n');
-      for (const command of old[name].script)
-        expect(commands).toContain(
-          name === 'phpstan'
-            ? command.replace('--memory-limit 512M', '--memory-limit 1G')
-            : command,
-        );
-    }
+    const commands = workflow.jobs[name].steps
+      .map((step: { run?: string }) => step.run ?? '')
+      .join('\n');
+    for (const command of expected) expect(commands).toContain(command);
   });
 });

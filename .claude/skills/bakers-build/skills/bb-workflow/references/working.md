@@ -1,48 +1,62 @@
 # Working
 
-Build the confirmed scope to GREEN. The recipe's slots supply the method; this flow supplies the
-frame around it.
+## references
+
+Read in order at the consuming step; skip unmet conditions.
+
+always: read-ticket.md, tools.md, working.md, entry-guard.md
+if ticket read fails: read-ticket-troubleshooting.md
+if needed comments missing: comment-context.md
+if qualification entry guard fails: return-to-qualification.md
+if acceptance is absent for confirmed scope: ticket-writes.md, acceptance.md
+if a check needs a running environment: results.md, verify.md, tools.md
+always: boundaries.md, prior-art-build.md, forge.md
+if forge tools absent at an operation: forge-fallback.md
+if a browser path is selected: browser.md
+always: evidence.md, results.md, delivery.md, ticket-writes.md, transition-ticket.md
+if a preview is available: preview-links.md
+always: outtake.md, outtake/working.md, coding-gate.md
+if asking for done/cancel confirmation: retrospective.md
+if named retrospective causes: retrospective-evidence.md
+if rating/reason supplied: retrospective-write.md
+if measurements supplied: measurement.md
+if merge to done is explicitly authorized: merge.md
+if merging without tools: merge-fallback.md
+if ticket has an origin: origin-status.md
 
 ## read
 
-Apply [ensure qualification](ensure-qualification.md); continue only on `qualified`. Resume the
-confirmed scope and verification plan; publish [acceptance](acceptance.md) if absent for this scope.
+Make the working comment calls under [read ticket](read-ticket.md), then apply
+[entry guard](entry-guard.md).
+Resume confirmed scope/test plan; publish [acceptance](acceptance.md) if absent for this scope.
 
 ## provision
 
-Before any environment-dependent execution, apply the frame's *Provision* rule. A
-**missing** persona blocks its checks; nobody else tests in its place. No need → skip silently.
+Apply frame Provision for runtime checks; [results](results.md) owns missing-persona handling.
 
 ## work
 
-Apply [boundaries](boundaries.md), then the [remote base check](prior-art-build.md). On
-`prior_art_hit` **STOP** before building: report the candidate on `origin/<base_branch>` and ask
-whether to build anyway, fold into the existing ticket, or drop it; publish no handoff and
-transition nothing. Otherwise use the existing isolated branch and call the method's skills
-directly with the approved inputs and test seams, with subagents where the method calls for them.
-Stop before its review activity.
+Apply [boundaries](boundaries.md), then [remote base check](prior-art-build.md).
+On prior_art_hit report candidate and ask build anyway/fold/drop; stop before building,
+publication or transition. Otherwise call recipe skills with approved inputs/seams on the
+existing isolated branch, using subagents where prescribed; stop before method review.
 
 ## validate
 
-Run each matching `WORKFLOW.md` `bb-phase-validate` row once per revision, and the confirmed
-functional checks through [verify](verify.md) and, where selected, [browser](browser.md). Record
-[result records](results.md). Fix within scope; record every applicable criterion as PASS or FAIL
-with test path, command, result and tested commit. Only all PASS reaches GREEN; missing or failed
-evidence stops the success gate.
+Run matching WORKFLOW.md rows and confirmed functional checks, recording [results](results.md).
+Use [verify](verify.md) for runtime execution and [browser](browser.md) for selected browser paths.
+Fix within scope; every applicable AC needs PASS with command/observation/revision for GREEN.
 
 ## deliver
 
-Commit, push and resolve the MR under [delivery](delivery.md); preserve every user and unresolved
-blocker in the records.
+Commit/push/resolve MR under [delivery](delivery.md), preserving blockers in records.
 
 ## outtake
 
-Issue each `test_as` persona's login link through the `WORKFLOW.md` `bb-phase-outtake` hint and add it
-to the records. Publish the typed coding handoff through [publish comment](publish-comment.md):
-confirmed scope IDs, base and head SHAs, MR, per-criterion evidence and the login links. Render it
-through [the outtake](outtake.md), publish that as its own comment of type `summary`, and print it.
-Both writes are owed even when no transition follows.
+Issue required test_as logins via project hint. Via [ticket writes](ticket-writes.md) publish coding:
+confirmed scope IDs, base/head, MR, per-AC evidence/logins. Render [outtake](outtake.md), publish
+identical summary and print, also when blocked or restricted to working.
 
 ## transition
 
-Apply the [coding gate](coding-gate.md).
+Apply [coding gate](coding-gate.md).

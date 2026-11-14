@@ -104,6 +104,8 @@ export interface DiscoveredContributions {
   agents: unknown[];
   /** Opaque: `HookListener[]` on the conductor surface (BB-599). */
   hooks: unknown[];
+  /** Opaque: `RuntimePlugin[]` on the conductor surface — where runs execute. */
+  runtimes: unknown[];
   connectionPlugins: DropSHPlugin[];
   /**
    * BB-373: UI extension entry MODULES — specifiers, never constructed
@@ -161,7 +163,14 @@ export const SURFACE_KEYS: Record<
   Array<keyof DiscoveredContributions>
 > = {
   command: ['commands'],
-  conductor: ['servers', 'executors', 'worktrees', 'agents', 'hooks'],
+  conductor: [
+    'servers',
+    'executors',
+    'worktrees',
+    'agents',
+    'hooks',
+    'runtimes',
+  ],
   connection: ['connectionPlugins', 'uiEntries'],
 };
 
@@ -172,7 +181,7 @@ export const SURFACE_KEYS: Record<
  * (override semantics — the user config participates as the final preset).
  */
 export interface BbPreset<O = unknown> {
-  /** Meta-addon composition: children apply depth-first BEFORE this preset. */
+  /** Children load as if listed in the same scope, depth-first BEFORE this preset. */
   addons?: AddonEntry[];
 
   /** The config scopes this addon may be listed in; absent means both. */
@@ -197,6 +206,7 @@ export interface BbPreset<O = unknown> {
   worktrees?: OpaqueAccumulator<O>;
   agents?: OpaqueAccumulator<O>;
   hooks?: OpaqueAccumulator<O>;
+  runtimes?: OpaqueAccumulator<O>;
 
   // ── connection surface (dropsh) ──
   connectionPlugins?: (
@@ -226,6 +236,7 @@ export const PRESET_FUNCTION_KEYS: Array<keyof DiscoveredContributions> = [
   'worktrees',
   'agents',
   'hooks',
+  'runtimes',
   'connectionPlugins',
   'uiEntries',
 ];
@@ -239,6 +250,7 @@ export function emptyContributions(): DiscoveredContributions {
     worktrees: [],
     agents: [],
     hooks: [],
+    runtimes: [],
     connectionPlugins: [],
     uiEntries: [],
     addonInbox: [],

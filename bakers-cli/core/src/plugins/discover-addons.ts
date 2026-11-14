@@ -322,6 +322,8 @@ export async function discoverAddons(
   bases: string[],
   opts: {
     logger?: ConductorLogger;
+    /** Already expanded by scopeAddons. */
+    expandNested?: boolean;
     globals?: unknown;
     /** Like `globals`, but seen only by the `agents` accumulators (the
      *  conductor's shared run security). */
@@ -386,7 +388,11 @@ export async function discoverAddons(
       }
       visited.add(dedupKey);
       // Depth-first: meta-addon children apply BEFORE the declaring preset.
-      if (Array.isArray(preset.addons) && preset.addons.length > 0) {
+      if (
+        opts.expandNested !== false &&
+        Array.isArray(preset.addons) &&
+        preset.addons.length > 0
+      ) {
         await walk(preset.addons, listBases);
       }
       const presetOpts = mergeGlobals(opts.globals, withOpts);
@@ -477,10 +483,12 @@ export interface ResolvedConductorSlots<
   E = unknown,
   W = unknown,
   A = unknown,
+  U = unknown,
 > {
   remote?: R;
   executor?: E;
   workspace?: W;
+  runtime?: U;
   agents: A[];
 }
 
@@ -512,15 +520,16 @@ function resolveSingleton<T>(
 }
 
 /** Resolve discovered conductor contributions into the four engine slots. */
-export function resolveConductorSlots<R, E, W, A>(
+export function resolveConductorSlots<R, E, W, A, U = unknown>(
   contributions: {
     servers: R[];
     executors: E[];
     worktrees: W[];
     agents: A[];
+    runtimes?: U[];
   },
   logger?: ConductorLogger,
-): ResolvedConductorSlots<R, E, W, A> {
+): ResolvedConductorSlots<R, E, W, A, U> {
   const remote = resolveSingleton(contributions.servers, 'server', logger);
   const executor = resolveSingleton(
     contributions.executors,
@@ -532,10 +541,16 @@ export function resolveConductorSlots<R, E, W, A>(
     'worktree',
     logger,
   );
+  const runtime = resolveSingleton(
+    contributions.runtimes ?? [],
+    'runtime',
+    logger,
+  );
   return {
     ...(remote ? { remote } : {}),
     ...(executor ? { executor } : {}),
     ...(workspace ? { workspace } : {}),
+    ...(runtime ? { runtime } : {}),
     agents: contributions.agents,
   };
 }

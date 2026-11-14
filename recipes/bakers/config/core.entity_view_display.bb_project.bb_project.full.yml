@@ -21,11 +21,46 @@ third_party_settings:
               main:
                 sources:
                   -
+                    source_id: bb_project_overview
+                    source:
+                      section: metrics
+                      context_mapping:
+                        entity: entity
+                    node_id: overview_metrics
+                  -
+                    source_id: bb_project_overview
+                    source:
+                      section: attention
+                      context_mapping:
+                        entity: entity
+                    node_id: overview_attention
+                  -
+                    source_id: bb_project_overview
+                    source:
+                      section: epics
+                      context_mapping:
+                        entity: entity
+                    node_id: overview_epics
+                  -
+                    source_id: bb_project_overview
+                    source:
+                      section: deployments
+                      context_mapping:
+                        entity: entity
+                    node_id: overview_deployments
+                  -
                     source_id: bb_entity_detail_activities
                     source:
                       context_mapping:
                         entity: entity
                     node_id: project_activities
+                  -
+                    source_id: bb_project_overview
+                    source:
+                      section: empty
+                      context_mapping:
+                        entity: entity
+                    node_id: overview_empty
               inspector:
                 sources:
                   -
@@ -63,18 +98,18 @@ third_party_settings:
                                           -
                                             source_id: token
                                             source:
-                                              value: Identity
-                                            node_id: project_identity_heading
+                                              value: About
+                                            node_id: project_about_heading
                                       content:
                                         sources:
                                           -
-                                            source_id: entity_form
+                                            source_id: bb_project_overview
                                             source:
-                                              operation: identity
+                                              section: description
                                               context_mapping:
                                                 entity: entity
-                                            node_id: project_identity_form
-                                node_id: project_identity
+                                            node_id: overview_about
+                                node_id: project_about
                               -
                                 source_id: component
                                 source:
@@ -98,6 +133,15 @@ third_party_settings:
                                             source:
                                               value: Properties
                                             node_id: project_properties_heading
+                                      actions:
+                                        sources:
+                                          -
+                                            source_id: bb_project_overview
+                                            source:
+                                              section: edit
+                                              context_mapping:
+                                                entity: entity
+                                            node_id: overview_edit
                                       content:
                                         sources:
                                           -
@@ -108,13 +152,6 @@ third_party_settings:
                                                 entity: entity
                                             node_id: project_properties_form
                                 node_id: project_properties
-                              -
-                                source_id: bb_project_overview
-                                source:
-                                  section: epics
-                                  context_mapping:
-                                    entity: entity
-                                node_id: overview_epics
                     node_id: project_inspector
         node_id: project_canvas
 id: bb_project.bb_project.full
@@ -132,6 +169,7 @@ hidden:
   key: true
   name: true
   next_number: true
+  origin_sources: true
   owner_user_id: true
   repository: true
   search_api_excerpt: true

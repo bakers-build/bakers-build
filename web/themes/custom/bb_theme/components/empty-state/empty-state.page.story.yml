@@ -1,0 +1,8 @@
+component: bb_theme:empty-state
+name: Page
+props:
+  title: No tickets yet
+  message: >-
+    Once tickets arrive, this page shows what needs attention, how epics
+    progress and what happened.
+  icon: ticket

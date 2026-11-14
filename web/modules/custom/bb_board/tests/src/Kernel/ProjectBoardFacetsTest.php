@@ -8,12 +8,12 @@ use Drupal\Tests\bb_core\Kernel\ProjectsViewTestTrait;
 use Drupal\Tests\bb_core\Kernel\WorkspaceReadScopeTestTrait;
 use Drupal\Core\TypedData\ComplexDataInterface;
 use Drupal\facets\Result\ResultInterface;
-use Drupal\bb_board\BoardAddress;
 use Drupal\bb_board\ProjectBoard;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_board\Plugin\views\area\BbBoardSummary;
+use Drupal\bb_core\Plugin\views\filter\BbTicketSearch;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\search_api\Entity\Index;
 use Drupal\search_api\Plugin\views\query\SearchApiQuery;
@@ -24,7 +24,7 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 
 /**
- * The Project Board's parent focus, facet chips and summary on indexed data.
+ * The Project Board's parent focus, filter bar and summary on indexed data.
  */
 #[Group('bb_core')]
 #[RunTestsInSeparateProcesses]
@@ -45,7 +45,8 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     'better_exposed_filters', 'facets', 'facets_exposed_filters',
     'display_builder', 'ui_patterns', 'ui_patterns_views',
     'display_builder_views',
-    'bb_core', 'bb_board',
+    // The attention set reads ticket activity.
+    'bb_core', 'bb_activity', 'bb_board',
   ];
 
   /**
@@ -100,6 +101,8 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     parent::setUp();
     $this->installEntitySchema('search_api_task');
     $this->installSchema('search_api', ['search_api_item']);
+    $this->installSchema('user', ['users_data']);
+    $this->installEntitySchema('bb_activity');
     $this->installReadScopeEnvironment();
     $this->installConfig(['search_api']);
     $this->container->get('config.installer')
@@ -213,25 +216,6 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
   }
 
   /**
-   * Priority chips are facets too, the missing priority included.
-   */
-  public function testPriorityChipsCountAndToggle(): void {
-    $uuid = $this->parent->uuid();
-    $summary = $this->summary(['parent_id' => $uuid]);
-    $chips = array_map(static fn (array $row): array => [(string) $row['label'], $row['count']], $summary['priorities']);
-    self::assertSame([['High', 1], ['No priority', 14]], $chips);
-    self::assertSame('critical', $summary['priorities'][0]['tone']);
-    self::assertArrayNotHasKey('tone', $summary['priorities'][1]);
-    self::assertStringStartsWith('!(', (string) $summary['priorities'][1]['value']);
-
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace(['parent_id' => $uuid]);
-    $html = $this->renderSummary($this->execute('project_board', ['parent_id' => $uuid]));
-    self::assertMatchesRegularExpression('#<a [^>]*href="[^"]*priority%5B0%5D=1[^"]*"[^>]*>(?:(?!</a>)[\s\S])*High · 1#', $html);
-    self::assertMatchesRegularExpression('#<a [^>]*class="[^"]*text-state-unassigned-ink[^"]*"[^>]*>[\s\S]*High · 1#', $html);
-    self::assertSame(1, $this->summary(['parent_id' => $uuid, 'priority' => ['1']])['total']);
-  }
-
-  /**
    * A done card says when it was done, relatively, and links its MR.
    */
   public function testDoneCardShowsRelativeDoneDateAndMergeRequest(): void {
@@ -248,37 +232,6 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     $open = $this->container->get(ProjectBoard::class)->cards([$this->critical], 'working');
     self::assertArrayNotHasKey('done_label', $open[0]);
     self::assertArrayNotHasKey('mr_url', $open[0]);
-  }
-
-  /**
-   * State chips link to the same State facet value and drop pagers.
-   */
-  public function testStateChipsToggleTheStateFacet(): void {
-    $uuid = $this->parent->uuid();
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace(['parent_id' => $uuid, 'page' => '0,1']);
-    $html = $this->renderSummary($this->execute('project_board', ['parent_id' => $uuid]));
-    self::assertMatchesRegularExpression('#<a [^>]*href="[^"]*state%5B0%5D=review[^"]*"[^>]*>(?:(?!</a>)[\s\S])*Review · 3#', $html);
-    self::assertStringNotContainsString('page=', $html, 'A chip resets every column pager.');
-  }
-
-  /**
-   * The Done chip keeps the parent, writes work_state and drops pagers.
-   */
-  public function testDoneChipPreservesParentAndDropsPagers(): void {
-    $uuid = $this->parent->uuid();
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace([
-      'parent_id' => $uuid,
-      'page' => '0,1',
-    ]);
-    $html = $this->renderSummary($this->execute('project_board', ['parent_id' => $uuid]));
-    self::assertStringNotContainsString('Show done', $html);
-    self::assertStringNotContainsString('Board controls', $html);
-    self::assertMatchesRegularExpression(
-      '#<a [^>]*href="[^"]*work_state%5B3%5D=done[^"]*"[^>]*>(?:(?!</a>)[\s\S])*Done · #',
-      $html,
-    );
-    self::assertStringNotContainsString('page=', $html, 'Toggling Done drops every column pager.');
-    self::assertStringContainsString('parent_id=' . $uuid, $html);
   }
 
   /**
@@ -311,130 +264,6 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     self::assertEqualsCanonicalizing(['alice', 'bob', 'Unassigned'], $labels['facets_assignee_user_id']);
     self::assertContains('No priority', $labels['facets_priority']);
     self::assertContains('High', $labels['facets_priority']);
-  }
-
-  /**
-   * Absent work_state filters the same as the three open columns.
-   */
-  public function testDefaultWorkStateFilterMatchesExplicitOpenStates(): void {
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace([]);
-    $default = $this->summary([]);
-    $explicit = $this->summary(['work_state' => BoardAddress::OPEN_WORK_STATES]);
-    self::assertSame($explicit['total'], $default['total']);
-    self::assertSame($this->employeeCounts($explicit), $this->employeeCounts($default));
-    self::assertSame(
-      array_column($explicit['states'], 'count'),
-      array_column($default['states'], 'count'),
-    );
-    self::assertSame(
-      array_column($explicit['work_states'], 'count'),
-      array_column($default['work_states'], 'count'),
-    );
-    self::assertSame(2, $this->workStateCount($default, 'done'));
-    $with_done = $this->summary(['work_state' => [...BoardAddress::OPEN_WORK_STATES, 'done']]);
-    self::assertGreaterThan($default['total'], $with_done['total']);
-  }
-
-  /**
-   * The default open columns are filtered without writing work_state.
-   */
-  public function testDefaultWorkStateDoesNotMaterializeExposedInput(): void {
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace([]);
-    $view = $this->execute('project_board', []);
-    self::assertArrayNotHasKey('work_state', $view->getExposedInput());
-    self::assertArrayNotHasKey('work_state', $view->getRequest()->query->all());
-  }
-
-  /**
-   * All four work-state chips render; the three open ones start active.
-   */
-  public function testWorkStateChipsDefaultToOpenColumns(): void {
-    $uuid = $this->parent->uuid();
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace(['parent_id' => $uuid]);
-    $summary = $this->summary(['parent_id' => $uuid]);
-    self::assertSame(
-      ['not_assigned', 'intake', 'working', 'done'],
-      array_column($summary['work_states'], 'value'),
-    );
-    $active = array_column(
-      array_filter($summary['work_states'], static fn (array $row): bool => $row['active']),
-      'value',
-    );
-    self::assertSame(['not_assigned', 'intake', 'working'], $active);
-    $working = array_values(array_filter($summary['work_states'], static fn (array $row): bool => $row['value'] === 'working'));
-    self::assertSame('Working', $working[0]['label']);
-    self::assertSame(15, $working[0]['count']);
-    self::assertSame(
-      ['wait', 'attention', 'running', 'idle'],
-      array_column($summary['work_states'], 'tone'),
-    );
-
-    $html = $this->renderSummary($this->execute('project_board', ['parent_id' => $uuid]));
-    self::assertMatchesRegularExpression('#<a [^>]*href="[^"]*work_state%5B0%5D=not_assigned[^"]*"[^>]*>(?:(?!</a>)[\s\S])*Working · 15#', $html);
-    self::assertMatchesRegularExpression('#<a [^>]*aria-pressed="true"[^>]*>[\s\S]*Working · 15#', $html);
-    self::assertMatchesRegularExpression('#<a [^>]*aria-pressed="false"[^>]*>[\s\S]*Done · #', $html);
-    self::assertStringContainsString('bg-state-unassigned-tint', $html);
-    self::assertStringContainsString('bg-state-attention-tint', $html);
-    self::assertStringContainsString('bg-state-running-tint', $html);
-    self::assertSame(15, $this->summary(['parent_id' => $uuid, 'work_state' => ['working']])['total']);
-  }
-
-  /**
-   * Parent chips use eligible options and exclusive UUID toggles.
-   */
-  public function testParentChipsToggleTheParentFilter(): void {
-    $uuid = $this->parent->uuid();
-    $summary = $this->summary([]);
-    $chip = array_values(array_filter($summary['parents'], static fn (array $row): bool => $row['value'] === $uuid));
-    self::assertNotSame([], $chip);
-    self::assertSame($this->parent->getIdentifier(), $chip[0]['label']);
-    self::assertSame('Break & retry', $chip[0]['title']);
-    self::assertGreaterThan(0, $chip[0]['count']);
-
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace([]);
-    $html = $this->renderSummary($this->execute('project_board', []));
-    self::assertMatchesRegularExpression(
-      '#<a [^>]*href="[^"]*parent_id=' . preg_quote($uuid, '#') . '[^"]*"[^>]*>(?:(?!</a>)[\s\S])*' . preg_quote($this->parent->getIdentifier(), '#') . '#',
-      $html,
-    );
-
-    $focused = $this->summary(['parent_id' => $uuid]);
-    $active = array_values(array_filter($focused['parents'], static fn (array $row): bool => $row['active']));
-    self::assertSame([$uuid], array_column($active, 'value'));
-  }
-
-  /**
-   * Parent chips keep every eligible parent while one of them is focused.
-   */
-  public function testParentChipsStayOfferedWhileFocused(): void {
-    $other = $this->ticket(NULL, 'coding', $this->alice);
-    $this->ticket($other, 'coding', $this->bob);
-    $this->index();
-    $this->container->set('bb_board.parent_ticket_scope', NULL);
-    $unfocused = $this->summary([]);
-    $this->container->set('bb_board.parent_ticket_scope', NULL);
-    $focused = $this->summary(['parent_id' => $this->parent->uuid()]);
-    $uuids = array_column($focused['parents'], 'value');
-    self::assertContains($this->parent->uuid(), $uuids);
-    self::assertContains($other->uuid(), $uuids);
-    self::assertSame(
-      $this->parentChipCount($unfocused, $other->uuid()),
-      $this->parentChipCount($focused, $other->uuid()),
-    );
-    self::assertSame(1, $this->parentChipCount($focused, $other->uuid()));
-  }
-
-  /**
-   * The executed page keeps facet plugins and has no fulltext search.
-   */
-  public function testBoardViewHasFacetChipsAndNoSearch(): void {
-    $view = $this->execute('project_board', ['parent_id' => $this->parent->uuid()]);
-    foreach (['facets_state', 'facets_assignee_user_id', 'facets_priority', 'facets_work_state'] as $id) {
-      self::assertArrayHasKey($id, $view->filter);
-    }
-    self::assertArrayHasKey('board_parent', $view->filter);
-    self::assertArrayNotHasKey('search_api_fulltext', $view->filter);
-    self::assertArrayNotHasKey('work_state', $view->filter, 'The page has no column predicate; chips use facets_work_state.');
   }
 
   /**
@@ -484,43 +313,6 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
   }
 
   /**
-   * Clear filters keeps the parent and Done, and drops every other filter.
-   */
-  public function testClearFiltersKeepsTheParent(): void {
-    $uuid = $this->parent->uuid();
-    $input = ['parent_id' => $uuid, 'state' => ['review'], 'work_state' => ['working'], 'page' => '0,1'];
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace($input);
-    $html = $this->renderSummary($this->execute('project_board', $input));
-    self::assertStringContainsString('Clear filters', $html);
-    self::assertMatchesRegularExpression('#By work state[\s\S]*Clear filters[\s\S]*By state#', $html);
-    self::assertStringContainsString('?parent_id=' . $uuid . '"', $html);
-
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace(['parent_id' => $uuid]);
-    self::assertStringNotContainsString('Clear filters', $this->renderSummary($this->execute('project_board', ['parent_id' => $uuid])));
-  }
-
-  /**
-   * Choosing the Done chip includes closed descendants in counts and cards.
-   */
-  public function testDoneChipKeepsOpenSummaryCounts(): void {
-    $uuid = $this->parent->uuid();
-    $open = $this->summary(['parent_id' => $uuid]);
-    $this->container->get('request_stack')->getCurrentRequest()->query->replace([
-      'parent_id' => $uuid,
-      'work_state' => ['not_assigned', 'intake', 'working', 'done'],
-    ]);
-    $with_done = $this->summary([
-      'parent_id' => $uuid,
-      'work_state' => ['not_assigned', 'intake', 'working', 'done'],
-    ]);
-    self::assertSame(15, $open['total']);
-    self::assertSame(2, $this->workStateCount($open, 'done'));
-    self::assertSame(17, $with_done['total']);
-    self::assertSame(2, $this->workStateCount($with_done, 'done'));
-    self::assertSame(2, (int) $this->execute('done', ['parent_id' => $uuid])->total_rows);
-  }
-
-  /**
    * A deliberate abort is an empty result; only a failure with a reason errs.
    */
   public function testDeliberateAbortIsZeroNotFailure(): void {
@@ -546,10 +338,247 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
   }
 
   /**
-   * The rendered strip names readiness unavailable and every count.
+   * The page exposes Search, State, Priority and Assignee, never Conductor.
+   *
+   * Work state is no filter any more: the columns are the work states.
+   */
+  public function testBoardViewHasFilterBarWithSearch(): void {
+    $view = $this->execute('project_board', ['parent_id' => $this->parent->uuid()]);
+    $identifiers = [];
+    foreach ($view->filter as $id => $filter) {
+      if ($filter->isExposed()) {
+        $identifiers[$id] = $filter->options['expose']['identifier'];
+      }
+    }
+    self::assertEqualsCanonicalizing(['parent_id', 'search', 'state', 'priority', 'assignee'], array_values($identifiers));
+    self::assertInstanceOf(BbTicketSearch::class, $view->filter['bb_ticket_search']);
+    self::assertSame('search', $identifiers['bb_ticket_search']);
+    self::assertSame('parent_id', $identifiers['board_parent']);
+    self::assertArrayNotHasKey('facets_work_state', $view->filter);
+  }
+
+  /**
+   * Search narrows every column, by title words and by identifier.
+   */
+  public function testSearchNarrowsEveryColumn(): void {
+    $working = $this->ticket(NULL, 'coding', $this->bob);
+    $working->set('title', 'needle in the working column')->save();
+    $backlog = $this->ticket(NULL, 'coding', NULL);
+    $backlog->set('title', 'needle without a conductor')->set('conductor_id', NULL)->save();
+    $this->index();
+
+    $words = ['search' => 'needle'];
+    self::assertSame([$backlog->getIdentifier()], $this->identifiers($this->execute('backlog', $words)));
+    self::assertSame([$working->getIdentifier()], $this->identifiers($this->execute('working', $words)));
+    self::assertSame(0, (int) $this->execute('intake', $words)->total_rows);
+    self::assertSame(2, $this->summary($words)['total']);
+    // States: the review sub-column searches too.
+    self::assertSame(4, (int) $this->execute('working_review', [])->total_rows);
+    self::assertSame([$this->parent->getIdentifier()], $this->identifiers($this->execute('working_review', ['search' => 'retry'])));
+
+    $identifier = ['search' => $this->critical->getIdentifier()];
+    self::assertSame([$this->critical->getIdentifier()], $this->identifiers($this->execute('working', $identifier)));
+    self::assertSame(0, (int) $this->execute('backlog', $identifier)->total_rows);
+    self::assertSame(1, $this->summary($identifier)['total']);
+  }
+
+  /**
+   * Unhealthy limits every column to the attention set and shows its chip.
+   */
+  public function testHealthFilterLimitsColumnsToUnhealthyTickets(): void {
+    // The tickets on the owner-less conductor stay unhealthy: "Conductor has
+    // no access". Every other ticket's conductor is owned by an admin.
+    $this->ownConductorsByAnAdmin(FALSE);
+    $unhealthy = [$this->critical, $this->leaf];
+    $expected = array_map(static fn (BbTicketInterface $ticket): string => $ticket->getIdentifier(), $unhealthy);
+    sort($expected);
+    self::assertEqualsCanonicalizing(
+      array_map(static fn (BbTicketInterface $ticket): int => (int) $ticket->id(), $unhealthy),
+      $this->unhealthyIds(),
+    );
+
+    $input = ['health' => 'unhealthy'];
+    $working = $this->identifiers($this->execute('working', $input));
+    sort($working);
+    self::assertSame($expected, $working);
+    // The only review candidate is a parent and remains healthy.
+    self::assertSame([], $this->identifiers($this->execute('working_review', $input)));
+    foreach (['backlog', 'intake', 'done', 'working_plan', 'working_working'] as $display) {
+      self::assertSame(0, (int) $this->execute($display, $input)->total_rows, $display);
+    }
+    $this->request($input);
+    $summary = $this->summary($input);
+    self::assertSame(2, $summary['total']);
+    self::assertSame([['Unhealthy', [], 2]], $this->chips($summary));
+    self::assertStringNotContainsString('health', $summary['chips'][0]['remove_url']);
+    self::assertStringContainsString('Unhealthy · 2', $this->text($this->renderSummary($this->execute('project_board', $input))));
+
+    self::assertSame(19, $this->summary(['health' => 'something-else'])['total'], 'Only "unhealthy" filters.');
+
+    // One rule for the columns and the chip: only the scalar value filters.
+    $listed = ['health' => ['unhealthy']];
+    $this->request($listed);
+    $summary = $this->summary($listed);
+    self::assertSame(19, $summary['total']);
+    self::assertSame([], $summary['chips']);
+    self::assertSame((int) $this->execute('working', [])->total_rows, (int) $this->execute('working', $listed)->total_rows);
+  }
+
+  /**
+   * An empty attention set shows empty columns, never every ticket.
+   */
+  public function testHealthFilterWithEmptySetMatchesNothing(): void {
+    $this->ownConductorsByAnAdmin(TRUE);
+    self::assertSame([], $this->unhealthyIds());
+
+    $input = ['health' => 'unhealthy'];
+    foreach (['backlog', 'intake', 'working', 'done', 'working_plan', 'working_working', 'working_review'] as $display) {
+      $view = $this->execute($display, $input);
+      self::assertSame([], $this->identifiers($view), $display);
+      self::assertSame(0, (int) $view->total_rows, $display);
+    }
+    $summary = $this->summary($input);
+    self::assertSame('ok', $summary['status']);
+    self::assertSame(0, $summary['total']);
+    self::assertSame(19, $this->summary([])['total'], 'Without the filter the board is full.');
+  }
+
+  /**
+   * Each active chip counts what its own filter matches, beside the total.
+   */
+  public function testActiveChipCarriesMatchCount(): void {
+    $review = $this->summary(['state' => ['review']])['total'];
+    $input = ['priority' => ['1'], 'state' => ['review']];
+    $this->request($input);
+    $summary = $this->summary($input);
+    self::assertSame(0, $summary['total'], 'The one High ticket is not in review.');
+    self::assertSame([['State', ['Review'], $review], ['Priority', ['High'], 1]], $this->chips($summary));
+    // The facet filter writes its own value shape back into the request.
+    self::assertStringNotContainsString('priority', $summary['chips'][1]['remove_url']);
+    self::assertStringContainsString('=review', $summary['chips'][1]['remove_url']);
+
+    $text = $this->text($this->renderSummary($this->execute('project_board', $input)));
+    self::assertStringContainsString('Priority is High · 1', $text);
+    self::assertStringContainsString('State is Review · ' . $review, $text);
+  }
+
+  /**
+   * The open total M of "N of M" is the board without its clearable filters.
+   */
+  public function testOpenTicketTotal(): void {
+    $input = ['priority' => ['1']];
+    $this->request($input);
+    $summary = $this->summary($input);
+    self::assertSame(1, $summary['total']);
+    self::assertSame(19, $summary['open']);
+    self::assertStringContainsString('1 of 19 open tickets', $this->text($this->renderSummary($this->execute('project_board', $input))));
+
+    $focused = ['parent_id' => $this->parent->uuid(), 'priority' => ['1']];
+    $this->request($focused);
+    self::assertSame(15, $this->summary($focused)['open'], 'A parent focus is the board the filters narrow.');
+
+    // Work state is no input any more: Done never joins the open count.
+    $this->request(['work_state' => ['done']]);
+    $done = $this->summary(['work_state' => ['done']]);
+    self::assertSame(19, $done['total']);
+    self::assertSame(19, $done['open']);
+  }
+
+  /**
+   * The board's own URL names the project by key: counts and health follow.
+   */
+  public function testProjectKeyAddressCountsTheProject(): void {
+    $key = $this->project->getKey();
+    self::assertNotSame('', $key);
+    $this->ownConductorsByAnAdmin(FALSE);
+    $input = ['priority' => ['1'], 'health' => 'unhealthy'];
+    $this->request($input);
+    $summary = $this->summaryOf($this->execute('project_board', $input, $key));
+    self::assertSame(1, $summary['total']);
+    self::assertSame(19, $summary['open']);
+    self::assertSame([['Priority', ['High'], 1], ['Unhealthy', [], 2]], $this->chips($summary));
+    self::assertSame(1, (int) $this->execute('working', $input, $key)->total_rows);
+  }
+
+  /**
+   * The board's own URL names the project by key: the parent focus follows.
+   */
+  public function testProjectKeyAddressFocusesTheParent(): void {
+    $key = $this->project->getKey();
+    $input = ['parent_id' => $this->parent->uuid()];
+    $this->request($input);
+    $view = $this->execute('project_board', $input, $key);
+    $summary = $this->summaryOf($view);
+    self::assertSame('parent', $summary['mode']);
+    self::assertSame(15, $summary['total']);
+    self::assertMatchesRegularExpression('#data-option-picker-label="Parent ticket"\s+data-option-picker-variant="field"#', $this->renderSummary($view));
+    self::assertSame(
+      (int) $this->execute('working', $input)->total_rows,
+      (int) $this->execute('working', $input, $key)->total_rows,
+    );
+  }
+
+  /**
+   * The parent focus is an active chip; removing it leaves the project board.
+   */
+  public function testParentFocusShowsAsActiveChip(): void {
+    $uuid = $this->parent->uuid();
+    $this->request(['parent_id' => $uuid, 'state' => ['review']]);
+    $summary = $this->summary(['parent_id' => $uuid, 'state' => ['review']]);
+    self::assertSame(
+      [['Parent', [$this->parent->getIdentifier() . ' Break & retry'], 15], ['State', ['Review'], 3]],
+      $this->chips($summary),
+    );
+    self::assertStringNotContainsString('parent_id', $summary['chips'][0]['remove_url']);
+    self::assertStringContainsString('parent_id=' . $uuid, $summary['chips'][1]['remove_url']);
+    $input = ['parent_id' => $uuid, 'state' => ['review']];
+    $text = $this->text($this->renderSummary($this->execute('project_board', $input)));
+    self::assertStringContainsString('Parent is ' . $this->parent->getIdentifier() . ' Break & retry · 15', $text);
+    self::assertStringContainsString('3 of 15 open tickets', $text);
+  }
+
+  /**
+   * The pickers count each value under every other filter, missing included.
+   */
+  public function testPickersCarryCounts(): void {
+    $uuid = $this->parent->uuid();
+    $summary = $this->summary(['parent_id' => $uuid]);
+    $rows = array_map(static fn (array $row): array => [(string) $row['label'], $row['count']], $summary['priorities']);
+    self::assertSame([['High', 1], ['No priority', 14]], $rows);
+    self::assertStringStartsWith('!(', (string) $summary['priorities'][1]['value']);
+
+    $this->request(['parent_id' => $uuid]);
+    $html = $this->renderSummary($this->execute('project_board', ['parent_id' => $uuid]));
+    self::assertMatchesRegularExpression($this->pickerRow('1', 'High', 1), $html);
+    self::assertMatchesRegularExpression($this->pickerRow((string) $summary['priorities'][1]['value'], 'No priority', 14), $html);
+    self::assertMatchesRegularExpression($this->pickerRow('review', 'Review', 3), $html);
+    self::assertSame(1, $this->summary(['parent_id' => $uuid, 'priority' => ['1']])['total']);
+  }
+
+  /**
+   * Clear filters keeps the parent and drops every other filter.
+   */
+  public function testClearFiltersKeepsTheParent(): void {
+    $uuid = $this->parent->uuid();
+    $input = ['parent_id' => $uuid, 'state' => ['review'], 'page' => '0,1'];
+    $this->request($input);
+    $html = $this->renderSummary($this->execute('project_board', $input));
+    self::assertMatchesRegularExpression(
+      '#<a [^>]*href="[^"]*\?parent_id=' . preg_quote($uuid, '#') . '"[^>]*>(?:(?!</a>)[\s\S])*Clear filters#',
+      $html,
+    );
+
+    $this->request(['parent_id' => $uuid]);
+    self::assertStringNotContainsString('Clear filters', $this->renderSummary($this->execute('project_board', ['parent_id' => $uuid])));
+  }
+
+  /**
+   * The filter bar: search, pickers, avatars with counts and Details.
    */
   public function testRenderedSummary(): void {
-    $view = $this->execute('project_board', ['parent_id' => $this->parent->uuid()]);
+    $uuid = $this->parent->uuid();
+    $this->request(['parent_id' => $uuid]);
+    $view = $this->execute('project_board', ['parent_id' => $uuid]);
     $handler = $view->header['bb_board_summary'] ?? NULL;
     self::assertInstanceOf(BbBoardSummary::class, $handler);
     $build = $handler->render();
@@ -557,32 +586,126 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
     self::assertContains('user', $build['#cache']['contexts']);
     self::assertContains('url.query_args', $build['#cache']['contexts']);
     $html = $this->renderSummary($view);
-    foreach ([
-      'alice · 12', 'bob · 2', 'Unassigned · 1',
-      $this->parent->getIdentifier() . ' ·',
-    ] as $text) {
-      self::assertStringContainsString($text, $html);
-    }
+
+    self::assertMatchesRegularExpression('#<input[^>]*name="search"#', $html);
     self::assertMatchesRegularExpression(
-      '#<a [^>]*title="Break &amp; retry"[^>]*>[\s\S]*?<span class="button__label">'
-      . preg_quote($this->parent->getIdentifier(), '#')
-      . ' · \d+</span>#',
+      '#<a\s(?=[^>]*aria-label="alice, 12 tickets")(?=[^>]*href="[^"]*assignee%5B0%5D=' . $this->alice->id() . '[^"]*")[^>]*>(?:(?!</a>)[\s\S])*data-person-mark[^>]*>A</span>(?:(?!</a>)[\s\S])*12#',
       $html,
     );
-    self::assertStringNotContainsString('Show done', $html);
-    self::assertStringNotContainsString('Board controls', $html);
-    self::assertStringContainsString('By work state', $html);
-    self::assertStringContainsString('Not assigned ·', $html);
-    self::assertStringContainsString('Done ·', $html);
+    self::assertMatchesRegularExpression('#<a\s(?=[^>]*aria-label="bob, 2 tickets")[^>]*>#', $html);
+    self::assertDoesNotMatchRegularExpression('#<a\s[^>]*aria-current="true"#', $html, 'No assignee is chosen.');
+    self::assertStringContainsString('Unassigned · 1', $html);
+    self::assertMatchesRegularExpression('#<a\s[^>]*href="[^"]*details=states[^"]*"[^>]*>\s*States#', $html);
+    self::assertMatchesRegularExpression('#<a\s[^>]*href="[^"]*details=phases[^"]*"[^>]*aria-current="page"[^>]*>\s*Phases#', $html);
+    self::assertStringContainsString('Apply', $html, 'Without JavaScript the form still submits.');
+    self::assertStringContainsString('15 of 15 open tickets', $this->text($html));
+    foreach (['By work state', 'By state', 'By assignee', 'By priority', 'By parent'] as $gone) {
+      self::assertStringNotContainsString($gone, $html, 'The chip groups are gone.');
+    }
     self::assertStringNotContainsString('Clear filters', $html);
-    self::assertMatchesRegularExpression('#<a [^>]*href="[^"]*state%5B0%5D=#', $html);
-    self::assertDoesNotMatchRegularExpression('#<input[^>]*name="title#', $html);
-    self::assertStringNotContainsString('→', $html, 'No branch pair is claimed.');
-    self::assertStringNotContainsString('in current selection', $html, 'The board below shows the tickets.');
-    self::assertStringNotContainsString('Ready to merge', $html);
-    self::assertStringNotContainsString('Last merged', $html, 'The Done column shows merged work.');
-    self::assertStringNotContainsString('Diagnose · 0', $html, 'A zero count is omitted.');
     self::assertStringNotContainsString('&amp;amp;', $html, 'A title is escaped once.');
+  }
+
+  /**
+   * In the theme, the exposed form is one filter bar with Details at its end.
+   */
+  public function testFilterBarRendersAsOneToolbar(): void {
+    $this->container->get('theme.manager')->setActiveTheme(
+      $this->container->get('theme.initialization')->initTheme('bb_theme'),
+    );
+    $input = ['parent_id' => $this->parent->uuid(), 'assignee' => [(string) $this->bob->id()]];
+    $this->request($input);
+    $html = $this->renderSummary($this->execute('project_board', $input));
+    self::assertMatchesRegularExpression(
+      '#role="search"[^>]*aria-label="Board filters"[\s\S]*name="search"[\s\S]*name="state\[\]"[\s\S]*name="priority\[\]"[\s\S]*data-option-picker-label="Parent ticket"[\s\S]*aria-label="bob, 2 tickets"[\s\S]*details=states[\s\S]*Clear filters#',
+      $html,
+    );
+    self::assertSame(1, substr_count($html, 'name="parent_id" value="' . $this->parent->uuid() . '"'), 'The chosen parent rides along once.');
+    self::assertMatchesRegularExpression('#<input type="hidden" name="assignee\[\]" value="' . $this->bob->id() . '">#', $html);
+    self::assertMatchesRegularExpression('#<input type="radio" name="parent_id" value="' . $this->parent->uuid() . '"[^>]*\schecked#', $html, 'The picker submits the chosen parent.');
+    self::assertStringNotContainsString('name="assignee[]" value="' . $this->alice->id() . '"', $html, 'Avatars are links, not inputs.');
+    self::assertMatchesRegularExpression('#<a\s(?=[^>]*aria-label="bob, 2 tickets")(?=[^>]*aria-current="true")[^>]*>#', $html, 'The chosen assignee is on.');
+    self::assertMatchesRegularExpression('#<a\s(?=[^>]*aria-label="alice, 12 tickets")(?![^>]*aria-current)[^>]*>#', $html);
+    self::assertDoesNotMatchRegularExpression('#<input[^>]*name="health"#', $html);
+
+    // A submit keeps the Unhealthy filter: it rides along as a hidden input.
+    $input['health'] = 'unhealthy';
+    $this->request($input);
+    $html = $this->renderSummary($this->execute('project_board', $input));
+    self::assertMatchesRegularExpression('#<form[\s\S]*<input(?=[^>]*type="hidden")(?=[^>]*name="health")(?=[^>]*value="unhealthy")[^>]*>[\s\S]*</form>#', $html);
+  }
+
+  /**
+   * Gives the board's conductors an owner who may work in the project.
+   *
+   * @param bool $ownerless
+   *   Whether the owner-less conductor gets that owner too.
+   */
+  private function ownConductorsByAnAdmin(bool $ownerless): void {
+    $admin = $this->createAccount('conductor-admin', ['administer bakers']);
+    $conductors = [$this->fixture('a', 'bb_conductor')];
+    if ($ownerless) {
+      $conductors[] = $this->ownerless;
+    }
+    foreach ($conductors as $conductor) {
+      $conductor->set('owner_user_id', $admin->id())->set('status', 'online')->save();
+    }
+    // Only fixtures reassign an owner, so no save hook recomputes health.
+    $tickets = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->loadByProperties(['closed' => 0]);
+    $this->container->get('bb_core.ticket_health')->refresh(array_values(array_filter($tickets, static fn ($ticket): bool => $ticket instanceof BbTicketInterface)));
+    $this->index();
+  }
+
+  /**
+   * The attention set as the reader sees it.
+   *
+   * @return list<int>
+   *   Ticket ids.
+   */
+  private function unhealthyIds(): array {
+    $this->container->get('current_user')->setAccount($this->reader);
+    return array_map(static fn ($item): int => (int) $item->ticket->id(), $this->container->get('bb_core.project_health')->attention($this->project));
+  }
+
+  /**
+   * Makes the current request carry this query, as the browser would.
+   *
+   * @param array<string, mixed> $query
+   *   The query parameters.
+   */
+  private function request(array $query): void {
+    $this->container->get('request_stack')->getCurrentRequest()->query->replace($query);
+  }
+
+  /**
+   * Field, values and count of each active chip, in order.
+   *
+   * @param array<string, mixed> $summary
+   *   The summary data.
+   *
+   * @return list<array{0: mixed, 1: mixed, 2: mixed}>
+   *   One triple per chip.
+   */
+  private function chips(array $summary): array {
+    return array_values(array_map(
+      static fn (array $chip): array => [$chip['field'], $chip['values'], $chip['count']],
+      $summary['chips'],
+    ));
+  }
+
+  /**
+   * The visible text of rendered markup, one space between words.
+   */
+  private function text(string $html): string {
+    return trim(preg_replace('/\s+/', ' ', html_entity_decode(preg_replace('/<[^>]+>/', ' ', $html))));
+  }
+
+  /**
+   * A picker row with its value, label and count.
+   */
+  private function pickerRow(string $value, string $label, int $count): string {
+    return '#data-value="' . preg_quote(htmlspecialchars($value), '#') . '">(?:(?!</li>)[\s\S])*>'
+      . preg_quote($label, '#') . '</span>(?:(?!</li>)[\s\S])*tabular-nums[^>]*>' . $count . '</span>#';
   }
 
   /**
@@ -634,13 +757,15 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
    *   The display id.
    * @param array<string, mixed> $input
    *   The exposed input, as a browser would send it.
+   * @param string|null $project
+   *   The project argument as the URL gives it, the id by default.
    */
-  private function view(string $display, array $input): ViewExecutable {
+  private function view(string $display, array $input, ?string $project = NULL): ViewExecutable {
     $this->container->get('current_user')->setAccount($this->reader);
     $view = Views::getView('project_board');
     self::assertInstanceOf(ViewExecutable::class, $view);
     self::assertTrue($view->setDisplay($display));
-    $arguments = [(string) $this->fixture('a', 'bb_workspace')->id(), (string) $this->project->id()];
+    $arguments = [(string) $this->fixture('a', 'bb_workspace')->id(), $project ?? (string) $this->project->id()];
     $view->setArguments($arguments);
     $view->setExposedInput($input);
     $view->preExecute($arguments);
@@ -654,9 +779,11 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
    *   The display id.
    * @param array<string, mixed> $input
    *   The exposed input.
+   * @param string|null $project
+   *   The project argument as the URL gives it, the id by default.
    */
-  private function execute(string $display, array $input): ViewExecutable {
-    $view = $this->view($display, $input);
+  private function execute(string $display, array $input, ?string $project = NULL): ViewExecutable {
+    $view = $this->view($display, $input, $project);
     $view->execute($display);
     return $view;
   }
@@ -700,40 +827,6 @@ final class ProjectBoardFacetsTest extends KernelTestBase {
       static fn (array $row): array => [(string) $row['label'], (int) $row['count']],
       $summary['employees'],
     ));
-  }
-
-  /**
-   * One parent chip's count, or NULL when that parent is not listed.
-   *
-   * @param array<string, mixed> $summary
-   *   The summary data.
-   * @param string $uuid
-   *   The parent ticket UUID.
-   */
-  private function parentChipCount(array $summary, string $uuid): ?int {
-    foreach ($summary['parents'] as $row) {
-      if ($row['value'] === $uuid) {
-        return (int) $row['count'];
-      }
-    }
-    return NULL;
-  }
-
-  /**
-   * One work state's count, or NULL when the summary lists no such value.
-   *
-   * @param array<string, mixed> $summary
-   *   The summary data.
-   * @param string $value
-   *   The work_state value.
-   */
-  private function workStateCount(array $summary, string $value): ?int {
-    foreach ($summary['work_states'] as $row) {
-      if ($row['value'] === $value) {
-        return (int) $row['count'];
-      }
-    }
-    return NULL;
   }
 
   /**

@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# provision_up('conductor-e2e'): a playground conductor from this worktree's build, started
+# detached outside the agent sandbox, so a sandboxed run can check live conductor behaviour.
+#
+#   conductor-e2e.sh            reset the playground, set it up, lower the version gate, start
+#   conductor-e2e.sh start      start the playground conductor again, keeping the playground
+#   conductor-e2e.sh stop       stop it (`bakers conductor stop`)
+#   conductor-e2e.sh teardown   release conductor and playground (after_done); no playground, no-op
+#
+# The playground lives in the worktree (workspaces/bakers-playground), so the run reads its log and
+# edits its config directly. Every ticket the conductor claims starts a paid agent run.
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/../.." && pwd -P)"
+workspace="$root/workspaces/bakers-playground"
+bakers="$root/bakers-cli/bin/bakers"
+
+# Keep the playground's unsandboxed, host-runtime agents separate from the real machine policy.
+playground_home="$root/workspaces/.bakers-playground-home"
+mkdir -p "$playground_home"
+if [ "${BAKERS_HOME:-}" != "$playground_home" ]; then
+node --input-type=module - "${BAKERS_HOME:-${HOME}/.bakers}/machine.config.js" "$playground_home/machine.config.js" "$root/workspaces/.playground-isolated" <<'JS'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
+const [source, target, marker] = process.argv.slice(2);
+const keep_runtime = existsSync(marker);
+// Each line of the marker is a host path the Bubblewrap runtime exposes read-only in playground runs.
+const expose = keep_runtime ? readFileSync(marker, 'utf8').split('\n').map(line => line.trim()).filter(Boolean) : [];
+writeFileSync(target, `import machine from ${JSON.stringify(pathToFileURL(source).href)};
+const stripSandbox = value => Array.isArray(value) ? value.map(stripSandbox)
+  : value && typeof value === 'object'
+    ? Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'sandbox').map(([key, item]) => [key, stripSandbox(item)]))
+    : value;
+// The playground runs on the host unless workspaces/.playground-isolated asks for the machine's runtime.
+const isRuntime = entry => (typeof entry === 'string' ? entry : entry?.use ?? '').startsWith('@bakers-build/addon-runtime-');
+const playground = stripSandbox(machine);
+const expose = ${JSON.stringify(expose)};
+const nameOf = entry => typeof entry === 'string' ? entry : entry?.use ?? '';
+const exposed = entry => !expose.length || nameOf(entry) !== '@bakers-build/addon-runtime-bwrap' ? entry
+  : { use: nameOf(entry), with: { ...(entry.with ?? {}), readPaths: [...(entry.with?.readPaths ?? []), ...expose] } };
+export default !playground.addons ? playground
+  : { ...playground, addons: ${keep_runtime} ? playground.addons.map(exposed) : playground.addons.filter(entry => !isRuntime(entry)) };
+`, { mode: 0o600 });
+JS
+ln -sfn "${BAKERS_HOME:-${HOME}/.bakers}/connections" "$playground_home/connections"
+ln -sfn "$workspace/node_modules" "$playground_home/node_modules"
+fi
+export BAKERS_HOME="$playground_home"
+
+teardown() {
+  [ -d "$workspace" ] || return 0
+  bash "$root/.bakers/scripts/teardown-test-project.sh"
+}
+
+# start: `conductor start` returns once the detached conductor's first heartbeat arrived.
+start() {
+  local out id
+  out="$(cd "$workspace" && "$bakers" conductor start)"
+  echo "$out"
+  # Only a fresh start counts: "already running" can be a record whose heartbeat outlived its process.
+  id="$(sed -n 's/^started conductor \([^ ]*\) .*/\1/p' <<<"$out" | head -1)"
+  [ -n "$id" ] || { echo 'conductor-e2e: conductor start reported no started conductor' >&2; exit 1; }
+  cat <<EOF
+
+Playground conductor: $id
+  log      $workspace/.bakers/log.txt
+  config   $workspace/.bakers/project.config.js, $workspace/.bakers/connection.config.js
+  ticket   provision_exec('web', ['drush', 'php:script', 'scripts/e2e/playground-ticket.php', '--', '$id', '<title>', '<state>'])
+  stop     provision_up('conductor-e2e-stop'); start again: provision_up('conductor-e2e-start')
+EOF
+}
+
+case "${1:-}" in
+  teardown) teardown; exit 0 ;;
+  stop) cd "$workspace" && "$bakers" conductor stop; exit 0 ;;
+  start) start; exit 0 ;;
+  '') ;;
+  *) echo "usage: $0 [start|stop|teardown]" >&2; exit 2 ;;
+esac
+
+teardown
+(cd "$root/bakers-cli" && pnpm -r run build)
+# setup-test-project.sh refuses any control plane whose host is not *.ddev.site before any write,
+# so the gate below is lowered on this worktree's local site only. The source build reports 0.0.1.
+bash "$root/.bakers/scripts/setup-test-project.sh"
+(cd "$root" && ddev drush cset -y bb_core.settings min_client_version 0.0.1)
+# No `conductor once` first: its fresh heartbeat makes `conductor start` report "already running" and start
+# nothing. `conductor start` registers a missing conductor itself.
+start

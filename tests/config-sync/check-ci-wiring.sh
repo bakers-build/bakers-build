@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
-# BB-407 — the semantic config gate must remain an independent every-push job.
+# BB-407 — the semantic config gate must remain an independent pull-request job that gates merges.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CI="$ROOT/.gitlab-ci.yml"
-JOB="$(awk '
-  /^config_sync:$/ { in_job = 1 }
-  in_job && /^[A-Za-z0-9_.-]+:$/ && $0 != "config_sync:" { exit }
-  in_job { print }
-' "$CI")"
+CI="${1:-$ROOT/.github/workflows/checks.yml}"
+# Body of one top-level job: the lines between its key and the next job key.
+job() { sed -n "/^  $1:\$/,/^  [A-Za-z0-9_.-]*:/{/^  [A-Za-z0-9_.-]*:/!p}" "$CI"; }
+JOB="$(job config_sync)"
+REQUIRED="$(job required)"
 
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 
 [ -n "$JOB" ] || fail 'config_sync job is missing'
-grep -q '^  stage: test$' <<<"$JOB" || fail 'config_sync is not in the test stage'
-grep -q '^  needs: \[\]$' <<<"$JOB" || fail 'config_sync is not an independent DAG job'
-grep -q 'CI_PIPELINE_SOURCE == "push"' <<<"$JOB" || fail 'config_sync does not run on pushes'
-grep -q 'CI_PIPELINE_SOURCE == "merge_request_event"' <<<"$JOB" || fail 'config_sync does not run for merge requests'
+if grep -q '^    needs:' <<<"$JOB"; then
+  fail 'config_sync is not an independent job'
+fi
+grep -q '^    if: \*checks$' <<<"$JOB" || fail 'config_sync does not run for pull requests'
+grep -q '^      - config_sync$' <<<"$REQUIRED" || fail 'config_sync is not required'
 grep -q 'bash tests/config-sync/check-config-sync.sh' <<<"$JOB" || fail 'config_sync does not run the semantic harness'
 grep -q 'bash tests/config-sync/check-ci-wiring.sh' <<<"$JOB" || fail 'config_sync does not run the wiring guard'
 if grep -q 'tests/contract/' <<<"$JOB"; then
   fail 'config_sync is incorrectly routed through tests/contract'
 fi
 
-printf 'OK: config_sync is an independent push and merge-request job.\n'
+printf 'OK: config_sync is an independent, required pull-request job.\n'

@@ -45,6 +45,23 @@ props:
         Optional fill from the badge token vocabulary, for a control that is
         also a labelled state (Board work-state and priority chips). When set it
         replaces the variant colours. The label still names the value.
+    pressed:
+      type: boolean
+      title: Pressed
+      description: >-
+        Makes the control a TOGGLE and says whether it is on. A `<button>`
+        carries `aria-pressed` true or false; a link (a filter that navigates,
+        such as an assignee avatar on the Board filter bar) carries
+        `aria-current="true"` while it is on, because a link cannot be pressed.
+        On, it takes the primary look, the house look of an active filter chip.
+        Absent, the control is not a toggle and renders as before.
+    aria_label:
+      type: string
+      title: Accessible name
+      description: >-
+        Overrides the accessible name when the visible content does not say
+        enough, such as an avatar and a count: "Christian Wiedemann, 18 tickets"
+        for a toggle that shows "CW 18". Wins over the `icon_only` name.
   required:
     - label
 slots:

@@ -31,5 +31,8 @@
     "@bakers-build/core": "workspace:^",
     "typescript": "^5.9.0",
     "vitest": "^4.1.0"
+  },
+  "bakers": {
+    "stability": "internal"
   }
 }

@@ -338,3 +338,75 @@ describe('restart_on_change and the watched files', () => {
     ).rejects.toThrow(/restart_on_change must be boolean/);
   });
 });
+
+describe('the runtime slot', () => {
+  const runtimePreset = (isolates: boolean) => `
+export const scopes = ['machine'];
+export const runtimes = (acc) => [...acc, {
+  kind: 'runtime', id: 'probe', isolates: ${isolates}, requiredModules: [],
+  createRuntime: async () => ({ id: 'probe', wrap: async (l) => l, cleanup: async () => {} }),
+}];
+`;
+  const withRuntime = (
+    isolates?: boolean,
+    entry = "'@bakers-build/addon-claude'",
+  ) => {
+    const machine = writeMachine(`export default {
+      permissions: { mode: 'sandbox', sandbox: {
+        deny_read: ['$inherit', '/srv/private'],
+        allow_write: ['/srv/cache'], trusted_commands: ['git'],
+      } },
+      addons: [${entry}, ${isolates === undefined ? '' : "'./runtime-probe.js'"}],
+    };`);
+    if (isolates !== undefined)
+      writeFileSync(
+        join(machine, '../runtime-probe.js'),
+        runtimePreset(isolates),
+      );
+  };
+
+  it.each([
+    true,
+    false,
+    undefined,
+  ])('preserves machine security and the agent command with runtime isolation %s', async (isolates) => {
+    withRuntime();
+    const host = await loadConductorConfig(writeProject(projectConfig()));
+    const hostAgent = host.agents.find((c) => c.agent.id === 'claude')?.agent;
+    withRuntime(isolates);
+    const cfg = await loadConductorConfig(writeProject(projectConfig()));
+    const agent = cfg.agents.find((c) => c.agent.id === 'claude')?.agent;
+    expect(cfg.runtime?.id).toBe(isolates === undefined ? undefined : 'probe');
+    expect(agent?.permissions?.mode).toEqual({
+      value: 'sandbox',
+      source: 'machine',
+    });
+    expect(agent?.permissions).toEqual(hostAgent?.permissions);
+    const launched = await agent?.createAgent({} as never);
+    const hostLaunched = await hostAgent?.createAgent({} as never);
+    expect(launched?.launchCommand('x')).toBe(hostLaunched?.launchCommand('x'));
+    expect(agent?.permissions?.sandbox.allow_write.entries).toEqual([
+      { value: '/srv/cache', source: 'machine' },
+    ]);
+  });
+
+  it('keeps explicit agent sandbox options under an isolating runtime', async () => {
+    withRuntime(
+      true,
+      `{ use: '@bakers-build/addon-claude', with: {
+      permissions: 'sandbox', sandbox: { deny_read: ['$inherit', '/srv/agent-private'] },
+    } }`,
+    );
+    const cfg = await loadConductorConfig(writeProject(projectConfig()));
+    const agent = cfg.agents.find((c) => c.agent.id === 'claude')?.agent;
+    expect(agent?.permissions?.mode).toEqual({
+      value: 'sandbox',
+      source: 'agent',
+    });
+    expect(agent?.permissions?.sandbox.deny_read.entries).toContainEqual({
+      value: '/srv/agent-private',
+      source: 'agent',
+    });
+    expect(agent?.permissions?.not_applied).toEqual([]);
+  });
+});

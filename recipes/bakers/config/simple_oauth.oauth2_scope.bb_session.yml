@@ -72,7 +72,7 @@
 #     (`.claude/skills/bakers-build/skills/create-project/`).
 #   * `create bb_environment` — `prepare-deployment/SKILL.md` instructs the
 #     agent to "create the environment" before a release.
-#   * `create bb_group` — `scripts/setup-test-project.sh` documents
+#   * `create bb_group` — `.bakers/scripts/setup-test-project.sh` documents
 #     `bakers dropsh create bb_group …` as a step an agent runs.
 #   * `create bb_team` — the `workspace_id` filler documented in
 #     `.bakers/bakers.config.js` fills a bb_group / bb_team CREATE payload, not

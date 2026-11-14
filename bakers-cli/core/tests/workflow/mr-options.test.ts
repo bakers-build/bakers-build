@@ -61,6 +61,9 @@ describe('BB-274 merge-request options', () => {
         '.claude/skills/bakers-build/skills/bb-workflow/references/working.md',
         '.claude/skills/bakers-build/skills/bb-workflow/references/delivery.md',
         mergePath,
+        '.claude/skills/bakers-build/skills/bb-workflow/references/forge.md',
+        '.claude/skills/bakers-build/skills/bb-workflow/references/forge-fallback.md',
+        '.claude/skills/bakers-build/skills/bb-workflow/references/merge-fallback.md',
       ]) {
         const dest = join(root, path);
         mkdirSync(dirname(dest), { recursive: true });

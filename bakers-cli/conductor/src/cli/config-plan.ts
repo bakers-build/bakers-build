@@ -13,6 +13,7 @@ import {
 import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import {
+  type AddonCapabilities,
   type ConfigFileReport,
   type ConfigFinding,
   type ConfigFindingCode,
@@ -31,13 +32,19 @@ import {
 } from './config-source-edit.js';
 import {
   type ConnectionAuthType,
+  DEFAULT_SLOT_ADDON,
   renderCommittedConfig,
   renderGlobalConnection,
   renderHostMachine,
 } from './config-templates.js';
 import { validateConfigSources } from './config-validation.js';
 
+// The host reads this addon's capabilities before a fresh project file exists.
+export { DEFAULT_SLOT_ADDON } from './config-templates.js';
+
 export interface ConfigPlanOptions extends ConfigInventoryOptions {
+  capabilities?: AddonCapabilities;
+  slots?: Partial<Record<'server' | 'executor' | 'worktree', string>>;
   inputs?: {
     /** Machine display label; the machine UUID is always generated. */
     label?: string;
@@ -84,6 +91,23 @@ function readFingerprint(path: string) {
 
 /** Inventory, transform in memory, validate the complete proposed installation. */
 export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
+  const capabilities = options.capabilities ?? {};
+  const selectedSlots = Object.entries(options.slots ?? {});
+  if (
+    selectedSlots.length &&
+    (options.operation !== 'init' ||
+      !['project', 'all'].includes(options.scope ?? ''))
+  )
+    throw new Error('Slot flags require config init --scope project (or all).');
+  for (const [slot, spec] of selectedSlots) {
+    const capability = capabilities[spec];
+    if (!capability)
+      throw new Error(`--${slot}: cannot resolve addon '${spec}'.`);
+    if (!capability.scopes.includes('project'))
+      throw new Error(`--${slot}: '${spec}' does not allow project scope.`);
+    if (!capability.slots.includes(slot))
+      throw new Error(`--${slot}: '${spec}' contributes no ${slot}.`);
+  }
   // `conductor` is a bakers.build-specific sub-scope of `project`: it selects the same
   // files but communicates to the planner that only conductor-config changes are
   // requested. We map it to `project` for the inventory, which uses a strict
@@ -122,6 +146,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
       inventoryOptions,
       new Map(original),
       files,
+      options.capabilities,
     );
     return {
       report: finalizeConfigReport(validated),
@@ -749,11 +774,8 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         editor(file).stamp(1);
       }
       if (file.kind === 'project') {
-        if (
-          (!e || e.text.trim() === 'export default {};') &&
-          file.required &&
-          options.project
-        ) {
+        const fresh = !e || e.text.trim() === 'export default {};';
+        if (fresh && file.required && options.project) {
           e = new ConfigSourceEditor(
             renderCommittedConfig({
               project: options.project,
@@ -763,42 +785,101 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
                 : {}),
             }),
           );
+          if (selectedSlots.length) {
+            const contributed = new Set(
+              selectedSlots.flatMap(
+                ([, spec]) => capabilities[spec]?.slots ?? [],
+              ),
+            );
+            if (options.slots?.executor) {
+              const entries = Array.from(
+                { length: e.property('addons')?.arrayLength ?? 0 },
+                (_, index) => `addons[${index}]`,
+              );
+              e.set(
+                'addons',
+                `[${entries
+                  .filter(
+                    (key) =>
+                      (e?.property(`${key}.use`)?.value ??
+                        e?.property(key)?.value) !== DEFAULT_SLOT_ADDON,
+                  )
+                  .map((key) => e?.expression(key))
+                  .join(', ')}]`,
+              );
+            }
+            for (const slot of contributed) e.remove(slot);
+          }
           editors.set(file.path, e);
         }
         if (!e) continue;
         {
           e = editor(file);
           fill(file, 'project.name', options.project);
-          const canonical = new ConfigSourceEditor(
-            renderCommittedConfig({
-              project: options.project ?? 'project',
-            }),
-          );
           const addonPackages = new Set(
             [...e.source.properties]
               .filter(([key]) => /^addons\[\d+\](?:\.use)?$/.test(key))
               .map(([, property]) => property.value)
               .filter((value): value is string => typeof value === 'string'),
           );
-          const providers: Record<string, string[]> = {
-            server: [
-              '@bakers-build/addon-remote-drupal',
-              '@bakers-build/addon-fake',
-            ],
-            executor: ['@bakers-build/addon-herdr', '@bakers-build/addon-fake'],
-            worktree: [
-              '@bakers-build/addon-herdr',
-              '@bakers-build/addon-fake',
-              '@bakers-build/addon-workspace-git',
-            ],
+          const existingPackages = [...addonPackages];
+          // Text is spliced into addons, so only a literal array can take it.
+          const literalAddons = () => {
+            const addons = e?.property('addons');
+            if (!addons || addons.nodeType === 'ArrayExpression') return true;
+            problem(
+              file,
+              'unsupported_source_shape',
+              'addons',
+              'A literal addons array is required to add a slot provider.',
+            );
+            return false;
           };
-          for (const slot of ['server', 'executor', 'worktree']) {
+          for (const [slot, spec] of selectedSlots) {
             if (
               e.property(slot) ||
-              providers[slot]?.some((provider) => addonPackages.has(provider))
+              existingPackages.some((pkg) =>
+                capabilities[pkg]?.slots.includes(slot),
+              )
             )
               continue;
-            e.set(slot, canonical.expression(slot) as string);
+            if (!literalAddons()) continue;
+            if (!addonPackages.has(spec)) {
+              const expression = e.expression('addons') ?? '[]';
+              const before = expression.slice(0, -1).trimEnd();
+              e.set(
+                'addons',
+                `${before}${before.endsWith('[') || before.endsWith(',') ? '' : ','} { use: ${JSON.stringify(spec)} }]`,
+              );
+              addonPackages.add(spec);
+            }
+          }
+          const supplied = (slot: string) =>
+            e?.property(slot) ||
+            [...addonPackages].some(
+              (pkg) =>
+                capabilities[pkg]?.slots.includes(slot) ??
+                pkg === DEFAULT_SLOT_ADDON,
+            );
+          if (options.slots?.executor && !supplied('worktree'))
+            problem(
+              file,
+              'missing_required_key',
+              'worktree',
+              'The selected executor supplies no worktree; pass --worktree <package>.',
+            );
+          // The server comes from the connection; herdr fills a missing executor or worktree.
+          for (const slot of ['executor', 'worktree']) {
+            if (supplied(slot)) continue;
+            if (slot === 'worktree' && options.slots?.executor) continue;
+            if (!literalAddons()) break;
+            const expression = e.expression('addons') ?? '[]';
+            const before = expression.slice(0, -1).trimEnd();
+            e.set(
+              'addons',
+              `${before}${before.endsWith('[') || before.endsWith(',') ? '' : ','} '${DEFAULT_SLOT_ADDON}']`,
+            );
+            addonPackages.add(DEFAULT_SLOT_ADDON);
           }
           if (
             options.operation === 'init' &&
@@ -887,7 +968,12 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
   );
   for (const [path] of original)
     if (!editors.has(path)) overlay.set(path, null);
-  const proposed = validateConfigSources(inventoryOptions, overlay, files);
+  const proposed = validateConfigSources(
+    inventoryOptions,
+    overlay,
+    files,
+    options.capabilities,
+  );
   report.findings = [
     ...errors,
     ...proposed.findings.filter(
@@ -897,6 +983,7 @@ export function planConfig(options: ConfigPlanOptions = {}): ConfigPlan {
         ),
     ),
   ];
+  if (proposed.slot_sources) report.slot_sources = proposed.slot_sources;
   report.verification.skipped = proposed.verification.skipped;
   const writes: ConfigWrite[] = [];
   for (const file of files.filter((f) => f.selected)) {

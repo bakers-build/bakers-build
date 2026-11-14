@@ -21,7 +21,7 @@ A skill is something that is *chosen*: by a person, by the ticket's `recipe` fie
 | `bb-init`, `bb-init-project`, `bb-create-project`, `bb-upgrade-project` | a person, for setup |
 | `bb-create-ticket`, `bb-scope-change`, `bb-prepare-time` | a person or a host, for a ticket or time proposals |
 
-Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, reading the ticket, publishing a comment, provisioning, verification, the browser surface, the intake and outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.
+Everything that is only *read* is a reference of `bb-workflow`, under `bb-workflow/references/`: the four state files, read-ticket (including the run frame), ticket-writes (including comment publication), provisioning, verification, the browser surface, outtake, measurements, merge and the state write. A reference is not a skill and cannot be invoked.
 
 ## The grid
 
@@ -38,11 +38,11 @@ A run is **state × phase**. Every state run passes seven phases in order: `read
 | `qualification` | `references/qualification.md` |
 | every other state | the recipe's `bb-state-<state>` section, run inside the state file of that name (`plan`, `working`, `review`) |
 
-It then resolves the recipe, renders the intake (`references/intake.md`) once and starts the state file's `## read`. A state without a state file stops the run and names the state.
+It then resolves the recipe, renders the intake (`references/read-ticket.md`) once and starts the state file's `## read`. A state without a state file stops the run and names the state.
 
 Every ticket runs the one workflow `bb_work`: `qualification → plan → working → review → done`. A deployment and a verification are tickets of type `deployment` and `verification` whose recipes, `bb-recipe-deploy-and-release` and `bb-recipe-verify`, say what `plan`, `working` and `review` mean for them.
 
-`plan`, `working` and `review` first apply `references/ensure-qualification.md` and continue only on `qualified`. Provisioning is lazy: the runtime is brought up before the first action that needs it, and skipped when nothing does.
+`plan` and `working` check the latest qualification inline and continue on `qualified`; an invalid handoff loads `references/return-to-qualification.md`. Provisioning is lazy: the runtime is brought up before the first action that needs it, and skipped when nothing does.
 
 ## Recipes
 
@@ -66,7 +66,7 @@ If the recipe, its state section, the ticket's type among the recipe's declared 
 
 ## References route nothing
 
-A reference produces one outcome and chooses no destination. Two exceptions exist: `references/ensure-qualification.md` may send a ticket back to `qualification`, and the `bb-create-ticket` skill owns the first routing of a new ticket. The global rules every run keeps live in `bb-workflow` and its references.
+A reference produces one outcome and chooses no destination. Two exceptions exist: `references/return-to-qualification.md` may send a ticket back to `qualification`, and the `bb-create-ticket` skill owns the first routing of a new ticket. The global rules every run keeps live in `bb-workflow` and its references.
 
 ## Handoff and transition order
 
@@ -86,8 +86,10 @@ records. The summary gives brief successes, actionable problems and persona-spec
 
 ## Size and verification
 
-Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` permits 500 whitespace-separated words, including frontmatter and code; `references/retrospective.md` is the listed exception.
-`python3 tests/contract/skill-size.py` enforces this in CI. Remove repetition instead of moving entire instructions elsewhere.
+Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` permits 500 whitespace-separated words, including frontmatter and code.
+`python3 tests/contract/skill-size.py` enforces this in CI, plus always-read byte limits of
+18/12/19/15 KB for qualification/plan/working/review. Ordered manifests interleave `always:`
+lines with conditional reads at their consuming steps; the guard sums every always-read file once. Remove repetition instead of moving entire instructions elsewhere.
 
 `python3 tests/contract/skill-references.py` is the one structure check: links resolve, retired skill names are absent, grid headings are valid, every state file has the seven phases, `WORKFLOW.md` holds only `## bb-phase-*` sections, recipes link no frame reference and call no other bakers.build skill, no skill declares an input, exactly the bundle's skills exist, no contributor-facing file requires a private keytec skill, and every project skill `WORKFLOW.md` names exists under `.claude/skills/`. No skill check asserts a sentence.
 

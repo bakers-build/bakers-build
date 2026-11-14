@@ -19,7 +19,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * marks and lease live in {@see ProjectBoard}. Column placement is each
  * column display's filters on general index fields. The theme's
  * `views-view-bb-board.html.twig` turns the cards into board-card. Empty
- * results still render: the column chrome stays up with an empty sentence.
+ * results still render: the column chrome stays up, and the view's empty
+ * area says why.
  */
 #[ViewsStyle(
   id: 'bb_board',
@@ -95,6 +96,10 @@ final class BbBoard extends StylePluginBase {
           $tickets,
           (string) $this->view->current_display,
         ),
+        '#cache' => [
+          'contexts' => ['user'],
+          'tags' => ['bb_ticket_list', 'bb_environment_list', 'og_membership_list'],
+        ],
       ],
     ];
   }

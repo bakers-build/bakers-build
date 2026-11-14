@@ -253,7 +253,9 @@
         `name` is the submitted field name, so the cell can live in a real form:
         `option_list` renders real inputs under it and a clearable clear row.
         Without it the name is derived from the label, for inert scenes. The
-        accessible name keeps reading the label. #}
+        accessible name keeps reading the label. `autosave`, `status` and
+        `invalid` go to `option_picker` unchanged: the pick submits the form, and
+        the field says "Saved" or names the error. #}
     {%- set field = c.name|default(c.label|lower) -%}
     {%- set spoken = c.label|lower -%}
     {%- set picked = c.value_labels|default([]) -%}
@@ -283,6 +285,9 @@
       selected_chips: c.selected_chips|default(false),
       selected: c.selected|default([]),
       open: c.open|default(false),
+      autosave: c.autosave|default(false),
+      status: c.status|default(''),
+      invalid: c.invalid|default(false),
       options: panel,
     }, with_context = false) }}
   {%- elseif c.kind == 'masked' -%}
@@ -335,6 +340,10 @@
         {%- set action_attributes = action_attributes.setAttribute('data-hx-' ~ key, c.hx[key]) -%}
       {%- endif -%}
     {%- endfor -%}
+    {#- `full_load`: a download or a form page, reached outside the island's boost. -#}
+    {%- if c.full_load -%}
+      {%- set action_attributes = action_attributes.setAttribute('data-hx-boost', 'false') -%}
+    {%- endif -%}
     {{ include('bb_theme:button', {
       variant: c.variant|default('ghost'),
       type: 'button',
@@ -408,6 +417,18 @@
       <span id="{{ input_id }}--error" class="text-meta text-state-attention-ink" role="alert">{{ c.error }}</span>
       {%- endif -%}
     </span>
+  {%- elseif c.kind == 'meter' -%}
+    {#- A load against a capacity: a bar filled to the caller's `share` (0 to
+        100) and the caller's words for it. Without a share the words stand
+        alone and faint - an unknown capacity is not zero. -#}
+    <span class="inline-flex items-center gap-inline">
+      {%- if c.share is defined and c.share is not null -%}
+      <svg class="block h-2 w-30 shrink-0 rounded-full overflow-hidden" viewBox="0 0 100 6" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect width="100" height="6" class="fill-surface-3"></rect><rect width="{{ c.share }}" height="6" class="fill-state-running"></rect></svg>
+      <span class="text-meta text-text">{{ c.label }}</span>
+      {%- else -%}
+      <span class="text-meta text-text-light">{{ c.label }}</span>
+      {%- endif -%}
+    </span>
   {%- elseif c.kind == 'time' -%}
     {#- A point in time, already formatted by BbDate. #}
     {{ include('bb_theme:time', { label: c.label, datetime: c.datetime, title: c.title|default('') }, with_context = false) }}
@@ -459,14 +480,15 @@
 {% else %}
   {#- THE ROW ACCENT, and the two things it does. The leading rail is drawn on the
       FIRST cell of the row with a pseudo-element, so it costs no `<td>` no column
-      asked for. `wait` additionally tints the whole row: a listing nobody is
-      acting on is the one state the deleted row components made loud, and the tint
+      asked for. `wait` and `critical` additionally tint the whole row: a listing
+      that needs a person is the one state the deleted row components made loud, and the tint
       is what a `wait` badge's `-ink` colour is legible against — the raw hue
       measures 2.76:1 there against the 4.5:1 the contrast criterion asks for. #}
   {% set accent_map = {
     'running': 'bg-state-running',
     'attention': 'bg-state-attention-mark',
     'wait': 'bg-state-unassigned',
+    'critical': 'bg-state-unassigned',
     'idle': 'bg-transparent'
   } %}
   {% set rail_classes = ['absolute', 'left-0', 'top-2', 'bottom-2', 'w-1', 'rounded-xs'] %}
@@ -527,7 +549,7 @@
           that is absent, and it is the whole reason the cells are keyed. #}
       {% for row in rows %}
         {% set row_classes = ['group', 'transition-colors', 'duration-fast', 'hover:bg-app'] %}
-        {% if row.accent == 'wait' %}{% set row_classes = row_classes|merge(['bg-state-unassigned-tint']) %}{% endif %}
+        {% if row.accent in ['wait', 'critical'] %}{% set row_classes = row_classes|merge(['bg-state-unassigned-tint']) %}{% endif %}
         <tr data-table-row class="{{ row_classes|join(' ') }}"{% if row.url %} data-row-url="{{ row.url }}"{% endif %}>
           {% for column in columns %}
             {%- set c = row.cells[column.key]|default(null) -%}

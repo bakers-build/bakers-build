@@ -359,6 +359,7 @@ console.log(m[1]);
         'Invoke the bakers skill',
         'ticket:run',
         'coding engine',
+        'bakers tools',
         // BB-204 made WORKFLOW.md a pure loader, so no project carries a
         // `State: <state>` section for the prompt to point at. A packaged
         // prompt that still names one stops literal-minded agents mid-dispatch.
@@ -367,6 +368,8 @@ console.log(m[1]);
         'dropsh --format md read',
         // The run's CLI call names the bare tool; the server prefix is gone.
         'tool_api__',
+        // The default read returns the newest comments, not all of them.
+        'and all comments',
       ]) {
         if (prompt.includes(bad)) {
           fail(
@@ -375,10 +378,11 @@ console.log(m[1]);
         }
       }
       for (const marker of [
-        'Read the ticket and all comments',
+        'Read the ticket with the bakers tool bakers_ticket_read',
         'bakers_ticket_read',
-        `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
+        'Follow the loaded skill for tool discovery, transport and fallback',
         './WORKFLOW.md',
+        'Do not call ticket or service tools before reading both files',
         "that skill's {state} section",
         'Do not start or prepare a later state',
       ]) {

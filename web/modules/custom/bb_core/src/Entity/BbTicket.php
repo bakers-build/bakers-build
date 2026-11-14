@@ -444,6 +444,20 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
    */
   private static function relationFields(): array {
     $fields = [];
+    $fields['health'] = BaseFieldDefinition::create('list_string')
+      ->setLabel(new TranslatableMarkup('Health'))
+      ->setReadOnly(TRUE)
+      ->setSetting('allowed_values', ['healthy' => 'Healthy', 'warning' => 'Warning', 'critical' => 'Critical']);
+    $fields['health_reason'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Health reason'))
+      ->setReadOnly(TRUE);
+    $fields['health_moved'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(new TranslatableMarkup('Last real movement'))
+      ->setReadOnly(TRUE);
+    $fields['health_checked'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(new TranslatableMarkup('Health evaluated'))
+      ->setReadOnly(TRUE);
+
     $fields['parent_id'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(new TranslatableMarkup('Parent ticket'))
       ->setSetting('target_type', 'bb_ticket')
@@ -677,16 +691,18 @@ final class BbTicket extends BbContentEntityBase implements BbTicketInterface, E
     $storage = $this->entityTypeManager()->getStorage('bb_ticket');
     foreach ($this->getBlockedByIds() as $blocker_id) {
       $blocker = $storage->load($blocker_id);
-      if (!$blocker instanceof BbTicketInterface) {
-        continue;
-      }
-      $state = (string) $blocker->get('state')->value;
-      // A blocker is open unless it reached a terminal state.
-      if (!in_array($state, ['done', 'cancelled'], TRUE)) {
+      if ($blocker instanceof BbTicketInterface && $blocker->isBlocking()) {
         return TRUE;
       }
     }
     return FALSE;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function isBlocking(): bool {
+    return !in_array((string) $this->get('state')->value, ['done', 'cancelled'], TRUE);
   }
 
   /**

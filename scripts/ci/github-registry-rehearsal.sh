@@ -11,7 +11,7 @@ package_name() {
   if [ -n "${REGISTRY_PACKAGE_PREFIX:-}" ]; then printf '%s/%s' "$prefix" "$1";
   else printf '%s-%s' "$prefix" "$1"; fi
 }
-images=(php nginx docs pm-bot)
+images=(php nginx docs)
 mkdir -p gate-reports
 for image in "${images[@]}"; do
   package=$(package_name "$image")

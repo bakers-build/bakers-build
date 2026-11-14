@@ -3,9 +3,13 @@ import { basename, dirname, join } from 'node:path';
 import {
   type ConductorLogger,
   killRunProcesses,
+  loadRunClone,
   type MachineContext,
+  protectedProjectPaths,
+  saveRunClone,
   shellQuote,
   stemForConfigFile,
+  transferIsolatedCommit,
 } from '@bakers-build/core';
 import type { PluginLaunch } from '../plugins/agent.js';
 import {
@@ -35,7 +39,11 @@ import type {
   Ticket,
   UncleanTicket,
 } from '../plugins/remote.js';
-import { sandboxFailures } from '../plugins/sandbox-preflight.js';
+import { type BbRuntime, hostRuntime } from '../plugins/runtime.js';
+import {
+  runtimeSandboxWarning,
+  sandboxFailures,
+} from '../plugins/sandbox-preflight.js';
 import { loadTools, type ToolBinding } from '../plugins/tools.js';
 import type { BbWorkspace, EnsuredWorkspace } from '../plugins/workspace.js';
 import type { ConductorFileConfig } from '../types.js';
@@ -275,6 +283,9 @@ export class Conductor {
   /** The local MCP server for addon tools; only the serve process runs one. */
   private toolServer: ToolServer | undefined;
 
+  /** Where runs execute; created once, on first use. */
+  private runtimeOnce: Promise<BbRuntime> | undefined;
+
   /** Serializes git worktree add/remove: parallel ones fight over git locks. */
   private gitLock: Promise<unknown> = Promise.resolve();
 
@@ -373,7 +384,10 @@ export class Conductor {
    */
   async startTools(endpointFile?: string): Promise<void> {
     const { siteTools } = this.remote;
+    const runtime = await this.runtime();
     if ((!this.config.tools && !siteTools) || this.toolServer) return;
+    const hosts = (await runtime.toolServerHosts?.()) ?? [];
+    const registry = this.config.tools ?? (await loadTools([]));
     // Runs closed while no server ran (`oven once`, a crash) lose their grant here.
     const openRuns = await this.remote.fetchActiveRuns(this.id).then(
       (runs) => runs.map((r) => r.runUuid),
@@ -386,12 +400,13 @@ export class Conductor {
       },
     );
     this.toolServer = await startToolServer({
-      registry: this.config.tools ?? (await loadTools([])),
+      registry,
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
       ...(endpointFile ? { endpointFile } : {}),
       ...(openRuns ? { openRuns } : {}),
       ...(siteTools ? { siteTools } : {}),
+      ...(hosts.length > 0 ? { hosts } : {}),
       onSiteWrite: (b) => this.signalUi(b.worktreePath),
     });
     this.logger.info(
@@ -400,10 +415,31 @@ export class Conductor {
     );
   }
 
+  private runtime(): Promise<BbRuntime> {
+    this.runtimeOnce ??= (this.config.runtime ?? hostRuntime).createRuntime(
+      this.config,
+      { logger: this.logger },
+    );
+    return this.runtimeOnce;
+  }
+
+  /** Best-effort, like the tab close: logged, never thrown. */
+  private async cleanupRuntime(runUuid: string, runId: number): Promise<void> {
+    try {
+      await (await this.runtime()).cleanup({ uuid: runUuid, id: runId });
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, err: String(err) },
+        'runtime cleanup failed',
+      );
+    }
+  }
+
   /** Tell an open `bakers ui` in the checkout (and the run's worktree) to reload. */
   private signalUi(worktree?: string): void {
     signalUi(this.checkoutRoot);
-    if (worktree) signalUi(worktree);
+    // A run clone keeps its own exclude; the host runs no Git in its workspace.
+    if (worktree) signalUi(worktree, !loadRunClone(worktree));
   }
 
   async stopTools(): Promise<void> {
@@ -497,6 +533,8 @@ export class Conductor {
         'addon registration failed',
       );
     }
+    const warning = runtimeSandboxWarning(this.config.runtime?.id);
+    if (warning) this.logger.warn({ conductorId: this.id }, warning);
     for (const line of await sandboxFailures(this.agents)) {
       this.logger.error({ conductorId: this.id }, line);
     }
@@ -697,6 +735,7 @@ export class Conductor {
       }
       // The transcript is captured, so killing the PTY is safe (BB-171).
       if (branch) await this.closeRunTab(branch, r.runUuid, r.runId);
+      await this.transferRunCommits(r.worktreePath, r.runUuid);
       // BB-599: `after_run` fires at run end — after the worker is gone,
       // before the durable close. A failed close write repeats it next tick,
       // which is why listeners must be idempotent.
@@ -722,6 +761,30 @@ export class Conductor {
       this.logger.warn(
         { run: r.runUuid, err: String(err) },
         'run finalise failed',
+      );
+    }
+  }
+
+  /**
+   * Bring an isolated run's commits to the ticket branch in the parent
+   * repository. Best-effort: a refused transfer is logged and leaves the run's
+   * Git directory in place until the next run of the ticket starts.
+   */
+  private async transferRunCommits(
+    worktreePath: string | undefined,
+    runUuid: string,
+  ): Promise<void> {
+    const clone = worktreePath ? loadRunClone(worktreePath) : undefined;
+    if (!clone) return;
+    try {
+      await this.serialGit(async () => {
+        const tip = transferIsolatedCommit(clone);
+        saveRunClone({ ...clone, expected: tip });
+      });
+    } catch (err) {
+      this.logger.warn(
+        { run: runUuid, branch: clone.branch, err: String(err) },
+        'run commits not transferred to the ticket branch',
       );
     }
   }
@@ -817,6 +880,7 @@ export class Conductor {
         'run tab cleanup failed',
       );
     }
+    await this.cleanupRuntime(runUuid, runId);
     // Background commands and their sandboxes outlive the closed PTY.
     try {
       const { pids } = await killRunProcesses(runUuid);
@@ -953,11 +1017,12 @@ export class Conductor {
         });
       }
     }
+    // Host scripts take the worktree from here: a run clone has no Git to ask.
     const shell = await this.runHook(
       name,
       cwd,
       { ticket: ticketRef },
-      shellEnv,
+      { ...shellEnv, BAKERS_WORKTREE_PATH: cwd },
     );
     if (failed.length === 0) return shell;
     const error = `hook listener failed: ${failed.join(', ')}`;
@@ -1163,7 +1228,10 @@ export class Conductor {
       if (!t.baseBranch) throw new Error('ticket has no base branch');
       // Under the git lock: workspace.ensure fetches the same ref into this repo.
       const values = await this.serialGit(() =>
-        measureMrChanges(t.worktreePath, t.baseBranch),
+        // A run clone has no Git on the host: measure its branch in the parent.
+        loadRunClone(t.worktreePath)
+          ? measureMrChanges(this.checkoutRoot, t.baseBranch, t.branchName)
+          : measureMrChanges(t.worktreePath, t.baseBranch),
       );
       await this.remote.replaceTicketMetrics(
         t.ticketUuid,
@@ -1394,7 +1462,11 @@ export class Conductor {
       ...(t.identifier ? { BAKERS_TICKET_IDENTIFIER: t.identifier } : {}),
       ...(state ? { BAKERS_STATE: state } : {}),
       ...(runUuid ? { BAKERS_RUN_UUID: runUuid } : {}),
+      // A host script names the worktree's DDEV project after it without asking Git.
+      ...(t.branchName ? { BAKERS_BRANCH_NAME: t.branchName } : {}),
       BAKERS_TUNNEL: (await this.currentTunnel()) ? '1' : '0',
+      // Host scripts skip what an isolated run does in its own container.
+      BAKERS_RUNTIME_ISOLATES: this.config.runtime?.isolates ? '1' : '0',
       WORKSPACE_ROOT: this.checkoutRoot,
       ...(t.issueUrl ? { TICKET_URL: t.issueUrl } : {}),
       ...(t.projectName ? { BAKERS_PROJECT: t.projectName } : {}),
@@ -1553,6 +1625,13 @@ export class Conductor {
       this.workspace.ensure(t.identifier, t.branchName, baseRef),
     );
     at.worktree = ws.path;
+    // The transfer checks the project's list; the record is the host's alone.
+    if (ws.clone)
+      saveRunClone({
+        ...ws.clone,
+        protectedPaths: this.config.readOnly ?? [],
+      });
+    env.BAKERS_WORKTREE_PATH = ws.path;
     // The backend's own vars (Git config) join the run env; core keys still win.
     for (const [key, value] of Object.entries(ws.env ?? {})) {
       if (!isReservedEnvKey(key)) env[key] = value;
@@ -1674,7 +1753,9 @@ export class Conductor {
     // a re-dispatch of the same run drops its stale duplicate before startRun
     // re-creates it. Sibling prior-state run tabs are left to the worktree reap.
     await this.executor.cleanupRun(t.branchName, run.runId);
-    const prompt = ws.instructions
+    await this.cleanupRuntime(run.runUuid, run.runId);
+    const runtime = await this.runtime();
+    let prompt = ws.instructions
       ? renderPrompt(this.config.prompt, {
           identifier: t.identifier,
           state: t.state || 'qualification',
@@ -1682,6 +1763,13 @@ export class Conductor {
           ticketUuid: t.uuid,
         })
       : '';
+    if (prompt && ws.clone)
+      prompt +=
+        '\n\nRuntime context: this run works in a fresh clone of the ticket branch. ' +
+        'Commit before you end: uncommitted work is not carried over. ' +
+        'forge_fetch refreshes the origin refs and forge_push transfers and pushes your commits. ' +
+        `Read-only here: ${['.bakers', ...(this.config.readOnly ?? [])].filter((path, index, all) => all.indexOf(path) === index).join(', ')}. ` +
+        'If merging the target fails on one of them, report it: a maintainer merges the target outside the run.';
     // BB-473 review round 2 (Critical 1): pinning the run's own UUID
     // unconditionally makes a re-dispatch of the same run — an existing,
     // supported path (see the cleanupRun comment above) — fail to launch,
@@ -1725,15 +1813,50 @@ export class Conductor {
     const tools = chosen.agent.withoutConductorTools
       ? undefined
       : this.issueRunTools(run.runUuid, { worktreePath: ws.path, ticket: t });
+    const toolsUrl = tools
+      ? (runtime.toolsUrl?.(tools.url) ?? tools.url)
+      : undefined;
     const plugins = await this.installPlugins(chosen, t, run);
     Object.assign(env, plugins.env);
+    const agentInfo = {
+      ...(chosen.agent.installCommand
+        ? { installCommand: chosen.agent.installCommand }
+        : {}),
+      ...(chosen.agent.modelApi ? { modelApi: chosen.agent.modelApi } : {}),
+    };
+    const runtimeContext = await runtime.prepareRun?.(
+      {
+        uuid: run.runUuid,
+        id: run.runId,
+      },
+      agentInfo,
+    );
+    if (runtimeContext?.env) Object.assign(env, runtimeContext.env);
+    const preparation = runtimeContext
+      ? await chosen.agent.prepareRun?.({
+          ...runtimeContext,
+          workspacePath: ws.path,
+          env,
+        })
+      : undefined;
+    if (preparation) Object.assign(env, preparation.env);
+    const isolates = this.config.runtime?.isolates === true;
+    // An isolated run without its own clone would share the parent's Git data.
+    if (isolates && !ws.clone)
+      throw new Error(
+        'the runtime isolates runs, but the workspace provides no run clone',
+      );
+    const protectedPaths = isolates
+      ? protectedProjectPaths(ws.path, this.config.readOnly ?? [])
+      : [];
     const command = chosen.agent.launchCommand(
       prompt,
       identity,
       ws.path,
-      tools ? { url: tools.url } : undefined,
+      toolsUrl ? { url: toolsUrl } : undefined,
       env,
       plugins.args,
+      isolates,
     );
     // Read after launchCommand: a warning may depend on what this launch got.
     const warnings = chosen.agent.launchWarnings;
@@ -1751,6 +1874,45 @@ export class Conductor {
         );
       }
     }
+    // The token travels in the env, never in argv or the launch log.
+    const runEnv = tools
+      ? {
+          ...env,
+          [CONDUCTOR_URL_ENV]: toolsUrl as string,
+          [CONDUCTOR_TOKEN_ENV]: tools.token,
+        }
+      : env;
+    // A wrap failure fails the dispatch: an isolated run never falls back to the host.
+    const wrapped = await runtime.wrap({
+      command,
+      env: runEnv,
+      workspacePath: ws.path,
+      ...(ws.clone
+        ? {
+            gitDir: ws.clone.gitDir,
+            ...(ws.clone.shared
+              ? { sharedObjects: join(ws.clone.parentGitDir, 'objects') }
+              : {}),
+          }
+        : {}),
+      run: { uuid: run.runUuid, id: run.runId },
+      harness: chosen.agent.id,
+      ...agentInfo,
+      ...(runtimeContext
+        ? {
+            homePath: runtimeContext.homePath,
+            readPaths: [
+              ...(preparation?.readPaths ?? []),
+              ...(isolates ? protectedPaths : []),
+            ],
+            writePaths: preparation?.writePaths ?? [],
+            ...(preparation?.bindPaths?.length
+              ? { bindPaths: preparation.bindPaths }
+              : {}),
+          }
+        : {}),
+      ...(isolates && !runtimeContext ? { readPaths: protectedPaths } : {}),
+    });
     await this.executor.startRun({
       ticket: {
         uuid: t.uuid,
@@ -1763,15 +1925,8 @@ export class Conductor {
       run: { uuid: run.runUuid, id: run.runId, handler: run.handler },
       workspacePath: ws.path,
       instructions: ws.instructions,
-      command,
-      // The token travels in the env, never in argv or the launch log.
-      env: tools
-        ? {
-            ...env,
-            [CONDUCTOR_URL_ENV]: tools.url,
-            [CONDUCTOR_TOKEN_ENV]: tools.token,
-          }
-        : env,
+      command: wrapped.command,
+      env: wrapped.env,
     });
     launch.started = true;
     this.logger.info(
@@ -1784,6 +1939,7 @@ export class Conductor {
         envKeys: Object.keys(env),
         harness: chosen.agent.id,
         alias: chosen.alias ?? chosen.id,
+        runtime: runtime.id,
         // The launch with its options; the prompt is long and in the ticket.
         launch: command.replace(shellQuote(prompt), "'<prompt>'"),
       },
@@ -1827,6 +1983,8 @@ export class Conductor {
           runUuid,
           ctx.run?.id ?? 0,
         );
+      } else {
+        await this.cleanupRuntime(runUuid, ctx.run?.id ?? 0);
       }
       await this.runSlot(
         'after_run',

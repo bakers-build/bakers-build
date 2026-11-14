@@ -337,7 +337,14 @@ DELETED_ALLOWLIST=''
 # 69 SINCE BAKERS-151: `onboarding` is deleted. The wizard is framed by `gate`,
 # the same chrome as sign-in, whose left band now takes an optional
 # per-step explanation. 70 - 1 = 69.
-TARGET_COMPONENT_COUNT=69
+# 70 SINCE BAKERS-55: `progress`, one unit of work split into done, in progress
+# and open - identifier, title, percent, a three-part bar and the counts in
+# words - for the epics on the project Overview. No component drew a bar of
+# several parts: `stat-breakdown` draws one share per entry and `table`'s
+# `meter` cell one load against a capacity. The Board's column header is NOT a
+# component: it is `board`'s own `column()` macro, so the board still owns its
+# columns (B1). Data Display (single word). 69 + 1 = 70.
+TARGET_COMPONENT_COUNT=70
 
 # The three containers and the props that make them containers (D2).
 CONTAINER_COMPONENTS='table list form'
@@ -1106,6 +1113,7 @@ b4_row_cells_equal_the_column_keys() {
   python3 - "$THEME" $SECTION_SCENE_FILES <<'PY'
 import glob
 import os
+import re
 import sys
 import yaml
 
@@ -1176,8 +1184,14 @@ for path in mappings:
         if key not in src:
             print(f'  {rel}: a view mapping must emit {key}')
             rc = 1
-    if '"slots"' in src:
-        print(f'  {rel}: a view mapping must not fill a table slot (D2)')
+    # D2 is about a TABLE's `body`/`head`. Other nodes in a view mapping fill slots legitimately (the
+    # board's toolbar and filters, a zone's content), so only a `slots` block that follows a table
+    # node, before the next component node, and opens with `body`/`head` counts. shortcut: text, not a
+    # parse - a `body`/`head` slot key that is not the table's but sits before the next component node
+    # would trip it, tighten then.
+    if re.search(r':table"(?:(?!"component").)*?"slots"\s*:\s*\{(?:(?!"component").)*?"(?:body|head)"\s*:',
+                 src, re.S):
+        print(f'  {rel}: a view mapping must not fill a table `body` or `head` slot (D2)')
         rc = 1
 
 if not seen:
@@ -1329,10 +1343,16 @@ for mapping in sorted(glob.glob(f'{theme}/designbook/entity-mapping/*.jsonata'))
         # gap, not before.
         continue
     pairs += 1
+    # SUBSET, not equality: a Display Builder source (a PHP UI Patterns source such as
+    # `bb_project_overview`) fills inner trees at runtime, so the generator places only the outer
+    # components while the preview mapping must spell the inner ones out. What AC-1 needs is that every
+    # component the Drupal display places is previewed. Accepted cost: a preview-only component in the
+    # mapping goes unnoticed. An empty generator still fails (an empty set is a subset of anything).
     mapped, synced = components_of(mapping), components_of(syncs[0])
-    if mapped != synced:
-        print(f'  {unit}: the mapping names {sorted(mapped)} but '
-              f'{os.path.basename(syncs[0])} names {sorted(synced)} (AC-1)')
+    if not synced or not synced <= mapped:
+        print(f'  {unit}: {os.path.basename(syncs[0])} places {sorted(synced)}, the mapping names '
+              f'{sorted(mapped)}: the generator must place at least one component, all of them named '
+              f'by the mapping (AC-1)')
         rc = 1
 
 if pairs == 0:
@@ -1342,7 +1362,7 @@ sys.exit(rc)
 PY
 }
 
-check "B7 every entity mapping and its sync generator name the same component" \
+check "B7 every component an entity sync generator places is named by its mapping" \
   b7_mapping_and_sync_name_the_same_component
 
 # --- B8. The classification is `group:`, and the spelling is derived from it ---------------------

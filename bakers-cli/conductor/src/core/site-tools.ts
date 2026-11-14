@@ -9,11 +9,13 @@ import type { ToolBinding } from '../plugins/tools.js';
 /** The site tools a run may call. */
 export const SITE_TOOLS: readonly string[] = [
   'bakers_ticket_read',
+  'bakers_comment_read',
   'bakers_ticket_search',
   'bakers_ticket_create',
   'bakers_ticket_update',
   'bakers_ticket_classify',
   'bakers_ticket_transition',
+  'bakers_run_cancel',
   'bakers_comment_publish',
   'bakers_metric_write',
   'bakers_ticket_list',
@@ -29,6 +31,7 @@ export const SITE_WRITE_TOOLS: readonly string[] = [
   'bakers_ticket_update',
   'bakers_ticket_classify',
   'bakers_ticket_transition',
+  'bakers_run_cancel',
   'bakers_comment_publish',
 ];
 
@@ -105,6 +108,14 @@ export function siteToolProxy(
       // The site reads an empty project or workspace as no filter, so empty counts as missing.
       const blank = (v: unknown) => v === undefined || v === null || v === '';
       const scoped = { ...args };
+      // Machine-wide cancellation can reach projects outside this run's scope.
+      if (
+        name === 'bakers_run_cancel' &&
+        (blank(scoped.ticket) || !blank(scoped.machine_id))
+      )
+        throw new Error(
+          'In a run, cancel by ticket only; machine_id is not allowed.',
+        );
       if (FILLS_PROJECT.includes(name) && blank(scoped.project))
         scoped.project = project;
       if (

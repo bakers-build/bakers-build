@@ -3,14 +3,14 @@ Status: active
 
 Minimal Drupal 11 fixture project for the bakers.build Conductor test setup.
 
-`scripts/setup-test-project.sh` serves this tree from a local bare repository and clones it into
+`.bakers/scripts/setup-test-project.sh` serves this tree from a local bare repository and clones it into
 an isolated workspace; `--fixture-repo <url>` uses a real remote instead. Runtime dependencies,
 Drupal core and generated configuration are not committed. The DDEV configuration and commands
 are committed so the clone can run DDEV setup locally.
 
 ## Local setup
 
-Run `node scripts/setup-worktree.mjs` to prepare the gitignored worktree identity and public env
+Run `node .bakers/scripts/setup-worktree.mjs` to prepare the gitignored worktree identity and public env
 without starting DDEV. Run `ddev init` only when deliberately installing/replacing the local
 minimal Drupal database; it starts DDEV, installs Composer dependencies, installs minimal and
 rebuilds caches. `ddev coder-init` reuses a bootstrapped database. No keytec DDEV addon is needed.

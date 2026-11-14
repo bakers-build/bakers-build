@@ -1,398 +1,150 @@
 (
-  /* Frozen project preview inputs. No live API or shared sample mutations. */
+  /* HAND-WRITTEN ONCE under a waiver: Pascal Glass, 2026-11-11 (BAKERS-55
+     Task 12). Designbook a4fea9d7 map-entity refuses list-view mappings
+     ("uses unsupported structure list-view") although drupal-views.md
+     requires list-view for every view.
+
+     THE PROJECT BOARD (views.view.project_board, page display): the filter
+     bar, the active filters, the four work-state columns and the active
+     conductors. The view record names the board state a scene shows; the
+     tickets are pinned. Unhealthy tickets carry their reason; a blocked
+     ticket waits in Intake and is never unhealthy. */
+  $states := {
+    "project_board": { "details": false, "done_open": false, "health": false },
+    "project_board_details": { "details": true, "done_open": false, "health": false },
+    "project_board_done_open": { "details": false, "done_open": true, "health": false },
+    "project_board_unhealthy": { "details": false, "done_open": false, "health": true }
+  };
+  $s := $lookup($states, $exists($.id) ? $.id : "project_board");
+  $people := {
+    "cw": { "name": "Christian Wiedemann", "initials": "CW", "color": "attention" },
+    "sg": { "name": "Sven Gruber", "initials": "SG", "color": "running" }
+  };
   $tickets := [
-  {
-    "id": "01",
-    "identifier": "BOARD-01",
-    "title": "Unassigned backlog",
-    "state": "plan",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": null,
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "02",
-    "identifier": "BOARD-02",
-    "title": "Assigned backlog",
-    "state": "plan",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "03",
-    "identifier": "BOARD-03",
-    "title": "Ready for conductor",
-    "state": "qualification",
-    "project_id": "1",
-    "conductor_id": "1",
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "04",
-    "identifier": "BOARD-04",
-    "title": "Blocked dependency",
-    "state": "plan",
-    "project_id": "1",
-    "conductor_id": "1",
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": true,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "05",
-    "identifier": "BOARD-05",
-    "title": "Build the project screen",
-    "state": "working",
-    "project_id": "1",
-    "conductor_id": "1",
-    "assignee_id": "1",
-    "has_running_run": true,
-    "blocked": false,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "06",
-    "identifier": "BOARD-06",
-    "title": "Review the project screen",
-    "state": "review",
-    "project_id": "1",
-    "conductor_id": "1",
-    "assignee_id": "2",
-    "has_running_run": true,
-    "blocked": false,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "07",
-    "identifier": "BOARD-07",
-    "title": "Delivered screen",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": "1",
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-10-05T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "08",
-    "identifier": "BOARD-08",
-    "title": "Cancelled experiment",
-    "state": "cancelled",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-10-04T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "09",
-    "identifier": "BOARD-09",
-    "title": "Older delivery",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-09-01T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "10",
-    "identifier": "BOARD-10",
-    "title": "Missing closing time",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "11",
-    "identifier": "BOARD-11",
-    "title": "Blocked without conductor",
-    "state": "plan",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": true,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "12",
-    "identifier": "BOARD-12",
-    "title": "Running despite block",
-    "state": "working",
-    "project_id": "1",
-    "conductor_id": "c-board",
-    "assignee_id": "2",
-    "has_running_run": true,
-    "blocked": true,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "13",
-    "identifier": "BOARD-13",
-    "title": "Terminal overrides stale run",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": "1",
-    "assignee_id": "1",
-    "has_running_run": true,
-    "blocked": false,
-    "closed_date": "2026-10-06T10:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "14",
-    "identifier": "BOARD-14",
-    "title": "Another project",
-    "state": "working",
-    "project_id": "2",
-    "conductor_id": "2",
-    "assignee_id": "1",
-    "has_running_run": true,
-    "blocked": false,
-    "closed_date": null,
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "15",
-    "identifier": "BOARD-15",
-    "title": "Seven-day boundary",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-09-29T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "16",
-    "identifier": "BOARD-16",
-    "title": "Outside seven days",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-09-29T11:59:59Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "17",
-    "identifier": "BOARD-17",
-    "title": "Future closing date",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-10-07T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "18",
-    "identifier": "BOARD-18",
-    "title": "Closed three days ago",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": "1",
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-10-03T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "19",
-    "identifier": "BOARD-19",
-    "title": "Closed four days ago",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "2",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-10-02T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "20",
-    "identifier": "BOARD-20",
-    "title": "Closed five days ago",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-10-01T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "21",
-    "identifier": "BOARD-21",
-    "title": "Closed six days ago",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": "c-board",
-    "assignee_id": "2",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-09-30T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "22",
-    "identifier": "BOARD-22",
-    "title": "Closed sixteen days ago",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-09-20T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "23",
-    "identifier": "BOARD-23",
-    "title": "Closed twenty-one days ago",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-09-15T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "24",
-    "identifier": "BOARD-24",
-    "title": "Closed twenty-six days ago",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "2",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-09-10T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  },
-  {
-    "id": "25",
-    "identifier": "BOARD-25",
-    "title": "Closed forty-seven days ago",
-    "state": "done",
-    "project_id": "1",
-    "conductor_id": null,
-    "assignee_id": "1",
-    "has_running_run": false,
-    "blocked": false,
-    "closed_date": "2026-08-20T12:00:00Z",
-    "url": "/?path=/story/designbook-sections-tickets-scenes--ticket-detail"
-  }
-];
-  $conductors := [
-  {
-    "id": "1",
-    "project_id": "1",
-    "label": "cw \u00b7 framework",
-    "status": "online",
-    "current_load": 2,
-    "max_parallel": 5,
-    "active_ticket_ids": [
-      "05",
-      "06"
-    ]
-  },
-  {
-    "id": "c-board",
-    "project_id": "1",
-    "label": "cw \u00b7 board",
-    "status": "online",
-    "current_load": 1,
-    "max_parallel": null,
-    "active_ticket_ids": [
-      "12"
-    ]
-  },
-  {
-    "id": "offline-board",
-    "project_id": "1",
-    "label": "Offline worker",
-    "status": "offline",
-    "current_load": 0,
-    "max_parallel": 2,
-    "active_ticket_ids": []
-  },
-  {
-    "id": "2",
-    "project_id": "2",
-    "label": "Other project",
-    "status": "online",
-    "current_load": 1,
-    "max_parallel": 2,
-    "active_ticket_ids": [
-      "14"
-    ]
-  }
-];
-  $phase := function($t) { $t.closed_date ? "Done" : $t.conductor_id ? ($t.state = "qualification" ? "Intake" : "Working") : "Not assigned" };
-  $columns := $map(["Not assigned", "Intake", "Working"], function($name) {
-    { "name": $name, "cards": [$map($tickets[project_id = "1" and $phase($) = $name], function($t) {
-      {
-        "identifier": $t.identifier, "title": $t.title, "state": $t.state, "url": $t.url,
-        "status": $t.has_running_run and $name = "Working" ? "running" : "idle", "blocked": $t.blocked,
-        "assignee_id": $t.assignee_id ? $t.assignee_id : "",
-        "lane_id": $t.conductor_id ? $t.conductor_id : "",
-        "closed_date": $t.closed_date ? $t.closed_date : "",
-        "assignee_name": $t.assignee_id = "1" ? "Christian Wiedemann" : $t.assignee_id = "2" ? "Sven Gruber" : "",
-        "assignee_initials": $t.assignee_id = "1" ? "CW" : $t.assignee_id = "2" ? "SG" : ""
+    { "id": "BB-281", "type": "bug", "title": "Runs dispatch to the wrong agent: three conductors with divergent agent configs", "phase": "na", "state": "plan", "prio": "p1" },
+    { "id": "BB-307", "type": "bug", "title": "Expired runs are never closed: 1333 stand open because no path closes them", "phase": "na", "state": "plan", "prio": "p1", "runs": 4, "last": "failed", "reason": "Last run failed" },
+    { "id": "BB-312", "type": "bug", "title": "Billing account picker shows archived accounts", "phase": "na", "state": "qualification", "prio": "p2", "reason": "Needs info" },
+    { "id": "BB-402", "type": "feature", "title": "Board: persist the Details toggle per user", "phase": "intake", "state": "qualification", "prio": "p1", "who": "cw", "blocked": ["BB-348"] },
+    { "id": "BB-405", "type": "chore", "title": "Retire the Gin-era ticket components", "phase": "intake", "state": "qualification", "prio": "p2", "who": "cw", "hidden": true },
+    { "id": "BB-398", "type": "bug", "title": "Conductor cannot reach the repository after the team move", "phase": "intake", "state": "qualification", "prio": "p1", "runs": 1, "last": "cancelled", "reason": "Conductor has no access" },
+    { "id": "BB-393", "type": "bug", "title": "Conductor reap leaks worktree DDEV environments", "phase": "working", "state": "working", "prio": "p1", "who": "cw", "runs": 6, "last": "running", "live": true },
+    { "id": "BB-365", "type": "bug", "title": "Deployment tickets ignore every project whose key is not bakers.build", "phase": "working", "state": "working", "prio": "p1", "who": "sg", "runs": 2, "last": "running", "live": true },
+    { "id": "BB-348", "type": "bug", "title": "Ticket detail drops the handoff stream on reload", "phase": "working", "state": "plan", "prio": "p2", "who": "cw", "runs": 1, "last": "expired", "reason": "Last run expired" },
+    { "id": "BB-390", "type": "bug", "title": "Import connector stalls on the staging data", "phase": "working", "state": "working", "prio": "p2", "who": "sg", "runs": 3, "last": "failed", "reason": "Technical problem" },
+    { "id": "BB-344", "type": "bug", "title": "Settings form loses the repository branch", "phase": "working", "state": "working", "prio": "p3", "who": "sg", "runs": 2, "last": "done", "reason": "Idle 4 days" },
+    { "id": "BB-371", "type": "feature", "title": "Show the source ticket in the Related pane", "phase": "done", "state": "done", "prio": "p1", "who": "cw", "closed": 2 },
+    { "id": "BB-366", "type": "chore", "title": "Close expired runs from the reaper", "phase": "done", "state": "cancelled", "prio": "p1", "closed": 3 },
+    { "id": "BB-350", "type": "feature", "title": "Seed the onboarding wizard with a first project", "phase": "done", "state": "done", "prio": "p2", "who": "sg", "closed": 5 },
+    { "id": "BB-301", "type": "feature", "title": "Move the board summary into the page header", "phase": "done", "state": "done", "prio": "p3", "who": "cw", "closed": 20 }
+  ];
+  $url := "/?path=/story/designbook-sections-tickets-scenes--ticket-detail";
+  $card := function ($t) {(
+    $p := $t.who ? $lookup($people, $t.who);
+    {
+      "identifier": $t.id,
+      "title": $t.title,
+      "type": "bb_" & $t.type,
+      "url": $url,
+      "state": $t.state,
+      "status": $t.live ? "running" : "idle",
+      "priority": $t.prio,
+      "assignee_name": $p.name,
+      "assignee_initials": $p.initials,
+      "assignee_color": $p.color,
+      "blocked_by": $t.blocked,
+      "blocked_hidden": $t.hidden,
+      "run_count": $t.runs,
+      "last_run_state": $t.last,
+      "done_label": $t.closed ? $t.closed & " days ago"
+    }
+  )};
+  $open := $tickets[phase != "done"];
+  $visible := $s.health ? $open[reason] : $open;
+  $done := $s.health ? [] : $tickets[phase = "done" and closed <= 7];
+  $cards := function ($phase) { [$map($visible[phase = $phase], $card)] };
+  $toggles := $s.done_open
+    ? [{ "label": "Show older", "url": "?done=show&done_older=1" }, { "label": "Hide done", "url": "?done=hide" }]
+    : [{ "label": "Show done", "url": "?done=show" }];
+  $assignee := function ($who) {
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:button",
+      "props": {
+        "variant": "ghost",
+        "label": $string($count($open[who = $who])),
+        "href": "?assignee[]=" & $who,
+        "pressed": false,
+        "aria_label": $lookup($people, $who).name & ", " & $count($open[who = $who]) & " tickets"
+      },
+      "slots": {
+        "icon": [{
+          "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:person",
+          "props": { "variant": "compact", "initials": $lookup($people, $who).initials, "color": $lookup($people, $who).color, "display_name": "" }
+        }]
       }
-    })] }
-  });
-  [
-  {
+    }
+  };
+  $picker := function ($field, $label, $icon, $value, $options) {
+    {
+      "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:option_picker",
+      "props": { "variant": "field", "label": $label, "icon": $icon, "value_label": $value, "aria_label": "Filter by " & $field & ". Currently " & $value & ".", "multiple": true, "name": $field, "id": "board-" & $field },
+      "slots": {
+        "options": [{
+          "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:option_list",
+          "props": { "name": $field, "multiple": true, "options": [$map($options, function ($o) { { "value": $o, "label": $o, "count": $string($count($open[state = $o or prio = $o])) } })] }
+        }]
+      }
+    }
+  };
+  [{
     "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:board",
     "props": {
-      "controls_enabled": false,
-      "columns": $columns
+      "details": $s.details,
+      "done_open": $s.done_open,
+      "columns": [
+        { "name": "Not assigned", "dot": "wait", "cards": $cards("na") },
+        { "name": "Intake", "dot": "attention", "cards": $cards("intake") },
+        { "name": "Working", "dot": "running", "cards": $cards("working") },
+        { "name": "Done", "dot": "idle", "count": $count($done), "caption": $s.done_open ? "last 7 days", "toggles": $toggles, "cards": [$map($done, $card)] }
+      ]
+    },
+    "slots": {
+      "empty": "No ticket matches these filters.",
+      "toolbar": [{
+        "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:filters",
+        "props": { "layout": "toolbar", "label": "Board filters" },
+        "slots": {
+          "controls": [
+            { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:form_input", "props": { "type": "search", "name": "search", "id": "board-search", "value": "", "placeholder": "Search tickets", "compact": true } },
+            $picker("state", "State", "status-running", "All", ["plan", "qualification", "working"]),
+            $picker("priority", "Priority", "alert-triangle", "All", ["p1", "p2", "p3"]),
+            { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:text", "props": { "text": "Assignee", "as": "span", "size": "meta", "tone": "light" } },
+            $assignee("cw"),
+            $assignee("sg"),
+            { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:button", "props": { "variant": "neutral", "label": "Unassigned · " & $count($open[$not($exists(who))]), "href": "?assignee[]=!", "pressed": false } }
+          ],
+          "actions": [
+            { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:text", "props": { "text": "Details", "as": "span", "size": "meta", "tone": "light" } },
+            { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:segmented_control", "props": { "label": "Details", "items": [
+              { "label": "Phases", "url": "?details=phases", "active": $not($s.details) },
+              { "label": "States", "url": "?details=states", "active": $s.details }
+            ] } },
+            { "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:button", "props": { "variant": "ghost", "label": "Clear filters", "href": "?" } }
+          ]
+        }
+      }],
+      "filters_active": [{
+        "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:active-filters",
+        "props": {
+          "variant": "inline",
+          "label": "Active filters",
+          "empty_label": "No filters",
+          "facets": $s.health ? [{ "field": "Unhealthy", "count": $count($visible), "remove_url": "?" }] : []
+        },
+        "slots": {
+          "meta": [{ "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:text", "props": { "text": $count($visible) & " of " & $count($open) & " open tickets", "as": "span", "size": "meta", "tone": "light" } }]
+        }
+      }],
+      "conductors": [{ "entity": "view.conductors", "view_mode": "board" }]
     }
-  }
-]
+  }]
 )

@@ -12,9 +12,24 @@ import { executors, scopes, worktrees } from '../src/preset.js';
 
 const INSTANT_WATCH = { timeout_ms: 0, poll_ms: 1 } as const;
 
+/** The `terminal.run` request `startRun` sends over `hc connect`. */
+interface RunRequest {
+  method: string;
+  params: {
+    argv: string[];
+    cwd: string;
+    name: string;
+    labels: Record<string, string>;
+    no_parent: boolean;
+    outlive_parent: boolean;
+    size: { cols: number; rows: number };
+  };
+}
+
 /**
- * A scripted `hc`: records every call and answers by the command word. `run`
- * plays the launch wrapper (writes `started`) unless told the agent exited.
+ * A scripted `hc`: records every call and answers by the command word.
+ * `connect` records its request and plays the launch wrapper (writes
+ * `started`) unless told the agent exited, or answers `connectError`.
  */
 function fakeHc(
   opts: {
@@ -23,22 +38,30 @@ function fakeHc(
     terminals?: unknown;
     exitAtOnce?: boolean;
     failOn?: string;
+    connectError?: object;
   } = {},
 ) {
   const calls: string[][] = [];
-  const hc = async (args: string[]): Promise<string> => {
+  const requests: RunRequest[] = [];
+  const hc = async (args: string[], input?: string): Promise<string> => {
     calls.push(args);
     if (opts.missing) throw new HcNotFound();
     if (args[0] === opts.failOn) throw new Error(`hc ${args[0]} failed`);
     if (args[0] === '--version') return `hc ${opts.version ?? '0.1.18'}\n`;
-    if (args[0] === 'run') {
-      const dir = dirname(args[args.length - 1] as string);
+    if (args[0] === 'connect') {
+      const request = JSON.parse(input ?? '') as RunRequest & { id: number };
+      requests.push(request);
+      if (opts.connectError) {
+        return `${JSON.stringify({ jsonrpc: '2.0', id: request.id, error: opts.connectError })}\n`;
+      }
+      const dir = dirname(request.params.argv.at(-1) as string);
       writeFileSync(join(dir, 'started'), 'started');
       if (opts.exitAtOnce) writeFileSync(join(dir, 'exit'), 'exit 1\n');
-      return JSON.stringify({
-        id: 't7',
-        name: args[args.indexOf('--name') + 1],
-      });
+      return `${JSON.stringify({
+        jsonrpc: '2.0',
+        id: request.id,
+        result: { address: 't7', name: request.params.name, state: 'live' },
+      })}\n`;
     }
     // The envelope hc 0.1.18 prints for `ls --json` (pinned by a live run).
     if (args[0] === 'ls') {
@@ -50,7 +73,7 @@ function fakeHc(
     if (args[0] === 'read') return 'agent says hi';
     return '{}';
   };
-  return { hc, calls };
+  return { hc, calls, requests };
 }
 
 function spyLogger() {
@@ -94,36 +117,43 @@ describe('HerdrCoreExecutor', () => {
 });
 
 describe('HerdrCoreExecutor.startRun', () => {
-  it('starts the agent as a detached, labelled hc terminal in the worktree', async () => {
-    const { hc, calls } = fakeHc();
+  it('starts the agent as a detached, labelled 80x24 hc terminal in the worktree', async () => {
+    const { hc, calls, requests } = fakeHc();
     const ex = new HerdrCoreExecutor({ launch_watch: INSTANT_WATCH }, hc);
     await expect(ex.startRun(input())).resolves.toEqual({
       sessionRef: 'bakers-109-4711',
     });
-    const run = calls.find((c) => c[0] === 'run') as string[];
-    const script = run[run.length - 1] as string;
-    expect(run).toEqual([
-      'run',
-      '--bg',
-      '--no-parent',
-      '--outlive-parent',
-      '--cwd',
-      '/repo/.bakers-worktrees/feat/bakers-109',
-      '--name',
-      'bakers-109-4711',
-      '--label',
-      'bakers.branch=feat/bakers-109-new-addon-herd',
-      '--label',
-      'bakers.run=4711',
-      '--label',
-      'bakers.ticket=BAKERS-109',
-      '--json',
+    expect(calls).toContainEqual(['connect', '--json']);
+    expect(requests).toHaveLength(1);
+    const [request] = requests as [RunRequest];
+    const script = request.params.argv.at(-1) as string;
+    expect(request.method).toBe('terminal.run');
+    expect(request.params).toEqual({
+      argv: expect.any(Array),
+      cwd: '/repo/.bakers-worktrees/feat/bakers-109',
+      name: 'bakers-109-4711',
+      labels: {
+        'bakers.branch': 'feat/bakers-109-new-addon-herd',
+        'bakers.run': '4711',
+        'bakers.ticket': 'BAKERS-109',
+      },
+      no_parent: true,
+      outlive_parent: true,
+      // Fits any pane; hc's headless default (200x120) rewraps in a smaller one.
+      size: { cols: 80, rows: 24 },
+    });
+    // The wrapper runs behind the resize forwarder, on this node.
+    expect(request.params.argv).toEqual([
+      process.execPath,
+      expect.stringMatching(/\/resize-forwarding\.js$/),
       'sh',
       script,
     ]);
-    // The env travels in the 0600 launch script, never in argv; no --rm.
-    expect(calls.flat().join(' ')).not.toContain('hunter2');
-    expect(run).not.toContain('--rm');
+    // The env travels in the 0600 launch script, never in argv; no rm.
+    expect(JSON.stringify(requests) + calls.flat().join(' ')).not.toContain(
+      'hunter2',
+    );
+    expect(request.params).not.toHaveProperty('rm');
   });
 
   it('fails fast with an install message when hc is missing', async () => {
@@ -143,7 +173,7 @@ describe('HerdrCoreExecutor.startRun', () => {
         input(),
       ),
     ).rejects.toThrow(/hc 0\.1\.17 is too old.*0\.1\.18/);
-    expect(calls.some((c) => c[0] === 'run')).toBe(false);
+    expect(calls.some((c) => c[0] === 'connect')).toBe(false);
   });
 
   it('accepts a newer hc', async () => {
@@ -156,14 +186,32 @@ describe('HerdrCoreExecutor.startRun', () => {
   });
 
   it('a launch that exits at once fails the run, reports the screen and drops the terminal', async () => {
-    const { hc, calls } = fakeHc({ exitAtOnce: true });
+    const { hc, calls, requests } = fakeHc({ exitAtOnce: true });
     const ex = new HerdrCoreExecutor({ launch_watch: INSTANT_WATCH }, hc);
     await expect(ex.startRun(input())).rejects.toThrow(/exit 1/);
     expect(calls).toContainEqual(['read', 'bakers-109-4711', '--lines', '40']);
     expect(calls).toContainEqual(['kill', 'bakers-109-4711', '--json']);
     expect(calls).toContainEqual(['rm', 'bakers-109-4711', '--json']);
-    const run = calls.find((c) => c[0] === 'run') as string[];
-    expect(existsSync(dirname(run[run.length - 1] as string))).toBe(false);
+    const script = requests[0]?.params.argv.at(-1) as string;
+    expect(existsSync(dirname(script))).toBe(false);
+  });
+
+  it('an hc error reply rejects with its message and removes the launch script', async () => {
+    const { hc, calls, requests } = fakeHc({
+      connectError: {
+        code: -32602,
+        message: 'bad name "x"',
+        data: { kind: 'invalid_params' },
+      },
+    });
+    const ex = new HerdrCoreExecutor({ launch_watch: INSTANT_WATCH }, hc);
+    await expect(ex.startRun(input())).rejects.toThrow(
+      /hc terminal\.run failed \(invalid_params\): bad name "x"/,
+    );
+    const script = requests[0]?.params.argv.at(-1) as string;
+    expect(existsSync(dirname(script))).toBe(false);
+    // Nothing started, so there is no terminal to drop.
+    expect(calls.some((c) => c[0] === 'kill' || c[0] === 'rm')).toBe(false);
   });
 });
 

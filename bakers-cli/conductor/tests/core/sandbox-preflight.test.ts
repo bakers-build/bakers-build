@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parseClaudeTranscript } from '@bakers-build/addon-claude';
 import {
   FakeBbRemote,
@@ -10,12 +13,19 @@ import {
 import type {
   BbAgent,
   ConductorFileConfig,
+  RuntimePlugin,
   SandboxPreflight,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { DEFAULT_AGENT_PROMPT } from '../../src/config.js';
 import { Conductor } from '../../src/core/conductor.js';
+
+const roots: string[] = [];
+afterEach(() => {
+  for (const root of roots.splice(0))
+    rmSync(root, { recursive: true, force: true });
+});
 
 const MISSING: SandboxPreflight = {
   ok: false,
@@ -37,7 +47,11 @@ function agentWith(results: SandboxPreflight[]) {
   return agent;
 }
 
-function setup(agent: BbAgent) {
+function setup(agent: BbAgent, runtime?: RuntimePlugin) {
+  const root = mkdtempSync(join(tmpdir(), 'bakers-preflight-test-'));
+  roots.push(root);
+  const worktree = join(root, 'worktree');
+  mkdirSync(join(worktree, '.bakers'), { recursive: true });
   const logs: { level: string; msg?: string }[] = [];
   const mk = (level: string) => (_obj: object, msg?: string) => {
     logs.push({ level, msg });
@@ -61,9 +75,25 @@ function setup(agent: BbAgent) {
   const workspace = new FakeWorkspace();
   let ensured = 0;
   const ensure = workspace.ensure.bind(workspace);
-  workspace.ensure = (...args) => {
+  workspace.ensure = async (...args) => {
     ensured += 1;
-    return ensure(...args);
+    return {
+      ...(await ensure(...args)),
+      path: worktree,
+      // An isolating runtime dispatches only into a run clone.
+      ...(runtime?.isolates
+        ? {
+            clone: {
+              gitDir: join(root, 'run.git'),
+              workspace: worktree,
+              parentGitDir: join(root, 'parent.git'),
+              branch: 'bb-1',
+              expected: '',
+              shared: false,
+            },
+          }
+        : {}),
+    };
   };
   const executor = new FakeExecutor({ outcome: 'exited' });
   const config: ConductorFileConfig = {
@@ -71,6 +101,7 @@ function setup(agent: BbAgent) {
     remote: fakeRemote(),
     executor: fakeExecutor(),
     agent: [],
+    runtime,
     workspace: fakeWorkspace(),
     label: 'test',
     conductor_id: 'bakers-test-conductor',
@@ -80,7 +111,7 @@ function setup(agent: BbAgent) {
     host_key: 'test-box',
     poll_interval_ms: 5000,
     lease_seconds: 300,
-    config_path: '/tmp/bakers-preflight-test/project.config.js',
+    config_path: join(root, 'project.config.js'),
   };
   const conductor = new Conductor(
     config,
@@ -89,7 +120,7 @@ function setup(agent: BbAgent) {
     workspace,
     [{ id: 'claude', agent }],
     log,
-    '/tmp/bakers-preflight-test',
+    root,
   );
   return { conductor, remote, logs, ensured: () => ensured };
 }
@@ -98,6 +129,27 @@ const SANDBOX_LINE =
   'sandbox unavailable: claude: socat not found — install it with sudo apt-get install -y socat (see https://bakers.build/docs/advanced/run-security#sandbox-prerequisites)';
 
 describe('sandbox preflight gate', () => {
+  it('warns that runtime prerequisites are unchecked without withholding claims', async () => {
+    const { conductor, remote, logs } = setup(agentWith([{ ok: true }]), {
+      kind: 'runtime',
+      id: 'docker',
+      isolates: true,
+      requiredModules: [],
+      createRuntime: async () => ({
+        id: 'docker',
+        wrap: async ({ command, env }) => ({ command, env }),
+        cleanup: async () => {},
+      }),
+    });
+    await conductor.start();
+    expect(logs).toContainEqual({
+      level: 'warn',
+      msg: expect.stringMatching(/host only.*docker.*not checked/),
+    });
+    await conductor.tick();
+    expect(remote.calls.markRunning[0]).toMatchObject({ runUuid: 'r-1' });
+  });
+
   it('start logs the unavailable sandbox at error', async () => {
     const { conductor, logs } = setup(agentWith([MISSING]));
     await conductor.start();

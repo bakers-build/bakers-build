@@ -177,6 +177,16 @@ final class TicketsContextualDisplayTest extends KernelTestBase {
   }
 
   /**
+   * The form's empty hidden deployment field chooses no deployment.
+   */
+  public function testEmptyDeploymentInputFiltersNothing(): void {
+    self::assertSame(
+      [(int) $this->ticketA->id(), (int) $this->ticketAReview->id()],
+      $this->ticketIds('project_tickets', [$this->projectA->id()], ['deployment' => '']),
+    );
+  }
+
+  /**
    * Team context follows all project teams and respects workspace access.
    */
   public function testTeamDisplayUsesTheProjectTeamsRelation(): void {

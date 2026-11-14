@@ -154,8 +154,8 @@ final class EntitySchemaHooks {
       'area' => ['id' => 'bb_contextual_empty'],
     ];
 
-    // Counts of what references a project or a group, for their listings:
-    // a small icon badge each, with a tooltip saying what is counted.
+    // Counts of what references a project, a group or a conductor, for their
+    // listings: a small icon badge each, with a tooltip saying what is counted.
     $open = ['closed' => 0];
     foreach ([
       [
@@ -166,6 +166,10 @@ final class EntitySchemaHooks {
         'bb_project', 'conductor_tickets', 'Open tickets with a conductor', 'bb_ticket', 'project_id',
         $open + ['conductor_id' => ['operator' => 'IS NOT NULL']], 'conductor', 'lease',
         '1 open ticket with a conductor', '@count open tickets with a conductor',
+      ],
+      [
+        'bb_conductor', 'open_tickets', 'Open tickets', 'bb_ticket', 'conductor_id', $open,
+        'ticket', 'neutral', '1 open ticket', '@count open tickets',
       ],
       [
         'bb_project', 'closed_tickets', 'Closed tickets', 'bb_ticket', 'project_id', ['closed' => 1],
@@ -194,23 +198,16 @@ final class EntitySchemaHooks {
       }
     }
 
-    // Ticket-list run count: occupancy is the conductor rail; this is how
-    // often the ticket has already run. Zero is omitted so idle rows stay
-    // quiet. The field lives on the Search API table the tickets view uses.
+    // Ticket-list runs summary: occupancy is the conductor rail; this is how
+    // often the ticket has already run and how its newest run ended. A ticket
+    // without runs stays quiet. The field lives on the Search API table the
+    // tickets view uses.
     if (isset($data['search_api_index_bb_tickets'])) {
-      $data['search_api_index_bb_tickets']['run_count'] = [
+      $data['search_api_index_bb_tickets']['run_summary'] = [
         'title' => 'Runs',
-        'help' => new TranslatableMarkup('How many entities reference this one.'),
+        'help' => new TranslatableMarkup('How many runs the ticket has, and the state and time of the newest.'),
         'field' => [
-          'id' => 'bb_reference_count',
-          'count_entity_type' => 'bb_run',
-          'count_field' => 'ticket_id',
-          'conditions' => [],
-          'icon' => 'run',
-          'tone' => 'neutral',
-          'singular' => '1 run',
-          'plural' => '@count runs',
-          'hide_zero' => TRUE,
+          'id' => 'bb_run_summary',
         ],
       ];
       $data['search_api_index_bb_tickets']['stall_reason'] = [
@@ -346,6 +343,15 @@ final class EntitySchemaHooks {
           address: open rows, closed rows, or both.'),
         'real field' => 'closed',
         'filter' => ['id' => 'bb_closed_rows'],
+      ];
+    }
+    if (isset($table['ticket_id'])) {
+      $table['bb_has_children'] = [
+        'title' => new TranslatableMarkup('Has sub-tickets'),
+        'help' => new TranslatableMarkup('Narrows the list to the tickets
+          with at least one sub-ticket.'),
+        'real field' => 'ticket_id',
+        'filter' => ['id' => 'bb_has_children'],
       ];
     }
     if (isset($table['search_api_fulltext'], $table['origin_ref'])) {

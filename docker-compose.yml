@@ -125,7 +125,7 @@ services:
       - internal
 
   php:
-    # Built + pushed by GitLab CI (build job), pulled from the registry.
+    # Built + pushed by release.yml, pulled from the registry.
     image: "${REGISTRY_IMAGE_PHP}"
     restart: unless-stopped
     depends_on:

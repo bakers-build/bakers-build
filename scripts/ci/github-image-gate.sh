@@ -7,21 +7,16 @@ mkdir -p gate-reports
 images=(php php-test nginx docs)
 labels=()
 if [ -n "${CI_RELEASE_VERSION:-}" ]; then labels+=(--label "org.opencontainers.image.version=$CI_RELEASE_VERSION"); fi
+# Authenticates composer's GitHub downloads in the php stages (Dockerfile); the token stays out of layers.
+secrets=()
+if [ -n "${COMPOSER_AUTH:-}" ]; then secrets+=(--secret id=composer_auth,env=COMPOSER_AUTH); fi
 for image in "${images[@]}"; do
-  docker build "${labels[@]}" --target "$image" --label "org.opencontainers.image.revision=$revision" \
+  docker build "${labels[@]}" "${secrets[@]}" --target "$image" --label "org.opencontainers.image.revision=$revision" \
     --build-arg "CI_COMMIT_REF_NAME=$source_ref" --build-arg "CI_COMMIT_SHORT_SHA=${revision:0:8}" \
     -t "bakers-gate/$image:local" .
 done
 docker build -f docker/e2e/Dockerfile -t bakers-gate/e2e:local .
-# The PM bot (experimental/pm-bot/Dockerfile): its own build context, smoke-tested in check and run mode.
-# Its skills: this repository's bundle and two upstreams pinned by commit (superpowers v7.0.0,
-# mattpocock/skills v1.3.2).
-docker build "${labels[@]}" --label "org.opencontainers.image.revision=$revision" -t bakers-gate/pm-bot:local \
-  --build-context bundle=.claude/skills/bakers-build \
-  --build-context superpowers=https://github.com/obra/superpowers.git#bb92a77741419a4ab5f06e711a283343f1ada0c3 \
-  --build-context mattpocock=https://github.com/mattpocock/skills.git#d1478fcb140db0b93c0c8df17bcfd311844749d0 experimental/pm-bot
-bash tests/contract/pm-bot-image.sh bakers-gate/pm-bot:local
-for image in php php-test nginx docs e2e pm-bot; do
+for image in php php-test nginx docs e2e; do
   docker image inspect "bakers-gate/$image:local" > "gate-reports/$image.json"
 done
 printf '%s\n' "commit=$revision" "tree=$(git rev-parse 'HEAD^{tree}')" "run=$GITHUB_RUN_ID" "attempt=$GITHUB_RUN_ATTEMPT" > gate-reports/candidate.txt
@@ -56,7 +51,7 @@ done
 GATE_RUN_LOG_STORAGE=1 docker compose up -d --no-build --wait --no-deps --force-recreate php nginx
 docker compose run --name github-integration --no-deps runner \
   bash /repo/scripts/e2e/run-integration.sh /bakers-test/env || status=1
-docker cp github-integration:/repo/.ddev/.bakers-test/junit-integration.xml gate-reports/ || true
+docker cp github-integration:/repo/tests/artifacts/bakers/junit-integration.xml gate-reports/ || true
 cleanup
 if [ "$status" != 0 ]; then exit "$status"; fi
 # A separate database proves config/sync without importing it into the recipe world.

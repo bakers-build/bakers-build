@@ -49,7 +49,10 @@ import type {
   ConductorStatus,
   ConductorTakeoverRequired,
 } from '../plugins/remote.js';
-import { sandboxFailures } from '../plugins/sandbox-preflight.js';
+import {
+  runtimeSandboxWarning,
+  sandboxFailures,
+} from '../plugins/sandbox-preflight.js';
 import type { BbWorkspace } from '../plugins/workspace.js';
 import {
   type DetachedChild,
@@ -209,7 +212,7 @@ async function resolveConfig(
         ? { workspaceSelector: engine.bakers.workspace }
         : {}),
     });
-    return composeConductorConfig(engine, connection);
+    return await composeConductorConfig(engine, connection);
   }
   const unscoped = await loadReadyBbConnection(host, {
     workspaceIdOverride: '',
@@ -221,7 +224,7 @@ async function resolveConfig(
     workspaceSelector: context.workspaceId,
   });
   return {
-    ...composeConductorConfig(engine, connection),
+    ...(await composeConductorConfig(engine, connection)),
     resolved_bakers: context,
   };
 }
@@ -449,6 +452,20 @@ async function cmdPoll(deps: BbCliDeps, log: LogOpts = {}): Promise<void> {
 /** `bakers conductor check`: whether each enabled agent can start its sandbox. */
 async function cmdCheck(deps: BbCliDeps): Promise<void> {
   const config = await resolveConfig(deps);
+  const sources = config.slot_sources ?? {};
+  const packages = config.slot_packages ?? {};
+  for (const [slot, plugin] of [
+    ['server', config.remote],
+    ['executor', config.executor],
+    ['worktree', config.workspace],
+  ] as const) {
+    const source = sources[slot];
+    console.log(
+      `${slot}: ${packages[slot] ?? plugin.id}${source ? ` (${source})` : ''}`,
+    );
+  }
+  const warning = runtimeSandboxWarning(config.runtime?.id);
+  if (warning) console.warn(`warning: ${warning}`);
   for (const agent of deps.agents ?? (await selectAgents(config))) {
     const [failure] = await sandboxFailures([agent]);
     console.log(failure ?? `${agent.alias ?? agent.id}: sandbox ok`);
@@ -1042,6 +1059,8 @@ async function cmdStartBody(
   if (!(await ensureAuthenticated(config, logger))) return;
   // The loop withholds claims while this fails; say so before it starts.
   // Best-effort: an agent config the loop cannot load fails there, as before.
+  const warning = runtimeSandboxWarning(config.runtime?.id);
+  if (warning) console.warn(`warning: ${warning}`);
   try {
     for (const line of await sandboxFailures(
       deps.agents ?? (await selectAgents(config)),
@@ -1067,7 +1086,16 @@ async function cmdStartBody(
   // is what tells a genuine new heartbeat apart from the killed conductor's
   // stale-but-still-in-window one.
   const priorLastSeen = existing?.lastSeen;
-  if (existing && classify(existing) === 'online') {
+  const probe = deps.procProbe ?? defaultProcProbe();
+  // A record online by heartbeat whose pid is provably gone or recycled on
+  // this host (same proof as `ls`) is offline: its offline write was lost.
+  const recordOnline =
+    existing !== undefined && classify(existing) === 'online';
+  if (recordOnline && classify(existing, thisHostKey, probe) !== 'online') {
+    console.log(
+      `conductor ${id}: recorded pid ${existing.lastPid} is not running here; starting`,
+    );
+  } else if (recordOnline) {
     if (!force) {
       const age = heartbeatAgeSeconds(existing);
       console.log(
@@ -1077,7 +1105,6 @@ async function cmdStartBody(
       return;
     }
 
-    const probe = deps.procProbe ?? defaultProcProbe();
     const stopOutcome = signalVerifiedProcess({
       pid: existing.lastPid,
       hostKey: existing.hostKey,

@@ -30,6 +30,8 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
+[Isolation models](/agents/isolation): platform support.
+
 OpenCode has no OS sandbox, and its permission policies do not sandbox plugin code, so bakers.build cannot protect an OpenCode run. It therefore runs in `system`, the default for every harness, and rejects `sandbox`:
 
 | `permissions` | Launch flags |

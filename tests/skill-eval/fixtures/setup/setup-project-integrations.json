@@ -1,0 +1,186 @@
+{
+  "id": "setup-project-integrations",
+  "request": "Use bb-init-project to set up Audit Project in Audit Workspace. This repository needs an application environment for tests and shareable previews. Inspect its existing scripts, ask missing setup decisions, and preserve existing machine identity and connection. No client, provisioning profiles, preview policy or forge configuration has been selected yet. Project writes are authorized; ask before changing shared machine settings. Keep repository-specific Forge settings and preview services in the project, with its sandbox mode recorded explicitly; transport and preview policy belong to the machine.",
+  "files": {
+    "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker',addons:['@bakers-build/addon-claude'],permissions:{mode:'sandbox'}};\n",
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[{plugin:'@bakers-build/addon-essentials'}]};\n",
+    "project/scripts/demo-env.mjs": "// Synthetic setup fixture: no server, network or package installation.\nconst allowed = ['deps', 'test', 'preview', 'stop'];\nif (!allowed.includes(process.argv[2])) process.exit(1);\nconsole.log('Synthetic environment action: ' + process.argv[2]);\n"
+  },
+  "answers": {
+    "machine_role": "Run tickets on my own local computer.",
+    "harness": "Claude Code, already installed and signed in.",
+    "machine_label": "audit-worker",
+    "scope": "Project setup. If machine preview policy is missing, I authorize only the described tunnel and ports changes; preserve identity, harness and connection.",
+    "server_url": "https://setup.example.test",
+    "client_id": "bakers-cli",
+    "workspace": "Audit Workspace",
+    "optional_workspace_uuid": "Skip the optional workspace UUID.",
+    "project": "Audit Project",
+    "client": "herdr-cli",
+    "environment": "Use the existing scripts/demo-env.mjs, not DDEV or containers.",
+    "group": "Existing",
+    "team": "North",
+    "project_description": "Skip; no description.",
+    "repository": "https://git.example.test/audit/repo.git",
+    "branch": "main",
+    "after_create": "node scripts/demo-env.mjs deps",
+    "after_done": "node scripts/demo-env.mjs stop",
+    "provision_up": "Set profiles deps, test and preview to node scripts/demo-env.mjs deps, node scripts/demo-env.mjs test and node scripts/demo-env.mjs preview respectively.",
+    "security": "Use sandbox permissions for this project; preserve the existing machine sandbox policy.",
+    "tunnel": "Yes, share previews publicly when explicitly requested. Set machine tunnel:true. Use the Cloudflare Quick transport under the machine ports addon; no real tunnel should be opened in this test.",
+    "consent": "Apply the described project changes. Shared writes are authorized only for the selected ports transport and tunnel policy, preserving identity, harness, permissions and connection. Put Forge in the project.",
+    "optional_addons": "Use ports and forge for the selected features. No DDEV. Harnesses remain in the machine, essentials in the connection.",
+    "workflow": "Use the installed superpowers recipe and its selected marketplace plugin. No origin labels. Add provision hints for the deps, test and preview profiles, and a validate hint using node scripts/demo-env.mjs test. No other project rules.",
+    "before_run": "No before_run hook is needed.",
+    "preview_service": "Project service key demo, match demo-preview.",
+    "forge": "Use GitHub repository synthetic-owner/setup-demo with conductor auth gh. Put this repository-specific Forge entry in project addons, not machine addons. Configure only main: squash, delete the short-lived source branch; no explicit wildcard merge rule.",
+    "marketplaces": "Use the superpowers plugin from https://github.com/obra/superpowers.git at v7.0.0.",
+    "readiness": "These are synthetic configuration fixtures, not a running environment. Leave actual base URL/readiness verification unverified; document that limitation.",
+    "after_run": "No after_run hook.",
+    "on_freeze": "No on_freeze hook.",
+    "on_resume": "No on_resume hook."
+  },
+  "max_turns": 70,
+  "expected_files": {
+    "project/.bakers/project.config.js": [
+      "Audit Project",
+      "@bakers-build/addon-herdr",
+      "provision_up",
+      "node scripts/demo-env.mjs test",
+      "node scripts/demo-env.mjs preview",
+      "marketplaces",
+      "https://github.com/obra/superpowers.git",
+      "@bakers-build/addon-forge",
+      "synthetic-owner/setup-demo",
+      "@bakers-build/addon-ports",
+      "demo-preview",
+      "@bakers-build/addon-forge-github",
+      "v7.0.0",
+      "sandbox",
+      "node scripts/demo-env.mjs deps",
+      "node scripts/demo-env.mjs stop"
+    ],
+    "machine/machine.config.js": [
+      "11111111-1111-4111-8111-111111111111",
+      "preserve-worker",
+      "@bakers-build/addon-claude",
+      "tunnel",
+      "true",
+      "@bakers-build/addon-ports-cloudflare-quick"
+    ],
+    "machine/connections/default.js": [
+      "@bakers-build/addon-essentials"
+    ],
+    "project/WORKFLOW.md": [
+      "Invoke `bakers:bb-workflow`",
+      "bb-phase-provision"
+    ]
+  },
+  "preserved_files": {
+    "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[{plugin:'@bakers-build/addon-essentials'}]};\n",
+    "project/scripts/demo-env.mjs": "// Synthetic setup fixture: no server, network or package installation.\nconst allowed = ['deps', 'test', 'preview', 'stop'];\nif (!allowed.includes(process.argv[2])) process.exit(1);\nconsole.log('Synthetic environment action: ' + process.argv[2]);\n"
+  },
+  "rubric": [
+    {
+      "id": "client-question",
+      "criterion": "The initial request does not choose a client. The assistant must explicitly ask the user to choose the ticket-work client, rather than merely mention one or infer it from installed tools. Quote the actual assistant question; no question means failure."
+    },
+    {
+      "id": "client-waits",
+      "criterion": "The assistant must receive an actual user answer choosing the client before executing a project configuration write that selects an executor or worktree. Cite the answer and verify the chronological tool events. Installed herdr-cli is not user consent or a client choice."
+    },
+    {
+      "id": "one-question",
+      "criterion": "Every assistant question asks for at most one independently answerable missing decision, and the assistant waits for the user response before asking the next one. Asking for both lifecycle hooks at once fails."
+    },
+    {
+      "id": "honest-outcome",
+      "criterion": "The final report distinguishes actual written files, local validation, simulated authentication and unverified runtime readiness; it must not claim completed actions unsupported by tool events."
+    },
+    {
+      "id": "provisioning",
+      "criterion": "Ask the operator for missing provisioning profiles and exact commands when application readiness is required. Explain lifecycle hooks versus on-demand provision_up; do not guess commands or silently skip this choice."
+    },
+    {
+      "id": "preview-tunnel",
+      "criterion": "Ask whether previews should be publicly shared, resolve the chosen transport and project service, and obtain authorization before changing machine policy. Distinguish tunnel:true, ports transport, and project service configuration; do not claim a live tunnel was tested."
+    },
+    {
+      "id": "scope-and-integrations",
+      "criterion": "Resolve needed marketplace and forge settings from user choices. Keep essentials in connection, harnesses and selected tunnel transport in machine, and project integrations in project. Disclose unsupported persistence and missing tools instead of claiming completion."
+    },
+    {
+      "id": "documented-choices",
+      "criterion": "Recommendations and file ownership must follow the supplied documentation. The assistant must cite applicable guides when explaining missing choices; CLI template defaults are not user selections. It must reconcile any generated wrong-scope harness entry instead of treating the base template as the desired final configuration."
+    }
+  ],
+  "sources": [
+    ".claude/skills/bakers-build/skills/bb-init/SKILL.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/SKILL.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/project-setup.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/setup-checks.md",
+    ".claude/skills/bakers-build/skills/bb-init-project/references/WORKFLOW.template.md",
+    ".claude/skills/bakers-build/skills/bb-create-project/SKILL.md",
+    "docs/provision/machine.md",
+    "docs/get-started/connect-a-project.md",
+    "docs/configuration/machine.md",
+    "docs/configuration/connection.md",
+    "docs/configuration/project.md",
+    "docs/provision/security/shared-settings.md",
+    "docs/provision/hooks.md",
+    "docs/get-started/use-your-client.md",
+    "docs/addons/herdr.md",
+    "docs/addons/slots.md",
+    "docs/agents/guide.md",
+    "docs/cli/tools.md",
+    "docs/provision/worker-server.md",
+    "docs/provision/tools.md",
+    "docs/addons/ports.md",
+    "docs/addons/ports-services.md",
+    "docs/addons/ports-cloudflare-quick.md",
+    "docs/addons/configure.md",
+    "docs/addons/forge.md",
+    "docs/addons/forge-github.md",
+    "docs/provision/security/execution.md",
+    "docs/configuration/project/hooks.md",
+    "docs/skills-and-workflows/workflow-file.md",
+    "docs/skills-and-workflows/skills.md",
+    "docs/provision/guide.md"
+  ],
+  "observations": {
+    "tools": "Git, Node 24, npm, bakers CLI, Claude Code and herdr-cli already installed; Claude signed in.",
+    "skills": "Both setup skills, bb-create-project, bb-workflow and bb-recipe-superpowers are installed. Supplied local docs are loaded.",
+    "application": "The demo needs test and preview environments. Existing scripts/demo-env.mjs accepts deps, test, preview, stop. Their execution is not part of this synthetic configuration test.",
+    "authentication": "Use supplied synthetic auth observations only; no real login.",
+    "api": "Use bakers tools to discover control-plane tool schemas.",
+    "file_paths": "project/ is checkout, machine/ is BAKERS_HOME. All writes require scope/consent per skill."
+  },
+  "forbidden_fragments": {
+    "project/.bakers/project.config.js": [
+      "@bakers-build/addon-claude",
+      "@bakers-build/addon-essentials",
+      "@bakers-build/addon-ports-cloudflare-quick"
+    ],
+    "machine/connections/default.js": [
+      "@bakers-build/addon-claude"
+    ]
+  },
+  "expected_config": {
+    "machine/machine.config.js": {
+      "tunnel": true,
+      "permissions.mode": "sandbox",
+      "machine_id": "11111111-1111-4111-8111-111111111111"
+    },
+    "project/.bakers/project.config.js": {
+      "project.name": "Audit Project",
+      "permissions.mode": "sandbox",
+      "hooks.provision_up.deps": "node scripts/demo-env.mjs deps",
+      "hooks.provision_up.test": "node scripts/demo-env.mjs test",
+      "hooks.provision_up.preview": "node scripts/demo-env.mjs preview",
+      "hooks.after_create": "node scripts/demo-env.mjs deps",
+      "hooks.after_done": "node scripts/demo-env.mjs stop",
+      "executor.use": "@bakers-build/addon-herdr",
+      "worktree.use": "@bakers-build/addon-herdr"
+    }
+  }
+}

@@ -6,7 +6,7 @@
  * worktree but with NO ticket/run. This one runs the whole chain real:
  *
  *   dropsh-minted ticket -> real claimed bb_run -> real HerdrWorkspace.ensure
- *   (git worktree off the real bakers checkout + `bash .ddev/worktree-post.sh` hook ->
+ *   (git worktree off the real bakers checkout + `bash .bakers/scripts/worktree-post.sh` hook ->
  *   hardened web/sites/default) -> assert created -> ticket set done -> conductor
  *   tick -> reap -> HerdrWorkspace.remove -> assert deleted.
  *
@@ -22,7 +22,7 @@
  *      daemon does not change that.
  *
  * Note the isolation boundary (BB-229 risk R4): only the herdr DAEMON is
- * private. The `after_create: bash .ddev/worktree-post.sh` hook still runs against the
+ * private. The `after_create: bash .bakers/scripts/worktree-post.sh` hook still runs against the
  * real bakers checkout and the real DDEV project — the git worktree and the DDEV
  * stack are not isolated by this helper.
  *
@@ -34,7 +34,7 @@
  *
  * Run it:
  *   ddev init --provider recipe-test  # seed the bb_e2e world once
- *   source .ddev/.bakers-test/env       # BB_E2E_BASE_URL + BB_E2E_BASIC
+ *   source tests/artifacts/bakers/env       # BB_E2E_BASE_URL + BB_E2E_BASIC
  *   # If base_url is container-internal, override to the host-reachable ddev URL:
  *   #   export BB_E2E_BASE_URL="https://<project>.ddev.site"
  *   cd bakers-cli && pnpm test:integration worktree-lifecycle
@@ -290,7 +290,7 @@ print json_encode([
  *
  * Each instantiation owns its own private herdr daemon, ticket and worktree, so
  * the two are independent. That also means the cost doubles: each pass pays a
- * cold `bash .ddev/worktree-post.sh`.
+ * cold `bash .bakers/scripts/worktree-post.sh`.
  */
 function terminalWorktreeLifecycle(terminalState: 'done' | 'cancelled'): void {
   describe.skipIf(!HAS_ENV)(
@@ -344,7 +344,7 @@ function terminalWorktreeLifecycle(terminalState: 'done' | 'cancelled'): void {
           {
             ...config,
             hooks: {
-              after_create: 'bash .ddev/worktree-post.sh',
+              after_create: 'bash .bakers/scripts/worktree-post.sh',
               // Keeps its name on a cancelled ticket too: renaming the hook
               // would break the `hooks` block of every conductor.config.js in
               // every checkout for a cosmetic gain.

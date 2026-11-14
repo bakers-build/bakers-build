@@ -2,6 +2,10 @@
 // (docs/.vitepress/addon-options.mjs), and every schema-bearing addon page carries the directive.
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { addonCoverage, expandOptions } from '../.vitepress/addon-options.mjs'
 
 const HARNESS = 'https://bakers.build/schema/harness-options.schema.json'
@@ -151,12 +155,62 @@ test('the table carries a generated note; text around the directive is unchanged
   assert.ok(generated.includes('| Option | Type | Default | Required | Effect |'))
 })
 
-test('every schema-bearing addon page carries its directive; the rest are listed as not generated', () => {
-  const { missing, notGenerated } = addonCoverage()
-  assert.deepEqual(missing, [], 'schema-bearing addon pages without <!-- @options … -->')
-  assert.deepEqual(notGenerated, [
-    'agents', 'bakers-ui', 'bakers-ui-artifacts', 'ddev', 'deployment', 'docker-compose', 'dropsh',
-    'essentials', 'info', 'name-refs', 'ports-cloudflare-quick', 'remote-drupal', 'track', 'workspace',
-    'ports-services.md',
-  ])
+const empty = { type: 'object', additionalProperties: false }
+const configured = { type: 'object', properties: { zone: { type: 'string', description: 'Zone.' } } }
+
+function fixture(t, { stability, schema = empty, page = '# Demo', directory = false } = {}) {
+  const root = mkdtempSync(join(tmpdir(), 'addon-coverage-'))
+  t.after(() => rmSync(root, { recursive: true, force: true }))
+  const addon = join(root, 'bakers-cli/addons/demo')
+  const docs = join(root, 'docs/addons')
+  mkdirSync(addon, { recursive: true })
+  mkdirSync(docs, { recursive: true })
+  writeFileSync(join(addon, 'package.json'), JSON.stringify({ bakers: { stability } }))
+  if (schema !== null) writeFileSync(join(addon, 'options.schema.json'), JSON.stringify(schema))
+  if (page !== null) writeFileSync(join(docs, 'demo.md'), page)
+  if (directory) mkdirSync(join(docs, 'demo'))
+  return pathToFileURL(`${root}/`)
+}
+
+for (const stability of ['internal', 'experimental']) {
+  for (const directory of [false, true]) {
+    test(`${stability} addon cannot have a ${directory ? 'page directory' : 'page'}`, (t) => {
+      const root = fixture(t, { stability, directory, page: directory ? null : '# Demo' })
+      assert.match(addonCoverage(root).failures.join('\n'), /demo.*must not have.*page/)
+    })
+  }
+}
+
+test('unknown stability fails with the addon and value', (t) => {
+  assert.match(addonCoverage(fixture(t, { stability: 'preview' })).failures.join('\n'), /demo.*unknown stability.*preview/)
+})
+
+test('a public addon must ship a schema', (t) => {
+  assert.match(addonCoverage(fixture(t, { schema: null })).failures.join('\n'), /demo.*missing options.schema.json/)
+})
+
+test('a public addon with options needs its directive', (t) => {
+  assert.match(addonCoverage(fixture(t, { schema: configured })).failures.join('\n'), /demo.md.*lacks.*@options/)
+})
+
+for (const page of [directive(), '## Options']) {
+  test(`an empty schema forbids ${page} on its page`, (t) => {
+    assert.match(addonCoverage(fixture(t, { page })).failures.join('\n'), /demo.md.*no options.*Options/)
+  })
+}
+
+test('public by default, configured public, and hidden addons without pages pass', (t) => {
+  for (const options of [{}, { schema: configured, page: directive() },
+    { stability: 'internal', schema: null, page: null },
+    { stability: 'experimental', schema: null, page: null }]) {
+    assert.deepEqual(addonCoverage(fixture(t, options)), { failures: [] })
+  }
+})
+
+test('a directive on an empty schema fails, naming its page', () => {
+  assert.throws(() => render({ '@bakers-build/addon-demo': empty }, directive()), /addons\/demo.md.*no options/)
+})
+
+test('the repository has no addon coverage failures', () => {
+  assert.deepEqual(addonCoverage(), { failures: [] })
 })

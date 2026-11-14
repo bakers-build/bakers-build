@@ -51,7 +51,6 @@ Options go in the addon entry's `with` object (or a `catalog` entry). The addon 
 |---|---|
 | [Claude Code](/addons/claude) | Claude aliases, models, effort, measurement and reserved arguments |
 | [Codex](/addons/codex) | Codex aliases, models, effort and reserved arguments |
-| [Kimi](/addons/kimi) | Kimi model and arguments |
 | [OpenCode](/addons/opencode) | OpenCode model and arguments |
 | [Pi](/addons/pi) | Provider, model, thinking and local-file approval |
 | [Grok](/addons/grok) | Model pins, reasoning effort and reserved arguments |
@@ -61,6 +60,8 @@ Run `bakers agents` in the project checkout to see the aliases and models your i
 `args` is a list of strings appended in order as separate shell-quoted arguments. Values starting with `~`, including `--option=~/path`, are rejected; use absolute paths. Supported passthrough arguments and flags reserved by bakers.build differ by harness and are listed in those references.
 
 ## Run security
+
+Compare boundaries and support by agent and platform in [Isolation models](/agents/isolation).
 
 Runs start in `system` mode by default; choose `permissions: 'sandbox'` for Claude, Codex or Grok runs on untrusted tickets. Set `permissions`, the `sandbox` keys, `config` and `env_deny` in a harness entry's `with`; a `catalog` entry uses only its own `with`. The mode and the `deny_read`, `allow_write` and `trusted_commands` lists can also be set once for every agent in a top-level `permissions` block of `machine.config.js` or the project's `.bakers/project.config.js`; layers combine as [Shared run security](/provision/security/shared-settings) describes, including the risk of a committed project block that loosens the sandbox.
 

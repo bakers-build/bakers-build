@@ -29,10 +29,17 @@
   {% if description_display == 'before' and has_description %}
     <div{% if description_id %} id="{{ description_id }}"{% endif %} class="{{ (description_classes|merge(['pb-inline-xs']))|join(' ') }}">{{ description_markup }}</div>
   {% endif %}
-  {% if prefix_markup|striptags(visible_tags)|trim is not empty %}<span class="field-prefix">{{ prefix_markup }}</span>{% endif %}
-  {{ children }}
-  {% if suffix_markup|striptags(visible_tags)|trim is not empty %}<span class="field-suffix">{{ suffix_markup }}</span>{% endif %}
-  {% if label_display == 'after' %}{{ label }}{% endif %}
+  {% set control %}
+    {% if prefix_markup|striptags(visible_tags)|trim is not empty %}<span class="field-prefix">{{ prefix_markup }}</span>{% endif %}
+    {{ children }}
+    {% if suffix_markup|striptags(visible_tags)|trim is not empty %}<span class="field-suffix">{{ suffix_markup }}</span>{% endif %}
+  {% endset %}
+  {#- A checkbox or radio and the label after it read as one row, spaced like inline text. #}
+  {% if label_display == 'after' %}
+    <span class="inline-flex items-center gap-inline">{{ control }}{{ label }}</span>
+  {% else %}
+    {{ control }}
+  {% endif %}
   {% if has_errors %}<div class="form-item--error-message text-meta text-state-attention-ink">{{ errors_markup }}</div>{% endif %}
   {% if description_display in ['after', 'invisible'] and has_description %}
     <div{% if description_id %} id="{{ description_id }}"{% endif %} class="{{ (description_classes|merge(['pt-inline-xs']))|join(' ') }}">{{ description_markup }}</div>

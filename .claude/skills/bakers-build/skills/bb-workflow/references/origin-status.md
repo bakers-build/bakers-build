@@ -1,66 +1,22 @@
-
 # Publish origin status
 
-Read at a state's `transition`, before the state write. Accept the destination from the caller and
-require caller authorization.
+Before the caller's authorized state write, use its destination and WORKFLOW.md's
+`bb-phase-transition` table (`State | Origin label`). No origin, table or destination row: no-op,
+including no removals. Never supply a default map.
 
-## The map
+The destination row chooses label; the table's unique labels form the owned family. Remove
+family minus selected label; leave every other origin label untouched.
 
-The project's `WORKFLOW.md` › `## bb-phase-transition` holds the only map, one table:
+For a GitLab issue, list the project's existing and inherited labels through
+[tool discovery and fallback](tools.md#choose-an-operation). If unavailable, write nothing and
+record the operation and human next action in Manual review.
 
-```markdown
-| State | Origin label |
-|---|---|
-| qualification | doing |
-| plan | doing |
-| working | doing |
-| review | doing |
-| done | review |
-```
+Match ignoring case, preferring exact spelling, then `is_project_label: true`. Use returned names;
+create none. Warn and omit unmatched names. Read failure: warn, write nothing.
 
-A row maps a bakers.build state to the customer-facing label on the origin issue. The set of labels
-in the table is the family bakers.build owns there: exactly one of them is present at a time and
-the others are removed, so a label outside the table is never touched.
-
-## Resolve the label
-
-```
-label  = the row whose State is the destination
-family = the unique labels of the table
-remove = family minus label
-```
-
-## Match existing labels
-
-bakers.build never creates a label in the Git project; it writes only labels the project already
-has. For a GitLab issue URL `https://<host>/<path>/-/issues/<n>`, read the project's labels,
-inherited group labels included, in one call, with `<path>` URL-encoded (`acme/shop` →
-`acme%2Fshop`):
-
-```bash
-glab api --hostname "<host>" --paginate "projects/<encoded path>/labels?include_ancestor_groups=true&per_page=100"
-```
-
-Replace `label` and each name in `remove` with the listed `name` that equals it ignoring case
-(`doing` → `Doing`). When several listed names match, take the exact spelling, else the one with
-`is_project_label: true`. A name with no match is left out of the call, and the run warns naming it. If
-`label` is left out, the call carries only `--unlabel`; if nothing is left, there is no call. If the
-read fails, write nothing and warn.
-
-## Write it
-
-For a GitLab issue URL, one call with the matched names:
-
-```bash
-glab issue update "$origin" --label "$label" --unlabel "$remove"
-```
-
-**No-op when `origin` is empty, when `WORKFLOW.md` has no such table, or when the destination has no
-row** — a state the project maps to nothing writes nothing and removes nothing. No table is never
-filled from a default. Pass a comma-separated `remove` list; a label may therefore not contain a
-comma.
-
-Unknown adapters and failures warn and return success so ticket work is not blocked. Never choose
-the label, timing, or ticket state: the label is the table's, the state is the caller's.
-`@bakers-build/bb-workflow` owns ordering and compensation when the following state write fails or
-is uncertain.
+Through the same discovery, set the matched destination label and remove the other matched
+family labels in one update. If the selected label is absent, only remove matched family labels;
+if neither remains, no call. Return the applied/skipped labels and warnings. Missing mapped labels,
+unknown adapters and write failures leave the caller's transition unblocked.
+[Ticket writes](ticket-writes.md) owns compensation and uncertain-state reconciliation; the
+caller owns ordering, authorization and destination. An unavailable operation stays unverified.

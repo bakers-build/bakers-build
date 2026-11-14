@@ -2,10 +2,9 @@
 
 Read by [the outtake](../outtake.md) for a `qualification` handoff.
 
-- **Lead section** `### 📋 Acceptance`, directly after *Outcome*: every acceptance criterion of the
-  handoff, one line each — its AC ID and wording; a rewritten one also shows its previous wording.
-  Then the gate's passed/rewritten tally, the chosen recipe and type with the reason, and `test_as`.
-  No criterion is added, merged or dropped.
+- **Lead section** `### 📋 Acceptance`, directly after *Outcome*: cite the qualification comment
+  and its AC IDs; report the gate tally, recipe/type choice and `test_as`. Full criteria and
+  previous wording stay in qualification under [ticket writes](../ticket-writes.md).
 - **Success**: the prior-art checks with their outcome and checked revision.
 - **Manual review**: check that the criteria describe the ask and nothing else.
 - **Next action**: ask the human whether the criteria fit — the question the approval answers.

@@ -14,6 +14,14 @@ description: >-
   nothing else. What a board holds is the BOARD'S knowledge, and the mapping's:
   the card takes an identifier and a title, and it does not ask what they
   identify.
+
+
+
+  A BLOCKED CARD NAMES ITS BLOCKERS AND A CARD STATES ITS RUNS (BAKERS-55). The
+  blocked marker reads "Blocked by" plus the identifiers in `blocked_by`, or
+  "Blocked by" alone with `blocked_hidden`. The run line reads "N runs - last
+  <state>" ("1 run" for one), red for a failed or expired newest run, and is
+  absent without runs. The "Cancelled" marker is unchanged.
 provider: bb_theme
 libraryOverrides:
   dependencies:
@@ -22,6 +30,12 @@ libraryOverrides:
 props:
   type: object
   properties:
+    deployed_to:
+      type: array
+      title: Deployed to
+      description: Distinct target environments of closed deployments.
+      items:
+        type: string
     identifier:
       type: string
       title: Identifier
@@ -53,11 +67,6 @@ props:
     state:
       type: string
       title: Workflow state key (e.g. qualification, plan, working)
-    blocked:
-      type: boolean
-      title: Blocked
-      default: false
-      description: A dependency marker, independent of health and workflow state.
     url:
       type: string
       title: Canonical URL
@@ -86,9 +95,9 @@ props:
       type: string
       title: Done time label
       description: >-
-        When a closed ticket was done, formatted by BbDate ("3 days ago").
-        With it or `mr_url` the footer says "Done …" and links the merge
-        request instead of the lease and state line.
+        When a closed ticket was done, formatted by BbDate ("3 days ago"). With
+        it or `mr_url` the footer says "Done …" and links the merge request
+        instead of the lease and state line.
     done_datetime:
       type: string
       title: Done time, ISO 8601
@@ -101,6 +110,40 @@ props:
     mr_label:
       type: string
       title: Merge request label
+    blocked_by:
+      type: array
+      items:
+        type: string
+      title: Blocked by
+      description: >-
+        Identifiers of the open blockers the reader may view, rendered in mono
+        after "Blocked by". Replaces the former `blocked` flag, which counted
+        closed blockers too.
+    blocked_hidden:
+      type: boolean
+      default: false
+      title: Hidden blocker
+      description: >-
+        The ticket has an open blocker the reader may not view. With an empty
+        `blocked_by` the marker reads "Blocked by" alone and names nothing, so
+        no identifier leaks across access.
+    run_count:
+      type: integer
+      title: Run count
+      description: How many runs the ticket has. Zero or absent renders no run line.
+    last_run_state:
+      type: string
+      enum:
+        - claimed
+        - running
+        - done
+        - expired
+        - failed
+        - cancelled
+      title: Newest run state
+      description: >-
+        The state of the newest run. `failed` and `expired` turn the run line
+        red.
   required:
     - identifier
     - title

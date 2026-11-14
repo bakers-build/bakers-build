@@ -1,0 +1,43 @@
+component: bb_theme:option_list
+name: Quick choices
+variant: form
+props:
+  name: state
+  multiple: true
+  input_name: state
+  input_type: checkbox
+  clearable: true
+  clear_label: Any state
+  clear_url: '?closed=all'
+  quick_choices:
+    - label: Only open states
+      values:
+        - qualification
+        - plan
+        - working
+        - review
+  options:
+    - value: qualification
+      label: Qualification
+      count: '2'
+      selected: false
+    - value: plan
+      label: Plan
+      count: '1'
+      selected: true
+    - value: working
+      label: Working
+      count: '3'
+      selected: true
+    - value: review
+      label: Review
+      count: '2'
+      selected: true
+    - value: done
+      label: Done
+      count: '41'
+      selected: false
+    - value: cancelled
+      label: Cancelled
+      count: '6'
+      selected: false

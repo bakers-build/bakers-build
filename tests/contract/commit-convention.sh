@@ -95,11 +95,11 @@ check 'the working state file exists' test -f "$IMPL"
 check 'the deployment addon source exists' test -f "$DEPLOY"
 
 WF_FLAT="$(flatten "$WF")"
-MERGE_FLAT="$(flatten "$MERGE")"
+MERGE_FLAT="$(flatten "$MERGE") $(flatten "$(dirname "$MERGE")/merge-fallback.md")"
 for reference in coding-gate delivery; do
   check "the working state discloses $reference" grep -qF "($reference.md)" "$IMPL"
 done
-IMPL_FLAT="$(for reference in coding-gate review delivery; do flatten "$(dirname "$IMPL")/$reference.md"; done)"
+IMPL_FLAT="$(for reference in coding-gate review delivery forge-fallback; do flatten "$(dirname "$IMPL")/$reference.md"; done)"
 WF_PLAIN="$(plain "$WF")"
 IMPL_PLAIN="$(plain "$IMPL")"
 MERGE_PLAIN="$(plain "$MERGE")"
@@ -145,12 +145,11 @@ check 'AC-1 WORKFLOW.md carries a NON-bakers.build worked example (SHOP-42 -> re
 
 # --- AC-2 — WORKFLOW.md states the merge-request rule --------------------------------------------
 
-check 'AC-2 WORKFLOW.md: an MR title and description carry no bakers.build reference' \
-  hasre "$WF_FLAT" 'merge request title and description carry \*\*no bakers.build reference\*\*'
-check 'AC-2 WORKFLOW.md states that rule holds without exception' \
-  hasi "$WF_FLAT" 'without exception'
-check 'AC-2 WORKFLOW.md targets the MR at the ticket base_branch, passed explicitly' \
-  has "$WF_FLAT" 'glab mr create --target-branch <base_branch>'
+# The rule lives in the bb-workflow delivery reference; it states it unconditionally, so the former
+# GitLab-section "without exception" wording has no counterpart to bind.
+check 'AC-2 delivery: an MR title and description carry no bakers.build reference' \
+  has "$IMPL_FLAT" 'MR title/description carry no bakers.build reference.'
+# The explicit MR target is bound by AC-4 (`target is target_branch (else base_branch)`).
 check 'AC-2 WORKFLOW.md no longer hardcodes develop as the MR target' \
   absent "$WF_FLAT" 'merge request against `develop`'
 
@@ -173,9 +172,9 @@ check 'AC-3 merge-mr forbids constructing the trailer project prefix' \
 check 'AC-3 merge-mr carries a NON-bakers.build worked example (SHOP-42 -> ref:SHOP-42)' \
   has "$MERGE_FLAT" 'ref:SHOP-42'
 check 'AC-3 merge-mr says the subject comes from the MR title' \
-  has "$MERGE_FLAT" 'comes from the MR title'
+  has "$MERGE_FLAT" 'Use the validated MR title verbatim as the subject.'
 check 'AC-3 merge-mr says that MR title carries no bakers.build reference (so it cannot supply it)' \
-  has "$MERGE_FLAT" 'MR title, which carries no bakers.build reference'
+  has "$(flatten "$ROOT/.claude/skills/bakers-build/skills/bb-workflow/references/delivery.md")" 'MR title/description carry no bakers.build reference.'
 check 'AC-3 merge-mr says the squash discards each commit trailer' \
   has "$MERGE_FLAT" 'Squash discards individual commit trailers'
 check 'AC-3 merge-mr names the loss as silent' \
@@ -194,19 +193,19 @@ check 'AC-3 merge-mr says convention, never the word the skill guard forbids' \
 check 'AC-3 the recipe does not call merge-mr directly (single-sourced in Coding gate)' \
   no_has "$RECIPE" 'merge.md'
 check 'AC-3 the Coding gate merge-mr call names the ticket `identifier` field' \
-  hasre "$IMPL_FLAT" 'runs \[merge\]\(merge\.md\) with the ticket.s .identifier. field'
+  hasre "$IMPL_FLAT" '\[merge\]\(merge\.md\) using ticket.s .identifier. field'
 # BB-444: the review merge-mr call site moved out of review-ticket into the shared
 # bb-workflow › Review flow (review-ticket is the credential-less verdict helper and calls no
 # merge). Assert the flow's call site names the `identifier` field.
 check 'AC-3 the Review flow merge-mr call names the ticket `identifier` field' \
-  hasre "$IMPL_FLAT" 'run \[merge\]\(merge\.md\) with the ticket.s .identifier. field once'
+  hasre "$IMPL_FLAT" 'pass the ticket.s .identifier. to the authorized \[merge\]\(merge\.md\) once'
 
 # --- AC-4 — shared coding context reaches the project convention ------------------------------
 
 check 'AC-4 coding context points at project commit and MR conventions' \
-  has "$IMPL_FLAT" 'Follow project commit and MR conventions'
+  has "$IMPL_FLAT" 'Commit scoped work under project conventions'
 check 'AC-4 coding context requires an explicit base_branch MR target' \
-  hasre "$IMPL_FLAT" '\*\*target\*\* = the ticket.{0,3}s `base_branch`'
+  hasre "$IMPL_FLAT" 'target is target_branch \(else base_branch\)'
 
 # --- D6 — the convention is compatible with the release-batch parser -----------------------------
 #

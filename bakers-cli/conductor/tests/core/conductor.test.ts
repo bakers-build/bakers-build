@@ -1135,7 +1135,10 @@ describe('Conductor', () => {
       BAKERS_TICKET_IDENTIFIER: 'BB-1',
       BAKERS_STATE: 'todo',
       BAKERS_RUN_UUID: 'r-1',
+      BAKERS_BRANCH_NAME: 'bakers/bb-1',
       BAKERS_TUNNEL: '0',
+      BAKERS_RUNTIME_ISOLATES: '0',
+      BAKERS_WORKTREE_PATH: '/fake/BB-1',
       WORKSPACE_ROOT: CHECKOUT,
       TICKET_URL: 'https://issues/1',
     });
@@ -1431,7 +1434,7 @@ describe('Conductor', () => {
     expect(command).toContain('Custom BB-1 plan r-1');
   });
 
-  it('dispatch uses the embed-free default prompt: step-0 read command, no ticket body/comments (BB-112)', async () => {
+  it('dispatch uses the embed-free default prompt: workflow-first ticket read, no ticket body/comments (BB-112)', async () => {
     const remote = new FakeBbRemote({
       tickets: {
         't-1': { identifier: 'BB-1', title: 'One', state: 'working' },
@@ -1463,7 +1466,7 @@ describe('Conductor', () => {
     // The agent self-reads the ticket + comments at step 0 — the dispatch line
     // embeds neither the ticket body nor any comment text, and stays bounded.
     expect(command).toContain(
-      `bakers tools bakers_ticket_read --data '{"ticket":"t-1"}'`,
+      `Read the ticket with the bakers tool bakers_ticket_read, arguments {"ticket":"t-1"}`,
     );
     expect(command).not.toContain('--- Ticket comments ---');
     expect(command).not.toContain('{comments}');
@@ -4682,7 +4685,7 @@ describe('Conductor — addon lifecycle hook listeners', () => {
     return remote;
   }
 
-  it('after_done runs listeners with the current ticket context before the shell hook, whose env stays inherited', async () => {
+  it('after_done runs listeners with the current ticket context before the shell hook, whose inherited env gains only the worktree path', async () => {
     const events: string[] = [];
     const seen: Array<{
       id: string;
@@ -4711,7 +4714,9 @@ describe('Conductor — addon lifecycle hook listeners', () => {
       ticket: { identifier: 'BB-1' },
     });
     expect(seen[0]?.ctx.env.TICKET_ONLY).toBe('1');
-    expect(executor.shellEnv.after_done).toBeUndefined();
+    expect(executor.shellEnv.after_done).toEqual({
+      BAKERS_WORKTREE_PATH: PRESENT_WORKTREE,
+    });
     expect(remote.calls.markCleanedUp).toEqual(['t-1']);
   });
 
@@ -4759,37 +4764,43 @@ describe('Conductor — addon lifecycle hook listeners', () => {
 
 describe('qualification gate orchestration (the frame)', () => {
   const wf = readProjectWorkflow();
-  const guardLink = '[ensure qualification](ensure-qualification.md)';
+  const recoveryLink = '[return to qualification](return-to-qualification.md)';
 
-  it('unqualified path: plan and working invoke the guard in their read phase', () => {
+  it('unqualified path: plan and working disclose the shared guard and its recovery', () => {
     for (const state of ['plan.md', 'working.md']) {
-      const read = mdSection(readReference(state), 'read');
-      expect(read, `${state} read phase missing guard`).toContain(guardLink);
+      expect(mdSection(readReference(state), 'read')).toContain(
+        '[entry guard](entry-guard.md)',
+      );
     }
-    // Recovery and its stop condition belong to the shared guard, not the state files.
-    const guard = readReference('ensure-qualification.md');
-    expect(guard).toContain('returned_to_qualification');
-    expect(guard).toMatch(/then stop/);
-    expect(guard).toMatch(
+    expect(readReference('entry-guard.md')).toContain(recoveryLink);
+    const recovery = readReference('return-to-qualification.md');
+    expect(recovery).toContain('returned_to_qualification');
+    expect(recovery).toMatch(/then stop/);
+    expect(recovery).toMatch(
       /\[transition ticket\]\(transition-ticket\.md\).*destination `qualification`/,
     );
   });
 
-  it('qualified path: the state continues after the guard', () => {
+  it('qualified path: the shared check continues unchanged', () => {
     for (const state of ['plan.md', 'working.md']) {
-      const read = mdSection(readReference(state), 'read');
-      const continuation = /[Cc]ontinu\w*\s+only\s+on\s+`qualified`/.exec(read);
-      expect(continuation).not.toBeNull();
-      expect(continuation?.index).toBeGreaterThan(read.indexOf(guardLink));
+      expect(mdSection(readReference(state), 'read')).toContain(
+        '[entry guard](entry-guard.md)',
+      );
+      const read = readReference('entry-guard.md');
+      expect(read).toContain('`qualified`');
+      expect(read).toMatch(/continue unchanged/);
+      expect(read).toContain('acceptance_criteria');
     }
   });
 
-  it('guard exclusion: review and the recipe do not invoke the guard', () => {
+  it('guard exclusion: review and the recipe do not invoke recovery', () => {
     expect(mdSection(readSkill('bb-recipe-matt'), 'bb-state-review')).not.toBe(
       '',
     );
-    expect(readSkill('bb-recipe-matt')).not.toContain('ensure-qualification');
-    expect(readReference('review.md')).not.toContain('ensure-qualification');
+    expect(readSkill('bb-recipe-matt')).not.toContain(
+      'return-to-qualification',
+    );
+    expect(readReference('review.md')).not.toContain('return-to-qualification');
   });
 
   it('WORKFLOW.md is the entry line plus phase hints — no loader, no state sections', () => {

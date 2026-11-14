@@ -1,0 +1,52 @@
+(
+  /* HAND-WRITTEN ONCE under a waiver: Pascal Glass, 2026-11-11 (BAKERS-55
+     Task 12). Designbook a4fea9d7 map-entity refuses list-view mappings
+     ("uses unsupported structure list-view") although drupal-views.md
+     requires list-view for every view.
+
+     THE ACTIVE CONDUCTORS BELOW THE BOARD (views.view.conductors, display
+     board): the project's active conductors, not affected by ticket filters.
+     Load is a meter with "current / max parallel runs"; a conductor without
+     a linked machine reads "Unknown capacity". Rows are pinned. */
+  $rows := [
+    { "name": "cw-framework", "initials": "CW", "status": "running", "tone": "running", "tickets": 5, "current": 2, "max": 3, "seen": "12 s ago", "at": "2026-11-11T09:59:48Z" },
+    { "name": "sg-design", "initials": "SG", "status": "online · idle", "tone": "idle", "tickets": 1, "current": 0, "max": 2, "seen": "2 min ago", "at": "2026-11-11T09:58:00Z" },
+    { "name": "cw-board", "initials": "CW", "status": "offline", "tone": "offline", "tickets": 1, "seen": "3 h ago", "at": "2026-11-11T07:00:00Z" }
+  ];
+  $load := function ($c) {
+    $exists($c.max)
+      ? { "kind": "meter", "share": $round(100 * $c.current / $c.max), "label": $c.current & " / " & $c.max & " parallel runs" }
+      : { "kind": "meter", "label": "Unknown capacity" }
+  };
+  [{
+    "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:zone",
+    "props": { "inset": "none", "gap": "sm", "description": "not affected by ticket filters" },
+    "slots": {
+      "heading": "Active conductors",
+      "content": [{
+        "component": "$DESIGNBOOK_COMPONENT_NAMESPACE:table",
+        "props": {
+          "variant": "",
+          "columns": [
+            { "key": "conductor", "label": "Conductor", "row_header": true },
+            { "key": "status", "label": "Status" },
+            { "key": "tickets", "label": "Active tickets", "num": true },
+            { "key": "load", "label": "Load" },
+            { "key": "heartbeat", "label": "Last heartbeat" }
+          ],
+          "rows": [$map($rows, function ($c) {
+            {
+              "cells": {
+                "conductor": { "kind": "mono", "value": $c.name },
+                "status": { "kind": "badge", "label": $c.status, "tone": $c.tone, "dot": true },
+                "tickets": { "kind": "text", "value": $string($c.tickets) },
+                "load": $load($c),
+                "heartbeat": { "kind": "time", "label": $c.seen, "datetime": $c.at }
+              }
+            }
+          })]
+        }
+      }]
+    }
+  }]
+)

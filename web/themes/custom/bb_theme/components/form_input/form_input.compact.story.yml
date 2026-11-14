@@ -1,0 +1,8 @@
+component: bb_theme:form_input
+name: Compact
+props:
+  type: search
+  id: story-search-compact
+  name: search
+  placeholder: Search tickets
+  compact: true

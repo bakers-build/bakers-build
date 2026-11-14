@@ -11,11 +11,19 @@ const assistant = (
   content: unknown[],
   usage: Record<string, number>,
   model = 'claude-opus-4-8',
+  id?: string,
 ) =>
   line({
     type: 'assistant',
-    message: { role: 'assistant', model, content, usage },
+    message: { id, role: 'assistant', model, content, usage },
   });
+
+const USAGE_100 = {
+  input_tokens: 10,
+  output_tokens: 20,
+  cache_creation_input_tokens: 30,
+  cache_read_input_tokens: 40,
+};
 
 const userPrompt = (text: string) =>
   line({ type: 'user', message: { role: 'user', content: text } });
@@ -66,6 +74,81 @@ describe('parseClaudeTranscript', () => {
     const fp = parseClaudeTranscript(jsonl);
     expect(fp.agent_turns).toBe(2);
     expect(fp.tool_calls).toBe(3);
+  });
+
+  describe('one response split into several entries', () => {
+    it('counts its usage and turn once per message.id', () => {
+      const jsonl = [
+        assistant(
+          [{ type: 'thinking', thinking: '…' }],
+          USAGE_100,
+          undefined,
+          'msg_1',
+        ),
+        assistant(
+          [{ type: 'text', text: 'hi' }],
+          USAGE_100,
+          undefined,
+          'msg_1',
+        ),
+        assistant(
+          [{ type: 'tool_use', id: 't1', name: 'Bash', input: {} }],
+          USAGE_100,
+          undefined,
+          'msg_1',
+        ),
+      ].join('\n');
+      const fp = parseClaudeTranscript(jsonl);
+      expect(fp.tokens).toBe(100);
+      expect(fp.agent_turns).toBe(1);
+      expect(fp.tool_calls).toBe(1);
+    });
+
+    it("counts only the last entry's usage, even when another response lies between", () => {
+      const jsonl = [
+        assistant([{ type: 'text', text: 'a' }], USAGE_100, undefined, 'msg_1'),
+        assistant(
+          [{ type: 'text', text: 'b' }],
+          { input_tokens: 7 },
+          undefined,
+          'msg_2',
+        ),
+        assistant(
+          [{ type: 'text', text: 'c' }],
+          { input_tokens: 150 },
+          undefined,
+          'msg_1',
+        ),
+      ].join('\n');
+      const fp = parseClaudeTranscript(jsonl);
+      expect(fp.tokens).toBe(157);
+      expect(fp.agent_turns).toBe(2);
+    });
+
+    it('still counts every tool_use block across its entries', () => {
+      const toolUse = (id: string) =>
+        assistant(
+          [{ type: 'tool_use', id, name: 'Bash', input: {} }],
+          USAGE_100,
+          undefined,
+          'msg_1',
+        );
+      const fp = parseClaudeTranscript(
+        [toolUse('t1'), toolUse('t2'), toolUse('t3')].join('\n'),
+      );
+      expect(fp.tool_calls).toBe(3);
+      expect(fp.agent_turns).toBe(1);
+    });
+
+    it('counts each entry without message.id as its own turn', () => {
+      const jsonl = [
+        assistant([{ type: 'text', text: 'a' }], USAGE_100),
+        assistant([{ type: 'text', text: 'b' }], USAGE_100),
+      ].join('\n');
+      const fp = parseClaudeTranscript(jsonl);
+      expect(fp.tokens).toBe(200);
+      expect(fp.agent_turns).toBe(2);
+    });
   });
 
   it('counts user prompts (string content) and their words, ignoring tool results', () => {

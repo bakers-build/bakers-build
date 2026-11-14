@@ -15,6 +15,6 @@ The server owns ticket history; pointing a client at another instance does not m
 Review access and the configuration used to connect to your server.
 
 <DocQuickLinks aria-label="Connect clients and workers" :items="[
-  { label: 'Security', text: 'Understand access boundaries and credentials before granting access.', link: '/provision/security/' },
+  { label: 'Security', text: 'Understand access boundaries and credentials before granting access.', link: '/agents/security' },
   { label: 'Configuration', text: 'Find the connection, machine and project settings used by clients and workers.', link: '/configuration/' }
 ]" />

@@ -38,7 +38,7 @@ slot names its own comment, check or merge, it replaces the state file's default
 verification, the browser surface, intake, outtake, measurement, merge and the state
 write — is a reference under `skills/bb-workflow/references/`, not a skill, and cannot be invoked.
 Each has one observable result and never chooses a destination; **a reference owns the command it
-performs**. `references/ensure-qualification.md` keeps its guard exception — its only route is the
+performs**. `references/return-to-qualification.md` keeps its guard exception — its only route is the
 recovery back to `qualification`. Project parameters are `WORKFLOW.md` hint tables, such as the
 origin-label table under `## bb-phase-transition`.
 
@@ -47,14 +47,14 @@ For authoring recipes, guides and hints, read `skills/bb-workflow/references/aut
 ## Setup and upgrades
 
 - `@bakers-build/bb-init-project` initializes or completes a selected machine, connection, project
-  or all configuration scope through `bakers config init` and `bakers config check`. It preserves
+  or all configuration scopes through initialization and validation. It preserves
   partial configurations and existing workflow policy; project setup composes an absent workflow.
 - `@bakers-build/bb-init` (`bakers:bb-init` in Claude Code) guides machine and user setup through the
   documentation. Its wizard explains workspace-manager and development-environment choices,
   checks the selected path, and helps with sign-in. Tool requirements and commands live in the
   documentation; the person installs tools. `@bakers-build/bb-init-project` calls it when a machine
   has no configured user.
-- `@bakers-build/bb-upgrade-project` migrates and repairs through `bakers config upgrade` and scoped checks,
+- `@bakers-build/bb-upgrade-project` migrates and repairs through configuration upgrades and scoped checks,
   preserving local policy and optional project connections. Package update is a separate action.
   Both skills distinguish local validity from online authentication readiness (workspace optional).
 
@@ -76,8 +76,8 @@ Refresh only the selected environment; preserve unrelated global skill libraries
 ## Review records and skill size
 
 Every bakers.build `SKILL.md` and every file under `bb-workflow/references/` is limited to 500
-whitespace-separated words, including frontmatter, tables and examples (`references/retrospective.md`
-excepted). `python3 tests/contract/skill-size.py` enforces this in the core CI suite;
+whitespace-separated words, including frontmatter, tables and examples.
+`python3 tests/contract/skill-size.py` enforces this in the core CI suite;
 `python3 tests/contract/skill-references.py` checks links, grid headings and the skill set.
 
 Qualification records intended test users and environments. The shared contract in

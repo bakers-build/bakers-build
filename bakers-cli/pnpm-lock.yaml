@@ -387,6 +387,9 @@ importers:
 
   addons/herdr-core:
     dependencies:
+      '@bakers-build/addon-workspace-git':
+        specifier: workspace:^
+        version: link:../workspace-git
       '@bakers-build/addon-herdr':
         specifier: workspace:^
         version: link:../herdr
@@ -585,6 +588,30 @@ importers:
       vitest:
         specifier: ^4.1.0
         version: 4.1.10(@types/node@20.19.43)(vite@8.1.4(@types/node@20.19.43)(esbuild@0.28.1)(tsx@4.23.1)(yaml@2.9.0))
+
+  addons/runtime-bwrap:
+    devDependencies:
+      '@bakers-build/conductor':
+        specifier: workspace:^
+        version: link:../../conductor
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+
+  addons/runtime-docker:
+    devDependencies:
+      '@bakers-build/conductor':
+        specifier: workspace:^
+        version: link:../../conductor
+      '@bakers-build/core':
+        specifier: workspace:^
+        version: link:../../core
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
 
   addons/tailscale:
     devDependencies:
@@ -799,6 +826,12 @@ importers:
       '@bakers-build/addon-remote-drupal':
         specifier: workspace:^
         version: link:../addons/remote-drupal
+      '@bakers-build/addon-runtime-bwrap':
+        specifier: workspace:^
+        version: link:../addons/runtime-bwrap
+      '@bakers-build/addon-runtime-docker':
+        specifier: workspace:^
+        version: link:../addons/runtime-docker
       '@bakers-build/addon-tailscale':
         specifier: workspace:^
         version: link:../addons/tailscale

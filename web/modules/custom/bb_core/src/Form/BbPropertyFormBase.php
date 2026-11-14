@@ -12,6 +12,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Htmx\Htmx;
+use Drupal\Core\Lock\LockBackendInterface;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -25,6 +26,15 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * loaded fresh and only the fields changed against that snapshot are applied,
  * each re-checked for update and field edit access. The POST swaps this form
  * only, so sibling forms on the page keep their unsent input.
+ *
+ * A form that autosaves submits on every pick and keeps Save only without
+ * JavaScript. It refuses a changed field whose stored value no longer matches
+ * the snapshot, writing nothing; changes to other fields still merge.
+ *
+ * One object owns the snapshot, the refusal and the locked write: split up,
+ * a check would sit apart from the write it guards.
+ *
+ * @SuppressWarnings("PHPMD.ExcessiveClassComplexity")
  */
 abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyEntityFormInterface {
 
@@ -41,11 +51,17 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
   protected CsrfTokenGenerator $csrfToken;
 
   /**
+   * Serializes the autosaving check-and-write of one entity.
+   */
+  protected LockBackendInterface $lock;
+
+  /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container): static {
     $form = parent::create($container);
     $form->csrfToken = $container->get('csrf_token');
+    $form->lock = $container->get('lock');
     return $form;
   }
 
@@ -62,6 +78,13 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
    */
   protected function editsFields(): bool {
     return TRUE;
+  }
+
+  /**
+   * Whether each pick saves itself, refusing a field changed meanwhile.
+   */
+  protected function autosaves(): bool {
+    return FALSE;
   }
 
   /**
@@ -157,6 +180,10 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
     unset($actions['delete']);
     $actions['submit']['#value'] = $this->t('Save');
     $actions['submit']['#access'] = $this->entity->access('update');
+    if ($this->autosaves()) {
+      // Core's js-hide: Save stays the fallback without JavaScript only.
+      $actions['#attributes']['class'][] = 'js-hide';
+    }
     return $actions;
   }
 
@@ -187,14 +214,9 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
     $submitted = clone $entity;
     $display = $this->getFormDisplay($form_state);
     $extracted = $display->extractFormValues($submitted, $form, $form_state);
-    $baseline = $form_state->get('property_baseline');
-    if ($this->getRequest()->isMethod('POST') && !$form_state->get('property_saved')) {
-      $snapshot = $this->openingSnapshot($form_state);
-      $baseline = clone $entity;
-      foreach (array_intersect_key($snapshot, $display->getComponents()) as $field => $values) {
-        $baseline->set($field, $values);
-      }
-    }
+    $baseline = $this->comparedBaseline($entity, $form_state);
+    $changed = [];
+    $kept = [];
     foreach (array_keys($extracted) as $field) {
       if ($baseline !== NULL && $submitted->get($field)->equals($baseline->get($field))) {
         continue;
@@ -202,8 +224,65 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
       if (!$entity->access('update') || !$entity->get($field)->access('edit')) {
         throw new AccessDeniedHttpException();
       }
+      // Stored already, by someone else: nothing to write, nothing to refuse.
+      if ($submitted->get($field)->equals($entity->get($field))) {
+        $kept[] = $field;
+        continue;
+      }
+      if ($this->refusedAsStale($entity, $baseline, $field, $form_state)) {
+        continue;
+      }
       $entity->set($field, $submitted->get($field)->getValue());
+      $changed[] = $field;
     }
+    $form_state->set('property_changed', $changed);
+    $form_state->set('property_kept', $kept);
+    $form_state->setTemporaryValue('property_compared', $baseline);
+  }
+
+  /**
+   * The values the submitted ones are compared with.
+   *
+   * The signed opening snapshot on a form's first POST; the baseline this
+   * form state keeps from then on.
+   */
+  private function comparedBaseline(ContentEntityInterface $entity, FormStateInterface $form_state): ?ContentEntityInterface {
+    if (!$this->getRequest()->isMethod('POST') || $form_state->has('property_saved')) {
+      return $form_state->get('property_baseline');
+    }
+    $baseline = clone $entity;
+    $components = $this->getFormDisplay($form_state)->getComponents();
+    foreach (array_intersect_key($this->openingSnapshot($form_state), $components) as $field => $values) {
+      $baseline->set($field, $values);
+    }
+    return $baseline;
+  }
+
+  /**
+   * Whether validation refuses a field someone stored anew since the snapshot.
+   *
+   * After validation save() checks again under its lock, so this is false.
+   */
+  private function refusedAsStale(ContentEntityInterface $stored, ?ContentEntityInterface $baseline, string $field, FormStateInterface $form_state): bool {
+    if ($form_state->isValidationComplete() || !$this->changedMeanwhile($stored, $baseline, $field)) {
+      return FALSE;
+    }
+    $form_state->setErrorByName($field, $this->refusal());
+    return TRUE;
+  }
+
+  /**
+   * Whether an autosaving form's field was stored anew since its snapshot.
+   */
+  private function changedMeanwhile(ContentEntityInterface $stored, ?ContentEntityInterface $baseline, string $field): bool {
+    return $this->autosaves() && $baseline !== NULL && !$stored->get($field)->equals($baseline->get($field));
+  }
+
+  /**
+   * The copy of a pick refused because someone changed the field meanwhile.
+   */
+  private function refusal(): string {
+    return (string) $this->t('Someone changed this meanwhile. The page shows their value.');
   }
 
   /**
@@ -236,30 +315,131 @@ abstract class BbPropertyFormBase extends ContentEntityForm implements ReadOnlyE
     if (!$this->entity->access('update')) {
       throw new AccessDeniedHttpException();
     }
-    return parent::validateForm($form, $form_state);
+    $entity = parent::validateForm($form, $form_state);
+    assert($entity instanceof ContentEntityInterface);
+    $this->validateProperties($entity, $form_state);
+    if ($this->autosaves() && $form_state->getErrors()) {
+      // The answer shows the stored values; the next pick compares with them.
+      $form_state->set('property_baseline', clone $this->entity);
+      $payload = $this->baselinePayload($form_state);
+      $form['property_baseline']['#value'] = $payload;
+      $form['property_signature']['#value'] = $this->csrfToken->get($this->baselineKey($payload, $form['#build_id']));
+    }
+    return $entity;
+  }
+
+  /**
+   * Further rules for the built entity; their errors refuse it like any other.
+   *
+   * @SuppressWarnings("PHPMD.UnusedFormalParameter")
+   */
+  protected function validateProperties(ContentEntityInterface $entity, FormStateInterface $form_state): void {
   }
 
   /**
    * {@inheritdoc}
+   *
+   * An autosaving form checks the changed fields again under a lock and
+   * writes them onto the entity as stored now. A field someone saved after
+   * validation is refused at the field and nothing is written; the answer
+   * then shows the stored entity and returns 0.
    */
   public function save(array $form, FormStateInterface $form_state): int {
     if (!$this->entity->access('update')) {
       throw new AccessDeniedHttpException();
     }
+    if (!$this->autosaves()) {
+      return $this->write($form_state, TRUE);
+    }
+    $announce = !$this->getRequest()->headers->has('HX-Request');
+    if (($form_state->get('property_changed') ?? []) === []) {
+      // Nothing to write: no lock and no save. Save without JavaScript is
+      // still confirmed.
+      $this->confirm($announce);
+      $this->answer($form_state, $form_state->get('property_kept') ?? [], []);
+      return 0;
+    }
+    $type = $this->entity->getEntityTypeId();
+    $lock = 'bb_property:' . $type . ':' . $this->entity->id();
+    $locked = $this->lock->acquire($lock) || (!$this->lock->wait($lock) && $this->lock->acquire($lock));
+    try {
+      $stored = $this->entityTypeManager->getStorage($type)->loadUnchanged($this->entity->id());
+      assert($stored instanceof ContentEntityInterface);
+      $changed = $form_state->get('property_changed') ?? [];
+      $baseline = $form_state->getTemporaryValue('property_compared');
+      // Without the lock someone is saving this entity right now: refuse all.
+      $stale = $locked ? array_filter($changed, fn (string $field): bool => $this->changedMeanwhile($stored, $baseline, $field)) : $changed;
+      if ($stale !== []) {
+        $this->entity = $stored;
+        $this->answer($form_state, [], array_fill_keys($stale, $this->refusal()));
+        return 0;
+      }
+      // Onto the entity as stored now, so another field saved meanwhile stays.
+      foreach ($changed as $field) {
+        $stored->set($field, $this->entity->get($field)->getValue());
+      }
+      $this->entity = $stored;
+      return $this->write($form_state, $announce);
+    }
+    finally {
+      if ($locked) {
+        $this->lock->release($lock);
+      }
+    }
+  }
+
+  /**
+   * Saves the entity and answers with the rebuilt form.
+   *
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
+   * @param bool $announce
+   *   Whether a status message confirms the save; an autosaving answer says
+   *   "Saved" at the field instead.
+   */
+  private function write(FormStateInterface $form_state, bool $announce): int {
     $result = $this->entity->save();
-    // The same wording Settings uses, rendered by this form's own messages.
-    $this->messenger()->addStatus($this->t('@type %label saved.', [
-      '@type' => $this->entity->getEntityType()->getLabel(),
-      '%label' => $this->entity->label() ?? $this->entity->id(),
-    ]));
+    $this->confirm($announce);
+    $saved = array_merge($form_state->get('property_changed') ?? [], $form_state->get('property_kept') ?? []);
+    $this->answer($form_state, $saved, []);
+    return $result;
+  }
+
+  /**
+   * Confirms the save with a status message, when it is announced.
+   */
+  private function confirm(bool $announce): void {
+    if ($announce) {
+      // The same wording Settings uses, rendered by this form's own messages.
+      $this->messenger()->addStatus($this->t('@type %label saved.', [
+        '@type' => $this->entity->getEntityType()->getLabel(),
+        '%label' => $this->entity->label() ?? $this->entity->id(),
+      ]));
+    }
+  }
+
+  /**
+   * Rebuilds the form on the current entity as the answer to this POST.
+   *
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The form state.
+   * @param array<string> $saved
+   *   The fields that now hold what was picked.
+   * @param array<string, string> $refused
+   *   Messages of the fields refused after validation, keyed by field.
+   */
+  private function answer(FormStateInterface $form_state, array $saved, array $refused): void {
     $form_state->set('property_baseline', clone $this->entity);
-    $form_state->set('property_saved', TRUE);
+    // From now on the baseline lives here.
+    $form_state->set('property_saved', $saved);
+    $form_state->set('property_refused', $refused);
+    // The answer shows the entity, not the submitted values a refusal kept out.
     $form_state->setUserInput([]);
+    $form_state->setValues([]);
     // A later Save belongs to this same form, not a new editor's snapshot.
     // Core caches this successful POST continuation, never the opening GET.
     $form_state->addRebuildInfo('copy', ['#build_id' => TRUE]);
     $form_state->setRebuild();
-    return $result;
   }
 
   /**

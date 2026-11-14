@@ -66,6 +66,34 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     Then the band region "flow" comes before the band region "summary"
     And the band region "summary" comes before the band region "links"
 
+  # AC 10. The sub-line names who created the ticket and how long ago; the
+  # exact date is one hover away, on the time element.
+  Scenario: The header names creator and age
+    When I visit the ticket "BB-142"
+    Then the page header names the creator of ticket "BB-142" and how long ago it was created
+    And the age in the page header shows its exact date on hover
+
+  # AC 9. A title too long for two lines is clamped on screen, and the heading
+  # still holds the whole title, also on hover, an apostrophe and `$` included.
+  # The clamp itself is a layout measure and stays out of the suite.
+  Scenario: A long title keeps its full text on hover
+    Given a disposable ticket titled "Add designbook entity view-mode for bb_ticket so designers can preview every ticket detail layout, the summary band's $variables and the run history without hitting live Drupal data, in every workflow state and at both densities"
+    When I visit the disposable ticket
+    Then the page heading shows the whole title of the disposable ticket as text, also on hover
+
+  # A ticket title is text, never markup: a tag shows as typed, a quote stays in
+  # the hover title and nothing in a title runs.
+  Scenario Outline: A ticket title renders as text
+    Given a disposable ticket titled '<title>'
+    When I visit the disposable ticket
+    Then the page heading shows the whole title of the disposable ticket as text, also on hover
+
+    Examples:
+      | title                                     |
+      | A <i>tag</i> title                        |
+      | Quote "here" title                        |
+      | <img src=x onerror="window.__bbXss=1">    |
+
   # AC 6's grouping, observed on the surface rather than on the grouper. BB-142
   # carries six links spanning mr, ci, report, design, ddev and chat — so all
   # four groups have rows. An empty group must be ABSENT, which is what the
@@ -79,6 +107,21 @@ Feature: The ticket detail screen is one canvas inside the shell's island
   Scenario: A Slack thread permalink is a chat row under More
     When I visit the ticket "BB-142"
     Then the link group "More" has a row for "https://example.slack.com/archives/C0123ABCD/p1700000000000100" with the icon "inbox"
+
+  # BAKERS-56 AC-14: the link opens the project list on the ticket's direct
+  # sub-tickets, closed ones included; without sub-tickets there is no link.
+  Scenario: Show in list opens the sub-tickets in the project list
+    Given a disposable ticket titled "Parent of two"
+    And the disposable ticket has an open and a closed sub-ticket
+    When I visit the disposable ticket
+    And I open the Relations block
+    And I open "Show in list →"
+    Then the list shows the parent filter for the disposable ticket and exactly its sub-tickets
+
+  Scenario: A ticket without sub-tickets offers no Show in list link
+    Given a disposable ticket titled "Childless"
+    When I visit the disposable ticket
+    Then the inspector offers no "Show in list →" link
 
   # The state flow is a list, not colour alone: exactly one step is current,
   # and it is the ticket's own state.
@@ -148,7 +191,7 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     And the inspector is still held at the top of the viewport
     And nothing between the inspector and the document clips it
     And no handoff stream is shown
-    And no run history is shown
+    And the run history shows no runs
 
   # AC 11's island half. TWO CLICKS, and the second one lands on markup that
   # arrived through a swap rather than through a document load: leave the ticket
@@ -195,3 +238,17 @@ Feature: The ticket detail screen is one canvas inside the shell's island
     When I request the ticket "BB-142" in the workspace "other"
     Then the response status is 404
     And the error screen is 404 with the "signpost-missing" signpost
+
+  @deployment-presentation @feature:project-overview
+  Scenario: Ticket header badges appear only once the deployment is closed
+    Given a project world with these tickets:
+      | ticket     | state         |
+      | First work | qualification |
+    And the world has an open deployment to "develop" carrying "First work"
+    And the account "north-lead" is seated in the world as a lead
+    And I am signed in as "north-lead"
+    When I open the world ticket "First work"
+    Then the ticket header does not show the deployed badge "develop"
+    When the world deployment is closed
+    And I open the world ticket "First work"
+    Then the ticket header shows the deployed badge "develop"

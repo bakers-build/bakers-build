@@ -1,0 +1,151 @@
+{
+  "source": {
+    "kind": "figma",
+    "identity": "https://www.figma.com/design/sr31HfHNWbCeNsxvXbt4wv",
+    "revision": null
+  },
+  "role": "reference",
+  "elements": [
+    {
+      "id": "project-overview-needs-attention",
+      "locator": {
+        "kind": "figma-node",
+        "value": "100:2680"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 1180
+        }
+      ]
+    },
+    {
+      "id": "project-overview-metrics-flowing",
+      "locator": {
+        "kind": "figma-node",
+        "value": "101:537"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 856,
+          "height": 256
+        }
+      ]
+    },
+    {
+      "id": "project-board-details-off",
+      "locator": {
+        "kind": "figma-node",
+        "value": "101:12045"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 1076
+        }
+      ]
+    },
+    {
+      "id": "project-board-details-on",
+      "locator": {
+        "kind": "figma-node",
+        "value": "102:623"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 1116
+        }
+      ]
+    },
+    {
+      "id": "project-board-done-open-scroll",
+      "locator": {
+        "kind": "figma-node",
+        "value": "110:8013"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 1120
+        }
+      ]
+    },
+    {
+      "id": "project-overview-layout",
+      "locator": {
+        "kind": "figma-node",
+        "value": "71:4200"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    },
+    {
+      "id": "project-board-layout",
+      "locator": {
+        "kind": "figma-node",
+        "value": "80:3178"
+      },
+      "states": [
+        {
+          "name": "default",
+          "session": "anonymous"
+        }
+      ],
+      "views": [
+        {
+          "id": "desktop",
+          "width": 1440,
+          "height": 900
+        }
+      ]
+    }
+  ],
+  "assets_dir": "assets"
+}

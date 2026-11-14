@@ -1,0 +1,9 @@
+component: bb_theme:board-card
+name: Deployed
+props:
+  identifier: BB-216
+  title: Show completed deployment targets
+  state: done
+  deployed_to:
+    - develop
+    - production

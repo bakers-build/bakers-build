@@ -1,6 +1,6 @@
 # herdr-core
 
-Run each ticket's agent in a herdr-core terminal. herdr-core is the local server behind herdr-app; its terminals live independently of the app. See [Use your client](/get-started/use-your-client#herdr-app) for usage. The worktree comes from a workspace addon such as [Git workspace](/addons/workspace-git).
+Run each ticket's agent in a herdr-core terminal. herdr-core is the local server behind herdr-app; its terminals live independently of the app. See [Use your client](/get-started/use-your-client#herdr-app) for usage. Its preset brings [Git workspace](/addons/workspace-git) in project scope.
 
 ## AI first
 
@@ -8,10 +8,8 @@ Run each ticket's agent in a herdr-core terminal. herdr-core is the local server
 Read https://bakers.build/addons/herdr-core.
 Use herdr-core as this machine's executor. Check `hc --version` (0.1.18 or
 later), propose the machine.config.js executor entry or a project addon entry
-with a workspace addon, and verify it with bakers conductor check.
+and verify it with bakers conductor check.
 ```
-
-The reference below explains the commands and configuration changes.
 
 ## Setup
 
@@ -26,12 +24,17 @@ A run fails at once with an install or upgrade message when `hc` is missing or o
 
 ## Configuration
 
-herdr-core is an executor only. In a project, list it with a workspace addon in `.bakers/project.config.js`:
+Initialize a project with the executor choice:
+
+```sh
+bakers config init --scope project --project <name> --executor @bakers-build/addon-herdr-core
+```
+
+Its preset brings `@bakers-build/addon-workspace-git`; no separate worktree entry is needed.
+Existing projects can list it in `.bakers/project.config.js`:
 
 ```js
 addons: [
-  '@bakers-build/addon-remote-drupal',
-  '@bakers-build/addon-workspace-git',
   '@bakers-build/addon-herdr-core',
 ],
 ```
@@ -54,7 +57,7 @@ The machine's executor wins for every project on that machine; the project keeps
 
 ## Run lifecycle
 
-`startRun` runs `hc run --bg --no-parent --outlive-parent` in the worktree. Its terminal name holds at most 32 characters of `a-z0-9-_`. The run's environment travels in a private launch script, never in the command line. `stopRun` does nothing. Cleanup finds the run's terminals by their branch and run labels, ends a live one with `hc kill` and removes it with `hc rm`; a sibling run's terminal is left alone. Run state reaches bakers.build through the agent and the server, as with herdr.
+`startRun` starts an 80x24 background terminal in the worktree through `hc connect`. A forwarder passes each resize (`SIGWINCH`) to the agent, also under bwrap's `--new-session`. Its terminal name holds at most 32 characters of `a-z0-9-_`. The run's environment travels in a private launch script, never in the command line. `stopRun` does nothing. Cleanup ends (`hc kill`) and removes (`hc rm`) only this run's terminals, found by their branch and run labels. Run state reaches bakers.build through the agent and the server, as with herdr.
 
 herdr-core has no workspace of its own and opens no layout. Remote machines (`hc run --on`) are not used.
 

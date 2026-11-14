@@ -39,6 +39,8 @@ export default {
 | `plugins[].plugin`, `plugins[].export`, `plugins[].with`, `plugins[].options` | A descriptor's package name, the named export to load (default export when absent), and its options: `with`, or `options` when `with` is absent. Other keys in a descriptor fail. |
 | `addons` | Optional package entries: a name or `{ use, alias?, with? }`. Contributions are appended after `plugins`. UI addons add tabs to `bakers ui`; see [Addons](/addons/configure). An entry that cannot be resolved is an error here. |
 | `addons[].use`, `addons[].alias`, `addons[].with`, `addons[].priority` | An entry's package name, its alias, its options (`with`) and an optional `priority` function. |
+| `server` | Optional conductor server slot for this connection: `{ use, export?, with? }`, or a constructed plugin with `kind: 'server'`. Default `@bakers-build/addon-remote-drupal`. A project `server` slot or a server addon in the project's `addons` wins over it. |
+| `server.use`, `server.export`, `server.with` | The server slot's package, its named factory and the factory's options, as in a project [slot descriptor](/configuration/project#slot-descriptors). |
 
 Unknown keys fail. The top-level values are passed to every plugin as base options; an entry's own `with` wins. There is no merge of arbitrary plugins across files.
 
@@ -176,7 +178,7 @@ export default {
 
 Never paste a real secret into a ticket, a document or a committed file. A `client_secret` read from `process.env` works at run time; `bakers config check` then reports the value as not checked. The plugin also offers `oauth2_password`; use it only where the operator explicitly enables that grant.
 
-Other profiles of one host: `bakers auth use <id>` switches the active profile and `--auth-profile <id>` overrides it for one command. Inline HTTP Basic ([`@bakers-build/addon-auth-basic`](/addons/auth-basic)) exists for servers configured for it.
+Other profiles of one host: `bakers auth use <id>` switches the active profile and `--auth-profile <id>` overrides it for one command.
 
 ## Chat connector
 

@@ -46,6 +46,8 @@ export class BbConnectionConfigError extends Error {
 export interface BbConnectionConfig {
   site: { base_url: string; jsonapi_prefix: string };
   plugins: DropSHPlugin[];
+  /** The conductor server slot, as written; the conductor resolves it. */
+  server?: unknown;
   /**
    * BB-351: the uuid of the `bb_workspace` this connection is focused on.
    * BB-495: optional. `bakers dropsh` needs none — the caller names the
@@ -515,6 +517,7 @@ export async function loadBbConnectionBootstrap(
   return {
     site: { base_url: baseUrl, jsonapi_prefix: jsonapiPrefix },
     plugins,
+    ...(raw.server !== undefined ? { server: raw.server } : {}),
     workspace_id: workspaceId || undefined,
     config_path: configPath,
     fallback: resolution.fallback,

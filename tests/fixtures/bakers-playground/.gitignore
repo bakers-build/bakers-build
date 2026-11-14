@@ -27,3 +27,10 @@ patches.lock.json
 /.env.ddev
 
 /.env.ddev.*.tmp
+
+# Agent request logs (agent:opus-proxy).
+/assets-ai/
+
+# Written into a ticket worktree by after_create; a run clone's refresh keeps ignored files.
+/.bakers/connection.config.js
+/.claude/skills

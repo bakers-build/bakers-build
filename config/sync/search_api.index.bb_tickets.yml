@@ -59,6 +59,22 @@ field_settings:
     dependencies:
       module:
         - bb_core
+  health:
+    label: Health
+    datasource_id: 'entity:bb_ticket'
+    property_path: health
+    type: string
+    dependencies:
+      module:
+        - bb_core
+  health_moved:
+    label: 'Last real movement'
+    datasource_id: 'entity:bb_ticket'
+    property_path: health_moved
+    type: date
+    dependencies:
+      module:
+        - bb_core
   group_id:
     label: Group
     datasource_id: 'entity:bb_ticket'
@@ -100,6 +116,18 @@ field_settings:
     datasource_id: 'entity:bb_ticket'
     property_path: parent_id
     type: integer
+    dependencies:
+      module:
+        - bb_core
+  deployment_identifiers:
+    label: 'Deployment identifiers'
+    property_path: deployment_identifiers
+    type: string
+  parent_identifier:
+    label: 'Parent identifier'
+    datasource_id: 'entity:bb_ticket'
+    property_path: 'parent_id:entity:identifier'
+    type: string
     dependencies:
       module:
         - bb_core
@@ -196,6 +224,7 @@ datasource_settings:
       default: true
       selected: {  }
 processor_settings:
+  bb_deployment_identifiers: {  }
   add_url: {  }
   aggregated_field: {  }
   bb_origin_ref: {  }

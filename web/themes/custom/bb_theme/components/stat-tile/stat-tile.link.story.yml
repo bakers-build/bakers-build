@@ -1,0 +1,11 @@
+component: bb_theme:stat-tile
+name: Link
+props:
+  size: kpi
+  label: Unhealthy
+  value: '3'
+  tone: attention
+  detail: need a person now
+  info: Open tickets where a person has to act now.
+  source: bb_core.project_health
+  url: /?path=/story/designbook-sections-projects-scenes--project-detail-board

@@ -12,6 +12,7 @@ import type {
   BbAgent,
   ConductorFileConfig,
   ResolvedAgent,
+  RuntimePlugin,
   SandboxPreflight,
 } from '@bakers-build/conductor/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -45,6 +46,14 @@ const MISSING: SandboxPreflight = {
 const LINE =
   'sandbox unavailable: claude: socat not found — install it with sudo apt-get install -y socat (see https://bakers.build/docs/advanced/run-security#sandbox-prerequisites)';
 
+// Fake plugins all carry id 'fake'; makeConfig sets where each came from and
+// the server's package, which check prints in place of the id.
+const SLOTS = [
+  'server: @bakers-build/addon-remote-drupal (default)',
+  'executor: fake (addons)',
+  'worktree: fake (slot)',
+];
+
 describe('bakers conductor check / start sandbox report', () => {
   let home: string;
   let out: string[];
@@ -75,14 +84,40 @@ describe('bakers conductor check / start sandbox report', () => {
       ['check'],
       [agent('claude', MISSING), agent('codex', { ok: true })],
     );
-    expect(out).toEqual([LINE, 'codex: sandbox ok']);
+    expect(out).toEqual([...SLOTS, LINE, 'codex: sandbox ok']);
     expect(process.exitCode).toBe(1);
   });
 
   it('check exits 0 when every agent can start its sandbox', async () => {
     await run(['check'], [agent('claude', { ok: true })]);
-    expect(out).toEqual(['claude: sandbox ok']);
+    expect(out).toEqual([...SLOTS, 'claude: sandbox ok']);
     expect(process.exitCode).toBeUndefined();
+  });
+
+  it.each([
+    'check',
+    'start',
+  ])('%s warns about unchecked runtime prerequisites without failing', async (command) => {
+    const spawner = fakeSpawn();
+    await run(
+      command === 'check' ? ['check'] : ['start', '--no-update-check'],
+      [agent('claude', { ok: true })],
+      spawner,
+      {
+        kind: 'runtime',
+        id: 'docker',
+        isolates: true,
+        requiredModules: [],
+        createRuntime: async () => {
+          throw new Error('not needed');
+        },
+      },
+    );
+    expect(out).toContainEqual(
+      expect.stringMatching(/warning:.*host only.*docker.*not checked/),
+    );
+    if (command === 'check') expect(process.exitCode).toBeUndefined();
+    else expect(spawner.spawned).toHaveLength(1);
   });
 
   it('check names each agent by its alias', async () => {
@@ -94,6 +129,7 @@ describe('bakers conductor check / start sandbox report', () => {
       ],
     );
     expect(out).toEqual([
+      ...SLOTS,
       LINE.replace('claude:', 'claude-fast:'),
       'claude-deep: sandbox ok',
     ]);
@@ -114,10 +150,11 @@ describe('bakers conductor check / start sandbox report', () => {
     argv: string[],
     agents: ResolvedAgent[],
     spawner = fakeSpawn(),
+    runtime?: RuntimePlugin,
   ): Promise<void> {
     await buildConductorProgram({
       remote: new FakeBbRemote(),
-      config: makeConfig(),
+      config: { ...makeConfig(), ...(runtime ? { runtime } : {}) },
       agents,
       spawnConductor: spawner,
       sleep: async () => {},
@@ -133,6 +170,8 @@ describe('bakers conductor check / start sandbox report', () => {
       executor: fakeExecutor(),
       agent: [],
       workspace: fakeWorkspace(),
+      slot_sources: { server: 'default', executor: 'addons', worktree: 'slot' },
+      slot_packages: { server: '@bakers-build/addon-remote-drupal' },
       label: 'check test',
       project: 'bakers',
       states: ['working'],

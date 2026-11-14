@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Ticket;
 
+use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\Core\Url;
 use Drupal\bb_core\Claim\TicketStallReason;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\EnvVars;
 use Drupal\bb_core\Inspector\InspectorRows;
+use Drupal\bb_core\Run\RunSummary;
+use Drupal\bb_core\Run\TicketRunSummary;
 use Drupal\bb_core\Time\BbDate;
 
 /**
@@ -29,6 +33,7 @@ final class TicketInspectorRows extends InspectorRows {
     'recipe' => 'Recipe',
     'labels' => 'Labels',
     'owner_user_id' => 'Created by',
+    'runs' => 'Runs',
     'time_estimate' => 'Estimate',
     'time_spent' => 'Spent',
     'branch_name' => 'Branch',
@@ -44,6 +49,7 @@ final class TicketInspectorRows extends InspectorRows {
 
   public function __construct(
     private readonly BbDate $date,
+    private readonly TicketRunSummary $runSummary,
   ) {}
 
   /**
@@ -60,7 +66,7 @@ final class TicketInspectorRows extends InspectorRows {
    * Builds the rail's `items` array.
    *
    * @return array<string, array<string, mixed>>
-   *   Twenty `list` items, in the order the scene fixes.
+   *   Twenty-one `list` items, in the order the scene fixes.
    */
   public function build(BbTicketInterface $ticket): array {
     return $this->buildRows($ticket, self::FIELDS);
@@ -79,6 +85,9 @@ final class TicketInspectorRows extends InspectorRows {
     }
     if ($field === 'deployments') {
       return $this->deploymentsRow($label, $entity);
+    }
+    if ($field === 'runs') {
+      return $this->runsRow($label, $entity);
     }
     if (in_array($field, self::RELATIONS, TRUE)) {
       return $this->relationRow($label, $entity, $field);
@@ -116,7 +125,7 @@ final class TicketInspectorRows extends InspectorRows {
    *   The zone heading.
    *
    * @return array<string, mixed>
-   *   The `zone` render array.
+   *   The `zone` render array, carrying the runs summary's cacheability.
    */
   public function propertiesBlock(array $rows, string $heading = 'Properties'): array {
     $fields = [
@@ -131,18 +140,22 @@ final class TicketInspectorRows extends InspectorRows {
       'parent_id',
       'blocked_by',
       'owner_user_id',
+      'runs',
     ];
     $items = [];
     foreach ($fields as $field) {
       if (!isset($rows[$field])) {
         continue;
       }
-      if ($field === 'stall_reason' && $this->isEmpty($rows[$field])) {
+      if (in_array($field, ['stall_reason', 'runs'], TRUE) && $this->isEmpty($rows[$field])) {
         continue;
       }
       $items[$field] = $rows[$field];
     }
-    return parent::propertiesBlock($items, $heading);
+    unset($items['runs']['#cache']);
+    $block = parent::propertiesBlock($items, $heading);
+    CacheableMetadata::createFromRenderArray($rows['runs'] ?? [])->applyTo($block);
+    return $block;
   }
 
   /**
@@ -155,11 +168,13 @@ final class TicketInspectorRows extends InspectorRows {
    *   A key of self::GROUPS.
    * @param array<string, array<string, mixed>> $rows
    *   The `list` items keyed by field, as build() returns them.
+   * @param \Drupal\bb_core\Entity\BbTicketInterface|null $ticket
+   *   The ticket the rows describe; Relations offers "Show in list →" for it.
    *
    * @return array<string, mixed>
    *   The `collapsible` render array, or an empty array.
    */
-  public function groupBlock(string $group, array $rows): array {
+  public function groupBlock(string $group, array $rows, ?BbTicketInterface $ticket = NULL): array {
     $filled = array_values(array_filter(
       array_intersect_key($rows, array_flip(self::GROUPS[$group])),
       fn(array $row): bool => !$this->isEmpty($row),
@@ -173,6 +188,9 @@ final class TicketInspectorRows extends InspectorRows {
       'code' => $base === '' || $base === '—' ? 'Code' : 'Code · ' . $base,
       default => 'Relations · ' . array_sum(array_map(static fn(array $row): int => count($row['cells']) - 1, $filled)),
     };
+    if ($group === 'relations' && $ticket !== NULL && $ticket->getProjectId() !== NULL && $this->hasReadableChip($rows['sub_tickets'] ?? [])) {
+      $filled = $this->withShowInList($filled, $rows['sub_tickets'], $ticket);
+    }
     return [
       '#type' => 'component',
       '#component' => 'bb_theme:collapsible',
@@ -191,6 +209,50 @@ final class TicketInspectorRows extends InspectorRows {
         'content' => $this->list($filled),
       ],
     ];
+  }
+
+  /**
+   * Whether a relation row links at least one ticket the reader may open.
+   *
+   * @param array<string, mixed> $row
+   *   The relation row; an unreadable ticket is a chip without a `url`.
+   */
+  private function hasReadableChip(array $row): bool {
+    foreach ($row['cells'] ?? [] as $key => $cell) {
+      if ($key !== 'label' && isset($cell['url'])) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  /**
+   * Puts the "Show in list →" row right under the sub-tickets row.
+   *
+   * It opens the project's ticket list on this ticket's direct sub-tickets;
+   * `closed=all` keeps the closed ones in. Only offered with a project and at
+   * least one sub-ticket the reader may open, so no empty list.
+   *
+   * @param array<int, array<string, mixed>> $filled
+   *   The block's rows.
+   * @param array<string, mixed> $subTickets
+   *   The sub-tickets row among them.
+   * @param \Drupal\bb_core\Entity\BbTicketInterface $ticket
+   *   The parent ticket.
+   *
+   * @return array<int, array<string, mixed>>
+   *   The rows with the link row added.
+   */
+  private function withShowInList(array $filled, array $subTickets, BbTicketInterface $ticket): array {
+    $url = Url::fromRoute(
+      'view.tickets.project_tickets',
+      ['bb_project' => $ticket->getProjectId()],
+      ['query' => ['parent' => $ticket->getIdentifier(), 'closed' => 'all']],
+    )->toString();
+    $link = $this->row('', ['kind' => 'link', 'value' => 'Show in list →', 'url' => $url]);
+    $position = array_search($subTickets, $filled, TRUE);
+    array_splice($filled, $position === FALSE ? count($filled) : $position + 1, 0, [$link]);
+    return $filled;
   }
 
   /**
@@ -309,6 +371,23 @@ final class TicketInspectorRows extends InspectorRows {
       }
     }
     return $this->chipsRow($label, $chips);
+  }
+
+  /**
+   * The runs summary row, carrying the summary's own cacheability.
+   *
+   * A dash, which the Properties block leaves out, when the reader would be
+   * told "No runs yet" about runs they cannot see.
+   *
+   * @return array<string, mixed>
+   *   The `list` item, with the summary's `#cache`.
+   */
+  private function runsRow(string $label, BbTicketInterface $ticket): array {
+    $summary = $this->runSummary->forTicket($ticket->id());
+    if ($summary === NULL) {
+      return $this->row($label, $this->dash()) + ['#cache' => RunSummary::CACHE];
+    }
+    return $this->row($label, ['kind' => 'badge'] + $summary->badge()) + ['#cache' => $summary->build()['#cache']];
   }
 
   /**

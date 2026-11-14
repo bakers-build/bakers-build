@@ -15,7 +15,10 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const script = fileURLToPath(
-  new URL('../../../../scripts/teardown-test-project.sh', import.meta.url),
+  new URL(
+    '../../../../.bakers/scripts/teardown-test-project.sh',
+    import.meta.url,
+  ),
 );
 
 type Project = { name: string; approot: string; status: string };

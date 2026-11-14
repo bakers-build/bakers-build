@@ -8,6 +8,7 @@ use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\bb_core\Entity\BbRunInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\Run\TicketRetry;
 
 /**
  * Parks a ticket that is hot-reclaim-looping on a persistently-failing setup.
@@ -19,8 +20,9 @@ use Drupal\bb_core\Entity\BbTicketInterface;
  * `failed` run frees the ticket immediately, so a broken setup would re-claim +
  * re-fail every tick. Self-healing: once the window elapses (the newest failed
  * run ages out) or a non-failed run appears among the most recent N, the ticket
- * is claimable again — no permanent human gate. A ticket with fewer than `cap`
- * runs, or a mixed recent set, is never parked.
+ * is claimable again — no permanent human gate. A member's Retry lifts it at
+ * once: only runs changed after the request count. A ticket with fewer than
+ * `cap` runs, or a mixed recent set, is never parked.
  *
  * Split out of TicketClaimService so the claim service stays under the phpmd
  * class-complexity budget. The thresholds are fixed constants.
@@ -37,10 +39,13 @@ final class FailedRunCircuitBreaker {
    *   The entity type manager, used to query the ticket's runs.
    * @param \Drupal\Component\Datetime\TimeInterface $time
    *   The time service, used to evaluate the retry window.
+   * @param \Drupal\bb_core\Run\TicketRetry $ticketRetry
+   *   A member's retry request; only runs changed after it count.
    */
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly TimeInterface $time,
+    private readonly TicketRetry $ticketRetry,
   ) {
   }
 
@@ -67,13 +72,18 @@ final class FailedRunCircuitBreaker {
     $window = self::DEFAULT_RETRY_WINDOW_SECONDS;
     $storage = $this->entityTypeManager->getStorage('bb_run');
     // The `cap` most-recent runs of this ticket, newest first.
-    $ids = $storage->getQuery()
+    $query = $storage->getQuery()
       ->accessCheck(FALSE)
       ->condition('ticket_id', $ticket->id())
       ->sort('changed', 'DESC')
       ->sort('id', 'DESC')
-      ->range(0, $cap)
-      ->execute();
+      ->range(0, $cap);
+    // A retry request wipes the slate: earlier failures no longer count.
+    $requested_at = $this->ticketRetry->requestedAt($ticket);
+    if ($requested_at !== NULL) {
+      $query->condition('changed', $requested_at, '>');
+    }
+    $ids = $query->execute();
     // Fewer than `cap` runs so far → not enough failures to trip the breaker.
     if (count($ids) < $cap) {
       return FALSE;

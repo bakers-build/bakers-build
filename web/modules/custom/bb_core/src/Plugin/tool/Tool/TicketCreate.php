@@ -6,6 +6,7 @@ namespace Drupal\bb_core\Plugin\tool\Tool;
 
 use Drupal\bb_core\Entity\BbProjectInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
+use Drupal\bb_core\TicketWriteBudget;
 use Drupal\Component\Uuid\Uuid;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Access\AccessResultInterface;
@@ -111,6 +112,17 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('The ticket identifier, e.g. BAKERS-15.'),
       nullable: TRUE,
     ),
+    'title' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Title'),
+      description: new TranslatableMarkup('The saved ticket title.'),
+    ),
+    'origin' => new OutputDefinition(
+      data_type: 'string',
+      label: new TranslatableMarkup('Origin'),
+      description: new TranslatableMarkup('The stored origin, null when absent or not readable.'),
+      nullable: TRUE,
+    ),
     'state' => new OutputDefinition(
       data_type: 'string',
       label: new TranslatableMarkup('State'),
@@ -156,6 +168,7 @@ final class TicketCreate extends ToolBase {
       throw new \InvalidArgumentException('You may not create tickets.');
     }
     $project = $this->readableProject($values['project']);
+    TicketWriteBudget::check($values['description'] ?? '');
     $fields = [
       'title' => $values['title'],
       'workflow' => $values['workflow'],
@@ -201,66 +214,14 @@ final class TicketCreate extends ToolBase {
     return ExecutableResult::success($message, [
       'id' => $ticket->uuid(),
       'identifier' => $ticket->getIdentifier() ?: NULL,
+      'title' => $ticket->label(),
+      'origin' => $ticket->get('origin')->access('view', $this->currentUser) ? $ticket->get('origin')->value : NULL,
       'state' => $ticket->get('state')->value,
       'branch_name' => $ticket->get('branch_name')->value,
       'assignee' => $assignee instanceof AccountInterface ? $assignee->getDisplayName() : NULL,
       'reviewers' => array_map(static fn (AccountInterface $account) => $account->getDisplayName(), $ticket->get('reviewers')->referencedEntities()),
       'url' => $ticket->toUrl()->setAbsolute()->toString(),
     ]);
-  }
-
-  /**
-   * Assigns the active account of this address when the field's rule allows.
-   *
-   * The assignee field's own validation (ValidReference with its selection
-   * handler) decides, as in the web form. Returns whether it was assigned.
-   */
-  private function assign(BbTicketInterface $ticket, string $email): bool {
-    $account = $this->activeAccount($email);
-    if (!$account) {
-      return FALSE;
-    }
-    $ticket->set('assignee_user_id', $account->id());
-    if ($ticket->get('assignee_user_id')->validate()->count() === 0) {
-      return TRUE;
-    }
-    $ticket->set('assignee_user_id', NULL);
-    return FALSE;
-  }
-
-  /**
-   * Adds the active account of this address as a reviewer when allowed.
-   *
-   * The reviewers field's own validation decides, as for the assignee.
-   * Returns whether it was added.
-   */
-  private function addReviewer(BbTicketInterface $ticket, string $email): bool {
-    $account = $this->activeAccount($email);
-    if (!$account) {
-      return FALSE;
-    }
-    $reviewers = $ticket->get('reviewers')->getValue();
-    $ticket->get('reviewers')->appendItem($account->id());
-    if ($ticket->get('reviewers')->validate()->count() === 0) {
-      return TRUE;
-    }
-    $ticket->set('reviewers', $reviewers);
-    return FALSE;
-  }
-
-  /**
-   * The active account with this e-mail address, if any.
-   */
-  private function activeAccount(string $email): ?AccountInterface {
-    $storage = $this->entities()->getStorage('user');
-    // Case-insensitive, like core's unique-mail check; escaped as escapeLike().
-    $ids = $storage->getQuery()->accessCheck(FALSE)
-      ->condition('mail', addcslashes($email, '\\%_'), 'LIKE')
-      ->condition('status', 1)
-      ->range(0, 1)
-      ->execute();
-    $account = $ids ? $storage->load(reset($ids)) : NULL;
-    return $account instanceof AccountInterface ? $account : NULL;
   }
 
   /**

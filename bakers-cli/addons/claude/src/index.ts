@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { existsSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import {
   type AgentFootprint,
   type AgentPlugin,
+  type AgentRunContext,
   type AgentRunIdentity,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
@@ -38,9 +39,14 @@ import {
   shellQuote,
   withoutGitDirs,
 } from '@bakers-build/core';
+import { shareLogin } from './credentials.js';
 import { parseClaudeTranscript } from './footprint.js';
+import { encodeClaudeProjectDir, prepareClaudeRun } from './run.js';
+import { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 export { parseClaudeTranscript } from './footprint.js';
+export { encodeClaudeProjectDir } from './run.js';
+export { claudeInstallCommand, claudeModelApi } from './setup.js';
 
 /** src/index.ts and dist/src/index.js both sit two levels below the package root. */
 const MEASURE_WRAPPER = fileURLToPath(
@@ -83,6 +89,7 @@ function securityFlags(
   { mode, sandbox, config }: ResolvedSecurity,
   workspacePath: string | undefined,
   pluginsOn = false,
+  isolatedGit = false,
 ): string[] {
   if (mode === 'system') return [];
   if (mode === 'yolo') return ['--dangerously-skip-permissions'];
@@ -91,7 +98,7 @@ function securityFlags(
   const git =
     workspacePath === undefined
       ? { write: [], protect: [] }
-      : gitSandboxPaths(workspacePath);
+      : gitSandboxPaths(workspacePath, isolatedGit);
   const settings = {
     sandbox: {
       enabled: true,
@@ -142,14 +149,6 @@ function securityFlags(
   ];
 }
 
-/**
- * Encode an absolute cwd the way Claude Code names its per-project transcript
- * directory under `~/.claude/projects/`: every non-alphanumeric char → `-`.
- */
-export function encodeClaudeProjectDir(cwd: string): string {
-  return cwd.replace(/[^a-zA-Z0-9]/g, '-');
-}
-
 export interface ClaudeAgentOptions extends SecurityOptions {
   model?: string;
   effort?: string;
@@ -160,6 +159,11 @@ export interface ClaudeAgentOptions extends SecurityOptions {
    * applies the state-group settings shipped with the addon.
    */
   measure?: boolean;
+  /**
+   * When true (and `measure` is not), the unchanged launch runs through
+   * `claude-measure.mjs --capture`, which only logs every model request.
+   */
+  proxy?: boolean;
   /** False runs this agent in the user's own `~/.claude`, without the project's plugins. */
   plugins?: boolean;
 }
@@ -207,6 +211,8 @@ const CLAUDE_KNOWN: readonly KnownOptionSpec[] = [
 
 export class ClaudeAgent implements BbAgent {
   readonly id = 'claude';
+  readonly installCommand = claudeInstallCommand;
+  readonly modelApi = claudeModelApi;
   private readonly args: string[];
   private readonly model: string | undefined;
   private readonly effort: string | undefined;
@@ -218,6 +224,7 @@ export class ClaudeAgent implements BbAgent {
   /** Set by the last launch: the conductor's server replaced the sandbox's own `bakers`. */
   private replacedBakersServer = false;
   private readonly measure: boolean;
+  private readonly proxy: boolean;
   private readonly overrides: { model: boolean; effort: boolean };
   readonly pluginsDisabled: boolean;
   /** The Claude config dir runs read and write: the agent home while plugins are on. */
@@ -246,6 +253,7 @@ export class ClaudeAgent implements BbAgent {
     this.securityMode = security.mode;
     this.runEnvPolicy = security.runEnvPolicy;
     this.measure = validateOptionalBoolean(options.measure, 'measure') ?? false;
+    this.proxy = validateOptionalBoolean(options.proxy, 'proxy') ?? false;
     this.pluginsDisabled =
       validateOptionalBoolean(options.plugins, 'plugins') === false;
     this.configDir = join(home, '.claude');
@@ -258,17 +266,20 @@ export class ClaudeAgent implements BbAgent {
     this.configDir = homePath(this.id, homeKey([...marketplaces]));
   }
 
+  prepareRun(context: AgentRunContext) {
+    return prepareClaudeRun(context, this.configDir);
+  }
+
   async installPlugins(
     marketplaces: readonly MarketplaceDeclaration[],
     home: string,
   ): Promise<PluginLaunch> {
+    const credentials = join(this.home, '.claude', '.credentials.json');
     const outcome = await ensureHome(home, async (dir) => {
-      const credentials = join(this.home, '.claude', '.credentials.json');
       if (!existsSync(credentials))
         throw new Error(
           `claude: no credential file at ${credentials} (a keychain login cannot be shared with an agent home); log in with a file-based credential`,
         );
-      symlinkSync(credentials, join(dir, '.credentials.json'));
       for (const { url, ref, plugins } of marketplaces) {
         const added = await claudeJson(dir, url, [
           'plugin',
@@ -294,6 +305,8 @@ export class ClaudeAgent implements BbAgent {
         { mode: 0o600 },
       );
     });
+    // Every use: a token refresh inside the home replaced the link with a copy.
+    shareLogin(credentials, join(home, '.credentials.json'));
     return { env: { CLAUDE_CONFIG_DIR: home }, args: [], home: outcome };
   }
 
@@ -317,6 +330,7 @@ export class ClaudeAgent implements BbAgent {
     tools?: { url: string },
     _env?: Readonly<Record<string, string>>,
     pluginArgs: readonly string[] = [],
+    isolatedGit = false,
   ): string {
     if (prompt === '') {
       return 'claude';
@@ -331,8 +345,12 @@ export class ClaudeAgent implements BbAgent {
         ? ['node', shellQuote(TRUST_WRAPPER), shellQuote(workspacePath)]
         : []),
       ...(this.measure
-        ? ['node', shellQuote(MEASURE_WRAPPER), 'claude', shellQuote(prompt)]
-        : ['claude', shellQuote(prompt)]),
+        ? ['node', shellQuote(MEASURE_WRAPPER)]
+        : this.proxy
+          ? ['node', shellQuote(MEASURE_WRAPPER), '--capture']
+          : []),
+      'claude',
+      shellQuote(prompt),
     ];
     if (this.model !== undefined && !this.overrides.model) {
       parts.push('--model', shellQuote(this.model));
@@ -343,7 +361,12 @@ export class ClaudeAgent implements BbAgent {
     // The flags are constants; only their generated values need quoting.
     parts.push(
       ...[
-        ...securityFlags(this.security, workspacePath, this.pluginsOn),
+        ...securityFlags(
+          this.security,
+          workspacePath,
+          this.pluginsOn,
+          isolatedGit,
+        ),
         ...this.mcpFlags(tools),
       ].map((t) => (t.startsWith('--') ? t : shellQuote(t))),
     );

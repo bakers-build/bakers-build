@@ -5,9 +5,12 @@ description: Use when initializing or completing bakers.build machine, connectio
 
 # Initialize bakers.build configuration
 
-Use the CLI inventory/repair planner; existing files alone do not establish readiness.
+Follow the setup documentation for choices and file ownership. Use the CLI inventory/repair
+planner for supported changes; generated defaults and existing files alone do not establish readiness.
 For requested migration use `@bakers-build/bb-upgrade-project`.
 Read [setup checks](references/setup-checks.md) before checking/applying.
+For project/all, first [assess worktree compatibility](references/project-setup.md#check-worktree-compatibility-first)
+before configuration checks or setup changes. Resolve known application blockers before continuing.
 
 ## Select and check the scope
 
@@ -26,22 +29,24 @@ requires shared-setup authorization. Obtain missing scope authorization before s
    Preserve selected paths throughout: `--path <directory>` selects project root;
    `--machine-path <file>` / `--config <file>` select shared targets.
 2. For project setup, independently check machine validity and effective connection authentication.
-   With no machine identity or no authenticated user, invoke `@bakers-build/bb-init` for the missing layer
-   and resume afterwards. Resolve other prerequisites in their owning authorized scope.
+   With no machine identity, no authenticated user or an open machine decision (agent harness,
+   routes, machine permissions, preview-tunnel policy), invoke `@bakers-build/bb-init` for it and resume afterwards. Resolve other prerequisites in their owning authorized scope.
 3. Obtain only missing inputs; reuse explicit values. Machine: `--label`
    (`bakers init` generates `machine_id`; the run budget is set in the backend). Connection: `--base-url`, `--client-id`,
    optional `--workspace-id`, `--secret-env <variable-name>`. Invent no identities, credentials or workspaces. Secrets stay
    out of prompts, arguments and reports; CLI owns private storage. Supply workspace only if
    caller-named; otherwise `bakers ui` uses its picker.
 4. For project/all, follow [project setup](references/project-setup.md) before applying:
-   resolve/create the real project, collect operator hooks, write the phase hints, preserve workflow policy and verify ignores.
+   after the compatibility assessment, resolve/create the real project, follow its decision matrix, preserve workflow policy and verify ignores.
 
 ## Apply and verify
 
 Run `bakers config init --scope <scope>` with selected inputs/paths; project/all includes
-`--project <resolved-name>` and `--path`. CLI fills/migrates supported partial layers while
-preserving custom values. Keep `--project-connection keep`; use `create` only for an explicitly
-requested override.
+`--project <resolved-name>` and `--path`; herdr-app adds
+`--executor @bakers-build/addon-herdr-core` (Git workspace comes with it). CLI fills/migrates partial layers while
+preserving custom values. Select a named connection using the current help and
+[connection guide](https://bakers.build/configuration/connection). Reconcile generated files with
+the documented choices from project setup, including settings without CLI flags.
 
 If authentication fails after preparation, report written paths and incomplete setup; follow the
 selected connection's exact `bakers` provider login remedy and rerun initialization.
@@ -50,5 +55,6 @@ inapplicable; other scopes require authentication, not a workspace. Offline chec
 
 For project/all, read the configured project and confirm its `WORKFLOW.md` starts with the entry
 line and names only installed skills.
-Report written paths, scope, local validation, online readiness and remaining actions separately.
+Report paths, scope, resolved executor and worktree (herdr-app: `@bakers-build/addon-workspace-git`),
+local validation, online readiness and remaining actions separately.
 Stop after setup; do not start ticket work.

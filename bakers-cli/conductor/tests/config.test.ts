@@ -11,6 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { agentReport } from '@bakers-build/addon-agents';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  composeConductorConfig,
   configStems,
   DEFAULT_AGENT_PROMPT,
   listConductorConfigFiles,
@@ -224,26 +225,27 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     expect(DEFAULT_AGENT_PROMPT).not.toContain('--- Ticket comments ---');
   });
 
-  it('instructs the step-0 read: MCP tool, else load it, and the CLI only when it cannot be loaded', () => {
-    // A harness connects MCP servers in the background, so at the first turn the
-    // tool can be "not listed yet" without being "not served". The agent loads it
-    // before falling back; a run whose Bash forbids `bakers tools` stopped there.
+  it('loads the workflow before reading the ticket and delegates transport to the skill', () => {
     const paths = [
-      'the MCP tool bakers_ticket_read',
-      'when it is not listed yet load it through your tool search',
-      'only when it cannot be loaded',
-      `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
+      'Read ./WORKFLOW.md',
+      'load the bakers.build entry skill named there',
+      'Read the ticket with the bakers tool bakers_ticket_read',
+      'Follow the loaded skill for tool discovery, transport and fallback',
     ].map((p) => DEFAULT_AGENT_PROMPT.indexOf(p));
     expect(paths.every((at) => at >= 0)).toBe(true);
     expect([...paths].sort((a, b) => a - b)).toEqual(paths);
     expect(DEFAULT_AGENT_PROMPT).toContain(
-      'a denial blocks that one command, not every command',
+      'Do not call ticket or service tools before reading both files',
     );
-    expect(DEFAULT_AGENT_PROMPT).not.toContain('when it is listed, else');
-    expect(DEFAULT_AGENT_PROMPT).not.toContain('bakers oven tools');
-    // Harness-neutral: no Claude-only tool names.
-    for (const claudeOnly of ['tool_api__', 'mcp__', 'ToolSearch']) {
-      expect(DEFAULT_AGENT_PROMPT).not.toContain(claudeOnly);
+    expect(DEFAULT_AGENT_PROMPT).not.toContain("for this ticket's work type");
+    for (const transport of [
+      'bakers tools',
+      'Bash',
+      'tool_api__',
+      'mcp__',
+      'ToolSearch',
+    ]) {
+      expect(DEFAULT_AGENT_PROMPT).not.toContain(transport);
     }
   });
 
@@ -299,7 +301,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
       .replaceAll('{ticket_uuid}', 'ffcb6949-90bf-4639-96d1-91c2c2378575');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
-      `bakers tools bakers_ticket_read --data '{"ticket":"ffcb6949-90bf-4639-96d1-91c2c2378575"}'`,
+      `arguments {"ticket":"ffcb6949-90bf-4639-96d1-91c2c2378575"}`,
     );
     expect(rendered).not.toContain('--- Ticket comments ---');
     expect(rendered).not.toContain('{comments}');
@@ -330,16 +332,19 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
     'Invoke the bakers skill',
     'ticket:run',
     'coding engine',
+    'bakers tools',
     'State: {state}',
     // The run reads through bakers_ticket_read like every skill step.
     'dropsh --format md read',
+    // The default read returns the newest comments, not all of them.
+    'and all comments',
   ];
   const NEUTRAL_CONTRACT = [
-    'Read the ticket and all comments',
+    'Read the ticket with the bakers tool bakers_ticket_read',
     'bakers_ticket_read',
-    `bakers tools bakers_ticket_read --data '{"ticket":"{ticket_uuid}"}'`,
-    'load it through your tool search',
+    'Follow the loaded skill for tool discovery, transport and fallback',
     './WORKFLOW.md',
+    'Do not call ticket or service tools before reading both files',
     "that skill's {state} section",
     'Do not start or prepare a later state',
   ];
@@ -586,6 +591,55 @@ describe('loadConductorConfig', () => {
     await expect(loadConductorConfig(path)).rejects.toThrow(
       `${path}: max_parallel unknown key`,
     );
+  });
+});
+
+describe('the server comes from the project, else the connection, else the default', () => {
+  const NO_SERVER = VALID.replace("  server: slot('server'),\n", '');
+  const connection = (server?: unknown) => ({
+    site: { base_url: 'http://web', jsonapi_prefix: '/jsonapi' },
+    plugins: [],
+    config_path: join(tmpdir(), 'connections', 'default.js'),
+    ...(server !== undefined ? { server } : {}),
+  });
+  const connServer = { kind: 'server', id: 'conn', requiredModules: [] };
+  const serve = async (project: string, server?: unknown) =>
+    composeConductorConfig(
+      await loadConductorConfig(writeConfig(project)),
+      connection(server),
+    );
+
+  it('serves a project config that names no server through the Drupal addon', async () => {
+    const config = await serve(NO_SERVER);
+    expect(config.remote.id).toBe('drupal');
+    expect(config.slot_sources?.server).toBe('default');
+    expect(config.slot_packages?.server).toBe(
+      '@bakers-build/addon-remote-drupal',
+    );
+  });
+
+  it('serves through the server the connection names', async () => {
+    const config = await serve(NO_SERVER, connServer);
+    expect(config.remote.id).toBe('conn');
+    expect(config.slot_sources?.server).toBe('connection');
+  });
+
+  it('keeps the project server slot over the connection', async () => {
+    const config = await serve(VALID, connServer);
+    expect(config.remote.id).toBe('server');
+    expect(config.slot_sources?.server).toBe('slot');
+  });
+
+  it('keeps a server addon in the project addons over the connection', async () => {
+    const config = await serve(
+      NO_SERVER.replace(
+        'export default {',
+        "export default {\n  addons: ['@bakers-build/addon-remote-drupal'],",
+      ),
+      connServer,
+    );
+    expect(config.remote.id).toBe('drupal');
+    expect(config.slot_sources?.server).toBe('addons');
   });
 });
 
@@ -1491,6 +1545,40 @@ export default {
     vi.stubEnv('HOME', home);
   };
 
+  it('serves the loaded machine agent policy through agents_catalog without reloading it', async () => {
+    writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
+    const file = writeConfig(
+      slotConfig.replace(
+        "project: { name: 'bakers' },",
+        "project: { name: 'bakers' }, addons: ['@bakers-build/addon-agents'],",
+      ),
+    );
+    const cfg = await loadConductorConfig(file);
+    writeMachine(`export default { addons: [] };`);
+    const binding = { worktreePath: dirname(file) };
+    const result = await cfg.tools!.call('agents_catalog', {}, binding);
+    const report = JSON.parse(result.text);
+    const { runtime: _runtime, ...operator } = agentReport(cfg);
+    expect(report).not.toHaveProperty('runtime');
+    expect(report).toEqual({
+      ...operator,
+      agents: operator.agents.map(({ alias, description, harness, model }) => ({
+        alias,
+        description,
+        harness,
+        model,
+      })),
+    });
+    expect(report.default_agent).toBe('opus');
+    expect(
+      report.agents.every((agent: object) => !('permissions' in agent)),
+    ).toBe(true);
+    expect(operator.agents[0]).toHaveProperty('permissions');
+    await expect(
+      cfg.tools!.call('agents_catalog', { reload: true }, binding),
+    ).rejects.toThrow(/invalid arguments/);
+  });
+
   it('reports the default Claude catalog including Fable without changing the default', async () => {
     writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
     const cfg = await loadConductorConfig(writeConfig(slotConfig));
@@ -1500,6 +1588,7 @@ export default {
       'opus',
       'sonnet',
       'fable',
+      'opus-proxy',
     ]);
     expect(report.agents[2]).toMatchObject({
       alias: 'fable',
@@ -1507,7 +1596,12 @@ export default {
       model: 'fable',
       description: expect.stringMatching(/\S/),
     });
-    expect(report.enabled_agents).toEqual(['opus', 'sonnet', 'fable']);
+    expect(report.enabled_agents).toEqual([
+      'opus',
+      'sonnet',
+      'fable',
+      'opus-proxy',
+    ]);
     expect(report.default_agent).toBe('opus');
     expect(report.routes).toEqual({ default: { '*': 'opus' } });
   });
@@ -1521,11 +1615,23 @@ export default {
       expected: 'fable',
     },
     { labels: ['agent:fable@working'], state: 'review', expected: 'opus' },
+    {
+      labels: ['agent:opus-proxy'],
+      state: 'working',
+      expected: 'opus-proxy',
+      model: 'opus',
+    },
     { labels: [], state: 'working', expected: 'opus' },
-  ])('resolves Claude labels $labels in $state to $expected', async ({
+  ] as {
+    labels: string[];
+    state: string;
+    expected: string;
+    model?: string;
+  }[])('resolves Claude labels $labels in $state to $expected', async ({
     labels,
     state,
     expected,
+    model,
   }) => {
     writeMachine(`export default { addons: ['@bakers-build/addon-claude'] };`);
     const cfg = await loadConductorConfig(writeConfig(slotConfig));
@@ -1547,11 +1653,14 @@ export default {
     expect(selected).toMatchObject({
       alias: expected,
       id: 'claude',
-      model: expected,
+      model: model ?? expected,
     });
     expect(warn).not.toHaveBeenCalled();
     const command = selected.agent.launchCommand('task');
-    expect(command).toContain(`--model '${expected}'`);
+    expect(command).toContain(`--model '${model ?? expected}'`);
+    expect(command.includes(' --capture claude ')).toBe(
+      expected === 'opus-proxy',
+    );
     expect(command.match(/--model/g)).toHaveLength(1);
   });
 
@@ -1586,7 +1695,7 @@ export default {
 
   it.each([
     "enabled: ['opus', 'sonnet']",
-    "disabled: ['fable']",
+    "disabled: ['fable', 'opus-proxy']",
   ])('honors machine filtering of Fable via %s', async (policy) => {
     writeMachine(`export default {
       addons: ['@bakers-build/addon-claude'], agents: { ${policy} },
@@ -2039,5 +2148,47 @@ export default {
     expect(opencode?.launchCommand('task')).not.toMatch(
       /effort|thinking|variant/,
     );
+  });
+});
+
+describe('protected paths and host commands', () => {
+  const isolating = `export const runtimes = acc => [...acc, { kind: 'runtime', id: 'test', isolates: true, requiredModules: [] }];`;
+  const load = (body: string, runtime = true) => {
+    const path = writeDescriptorConfig(
+      `${body}${runtime ? " addons: ['./runtime.js']," : ''}`,
+    );
+    writeFileSync(join(dirname(path), 'runtime.js'), isolating);
+    return loadConductorConfig(path);
+  };
+
+  it('keeps the project list of protected paths', async () => {
+    const config = await load(`runtime: { read_only: ['.ddev', '.github'] },`);
+    expect(config.readOnly).toEqual(['.ddev', '.github']);
+    expect(config.runtime?.isolates).toBe(true);
+  });
+
+  it('refuses a host command outside a protected path under an isolating runtime', async () => {
+    await expect(
+      load(`hooks: { before_run: 'pnpm install' },`),
+    ).rejects.toThrow(/hooks\.before_run.*protected path/);
+    await expect(
+      load(
+        `runtime: { read_only: ['.ddev'] }, hooks: { provision_up: { up: 'bash scripts/up.sh' } },`,
+      ),
+    ).rejects.toThrow(/hooks\.provision_up\.up/);
+  });
+
+  it('accepts host commands that start in a protected path and serves provision_exec', async () => {
+    const config = await load(
+      `runtime: { read_only: ['.ddev'] }, hooks: { before_run: 'bash .bakers/scripts/deps.sh', provision_up: { deps: 'bash .bakers/provision.sh deps' }, provision_exec: { drush: 'bash .ddev/exec.sh drush' } },`,
+    );
+    expect(config.tools?.list().map((tool) => tool.name)).toEqual(
+      expect.arrayContaining(['provision_up', 'provision_exec']),
+    );
+  });
+
+  it('leaves host commands unchecked under runtime-host', async () => {
+    const config = await load(`hooks: { before_run: 'pnpm install' },`, false);
+    expect(config.runtime?.isolates ?? false).toBe(false);
   });
 });

@@ -18,6 +18,64 @@ final class TicketReadToolTest extends BakersToolTestBase {
   use ForeignWorkspaceTrait;
 
   /**
+   * Read exposes canonical location and people without leaking private mail.
+   */
+  public function testReadReturnsLocationAndPeople(): void {
+    $this->container->get('router.builder')->rebuild();
+    $other = $this->account('reviewer');
+    $other->set('mail', 'private@example.test')->save();
+    $ticket = $this->ticket('TR-people', [
+      'reviewers' => [$other->id()],
+      'assignee_user_id' => $this->actor->id(),
+      'origin' => 'legacy origin',
+    ]);
+    $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
+    self::assertSame([['name' => 'reviewer', 'mail' => NULL]], $out['reviewers']);
+    self::assertSame(['name' => 'actor', 'mail' => NULL], $out['assignee']);
+    self::assertSame('legacy origin', $out['origin']);
+    self::assertSame($ticket->toUrl()->setAbsolute()->toString(), $out['url']);
+    user_role_grant_permissions('skill_user', ['view user email addresses']);
+    $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
+    self::assertSame('private@example.test', $out['reviewers'][0]['mail']);
+  }
+
+  /**
+   * Read, list and update preserve field visibility restrictions.
+   */
+  public function testMetadataFieldAccess(): void {
+    $this->enableModules(['bb_property_access_test']);
+    $this->container->get('router.builder')->rebuild();
+    $ticket = $this->ticket('TR-private', [
+      'reviewers' => [$this->actor->id()],
+      'assignee_user_id' => $this->actor->id(),
+      'origin' => 'private origin',
+      'links' => [['uri' => 'https://example.test/private', 'title' => 'Private']],
+    ]);
+    $this->container->get('state')->set('bb_property_access_test.denied', [
+      'view' => ['origin', 'reviewers', 'assignee_user_id', 'links'],
+      'edit' => ['reviewers', 'links'],
+    ]);
+    $read = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
+    self::assertNull($read['origin']);
+    self::assertSame([], $read['links']);
+    self::assertSame([], $read['reviewers']);
+    self::assertNull($read['assignee']);
+    $list = $this->outputs($this->runTool('bakers_ticket_list', ['project' => $this->project->uuid()]));
+    self::assertNull($list['tickets'][0]['origin']);
+    self::assertSame([], $list['tickets'][0]['links']);
+    $update = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->uuid(),
+      'title' => 'Visible title',
+    ]));
+    self::assertSame([], $update['reviewers']);
+    self::assertNull($update['assignee']);
+    self::assertSame([], $update['links']);
+    foreach (['reviewers_remove' => ['actor@example.test'], 'links_remove' => ['https://example.test/private']] as $input => $value) {
+      $this->assertFailure($this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), $input => $value]), 'You may not change');
+    }
+  }
+
+  /**
    * Returns the ticket fields and its comments in chronological order.
    */
   public function testReadReturnsFieldsAndComments(): void {
@@ -55,6 +113,102 @@ final class TicketReadToolTest extends BakersToolTestBase {
       ['id' => $first->uuid(), 'type' => 'spec', 'body' => 'first', 'created' => date('c', 1000), 'author' => 'actor'],
       ['id' => $second->uuid(), 'type' => 'plan', 'body' => 'second', 'created' => date('c', 2000), 'author' => 'actor'],
     ], $out['comments']);
+  }
+
+  /**
+   * By default returns the 2 newest readable comments and facets over all.
+   */
+  public function testDefaultReturnsTwoNewestCommentsAndFacets(): void {
+    $other = $this->account('other', ['skill_user']);
+    $ticket = $this->ticket('TR-6', ['reviewers' => [$other->id()]]);
+    $spec = $this->comment($ticket, 'spec', 1000);
+    $plan = $this->comment($ticket, 'plan', 2000, ['author' => $other->id()]);
+    $test = $this->comment($ticket, 'test', 3000);
+    // Another author's draft review is unreadable to the actor.
+    $this->container->get('entity_type.manager')->getStorage('bb_comment_type')
+      ->create(['id' => 'review', 'label' => 'Review'])
+      ->save();
+    $this->container->get('entity_type.bundle.info')->clearCachedBundles();
+    $this->comment($ticket, 'secret', 4000, ['bundle' => 'review', 'author' => $other->id()]);
+
+    $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]));
+
+    self::assertSame([$plan->uuid(), $test->uuid()], array_column($out['comments'], 'id'));
+    self::assertSame([
+      'type' => [
+        ['value' => 'plan', 'count' => 1, 'newest' => date('c', 2000)],
+        ['value' => 'spec', 'count' => 1, 'newest' => date('c', 1000)],
+        ['value' => 'test', 'count' => 1, 'newest' => date('c', 3000)],
+      ],
+      'author' => [
+        ['value' => 'actor', 'count' => 2, 'newest' => date('c', 3000)],
+        ['value' => 'other', 'count' => 1, 'newest' => date('c', 2000)],
+      ],
+    ], $out['comment_facets']);
+
+    $read = fn (int $newest): array => array_column($this->outputs($this->runTool('bakers_ticket_read', [
+      'ticket' => $ticket->getIdentifier(),
+      'newest' => $newest,
+    ]))['comments'], 'id');
+    self::assertSame([], $read(0));
+    self::assertSame([$spec->uuid(), $plan->uuid(), $test->uuid()], $read(10));
+  }
+
+  /**
+   * A negative `newest` is an input error.
+   */
+  public function testNegativeNewestFails(): void {
+    $this->assertFailure($this->runTool('bakers_ticket_read', [
+      'ticket' => $this->ticket('TR-7')->getIdentifier(),
+      'newest' => -1,
+    ]), 'newest');
+  }
+
+  /**
+   * The default read of a ticket shaped like a large real one stays small.
+   *
+   * Body sizes of a real 60-comment ticket (787,122 characters), oldest first.
+   */
+  public function testDefaultReadOfLargeTicketFits(): void {
+    $sizes = [
+      7646, 4386, 2610, 7873, 10355, 5981, 1990, 601, 4682, 7605, 1444, 786, 4461, 1158, 872,
+      8495, 30409, 22532, 10143, 17657, 19910, 24633, 16178, 17409, 28494, 30388, 53816, 44188,
+      47915, 61982, 20669, 15266, 16589, 30208, 34656, 16389, 15513, 7535, 2184, 5859, 2394,
+      35490, 7594, 1801, 3199, 1336, 10947, 2565, 1539, 11968, 3359, 302, 1266, 838, 16467,
+      3807, 13600, 4511, 2343, 329,
+    ];
+    $ticket = $this->ticket('TR-8');
+    foreach ($sizes as $i => $size) {
+      $body = ['value' => str_repeat('x', $size), 'format' => 'bb_rich'];
+      $this->comment($ticket, 'summary', 1000 + $i, ['body' => $body]);
+    }
+    $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->getIdentifier()]));
+    self::assertCount(2, $out['comments']);
+    self::assertLessThanOrEqual(100000, strlen((string) json_encode($out)));
+  }
+
+  /**
+   * Saves a published comment by the actor on the ticket.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $ticket
+   *   The ticket.
+   * @param string $type
+   *   The comment type, also its body.
+   * @param int $created
+   *   The creation timestamp.
+   * @param array<string, mixed> $values
+   *   Field values overriding the defaults.
+   *   Field values overriding the defaults.
+   */
+  private function comment(EntityInterface $ticket, string $type, int $created, array $values = []): EntityInterface {
+    $comment = $this->container->get('entity_type.manager')->getStorage('bb_comment')->create($values + [
+      'ticket_id' => $ticket->id(),
+      'type' => $type,
+      'body' => ['value' => $type, 'format' => 'bb_rich'],
+      'created' => $created,
+    ]);
+    $comment->save();
+    return $comment;
   }
 
   /**

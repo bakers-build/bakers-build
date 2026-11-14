@@ -1,0 +1,14 @@
+{#
+/**
+ * @file
+ * A conductor's load as the table's meter cell, with its machine-readable level.
+ *
+ * Available variables:
+ * - label: Load text, e.g. "2 / 4 parallel runs" or "Unknown capacity".
+ * - level: unknown, idle, partial or full.
+ * - share: Filled share of the capacity, 0 to 100, or NULL when the capacity
+ *   is unknown or zero.
+ */
+#}
+{% import 'bb_theme:table' as cells %}
+<span data-utilization="{{ level }}">{{ cells.cell({ kind: 'meter', label: label, share: share }) }}</span>

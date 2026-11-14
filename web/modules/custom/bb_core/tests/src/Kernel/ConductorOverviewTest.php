@@ -55,7 +55,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     'file', 'image',
     'system', 'user', 'options', 'entity', 'state_machine',
     'field', 'og', 'island', 'link', 'text', 'filter', 'markdown_easy', 'views',
-    'better_exposed_filters', 'ui_patterns', 'ui_patterns_views',
+    'block', 'path_alias', 'better_exposed_filters', 'ui_patterns', 'ui_patterns_views',
     'ui_patterns_field', 'ui_patterns_field_formatters',
     'display_builder', 'display_builder_views', 'display_builder_entity_view',
     'bb_core',
@@ -139,6 +139,7 @@ final class ConductorOverviewTest extends KernelTestBase {
     ] as $type) {
       $this->installEntitySchema($type);
     }
+    $this->installEntitySchema('path_alias');
     $this->installConfig(['system', 'user', 'views']);
     $this->container->get('theme_installer')->install(['bb_theme']);
     $this->config('system.theme')->set('default', 'bb_theme')->save();
@@ -955,6 +956,8 @@ final class ConductorOverviewTest extends KernelTestBase {
     }
     $request->server->set('REQUEST_TIME', $now);
     $request->server->set('REQUEST_TIME_FLOAT', (float) $now);
+    // Saves in setUp() build the date service on the real clock; rebuild it.
+    $this->container->set('bb_core.date', NULL);
     $this->container->set('datetime.time', new class($now) implements TimeInterface {
 
       /**

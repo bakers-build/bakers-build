@@ -24,7 +24,7 @@ Leave `unit` and `recorded` out when they are empty. Never send `recorded` as an
 
 Names are a convention, not a schema, so agreeing on them keeps metrics comparable. The convention is a namespace: a measurement definition has an `id` and a fixed, ordered set of numeric values, and each value becomes one row named `<id>.<value>`. The namespace keeps `spec_quality.score` and `review_quality.score` apart and makes a re-measure replace its own rows deterministically.
 
-The definitions live beside the `bb-verdict` skill in `.claude/skills/bakers-build/skills/bb-verdict/measurements/definitions/`, and `schema.json` there validates a definition. Four ship:
+The definitions live beside the `bb-verdict` skill in `.claude/skills/bakers-build/skills/bb-verdict/measurements/definitions/`, and `schema.json` there validates a definition. Five ship:
 
 | Definition | Rows | Written |
 |---|---|---|
@@ -32,6 +32,7 @@ The definitions live beside the `bb-verdict` skill in `.claude/skills/bakers-bui
 | `review_quality` | `score` (0 to 5), `defects_found` (count), `rework_bounces` (count), `coverage_delta` (ratio) | By the credentialed parent of a review, before the verdict transition; the `bb-verdict` subagent itself only returns values. |
 | `spec_quality` | `score` (0 to 5), `ac_coverage` (ratio), `risk_clarity` (0 to 5), `open_questions` (count) | Defined as a worked example; nothing in the shipped workflow writes it yet. |
 | `mr_changes` | `score` (added + deleted lines), `files_changed`, `additions`, `deletions` | The conductor records the merge-request diff when cleaning up a done ticket with an MR. Binary files count as files and zero lines. |
+| `reference_load` | `qualification`, `plan`, `working`, `review` (KB), `score` (their sum) | After an `opus-proxy` playground documentation-chore pass, before state writes. Counts printed bb-workflow references and bb-verdict files in each state's largest request. Blocked measurement writes nothing; adds no label. |
 
 A definition may name a `label_term`, an existing label added to the ticket as visible provenance; one without it adds no label. To add a definition, drop a JSON file that matches `schema.json` with exactly one value named `score`, unique value names, and an existing `label_term` if you name one. No code changes are needed.
 

@@ -22,6 +22,8 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
+[Isolation models](/agents/isolation): platform support.
+
 | Mode | Flags |
 |---|---|
 | `sandbox` | `--sandbox workspace --permission-mode acceptEdits --allow 'Bash(*)' --deny 'MCPTool(*)'` |

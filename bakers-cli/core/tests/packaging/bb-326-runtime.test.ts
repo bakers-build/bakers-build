@@ -93,7 +93,10 @@ describe('BB-326 runtime packaging', () => {
     // 36 since the forge addon and its GitHub and GitLab backends; none sets
     // `engines`.
     // Tailscale adds one optional machine addon with the same Node floor.
-    expect(dirs).toHaveLength(37);
+    // 38 since `@bakers-build/addon-runtime-docker` (the Docker runtime); it
+    // sets no `engines`.
+    // External Bubblewrap runtime adds one independently published addon.
+    expect(dirs).toHaveLength(39);
     for (const dir of dirs) {
       const engines = manifestOf(dir).engines?.node;
       if (engines !== undefined)
@@ -119,8 +122,8 @@ describe('BB-326 runtime packaging', () => {
 
   it('the spike is gone and CI has no spike job', () => {
     expect(existsSync(`${CLI_ROOT}spikes`)).toBe(false);
-    expect(readFileSync(`${REPO_ROOT}.gitlab-ci.yml`, 'utf8')).not.toContain(
-      'tui_spike',
-    );
+    expect(
+      readFileSync(`${REPO_ROOT}.github/workflows/checks.yml`, 'utf8'),
+    ).not.toContain('tui_spike');
   });
 });

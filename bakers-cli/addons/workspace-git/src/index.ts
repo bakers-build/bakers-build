@@ -22,6 +22,11 @@ import {
 import { runBranchGit } from './git-config.js';
 import { loadInstructions } from './instructions.js';
 import { removeGitWorktree } from './remove-git-worktree.js';
+import {
+  ensureRunClone,
+  removeRunCloneWorkspace,
+  targetOf,
+} from './run-clone.js';
 
 export { restoreWritable } from './fs.js';
 export {
@@ -34,6 +39,11 @@ export {
   removeGitWorktree,
   type WorktreeGitExec,
 } from './remove-git-worktree.js';
+export {
+  ensureRunClone,
+  removeRunCloneWorkspace,
+  targetOf,
+} from './run-clone.js';
 
 /** Default branch template: `<prefix><key>-<title-slug>` (readable). */
 export const DEFAULT_BRANCH_TEMPLATE = '{branch_prefix}{key}-{title_slug}';
@@ -77,6 +87,10 @@ export interface GitWorkspaceOptions {
   /** Receives the warning when `branch.autoSetupMerge` cannot be written. */
   logger?: ConductorLogger;
   runGit?: GitRunner;
+  /** The runtime isolates: a fresh run clone per ensure instead of a linked worktree. */
+  clone?: boolean;
+  /** Run clones borrow the root's objects (`git clone --shared`). */
+  shared?: boolean;
 }
 
 const defaultGitRunner: GitRunner = (args, cwd) => exec('git', args, { cwd });
@@ -96,6 +110,8 @@ export class GitWorkspace implements BbWorkspace {
   private readonly branchTemplate: string;
   private readonly autoSetupMerge: boolean;
   private readonly logger: ConductorLogger | undefined;
+  private readonly clone: boolean;
+  private readonly shared: boolean;
 
   constructor(options: GitWorkspaceOptions) {
     this.runGit = options.runGit ?? defaultGitRunner;
@@ -107,6 +123,8 @@ export class GitWorkspace implements BbWorkspace {
     this.branchTemplate = options.branchTemplate ?? DEFAULT_BRANCH_TEMPLATE;
     this.autoSetupMerge = options.autoSetupMerge ?? false;
     this.logger = options.logger;
+    this.clone = options.clone ?? false;
+    this.shared = options.shared ?? false;
   }
 
   /** Render the branch name for a ticket from the configured template. */
@@ -130,7 +148,7 @@ export class GitWorkspace implements BbWorkspace {
   async ensure(
     identifier: string,
     title?: string,
-    _baseRef?: string,
+    baseRef?: string,
   ): Promise<EnsuredWorkspace> {
     const key = this.keyFor(identifier);
     // Reject empty and dot-leading keys: a dot-leading key would produce an
@@ -143,6 +161,51 @@ export class GitWorkspace implements BbWorkspace {
       ? undefined
       : await runBranchGit(this.root, this.logger);
     const extra = env ? { env } : {};
+    if (this.clone) {
+      const created = !existsSync(path);
+      const branch = this.branchFor(identifier, title);
+      // Like `worktree add -B` on first use, but an existing branch stays put.
+      try {
+        await this.runGit(
+          [
+            '-C',
+            this.root,
+            'rev-parse',
+            '--verify',
+            '--quiet',
+            `refs/heads/${branch}`,
+          ],
+          this.root,
+        );
+      } catch {
+        await this.runGit(['-C', this.root, 'branch', branch], this.root);
+      }
+      const target = targetOf(baseRef);
+      if (target && baseRef?.startsWith('origin/')) {
+        try {
+          await this.runGit(
+            ['-C', this.root, 'fetch', '--quiet', 'origin', '--', target],
+            this.root,
+          );
+        } catch {
+          // Offline or no remote: the clone carries the target as last fetched.
+        }
+      }
+      const clone = ensureRunClone({
+        parent: this.root,
+        workspace: path,
+        branch,
+        ...(target ? { target } : {}),
+        shared: this.shared,
+      });
+      return {
+        path,
+        instructions: loadInstructions(path),
+        created,
+        clone,
+        ...extra,
+      };
+    }
     if (existsSync(path)) {
       return {
         path,
@@ -167,7 +230,12 @@ export class GitWorkspace implements BbWorkspace {
   }
 
   /** Tear down the ticket worktree with git ({@link removeGitWorktree}). */
-  remove(branch: string, worktreePath?: string): Promise<WorktreeTeardown> {
+  async remove(
+    branch: string,
+    worktreePath?: string,
+  ): Promise<WorktreeTeardown> {
+    const removed = removeRunCloneWorkspace(worktreePath);
+    if (removed) return removed;
     return removeGitWorktree(
       this.root,
       branch,
@@ -183,6 +251,7 @@ export interface GitWorkspaceAddonOptions {
   branch_prefix?: string;
   branch_template?: string;
   auto_setup_merge?: boolean;
+  shared?: boolean;
 }
 
 export function gitWorkspace(
@@ -204,6 +273,8 @@ export function gitWorkspace(
           : {}),
         ...(opts.auto_setup_merge ? { autoSetupMerge: true } : {}),
         ...(deps?.logger ? { logger: deps.logger } : {}),
+        clone: config.runtime?.isolates === true,
+        ...(opts.shared ? { shared: true } : {}),
       });
     },
   };

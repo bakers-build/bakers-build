@@ -1,0 +1,46 @@
+{
+  "id": "reference_load",
+  "label": "Reference Load",
+  "values": [
+    {
+      "name": "qualification",
+      "label": "Qualification",
+      "description": "Reference bytes / 1000 in the largest request of qualification, measured in an opus-proxy playground documentation chore pass. Count Bash/Read output printing bb-workflow/references/** and bb-verdict files.",
+      "unit": "KB",
+      "direction": "down",
+      "min": 0
+    },
+    {
+      "name": "plan",
+      "label": "Plan",
+      "description": "Reference bytes / 1000 in the largest request of plan, measured in an opus-proxy playground documentation chore pass. Count Bash/Read output printing bb-workflow/references/** and bb-verdict files.",
+      "unit": "KB",
+      "direction": "down",
+      "min": 0
+    },
+    {
+      "name": "working",
+      "label": "Working",
+      "description": "Reference bytes / 1000 in the largest request of working, measured in an opus-proxy playground documentation chore pass. Count Bash/Read output printing bb-workflow/references/** and bb-verdict files.",
+      "unit": "KB",
+      "direction": "down",
+      "min": 0
+    },
+    {
+      "name": "review",
+      "label": "Review",
+      "description": "Reference bytes / 1000 in the largest request of review, measured in an opus-proxy playground documentation chore pass. Count Bash/Read output printing bb-workflow/references/** and bb-verdict files.",
+      "unit": "KB",
+      "direction": "down",
+      "min": 0
+    },
+    {
+      "name": "score",
+      "label": "Score",
+      "description": "Sum of the four state values.",
+      "unit": "KB",
+      "direction": "down",
+      "min": 0
+    }
+  ]
+}

@@ -1,25 +1,40 @@
 # Ticket writes
 
-Read before writing a ticket, comment or relationship. Every write is a tool call
-([tools](tools.md)).
+Use [tools](tools.md): Markdown (`bb_rich`); verify format and resolved type/recipe/labels.
+Reviewers/links: `bakers_ticket_update`; state: transition.
 
-## Handoffs and ticket text are Markdown
+## Content and size
 
-Pass Markdown source as a comment's `body` or a ticket's `description`; the tool stores it as
-`bb_rich`. Inspect headings, lists, links and tables before writing. Raw HTML is stripped. The
-comment type is its own argument, separate from the text. Verify the exact stored text on readback;
-[publish comment](publish-comment.md) confirms comments by their result.
+For the next reader: open thread, why, next. Cite comment/AC IDs, MR/commit/artifact; never copy.
+Per line: unneeded → drop; recorded → link; fits one line → one line; else minimum.
+Keep failures, risks, assumptions, decisions/why, deviations. Mark unverified claims.
+Put not checked / risk in *Problems*. State formats apply; full ACs only in qualification.
 
-## Validated writes and uncertain outcomes
+| Type | Reader: content | UTF-8 bytes |
+|---|---|---:|
+| qualification | plan: ACs, scope/recipe/assumptions | 4096 |
+| test, debug_diagnose | working: AC checks/diagnosis | 4096 |
+| spec, plan | working: decisions/steps/checks | 6144 |
+| coding | review: scope IDs, SHA/MR, AC results/risks | 6144 |
+| review | done/working: verdict/findings/repairs | 6144 |
+| acceptance | verification: AC refs, additions/changes | 3072 |
+| summary | human: outcome/problems/next | 3072 |
+| retro | human: rating/reason/causes/evidence | 3072 |
+| comment/other | named reader: question/decision/fact | 8192 |
+| description | requester/qualification: problem/want/scope | 6144 |
 
-Arguments are validated against the tool's schema before sending; correct a rejection (exit 4)
-before retrying. Retain returned UUIDs immediately. Reconcile uncertain writes by UUID or uniquely
-matching context; never blindly repeat a create.
+Evidence: **command, one-line observation, immutable commit**; failures add excerpt.
+Logs/transcripts/manifests stay in artifacts. Measure before writing. Oversize: type/bytes/limit, nothing saved; shorten, never split.
 
-Verify state readback. On definite rejection retain state and best-effort restore mapped origin
-status while authorized; on uncertain outcomes reconcile first. Report unreconciled mismatches.
+## Publish a comment
 
-## References are named, not resolved
+Require authorized ticket/type and readable populated body file. Send unchanged to
+`bakers_comment_publish`, trailing newlines included. Whitespace-only: no call.
+Result id confirms: retain/return, no read/search or other mutation.
 
-Type, recipe and labels are term names; the tool resolves them in the ticket's workspace. Verify the
-resolved values on readback. Links are added, never replaced: the tool keeps existing links.
+## Rejected or uncertain writes
+
+Budget rejection saved nothing: shorten/retry. Exit 4: fix schema/retry. Report other failures
+with ticket/type/cause. Timeout/lost response: no second call; reconcile by UUID/unique context.
+Verify state readback; rejection keeps state, best-effort restores mapped origin while authorized.
+Reconcile uncertainty first; report mismatches.

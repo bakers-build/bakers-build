@@ -9,10 +9,12 @@
     "./preset": "./dist/src/preset.js",
     "./ui": "./dist/src/ui.js",
     "./react-experiment": "./dist/src/react-experiment.js",
-    "./react-experiment/preset": "./dist/src/react-preset.js"
+    "./react-experiment/preset": "./dist/src/react-preset.js",
+    "./options.schema.json": "./options.schema.json"
   },
   "files": [
-    "dist/src"
+    "dist/src",
+    "options.schema.json"
   ],
   "scripts": {
     "build": "tsc",

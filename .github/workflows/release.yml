@@ -117,7 +117,7 @@ jobs:
           head=$(bash scripts/ci/github-release-head.sh); [ "$head" = current ] || exit 0
           printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
-          for image in php nginx docs pm-bot; do
+          for image in php nginx docs; do
             source=$(awk -v image="$image" '$1 == image { print $2 }' gate-reports/registry.txt)
             test -n "$source"
             base="ghcr.io/$GITHUB_REPOSITORY/$image"
@@ -175,7 +175,7 @@ jobs:
           fi
           printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
-          for image in php nginx docs pm-bot; do
+          for image in php nginx docs; do
             source=$(awk -v image="$image" '$1 == image { print $2 }' gate-reports/registry.txt)
             for tag in "$CI_RELEASE_VERSION" latest; do
               target="ghcr.io/$GITHUB_REPOSITORY/$image:$tag"

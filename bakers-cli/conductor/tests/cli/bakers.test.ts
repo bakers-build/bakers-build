@@ -519,6 +519,93 @@ describe('bakers conductor start --force (BB-450 D10)', () => {
     expect(process.exitCode).toBe(1);
   });
 
+  // A record still `online` by heartbeat (30 s old) whose pid is provably not
+  // a conductor on this host: the stopping conductor's offline write never
+  // arrived. `start` must treat it as offline, with or without `--force`.
+  describe('recorded pid that is not running here', () => {
+    const staleRow = (over: Partial<ConductorStatus> = {}) =>
+      runningRow({ lastSeen: Math.floor(Date.now() / 1000) - 30, ...over });
+    const dead = (): ProcProbe & { sentSignals: NodeJS.Signals[] } =>
+      fakeProcProbe(1); // knows no pid 4242
+    const recycled = (): ProcProbe & { sentSignals: NodeJS.Signals[] } => ({
+      ...fakeProcProbe(4242),
+      cmdlineOf: (p: number) =>
+        p === 4242 ? '/usr/bin/vim notes.txt' : undefined,
+    });
+    const startWith = async (
+      args: string[],
+      row: ConductorStatus,
+      probe: ProcProbe,
+    ) => {
+      const remote = new ScriptedRemote([
+        [row],
+        [
+          runningRow({
+            lastPid: 9999,
+            lastSeen: Math.floor(Date.now() / 1000) + 5,
+          }),
+        ],
+      ]);
+      const spawnConductor = fakeSpawn();
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        await runConductorCli(
+          ['conductor', 'start', ...args],
+          makeDeps(
+            {},
+            { remote, spawnConductor, procProbe: probe, startPollAttempts: 2 },
+          ),
+        );
+        return {
+          lines: logSpy.mock.calls.map((c) => String(c[0])),
+          spawned: spawnConductor.spawned.length,
+        };
+      } finally {
+        logSpy.mockRestore();
+      }
+    };
+
+    it.each([
+      ['dead pid, plain start', [], dead],
+      ['recycled pid, plain start', [], recycled],
+      ['dead pid, --force', ['--force'], dead],
+      ['recycled pid, --force', ['--force'], recycled],
+    ])('%s: starts at once without signalling', async (_n, args, make) => {
+      const probe = make();
+      const { lines, spawned } = await startWith(args, staleRow(), probe);
+      expect(
+        lines.some((l) =>
+          l.includes(
+            'conductor test-machine: recorded pid 4242 is not running here; starting',
+          ),
+        ),
+      ).toBe(true);
+      expect(spawned).toBe(1);
+      expect(probe.sentSignals).toEqual([]);
+      expect(
+        lines.some(
+          (l) =>
+            l.includes('started conductor test-machine') &&
+            l.includes('pid 9999'),
+        ),
+      ).toBe(true);
+      expect(lines.some((l) => l.includes('failed'))).toBe(false);
+      expect(process.exitCode).toBeUndefined();
+    });
+
+    it.each([
+      ['another host', staleRow({ hostKey: 'other-host' }), dead()],
+      ['no recorded pid', staleRow({ lastPid: undefined }), dead()],
+      ['an unsupported platform', staleRow(), { ...dead(), supported: false }],
+      ['a live conductor of this id', staleRow(), fakeProcProbe(4242)],
+    ])('refuses as today on %s while the heartbeat is fresh', async (_n, row, probe) => {
+      const { lines, spawned } = await startWith([], row, probe);
+      expect(lines.some((l) => l.includes('already running'))).toBe(true);
+      expect(spawned).toBe(0);
+      expect(probe.sentSignals).toEqual([]);
+    });
+  });
+
   it('behaves as a plain start (no stop, no message) when nothing is running yet', async () => {
     const remote = new HeartbeatAfterSpawnRemote({ id: 'test-machine' });
     const spawnConductor = fakeSpawn();

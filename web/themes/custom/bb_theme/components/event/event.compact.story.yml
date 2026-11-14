@@ -1,0 +1,14 @@
+component: bb_theme:event
+name: Compact
+props:
+  compact: true
+  author_name: Christian Wiedemann
+  author_initials: CW
+  author_color: attention
+  statement: claimed
+  subject_label: BB-142
+  subject_url: '#'
+  detail: at coding
+  timestamp: 2h ago
+  datetime: '2026-11-10T10:00:00Z'
+  timestamp_title: Tue, 10 Nov 2026, 10:00 UTC

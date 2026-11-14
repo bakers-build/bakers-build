@@ -22,4 +22,4 @@ const agentsCommand: BbCommandPlugin = {
   },
 };
 export default agentsCommand;
-export { agentReport } from './agents.js';
+export { agentReport, catalogReport } from './agents.js';

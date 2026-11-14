@@ -55,6 +55,30 @@ final class TicketCreateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * A description at the limit is stored; an oversized create saves nothing.
+   */
+  public function testDescriptionByteBudget(): void {
+    $body = str_repeat('é', 3072);
+    $values = [
+      'title' => 'Budget boundary',
+      'workflow' => 'bb_work',
+      'project' => $this->project->uuid(),
+      'description' => $body,
+    ];
+    $out = $this->outputs($this->runTool('bakers_ticket_create', $values));
+    $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
+    self::assertInstanceOf(BbTicketInterface::class, $stored);
+    self::assertSame($body, $stored->get('description')->value);
+    $storage = $this->container->get('entity_type.manager')->getStorage('bb_ticket');
+    $before = $storage->getQuery()->accessCheck(FALSE)->count()->execute();
+    $values['description'] .= 'x';
+    $values['recipe'] = 'oversized-create';
+    $this->assertFailure($this->runTool('bakers_ticket_create', $values), 'description is 6145 UTF-8 bytes; limit 6144');
+    self::assertSame($before, $storage->getQuery()->accessCheck(FALSE)->count()->execute());
+    self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'oversized-create']));
+  }
+
+  /**
    * A carrier ticket keeps the given branch; others get the derived one.
    */
   public function testCarrierBranchIsKeptAndOtherwiseDerived(): void {
@@ -97,6 +121,8 @@ final class TicketCreateToolTest extends BakersToolTestBase {
       'workflow' => 'bb_work',
       'project' => 'TOOL',
     ]));
+    self::assertSame('Linked', $out['title']);
+    self::assertNull($out['origin']);
     self::assertMatchesRegularExpression('#^https?://[^/]+(/.*)?/tool-workspace/ticket/tool-1$#', $out['url']);
   }
 

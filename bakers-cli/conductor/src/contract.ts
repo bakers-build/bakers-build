@@ -19,7 +19,11 @@ export {
 } from './bakers-project-context.js';
 export {
   type AgentFootprint,
+  type AgentModelApi,
+  type AgentRunContext,
   type AgentRunIdentity,
+  type AgentRunPreparation,
+  type AgentRuntimeInfo,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
   CONDUCTOR_TOOL_TIMEOUT_MS,
@@ -29,6 +33,7 @@ export {
   emptyAgentFootprint,
   matchesEnvDeny,
   type PluginLaunch,
+  type RunBind,
   type RunEnvPolicy,
 } from './plugins/agent.js';
 export {
@@ -133,6 +138,13 @@ export type {
 } from './plugins/remote.js';
 export { ConductorTakeoverRequired } from './plugins/remote.js';
 export {
+  type BbRuntime,
+  hostRuntime,
+  type RuntimeLaunch,
+  type RuntimePlugin,
+  type RuntimeRun,
+} from './plugins/runtime.js';
+export {
   installCommand,
   lastLine,
   type SandboxHost,
@@ -142,9 +154,11 @@ export {
 } from './plugins/sandbox-preflight.js';
 export type {
   AddonTools,
+  AgentCatalog,
   ToolBinding,
   ToolDefinition,
   ToolHandler,
+  ToolHost,
   ToolRequest,
   ToolResult,
 } from './plugins/tools.js';

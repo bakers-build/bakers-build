@@ -154,9 +154,53 @@ export interface PluginLaunch {
   gaps?: string[];
 }
 
-export interface BbAgent {
+/** Inputs for preparing an agent in a runtime-provided home. */
+export interface AgentRunContext {
+  homePath: string;
+  workspacePath: string;
+  env: Readonly<Record<string, string>>;
+}
+
+/** Files and environment an agent needs, independent of its execution backend. */
+export interface AgentRunPreparation {
+  env: Record<string, string>;
+  readPaths: string[];
+  writePaths: string[];
+  /** Host files mounted read-write over a target inside the run home. */
+  bindPaths?: RunBind[];
+}
+
+/** One host file the run shares, mounted over `target` in the run home. */
+export interface RunBind {
+  source: string;
+  target: string;
+}
+
+/** Model API facts used by credential relays, independent of an execution backend. */
+export interface AgentModelApi {
+  target: string;
+  baseUrlEnv: string;
+  keyEnv: string;
+  credentialHint: string;
+  auth: Record<
+    string,
+    { set: Record<string, string>; append?: Record<string, string> }
+  >;
+}
+
+/** Optional software and API facts; the runtime owns installation and transport. */
+export interface AgentRuntimeInfo {
+  readonly installCommand?: string;
+  readonly modelApi?: AgentModelApi;
+}
+
+export interface BbAgent extends AgentRuntimeInfo {
   /** Stable id, e.g. 'claude'. */
   readonly id: string;
+  /** Prepare configuration in a private run home without runtime-specific flags. */
+  prepareRun?(
+    context: AgentRunContext,
+  ): AgentRunPreparation | Promise<AgentRunPreparation>;
   /** True when the catalog entry sets `plugins: false`: the run uses the user's own agent home. */
   readonly pluginsDisabled?: boolean;
   /**
@@ -216,6 +260,8 @@ export interface BbAgent {
     tools?: { url: string },
     env?: Readonly<Record<string, string>>,
     args?: readonly string[],
+    /** The workspace is a run clone: grant `<workspace>/.git`, ask Git nothing. */
+    isolatedGit?: boolean,
   ): string;
   /**
    * Locate and read this agent's run transcript for a run that executed in

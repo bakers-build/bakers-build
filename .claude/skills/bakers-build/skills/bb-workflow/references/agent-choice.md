@@ -1,20 +1,12 @@
 # Propose an agent
 
-A confirmed agent choice — confirmed defaults or a confirmed override — is kept as it is: report
-it and look nothing up. Otherwise run `bakers agents` in the current ticket worktree. Its JSON supplies routes, default_agent,
-enabled_agents, disabled_agents and the effective alias/description/harness/model catalog.
-Treat models as configuration, never prompt literals or labels.
-
-Present named routes first, excluding reserved `default`, in reported order. Recommend a route
-from the ticket type and recipe, explaining its state map. Offer individual aliases
-only as useful overrides. Use `agent:<route-or-alias>` or `agent:<route-or-alias>@<state>`.
-
-With only default, report the current-state or `*` target; ask no meaningless route choice.
-Preserve confirmed choices and report unavailable targets for a decision. A failed catalog lookup
-or empty catalog produces no proposal; continue with existing defaults.
-
-Write a proposed label only after explicit confirmation of that choice; general qualification
-approval does not authorize an unstated override. Add it with `bakers_ticket_update` `labels_add`
-([tools](tools.md)); the tool creates a missing workspace label and keeps unrelated labels. Do not
-bulk-sync catalog entries.
-An unattended run writes no agent label; its recommendation remains advisory.
+Keep/report confirmed defaults or override without lookup. Otherwise read the conductor's loaded
+agent catalog through [tool discovery and fallback](tools.md#choose-an-operation).
+Use its effective routes and enabled agents; models stay configuration.
+Present non-default routes in reported order, recommend by type/recipe with state map; individual
+aliases only useful overrides (`agent:<route-or-alias>[@<state>]`). Only default: report current
+state or * target, no choice question. Unavailable confirmed targets need decision. Failed/empty
+catalog: no proposal, keep defaults.
+Only explicit choice confirmation authorizes label write, not general qualification approval.
+Use `bakers_ticket_update` labels_add ([tools](tools.md)), preserving unrelated labels; no catalog
+bulk sync. Unattended recommendation is advisory, no agent label write.

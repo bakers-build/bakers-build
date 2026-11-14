@@ -67,7 +67,11 @@ COPY --chown=wodby composer.* ${APP_ROOT}
 # their own layer (before the full source COPY below) so the install cache only
 # busts when a patch actually changes.
 COPY --chown=wodby patches ${APP_ROOT}/patches
-RUN composer install --no-dev --no-interaction --no-progress --prefer-dist
+# Optional `composer_auth` secret (COMPOSER_AUTH JSON): GitHub throttles anonymous dist downloads
+# from shared CI runners. Mounted for this RUN only, never in a layer; absent, nothing changes.
+RUN --mount=type=secret,id=composer_auth,required=false,mode=0444 \
+    if [ -s /run/secrets/composer_auth ]; then export COMPOSER_AUTH="$(cat /run/secrets/composer_auth)"; fi; \
+    composer install --no-dev --no-interaction --no-progress --prefer-dist
 COPY --chown=wodby . ${APP_ROOT}
 # Built theme assets (dist/ is gitignored, so absent from the build context above).
 COPY --chown=wodby --from=theme /repo/web/themes/custom/bb_theme/dist ${APP_ROOT}/web/themes/custom/bb_theme/dist

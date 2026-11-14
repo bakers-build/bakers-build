@@ -19,6 +19,7 @@ import type {
   WorkspacePlugin,
 } from './plugins/plugins.js';
 import type { Ticket } from './plugins/remote.js';
+import type { RuntimePlugin } from './plugins/runtime.js';
 import type {
   ProvisionHook,
   ProvisionRuns,
@@ -86,6 +87,8 @@ export interface ConductorSettings {
     on_resume?: string;
     /** Never runs on its own: offered to runs as the `provision_up(profile?)` tool. */
     provision_up?: ProvisionHook;
+    /** Never runs on its own: offered to runs as the `provision_exec(key, args?)` tool. */
+    provision_exec?: Record<string, string>;
   };
   /** Control-plane site settings used for dropsh and agent env. */
   site: { base_url: string; jsonapi_prefix: string };
@@ -98,6 +101,23 @@ export interface ConductorSettings {
   restart_on_change?: boolean;
   /** The files and addon build dirs this config was loaded from. */
   watch_paths?: { files: string[]; dirs: string[] };
+  /** Where each slot's plugin came from, for `bakers conductor check`. */
+  slot_sources?: Partial<SlotSources>;
+  /** The package each slot named with `use`; addon-discovered slots have none. */
+  slot_packages?: Partial<Record<keyof SlotSources, string>>;
+}
+
+/** Where a resolved server, executor or worktree plugin came from. */
+export type SlotSource =
+  | 'machine'
+  | 'slot'
+  | 'addons'
+  | 'connection'
+  | 'default';
+export interface SlotSources {
+  server: SlotSource;
+  executor: SlotSource;
+  worktree: SlotSource;
 }
 
 /** Whole project.config.js (dropsh-superset): site + named plugin slots. */
@@ -115,6 +135,10 @@ export interface ConductorFileConfig extends ConductorSettings {
   /** Replaces the shipped label/default resolution for this project. */
   selectAgent?: (candidates: ResolvedAgent[], ticket: Ticket) => ResolvedAgent;
   workspace: WorkspacePlugin;
+  /** Where agent processes run (the `runtime` slot); absent means on the host. */
+  runtime?: RuntimePlugin;
+  /** The project's `runtime.read_only`: paths an isolated run sees read-only. */
+  readOnly?: string[];
   /** The project's agent plugin marketplaces; empty when it declares none. */
   marketplaces: MarketplaceDeclaration[];
   /**
@@ -146,5 +170,8 @@ export interface ConductorFileConfig extends ConductorSettings {
  */
 export type ConductorEngineConfig = Omit<
   ConductorFileConfig,
-  'site' | 'plugins'
->;
+  'site' | 'plugins' | 'remote'
+> & {
+  /** Absent when the project names no server; the connection or the default fills it. */
+  remote?: RemotePlugin;
+};

@@ -46,24 +46,39 @@
 {#- THE LEADING STATUS RAIL, drawn with a pseudo-element so it costs no cell. On a
     card it runs the full height and picks up the left radius, exactly as the
     board's card does; on a line it is inset top and bottom, exactly as the run
-    line was. `wait` additionally tints the whole item — the one state the absorbed
-    entries made loud — and on a card it tints the border too, because a card has
-    one to tint. #}
+    line was. `wait` and `critical` additionally tint the whole item — the states
+    that need a person — and on a card the tint covers the border too, because a
+    card has one to tint. #}
 {% set accent_map = {
   'running': 'bg-state-running',
   'attention': 'bg-state-attention-mark',
+  'critical': 'bg-state-unassigned',
   'wait': 'bg-state-unassigned',
   'idle': 'bg-transparent'
+} %}
+{#- The detail line takes the ink of its item's accent, so a failure reads red
+    and a waiting claim amber; any other item keeps the light text colour. #}
+{% set detail_map = {
+  'wait': 'text-state-unassigned-ink',
+  'critical': 'text-state-unassigned-ink',
+  'attention': 'text-state-attention-ink'
 } %}
 {% set rail_classes = cards
   ? ['absolute', 'left-0', 'top-0', 'bottom-0', 'w-1', 'rounded-l-xs']
   : ['absolute', 'left-0', 'top-2', 'bottom-2', 'w-1', 'rounded-xs'] %}
 {#- `plain` is a block's property rows: no line, hover fill or inset. The
-    label cell takes a fixed `w-28` track so values align; values may wrap
-    anywhere, since clipping would also clip an inline picker's panel. #}
+    label cell takes the fixed 96px `list.plain.label-width` track so values
+    align, and a row is at least the 32px `list.plain.row-height`. A row with
+    ONE text, mono, link or picker value gives it the rest of the line, so it
+    stays beside its label: text is cut to one line with the full value in its
+    title, and a picker cuts its own value. The cell itself never clips, since
+    that would also clip an inline picker's panel. Several values, such as
+    chips, and a badge still wrap onto a line of their own. The label keeps to
+    the first line of a taller value: it is one 24px line, the height of an
+    inline picker's trigger, at the top of the row. #}
 {% set plain = layout == 'plain' %}
 {% set item_base = plain
-  ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-inline', 'gap-y-inline-xs', 'py-inline-xs']
+  ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-inline', 'gap-y-inline-xs', 'min-h-list-plain-row-height', 'py-inline-xs']
   : (cards
   ? ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-x-stack', 'gap-y-inline-xs', 'min-h-row', 'pl-stack', 'pr-inline', roomy ? 'py-stack' : 'py-inline', 'bg-surface-2', 'border', 'border-border-2', 'rounded-xs', 'transition-colors', 'duration-fast', 'hover:bg-surface-3']
   : ['group', 'relative', 'flex', 'items-center', 'flex-wrap', 'gap-stack', 'pl-stack', 'pr-inline', 'py-inline', 'border-b', 'border-border-2', 'last:border-b-0', 'transition-colors', 'duration-fast', 'hover:bg-surface']) %}
@@ -71,8 +86,13 @@
   <ul{{ (attributes ?: create_attribute()).addClass(['flex', 'flex-col', 'list-none', 'p-0', 'm-0', cards ? (roomy ? 'gap-stack' : 'gap-inline') : 'gap-0']) }} role="list">
     {% for item in items %}
       {% set item_classes = item_base %}
-      {% if item.accent == 'wait' %}
+      {% if item.accent in ['wait', 'critical'] %}
         {% set item_classes = item_classes|merge(['bg-state-unassigned-tint']) %}
+      {% endif %}
+      {#- A detail line sits close under its cells: the line gap shrinks, the
+          gap between cells stays. -#}
+      {% if item.detail and not cards and not plain and not pattern %}
+        {% set item_classes = item_classes|filter(c => c != 'gap-stack')|merge(['gap-x-stack', 'gap-y-inline-xs']) %}
       {% endif %}
       {#- THE WHOLE PATTERNED ROW IS A CLICK TARGET FOR ITS IDENTITY LINK. A click on
           the row's own surface forwards to the first link in the headline, so htmx
@@ -87,6 +107,42 @@
           {%- if c and (c.kind|default('') == 'link' or (c.kind|default('') == 'rendered' and '<a' in (c.markup ~ ''))) -%}{%- set row_link = true -%}{%- endif -%}
         {%- endfor -%}
       {%- endif -%}
+      {#- The regions a patterned row fills, read before the item opens: the
+          number of lines decides the row's inset. -#}
+      {% set left = [] %}
+      {% if pattern %}
+        {% set captions = pattern.captions|default({}) %}
+        {% set right = [] %}
+        {% set right_meta = [] %}
+        {% set avatar = [] %}
+        {% for region in ['avatar', 'headline', 'meta', 'description', 'right', 'right_meta'] %}
+          {% set present = [] %}
+          {% for key in pattern[region]|default([]) %}
+            {% if item.cells[key]|default(null) %}{% set present = present|merge([key]) %}{% endif %}
+          {% endfor %}
+          {% if region == 'right' %}
+            {% set right = present %}
+          {% elseif region == 'right_meta' %}
+            {% set right_meta = present %}
+          {% elseif region == 'avatar' %}
+            {% set avatar = present %}
+          {% elseif present is not empty %}
+            {% set left = left|merge([{ 'region': region, 'keys': present }]) %}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      {#- A PATTERNED ROW IN `lines` IS AT LEAST ONE LIST ROW HIGH (`min-h-list-row`,
+          56px at compact). A row of one or two lines sits without a line gap in the
+          `inline-xs` inset, so a meta line with an avatar or badge still fits; a row
+          of three lines keeps the line gap and inset, and a wrapping title grows any row. -#}
+      {% set line_row = pattern and not cards and not plain %}
+      {% set tight = line_row and left|length <= 2 %}
+      {% if line_row %}
+        {% set item_classes = item_classes|merge(['min-h-list-row']) %}
+      {% endif %}
+      {% if tight %}
+        {% set item_classes = item_classes|filter(c => c != 'py-inline')|merge(['py-inline-xs']) %}
+      {% endif %}
       {%- if row_link %}{% set item_classes = item_classes|merge(['cursor-pointer']) %}{% endif %}
       <li data-list-item class="{{ item_classes|join(' ') }}"{% if item.url %} data-item-url="{{ item.url }}"{% endif %}{% if row_link %} x-data @click="$event.target.closest('a, button, input, select, textarea, label, summary, [role=button]') || String(window.getSelection()) || $el.querySelector('[data-list-region=headline] a')?.click()"{% endif %}>
         <span class="{{ (rail_classes|merge([accent_map[item.accent]|default('bg-transparent')]))|join(' ') }}" aria-hidden="true"></span>
@@ -103,26 +159,6 @@
           {#- `avatar` leads the row as its own non-shrinking block, before the text
               column; `description` is the text column's last line, beneath meta,
               and wraps inside the row. Both are optional regions like the rest. #}
-          {% set captions = pattern.captions|default({}) %}
-          {% set left = [] %}
-          {% set right = [] %}
-          {% set right_meta = [] %}
-          {% set avatar = [] %}
-          {% for region in ['avatar', 'headline', 'meta', 'description', 'right', 'right_meta'] %}
-            {% set present = [] %}
-            {% for key in pattern[region]|default([]) %}
-              {% if item.cells[key]|default(null) %}{% set present = present|merge([key]) %}{% endif %}
-            {% endfor %}
-            {% if region == 'right' %}
-              {% set right = present %}
-            {% elseif region == 'right_meta' %}
-              {% set right_meta = present %}
-            {% elseif region == 'avatar' %}
-              {% set avatar = present %}
-            {% elseif present is not empty %}
-              {% set left = left|merge([{ 'region': region, 'keys': present }]) %}
-            {% endif %}
-          {% endfor %}
           {#- With an avatar, avatar and text share one non-wrapping block that takes
               the left basis, so the avatar stays beside the headline on a phone
               and only the right block flows beneath. A headline alone centres on the
@@ -136,7 +172,7 @@
             </div>
           {% endif %}
           {% if left is not empty %}
-            <div class="flex min-w-0 flex-1 {{ avatar is empty ? 'basis-80' : 'basis-0' }} flex-col gap-inline-xs">
+            <div class="flex min-w-0 flex-1 {{ avatar is empty ? 'basis-80' : 'basis-0' }} flex-col {{ tight ? 'gap-0' : 'gap-inline-xs' }}">
               {% for line in left %}
                 <div data-list-region="{{ line.region }}" class="{{ (line.region == 'headline' ? ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-inline', 'gap-y-inline-xs', 'text-item-title', 'text-text'] : (line.region == 'description' ? ['flex', 'min-w-0', 'flex-wrap', 'gap-x-stack', 'gap-y-inline-xs', 'text-body', 'text-text-light'] : ['flex', 'min-w-0', 'flex-wrap', 'items-center', 'gap-x-stack', 'gap-y-inline-xs', 'text-meta', 'text-text-faint']))|join(' ') }}">
                   {% for key in line.keys %}
@@ -172,10 +208,38 @@
         {#- ONE CELL PER ENTRY OF THE MAP, in the order the mapping wrote them.
             There are no columns here, so the key names the value instead of
             addressing a column, and the item's own order is the only order there
-            is — which is the difference this component exists to state. #}
+            is — which is the difference this component exists to state.
+            In `lines` the `action` cells form one group at the right edge, in
+            their own order: the group wraps as a whole when the line is full,
+            so no action is left behind at the start of the next line. #}
+        {% set actions = not cards and not plain ? item.cells|filter(c => c and c.kind|default('') == 'action') : {} %}
+        {% set single = plain and item.cells|keys|length == 2 %}
         {% for key, c in item.cells %}
-          {% if c %}<span class="min-w-0 {{ not plain ? 'whitespace-nowrap' : (loop.first ? 'whitespace-nowrap w-28 shrink-0' : 'wrap-anywhere') }}" data-cell="{{ key }}">{{ cells.cell(c) }}</span>{% endif %}
+          {% set fits = single and not loop.first and c and c.kind|default('text') in ['text', 'mono', 'link', 'picker'] %}
+          {% if c and actions[key] is not defined %}<span class="min-w-0 {{ not plain ? 'whitespace-nowrap' : (loop.first ? 'whitespace-nowrap w-list-plain-label-width shrink-0 self-start leading-6' : (fits ? 'flex-1 wrap-anywhere' : 'wrap-anywhere')) }}" data-cell="{{ key }}">
+            {%- if fits and c.kind|default('text') != 'picker' -%}
+              {#- The inset keeps a link's focus ring inside the clip. The margin takes it back
+                  on the left and vertically, inside the row; on the right it would reach past
+                  the inspector, so the cut comes 4px earlier there instead. The value itself is
+                  an inline block no wider than the line, so a cut link still has its whole
+                  ring. -#}
+              <span class="block truncate *:truncate *:inline-block *:max-w-full *:align-top p-inline-xs -my-inline-xs -ml-inline-xs" title="{{ c.value }}">{{ cells.cell(c) }}</span>
+            {%- else -%}
+              {{ cells.cell(c) }}
+            {%- endif -%}
+          </span>{% endif %}
         {% endfor %}
+        {% if actions is not empty %}
+          <span data-list-actions class="ml-auto flex shrink-0 items-center gap-inline">
+            {%- for key, c in actions %}<span class="whitespace-nowrap" data-cell="{{ key }}">{{ cells.cell(c) }}</span>{% endfor -%}
+          </span>
+        {% endif %}
+        {#- THE DETAIL LINE: one sentence beneath the cells, on a line of its own,
+            such as why a run failed or what its claim waits for. `detail_title`
+            is the full text on hover when `detail` is a shortened form. #}
+        {% if item.detail %}
+          <span data-list-detail class="basis-full min-w-0 wrap-anywhere text-meta {{ detail_map[item.accent]|default('text-text-light') }}"{% if item.detail_title %} title="{{ item.detail_title }}"{% endif %}>{{ item.detail }}</span>
+        {% endif %}
         {%- endif %}
       </li>
     {% endfor %}

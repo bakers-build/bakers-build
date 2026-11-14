@@ -1,0 +1,13 @@
+component: bb_theme:board-card
+name: Runs
+props:
+  identifier: BB-365
+  title: Deployment tickets ignore every project whose key is not BB
+  status: running
+  priority: p1
+  state: review
+  run_count: 2
+  last_run_state: running
+  assignee_name: Sven Gruber
+  assignee_initials: SG
+  assignee_color: running

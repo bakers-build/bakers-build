@@ -26,9 +26,10 @@ checks and personas. Its approval approves the set.
 ### bb-phase-work
 
 A verification builds nothing: skip the remote base check. Run each tested ticket's confirmed checks
-against the target as its personas: its Playwright-BDD suite once with
+against the target as its personas: its Playwright-BDD suite and browser inspection through the
+frame's tool discovery and fallback, the suite once with
 `PLAYWRIGHT_BASE_URL=<base_url>`, filtered to its own scenarios, and its manual paths with
-`playwright-cli`. A missing persona is reported as missing and blocks its checks; nobody else runs
+browser inspection. A missing persona is reported as missing and blocks its checks; nobody else runs
 them, an administrator least of all. A missing required check or evidence is a failure; an
 unavailable optional path is skipped.
 

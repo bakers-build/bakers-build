@@ -10,12 +10,13 @@ id: conductors
 label: Conductors
 module: views
 description: |-
-  Two listings of bb_conductor. The user-area rail item (user_list) is the
+  Three listings of bb_conductor. The user-area rail item (user_list) is the
   conductors assigned to the account in the URL, any workspace. The project
-  tab (project_list) is that project's conductors, any owner. Both walk
-  project_id then group_id because bb_conductor carries no workspace field
-  of its own. Both joins are INNER: a conductor whose project or group is
-  gone has no workspace to be listed under.
+  tab (project_list) is that project's conductors, any owner. The Board block
+  (board) is that project's active conductors, placed below the Board columns.
+  All walk project_id then group_id because bb_conductor carries no workspace
+  field of its own. Both joins are INNER: a conductor whose project or group
+  is gone has no workspace to be listed under.
 tag: ''
 base_table: bb_conductor
 base_field: id
@@ -140,7 +141,7 @@ display:
           element_wrapper_type: ''
           element_wrapper_class: ''
           element_default_classes: true
-          empty: '(unnamed)'
+          empty: (unnamed)
           hide_empty: false
           empty_zero: false
           hide_alter_empty: false
@@ -635,6 +636,400 @@ display:
         - 'url.query_args:sort_by'
         - 'url.query_args:sort_order'
         - user.permissions
+      tags: {  }
+  board:
+    id: board
+    display_title: 'Board conductors'
+    display_plugin: block
+    position: 3
+    display_options:
+      title: 'Active conductors'
+      fields:
+        label:
+          id: label
+          table: bb_conductor
+          field: label
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_conductor
+          entity_field: label
+          plugin_id: field
+          label: Conductor
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: (unnamed)
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: false
+          click_sort_column: value
+          type: string
+          settings:
+            link_to_entity: true
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        status:
+          id: status
+          table: bb_conductor
+          field: status
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_conductor
+          entity_field: status
+          plugin_id: field
+          label: Status
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: ''
+          hide_empty: false
+          empty_zero: false
+          hide_alter_empty: true
+          click_sort_column: value
+          type: bb_status_badge
+          settings: {  }
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+        open_tickets:
+          id: open_tickets
+          table: bb_conductor
+          field: open_tickets
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_reference_count
+          label: 'Active tickets'
+          exclude: false
+        utilization:
+          id: utilization
+          table: bb_conductor
+          field: utilization
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: bb_conductor_utilization
+          label: Load
+          exclude: false
+        last_seen:
+          id: last_seen
+          table: bb_conductor
+          field: last_seen
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_conductor
+          entity_field: last_seen
+          plugin_id: field
+          label: 'Last heartbeat'
+          exclude: false
+          alter:
+            alter_text: false
+            text: ''
+            make_link: false
+            path: ''
+            absolute: false
+            external: false
+            replace_spaces: false
+            path_case: none
+            trim_whitespace: false
+            alt: ''
+            rel: ''
+            link_class: ''
+            prefix: ''
+            suffix: ''
+            target: ''
+            nl2br: false
+            max_length: 0
+            word_boundary: true
+            ellipsis: true
+            more_link: false
+            more_link_text: ''
+            more_link_path: ''
+            strip_tags: false
+            trim: false
+            preserve_tags: ''
+            html: false
+          element_type: ''
+          element_class: ''
+          element_label_type: ''
+          element_label_class: ''
+          element_label_colon: false
+          element_wrapper_type: ''
+          element_wrapper_class: ''
+          element_default_classes: true
+          empty: Never
+          hide_empty: false
+          empty_zero: true
+          hide_alter_empty: true
+          click_sort_column: value
+          type: bb_time
+          settings:
+            date_only: false
+          group_column: value
+          group_columns: {  }
+          group_rows: true
+          delta_limit: 0
+          delta_offset: 0
+          delta_reversed: false
+          delta_first_last: false
+          multi_type: separator
+          separator: ', '
+          field_api_classes: false
+      pager:
+        type: none
+        options:
+          offset: 0
+      cache:
+        type: none
+        options: {  }
+      empty:
+        area_text_custom:
+          id: area_text_custom
+          table: views
+          field: area_text_custom
+          relationship: none
+          group_type: group
+          admin_label: 'No results text'
+          plugin_id: text_custom
+          empty: true
+          content: 'This project has no active conductors.'
+          tokenize: false
+      sorts:
+        label:
+          id: label
+          table: bb_conductor
+          field: label
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_conductor
+          entity_field: label
+          plugin_id: standard
+          order: ASC
+          expose:
+            label: ''
+            field_identifier: label
+          exposed: false
+      arguments:
+        project_id:
+          id: project_id
+          table: bb_conductor
+          field: project_id
+          relationship: none
+          group_type: group
+          admin_label: Project
+          entity_type: bb_conductor
+          entity_field: project_id
+          plugin_id: entity_target_id
+          default_action: default
+          exception:
+            value: ''
+            title_enable: false
+            title: All
+          title_enable: false
+          title: ''
+          default_argument_type: raw
+          default_argument_options:
+            index: 3
+            use_alias: false
+          summary_options: {  }
+          summary:
+            sort_order: asc
+            number_of_records: 0
+            format: default_summary
+          specify_validation: true
+          validate:
+            type: bb_project_reference
+            fail: 'not found'
+          validate_options:
+            bundles: {  }
+            access: true
+            operation: view
+            multiple: 0
+          break_phrase: false
+          not: false
+      filters:
+        active:
+          id: active
+          table: bb_conductor
+          field: active
+          relationship: none
+          group_type: group
+          admin_label: ''
+          entity_type: bb_conductor
+          entity_field: active
+          plugin_id: boolean
+          operator: '='
+          value: '1'
+          group: 1
+          exposed: false
+      filter_groups:
+        operator: AND
+        groups:
+          1: AND
+      style:
+        type: table
+        options:
+          grouping: {  }
+          row_class: ''
+          default_row_class: true
+          columns:
+            label: label
+            status: status
+            open_tickets: open_tickets
+            utilization: utilization
+            last_seen: last_seen
+          default: '-1'
+          info:
+            label:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: null
+            status:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: null
+            open_tickets:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: null
+            utilization:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: null
+            last_seen:
+              sortable: false
+              default_sort_order: asc
+              align: ''
+              separator: ''
+              empty_column: false
+              responsive: null
+          override: true
+          sticky: false
+          summary: ''
+          empty_table: false
+          caption: ''
+          description: ''
+          class: ''
+      row:
+        type: fields
+        options: {  }
+      defaults:
+        empty: false
+        cache: false
+        title: false
+        pager: false
+        style: false
+        row: false
+        fields: false
+        sorts: false
+        arguments: false
+        filters: false
+        filter_groups: false
+      display_description: "The project's active conductors for the Board, whatever its ticket filters say."
+      display_extenders: {  }
+      block_description: 'Active conductors'
+      block_category: bakers.build
+    cache_metadata:
+      max-age: 0
+      contexts:
+        - user
       tags: {  }
   project_list:
     id: project_list

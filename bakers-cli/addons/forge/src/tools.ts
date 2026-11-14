@@ -7,7 +7,13 @@ import type {
   ToolRequest,
   ToolResult,
 } from '@bakers-build/conductor/contract';
-import { homeBbDir } from '@bakers-build/core';
+import {
+  homeBbDir,
+  loadRunClone,
+  refreshRunTarget,
+  saveRunClone,
+  transferIsolatedCommit,
+} from '@bakers-build/core';
 import type { ForgeBackend, ForgeCheck } from './backend.js';
 import { FORGE_NEEDS_BACKEND, loadForgeBackend, mergeRule } from './config.js';
 import { fetchBranches, pushBranch } from './git.js';
@@ -92,11 +98,19 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
         .split(/\s+/)
         .filter(Boolean);
       const b = await backend();
-      const refs = await fetchBranches(req.worktreePath, await b.gitAuth(), [
-        run.baseBranch,
-        run.branchName,
-        ...extra,
-      ]);
+      // A run clone has no Git on the host: the parent repository is fetched.
+      const clone = loadRunClone(req.worktreePath);
+      const refs = await fetchBranches(
+        clone?.parentGitDir ?? req.worktreePath,
+        await b.gitAuth(),
+        [run.baseBranch, run.branchName, ...extra],
+      );
+      // The run sees what the parent got, written without Git in its directory.
+      if (clone)
+        refreshRunTarget(
+          clone,
+          refs.map((ref) => ref.name),
+        );
       return json({ fetched: refs });
     },
 
@@ -104,8 +118,12 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const run = runOf(req);
       const branch = ownedBranch(req, run);
       const b = await backend();
+      const clone = loadRunClone(req.worktreePath);
+      // Only checked commits leave the run: transfer first, push from the parent.
+      if (clone && branch === clone.branch)
+        saveRunClone({ ...clone, expected: transferIsolatedCommit(clone) });
       const sha = await pushBranch(
-        req.worktreePath,
+        clone?.parentGitDir ?? req.worktreePath,
         await b.gitAuth(),
         branch,
         {
@@ -115,6 +133,7 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
             : {}),
         },
       );
+      if (clone) refreshRunTarget(clone, [branch]);
       return json({ branch, sha });
     },
 

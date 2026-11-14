@@ -31,10 +31,28 @@ final class WorkStateItemList extends FieldItemList {
     if (!$entity instanceof BbTicketInterface) {
       return;
     }
-    $value = $entity->get('closed')->value ? 'done'
-      : ($entity->get('conductor_id')->isEmpty() ? 'not_assigned'
-        : ($entity->get('state')->value === 'qualification' ? 'intake' : 'working'));
-    $this->list[0] = $this->createItem(0, $value);
+    $this->list[0] = $this->createItem(0, $this->workState($entity));
+  }
+
+  /**
+   * Rule order: closed, no conductor, qualification, blocked without a run.
+   *
+   * The blocker and live-run lookups only run for an assigned ticket past
+   * qualification, so unblocked tickets add no run query.
+   */
+  private function workState(BbTicketInterface $ticket): string {
+    if ($ticket->get('closed')->value) {
+      return 'done';
+    }
+    if ($ticket->get('conductor_id')->isEmpty()) {
+      return 'not_assigned';
+    }
+    if ($ticket->get('state')->value === 'qualification') {
+      return 'intake';
+    }
+    $blockedIdle = $ticket->hasOpenBlockers()
+      && !\Drupal::service('bb_core.ticket_run_deriver')->hasLiveRun($ticket);
+    return $blockedIdle ? 'intake' : 'working';
   }
 
 }

@@ -11,6 +11,7 @@ use Drupal\Core\Entity\Attribute\ContentEntityType;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityListBuilder;
 use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
 use Drupal\Core\StringTranslation\TranslatableMarkup;
 use Drupal\entity\EntityAccessControlHandler;
@@ -92,6 +93,10 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
       // reaches vid and workspace_id through getEntity().
       ->addConstraint('BbTermUniqueNameInWorkspace');
 
+    $fields['key'] = BaseFieldDefinition::create('string')
+      ->setLabel(new TranslatableMarkup('Key'))
+      ->addConstraint('BbTermUniqueNameInWorkspace', ['message' => 'A term key %name already exists in this workspace and vocabulary.']);
+
     $fields['description'] = BaseFieldDefinition::create('string_long')
       ->setLabel(new TranslatableMarkup('Description'))
       ->setDisplayConfigurable('form', TRUE)
@@ -127,6 +132,30 @@ final class BbTerm extends ContentEntityBase implements BbTermInterface, EntityO
     $fields['owner_user_id'] = static::ownerBaseFieldDefinition();
 
     return $fields;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function preSave(EntityStorageInterface $storage): void {
+    parent::preSave($storage);
+    if (!$this->get('key')->isEmpty()) {
+      $this->set('key', mb_strtolower((string) $this->get('key')->value));
+    }
+    elseif ($this->isNew() && $this->bundle() === 'label') {
+      $this->set('key', self::keyOf((string) $this->label()));
+      // An unvalidated save of a clashing name keeps no key, never fails.
+      if ($this->get('key')->validate()->count() > 0) {
+        $this->set('key', NULL);
+      }
+    }
+  }
+
+  /**
+   * The stable, lowercase label identity derived from a name.
+   */
+  public static function keyOf(string $name): string {
+    return (string) preg_replace('/[^a-z0-9]+/', '_', mb_strtolower(trim($name)));
   }
 
   /**

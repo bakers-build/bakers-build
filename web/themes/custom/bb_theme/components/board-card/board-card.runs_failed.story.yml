@@ -1,0 +1,10 @@
+component: bb_theme:board-card
+name: Runs failed
+props:
+  identifier: BB-307
+  title: 'Expired runs are never closed: 1333 stand open because no path closes them'
+  status: attention
+  priority: p1
+  state: plan
+  run_count: 4
+  last_run_state: failed

@@ -2,8 +2,8 @@
 db_import_command:
   command: |
     set -u
-    LOG=/var/www/html/.ddev/.bakers-test/init-existing-config.log
-    mkdir -p /var/www/html/.ddev/.bakers-test
+    LOG=/var/www/html/tests/artifacts/bakers/init-existing-config.log
+    mkdir -p /var/www/html/tests/artifacts/bakers
     (
       set -ex
       drush site:install --existing-config -y

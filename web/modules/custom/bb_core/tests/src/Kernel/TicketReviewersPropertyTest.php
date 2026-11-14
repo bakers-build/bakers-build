@@ -220,6 +220,10 @@ final class TicketReviewersPropertyTest extends KernelTestBase {
     $form_object->setEntity($edited);
     $form_state = new FormState();
     $form_state->set('property_baseline', clone $opened);
+    // What the submit step leaves for save(): the changed field and the
+    // baseline it was compared with.
+    $form_state->set('property_changed', ['reviewers']);
+    $form_state->setTemporaryValue('property_compared', clone $opened);
     $form = [];
     $form_object->save($form, $form_state);
     $this->container->get('request_stack')->pop();

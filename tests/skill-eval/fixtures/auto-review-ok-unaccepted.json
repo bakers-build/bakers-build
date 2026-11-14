@@ -8,14 +8,10 @@
     "bb-workflow/SKILL.md",
     "bb-workflow/references/read-ticket.md",
     "bb-workflow/references/review.md",
-    "bb-workflow/references/publish-comment.md",
     "bb-workflow/references/ticket-writes.md",
-    "bb-workflow/references/merge.md",
-    "bb-workflow/references/prior-art-build.md",
     "bb-workflow/references/transition-ticket.md",
     "bb-workflow/references/outtake.md",
     "bb-workflow/references/outtake/review.md",
-    "bb-workflow/references/origin-status.md",
     "bb-label-ticket-question/SKILL.md"
   ],
   "recipes": [
@@ -225,5 +221,8 @@
       "id": "asks-acceptance",
       "criterion": "The final answer reports a user question asking the user to accept the result, because the ticket carries no earlier acceptance, in place of a merge."
     }
+  ],
+  "virtual_references": [
+    "bb-workflow/references/retrospective.md"
   ]
 }

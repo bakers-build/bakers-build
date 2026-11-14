@@ -28,6 +28,8 @@ Without `env_deny`, the [default list](/provision/security/execution#ticket-env-
 
 ## Security
 
+[Isolation models](/agents/isolation): platform support.
+
 Runs default to `system`; `permissions: 'sandbox'` starts the OS sandbox. [Execution security](/provision/security/execution) owns boundaries, environment filtering and isolation risks.
 
 | `permissions` | Launch flags |
