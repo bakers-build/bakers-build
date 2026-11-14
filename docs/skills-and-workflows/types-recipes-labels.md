@@ -38,6 +38,8 @@ A run stops before doing any work when the recipe, its section for the current s
 
 With `ticket-question`, answer in a comment, remove the question label and unfreeze to continue. Do not use that label when nobody will answer ticket questions. Without it, questions go to the session. `auto` does not waive checks; acceptance is due only when something was yours to decide.
 
+A proposed redesign into named gates with the labels `auto-review` and `auto-accept`: the decision record `docs/decisions/gate-keys-for-unattended-work.md`.
+
 Other installed `bb-label-<label>` skills can define behavior for their labels. A label without such a skill or built-in meaning is a tag for people and filters.
 
 ## Agent labels
