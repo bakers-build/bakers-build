@@ -55,7 +55,6 @@ export const SIDEBAR = {
     ]),
     group("Tools and access", [
       ["Tools and integrations", "/provision/tools"],
-      ["Permissions and isolation", "/agents/security"],
     ]),
     group("Machine setup", [
       ["Set up a worker server", "/provision/worker-server"],
@@ -75,7 +74,6 @@ export const SIDEBAR = {
       ["Permissions and isolation", "/agents/security"],
       ["Agent permissions", "/provision/security/execution"],
       ["Isolation models", "/agents/isolation"],
-      ["Tools across boundaries", "/provision/tools"],
       ["Configure permissions", "/provision/security/shared-settings"],
       ["Access and data", "/provision/security/access-and-data"],
       ["API keys and service accounts", "/provision/security/credentials"],

@@ -92,7 +92,7 @@ for (const slug of ['connector', 'connect-a-project', 'first-ticket']) {
     `missing setup entry: ${slug}`,
   )
 }
-// The security overview lives under Agents but stays on the provision path.
+// The security overview lives under Agents but stays in the Provision sidebar.
 for (const link of ['/provision/machine', '/provision/guide', '/provision/tools', '/agents/security', '/provision/examples']) {
   requireNavigation(
     sidebarLinks(SIDEBAR['/provision/'] ?? []).includes(link),
