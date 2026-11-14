@@ -8,7 +8,7 @@ import tempfile
 repo = Path(__file__).resolve().parents[2]
 root = repo / '.claude/skills/bakers-build'
 SKILLS = ('bb-create-project', 'bb-create-ticket', 'bb-init', 'bb-init-project', 'bb-label-auto',
-          'bb-label-ticket-question', 'bb-prepare-time', 'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-superpowers',
+          'bb-label-human-accept', 'bb-label-human-review', 'bb-label-ticket-question', 'bb-prepare-time', 'bb-recipe-deploy-and-release', 'bb-recipe-matt', 'bb-recipe-superpowers',
           'bb-recipe-verify', 'bb-scope-change', 'bb-upgrade-project', 'bb-verdict',
           'bb-workflow')
 STATES = ('qualification', 'plan', 'working', 'review')
@@ -42,13 +42,21 @@ def grid_errors(path, text, recipe=False):
 
     def valid(heading):
         state, phase = STATE_HEADING.fullmatch(heading), PHASE_HEADING.fullmatch(heading)
+        if recipe and heading == '## bb-gates':
+            return True
         if recipe and heading.startswith('## '):
             return bool(state) and state[2] in STATES and (not state[1] or state[1] in types)
         # A recipe nests phase slots under its state sections; hints and guides use them top-level.
         return bool(phase) and phase[1] in PHASES and heading.startswith('### ' if recipe else '## ')
 
-    return [(path, h) for h in headings(text)
-            if ('bb-state' in h or 'bb-phase' in h or (recipe and h[:3] in ('## ', '###'))) and not valid(h)]
+    errors = [(path, h) for h in headings(text)
+              if ('bb-state' in h or 'bb-phase' in h or (recipe and h[:3] in ('## ', '###'))) and not valid(h)]
+    if recipe:
+        # `## bb-gates` holds one `| <type> | <gates> |` row per declared type.
+        gates = re.search(r'^## bb-gates\n(.*?)(?=^## |\Z)', text, re.M | re.S)
+        rows = set(re.findall(r'^\| `?([a-z]+)`? \|', gates[1], re.M)) if gates else set()
+        errors += [(path, f'no bb-gates row for {t}') for t in sorted(types - rows)]
+    return errors
 
 
 def check(scan):
@@ -98,6 +106,10 @@ def check(scan):
             errors.append((f'{state}.md', f'phase headings {found}'))
         if not (references / 'outtake' / f'{state}.md').is_file():
             errors.append((f'outtake/{state}.md', 'missing'))
+        # Every handoff carries `### Gates`, labelled or not, so each state's always-read set links its rule.
+        always = re.findall(r'^always: (.+)$', (references / f'{state}.md').read_text(), re.M)
+        if not any('gates.md#record' in (references / n).read_text() for g in always for n in g.split(', ')):
+            errors.append((f'{state}.md', 'no always-read link to gates.md#record'))
     frame = (installed / 'bb-workflow/SKILL.md').read_text()
     errors += [('bb-workflow/SKILL.md', h) for h in headings(frame, 2) if h[3:] in PHASES]
     errors += [('bb-workflow/SKILL.md', f'no link to {f}') for f in [*STATES, 'read-ticket']

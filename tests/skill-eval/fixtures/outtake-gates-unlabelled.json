@@ -1,0 +1,64 @@
+{
+  "id": "outtake-gates-unlabelled",
+  "synthetic": true,
+  "profile": "state-outtake",
+  "skill": "bb-workflow/references/outtake.md",
+  "references": [
+    "bb-workflow/references/outtake/review.md",
+    "bb-workflow/references/ticket-writes.md",
+    "bb-workflow/references/gates.md",
+    "bb-workflow/references/results.md",
+    "bb-workflow/references/evidence.md"
+  ],
+  "recipes": [
+    "bb-recipe-probe"
+  ],
+  "input": {
+    "ticket": "EVAL-42: Export invoices as CSV",
+    "state": "review",
+    "recipe": "probe",
+    "ticket_type": "feature",
+    "labels": [],
+    "task": "Render the summary outtake for this review verdict. The ticket carries no label. Printing and publishing are the caller's.",
+    "verdict": {
+      "status": "Not OK",
+      "comment": "77777777-7777-4777-8777-000000000042",
+      "results": [
+        {
+          "ac": "AC-2",
+          "result": "FAIL(implementation)",
+          "revision": "f00dfeed00000000000000000000000000000042"
+        }
+      ],
+      "findings": [
+        {
+          "location": "src/invoices/export.ts:57",
+          "what": "Column header is \"amount\", the criterion says \"total\".",
+          "fix": "Rename the header; test/export.test.ts must pass.",
+          "cause": "implementation"
+        }
+      ]
+    },
+    "observations": [
+      "The run recommended the verdict Not OK. The requester rita confirmed Not OK in this session and chose to send the ticket back to working; the run recorded her answer in comment 77777777-7777-4777-8777-000000000043.",
+      "No other gate was passed or rejected since the coding handoff."
+    ],
+    "mr": "https://git.example.invalid/team/app/-/merge_requests/42"
+  },
+  "expect": {
+    "verdict": "Not OK",
+    "gates": [
+      "verdict"
+    ]
+  },
+  "rubric": [
+    {
+      "id": "gates-record",
+      "criterion": "The summary has a `### Gates` block with one line for the verdict gate: passed by rita citing comment 77777777-7777-4777-8777-000000000043, recommendation Not OK, followed yes. No line for a gate the input does not name."
+    },
+    {
+      "id": "verdict",
+      "criterion": "The outcome states Not OK."
+    }
+  ]
+}

@@ -14,6 +14,14 @@ matching skills, never from here. The skills are the originals from `mattpocock/
 agent environment provides them; the slots name only skills the agent can invoke, and carry the
 user-only ones' method inline.
 
+## bb-gates
+
+| Type | Gates |
+|---|---|
+| feature | default |
+| bug | default |
+| chore | default |
+
 ## bb-state-qualification
 
 ### bb-phase-work

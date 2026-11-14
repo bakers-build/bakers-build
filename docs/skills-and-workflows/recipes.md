@@ -22,7 +22,16 @@ A recipe brings one engineering method to `plan`, `working` and `review`. It add
 
 2. **Write one section per state, one slot per phase.** `## bb-state-plan`, `## bb-state-working` and `## bb-state-review`, each with a `### bb-phase-<phase>` slot only where your method adds something, usually `### bb-phase-work`, naming the method's original skills. Add a `## <type>:bb-state-<state>` section only where a type behaves differently, for example `## bug:bb-state-plan`; per phase its slot wins over the general one. A recipe links no `bb-workflow` reference and calls no other bakers.build skill. Follow the authority limits below. Keep the whole file under 500 words.
 
+   Before the state sections, `## bb-gates` holds one row per declared type: `default` for a shipped type (feature, bug, chore, deployment, verification), optionally plus gates you add; for your own type every gate it waits on. Your own gate reads `a person confirms <what> in <state>/<phase>` and is named `<recipe>:<gate>`.
+
    ```md
+   ## bb-gates
+
+   | Type | Gates |
+   |---|---|
+   | feature | default |
+   | chore | default |
+
    ## bb-state-plan
 
    ### bb-phase-work

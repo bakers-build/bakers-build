@@ -7,6 +7,15 @@ description: Test recipe for tickets of type feature or chore — never shipped;
 
 A second test-only recipe, so qualification has a real choice.
 
+## bb-gates
+
+Gates per type, as the frame defines them.
+
+| Type | Gates |
+|---|---|
+| feature | default |
+| chore | default |
+
 ## bb-state-plan
 
 ### bb-phase-work
