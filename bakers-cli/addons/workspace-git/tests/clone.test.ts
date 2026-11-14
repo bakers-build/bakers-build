@@ -183,7 +183,9 @@ it('takes shared from the isolating runtime, the workspace option as fallback', 
     const ws = await gitWorkspace(
       workspace === undefined ? {} : { shared: workspace },
     ).createWorkspace(config);
-    expect((await ws.ensure(`GL-${10 + i}`)).clone?.shared).toBe(expected);
+    expect(
+      (await ws.ensure(`GL-${10 + i}`, `feat/gl-${10 + i}`)).clone?.shared,
+    ).toBe(expected);
   }
 });
 

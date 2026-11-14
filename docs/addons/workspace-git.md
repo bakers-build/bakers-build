@@ -29,14 +29,14 @@ Under an isolating runtime ([Docker](/addons/runtime-docker), [Bubblewrap](/addo
 
 ## Check it works
 
-A dispatched ticket gets a worktree at `<checkout>/.bakers-worktrees/<branch_name>`, on the ticket's own `branch_name`.
+A dispatched ticket gets a worktree at `<checkout>/.bakers-worktrees/<branch_name>`, on its own branch.
 
 ## Good to know
 
-- The workspace checks out the ticket's `branch_name`. An existing branch is checked out as it is, never reset. A new branch starts at the root checkout's HEAD; this backend ignores the requested `baseRef`, so choose herdr or Orca when parent-base selection is required.
+- An existing ticket branch is checked out as it is, never reset. A new one starts at the root checkout's HEAD and ignores `baseRef`; choose herdr or Orca when parent-base selection is required.
 - The default `worktree_dir` lies inside the checkout: add `/.bakers-worktrees/` to its `.gitignore`.
-- A branch with a worktree elsewhere, such as an old `<checkout>-worktrees/<key>`, keeps it there. An old run clone is recreated at the new path; its commits stay in the parent repository.
-- `branch_prefix` and `branch_template` were removed; setting them fails validation.
+- A branch's existing worktree, such as an old `<checkout>-worktrees/<key>`, stays in use. An old run clone is recreated at the new path; its commits stay in the parent.
+- Setting the removed `branch_prefix` or `branch_template` fails validation.
 - The package also loads `WORKFLOW.md` from the worktree as run instructions, when the file exists.
 - Listing [herdr](/addons/herdr) or [Orca](/addons/orca) in `addons` as well adds their workspace, and the last one listed wins with a warning. To run their executor on Git worktrees, set an explicit `executor` slot instead; see [Conductor slots](/addons/slots).
 - When a ticket is done, the conductor removes its worktree with Git, whatever the executor.
