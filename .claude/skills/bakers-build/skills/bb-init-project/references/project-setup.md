@@ -70,8 +70,9 @@ List every other path the host executes or reads as trusted (such as `.ddev` or 
 project's `runtime.read_only`: the list is the project's alone, with no addon default. Under an
 isolating runtime each hook, `provision_up` and `provision_exec` command must start with a script
 in a listed path, and that script calls only protected code; anything the run can write, such as
-a dependency install or a build, belongs in a container. Offer `provision_exec` keys for commands
-agents run in the project's containers. A declined or unanswered move stays unresolved; report
+a dependency install or a build, belongs in a container. Offer one fixed `provision_exec` key per command
+agents run in the project's containers; add `args: true` only where the command needs input its script
+validates. A declined or unanswered move stays unresolved; report
 the path and protection gap. Nested entries protect their entire top-level project folder against
 ancestor renames; explain this scope when obtaining consent.
 See [hook protection](https://bakers.build/provision/hooks#protect-host-executed-files).

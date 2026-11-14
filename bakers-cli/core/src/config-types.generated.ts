@@ -73,9 +73,13 @@ export interface ProjectConfig {
     provision_up?: string | {
       [key: string]: string;
     };
-    /** Commands by key, offered to runs as provision_exec(key, args). Arguments follow the command as argv, never through a shell. */
+    /** Commands by key, offered to runs as provision_exec(key, args). A string is a fixed command that takes no arguments; { command, args: true } also passes the run's arguments as argv after --, never through a shell. */
     provision_exec?: {
-      [key: string]: string;
+      [key: string]: string | {
+        command: string;
+        /** Pass the run's arguments to the command. */
+        args?: boolean;
+      };
     };
   };
   /** Agent plugin marketplaces every run of this project installs. */

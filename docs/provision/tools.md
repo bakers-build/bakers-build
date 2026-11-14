@@ -6,7 +6,7 @@ Tools make functions available to agents and other callers: check an environment
 
 A tool has a name, a description and defined input parameters. The caller chooses a tool and supplies its inputs; the implementation performs the operation and returns a result or an error.
 
-For example, `ddev_status()` reports an environment's status. `provision_exec(key, args)` runs a command your project configured, with the arguments you pass. The tool's implementation determines what it can do.
+For example, `ddev_status()` reports an environment's status. `provision_exec(key, args?)` runs a command your project configured; only keys that allow arguments take `args`. The tool's implementation determines what it can do.
 
 ## Where tools come from
 

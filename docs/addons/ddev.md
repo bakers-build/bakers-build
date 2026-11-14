@@ -51,7 +51,7 @@ In `WORKFLOW.md`, say how a `ddev <cmd>` row runs:
 ```md
 ## bb-phase-provision
 
-Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as `provision_exec('web', [...])`.
+Drupal checks run on `provision_up('test')`. A `ddev <cmd>` row runs as its own fixed `provision_exec` key, such as `provision_exec('phpcs')`.
 
 ## bb-phase-validate
 
