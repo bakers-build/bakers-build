@@ -36,6 +36,10 @@ The agent prepares its configuration and grants. Claude copies settings and logi
 private home, mounts plugins read-only, and writes its transcript to the worktree transcript directory.
 Explicit API credentials override stored login.
 
+User hooks are copied with the settings, their scripts are not. An unreachable hook script fails
+open: its tool still runs. Grant its directory with `readPaths`; hook paths are never mounted
+automatically, as each grant exposes host files.
+
 The workspace is a fresh [run clone](/provision/security/shared-settings#isolated-git-delivery) of the ticket
 branch at the worktree path, made at every run start. The run's Git directory, kept in the
 conductor's cache, is mounted as `.git`; the parent repository is absent. The workspace option
