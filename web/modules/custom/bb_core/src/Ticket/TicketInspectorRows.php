@@ -188,7 +188,7 @@ final class TicketInspectorRows extends InspectorRows {
       'code' => $base === '' || $base === '—' ? 'Code' : 'Code · ' . $base,
       default => 'Relations · ' . array_sum(array_map(static fn(array $row): int => count($row['cells']) - 1, $filled)),
     };
-    if ($group === 'relations' && $ticket !== NULL && $ticket->getProjectId() !== NULL && $this->hasReadableChip($rows['sub_tickets'] ?? [])) {
+    if ($group === 'relations' && $ticket !== NULL && $ticket->getProjectId() !== NULL && $ticket->getIdentifier() !== '' && $this->hasReadableChip($rows['sub_tickets'] ?? [])) {
       $filled = $this->withShowInList($filled, $rows['sub_tickets'], $ticket);
     }
     return [
