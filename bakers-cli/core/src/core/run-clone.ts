@@ -87,9 +87,9 @@ const adminOf = ({ parentGitDir, gitDir }: RunClone) =>
 
 /**
  * Register the run clone as a linked worktree of the parent on the host, so
- * herdr groups its workspace under the repository. The run never sees this:
- * its own Git directory is mounted over the stub. Repeat after every
- * {@link createRunClone}, which empties the stub.
+ * herdr groups its workspace under the repository, with the branch tip as its
+ * index. The run never sees this: its own Git directory is mounted over the
+ * stub. Repeat after every {@link createRunClone}, which empties the stub.
  */
 export function registerRunCloneWorktree(record: RunClone): void {
   const admin = adminOf(record);
@@ -100,6 +100,8 @@ export function registerRunCloneWorktree(record: RunClone): void {
   writeFileSync(join(admin, 'gitdir'), `${stub}\n`);
   writeFileSync(join(stub, 'commondir'), `${record.parentGitDir}\n`);
   writeFileSync(join(stub, 'gitdir'), `${stub}\n`);
+  // Without an index, host Git there would stage every tracked file as deleted.
+  git(['--git-dir', stub, 'read-tree', 'HEAD']);
 }
 
 export function removeRunClone(workspace: string, env: Env = process.env) {

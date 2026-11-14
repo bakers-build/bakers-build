@@ -16,7 +16,7 @@ import type {
   WorktreeTeardown,
 } from '@bakers-build/conductor/contract';
 import type { ConductorLogger } from '@bakers-build/core';
-import { exec, registerRunCloneWorktree } from '@bakers-build/core';
+import { exec } from '@bakers-build/core';
 import { isRecord, parseJson } from './pane-layout.js';
 import { deriveHerdrRoot, type RootGitExec } from './root-anchor.js';
 import { resolveBaseRef } from './shared.js';
@@ -235,8 +235,8 @@ export class HerdrWorkspace implements BbWorkspace {
 
   /**
    * The isolating-runtime variant: a fresh run clone at the worktree's stable
-   * path, shown in a plain herdr workspace. The parent keeps the ticket
-   * branch; no linked worktree and no `.git` exist on the host.
+   * path, opened in herdr as a worktree of the parent. The parent keeps the
+   * ticket branch; the host's `.git` there is only the stub that links to it.
    */
   private async ensureClone(
     branch: string,
@@ -278,7 +278,6 @@ export class HerdrWorkspace implements BbWorkspace {
       ...(target ? { target } : {}),
       shared: this.options.shared ?? false,
     });
-    registerRunCloneWorktree(clone);
     await openCloneWorkspace(this.execHerdr, this.root, branch, path);
     return { path, instructions: loadInstructions(path), created, clone };
   }

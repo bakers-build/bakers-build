@@ -9,6 +9,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { ensureRunClone } from '@bakers-build/addon-workspace-git';
 import type { ConductorFileConfig } from '@bakers-build/conductor/contract';
 import { loadRunClone } from '@bakers-build/core';
 import { afterEach, beforeEach, expect, it } from 'vitest';
@@ -237,14 +238,8 @@ it('closes the workspace and removes the clone and its worktree entry on teardow
   expect(git(root, 'worktree', 'list', '--porcelain')).not.toContain(ws.path);
 });
 
-it('the executor starts and cleans a run in the open clone workspace without opening it again', async () => {
-  const herdr = fakeHerdr();
-  const ws = await new HerdrWorkspace({
-    root,
-    clone: true,
-    execHerdr: herdr.exec,
-  }).ensure('BB-1', BRANCH);
-  herdr.calls.length = 0;
+/** An executor whose `startRun` stops at the tab, once the workspace is resolved. */
+function executorOn(herdr: ReturnType<typeof fakeHerdr>) {
   const tabExec = async (args: string[]) => {
     if (args[0] === 'tab' && args[1] === 'create') {
       herdr.calls.push(args);
@@ -258,23 +253,37 @@ it('the executor starts and cleans a run in the open clone workspace without ope
     warn() {},
     error() {},
   });
+  const start = (workspacePath: string) =>
+    expect(
+      executor.startRun({
+        ticket: {
+          uuid: 't',
+          identifier: 'BB-1',
+          title: 'One',
+          branchName: BRANCH,
+          state: 'working',
+        },
+        run: { uuid: 'r', id: 7, handler: 'code' },
+        workspacePath,
+        instructions: null,
+        command: 'true',
+        env: {},
+      }),
+    ).rejects.toThrow(/stop after the workspace was resolved/);
+  return { executor, start };
+}
 
-  await expect(
-    executor.startRun({
-      ticket: {
-        uuid: 't',
-        identifier: 'BB-1',
-        title: 'One',
-        branchName: BRANCH,
-        state: 'working',
-      },
-      run: { uuid: 'r', id: 7, handler: 'code' },
-      workspacePath: ws.path,
-      instructions: null,
-      command: 'true',
-      env: {},
-    }),
-  ).rejects.toThrow(/stop after the workspace was resolved/);
+it('the executor starts and cleans a run in the open clone workspace without opening it again', async () => {
+  const herdr = fakeHerdr();
+  const ws = await new HerdrWorkspace({
+    root,
+    clone: true,
+    execHerdr: herdr.exec,
+  }).ensure('BB-1', BRANCH);
+  herdr.calls.length = 0;
+  const { executor, start } = executorOn(herdr);
+
+  await start(ws.path);
   const create = herdr.calls.find(
     (call) => call[0] === 'tab' && call[1] === 'create',
   );
@@ -285,4 +294,15 @@ it('the executor starts and cleans a run in the open clone workspace without ope
   await executor.cleanupRun(BRANCH, 7);
   expect(herdr.calls).toContainEqual(['tab', 'list', '--workspace', 'ws-new']);
   expect(readFileSync(join(ws.path, 'WORKFLOW.md'), 'utf8')).toBe('rules');
+});
+
+it('the executor opens a clone another workspace addon made', async () => {
+  const herdr = fakeHerdr();
+  const path = join(root, '.bakers-worktrees', BRANCH);
+  git(root, 'branch', BRANCH);
+  ensureRunClone({ parent: root, workspace: path, branch: BRANCH });
+
+  await executorOn(herdr).start(path);
+
+  expect(herdr.open).toEqual([{ id: 'ws-new', label: BRANCH }]);
 });

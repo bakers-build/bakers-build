@@ -6,7 +6,11 @@ import {
   type WorktreeGitExec,
 } from '@bakers-build/addon-workspace-git';
 import type { WorktreeTeardown } from '@bakers-build/conductor/contract';
-import { type ConductorLogger, loadRunClone } from '@bakers-build/core';
+import {
+  type ConductorLogger,
+  loadRunClone,
+  registerRunCloneWorktree,
+} from '@bakers-build/core';
 import { type HerdrExec, isRecord, parseJson } from './pane-layout.js';
 import { parseWorkspaceList } from './workspace-list.js';
 
@@ -129,8 +133,8 @@ export async function cloneWorkspaceId(
 
 /**
  * The run clone's herdr workspace, opened as a worktree of `root` when none is
- * open, so herdr groups it under the repository. Needs the clone registered
- * with `registerRunCloneWorktree`.
+ * open, so herdr groups it under the repository. Registers the clone as a
+ * worktree first, whichever addon made it: every refresh empties its stub.
  */
 export async function openCloneWorkspace(
   execHerdr: HerdrExec,
@@ -138,6 +142,8 @@ export async function openCloneWorkspace(
   branch: string,
   path: string,
 ): Promise<string> {
+  const clone = loadRunClone(path);
+  if (clone) registerRunCloneWorktree(clone);
   const open = await cloneWorkspaceId(execHerdr, root, branch, path);
   if (open) return open;
   const output = await execHerdr([

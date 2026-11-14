@@ -303,6 +303,8 @@ it('registers the run clone as a linked worktree of the parent on the ticket bra
   expect(list()).toContain(`worktree ${workspace}`);
   // Host Git in the workspace sees the parent repository on the ticket branch.
   expect(git(workspace, 'rev-parse', '--abbrev-ref', 'HEAD')).toBe('ticket');
+  // ...and a clean checkout, so a host commit there can't delete every file.
+  expect(git(workspace, 'status', '--porcelain')).toBe('');
 
   removeRunClone(workspace, env);
   expect(list()).not.toContain(workspace);
