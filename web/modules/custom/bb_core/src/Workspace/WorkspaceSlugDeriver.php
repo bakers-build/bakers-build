@@ -5,25 +5,21 @@ declare(strict_types=1);
 namespace Drupal\bb_core\Workspace;
 
 use Drupal\Component\Transliteration\TransliterationInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\bb_core\Plugin\Validation\Constraint\BbWorkspaceSlugConstraint;
 
 /**
- * Derives a usable workspace slug from a typed workspace name.
+ * Derives a pattern-valid workspace slug from a typed workspace name.
  *
- * The slug is never asked of the customer. `BbWorkspaceSlugConstraint`
- * stays the authority: this class reads its `PATTERN` and `RESERVED` constants
- * and the same table rather than restating the rules. It never fails; a name
- * that transliterates to nothing falls back to a generated stem.
+ * The slug is never asked of the customer, and never suffixed: a taken or
+ * reserved slug is `BbWorkspaceSlugConstraint`'s to refuse, so the customer
+ * chooses another name instead of receiving an address they did not choose.
+ * A name that transliterates to nothing falls back to a generated stem.
  */
 final class WorkspaceSlugDeriver {
 
   /**
    * The stem used when a name derives to nothing usable.
    *
-   * `workspace` is itself pattern-valid and NOT on `RESERVED`, so the fallback
-   * enters the same uniquifying loop as any other stem and comes out as
-   * `workspace`, `workspace-2`, … rather than needing a branch of its own.
+   * `workspace` is itself pattern-valid and NOT on `RESERVED`.
    */
   private const FALLBACK_STEM = 'workspace';
 
@@ -33,55 +29,28 @@ final class WorkspaceSlugDeriver {
   private const MAX_LENGTH = 64;
 
   /**
-   * How many suffixes to try before giving up on a stem.
-   *
-   * A bound rather than `while (TRUE)`: the loop's exit depends on a database
-   * query, and an unbounded loop against a failing query is a hung request
-   * instead of an error. Reaching it means something is wrong that a longer
-   * loop would not fix.
-   */
-  private const MAX_ATTEMPTS = 1000;
-
-  /**
    * Constructs the deriver.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
-   *   Queries existing slugs for the uniqueness rule.
    * @param \Drupal\Component\Transliteration\TransliterationInterface $transliteration
    *   Core's own transliteration, so `Ä` becomes `ae` the same way it does
    *   everywhere else in Drupal rather than by a table of ours.
    */
   public function __construct(
-    private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly TransliterationInterface $transliteration,
   ) {}
 
   /**
-   * Derives a free, pattern-valid, non-reserved slug from a name.
+   * Derives a pattern-valid slug from a name.
    *
    * @param string $name
    *   The workspace name as typed.
    *
    * @return string
-   *   A slug that satisfies all three of the constraint's rules.
+   *   A slug matching `BbWorkspaceSlugConstraint::PATTERN`; it may be taken
+   *   or reserved.
    */
   public function derive(string $name): string {
-    $stem = $this->stem($name);
-    $candidate = $stem;
-    for ($attempt = 2; $attempt <= self::MAX_ATTEMPTS; $attempt++) {
-      if ($this->isFree($candidate)) {
-        return $candidate;
-      }
-      // THE SUFFIX IS MEASURED INTO THE LIMIT, not appended past it. A stem at
-      // 64 characters plus `-2` is 66 and fails PATTERN, so the stem is cut
-      // to make room for the suffix that is actually about to be added — which
-      // also means a long name does not silently collide with its own
-      // truncation forever.
-      $suffix = '-' . $attempt;
-      $room = self::MAX_LENGTH - strlen($suffix);
-      $candidate = rtrim(substr($stem, 0, $room), '-') . $suffix;
-    }
-    throw new \RuntimeException(sprintf('No free workspace slug derived from "%s" after %d attempts.', $name, self::MAX_ATTEMPTS));
+    return $this->stem($name);
   }
 
   /**
@@ -108,38 +77,6 @@ final class WorkspaceSlugDeriver {
     // PATTERN forbids a trailing one.
     $stem = rtrim($stem, '-');
     return $stem === '' ? self::FALLBACK_STEM : $stem;
-  }
-
-  /**
-   * Whether a candidate satisfies all three of the constraint's rules.
-   *
-   * @param string $candidate
-   *   The slug to test.
-   *
-   * @return bool
-   *   TRUE when the constraint would accept it.
-   */
-  private function isFree(string $candidate): bool {
-    if (preg_match(BbWorkspaceSlugConstraint::PATTERN, $candidate) !== 1) {
-      return FALSE;
-    }
-    // IN_ARRAY IS THE CONSTRAINT'S OWN LIST, read rather than copied. The list
-    // is hand-maintained and `ReservedSlugCoverageTest` keeps it complete
-    // against the live route collection, so reading it is how this class
-    // inherits that guarantee instead of drifting from it.
-    if (in_array($candidate, BbWorkspaceSlugConstraint::RESERVED, TRUE)) {
-      return FALSE;
-    }
-    // `accessCheck(FALSE)`: whether a slug is taken is a property of the table,
-    // not of what the acting session may view. An access-checked query would
-    // hand a new customer a slug that collides with a workspace they cannot
-    // see, and the save would then fail validation instead.
-    $existing = $this->entityTypeManager->getStorage('bb_workspace')->getQuery()
-      ->accessCheck(FALSE)
-      ->condition('slug', $candidate)
-      ->range(0, 1)
-      ->execute();
-    return $existing === [];
   }
 
 }

@@ -7,6 +7,7 @@ namespace Drupal\bb_core\Workspace;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
@@ -89,17 +90,20 @@ final class WorkspaceProvisioner {
    * @return \Drupal\bb_core\Entity\BbWorkspaceInterface
    *   The saved workspace.
    *
+   * @throws \Drupal\bb_core\Workspace\WorkspaceSlugTakenException
+   *   After the rollback, when another workspace saved the slug first.
    * @throws \Throwable
    *   Rethrown after the rollback, so a caller cannot mistake a failed
    *   provisioning for a successful one. Returning NULL would let a caller
    *   redirect a customer into a workspace that does not exist.
    */
   public function provision(string $name, UserInterface $owner, string $teamName, array $values = []): BbWorkspaceInterface {
+    $slug = $this->slugDeriver->derive($name);
     $transaction = $this->database->startTransaction();
     try {
       $workspace = $this->entityTypeManager->getStorage('bb_workspace')->create([
         'name' => $name,
-        'slug' => $this->slugDeriver->derive($name),
+        'slug' => $slug,
         'owner_user_id' => $owner->id(),
       ] + $values);
       $workspace->save();
@@ -141,8 +145,30 @@ final class WorkspaceProvisioner {
         '%name' => $owner->getAccountName(),
         '@message' => $error->getMessage(),
       ]);
+      // A storage error with the slug now taken is the `bb_workspace__slug`
+      // key refusing a concurrent creation; the caller reports it as taken.
+      if ($error instanceof EntityStorageException && $this->isSlugTaken($slug)) {
+        throw new WorkspaceSlugTakenException($slug, $error);
+      }
       throw $error;
     }
+  }
+
+  /**
+   * Whether a workspace holds this slug.
+   *
+   * @param string $slug
+   *   The slug to look up.
+   *
+   * @return bool
+   *   TRUE when a saved workspace uses it.
+   */
+  private function isSlugTaken(string $slug): bool {
+    return $this->entityTypeManager->getStorage('bb_workspace')->getQuery()
+      ->accessCheck(FALSE)
+      ->condition('slug', $slug)
+      ->range(0, 1)
+      ->execute() !== [];
   }
 
   /**

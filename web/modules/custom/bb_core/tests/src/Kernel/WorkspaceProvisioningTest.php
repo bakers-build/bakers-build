@@ -16,6 +16,7 @@ use Drupal\bb_core\Plugin\Validation\Constraint\BbWorkspaceSlugConstraint;
 use Drupal\bb_core\Workspace\InviteMatcher;
 use Drupal\bb_core\Workspace\WorkspaceProvisioner;
 use Drupal\bb_core\Workspace\WorkspaceSlugDeriver;
+use Drupal\bb_core\Workspace\WorkspaceSlugTakenException;
 use Drupal\og\Entity\OgRole;
 use Drupal\user\UserInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -209,8 +210,8 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
       'umlauts transliterate the German way' => ['Ärzte & Söhne', 'aerzte-soehne'],
       'runs of punctuation collapse to one hyphen' => ['Acme  &  Co', 'acme-co'],
       'trailing punctuation is trimmed' => ['Acme GmbH!!', 'acme-gmbh'],
-      'a reserved derivation is avoided' => ['home', 'home-2'],
-      'so is the other kind of reserved' => ['admin', 'admin-2'],
+      'a reserved derivation is not suffixed' => ['home', 'home'],
+      'nor is the other kind of reserved' => ['admin', 'admin'],
       'a derivation that empties falls back' => ['...', 'workspace'],
       'and so does one with no alphanumerics at all' => ['!!!', 'workspace'],
       'over-long names truncate to the pattern limit' => [str_repeat('a', 80), str_repeat('a', 64)],
@@ -219,28 +220,102 @@ final class WorkspaceProvisioningTest extends KernelTestBase {
   }
 
   /**
-   * Every derived slug satisfies all three of the constraint's rules.
+   * Every derived slug has the constraint's shape.
    *
    * Asserted as a PROPERTY rather than row by row, because the table above
    * fixes the expected strings and this fixes what makes them acceptable — a
    * future change that made the deriver return `Home` would break both, and
-   * only this one says why.
+   * only this one says why. Reserved and taken slugs are the form's to
+   * refuse, not the deriver's to avoid.
    */
-  public function testEveryDerivedSlugWouldPassTheConstraint(): void {
+  public function testEveryDerivedSlugHasTheConstraintShape(): void {
     foreach (self::slugCases() as $label => [$name, $_expected]) {
       $slug = $this->deriver()->derive($name);
       self::assertMatchesRegularExpression(BbWorkspaceSlugConstraint::PATTERN, $slug, $label);
-      self::assertNotContains($slug, BbWorkspaceSlugConstraint::RESERVED, $label);
       self::assertLessThanOrEqual(64, strlen($slug), $label);
     }
   }
 
   /**
-   * A colliding name is uniquified rather than refused.
+   * A name whose slug is taken is refused on the name field, not suffixed.
    */
-  public function testCollidingNameGetsSuffix(): void {
+  public function testTakenNameIsRefusedOnTheNameField(): void {
     $this->provisioner()->provision('Acme', $this->operator, 'Core Team');
-    self::assertSame('acme-2', $this->deriver()->derive('Acme'));
+    self::assertSame('acme', $this->deriver()->derive('Acme'), 'A taken slug is never suffixed.');
+    $this->prepareCreateForm();
+    $before = $this->counts();
+
+    $errors = $this->submitCreateForm('Acme');
+
+    self::assertSame(['name][0][value' => 'A workspace with the address /acme already exists. Choose a different name.'], $errors);
+    self::assertSame($before, $this->counts(), 'A refused name saves no workspace, team or membership.');
+  }
+
+  /**
+   * A name deriving to a reserved slug is refused on the name field.
+   */
+  public function testReservedNameIsRefusedOnTheNameField(): void {
+    $this->prepareCreateForm();
+    $before = $this->counts();
+
+    $errors = $this->submitCreateForm('Home');
+
+    self::assertSame(['name][0][value' => 'The address /home is reserved. Choose a different name.'], $errors);
+    self::assertSame($before, $this->counts(), 'A refused name saves no workspace, team or membership.');
+  }
+
+  /**
+   * A slug taken between validation and save rolls back and reads as taken.
+   *
+   * The provisioner does not validate, so saving `acme` beside an existing
+   * `acme` is exactly the concurrent creation the unique key must stop.
+   */
+  public function testSlugCollisionAtSaveRollsBackAndReportsTaken(): void {
+    $this->provisioner()->provision('Acme', $this->operator, 'Core Team');
+    $before = $this->counts();
+
+    try {
+      $this->provisioner()->provision('ACME', $this->operator, 'Other Team');
+      self::fail('A duplicate slug must not be saved.');
+    }
+    catch (WorkspaceSlugTakenException $expected) {
+      self::assertSame('acme', $expected->slug);
+    }
+    self::assertSame($before, $this->counts(), 'The collision leaves no workspace, team or membership.');
+
+    // The form path: its save reports the same text instead of a 500.
+    $this->prepareCreateForm();
+    $form_object = BbWorkspaceCreateForm::create($this->container);
+    $draft = $form_object->getEntity();
+    self::assertInstanceOf(BbWorkspaceInterface::class, $draft);
+    $draft->setName('Acme');
+    $form_state = (new FormState())->setValue('team_name', 'Other Team');
+    $form_object->save([], $form_state);
+
+    self::assertTrue($form_state->isRebuilding(), 'The form is shown again.');
+    self::assertFalse($form_state->getRedirect(), 'Nobody is sent into a workspace that was not created.');
+    $messages = $this->container->get('messenger')->messagesByType('error');
+    self::assertSame(['A workspace with the address /acme already exists. Choose a different name.'], array_map('strval', $messages));
+    self::assertSame($before, $this->counts());
+  }
+
+  /**
+   * Submits the create form with a name and returns its errors as strings.
+   *
+   * @param string $name
+   *   The workspace name.
+   *
+   * @return array<string, string>
+   *   The form errors keyed by element.
+   */
+  private function submitCreateForm(string $name): array {
+    $form_state = (new FormState())->setValues([
+      'name' => [['value' => $name]],
+      'team_name' => 'Core Team',
+      'op' => 'Create workspace',
+    ]);
+    $this->container->get('form_builder')->submitForm(BbWorkspaceCreateForm::class, $form_state);
+    return array_map('strval', $form_state->getErrors());
   }
 
   /**

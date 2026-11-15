@@ -16,6 +16,7 @@ use Drupal\entity\Routing\DefaultHtmlRouteProvider;
 use Drupal\bb_core\Form\BbWorkspaceForm;
 use Drupal\bb_core\ListBuilder\BbWorkspaceListBuilder;
 use Drupal\bb_core\RunLog\RunLogPolicy;
+use Drupal\bb_core\Storage\BbWorkspaceStorageSchema;
 use Drupal\user\EntityOwnerInterface;
 use Drupal\user\EntityOwnerTrait;
 
@@ -44,6 +45,7 @@ use Drupal\user\EntityOwnerTrait;
     // WorkspaceReadScopeSubscriber.
     'query_access' => QueryAccessHandler::class,
     'permission_provider' => EntityPermissionProvider::class,
+    'storage_schema' => BbWorkspaceStorageSchema::class,
     'list_builder' => BbWorkspaceListBuilder::class,
     'form' => [
       'default' => BbWorkspaceForm::class,
