@@ -1,0 +1,20 @@
+# fixture-claim-owner's host that forbids assignment by others.
+_meta:
+  version: '1.0'
+  entity_type: bb_machine
+  uuid: dbm00000-0000-4000-8000-000000000003
+  depends:
+    7710d75c-ed4e-4e99-85b8-d1a306c2e3cf: user
+default:
+  name:
+  - value: forbid-assignment-host
+  host_key:
+  - value: forbid-assignment-host
+  max_parallel:
+  - value: 1
+  current_load:
+  - value: 0
+  owner_user_id:
+  - entity: 7710d75c-ed4e-4e99-85b8-d1a306c2e3cf
+  assignment:
+  - value: forbid

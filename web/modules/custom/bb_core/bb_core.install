@@ -43,3 +43,19 @@ function bb_core_update_11001(): void {
   $entity_type = \Drupal::entityTypeManager()->getDefinition('bb_workspace');
   \Drupal::entityDefinitionUpdateManager()->updateEntityType($entity_type);
 }
+
+/**
+ * Installs the machine and conductor assignment settings.
+ *
+ * Before any post-update, so heartbeats never save to a missing column;
+ * bb_core_post_update_conductor_assignment() fills existing rows.
+ */
+function bb_core_update_11002(): void {
+  $manager = \Drupal::entityDefinitionUpdateManager();
+  foreach (['bb_machine', 'bb_conductor'] as $type) {
+    if ($manager->getFieldStorageDefinition('assignment', $type) === NULL) {
+      $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions($type)['assignment'];
+      $manager->installFieldStorageDefinition('assignment', $type, 'bb_core', $definition);
+    }
+  }
+}

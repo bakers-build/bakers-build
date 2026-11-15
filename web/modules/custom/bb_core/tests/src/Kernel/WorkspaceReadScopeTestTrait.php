@@ -207,6 +207,9 @@ trait WorkspaceReadScopeTestTrait {
       'name' => "machine-$side",
       'host_key' => "host-$side",
       'owner_user_id' => $owner_id,
+      // As every machine predating the setting; ConductorOwnerAccessTest
+      // covers forbid.
+      'assignment' => 'allow',
     ]);
     // One label per side, so cross-workspace term isolation and the ticket's
     // own label rule are both observable in this world (BB-339 D7, D6).

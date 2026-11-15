@@ -50,6 +50,17 @@ export default {
 
 Unknown keys fail. The run budget (**Max parallel**) is set on the machine in the backend; a new machine starts with 5. Every conductor on this host shares it and picks up a change on its next tick.
 
+## Who may assign this conductor
+
+Assigning means setting a conductor on a ticket or template. The machine's **Assignment** decides it for every conductor on the machine that follows the machine:
+
+| Value | Who may assign |
+|---|---|
+| `allow` | The owner and anyone who can view the conductor. |
+| `forbid` | The owner only; nobody else, administrators included. |
+
+A new machine starts with `forbid`; machines registered before this setting existed were set to `allow`, so switch one to `forbid` on its Identity card to restrict it. Only the owner changes it, in the web UI on the machine's Identity card; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
+
 ## Preview-link tunnels
 
 `tunnel: true` tells workflow agents to share addon-claimed HTTP(S) services through [Ports](/addons/ports), using this machine's configured transport. The flag does not install or start a transport. Agents receive `BAKERS_TUNNEL` (`1` or `0`); omitted or `false` means share local URLs only. Unknown policy or a failed share must be reported as local-only. Public URLs are reachable from the internet while the tunnel is active. `bakers config check --scope machine` reports the effective policy and its source.

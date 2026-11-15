@@ -55,7 +55,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 
 | Tool | Arguments | What it does |
 |---|---|---|
-| `bakers_user_read` | none | Your own user: name, position and background, which describe you |
+| `bakers_user_read` | optional `user` (e-mail or username) | You or a teammate: profile, team roles, machines and conductors with `conductor_id` and `assignment` |
 | `bakers_workspace_list` | `limit`, `offset` | The workspaces you can reach |
 | `bakers_group_list` | `workspace`; optional `group` | A workspace's groups, or one group's subgroups |
 | `bakers_group_create` | `workspace`, `name`; optional `description` | Create a group |
@@ -63,15 +63,15 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 | `bakers_project_list` | optional `workspace`, `group`, `query` | Projects you can reach, with `key` and `uuid` |
 | `bakers_project_read` | `project` (key or UUID) | One project: group, teams, repository, coder configuration, environments |
 | `bakers_project_create` | `group`, `name`, `teams`; optional `description`, `repository`, `coder_config` | Create a project |
-| `bakers_conductor_list` | `project` | A project's conductors and their status, with each conductor's `machine` (machine_id) |
-| `bakers_machine_list` | optional `workspace` (UUID), `conductor_uuid` | Machines you may view, with `machine_id`, `label`, `connection_url`, `max_parallel` and `current_load` |
+| `bakers_conductor_list` | `project` | A project's conductors and their status, with each conductor's `machine` (machine_id), `owner` and `assignment` |
+| `bakers_machine_list` | optional `workspace` (UUID), `conductor_uuid` | Machines you may view, with `machine_id`, `label`, `connection_url`, `max_parallel`, `current_load` and `assignment` |
 | `bakers_label_list` | `workspace`; optional `query` | A workspace's labels |
 | `bakers_ticket_read` | `ticket` (identifier or UUID); optional `newest` (default 2), `types` | A ticket with canonical absolute `url`, stored `origin`, `reviewers` and `assignee` (see below), its `newest` comments per `types`, oldest first, as an agent run reads it first; `comment_facets`: per comment `type` and `author`, the `count` and `newest` time of all readable comments; and `deployments`: each deployment ticket that carries it, with its `identifier` and `environments` |
 | `bakers_comment_read` | `ticket`; optional `ids`, `type`, `author` (lists), `newest` (per type when `type` is given) | A ticket's readable comments matching every given filter, oldest first; no filter returns all |
 | `bakers_ticket_search` | `query` or `branch_name`; optional `project` | Tickets matching a text or a branch |
 | `bakers_ticket_list` | `project` (UUID); `limit`, `offset` | Every ticket of the project you can read, closed ones included, oldest first. Each row has `id` (UUID), `identifier`, `title`, canonical absolute `url`, stored `origin`, `state`, `links` (`uri`, `title`), `labels` (names), `frozen`, `frozen_at` (ISO 8601 or `null`), `parent` (the parent's UUID, `null` when absent or unreadable) and `closed` |
-| `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee_email`, `reviewer_emails` | Create a ticket; returns `title`, `url` and stored `origin` too. An `assignee_email` that may not be assigned in the workspace leaves it unassigned, and each address in `reviewer_emails` adds its account as a reviewer when it may review there; `reviewers` lists the ones added |
-| `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `labels_add`, `labels_remove`, `frozen`, `environments_add`, `referenced_tickets_add`, `reviewers_add`, `reviewers_remove`, `links_add`, `links_remove` | Edit a ticket; values not given are kept, `labels_remove` drops only the named labels, `environments_add` and `referenced_tickets_add` only add; a closed ticket refuses every edit |
+| `bakers_ticket_create` | `title`, `workflow`, `project`; optional `description`, `type`, `recipe`, `parent`, `branch_name`, `assignee`, `reviewers` (user UUIDs) | Create a ticket; returns `title`, `url` and stored `origin` too. Ineligible people are skipped |
+| `bakers_ticket_update` | `ticket`; any of `title`, `description`, `conductor`, `assignee`, `labels_add`, `labels_remove`, `frozen`, `environments_add`, `referenced_tickets_add`, `reviewers_add`, `reviewers_remove`, `links_add`, `links_remove` | Edit a ticket; values not given are kept, `labels_remove` drops only the named labels, `environments_add` and `referenced_tickets_add` only add; `assignee` takes a user UUID or `""`; a [forbidden](/configuration/project/conductors#who-may-assign-this-conductor) `conductor` is refused; a closed ticket refuses every edit |
 | `bakers_ticket_classify` | `ticket`; `recipe`, `type` or both | Set recipe and type by name |
 | `bakers_ticket_transition` | `ticket`; `state`, `links` or both | Change the state or add links |
 | `bakers_ticket_template_run` | `template` (UUID); optional `title`, `description`, `workflow`, `project`, `conductor`, `labels`, `target_state` | Create a ticket from a ticket template |
@@ -87,11 +87,11 @@ The list printed by `bakers tools` is what your identity may call on this server
 
 ## Writing tickets and comments
 
-`reviewers_add` and `reviewers_remove` take e-mail lists, resolved case-insensitively to active accounts eligible in the ticket’s workspace. Adding a present reviewer or removing an eligible account that is not a reviewer changes nothing. Unknown, blocked and ineligible accounts receive the same refusal; the whole update rolls back. An address in both lists is refused.
+`reviewers_add` and `reviewers_remove` take user UUIDs of active accounts eligible in the ticket’s workspace. Adding a present reviewer or removing an eligible account that is not a reviewer changes nothing. Unknown, blocked and ineligible accounts receive the same refusal; the whole update rolls back. A user in both lists is refused.
 
 `links_add` takes `[{uri, title?}]`: an exact stored URI updates its title in place; omitted `title` preserves it and `""` clears it. A new URI appends a link; duplicate URIs collapse and the server derives their kind. `links_remove` takes exact URIs; absent URIs are ignored. A URI in both lists or an invalid link refuses the whole update. Omitted/null operation lists and `[]` are no-ops. There is no clear-all: remove each reviewer or URI explicitly. Unaddressed values stay unchanged. Existing update calls keep their meaning.
 
-Read and update return `reviewers: [{name, mail}]` and `assignee: {name, mail} | null`; `mail` is null without permission to view that user’s mail. Unreadable ticket fields are not disclosed. Update also returns saved `links: [{uri, title}]`. Read/list return the canonical absolute `url` and stored `origin` (null when absent or not readable); these tools never write origin. Use update to maintain links without changing state; transition’s `links` attach links alongside a state change (its existing links-only mode remains compatible).
+Read, create and update return `reviewers: [{uuid, name, mail}]` and `assignee: {uuid, name, mail} | null`; `mail` is null without permission to view that user’s mail. Unreadable ticket fields are not disclosed. Update also returns saved `links: [{uri, title}]`. Read/list return the canonical absolute `url` and stored `origin` (null when absent or not readable); these tools never write origin. Use update to maintain links without changing state; transition’s `links` attach links alongside a state change (its existing links-only mode remains compatible).
 
 A state change is `bakers_ticket_transition`; the server maps the target state to an allowed transition and refuses an invalid one. Rich-text values, a ticket's `description` and a comment's `body`, are GitHub-flavored Markdown: pipe tables render as tables, and the separator colons (`:---`, `:---:`, `---:`) align a column left, center or right. Raw HTML, `<table>` included, is removed, so write tables in Markdown. `branch_name` on `bakers_ticket_create` makes a carrier ticket on a long-lived integration branch that its sub-tickets base on. Omitted, the server derives `feat/<identifier>-<title>`, and either way the value is frozen afterwards.
 

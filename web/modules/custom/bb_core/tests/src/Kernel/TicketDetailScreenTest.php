@@ -2252,6 +2252,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'owner_user_id' => $owner->id(),
         'status' => 'online',
         'project_id' => $this->ticket->get('project_id')->target_id,
+        // The reader re-dispatches to it; the setting has its own tests.
+        'assignment' => 'allow',
         'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
       ]);
       $conductor->save();

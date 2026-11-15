@@ -31,8 +31,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * missing from the option list, so an unrelated form save would silently clear
  * a reference stranded on a deactivated conductor. The same escape keeps a
  * current conductor whose owner has since lost access to the project; every
- * other candidate needs an owner with access (BbConductorOwnerAccess) and, on
- * a ticket with an assignee, one that is the assignee or a reviewer.
+ * other candidate needs an owner with access (BbConductorOwnerAccess) whose
+ * assignment setting lets the current user set it.
  */
 #[EntityReferenceSelection(
   id: 'bb_conductor_by_ticket_project',
@@ -78,7 +78,7 @@ class ConductorByTicketProjectSelection extends DefaultSelection {
       // never a valid entity id, so it is the sentinel that makes this
       // branch match nothing without a second, always-false query shape.
       $activeAndProject->condition('project_id', $hasProject ? $projectId : 0);
-      $activeAndProject->condition('id', $this->eligibleConductorIds($entity, $projectId), 'IN');
+      $activeAndProject->condition('id', $this->eligibleConductorIds($projectId), 'IN');
     }
 
     // The current-reference escape stands outside the project condition as
@@ -97,13 +97,13 @@ class ConductorByTicketProjectSelection extends DefaultSelection {
   }
 
   /**
-   * Active conductors of the project whose owner may take the entity's work.
+   * Active conductors of the project the current user may set.
    *
    * @return array<int|string>
    *   The eligible conductor ids, or the never-matching `[0]` when none; a
    *   project holds few conductors.
    */
-  private function eligibleConductorIds(BbTicketInterface|BbTicketTemplateInterface $entity, mixed $projectId): array {
+  private function eligibleConductorIds(mixed $projectId): array {
     if (!is_numeric($projectId)) {
       return [0];
     }
@@ -119,7 +119,7 @@ class ConductorByTicketProjectSelection extends DefaultSelection {
       if (
         $conductor instanceof BbConductorInterface
         && $this->ownerAccess->ownerHasAccess($conductor, $projectId)
-        && (!$entity instanceof BbTicketInterface || $this->ownerAccess->ownerIsResponsible($conductor, $entity))
+        && $this->ownerAccess->mayAssign($conductor, $this->currentUser)
       ) {
         $eligible[] = $id;
       }

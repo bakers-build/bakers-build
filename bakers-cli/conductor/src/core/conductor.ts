@@ -1458,6 +1458,10 @@ export class Conductor {
     const core: Record<string, string> = {
       BAKERS_URL: this.config.site.base_url,
       BAKERS_ID: t.uuid,
+      // The agent finds its own conductor in bakers_user_read by this id.
+      ...(this.config.conductor_id
+        ? { BAKERS_CONDUCTOR_ID: this.config.conductor_id }
+        : {}),
       // BB-569: lets a launch wrapper key off the ticket and the run's
       // start state without parsing the prompt (addon-claude `measure`).
       ...(t.identifier ? { BAKERS_TICKET_IDENTIFIER: t.identifier } : {}),

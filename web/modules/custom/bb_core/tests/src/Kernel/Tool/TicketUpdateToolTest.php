@@ -34,33 +34,32 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     $keep = $this->account('keep');
     $add = $this->account('add');
     foreach ([$keep, $add] as $account) {
-      $account->set('mail', $account->getAccountName() . '@example.test')->save();
       $this->addMembership($this->workspace, $account, ['contributor']);
     }
     $this->container->get('bb_core.workspace_read_scope')->reset();
     $ticket = $this->ticket('TU-reviewers', ['reviewers' => [$keep->id()]]);
     $this->outputs($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->uuid(),
-      'reviewers_add' => ['Add@Example.TEST', 'add@example.test', 'keep@example.test'],
+      'reviewers_add' => [$add->uuid(), $add->uuid(), $keep->uuid()],
     ]));
     self::assertSame([$keep->id(), $add->id()], array_column($this->reload($ticket)->get('reviewers')->getValue(), 'target_id'));
     $this->outputs($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->uuid(),
-      'reviewers_remove' => ['keep@example.test'],
+      'reviewers_remove' => [$keep->uuid()],
     ]));
     $this->outputs($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->uuid(),
-      'reviewers_remove' => ['keep@example.test'],
+      'reviewers_remove' => [$keep->uuid()],
     ]));
     self::assertSame([$add->id()], array_column($this->reload($ticket)->get('reviewers')->getValue(), 'target_id'));
     $read = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
-    self::assertSame([['name' => 'add', 'mail' => NULL]], $read['reviewers']);
+    self::assertSame([['uuid' => $add->uuid(), 'name' => 'add', 'mail' => NULL]], $read['reviewers']);
     $update = $this->outputs($this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), 'reviewers_add' => []]));
     self::assertSame($read['reviewers'], $update['reviewers']);
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->uuid(),
-      'reviewers_add' => ['ADD@example.test'],
-      'reviewers_remove' => ['add@example.test'],
+      'reviewers_add' => [$add->uuid()],
+      'reviewers_remove' => [$add->uuid()],
     ]), 'both added and removed');
   }
 
@@ -69,22 +68,21 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
    */
   public function testInvalidReviewersRollBack(): void {
     $foreign = $this->account('foreign');
-    $foreign->set('mail', 'foreign@example.test')->save();
     [$workspace] = $this->foreignWorkspace();
     $this->addMembership($workspace, $foreign, ['contributor']);
     $this->container->get('current_user')->setAccount($this->actor);
     $blocked = $this->account('blocked');
-    $blocked->set('mail', 'blocked@example.test')->block()->save();
+    $blocked->block()->save();
     $this->addMembership($this->workspace, $blocked, ['contributor']);
     $ticket = $this->ticket('TU-refused');
-    foreach (['missing@example.test', 'foreign@example.test', 'blocked@example.test'] as $email) {
+    foreach ([$this->container->get('uuid')->generate(), $foreign->uuid(), $blocked->uuid()] as $uuid) {
       foreach (['reviewers_add', 'reviewers_remove'] as $input) {
         $this->assertFailure($this->runTool('bakers_ticket_update', [
           'ticket' => $ticket->uuid(),
           'title' => 'Not saved',
           'labels_add' => ['rolled-back'],
-          $input => [$email],
-        ]), 'No account with this e-mail address can be a reviewer in this workspace.');
+          $input => [$uuid],
+        ]), 'No such user can be a reviewer in this workspace.');
         self::assertSame('TU-refused', $this->reload($ticket)->label());
         self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'rolled-back']));
       }
@@ -155,12 +153,12 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     self::assertCount(1, $this->reload($ticket)->get('links'));
     self::assertCount(1, $this->reload($ticket)->get('reviewers'));
     $this->actAsReader();
-    foreach (['links_remove' => ['https://example.test/keep'], 'reviewers_add' => ['actor@example.test']] as $input => $value) {
+    foreach (['links_remove' => ['https://example.test/keep'], 'reviewers_add' => [$this->actor->uuid()]] as $input => $value) {
       $this->assertFailure($this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), $input => $value]), 'You may not change');
     }
     $this->container->get('current_user')->setAccount($this->actor);
     $ticket->set('state', 'done')->save();
-    foreach (['links_remove' => ['https://example.test/keep'], 'reviewers_add' => ['actor@example.test']] as $input => $value) {
+    foreach (['links_remove' => ['https://example.test/keep'], 'reviewers_add' => [$this->actor->uuid()]] as $input => $value) {
       $this->assertFailure($this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), $input => $value]), 'closed');
     }
   }
@@ -178,7 +176,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     self::assertSame([
       'links' => [],
       'reviewers' => [],
-      'assignee' => ['name' => 'actor', 'mail' => NULL],
+      'assignee' => ['uuid' => $this->actor->uuid(), 'name' => 'actor', 'mail' => NULL],
       'identifier' => $ticket->getIdentifier(),
       'title' => 'Clarified title',
       'description' => 'Clarified *ask*.',
@@ -243,7 +241,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     $ticket = $this->ticket('TU-3');
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
-    ]), 'Give a title, a description, a conductor, labels to add or remove, frozen, environments to add or referenced tickets to add.');
+    ]), 'Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, environments to add or referenced tickets to add.');
     self::assertSame('TU-3', $this->reload($ticket)->label());
   }
 
@@ -354,6 +352,74 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
   }
 
   /**
+   * Changing the assignee by UUID keeps the conductor.
+   */
+  public function testAssigneeChangeKeepsConductor(): void {
+    $member = $this->account('member');
+    $this->addMembership($this->workspace, $member, ['contributor']);
+    $this->container->get('bb_core.workspace_read_scope')->reset();
+    $conductor = $this->conductor((int) $this->project->id());
+    $ticket = $this->ticket('TU-assignee', [
+      'assignee_user_id' => $this->actor->id(),
+      'conductor_id' => $conductor->id(),
+    ]);
+    $out = $this->outputs($this->runTool('bakers_ticket_update', [
+      'ticket' => $ticket->uuid(),
+      'assignee' => $member->uuid(),
+    ]));
+    self::assertSame(['uuid' => $member->uuid(), 'name' => 'member', 'mail' => NULL], $out['assignee']);
+    self::assertSame($conductor->uuid(), $out['conductor']);
+    $stored = $this->reload($ticket);
+    self::assertSame((string) $member->id(), (string) $stored->get('assignee_user_id')->target_id);
+    self::assertSame((string) $conductor->id(), (string) $stored->get('conductor_id')->target_id);
+  }
+
+  /**
+   * An empty assignee clears it; a conductor's owner fills it again on save.
+   */
+  public function testEmptyAssigneeClears(): void {
+    $ticket = $this->ticket('TU-clear', ['assignee_user_id' => $this->actor->id()]);
+    $result = $this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), 'assignee' => '']);
+    self::assertNull($this->outputs($result)['assignee']);
+    self::assertSame('Ticket updated.', (string) $result->getMessage());
+    self::assertTrue($this->reload($ticket)->get('assignee_user_id')->isEmpty());
+    // BbTicket::preSave() derives an empty assignee from the conductor.
+    $member = $this->account('member');
+    $this->addMembership($this->workspace, $member, ['contributor']);
+    $this->container->get('bb_core.workspace_read_scope')->reset();
+    $conductor = $this->conductor((int) $this->project->id());
+    $owned = $this->ticket('TU-clear-owned', ['assignee_user_id' => $member->id(), 'conductor_id' => $conductor->id()]);
+    $result = $this->runTool('bakers_ticket_update', ['ticket' => $owned->uuid(), 'assignee' => '']);
+    $out = $this->outputs($result);
+    self::assertSame($this->actor->uuid(), $out['assignee']['uuid']);
+    self::assertSame("Ticket updated; the assignee was refilled from the conductor's owner.", (string) $result->getMessage());
+    self::assertSame((string) $conductor->id(), (string) $this->reload($owned)->get('conductor_id')->target_id);
+  }
+
+  /**
+   * An ineligible assignee refuses the entire update without disclosing it.
+   */
+  public function testIneligibleAssigneeRollsBack(): void {
+    $foreign = $this->account('foreign');
+    [$workspace] = $this->foreignWorkspace();
+    $this->addMembership($workspace, $foreign, ['contributor']);
+    $this->container->get('current_user')->setAccount($this->actor);
+    $ticket = $this->ticket('TU-assignee-refused', ['assignee_user_id' => $this->actor->id()]);
+    foreach ([$this->container->get('uuid')->generate(), $foreign->uuid()] as $uuid) {
+      $this->assertFailure($this->runTool('bakers_ticket_update', [
+        'ticket' => $ticket->uuid(),
+        'title' => 'Not saved',
+        'labels_add' => ['rolled-back'],
+        'assignee' => $uuid,
+      ]), 'No such user can be assigned in this workspace.');
+      $stored = $this->reload($ticket);
+      self::assertSame('TU-assignee-refused', $stored->label());
+      self::assertSame((string) $this->actor->id(), (string) $stored->get('assignee_user_id')->target_id);
+      self::assertSame([], $this->container->get('entity_type.manager')->getStorage('bb_term')->loadByProperties(['name' => 'rolled-back']));
+    }
+  }
+
+  /**
    * An empty title is refused with the field's validation message.
    */
   public function testEmptyTitleIsRefused(): void {
@@ -370,12 +436,12 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
   }
 
   /**
-   * The tool offers no input for state, assignee, terms or approvals.
+   * The tool offers no input for state, terms or approvals.
    */
   public function testInputsAreLimitedToEditableFields(): void {
     $definition = $this->container->get('plugin.manager.tool')->getDefinition('bakers_ticket_update');
     self::assertSame([
-      'ticket', 'title', 'description', 'conductor', 'labels_add', 'labels_remove', 'frozen',
+      'ticket', 'title', 'description', 'conductor', 'assignee', 'labels_add', 'labels_remove', 'frozen',
       'environments_add', 'referenced_tickets_add', 'reviewers_add', 'reviewers_remove', 'links_add', 'links_remove',
     ], array_keys($definition->getInputDefinitions()));
   }

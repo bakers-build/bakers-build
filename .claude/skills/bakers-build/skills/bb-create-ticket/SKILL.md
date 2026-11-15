@@ -19,7 +19,8 @@ the rest. The host may add a conversation link, a conductor and the wish to spec
 3. **Otherwise qualify** it based on the intake, its confirmation the approval: publish the
    `qualification` as [qualification › outtake](../bb-workflow/references/qualification.md#outtake)
    lists, then the `summary`, and move to `plan`; read it back. A confirmed intake with `spec`,
-   `plan` and `test` publishes them too and moves to `working`. Last, set the intake's conductor.
+   `plan` and `test` publishes them too and moves to `working`. Last, set the intake's conductor
+   ([people](../bb-workflow/references/people.md)).
    In a checkout, apply [agent choice](../bb-workflow/references/agent-choice.md) and
    [origin status](../bb-workflow/references/origin-status.md). Reply with the identifier and its
    state.

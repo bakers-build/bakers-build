@@ -130,7 +130,7 @@ final class RunRetryAccessTest extends ClaimKernelTestBase {
   public function testRunActionsFollowNewerRunsAndConductors(): void {
     [$ticket, $run] = $this->failedRun();
     $tags = TicketInterventions::runCacheability($run)->getCacheTags();
-    foreach (['bb_ticket:' . $ticket->id(), 'bb_run_list', 'bb_ticket_list', 'bb_conductor_list'] as $tag) {
+    foreach (['bb_ticket:' . $ticket->id(), 'bb_run_list', 'bb_ticket_list', 'bb_conductor_list', 'bb_machine_list'] as $tag) {
       self::assertContains($tag, $tags);
     }
     $claimed = $this->seedRun($ticket, 'working', 'claimed');

@@ -63,12 +63,13 @@ Feature: Ticket activity JSON:API contract
       """
     Then the API response status is 201
     When the API resource is remembered as "conductor"
+    # The owner sets its own conductor: others need its assignment allowed.
+    Given the API client is "fixture-claim-owner"
     When the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}":
       """
       {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","attributes":{"state":"plan","priority":1},"relationships":{"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{saved.conductor}"}}}}}
       """
     Then the API response status is 200
-    Given the API client is "fixture-claim-owner"
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
       {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-{saved.ticket}","lease_seconds":600}}}
@@ -107,12 +108,13 @@ Feature: Ticket activity JSON:API contract
       """
     Then the API response status is 201
     When the API resource is remembered as "conductor"
+    # The owner sets its own conductor: others need its assignment allowed.
+    Given the API client is "fixture-claim-owner"
     When the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}":
       """
       {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","attributes":{"state":"plan","priority":1},"relationships":{"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{saved.conductor}"}}}}}
       """
     Then the API response status is 200
-    Given the API client is "fixture-claim-owner"
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
       {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-later-{saved.ticket}","lease_seconds":600}}}
@@ -146,12 +148,13 @@ Feature: Ticket activity JSON:API contract
       """
     Then the API response status is 201
     When the API resource is remembered as "conductor"
+    # The owner sets its own conductor: others need its assignment allowed.
+    Given the API client is "fixture-claim-owner"
     When the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}":
       """
       {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","attributes":{"state":"plan","priority":1},"relationships":{"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{saved.conductor}"}}}}}
       """
     Then the API response status is 200
-    Given the API client is "fixture-claim-owner"
     When the API client sends "POST" to "/jsonapi/bb_ticket/{saved.ticket}/claim":
       """
       {"data":{"type":"bakers-claim","attributes":{"conductor_id":"bdd-activity-failed-{saved.ticket}","lease_seconds":600}}}
@@ -178,6 +181,8 @@ Feature: Ticket activity JSON:API contract
       """
     Then the API response status is 201
     When the API resource is remembered as "conductor"
+    # The owner sets its own conductor: others need its assignment allowed.
+    Given the API client is "fixture-claim-owner"
     When the API client sends "PATCH" to "/jsonapi/bb_ticket/bb_ticket/{saved.ticket}":
       """
       {"data":{"type":"bb_ticket--bb_ticket","id":"{saved.ticket}","attributes":{"state":"plan","priority":1},"relationships":{"conductor_id":{"data":{"type":"bb_conductor--bb_conductor","id":"{saved.conductor}"}}}}}
