@@ -235,11 +235,27 @@ container; only checked commits come back.
    (`$XDG_CACHE_HOME/bakers/run-git/<hash>.git`) and is mounted as `.git` only inside the run. On
    the host the workspace's `.git` is a stub the host rewrites at every run start (`HEAD` on the
    ticket branch, no objects), so host tools there name the ticket branch instead of finding the
-   parent checkout above; the conductor itself runs no Git there. The
+   parent checkout above; the conductor itself runs no Git there. Under herdr the host also registers the stub as
+   a linked worktree of the parent (`<parent .git>/worktrees/run-<hash>`, removed with the clone),
+   so host Git there works on the parent repository like in any linked worktree; the run never sees
+   the stub, because its own Git directory is mounted over it. The run writes that work tree, so the
+   stub's `config.worktree` sets `core.hooksPath=/dev/null` and `core.fsmonitor=false` (the parent
+   gets `extensions.worktreeConfig`): a parent `core.hooksPath` relative to the work tree runs no
+   file of the run. It also switches off every filter, diff and merge driver the parent's own config
+   names (`filter.*`, `diff.*.textconv`, `diff.*.command`, `diff.external`, `merge.*.driver`), as
+   read at registration: the run picks their paths through `.gitattributes`, and a plain
+   `git status` or `git diff` would run them. Git has no pass-through for an external diff, so with
+   one configured `git diff` fails there until called with `--no-ext-diff`. **Residual:** other
+   command-valued settings of the parent (`core.pager`, aliases, `core.editor`, `core.sshCommand`,
+   credential helpers and similar) stay in effect; one with a path relative to the work tree runs
+   a file of the run when a person calls Git there. A repository the run embeds in the work tree
+   brings its own config: once a person stages it there (`git add` warns about an embedded
+   repository), `git status` and `git diff` run what that config names, registered or not. The
+   stub's index follows the branch tip at run start and after each transfer. The
    parent repository is not mounted in the run. The clone carries the target branch as
    `origin/<target>`; nothing is merged. Tracked files are reset, untracked files removed, ignored
-   files (`node_modules`, `vendor`) kept. Uncommitted work does not reach the next run. herdr shows
-   the clone in a plain workspace labelled with the branch.
+   files (`node_modules`, `vendor`) kept. Uncommitted work does not reach the next run. herdr opens
+   the clone with `herdr worktree open` and shows it under its repository.
 2. **Protected paths from the project only.** `runtime: { read_only: [...] }` in
    `.bakers/project.config.js`, plus the fixed `.bakers`. No machine key, addon default, `'$inherit'`
    or runtime-entry option. bakers mounts them read-only in the run; the project protects them in

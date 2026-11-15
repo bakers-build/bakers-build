@@ -97,7 +97,7 @@ and the next run starts from that state.
 Your project's own containers must protect the same paths: bakers.build does not propagate
 `runtime.read_only` into them. This repository uses ordinary DDEV Compose configuration in
 `.ddev/docker-compose.protection.yaml`. It mounts `.bakers`, `.github`, `.ddev` and the host's
-`.git` stub read-only into the web container. Mount whole directories: protecting only one
+`.git` stub read-only into the web container, where Git answers nothing. Mount whole directories: protecting only one
 file leaves a writable ancestor that can be renamed and replaced. Apply Compose changes by
 recreating the containers.
 
@@ -109,9 +109,10 @@ Host-side DDEV and provisioning can still write generated, ignored files there, 
 At every isolated run start, the [Git workspace](/addons/workspace-git#isolated-runs) or
 [herdr](/addons/herdr) creates a fresh **run clone** of the ticket branch at the stable worktree
 path. Its Git directory lives in the conductor's cache, at
-`$XDG_CACHE_HOME/bakers/run-git/<hash>.git` (default `~/.cache`), and is mounted as `.git` only
-inside the run's container. On the host, the workspace's `.git` is a stub the host rewrites at every run start: it names
-the ticket branch and holds no objects. The parent repository is not mounted in the run.
+`$XDG_CACHE_HOME/bakers/run-git/<hash>.git`, and is mounted as `.git` only
+inside the run. The host's `.git` is a stub rewritten per run, without
+objects; under [herdr](/addons/herdr#isolated-runs) a linked worktree of the parent, its hooks and
+Git drivers off. The run never sees the parent repository.
 
 The clone carries the ticket's target branch as `origin/<target>`; nothing is merged. Tracked files
 are reset and untracked files removed; ignored files such as `node_modules` and `vendor` are kept.

@@ -192,6 +192,7 @@ export {
   loadRunClone,
   type RunClone,
   type RunCloneOptions,
+  registerRunCloneWorktree,
   removeRunClone,
   runCloneGitDir,
   saveRunClone,
