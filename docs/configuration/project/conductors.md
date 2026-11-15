@@ -124,6 +124,18 @@ A team host provides execution capacity so project managers need no conductor of
 
 If a ticket is not picked up, check its conductor, state and blockers, and the conductor's liveness.
 
+## Who may assign this conductor
+
+Assigning means setting a conductor on a ticket or template. The owner always may. Everyone else depends on the conductor's **Assignment**:
+
+| Value | Who may assign |
+|---|---|
+| `machine` | The default: the machine's value applies ([Machines](/configuration/machine#who-may-assign-this-conductor)). |
+| `allow` | Anyone who can view the conductor. |
+| `forbid` | Nobody else, administrators included. |
+
+Only the owner changes it, in the web UI on the conductor's Identity card; the card shows the value in force and its source. The CLI never writes it. Pickers offer only conductors you may assign; a refused save says `Conductor <label> cannot be assigned: its owner <owner> forbids assignment by others (<source> setting).` A [team host](#run-a-conductor-for-a-team) needs `allow` before others can assign its conductors.
+
 ## Command reference
 
 [bakers conductor](/cli/conductor) covers every `bakers conductor` option.

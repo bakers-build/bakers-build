@@ -18,8 +18,8 @@ On that yes, apply [ticket writes](ticket-writes.md), then publish in this order
 Then route once every comment is confirmed, and read the ticket back:
 
 - **A `feature` or `chore`:** set the type and the recipe's name without `bb-recipe-`, move to
-  `working`, and last set the host's conductor. Without one, ask the requester which of the
-  project's conductors runs it, whatever your user says.
+  `working`, and last set the host's conductor ([people](people.md)). Without one, ask the
+  requester which of the project's conductors runs it, whatever your user says.
 - **A bug:** set type and recipe, move to `plan`; its diagnosis runs there.
 
 Then reply with one line and nothing else: `Work on <identifier> starts.`, the conductor question,
