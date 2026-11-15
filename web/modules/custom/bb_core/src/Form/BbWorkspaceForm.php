@@ -69,19 +69,11 @@ final class BbWorkspaceForm extends BbContentEntityFormBase {
         '#weight' => 4,
       ];
     }
-    $delete = static::deleteAction($this->entity)['delete'] ?? NULL;
-    if ($delete !== NULL) {
-      $delete['#props']['label'] = $this->t('Delete workspace');
-      $delete['#props']['variant'] = 'danger';
-      // Drawn like the fields above it: label, button, then the description.
-      $form['danger_zone'] = [
-        '#type' => 'item',
-        '#title' => $this->t('Delete workspace'),
-        '#description' => $this->t('Deletes this workspace with its first team, members, invitations, terms, templates, triggers and addons. Groups and projects must be removed first.'),
-        'delete' => $delete,
-        '#weight' => 1000,
-      ];
-    }
+    $form += static::dangerZone(
+      $this->entity,
+      $this->t('Delete workspace'),
+      $this->t('Deletes this workspace with its first team, members, invitations, terms, templates, triggers and addons. Groups and projects must be removed first.'),
+    );
     return $form;
   }
 

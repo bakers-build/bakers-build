@@ -190,4 +190,35 @@ class BbContentEntityFormBase extends ContentEntityForm {
     ];
   }
 
+  /**
+   * A saved entity's Delete set apart in a danger zone, for who may delete.
+   *
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity.
+   * @param \Drupal\Core\StringTranslation\TranslatableMarkup $label
+   *   The row title and button label, e.g. "Delete workspace".
+   * @param \Drupal\Core\StringTranslation\TranslatableMarkup $description
+   *   What the delete removes, and what still blocks it.
+   *
+   * @return array<string, array<string, mixed>>
+   *   The `danger_zone` element, or nothing without delete access.
+   */
+  public static function dangerZone(EntityInterface $entity, TranslatableMarkup $label, TranslatableMarkup $description): array {
+    $delete = static::deleteAction($entity)['delete'] ?? NULL;
+    if ($delete === NULL) {
+      return [];
+    }
+    $delete['#props']['label'] = (string) $label;
+    $delete['#props']['variant'] = 'danger';
+    return [
+      'danger_zone' => [
+        '#type' => 'component',
+        '#component' => 'bb_theme:danger_zone',
+        '#props' => ['title' => $label, 'description' => $description],
+        '#slots' => ['action' => ['delete' => $delete]],
+        '#weight' => 1000,
+      ],
+    ];
+  }
+
 }

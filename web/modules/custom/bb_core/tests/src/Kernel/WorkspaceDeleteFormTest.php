@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\bb_core\Kernel;
 
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormState;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
@@ -146,7 +147,8 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
     $form = $this->container->get('entity.form_builder')->getForm($workspace, 'settings');
     self::assertArrayNotHasKey('delete', $form['actions']);
     self::assertArrayHasKey('danger_zone', $form);
-    $button = $form['danger_zone']['delete'];
+    self::assertSame('bb_theme:danger_zone', $form['danger_zone']['#component']);
+    $button = $form['danger_zone']['#slots']['action']['delete'];
     self::assertSame('Delete workspace', (string) $button['#props']['label']);
     self::assertSame('danger', $button['#props']['variant']);
     self::assertSame($workspace->toUrl('delete-form')->toString(), $button['#props']['href']);
@@ -159,6 +161,39 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
     $form = $this->container->get('entity.form_builder')->getForm($workspace, 'settings');
     self::assertArrayNotHasKey('danger_zone', $form);
     self::assertArrayNotHasKey('delete', $form['actions']);
+  }
+
+  /**
+   * Project Settings and the team card move Delete into the danger zone too.
+   */
+  public function testProjectAndTeamDeleteSitInTheDangerZone(): void {
+    $workspace = $this->provision();
+    $etm = $this->container->get('entity_type.manager');
+    $group = $etm->getStorage('bb_group')->create(['name' => 'Clients', 'workspace_id' => $workspace->id()]);
+    $group->save();
+    $team = current($etm->getStorage('bb_team')->loadByProperties(['workspace_id' => $workspace->id()]));
+    self::assertInstanceOf(EntityInterface::class, $team);
+    $project = $etm->getStorage('bb_project')->create([
+      'name' => 'Site',
+      'key' => 'SITE',
+      'group_id' => $group->id(),
+      'teams' => [$team->id()],
+    ]);
+    $project->save();
+
+    // Placement only; who may delete a project or team is covered elsewhere.
+    $admin = $this->createUser(['administer bakers'], 'site-admin');
+    self::assertInstanceOf(UserInterface::class, $admin);
+    $this->setCurrentUser($admin);
+    foreach ([[$project, 'settings'], [$team, 'identity']] as [$entity, $operation]) {
+      $form = $this->container->get('entity.form_builder')->getForm($entity, $operation);
+      $type = $entity->getEntityTypeId();
+      self::assertArrayNotHasKey('delete', $form['actions'] ?? [], "$type: no Delete in the action row");
+      self::assertSame('bb_theme:danger_zone', $form['danger_zone']['#component'] ?? NULL, "$type: danger zone");
+      $button = $form['danger_zone']['#slots']['action']['delete'];
+      self::assertSame('danger', $button['#props']['variant']);
+      self::assertSame($entity->toUrl('delete-form')->toString(), $button['#props']['href']);
+    }
   }
 
 }
