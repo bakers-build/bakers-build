@@ -53,7 +53,10 @@ description: >-
   PHONE TOUCH DELTA (AC-15): below md, a sortable header link, a linked badge
   chip and any link a formatter puts in a `rendered` cell also measure at least
   the `touch` size (44px); a `contents` wrapper around `rendered` markup carries
-  that rule and keeps the cell layout; md and up are unchanged.
+  that rule and keeps the cell layout; md and up are unchanged. PHONE TOUCH
+  DELTA (AC-15): below md, the tree disclosure link is the `touch` size (44px)
+  and its placeholder as wide, so row names stay aligned; md and up are
+  unchanged.
 provider: bb_theme
 props:
   type: object

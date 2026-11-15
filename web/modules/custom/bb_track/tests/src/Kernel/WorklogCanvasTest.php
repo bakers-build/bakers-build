@@ -172,10 +172,12 @@ final class WorklogCanvasTest extends KernelTestBase {
     self::assertCount(0, $crawler->filter('[data-canvas-region="filters"]'), 'The filters rail is gone.');
     $toolbar = $crawler->filter('[data-canvas-region="main"] [role="search"]');
     self::assertCount(1, $toolbar, 'The toolbar is missing from main.');
-    self::assertCount(1, $toolbar->filter('input[name="mode"][value="week"]'));
+    // The hidden mode and date ride along in the form, outside the toolbar.
+    $form = $crawler->filter('[data-canvas-region="main"] form');
+    self::assertCount(1, $form->filter('input[name="mode"][value="week"]'));
     self::assertCount(1, $toolbar->filter('a[href*="mode=day"]:contains("Day")'));
     self::assertCount(1, $toolbar->filter('[aria-current="page"]:contains("Week")'));
-    self::assertCount(1, $toolbar->filter('input[type="hidden"][name="date"]'), 'The date rides along; ‹ › and the period label choose it.');
+    self::assertCount(1, $form->filter('input[type="hidden"][name="date"]'), 'The date rides along; ‹ › and the period label choose it.');
     self::assertCount(1, $toolbar->filter('[data-option-picker-variant="field"] input[type="radio"][name="project"]'));
     self::assertCount(0, $crawler->filter('[name="title"]'));
     $main = $crawler->filter('[data-canvas-region="main"]')->html();

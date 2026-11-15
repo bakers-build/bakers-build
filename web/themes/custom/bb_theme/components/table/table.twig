@@ -574,11 +574,11 @@
                 {%- set indent_map = { 1: 'pl-gutter', 2: 'pl-12', 3: 'pl-18' } -%}
                 <span class="inline-flex items-center gap-inline {{ indent_map[row.depth]|default('') }}">
                   {%- if row.disclosure -%}
-                    <a data-table-disclosure class="inline-flex w-5 justify-center text-text-light no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ row.disclosure.href }}" aria-expanded="{{ row.disclosure.expanded ? 'true' : 'false' }}" aria-label="{{ row.disclosure.expanded ? 'Collapse' : 'Expand' }} {{ c.value|default('') }}">
+                    <a data-table-disclosure class="inline-flex w-5 max-md:size-touch max-md:items-center justify-center text-text-light no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ row.disclosure.href }}" aria-expanded="{{ row.disclosure.expanded ? 'true' : 'false' }}" aria-label="{{ row.disclosure.expanded ? 'Collapse' : 'Expand' }} {{ c.value|default('') }}">
                       <span class="inline-flex {{ row.disclosure.expanded ? '' : '-rotate-90' }}">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'xs' }, with_context = false) }}</span>
                     </a>
                   {%- else -%}
-                    <span class="inline-flex w-5" aria-hidden="true"></span>
+                    <span class="inline-flex w-5 max-md:w-touch" aria-hidden="true"></span>
                   {%- endif -%}
                   {%- if c %}{{ cells.cell(c) }}{% endif -%}
                   {%- for badge in row.badges|default([]) -%}
