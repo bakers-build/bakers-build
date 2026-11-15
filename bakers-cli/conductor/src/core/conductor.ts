@@ -403,6 +403,9 @@ export class Conductor {
       registry,
       workspaceRoot: this.checkoutRoot,
       logger: this.logger,
+      ...(this.config.conductor_id
+        ? { conductorId: this.config.conductor_id }
+        : {}),
       ...(endpointFile ? { endpointFile } : {}),
       ...(openRuns ? { openRuns } : {}),
       ...(siteTools ? { siteTools } : {}),
