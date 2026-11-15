@@ -94,6 +94,11 @@ use Drupal\tool\TypedData\OutputDefinition;
             label: new TranslatableMarkup('Current load'),
             description: new TranslatableMarkup('Runs the machine holds now.'),
           ),
+          'assignment' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Assignment'),
+            description: new TranslatableMarkup("The machine's own setting: allow or forbid whether others may assign its conductors; the owner always may."),
+          ),
         ],
       ),
     ),
@@ -146,6 +151,7 @@ final class MachineList extends ToolBase {
         'connection_url' => $machine->get('connection_url')->value ?: NULL,
         'max_parallel' => $machine->getMaxParallel(),
         'current_load' => $machine->getCurrentLoad(),
+        'assignment' => $machine->getAssignment(),
       ];
     }
     return ExecutableResult::success(new TranslatableMarkup('@count machines found.', ['@count' => count($machines)]), [

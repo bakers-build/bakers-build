@@ -26,6 +26,26 @@ if [ "${1:-}" = exec ]; then
       [ "$#" = 0 ] || usage
       web ".ddev/commands/web/$key"
       ;;
+    phpunit|phpunit-mariadb)
+      # <test path>…: explicit paths, never --filter or --group (they can pass on no tests).
+      [ "$#" -ge 1 ] || usage
+      safe "$@"
+      if [ "$key" = phpunit-mariadb ]; then
+        web env SIMPLETEST_DB=mysql://db:db@db/db ./vendor/bin/phpunit --configuration=phpunit.xml "$@"
+      else
+        web ./vendor/bin/phpunit --configuration=phpunit.xml "$@"
+      fi
+      ;;
+    paratest)
+      # <suite> or one <path>: a value with a slash is a path.
+      [ "$#" = 1 ] || usage
+      safe "$1"
+      if [[ "$1" == */* ]]; then
+        web ./vendor/bin/paratest --configuration=phpunit.xml --processes 4 "$1"
+      else
+        web ./vendor/bin/paratest --configuration=phpunit.xml --processes 4 --testsuite "$1"
+      fi
+      ;;
     uli)
       # <persona> [<uri>]
       [ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
@@ -41,6 +61,19 @@ if [ "${1:-}" = exec ]; then
       [ "$#" -ge 1 ] || usage
       safe "$@"
       web playwright-cli "$@"
+      ;;
+    designbook)
+      # start | stop | status | check <story-id>: Designbook's Storybook daemon and story check in
+      # the web container, with the image's Chromium (.ddev/web-build/Dockerfile.playwright).
+      [ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
+      safe "$@"
+      case "$1" in
+        start) [ "$#" = 1 ] || usage; set -- storybook start --port 6006 --force ;;
+        stop|status) [ "$#" = 1 ] || usage; set -- storybook "$1" ;;
+        check) [ "$#" = 2 ] || usage; set -- storybook check "http://localhost:6006/iframe.html?id=$2&viewMode=story" ;;
+        *) usage ;;
+      esac
+      web env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright bash -c 'cd web/themes/custom/bb_theme && npx storybook-addon-designbook "$@"' designbook "$@"
       ;;
     playground-ticket)
       # <conductor_id> <title> [<state>]: a title may contain spaces, so it is checked loosely.

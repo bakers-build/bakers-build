@@ -1413,6 +1413,12 @@ final class TicketDetailScreenTest extends KernelTestBase {
     self::assertStringContainsString('parent=' . $this->ticket->getIdentifier(), $found[0]['url']);
     self::assertStringContainsString('closed=all', $found[0]['url']);
 
+    // A ticket without an identifier has no parent to filter by.
+    $identifier = $this->ticket->getIdentifier();
+    $this->ticket->setIdentifier('');
+    self::assertSame([], $links($rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket)), 'No identifier, no link.');
+    $this->ticket->setIdentifier($identifier);
+
     // A ticket without a project has no list to open.
     $this->ticket->set('project_id', NULL);
     self::assertSame([], $links($rows_service->groupBlock('relations', $rows_service->build($this->ticket), $this->ticket)), 'No project, no link.');
@@ -1647,7 +1653,10 @@ final class TicketDetailScreenTest extends KernelTestBase {
   }
 
   /**
-   * The newest failed run is danger, says why and offers its three actions.
+   * The newest failed run is danger, says why and offers its actions.
+   *
+   * Both runs record an error-log size without a stored file, so neither has
+   * a log to offer or to point to.
    */
   public function testFailedRunRowShowsReasonAndActions(): void {
     $this->assignTheConductors();
@@ -1661,22 +1670,21 @@ final class TicketDetailScreenTest extends KernelTestBase {
     $item = $this->rowItem($newest);
     self::assertSame('critical', $item['accent']);
     self::assertSame('critical', $item['cells']['state']['tone']);
-    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
-    self::assertSame(['Retry', 'Re-dispatch', 'Log'], $this->actionLabels($item));
+    self::assertSame('No reason and no log were recorded.', $item['detail']);
+    self::assertSame(['Retry', 'Re-dispatch'], $this->actionLabels($item), 'No Log for a file that is not there.');
     self::assertStringContainsString('run_action=retry', $item['cells']['retry']['href']);
     self::assertStringContainsString('run_action=redispatch', $item['cells']['redispatch']['hx']['get']);
-    self::assertTrue($item['cells']['log']['full_load'], 'The Log downloads as a whole document, outside the boost.');
 
     $item = $this->rowItem($older);
     self::assertSame('critical', $item['accent']);
-    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
-    self::assertSame(['Log'], $this->actionLabels($item), 'An older failed run offers its log only.');
+    self::assertSame('No reason and no log were recorded.', $item['detail']);
+    self::assertSame([], $this->actionLabels($item), 'An older failed run without a log offers nothing.');
 
     $guest = $this->createUser(['view bb_ticket']);
     self::assertInstanceOf(UserInterface::class, $guest);
     $this->setCurrentUser($guest);
     $item = $this->rowItem($newest);
-    self::assertSame('No reason was recorded. Open the log for details.', $item['detail']);
+    self::assertSame('No reason and no log were recorded.', $item['detail']);
     self::assertSame([], $this->actionLabels($item), 'A guest sees the reason, no intervention and no log.');
   }
 
@@ -2244,6 +2252,8 @@ final class TicketDetailScreenTest extends KernelTestBase {
         'owner_user_id' => $owner->id(),
         'status' => 'online',
         'project_id' => $this->ticket->get('project_id')->target_id,
+        // The reader re-dispatches to it; the setting has its own tests.
+        'assignment' => 'allow',
         'last_seen' => $this->container->get('datetime.time')->getRequestTime(),
       ]);
       $conductor->save();

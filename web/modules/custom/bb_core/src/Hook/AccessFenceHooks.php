@@ -17,6 +17,7 @@ use Drupal\bb_core\Access\BbRankEntityFence;
 use Drupal\bb_core\Onboarding\OnboardingDestination;
 use Drupal\bb_core\RunLog\RunLogPolicy;
 use Drupal\og\OgAccess;
+use Drupal\user\EntityOwnerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
@@ -51,8 +52,8 @@ final class AccessFenceHooks {
       'name', 'description', 'image', 'key', 'repository', 'env_vars',
       'coder_config', 'teams',
     ],
-    'bb_machine' => ['name', 'max_parallel'],
-    'bb_conductor' => ['label', 'active', 'states'],
+    'bb_machine' => ['name', 'max_parallel', 'assignment'],
+    'bb_conductor' => ['label', 'active', 'states', 'assignment'],
   ];
 
   public function __construct(
@@ -114,6 +115,11 @@ final class AccessFenceHooks {
       return $run_log;
     }
 
+    $assignment = $this->assignmentFieldAccess($operation, $field_definition, $account, $items);
+    if ($assignment !== NULL) {
+      return $assignment;
+    }
+
     $saved_row = $this->savedRowFieldPolicy($operation, $field_definition, $account, $items);
     if ($saved_row !== NULL) {
       return $saved_row;
@@ -149,6 +155,30 @@ final class AccessFenceHooks {
       return AccessResult::forbidden('Run-log storage is disabled by this deployment.');
     }
     return NULL;
+  }
+
+  /**
+   * The assignment setting is the owner's alone, admins included.
+   *
+   * Returns NULL when this rule does not apply or the account is the owner,
+   * so the owner still passes the saved-row allowlist and the rank fence.
+   */
+  private function assignmentFieldAccess(
+    string $operation,
+    FieldDefinitionInterface $field_definition,
+    AccountInterface $account,
+    ?FieldItemListInterface $items,
+  ): ?AccessResultInterface {
+    $entity = $items?->getEntity();
+    if ($operation !== 'edit' || $field_definition->getName() !== 'assignment' || !$entity instanceof EntityOwnerInterface) {
+      return NULL;
+    }
+    if ((int) $account->id() !== 0 && (int) $entity->getOwnerId() === (int) $account->id()) {
+      return NULL;
+    }
+    return AccessResult::forbidden('Only the owner may change the assignment setting.')
+      ->cachePerUser()
+      ->addCacheableDependency($entity);
   }
 
   /**

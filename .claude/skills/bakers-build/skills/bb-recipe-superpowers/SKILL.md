@@ -13,6 +13,14 @@ publication, gates and transitions. Domain and runtime come from the project's h
 matching skills, never from here. The skills are the originals from `obra/superpowers`, as the
 agent environment provides them.
 
+## bb-gates
+
+| Type | Gates |
+|---|---|
+| feature | default |
+| bug | default |
+| chore | default |
+
 ## bb-state-qualification
 
 ### bb-phase-work

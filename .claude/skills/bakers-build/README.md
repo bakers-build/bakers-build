@@ -12,7 +12,7 @@ skills; the agent environment's native skill mechanism loads them.
 **Skills are chosen; references are read.** A skill is something a person, the ticket's `recipe`
 field, a hint or a subagent start selects. The `recipe` field is written at qualification: the agent
 loads every installed `bb-recipe-*` skill completely and picks the method that fits the ask
-(`skills/bb-workflow/references/classify.md`). Exactly fifteen ship:
+(`skills/bb-workflow/references/classify.md`). Exactly sixteen ship:
 
 | Skill | Job |
 |---|---|
@@ -22,8 +22,10 @@ loads every installed `bb-recipe-*` skill completely and picks the method that f
 | `@bakers-build/bb-recipe-deploy-and-release`, `@bakers-build/bb-recipe-verify` | The recipes of `deployment` and `verification` tickets. |
 | `@bakers-build/bb-verdict` | The review subagent's start: an independent verdict and findings. |
 | `@bakers-build/bb-label-auto` | Loaded by the `bb-workflow` frame for a ticket labelled `auto`, in any state, as every `bb-label-<label>` skill is: it carries the ticket to `done` on its own, asks the user only what is theirs to decide and for one acceptance only when they had something to decide, and refers technical problems to the developers. |
+| `@bakers-build/bb-label-human-review` | Loaded by the frame for a ticket labelled `human-review`, in any state: it passes every gate up to a published review verdict on its own; the ticket's reviewer confirms the verdict and authorizes the merge. |
+| `@bakers-build/bb-label-human-accept` | Loaded by the frame for a ticket labelled `human-accept`, in any state: it passes every gate on its own except the user's acceptance of the result, and the reviewer's verdict on a planned risky change, then merges. |
 | `@bakers-build/bb-label-ticket-question` | Loaded by the frame for a ticket labelled `ticket-question`, in any state: it reaches a human only through the ticket — a question or a technical problem — then freezes it. |
-| `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project`, `@bakers-build/bb-upgrade-project` | Machine, project and workflow setup and upgrades. |
+| `@bakers-build/bb-init`, `@bakers-build/bb-init-project`, `@bakers-build/bb-create-project` | Machine, project and workflow setup and upgrades. |
 | `@bakers-build/bb-create-ticket`, `@bakers-build/bb-scope-change`, `@bakers-build/bb-prepare-time` | Create a ticket, specified with its requester when asked; change its scope; prepare time proposals. |
 
 **The grid.** A run is state × phase. `qualification`, `plan`, `working` and `review` each have a
@@ -46,17 +48,17 @@ For authoring recipes, guides and hints, read `skills/bb-workflow/references/aut
 
 ## Setup and upgrades
 
-- `@bakers-build/bb-init-project` initializes or completes a selected machine, connection, project
-  or all configuration scopes through initialization and validation. It preserves
-  partial configurations and existing workflow policy; project setup composes an absent workflow.
+- `@bakers-build/bb-init-project` initializes, completes, repairs or upgrades a selected machine,
+  connection, project or all configuration scopes through initialization, configuration upgrades and
+  scoped checks. It preserves partial configurations, optional project connections and existing
+  workflow policy, migrates a legacy `WORKFLOW.md` layout, and composes an absent workflow. Package
+  update is a separate action. It distinguishes local validity from online authentication readiness
+  (workspace optional).
 - `@bakers-build/bb-init` (`bakers:bb-init` in Claude Code) guides machine and user setup through the
   documentation. Its wizard explains workspace-manager and development-environment choices,
   checks the selected path, and helps with sign-in. Tool requirements and commands live in the
   documentation; the person installs tools. `@bakers-build/bb-init-project` calls it when a machine
   has no configured user.
-- `@bakers-build/bb-upgrade-project` migrates and repairs through configuration upgrades and scoped checks,
-  preserving local policy and optional project connections. Package update is a separate action.
-  Both skills distinguish local validity from online authentication readiness (workspace optional).
 
 Initialization and upgrade are human-initiated capabilities. Neither starts ticket work.
 

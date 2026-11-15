@@ -10,7 +10,7 @@ Move a workstation to a newer bakers.build release: the CLI first, then your con
 Check my CLI and bakers skills versions. Guide their updates using
 https://bakers.build/configuration/guides/updates. Preview configuration
 migration with --dry-run and show the effects before applying it.
-Use bb-upgrade-project for shared project files in a branch.
+Use bb-init-project for shared project files in a branch.
 ```
 
 Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. They guide the update but do not replace your tools automatically. The exact CLI/configuration sequence follows.
@@ -25,7 +25,7 @@ Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. 
    bakers --version
    ```
 
-   `bakers update` runs `npm install -g @bakers-build/bakers@latest` and prints `<before> → <after>`. To pin a release instead, run `npm install -g @bakers-build/bakers@<version>`. An interactive `bakers conductor start` can run that install and the all-scope migration for you: Enter accepts, then the process exits so you can rerun start; `n` continues on the current release. Failures stop this start and leave a running conductor untouched. `bakers ui`, foreground, CI and non-TTY starts only print a notice. `--no-update-check` skips the lookup. Manual update and the dry-run path below still work.
+   `bakers update` runs `npm install -g @bakers-build/bakers@latest` and prints `<before> → <after>`. To pin a release instead, run `npm install -g @bakers-build/bakers@<version>`. An interactive `bakers conductor start` can run that install and the all-scope migration for you: Enter accepts, then the same start continues on the new release; `n` continues on the current release. Failures stop this start and leave a running conductor untouched. A conductor that is already running notices the new installed version on its own, whatever installed it, and migrates and restarts itself (see [Restart after an upgrade](/cli/conductor#restart-after-an-upgrade)). `bakers ui`, foreground, CI and non-TTY starts only print a notice. `--no-update-check` skips the lookup. Manual update and the dry-run path below still work.
 
 2. Preview the configuration migration. Add `--connection <id>` if you use a named connection.
 
@@ -45,7 +45,7 @@ Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. 
 
    Apply rechecks the files, writes a private backup `<file>.bakers.bak` next to each changed file, and replaces the file atomically. Do not commit the backups. The last preview must show no change. An offline `ok` proves only the file shape; `--online` proves sign-in and project access, and "online skipped" is not a pass.
 
-4. Update the shared project files in a branch, never on the default branch. Ask your AI to run the `bb-upgrade-project` skill, which keeps the repository's `WORKFLOW.md` policy, moves an old `## Loaded skills` layout to the entry line and phase sections, and confirms that every skill the file names is installed. Review the diff.
+4. Update the shared project files in a branch, never on the default branch. Ask your AI to run the `bb-init-project` skill, which keeps the repository's `WORKFLOW.md` policy, moves an old `## Loaded skills` layout to the entry line and phase sections, and confirms that every skill the file names is installed. Review the diff.
 
    Run a small test ticket in a disposable project, then submit the branch for review. Teammates update their own tools; your merge does not do it for them.
 
@@ -62,4 +62,4 @@ Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. 
 | Shared project files | A project developer, through review | 4 |
 | Server | The operator | 5 |
 
-Updating the CLI alone migrates neither your files nor the project, and deploys nothing. Automatic migration from an accepted start prompt uses the same all-scope planner, may touch selected project files, keeps backups and conflict protections, and deploys nothing. The cache is `~/.bakers/update-check.json` (or `$BAKERS_HOME/update-check.json`); a decline lasts until that original check expires, not until 24 hours after you answer. A failed cache write is reported and does not claim suppression. Enter accepts; EOF or Ctrl-C cancels without installing or declining. The running process does not become the new release, and a source checkout or PATH shim may still run source after a global install. Keep the failing command, its key and the file path when you ask for help, and never paste secret values.
+Updating the CLI alone deploys nothing and migrates neither the project nor, without a running conductor, your files. Automatic migration from an accepted start prompt uses the same all-scope planner, may touch selected project files, keeps backups and conflict protections, and deploys nothing. The cache is `~/.bakers/update-check.json` (or `$BAKERS_HOME/update-check.json`); a decline lasts until that original check expires, not until 24 hours after you answer. A failed cache write is reported and does not claim suppression. Enter accepts; EOF or Ctrl-C cancels without installing or declining. A source checkout or PATH shim may still run source after a global install. Keep the failing command, its key and the file path when you ask for help, and never paste secret values.

@@ -387,7 +387,7 @@ export async function runTicketTui(
   // Best-effort: paint/timer failure must not block reaching the main UI.
   if (interactive && renderer && shell && !shouldSkipSplash(options)) {
     try {
-      const splash = mountTree(renderer, shell, splashTree());
+      const splash = mountTree(renderer, shell, splashTree(renderer.width));
       renderer.requestRender();
       await awaitSplash(SPLASH_MS, options.wait);
       unmountTree(shell, splash);

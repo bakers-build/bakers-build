@@ -1458,6 +1458,10 @@ export class Conductor {
     const core: Record<string, string> = {
       BAKERS_URL: this.config.site.base_url,
       BAKERS_ID: t.uuid,
+      // The agent finds its own conductor in bakers_user_read by this id.
+      ...(this.config.conductor_id
+        ? { BAKERS_CONDUCTOR_ID: this.config.conductor_id }
+        : {}),
       // BB-569: lets a launch wrapper key off the ticket and the run's
       // start state without parsing the prompt (addon-claude `measure`).
       ...(t.identifier ? { BAKERS_TICKET_IDENTIFIER: t.identifier } : {}),
@@ -1825,6 +1829,12 @@ export class Conductor {
         : {}),
       ...(chosen.agent.modelApi ? { modelApi: chosen.agent.modelApi } : {}),
     };
+    const isolates = this.config.runtime?.isolates === true;
+    // Without it the run starts in an empty private home and cannot sign in.
+    if (isolates && !chosen.agent.prepareRun)
+      throw new Error(
+        `agent ${chosen.alias ?? chosen.id}: the runtime isolates runs, but the agent has no prepareRun to prepare its login and configuration`,
+      );
     const runtimeContext = await runtime.prepareRun?.(
       {
         uuid: run.runUuid,
@@ -1841,7 +1851,6 @@ export class Conductor {
         })
       : undefined;
     if (preparation) Object.assign(env, preparation.env);
-    const isolates = this.config.runtime?.isolates === true;
     // An isolated run without its own clone would share the parent's Git data.
     if (isolates && !ws.clone)
       throw new Error(

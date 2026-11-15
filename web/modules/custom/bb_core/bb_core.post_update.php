@@ -145,3 +145,17 @@ function bb_core_post_update_ticket_health_3_tickets(array &$sandbox): void {
   $sandbox['last'] = $ids === [] ? ($sandbox['last'] ?? 0) : max($ids);
   $sandbox['#finished'] = $ids === [] ? 1 : 0.5;
 }
+
+/**
+ * Existing machines allow assignment; existing conductors defer to them.
+ *
+ * New machines forbid by default. Existing ones allow, so nothing that works
+ * today breaks. bb_core_update_11002() installed the columns.
+ */
+function bb_core_post_update_conductor_assignment(): void {
+  foreach (['bb_machine' => 'allow', 'bb_conductor' => 'machine'] as $type => $value) {
+    \Drupal::database()->update($type)->fields(['assignment' => $value])->execute();
+  }
+  \Drupal::entityTypeManager()->getStorage('bb_machine')->resetCache();
+  \Drupal::entityTypeManager()->getStorage('bb_conductor')->resetCache();
+}

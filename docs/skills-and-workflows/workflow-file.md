@@ -10,7 +10,7 @@
 Use bakers:bb-init-project to create WORKFLOW.md for this repository.
 ```
 
-`bb-init-project` starts from the plugin's template; `bb-upgrade-project` updates a file you already have, including one in the old `## Loaded skills` layout.
+`bb-init-project` starts from the plugin's template and also updates a file you already have, including one in the old `## Loaded skills` layout.
 
 ## What goes in
 
@@ -40,7 +40,7 @@ Invoke `bakers:bb-workflow` and follow it for the ticket's current state.
 
 A run applies every matching row, and the rows are binding: the agent loads each named skill before the work it governs and stops if one is missing. Only the agent reads this file, as prose: bakers.build code never parses it, and the conductor checks no skills before a launch, so no table, command or skill name in it can block a run before the agent starts. The engineering method is not in this file; each ticket carries a [recipe](/skills-and-workflows/types-recipes-labels). Repository conventions and test lore belong in your repository docs, linked from `CLAUDE.md`.
 
-The [`auto` and `ticket-question` labels](/skills-and-workflows/types-recipes-labels#labels) control unattended work and where the agent asks questions. Neither needs an extra entry-line clause.
+The [`auto`, `human-review`, `human-accept` and `ticket-question` labels](/skills-and-workflows/types-recipes-labels#labels) control unattended work and where the agent asks questions. None needs an extra entry-line clause.
 
 ## Example
 

@@ -1,13 +1,7 @@
----
-name: bb-upgrade-project
-description: Use when migrating or repairing existing bakers.build configuration and project workflow policy, including missing or partial layers.
----
+# Upgrade an existing installation
 
-# Upgrade bakers.build configuration and project policy
-
-CLI owns inventory, migrations and missing-layer repair. Blank installations use
-`@bakers-build/bb-init-project`; partial installations stay here. Before checking/applying, read
-[setup checks](../bb-init-project/references/setup-checks.md).
+CLI owns inventory, migrations and missing-layer repair. Before checking/applying, read
+[setup checks](setup-checks.md).
 
 ## Check, apply, recheck
 
@@ -36,7 +30,7 @@ CLI owns inventory, migrations and missing-layer repair. Blank installations use
 
 ## Preserve project policy
 
-For selected projects, follow [WORKFLOW.template.md](../bb-init-project/references/WORKFLOW.template.md);
+For selected projects, follow [WORKFLOW.template.md](WORKFLOW.template.md);
 create absent workflows. Rename phase hints to `## bb-phase-<phase>`: `## provision`, `## work`,
 `## validate` and `## deliver` keep their phase; `## transition` → `## bb-phase-outtake`, except an
 origin-label override → `## bb-phase-transition`. Move an old loader's sections: the entry line

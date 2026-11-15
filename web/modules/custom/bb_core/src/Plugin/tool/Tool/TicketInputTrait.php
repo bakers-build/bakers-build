@@ -12,7 +12,6 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\user\UserInterface;
-use Drupal\Core\Session\AccountInterface;
 
 /**
  * Resolves a tool's `ticket` input, an identifier or UUID, under view access.
@@ -156,6 +155,7 @@ trait TicketInputTrait {
     $person = function (EntityInterface $account): array {
       assert($account instanceof UserInterface);
       return [
+        'uuid' => $account->uuid(),
         'name' => $account->getDisplayName(),
         'mail' => $account->get('mail')->access('view', $this->currentUser) ? $account->get('mail')->value : NULL,
       ];
@@ -169,13 +169,13 @@ trait TicketInputTrait {
   }
 
   /**
-   * Assigns the active account of this address when the field's rule allows.
+   * Assigns the active account of this UUID when the field's rule allows.
    *
    * The assignee field's own validation (ValidReference with its selection
    * handler) decides, as in the web form. Returns whether it was assigned.
    */
-  protected function assign(BbTicketInterface $ticket, string $email): bool {
-    $account = $this->activeAccount($email);
+  protected function assign(BbTicketInterface $ticket, string $uuid): bool {
+    $account = $this->activeAccount($uuid);
     if (!$account) {
       return FALSE;
     }
@@ -188,13 +188,13 @@ trait TicketInputTrait {
   }
 
   /**
-   * Adds the active account of this address as a reviewer when allowed.
+   * Adds the active account of this UUID as a reviewer when allowed.
    *
    * The reviewers field's own validation decides, as for the assignee.
    * Returns whether it was added.
    */
-  protected function addReviewer(BbTicketInterface $ticket, string $email): bool {
-    $account = $this->activeAccount($email);
+  protected function addReviewer(BbTicketInterface $ticket, string $uuid): bool {
+    $account = $this->activeAccount($uuid);
     if (!$account) {
       return FALSE;
     }
@@ -210,18 +210,11 @@ trait TicketInputTrait {
   }
 
   /**
-   * The active account with this e-mail address, if any.
+   * The active account with this UUID, if any.
    */
-  protected function activeAccount(string $email): ?AccountInterface {
-    $storage = $this->entities()->getStorage('user');
-    // Case-insensitive, like core's unique-mail check; escaped as escapeLike().
-    $ids = $storage->getQuery()->accessCheck(FALSE)
-      ->condition('mail', addcslashes($email, '\\%_'), 'LIKE')
-      ->condition('status', 1)
-      ->range(0, 1)
-      ->execute();
-    $account = $ids ? $storage->load(reset($ids)) : NULL;
-    return $account instanceof AccountInterface ? $account : NULL;
+  protected function activeAccount(string $uuid): ?UserInterface {
+    $account = current($this->entities()->getStorage('user')->loadByProperties(['uuid' => $uuid, 'status' => 1]));
+    return $account instanceof UserInterface ? $account : NULL;
   }
 
 }

@@ -8,16 +8,18 @@ use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Conductor\ConductorOwnerAccess;
 use Drupal\bb_core\Entity\BbConductorInterface;
 use Drupal\bb_core\Entity\BbTicketInterface;
 use Drupal\bb_core\Entity\BbTicketTemplateInterface;
+use Drupal\user\UserInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 
 /**
- * Validates a newly set conductor against its owner's access and role.
+ * Validates a newly set conductor against its owner's access and setting.
  *
  * Only a changed reference is checked, as for BbConductorActive, so a ticket
  * stranded on a conductor whose owner lost access still saves unrelated edits.
@@ -27,6 +29,7 @@ final class ConductorOwnerAccessConstraintValidator extends ConstraintValidator 
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly ConductorOwnerAccess $ownerAccess,
+    private readonly AccountInterface $currentUser,
   ) {
   }
 
@@ -37,6 +40,7 @@ final class ConductorOwnerAccessConstraintValidator extends ConstraintValidator 
     return new static(
       $container->get('entity_type.manager'),
       $container->get('bb_core.conductor_owner_access'),
+      $container->get('current_user'),
     );
   }
 
@@ -56,8 +60,13 @@ final class ConductorOwnerAccessConstraintValidator extends ConstraintValidator 
       $this->context->addViolation($constraint->message, ['@label' => $conductor->label()]);
       return;
     }
-    if ($entity instanceof BbTicketInterface && !$this->ownerAccess->ownerIsResponsible($conductor, $entity)) {
-      $this->context->addViolation($constraint->notResponsibleMessage, ['@label' => $conductor->label()]);
+    if (!$this->ownerAccess->mayAssign($conductor, $this->currentUser)) {
+      $owner = $conductor->get('owner_user_id')->entity;
+      $this->context->addViolation($constraint->forbiddenMessage, [
+        '@label' => $conductor->label(),
+        '@owner' => $owner instanceof UserInterface ? $owner->getDisplayName() : '',
+        '@source' => $conductor->getEffectiveAssignment()['source'],
+      ]);
     }
   }
 

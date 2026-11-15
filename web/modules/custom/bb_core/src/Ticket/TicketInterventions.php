@@ -223,12 +223,13 @@ final class TicketInterventions {
    * Cacheability of what a run says and offers on its row and its page.
    *
    * Retry, Re-dispatch and the stall follow the ticket, its newer runs, its
-   * blockers and the project's conductors; a claim's words change in time.
+   * blockers, the project's conductors and their machines; a claim's words
+   * change in time.
    */
   public static function runCacheability(BbRunInterface $run): CacheableMetadata {
     $ticket = $run->getTicket();
     $cache = $ticket instanceof BbTicketInterface
-      ? TicketStallReason::cacheability($ticket)->addCacheTags(['bb_conductor_list'])
+      ? TicketStallReason::cacheability($ticket)->addCacheTags(['bb_conductor_list', 'bb_machine_list'])
       : new CacheableMetadata();
     if ($run->getRunState() === 'claimed') {
       // "The claim lapses in …" turns into "The claim lapsed … ago".

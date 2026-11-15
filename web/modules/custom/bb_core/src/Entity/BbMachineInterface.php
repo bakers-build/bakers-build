@@ -52,4 +52,12 @@ interface BbMachineInterface extends BbContentEntityInterface {
    */
   public function setCurrentLoad(int $current_load): static;
 
+  /**
+   * Returns whether others may assign this machine's conductors.
+   *
+   * @return string
+   *   `allow` or `forbid`.
+   */
+  public function getAssignment(): string;
+
 }

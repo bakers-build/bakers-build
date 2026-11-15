@@ -14,6 +14,7 @@ import type {
   ConductorFileConfig,
   ConductorRegistration,
 } from '@bakers-build/conductor/contract';
+import { resolveCliVersion } from '@bakers-build/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   type BbCliDeps,
@@ -167,6 +168,135 @@ describe('bakers conductor start --foreground self-restart', () => {
     ).toHaveLength(1);
   });
 
+  describe('after the installed CLI version changes', () => {
+    const START = resolveCliVersion();
+
+    /** Reads `versions` in turn; when they run out, stops the conductor. */
+    function reads(...versions: string[]) {
+      return vi.fn(() => {
+        const next = versions.shift();
+        if (next === undefined) {
+          process.emit('SIGTERM');
+          return START;
+        }
+        return next;
+      });
+    }
+
+    it('on two equal new reads, migrates, checks, then re-execs itself', async () => {
+      const remote = new TickRemote();
+      const calls: string[] = [];
+      const h = harness(
+        remote,
+        async () => {
+          calls.push('check');
+          return undefined;
+        },
+        { watch_paths: undefined },
+        true,
+        {
+          readCliVersion: reads('99.0.0', '99.0.0'),
+          migrateConfig: async () => {
+            calls.push('migrate');
+            return undefined;
+          },
+        },
+      );
+      h.execve.mockImplementation(() => calls.push('execve'));
+
+      await h.run();
+
+      expect(calls).toEqual(['migrate', 'check', 'execve']);
+      expect(remote.statusWrites).toEqual([]);
+      expect(log()).toContain(`CLI version changed ${START} → 99.0.0`);
+      expect(log()).toContain('config check passed; restarting conductor');
+    });
+
+    function watch(
+      versions: string[],
+      results: { migrate?: string[]; check?: string[] } = {},
+      over: Partial<ConductorFileConfig> = {},
+    ) {
+      const remote = new TickRemote();
+      const counts = { migrate: 0, check: 0 };
+      const h = harness(
+        remote,
+        async () => {
+          counts.check += 1;
+          return results.check?.shift();
+        },
+        { watch_paths: undefined, ...over },
+        true,
+        {
+          readCliVersion: reads(...versions),
+          migrateConfig: async () => {
+            counts.migrate += 1;
+            return results.migrate?.shift();
+          },
+        },
+      );
+      return { remote, counts, h };
+    }
+
+    it('ignores a half-written install: one new read, then the old one again', async () => {
+      const { remote, counts, h } = watch(['99.0.0', START, START]);
+      await h.run();
+      expect(counts.migrate).toBe(0);
+      expect(h.execve).not.toHaveBeenCalled();
+      expect(remote.statusWrites).toEqual([['mid-fg', 'offline']]);
+    });
+
+    it('leaves the conductor alone when the version is unchanged or unreadable', async () => {
+      const { counts, h } = watch([START, START, '0.0.0', '0.0.0']);
+      await h.run();
+      expect(counts.migrate).toBe(0);
+      expect(h.execve).not.toHaveBeenCalled();
+    });
+
+    it('on a failed migration, logs the step and recovery and retries only on a newer version', async () => {
+      const { counts, h } = watch(
+        ['99.0.0', '99.0.0', '99.0.0', '99.0.0', '99.0.1', '99.0.1'],
+        { migrate: ['schema 7 unknown', 'schema 8 unknown'] },
+      );
+      await h.run();
+      expect(counts.migrate).toBe(2);
+      expect(counts.check).toBe(0);
+      expect(h.execve).not.toHaveBeenCalled();
+      expect(log()).toContain(
+        `config upgrade failed; keeping the running conductor on ${START}: schema 7 unknown`,
+      );
+      expect(log()).toContain(
+        'Recover with `bakers config upgrade --scope all --yes`, then `bakers oven start --force`',
+      );
+    });
+
+    it('on a failed check after the migration, logs the check step and keeps serving', async () => {
+      const { counts, h } = watch(['99.0.0', '99.0.0', '99.0.0'], {
+        check: ['SyntaxError: Unexpected token }'],
+      });
+      await h.run();
+      expect(counts).toEqual({ migrate: 1, check: 1 });
+      expect(h.execve).not.toHaveBeenCalled();
+      expect(log()).toContain(
+        `config check failed; keeping the running conductor on ${START}: SyntaxError`,
+      );
+    });
+
+    it('only warns when restart_on_change is false', async () => {
+      const { counts, h } = watch(
+        ['99.0.0', '99.0.0', '99.0.0'],
+        {},
+        {
+          restart_on_change: false,
+        },
+      );
+      await h.run();
+      expect(counts.migrate).toBe(0);
+      expect(h.execve).not.toHaveBeenCalled();
+      expect(log().match(/restart_on_change is off/g)).toHaveLength(1);
+    });
+  });
+
   function log(): string {
     const files = readdirSync(home, { recursive: true, encoding: 'utf8' })
       .filter((f) => f.endsWith('log.txt'))
@@ -179,6 +309,7 @@ describe('bakers conductor start --foreground self-restart', () => {
     checkConfig: () => Promise<string | undefined>,
     over: Partial<ConductorFileConfig> = {},
     injectExecve = true,
+    extra: Partial<BbCliDeps> = {},
   ) {
     let trigger: ((path: string) => Promise<void>) | undefined;
     const h = {
@@ -208,6 +339,7 @@ describe('bakers conductor start --foreground self-restart', () => {
             return checkConfig();
           },
           ...(injectExecve ? { execve: h.execve } : {}),
+          ...extra,
         };
         await buildConductorProgram(deps).parseAsync(
           ['conductor', 'start', '--foreground', '--no-update-check'],

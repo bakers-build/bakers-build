@@ -351,6 +351,7 @@ describe('Conductor dispatch env injection', () => {
     expect(env.BAKERS_WORKSPACE).toBe('Acme');
     expect(env.BAKERS_WORKSPACE_ID).toBe('ws-uuid');
     expect(env.BAKERS_WORKSPACE_IDS?.split(',')).toContain('ws-uuid');
+    expect(env.BAKERS_CONDUCTOR_ID).toBe('bakers-test-conductor');
   });
 
   it('exports BAKERS_TUNNEL=1 when machine policy is true and ticket env cannot override it', async () => {

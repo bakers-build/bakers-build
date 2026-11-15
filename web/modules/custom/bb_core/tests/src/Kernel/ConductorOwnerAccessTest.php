@@ -84,6 +84,8 @@ final class ConductorOwnerAccessTest extends KernelTestBase {
       'project_id' => $this->fixture('b', 'bb_project')->id(),
       'owner_user_id' => $this->owner->id(),
       'states' => ['plan'],
+      // Teammates assign it in these cases; the setting has its own tests.
+      'assignment' => 'allow',
     ]);
     self::assertInstanceOf(BbConductorInterface::class, $conductor);
     $this->conductor = $conductor;
@@ -193,24 +195,85 @@ final class ConductorOwnerAccessTest extends KernelTestBase {
   }
 
   /**
-   * On a ticket with an assignee only assignee and reviewers' conductors fit.
+   * The owner may always set their own conductor, even under forbid.
    */
-  public function testOnlyAssigneeOrReviewerConductorIsAssignable(): void {
-    [$assignee] = $this->memberWithConductor('assignee');
-    [$reviewer, $reviewer_conductor] = $this->memberWithConductor('reviewer');
-    [, $other_conductor] = $this->memberWithConductor('other');
-    $ticket = $this->ticketEditedByContributor();
-    $ticket->set('assignee_user_id', $assignee->id());
-    $ticket->set('reviewers', [$reviewer->id()]);
+  public function testOwnerMayAssignOwnConductorUnderForbid(): void {
+    [$member, $conductor] = $this->memberWithConductor('member', 'forbid');
+    $ticket = $this->ticketEditedBy($member);
+    $ticket->set('conductor_id', $conductor->id());
 
-    $ticket->set('conductor_id', $reviewer_conductor->id());
     self::assertSame([], $this->conductorViolations($ticket));
+  }
 
-    $ticket->set('conductor_id', $other_conductor->id());
-    self::assertSame(
-      ['Conductor node-other cannot be assigned: its owner is neither the assignee nor a reviewer of this ticket.'],
-      $this->conductorViolations($ticket),
-    );
+  /**
+   * Under allow, any teammate who sees the conductor may set it.
+   */
+  public function testTeammateMayAssignUnderAllow(): void {
+    [, $conductor] = $this->memberWithConductor('member', 'machine', 'allow');
+    $ticket = $this->ticketEditedByContributor();
+    $ticket->set('assignee_user_id', $this->owner->id());
+    $ticket->set('conductor_id', $conductor->id());
+
+    self::assertSame([], $this->conductorViolations($ticket));
+  }
+
+  /**
+   * Under forbid a teammate and a workspace Admin are refused, with the source.
+   */
+  public function testTeammateAndAdminRefusedUnderForbid(): void {
+    [, $by_machine] = $this->memberWithConductor('member', 'machine', 'forbid');
+    [, $by_conductor] = $this->memberWithConductor('other', 'forbid', 'allow');
+    $admin = $this->createAccount('ws-admin', ['view bb_conductor']);
+    $this->addMembership($this->fixture('b', 'bb_workspace'), $admin, ['lead']);
+
+    foreach ([$this->ticketEditedByContributor(), $this->ticketEditedBy($admin)] as $ticket) {
+      $ticket->set('conductor_id', $by_machine->id());
+      self::assertSame(
+        ['Conductor node-member cannot be assigned: its owner member forbids assignment by others (machine setting).'],
+        $this->conductorViolations($ticket),
+      );
+      $ticket->set('conductor_id', $by_conductor->id());
+      self::assertSame(
+        ['Conductor node-other cannot be assigned: its owner other forbids assignment by others (conductor setting).'],
+        $this->conductorViolations($ticket),
+      );
+    }
+  }
+
+  /**
+   * A ticket already on a forbid conductor still saves a title edit.
+   */
+  public function testStrandedForbidConductorStillSavesTitleEdit(): void {
+    [, $conductor] = $this->memberWithConductor('member', 'forbid');
+    $this->fixture('b', 'bb_ticket')->set('conductor_id', $conductor->id())->save();
+    $ticket = $this->ticketEditedByContributor();
+    $ticket->set('title', 'edited');
+
+    self::assertSame([], $this->conductorViolations($ticket));
+  }
+
+  /**
+   * Deactivation hands the ticket to the owner's sibling whatever its setting.
+   */
+  public function testReassignerIgnoresAssignmentSetting(): void {
+    [$member, $conductor] = $this->memberWithConductor('member');
+    $sibling = $this->createEntity('bb_conductor', [
+      'conductor_id' => 'node-member-sibling',
+      'label' => 'node-member-sibling',
+      'status' => 'online',
+      'project_id' => $this->fixture('b', 'bb_project')->id(),
+      'owner_user_id' => $member->id(),
+      'assignment' => 'forbid',
+    ]);
+    $ticket = $this->fixture('b', 'bb_ticket');
+    $ticket->set('conductor_id', $conductor->id())->save();
+    $this->ticketEditedByContributor();
+
+    $conductor->set('active', FALSE)->save();
+
+    $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')->loadUnchanged($ticket->id());
+    self::assertInstanceOf(BbTicketInterface::class, $ticket);
+    self::assertSame((string) $sibling->id(), (string) $ticket->get('conductor_id')->target_id);
   }
 
   /**
@@ -299,22 +362,19 @@ final class ConductorOwnerAccessTest extends KernelTestBase {
   }
 
   /**
-   * On a ticket with an assignee the picker offers only responsible owners.
+   * The picker offers each actor only the conductors they may set.
    */
-  public function testPickerOffersOnlyAssigneeAndReviewerConductors(): void {
-    [$assignee, $assignee_conductor] = $this->memberWithConductor('assignee');
-    [$reviewer, $reviewer_conductor] = $this->memberWithConductor('reviewer');
-    [, $other_conductor] = $this->memberWithConductor('other');
-    $this->fixture('b', 'bb_ticket')
-      ->set('assignee_user_id', $assignee->id())
-      ->set('reviewers', [$reviewer->id()])
-      ->save();
+  public function testPickerOffersOnlyAssignableConductors(): void {
+    [$member, $forbidden] = $this->memberWithConductor('member', 'forbid');
+    [, $allowed] = $this->memberWithConductor('other');
 
     $offered = $this->pickerOptions($this->ticketEditedByContributor());
+    self::assertContains((int) $allowed->id(), $offered);
+    self::assertNotContains((int) $forbidden->id(), $offered);
 
-    self::assertContains((int) $assignee_conductor->id(), $offered);
-    self::assertContains((int) $reviewer_conductor->id(), $offered);
-    self::assertNotContains((int) $other_conductor->id(), $offered);
+    $offered = $this->pickerOptions($this->ticketEditedBy($member));
+    self::assertContains((int) $allowed->id(), $offered);
+    self::assertContains((int) $forbidden->id(), $offered);
   }
 
   /**
@@ -337,10 +397,17 @@ final class ConductorOwnerAccessTest extends KernelTestBase {
    * Loads ticket T-B fresh, with a Contributor of B as the current user.
    */
   private function ticketEditedByContributor(): BbTicketInterface {
-    $contributor = $this->createAccount('ticket-contributor-' . $this->randomMachineName());
+    $contributor = $this->createAccount('ticket-contributor-' . $this->randomMachineName(), ['view bb_conductor']);
     $this->addMembership($this->fixture('b', 'bb_workspace'), $contributor, ['contributor']);
     $this->addMembership($this->fixture('b', 'bb_team'), $contributor);
-    $this->setCurrentUser($contributor);
+    return $this->ticketEditedBy($contributor);
+  }
+
+  /**
+   * Loads ticket T-B fresh, with the given account as the current user.
+   */
+  private function ticketEditedBy(UserInterface $actor): BbTicketInterface {
+    $this->setCurrentUser($actor);
     $ticket = $this->container->get('entity_type.manager')->getStorage('bb_ticket')
       ->loadUnchanged($this->fixture('b', 'bb_ticket')->id());
     self::assertInstanceOf(BbTicketInterface::class, $ticket);
@@ -367,10 +434,12 @@ final class ConductorOwnerAccessTest extends KernelTestBase {
   /**
    * A Contributor in team B owning an active conductor of project B.
    *
+   * The conductor carries $assignment; its own machine carries $machine.
+   *
    * @return array{0: \Drupal\user\UserInterface, 1: \Drupal\bb_core\Entity\BbConductorInterface}
    *   The member and the conductor.
    */
-  private function memberWithConductor(string $name): array {
+  private function memberWithConductor(string $name, string $assignment = 'allow', string $machine = 'forbid'): array {
     $member = $this->createAccount($name);
     $this->addMembership($this->fixture('b', 'bb_workspace'), $member, ['contributor']);
     $this->addMembership($this->fixture('b', 'bb_team'), $member);
@@ -380,6 +449,13 @@ final class ConductorOwnerAccessTest extends KernelTestBase {
       'status' => 'online',
       'project_id' => $this->fixture('b', 'bb_project')->id(),
       'owner_user_id' => $member->id(),
+      'assignment' => $assignment,
+      'machine' => $this->createEntity('bb_machine', [
+        'name' => "machine-$name",
+        'host_key' => "host-$name",
+        'owner_user_id' => $member->id(),
+        'assignment' => $machine,
+      ])->id(),
     ]);
     self::assertInstanceOf(BbConductorInterface::class, $conductor);
     return [$member, $conductor];

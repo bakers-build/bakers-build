@@ -44,7 +44,7 @@ The file carries no identity and is identical for everyone. A conductor is ident
 | `prompt` | Agent prompt template with `{identifier}`, `{state}`, `{run_uuid}` and `{ticket_uuid}`. The default tells the agent to read the ticket and comments, read `WORKFLOW.md` and run only the current state. Keep a custom prompt short and on one line. |
 | `poll_interval_ms` | Positive integer, default `5000`. |
 | `lease_seconds` | Positive integer requested run lease, default `300`; the server caps it at 3600. It is an ownership duration, not a task timeout. |
-| `restart_on_change` | Boolean, default `true`: a foreground conductor restarts itself when a config file changes. Needs Node.js 22.15 or later. |
+| `restart_on_change` | Boolean, default `true`: a running conductor restarts itself when a config file changes or the installed CLI version changes. Needs Node.js 22.15 or later. |
 | `capture_logs` | Boolean, default `true`. Transcripts upload only where the server's [run-log storage policy](/self-hosting/server#run-log-storage) allows it; `false` keeps this conductor's transcripts local even then. Metrics are unaffected. |
 | `hooks` | Optional command object. [Lifecycle hooks](/configuration/project/hooks) owns its keys, timing, environment, failure behavior and on-demand `provision_up` profiles. |
 | `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume`, `hooks.provision_up`, `hooks.provision_exec` | The lifecycle hooks and the on-demand `provision_up` and `provision_exec` commands; see [Lifecycle hooks](/configuration/project/hooks). |

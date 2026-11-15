@@ -103,6 +103,15 @@ final class BbMachine extends BbContentEntityBase implements BbMachineInterface,
       ->setLabel(new TranslatableMarkup('Connection URL'))
       ->setSetting('max_length', 2048)
       ->setDisplayConfigurable('view', TRUE);
+    // Owner-only (AccessFenceHooks); registration never writes it.
+    $fields['assignment'] = BaseFieldDefinition::create('list_string')
+      ->setLabel(new TranslatableMarkup('Assignment'))
+      ->setDescription(new TranslatableMarkup('Whether others may assign the conductors of this machine to tickets.'))
+      ->setRequired(TRUE)
+      ->setSetting('allowed_values', ['allow' => 'Allow', 'forbid' => 'Forbid'])
+      ->setDefaultValue('forbid')
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayOptions('form', ['type' => 'options_select', 'weight' => 4]);
 
     return $fields;
   }
@@ -178,6 +187,13 @@ final class BbMachine extends BbContentEntityBase implements BbMachineInterface,
   public function setCurrentLoad(int $current_load): static {
     $this->set('current_load', $current_load);
     return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getAssignment(): string {
+    return (string) $this->get('assignment')->value;
   }
 
 }

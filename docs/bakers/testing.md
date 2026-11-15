@@ -16,7 +16,7 @@ for the gate:
 
 | When | Command |
 |---|---|
-| PHP implementation | `ddev exec ./vendor/bin/phpunit --configuration=phpunit.xml <path/to/AffectedTest.php> …` |
+| PHP implementation | `ddev exec ./vendor/bin/phpunit --configuration=phpunit.xml <path/to/AffectedTest.php> …`; from a run `provision_exec('phpunit', ['<path/to/AffectedTest.php>', …])` |
 | Web UI implementation or Playwright behavior changes | `cd tests/playwright && npm test -- --list <affected-generated-feature-path> … && npm test -- <affected-generated-feature-path> …` |
 
 ## Setup
@@ -90,12 +90,13 @@ these can report `No tests executed!` with exit 0. An empty discovery is a faile
 PASS. Use discovery output for counts; the CI merge gate owns the full `unit-kernel` suite. A full local run, when
 required by impact or the ticket's verification plan, uses ParaTest with **four workers** and one
 path or suite (never a path list):
-`ddev exec ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 4`
+`ddev exec ./vendor/bin/paratest --configuration=phpunit.xml --testsuite unit-kernel --processes 4` (from a run `provision_exec('paratest', ['unit-kernel'])`, or one path)
 
 PHPUnit uses sqlite `:memory:` by default. Production uses MariaDB, so a MariaDB-dependent defect
 can pass here: assert on values, not on the database's formatting (e.g. decimal scale `'0.8'` vs
 `'0.8000'`). A check that needs MariaDB (every Functional test) sets it **inside the container**:
-`ddev exec bash -c 'SIMPLETEST_DB=mysql://db:db@db/db ./vendor/bin/phpunit --configuration=phpunit.xml <path>'`;
+`ddev exec bash -c 'SIMPLETEST_DB=mysql://db:db@db/db ./vendor/bin/phpunit --configuration=phpunit.xml <path>'`
+(from a run `provision_exec('phpunit-mariadb', ['<path>'])`);
 exporting it on the host silently keeps sqlite.
 
 Browser E2E uses Playwright, never PHPUnit. Navigation scenarios click twice. List the affected
