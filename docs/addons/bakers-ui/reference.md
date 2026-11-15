@@ -84,7 +84,7 @@ The project **Runs** tab lists the project's runs, newest first, 20 per page. A 
 
 ### Cancelling and restarting
 
-Cancelling and restarting are actions of their own, next to `e` in the footer, and each asks first in the same confirmation dialog: `Enter` confirms, `Esc` closes and writes nothing, and a refused write shows the server's message and keeps the dialog open.
+Cancelling and restarting are actions of their own, next to `e` in the footer, and each asks first in the same confirmation dialog. Its buttons **Confirm** and **Close** sit under the question, with Confirm focused. `←`/`→` or `Tab` moves between them and `Enter` presses the focused one. `Esc` closes like Close and writes nothing. A refused write shows the server's message and keeps the dialog open.
 
 | Key | Where | What confirming does |
 |---|---|---|

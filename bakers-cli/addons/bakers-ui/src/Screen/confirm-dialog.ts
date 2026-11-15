@@ -1,7 +1,7 @@
 import type { VNode } from '@opentui/core';
 import { actionItem } from '../Component/footer-actions/index.js';
 import { serverMessage } from '../lib/jsonapi-error.js';
-import { columnNode, textNode } from '../lib/vnode.js';
+import { columnNode, rowNode, textNode } from '../lib/vnode.js';
 import { wrapToWidth } from '../lib/width.js';
 import { defineContext } from '../Routing/context.js';
 import type { RouteMetadata } from '../Routing/route.js';
@@ -49,6 +49,12 @@ const rowsOf = (id: string, text: string): VNode[] =>
     .flatMap((line) => wrapToWidth(line, WIDTH))
     .map((content, index) => textNode({ id: `${id}-${index}`, content }));
 
+type Button = 'confirm' | 'close';
+const BUTTON_LABELS: Record<Button, string> = {
+  confirm: 'Confirm',
+  close: 'Close',
+};
+
 /** The confirmation dialog: Enter confirms, Esc closes and writes nothing. */
 export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
   static readonly route = {
@@ -63,6 +69,12 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
   private action: ScreenAction | undefined;
   private message = '';
   private submitting = false;
+  /** Index of the focused button; Confirm, the first, when there is one. */
+  private focus = 0;
+
+  private buttons(): Button[] {
+    return this.readyValue?.confirm ? ['confirm', 'close'] : ['close'];
+  }
 
   protected load(context: ScreenContext): Promise<ConfirmPrompt> {
     this.request = context.contexts?.has(confirmRequestContext)
@@ -80,6 +92,20 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
       'confirm-dialog',
       ...rowsOf('confirm-dialog-message', prompt.message),
       ...rowsOf('confirm-dialog-detail', this.message || prompt.detail || ''),
+      textNode({ id: 'confirm-dialog-gap', content: '' }),
+      rowNode(
+        'confirm-dialog-buttons',
+        ...this.buttons().flatMap((button, index) => [
+          ...(index > 0
+            ? [textNode({ id: `confirm-dialog-gap-${index}`, content: '  ' })]
+            : []),
+          textNode({
+            id: `confirm-dialog-button-${button}`,
+            content: `${index === this.focus ? '▸' : ' '}[ ${BUTTON_LABELS[button]} ]`,
+            selected: index === this.focus,
+          }),
+        ]),
+      ),
     );
   }
 
@@ -89,9 +115,8 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
 
   protected override actions() {
     return [
-      ...(this.readyValue?.confirm
-        ? [actionItem('confirm-submit', 'Enter', 'confirm')]
-        : []),
+      actionItem('confirm-move', '←→', 'button'),
+      actionItem('confirm-press', 'Enter', 'press'),
       actionItem('confirm-esc', 'Esc', 'close'),
     ];
   }
@@ -104,16 +129,36 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
 
   override handleInput(input: string, context: ScreenContext): boolean {
     if (super.handleInput(input, context)) return true;
-    if (input === 'escape') {
-      // A pending write still lands; leaving now would let its result pop
-      // the screen below as well.
-      if (!this.submitting) this.action = { type: 'back' };
+    if (!this.readyValue) return false;
+    const buttons = this.buttons();
+    const step =
+      input === 'right' || input === 'tab'
+        ? 1
+        : input === 'left' || input === 'shift+tab'
+          ? -1
+          : 0;
+    if (step !== 0) {
+      if (!this.submitting)
+        this.focus = (this.focus + step + buttons.length) % buttons.length;
       context.requestDraw();
       return true;
     }
-    const confirm = this.readyValue?.confirm;
-    if (input !== 'enter' || !confirm) return false;
+    const pressed =
+      input === 'escape'
+        ? 'close'
+        : input === 'enter' || input === ' '
+          ? buttons[this.focus]
+          : undefined;
+    if (!pressed) return false;
+    // A pending write still lands; leaving now would let its result pop the
+    // screen below as well, and a second confirm would write twice.
     if (this.submitting) return true;
+    const confirm = this.readyValue.confirm;
+    if (pressed === 'close' || !confirm) {
+      this.action = { type: 'back' };
+      context.requestDraw();
+      return true;
+    }
     this.submitting = true;
     this.message = '';
     void confirm(context)
@@ -143,6 +188,7 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
     this.action = undefined;
     this.message = '';
     this.submitting = false;
+    this.focus = 0;
     super.reset();
   }
 }

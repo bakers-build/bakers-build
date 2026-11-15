@@ -514,6 +514,8 @@ it('x opens the confirmation dialog; Enter writes only state: cancelled', async 
   await press('x');
   expect(plain(screen())).toContain('Cancel ticket');
   expect(plain(screen())).toContain('The ticket moves to cancelled.');
+  expect(plain(screen())).toContain('[ Confirm ]');
+  expect(plain(screen())).toContain('[ Close ]');
   expect(h.rec.writes).toEqual([]);
 
   await press('\r');
@@ -522,6 +524,17 @@ it('x opens the confirmation dialog; Enter writes only state: cancelled', async 
     attributes: { state: 'cancelled' },
   });
   expect(h.rec.writes[0]?.body).not.toHaveProperty('relationships');
+  await quit();
+});
+
+it('x, → to Close, Enter closes the dialog and writes nothing', async () => {
+  const h = harness();
+  const { screen, press, quit } = await openTicket(h);
+  await press('x');
+  await press('\x1b[C'); // → focuses Close
+  await press('\r');
+  expect(h.rec.writes).toEqual([]);
+  expect(plain(screen())).not.toContain('The ticket moves to cancelled.');
   await quit();
 });
 

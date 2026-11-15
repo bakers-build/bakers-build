@@ -26,6 +26,12 @@ const contextWith = (request: ConfirmRequest): ScreenContext => ({
   back: vi.fn(() => true),
 });
 
+/** The buttons as one line, in order (the tree renders one line per cell). */
+const buttonRow = (screen: ConfirmDialogScreen, context: ScreenContext) =>
+  renderTree(screen.present(context).body)
+    .filter((row) => /\[ (Confirm|Close) \]/.test(row))
+    .join('  ');
+
 const opened = async (request: ConfirmRequest) => {
   const screen = new ConfirmDialogScreen();
   const context = contextWith(request);
@@ -60,9 +66,52 @@ describe('confirmation dialog', () => {
     expect(text).toContain('Sure?');
     expect(text).toContain('It is final.');
     expect(shown.actions?.map((a) => `${a.key} ${a.label}`)).toEqual([
-      'Enter confirm',
+      '←→ button',
+      'Enter press',
       'Esc close',
     ]);
+  });
+
+  it('shows Confirm and Close buttons, Confirm focused', async () => {
+    const { screen, context } = await opened(
+      requestOf({ message: 'Sure?', confirm: vi.fn() }),
+    );
+    expect(buttonRow(screen, context)).toBe('▸[ Confirm ]   [ Close ]');
+  });
+
+  it('→ and Tab move the focus, ← and Shift-Tab move it back', async () => {
+    const { screen, context } = await opened(
+      requestOf({ message: 'Sure?', confirm: vi.fn() }),
+    );
+    expect(screen.handleInput('right', context)).toBe(true);
+    expect(buttonRow(screen, context)).toBe(' [ Confirm ]  ▸[ Close ]');
+    screen.handleInput('left', context);
+    expect(buttonRow(screen, context)).toContain('▸[ Confirm ]');
+    screen.handleInput('tab', context);
+    expect(buttonRow(screen, context)).toContain('▸[ Close ]');
+    screen.handleInput('shift+tab', context);
+    expect(buttonRow(screen, context)).toContain('▸[ Confirm ]');
+  });
+
+  it('Enter on Close goes back without a result and confirms nothing', async () => {
+    const confirm = vi.fn();
+    const { screen, context } = await opened(
+      requestOf({ message: 'Sure?', confirm }),
+    );
+    screen.handleInput('right', context);
+    expect(screen.handleInput('enter', context)).toBe(true);
+    expect(screen.takeAction()).toEqual({ type: 'back' });
+    expect(confirm).not.toHaveBeenCalled();
+  });
+
+  it('Space presses the focused button too', async () => {
+    const confirm = vi.fn().mockResolvedValue('ok');
+    const { screen, context } = await opened(
+      requestOf({ message: 'Sure?', confirm }),
+    );
+    screen.handleInput(' ', context);
+    await settle();
+    expect(confirm).toHaveBeenCalledTimes(1);
   });
 
   it('Enter confirms once and goes back with its result', async () => {
@@ -144,16 +193,16 @@ describe('confirmation dialog', () => {
     expect(rows.map((row) => row.trim()).join(' ')).toContain(detail);
   });
 
-  it('a prompt without confirm makes Enter write nothing', async () => {
+  it('a prompt without confirm offers only Close', async () => {
     const { screen, context } = await opened(
       requestOf({ message: 'Nothing to do.' }),
     );
-    expect(screen.handleInput('enter', context)).toBe(false);
-    await settle();
+    expect(buttonRow(screen, context)).toBe('▸[ Close ]');
+    expect(screen.handleInput('right', context)).toBe(true);
+    expect(buttonRow(screen, context)).toBe('▸[ Close ]');
+    expect(screen.handleInput('enter', context)).toBe(true);
+    expect(screen.takeAction()).toEqual({ type: 'back' });
     expect(context.back).not.toHaveBeenCalled();
-    expect(
-      screen.present(context).actions?.map((a) => `${a.key} ${a.label}`),
-    ).toEqual(['Esc close']);
   });
 
   it('a second open runs the new request, not the first one', async () => {

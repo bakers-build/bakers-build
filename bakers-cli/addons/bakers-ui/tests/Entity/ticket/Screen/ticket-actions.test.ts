@@ -314,7 +314,9 @@ describe('restart run through the confirmation dialog', () => {
     expect(renderTree(screen.present(context).body)).toContain(
       'No active run any more.',
     );
-    expect(screen.handleInput('enter', context)).toBe(false);
+    // Only Close is offered; Enter presses it.
+    expect(screen.handleInput('enter', context)).toBe(true);
+    expect(screen.takeAction()).toEqual({ type: 'back' });
     await settle();
     expect(client.writes).toEqual([]);
   });
