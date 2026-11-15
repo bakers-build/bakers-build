@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Drupal\bb_core\Form;
 
+use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\bb_core\Entity\BbWorkspaceInterface;
 
@@ -35,14 +36,13 @@ final class BbWorkspaceDeleteForm extends BbContentEntityDeleteForm {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state): void {
-    parent::validateForm($form, $form_state);
-    if (!isset($form['confirm_slug']) || $form_state->getErrors() !== []) {
-      return;
-    }
-    if (trim((string) $form_state->getValue('confirm_slug')) !== $this->workspace()->getSlug()) {
+  public function validateForm(array &$form, FormStateInterface $form_state): ContentEntityInterface {
+    $entity = parent::validateForm($form, $form_state);
+    $typed = trim((string) $form_state->getValue('confirm_slug'));
+    if (isset($form['confirm_slug']) && $form_state->getErrors() === [] && $typed !== $this->workspace()->getSlug()) {
       $form_state->setErrorByName('confirm_slug', $this->t('The slug does not match. Type %slug to delete this workspace.', ['%slug' => $this->workspace()->getSlug()]));
     }
+    return $entity;
   }
 
   /**

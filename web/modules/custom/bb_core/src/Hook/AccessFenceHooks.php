@@ -269,7 +269,6 @@ final class AccessFenceHooks {
       return;
     }
 
-    $entity_type_id = $entity_type->id();
     // The chain includes the group itself, so a project lead is answered by
     // its own project and a workspace lead by the workspace above it.
     $chain = $this->rankEntityFence->groupsAnchoredBy($group);

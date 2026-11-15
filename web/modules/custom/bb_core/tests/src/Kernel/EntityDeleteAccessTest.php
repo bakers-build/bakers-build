@@ -108,7 +108,13 @@ final class EntityDeleteAccessTest extends KernelTestBase {
     $this->container->get('router.route_provider')->getRouteByName('entity.bb_workspace.delete_form');
     $access_manager = $this->container->get('access_manager');
     $route = fn($account) => $access_manager->checkNamedRoute('entity.bb_workspace.delete_form', ['bb_workspace' => $workspace->get('slug')->value], $account);
-    foreach (['owner' => [$owner, TRUE], 'other lead' => [$lead, FALSE], 'member' => [$member, FALSE], 'foreign lead' => [$foreign, FALSE]] as $who => [$account, $expected]) {
+    $cases = [
+      'owner' => [$owner, TRUE],
+      'other lead' => [$lead, FALSE],
+      'member' => [$member, FALSE],
+      'foreign lead' => [$foreign, FALSE],
+    ];
+    foreach ($cases as $who => [$account, $expected]) {
       $this->container->get('entity_type.manager')->getAccessControlHandler('bb_workspace')->resetCache();
       self::assertSame($expected, $workspace->access('delete', $account), "$who: entity access");
       self::assertSame($expected, $route($account), "$who: route access");

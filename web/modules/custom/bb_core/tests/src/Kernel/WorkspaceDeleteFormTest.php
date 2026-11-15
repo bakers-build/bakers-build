@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Form\FormState;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\user\Traits\UserCreationTrait;
@@ -69,7 +70,7 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
   /**
    * Submits the delete form with the given slug.
    */
-  private function submit(BbWorkspaceInterface $workspace, string $slug): FormState {
+  private function submit(BbWorkspaceInterface $workspace, string $slug): FormStateInterface {
     $form_object = $this->container->get('entity_type.manager')->getFormObject('bb_workspace', 'delete');
     $form_object->setEntity($workspace);
     $form_state = (new FormState())->setValue('confirm_slug', $slug);
@@ -110,7 +111,7 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
     self::assertSame(0, $this->rows('bb_workspace'));
     self::assertSame(0, $this->rows('bb_team'));
     self::assertSame(0, $this->rows('og_membership'));
-    // A programmed submit reports no redirect; the stored one is what a post gets.
+    // A programmed submit reports no redirect; a real post gets this one.
     $redirect = $form_state->setProgrammed(FALSE)->getRedirect();
     self::assertInstanceOf(Url::class, $redirect);
     self::assertSame('bb_core.home', $redirect->getRouteName());
@@ -119,7 +120,7 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
   }
 
   /**
-   * A group blocks: no slug field, no confirm button, and a slug changes nothing.
+   * A group blocks: no slug field, no confirm button, a slug changes nothing.
    */
   public function testGroupBlocksTheDelete(): void {
     $workspace = $this->provision();
