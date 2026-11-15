@@ -6,6 +6,7 @@ namespace Drupal\Tests\bb_core\Kernel;
 
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\KernelTests\KernelTestBase;
+use Drupal\bb_core\Entity\BbWorkspace;
 use Drupal\bb_core\PathProcessor\BbWorkspacePathProcessor;
 use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
@@ -185,10 +186,11 @@ final class WorkspaceFrontPageTest extends KernelTestBase {
    * through the real processor chain rather than read off the routing file —
    * with a workspace ACTUALLY slugged `bakers` in play, so a regression that
    * reintroduces the collision fails here rather than only on a live site
-   * running two workspaces.
+   * running two workspaces. That workspace is the one setUp() creates for
+   * self::FRONT; slugs are unique, so it is asserted rather than created again.
    */
   public function testRunLogRouteSurvivesDefaultSlugWorkspace(): void {
-    $this->create('bb_workspace', ['name' => 'Default', 'slug' => 'bakers']);
+    self::assertSame(BbWorkspace::DEFAULT_SLUG, explode('/', ltrim(self::FRONT, '/'))[0]);
 
     self::assertSame(
       '/_bakers-api/run/1a49fe21-c38e-42ef-acaa-70828ba864f1/log/log',
