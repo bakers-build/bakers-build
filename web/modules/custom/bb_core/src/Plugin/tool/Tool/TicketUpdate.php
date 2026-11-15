@@ -345,7 +345,7 @@ final class TicketUpdate extends ToolBase {
       static fn ($value) => $value !== NULL,
     );
     if (!$given) {
-      throw new \InvalidArgumentException('Give a title, a description, a conductor, labels to add or remove, frozen, environments to add or referenced tickets to add.');
+      throw new \InvalidArgumentException('Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, environments to add or referenced tickets to add.');
     }
     $this->assertDisjointLists($given);
     // Closed tickets deny every field edit; say why before the access check.
@@ -358,7 +358,7 @@ final class TicketUpdate extends ToolBase {
     }
     // A label created on the way must not outlive a refused update.
     $transaction = $this->database->startTransaction();
-    // List inputs change their field in place; the rest replace the value.
+    // Inputs with their own handler; the rest replace the value.
     $lists = [
       'assignee' => $this->setAssignee(...),
       'links_add' => $this->addLinks(...),

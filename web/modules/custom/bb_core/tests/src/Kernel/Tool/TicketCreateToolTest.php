@@ -161,7 +161,8 @@ final class TicketCreateToolTest extends BakersToolTestBase {
     ]);
     $out = $this->outputs($result);
     self::assertSame('Ticket created.', (string) $result->getMessage());
-    self::assertSame('member', $out['assignee']);
+    self::assertSame($member->uuid(), $out['assignee']['uuid']);
+    self::assertSame('member', $out['assignee']['name']);
     $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
     self::assertInstanceOf(BbTicketInterface::class, $stored);
     self::assertSame($member->id(), $stored->get('assignee_user_id')->target_id);
@@ -223,7 +224,8 @@ final class TicketCreateToolTest extends BakersToolTestBase {
     ]);
     $out = $this->outputs($result);
     self::assertSame('Ticket created.', (string) $result->getMessage());
-    self::assertSame(['member'], $out['reviewers']);
+    self::assertSame([$member->uuid()], array_column($out['reviewers'], 'uuid'));
+    self::assertSame(['member'], array_column($out['reviewers'], 'name'));
     self::assertNull($out['assignee']);
     $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
     self::assertInstanceOf(BbTicketInterface::class, $stored);
@@ -275,7 +277,8 @@ final class TicketCreateToolTest extends BakersToolTestBase {
     ]);
     $out = $this->outputs($result);
     self::assertSame('Ticket created. Not every reviewer was added: no such user can be a reviewer in this workspace.', (string) $result->getMessage());
-    self::assertSame(['member'], $out['reviewers']);
+    self::assertSame([$member->uuid()], array_column($out['reviewers'], 'uuid'));
+    self::assertSame(['member'], array_column($out['reviewers'], 'name'));
   }
 
   /**

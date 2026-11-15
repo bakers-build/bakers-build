@@ -241,7 +241,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     $ticket = $this->ticket('TU-3');
     $this->assertFailure($this->runTool('bakers_ticket_update', [
       'ticket' => $ticket->getIdentifier(),
-    ]), 'Give a title, a description, a conductor, labels to add or remove, frozen, environments to add or referenced tickets to add.');
+    ]), 'Give a title, a description, a conductor, an assignee, labels to add or remove, frozen, environments to add or referenced tickets to add.');
     self::assertSame('TU-3', $this->reload($ticket)->label());
   }
 

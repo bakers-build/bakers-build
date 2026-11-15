@@ -19,6 +19,7 @@ use Drupal\tool\Tool\ToolOperation;
 use Drupal\tool\TypedData\InputDefinition;
 use Drupal\tool\TypedData\ListInputDefinition;
 use Drupal\tool\TypedData\ListOutputDefinition;
+use Drupal\tool\TypedData\MapOutputDefinition;
 use Drupal\tool\TypedData\OutputDefinition;
 
 /**
@@ -27,7 +28,7 @@ use Drupal\tool\TypedData\OutputDefinition;
 #[Tool(
   id: 'bakers_ticket_create',
   label: new TranslatableMarkup('Create a ticket'),
-  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. An assignee user UUID assigns that user when they may be assigned in the project’s workspace; otherwise the ticket is created unassigned and the message says so. Each reviewer user UUID adds that user as a reviewer when they may review in the project’s workspace; otherwise it adds no one and the message says so. Returns the new ticket’s UUID, identifier, state, assignee, reviewers and URL.'),
+  description: new TranslatableMarkup('Creates a ticket in a project, in its workflow’s initial state. Type and recipe are term names of the project’s workspace, created there when missing and the caller may. An assignee user UUID assigns that user when they may be assigned in the project’s workspace; otherwise the ticket is created unassigned and the message says so. Each reviewer user UUID adds that user as a reviewer when they may review in the project’s workspace; otherwise it adds no one and the message says so. Returns the new ticket’s UUID, identifier, state, assignee and reviewers (each with UUID, name and mail) and URL.'),
   operation: ToolOperation::Write,
   destructive: FALSE,
   permission: 'view bb_ticket',
@@ -133,19 +134,53 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('The ticket’s git branch.'),
       nullable: TRUE,
     ),
-    'assignee' => new OutputDefinition(
-      data_type: 'string',
+    'assignee' => new MapOutputDefinition(
       label: new TranslatableMarkup('Assignee'),
-      description: new TranslatableMarkup('The assignee’s display name, or none.'),
+      description: new TranslatableMarkup('The saved account.'),
       nullable: TRUE,
+      property_definitions: [
+        'uuid' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('UUID'),
+          description: new TranslatableMarkup('The user UUID.'),
+        ),
+        'name' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('Name'),
+          description: new TranslatableMarkup('The display name.'),
+        ),
+        'mail' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('Mail'),
+          description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
+          nullable: TRUE,
+        ),
+      ],
     ),
     'reviewers' => new ListOutputDefinition(
       label: new TranslatableMarkup('Reviewers'),
-      description: new TranslatableMarkup('The display names of the reviewers added.'),
-      item_definition: new OutputDefinition(
-        data_type: 'string',
+      description: new TranslatableMarkup('The readable reviewers added.'),
+      item_definition: new MapOutputDefinition(
         label: new TranslatableMarkup('Reviewer'),
-        description: new TranslatableMarkup('One reviewer’s display name.'),
+        description: new TranslatableMarkup('The saved account.'),
+        property_definitions: [
+          'uuid' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('UUID'),
+            description: new TranslatableMarkup('The user UUID.'),
+          ),
+          'name' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Name'),
+            description: new TranslatableMarkup('The display name.'),
+          ),
+          'mail' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('Mail'),
+            description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
+            nullable: TRUE,
+          ),
+        ],
       ),
     ),
     'url' => new OutputDefinition(
@@ -209,7 +244,6 @@ final class TicketCreate extends ToolBase {
     if ($unreviewed) {
       $message = new TranslatableMarkup('@created Not every reviewer was added: no such user can be a reviewer in this workspace.', ['@created' => $message]);
     }
-    $assignee = $ticket->get('assignee_user_id')->entity;
     return ExecutableResult::success($message, [
       'id' => $ticket->uuid(),
       'identifier' => $ticket->getIdentifier() ?: NULL,
@@ -217,8 +251,7 @@ final class TicketCreate extends ToolBase {
       'origin' => $ticket->get('origin')->access('view', $this->currentUser) ? $ticket->get('origin')->value : NULL,
       'state' => $ticket->get('state')->value,
       'branch_name' => $ticket->get('branch_name')->value,
-      'assignee' => $assignee instanceof AccountInterface ? $assignee->getDisplayName() : NULL,
-      'reviewers' => array_map(static fn (AccountInterface $account) => $account->getDisplayName(), $ticket->get('reviewers')->referencedEntities()),
+      ...$this->ticketPeople($ticket),
       'url' => $ticket->toUrl()->setAbsolute()->toString(),
     ]);
   }
