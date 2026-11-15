@@ -592,25 +592,22 @@ describe('bb-label-auto profile', () => {
     ['label-human-review-ok-service-assignee', 'reviewer', 'service-ci'],
     ['label-human-accept-review-risky', 'rita', 'ana'],
     ['label-human-accept-review-risky-assignee', 'ana', 'rita'],
-  ])(
-    '%s asks %s, not %s, to confirm the verdict',
-    async (id, person, other) => {
-      const passed = [readTicket(), verdict('OK'), summary];
-      expect(
-        await judge(id, 'Asked.', [...passed, askOf(person), asked]),
-      ).toEqual([]);
-      expect(
-        await judge(id, 'Asked.', [...passed, askOf(other), asked]),
-      ).toEqual(['auto-asks']);
-      expect(
-        await judge(id, 'Merged.', [
-          ...passed,
-          await mergeOf(id),
-          transition('done'),
-        ]),
-      ).toEqual(['auto-question', 'auto-transition', 'auto-merge', 'auto-asks']);
-    },
-  );
+  ])('%s asks %s, not %s, to confirm the verdict', async (id, person, other) => {
+    const passed = [readTicket(), verdict('OK'), summary];
+    expect(
+      await judge(id, 'Asked.', [...passed, askOf(person), asked]),
+    ).toEqual([]);
+    expect(await judge(id, 'Asked.', [...passed, askOf(other), asked])).toEqual(
+      ['auto-asks'],
+    );
+    expect(
+      await judge(id, 'Merged.', [
+        ...passed,
+        await mergeOf(id),
+        transition('done'),
+      ]),
+    ).toEqual(['auto-question', 'auto-transition', 'auto-merge', 'auto-asks']);
+  });
   it('human-accept asks for the acceptance at a GREEN working pass', async () => {
     const handedOff = [readTicket(), comment('coding'), summary];
     const id = 'label-human-accept-working';
@@ -647,7 +644,6 @@ describe('bb-label-auto profile', () => {
       'auto-transition',
     ]);
   });
-
 });
 
 describe('classify profile', () => {
