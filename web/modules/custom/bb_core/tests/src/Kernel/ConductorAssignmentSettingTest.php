@@ -164,7 +164,7 @@ final class ConductorAssignmentSettingTest extends KernelTestBase {
     }
 
     $this->container->get('module_handler')->loadInclude('bb_core', 'install');
-    bb_core_update_11001();
+    bb_core_update_11002();
     foreach (['bb_machine', 'bb_conductor'] as $type) {
       $this->assertNotNull($updates->getFieldStorageDefinition('assignment', $type), $type);
     }

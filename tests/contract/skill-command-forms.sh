@@ -19,7 +19,7 @@ done
 cd "$root"
 mapfile -d '' files < <(find .claude/skills/bakers-build -name '*.md' \
   ! -path '*/bb-init/*' ! -path '*/bb-init-project/*' \
-  ! -path '*/bb-upgrade-project/*' ! -path '*/bb-prepare-time/*' \
+  ! -path '*/bb-prepare-time/*' \
   ! -name 'read-ticket-troubleshooting.md' -print0)
 hits="$(grep -nE "$pattern" "${files[@]}" WORKFLOW.md)" || status=$?
 if [ "${status:-0}" -gt 1 ]; then exit "$status"; fi

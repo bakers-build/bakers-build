@@ -10,7 +10,7 @@ Move a workstation to a newer bakers.build release: the CLI first, then your con
 Check my CLI and bakers skills versions. Guide their updates using
 https://bakers.build/configuration/guides/updates. Preview configuration
 migration with --dry-run and show the effects before applying it.
-Use bb-upgrade-project for shared project files in a branch.
+Use bb-init-project for shared project files in a branch.
 ```
 
 Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. They guide the update but do not replace your tools automatically. The exact CLI/configuration sequence follows.
@@ -45,7 +45,7 @@ Refresh [skills](/skills-and-workflows/skills#updates) separately from the CLI. 
 
    Apply rechecks the files, writes a private backup `<file>.bakers.bak` next to each changed file, and replaces the file atomically. Do not commit the backups. The last preview must show no change. An offline `ok` proves only the file shape; `--online` proves sign-in and project access, and "online skipped" is not a pass.
 
-4. Update the shared project files in a branch, never on the default branch. Ask your AI to run the `bb-upgrade-project` skill, which keeps the repository's `WORKFLOW.md` policy, moves an old `## Loaded skills` layout to the entry line and phase sections, and confirms that every skill the file names is installed. Review the diff.
+4. Update the shared project files in a branch, never on the default branch. Ask your AI to run the `bb-init-project` skill, which keeps the repository's `WORKFLOW.md` policy, moves an old `## Loaded skills` layout to the entry line and phase sections, and confirms that every skill the file names is installed. Review the diff.
 
    Run a small test ticket in a disposable project, then submit the branch for review. Teammates update their own tools; your merge does not do it for them.
 

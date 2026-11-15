@@ -2,14 +2,14 @@
   <img src=".github/assets/bakers-build-icon.png" alt="bakers.build" width="120">
 </p>
 
-<p align="center">
-  <strong>A ticket-driven AI software factory.</strong>
-</p>
+<h3 align="center">A ticket-driven AI software factory.</h3>
 
 Every ticket moves through the same fixed steps: plan, build, review, ship. AI agents do the work
 on your development machine or on remote workers, and at every step you can look in.
 Everyone works on their own terms: their own AI subscription, their own machine, their own client.
 The line is shared, the tools are not.
+
+bakers.build is inspired by [OpenAI Symphony](https://github.com/openai/symphony). It adds a control plane (tickets, workflow states and approvals), distributed conductors on several machines, and cost and time allocation.
 
 - [Get started](https://bakers.build/get-started/)
 - [Configuration](https://bakers.build/configuration/)

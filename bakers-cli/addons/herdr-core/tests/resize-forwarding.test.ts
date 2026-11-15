@@ -63,6 +63,8 @@ describe.skipIf(
     let pts = '';
     await vi.waitFor(() => {
       pts = read(join(dir, 'pts'));
+      // `tty > pts` creates the file before tty writes to it.
+      expect(pts).not.toBe('');
     });
     for (const [n, size] of [
       [1, ['cols', '100', 'rows', '30']],
