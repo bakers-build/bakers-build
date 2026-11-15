@@ -17,6 +17,7 @@ import type {
   ScreenId,
 } from '../../../Screen/screen.js';
 import type { TicketDetailDocument, UiViewMode } from '../../../types.js';
+import { activeRunInfo } from '../../run/Data/active-run.js';
 import {
   ADDONS_KEY,
   hasAddonsMessages,
@@ -49,6 +50,7 @@ import { loadTicketDetail } from '../Data/detail.js';
 import { ticketDetailInputContext } from '../Data/input.js';
 import {
   loadTicketView,
+  mergeTicketDocuments,
   readTicket,
   refreshTicket,
   saveTicket,
@@ -57,7 +59,7 @@ import {
 } from '../Data/store.js';
 import { updateTicketFrozen } from '../Data/write.js';
 import { isTicketCancellable } from '../Form/edit.js';
-import { cancelTicketRequest } from './ticket-actions.js';
+import { cancelTicketRequest, restartRunRequest } from './ticket-actions.js';
 
 /** Overview width when the context carries none — a pipe has no terminal. */
 const DEFAULT_COLUMNS = 80;
@@ -387,10 +389,14 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
   private cancellable(): boolean {
     return !!this.document && isTicketCancellable(this.document);
   }
+  private restartable(): boolean {
+    return !!this.document && activeRunInfo(this.document) !== null;
+  }
   commandForInput(input: string): string | undefined {
     if (this.state !== 'ready' || this.viewMode !== 'full') return undefined;
     if (input === 'e') return 'edit-assignment';
     if (input === 'x' && this.cancellable()) return 'cancel-ticket';
+    if (input === 'r' && this.restartable()) return 'restart-run';
     return undefined;
   }
   actionForInput(
@@ -402,6 +408,13 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
       return ticketEditAction(context, this.document);
     if (command === 'cancel-ticket' && this.document)
       return confirmNavigation(cancelTicketRequest(this.document));
+    if (command === 'restart-run' && this.document)
+      return confirmNavigation(
+        restartRunRequest(
+          this.document.data?.id ?? context.params?.ticketId ?? '',
+          ticketTitleOf(this.document).identifier,
+        ),
+      );
     return undefined;
   }
   receiveResult(result: unknown, context: ScreenContext): void {
@@ -409,9 +422,13 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
       result && typeof result === 'object'
         ? (result as { type?: unknown }).type
         : undefined;
-    if (type === 'ticket-cancelled') {
+    if (type === 'ticket-cancelled' || type === 'run-cancelled') {
       const document = (result as { document?: TicketDetailDocument }).document;
-      if (document) this.replaceReady(saveTicket(context, document));
+      // Restart run returns a sparse read: merged, so this view's includes stay.
+      if (document)
+        this.replaceReady(
+          saveTicket(context, mergeTicketDocuments(this.document, document)),
+        );
       context.requestDraw();
       return;
     }
@@ -481,6 +498,9 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
       actionItem('detail-edit', 'e', 'edit'),
       ...(this.cancellable()
         ? [actionItem('ticket-cancel', 'x', 'cancel ticket')]
+        : []),
+      ...(this.restartable()
+        ? [actionItem('detail-restart', 'r', 'restart run')]
         : []),
       // Freeze and paging before copy: at 80 columns the footer clips the
       // tail, and `Y:Copy link` is the hint that yields.
