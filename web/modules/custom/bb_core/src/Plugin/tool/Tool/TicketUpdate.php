@@ -393,7 +393,11 @@ final class TicketUpdate extends ToolBase {
     unset($transaction);
     $saved = $this->entities()->getStorage('bb_ticket')->loadUnchanged($ticket->id());
     assert($saved instanceof BbTicketInterface);
-    return ExecutableResult::success(new TranslatableMarkup('Ticket updated.'), [
+    // BbTicket::preSave() refills a cleared assignee from the conductor.
+    $message = ($given['assignee'] ?? NULL) === '' && !$saved->get('assignee_user_id')->isEmpty()
+      ? new TranslatableMarkup("Ticket updated; the assignee was refilled from the conductor's owner.")
+      : new TranslatableMarkup('Ticket updated.');
+    return ExecutableResult::success($message, [
       'links' => array_map(static fn (array $link): array => [
         'uri' => $link['uri'],
         'title' => (string) $link['title'],

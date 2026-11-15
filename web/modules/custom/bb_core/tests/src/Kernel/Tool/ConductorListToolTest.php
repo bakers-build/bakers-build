@@ -22,6 +22,8 @@ final class ConductorListToolTest extends BakersToolTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
+    // Owner names must be display names, not account names.
+    $this->enableModules(['bb_display_name_test']);
     $this->installEntitySchema('bb_machine');
   }
 
@@ -44,7 +46,7 @@ final class ConductorListToolTest extends BakersToolTestBase {
       'active' => $active,
       'status' => $status,
       'machine' => NULL,
-      'owner' => ['uuid' => $this->actor->uuid(), 'name' => $this->actor->getAccountName()],
+      'owner' => ['uuid' => $this->actor->uuid(), 'name' => 'Display ' . $this->actor->getAccountName()],
       'assignment_setting' => 'machine',
       'assignment' => 'forbid',
     ];

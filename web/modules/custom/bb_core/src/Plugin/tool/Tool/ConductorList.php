@@ -100,7 +100,7 @@ use Drupal\user\UserInterface;
               'name' => new OutputDefinition(
                 data_type: 'string',
                 label: new TranslatableMarkup('Name'),
-                description: new TranslatableMarkup('The owner account name.'),
+                description: new TranslatableMarkup('The owner display name.'),
               ),
             ],
             nullable: TRUE,
@@ -157,7 +157,7 @@ final class ConductorList extends ToolBase {
         'active' => (bool) $conductor->get('active')->value,
         'status' => (string) $conductor->get('status')->value,
         'machine' => $conductor->getMachine()?->getHostKey(),
-        'owner' => $owner instanceof UserInterface ? ['uuid' => $owner->uuid(), 'name' => $owner->getAccountName()] : NULL,
+        'owner' => $owner instanceof UserInterface ? ['uuid' => $owner->uuid(), 'name' => $owner->getDisplayName()] : NULL,
         'assignment_setting' => $conductor->getAssignment(),
         'assignment' => $conductor->getEffectiveAssignment()['value'],
       ];

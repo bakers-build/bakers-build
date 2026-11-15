@@ -153,13 +153,21 @@ final class ConductorAssignmentSettingTest extends KernelTestBase {
   }
 
   /**
-   * The post-update allows existing machines and defers existing conductors.
+   * The update installs the columns; the post-update fills existing rows.
    */
-  public function testPostUpdate(): void {
+  public function testUpdates(): void {
     $conductor = $this->heartbeat($this->createUser('owner'));
-    $conductor->set('assignment', 'forbid')->save();
     $machine_id = $conductor->getMachine()?->id();
+    $updates = $this->container->get('entity.definition_update_manager');
+    foreach (['bb_machine', 'bb_conductor'] as $type) {
+      $updates->uninstallFieldStorageDefinition($updates->getFieldStorageDefinition('assignment', $type));
+    }
 
+    $this->container->get('module_handler')->loadInclude('bb_core', 'install');
+    bb_core_update_11001();
+    foreach (['bb_machine', 'bb_conductor'] as $type) {
+      $this->assertNotNull($updates->getFieldStorageDefinition('assignment', $type), $type);
+    }
     require_once __DIR__ . '/../../../bb_core.post_update.php';
     bb_core_post_update_conductor_assignment();
 

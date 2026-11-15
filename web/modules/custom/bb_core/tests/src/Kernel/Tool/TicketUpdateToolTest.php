@@ -379,8 +379,9 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
    */
   public function testEmptyAssigneeClears(): void {
     $ticket = $this->ticket('TU-clear', ['assignee_user_id' => $this->actor->id()]);
-    $out = $this->outputs($this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), 'assignee' => '']));
-    self::assertNull($out['assignee']);
+    $result = $this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), 'assignee' => '']);
+    self::assertNull($this->outputs($result)['assignee']);
+    self::assertSame('Ticket updated.', (string) $result->getMessage());
     self::assertTrue($this->reload($ticket)->get('assignee_user_id')->isEmpty());
     // BbTicket::preSave() derives an empty assignee from the conductor.
     $member = $this->account('member');
@@ -388,8 +389,10 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     $this->container->get('bb_core.workspace_read_scope')->reset();
     $conductor = $this->conductor((int) $this->project->id());
     $owned = $this->ticket('TU-clear-owned', ['assignee_user_id' => $member->id(), 'conductor_id' => $conductor->id()]);
-    $out = $this->outputs($this->runTool('bakers_ticket_update', ['ticket' => $owned->uuid(), 'assignee' => '']));
+    $result = $this->runTool('bakers_ticket_update', ['ticket' => $owned->uuid(), 'assignee' => '']);
+    $out = $this->outputs($result);
     self::assertSame($this->actor->uuid(), $out['assignee']['uuid']);
+    self::assertSame("Ticket updated; the assignee was refilled from the conductor's owner.", (string) $result->getMessage());
     self::assertSame((string) $conductor->id(), (string) $this->reload($owned)->get('conductor_id')->target_id);
   }
 

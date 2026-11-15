@@ -147,18 +147,13 @@ function bb_core_post_update_ticket_health_3_tickets(array &$sandbox): void {
 }
 
 /**
- * Installs the assignment settings; existing machines allow assignment.
+ * Existing machines allow assignment; existing conductors defer to them.
  *
  * New machines forbid by default. Existing ones allow, so nothing that works
- * today breaks; existing conductors defer to their machine.
+ * today breaks. bb_core_update_11001() installed the columns.
  */
 function bb_core_post_update_conductor_assignment(): void {
-  $manager = \Drupal::entityDefinitionUpdateManager();
   foreach (['bb_machine' => 'allow', 'bb_conductor' => 'machine'] as $type => $value) {
-    if ($manager->getFieldStorageDefinition('assignment', $type) === NULL) {
-      $definition = \Drupal::service('entity_field.manager')->getFieldStorageDefinitions($type)['assignment'];
-      $manager->installFieldStorageDefinition('assignment', $type, 'bb_core', $definition);
-    }
     \Drupal::database()->update($type)->fields(['assignment' => $value])->execute();
   }
   \Drupal::entityTypeManager()->getStorage('bb_machine')->resetCache();
