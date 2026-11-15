@@ -72,11 +72,11 @@ Native columns describe adapter integration; runtime columns describe the outer 
 | Agent | Native Linux | Native macOS | `runtime-bwrap` Linux | `runtime-bwrap` macOS | `runtime-docker` Linux | `runtime-docker` macOS |
 |---|---|---|---|---|---|---|
 | Claude | Supported: Bubblewrap + socat, user/network namespaces | Supported: Seatbelt | Experimental: Claude preparation exists | Not integrated: Linux only | Experimental: Claude preparation and default image installation exist | Unverified: Claude preparation exists; macOS not tested |
-| Codex | Supported: own sandbox; `codex sandbox true` probe | Supported: Seatbelt | Not prepared, Unverified | Not integrated | Not prepared, Unverified; needs own image | Not prepared, Unverified; needs own image |
-| Grok | Supported: Landlock; managed `allow_write` also needs Bubblewrap | Supported integration: Seatbelt; managed profiles Unverified | Not prepared, Unverified | Not integrated | Not prepared, Unverified; needs own image | Not prepared, Unverified; needs own image |
-| OpenCode | Not integrated: no Bakers OS sandbox | Not integrated | Not prepared, Unverified | Not integrated | Not prepared, Unverified; needs own image | Not prepared, Unverified; needs own image |
-| Pi | Not integrated: no Bakers OS sandbox | Not integrated | Not prepared, Unverified | Not integrated | Not prepared, Unverified; needs own image | Not prepared, Unverified; needs own image |
-| Kimi | Not integrated: no permissions policy | Not integrated | Not prepared, Unverified | Not integrated | Not prepared, Unverified; needs own image | Not prepared, Unverified; needs own image |
+| Codex | Supported: own sandbox; `codex sandbox true` probe | Supported: Seatbelt | Unverified: Codex preparation exists | Not integrated | Unverified: Codex preparation exists; needs own image | Unverified: Codex preparation exists; needs own image |
+| Grok | Supported: Landlock; managed `allow_write` also needs Bubblewrap | Supported integration: Seatbelt; managed profiles Unverified | Unverified: Grok preparation exists | Not integrated | Unverified: Grok preparation exists; needs own image | Unverified: Grok preparation exists; needs own image |
+| OpenCode | Not integrated: no Bakers OS sandbox | Not integrated | Not prepared: dispatch fails | Not integrated | Not prepared: dispatch fails; needs own image | Not prepared: dispatch fails; needs own image |
+| Pi | Not integrated: no Bakers OS sandbox | Not integrated | Not prepared: dispatch fails | Not integrated | Not prepared: dispatch fails; needs own image | Not prepared: dispatch fails; needs own image |
+| Kimi | Not integrated: no permissions policy | Not integrated | Not prepared: dispatch fails | Not integrated | Not prepared: dispatch fails; needs own image | Not prepared: dispatch fails; needs own image |
 
 **Windows / WSL2: Unverified for the complete bakers.build chain.** Upstream support alone does not establish support here. The outer Bubblewrap backend targets Linux only.
 

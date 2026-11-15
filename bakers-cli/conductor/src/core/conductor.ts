@@ -1825,6 +1825,12 @@ export class Conductor {
         : {}),
       ...(chosen.agent.modelApi ? { modelApi: chosen.agent.modelApi } : {}),
     };
+    const isolates = this.config.runtime?.isolates === true;
+    // Without it the run starts in an empty private home and cannot sign in.
+    if (isolates && !chosen.agent.prepareRun)
+      throw new Error(
+        `agent ${chosen.alias ?? chosen.id}: the runtime isolates runs, but the agent has no prepareRun to prepare its login and configuration`,
+      );
     const runtimeContext = await runtime.prepareRun?.(
       {
         uuid: run.runUuid,
@@ -1841,7 +1847,6 @@ export class Conductor {
         })
       : undefined;
     if (preparation) Object.assign(env, preparation.env);
-    const isolates = this.config.runtime?.isolates === true;
     // An isolated run without its own clone would share the parent's Git data.
     if (isolates && !ws.clone)
       throw new Error(

@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import {
   type AgentFootprint,
   type AgentPlugin,
+  type AgentRunContext,
   type AgentRunIdentity,
   type BbAgent,
   CONDUCTOR_TOKEN_ENV,
@@ -37,6 +38,7 @@ import {
   withoutGitDirs,
 } from '@bakers-build/core';
 import { parseCodexTranscript } from './footprint.js';
+import { prepareCodexRun } from './run.js';
 
 export { parseCodexTranscript } from './footprint.js';
 
@@ -290,6 +292,10 @@ export class CodexAgent implements BbAgent {
       home: outcome,
       trust_bypass: ['hook trust'],
     };
+  }
+
+  prepareRun(context: AgentRunContext) {
+    return prepareCodexRun(context, this.configDir);
   }
 
   /** A `config.toml` server the conductor's own replaces, named once per dispatch. */
