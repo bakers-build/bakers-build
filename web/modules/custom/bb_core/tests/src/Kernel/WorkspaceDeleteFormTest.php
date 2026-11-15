@@ -146,7 +146,7 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
     $form = $this->container->get('entity.form_builder')->getForm($workspace, 'settings');
     self::assertArrayNotHasKey('delete', $form['actions']);
     self::assertArrayHasKey('danger_zone', $form);
-    $button = $form['danger_zone']['#slots']['body']['delete'];
+    $button = $form['danger_zone']['delete'];
     self::assertSame('Delete workspace', (string) $button['#props']['label']);
     self::assertSame('danger', $button['#props']['variant']);
     self::assertSame($workspace->toUrl('delete-form')->toString(), $button['#props']['href']);
