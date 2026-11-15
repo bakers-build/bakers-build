@@ -1,7 +1,7 @@
 # Read a ticket
 
-`bakers_ticket_read` ([tools](tools.md)): recover missing/truncated context; empty comments valid.
-At state read, load missing comments under [comment context](comment-context.md).
+First read: `bakers_ticket_read` ([tools](tools.md)), `types`/`newest` per [comment context](comment-context.md).
+Recover missing/truncated context; empty comments valid.
 Unresolved ticket/credentials: [troubleshooting](read-ticket-troubleshooting.md).
 The frame writes nothing; state phases own writes/routes.
 

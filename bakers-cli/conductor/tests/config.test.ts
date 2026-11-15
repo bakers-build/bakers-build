@@ -229,7 +229,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
     const paths = [
       'Read ./WORKFLOW.md',
       'load the bakers.build entry skill named there',
-      'Read the ticket with the bakers tool bakers_ticket_read',
+      'Read ticket {ticket_uuid} as the loaded skill says',
       'Follow the loaded skill for tool discovery, transport and fallback',
     ].map((p) => DEFAULT_AGENT_PROMPT.indexOf(p));
     expect(paths.every((at) => at >= 0)).toBe(true);
@@ -301,7 +301,7 @@ describe('DEFAULT_AGENT_PROMPT (BB-112: embed-free, bounded)', () => {
       .replaceAll('{ticket_uuid}', 'ffcb6949-90bf-4639-96d1-91c2c2378575');
     expect(rendered.length).toBeLessThanOrEqual(1024);
     expect(rendered).toContain(
-      `arguments {"ticket":"ffcb6949-90bf-4639-96d1-91c2c2378575"}`,
+      'Read ticket ffcb6949-90bf-4639-96d1-91c2c2378575 as the loaded skill says.',
     );
     expect(rendered).not.toContain('--- Ticket comments ---');
     expect(rendered).not.toContain('{comments}');
@@ -338,10 +338,11 @@ describe('shipped prompt artifacts stay skill-neutral + fresh (BB-205)', () => {
     'dropsh --format md read',
     // The default read returns the newest comments, not all of them.
     'and all comments',
+    // The loaded skill owns the first read's arguments.
+    'arguments {"ticket"',
   ];
   const NEUTRAL_CONTRACT = [
-    'Read the ticket with the bakers tool bakers_ticket_read',
-    'bakers_ticket_read',
+    'Read ticket {ticket_uuid} as the loaded skill says',
     'Follow the loaded skill for tool discovery, transport and fallback',
     './WORKFLOW.md',
     'Do not call ticket or service tools before reading both files',

@@ -370,6 +370,8 @@ console.log(m[1]);
         'tool_api__',
         // The default read returns the newest comments, not all of them.
         'and all comments',
+        // The loaded skill owns the first read's arguments.
+        'arguments {"ticket"',
       ]) {
         if (prompt.includes(bad)) {
           fail(
@@ -378,8 +380,7 @@ console.log(m[1]);
         }
       }
       for (const marker of [
-        'Read the ticket with the bakers tool bakers_ticket_read',
-        'bakers_ticket_read',
+        'Read ticket {ticket_uuid} as the loaded skill says',
         'Follow the loaded skill for tool discovery, transport and fallback',
         './WORKFLOW.md',
         'Do not call ticket or service tools before reading both files',

@@ -1465,9 +1465,7 @@ describe('Conductor', () => {
     const command = executor.started[0]?.command ?? '';
     // The agent self-reads the ticket + comments at step 0 — the dispatch line
     // embeds neither the ticket body nor any comment text, and stays bounded.
-    expect(command).toContain(
-      `Read the ticket with the bakers tool bakers_ticket_read, arguments {"ticket":"t-1"}`,
-    );
+    expect(command).toContain('Read ticket t-1 as the loaded skill says.');
     expect(command).not.toContain('--- Ticket comments ---');
     expect(command).not.toContain('{comments}');
   });
