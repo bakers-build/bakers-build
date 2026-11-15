@@ -32,17 +32,15 @@ every gate; a missing row fails the *Stop rule*. A recipe gate reads "a person c
 
 ## Label rules
 
-Apply them before any label skill:
+Apply them before label skills:
 
 - `auto` beside one `human-*` label: follow that `human-*` skill alone.
 - `human-review` beside `human-accept`: stop with a question asking which applies.
 - Type `deployment` or `verification` with a `human-*` label: stop with a question asking for
   `auto` or no label.
-- Under a `human-*` label the **confirming person** decides a `criterion` and confirms the label's
-  `verdict` and `merge`: the assignee and every reviewer, except an assignee with
-  `service_account: true` in the ticket's people. The question names each of them; the first
-  answer from one of them passes. With nobody left, stop with a question naming the missing
-  reviewer.
+- Under a `human-*` label the **confirming person** decides `criterion`, `verdict` and `merge`:
+  any reviewer, or the assignee unless `service_account`. Name them; the first answer passes.
+  Nobody: ask for a reviewer.
 
 ## Risk list
 
