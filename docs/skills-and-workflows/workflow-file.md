@@ -10,7 +10,7 @@
 Use bakers:bb-init-project to create WORKFLOW.md for this repository.
 ```
 
-`bb-init-project` starts from the plugin's template; `bb-upgrade-project` updates a file you already have, including one in the old `## Loaded skills` layout.
+`bb-init-project` starts from the plugin's template and also updates a file you already have, including one in the old `## Loaded skills` layout.
 
 ## What goes in
 
