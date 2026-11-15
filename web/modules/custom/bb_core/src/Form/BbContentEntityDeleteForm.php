@@ -279,7 +279,7 @@ class BbContentEntityDeleteForm extends ContentEntityDeleteForm {
       }),
       'bb_invite' => Url::fromRoute('bb_core.bb_workspace.members'),
       'bb_comment' => ($ticket = $reference('ticket_id')) ? $ticket->toUrl() : NULL,
-      'bb_workspace' => Url::fromRoute('<front>'),
+      'bb_workspace' => Url::fromRoute('bb_core.home'),
       default => $this->accountRedirectUrl($reference),
     };
     return $url ?? parent::getRedirectUrl();

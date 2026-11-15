@@ -9,6 +9,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityLastInstalledSchemaRepositoryInterface;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\og\GroupTypeManagerInterface;
 
 /**
  * What deleting an entity blocks, deletes with it and detaches from others.
@@ -108,8 +109,7 @@ final class EntityDeleteRules {
     'bb_machine' => [
       [self::DETACH, 'bb_conductor', 'machine'],
     ],
-    // A project needs a group, so the group block covers projects too; OG
-    // deletes the memberships of a deleted group itself.
+    // A project needs a group, so the group block covers projects too.
     'bb_workspace' => [
       [self::BLOCK, 'bb_group', 'workspace_id'],
       [self::BLOCK, 'user', 'bb_service_workspace'],
@@ -135,6 +135,7 @@ final class EntityDeleteRules {
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly EntityLastInstalledSchemaRepositoryInterface $installedSchema,
+    private readonly GroupTypeManagerInterface $groupTypeManager,
   ) {}
 
   /**
@@ -187,6 +188,26 @@ final class EntityDeleteRules {
           unset($this->cascading[$key]);
         }
       }
+    }
+    $this->deleteMemberships($entity);
+  }
+
+  /**
+   * Deletes the memberships of a deleted OG group.
+   *
+   * OG leaves them behind while `delete_orphans` is off, as shipped.
+   */
+  private function deleteMemberships(EntityInterface $entity): void {
+    if (!$this->groupTypeManager->isGroup($entity->getEntityTypeId(), $entity->bundle())) {
+      return;
+    }
+    $storage = $this->entityTypeManager->getStorage('og_membership');
+    $ids = $storage->getQuery()->accessCheck(FALSE)
+      ->condition('entity_type', $entity->getEntityTypeId())
+      ->condition('entity_id', $entity->id())
+      ->execute();
+    if ($ids !== []) {
+      $storage->delete($storage->loadMultiple($ids));
     }
   }
 
