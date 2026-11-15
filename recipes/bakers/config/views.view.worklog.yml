@@ -191,28 +191,9 @@ display:
                     main:
                       sources:
                         -
-                          source_id: component
-                          source:
-                            component:
-                              component_id: 'bb_theme:filters'
-                              variant_id: null
-                              props:
-                                layout:
-                                  source_id: select
-                                  source:
-                                    value: bar
-                                label:
-                                  source_id: textfield
-                                  source:
-                                    value: 'Time filters'
-                              slots:
-                                controls:
-                                  sources:
-                                    -
-                                      source_id: view_exposed
-                                      source: {  }
-                                      node_id: worklog_exposed
-                          node_id: worklog_filters
+                          source_id: view_exposed
+                          source: {  }
+                          node_id: worklog_exposed
                         -
                           source_id: component
                           source:
@@ -311,28 +292,9 @@ display:
                     main:
                       sources:
                         -
-                          source_id: component
-                          source:
-                            component:
-                              component_id: 'bb_theme:filters'
-                              variant_id: null
-                              props:
-                                layout:
-                                  source_id: select
-                                  source:
-                                    value: bar
-                                label:
-                                  source_id: textfield
-                                  source:
-                                    value: 'Time filters'
-                              slots:
-                                controls:
-                                  sources:
-                                    -
-                                      source_id: view_exposed
-                                      source: {  }
-                                      node_id: worklog_exposed
-                          node_id: worklog_filters
+                          source_id: view_exposed
+                          source: {  }
+                          node_id: worklog_exposed
                         -
                           source_id: component
                           source:
@@ -433,28 +395,9 @@ display:
                     main:
                       sources:
                         -
-                          source_id: component
-                          source:
-                            component:
-                              component_id: 'bb_theme:filters'
-                              variant_id: null
-                              props:
-                                layout:
-                                  source_id: select
-                                  source:
-                                    value: bar
-                                label:
-                                  source_id: textfield
-                                  source:
-                                    value: 'Time filters'
-                              slots:
-                                controls:
-                                  sources:
-                                    -
-                                      source_id: view_exposed
-                                      source: {  }
-                                      node_id: worklog_exposed
-                          node_id: worklog_filters
+                          source_id: view_exposed
+                          source: {  }
+                          node_id: worklog_exposed
                         -
                           source_id: component
                           source:
@@ -555,28 +498,9 @@ display:
                     main:
                       sources:
                         -
-                          source_id: component
-                          source:
-                            component:
-                              component_id: 'bb_theme:filters'
-                              variant_id: null
-                              props:
-                                layout:
-                                  source_id: select
-                                  source:
-                                    value: bar
-                                label:
-                                  source_id: textfield
-                                  source:
-                                    value: 'Time filters'
-                              slots:
-                                controls:
-                                  sources:
-                                    -
-                                      source_id: view_exposed
-                                      source: {  }
-                                      node_id: worklog_exposed
-                          node_id: worklog_filters
+                          source_id: view_exposed
+                          source: {  }
+                          node_id: worklog_exposed
                         -
                           source_id: component
                           source:

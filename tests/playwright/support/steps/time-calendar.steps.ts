@@ -166,8 +166,7 @@ When('I filter the time by {word} {string}', async ({ page }, field: string, val
   await input.focus();
   await page.keyboard.press(' ');
   await expect(input).toBeChecked();
-  await page.getByRole('button', { name: 'Apply', exact: true }).focus();
-  await page.keyboard.press('Enter');
+  // The toolbar submits a picked value itself; Apply exists only without JavaScript.
   await page.waitForFunction(
     ([key, wanted]) => new URLSearchParams(window.location.search).get(key) === wanted,
     [field, expected],

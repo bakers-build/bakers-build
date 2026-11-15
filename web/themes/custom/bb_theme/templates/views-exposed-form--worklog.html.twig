@@ -1,11 +1,23 @@
-{# The time calendar's period controls: Day/Week, the date, the pickers and
-   Previous · Today · Next share one toolbar row above the rows. #}
-{#- Below md the paging links (Previous · Today · Next) get the 44px touch
-    target; desktop keeps them as text links. -#}
-{{ include('bb_theme:zone', {
-  attributes: attributes.addClass(['max-md:[&_a]:inline-flex', 'max-md:[&_a]:items-center', 'max-md:[&_a]:min-h-touch']),
-  direction: 'row',
-  gap: 'sm',
-  inset: 'none',
-  content: form,
-}, with_context = false) }}
+{# The time calendar's toolbar, one row as Figma L&T 5 draws it: Day/Week,
+   ‹ period › (the label leads to today), the project, ticket and person
+   pills, and the week total at the row's end. Apply is the submit without
+   JavaScript; with it, the toolbar submits a picked value itself. #}
+{% embed 'bb_theme:filters' with {
+  layout: 'toolbar',
+  label: 'Time filters'|t,
+  pinned_width: 'auto',
+  mode: form.mode_switch,
+  previous: form.previous,
+  period: form.period,
+  next: form.next,
+  project: form.project,
+  ticket: form.ticket,
+  person: form.person,
+  total: form.week_total,
+  submit: form.actions,
+} only %}
+  {% block pinned %}{{ mode }}{% endblock %}
+  {% block controls %}{{ previous }}{{ period }}{{ next }}{{ project }}{{ ticket }}{{ person }}<noscript>{{ submit }}</noscript>{% endblock %}
+  {% block actions %}{{ total }}{% endblock %}
+{% endembed %}
+{{ form|without('mode_switch', 'previous', 'period', 'next', 'project', 'ticket', 'person', 'week_total', 'actions') }}

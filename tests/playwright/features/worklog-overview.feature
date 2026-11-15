@@ -15,14 +15,12 @@ Feature: Employees review their own time in a workspace by day and week
     And the My time heading describes recorded hours
     And the period chips have no remove control
     When I choose overview mode "Day"
-    And I set the overview date to "2026-11-03"
-    And I apply the overview filters
     Then the address includes "mode=day"
-    And the address includes "date=2026-11-03"
-    And the overview total is "2:30"
+    When I visit "/bakers/time?mode=day&date=2026-11-03"
+    Then the overview total is "2:30"
     When I choose overview mode "Week"
-    And I apply the overview filters
     Then the address includes "mode=week"
+    And the address includes "date=2026-11-03"
     And the overview total is "4:30"
     When I go to the previous overview period
     And I go to the previous overview period

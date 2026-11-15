@@ -13,7 +13,9 @@
 {% if rows.strip %}
   {{ include('bb_theme:week-strip', rows.strip, with_context = false) }}
 {% endif %}
-{{ include('bb_theme:text', { text: rows.total, as: 'p', size: 'body', align: rows.mode == 'week' ? 'end' : 'start' }, with_context = false) }}
+{% if rows.total %}
+  {{ include('bb_theme:text', { text: rows.total, as: 'p', size: 'body' }, with_context = false) }}
+{% endif %}
 {% if rows.proposed_total %}
   {{ include('bb_theme:text', { text: rows.proposed_total, as: 'p', tone: 'faint' }, with_context = false) }}
 {% endif %}

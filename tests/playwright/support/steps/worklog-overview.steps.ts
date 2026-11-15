@@ -63,9 +63,13 @@ Then('I see the My time overview', async ({ page }) => {
   const period = toolbar.getByRole('group', { name: 'Period', exact: true });
   await expect(period.getByRole('link', { name: 'Day', exact: true })).toBeVisible();
   await expect(period.getByRole('link', { name: 'Week', exact: true })).toBeVisible();
+  // One row as Figma draws it: ‹ period › with the period label leading to
+  // today, the week total at the row's end, and no Apply while JavaScript runs.
   await expect(toolbar.getByRole('link', { name: 'Previous', exact: true })).toBeVisible();
-  await expect(toolbar.getByRole('link', { name: 'Today', exact: true })).toBeVisible();
+  await expect(toolbar.getByRole('link', { name: /^Go to today/ })).toBeVisible();
   await expect(toolbar.getByRole('link', { name: 'Next', exact: true })).toBeVisible();
+  await expect(toolbar.getByText(/Week total/)).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Apply', exact: true })).toHaveCount(0);
 });
 
 Then('the My time heading describes recorded hours', async ({ page }) => {
@@ -95,15 +99,8 @@ When('I choose overview mode {string}', async ({ page }, mode: string) => {
   await page.waitForLoadState('domcontentloaded');
 });
 
-When('I set the overview date to {string}', async ({ page }, date: string) => {
-  await page.locator('#edit-date').fill(date);
-});
 
 
-When('I apply the overview filters', async ({ page }) => {
-  await page.getByRole('button', { name: 'Apply', exact: true }).click();
-  await page.waitForLoadState('domcontentloaded');
-});
 
 When('I go to the previous overview period', async ({ page }) => {
   await page.getByRole('link', { name: 'Previous', exact: true }).click();
@@ -116,7 +113,7 @@ When('I go to the next overview period', async ({ page }) => {
 });
 
 When('I go to today\'s overview period', async ({ page }) => {
-  await page.getByRole('link', { name: 'Today', exact: true }).click();
+  await page.getByRole('link', { name: /^Go to today/ }).click();
   await page.waitForLoadState('domcontentloaded');
 });
 

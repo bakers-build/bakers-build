@@ -111,7 +111,7 @@
     panel's, which is `display: contents` from `lg` up, so one DOM serves both
     and the fields exist once. "Show results" submits the enclosing form. -#}
 {% set controls_classes = ['flex', 'flex-wrap', 'items-center', 'gap-inline', 'min-w-0']
-  |merge(has_pinned ? [sheet ? 'lg:flex-1' : 'flex-1'] : ['*:first:w-60', '*:first:shrink-0'])
+  |merge(has_pinned ? [sheet ? 'lg:flex-1' : 'grow'] : ['*:first:w-60', '*:first:shrink-0'])
   |merge(sheet ? ['max-lg:flex-col', 'max-lg:items-stretch'] : []) %}
 {% set actions_classes = ['flex', 'flex-wrap', 'items-center', 'gap-inline']|merge(sheet ? ['max-lg:pt-stack'] : []) %}
 <div{{ (attributes ?: create_attribute()).addClass([

@@ -123,9 +123,10 @@ final class WorklogCalendar extends StylePluginBase {
       'scope' => $this->scopeSentence($filter),
       'strip' => $is_day ? $this->strip($filter, $selection, $days) : NULL,
       'mode' => $selection->mode,
+      // Week mode states its total at the toolbar row's end (WorklogPeriod).
       'total' => $is_day
         ? (string) $this->t('Total recorded time: @total', ['@total' => WorklogFormLayout::formatDuration($days[$selection->date] ?? 0)])
-        : (string) $this->t('Week total @total', ['@total' => WorklogFormLayout::formatDuration(array_sum($days))]),
+        : NULL,
       'rows' => $selection->mode === 'day' ? $this->dayRows($filter) : [],
       'grid' => $selection->mode === 'week' && !$selection->isOwn() ? $this->weekGrid($filter, $selection, $days) : NULL,
       'week_form' => NULL,
