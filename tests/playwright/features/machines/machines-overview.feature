@@ -47,6 +47,7 @@ Feature: User Machines listing and View
     Then there is no tab "Settings"
     And the "Identity" card offers "Name" with Save
     And the "Identity" card offers "Max parallel" with Save
+    And the "Identity" card offers "Assignment" with Save
     When I visit the former edit address of the machine "e2e default host"
     Then the address is the detail of the machine "e2e default host"
     And the page heading is "e2e default host"

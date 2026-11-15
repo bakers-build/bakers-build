@@ -16,3 +16,5 @@ default:
   - value: 0
   owner_user_id:
   - entity: 25d160a3-a2cd-4ebf-acce-5273c92bf1bb
+  assignment:
+  - value: allow
