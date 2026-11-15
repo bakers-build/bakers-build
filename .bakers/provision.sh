@@ -63,14 +63,43 @@ if [ "${1:-}" = exec ]; then
       web playwright-cli "$@"
       ;;
     designbook)
-      # start | stop | status | check <story-id>: Designbook's Storybook daemon and story check in
-      # the web container, with the image's Chromium (.ddev/web-build/Dockerfile.playwright).
-      [ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
-      safe "$@"
+      # Designbook's Storybook daemon, story check and browser captures in the web container, with
+      # the image's Chromium (.ddev/web-build/Dockerfile.playwright):
+      #   start | stop | status | check <story-id>
+      #   save <revision> <story-id> <state> <prelude|none>
+      #   capture-image <revision> <story-id> <view> <subject> <state> <width> <prelude|none> [<selector>]
+      # <revision> is <id>/<rev> under designbook/references, <prelude> a file in designbook/preludes,
+      # the PNG <view>--<subject>--<state>.png. The other reference commands need no browser.
+      [ "$#" -ge 1 ] || usage
+      book=/var/www/html/web/themes/custom/bb_theme/designbook
+      refuse() { echo "Refused argument: $1" >&2; exit 1; }
+      story() { echo "http://localhost:6006/iframe.html?id=$1&viewMode=story"; }
+      revision() { [[ "$1" =~ ^[0-9a-f]{16}/[0-9a-f]{16}$ ]] || refuse "$1"; ref="$book/references/$1"; }
+      preludes=()
+      prelude() {
+        [ "$1" = none ] && return
+        [[ "$1" =~ ^[A-Za-z0-9_-]+\.mjs$ ]] || refuse "$1"
+        preludes=(--prelude "$book/preludes/$1")
+      }
       case "$1" in
         start) [ "$#" = 1 ] || usage; set -- storybook start --port 6006 --force ;;
         stop|status) [ "$#" = 1 ] || usage; set -- storybook "$1" ;;
-        check) [ "$#" = 2 ] || usage; set -- storybook check "http://localhost:6006/iframe.html?id=$2&viewMode=story" ;;
+        check) [ "$#" = 2 ] || usage; safe "$2"; set -- storybook check "$(story "$2")" ;;
+        save)
+          [ "$#" = 5 ] || usage
+          safe "${@:2}"; revision "$2"; prelude "$5"
+          set -- reference save --reference "$ref" --url "$(story "$3")" --state "$4" "${preludes[@]}"
+          ;;
+        capture-image)
+          [ "$#" -ge 8 ] && [ "$#" -le 9 ] || usage
+          safe "${@:2:7}"; revision "$2"; prelude "$8"
+          [[ "$7" =~ ^[0-9]+$ ]] || refuse "$7"
+          # A CSS selector may carry spaces, combinators and brackets, never a leading '-'.
+          selector='^[A-Za-z.#*[][][A-Za-z0-9_ .#*>+~:,()="'\''-]*$'
+          [ "$#" = 8 ] || [[ "$9" =~ $selector ]] || refuse "$9"
+          set -- reference capture-image --reference "$ref" --path "$4--$5--$6.png" --url "$(story "$3")" \
+            --width "$7" --view "$4" --state "$6" --selector "${9:-}" "${preludes[@]}"
+          ;;
         *) usage ;;
       esac
       web env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright bash -c 'cd web/themes/custom/bb_theme && npx storybook-addon-designbook "$@"' designbook "$@"
