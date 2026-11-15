@@ -1,5 +1,3 @@
-import { declareForm } from '../../../Form/index.js';
-
 export const CANCELLED_RUN_STATE = 'cancelled';
 
 /**
@@ -14,9 +12,6 @@ export const CANCELLABLE_RUN_STATES: ReadonlySet<string> = new Set([
   'running',
 ]);
 
-export const CANCEL_RUN_ACTION_ID = 'cancelRun';
-export type RunEditFieldId = typeof CANCEL_RUN_ACTION_ID;
-
 export interface CancelRunPayload {
   attributes: { state: typeof CANCELLED_RUN_STATE };
 }
@@ -25,21 +20,5 @@ export const cancelRunPayload = (): CancelRunPayload => ({
   attributes: { state: CANCELLED_RUN_STATE },
 });
 
-const EDIT_FORM = declareForm<
-  Record<string, never>,
-  Record<string, never>,
-  CancelRunPayload
->({
-  fields: (f) => [f.action('Cancel run', CANCEL_RUN_ACTION_ID)],
-  toObject: () => cancelRunPayload(),
-});
-
-export type EditRunFormDeclaration = typeof EDIT_FORM;
-
 export const isRunCancellable = (state: string): boolean =>
   CANCELLABLE_RUN_STATES.has(state);
-
-export const editRunFormFor = (
-  runState: string,
-): EditRunFormDeclaration | undefined =>
-  isRunCancellable(runState) ? EDIT_FORM : undefined;

@@ -6,7 +6,6 @@ import { ProjectConductorsScreen } from '../Entity/conductor/Screen/project-cond
 import { ProjectOverviewScreen } from '../Entity/project/Screen/project-overview.js';
 import { ProjectPickerScreen } from '../Entity/project/Screen/project-picker.js';
 import { ProjectsScreen } from '../Entity/project/Screen/projects-screen.js';
-import { EditRunFormScreen } from '../Entity/run/Screen/edit-run-form.js';
 import { RunDetailScreen } from '../Entity/run/Screen/run-detail.js';
 import { RunsScreen } from '../Entity/run/Screen/runs.js';
 import { WorkspaceMemberRunsScreen } from '../Entity/run/Screen/user-runs.js';
@@ -30,6 +29,7 @@ import { WhoFilterScreen } from '../Entity/ticket/Screen/who-filter-form.js';
 import { WorkspaceMemberOverviewScreen } from '../Entity/user/Screen/member-overview.js';
 import { UsersScreen } from '../Entity/user/Screen/users.js';
 import { WorkspacePickerScreen } from '../Entity/workspace/Screen/workspace-picker.js';
+import { ConfirmDialogScreen } from '../Screen/confirm-dialog.js';
 import type { ResolvedRoute } from '../types.js';
 import { defineRoutes } from './registry.js';
 import type { RouteLocation, ScreenClass } from './route.js';
@@ -91,7 +91,7 @@ const BUILT_IN: readonly ScreenClass[] = [
   TicketAddonsScreen,
   AddonActionFormScreen,
   RunDetailScreen,
-  EditRunFormScreen,
+  ConfirmDialogScreen,
 ];
 
 export function buildRoutes(
