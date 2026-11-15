@@ -20,6 +20,8 @@ final class BbWorkspaceDeleteForm extends BbContentEntityDeleteForm {
   public function buildForm(array $form, FormStateInterface $form_state): array {
     $form = parent::buildForm($form, $form_state);
     if (($form['actions']['submit']['#access'] ?? TRUE) !== FALSE) {
+      // The page renders no messages region; a wrong slug is reported here.
+      $form['messages'] = ['#type' => 'status_messages', '#weight' => 9];
       $form['confirm_slug'] = [
         '#type' => 'textfield',
         '#title' => $this->t('Type the workspace slug %slug to confirm', ['%slug' => $this->workspace()->getSlug()]),

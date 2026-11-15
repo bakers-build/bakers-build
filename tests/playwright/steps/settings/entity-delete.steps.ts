@@ -33,7 +33,7 @@ function exists(reference: string): boolean {
   return lastLine(`print \\Drupal::entityTypeManager()->getStorage("${type}")->load("${id}") ? "yes" : "no";`) === 'yes';
 }
 
-After({ tags: '@feature:entity-delete or @feature:delete-dialog' }, async ({ page }) => {
+After({ tags: '@feature:entity-delete or @feature:delete-dialog or @feature:workspace-delete' }, async ({ page }) => {
   const record = disposables.get(page);
   disposables.delete(page);
   if (!record) return;
@@ -46,7 +46,7 @@ After({ tags: '@feature:entity-delete or @feature:delete-dialog' }, async ({ pag
   ].join(' '));
 });
 
-Given('a disposable {string} exists in the Northside workspace', async ({ page }, kind: string) => {
+function createDisposable(page: Page, kind: string): void {
   const n = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
   const output = lastLine(disposableSnippet(kind, n));
   const [created, label, manage, deletePath] = output.split('|');
@@ -54,6 +54,15 @@ Given('a disposable {string} exists in the Northside workspace', async ({ page }
     throw new Error(`The disposable ${kind} did not settle: "${output}".`);
   }
   disposables.set(page, { created: created.split(','), label, manage, deletePath });
+}
+
+Given('a disposable {string} exists in the Northside workspace', async ({ page }, kind: string) => {
+  createDisposable(page, kind);
+});
+
+// A kind that brings its own workspace.
+Given('a disposable {string} exists', async ({ page }, kind: string) => {
+  createDisposable(page, kind);
 });
 
 When('I open the page where the disposable entity is managed', async ({ page }) => {
@@ -63,6 +72,10 @@ When('I open the page where the disposable entity is managed', async ({ page }) 
 
 Then('the disposable entity offers its Delete action', async ({ page }) => {
   await expect(page.locator(`a[href^="${subject(page).deletePath}"]`).first()).toBeAttached();
+});
+
+Then('the disposable entity offers the Delete action {string}', async ({ page }, label: string) => {
+  await expect(page.locator(`a[href^="${subject(page).deletePath}"]`, { hasText: label })).toBeVisible();
 });
 
 Then('the disposable entity offers no Delete action', async ({ page }) => {
@@ -91,6 +104,47 @@ When('I confirm the deletion', async ({ page }) => {
     page.waitForURL((url) => url.pathname !== subject(page).deletePath),
     page.getByRole('button', { name: 'Delete', exact: true }).click(),
   ]);
+});
+
+function slugConfirmation(page: Page) {
+  return page.getByLabel('Type the workspace slug');
+}
+
+When('I type {string} to confirm', async ({ page }, text: string) => {
+  await slugConfirmation(page).fill(text);
+});
+
+When('I type the slug of the disposable workspace to confirm', async ({ page }) => {
+  // The managing page is /<slug>/settings.
+  await slugConfirmation(page).fill(subject(page).manage.split('/')[1]);
+});
+
+When('I submit the deletion', async ({ page }) => {
+  await Promise.all([
+    page.waitForResponse((response) => response.request().method() === 'POST'),
+    page.getByRole('button', { name: 'Delete', exact: true }).click(),
+  ]);
+  await page.waitForLoadState();
+});
+
+Then('the delete page asks for no slug', async ({ page }) => {
+  await expect(slugConfirmation(page)).toHaveCount(0);
+});
+
+Then('I land on the workspace overview', async ({ page }) => {
+  expect(new URL(page.url()).pathname).toBe('/home');
+});
+
+Then('the Settings page of the workspace {string} offers no Delete workspace', async ({ page }, slug: string) => {
+  // A member may be refused Settings itself; either way no action shows.
+  const response = await page.goto(`/${slug}/settings`);
+  expect([200, 403]).toContain(response?.status());
+  await expect(page.locator(`a[href^="/${slug}/delete"]`)).toHaveCount(0);
+});
+
+Then('the delete page of the workspace {string} answers {int}', async ({ page }, slug: string, status: number) => {
+  const response = await page.goto(`/${slug}/delete`);
+  expect(response?.status()).toBe(status);
 });
 
 Then('the page confirms the disposable entity was deleted', async ({ page }) => {

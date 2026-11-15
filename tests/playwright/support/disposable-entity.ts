@@ -9,6 +9,8 @@ const PRELUDE = [
   '$p = current($etm->getStorage("bb_project")->loadByProperties(["key" => "BB"]));',
 ].join(' ');
 
+const OWNED_WORKSPACE = '$o = current($etm->getStorage("user")->loadByProperties(["name" => "fixture-workspace-owner"])); $e = \\Drupal::service("bb_core.workspace_provisioner")->provision($l, $o, "First crew"); $extra[] = current($etm->getStorage("bb_team")->loadByProperties(["workspace_id" => $e->id()])); ';
+
 // Per kind: creates `$e` (the subject) and `$extra` (helpers), sets `$manage` and `$delete`.
 export const KINDS: Record<string, string> = {
   project: '$e = $etm->getStorage("bb_project")->create(["name" => $l, "key" => "D" . substr($n, -7), "group_id" => $p->get("group_id")->target_id, "teams" => $p->get("teams")->getValue()]); $e->save(); $manage = $e->toUrl()->toString() . "/settings";',
@@ -27,6 +29,9 @@ export const KINDS: Record<string, string> = {
   'conductor project': '$e = $etm->getStorage("bb_project")->create(["name" => $l, "key" => "D" . substr($n, -7), "group_id" => $p->get("group_id")->target_id, "teams" => $p->get("teams")->getValue()]); $e->save(); $c = $etm->getStorage("bb_conductor")->create(["label" => $l, "conductor_id" => "delete-" . $n, "project_id" => $e->id()]); $c->save(); $extra[] = $c; $manage = $e->toUrl()->toString() . "/settings";',
   conductor: '$e =$etm->getStorage("bb_conductor")->create(["label" => $l, "conductor_id" => "delete-" . $n, "project_id" => $p->id()]); $e->save(); $manage = $e->toUrl()->toString();',
   workspace: '$e = $etm->getStorage("bb_workspace")->create(["name" => $l, "slug" => "delete-" . $n]); $e->save(); $manage = "/delete-$n/settings";',
+  // As sign-up leaves it, owned by fixture-workspace-owner; the first team is the helper.
+  'owned workspace': OWNED_WORKSPACE + '$manage = "/" . $e->getSlug() . "/settings";',
+  'owned workspace with a group': OWNED_WORKSPACE + '$g = $etm->getStorage("bb_group")->create(["name" => $l, "workspace_id" => $e->id()]); $g->save(); $extra[] = $g; $manage = "/" . $e->getSlug() . "/settings";',
 };
 
 /**

@@ -92,4 +92,3 @@ Feature: Deleting an entity where it is managed
       | kind      |
       | machine   |
       | conductor |
-      | workspace |
