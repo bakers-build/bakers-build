@@ -135,7 +135,8 @@ final class EntityDeleteRules {
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
     private readonly EntityLastInstalledSchemaRepositoryInterface $installedSchema,
-    private readonly GroupTypeManagerInterface $groupTypeManager,
+    // Absent where og is not enabled, such as some kernel tests.
+    private readonly ?GroupTypeManagerInterface $groupTypeManager = NULL,
   ) {}
 
   /**
@@ -198,7 +199,7 @@ final class EntityDeleteRules {
    * OG leaves them behind while `delete_orphans` is off, as shipped.
    */
   private function deleteMemberships(EntityInterface $entity): void {
-    if (!$this->groupTypeManager->isGroup($entity->getEntityTypeId(), $entity->bundle())) {
+    if ($this->groupTypeManager?->isGroup($entity->getEntityTypeId(), $entity->bundle()) !== TRUE) {
       return;
     }
     $storage = $this->entityTypeManager->getStorage('og_membership');
