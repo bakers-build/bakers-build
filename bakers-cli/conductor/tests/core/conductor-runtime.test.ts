@@ -162,6 +162,7 @@ const agent = (
   extension: Record<string, unknown> = {},
 ): BbAgent => ({
   id: 'claude',
+  prepareRun: () => ({ env: {}, readPaths: [], writePaths: [] }),
   ...extension,
   launchCommand: (prompt, _run, _ws, tools) => {
     seen.prompt = prompt;
@@ -421,6 +422,44 @@ describe('runtime slot — launch wrapping', () => {
         JSON.stringify(line.obj).includes('provides no run clone'),
       ),
     ).toBe(true);
+  });
+
+  it('fails an isolated dispatch of an agent without prepareRun, naming both', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    let prepared = false;
+    const s = setup(
+      recordingRuntime([], rec, {
+        prepareRun: async () => {
+          prepared = true;
+          return { homePath: '/private/run' };
+        },
+      }),
+      false,
+      { prepareRun: undefined },
+    );
+    await s.run();
+    expect(prepared).toBe(false);
+    expect(rec.wraps).toHaveLength(0);
+    expect(s.executor.started).toHaveLength(0);
+    expect(
+      s.logs.some((line) =>
+        JSON.stringify(line.obj).includes(
+          'agent opus: the runtime isolates runs, but the agent has no prepareRun',
+        ),
+      ),
+    ).toBe(true);
+  });
+
+  it('launches an agent without prepareRun on a non-isolating runtime', async () => {
+    const rec: Recorded = { wraps: [], cleanups: [] };
+    const runtime: RuntimePlugin = {
+      ...recordingRuntime([], rec),
+      isolates: false,
+    };
+    const s = setup(runtime, false, { prepareRun: undefined });
+    await s.run();
+    expect(rec.wraps).toHaveLength(1);
+    expect(s.executor.started).toHaveLength(1);
   });
 
   it('tells hooks and the run the worktree path and that the runtime isolates', async () => {
