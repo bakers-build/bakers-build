@@ -39,6 +39,11 @@ final class EntityDeleteRules {
   private const string SOLE = 'sole';
 
   /**
+   * Cascades the referencing entity with the lowest id; every other blocks.
+   */
+  private const string FIRST = 'first';
+
+  /**
    * Rules per deleted entity type: [action, referencing type, field].
    */
   private const array RULES = [
@@ -107,11 +112,12 @@ final class EntityDeleteRules {
     // deletes the memberships of a deleted group itself.
     'bb_workspace' => [
       [self::BLOCK, 'bb_group', 'workspace_id'],
-      [self::BLOCK, 'bb_team', 'workspace_id'],
       [self::BLOCK, 'user', 'bb_service_workspace'],
       // Cascades run in this order: templates go before the terms they use
       // as type or recipe, which would otherwise block.
       [self::CASCADE, 'bb_invite', 'workspace_id'],
+      // The first team is the one provisioning created; any later one blocks.
+      [self::FIRST, 'bb_team', 'workspace_id'],
       [self::CASCADE, 'bb_ticket_trigger', 'workspace_id'],
       [self::CASCADE, 'bb_addon', 'workspace_id'],
       [self::CASCADE, 'bb_ticket_template', 'workspace_id'],
@@ -210,14 +216,17 @@ final class EntityDeleteRules {
       }
       $storage = $this->entityTypeManager->getStorage($type);
       $ids = $storage->getQuery()->accessCheck(FALSE)->condition($field, $entity->id())->execute();
+      $first = $ids === [] ? NULL : min(array_map('intval', $ids));
       foreach ($storage->loadMultiple($ids) as $referencing) {
         assert($referencing instanceof ContentEntityInterface);
         if ($type === $entity->getEntityTypeId() && $referencing->id() === $entity->id()) {
           continue;
         }
-        $resolved = $action === self::SOLE
-          ? (count($referencing->get($field)->getValue()) > 1 ? self::DETACH : self::BLOCK)
-          : $action;
+        $resolved = match ($action) {
+          self::SOLE => count($referencing->get($field)->getValue()) > 1 ? self::DETACH : self::BLOCK,
+          self::FIRST => (int) $referencing->id() === $first ? self::CASCADE : self::BLOCK,
+          default => $action,
+        };
         $matches[] = [$resolved, $referencing, $field];
       }
     }
