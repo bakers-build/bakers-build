@@ -62,6 +62,19 @@ if [ "${1:-}" = exec ]; then
       safe "$@"
       web playwright-cli "$@"
       ;;
+    designbook)
+      # start | stop | status | check <story-id>: Designbook's Storybook daemon and story check in
+      # the web container, with the image's Chromium (.ddev/web-build/Dockerfile.playwright).
+      [ "$#" -ge 1 ] && [ "$#" -le 2 ] || usage
+      safe "$@"
+      case "$1" in
+        start) [ "$#" = 1 ] || usage; set -- storybook start --port 6006 --force ;;
+        stop|status) [ "$#" = 1 ] || usage; set -- storybook "$1" ;;
+        check) [ "$#" = 2 ] || usage; set -- storybook check "http://localhost:6006/iframe.html?id=$2&viewMode=story" ;;
+        *) usage ;;
+      esac
+      web env PLAYWRIGHT_BROWSERS_PATH=/opt/ms-playwright bash -c 'cd web/themes/custom/bb_theme && npx storybook-addon-designbook "$@"' designbook "$@"
+      ;;
     playground-ticket)
       # <conductor_id> <title> [<state>]: a title may contain spaces, so it is checked loosely.
       [ "$#" -ge 2 ] && [ "$#" -le 3 ] || usage
