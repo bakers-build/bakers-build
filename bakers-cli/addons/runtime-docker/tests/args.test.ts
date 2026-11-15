@@ -42,6 +42,34 @@ const envFlags = (argv: string[]) =>
   argv.flatMap((a, i) => (a === '-e' ? [argv[i + 1] as string] : []));
 
 describe('dockerArgs', () => {
+  it("passes the pane's terminal and locale variables by name only", () => {
+    const { argv, env } = dockerArgs(launch, opts, where);
+    const flags = envFlags(argv);
+    for (const key of [
+      'TERM',
+      'COLORTERM',
+      'TERM_PROGRAM',
+      'TERM_PROGRAM_VERSION',
+      'LANG',
+      'LANGUAGE',
+      'LC_ALL',
+      'LC_CTYPE',
+      'LC_MESSAGES',
+      'NO_COLOR',
+      'FORCE_COLOR',
+    ])
+      expect(flags.filter((flag) => flag === key)).toEqual([key]);
+    expect(flags.some((flag) => /^(TERM|LANG|LC_)\w*=/.test(flag))).toBe(false);
+    expect(Object.keys(env)).not.toContain('TERM');
+  });
+  it('does not repeat a terminal variable the run already forwards', () => {
+    const { argv } = dockerArgs(
+      { ...launch, env: { ...launch.env, LANG: 'de_DE.UTF-8' } },
+      opts,
+      where,
+    );
+    expect(envFlags(argv).filter((flag) => flag === 'LANG')).toEqual(['LANG']);
+  });
   it('mounts the run Git directory as .git and nothing of the parent repository', () => {
     const mounts = volumes(dockerArgs(launch, opts, where).argv);
     expect(mounts).toContain('/cache/run.git:/w/tree/.git');
