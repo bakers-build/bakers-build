@@ -28,8 +28,8 @@ const rows = [stations.slice(0, 2), stations.slice(2)]
       <div data-cta-group class="mt-[34px] flex flex-col items-start gap-[18px] sm:flex-row sm:items-end sm:gap-5">
         <a :href="SIGN_UP_URL" class="lp-btn">{{ t.signUp }}</a>
         <a :href="DOCS_URL" class="lp-btn lp-btn--paper">{{ t.docs }}</a>
-        <a :href="SYMPHONY_URL" class="lp-mono text-[13px] font-medium text-[color:var(--lp-ink-2)] underline underline-offset-4 sm:self-center">{{ t.inspired }}</a>
       </div>
+      <a :href="SYMPHONY_URL" class="lp-mono mt-[18px] text-[13px] font-medium text-[color:var(--lp-ink-2)] underline underline-offset-4">{{ t.inspired }}</a>
       <p class="lp-mono m-0 mt-[22px] flex items-center gap-2 text-[13px] font-medium text-[color:var(--lp-ink-2)]">
         <img src="/landing/spark.svg" alt="" width="14" height="14" />
         {{ t.hero.note }}
