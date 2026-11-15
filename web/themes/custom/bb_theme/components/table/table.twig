@@ -456,7 +456,7 @@
         them as strings; this one is printed, and printing nothing is already
         the right answer. A `contents` wrapper keeps the cell's layout and
         gives a formatter's link the phone touch size. #}
-    <span class="contents max-md:[&_a]:inline-flex max-md:[&_a]:items-center max-md:[&_a]:min-h-touch max-md:[&_a]:min-w-touch">{{ c.markup }}</span>
+    <span class="contents max-md:[&>a]:inline-flex max-md:[&>a]:items-center max-md:[&>a]:min-h-touch max-md:[&>a]:min-w-touch">{{ c.markup }}</span>
   {%- elseif c.exact -%}
     {#- An abbreviated value with its exact value on hover and focus. The
         tooltip opens upwards and right-aligned: the table scrolls sideways, so

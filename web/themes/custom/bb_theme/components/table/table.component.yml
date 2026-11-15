@@ -56,7 +56,9 @@ description: >-
   that rule and keeps the cell layout; md and up are unchanged. PHONE TOUCH
   DELTA (AC-15): below md, the tree disclosure link is the `touch` size (44px)
   and its placeholder as wide, so row names stay aligned; md and up are
-  unchanged.
+  unchanged. PHONE TOUCH DELTA (AC-15): the `rendered` cell touch rule addresses
+  only direct-child links (`[&>a]`), so the prose selectors stay with rich-text
+  and a nested formatter markup keeps its own layout; md and up are unchanged.
 provider: bb_theme
 props:
   type: object
