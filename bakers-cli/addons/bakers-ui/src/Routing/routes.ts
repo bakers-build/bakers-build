@@ -30,6 +30,7 @@ import { WhoFilterScreen } from '../Entity/ticket/Screen/who-filter-form.js';
 import { WorkspaceMemberOverviewScreen } from '../Entity/user/Screen/member-overview.js';
 import { UsersScreen } from '../Entity/user/Screen/users.js';
 import { WorkspacePickerScreen } from '../Entity/workspace/Screen/workspace-picker.js';
+import { ConfirmDialogScreen } from '../Screen/confirm-dialog.js';
 import type { ResolvedRoute } from '../types.js';
 import { defineRoutes } from './registry.js';
 import type { RouteLocation, ScreenClass } from './route.js';
@@ -92,6 +93,7 @@ const BUILT_IN: readonly ScreenClass[] = [
   AddonActionFormScreen,
   RunDetailScreen,
   EditRunFormScreen,
+  ConfirmDialogScreen,
 ];
 
 export function buildRoutes(
