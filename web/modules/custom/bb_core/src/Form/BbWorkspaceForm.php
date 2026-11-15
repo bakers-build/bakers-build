@@ -14,8 +14,8 @@ use Drupal\bb_core\RunLog\RunLogPolicy;
 /**
  * Workspace entity form with a meta header block on admin screens.
  *
- * The product Settings surface skips Meta (created/changed). Delete is not
- * offered here until Linear-style delayed delete exists.
+ * The product Settings surface skips Meta (created/changed) and offers Delete
+ * in a danger zone below the form instead of in the action row.
  */
 final class BbWorkspaceForm extends BbContentEntityFormBase {
 
@@ -69,6 +69,23 @@ final class BbWorkspaceForm extends BbContentEntityFormBase {
         '#weight' => 4,
       ];
     }
+    $delete = static::deleteAction($this->entity)['delete'] ?? NULL;
+    if ($delete !== NULL) {
+      $delete['#props']['label'] = $this->t('Delete workspace');
+      $delete['#props']['variant'] = 'danger';
+      $form['danger_zone'] = [
+        '#type' => 'component',
+        '#component' => 'bb_theme:note',
+        '#props' => ['tone' => 'attention', 'lead' => $this->t('Delete workspace')],
+        '#slots' => [
+          'body' => [
+            'sentence' => ['#markup' => $this->t('Deletes this workspace with its first team, members, invitations, terms, templates, triggers and addons. Groups and projects must be removed first.')],
+            'delete' => $delete,
+          ],
+        ],
+        '#weight' => 1000,
+      ];
+    }
     return $form;
   }
 
@@ -78,6 +95,8 @@ final class BbWorkspaceForm extends BbContentEntityFormBase {
   protected function actions(array $form, FormStateInterface $form_state): array {
     $actions = parent::actions($form, $form_state);
     if ($this->getOperation() === 'settings') {
+      // Offered in the danger zone below the form instead.
+      unset($actions['delete']);
       $actions['#attributes']['class'][] = 'flex-wrap';
       $actions['workspace_overview'] = [
         '#type' => 'component',

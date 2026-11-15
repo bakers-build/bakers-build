@@ -137,4 +137,27 @@ final class WorkspaceDeleteFormTest extends KernelTestBase {
     self::assertSame(1, $this->rows('bb_workspace'));
   }
 
+  /**
+   * Settings shows the owner a danger zone; another lead sees none.
+   */
+  public function testSettingsDangerZoneIsTheOwners(): void {
+    $workspace = $this->provision();
+    $form = $this->container->get('entity.form_builder')->getForm($workspace, 'settings');
+    self::assertArrayNotHasKey('delete', $form['actions']);
+    self::assertArrayHasKey('danger_zone', $form);
+    $button = $form['danger_zone']['#slots']['body']['delete'];
+    self::assertSame('Delete workspace', (string) $button['#props']['label']);
+    self::assertSame('danger', $button['#props']['variant']);
+    self::assertSame($workspace->toUrl('delete-form')->toString(), $button['#props']['href']);
+
+    $lead = $this->createUser([], 'other-lead');
+    self::assertInstanceOf(UserInterface::class, $lead);
+    $this->addMembership($workspace, $lead, ['lead']);
+    $this->setCurrentUser($lead);
+    $this->container->get('entity_type.manager')->getAccessControlHandler('bb_workspace')->resetCache();
+    $form = $this->container->get('entity.form_builder')->getForm($workspace, 'settings');
+    self::assertArrayNotHasKey('danger_zone', $form);
+    self::assertArrayNotHasKey('delete', $form['actions']);
+  }
+
 }
