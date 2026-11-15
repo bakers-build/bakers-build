@@ -1,4 +1,5 @@
 import {
+  existsSync,
   lstatSync,
   mkdirSync,
   mkdtempSync,
@@ -110,4 +111,33 @@ it('CodexAgent.prepareRun prepares from its configured home', () => {
   const out = agent.prepareRun({ homePath, workspacePath: '/w', env: {} });
   expect(out.env.CODEX_HOME).toBe(join(homePath, '.codex'));
   expect(out.readPaths).toEqual([join(source, 'plugins')]);
+});
+
+it('shares only the allow-listed directories of a previously used agent home', () => {
+  const shared = ['plugins', 'skills', 'packages', '.tmp/marketplaces'];
+  const stale = [
+    'thread-writer-locks',
+    '.tmp/plugins',
+    'cache',
+    'tui-thread-reference-capabilities',
+  ];
+  for (const dir of [...shared, ...stale])
+    mkdirSync(join(source, dir), { recursive: true });
+  writeFileSync(join(source, 'history.jsonl'), '');
+  const out = prepare();
+  const home = join(homePath, '.codex');
+  expect(out.readPaths).toEqual(shared.map((dir) => join(source, dir)));
+  for (const dir of shared)
+    expect(realpathSync(join(home, dir))).toBe(join(source, dir));
+  for (const dir of [
+    'thread-writer-locks',
+    'cache',
+    'tui-thread-reference-capabilities',
+  ])
+    expect(existsSync(join(home, dir))).toBe(false);
+  expect(lstatSync(join(home, '.tmp')).isDirectory()).toBe(true);
+  expect(out.writePaths).toEqual([join(source, 'sessions')]);
+  expect(out.bindPaths).toEqual([
+    { source: realpathSync(hostLogin), target: join(home, 'auth.json') },
+  ]);
 });
