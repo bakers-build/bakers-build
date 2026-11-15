@@ -217,7 +217,7 @@ services:
   # Derives a workspace slug from a typed name.
   bb_core.workspace_slug_deriver:
     class: Drupal\bb_core\Workspace\WorkspaceSlugDeriver
-    arguments: ['@entity_type.manager', '@transliteration']
+    arguments: ['@transliteration']
   # Creates workspace + first team + both memberships in ONE transaction, or
   # leaves none of them.
   bb_core.workspace_provisioner:
