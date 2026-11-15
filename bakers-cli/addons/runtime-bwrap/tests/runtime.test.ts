@@ -236,6 +236,69 @@ echo isolated`;
   },
 );
 
+it.skipIf(!canBwrap)(
+  "forwards the pane's terminal and locale variables and no other host variable",
+  async () => {
+    const runtime = make();
+    const context = await runtime.prepareRun!(run);
+    const launch = await runtime.wrap({
+      command: 'env',
+      env: {},
+      workspacePath: ws,
+      gitDir: clone.gitDir,
+      run,
+      harness: 'any',
+      ...context,
+    });
+    const result = spawnSync('sh', ['-c', launch.command], {
+      env: {
+        ...process.env,
+        ...launch.env,
+        TERM: 'xterm-256color',
+        COLORTERM: 'truecolor',
+        TERM_PROGRAM: 'herdr',
+        LANG: 'C.UTF-8',
+        LC_CTYPE: 'C.UTF-8',
+        NO_COLOR: '1',
+        LANGUAGE: undefined,
+        FORCE_COLOR: undefined,
+        HOST_SECRET: 'hidden',
+        XLC_FOO: 'look-alike',
+        TERMINFO_SECRET: 'look-alike',
+      },
+      encoding: 'utf8',
+      timeout: 15000,
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const inside = Object.fromEntries(
+      result.stdout
+        .trim()
+        .split('\n')
+        .map((line) => [
+          line.slice(0, line.indexOf('=')),
+          line.slice(line.indexOf('=') + 1),
+        ]),
+    );
+    expect(inside).toMatchObject({
+      TERM: 'xterm-256color',
+      COLORTERM: 'truecolor',
+      TERM_PROGRAM: 'herdr',
+      LANG: 'C.UTF-8',
+      LC_CTYPE: 'C.UTF-8',
+      NO_COLOR: '1',
+    });
+    for (const key of [
+      'LANGUAGE',
+      'FORCE_COLOR',
+      'HOST_SECRET',
+      'XLC_FOO',
+      'TERMINFO_SECRET',
+    ])
+      expect(inside).not.toHaveProperty(key);
+    await runtime.cleanup(run);
+  },
+);
+
 it('rejects relative grants and writable aliases of the run Git directory', async () => {
   const runtime = make();
   const context = await runtime.prepareRun!(run);
