@@ -20,13 +20,12 @@ import {
   systemSandboxHost,
   validateOptionalString,
 } from '@bakers-build/conductor/contract';
-import { encodeGrokSessionCwd, prepareGrokRun } from './run.js';
-
-export { encodeGrokSessionCwd } from './run.js';
 import { shellQuote } from '@bakers-build/core';
 import { parseGrokTranscript } from './footprint.js';
+import { encodeGrokSessionCwd, prepareGrokRun } from './run.js';
 
 export { parseGrokTranscript } from './footprint.js';
+export { encodeGrokSessionCwd } from './run.js';
 
 export type GrokReasoningEffort = 'high' | 'medium' | 'low';
 

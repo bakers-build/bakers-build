@@ -37,7 +37,8 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 const prepare = (
   env: Record<string, string> = {},
   hostEnv: Record<string, string> = {},
-) => prepareCodexRun({ homePath, workspacePath: '/w/tree', env }, source, hostEnv);
+) =>
+  prepareCodexRun({ homePath, workspacePath: '/w/tree', env }, source, hostEnv);
 
 it('builds a private CODEX_HOME with the configuration and read-only plugins', () => {
   const out = prepare();
@@ -60,8 +61,9 @@ it('takes the source home from the run env CODEX_HOME', () => {
   mkdirSync(other);
   writeFileSync(join(other, 'config.toml'), 'model = "o3"\n');
   const out = prepare({ CODEX_HOME: other });
-  expect(readFileSync(join(out.env.CODEX_HOME as string, 'config.toml'), 'utf8'))
-    .toBe('model = "o3"\n');
+  expect(
+    readFileSync(join(out.env.CODEX_HOME as string, 'config.toml'), 'utf8'),
+  ).toBe('model = "o3"\n');
   expect(out.writePaths).toEqual([join(other, 'sessions')]);
 });
 

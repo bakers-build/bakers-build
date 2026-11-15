@@ -33,7 +33,8 @@ afterEach(() => rmSync(root, { recursive: true, force: true }));
 const prepare = (
   env: Record<string, string> = {},
   hostEnv: Record<string, string> = {},
-) => prepareGrokRun({ homePath, workspacePath: '/w/tree', env }, source, hostEnv);
+) =>
+  prepareGrokRun({ homePath, workspacePath: '/w/tree', env }, source, hostEnv);
 
 it('builds a private GROK_HOME with copies of the configuration and policy', () => {
   const out = prepare();
@@ -79,7 +80,9 @@ it('GrokAgent.prepareRun prepares from the user Grok home', () => {
     env: {},
   });
   expect(out.env.GROK_HOME).toBe(join(homePath, '.grok'));
-  expect(out.bindPaths?.[0]?.source).toBe(realpathSync(join(source, 'auth.json')));
+  expect(out.bindPaths?.[0]?.source).toBe(
+    realpathSync(join(source, 'auth.json')),
+  );
 });
 
 it('hands the managed launcher the run GROK_HOME, else the user Grok home', () => {
