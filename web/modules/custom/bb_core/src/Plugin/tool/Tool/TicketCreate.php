@@ -155,6 +155,11 @@ use Drupal\tool\TypedData\OutputDefinition;
           description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
           nullable: TRUE,
         ),
+        'service_account' => new OutputDefinition(
+          data_type: 'boolean',
+          label: new TranslatableMarkup('Service account'),
+          description: new TranslatableMarkup('Whether the account is a workspace service account, not a person.'),
+        ),
       ],
     ),
     'reviewers' => new ListOutputDefinition(
@@ -179,6 +184,11 @@ use Drupal\tool\TypedData\OutputDefinition;
             label: new TranslatableMarkup('Mail'),
             description: new TranslatableMarkup('The e-mail address, null without mail view access.'),
             nullable: TRUE,
+          ),
+          'service_account' => new OutputDefinition(
+            data_type: 'boolean',
+            label: new TranslatableMarkup('Service account'),
+            description: new TranslatableMarkup('Whether the account is a workspace service account, not a person.'),
           ),
         ],
       ),

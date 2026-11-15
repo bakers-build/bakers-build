@@ -163,6 +163,7 @@ final class TicketCreateToolTest extends BakersToolTestBase {
     self::assertSame('Ticket created.', (string) $result->getMessage());
     self::assertSame($member->uuid(), $out['assignee']['uuid']);
     self::assertSame('member', $out['assignee']['name']);
+    self::assertFalse($out['assignee']['service_account']);
     $stored = $this->container->get('entity.repository')->loadEntityByUuid('bb_ticket', $out['id']);
     self::assertInstanceOf(BbTicketInterface::class, $stored);
     self::assertSame($member->id(), $stored->get('assignee_user_id')->target_id);

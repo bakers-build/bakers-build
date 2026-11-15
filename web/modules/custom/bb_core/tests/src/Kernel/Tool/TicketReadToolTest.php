@@ -30,8 +30,8 @@ final class TicketReadToolTest extends BakersToolTestBase {
       'origin' => 'legacy origin',
     ]);
     $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
-    self::assertSame([['uuid' => $other->uuid(), 'name' => 'reviewer', 'mail' => NULL]], $out['reviewers']);
-    self::assertSame(['uuid' => $this->actor->uuid(), 'name' => 'actor', 'mail' => NULL], $out['assignee']);
+    self::assertSame([['uuid' => $other->uuid(), 'name' => 'reviewer', 'mail' => NULL, 'service_account' => FALSE]], $out['reviewers']);
+    self::assertSame(['uuid' => $this->actor->uuid(), 'name' => 'actor', 'mail' => NULL, 'service_account' => FALSE], $out['assignee']);
     self::assertSame('legacy origin', $out['origin']);
     self::assertSame($ticket->toUrl()->setAbsolute()->toString(), $out['url']);
     user_role_grant_permissions('skill_user', ['view user email addresses']);
