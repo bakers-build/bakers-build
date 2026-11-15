@@ -109,8 +109,8 @@ Host-side DDEV and provisioning can still write generated, ignored files there, 
 At every isolated run start, the [Git workspace](/addons/workspace-git#isolated-runs) or
 [herdr](/addons/herdr) creates a fresh **run clone** of the ticket branch at the stable worktree
 path. Its Git directory lives in the conductor's cache, at
-`$XDG_CACHE_HOME/bakers/run-git/<hash>.git` (default `~/.cache`), and is mounted as `.git` only
-inside the run. The host's `.git` is a stub rewritten at every run start, without
+`$XDG_CACHE_HOME/bakers/run-git/<hash>.git`, and is mounted as `.git` only
+inside the run. The host's `.git` is a stub rewritten per run, without
 objects; under [herdr](/addons/herdr#isolated-runs) a linked worktree of the parent, its hooks and
 Git drivers off. The run never sees the parent repository.
 
