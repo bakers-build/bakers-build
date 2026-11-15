@@ -30,8 +30,8 @@ final class TicketReadToolTest extends BakersToolTestBase {
       'origin' => 'legacy origin',
     ]);
     $out = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
-    self::assertSame([['name' => 'reviewer', 'mail' => NULL]], $out['reviewers']);
-    self::assertSame(['name' => 'actor', 'mail' => NULL], $out['assignee']);
+    self::assertSame([['uuid' => $other->uuid(), 'name' => 'reviewer', 'mail' => NULL]], $out['reviewers']);
+    self::assertSame(['uuid' => $this->actor->uuid(), 'name' => 'actor', 'mail' => NULL], $out['assignee']);
     self::assertSame('legacy origin', $out['origin']);
     self::assertSame($ticket->toUrl()->setAbsolute()->toString(), $out['url']);
     user_role_grant_permissions('skill_user', ['view user email addresses']);
@@ -70,7 +70,7 @@ final class TicketReadToolTest extends BakersToolTestBase {
     self::assertSame([], $update['reviewers']);
     self::assertNull($update['assignee']);
     self::assertSame([], $update['links']);
-    foreach (['reviewers_remove' => ['actor@example.test'], 'links_remove' => ['https://example.test/private']] as $input => $value) {
+    foreach (['reviewers_remove' => [$this->actor->uuid()], 'links_remove' => ['https://example.test/private']] as $input => $value) {
       $this->assertFailure($this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), $input => $value]), 'You may not change');
     }
   }

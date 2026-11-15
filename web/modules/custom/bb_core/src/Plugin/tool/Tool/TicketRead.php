@@ -62,6 +62,11 @@ use Drupal\tool\TypedData\OutputDefinition;
         label: new TranslatableMarkup('Reviewer'),
         description: new TranslatableMarkup('The saved account.'),
         property_definitions: [
+          'uuid' => new OutputDefinition(
+            data_type: 'string',
+            label: new TranslatableMarkup('UUID'),
+            description: new TranslatableMarkup('The user UUID.'),
+          ),
           'name' => new OutputDefinition(
             data_type: 'string',
             label: new TranslatableMarkup('Name'),
@@ -81,6 +86,11 @@ use Drupal\tool\TypedData\OutputDefinition;
       description: new TranslatableMarkup('The saved account.'),
       nullable: TRUE,
       property_definitions: [
+        'uuid' => new OutputDefinition(
+          data_type: 'string',
+          label: new TranslatableMarkup('UUID'),
+          description: new TranslatableMarkup('The user UUID.'),
+        ),
         'name' => new OutputDefinition(
           data_type: 'string',
           label: new TranslatableMarkup('Name'),
