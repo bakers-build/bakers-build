@@ -17,5 +17,3 @@ Choose the guide for the work you want to do.
 [Use your client](/get-started/use-your-client) compares herdr-cli, herdr-app, Orca and Hermes. For chat-only access, begin with [a connector](/get-started/connector). Already have a prepared worker? [Connect another project](/get-started/connect-a-project).
 
 The version row identifies the site's build. It can describe changes not yet in a released package. Hermes is an experimental Slack project-manager bot.
-
-bakers.build is inspired by [OpenAI Symphony](https://github.com/openai/symphony). It adds a Drupal control plane (tickets, workflow states and approvals), distributed conductors on several machines, and cost and time allocation.

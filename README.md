@@ -11,7 +11,7 @@ on your development machine or on remote workers, and at every step you can look
 Everyone works on their own terms: their own AI subscription, their own machine, their own client.
 The line is shared, the tools are not.
 
-bakers.build is inspired by [OpenAI Symphony](https://github.com/openai/symphony). It adds a Drupal control plane (tickets, workflow states and approvals), distributed conductors on several machines, and cost and time allocation.
+bakers.build is inspired by [OpenAI Symphony](https://github.com/openai/symphony). It adds a control plane (tickets, workflow states and approvals), distributed conductors on several machines, and cost and time allocation.
 
 - [Get started](https://bakers.build/get-started/)
 - [Configuration](https://bakers.build/configuration/)
