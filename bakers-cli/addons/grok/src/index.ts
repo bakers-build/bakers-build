@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   type AgentFootprint,
   type AgentPlugin,
+  type AgentRunContext,
   type AgentRunIdentity,
   type BbAgent,
   type KnownOptionSpec,
@@ -19,6 +20,9 @@ import {
   systemSandboxHost,
   validateOptionalString,
 } from '@bakers-build/conductor/contract';
+import { encodeGrokSessionCwd, prepareGrokRun } from './run.js';
+
+export { encodeGrokSessionCwd } from './run.js';
 import { shellQuote } from '@bakers-build/core';
 import { parseGrokTranscript } from './footprint.js';
 
@@ -154,10 +158,6 @@ const GROK_KNOWN: readonly KnownOptionSpec[] = [
   { kind: 'effort', flags: ['--reasoning-effort', '--effort'] },
 ];
 
-export function encodeGrokSessionCwd(cwd: string): string {
-  return encodeURIComponent(cwd);
-}
-
 async function readText(path: string): Promise<string> {
   try {
     return await readFile(path, 'utf8');
@@ -238,7 +238,17 @@ export class GrokAgent implements BbAgent {
     this.overrides = cli.overrides;
   }
 
-  launchCommand(prompt: string, run?: AgentRunIdentity): string {
+  prepareRun(context: AgentRunContext) {
+    return prepareGrokRun(context, join(this.home, '.grok'));
+  }
+
+  launchCommand(
+    prompt: string,
+    run?: AgentRunIdentity,
+    _workspacePath?: string,
+    _tools?: { url: string },
+    env: Readonly<Record<string, string>> = {},
+  ): string {
     const parts = ['grok'];
     if (prompt !== '') {
       // Positional — the interactive form Grok Build documents
@@ -276,7 +286,8 @@ export class GrokAgent implements BbAgent {
       return [
         shellQuote(process.execPath),
         shellQuote(launcher),
-        shellQuote(join(this.home, '.grok')),
+        // An isolated run's own home, prepared by prepareRun.
+        shellQuote(env.GROK_HOME ?? join(this.home, '.grok')),
         shellQuote(JSON.stringify(this.security.sandbox.allow_write)),
         ...parts,
       ].join(' ');
