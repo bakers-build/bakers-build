@@ -76,6 +76,7 @@ export default {
       uli: { command: 'bash .bakers/provision.sh exec uli', args: true },
       playwright: { command: 'bash .bakers/provision.sh exec playwright', args: true },
       'playwright-cli': { command: 'bash .bakers/provision.sh exec playwright-cli', args: true },
+      designbook: { command: 'bash .bakers/provision.sh exec designbook', args: true },
       'playground-ticket': { command: 'bash .bakers/provision.sh exec playground-ticket', args: true },
     },
   },
