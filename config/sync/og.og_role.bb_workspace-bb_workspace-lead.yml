@@ -35,6 +35,7 @@ permissions:
   - 'delete bb_project'
   - 'delete bb_ticket_template'
   - 'delete bb_ticket_trigger'
+  - 'delete own bb_workspace'
   - 'edit bb_project'
   - 'manage members'
   - 'record own worklog'

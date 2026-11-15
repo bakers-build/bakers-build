@@ -4,8 +4,9 @@
 # Administers one workspace: members, projects, groups, teams, environments,
 # the deletes, and OG's `update group` / `manage members`. The workspace owner
 # holds this rank too: `group_manager_full_access` is off, so ownership alone
-# grants nothing. `create`/`delete any bb_workspace` stay off every rank;
-# a tenancy is an instance act (`administer bakers`).
+# grants nothing. `delete own bb_workspace` lets the owner, and no other lead,
+# delete the workspace; `create`/`delete any bb_workspace` stay off every rank,
+# an instance act (`administer bakers`).
 #
 # `register bakers conductor` is needed because every conductor re-registers
 # (an upsert), and the update path is fenced by rank. Per-user (`by_user`)
@@ -49,6 +50,7 @@ permissions:
   - 'delete bb_project'
   - 'delete bb_ticket_template'
   - 'delete bb_ticket_trigger'
+  - 'delete own bb_workspace'
   - 'edit bb_project'
   - 'manage members'
   - 'record own worklog'

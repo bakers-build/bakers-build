@@ -87,6 +87,35 @@ final class EntityDeleteAccessTest extends KernelTestBase {
   }
 
   /**
+   * The owner deletes their workspace; another lead or a member cannot.
+   */
+  public function testOwnerDeletesOwnWorkspace(): void {
+    // As shipped: OG's default would let any owner pass on ownership alone.
+    $this->config('og.settings')->set('group_manager_full_access', FALSE)->save();
+    $workspace = $this->fixture('a', 'bb_workspace');
+    $owner = $this->member('a');
+    $this->addMembership($workspace, $owner, ['lead']);
+    $workspace->set('owner_user_id', $owner->id())->set('slug', 'workspace-a')->save();
+    $lead = $this->createAccount('other-lead-a');
+    $this->addMembership($workspace, $lead, ['lead']);
+    $member = $this->createAccount('plain-member-a');
+    $this->addMembership($workspace, $member, ['member']);
+    $foreign = $this->member('b');
+    $this->addMembership($this->fixture('b', 'bb_workspace'), $foreign, ['lead']);
+
+    $this->container->get('router.builder')->rebuild();
+    // Guards the FALSE cases against a route that does not exist.
+    $this->container->get('router.route_provider')->getRouteByName('entity.bb_workspace.delete_form');
+    $access_manager = $this->container->get('access_manager');
+    $route = fn($account) => $access_manager->checkNamedRoute('entity.bb_workspace.delete_form', ['bb_workspace' => $workspace->get('slug')->value], $account);
+    foreach (['owner' => [$owner, TRUE], 'other lead' => [$lead, FALSE], 'member' => [$member, FALSE], 'foreign lead' => [$foreign, FALSE]] as $who => [$account, $expected]) {
+      $this->container->get('entity_type.manager')->getAccessControlHandler('bb_workspace')->resetCache();
+      self::assertSame($expected, $workspace->access('delete', $account), "$who: entity access");
+      self::assertSame($expected, $route($account), "$who: route access");
+    }
+  }
+
+  /**
    * A team lead deletes the projects of the team.
    */
   public function testTeamLeadDeletesTheTeamsProject(): void {
