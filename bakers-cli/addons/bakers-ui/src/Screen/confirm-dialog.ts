@@ -2,6 +2,7 @@ import type { VNode } from '@opentui/core';
 import { actionItem } from '../Component/footer-actions/index.js';
 import { serverMessage } from '../lib/jsonapi-error.js';
 import { columnNode, textNode } from '../lib/vnode.js';
+import { wrapToWidth } from '../lib/width.js';
 import { defineContext } from '../Routing/context.js';
 import type { RouteMetadata } from '../Routing/route.js';
 import { AsyncModalScreen } from './async-modal-screen.js';
@@ -38,6 +39,16 @@ export const confirmNavigation = (request: ConfirmRequest): ScreenAction => ({
   result: request,
 });
 
+/** Text width inside the popup, as the edit popup measures it. */
+const WIDTH = 58;
+
+/** One node per physical row: a server message is longer than the popup. */
+const rowsOf = (id: string, text: string): VNode[] =>
+  text
+    .split('\n')
+    .flatMap((line) => wrapToWidth(line, WIDTH))
+    .map((content, index) => textNode({ id: `${id}-${index}`, content }));
+
 /** The confirmation dialog: Enter confirms, Esc closes and writes nothing. */
 export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
   static readonly route = {
@@ -67,11 +78,8 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
   protected renderReady(prompt: ConfirmPrompt): VNode {
     return columnNode(
       'confirm-dialog',
-      textNode({ id: 'confirm-dialog-message', content: prompt.message }),
-      textNode({
-        id: 'confirm-dialog-detail',
-        content: this.message || prompt.detail || '',
-      }),
+      ...rowsOf('confirm-dialog-message', prompt.message),
+      ...rowsOf('confirm-dialog-detail', this.message || prompt.detail || ''),
     );
   }
 

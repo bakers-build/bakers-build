@@ -99,6 +99,20 @@ describe('confirmation dialog', () => {
     expect(renderTree(screen.present(context).body)).toContain('forbidden');
   });
 
+  it('wraps a long server message instead of clipping it', async () => {
+    const detail =
+      'state: The transition from working to cancelled is not allowed for this ticket right now.';
+    const confirm = vi.fn().mockRejectedValue(new Error(detail));
+    const { screen, context } = await opened(
+      requestOf({ message: 'Sure?', confirm }),
+    );
+    screen.handleInput('enter', context);
+    await settle();
+    const rows = renderTree(screen.present(context).body);
+    expect(rows.every((row) => row.trimEnd().length <= 58)).toBe(true);
+    expect(rows.map((row) => row.trim()).join(' ')).toContain(detail);
+  });
+
   it('a prompt without confirm makes Enter write nothing', async () => {
     const { screen, context } = await opened(
       requestOf({ message: 'Nothing to do.' }),

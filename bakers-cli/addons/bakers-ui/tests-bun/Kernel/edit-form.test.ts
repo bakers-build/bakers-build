@@ -496,22 +496,27 @@ it('AC-3: a conductor the READ profile cannot see still renders by name', async 
   await quit();
 });
 
-// ---- BB-360 — Cancel ticket action (replaces BB-313 State select) -------
+// ---- Cancel ticket: the detail's own action, through the confirmation dialog
 
-/** Move focus to Cancel ticket: Assignee·Reviewers·Conductor·Estimate·Spent·Parent·Type·Recipe·Labels·Save·Cancel */
-const toCancelTicket = async (press: (key: string) => Promise<void>) => {
-  for (let i = 0; i < 10; i += 1) await press('\x1b[B');
-};
-
-it('BB-360: Enter on Cancel ticket writes only state: cancelled', async () => {
+it('the edit popup has no Cancel ticket row and no State select', async () => {
   const h = harness();
   const { screen, press, quit } = await openTicket(h);
   await press('e');
-  expect(plain(screen())).toContain('[ Cancel ticket ]');
+  expect(plain(screen())).toContain('Edit ticket');
+  expect(plain(screen())).not.toContain('[ Cancel ticket ]');
   expect(plain(screen())).not.toContain('State:');
+  await quit();
+});
 
-  await toCancelTicket(press);
-  await press('\r'); // Enter activates the focused action row
+it('x opens the confirmation dialog; Enter writes only state: cancelled', async () => {
+  const h = harness();
+  const { screen, press, quit } = await openTicket(h);
+  await press('x');
+  expect(plain(screen())).toContain('Cancel ticket');
+  expect(plain(screen())).toContain('The ticket moves to cancelled.');
+  expect(h.rec.writes).toEqual([]);
+
+  await press('\r');
   expect(h.rec.writes).toHaveLength(1);
   expect(h.rec.writes[0]?.body).toEqual({
     attributes: { state: 'cancelled' },
@@ -520,19 +525,13 @@ it('BB-360: Enter on Cancel ticket writes only state: cancelled', async () => {
   await quit();
 });
 
-it('BB-360 D10: Ctrl+S from Cancel ticket row still Saves (never cancels)', async () => {
+it('x then Esc closes the dialog and writes nothing', async () => {
   const h = harness();
-  const { press, quit } = await openTicket(h);
-  await press('e');
-  await toCancelTicket(press);
-  await press('\x13'); // Ctrl+S — ALWAYS Save, even on Cancel ticket
-  expect(h.rec.writes).toHaveLength(1);
-  const attributes = h.rec.writes[0]?.body.attributes as Record<
-    string,
-    unknown
-  >;
-  expect(attributes).not.toHaveProperty('state');
-  expect(h.rec.writes[0]?.body).toHaveProperty('relationships');
+  const { screen, press, quit } = await openTicket(h);
+  await press('x');
+  await press('\x1b');
+  expect(h.rec.writes).toEqual([]);
+  expect(plain(screen())).not.toContain('The ticket moves to cancelled.');
   await quit();
 });
 
@@ -552,9 +551,11 @@ it('BB-360: an untouched Save still sends no state', async () => {
   await quit();
 });
 
-it('BB-360: a done ticket gets no Cancel ticket row, and Save stays reachable', async () => {
+it('BB-360: a done ticket offers no x, and Save stays reachable', async () => {
   const h = harness({ ticketState: 'done' });
   const { screen, press, quit } = await openTicket(h);
+  await press('x');
+  expect(plain(screen())).not.toContain('The ticket moves to cancelled.');
   await press('e');
   const frame = plain(screen());
   expect(frame).toContain('Edit ticket');
@@ -597,13 +598,14 @@ it('BB-360: Esc closes without writing; reopen is a fresh form', async () => {
   await quit();
 });
 
-it('BB-360: after a successful cancel the reopened popup is the terminal one', async () => {
+it('after a confirmed cancel the detail offers no x, and the popup still saves', async () => {
   const h = harness();
   const { screen, press, quit } = await openTicket(h);
-  await press('e');
-  await toCancelTicket(press);
-  await press('\r'); // cancel
+  await press('x');
+  await press('\r'); // confirm
   expect(h.rec.writes).toHaveLength(1);
+  await press('x');
+  expect(plain(screen())).not.toContain('The ticket moves to cancelled.');
 
   await press('e');
   const frame = plain(screen());
@@ -617,7 +619,7 @@ it('BB-360: after a successful cancel the reopened popup is the terminal one', a
   await quit();
 });
 
-it('BB-360: a rejected cancel keeps the popup and shows the server words', async () => {
+it('a rejected cancel keeps the dialog and shows the server words', async () => {
   const detail =
     'state: The transition from working to cancelled is not allowed.';
   const h = harness({
@@ -627,11 +629,10 @@ it('BB-360: a rejected cancel keeps the popup and shows the server words', async
     }),
   });
   const { screen, press, quit } = await openTicket(h);
-  await press('e');
-  await toCancelTicket(press);
+  await press('x');
   await press('\r');
   expect(plain(screen())).toContain(detail);
-  expect(plain(screen())).toContain('Edit ticket');
+  expect(plain(screen())).toContain('Cancel ticket');
   await quit();
 });
 

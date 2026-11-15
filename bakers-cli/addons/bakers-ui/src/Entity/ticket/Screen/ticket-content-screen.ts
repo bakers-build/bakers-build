@@ -9,6 +9,7 @@ import {
   AsyncScreen,
   type FullScreenChrome,
 } from '../../../Screen/async-screen.js';
+import { confirmNavigation } from '../../../Screen/confirm-dialog.js';
 import { runRowAction } from '../../../Screen/row-action.js';
 import type {
   ScreenAction,
@@ -55,6 +56,8 @@ import {
   watchTicket,
 } from '../Data/store.js';
 import { updateTicketFrozen } from '../Data/write.js';
+import { isTicketCancellable } from '../Form/edit.js';
+import { cancelTicketRequest } from './ticket-actions.js';
 
 /** Overview width when the context carries none — a pipe has no terminal. */
 const DEFAULT_COLUMNS = 80;
@@ -381,25 +384,38 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
       return this.select(keys.length - 1, context);
     return false;
   }
+  private cancellable(): boolean {
+    return !!this.document && isTicketCancellable(this.document);
+  }
   commandForInput(input: string): string | undefined {
-    return this.state === 'ready' && this.viewMode === 'full' && input === 'e'
-      ? 'edit-assignment'
-      : undefined;
+    if (this.state !== 'ready' || this.viewMode !== 'full') return undefined;
+    if (input === 'e') return 'edit-assignment';
+    if (input === 'x' && this.cancellable()) return 'cancel-ticket';
+    return undefined;
   }
   actionForInput(
     input: string,
     context: ScreenContext,
   ): ScreenAction | undefined {
-    return this.commandForInput(input) === 'edit-assignment'
-      ? ticketEditAction(context, this.document)
-      : undefined;
+    const command = this.commandForInput(input);
+    if (command === 'edit-assignment')
+      return ticketEditAction(context, this.document);
+    if (command === 'cancel-ticket' && this.document)
+      return confirmNavigation(cancelTicketRequest(this.document));
+    return undefined;
   }
   receiveResult(result: unknown, context: ScreenContext): void {
-    if (
-      result &&
-      typeof result === 'object' &&
-      (result as { type?: unknown }).type === 'ticket-assignment-updated'
-    ) {
+    const type =
+      result && typeof result === 'object'
+        ? (result as { type?: unknown }).type
+        : undefined;
+    if (type === 'ticket-cancelled') {
+      const document = (result as { document?: TicketDetailDocument }).document;
+      if (document) this.replaceReady(saveTicket(context, document));
+      context.requestDraw();
+      return;
+    }
+    if (type === 'ticket-assignment-updated') {
       const returned = result as {
         document?: TicketDetailDocument;
         options?: AssignmentLabels;
@@ -463,6 +479,9 @@ export abstract class TicketContentScreen extends AsyncScreen<TicketDetailDocume
     return [
       actionItem('detail-tab', 'Tab', 'section'),
       actionItem('detail-edit', 'e', 'edit'),
+      ...(this.cancellable()
+        ? [actionItem('ticket-cancel', 'x', 'cancel ticket')]
+        : []),
       // Freeze and paging before copy: at 80 columns the footer clips the
       // tail, and `Y:Copy link` is the hint that yields.
       actionItem('detail-freeze', 'f', this.isFrozen() ? 'unfreeze' : 'freeze'),

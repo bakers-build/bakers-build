@@ -1,9 +1,7 @@
 import { expect, it } from 'vitest';
 import { editFormTree } from '../../../../../src/Entity/ticket/Component/edit-form/index.js';
 import {
-  CANCEL_TICKET_ACTION_ID,
   EDIT_FIELDS,
-  EDIT_FIELDS_TERMINAL,
   type EditFormOptions,
   type EditFormState,
 } from '../../../../../src/Entity/ticket/Form/edit.js';
@@ -317,23 +315,13 @@ it('D4: every id in the popup`s tree is declared exactly once', () => {
 
 // ---- BB-360: Parent, Labels, Cancel ticket (no State select) --------------
 
-it('BB-360: non-terminal field list draws Parent, Labels, Save and Cancel ticket', () => {
+it('BB-360: the field list draws Parent, Labels and Save, and no Cancel ticket', () => {
   const lines = rowsOf(state(), opts).join('\n');
   expect(lines).toMatch(/Parent:/);
   expect(lines).toMatch(/Labels:/);
   expect(lines).toContain('[ Save ]');
-  expect(lines).toContain('[ Cancel ticket ]');
+  expect(lines).not.toContain('Cancel ticket');
   expect(lines).not.toMatch(/State:/);
-  expect(EDIT_FIELDS.map((f) => f.id)).toContain(CANCEL_TICKET_ACTION_ID);
-});
-
-it('BB-360: the terminal field list draws no Cancel ticket row', () => {
-  const lines = rowsOf(state(), opts, {}, EDIT_FIELDS_TERMINAL).join('\n');
-  expect(lines).toContain('[ Save ]');
-  expect(lines).not.toContain('[ Cancel ticket ]');
-  expect(lines).not.toMatch(/State:/);
-  expect(lines).toMatch(/Parent:/);
-  expect(lines).toMatch(/Labels:/);
 });
 
 it('BB-360: the legend names Parent and Labels structure fields', () => {
@@ -341,9 +329,6 @@ it('BB-360: the legend names Parent and Labels structure fields', () => {
   expect(withRow).toMatch(/Parent/i);
   expect(withRow).toMatch(/Labels/i);
   expect(withRow).not.toMatch(/only lifecycle move/i);
-  // Terminal still has the same structure legend (no State-only copy).
-  const without = rowsOf(state(), opts, {}, EDIT_FIELDS_TERMINAL).join(' ');
-  expect(without).toMatch(/Parent/i);
 });
 
 it('BB-360: the legend line is wrapped like every other row', () => {
