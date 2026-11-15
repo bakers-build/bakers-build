@@ -140,13 +140,14 @@ export function registerRunCloneWorktree(record: RunClone): void {
 /** The value that switches a command-valued driver key off; `undefined` for any other key. */
 function driverOff(key: string): string | undefined {
   if (key === 'diff.external') return '';
-  const name = /^(filter|diff|merge)\..+\.([^.]+)$/.exec(key);
-  if (!name) return undefined;
-  return {
+  const [, section = '', name = ''] =
+    /^(filter|diff|merge)\..+\.([^.]+)$/.exec(key) ?? [];
+  const off: Record<string, Record<string, string>> = {
     filter: { clean: '', smudge: '', process: '', required: 'false' },
     diff: { textconv: 'cat', command: '' },
     merge: { driver: 'false' },
-  }[name[1] as 'filter' | 'diff' | 'merge'][name[2]] as string | undefined;
+  };
+  return off[section]?.[name];
 }
 
 export function removeRunClone(workspace: string, env: Env = process.env) {
