@@ -536,3 +536,33 @@ Then("every ticket row ends with the assignee's mark, named by its tooltip", asy
     expect(mark!.text.length, 'The mark shows more than initials').toBeLessThanOrEqual(3);
   }
 });
+
+/**
+ * Touch targets: every visible button, link, tab and form control in main.
+ * A checkbox or radio is measured by its label, its real hit area. Links
+ * inside prose sentences are excluded; a link in a row whose own target is
+ * already as large is not.
+ */
+Then('every control in the main region is at least {int} pixels in both dimensions', async ({ page }, minimum: number) => {
+  await page.waitForLoadState('load');
+  const small = await page.getByRole('main').evaluate((main, min) => {
+    const controls = main.querySelectorAll('a[href], button, input:not([type="hidden"]), select, textarea, [role="tab"], summary');
+    return Array.from(controls).flatMap((control) => {
+      if (control.closest('p') && control.tagName === 'A') {
+        return [];
+      }
+      const input = control as HTMLInputElement;
+      const target = (input.type === 'checkbox' || input.type === 'radio') && input.labels?.[0] ? input.labels[0] : control;
+      if (!target.checkVisibility({ visibilityProperty: true })) {
+        return [];
+      }
+      const box = target.getBoundingClientRect();
+      if (box.width === 0 || (box.width >= min && box.height >= min)) {
+        return [];
+      }
+      const name = (target.getAttribute('aria-label') ?? target.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 30);
+      return [`${target.tagName.toLowerCase()} "${name}" ${Math.round(box.width)}×${Math.round(box.height)}`];
+    });
+  }, minimum);
+  expect(small, 'Controls smaller than the touch minimum').toEqual([]);
+});

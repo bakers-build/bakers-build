@@ -170,9 +170,9 @@
         is replaced instead of posting to a 404 (see the prop's description). #}
     {%- if c.external -%}
       {#- An address outside bakers.build: styled like a prose link, opened apart. #}
-      <a class="text-body text-link underline underline-offset-2 hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring break-all" href="{{ c.url|default('#') }}" target="_blank" rel="noopener noreferrer">{{ c.value }}</a>
+      <a class="text-body text-link underline underline-offset-2 max-md:inline-flex max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:decoration-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring break-all" href="{{ c.url|default('#') }}" target="_blank" rel="noopener noreferrer">{{ c.value }}</a>
     {%- else -%}
-    <a class="{{ c.mono ? 'font-mono text-data' : 'text-body' }} text-text no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url|default('#') }}">{{ c.value }}</a>
+    <a class="{{ c.mono ? 'font-mono text-data' : 'text-body' }} text-text no-underline max-md:inline-flex max-md:items-center max-md:min-h-touch max-md:min-w-touch hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url|default('#') }}">{{ c.value }}</a>
     {%- endif -%}
   {%- elseif c.kind == 'badge' -%}
     {#- With `url` a badge is a linked chip; hover dims it, because underline
@@ -402,7 +402,7 @@
       {%- endif -%}
       {%- if c.url -%}
       {%- set details_attributes = create_attribute()
-        .addClass(['absolute', '-top-2', '-right-2', 'grid', 'place-items-center', 'w-4', 'h-4', 'rounded-xs', 'bg-surface', 'text-text-faint', 'hover:text-primary', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'])
+        .addClass(['absolute', '-top-2', '-right-2', 'max-md:static', 'grid', 'place-items-center', 'w-4', 'h-4', 'max-md:size-touch', 'rounded-xs', 'bg-surface', 'text-text-faint', 'hover:text-primary', 'focus-visible:outline-2', 'focus-visible:outline-offset-2', 'focus-visible:outline-focus-ring'])
         .setAttribute('href', c.url)
         .setAttribute('data-hx-boost', 'false')
         .setAttribute('aria-label', c.url_label|default('Details'))

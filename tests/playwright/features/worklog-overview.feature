@@ -152,3 +152,10 @@ Feature: Employees review their own time in a workspace by day and week
     And I save the time entry
     Then the address does not include "evil.example"
     And the stored duration for description "Overview hostile dest" is 1200 seconds
+
+  Scenario: My time fits a phone and every control is large enough to tap
+    Given the viewport is 390 pixels wide
+    When I visit "/bakers/time?mode=week&date=2026-11-03"
+    Then I see the My time overview
+    And the document does not scroll horizontally
+    And every control in the main region is at least 44 pixels in both dimensions
