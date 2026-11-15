@@ -2,9 +2,7 @@
   <img src=".github/assets/bakers-build-icon.png" alt="bakers.build" width="120">
 </p>
 
-<p align="center">
-  <strong>A ticket-driven AI software factory.</strong>
-</p>
+<h3 align="center">A ticket-driven AI software factory.</h3>
 
 Every ticket moves through the same fixed steps: plan, build, review, ship. AI agents do the work
 on your development machine or on remote workers, and at every step you can look in.
