@@ -780,7 +780,7 @@ final class WorklogOverviewTest extends KernelTestBase {
       ['mode' => 'week', 'date' => '2026-12-08'],
     );
     $markup = $this->renderDisplay($team, 'team');
-    self::assertMatchesRegularExpression('/Week total\s*1:00/', $markup);
+    self::assertMatchesRegularExpression('/Week total\s*1:00/', strip_tags($markup));
     self::assertStringNotContainsString('Proposed', $markup);
     self::assertStringNotContainsString('bb-track-week-form', $markup);
   }
@@ -1279,7 +1279,8 @@ final class WorklogOverviewTest extends KernelTestBase {
    * Reads the formatted total from the executed view.
    */
   private function total(ViewExecutable $view): string {
-    $markup = $this->renderView($view);
+    // The toolbar sets the week total's label and value in separate elements.
+    $markup = strip_tags($this->renderView($view));
     // Day mode states the period total; week mode shows the week total once.
     if (preg_match('/Total recorded time:\s*(\d+:\d{2})/', $markup, $matches) === 1) {
       return $matches[1];
