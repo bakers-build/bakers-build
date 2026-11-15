@@ -17,7 +17,7 @@ See where a ticket stands, read its evidence and respond when a decision is need
 
 3. **Distinguish the reviews.** In workflow review, an agent checks the produced changes against requirements and repository standards. A person assigned under **Reviewers** separately checks the result, often through a shared preview. Mandatory agent review does not require a named human reviewer. Follow [Accept results](/skills-and-workflows/accept-results) for that walkthrough.
 
-4. **Check holds and properties.** The Properties panel includes assignee, reviewers, conductor, priority and labels. Its footer offers **Freeze ticket**, **Cancel ticket** and **More settings**. Reasons such as *frozen*, *blocked*, *no conductor*, *conductor has no access* or *failing* explain dispatch holds.
+4. **Check holds and properties.** The Properties panel includes assignee, reviewers, conductor, priority and labels. Its footer offers **Freeze ticket**, **Cancel ticket** and **More settings**. In `bakers ui`, `x` cancels the ticket and `r` restarts its active run, each after a confirmation dialog. Reasons such as *frozen*, *blocked*, *no conductor*, *conductor has no access* or *failing* explain dispatch holds.
 
 ## Where you answer
 

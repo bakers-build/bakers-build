@@ -1,17 +1,16 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   activeEditField,
-  CANCEL_TICKET_ACTION_ID,
   CANCELLED_STATE,
   cancelEditPayload,
   clearEditValue,
   cycleEdit,
   EDIT_FIELDS,
-  EDIT_FIELDS_TERMINAL,
   type EditFormOptions,
   type EditFormState,
   editFormFor,
   initialEditForm,
+  isTicketCancellable,
   moveEditField,
   serializeEdit,
 } from '../../../../src/Entity/ticket/Form/edit.js';
@@ -131,10 +130,10 @@ it('AC-1: prefills null for an unassigned ticket, and mixes', () => {
   expect(onlyCond.conductor).toBe(COND);
 });
 
-it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, parent, type, recipe, labels, save, cancelTicket', () => {
-  // BB-360: State select is gone; Parent + Labels sit before the dual actions.
-  // BAKERS-17: Type and Recipe sit between them.
-  // Cancel ticket is a dedicated action id — never `cancel` (Esc owns that intent).
+it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, parent, type, recipe, labels, save', () => {
+  // BB-360: State select is gone; Parent + Labels sit before Save.
+  // BAKERS-17: Type and Recipe sit between them. Cancel ticket is no field:
+  // it is the ticket detail's own confirmed action.
   expect(EDIT_FIELDS.map((f) => f.id)).toEqual([
     'assignee',
     'reviewers',
@@ -146,16 +145,14 @@ it('AC-1: the field list is assignee, reviewers, conductor, estimate, spent, par
     'recipe',
     'labels',
     'submit',
-    CANCEL_TICKET_ACTION_ID,
   ]);
-  expect(CANCEL_TICKET_ACTION_ID).toBe('cancelTicket');
   expect(EDIT_FIELDS.map((f) => f.id)).not.toContain('stateTarget');
   expect(EDIT_FIELDS.map((f) => f.label)).not.toContain('State');
   expect(activeEditField(s).id).toBe('assignee');
   expect(activeEditField(moveEditField(s, 1)).id).toBe('reviewers');
   expect(activeEditField(moveEditField(s, 2)).id).toBe('conductor');
   expect(moveEditField(s, -1).active).toBe(0);
-  expect(moveEditField(s, 99).active).toBe(10);
+  expect(moveEditField(s, 99).active).toBe(9);
 });
 
 // ---- AC-4: clearable, from both ends, in both directions --------------------
@@ -463,51 +460,47 @@ describe('BB-360 — labels and parent prefill', () => {
 
 // ---- BB-360: Cancel ticket payload and field lists ------------------------
 
-describe('BB-360 — Cancel ticket and terminal declaration', () => {
+describe('BB-360 — Cancel ticket payload and availability', () => {
   const withState = (state: string): TicketDetailDocument =>
     doc({ assignee: USER, conductor: COND }, { attributes: { state } });
 
-  it('non-terminal declaration has parent, labels, Save and Cancel ticket — no State', () => {
+  it('every open ticket gets the same popup: parent, labels, Save — no State, no Cancel ticket', () => {
+    for (const state of [
+      'qualification',
+      'plan',
+      'working',
+      'review',
+      'done',
+      'cancelled',
+    ])
+      expect(editFormFor(withState(state)).fields.map((f) => f.id)).toEqual([
+        'assignee',
+        'reviewers',
+        'conductor',
+        'estimate',
+        'spent',
+        'parent',
+        'ticketType',
+        'recipe',
+        'labels',
+        'submit',
+      ]);
+  });
+
+  it('a non-terminal ticket can be cancelled, a terminal or closed one cannot', () => {
     for (const state of ['qualification', 'plan', 'working', 'review'])
-      expect(editFormFor(withState(state)).fields.map((f) => f.id)).toEqual([
-        'assignee',
-        'reviewers',
-        'conductor',
-        'estimate',
-        'spent',
-        'parent',
-        'ticketType',
-        'recipe',
-        'labels',
-        'submit',
-        CANCEL_TICKET_ACTION_ID,
-      ]);
-  });
-
-  it('terminal declaration has parent + labels + Save only (no Cancel ticket)', () => {
+      expect(isTicketCancellable(withState(state))).toBe(true);
     for (const state of ['done', 'cancelled'])
-      expect(editFormFor(withState(state)).fields.map((f) => f.id)).toEqual([
-        'assignee',
-        'reviewers',
-        'conductor',
-        'estimate',
-        'spent',
-        'parent',
-        'ticketType',
-        'recipe',
-        'labels',
-        'submit',
-      ]);
-    expect(EDIT_FIELDS_TERMINAL.map((f) => f.id)).not.toContain(
-      CANCEL_TICKET_ACTION_ID,
-    );
-    expect(EDIT_FIELDS_TERMINAL.map((f) => f.id)).not.toContain('stateTarget');
+      expect(isTicketCancellable(withState(state))).toBe(false);
+    expect(
+      isTicketCancellable(
+        doc({}, { attributes: { state: 'working', closed: true } }),
+      ),
+    ).toBe(false);
   });
 
   it('D13: an unknown state fails OPEN — Cancel ticket is offered', () => {
-    expect(editFormFor(doc()).fields.map((f) => f.id)).toContain(
-      CANCEL_TICKET_ACTION_ID,
-    );
+    expect(isTicketCancellable(doc())).toBe(true);
   });
 
   it('cancelEditPayload is lifecycle-only: state cancelled, no relationships', () => {
@@ -559,7 +552,7 @@ it('the edit popup offers my conductors first (AC-14)', async () => {
 });
 
 describe("a closed ticket's edit popup", () => {
-  it('gets the read-only declaration: no Save, no Cancel ticket', () => {
+  it('gets the read-only declaration: no Save', () => {
     const closed = doc(
       { assignee: USER, conductor: COND },
       { attributes: { state: 'done', closed: true } },

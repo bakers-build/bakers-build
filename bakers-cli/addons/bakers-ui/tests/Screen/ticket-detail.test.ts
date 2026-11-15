@@ -162,24 +162,23 @@ describe('TicketDetailScreen interaction ownership', () => {
     );
   });
 
-  it('e on the Runs tab edits the selected run, not the ticket', () => {
+  it('x on the Runs tab cancels the selected run, not the ticket', () => {
     const screen = new TicketRunsScreen();
     const ctx = context();
 
     screen.enter(ctx);
 
-    expect(screen.actionForInput?.('e', ctx)).toEqual({
+    expect(screen.actionForInput?.('x', ctx)).toMatchObject({
       type: 'navigate',
-      routeId: 'run.edit',
-      params: { ticketId: 'ticket-1', runId: 'run-1' },
-      result: document,
+      routeId: 'confirm',
     });
-    expect(screen.present(ctx).actions?.find((a) => a.key === 'e')?.label).toBe(
-      'edit run',
+    expect(screen.actionForInput?.('e', ctx)).toBeUndefined();
+    expect(screen.present(ctx).actions?.find((a) => a.key === 'x')?.label).toBe(
+      'cancel run',
     );
   });
 
-  it('e does nothing on a finished run, and the footer offers no e', () => {
+  it('x does nothing on a finished run, and the footer offers no x', () => {
     const finished: TicketDetailDocument = {
       ...document,
       included: [
@@ -200,8 +199,8 @@ describe('TicketDetailScreen interaction ownership', () => {
 
     screen.enter(ctx);
 
-    expect(screen.actionForInput?.('e', ctx)).toBeUndefined();
-    expect(screen.present(ctx).actions?.some((a) => a.key === 'e')).toBe(false);
+    expect(screen.actionForInput?.('x', ctx)).toBeUndefined();
+    expect(screen.present(ctx).actions?.some((a) => a.key === 'x')).toBe(false);
   });
 
   it('repaints the run row on a cancellation result reaching the Runs tab', () => {
