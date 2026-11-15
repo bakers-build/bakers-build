@@ -37,13 +37,16 @@ final class ConductorListToolTest extends BakersToolTestBase {
       'teams' => $this->project->get('teams')->getValue(),
     ]);
     $this->conductor('c-elsewhere', (int) $other->id(), 'online');
-    $row = static fn (ContentEntityInterface $conductor, bool $active, string $status): array => [
+    $row = fn (ContentEntityInterface $conductor, bool $active, string $status): array => [
       'uuid' => $conductor->uuid(),
       'conductor_id' => $conductor->get('conductor_id')->value,
       'label' => $conductor->label(),
       'active' => $active,
       'status' => $status,
       'machine' => NULL,
+      'owner' => ['uuid' => $this->actor->uuid(), 'name' => $this->actor->getAccountName()],
+      'assignment_setting' => 'machine',
+      'assignment' => 'forbid',
     ];
     self::assertSame([
       'conductors' => [$row($offline, FALSE, 'offline'), $row($online, TRUE, 'online')],
@@ -67,6 +70,21 @@ final class ConductorListToolTest extends BakersToolTestBase {
     $this->conductor('on-box', (int) $this->project->id(), 'online', TRUE, (int) $machine->id());
     $rows = $this->outputs($this->runTool('bakers_conductor_list', ['project' => 'TOOLPROJEC']))['conductors'];
     self::assertSame('box-a', $rows[0]['machine']);
+  }
+
+  /**
+   * The effective assignment follows the machine unless the conductor sets it.
+   */
+  public function testShowsAssignment(): void {
+    $machine = $this->entity('bb_machine', [
+      'name' => 'box-f',
+      'host_key' => 'box-f',
+      'owner_user_id' => $this->actor->id(),
+      'assignment' => 'forbid',
+    ]);
+    $this->conductor('follows', (int) $this->project->id(), 'online', TRUE, (int) $machine->id());
+    $rows = $this->outputs($this->runTool('bakers_conductor_list', ['project' => 'TOOLPROJEC']))['conductors'];
+    self::assertSame(['machine', 'forbid'], [$rows[0]['assignment_setting'], $rows[0]['assignment']]);
   }
 
   /**
