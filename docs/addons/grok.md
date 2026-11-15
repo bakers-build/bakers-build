@@ -58,6 +58,10 @@ Reserved arguments: `--permission-mode`, `--session-id`/`-s`; in sandbox mode al
 
 `bakers conductor check` checks Linux prerequisites. Storage, directory and version checks precede launch. Shell approval prompts remain possible; unattended container-runtime completion is unverified.
 
+## Isolated runtimes
+
+Under [Bubblewrap](/addons/runtime-bwrap) or [Docker](/addons/runtime-docker) the run gets a private `GROK_HOME` with copies of `config.toml`, `sandbox.toml` and `requirements.toml`; a managed profile is written into that copy. This worktree's transcript folder under `~/.grok/sessions/` stays writable on the host. The run shares the host's single `auth.json`; `XAI_API_KEY` in the run or conductor environment replaces it. Docker needs an image with Grok installed.
+
 Runs reach the conductor's [addon tools](build/tools.md) through `bakers tools` in Bash, so they work in sandbox mode although `MCPTool(*)` is denied.
 
 More: [Run security](/provision/security/execution#grok-in-sandbox-mode), [Choose agents](/agents/guide).
