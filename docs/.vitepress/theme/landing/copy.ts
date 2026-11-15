@@ -8,6 +8,7 @@ export const DOCS_URL = '/get-started/'
 export const SELF_HOST_URL = '/self-hosting/'
 export const SECURITY_URL = '/agents/security'
 export const REPO_URL = 'https://github.com/bakers-build/bakers-build'
+export const SYMPHONY_URL = 'https://github.com/openai/symphony'
 // The language switch, in the design's fixed order.
 export const LANGUAGES = [
   { code: 'de', label: 'DE', name: 'Deutsch', href: '/de/' },
@@ -20,6 +21,7 @@ const en = {
   nav: { label: 'Main', menu: 'Menu' },
   signUp: 'Sign up',
   docs: 'Read the docs',
+  inspired: 'Inspired by OpenAI Symphony',
   hero: {
     title: 'A ticket-driven AI software factory.',
     text: "Before your team is up, the prep is done. Agents work every ticket on your development machine or on remote workers, and at every step you can look into the oven.",
@@ -112,6 +114,7 @@ const de: Copy = {
   nav: { label: 'Hauptmenü', menu: 'Menü' },
   signUp: 'Anmelden',
   docs: 'Docs lesen',
+  inspired: 'Inspiriert von OpenAI Symphony',
   hero: {
     title: 'Eine KI-Softwarefabrik. Vom Ticket bis zum Merge.',
     text: 'Bevor dein Team da ist, ist die Vorbereitung erledigt. Agenten arbeiten jedes Ticket auf deinem Entwicklungsrechner oder auf Remote-Workern ab, und bei jedem Schritt kannst du in den Ofen schauen.',
