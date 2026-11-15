@@ -59,7 +59,7 @@ Assigning means setting a conductor on a ticket or template. The machine's **Ass
 | `allow` | The owner and anyone who can view the conductor. |
 | `forbid` | The owner only; nobody else, administrators included. |
 
-A new machine starts with `forbid`. Only the owner changes it, in the web UI on the machine's Identity card; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
+A new machine starts with `forbid`; machines registered before this setting existed were set to `allow`, so switch one to `forbid` on its Identity card to restrict it. Only the owner changes it, in the web UI on the machine's Identity card; `machine.config.js` and the CLI never write it, so re-registering keeps it. A conductor can override it ([Conductors](/configuration/project/conductors#who-may-assign-this-conductor)). `bakers_user_read`, `bakers_machine_list` and `bakers_conductor_list` show the value ([Tools](/cli/tools)).
 
 ## Preview-link tunnels
 

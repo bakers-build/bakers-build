@@ -130,7 +130,7 @@ Assigning means setting a conductor on a ticket or template. The owner always ma
 
 | Value | Who may assign |
 |---|---|
-| `machine` | The default: the machine's value applies ([Machines](/configuration/machine#who-may-assign-this-conductor)). |
+| `machine` | The default, also for conductors registered before this setting existed: the machine's value applies ([Machines](/configuration/machine#who-may-assign-this-conductor)). |
 | `allow` | Anyone who can view the conductor. |
 | `forbid` | Nobody else, administrators included. |
 

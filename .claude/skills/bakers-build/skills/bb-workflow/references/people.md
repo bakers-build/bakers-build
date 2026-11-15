@@ -9,5 +9,6 @@ Pass people and conductors by UUID only, from `bakers_user_read` or ticket outpu
 *My conductor* = your user's conductors in the ticket's project, from `bakers_user_read` alone.
 Exactly one `online`: use it. Zero or several: ask, listing each with its machine.
 
-Before setting someone else's conductor, check its `assignment`. `forbid`: say so, name the owner,
-set no conductor; the owner alone lifts it, never an added reviewer.
+Before setting someone else's conductor, check its `assignment` (`bakers_conductor_list` shows it
+with the `owner`). `forbid`: say so, name the owner, set no conductor; the owner alone lifts it,
+never an added reviewer.
