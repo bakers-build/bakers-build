@@ -230,6 +230,7 @@ entries="$(cd "$root" && node --input-type=module -e 'const e = (await import(".
   'uli|bash .bakers/provision.sh exec uli|args=true' \
   'playwright|bash .bakers/provision.sh exec playwright|args=true' \
   'playwright-cli|bash .bakers/provision.sh exec playwright-cli|args=true' \
+  'designbook|bash .bakers/provision.sh exec designbook|args=true' \
   'playground-ticket|bash .bakers/provision.sh exec playground-ticket|args=true')" ] || fail "unstable entry points: $entries"
 dispatch exec phpcs
 [ "$rc" = 0 ] || fail "exit $rc: $out"
