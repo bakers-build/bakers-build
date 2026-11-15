@@ -74,13 +74,25 @@ Rendered: headings, `**strong**`, `*em*`, `~~struck~~` (dim), code, lists, quote
 
 ### Runs
 
-The ticket's **Runs** tab lists its runs as selectable rows, newest started first. `Enter` (or a click) opens the **run detail**: state, timing, footprint (tokens, tool calls, agent turns), worktree and the full, scrollable **Log** and **Error log**. A run in state `claimed` or `running` also offers `e` to cancel it.
+The ticket's **Runs** tab lists its runs as selectable rows, newest started first. `Enter` (or a click) opens the **run detail**: state, timing, footprint (tokens, tool calls, agent turns), worktree and the full, scrollable **Log** and **Error log**. A run in state `claimed` or `running` also offers `x` to cancel it, on the run detail and on the selected row of the Runs tab.
 
 The project **Runs** tab lists the project's runs, newest first, 20 per page. A `running` or `claimed` run with a heartbeat older than 600 seconds, or a lapsed claim lease, shows as `stale`. Lists state `N of M ticket(s)`: rows on screen of all rows matching the filters, `M` from the server's `meta.count`, or `?` when it reports none.
 
 ### Editing a ticket
 
-`e` opens the `✎ Edit ticket` popup: assignee, conductor, estimate, spent, **Parent** and **Labels**. **Save** (`Ctrl+S`) never writes the state. **Cancel ticket** (non-terminal tickets only) writes only `state: cancelled`, discards unsaved edits and asks no confirmation; a forbidden transition shows a 422. A closed ticket's popup is read-only.
+`e` opens the `✎ Edit ticket` popup: assignee, conductor, estimate, spent, **Parent** and **Labels**. **Save** (`Ctrl+S`) never writes the state. A closed ticket's popup is read-only.
+
+### Cancelling and restarting
+
+Cancelling and restarting are actions of their own, next to `e` in the footer, and each asks first in the same confirmation dialog: `Enter` confirms, `Esc` closes and writes nothing, and a refused write shows the server's message and keeps the dialog open.
+
+| Key | Where | What confirming does |
+|---|---|---|
+| `x` cancel ticket | Overview, Planning and History of a ticket that is neither `done`, `cancelled` nor closed | Writes only `state: cancelled`. |
+| `x` cancel run | Run detail and the Runs tab, for a run in `claimed` or `running` | Sets that run to `cancelled`. |
+| `r` restart run | Overview, Planning and History while the ticket has a run in `claimed` or `running` | Cancels exactly that run and nothing else; the conductor claims the ticket again and starts a new run. |
+
+Restart run uses the same endpoint and permissions as Cancel run. If the run ended before the dialog opened, the dialog says so and confirms nothing.
 
 ## The conductor sections
 
