@@ -44,7 +44,7 @@
   </span>
   <span class="md:min-w-22 max-md:max-w-full shrink-0 md:whitespace-nowrap text-body text-text-light">{{ statement }}</span>
   {% if subject_url %}
-    <a class="w-20 shrink-0 md:truncate max-md:wrap-anywhere font-mono text-data text-link no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ subject_url }}">{{ subject_label }}</a>
+    <a class="w-20 shrink-0 max-md:min-h-touch max-md:content-center md:truncate max-md:wrap-anywhere font-mono text-data text-link no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ subject_url }}">{{ subject_label }}</a>
   {% else %}
     <span class="w-20 shrink-0 md:truncate max-md:wrap-anywhere font-mono text-data text-text-light">{{ subject_label }}</span>
   {% endif %}

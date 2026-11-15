@@ -50,6 +50,10 @@ description: >-
   cell's Details link measure at least the `touch` size (44px) in both
   dimensions; the Details link leaves the input's corner and sits below the
   input instead. md and up are unchanged, so the 36px `md` row of My time holds.
+  PHONE TOUCH DELTA (AC-15): below md, a sortable header link, a linked badge
+  chip and any link a formatter puts in a `rendered` cell also measure at least
+  the `touch` size (44px); a `contents` wrapper around `rendered` markup carries
+  that rule and keeps the cell layout; md and up are unchanged.
 provider: bb_theme
 props:
   type: object

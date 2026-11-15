@@ -178,7 +178,7 @@
     {#- With `url` a badge is a linked chip; hover dims it, because underline
         does not paint through an inline-flex child. #}
     {%- if c.url is defined and c.url is not empty -%}
-    <a class="inline-flex rounded-sm no-underline transition-opacity duration-fast hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url }}">
+    <a class="inline-flex max-md:items-center max-md:min-h-touch max-md:min-w-touch rounded-sm no-underline transition-opacity duration-fast hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"{% if c.full_load %} data-hx-boost="false"{% endif %} href="{{ c.url }}">
     {%- endif -%}
     {{ include('bb_theme:badge', {
       label: c.label,
@@ -454,8 +454,9 @@
         whether a ticket has a team at all. The six guarded fields above are
         guarded because they are FORWARDED to a composed component that types
         them as strings; this one is printed, and printing nothing is already
-        the right answer. #}
-    {{ c.markup }}
+        the right answer. A `contents` wrapper keeps the cell's layout and
+        gives a formatter's link the phone touch size. #}
+    <span class="contents max-md:[&_a]:inline-flex max-md:[&_a]:items-center max-md:[&_a]:min-h-touch max-md:[&_a]:min-w-touch">{{ c.markup }}</span>
   {%- elseif c.exact -%}
     {#- An abbreviated value with its exact value on hover and focus. The
         tooltip opens upwards and right-aligned: the table scrolls sideways, so
@@ -536,7 +537,7 @@
           <th class="text-left text-label text-text-light bg-app px-stack py-stack border-b border-border-2 whitespace-nowrap {{ column.num ? 'text-right tabular-nums' : '' }}"
             {%- if column.sort %} aria-sort="{{ sort_aria[column.sort]|default('none') }}"{% endif %}>
             {%- if column.sort %}
-              <a data-table-sort class="inline-flex items-center gap-inline-xs text-inherit no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ column.url|default('#') }}">
+              <a data-table-sort class="inline-flex items-center gap-inline-xs max-md:min-h-touch max-md:min-w-touch text-inherit no-underline transition-colors duration-fast hover:text-text focus-visible:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring" href="{{ column.url|default('#') }}">
                 {{- column.label -}}
                 {%- if column.sort != 'none' %}
                   <span class="inline-flex {{ column.sort == 'asc' ? 'rotate-180' : '' }}">{{ include('bb_theme:icon', { name: 'chevron-down', size: 'xs' }, with_context = false) }}</span>

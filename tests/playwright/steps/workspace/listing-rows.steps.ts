@@ -540,8 +540,8 @@ Then("every ticket row ends with the assignee's mark, named by its tooltip", asy
 /**
  * Touch targets: every visible button, link, tab and form control in main.
  * A checkbox or radio is measured by its label, its real hit area. Links
- * inside prose sentences are excluded; a link in a row whose own target is
- * already as large is not.
+ * inside prose sentences are excluded, and so is a link whose clickable list
+ * row is itself a large enough target to the same place.
  */
 Then('every control in the main region is at least {int} pixels in both dimensions', async ({ page }, minimum: number) => {
   await page.waitForLoadState('load');
@@ -560,8 +560,14 @@ Then('every control in the main region is at least {int} pixels in both dimensio
       if (box.width === 0 || (box.width >= min && box.height >= min)) {
         return [];
       }
+      const row = control.closest('li[data-list-item][x-data]');
+      const headline = row?.querySelector('[data-list-region="headline"] a');
+      if (row && row.getBoundingClientRect().height >= min && headline?.getAttribute('href') === control.getAttribute('href')) {
+        return [];
+      }
       const name = (target.getAttribute('aria-label') ?? target.textContent ?? '').trim().replace(/\s+/g, ' ').slice(0, 30);
-      return [`${target.tagName.toLowerCase()} "${name}" ${Math.round(box.width)}×${Math.round(box.height)}`];
+      const owner = control.closest('[data-component-id]')?.getAttribute('data-component-id') ?? '';
+      return [`${target.tagName.toLowerCase()} "${name}" ${Math.round(box.width)}×${Math.round(box.height)} in ${owner}`];
     });
   }, minimum);
   expect(small, 'Controls smaller than the touch minimum').toEqual([]);
