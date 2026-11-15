@@ -893,7 +893,7 @@ export function listConductorConfigFiles(bakersDir: string): string[] {
 /**
  * Remove the obsolete `states:` array property from a conductor-config JS
  * source (BB-207 made `states` optional — empty ⇒ serve all claimable
- * states — so `@bakers-build/bb-upgrade-project` drops the now-dead key). Pure string
+ * states — so `@bakers-build/bb-init-project` drops the now-dead key). Pure string
  * transform: it strips the `states: [ ... ]` property (line form or inline in
  * an object literal) with its trailing comma, and rewrites nothing else. A
  * `substates:`/other key containing "states" is not matched.

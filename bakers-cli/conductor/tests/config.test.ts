@@ -1355,7 +1355,7 @@ export default { project:{name:'bakers'}, states:['working'],
 });
 
 // ---------------------------------------------------------------------------
-// BB-209 — @bakers-build/bb-upgrade-project strips the obsolete `states:` key (AC 10).
+// BB-209 — @bakers-build/bb-init-project strips the obsolete `states:` key (AC 10).
 // Coordinated with BB-207, which makes `states` optional. BB-207 is now
 // merged into this branch's base, so the loader accepts a config with no
 // `states`; the "a stripped config still loads" assertion runs (no longer
