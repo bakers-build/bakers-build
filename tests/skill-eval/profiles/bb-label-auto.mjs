@@ -24,6 +24,7 @@ export function validate(f) {
     'Expected expect.state working, review or done exactly for a transition');
   requireValue((e.stop === 'technical-problem') === nonempty(e.cause), 'Expected expect.cause exactly for a technical problem');
   requireValue(e.link === undefined || (e.stop === 'question' && nonempty(e.link)), 'Expected expect.link only for a user question');
+  requireValue(e.asks === undefined || (e.stop === 'question' && nonempty(e.asks)), 'Expected expect.asks only for a user question');
   requireValue(e.hidden === undefined || (e.link !== undefined && Array.isArray(e.hidden) && e.hidden.every(nonempty)),
     'Expected expect.hidden as technical terms of an acceptance question');
   requireValue(e.stop !== 'none' || nonempty(e.decision), 'Expected expect.decision for a run that does not stop');
@@ -100,6 +101,10 @@ function analyze(f, output, context) {
   if (e.link) {
     checks.push(check('auto-link', String(arg(headed('Question')[0], 'body')).includes(e.link),
       `Put the tunnel link (${e.link}) in the user question`));
+  }
+  if (e.asks) {
+    checks.push(check('auto-asks', String(arg(headed('Question')[0], 'body')).includes(e.asks),
+      `Address the user question to ${e.asks}`));
   }
   if (e.hidden) {
     const body = String(arg(headed('Question')[0], 'body'));
