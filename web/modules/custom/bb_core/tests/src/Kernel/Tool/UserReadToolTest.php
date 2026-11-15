@@ -41,7 +41,7 @@ final class UserReadToolTest extends BakersToolTestBase {
   }
 
   /**
-   * Without input the caller reads itself in full; nothing is current.
+   * Without input the caller reads itself in full.
    */
   public function testReadsSelfInFull(): void {
     $this->installProfileFields();
@@ -69,50 +69,13 @@ final class UserReadToolTest extends BakersToolTestBase {
         ],
       ],
       'machines' => [
-        $this->machineRow($box, 'allow', FALSE, [
-          $this->conductorRow($alpha, 'machine', 'allow', FALSE),
-          $this->conductorRow($beta, 'forbid', 'forbid', FALSE),
+        $this->machineRow($box, 'allow', [
+          $this->conductorRow($alpha, 'machine', 'allow'),
+          $this->conductorRow($beta, 'forbid', 'forbid'),
         ]),
-        $this->machineRow($bare, 'forbid', FALSE, []),
+        $this->machineRow($bare, 'forbid', []),
       ],
     ], $this->outputs($this->runTool('bakers_user_read', [])));
-  }
-
-  /**
-   * The caller's own conductor_id marks that conductor and its machine.
-   */
-  public function testMarksCurrentConductor(): void {
-    $box = $this->machine($this->actor, 'box-a');
-    $alpha = $this->conductor('alpha', $this->actor, $box);
-    $beta = $this->conductor('beta', $this->actor, $box);
-    $other = $this->machine($this->actor, 'box-b');
-
-    $machines = $this->outputs($this->runTool('bakers_user_read', ['conductor' => $beta->get('conductor_id')->value]))['machines'];
-    self::assertSame([
-      $this->machineRow($box, 'forbid', TRUE, [
-        $this->conductorRow($alpha, 'machine', 'forbid', FALSE),
-        $this->conductorRow($beta, 'machine', 'forbid', TRUE),
-      ]),
-      $this->machineRow($other, 'forbid', FALSE, []),
-    ], $machines);
-  }
-
-  /**
-   * A conductor_id that is not the caller's marks nothing, on any user.
-   */
-  public function testForeignConductorIdMarksNothing(): void {
-    $teammate = $this->teammate();
-    $on_t = $this->conductor('on-t', $teammate, $this->machine($teammate, 'box-t'));
-    $this->conductor('alpha', $this->actor, $this->machine($this->actor, 'box-a'));
-    $foreign = (string) $on_t->get('conductor_id')->value;
-
-    $self = $this->outputs($this->runTool('bakers_user_read', ['conductor' => $foreign]));
-    $other = $this->outputs($this->runTool('bakers_user_read', ['user' => 'teammate', 'conductor' => $foreign]));
-    foreach ([$self, $other] as $read) {
-      self::assertCount(1, $read['machines']);
-      self::assertFalse($read['machines'][0]['current']);
-      self::assertFalse($read['machines'][0]['conductors'][0]['current']);
-    }
   }
 
   /**
@@ -144,7 +107,7 @@ final class UserReadToolTest extends BakersToolTestBase {
         ],
       ],
       'machines' => [
-        $this->machineRow($box, 'allow', FALSE, [$this->conductorRow($on_t, 'machine', 'allow', FALSE)]),
+        $this->machineRow($box, 'allow', [$this->conductorRow($on_t, 'machine', 'allow')]),
       ],
     ], $by_mail);
   }
@@ -182,7 +145,7 @@ final class UserReadToolTest extends BakersToolTestBase {
    */
   public function testInputAllowlist(): void {
     $definition = $this->container->get('plugin.manager.tool')->getDefinition('bakers_user_read');
-    self::assertSame(['user', 'conductor'], array_keys($definition->getInputDefinitions()));
+    self::assertSame(['user'], array_keys($definition->getInputDefinitions()));
   }
 
   /**
@@ -232,15 +195,13 @@ final class UserReadToolTest extends BakersToolTestBase {
    *   The machine.
    * @param string $assignment
    *   The machine's assignment.
-   * @param bool $current
-   *   Whether it is current.
    * @param array<array<string, mixed>> $conductors
    *   The expected conductor rows.
    *
    * @return array<string, mixed>
    *   The row.
    */
-  private function machineRow(ContentEntityInterface $machine, string $assignment, bool $current, array $conductors): array {
+  private function machineRow(ContentEntityInterface $machine, string $assignment, array $conductors): array {
     return [
       'uuid' => $machine->uuid(),
       'machine_id' => $machine->get('host_key')->value,
@@ -248,7 +209,6 @@ final class UserReadToolTest extends BakersToolTestBase {
       'max_parallel' => 5,
       'current_load' => 0,
       'assignment' => $assignment,
-      'current' => $current,
       'conductors' => $conductors,
     ];
   }
@@ -259,7 +219,7 @@ final class UserReadToolTest extends BakersToolTestBase {
    * @return array<string, mixed>
    *   The row.
    */
-  private function conductorRow(ContentEntityInterface $conductor, string $setting, string $assignment, bool $current): array {
+  private function conductorRow(ContentEntityInterface $conductor, string $setting, string $assignment): array {
     return [
       'uuid' => $conductor->uuid(),
       'conductor_id' => $conductor->get('conductor_id')->value,
@@ -268,7 +228,6 @@ final class UserReadToolTest extends BakersToolTestBase {
       'status' => 'online',
       'assignment_setting' => $setting,
       'assignment' => $assignment,
-      'current' => $current,
     ];
   }
 

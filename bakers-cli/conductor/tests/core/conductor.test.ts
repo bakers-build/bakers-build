@@ -1132,6 +1132,7 @@ describe('Conductor', () => {
     expect(input?.env).toEqual({
       BAKERS_URL: 'http://web',
       BAKERS_ID: 't-1',
+      BAKERS_CONDUCTOR_ID: 'bakers-test-conductor',
       BAKERS_TICKET_IDENTIFIER: 'BB-1',
       BAKERS_STATE: 'todo',
       BAKERS_RUN_UUID: 'r-1',

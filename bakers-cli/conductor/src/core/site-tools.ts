@@ -58,7 +58,6 @@ export interface SiteToolProxy {
 export function siteToolProxy(
   client: SiteToolClient,
   logger?: ConductorLogger,
-  conductorId?: string,
 ): SiteToolProxy {
   return {
     async list() {
@@ -126,10 +125,6 @@ export function siteToolProxy(
         blank(scoped.workspace)
       )
         scoped.workspace = ticket.workspaceId;
-
-      // The site marks the caller's own conductor `current` when no user is asked for.
-      if (name === 'bakers_user_read' && conductorId && blank(scoped.user))
-        scoped.conductor = conductorId;
 
       const refs: Array<['ticket' | 'project', string, unknown]> = [
         ['ticket', 'ticket', scoped.ticket],

@@ -69,8 +69,6 @@ export interface ToolServerOptions {
   hosts?: string[];
   /** Reads a ticket from the server; run calls get it as `currentTicket`. */
   readTicket?: (uuid: string) => Promise<RunTicket>;
-  /** This conductor's id; `bakers_user_read` calls name it so the site can mark it. */
-  conductorId?: string;
 }
 
 const newToken = () => randomBytes(32).toString('hex');
@@ -142,7 +140,7 @@ export async function startToolServer(
 ): Promise<ToolServer> {
   const { registry, logger } = options;
   const site = options.siteTools
-    ? siteToolProxy(options.siteTools, logger, options.conductorId)
+    ? siteToolProxy(options.siteTools, logger)
     : undefined;
   if (site) {
     const clash = registry.list().find((t) => SITE_TOOLS.includes(t.name));

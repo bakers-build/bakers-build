@@ -55,7 +55,7 @@ Paged lists take optional `limit` (1 to 100, default 50) and `offset` (default 0
 
 | Tool | Arguments | What it does |
 |---|---|---|
-| `bakers_user_read` | optional `user` (e-mail or username) | You or a teammate: profile, team roles, machines and conductors with `assignment` and `current` |
+| `bakers_user_read` | optional `user` (e-mail or username) | You or a teammate: profile, team roles, machines and conductors with `conductor_id` and `assignment` |
 | `bakers_workspace_list` | `limit`, `offset` | The workspaces you can reach |
 | `bakers_group_list` | `workspace`; optional `group` | A workspace's groups, or one group's subgroups |
 | `bakers_group_create` | `workspace`, `name`; optional `description` | Create a group |

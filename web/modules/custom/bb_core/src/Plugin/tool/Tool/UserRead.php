@@ -41,12 +41,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
       description: new TranslatableMarkup('E-mail address (any case) or username; default you.'),
       required: FALSE,
     ),
-    'conductor' => new InputDefinition(
-      data_type: 'string',
-      label: new TranslatableMarkup('Conductor'),
-      description: new TranslatableMarkup("The calling run's conductor_id; marks your conductor and its machine as current."),
-      required: FALSE,
-    ),
   ],
   output_definitions: [
     'uuid' => new OutputDefinition(
@@ -145,11 +139,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
             label: new TranslatableMarkup('Assignment'),
             description: new TranslatableMarkup('allow or forbid: whether others may assign its conductors, unless a conductor overrides it.'),
           ),
-          'current' => new OutputDefinition(
-            data_type: 'boolean',
-            label: new TranslatableMarkup('Current'),
-            description: new TranslatableMarkup('Whether the calling run runs on this machine.'),
-          ),
           'conductors' => new ListOutputDefinition(
             label: new TranslatableMarkup('Conductors'),
             description: new TranslatableMarkup("The user's conductors on this machine you can view."),
@@ -193,11 +182,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
                   data_type: 'string',
                   label: new TranslatableMarkup('Assignment'),
                   description: new TranslatableMarkup('allow or forbid in force: whether others may assign this conductor; the owner always may.'),
-                ),
-                'current' => new OutputDefinition(
-                  data_type: 'boolean',
-                  label: new TranslatableMarkup('Current'),
-                  description: new TranslatableMarkup('Whether this is the calling run’s conductor.'),
                 ),
               ],
             ),
@@ -250,9 +234,8 @@ final class UserRead extends ToolBase {
       $profile[$key] = $user->hasField($field) ? trim((string) $user->get($field)->value) : '';
     }
     $self = (int) $user->id() === (int) $this->currentUser->id();
-    $current = $self ? (string) ($values['conductor'] ?? '') : '';
     $profile['teams'] = $this->teams($user);
-    $profile['machines'] = $this->machines($user, $self, $current);
+    $profile['machines'] = $this->machines($user, $self);
     return ExecutableResult::success(new TranslatableMarkup('Read user @name.', ['@name' => $profile['name']]), $profile);
   }
 
@@ -336,7 +319,7 @@ final class UserRead extends ToolBase {
    * @return array<array<string, mixed>>
    *   Machine rows, by name.
    */
-  private function machines(UserInterface $user, bool $self, string $current): array {
+  private function machines(UserInterface $user, bool $self): array {
     $conductor_storage = $this->entities()->getStorage('bb_conductor');
     $conductor_ids = $conductor_storage->getQuery()->accessCheck(TRUE)
       ->condition('owner_user_id', $user->id())
@@ -360,7 +343,6 @@ final class UserRead extends ToolBase {
         'status' => (string) $conductor->get('status')->value,
         'assignment_setting' => $conductor->getAssignment(),
         'assignment' => $effective['value'],
-        'current' => $current !== '' && $conductor->getConductorId() === $current,
       ];
     }
     $machine_storage = $this->entities()->getStorage('bb_machine');
@@ -373,7 +355,6 @@ final class UserRead extends ToolBase {
     $machines = [];
     foreach ($machine_storage->loadMultiple(array_unique($machine_ids)) as $id => $machine) {
       assert($machine instanceof BbMachineInterface);
-      $conductors = $by_machine[(int) $id] ?? [];
       $machines[] = [
         'uuid' => (string) $machine->uuid(),
         'machine_id' => $machine->getHostKey(),
@@ -381,8 +362,7 @@ final class UserRead extends ToolBase {
         'max_parallel' => $machine->getMaxParallel(),
         'current_load' => $machine->getCurrentLoad(),
         'assignment' => $machine->getAssignment(),
-        'current' => in_array(TRUE, array_column($conductors, 'current'), TRUE),
-        'conductors' => $conductors,
+        'conductors' => $by_machine[(int) $id] ?? [],
       ];
     }
     usort($machines, static fn (array $a, array $b): int => [(string) $a['name'], $a['machine_id']]
