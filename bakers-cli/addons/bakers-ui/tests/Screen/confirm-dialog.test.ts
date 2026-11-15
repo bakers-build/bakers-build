@@ -77,6 +77,37 @@ describe('confirmation dialog', () => {
     expect(context.back).toHaveBeenCalledWith({ type: 'done' });
   });
 
+  it('Esc while the write is pending does not leave; the result still goes back once', async () => {
+    let finish: (value: unknown) => void = () => {};
+    const confirm = vi.fn(() => new Promise((resolve) => (finish = resolve)));
+    const { screen, context } = await opened(
+      requestOf({ message: 'Sure?', confirm }),
+    );
+    screen.handleInput('enter', context);
+    expect(screen.handleInput('escape', context)).toBe(true);
+    expect(screen.takeAction()).toBeUndefined();
+    finish({ type: 'done' });
+    await settle();
+    expect(context.back).toHaveBeenCalledTimes(1);
+    expect(context.back).toHaveBeenCalledWith({ type: 'done' });
+  });
+
+  it('a write that settles after the dialog was left goes back nowhere', async () => {
+    let finish: (value: unknown) => void = () => {};
+    const confirm = vi.fn(() => new Promise((resolve) => (finish = resolve)));
+    const request = requestOf({ message: 'Sure?', confirm });
+    const screen = new ConfirmDialogScreen();
+    let active = true;
+    const context = { ...contextWith(request), isActive: () => active };
+    screen.enter(context);
+    await settle();
+    screen.handleInput('enter', context);
+    active = false;
+    finish({ type: 'done' });
+    await settle();
+    expect(context.back).not.toHaveBeenCalled();
+  });
+
   it('Esc goes back without a result and confirms nothing', async () => {
     const confirm = vi.fn();
     const { screen, context } = await opened(

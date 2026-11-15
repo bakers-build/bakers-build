@@ -250,6 +250,57 @@ describe('restart run through the confirmation dialog', () => {
     );
   });
 
+  it('returns the ticket as read after the cancel, so a stale derived_status does not keep r', async () => {
+    const before = withRuns(run('run-1', 'running', 7));
+    before.data = {
+      ...before.data,
+      type: 'bb_ticket--bb_ticket',
+      id: 'ticket-1',
+      attributes: { identifier: 'BB-1', derived_status: 'running' },
+    };
+    const after = withRuns(run('run-1', 'cancelled', 7));
+    after.data = {
+      ...after.data,
+      type: 'bb_ticket--bb_ticket',
+      id: 'ticket-1',
+      attributes: { identifier: 'BB-1', derived_status: 'cancelled' },
+    };
+    const client = fakeClient();
+    client.get = vi
+      .fn()
+      .mockResolvedValueOnce(before)
+      .mockResolvedValueOnce(after);
+    const { screen, context } = await dialogFor(
+      restartRunRequest('ticket-1', 'BB-1'),
+      client,
+    );
+    screen.handleInput('enter', context);
+    await settle();
+    expect(client.writes).toHaveLength(1);
+    const result = vi.mocked(context.back).mock.calls[0]?.[0] as {
+      document: TicketDetailDocument;
+    };
+    expect(result.document.data?.attributes?.derived_status).toBe('cancelled');
+  });
+
+  it('a failed read after the cancel still reports the cancel', async () => {
+    const client = fakeClient();
+    client.get = vi
+      .fn()
+      .mockResolvedValueOnce(withRuns(run('run-1', 'running', 7)))
+      .mockRejectedValueOnce(new Error('offline'));
+    const { screen, context } = await dialogFor(
+      restartRunRequest('ticket-1', 'BB-1'),
+      client,
+    );
+    screen.handleInput('enter', context);
+    await settle();
+    expect(client.writes).toHaveLength(1);
+    expect(context.back).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'run-cancelled', runId: 'run-1' }),
+    );
+  });
+
   it('a run that ended before the dialog opened is not cancelled', async () => {
     const client = fakeClient({
       documents: {

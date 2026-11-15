@@ -105,7 +105,9 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
   override handleInput(input: string, context: ScreenContext): boolean {
     if (super.handleInput(input, context)) return true;
     if (input === 'escape') {
-      this.action = { type: 'back' };
+      // A pending write still lands; leaving now would let its result pop
+      // the screen below as well.
+      if (!this.submitting) this.action = { type: 'back' };
       context.requestDraw();
       return true;
     }
@@ -116,6 +118,7 @@ export class ConfirmDialogScreen extends AsyncModalScreen<ConfirmPrompt> {
     this.message = '';
     void confirm(context)
       .then((result) => {
+        if (!context.isActive()) return;
         if (context.back) context.back(result);
         else this.action = { type: 'back', result };
       })

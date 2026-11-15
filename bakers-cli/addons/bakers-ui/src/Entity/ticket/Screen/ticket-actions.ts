@@ -52,12 +52,14 @@ export const restartRunRequest = (
   prepare: async (context) => {
     const client = context.services?.client;
     if (!client) throw new Error('No connection to read the runs.');
-    const document = (await client.get(
-      `bb_ticket/bb_ticket/${ticketId}`,
-      new DrupalJsonApiParams()
-        .addInclude(['runs'])
-        .addFields('bb_run--bb_run', ['state', 'drupal_internal__id']),
-    )) as TicketDetailDocument;
+    const readRuns = () =>
+      client.get(
+        `bb_ticket/bb_ticket/${ticketId}`,
+        new DrupalJsonApiParams()
+          .addInclude(['runs'])
+          .addFields('bb_run--bb_run', ['state', 'drupal_internal__id']),
+      ) as Promise<TicketDetailDocument>;
+    const document = await readRuns();
     const active = document.included?.find(
       (resource) =>
         resource.type === 'bb_run--bb_run' &&
@@ -68,7 +70,13 @@ export const restartRunRequest = (
     return {
       message: `Restart run${runNumber(document, runId)} of ${identifier}?`,
       detail: 'The active run is cancelled; the conductor starts a new one.',
-      confirm: (confirmContext) => cancelRun(confirmContext, document, runId),
+      // Read again after the write: the ticket's derived_status changes with it.
+      confirm: async (confirmContext) => {
+        const cancelled = await cancelRun(confirmContext, document, runId);
+        // The write landed; a failed re-read must not report it as failed.
+        const fresh = await readRuns().catch(() => cancelled.document);
+        return { ...cancelled, document: fresh };
+      },
     };
   },
 });
