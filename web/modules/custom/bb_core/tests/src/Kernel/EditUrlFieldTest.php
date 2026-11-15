@@ -9,7 +9,6 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\bb_core\Entity\BbGroup;
 use Drupal\bb_core\Entity\BbProject;
 use Drupal\bb_core\Entity\BbTicket;
-use Drupal\bb_core\Entity\BbWorkspace;
 
 /**
  * Tests the access-gated computed edit_url field on bb_ticket.
@@ -34,9 +33,10 @@ final class EditUrlFieldTest extends BbEntityKernelTestBase {
     self::assertInstanceOf(AccountInterface::class, $admin);
     $this->setCurrentUser($admin);
 
-    $workspace = BbWorkspace::create(['name' => 'Acme', 'slug' => 'acme']);
-    $workspace->save();
-    $group = BbGroup::create(['name' => 'Acme group', 'workspace_id' => $workspace->id()]);
+    // The base class's setUp() already created the `acme` workspace; slugs
+    // are unique, so reuse it.
+    self::assertNotNull($this->hostWorkspace);
+    $group = BbGroup::create(['name' => 'Acme group', 'workspace_id' => $this->hostWorkspace->id()]);
     $group->save();
     $project = BbProject::create(['name' => 'acme', 'key' => 'ACME', 'group_id' => $group->id()]);
     $project->save();
