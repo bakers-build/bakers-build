@@ -38,8 +38,11 @@ Apply them before any label skill:
 - `human-review` beside `human-accept`: stop with a question asking which applies.
 - Type `deployment` or `verification` with a `human-*` label: stop with a question asking for
   `auto` or no label.
-- Under a `human-*` label the assignee decides a `criterion`; the reviewer does when the assignee
-  is a bot. Nothing marks a bot yet: every assignee counts as a person.
+- Under a `human-*` label the **confirming person** decides a `criterion` and confirms the label's
+  `verdict` and `merge`: the assignee and every reviewer, except an assignee with
+  `service_account: true` in the ticket's people. The question names each of them; the first
+  answer from one of them passes. With nobody left, stop with a question naming the missing
+  reviewer.
 
 ## Risk list
 
