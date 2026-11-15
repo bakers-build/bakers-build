@@ -4,28 +4,23 @@ import {
   existsSync,
   lstatSync,
   mkdirSync,
-  readdirSync,
   realpathSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type {
   AgentRunContext,
   AgentRunPreparation,
   RunBind,
 } from '@bakers-build/conductor/contract';
 
-/** Entries prepared below, and those Codex writes while it runs. */
-const NOT_LINKED = new Set([
-  'auth.json',
-  'sessions',
-  'config.toml',
-  'rules',
-  'log',
-  'shell_snapshots',
-  'tmp',
-]);
+/**
+ * Source directories shared read-only; everything else starts fresh and
+ * writable in the private home, since Codex writes leftovers such as
+ * thread-writer-locks at startup. Marketplace clones live in .tmp/marketplaces.
+ */
+const SHARED = ['plugins', 'skills', 'packages', '.tmp/marketplaces'];
 
 /** Prepare Codex's files in the home supplied by any execution backend. */
 export function prepareCodexRun(
@@ -49,14 +44,15 @@ export function prepareCodexRun(
       recursive: true,
       dereference: true,
     });
-  // Directories (plugins, marketplaces, skills) are shared read-only, each on
-  // its own: the runtimes refuse a write path inside a read path.
+  // Shared directories are linked each on its own: the runtimes refuse a
+  // write path inside a read path.
   // shortcut: files such as the state DB and history start empty in the
   // private home and are discarded with it; link one if it must persist.
   const readPaths: string[] = [];
-  for (const name of readdirSync(source)) {
+  for (const name of SHARED) {
     const path = join(source, name);
-    if (NOT_LINKED.has(name) || !lstatSync(path).isDirectory()) continue;
+    if (!existsSync(path) || !lstatSync(path).isDirectory()) continue;
+    mkdirSync(dirname(join(home, name)), { recursive: true });
     symlinkSync(path, join(home, name));
     readPaths.push(path);
   }
