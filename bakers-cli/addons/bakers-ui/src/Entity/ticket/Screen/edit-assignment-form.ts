@@ -23,8 +23,6 @@ import {
 import { loadTicketDetail } from '../Data/detail.js';
 import type { FieldDef } from '../Form/edit.js';
 import {
-  CANCEL_TICKET_ACTION_ID,
-  cancelEditPayload,
   EDIT_FORM_CLOSED,
   type EditFieldId,
   type EditFormDeclaration,
@@ -255,24 +253,13 @@ export class EditAssignmentFormScreen extends AsyncModalScreen<EditAssignmentDat
     this.action = undefined;
     return action;
   }
-  private submit(
-    context: ScreenContext,
-    data: EditAssignmentData,
-    /** When true, Cancel ticket path (lifecycle-only). */
-    cancelTicket: boolean,
-  ): void {
+  private submit(context: ScreenContext, data: EditAssignmentData): void {
     if (this.submitting || !this.form || !context.services) return;
     this.submitting = true;
     this.message = '';
     const ticketId = data.document.data?.id ?? context.params?.ticketId ?? '';
-    const payload = cancelTicket
-      ? cancelEditPayload()
-      : serializeEdit(this.form);
-    const assigneeId = cancelTicket
-      ? (relationshipId(data.document, 'assignee_user_id') ?? '')
-      : 'relationships' in payload
-        ? (payload.relationships.assignee_user_id.data?.id ?? '')
-        : '';
+    const payload = serializeEdit(this.form);
+    const assigneeId = payload.relationships.assignee_user_id.data?.id ?? '';
     void (context.services.writeClient ?? context.services.client)
       .update('bb_ticket--bb_ticket', ticketId, payload)
       .then(async () => {
@@ -327,11 +314,7 @@ export class EditAssignmentFormScreen extends AsyncModalScreen<EditAssignmentDat
       // A closed ticket's popup is read-only: Ctrl+S writes nothing.
       this.message = 'This ticket is closed and read-only.';
     } else if (intent.kind === 'submit') {
-      // D10: Ctrl+S ALWAYS Save, even when the cursor is on Cancel ticket.
-      // Only Enter/submit while standing on the cancelTicket action cancels.
-      const cancelTicket =
-        input !== 'ctrl+s' && field.id === CANCEL_TICKET_ACTION_ID;
-      this.submit(context, data, cancelTicket);
+      this.submit(context, data);
     } else if (!this.savable && intent.kind !== 'move') {
       // A closed ticket's values stay as they are; only ↑↓ moves.
     } else {
@@ -400,7 +383,7 @@ export class EditAssignmentFormScreen extends AsyncModalScreen<EditAssignmentDat
   }
 
   protected override actions() {
-    // BB-360 D12 — Esc:close (not cancel); Cancel ticket is lifecycle.
+    // BB-360 D12 — Esc:close (not cancel).
     return [
       actionItem('edit-field', '↑↓', 'field'),
       ...(this.savable

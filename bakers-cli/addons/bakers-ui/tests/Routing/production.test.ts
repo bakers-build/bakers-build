@@ -15,6 +15,9 @@ describe('production routing composition', () => {
     expect(sharedScreenModules).toEqual([
       'async-modal-screen.ts',
       'async-screen.ts',
+      // The one concrete shared screen: the confirmation dialog knows no
+      // entity, and every slice that confirms an action opens it.
+      'confirm-dialog.ts',
       'full-screen.ts',
       'list-screen.ts',
       'modal-screen.ts',
@@ -28,7 +31,9 @@ describe('production routing composition', () => {
       new URL('../../src/Routing/routes.ts', import.meta.url),
       'utf8',
     );
-    expect(registry).not.toContain("from '../Screen/");
+    expect(
+      registry.replace("from '../Screen/confirm-dialog.js'", ''),
+    ).not.toContain("from '../Screen/");
     expect(registry).toContain("from '../Entity/");
   });
 

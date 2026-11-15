@@ -51,6 +51,10 @@ Runs default to `system`; `permissions: 'sandbox'` starts the OS sandbox. [Execu
 
 Needs Codex 0.166.0+. Writable: Git directories, not config or hooks; read-only: `.agents`, `.codex`, `.aws`.
 
+## Isolated runtimes
+
+[Bubblewrap](/addons/runtime-bwrap) and [Docker](/addons/runtime-docker) runs get a private `CODEX_HOME`: copied `config.toml` and `rules/`, read-only plugins, writable `sessions/`, and the host's shared `auth.json`. `CODEX_API_KEY` or `OPENAI_API_KEY` replaces that login.
+
 ## Check it works
 
 The agent catalog lists `codex` with harness `codex`.

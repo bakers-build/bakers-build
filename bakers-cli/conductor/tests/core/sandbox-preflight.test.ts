@@ -39,6 +39,7 @@ function agentWith(results: SandboxPreflight[]) {
   const agent: BbAgent = {
     id: 'claude',
     launchCommand: () => 'claude',
+    prepareRun: () => ({ env: {}, readPaths: [], writePaths: [] }),
     getRunLog: async () => '',
     parseFootprint: parseClaudeTranscript,
     sandboxPreflight: async () =>
