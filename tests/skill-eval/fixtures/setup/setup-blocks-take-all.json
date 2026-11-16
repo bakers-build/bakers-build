@@ -5,7 +5,12 @@
     "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker',addons:['@bakers-build/addon-claude'],permissions:{mode:'sandbox'},tunnel:false};\n",
     "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n",
     "project/.ddev/config.yaml": "name: setup-demo\ntype: php\ndocroot: web\nphp_version: \"8.3\"\n",
-    "project/composer.json": "{\n  \"name\": \"synthetic/setup-demo\",\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"lint\": \"phpcs\"\n  }\n}\n"
+    "project/composer.json": "{\n  \"name\": \"synthetic/setup-demo\",\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"lint\": \"phpcs\"\n  }\n}\n",
+    "project/README.md": "# setup-demo\n\nDDEV project. Each Git worktree gets its own DDEV project: `.bakers/scripts/prepare-ddev.sh` writes the name `bakers-<ticket UUID>` to `.ddev/config.zz-bakers.local.yaml` (ignored) and starts it; `.bakers/scripts/cleanup-ddev.sh` deletes only that project. No files outside the worktree are needed: `composer install` inside DDEV prepares a fresh checkout. `.bakers/scripts/provision.sh test` starts or reuses the worktree's site, installs it when missing and prints its URL. Run tests with `ddev composer test`, lint with `ddev composer lint`.\n",
+    "project/.gitignore": "/.ddev/config.zz-bakers.local.yaml\n",
+    "project/.bakers/scripts/prepare-ddev.sh": "set -eu\n: \"${BAKERS_ID:?ticket UUID required}\"\nprintf 'name: bakers-%s\\n' \"$BAKERS_ID\" > .ddev/config.zz-bakers.local.yaml\nddev start\nddev composer install\n",
+    "project/.bakers/scripts/cleanup-ddev.sh": "set -eu\nname=$(sed -n 's/^name: //p' .ddev/config.zz-bakers.local.yaml)\nprintf '%s\\n' \"$name\" | grep -Eq '^bakers-[0-9a-f-]{36}$'\nddev delete --omit-snapshot --yes \"$name\"\n",
+    "project/.bakers/scripts/provision.sh": "set -eu\ncase \"${1:-test}\" in\n  test) ddev start >/dev/null && ddev describe -j | sed -n 's/.*\"primary_url\": *\"\\([^\"]*\\)\".*/\\1/p' ;;\n  *) echo \"unknown profile $1\" >&2; exit 1 ;;\nesac\n"
   },
   "answers": {
     "every_block": "Take the proposal as shown, every time a block offers one.",
@@ -64,7 +69,7 @@
     "api": "Use bakers tools to discover control-plane tool schemas.",
     "file_paths": "project/ is checkout, machine/ is BAKERS_HOME. All writes require scope/consent per skill.",
     "marketplaces": "The agent already knows the marketplace https://github.com/obra/superpowers.git.",
-    "repository_files": "The checkout contains .ddev/config.yaml and composer.json (scripts: test, lint); read them for evidence."
+    "repository_files": "The checkout contains README.md, .gitignore, .ddev/config.yaml, composer.json (scripts: test, lint) and .bakers/scripts/{prepare-ddev,cleanup-ddev,provision}.sh; read them for evidence."
   },
   "max_turns": 70,
   "max_questions": 9,
@@ -93,7 +98,11 @@
     "machine/machine.config.js": "export default {schema_version:1,machine_id:'11111111-1111-4111-8111-111111111111',label:'preserve-worker',addons:['@bakers-build/addon-claude'],permissions:{mode:'sandbox'},tunnel:false};\n",
     "machine/connections/default.js": "export default {schema_version:1,site:{base_url:'https://setup.example.test'},plugins:[]};\n",
     "project/.ddev/config.yaml": "name: setup-demo\ntype: php\ndocroot: web\nphp_version: \"8.3\"\n",
-    "project/composer.json": "{\n  \"name\": \"synthetic/setup-demo\",\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"lint\": \"phpcs\"\n  }\n}\n"
+    "project/composer.json": "{\n  \"name\": \"synthetic/setup-demo\",\n  \"scripts\": {\n    \"test\": \"phpunit\",\n    \"lint\": \"phpcs\"\n  }\n}\n",
+    "project/README.md": "# setup-demo\n\nDDEV project. Each Git worktree gets its own DDEV project: `.bakers/scripts/prepare-ddev.sh` writes the name `bakers-<ticket UUID>` to `.ddev/config.zz-bakers.local.yaml` (ignored) and starts it; `.bakers/scripts/cleanup-ddev.sh` deletes only that project. No files outside the worktree are needed: `composer install` inside DDEV prepares a fresh checkout. `.bakers/scripts/provision.sh test` starts or reuses the worktree's site, installs it when missing and prints its URL. Run tests with `ddev composer test`, lint with `ddev composer lint`.\n",
+    "project/.bakers/scripts/prepare-ddev.sh": "set -eu\n: \"${BAKERS_ID:?ticket UUID required}\"\nprintf 'name: bakers-%s\\n' \"$BAKERS_ID\" > .ddev/config.zz-bakers.local.yaml\nddev start\nddev composer install\n",
+    "project/.bakers/scripts/cleanup-ddev.sh": "set -eu\nname=$(sed -n 's/^name: //p' .ddev/config.zz-bakers.local.yaml)\nprintf '%s\\n' \"$name\" | grep -Eq '^bakers-[0-9a-f-]{36}$'\nddev delete --omit-snapshot --yes \"$name\"\n",
+    "project/.bakers/scripts/provision.sh": "set -eu\ncase \"${1:-test}\" in\n  test) ddev start >/dev/null && ddev describe -j | sed -n 's/.*\"primary_url\": *\"\\([^\"]*\\)\".*/\\1/p' ;;\n  *) echo \"unknown profile $1\" >&2; exit 1 ;;\nesac\n"
   },
   "rubric": [
     {
