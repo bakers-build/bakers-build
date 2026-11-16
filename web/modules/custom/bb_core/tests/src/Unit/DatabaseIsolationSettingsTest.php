@@ -35,6 +35,9 @@ final class DatabaseIsolationSettingsTest extends UnitTestCase {
    */
   private array $savedEnv = [];
 
+  /**
+   * {@inheritdoc}
+   */
   protected function setUp(): void {
     parent::setUp();
     foreach (self::ENV as $name) {
@@ -43,6 +46,9 @@ final class DatabaseIsolationSettingsTest extends UnitTestCase {
     }
   }
 
+  /**
+   * {@inheritdoc}
+   */
   protected function tearDown(): void {
     foreach ($this->savedEnv as $name => $value) {
       putenv($value === FALSE ? $name : "$name=$value");
@@ -50,12 +56,18 @@ final class DatabaseIsolationSettingsTest extends UnitTestCase {
     parent::tearDown();
   }
 
+  /**
+   * Without DB_HOST, the committed local connection is used.
+   */
   public function testLocalConnectionUsesReadCommitted(): void {
     $databases = $this->loadSettings();
     self::assertSame('db', $databases['default']['default']['host']);
     self::assertSame(self::READ_COMMITTED, $databases['default']['default']['init_commands']['isolation_level'] ?? NULL);
   }
 
+  /**
+   * With DB_HOST, settings.container.php replaces the connection.
+   */
   public function testContainerConnectionUsesReadCommitted(): void {
     putenv('DB_HOST=db.example');
     putenv('DB_NAME=bakers');
@@ -74,8 +86,6 @@ final class DatabaseIsolationSettingsTest extends UnitTestCase {
    */
   private function loadSettings(): array {
     $databases = [];
-    $settings = [];
-    $config = [];
     require $this->root . '/sites/default/settings.php';
     return $databases;
   }
