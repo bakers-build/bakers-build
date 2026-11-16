@@ -1,17 +1,30 @@
 """The setup skills' text carries the block-question rules the setup conversation depends on."""
 from pathlib import Path
+import json
 import re
 import unittest
 
 SKILLS = Path(__file__).resolve().parents[2] / '.claude/skills/bakers-build/skills'
 CONVERSATION = SKILLS / 'bb-init/references/setup-conversation.md'
+TAKE_ALL = Path(__file__).resolve().parent / 'fixtures/setup/setup-blocks-take-all.json'
+OWN_DECISIONS = ['permission mode', 'grants', 'merge policy', 'forge authentication', 'server group']
+HOOKS = ['after_create', 'before_run', 'after_run', 'after_done', 'on_freeze', 'on_resume']
 MATRICES = [SKILLS / 'bb-init/references/machine-setup.md', SKILLS / 'bb-init-project/references/project-setup.md']
 
 
+def blocks(path):
+    """Each `###` block heading of a matrix with its table rows."""
+    sections = re.split(r'^### ', path.read_text(), flags=re.M)[1:]
+    return {section.splitlines()[0]: table_rows_of(section.splitlines()) for section in sections}
+
+
 def table_rows(path):
+    return table_rows_of(path.read_text().splitlines())
+
+
+def table_rows_of(lines):
     """Each row of every block table as {header: cell}."""
     cells = lambda line: [cell.strip() for cell in line.strip().strip('|').split('|')]
-    lines = path.read_text().splitlines()
     rows = []
     for index, line in enumerate(lines[:-1]):
         if line.startswith('|') and lines[index + 1].startswith('|---'):
@@ -34,7 +47,7 @@ class SetupRulesTest(unittest.TestCase):
 
     def test_own_decisions_are_named(self):
         line = next(line for line in CONVERSATION.read_text().splitlines() if '**Own decisions**' in line)
-        for decision in ['permission mode', 'grants', 'merge policy', 'forge authentication', 'server group']:
+        for decision in OWN_DECISIONS:
             self.assertIn(decision, line)
         self.assertIn('one per question', line)
 
@@ -51,6 +64,33 @@ class SetupRulesTest(unittest.TestCase):
         tunnel = ' '.join(explained['Tunnel transport'])
         self.assertIn('own Cloudflare domain', tunnel)
         self.assertIn('quick tunnel', tunnel)
+
+    def test_every_row_names_its_write_target(self):
+        for path in MATRICES:
+            for row in table_rows(path):
+                with self.subTest(path=path.name, row=row['Decide']):
+                    self.assertNotIn(row.get('Writes', ''), {'', '—'}, 'a preview names where each value is written')
+
+    def test_target_branch_is_written_to_the_deliver_hint_and_reuses_default_branch(self):
+        rows = blocks(MATRICES[1])
+        target = next(row for row in rows['Delivery'] if row['Decide'] == 'Target branch')
+        self.assertIn('WORKFLOW.md', target['Writes'])
+        self.assertIn('bb-phase-deliver', target['Writes'])
+        self.assertIn('default_branch', target['Derive from'])
+        server = rows['Server project'][0]
+        self.assertIn('default_branch', server['Decide'])
+
+    def test_question_budget_of_an_existing_project_fits_take_all(self):
+        # An existing project skips the server-project block and the server group.
+        block_count = len([name for name in blocks(MATRICES[1]) if name != 'Server project'])
+        budget = block_count + len(OWN_DECISIONS) - 1
+        self.assertLessEqual(budget, json.loads(TAKE_ALL.read_text())['max_questions'])
+
+    def test_hook_row_names_every_lifecycle_hook(self):
+        hooks = next(row for row in blocks(MATRICES[1])['Environment'] if 'Lifecycle hooks' in row['When'])
+        for hook in HOOKS:
+            self.assertIn(f'`{hook}`', hooks['Decide'])
+            self.assertIn(f'hooks.{hook}', hooks['Writes'])
 
     def test_documentation_links_are_full_text_markdown(self):
         for path in sorted({*SKILLS.glob('bb-init/**/*.md'), *SKILLS.glob('bb-init-project/**/*.md')}):

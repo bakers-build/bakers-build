@@ -73,6 +73,14 @@
   },
   "max_turns": 70,
   "max_questions": 9,
+  "previewed_keys": [
+    "after_create",
+    "before_run",
+    "after_run",
+    "after_done",
+    "on_freeze",
+    "on_resume"
+  ],
   "derived_sources": [
     "git remote get-url origin",
     "gh auth status"

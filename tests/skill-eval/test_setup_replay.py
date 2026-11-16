@@ -53,6 +53,13 @@ const open = {input:{expected_files:{},preserved_files:{},asked_values:['reposit
 const openRow = text => checkOutput(open, JSON.stringify({...saved,turns:[ask(text)]})).find(r=>r.id==='asked-repository').met;
 assert.equal(openRow('repository: ? — asked'), true);
 assert.equal(openRow('repository: acme/shop — source: git remote get-url origin'), false);
+// A source counts only on its value's preview line, never anywhere in the question.
+assert.equal(row([ask('Run git remote get-url origin first?\\nforge: github — recommended')], 'derived-source-git remote get-url origin'), false);
+const hooks = {input:{expected_files:{},preserved_files:{},previewed_keys:['after_create','on_resume']}};
+const hookRow = (text, key) => checkOutput(hooks, JSON.stringify({...saved,turns:[ask(text)]})).find(r=>r.id===`previewed-${key}`).met;
+assert.equal(hookRow('after_create: .bakers/scripts/prepare.sh — recommended\\non_resume: none — recommended', 'on_resume'), true);
+// A preview that omits a hook leaves it unresolved, even when the prose mentions it.
+assert.equal(hookRow('after_create: .bakers/scripts/prepare.sh — recommended\\nThe on_resume hook stays unset.', 'on_resume'), false);
 '''
         result = subprocess.run(['node', '--input-type=module', '-e', script],
                                 cwd=Path(__file__).resolve().parents[2], capture_output=True, text=True)

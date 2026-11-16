@@ -46,54 +46,54 @@ flow and the evidence that answers a row.
 
 The group is an own decision, never derived.
 
-| When | Decide | Derive from | Explain | Read |
-|---|---|---|---|---|
-| Project absent on the control plane | Group, teams, description, repository URL | `git remote get-url origin` for the repository URL; the workspace's groups and teams to offer | — | `@bakers-build/bb-create-project` |
+| When | Decide | Writes | Derive from | Explain | Read |
+|---|---|---|---|---|---|
+| Project absent on the control plane | Group, teams, description, repository URL, `default_branch` | The control-plane project through `@bakers-build/bb-create-project`, including its `default_branch` | `git remote get-url origin` for the repository URL; the workspace's groups and teams to offer | — | `@bakers-build/bb-create-project` |
 
 ### Environment
 
-| When | Decide | Derive from | Explain | Read |
-|---|---|---|---|---|
-| Client unknown | Client, and its executor and worktree | — (an installed client is not a selection) | — | [Clients](https://bakers.build/get-started/use-your-client.md), [slots](https://bakers.build/addons/slots.md) |
-| Worktrees nest inside the checkout | Worktree location | `.ddev/` in the repository: nested DDEV projects conflict | — | [Worktree requirements](https://bakers.build/provision/guide.md#make-the-project-worktree-compatible) |
-| Lifecycle hooks unanswered | Each lifecycle hook by name: `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`; none is a valid value | Existing project scripts; the runtime addon's page | — | [Hooks](https://bakers.build/provision/hooks.md) |
-| Tests or previews need an environment | `provision_up` profiles and their commands | Existing provisioning scripts; `.ddev/` or another runtime's configuration | `provision_up` lets a sandboxed agent bring its environment up by naming a profile, never the command. | [Environment](https://bakers.build/provision/guide.md), [provision_up](https://bakers.build/configuration/project/hooks.md#provision-on-an-agent-s-request) |
-| A profile serves a site | Readiness check per profile, written to the `WORKFLOW.md` `bb-phase-provision` hint | The base URL the profile prints | — | [provision_up](https://bakers.build/configuration/project/hooks.md#provision-on-an-agent-s-request) |
-| Agents run commands in the project's containers | `provision_exec` keys, one fixed command each | Test and lint commands in the repository's scripts and CI | The sandboxed agent cannot call the environment's CLI; `provision_exec` keys are the controlled way in. | [Run a configured command](https://bakers.build/configuration/project/hooks.md#run-a-configured-command) |
+| When | Decide | Writes | Derive from | Explain | Read |
+|---|---|---|---|---|---|
+| Client unknown | Client, and its executor and worktree | `addons`, or `executor` and `worktree`, in `.bakers/project.config.js` | — (an installed client is not a selection) | — | [Clients](https://bakers.build/get-started/use-your-client.md), [slots](https://bakers.build/addons/slots.md) |
+| Worktrees nest inside the checkout | Worktree location | A location option the worktree addon documents, or an `after_create` script that gives each worktree its own runtime name | `.ddev/` in the repository: nested DDEV projects conflict | — | [Worktree requirements](https://bakers.build/provision/guide.md#make-the-project-worktree-compatible) |
+| Lifecycle hooks unanswered | Each lifecycle hook by name: `after_create`, `before_run`, `after_run`, `after_done`, `on_freeze`, `on_resume`; none is a valid value | `hooks.after_create`, `hooks.before_run`, `hooks.after_run`, `hooks.after_done`, `hooks.on_freeze`, `hooks.on_resume` in `.bakers/project.config.js` | Existing project scripts; the runtime addon's page | — | [Hooks](https://bakers.build/provision/hooks.md) |
+| Tests or previews need an environment | `provision_up` profiles and their commands | `hooks.provision_up` in `.bakers/project.config.js` | Existing provisioning scripts; `.ddev/` or another runtime's configuration | `provision_up` lets a sandboxed agent bring its environment up by naming a profile, never the command. | [Environment](https://bakers.build/provision/guide.md), [provision_up](https://bakers.build/configuration/project/hooks.md#provision-on-an-agent-s-request) |
+| A profile serves a site | Readiness check per profile | `WORKFLOW.md` `bb-phase-provision` hint | The base URL the profile prints | — | [provision_up](https://bakers.build/configuration/project/hooks.md#provision-on-an-agent-s-request) |
+| Agents run commands in the project's containers | `provision_exec` keys, one fixed command each | `hooks.provision_exec` in `.bakers/project.config.js` | Test and lint commands in the repository's scripts and CI | The sandboxed agent cannot call the environment's CLI; `provision_exec` keys are the controlled way in. | [Run a configured command](https://bakers.build/configuration/project/hooks.md#run-a-configured-command) |
 
 ### Permissions
 
 Both rows are own decisions; recommend as the [machine matrix](../../bb-init/references/machine-setup.md) does.
 
-| When | Decide | Derive from | Explain | Read |
-|---|---|---|---|---|
-| Permissions unknown | Project permission mode and its effective source | `permissions` in project and machine configuration | — | [Execution security](https://bakers.build/provision/security/execution.md), [Isolation models](https://bakers.build/agents/isolation.md) |
-| The project needs access beyond the sandbox | Project grants: necessary write paths, trusted commands, network | The commands the environment block chose | A grant is a project setting that loosens the sandbox on every machine that accepts it. | [Shared settings](https://bakers.build/provision/security/shared-settings.md) |
+| When | Decide | Writes | Derive from | Explain | Read |
+|---|---|---|---|---|---|
+| Permissions unknown | Project permission mode and its effective source | `permissions.mode` in `.bakers/project.config.js` | `permissions` in project and machine configuration | — | [Execution security](https://bakers.build/provision/security/execution.md), [Isolation models](https://bakers.build/agents/isolation.md) |
+| The project needs access beyond the sandbox | Project grants: necessary write paths, trusted commands, network | `permissions.sandbox` in `.bakers/project.config.js` | The commands the environment block chose | A grant is a project setting that loosens the sandbox on every machine that accepts it. | [Shared settings](https://bakers.build/provision/security/shared-settings.md) |
 
 ### Delivery
 
 Forge authentication and the merge policy are own decisions.
 
-| When | Decide | Derive from | Explain | Read |
-|---|---|---|---|---|
-| Agents need repository delivery | Forge backend and repository; a repository-specific entry goes in the project file, authenticated by a login or a `*_env` key | `git remote get-url origin` | — | [Forge](https://bakers.build/addons/forge.md), then its backend guide |
-| Forge chosen | Forge authentication | `gh auth status` or `glab auth status` | — | The backend guide |
-| Forge chosen | Merge policy per base branch | The forge's repository merge settings (`gh repo view`, `glab repo view`) | — | [Forge](https://bakers.build/addons/forge.md) |
-| Forge chosen | Target branch | Base branches of recently merged requests (`gh pr list --state merged`, `glab mr list --merged`) | — | [Forge](https://bakers.build/addons/forge.md) |
+| When | Decide | Writes | Derive from | Explain | Read |
+|---|---|---|---|---|---|
+| Agents need repository delivery | Forge backend and repository; a repository-specific entry goes in the project file, authenticated by a login or a `*_env` key | The forge entry's `backend` in `.bakers/project.config.js` `addons` | `git remote get-url origin` | — | [Forge](https://bakers.build/addons/forge.md), then its backend guide |
+| Forge chosen | Forge authentication | `backend.with.auth` or a `*_env` key of the forge entry | `gh auth status` or `glab auth status` | — | The backend guide |
+| Forge chosen | Merge policy per base branch | `with.merge` of the forge entry | The forge's repository merge settings (`gh repo view`, `glab repo view`) | — | [Forge](https://bakers.build/addons/forge.md) |
+| Forge chosen | Target branch | `WORKFLOW.md` `bb-phase-deliver` hint | A new project: its `default_branch` from the server-project block. Otherwise the base branches of recently merged requests (`gh pr list --state merged`, `glab mr list --merged`) | — | [Forge](https://bakers.build/addons/forge.md) |
 
 ### Workflow
 
-| When | Decide | Derive from | Explain | Read |
-|---|---|---|---|---|
-| Workflow needs skills or recipes | `marketplaces` entries: plugins and pinned refs | The installed `bb-recipe-*` skills and their entries in [shipped recipes](https://bakers.build/skills-and-workflows/recipes.md#shipped-recipes-and-their-plugins); a marketplace the agent already knows | — | [Marketplaces](https://bakers.build/configuration/project.md#agent-plugins), [skills](https://bakers.build/skills-and-workflows/skills.md) |
-| Agent known | Project settings its agent guide recommends | The agent guide | — | [Agents](https://bakers.build/agents/index.md), then the agent's guide |
-| `WORKFLOW.md` absent or incomplete | Hints and origin labels | The environment block's profiles and keys; existing `WORKFLOW.md` | — | [Workflow file](https://bakers.build/skills-and-workflows/workflow-file.md) |
+| When | Decide | Writes | Derive from | Explain | Read |
+|---|---|---|---|---|---|
+| Workflow needs skills or recipes | `marketplaces` entries: plugins and pinned refs | `marketplaces` in `.bakers/project.config.js` | The installed `bb-recipe-*` skills and their entries in [shipped recipes](https://bakers.build/skills-and-workflows/recipes.md#shipped-recipes-and-their-plugins); a marketplace the agent already knows | — | [Marketplaces](https://bakers.build/configuration/project.md#agent-plugins), [skills](https://bakers.build/skills-and-workflows/skills.md) |
+| Agent known | Project settings its agent guide recommends | The file the agent guide names | The agent guide | — | [Agents](https://bakers.build/agents/index.md), then the agent's guide |
+| `WORKFLOW.md` absent or incomplete | Hints and origin labels | `WORKFLOW.md` hints and `bb-phase-transition` table | The environment block's profiles and keys; existing `WORKFLOW.md` | — | [Workflow file](https://bakers.build/skills-and-workflows/workflow-file.md) |
 
 ### Preview
 
-| When | Decide | Derive from | Explain | Read |
-|---|---|---|---|---|
-| Preview needed | Local or public; if public, the service key and its match text. Tunnel policy and transport are machine rows: hand them to `@bakers-build/bb-init` | The process a `provision_up` profile starts | — | [Ports](https://bakers.build/addons/ports.md), [services](https://bakers.build/addons/ports-services.md) |
+| When | Decide | Writes | Derive from | Explain | Read |
+|---|---|---|---|---|---|
+| Preview needed | Local or public; if public, the service key and its match text. Tunnel policy and transport are machine rows: hand them to `@bakers-build/bb-init` | `with.services` of the `@bakers-build/addon-ports` entry in `.bakers/project.config.js`; tunnel rows go to the machine file | The process a `provision_up` profile starts | — | [Ports](https://bakers.build/addons/ports.md), [services](https://bakers.build/addons/ports-services.md) |
 
 For herdr-app, initialize with `--executor @bakers-build/addon-herdr-core`;
 its preset brings `@bakers-build/addon-workspace-git`. Use that pair without a separate

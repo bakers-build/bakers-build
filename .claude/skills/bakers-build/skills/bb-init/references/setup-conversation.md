@@ -18,7 +18,7 @@ skill's decision matrix groups its rows into **blocks**; these rules run them.
 ## One block per turn
 
 - Ask **one block per turn** and wait. The question previews every value the block writes, per
-  target file, one line each: `key: value — source`, the source being the evidence command or
+  target file (the row's **Writes**), one line each: `key: value — source`, the source being the evidence command or
   file, `recommended` or `your answer`. An open value reads `key: ? — asked`. Name each value:
   every lifecycle hook, `provision_up` profile, readiness check and `provision_exec` key.
   The values a command generates (`bakers config init` defaults such as `capture_logs`) and the
