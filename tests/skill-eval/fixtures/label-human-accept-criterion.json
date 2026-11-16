@@ -53,11 +53,13 @@
       ],
       "links": [],
       "assignee": {
-        "name": "mara"
+        "name": "mara",
+        "service_account": false
       },
       "reviewers": [
         {
-          "name": "rita"
+          "name": "rita",
+          "service_account": false
         }
       ]
     },

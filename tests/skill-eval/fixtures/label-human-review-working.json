@@ -61,7 +61,8 @@
       ],
       "reviewers": [
         {
-          "name": "rita"
+          "name": "rita",
+          "service_account": false
         }
       ]
     },

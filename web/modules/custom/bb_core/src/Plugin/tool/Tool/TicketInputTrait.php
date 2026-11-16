@@ -158,6 +158,8 @@ trait TicketInputTrait {
         'uuid' => $account->uuid(),
         'name' => $account->getDisplayName(),
         'mail' => $account->get('mail')->access('view', $this->currentUser) ? $account->get('mail')->value : NULL,
+        // Marker read by name: bb_api_key declares it and depends on bb_core.
+        'service_account' => $account->hasField('bb_service_workspace') && !$account->get('bb_service_workspace')->isEmpty(),
       ];
     };
     $reviewers = $ticket->get('reviewers');

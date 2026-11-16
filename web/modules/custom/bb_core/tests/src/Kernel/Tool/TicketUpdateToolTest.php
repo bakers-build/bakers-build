@@ -53,7 +53,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     ]));
     self::assertSame([$add->id()], array_column($this->reload($ticket)->get('reviewers')->getValue(), 'target_id'));
     $read = $this->outputs($this->runTool('bakers_ticket_read', ['ticket' => $ticket->uuid()]));
-    self::assertSame([['uuid' => $add->uuid(), 'name' => 'add', 'mail' => NULL]], $read['reviewers']);
+    self::assertSame([['uuid' => $add->uuid(), 'name' => 'add', 'mail' => NULL, 'service_account' => FALSE]], $read['reviewers']);
     $update = $this->outputs($this->runTool('bakers_ticket_update', ['ticket' => $ticket->uuid(), 'reviewers_add' => []]));
     self::assertSame($read['reviewers'], $update['reviewers']);
     $this->assertFailure($this->runTool('bakers_ticket_update', [
@@ -176,7 +176,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
     self::assertSame([
       'links' => [],
       'reviewers' => [],
-      'assignee' => ['uuid' => $this->actor->uuid(), 'name' => 'actor', 'mail' => NULL],
+      'assignee' => ['uuid' => $this->actor->uuid(), 'name' => 'actor', 'mail' => NULL, 'service_account' => FALSE],
       'identifier' => $ticket->getIdentifier(),
       'title' => 'Clarified title',
       'description' => 'Clarified *ask*.',
@@ -367,7 +367,7 @@ final class TicketUpdateToolTest extends BakersToolTestBase {
       'ticket' => $ticket->uuid(),
       'assignee' => $member->uuid(),
     ]));
-    self::assertSame(['uuid' => $member->uuid(), 'name' => 'member', 'mail' => NULL], $out['assignee']);
+    self::assertSame(['uuid' => $member->uuid(), 'name' => 'member', 'mail' => NULL, 'service_account' => FALSE], $out['assignee']);
     self::assertSame($conductor->uuid(), $out['conductor']);
     $stored = $this->reload($ticket);
     self::assertSame((string) $member->id(), (string) $stored->get('assignee_user_id')->target_id);

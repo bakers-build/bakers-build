@@ -85,8 +85,8 @@ A label says which gates the run passes on its own. It stays fixed for the ticke
 | Label | A person passes | The run passes |
 |---|---|---|
 | none | every gate | none; it does the work between gates |
-| `human-review` | `verdict` and `merge`, as the ticket's reviewer; `criterion` | every other gate, up to the published verdict |
-| `human-accept` | `result`; `criterion`; also `verdict`, as the reviewer, when a planned change touches the risk list | every other gate; merges after acceptance |
+| `human-review` | `verdict` and `merge`, as the confirming person; `criterion` | every other gate, up to the published verdict |
+| `human-accept` | `result`; `criterion`; also `verdict`, as the confirming person, when a planned change touches the risk list | every other gate; merges after acceptance |
 | `auto` | only a user question on what the criteria leave open, and `result` when that happened (unchanged) | everything else, `criterion` and merge included |
 
 - **Risk list** (from `bb-label-auto`): a dependency, the data model, a public interface,
@@ -96,16 +96,21 @@ A label says which gates the run passes on its own. It stays fixed for the ticke
   `auto` passes them.
 - **`human-review` decides open content choices**: a choice the criteria leave to the user, such as
   what the result looks like, is no `criterion` under this label. The run decides it, records it
-  under `Decisions` and leaves it to the reviewer at `verdict`; the requester confirmed this in
+  under `Decisions` and leaves it to the confirming person at `verdict`; the requester confirmed this in
   review.
-- **Who decides a `criterion`** under `human-review` and `human-accept`: the ticket's assignee, or
-  the reviewer when the assignee is a bot. The requester chose this in working. Nothing marks a
-  user as a bot yet, so every assignee counts as a person until the follow-up flag exists.
+- **The confirming person** under `human-review` and `human-accept` decides a `criterion` and
+  confirms `verdict` and `merge`: the assignee and every reviewer, except a service-account
+  assignee. The ticket tools mark each person with `service_account` from the service-account
+  marker. When a person assignee and a reviewer are both set, either one's confirmation passes, so
+  a merge never waits on two people. With nobody left the run stops with a question naming the
+  missing reviewer; no fallback to the ticket author, since an empty assignee is rare (it becomes
+  the conductor's owner). The requester chose this in working and plan.
 - **Deployment and verification**: `human-review` and `human-accept` do not apply; a run that finds
   one stops and asks for `auto` or no label. `auto` keeps today's behavior.
-- **Label rules** (one label, deployment and verification, who decides a `criterion`) are written
+- **Label rules** (one label, deployment and verification, the confirming person) are written
   once, in `gates.md` › *Label rules*; the label skills link to them.
-- **`human-review` without a reviewer** stops with a question at the first state that finds it.
+- **`human-review` without a reviewer** runs on: a person assignee confirms. It used to stop at
+  the first state, although the assignee could confirm.
 - **One label per ticket**: `auto` beside one `human-*` label is read as that `human-*` label
   alone; `human-review` beside `human-accept` stops with a question asking which applies. The
   requester chose the names in review: the earlier `auto-` names read as the run reviewing
@@ -144,12 +149,12 @@ for a person. Questions go to the session, or to the ticket under `ticket-questi
 | qualification | stop for `qualification`; ask on a prior-art hit and agent choice | alone; transition to plan | alone; transition to plan | alone; transition to plan |
 | plan | stop for `plan`/`diagnosis` | alone; transition to working | alone; record whether the plan touches the risk list; transition to working | alone; transition to working |
 | working | stop for `coding` | alone; transition to review | stop for `result` (preview link, else MR); after acceptance transition to review | alone; ask `result` only when due; transition to review |
-| review | publish verdict; stop for `verdict` and `merge` | publish verdict; stop: the reviewer confirms and authorizes the merge | publish verdict; with a planned risky change stop for the reviewer's `verdict`; otherwise merge alone | verdict stands; merge alone after acceptance or "no acceptance due" |
-| done | reached only after an authorized merge | after the reviewer's merge authorization | after acceptance (and the reviewer's verdict when due) | after the merge |
+| review | publish verdict; stop for `verdict` and `merge` | publish verdict; stop: the confirming person confirms and authorizes the merge | publish verdict; with a planned risky change stop for the confirming person's `verdict`; otherwise merge alone | verdict stands; merge alone after acceptance or "no acceptance due" |
+| done | reached only after an authorized merge | after the confirming person's merge authorization | after acceptance (and the confirming person's verdict when due) | after the merge |
 
 Under every label: a failed check or `Not OK` verdict goes back to `working` when coding can fix
 it; a technical problem ends the run; a `criterion` waits for a person (under a `human-*` label
-the assignee, or the reviewer when the assignee is a bot), except under `auto`, which decides it
+the confirming person), except under `auto`, which decides it
 itself and asks only what is the user's to decide.
 
 ## 6. Visibility and recording
@@ -211,5 +216,5 @@ migration. The implementation changed:
   fixtures are renamed `auto-in-review-*` and `auto-content-decision-accepted`, so that no name
   reads like a former label; their behaviour is unchanged.
 - **Follow-up**: label terms `human-review` and `human-accept` in each workspace; label-permission
-  enforcement in `bb_core`; a bot flag on the user, so the label rules can tell a bot assignee; an
+  enforcement in `bb_core`; an
   optional metric on `followed: no`.
