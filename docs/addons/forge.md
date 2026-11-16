@@ -6,7 +6,7 @@ For operators who run agents in `sandbox` permissions without trusting `git`, `g
 
 ## Enable it
 
-Add the addon with exactly one backend, [GitHub](/addons/forge-github) or [GitLab](/addons/forge-gitlab), usually in `~/.bakers/machine.config.js`:
+Add the addon with exactly one backend, [GitHub](/addons/forge-github) or [GitLab](/addons/forge-gitlab), in `~/.bakers/machine.config.js` or the project's `.bakers/project.config.js`:
 
 ```js
 addons: [

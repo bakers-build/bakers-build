@@ -26,7 +26,7 @@ skill's decision matrix groups its rows into **blocks**; these rules run them.
 - Options: **Take proposal** (recommended); a named variant where the row lists one; **Adjust**.
   Taking answers exactly the values the preview names; a value it omits stays unanswered and is
   reported. Adjust asks the chosen values singly, one per turn.
-- **Own decisions**: permission mode, grants, merge policy, forge authentication and the server group are each asked alone, first in their block, never inside Take proposal; the block preview then shows them as `answered:`.
+- **Own decisions**: permission mode, grants, merge policy, forge authentication and the server group are asked one per question: never two together (mode and grants are two questions), never inside Take proposal, first in their block; the block preview then shows them as `answered:`.
 - Unattended, keep unknown choices unresolved and report them.
 - A decision belongs to the scope that stores it: machine blocks to `bb-init`, project blocks to
   `bb-init-project`. Hand a row of the other scope to its skill, then resume.

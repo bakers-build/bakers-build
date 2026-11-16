@@ -61,7 +61,7 @@
     },
     {
       "id": "one-block",
-      "criterion": "Every assistant question asks one block or one own decision (permission mode, grants, merge policy, forge authentication, server group). A block question previews every value it writes by name, including each lifecycle hook, and offers Take proposal, a named variant where one exists, or Adjust; own decisions are never inside Take proposal. The assistant waits for the answer before the next question."
+      "criterion": "Each assistant question covers exactly one block of the skill's decision matrix or exactly one own decision (permission mode, grants, merge policy, forge authentication, server group). A block intentionally groups several related values: the environment block, for example, holds the client, worktree location, all six lifecycle hooks, provision_up profiles, readiness checks and provision_exec keys in one question. A block question previews every value it writes by name, each with a source or '?', and offers Take proposal (plus a named variant where one exists) or Adjust. An own-decision question is asked alone and offers no Take proposal. Fail when one question spans two blocks, puts an own decision inside Take proposal, or asks the next question before the user answered."
     },
     {
       "id": "honest-outcome",

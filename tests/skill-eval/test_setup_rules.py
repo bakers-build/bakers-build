@@ -36,6 +36,7 @@ class SetupRulesTest(unittest.TestCase):
         line = next(line for line in CONVERSATION.read_text().splitlines() if '**Own decisions**' in line)
         for decision in ['permission mode', 'grants', 'merge policy', 'forge authentication', 'server group']:
             self.assertIn(decision, line)
+        self.assertIn('one per question', line)
 
     def test_every_matrix_derives_and_explains(self):
         rows = [row for path in MATRICES for row in table_rows(path)]
