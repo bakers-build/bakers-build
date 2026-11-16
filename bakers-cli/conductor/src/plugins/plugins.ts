@@ -60,6 +60,8 @@ export interface AgentPlugin extends DropSHPlugin {
   readonly requiredModules: string[];
   /** The effective run permissions and their source layers (`bakers agents`). */
   readonly permissions?: SecurityReport;
+  /** The secrets-file names its runs may receive (`bakers agents`). */
+  readonly secretEnv?: readonly string[];
   createAgent(config: ConductorFileConfig): Promise<BbAgent>;
 }
 

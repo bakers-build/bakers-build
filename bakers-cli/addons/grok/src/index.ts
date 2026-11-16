@@ -527,6 +527,7 @@ export function grokAgent(options: GrokAgentOptions = {}): AgentPlugin {
     id: 'grok',
     requiredModules: [],
     permissions: agent.security.report,
+    secretEnv: agent.secretEnv,
     async createAgent() {
       return agent;
     },

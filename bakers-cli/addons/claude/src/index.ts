@@ -604,6 +604,7 @@ export function claudeAgent(options: ClaudeAgentOptions = {}): AgentPlugin {
     id: 'claude',
     requiredModules: [],
     permissions: agent.security.report,
+    secretEnv: agent.secretEnv,
     async createAgent(config) {
       agent.useMarketplaces(config.marketplaces ?? []);
       return agent;

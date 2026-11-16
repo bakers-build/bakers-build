@@ -1,5 +1,9 @@
 import { loadConductorConfig } from '@bakers-build/conductor';
-import { type BbCommandPlugin, resolveConfigPath } from '@bakers-build/core';
+import {
+  type BbCommandPlugin,
+  loadSecretsFile,
+  resolveConfigPath,
+} from '@bakers-build/core';
 import { agentReport } from './agents.js';
 
 const agentsCommand: BbCommandPlugin = {
@@ -15,8 +19,11 @@ const agentsCommand: BbCommandPlugin = {
         const config = await loadConductorConfig(
           resolveConfigPath(options.config),
         );
+        const file = loadSecretsFile();
+        const isSet = (name: string) =>
+          Boolean(process.env[name] || file[name]);
         process.stdout.write(
-          `${JSON.stringify(agentReport(config), null, 2)}\n`,
+          `${JSON.stringify(agentReport(config, isSet), null, 2)}\n`,
         );
       });
   },

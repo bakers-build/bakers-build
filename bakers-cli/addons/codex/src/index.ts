@@ -566,6 +566,7 @@ export function codexAgent(options: CodexAgentOptions = {}): AgentPlugin {
     id: 'codex',
     requiredModules: [],
     permissions: agent.security.report,
+    secretEnv: agent.secretEnv,
     async createAgent(config) {
       agent.useMarketplaces(config.marketplaces ?? []);
       return agent;
