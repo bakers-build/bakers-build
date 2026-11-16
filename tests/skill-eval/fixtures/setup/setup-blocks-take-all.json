@@ -63,7 +63,8 @@
     "authentication": "Use supplied synthetic auth observations only; no real login.",
     "api": "Use bakers tools to discover control-plane tool schemas.",
     "file_paths": "project/ is checkout, machine/ is BAKERS_HOME. All writes require scope/consent per skill.",
-    "marketplaces": "The agent already knows the marketplace https://github.com/obra/superpowers.git."
+    "marketplaces": "The agent already knows the marketplace https://github.com/obra/superpowers.git.",
+    "repository_files": "The checkout contains .ddev/config.yaml and composer.json (scripts: test, lint); read them for evidence."
   },
   "max_turns": 70,
   "max_questions": 9,

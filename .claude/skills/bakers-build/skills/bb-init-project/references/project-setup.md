@@ -76,10 +76,10 @@ Forge authentication and the merge policy are own decisions.
 
 | When | Decide | Derive from | Explain | Read |
 |---|---|---|---|---|
-| Agents need repository delivery | Forge backend and repository | `git remote get-url origin` | — | [Forge](https://bakers.build/addons/forge.md), then its backend guide |
+| Agents need repository delivery | Forge backend and repository; a repository-specific entry goes in the project file, authenticated by a login or a `*_env` key | `git remote get-url origin` | — | [Forge](https://bakers.build/addons/forge.md), then its backend guide |
 | Forge chosen | Forge authentication | `gh auth status` or `glab auth status` | — | The backend guide |
-| Forge chosen | Merge policy per base branch | The forge's repository merge settings | — | [Forge](https://bakers.build/addons/forge.md) |
-| Forge chosen | Target branch | Base branches of recently merged requests | — | [Forge](https://bakers.build/addons/forge.md) |
+| Forge chosen | Merge policy per base branch | The forge's repository merge settings (`gh repo view`, `glab repo view`) | — | [Forge](https://bakers.build/addons/forge.md) |
+| Forge chosen | Target branch | Base branches of recently merged requests (`gh pr list --state merged`, `glab mr list --merged`) | — | [Forge](https://bakers.build/addons/forge.md) |
 
 ### Workflow
 

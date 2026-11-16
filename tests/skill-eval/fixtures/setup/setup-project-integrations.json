@@ -178,9 +178,7 @@
       "hooks.provision_up.test": "node scripts/demo-env.mjs test",
       "hooks.provision_up.preview": "node scripts/demo-env.mjs preview",
       "hooks.after_create": "node scripts/demo-env.mjs deps",
-      "hooks.after_done": "node scripts/demo-env.mjs stop",
-      "executor.use": "@bakers-build/addon-herdr",
-      "worktree.use": "@bakers-build/addon-herdr"
+      "hooks.after_done": "node scripts/demo-env.mjs stop"
     }
   }
 }
