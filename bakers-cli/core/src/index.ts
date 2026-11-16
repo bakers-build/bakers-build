@@ -197,6 +197,13 @@ export {
   runCloneGitDir,
   saveRunClone,
 } from './core/run-clone.js';
+export {
+  loadSecretsFile,
+  parseSecretsFile,
+  pickSecrets,
+  type Secrets,
+  secretsFilePath,
+} from './core/secrets-file.js';
 export { cliRootOf } from './core/runtime-paths.js';
 export { shellQuote } from './core/shell.js';
 export { DEFAULT_SLUG_MAX_LENGTH, slugify } from './core/slug.js';
