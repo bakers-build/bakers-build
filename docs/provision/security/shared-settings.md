@@ -87,10 +87,9 @@ a script in a protected path; otherwise the config fails to load. See
 [the entry-point rule](/provision/hooks#protect-host-executed-files). The run installs dependencies
 and builds in its own container, not on the host.
 
-A legitimate change to a protected path is made and delivered by a maintainer outside an isolated
-run. If the target branch changed a protected path, merging it fails inside the run as read-only.
-The run reports that; a maintainer merges the target into the ticket branch once, outside the run,
-and the next run starts from that state.
+A change to a protected path is made by a maintainer outside an isolated run. A run merges the
+target with `forge_update_branch` on the host; when that changes a protected path, it answers
+`sync: restart`, refuses `forge_push`, and the next run's fresh clone starts at the merge.
 
 ### DDEV tool protection
 

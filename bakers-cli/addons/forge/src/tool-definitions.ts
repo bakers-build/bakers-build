@@ -13,7 +13,7 @@ const branch = {
 export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
   forge_fetch: {
     description:
-      "Fetch the ticket's base_branch, its own branch and the named parent branches into refs/remotes/origin/*; read only. Then rebase or merge locally with git.",
+      "Fetch the ticket's base_branch, its own branch and the named parent branches into refs/remotes/origin/*; read only. To integrate the target into the ticket branch call forge_update_branch.",
     input: {
       type: 'object',
       properties: {
@@ -24,6 +24,11 @@ export const FORGE_TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
         },
       },
     },
+  },
+  forge_update_branch: {
+    description:
+      "Merge the ticket's current target (fetched fresh) into the ticket branch of an isolated run; pushes nothing, changes no PR/MR. Commit first. Returns previous, target and resulting SHAs and sync: none (no-op), in_place (run the returned git merge --ff-only before further work) or restart (protected paths changed: stop, cancel the run with bakers_run_cancel; the next run starts at resulting). Refuses uncommitted work, conflicts (naming paths) and concurrent branch movement without changing anything.",
+    input: { type: 'object', properties: {} },
   },
   forge_push: {
     description:

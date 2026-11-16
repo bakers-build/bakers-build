@@ -160,6 +160,7 @@ export {
   withoutGitDirs,
 } from './core/git-sandbox.js';
 export {
+  changedProtectedPaths,
   refreshRunTarget,
   runCloneTip,
   transferIsolatedCommit,

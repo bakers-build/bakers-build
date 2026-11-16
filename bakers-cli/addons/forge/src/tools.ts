@@ -8,15 +8,18 @@ import type {
   ToolResult,
 } from '@bakers-build/conductor/contract';
 import {
+  changedProtectedPaths,
   homeBbDir,
   loadRunClone,
+  type RunClone,
   refreshRunTarget,
+  runCloneTip,
   saveRunClone,
   transferIsolatedCommit,
 } from '@bakers-build/core';
 import type { ForgeBackend, ForgeCheck } from './backend.js';
 import { FORGE_NEEDS_BACKEND, loadForgeBackend, mergeRule } from './config.js';
-import { fetchBranches, pushBranch } from './git.js';
+import { fetchBranches, pushBranch, updateBranch } from './git.js';
 import {
   derivedBase,
   isConventionalTitle,
@@ -82,6 +85,27 @@ function ownedBranch(req: ToolRequest, run: Run): string {
   if (!isOwned(branch, run.branchName))
     throw new Error(ownershipRefusal(branch, run.branchName));
   return branch;
+}
+
+const restartRefusal = (sha: string) =>
+  `forge: the branch was updated to ${sha} with protected changes this run cannot see; stop and cancel this run with bakers_run_cancel on its ticket, the next run starts there`;
+
+/**
+ * Bring the run's commits into the parent. A run behind its branch (an update
+ * it has not synced) or awaiting a restart is refused: it would act on stale files.
+ */
+function transferRun(clone: RunClone): RunClone {
+  if (clone.restartPending)
+    throw new Error(restartRefusal(clone.restartPending));
+  const tip = runCloneTip(clone);
+  const expected = transferIsolatedCommit(clone, tip);
+  if (expected !== tip)
+    throw new Error(
+      `forge: the run is behind its branch at ${expected}; run git merge --ff-only ${expected} and validate first`,
+    );
+  const saved = { ...clone, expected };
+  saveRunClone(saved);
+  return saved;
 }
 
 export const LOG_DEFAULT_BYTES = 16_384;
@@ -157,8 +181,7 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       const b = await backend();
       const clone = loadRunClone(req.worktreePath);
       // Only checked commits leave the run: transfer first, push from the parent.
-      if (clone && branch === clone.branch)
-        saveRunClone({ ...clone, expected: transferIsolatedCommit(clone) });
+      if (clone && branch === clone.branch) transferRun(clone);
       const sha = await pushBranch(
         clone?.parentGitDir ?? req.worktreePath,
         await b.gitAuth(),
@@ -172,6 +195,65 @@ export function forgeTools(deps: ForgeToolDeps): Record<string, ToolHandler> {
       );
       if (clone) refreshRunTarget(clone, [branch]);
       return json({ branch, sha });
+    },
+
+    forge_update_branch: async (req) => {
+      const run = runOf(req);
+      const loaded = loadRunClone(req.worktreePath);
+      if (!loaded)
+        throw new Error(
+          'forge_update_branch serves isolated run clones; in this checkout run forge_fetch, then merge origin/<target> locally',
+        );
+      if (loaded.restartPending)
+        throw new Error(restartRefusal(loaded.restartPending));
+      const target = await currentBase(req, run.branchName, run);
+      const auth = await (await backend()).gitAuth();
+      const tip = runCloneTip(loaded);
+      // Run commits first, so the merge keeps them; a run behind its branch keeps its tip.
+      const clone = {
+        ...loaded,
+        expected: transferIsolatedCommit(loaded, tip),
+      };
+      saveRunClone(clone);
+      await fetchBranches(clone.parentGitDir, auth, [target, run.branchName]);
+      refreshRunTarget(clone, [target]);
+      const u = await updateBranch(clone.parentGitDir, auth, {
+        branch: run.branchName,
+        target,
+        expected: clone.expected,
+        workspace: { path: clone.workspace, clean: tip },
+      });
+      const protectedPaths =
+        u.resulting === tip
+          ? []
+          : changedProtectedPaths(clone, tip, u.resulting);
+      const sync =
+        u.resulting === tip
+          ? 'none'
+          : protectedPaths.length > 0
+            ? 'restart'
+            : 'in_place';
+      if (sync === 'in_place') refreshRunTarget(clone, [target], [u.resulting]);
+      saveRunClone({
+        ...clone,
+        expected: u.resulting,
+        ...(sync === 'restart' ? { restartPending: u.resulting } : {}),
+      });
+      const next = {
+        none: `nothing to do: '${run.branchName}' already contains ${u.target}`,
+        in_place: `run git merge --ff-only ${u.resulting} before any further work, then validate and forge_push`,
+        restart: `protected paths changed (${protectedPaths.join(', ')}): do no further work or publication; cancel this run with bakers_run_cancel on its ticket, the next run starts at ${u.resulting}`,
+      }[sync];
+      return json({
+        branch: run.branchName,
+        target_branch: target,
+        previous: u.previous,
+        target: u.target,
+        resulting: u.resulting,
+        noop: u.noop,
+        sync,
+        next,
+      });
     },
 
     forge_pr_upsert: async (req) => {
